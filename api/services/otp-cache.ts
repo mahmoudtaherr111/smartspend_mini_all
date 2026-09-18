@@ -1,5 +1,12 @@
-// SmartSpend In-Memory Security & Performance Cache for WhatsApp OTP
-import { validatePhone, cleanPhoneNumber } from "../local-auth-utils";
+/**
+ * What is left in process memory of the phone codes.
+ *
+ * - `otpCache` holds the codes of a phone-number change (`profile.requestPhoneChange`), which the bot sends to
+ *   the new number and the user types back. Sign-up and WhatsApp sign-in no longer use it: their challenges live
+ *   in `whatsapp_otp_codes`, shared by every replica (`api/services/phone-challenge.ts`).
+ * - The sender blocklist belongs to the WhatsApp service, which runs in one process by design, so memory is the
+ *   right place for it: three codes that do not belong to the sender block that sender for fifteen minutes.
+ */
 import { createLogger, phoneTail } from "../lib/log";
 
 const log = createLogger("otp-cache");
@@ -11,84 +18,39 @@ interface OtpSession {
   verified: boolean;
 }
 
-// In-memory store for active verification sessions (Key: clean phone number)
+/** Phone-change codes, keyed by `phone-change:<userId>:<phone>` and `phone-grant:...`. */
 export const otpCache = new Map<string, OtpSession>();
 
-// In-memory store for IP and Phone rate limits
-export const rateLimitCache = new Map<string, { count: number; resetTime: number }>();
+const BLOCK_AFTER = 3;
+const BLOCK_MS = 15 * 60 * 1000;
 
-// In-memory store for blocked WhatsApp senders (Anti Brute-Force)
-export const blocklist = new Map<string, { attempts: number; blockUntil: number }>();
+const blocklist = new Map<string, { attempts: number; blockUntil: number; lastAt: number }>();
 
-/**
- * Checks if a phone number or IP address is currently rate-limited
- */
-export function checkRateLimit(ip: string, phone: string): { allowed: boolean; message?: string } {
-  const now = Date.now();
-
-  // Rate limit by Phone: Max 1 code request per 60 seconds
-  const phoneKey = `phone:${phone}`;
-  const phoneLimit = rateLimitCache.get(phoneKey);
-  if (phoneLimit && now < phoneLimit.resetTime) {
-    const waitSeconds = Math.ceil((phoneLimit.resetTime - now) / 1000);
-    return { allowed: false, message: `برجاء الانتظار ${waitSeconds} ثانية قبل طلب كود جديد` };
+/** Forgets senders whose block ended and who have been quiet as long; the map would otherwise only grow. */
+function pruneBlocklist(now: number): void {
+  for (const [sender, entry] of blocklist) {
+    if (entry.blockUntil <= now && now - entry.lastAt > BLOCK_MS) blocklist.delete(sender);
   }
-
-  // Rate limit by IP: Max 5 code requests per 10 minutes
-  const ipKey = `ip:${ip}`;
-  const ipLimit = rateLimitCache.get(ipKey);
-  if (ipLimit) {
-    if (now > ipLimit.resetTime) {
-      // Reset window
-      rateLimitCache.set(ipKey, { count: 1, resetTime: now + 10 * 60 * 1000 });
-    } else {
-      if (ipLimit.count >= 5) {
-        const waitMinutes = Math.ceil((ipLimit.resetTime - now) / (60 * 1000));
-        return { allowed: false, message: `لقد تجاوزت الحد الأقصى للطلبات من جهازك. حاول مرة أخرى بعد ${waitMinutes} دقيقة` };
-      }
-      ipLimit.count += 1;
-    }
-  } else {
-    rateLimitCache.set(ipKey, { count: 1, resetTime: now + 10 * 60 * 1000 });
-  }
-
-  // Set next allowed time for phone
-  rateLimitCache.set(phoneKey, { count: 1, resetTime: now + 60 * 1000 });
-
-  return { allowed: true };
 }
 
-/**
- * Checks if a sender JID/LID is blocked due to excessive wrong code submissions
- */
-export function isSenderBlocked(sender: string): boolean {
-  const now = Date.now();
-  const block = blocklist.get(sender);
-  if (block && now < block.blockUntil) {
-    return true;
-  }
-  return false;
+/** Whether a sender is blocked for sending codes that were not theirs. */
+export function isSenderBlocked(sender: string, now = Date.now()): boolean {
+  const entry = blocklist.get(sender);
+  return Boolean(entry && now < entry.blockUntil);
 }
 
-/**
- * Records a failed OTP verification attempt for a sender
- */
-export function recordWrongAttempt(sender: string) {
-  const now = Date.now();
-  const block = blocklist.get(sender);
-  if (block) {
-    if (block.blockUntil > 0 && now > block.blockUntil) {
-      // Reset attempts if the previous block period has passed
-      blocklist.set(sender, { attempts: 1, blockUntil: 0 });
-    } else {
-      block.attempts += 1;
-      if (block.attempts >= 3) {
-        // Block for 15 minutes
-        block.blockUntil = now + 15 * 60 * 1000;
-        log.warn({ event: "whatsapp.sender_blocked", phone: phoneTail(sender) }, "Sender blocked for 15 minutes after 3 wrong codes");
-      }
-    }
-  } else {
-    blocklist.set(sender, { attempts: 1, blockUntil: 0 });
+/** Counts a code the sender had no right to send; the third within the window blocks them. */
+export function recordWrongAttempt(sender: string, now = Date.now()): void {
+  pruneBlocklist(now);
+  const entry = blocklist.get(sender);
+  if (!entry || (entry.blockUntil > 0 && now > entry.blockUntil)) {
+    blocklist.set(sender, { attempts: 1, blockUntil: 0, lastAt: now });
+    return;
+  }
+  entry.attempts += 1;
+  entry.lastAt = now;
+  if (entry.attempts >= BLOCK_AFTER && entry.blockUntil <= now) {
+    entry.blockUntil = now + BLOCK_MS;
+    log.warn({ event: "whatsapp.sender_blocked", phone: phoneTail(sender) }, "Sender blocked for 15 minutes after 3 wrong codes");
   }
 }

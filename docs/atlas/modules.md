@@ -10,17 +10,17 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | --- | --- | --- | --- | --- | --- |
 | `api-core` | API server core | 5 | `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | — |
 | `api-routers` | tRPC routers and HTTP sub-apps | 23 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq`, `web-push` |
-| `auth` | Authentication and sessions | 4 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `voice`, `whatsapp` | — |
+| `auth` | Authentication and sessions | 5 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `voice`, `whatsapp` | — |
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
 | `platform` | Platform services | 10 | `database` | `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
-| `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `mysql` |
+| `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice` | `mysql` |
 | `contracts` | Shared contracts | 4 | — | `api-core`, `api-routers`, `billing`, `web-capture` | — |
 | `billing` | Billing | 2 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
 | `ledger` | Ledger aggregates | 2 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `jobs` | — |
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
 | `jobs` | Scheduled job bodies | 5 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `database`, `platform` | `api-core`, `api-routers` | `firebase`, `web-push` |
-| `whatsapp` | WhatsApp | 2 | `auth`, `database`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
+| `whatsapp` | WhatsApp | 2 | `auth`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 10 | `ai-actions`, `ai-governance`, `ai-kernel`, `ai-memory`, `auth`, `database`, `finance-semantic-layer`, `platform` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 13 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs`, `voice` | — |
@@ -46,11 +46,11 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-insights` | Insights UI | 1 | `web-hooks`, `web-shell`, `web-ui-kit` | `web-ai` | — |
 | `web-finance` | Finance UI | 13 | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-account`, `web-pages` | — |
 | `web-bank-sync` | Bank sync UI | 4 | `web-shell`, `web-ui-kit` | `web-pages` | — |
-| `web-account` | Account UI | 8 | `web-finance`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
+| `web-account` | Account UI | 9 | `web-finance`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `turnstile` |
 | `web-growth` | Ads and SEO UI | 2 | `web-hooks`, `web-shell` | `web-pages`, `web-shell` | — |
 | `web-shared` | Shared web components | 5 | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
 | `web-hooks` | Web hooks | 20 | `web-lib`, `web-shell` | `web-account`, `web-ai`, `web-capture`, `web-finance`, `web-growth`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor`, `firebase` |
-| `web-lib` | Web utilities | 7 | — | `web-account`, `web-admin`, `web-ai`, `web-capture`, `web-finance`, `web-hooks`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor` |
+| `web-lib` | Web utilities | 8 | — | `web-account`, `web-admin`, `web-ai`, `web-capture`, `web-finance`, `web-hooks`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor` |
 
 ## External systems
 
@@ -71,7 +71,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `qdrant` | Qdrant vector store | datastore | `ai-memory` | `api/services/ai-memory/qdrant-vector-store.ts` |
 | `redis` | Redis | datastore | `platform` | `api/lib/redis-client.ts` |
 | `sentry` | Sentry | observability | `platform` | `api/lib/error-reporting.ts` |
-| `turnstile` | Cloudflare Turnstile | bot-protection | `security` | `api/lib/security-headers.ts`, `api/services/turnstile-service.ts` |
+| `turnstile` | Cloudflare Turnstile | bot-protection | `security`, `web-account` | `api/lib/security-headers.ts`, `api/services/turnstile-service.ts`, `src/components/auth/TurnstileWidget.tsx` |
 | `web-push` | Web Push | push | `api-routers`, `notifications` | `api/admin-router.ts`, `api/notification-engine.ts` |
 | `whatsapp` | WhatsApp through Baileys | messaging | `whatsapp` | `api/services/whatsapp-service.ts` |
 
@@ -121,7 +121,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 
 ### `auth` — Authentication and sessions
 
-Password hashing, JWT session creation, session validation, login brute-force protection, and the one module that changes a role, a plan or a session and invalidates the cached principal with it.
+Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -129,6 +129,7 @@ Password hashing, JWT session creation, session validation, login brute-force pr
 | `api/lib/login-protection.ts` | `platform`, `security` | — | — | — |
 | `api/lib/session-validation.ts` | `database`, `platform` | — | `sessions` | — |
 | `api/local-auth-utils.ts` | `database`, `platform`, `security` | — | — | `sessions` |
+| `api/services/phone-challenge.ts` | `database`, `platform` | — | `whatsapp_otp_codes` | `whatsapp_otp_codes` |
 
 ### `security` — Request security
 
@@ -146,7 +147,7 @@ HTTPS redirection and security headers, rate limiting, allowed origins, client I
 | `api/lib/rate-limit.ts` | `platform` | — | — | — |
 | `api/lib/security-headers.ts` | — | `turnstile` | — | — |
 | `api/lib/security-logger.ts` | `platform` | — | — | — |
-| `api/services/turnstile-service.ts` | — | `turnstile` | — | — |
+| `api/services/turnstile-service.ts` | `platform` | `turnstile` | — | — |
 
 ### `platform` — Platform services
 
@@ -241,8 +242,8 @@ Baileys WhatsApp client and the in-process OTP state it verifies against.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/services/otp-cache.ts` | `auth`, `platform` | — | — | — |
-| `api/services/whatsapp-service.ts` | `database`, `platform` | `whatsapp` | — | — |
+| `api/services/otp-cache.ts` | `platform` | — | — | — |
+| `api/services/whatsapp-service.ts` | `auth`, `platform` | `whatsapp` | — | — |
 
 ### `voice` — Voice
 
@@ -516,7 +517,7 @@ Route-level page components lazy-loaded by src/App.tsx.
 | `src/pages/BankSyncPage.tsx` | `web-bank-sync`, `web-growth`, `web-shell` | — | — | — |
 | `src/pages/Home.tsx` | `web-account`, `web-capture`, `web-finance`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/Landing.tsx` | `web-growth`, `web-ui-kit` | — | — | — |
-| `src/pages/Login.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/pages/Login.tsx` | `web-account`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/More.tsx` | `web-hooks`, `web-ui-kit` | — | — | — |
 | `src/pages/NotFound.tsx` | `web-ui-kit` | — | — | — |
 | `src/pages/Privacy.tsx` | `web-growth`, `web-ui-kit` | — | — | — |
@@ -693,6 +694,7 @@ Biometric lock and passkeys, the smart profile, business and people settings, an
 | `src/components/auth/BiometricLockOverlay.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/auth/BiometricOnboardingModal.tsx` | `web-hooks`, `web-ui-kit` | — | — | — |
 | `src/components/auth/PasskeySettings.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/auth/TurnstileWidget.tsx` | `web-lib` | `turnstile` | — | — |
 | `src/components/notifications/PushNotificationPrompt.tsx` | `web-hooks`, `web-ui-kit` | — | — | — |
 | `src/components/profile/SmartProfileSettings.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/profile/SmartProfileView.tsx` | `web-finance`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
@@ -759,4 +761,5 @@ Client utilities (back-button handling, biometric auth, client rules engine, ima
 | `src/lib/financial-taxonomy.ts` | — | — | — | — |
 | `src/lib/queryPersister.ts` | — | — | — | — |
 | `src/lib/transactionDisplay.ts` | — | — | — | — |
+| `src/lib/turnstile-config.ts` | — | — | — | — |
 | `src/lib/utils.ts` | — | — | — | — |

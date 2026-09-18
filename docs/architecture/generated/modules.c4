@@ -74,10 +74,10 @@ model {
       }
     }
     auth = module 'Authentication and sessions' {
-      description 'Password hashing, JWT session creation, session validation, login brute-force protection, and the one module that changes a role, a plan or a session and invalidates the cached principal with it.'
+      description 'Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in.'
       metadata {
-        files '4'
-        paths 'api/lib/access-control.ts, api/local-auth-utils.ts, api/lib/session-validation.ts, api/lib/login-protection.ts'
+        files '5'
+        paths 'api/lib/access-control.ts, api/services/phone-challenge.ts, api/local-auth-utils.ts, api/lib/session-validation.ts, api/lib/login-protection.ts'
       }
     }
     billing = module 'Billing' {
@@ -208,7 +208,7 @@ model {
     web-account = module 'Account UI' {
       description 'Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt.'
       metadata {
-        files '8'
+        files '9'
         paths 'src/components/auth/**, src/components/profile/**, src/components/settings/**, src/components/bank-sync/**, src/components/notifications/**'
       }
     }
@@ -271,7 +271,7 @@ model {
     web-lib = module 'Web utilities' {
       description 'Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/.'
       metadata {
-        files '7'
+        files '8'
         paths 'src/lib/**, src/types/**, src/*.ts'
       }
     }

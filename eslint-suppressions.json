@@ -61,7 +61,7 @@
   },
   "api/boot.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 2
+      "count": 1
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
@@ -464,7 +464,7 @@
   },
   "api/local-auth-router.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 24
+      "count": 23
     }
   },
   "api/middleware.ts": {
@@ -649,11 +649,6 @@
       "count": 1
     }
   },
-  "api/services/otp-cache.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
   "api/services/parser-trace.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -683,11 +678,6 @@
     },
     "no-console": {
       "count": 3
-    }
-  },
-  "api/services/turnstile-service.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
     }
   },
   "api/services/user-profile-service.ts": {
@@ -743,7 +733,7 @@
       "count": 1
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 5
+      "count": 1
     },
     "prefer-const": {
       "count": 1
@@ -1565,11 +1555,6 @@
   "tests/migration-0021.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 7
-    }
-  },
-  "tests/security/r3-turnstile-defense.test.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
     }
   },
   "tests/security/r6-bola-idor.test.ts": {

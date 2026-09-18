@@ -24,9 +24,10 @@
     {
       "id": "auth",
       "title": "Authentication and sessions",
-      "description": "Password hashing, JWT session creation, session validation, login brute-force protection, and the one module that changes a role, a plan or a session and invalidates the cached principal with it.",
+      "description": "Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in.",
       "paths": [
         "api/lib/access-control.ts",
+        "api/services/phone-challenge.ts",
         "api/local-auth-utils.ts",
         "api/lib/session-validation.ts",
         "api/lib/login-protection.ts"

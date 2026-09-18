@@ -25,6 +25,8 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { startAuthentication } from "@simplewebauthn/browser";
+import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
+import { TURNSTILE_SITE_KEY } from "@/lib/turnstile-config";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import darkModeLogo from "../../photos/dark_mode_logo-removebg-preview.png";
@@ -72,10 +74,15 @@ export default function Login() {
   const [regPassword, setRegPassword] = useState("");
   const [regReferral, setRegReferral] = useState("");
 
-  // Verification state
+  // Verification state. The code is shown for the user to send from their WhatsApp; the ticket stays in this tab
+  // and is what the server turns into an account once the bot has seen the message; the watch token only lets
+  // this page follow the challenge.
   const [verificationCode, setVerificationCode] = useState("");
+  const [challenge, setChallenge] = useState<{ ticket: string; watch: string } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
 
   const loginMutation = trpc.localAuth.login.useMutation({
     onSuccess: (data) => {
@@ -137,14 +144,24 @@ export default function Login() {
 
   const generateCodeMutation =
     trpc.localAuth.generateVerificationCode.useMutation({
-      onSuccess: () => {
+      onSuccess: (data) => {
+        setVerificationCode(data.code);
+        setChallenge({ ticket: data.ticket, watch: data.watch });
+        setTimeLeft(data.expiresInSeconds);
         setIsVerifying(true);
-        setTimeLeft(600);
       },
       onError: (err) => {
         toast.error(err.message);
       },
+      // A Turnstile token is good for one request.
+      onSettled: () => setTurnstileReset((n) => n + 1),
     });
+
+  const stopVerifying = () => {
+    setIsVerifying(false);
+    setVerificationCode("");
+    setChallenge(null);
+  };
 
   // Removed checkVerificationQuery (Polling replaced with SSE)
 
@@ -153,60 +170,57 @@ export default function Login() {
       const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
       return () => clearInterval(timer);
     } else if (timeLeft === 0 && isVerifying) {
-      setIsVerifying(false);
-      setVerificationCode("");
+      stopVerifying();
       toast.error("انتهى وقت التوثيق، برجاء المحاولة مرة أخرى");
     }
   }, [isVerifying, timeLeft]);
 
   useEffect(() => {
-    if (!isVerifying || !regPhone || !isWhatsAppVerificationEnabled) return;
+    if (!isVerifying || !challenge || !isWhatsAppVerificationEnabled) return;
 
-    // Open zero-polling, instantaneous SSE connection
-    const eventSource = new EventSource(`/api/sse/otp?phone=${regPhone}`);
+    // The stream follows this tab's challenge, not a phone number; EventSource reconnects on its own.
+    const eventSource = new EventSource(
+      `/api/sse/otp?challenge=${encodeURIComponent(challenge.watch)}`,
+    );
 
     eventSource.onmessage = (event) => {
-      if (event.data === "ping") return; // Keep-alive
-
+      let data: { status?: string };
       try {
-        const data = JSON.parse(event.data);
-
-        if (data.status === "verified") {
-          toast.success("تم توثيق الرقم بنجاح! جاري إنشاء الحساب...");
-          setIsVerifying(false);
-          eventSource.close();
-
-          // Proceed with actual registration
-          registerMutation.mutate({
-            name: regName,
-            phone: regPhone,
-            email: regEmail || undefined,
-            password: regPassword,
-            referralCode: regReferral || undefined,
-          });
-        } else if (data.status === "fraud") {
-          // The user tried to use a different WhatsApp number!
-          setIsVerifying(false);
-          setVerificationCode("");
-          eventSource.close();
-          toast.error(
-            `رسالة أمان: رقم الواتساب غير مطابق! حاولت التوثيق من الرقم ${data.actual} بينما الرقم المسجل هو ${data.expected}`,
-          );
-        }
-      } catch (err) {
-        console.error("SSE Parse Error", err);
+        data = JSON.parse(event.data);
+      } catch {
+        return;
       }
-    };
 
-    eventSource.onerror = () => {
-      // Reconnection is handled automatically by EventSource, but we can log it
-      console.log("SSE Connection lost, reconnecting...");
+      if (data.status === "verified") {
+        toast.success("تم توثيق الرقم بنجاح! جاري إنشاء الحساب...");
+        eventSource.close();
+        const ticket = challenge.ticket;
+        stopVerifying();
+        registerMutation.mutate({
+          name: regName,
+          phone: regPhone,
+          email: regEmail || undefined,
+          password: regPassword,
+          referralCode: regReferral || undefined,
+          verificationTicket: ticket,
+        });
+      } else if (data.status === "wrong_sender") {
+        eventSource.close();
+        stopVerifying();
+        toast.error(
+          "الكود وصل من رقم واتساب غير الرقم اللي بتسجل بيه. ابعته من نفس الرقم.",
+        );
+      } else if (data.status === "expired") {
+        eventSource.close();
+        stopVerifying();
+        toast.error("انتهى وقت التوثيق، برجاء المحاولة مرة أخرى");
+      }
     };
 
     return () => {
       eventSource.close();
     };
-  }, [isVerifying, regPhone]);
+  }, [isVerifying, challenge]);
 
   const { data: googleUrl } = trpc.auth.googleUrl.useQuery();
   const { data: botPhoneNumber } = trpc.localAuth.getBotPhoneNumber.useQuery();
@@ -275,8 +289,15 @@ export default function Login() {
     }
 
     if (isWhatsAppVerificationEnabled) {
+      if (TURNSTILE_SITE_KEY && !turnstileToken) {
+        toast.error("استنى لحظة لحد ما التحقق يخلص");
+        return;
+      }
       // Start verification process instead of direct registration
-      generateCodeMutation.mutate({ phone: regPhone });
+      generateCodeMutation.mutate({
+        phone: regPhone,
+        turnstileToken: turnstileToken ?? undefined,
+      });
     } else {
       // Register directly if OTP is disabled
       registerMutation.mutate({
@@ -479,34 +500,12 @@ export default function Login() {
                     </div>
                   </div>
 
+                  {/* No "skip": with verification on, the server creates the account only for a verified number. */}
                   <div className="flex gap-2 w-full mt-3">
-                    <Button
-                      variant="outline"
-                      className="flex-1 text-xs text-slate-500 font-bold h-9 rounded-xl"
-                      onClick={() => {
-                        setIsVerifying(false);
-                        setVerificationCode("");
-                        toast.success(
-                          "تم التخطي. يرجى توثيق رقمك لاحقاً للاستفادة الكاملة.",
-                        );
-                        registerMutation.mutate({
-                          name: regName,
-                          phone: regPhone,
-                          email: regEmail || undefined,
-                          password: regPassword,
-                          referralCode: regReferral || undefined,
-                        });
-                      }}
-                    >
-                      تخطي الآن
-                    </Button>
                     <Button
                       variant="ghost"
                       className="flex-1 text-xs text-muted-foreground h-9 rounded-xl"
-                      onClick={() => {
-                        setIsVerifying(false);
-                        setVerificationCode("");
-                      }}
+                      onClick={stopVerifying}
                     >
                       إلغاء وتعديل
                     </Button>
@@ -617,6 +616,13 @@ export default function Login() {
                         className="h-10 text-start rounded-xl font-mono bg-slate-50/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 focus-visible:ring-emerald-500 text-sm"
                       />
                     </div>
+
+                    {isWhatsAppVerificationEnabled ? (
+                      <TurnstileWidget
+                        onToken={setTurnstileToken}
+                        resetSignal={turnstileReset}
+                      />
+                    ) : null}
 
                     <Button
                       type="submit"

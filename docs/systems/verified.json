@@ -6,8 +6,8 @@
         "api/auth-router.ts": "20fc04d1a094",
         "api/boot.ts#GET /api/auth/google/callback": "4aa70d89b69f",
         "api/boot.ts#GET /api/auth/google/start": "30860aaa6f6e",
-        "api/boot.ts#GET /api/sse/otp": "f865b41c8a1c",
-        "api/boot.ts#job:daily-auth-cleanup": "5c88f2aa5eca",
+        "api/boot.ts#GET /api/sse/otp": "17c9d19750db",
+        "api/boot.ts#job:daily-auth-cleanup": "acfde0491549",
         "api/lib/access-control.ts": "cca3d73f1965",
         "api/lib/admin-safe-fields.ts": "cfb73d6bbe66",
         "api/lib/anonymizer.ts": "5c18efa7eec1",
@@ -17,11 +17,11 @@
         "api/lib/login-protection.ts": "2e7377afad07",
         "api/lib/origin-policy.ts": "48b4669b572f",
         "api/lib/ownership-guard.ts": "982cc47a2b0d",
-        "api/lib/rate-limit.ts": "e7c06892d6f5",
+        "api/lib/rate-limit.ts": "f1259bb5ce19",
         "api/lib/security-headers.ts": "0b1a83577095",
         "api/lib/security-logger.ts": "23e02f6971e7",
         "api/lib/session-validation.ts": "ac2005332694",
-        "api/local-auth-router.ts": "8889b5588d78",
+        "api/local-auth-router.ts": "e5c170578f1a",
         "api/local-auth-utils.ts": "099855526fd9",
         "api/profile-router.ts#profile.confirmPhoneChange": "0a0f3d1d7c1f",
         "api/profile-router.ts#profile.getMyProfile": "f179af96f735",
@@ -29,25 +29,27 @@
         "api/profile-router.ts#profile.updateProfile": "9aba6a0c3710",
         "api/profile-router.ts#profile.updateUserInfo": "ae7508bea9bd",
         "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
-        "api/services/turnstile-service.ts": "5702a2e46626",
+        "api/services/phone-challenge.ts": "9c5aa7cfebc9",
+        "api/services/turnstile-service.ts": "89a28fc96d49",
         "api/services/user-purge-service.ts": "6bdb77f3851e",
         "api/session-router.ts": "e255f9db4207",
         "api/webauthn-router.ts": "10e55c7473d8",
         "src/components/auth/BiometricLockOverlay.tsx": "c1ce277a617a",
         "src/components/auth/BiometricOnboardingModal.tsx": "bf1276a98d91",
         "src/components/auth/PasskeySettings.tsx": "5f00185fa2be",
+        "src/components/auth/TurnstileWidget.tsx": "9a0df28a6e7b",
         "src/components/notifications/PushNotificationPrompt.tsx": "b7d1e5b30b68",
         "src/components/profile/SmartProfileSettings.tsx": "2027ffdf6fd3",
         "src/components/profile/SmartProfileView.tsx": "1d6745467c8e",
         "src/components/settings/BusinessSettingsView.tsx": "3704739ee6bf",
         "src/components/settings/PeopleSettingsView.tsx": "d14db778fc4a",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
-        "src/pages/Login.tsx": "cc14b37780a0",
+        "src/pages/Login.tsx": "63a52d38688f",
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
-      "checked": "2026-09-18 b0c2f3b",
-      "arabic": "60e95b2e39c0",
-      "arabicChecked": "2026-09-18 b0c2f3b"
+      "checked": "2026-09-18 981a949",
+      "arabic": "8a60de768c62",
+      "arabicChecked": "2026-09-18 981a949"
     },
     "admin": {
       "files": {
@@ -371,19 +373,19 @@
         "api/profile-router.ts#profile.sendBiometricPromptNotification": "ae8ae7ea27ee",
         "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
         "api/services/firebase.ts": "3b9319b2c3a5",
-        "api/services/otp-cache.ts": "b3b4d0e1ebcd",
-        "api/services/whatsapp-service.ts": "b6475adf12bd"
+        "api/services/otp-cache.ts": "e6343a8abd07",
+        "api/services/whatsapp-service.ts": "1177804a1f23"
       },
-      "checked": "2026-09-18 b0c2f3b",
-      "arabic": "2bb6882db98e",
-      "arabicChecked": "2026-09-18 b0c2f3b"
+      "checked": "2026-09-18 981a949",
+      "arabic": "92a3a240b12b",
+      "arabicChecked": "2026-09-18 981a949"
     },
     "platform": {
       "files": {
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "933d7d1d9bc4",
+        "api/boot.ts#rest-of-file": "95b80b4c53d5",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "e83854efb800",
         "api/lib/app-time.ts": "23f0c001bb84",
@@ -414,9 +416,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "30875c0abaf8"
       },
-      "checked": "2026-09-18 49da160",
-      "arabic": "7fa6c1e038d5",
-      "arabicChecked": "2026-09-18 49da160"
+      "checked": "2026-09-18 981a949",
+      "arabic": "e945ac478c06",
+      "arabicChecked": "2026-09-18 981a949"
     },
     "voice-calls": {
       "files": {
@@ -542,6 +544,7 @@
         "src/lib/financial-taxonomy.ts": "45d0c76858fa",
         "src/lib/queryPersister.ts": "078724e324de",
         "src/lib/transactionDisplay.ts": "2e4b3557cb26",
+        "src/lib/turnstile-config.ts": "d197c44d6df9",
         "src/lib/utils.ts": "83074e324a5c",
         "src/main.tsx": "edecd8a6865f",
         "src/pages/Landing.tsx": "c618847f38a4",
@@ -556,9 +559,9 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-09-16 b51229f",
-      "arabic": "38698b40a53e",
-      "arabicChecked": "2026-09-16 0610413"
+      "checked": "2026-09-18 981a949",
+      "arabic": "8705c571a945",
+      "arabicChecked": "2026-09-18 981a949"
     }
   }
 }

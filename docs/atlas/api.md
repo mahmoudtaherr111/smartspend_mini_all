@@ -35,7 +35,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `export` | `api/export-router.ts` | 3 | 0 | 3 | `adminProcedure`, `authedProcedure`, `proProcedure` |
 | `goals` | `api/goals-router.ts` | 5 | 1 | 4 | `authedProcedure`, `proProcedure` |
 | `image` | `api/image-router.ts` | 1 | 0 | 1 | `proProcedure` |
-| `localAuth` | `api/local-auth-router.ts` | 13 | 6 | 7 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
+| `localAuth` | `api/local-auth-router.ts` | 12 | 5 | 7 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
 | `pro` | `api/pro-router.ts` | 5 | 2 | 3 | `adminProcedure`, `authedProcedure` |
 | `profile` | `api/profile-router.ts` | 25 | 8 | 17 | `authedProcedure` |
 | `referral` | `api/referral-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
@@ -253,9 +253,8 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `localAuth.checkVerificationStatus` | query | `strictPublicProcedure` | yes | — | — | `api/local-auth-utils.ts`, `api/services/otp-cache.ts` | — |
 | `localAuth.deleteUser` | mutation | `adminProcedure` | yes | — | — | `api/services/user-purge-service.ts` | — |
-| `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | yes | — | — | `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/otp-cache.ts`, `api/services/turnstile-service.ts` | `src/pages/Login.tsx` |
+| `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | yes | — | — | `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts`, `api/services/turnstile-service.ts` | `src/pages/Login.tsx` |
 | `localAuth.getBotPhoneNumber` | query | `publicProcedure` | no | — | — | `api/services/whatsapp-service.ts` | `src/pages/Login.tsx` |
 | `localAuth.getStats` | query | `adminProcedure` | no | `expenses`, `local_users` | — | — | — |
 | `localAuth.getVerificationSettings` | query | `publicProcedure` | no | — | — | `api/lib/settings-cache.ts` | `src/pages/Login.tsx` |
@@ -263,9 +262,9 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `localAuth.login` | mutation | `publicProcedure` | yes | `local_users` | `local_users` | `api/lib/get-client-ip.ts`, `api/lib/login-protection.ts`, `api/local-auth-utils.ts` | `src/pages/Login.tsx` |
 | `localAuth.logout` | mutation | `publicProcedure` | no | — | — | `api/lib/get-client-ip.ts`, `api/local-auth-utils.ts` | `src/hooks/useAuth.ts` |
 | `localAuth.me` | query | `publicProcedure` | no | `local_users` | — | — | `src/components/profile/SmartProfileSettings.tsx`, `src/hooks/useAuth.ts` |
-| `localAuth.register` | mutation | `strictPublicProcedure` | yes | `local_users` | `local_users` | `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/otp-cache.ts` | `src/pages/Login.tsx` |
+| `localAuth.register` | mutation | `strictPublicProcedure` | yes | `local_users` | `local_users` | `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` | `src/pages/Login.tsx` |
 | `localAuth.updateRole` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | — |
-| `localAuth.verifyOtp` | mutation | `strictPublicProcedure` | yes | `local_users` | — | `api/local-auth-utils.ts`, `api/services/otp-cache.ts` | — |
+| `localAuth.verifyOtp` | mutation | `strictPublicProcedure` | yes | `local_users` | — | `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` | — |
 
 ### `pro` — `api/pro-router.ts`
 
@@ -372,4 +371,4 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 These are not referenced by the web app. Some may be called by other clients (Android app, iOS shortcuts) or server-side through `createCaller`; the rest are candidates for removal.
 
-`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.runVoiceToolQa`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `budget.create`, `budget.delete`, `budget.list`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `expense.update`, `export.myExpenses`, `goals.delete`, `localAuth.checkVerificationStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.generateMagicCode`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `wallet.updateWallet`
+`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.runVoiceToolQa`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `budget.create`, `budget.delete`, `budget.list`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `expense.update`, `export.myExpenses`, `goals.delete`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.generateMagicCode`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `wallet.updateWallet`

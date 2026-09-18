@@ -61,10 +61,12 @@ with `ENABLE_CRONS=true`, and again before the scheduled and activity runs.
 - `sendMessage` refuses when the service is not connected or the number has no WhatsApp, shows typing for a moment, and
   sends. The WhatsApp monthly report of [insights](insights.md), the phone-change codes of [accounts](accounts.md) and
   admin messages go through it.
-- An incoming message that contains a code (`SS-` and six digits) is matched against `api/services/otp-cache.ts`: a
-  sender whose number, or saved WhatsApp LID, matches the code's number marks it verified and emits the event that
-  `/api/sse/otp` streams; any other sender is recorded, and three wrong codes block a sender for 15 minutes. The sign-up
-  flow around it is in [accounts](accounts.md).
+- An incoming message that contains a code (`SS-` and six digits) goes to `receiveVerificationCode`: the open challenges
+  with that code are read from `whatsapp_otp_codes` (`api/services/phone-challenge.ts`), and the one whose number, or
+  saved WhatsApp LID, is the sender's is marked verified, with a `challenge:<id>` event for the `/api/sse/otp` stream in
+  this process. A code from any other number verifies nothing, tells the watching page `wrong_sender` without either
+  number, and is counted: three block the sender for 15 minutes, in memory, since the service runs in one process. The
+  sign-up flow around it is in [accounts](accounts.md).
 - Admin broadcasts (`adminWhatsapp.broadcastMessage`) queue one message per phone user in process memory and send them
   one at a time, with a random pause of two to four minutes and a random choice between the `{a|b}` alternatives written
   in the text.
@@ -90,11 +92,13 @@ with `ENABLE_CRONS=true`, and again before the scheduled and activity runs.
 4. The WhatsApp session belongs to one process: never start it on more than one replica.
 
 ## Tests
-No test covers this system.
+`api/services/whatsapp-service.receive.test.ts` covers the handling of incoming verification codes; nothing else in
+this system has a test.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Debt.** Nothing tests notification delivery, the templates, the activity checks or the WhatsApp service.
+1. **Debt.** Nothing tests notification delivery, the templates, the activity checks or the WhatsApp connection and its
+   sending.
 2. **Bug.** The admin console always shows WhatsApp verification as off: `adminWhatsapp.getSettings` returns a fixed "temporarily
    disabled" answer, while `adminWhatsapp.toggleOtpVerification` still changes the `whatsapp_otp_enabled` setting that
    registration reads.
@@ -113,8 +117,6 @@ Checked against the code; each one names where it lives.
    nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion.
 9. **Bug.** The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a
    day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
-10. **Debt.** `whatsapp_otp_codes` is a table nothing writes: `api/local-auth-router.ts` and `api/services/whatsapp-service.ts`
-    import it, while the codes live in memory.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): phone verification and the passkey suggestion.

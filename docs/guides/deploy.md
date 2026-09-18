@@ -49,14 +49,16 @@ template. Decide these explicitly in production:
 | `PAYMOB_API_KEY`, `PAYMOB_INTEGRATION_ID`, `PAYMOB_IFRAME_ID`, `PAYMOB_HMAC_SECRET` | Payments. In production the webhook answers 503 when `PAYMOB_HMAC_SECRET` is empty; outside production it skips the signature check instead. |
 | `BILLING_SIMULATE` | Accepts demo transaction ids in upgrades. Never true in production. |
 | `ENABLE_WHATSAPP` | Connects the WhatsApp client for OTP login. Its session lives in the whatsapp_auth_info folder under the working directory: give that folder a volume and run the client in one instance only. |
+| `TURNSTILE_SECRET_KEY`, `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile in front of the WhatsApp verification code. In production the code request is refused without the secret, and Cloudflare's test values are not accepted; the site key is built into the web app and shows the widget on the sign-up form. |
 | `JWT_SECRET` | Signs sessions. While `AI_GATEWAY_SECRET` is unset it also seals the provider keys saved in the admin console, and rotating it then loses them. Any non-empty value passes validation, so generate a long random one. |
 | `AI_GATEWAY_SECRET`, `AI_GATEWAY_SECRET_PREVIOUS` | Seal the provider keys saved in the admin console. Set `AI_GATEWAY_SECRET` before rotating `JWT_SECRET`: at the next boot every stored key moves to it, and the providers tab shows which secret each key is on. To rotate it, put the old value in `AI_GATEWAY_SECRET_PREVIOUS` and the new one in `AI_GATEWAY_SECRET`, deploy, and remove the old value once no key shows it. |
 | `SENTRY_DSN` | Optional error reporting. |
 
 ## More than one instance
 State kept in process memory does not cross processes: the classification result cache, muscle memory, the settings
-cache, OTP codes and the OTP event stream (`api/AGENTS.md`, rule 6). WhatsApp OTP login completes only when the
-browser's event stream reaches the same process as the WhatsApp client.
+cache and the phone-change codes (`api/AGENTS.md`, rule 6). Sign-up verification over WhatsApp does: its challenges
+live in `whatsapp_otp_codes`, and an event stream on another instance than the WhatsApp client learns from the
+database within a few seconds.
 
 ## API and web app deployed separately
 - API: `npm run backend:build` bundles `api/server.ts` into `dist/server/server.js`, and `npm run backend:start` runs it

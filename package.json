@@ -30,7 +30,7 @@
     "prepare": "node -e \"try{require('./scripts/agent/install-git-hooks.cjs')}catch(e){if(e.code!=='MODULE_NOT_FOUND')throw e}\"",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:db": "cross-env RUN_DB_INTEGRATION=1 vitest run tests/auth-hot-path.test.ts tests/expense-rollups.test.ts tests/data-retention-job.test.ts",
+    "test:db": "cross-env RUN_DB_INTEGRATION=1 vitest run tests/auth-hot-path.test.ts tests/expense-rollups.test.ts tests/data-retention-job.test.ts tests/phone-challenge.test.ts",
     "test:build": "cross-env REQUIRE_BUILD=1 vitest run tests/fonts-self-hosted.test.ts tests/capacitor-manifest-sync.test.ts tests/static-compression.test.ts tests/pwa-instant-resume.test.ts",
     "test:redis": "cross-env RUN_REDIS_INTEGRATION=1 vitest run api/lib/redis-client.integration.test.ts api/lib/login-protection.integration.test.ts",
     "test:e2e": "playwright test",

@@ -1,4 +1,4 @@
-import { randomInt, randomUUID } from "crypto";
+import { randomUUID } from "crypto";
 import { z } from "zod";
 import {
   router,
@@ -27,7 +27,6 @@ import {
   webhookTokens,
   rawSmsEvents,
   expenseCategories,
-  whatsappOtpCodes,
   financialGoals,
   userBudgets,
   userBusinesses,
@@ -48,8 +47,15 @@ import {
 } from "./local-auth-utils";
 import { getIncomingHeader } from "./lib/get-client-ip";
 import { whatsappService } from "./services/whatsapp-service";
-import { otpCache, checkRateLimit } from "./services/otp-cache";
+import {
+  PHONE_CHALLENGE_TTL_MS,
+  consumePhoneChallenge,
+  readPhoneChallenge,
+  startPhoneChallenge,
+  type PhoneChallenge,
+} from "./services/phone-challenge";
 import { guardOtpGeneration } from "./services/turnstile-service";
+import { createRateLimiter } from "./lib/rate-limit";
 
 import { getSystemSettings } from "./lib/settings-cache";
 import { purgeUserData } from "./services/user-purge-service";
@@ -68,6 +74,19 @@ import { setRole } from "./lib/access-control";
 const INVALID_ACCOUNT_PASSWORD_HASH =
   "$2b$12$0cGyfKa.Hcq3FAwq/CUhju/iICgm1cM2vbhjNwwRs.yfpJyoek6ya";
 const INVALID_LOGIN_MESSAGE = "رقم التليفون أو الباسورد غلط";
+const NOT_VERIFIED_MESSAGE = "برجاء توثيق رقم التليفون عبر واتساب أولاً";
+
+// Counted in Redis across replicas, with each process's own count as a floor. They used to live in one
+// process's memory, so every replica handed out its own five codes per address.
+const codeRequestsPerIp = createRateLimiter(5, 10 * 60 * 1000);
+const codeRequestsPerPhone = createRateLimiter(1, 60 * 1000);
+
+/** The challenge a ticket names, when it is open and the bot has seen the number send its code. */
+async function verifiedChallenge(ticket: string | undefined): Promise<PhoneChallenge | null> {
+  if (!ticket) return null;
+  const challenge = await readPhoneChallenge(ticket, "ticket");
+  return challenge?.verified ? challenge : null;
+}
 
 function loginRequestId(req: Parameters<typeof getIncomingHeader>[0]): string {
   const incoming = getIncomingHeader(req, "x-request-id")?.trim();
@@ -85,6 +104,8 @@ export const localAuthRouter = router({
         email: z.string().email("الإيميل مش صحيح").optional().or(z.literal("")),
         password: z.string().min(6, "الباسورد لازم يكون 6 أحرف على الأقل"),
         referralCode: z.string().optional(),
+        /** From `generateVerificationCode`, once the bot has seen the number send its code. */
+        verificationTicket: z.string().max(200).optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -113,28 +134,14 @@ export const localAuthRouter = router({
       const settings = await getSystemSettings();
       const otpEnabled = settings["whatsapp_otp_enabled"];
 
+      // With verification on, the account is created only for the browser holding the ticket of a challenge the
+      // bot verified for this very number, not for any request that names a number someone else verified.
+      let proof: PhoneChallenge | null = null;
       if (otpEnabled === "true") {
-        // Check if phone is verified in our in-memory cache
-        const verificationRecord = otpCache.get(cleanPhone);
-
-        if (!verificationRecord || !verificationRecord.verified) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "برجاء توثيق رقم التليفون عبر واتساب أولاً",
-          });
+        proof = await verifiedChallenge(input.verificationTicket);
+        if (!proof || proof.phone !== cleanPhone) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: NOT_VERIFIED_MESSAGE });
         }
-
-        // Check expiration
-        if (verificationRecord.expiresAt < Date.now()) {
-          otpCache.delete(cleanPhone);
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "انتهت صلاحية توثيق الرقم، برجاء المحاولة مرة أخرى",
-          });
-        }
-
-        // Clean up the verification code from cache
-        otpCache.delete(cleanPhone);
       }
 
       const hashedPassword = await hashPassword(input.password);
@@ -148,19 +155,27 @@ export const localAuthRouter = router({
         if (referrer) referredBy = referrer.id;
       }
 
-      const [newUser] = await db
-        .insert(localUsers)
-        .values({
-          name: input.name,
-          phone: cleanPhone,
-          email: input.email || null,
-          password: hashedPassword,
+      // The proof is spent in the transaction that creates the account: two tabs with one ticket get one account,
+      // and an insert that fails gives the proof back.
+      const newUser = await db.transaction(async (tx) => {
+        if (proof && !(await consumePhoneChallenge(proof, { phone: cleanPhone, tx }))) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: NOT_VERIFIED_MESSAGE });
+        }
+        const [created] = await tx
+          .insert(localUsers)
+          .values({
+            name: input.name,
+            phone: cleanPhone,
+            email: input.email || null,
+            password: hashedPassword,
 
-          referralCode: referral,
-          referredBy: referredBy,
-          referredByType: referredBy ? "local" : null,
-        })
-        .$returningId();
+            referralCode: referral,
+            referredBy: referredBy,
+            referredByType: referredBy ? "local" : null,
+          })
+          .$returningId();
+        return created;
+      });
 
       const token = await generateToken(newUser.id, "local");
       await createSession(
@@ -221,50 +236,25 @@ export const localAuthRouter = router({
 
       const cleanPhone = cleanPhoneNumber(input.phone);
 
-      // Check In-Memory Rate Limiting
-      const rateLimit = checkRateLimit(ctx.ip, cleanPhone);
-      if (!rateLimit.allowed) {
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: rateLimit.message,
-        });
-      }
+      await codeRequestsPerIp.hit(`otp-code-ip:${clientIp}`, "طلبت أكواد كتير من الجهاز ده. جرّب تاني بعد شوية.");
+      await codeRequestsPerPhone.hit(`otp-code-phone:${cleanPhone}`, "استنى دقيقة قبل ما تطلب كود جديد لنفس الرقم.");
 
-      const code = "SS-" + randomInt(100000, 1000000).toString();
-      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes from now
-
-      // Store in memory cache (0 database writes!)
-      otpCache.set(cleanPhone, {
-        phone: cleanPhone,
-        code,
-        expiresAt,
-        verified: false,
-      });
-
-      return { success: true };
+      // The code is shown on the page for the user to send from their WhatsApp; the ticket stays in this tab and
+      // is what turns the verified challenge into an account; the watch token only follows it.
+      const challenge = await startPhoneChallenge(cleanPhone);
+      return {
+        success: true,
+        code: challenge.code,
+        ticket: challenge.ticket,
+        watch: challenge.watch,
+        expiresInSeconds: Math.round(PHONE_CHALLENGE_TTL_MS / 1000),
+      };
     }),
 
   getVerificationSettings: publicProcedure.query(async () => {
     const settings = await getSystemSettings();
     return { enabled: settings["whatsapp_otp_enabled"] === "true" };
   }),
-
-  checkVerificationStatus: strictPublicProcedure
-    .input(z.object({ phone: z.string() }))
-    .query(async ({ input }) => {
-      const cleanPhone = cleanPhoneNumber(input.phone);
-      const record = otpCache.get(cleanPhone);
-
-      if (!record) return { verified: false };
-
-      // Check expiration
-      if (record.expiresAt < Date.now()) {
-        otpCache.delete(cleanPhone);
-        return { verified: false, expired: true };
-      }
-
-      return { verified: record.verified };
-    }),
 
   getBotPhoneNumber: publicProcedure.query(() => {
     const status = whatsappService.getStatus();
@@ -362,28 +352,21 @@ export const localAuthRouter = router({
       }
     }),
 
+  /**
+   * Sign-in by WhatsApp: a session for the number the bot saw send the code, given to the browser that holds the
+   * challenge's ticket, once. It used to take a phone and a code from anyone and never asked whether the message
+   * had arrived.
+   */
   verifyOtp: strictPublicProcedure
-    .input(
-      z.object({
-        phone: z.string().min(10).max(15),
-        code: z.string().min(4).max(12),
-      }),
-    )
+    .input(z.object({ verificationTicket: z.string().min(1).max(200) }))
     .mutation(async ({ input, ctx }) => {
-      const cleanPhone = cleanPhoneNumber(input.phone);
-      const record = otpCache.get(cleanPhone);
-
-      if (!record || record.expiresAt < Date.now() || record.code !== input.code.trim()) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "رمز التأكيد غير صحيح أو منتهي الصلاحية",
-        });
+      const challenge = await verifiedChallenge(input.verificationTicket);
+      if (!challenge) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "الرقم لسه ماتوثقش، أو التوثيق انتهى" });
       }
 
-      otpCache.delete(cleanPhone);
-
       const user = await db.query.localUsers.findFirst({
-        where: eq(localUsers.phone, cleanPhone),
+        where: eq(localUsers.phone, challenge.phone),
       });
 
       if (!user) {
@@ -391,6 +374,10 @@ export const localAuthRouter = router({
           code: "NOT_FOUND",
           message: "الحساب غير موجود",
         });
+      }
+
+      if (!(await consumePhoneChallenge(challenge))) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "التوثيق ده اتستخدم قبل كده" });
       }
 
       const token = await generateToken(user.id, "local");

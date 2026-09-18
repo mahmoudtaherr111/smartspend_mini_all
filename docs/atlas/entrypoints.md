@@ -34,7 +34,7 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 | GET | `/api/sms/token` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `webhook_tokens` | — |
 | POST | `/api/sms/token/generate` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | — | `webhook_tokens` |
 | GET | `/api/sms/unparsed` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `raw_sms_events` | — |
-| GET | `/api/sse/otp` | sse | `api/boot.ts` | `api/lib/get-client-ip.ts`, `api/services/whatsapp-service.ts` | — | — |
+| GET | `/api/sse/otp` | sse | `api/boot.ts` | `api/lib/get-client-ip.ts`, `api/services/phone-challenge.ts`, `api/services/whatsapp-service.ts` | — | — |
 | ALL | `/api/trpc/*` | trpc | `api/boot.ts` | `api/router.ts` | — | — |
 | POST | `/api/webhooks/paymob` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/paymob.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` | — | — |
 | GET | `/health` | http | `api/boot.ts` | — | — | — |
@@ -55,7 +55,7 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 | Job | Schedule | Depends on | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `classification-log-cleanup` | `0 3 * * 0` | — | — | `classification_logs` |
-| `daily-auth-cleanup` | `0 0 * * *` | `api/lib/access-control.ts` | — | `auth_challenges` |
+| `daily-auth-cleanup` | `0 0 * * *` | `api/lib/access-control.ts`, `api/services/phone-challenge.ts` | — | `auth_challenges` |
 | `daily-subscription-expiry` | `0 6 * * *` | `api/jobs/subscription-expiry-job.ts` | `pro_subscriptions` | `pro_subscriptions` |
 | `data-retention-lifecycle` | `0 5 * * *` | `api/jobs/data-retention-job.ts` | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_usage` |
 | `monthly-behavior-snapshots` | `0 1 1 * *` | `api/jobs/monthly-behavior-job.ts` | `expenses`, `user_profiles` | — |

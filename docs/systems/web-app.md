@@ -21,6 +21,7 @@ public pages (landing, privacy, terms and the not-found page).
 | PWA | `src/pwa/`, `src/components/pwa/` | Service worker updates, install prompts, the launch handler, Firebase messaging, the offline queue dialog and the network toast |
 | Native | `src/hooks/useNativeThemeSync.ts`, `src/hooks/useHaptics.ts`, `src/lib/back-button-manager.ts`, `src/components/layout/mobile-nav-platform.ts` | The Capacitor side: splash screen, theme, haptics, the Android back button and platform-specific navigation |
 | Lock | `src/providers/BiometricLockProvider.tsx`, `src/lib/biometricAuth.ts` | The app lock and the passkey prompt ([accounts](accounts.md)) |
+| Robot check | `src/lib/turnstile-config.ts`, `src/components/auth/TurnstileWidget.tsx` | The Cloudflare Turnstile widget on the sign-up form, built in only when `VITE_TURNSTILE_SITE_KEY` is set ([accounts](accounts.md)) |
 | Behaviour hooks | `src/hooks/useAppResume.ts`, `src/hooks/useScrollRestoration.ts`, `src/hooks/useVirtualKeyboard.ts`, `src/hooks/useSwipeNavigation.ts` | Returning to the app, scroll position, the on-screen keyboard and swipe gestures |
 | Utilities | `src/lib/transactionDisplay.ts`, `src/lib/financial-taxonomy.ts`, `src/lib/utils.ts` | How a transaction is presented, the category labels and the class-name helper |
 | Public pages | `src/pages/Landing.tsx`, `src/pages/More.tsx`, `src/pages/Privacy.tsx`, `src/pages/Terms.tsx`, `src/pages/NotFound.tsx` | The landing page, the settings menu, the two legal pages and the 404 |

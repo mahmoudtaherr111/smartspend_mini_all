@@ -9,18 +9,64 @@ import pino from "pino";
 import QRCode from "qrcode";
 import fs from "fs";
 import path from "path";
-import { db } from "../queries/connection";
-import { whatsappOtpCodes } from "../../db/schema";
-import { eq, and } from "drizzle-orm";
 import { EventEmitter } from "events";
-import { otpCache, isSenderBlocked, recordWrongAttempt } from "./otp-cache";
+import { isSenderBlocked, recordWrongAttempt } from "./otp-cache";
+import { markPhoneChallengeVerified, openChallengesWithCode } from "./phone-challenge";
 import { createLogger, phoneTail } from "../lib/log";
 
 // Codes, message text and phone numbers never reach a log line from here (golden rule 10); a number is
 // written as its last four digits.
 const log = createLogger("whatsapp");
 
+/**
+ * `challenge:<id>` events for `/api/sse/otp` in this process: instant when the page's stream reached the process
+ * that holds WhatsApp. A stream on another replica learns the same from the database a few seconds later.
+ */
 export const otpEvents = new EventEmitter();
+
+/**
+ * A code arrived on WhatsApp from `senderPhone` (already normalised to `01…` where it was a `20…` number).
+ *
+ * The challenges live in MySQL (`api/services/phone-challenge.ts`), so a sign-up started on any replica is
+ * verified here. The sender must be the challenge's own number, or its WhatsApp LID: the message is the proof,
+ * the code only says which challenge it answers.
+ */
+export async function receiveVerificationCode(
+  code: string,
+  senderPhone: string,
+): Promise<"verified" | "wrong_sender" | "unknown" | "blocked" | "error"> {
+  if (isSenderBlocked(senderPhone)) {
+    log.warn({ event: "whatsapp.otp.blocked_sender", phone: phoneTail(senderPhone) }, "Ignored a code from a blocked sender");
+    return "blocked";
+  }
+  try {
+    const candidates = await openChallengesWithCode(code);
+    const challenge = candidates.find((candidate) => matchPhoneNumber(candidate.phone, senderPhone));
+
+    if (challenge) {
+      if (await markPhoneChallengeVerified(challenge.id)) {
+        log.info({ event: "whatsapp.otp.verified", phone: phoneTail(senderPhone) }, "A number proved it sent its code");
+        otpEvents.emit(`challenge:${challenge.id}`, { status: "verified" });
+      }
+      return "verified";
+    }
+    recordWrongAttempt(senderPhone);
+    if (candidates.length === 0) {
+      log.warn({ event: "whatsapp.otp.unknown_code", phone: phoneTail(senderPhone) }, "An unknown or expired code arrived");
+      return "unknown";
+    }
+    log.warn(
+      { event: "whatsapp.otp.wrong_sender", expected: phoneTail(candidates[0].phone), sender: phoneTail(senderPhone) },
+      "A code arrived from a number other than the one it was issued for",
+    );
+    // Neither number goes to the page: whoever watches a challenge learns only that it failed.
+    for (const candidate of candidates) otpEvents.emit(`challenge:${candidate.id}`, { status: "wrong_sender" });
+    return "wrong_sender";
+  } catch (err) {
+    log.error({ err, event: "whatsapp.otp.lookup_failed" }, "Could not check an incoming code");
+    return "error";
+  }
+}
 
 function matchPhoneNumber(expectedPhone: string, senderPhone: string): boolean {
   const expectedClean = expectedPhone.replace(/\D/g, ""); // e.g. "010XXXXXXXX"
@@ -239,47 +285,7 @@ class WhatsAppService {
                 senderPhone = "0" + senderPhone.substring(2);
               }
 
-              // Anti Brute-Force: Check if the sender is currently blocked
-              if (isSenderBlocked(senderPhone)) {
-                log.warn({ event: "whatsapp.otp.blocked_sender", phone: phoneTail(senderPhone) }, "Ignored a code from a blocked sender");
-                continue;
-              }
-
-              // Check if code exists in our in-memory cache (0 database reads!)
-              // Since the Map has keys by phone, we search for the session matching the code
-              const activeSessions = Array.from(otpCache.values());
-              const record = activeSessions.find((s) => s.code === code && s.expiresAt > Date.now());
-
-              if (record) {
-                // Fraud Prevention: Ensure the sender's phone number matches the phone number for this code (supporting LIDs)
-                if (matchPhoneNumber(record.phone, senderPhone)) {
-                  
-                  // Mark as verified in memory (0 database writes!)
-                  record.verified = true;
-
-                  log.info({ event: "whatsapp.otp.verified", phone: phoneTail(senderPhone) }, "A number proved it sent its code");
-                  otpEvents.emit(`otp:${record.phone}`, { status: "verified" });
-                  
-                } else {
-                  log.warn(
-                    { event: "whatsapp.otp.wrong_sender", expected: phoneTail(record.phone), sender: phoneTail(senderPhone) },
-                    "A code arrived from a number other than the one it was issued for",
-                  );
-                  
-                  // Record failed attempt for sender
-                  recordWrongAttempt(senderPhone);
-
-                  otpEvents.emit(`otp:${record.phone}`, { 
-                    status: "fraud", 
-                    expected: record.phone, 
-                    actual: senderPhone 
-                  });
-                }
-              } else {
-                // Invalid code, record failed attempt to prevent scanning
-                recordWrongAttempt(senderPhone);
-                log.warn({ event: "whatsapp.otp.unknown_code", phone: phoneTail(senderPhone) }, "An unknown or expired code arrived");
-              }
+              await receiveVerificationCode(code, senderPhone);
           }
         }
       }

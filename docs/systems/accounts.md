@@ -46,19 +46,31 @@ account of the same person.
 - **Register** (`localAuth.register`): an Egyptian mobile number starting with 010, 011, 012 or 015
   (`api/local-auth-utils.ts#validatePhone`, Arabic digits accepted) that is not registered yet; a password of at least
   six characters, hashed with bcrypt; an optional referral code of another phone user. When `whatsapp_otp_enabled` is
-  `true`, the number must have been verified first.
+  `true`, the request must carry the ticket of a challenge the bot verified for this very number, and the challenge is
+  spent in the transaction that creates the account (see WhatsApp verification).
 - **Login** (`localAuth.login`): the attempt passes login protection first; an unknown number is compared with a fixed
   hash, so it fails with the same message and takes as long as a wrong password.
 - Both create a session, set the `smartspend_token` cookie (HttpOnly, seven days) and return the token, which the web
   app also keeps in `localStorage` and sends as a Bearer header.
 
 ### WhatsApp verification
-Designed as reverse verification. `localAuth.generateVerificationCode` passes the Turnstile check and per-IP and
-per-number limits, then keeps a code (`SS-` and six digits) for ten minutes in `api/services/otp-cache.ts`. The user
-is meant to send that code to the bot from the same number: `api/services/whatsapp-service.ts` marks it verified when
-the sender matches, records a different sender as fraud, blocks a sender after three wrong codes for 15 minutes, and
-emits an event that the Login screen hears through `/api/sse/otp` before it registers. The flow does not complete
-today; see the known issues.
+Reverse verification: the user proves the number by sending a code to the bot from it, so the message is the proof
+and the code only a label (`api/services/phone-challenge.ts`).
+1. `localAuth.generateVerificationCode` passes the Turnstile check (`api/services/turnstile-service.ts`: in production
+   only a token Cloudflare accepts, and nothing at all without `TURNSTILE_SECRET_KEY`), then limits counted across
+   replicas: five codes per address in ten minutes, one per number a minute. It opens a challenge in
+   `whatsapp_otp_codes`, valid for ten minutes, and returns its code (`SS-` and six digits), a `ticket` and a `watch`
+   token, both HMACs of the row under a key derived from `JWT_SECRET`.
+2. The Login screen shows the code with a WhatsApp link that sends it to the bot, and follows the challenge on
+   `/api/sse/otp?challenge=<watch>`. The form shows the Turnstile widget when the build has `VITE_TURNSTILE_SITE_KEY`.
+3. The bot (`receiveVerificationCode` in `api/services/whatsapp-service.ts`) finds the open challenge with that code
+   and marks it verified only when the sender is the challenge's own number or its WhatsApp LID. A code from any
+   other number is refused and counted, and three block the sender for 15 minutes. The page hears `verified`,
+   `wrong_sender` or `expired`, never a phone number: at once when its stream reached the bot's process, and from the
+   database within three seconds on any other replica.
+4. On `verified` the page calls `localAuth.register` with the ticket; `localAuth.verifyOtp` does the same for an
+   existing account and returns a session. Both spend the challenge with a conditional delete, so a ticket works
+   once. Challenges nobody finished are deleted by the nightly `daily-auth-cleanup`.
 
 ### Passkeys
 - In Settings, a signed-in user registers a passkey: `webauthn.generateRegistrationOptions` stores a five-minute
@@ -114,8 +126,8 @@ Then, per procedure:
 
 ## Account changes and deletion
 - `profile.updateUserInfo` changes the name and avatar. A new phone number needs a code: `profile.requestPhoneChange`
-  sends one over WhatsApp when verification is on, and `profile.confirmPhoneChange` checks it, saves the number and
-  bumps the auth version.
+  sends one over WhatsApp when verification is on and keeps it in the process's memory (`api/services/otp-cache.ts`),
+  and `profile.confirmPhoneChange` checks it, saves the number and bumps the auth version.
 - `purgeUserData` deletes, inside the caller's transaction, every user-owned row (conversations and memory, the ledger,
   goals, contacts, sessions, passkeys, the profile, logs and referrals) and then the identity row. `admin.deleteUser`
   and `localAuth.deleteUser` call it; `tests/knowledge/architecture.test.ts` fails when a user-owned table is left out.
@@ -125,6 +137,8 @@ Then, per procedure:
 | --- | --- | --- |
 | Google sign-in | the Google routes in `api/boot.ts`, `api/auth-router.ts` | |
 | Phone registration and login | `api/local-auth-router.ts`, `api/local-auth-utils.ts`, `src/pages/Login.tsx` | `api/local-auth-router.security.test.ts` |
+| Proving a phone number | `api/services/phone-challenge.ts`, `receiveVerificationCode` in `api/services/whatsapp-service.ts`, `/api/sse/otp` in `api/boot.ts`, `src/pages/Login.tsx` | `api/local-auth-router.phone.test.ts`, `api/services/whatsapp-service.receive.test.ts`, `tests/phone-challenge.test.ts` (database) |
+| The robot check | `api/services/turnstile-service.ts`, `src/components/auth/TurnstileWidget.tsx` | `tests/security/r3-turnstile-defense.test.ts` |
 | Login limits | `api/lib/login-protection.ts` and the `LOGIN_*` variables in `api/lib/env.ts` | `api/lib/login-protection.test.ts`, `api/lib/login-protection.integration.test.ts` |
 | Passkeys | `api/webauthn-router.ts`, `src/components/auth/PasskeySettings.tsx` | |
 | How a request becomes a user | `api/context.ts`, `api/lib/session-validation.ts` | `tests/security/r5-session-hashing.test.ts`, `api/admin-authentication.security.test.ts` |
@@ -143,9 +157,13 @@ Then, per procedure:
    may write `role` or `plan` or delete a session (`tests/knowledge/architecture.test.ts`).
 5. A new user-owned table is added to `purgeUserData`.
 6. Never log tokens, codes or phone numbers (golden rule 10).
+7. A phone number is proved only through `api/services/phone-challenge.ts`: the bot marks the challenge verified, and
+   the ticket of the browser that started it spends it once. Never accept a phone number and a code from the client
+   as proof.
 
 ## Tests
-`api/local-auth-router.security.test.ts`, `api/admin-authentication.security.test.ts`,
+`api/local-auth-router.security.test.ts`, `api/local-auth-router.phone.test.ts`, `tests/phone-challenge.test.ts`
+(database), `api/admin-authentication.security.test.ts`,
 `api/admin-router.security.test.ts`, `api/business-router.security.test.ts`, `api/middleware.test.ts`,
 `api/lib/login-protection.test.ts`, `api/lib/login-protection.integration.test.ts`, `api/lib/origin-policy.test.ts`,
 `api/lib/get-client-ip.test.ts`, `api/lib/rate-limit.test.ts`, the suites in `tests/security/` and, for the app lock,
@@ -153,31 +171,23 @@ Then, per procedure:
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Bug.** Phone sign-up with WhatsApp verification cannot finish: `localAuth.generateVerificationCode` never returns the code
-   the Login screen tells the user to send, so the WhatsApp message carries an empty code, and "skip" calls
-   `localAuth.register`, which refuses a number that is not verified. With `whatsapp_otp_enabled` off, any number can
-   register without proof that it belongs to the person.
-2. **Security.** In production the code request is refused, because the web app sends no Turnstile token; meanwhile
-   `verifyTurnstileToken` accepts Cloudflare's public always-pass test token without asking Cloudflare.
-   `tests/security/r3-turnstile-defense.test.ts` tests its own copy of these functions, not
-   `api/services/turnstile-service.ts`.
-3. **Security.** `localAuth.verifyOtp` creates a session for a phone number and a matching code without checking that the code was
-   confirmed over WhatsApp. No screen uses it and codes never leave the server today, but returning the code to the
-   client, the obvious repair for issue 1, would let anyone who requests a code for a number sign in as its owner.
-4. **Bug.** Verification codes, their limits and the sender blocklist live in process memory (`api/services/otp-cache.ts`), so
-   verification fails when requests reach different replicas (`api/AGENTS.md`, rule 6).
-5. **Bug.** Saving the profile in Settings never changes the name or avatar, and says nothing: `SmartProfileSettings` always
+1. **Gap.** Verification is the setting `whatsapp_otp_enabled`: while it is off any number registers without proof that it
+   belongs to the person, and the admin console shows it as off whatever its value ([notifications](notifications.md)).
+2. **Gap.** In production, verification needs both Turnstile keys: `TURNSTILE_SECRET_KEY` on the server and
+   `VITE_TURNSTILE_SITE_KEY` in the web build. With verification on and either missing, nobody can sign up with a phone
+   number.
+3. **Bug.** A phone-number change keeps its code in one process's memory (`api/services/otp-cache.ts`), so confirming it fails
+   when the request reaches another replica (`api/AGENTS.md`, rule 6).
+4. **Bug.** Saving the profile in Settings never changes the name or avatar, and says nothing: `SmartProfileSettings` always
    sends the phone field, which `profile.updateUserInfo` rejects without a code (and rejects when empty, for Google
    users). Changing a phone number has no screen, and with verification off its code is never sent.
-6. **Gap.** A passkey cannot be removed; users cannot see or end their sessions (`session.listMine` and `session.revokeMine`
+5. **Gap.** A passkey cannot be removed; users cannot see or end their sessions (`session.listMine` and `session.revokeMine`
    have no screen) or delete their own account.
-7. **Security.** The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read
+6. **Security.** The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read
    it, while the content security policy allows inline scripts (`src/AGENTS.md`, rule 4).
-8. **Security.** `/api/sse/otp` answers for any phone number without signing in, sends the sender's number in its fraud event, and
-   never prunes its per-IP counters.
-9. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
-10. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
-    same storage.
+7. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
+8. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
+   same storage.
 
 ## Related systems
 - [Notifications and WhatsApp](notifications.md): the WhatsApp bot that receives the codes, and push subscriptions.

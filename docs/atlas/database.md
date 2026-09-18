@@ -86,7 +86,7 @@ Sessions, challenges, OTPs, pending actions
 | `pending_clarifications` | `pendingClarifications` | 9 | 3 | `user_id` + `user_type` | `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/ai-router.ts`, `api/expense-router.ts` | `api/admin-router.ts`, `api/ai-router.ts`, `api/expense-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts` |
 | `sessions` | `sessions` | 9 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/lib/access-control.ts`, `api/lib/session-validation.ts`, `api/session-router.ts` | `api/lib/access-control.ts`, `api/local-auth-utils.ts`, `api/services/user-purge-service.ts` |
 | `webhook_tokens` | `webhookTokens` | 6 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/profile-router.ts`, `api/sms-router.ts` | `api/profile-router.ts`, `api/services/user-purge-service.ts`, `api/sms-router.ts` |
-| `whatsapp_otp_codes` | `whatsappOtpCodes` | 6 | 1 | — | — | — | — |
+| `whatsapp_otp_codes` | `whatsappOtpCodes` | 6 | 1 | — | — | `api/services/phone-challenge.ts` | `api/services/phone-challenge.ts` |
 
 ### Class E — Telemetry / Logs
 
@@ -340,6 +340,6 @@ chat_messages and conversation threads
 | Check | Tables |
 | --- | --- |
 | No relations in db/relations.ts | `ad_stats_daily`, `ai_cost_monthly`, `expense_daily_rollups`, `expense_details`, `onboarding_questions`, `seo_pages`, `system_settings`, `whatsapp_otp_codes` |
-| Not read or written by any runtime file | `whatsapp_otp_codes` |
+| Not read or written by any runtime file | — |
 | Written but never read by runtime code | `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `expense_details` |
 | Read but never written by runtime code | `onboarding_questions` |

@@ -26,7 +26,7 @@ flowchart LR
     http__api_sse["GET /api/sse/otp"]
     job_daily_auth_cleanup["Job · daily-auth-cleanup"]
     router_auth["auth API · 4 procedures"]
-    router_localAuth["localAuth API · 13 procedures"]
+    router_localAuth["localAuth API · 12 procedures"]
     router_profile["profile API · 5 procedures"]
     router_session["session API · 5 procedures"]
     router_webauthn["webauthn API · 5 procedures"]
@@ -83,6 +83,7 @@ flowchart LR
     tbl_users[("users")]
     tbl_voice_usage[("voice_usage")]
     tbl_webhook_tokens[("webhook_tokens")]
+    tbl_whatsapp_otp_codes[("whatsapp_otp_codes")]
   end
   ext_turnstile{{"Cloudflare Turnstile"}}
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
@@ -90,6 +91,7 @@ flowchart LR
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
   http__api_auth --> sys_platform
+  http__api_sse --> mod_auth
   http__api_sse --> mod_security
   http__api_sse --> sys_notifications
   job_daily_auth_cleanup --> mod_auth
@@ -144,12 +146,14 @@ flowchart LR
   mod_auth ==> tbl_local_users
   mod_auth ==> tbl_sessions
   mod_auth ==> tbl_users
+  mod_auth ==> tbl_whatsapp_otp_codes
   mod_security --> ext_turnstile
   mod_security --> sys_platform
   mod_security -.-> tbl_financial_goals
   mod_security -.-> tbl_user_businesses
   mod_security -.-> tbl_user_contacts
   mod_security -.-> tbl_user_wallets
+  mod_web_account --> ext_turnstile
   mod_web_account --> sys_money
   mod_web_account --> sys_web_app
   page_Login --> router_auth
@@ -203,9 +207,9 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `accounts` — Account lifecycle | Account deletion: purgeUserData removes every row a user owns, inside the caller's transaction. | 1 |
-| `auth` — Authentication and sessions | Password hashing, JWT session creation, session validation, login brute-force protection, and the one module that changes a role, a plan or a session and invalidates the cached principal with it. | 4 |
+| `auth` — Authentication and sessions | Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in. | 5 |
 | `security` — Request security | HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging. | 11 |
-| `web-account` — Account UI | Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt. | 8 |
+| `web-account` — Account UI | Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt. | 9 |
 
 ## API procedures
 
@@ -215,7 +219,6 @@ flowchart LR
 | `auth.googleUrl` | query | `publicProcedure` | — | — | `Login` |
 | `auth.logout` | mutation | `authedProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
 | `auth.me` | query | `publicProcedure` | `users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
-| `localAuth.checkVerificationStatus` | query | `strictPublicProcedure` | — | — | — |
 | `localAuth.deleteUser` | mutation | `adminProcedure` | — | — | — |
 | `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | — | — | `Login` |
 | `localAuth.getBotPhoneNumber` | query | `publicProcedure` | — | — | `Login` |
@@ -304,12 +307,13 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `users` | A | `accounts`, `auth`, `auth.googleCallback`, `profile.updateUserInfo` | `auth.googleCallback`, `auth.me`, `webauthn.generateRegistrationOptions` |
 | `voice_usage` | E | `accounts` | — |
 | `webhook_tokens` | D | `accounts` | — |
+| `whatsapp_otp_codes` | D | `auth` | `auth` |
 
 ## Outside systems
 
 | System | Kind | Modules |
 | --- | --- | --- |
-| Cloudflare Turnstile | bot-protection | `security` |
+| Cloudflare Turnstile | bot-protection | `security`, `web-account` |
 
 ## Other systems
 
@@ -324,7 +328,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 | `ALLOWED_ORIGINS` | yes | `api/lib/origin-policy.ts` |
 | `APP_URL` | yes | `api/lib/origin-policy.ts` |
 | `FRONTEND_URL` | yes | `api/lib/origin-policy.ts` |
-| `JWT_SECRET` | yes | `api/lib/login-protection.ts`, `api/lib/session-validation.ts`, `api/local-auth-utils.ts` |
+| `JWT_SECRET` | yes | `api/lib/login-protection.ts`, `api/lib/session-validation.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` |
 | `LOGIN_ACCOUNT_MAX_FAILURES` | yes | `api/lib/login-protection.ts` |
 | `LOGIN_IP_BURST_MAX_FAILURES` | yes | `api/lib/login-protection.ts` |
 | `LOGIN_IP_MAX_FAILURES` | yes | `api/lib/login-protection.ts` |
@@ -341,7 +345,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/accounts.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>41 files and declarations</summary>
+<details><summary>43 files and declarations</summary>
 
 - `api/auth-router.ts`
 - `api/boot.ts#GET /api/auth/google/callback`
@@ -369,6 +373,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/profile-router.ts#profile.updateProfile`
 - `api/profile-router.ts#profile.updateUserInfo`
 - `api/profile-router.ts#rest-of-file`
+- `api/services/phone-challenge.ts`
 - `api/services/turnstile-service.ts`
 - `api/services/user-purge-service.ts`
 - `api/session-router.ts`
@@ -376,6 +381,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/auth/BiometricLockOverlay.tsx`
 - `src/components/auth/BiometricOnboardingModal.tsx`
 - `src/components/auth/PasskeySettings.tsx`
+- `src/components/auth/TurnstileWidget.tsx`
 - `src/components/notifications/PushNotificationPrompt.tsx`
 - `src/components/profile/SmartProfileSettings.tsx`
 - `src/components/profile/SmartProfileView.tsx`

@@ -30,6 +30,8 @@ import { classificationLogs, authChallenges } from "../db/schema";
 import { lt } from "drizzle-orm";
 import { installProviderHealthReporter } from "./lib/provider-health";
 import { refreshGatewayCache } from "./lib/ai-gateway";
+import { purgeExpiredPhoneChallenges, readPhoneChallenge } from "./services/phone-challenge";
+import { createRateLimiter } from "./lib/rate-limit";
 import { purgeExpiredSessions } from "./lib/access-control";
 import { createLogger } from "./lib/log";
 import { initErrorReporting } from "./lib/error-reporting";
@@ -96,8 +98,9 @@ scheduleProtectedJob("0 0 * * *", "daily-auth-cleanup", async () => {
   await Promise.all([
     purgeExpiredSessions(now),
     db.delete(authChallenges).where(lt(authChallenges.expiresAt, now)),
+    purgeExpiredPhoneChallenges(now),
   ]);
-  console.log("[Cron] Cleaned expired sessions and WebAuthn challenges");
+  console.log("[Cron] Cleaned expired sessions, WebAuthn challenges and phone challenges");
 });
 
 // Cron job to clean up classification logs older than 180 days (Sundays at 3 AM)
@@ -378,59 +381,56 @@ app.use(
   }),
 );
 
-const sseRateLimit = new Map<string, { count: number; resetAt: number }>();
+// Counted in Redis across replicas; the per-address map this replaces was never pruned.
+const otpStreamsPerIp = createRateLimiter(5, 5 * 60 * 1000);
+const CHALLENGE_POLL_MS = 3_000;
+const STREAM_PING_MS = 15_000;
 
-// ─── SSE Endpoint for Zero-Polling OTP Verification ───
-app.get("/api/sse/otp", (c) => {
-  const phone = c.req.query("phone");
-  if (!phone) return c.text("Phone required", 400);
+// ─── The sign-up page follows its phone challenge here ───
+// By challenge, never by phone number: the stream used to answer for any number and to put the sender's number
+// in its "fraud" event. The watch token can follow one challenge and do nothing else; the ticket that spends it
+// never appears in a URL (api/services/phone-challenge.ts). The bot's event arrives at once when this stream
+// reached the process that holds WhatsApp; on any other replica the database says the same a few seconds later.
+app.get("/api/sse/otp", async (c) => {
+  const watch = c.req.query("challenge") ?? "";
+  const challenge = watch ? await readPhoneChallenge(watch, "watch") : null;
+  if (!challenge) return c.text("Unknown or expired challenge", 404);
 
   const clientIp = getClientIp(c.req.raw, directPeerAddress(c)) || "unknown";
-  const now = Date.now();
-  const sseEntry = sseRateLimit.get(clientIp);
-  if (sseEntry && sseEntry.resetAt > now && sseEntry.count >= 5) {
+  try {
+    await otpStreamsPerIp.hit(`otp-sse:${clientIp}`);
+  } catch {
     return c.text("Too many SSE connections", 429);
-  }
-  if (!sseEntry || sseEntry.resetAt <= now) {
-    sseRateLimit.set(clientIp, { count: 1, resetAt: now + 5 * 60 * 1000 });
-  } else {
-    sseEntry.count++;
   }
 
   return streamSSE(c, async (stream) => {
-    const MAX_SSE_DURATION = 5 * 60 * 1000; // 5 minutes max to prevent memory leaks
-    const startTime = Date.now();
-
-    const listener = async (data: any) => {
-      await stream.writeSSE({ data: JSON.stringify(data) });
+    let finished = false;
+    const finish = async (status: "verified" | "wrong_sender" | "expired") => {
+      if (finished) return;
+      finished = true;
+      await stream.writeSSE({ data: JSON.stringify({ status }) });
     };
+    const eventName = `challenge:${challenge.id}`;
+    const listener = (event: { status: "verified" | "wrong_sender" }) => void finish(event.status);
+    otpEvents.on(eventName, listener);
 
-    otpEvents.on(`otp:${phone}`, listener);
-
-    c.req.raw.signal.addEventListener("abort", () => {
-      otpEvents.off(`otp:${phone}`, listener);
-    });
-
-    // Keep alive with max duration guard
-    while (
-      !c.req.raw.signal.aborted &&
-      Date.now() - startTime < MAX_SSE_DURATION
-    ) {
-      await stream.sleep(15000);
-      if (!c.req.raw.signal.aborted) {
-        await stream.writeSSE({ event: "ping", data: "ping" });
+    try {
+      if (challenge.verified) await finish("verified");
+      let lastPing = Date.now();
+      while (!finished && !c.req.raw.signal.aborted) {
+        await stream.sleep(CHALLENGE_POLL_MS);
+        if (finished || c.req.raw.signal.aborted) break;
+        // Gone means expired or already spent; either way this page has nothing left to wait for.
+        const current = await readPhoneChallenge(watch, "watch");
+        if (!current) await finish("expired");
+        else if (current.verified) await finish("verified");
+        else if (Date.now() - lastPing >= STREAM_PING_MS) {
+          lastPing = Date.now();
+          await stream.writeSSE({ event: "ping", data: "ping" });
+        }
       }
-    }
-
-    // Clean up listener on timeout (abort handler covers client disconnect)
-    otpEvents.off(`otp:${phone}`, listener);
-    if (!c.req.raw.signal.aborted) {
-      await stream.writeSSE({
-        event: "timeout",
-        data: JSON.stringify({
-          message: "SSE connection timed out. Reconnect if needed.",
-        }),
-      });
+    } finally {
+      otpEvents.off(eventName, listener);
     }
   });
 });

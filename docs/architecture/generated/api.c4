@@ -1452,19 +1452,9 @@ model {
       }
     }
     localAuth = router 'localAuth' {
-      description 'api/local-auth-router.ts — 13 procedures.'
+      description 'api/local-auth-router.ts — 12 procedures.'
       metadata {
         file 'api/local-auth-router.ts'
-      }
-      checkVerificationStatus = procedure 'localAuth.checkVerificationStatus' {
-        #query #strictPublic #uncalled
-        technology 'strictPublicProcedure'
-        description 'query · strictPublicProcedure · no caller in src/'
-        metadata {
-          file 'api/local-auth-router.ts'
-          builder 'strictPublicProcedure'
-          procedureKind 'query'
-        }
       }
       deleteUser = procedure 'localAuth.deleteUser' {
         #mutation #admin #uncalled

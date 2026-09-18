@@ -4,7 +4,7 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (69 of 126 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (65 of 122 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
@@ -16,24 +16,24 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (69 of
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 4 | **1** | 6 | 2 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 6 | — | 11 | 2 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 3 | — | 7 | 5 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 12 | **5** | 3 | 2 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-18 981a949 | 2026-09-18 981a949 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | **1** | 1 | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | **none** | **1** | 5 | 1 | 3 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 981a949 | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-18 49da160 | 2026-09-18 49da160 | 4 | — | 4 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-18 49da160 | 2026-09-18 49da160 | 9 | — | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-18 49da160 | 2026-09-18 49da160 | 5 | — | 1 | — | 9 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-16 b51229f | 2026-09-16 0610413 | 7 | **1** | 2 | 2 | 2 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-18 981a949 | 2026-09-18 981a949 | 5 | — | 1 | — | 8 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-18 981a949 | 2026-09-18 981a949 | 7 | **1** | 2 | 2 | 2 |
 
 
 ## Where the risk is
 
-These systems' explanations name no test at all, so nothing fails when they break: [Notifications and WhatsApp](notifications.md).
+Every system's explanation names at least one test.
 
-## What is waiting (126 issue(s))
+## What is waiting (122 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
-### Security (10)
+### Security (7)
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A high-risk draft (stopping a goal) asks for confirmation in the interface, but the call screen and `useVoiceCall` have no such confirmation, so it cannot complete from a call.
@@ -42,10 +42,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The runtime records a risk for each action (stopping a goal and undo are high) but does not act on it: the chat's confirm button and typed confirmations run every action the same way.
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
-- In production the code request is refused, because the web app sends no Turnstile token; meanwhile `verifyTurnstileToken` accepts Cloudflare's public always-pass test token without asking Cloudflare. `tests/security/r3-turnstile-defense.test.ts` tests its own copy of these functions, not `api/services/turnstile-service.ts`.
-- `localAuth.verifyOtp` creates a session for a phone number and a matching code without checking that the code was confirmed over WhatsApp. No screen uses it and codes never leave the server today, but returning the code to the client, the obvious repair for issue 1, would let anyone who requests a code for a number sign in as its owner.
 - The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read it, while the content security policy allows inline scripts (`src/AGENTS.md`, rule 4).
-- `/api/sse/otp` answers for any phone number without signing in, sends the sender's number in its fraud event, and never prunes its per-IP counters.
 - The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the same storage.
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
@@ -57,7 +54,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (59)
+### Bugs (58)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - Answering a clarification twice saves its items twice: `answerClarification` loads the row by id and owner without checking that its status is still `pending`.
@@ -111,8 +108,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Wallet balances are stored as whatever text the client sends.
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
-- Phone sign-up with WhatsApp verification cannot finish: `localAuth.generateVerificationCode` never returns the code the Login screen tells the user to send, so the WhatsApp message carries an empty code, and "skip" calls `localAuth.register`, which refuses a number that is not verified. With `whatsapp_otp_enabled` off, any number can register without proof that it belongs to the person.
-- Verification codes, their limits and the sender blocklist live in process memory (`api/services/otp-cache.ts`), so verification fails when requests reach different replicas (`api/AGENTS.md`, rule 6).
+- A phone-number change keeps its code in one process's memory (`api/services/otp-cache.ts`), so confirming it fails when the request reaches another replica (`api/AGENTS.md`, rule 6).
 - Saving the profile in Settings never changes the name or avatar, and says nothing: `SmartProfileSettings` always sends the phone field, which `profile.updateUserInfo` rejects without a code (and rejects when empty, for Google users). Changing a phone number has no screen, and with verification off its code is never sent.
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
@@ -144,7 +140,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, so anything recorded offline and not yet sent is lost with the session.
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (26)
+### Gaps (28)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - Correction learning cannot be reached from the app: `api/lib/correction-rules.ts#recordCorrection` runs only in `expense.update`, which the web app does not call. `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere.
@@ -169,6 +165,8 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments as spending, every source except voice as manual, and dates by UTC day.
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
+- Verification is the setting `whatsapp_otp_enabled`: while it is off any number registers without proof that it belongs to the person, and the admin console shows it as off whatever its value ([notifications](notifications.md)).
+- In production, verification needs both Turnstile keys: `TURNSTILE_SECRET_KEY` on the server and `VITE_TURNSTILE_SITE_KEY` in the web build. With verification on and either missing, nobody can sign up with a phone number.
 - A passkey cannot be removed; users cannot see or end their sessions (`session.listMine` and `session.revokeMine` have no screen) or delete their own account.
 - The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
 
@@ -194,7 +192,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (31)
+### Debt (29)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win; the code reads the `parser_*` keys first.
@@ -220,9 +218,8 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - No test covers the webhook's verification, the grant, the expiry job or referrals.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- Nothing tests notification delivery, the templates, the activity checks or the WhatsApp service.
+- Nothing tests notification delivery, the templates, the activity checks or the WhatsApp connection and its sending.
 - The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
-- `whatsapp_otp_codes` is a table nothing writes: `api/local-auth-router.ts` and `api/services/whatsapp-service.ts` import it, while the codes live in memory.
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - A settings change reaches the other replicas only when their five-minute cache expires (`api/lib/settings-cache.ts`).
@@ -237,7 +234,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
 - Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
 - In production every 404 that is not an API path reads `dist/public/index.html` from disk again, with no cache.
-- The OTP stream keeps its per-IP counters in a plain map that nothing prunes, so the map grows with the number of distinct addresses until the process restarts.
 - Sentry, when configured, is initialised with full tracing and profiling (`tracesSampleRate: 1.0`), which samples every request in production.
 - `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the history the admin screens show ends where the ninety-day pruning starts.
 - `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.

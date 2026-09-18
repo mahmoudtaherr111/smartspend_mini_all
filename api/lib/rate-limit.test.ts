@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { TRPCError } from "@trpc/server";
 import { createRateLimiter } from "./rate-limit";
 
 describe("createRateLimiter", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("returns an object with a hit function", () => {
     const limiter = createRateLimiter(5, 60_000);
     expect(typeof limiter.hit).toBe("function");
@@ -36,6 +40,21 @@ describe("createRateLimiter", () => {
     limiter.hit("a");
     expect(() => limiter.hit("b")).not.toThrow();
     expect(() => limiter.hit("a")).toThrow(TRPCError);
+  });
+
+  it("forgets keys whose window has passed, so its memory does not grow with every address it has seen", () => {
+    vi.useFakeTimers();
+    const limiter = createRateLimiter(5, 60_000);
+    for (let i = 0; i < 500; i++) limiter.hit(`old-${i}`);
+    expect(limiter.trackedKeys()).toBe(500);
+
+    vi.advanceTimersByTime(61_000);
+    for (let i = 0; i < 500; i++) limiter.hit(`new-${i}`);
+
+    expect(limiter.trackedKeys()).toBe(500);
+    // A key still inside its window keeps its count through the sweep.
+    for (let i = 0; i < 4; i++) limiter.hit("new-0");
+    expect(() => limiter.hit("new-0")).toThrow(TRPCError);
   });
 
   it("uses a custom message when provided", () => {

@@ -20,6 +20,7 @@ model {
   smartspend.api.http.get_sms_token -[uses]-> smartspend.api.modules.auth
   smartspend.api.http.get_sms_unparsed -[reads]-> smartspend.mysql.raw_sms_events
   smartspend.api.http.get_sms_unparsed -[uses]-> smartspend.api.modules.auth
+  smartspend.api.http.get_sse_otp -[uses]-> smartspend.api.modules.auth
   smartspend.api.http.get_sse_otp -[uses]-> smartspend.api.modules.security
   smartspend.api.http.get_sse_otp -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.http.post_sms_android-status -[reads]-> smartspend.mysql.webhook_tokens
@@ -284,9 +285,11 @@ model {
   smartspend.api.modules.auth -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.auth -[imports]-> smartspend.api.modules.security
   smartspend.api.modules.auth -[reads]-> smartspend.mysql.sessions
+  smartspend.api.modules.auth -[reads]-> smartspend.mysql.whatsapp_otp_codes
   smartspend.api.modules.auth -[writes]-> smartspend.mysql.local_users
   smartspend.api.modules.auth -[writes]-> smartspend.mysql.sessions
   smartspend.api.modules.auth -[writes]-> smartspend.mysql.users
+  smartspend.api.modules.auth -[writes]-> smartspend.mysql.whatsapp_otp_codes
   smartspend.api.modules.billing -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.billing -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.billing -[imports]-> smartspend.shared.contracts
@@ -845,13 +848,10 @@ model {
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.users
-  smartspend.api.trpc.localAuth.checkVerificationStatus -[uses]-> smartspend.api.modules.auth
-  smartspend.api.trpc.localAuth.checkVerificationStatus -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.trpc.localAuth.deleteUser -[uses]-> smartspend.api.modules.accounts
   smartspend.api.trpc.localAuth.generateVerificationCode -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.localAuth.generateVerificationCode -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.localAuth.generateVerificationCode -[uses]-> smartspend.api.modules.security
-  smartspend.api.trpc.localAuth.generateVerificationCode -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.trpc.localAuth.getBotPhoneNumber -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.trpc.localAuth.getStats -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.localAuth.getStats -[reads]-> smartspend.mysql.local_users
@@ -868,12 +868,10 @@ model {
   smartspend.api.trpc.localAuth.register -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.localAuth.register -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.localAuth.register -[uses]-> smartspend.api.modules.platform
-  smartspend.api.trpc.localAuth.register -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.trpc.localAuth.register -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.localAuth.updateRole -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.localAuth.verifyOtp -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.localAuth.verifyOtp -[uses]-> smartspend.api.modules.auth
-  smartspend.api.trpc.localAuth.verifyOtp -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.trpc.pro.cancel -[writes]-> smartspend.mysql.pro_subscriptions
   smartspend.api.trpc.pro.createCheckoutSession -[uses]-> smartspend.api.modules.billing
   smartspend.api.trpc.pro.createCheckoutSession -[uses]-> smartspend.api.modules.platform
@@ -1021,6 +1019,7 @@ model {
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-ui-kit
+  smartspend.web.modules.web-account -[uses]-> turnstile
   smartspend.web.modules.web-admin -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-admin -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-admin -[imports]-> smartspend.web.modules.web-ui-kit

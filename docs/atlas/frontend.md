@@ -218,7 +218,7 @@ _None._
 
 ### `Login` — `src/pages/Login.tsx`
 
-2 files in its import closure (not counting `src/components/ui/`).
+4 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |

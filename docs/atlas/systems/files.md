@@ -179,6 +179,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/otp-cache.ts` | [notifications](notifications.md) |
 | `api/services/parser-trace.ts` | [expense-capture](expense-capture.md) |
 | `api/services/personal-context-builder.ts` | [insights](insights.md) |
+| `api/services/phone-challenge.ts` | [accounts](accounts.md) |
 | `api/services/pro-report-engine.ts` | [insights](insights.md) |
 | `api/services/report-personalization-engine.ts` | [insights](insights.md) |
 | `api/services/scheduler-lock.ts` | [platform](platform.md) |
@@ -253,6 +254,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/auth/BiometricLockOverlay.tsx` | [accounts](accounts.md) |
 | `src/components/auth/BiometricOnboardingModal.tsx` | [accounts](accounts.md) |
 | `src/components/auth/PasskeySettings.tsx` | [accounts](accounts.md) |
+| `src/components/auth/TurnstileWidget.tsx` | [accounts](accounts.md) |
 | `src/components/bank-sync/AndroidSetupFlow.tsx` | [bank-messages](bank-messages.md) |
 | `src/components/bank-sync/DigitalBankingSuite.tsx` | [bank-messages](bank-messages.md) |
 | `src/components/bank-sync/IosSetupFlow.tsx` | [bank-messages](bank-messages.md) |
@@ -373,6 +375,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/lib/financial-taxonomy.ts` | [web-app](web-app.md) |
 | `src/lib/queryPersister.ts` | [web-app](web-app.md) |
 | `src/lib/transactionDisplay.ts` | [web-app](web-app.md) |
+| `src/lib/turnstile-config.ts` | [web-app](web-app.md) |
 | `src/lib/utils.ts` | [web-app](web-app.md) |
 | `src/main.tsx` | [web-app](web-app.md) |
 | `src/pages/AICenter.tsx` | [ai-center](ai-center.md) |
