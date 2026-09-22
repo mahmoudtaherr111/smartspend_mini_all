@@ -519,12 +519,15 @@ async function executeActionConfirm(
     return { ok: false, tool: "action_confirm", error: "No pending voice action found" };
   }
 
+  // An action that cannot be taken back needs its confirmation words typed (`confirmAction` checks them), which a
+  // call cannot do. Say so plainly rather than let the caller think it happened.
   if (action.risk === "high" || action.requiresUiConfirmation) {
     return {
       ok: false,
       tool: "action_confirm",
       error: "High risk actions require UI confirmation",
       requiresUiConfirmation: true,
+      message: "العملية دي مش بترجع، فمش بتتعمل من المكالمة. اطلبها من الشات في مركز الذكاء الاصطناعي وأكدها هناك.",
       result: {
         actionId: action.id,
         summary: action.summary,

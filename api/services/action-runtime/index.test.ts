@@ -232,3 +232,59 @@ describe("action runtime goal.create flow", () => {
     );
   });
 });
+
+/**
+ * Risk is a contract the server keeps. Stopping a goal or undoing an action cannot be taken back, so confirming
+ * one takes the words its card shows; the risk used to be stored with the draft and never read, and a tap or a
+ * typed "تمام" ran a high-risk action exactly like a medium one.
+ */
+describe("confirming an action that cannot be taken back", () => {
+  const ctx = { userId: 1, userType: "oauth", userPlan: "pro", conversationId: 42 };
+
+  beforeEach(() => {
+    insertedRows.length = 0;
+    updatedRows.length = 0;
+    state.nextId = 70;
+    state.pendingAction = undefined;
+  });
+
+  it("asks for the words when the draft is made", async () => {
+    const draft = await createPendingRuntimeAction(ctx, "goal.stop", { goalId: 9 });
+
+    expect(draft.action).toMatchObject({ risk: "high", confirmationPhrase: "أوقف الهدف" });
+    expect(draft.artifact.payload).toMatchObject({ confirmationPhrase: "أوقف الهدف" });
+  });
+
+  it("refuses a confirmation without them, and runs nothing", async () => {
+    const draft = await createPendingRuntimeAction(ctx, "goal.stop", { goalId: 9 });
+
+    await expect(confirmAction(ctx, Number(draft.action.id))).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    await expect(confirmAction(ctx, Number(draft.action.id), { phrase: "تمام" })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+    });
+    expect(updatedRows).toEqual([]);
+  });
+
+  it("runs it once the words are typed, however the hamza and spaces fall", async () => {
+    const draft = await createPendingRuntimeAction(ctx, "goal.stop", { goalId: 9 });
+
+    const result = await confirmAction(ctx, Number(draft.action.id), { phrase: "  اوقف   الهدف " });
+
+    expect(result).toMatchObject({ actionName: "goal.stop", status: "executed" });
+    expect(updatedRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ status: "confirmed" }),
+        expect.objectContaining({ status: "cancelled" }),
+        expect.objectContaining({ status: "executed" }),
+      ]),
+    );
+  });
+
+  it("leaves a medium action as it was: a plain confirmation runs it", async () => {
+    const draft = await createPendingRuntimeAction(ctx, "wallet.create", { name: "محفظة السفر", provider: "cash" });
+
+    expect(draft.action.risk).toBe("medium");
+    expect(draft.action).not.toHaveProperty("confirmationPhrase");
+    await expect(confirmAction(ctx, Number(draft.action.id))).resolves.toMatchObject({ status: "executed" });
+  });
+});

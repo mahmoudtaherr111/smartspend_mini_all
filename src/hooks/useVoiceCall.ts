@@ -446,6 +446,10 @@ export function useVoiceCall() {
               const payload = msg.payload && typeof msg.payload === "object"
                 ? msg.payload as Record<string, unknown>
                 : {};
+              // A high-risk action cannot be confirmed by voice; the screen says where to finish it.
+              if (payload.requiresUiConfirmation === true && typeof payload.message === "string") {
+                setAiText(payload.message);
+              }
               setVoiceTrace((prev) => [
                 ...prev.slice(-10),
                 {

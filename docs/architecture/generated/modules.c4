@@ -13,7 +13,7 @@ model {
     ai-actions = module 'AI action runtime' {
       description 'Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat.'
       metadata {
-        files '5'
+        files '6'
         paths 'api/services/action-runtime/**'
       }
     }

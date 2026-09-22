@@ -89,11 +89,12 @@
     },
     "ai-center": {
       "files": {
-        "api/chat-router.ts": "0842653d13c1",
-        "api/services/action-runtime/artifacts.ts": "f902de888eaf",
+        "api/chat-router.ts": "345c907c511a",
+        "api/services/action-runtime/artifacts.ts": "5292dfe6dc80",
+        "api/services/action-runtime/confirmation-phrases.ts": "ecf79bb5cfe7",
         "api/services/action-runtime/extended-actions.ts": "c67720db8a89",
         "api/services/action-runtime/goal-create.ts": "cd23a9134d6b",
-        "api/services/action-runtime/index.ts": "1c0efaa6ecb4",
+        "api/services/action-runtime/index.ts": "67c36d3f009e",
         "api/services/action-runtime/types.ts": "2a4e9b66ec6e",
         "api/services/ai-kernel/agent-planner.ts": "fcbc24f55547",
         "api/services/ai-kernel/ai-trace-logger.ts": "d728cbc63143",
@@ -105,7 +106,7 @@
         "api/services/ai-kernel/intent-router.ts": "4e034212c0a2",
         "api/services/ai-kernel/response-normalizer.ts": "c990a531a967",
         "api/services/ai-kernel/retrieval-policy.ts": "72b15ce603e0",
-        "api/services/ai-kernel/types.ts": "3b099f200836",
+        "api/services/ai-kernel/types.ts": "699cef99966e",
         "api/services/ai-memory/embedding-backfill.ts": "450063889613",
         "api/services/ai-memory/embedding-client.ts": "a3165268bce7",
         "api/services/ai-memory/embedding-settings.ts": "cbef17e87bfc",
@@ -133,14 +134,14 @@
         "api/services/site-guide/knowledge-base.ts": "e0e642a9d045",
         "api/services/site-guide/retriever.ts": "e276a63d4ba1",
         "api/services/site-guide/types.ts": "18e510c0b423",
-        "src/components/ai/AIChatbot.tsx": "a264c96beae0",
+        "src/components/ai/AIChatbot.tsx": "66916621b35a",
         "src/components/ai/AIMemoryManager.tsx": "ed2fb21c8dd8",
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "7a2d6ce14d6b"
       },
-      "checked": "2026-09-18 b0c2f3b",
-      "arabic": "c8565d43fd59",
-      "arabicChecked": "2026-09-18 b0c2f3b"
+      "checked": "2026-09-22 f79ee5a",
+      "arabic": "d369eb009aec",
+      "arabicChecked": "2026-09-22 f79ee5a"
     },
     "ai-platform": {
       "files": {
@@ -426,22 +427,22 @@
         "api/ai-router.ts#rest-of-file": "17d48b21e072",
         "api/boot.ts#ws:/api/voice/live": "9b250c4814f7",
         "api/server.ts#ws:/api/voice/live": "47522c8315bf",
-        "api/services/voice-call-service.ts": "fc077d13a5f7",
+        "api/services/voice-call-service.ts": "ef7753afa1e1",
         "api/services/voice-context-service.ts": "fae3cbb5d693",
         "api/services/voice-kernel/hot-context.ts": "e093679a39fc",
         "api/services/voice-kernel/index.ts": "843e5e65c01e",
-        "api/services/voice-kernel/types.ts": "74a50ba7ac6e",
+        "api/services/voice-kernel/types.ts": "29a4102db735",
         "api/services/voice-kernel/voice-call-archive.ts": "7e947f48796d",
         "api/services/voice-kernel/voice-prefetch.ts": "2f42e27bc783",
         "api/services/voice-kernel/voice-prompt.ts": "3731e551ff69",
         "api/services/voice-kernel/voice-session-state.ts": "93e8931ff5b3",
-        "api/services/voice-kernel/voice-tool-adapter.ts": "aea02a884e9e",
+        "api/services/voice-kernel/voice-tool-adapter.ts": "64868819e685",
         "src/components/ai/AIVoiceCall.tsx": "a48952518da3",
-        "src/hooks/useVoiceCall.ts": "42e8abf8b193"
+        "src/hooks/useVoiceCall.ts": "06ef098aa2b4"
       },
-      "checked": "2026-09-18 b0c2f3b",
-      "arabic": "d7d34be560b2",
-      "arabicChecked": "2026-09-18 b0c2f3b"
+      "checked": "2026-09-22 f79ee5a",
+      "arabic": "5d796fc2f7cb",
+      "arabicChecked": "2026-09-22 f79ee5a"
     },
     "web-app": {
       "files": {

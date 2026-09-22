@@ -280,6 +280,7 @@ describe("chat router phase 4 structured actions", () => {
     expect(confirmAction).toHaveBeenCalledWith(
       { userId: 1, userType: "oauth", userPlan: "free", conversationId: 88 },
       123,
+      { phrase: undefined },
     );
     expect(cancelAction).not.toHaveBeenCalled();
     expect(runAIKernelActive).not.toHaveBeenCalled();
@@ -331,12 +332,13 @@ describe("chat router phase 4 structured actions", () => {
       ip: "127.0.0.1",
     });
 
-    await caller.confirmAction({ actionId: 123, conversationId: 88 });
+    await caller.confirmAction({ actionId: 123, conversationId: 88, confirmationPhrase: "أوقف الهدف" });
     await caller.cancelAction({ actionId: 123, conversationId: 88 });
 
     expect(confirmAction).toHaveBeenCalledWith(
       { userId: 1, userType: "oauth", userPlan: "free", conversationId: 88 },
       123,
+      { phrase: "أوقف الهدف" },
     );
     expect(cancelAction).toHaveBeenCalledWith(
       { userId: 1, userType: "oauth", userPlan: "free", conversationId: 88 },
@@ -368,5 +370,53 @@ describe("chat router phase 4 structured actions", () => {
     expect(cancelAction).not.toHaveBeenCalled();
     expect(runAIKernelActive).toHaveBeenCalled();
     expect(result.model).toBe("kernel-model");
+  });
+});
+
+describe("typed replies to an action that cannot be taken back", () => {
+  const caller = () =>
+    chatRouter.createCaller({
+      user: {
+        id: 1,
+        type: "oauth",
+        name: "Test User",
+        email: "test@example.com",
+        role: "user",
+        plan: "free",
+      },
+      req: new Request("http://localhost/trpc"),
+      ip: "127.0.0.1",
+    });
+
+  beforeEach(() => {
+    dbState.pendingActionRows = [{ id: 123, conversationId: 88, actionName: "goal.stop", risk: "high" }];
+    vi.mocked(confirmAction).mockClear();
+    vi.mocked(cancelAction).mockClear();
+    vi.mocked(runAIKernelActive).mockClear();
+  });
+
+  it("does not run it on a plain \"تمام\", and says which words will", async () => {
+    const result = await caller().sendMessage({ message: "تمام", conversationId: 88 });
+
+    expect(confirmAction).not.toHaveBeenCalled();
+    expect(result.model).toBe("server-action-runtime");
+    expect(result.response).toContain("«أوقف الهدف»");
+    expect(result.toolsUsed).toEqual(["action.confirmation_phrase_required"]);
+  });
+
+  it("runs it when the user types the words, and passes them to the runtime to check again", async () => {
+    await caller().sendMessage({ message: "أوقف الهدف", conversationId: 88 });
+
+    expect(confirmAction).toHaveBeenCalledWith(
+      { userId: 1, userType: "oauth", userPlan: "free", conversationId: 88 },
+      123,
+      { phrase: "أوقف الهدف" },
+    );
+  });
+
+  it("still cancels it with a plain \"إلغاء\"", async () => {
+    await caller().sendMessage({ message: "إلغاء", conversationId: 88 });
+    expect(cancelAction).toHaveBeenCalled();
+    expect(confirmAction).not.toHaveBeenCalled();
   });
 });

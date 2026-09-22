@@ -972,7 +972,7 @@ export default function AIChatbot() {
     });
   }, [handleSend, isTyping]);
 
-  const handleConfirmAction = async (actionId: number) => {
+  const handleConfirmAction = async (actionId: number, confirmationPhrase?: string) => {
     try {
       setActionStatuses((prev) => ({
         ...prev,
@@ -981,6 +981,7 @@ export default function AIChatbot() {
       const result = await confirmAction.mutateAsync({
         actionId,
         conversationId,
+        confirmationPhrase,
       });
       setActionStatuses((prev) => ({
         ...prev,
@@ -1791,6 +1792,119 @@ function visibleResultFields(
   });
 }
 
+/** The same comparison the server makes: hamza, ya, ta marbuta, punctuation and spacing do not count. */
+function normalizePhrase(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/[\u064B-\u0652\u0640]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/[«»"'؟?،,.!]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * A drafted action, with its confirm and cancel buttons. An action that cannot be taken back (stopping a goal,
+ * undoing one) carries `confirmationPhrase`: the button waits until those words are typed, and the server checks
+ * them again, so the card is a convenience and not the guard.
+ */
+export function ActionConfirmationCard({
+  artifact,
+  status,
+  onConfirm,
+  onCancel,
+}: {
+  artifact: StructuredArtifact;
+  status?: string;
+  onConfirm: (actionId: number, confirmationPhrase?: string) => void;
+  onCancel: (actionId: number) => void;
+}) {
+  const [typed, setTyped] = useState("");
+  const actionId = numberValue(artifact.payload.actionId);
+  const phrase =
+    typeof artifact.payload.confirmationPhrase === "string"
+      ? artifact.payload.confirmationPhrase
+      : undefined;
+  const phraseMatches = !phrase || normalizePhrase(typed) === normalizePhrase(phrase);
+  const disabled =
+    !actionId ||
+    status === "confirming" ||
+    status === "cancelling" ||
+    status === "executed" ||
+    status === "cancelled";
+  const fields = (artifact.payload.fields ?? {}) as Record<string, unknown>;
+
+  return (
+    <div className="rounded-md border border-indigo-500/20 bg-indigo-500/5 p-3 text-start">
+      <div className="flex items-center gap-2 text-sm font-semibold">
+        <Target className="h-4 w-4 text-indigo-500" />
+        <span>{textValue(artifact.title, "تأكيد العملية")}</span>
+      </div>
+      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+        {textValue(artifact.payload.summary)}
+      </p>
+      <div className="mt-2 grid gap-1 text-xs">
+        {visibleActionFields(fields).map(([key, value]) => (
+          <div key={key} className="flex items-center justify-between gap-3">
+            <span className="text-muted-foreground">
+              {actionFieldLabel(key)}
+            </span>
+            <span className="font-medium text-end">
+              {actionFieldValue(key, value)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {phrase && !disabled ? (
+        <div className="mt-3 space-y-1.5">
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            العملية دي مش بترجع. اكتب «{phrase}» عشان تأكدها.
+          </p>
+          <input
+            value={typed}
+            onChange={(event) => setTyped(event.target.value)}
+            aria-label={`اكتب ${phrase} للتأكيد`}
+            placeholder={phrase}
+            className="h-8 w-full rounded-md border border-border bg-background px-2 text-xs"
+          />
+        </div>
+      ) : null}
+      <div className="mt-3 flex items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          className="h-8"
+          disabled={disabled || !phraseMatches}
+          onClick={() => actionId && onConfirm(actionId, phrase ? typed : undefined)}
+        >
+          {status === "confirming" ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="h-4 w-4" />
+          )}
+          <span>{status === "executed" ? "تم التنفيذ" : "تأكيد"}</span>
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8"
+          disabled={disabled}
+          onClick={() => actionId && onCancel(actionId)}
+        >
+          <X className="h-4 w-4" />
+          <span>{status === "cancelled" ? "تم الإلغاء" : "إلغاء"}</span>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function StructuredArtifactRenderer({
   artifact,
   status,
@@ -1799,68 +1913,17 @@ function StructuredArtifactRenderer({
 }: {
   artifact: StructuredArtifact;
   status?: string;
-  onConfirm: (actionId: number) => void;
+  onConfirm: (actionId: number, confirmationPhrase?: string) => void;
   onCancel: (actionId: number) => void;
 }) {
   if (artifact.type === "action_confirmation") {
-    const actionId = numberValue(artifact.payload.actionId);
-    const disabled =
-      !actionId ||
-      status === "confirming" ||
-      status === "cancelling" ||
-      status === "executed" ||
-      status === "cancelled";
-    const fields = (artifact.payload.fields ?? {}) as Record<string, unknown>;
-
     return (
-      <div className="rounded-md border border-indigo-500/20 bg-indigo-500/5 p-3 text-start">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Target className="h-4 w-4 text-indigo-500" />
-          <span>{textValue(artifact.title, "تأكيد العملية")}</span>
-        </div>
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          {textValue(artifact.payload.summary)}
-        </p>
-        <div className="mt-2 grid gap-1 text-xs">
-          {visibleActionFields(fields).map(([key, value]) => (
-            <div key={key} className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">
-                {actionFieldLabel(key)}
-              </span>
-              <span className="font-medium text-end">
-                {actionFieldValue(key, value)}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            className="h-8"
-            disabled={disabled}
-            onClick={() => actionId && onConfirm(actionId)}
-          >
-            {status === "confirming" ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4" />
-            )}
-            <span>{status === "executed" ? "تم التنفيذ" : "تأكيد"}</span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="h-8"
-            disabled={disabled}
-            onClick={() => actionId && onCancel(actionId)}
-          >
-            <X className="h-4 w-4" />
-            <span>{status === "cancelled" ? "تم الإلغاء" : "إلغاء"}</span>
-          </Button>
-        </div>
-      </div>
+      <ActionConfirmationCard
+        artifact={artifact}
+        status={status}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+      />
     );
   }
 

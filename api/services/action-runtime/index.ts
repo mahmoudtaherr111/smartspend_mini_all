@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { aiActionAuditLogs, aiActionMemory, aiPendingActions } from "../../../db/schema";
 import { db } from "../../queries/connection";
@@ -5,6 +6,7 @@ import { invalidateMemoryUserCache } from "../ai-memory";
 import { recordAICostMetric } from "../ai-cost-policy";
 import type { ActionDraft, Artifact } from "../ai-kernel/types";
 import { actionConfirmationArtifact, actionSummary, goalSummary } from "./artifacts";
+import { confirmationPhraseFor, matchesConfirmationPhrase } from "./confirmation-phrases";
 import {
   createBudgetSuggestionFromGoal,
   createPhase8PayloadFromMessage,
@@ -92,12 +94,15 @@ function actionRisk(actionName: RuntimeActionName): ActionDraft["risk"] {
 }
 
 function toActionDraft(id: number, actionName: RuntimeActionName, payload: RuntimeActionPayload): ActionDraft {
+  const risk = actionRisk(actionName);
+  const confirmationPhrase = confirmationPhraseFor(actionName, risk);
   return {
     id: String(id),
     name: actionName,
     status: "pending_confirmation",
-    risk: actionRisk(actionName),
+    risk,
     confirmationRequired: true,
+    ...(confirmationPhrase ? { confirmationPhrase } : {}),
     summary: actionSummary(actionName, payload),
     payload: { ...payload },
   };
@@ -265,11 +270,26 @@ async function loadPendingAction(
   };
 }
 
+/**
+ * Runs a drafted action. `proof.phrase` is what the user typed: a high-risk action runs only when it matches the
+ * phrase the draft showed, whatever channel asks — the risk used to be stored with the draft and never read.
+ */
 export async function confirmAction(
   ctx: ActionRuntimeContext,
   actionId: number,
+  proof: { phrase?: string } = {},
 ): Promise<ActionExecutionResult> {
   const action = await loadPendingAction(ctx, actionId);
+  const phrase = confirmationPhraseFor(action.actionName, action.risk);
+  if (phrase && !matchesConfirmationPhrase(proof.phrase, phrase)) {
+    await audit(ctx, actionId, action.actionName, "confirmation_refused", "pending_confirmation", {
+      reason: "confirmation_phrase_missing",
+    });
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: `العملية دي مش بترجع. اكتب «${phrase}» عشان تأكدها.`,
+    });
+  }
   const [updateResult] = await db
     .update(aiPendingActions)
     .set({ status: "confirmed", confirmedAt: new Date() })

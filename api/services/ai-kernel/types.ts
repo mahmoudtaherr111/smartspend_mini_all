@@ -170,6 +170,8 @@ export interface ActionDraft {
   status: ActionStatus;
   risk: ActionRisk;
   confirmationRequired: boolean;
+  /** What the user has to type to confirm a high-risk action; `confirmAction` refuses it without these words. */
+  confirmationPhrase?: string;
   summary: string;
   payload: Record<string, unknown>;
 }

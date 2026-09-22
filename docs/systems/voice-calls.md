@@ -78,7 +78,7 @@ structured finance data needs ahead of time.
 | `finance_query` | Exact finance data through the finance semantic layer (`resolveKernelDataNeeds`): summary, wallet summary, period comparison, category total, breakdown, transactions, chart data or goal progress, for a period from today to the salary cycle or custom dates |
 | `memory_search` | Searches the user's AI memory (`retrieveMemoryContext`) |
 | `action_draft` | Validates a payload for a goal, expense, budget, profile or wallet action and keeps it pending in the session for 30 minutes; stopping a goal is high risk, the rest medium |
-| `action_confirm` | For a medium-risk draft, creates the pending action in the action runtime and confirms it, which executes it; a high-risk draft returns "requires UI confirmation" |
+| `action_confirm` | For a medium-risk draft, creates the pending action in the action runtime and confirms it, which executes it. A high-risk draft is refused: it needs its confirmation words typed in the chat ([AI Center](ai-center.md)), and the result carries an Arabic reason the assistant says and the call screen shows |
 | `action_cancel` | Cancels a pending draft |
 
 `api/services/voice-call-service.ts#shouldExecuteLiveVoiceTool` enforces the call's tool budget from
@@ -130,18 +130,16 @@ Checked against the code; each one names where it lives.
 1. **Bug.** A call can use one data or draft tool in total, because the voice policy caps tool rounds at one, while the
    system prompt tells the model to call a tool for every exact question: the second such question in a call gets
    `voice_tool_limit_exceeded`.
-2. **Security.** A high-risk draft (stopping a goal) asks for confirmation in the interface, but the call screen and
-   `useVoiceCall` have no such confirmation, so it cannot complete from a call.
-3. **Bug.** The defaults written in `handleVoiceCallWebSocket` (for example five free minutes a month and a model named
+2. **Bug.** The defaults written in `handleVoiceCallWebSocket` (for example five free minutes a month and a model named
    `gemini-2.5-flash-native-audio-latest`) differ from the defaults in `api/lib/system-settings-registry.ts`, and
    the handler's apply whenever a setting was never saved.
-4. **Bug.** The month's allowance adds up every `voice_usage` row of the month, including seconds spent dictating expenses,
+3. **Bug.** The month's allowance adds up every `voice_usage` row of the month, including seconds spent dictating expenses,
    and the month is the server's calendar month rather than Cairo business time (golden rule 6).
-5. **Debt.** The model id skips `mapModelName` (golden rule 9): `resolveLiveModelId` only adds a prefix.
-6. **Bug.** Usage is written when the call ends; a process that stops mid-call records nothing.
-7. **Debt.** The prefetched facts are stored in the session state, but nothing reads them afterwards; the prefetch only warms
+4. **Debt.** The model id skips `mapModelName` (golden rule 9): `resolveLiveModelId` only adds a prefix.
+5. **Bug.** Usage is written when the call ends; a process that stops mid-call records nothing.
+6. **Debt.** The prefetched facts are stored in the session state, but nothing reads them afterwards; the prefetch only warms
    the finance layer's cache.
-8. **Debt.** `api/services/voice-context-service.ts#getUserFinancialContextSummary` has no caller, and `ai.runVoiceToolQa` is
+7. **Debt.** `api/services/voice-context-service.ts#getUserFinancialContextSummary` has no caller, and `ai.runVoiceToolQa` is
    used only by a development query parameter of the call screen.
 
 ## Related systems

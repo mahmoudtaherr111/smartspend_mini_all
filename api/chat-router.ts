@@ -60,6 +60,12 @@ import {
   maybeCreateActionDraftFromMessage,
   mergeActionArtifacts,
 } from "./services/action-runtime";
+import {
+  confirmationPhraseFor,
+  HIGH_RISK_CONFIRMATION_PHRASES,
+  matchesConfirmationPhrase,
+  normalizeConfirmation,
+} from "./services/action-runtime/confirmation-phrases";
 import type { ActionDraftResult, GoalCreatePayload, RuntimeActionName, RuntimeActionPayload } from "./services/action-runtime/types";
 import { displayFinanceCategory } from "./services/finance-semantic-layer/category-matcher";
 import { createLogger } from "./lib/log";
@@ -371,15 +377,17 @@ function actionReplyKind(message: string): "confirm" | "cancel" | null {
   return null;
 }
 
-async function findLatestPendingActionId(
+async function findLatestPendingAction(
   userId: number,
   userType: string,
   conversationId: number,
-): Promise<number | undefined> {
+): Promise<{ id: number; actionName: RuntimeActionName; risk: string } | undefined> {
   const rows = await db
     .select({
       id: aiPendingActions.id,
       conversationId: aiPendingActions.conversationId,
+      actionName: aiPendingActions.actionName,
+      risk: aiPendingActions.risk,
     })
     .from(aiPendingActions)
     .where(
@@ -393,22 +401,46 @@ async function findLatestPendingActionId(
     .limit(10);
 
   const sameConversation = rows.find((row) => Number(row.conversationId) === conversationId);
-  return Number(sameConversation?.id) || undefined;
+  if (!sameConversation) return undefined;
+  return {
+    id: Number(sameConversation.id),
+    actionName: sameConversation.actionName as RuntimeActionName,
+    risk: String(sameConversation.risk),
+  };
 }
+
+/** The phrases high-risk actions ask for, normalised: only these make a typed reply worth a lookup. */
+const HIGH_RISK_PHRASES = new Set(HIGH_RISK_CONFIRMATION_PHRASES.map(normalizeConfirmation));
 
 async function resolveTextActionReply(
   ctx: { userId: number; userType: string; userPlan: string },
   message: string,
   conversationId: number,
 ): Promise<{ response: string; structured: AIResponse; tokensUsed: number; model: string; toolsUsed: string[] } | null> {
-  const kind = actionReplyKind(message);
+  const typedPhrase = HIGH_RISK_PHRASES.has(normalizeConfirmation(message));
+  const kind = typedPhrase ? "confirm" : actionReplyKind(message);
   if (!kind) return null;
-  const actionId = await findLatestPendingActionId(ctx.userId, ctx.userType, conversationId);
-  if (!actionId) return null;
+  const pending = await findLatestPendingAction(ctx.userId, ctx.userType, conversationId);
+  if (!pending) return null;
+  const actionId = pending.id;
+
+  // "تمام" confirms a medium action; one that cannot be taken back waits for its own words, which the server
+  // checks again in confirmAction.
+  const phrase = confirmationPhraseFor(pending.actionName, pending.risk === "high" ? "high" : "medium");
+  if (kind === "confirm" && phrase && !matchesConfirmationPhrase(message, phrase)) {
+    const response = `العملية دي مش بترجع. لو متأكد اكتب «${phrase}» بالظبط، أو «إلغاء» لو مش عايزها.`;
+    return {
+      response,
+      structured: minimalStructuredResponse(response, [], []),
+      tokensUsed: 0,
+      model: "server-action-runtime",
+      toolsUsed: ["action.confirmation_phrase_required"],
+    };
+  }
 
   const result =
     kind === "confirm"
-      ? await runtimeConfirmAction({ ...ctx, conversationId }, actionId)
+      ? await runtimeConfirmAction({ ...ctx, conversationId }, actionId, { phrase: phrase ? message : undefined })
       : await runtimeCancelAction({ ...ctx, conversationId }, actionId);
   const artifacts = result.artifacts ?? (result.artifact ? [result.artifact] : []);
   const response = result.message;
@@ -1032,7 +1064,14 @@ export const chatRouter = router({
     }),
 
   confirmAction: aiProcedure
-    .input(z.object({ actionId: z.number().int().positive(), conversationId: z.number().int().positive().optional() }))
+    .input(
+      z.object({
+        actionId: z.number().int().positive(),
+        conversationId: z.number().int().positive().optional(),
+        /** The words a high-risk action's card asks for; a lower risk needs none. */
+        confirmationPhrase: z.string().max(100).optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       return runtimeConfirmAction(
         {
@@ -1042,6 +1081,7 @@ export const chatRouter = router({
           conversationId: input.conversationId,
         },
         input.actionId,
+        { phrase: input.confirmationPhrase },
       );
     }),
 

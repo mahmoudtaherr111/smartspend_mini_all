@@ -126,6 +126,8 @@ export function summarizeVoiceToolResponse(toolName: string, response: unknown):
     cacheRuntime: getCacheRuntimeStatus(),
     error: typeof record.error === "string" ? record.error : undefined,
     errors,
+    requiresUiConfirmation: record.requiresUiConfirmation === true,
+    message: typeof record.message === "string" ? record.message : undefined,
   };
 }
 

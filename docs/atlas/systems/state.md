@@ -4,7 +4,7 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (65 of 122 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (63 of 120 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
@@ -12,8 +12,8 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (65 of
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-16 b51229f | 2026-09-16 0610413 | 17 | — | 5 | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | — | 6 | 2 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 6 | **1** | 4 | — | 3 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 4 | **1** | 6 | 2 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-22 f79ee5a | 2026-09-22 f79ee5a | 6 | — | 4 | — | 3 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-22 f79ee5a | 2026-09-22 f79ee5a | 4 | — | 6 | 2 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 6 | — | 11 | 2 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 3 | — | 7 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-18 981a949 | 2026-09-18 981a949 | 14 | **2** | 2 | 4 | — |
@@ -29,17 +29,11 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (65 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (122 issue(s))
+## What is waiting (120 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
-### Security (7)
-
-**Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
-- A high-risk draft (stopping a goal) asks for confirmation in the interface, but the call screen and `useVoiceCall` have no such confirmation, so it cannot complete from a call.
-
-**AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
-- The runtime records a risk for each action (stopping a goal and undo are high) but does not act on it: the chat's confirm button and typed confirmations run every action the same way.
+### Security (5)
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read it, while the content security policy allows inline scripts (`src/AGENTS.md`, rule 4).

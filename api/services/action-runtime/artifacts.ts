@@ -92,6 +92,7 @@ export function actionConfirmationArtifact(action: ActionDraft): Artifact {
       actionName: action.name,
       summary: action.summary,
       risk: action.risk,
+      ...(action.confirmationPhrase ? { confirmationPhrase: action.confirmationPhrase } : {}),
       fields: action.payload,
       confirmLabel: "تأكيد",
       cancelLabel: "إلغاء",

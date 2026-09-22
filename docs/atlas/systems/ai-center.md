@@ -152,7 +152,7 @@ Drawn in `docs/architecture/flows/ai-chat.c4`; in the interactive map it is the 
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `ai-actions` — AI action runtime | Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat. | 5 |
+| `ai-actions` — AI action runtime | Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat. | 6 |
 | `ai-kernel` — AI Center kernel | Plans each AI Center turn without a model (intent, data needs, clarifying questions), packs the context, applies the capability registry and retrieval policy, words the answer with at most one model call, and logs traces. | 11 |
 | `ai-memory` — AI memory | Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional Fireworks embeddings stored in MySQL with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests. | 12 |
 | `finance-semantic-layer` — Finance semantic layer | Answers factual finance questions from the ledger: period resolution, category matching, row aggregation, monthly report facts, proactive insights, chart artifacts and a per-user cache. | 10 |
@@ -227,10 +227,11 @@ Used by: [Bank and wallet messages](bank-messages.md), [Recording spending](expe
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/ai-center.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>48 files and declarations</summary>
+<details><summary>49 files and declarations</summary>
 
 - `api/chat-router.ts`
 - `api/services/action-runtime/artifacts.ts`
+- `api/services/action-runtime/confirmation-phrases.ts`
 - `api/services/action-runtime/extended-actions.ts`
 - `api/services/action-runtime/goal-create.ts`
 - `api/services/action-runtime/index.ts`

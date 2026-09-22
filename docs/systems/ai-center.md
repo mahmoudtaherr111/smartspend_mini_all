@@ -39,7 +39,8 @@ assistant is paused.
 ### 2. A confirmation typed as text
 When the message is a short confirmation or cancellation with no numbers ("موافق", "تمام نفذ", "الغي", "لا") and the
 conversation has a pending action, `resolveTextActionReply` confirms or cancels the newest one through the action
-runtime and answers without a model.
+runtime and answers without a model. A high-risk action is confirmed only by its phrase («أوقف الهدف», «تراجع عن
+العملية»); a plain «تمام» gets an answer naming the phrase, and nothing runs.
 
 ### 3. The kernel plans the turn
 `api/services/ai-kernel/index.ts#runAIKernelActive` loads the user's contacts, then
@@ -104,10 +105,14 @@ summary and an expiry, and shown as a confirmation card.
 confirmation):
 1. loads the action for this user, requires it to be pending, unexpired, and from the same conversation when one is
    given;
-2. moves it to `confirmed` in one conditional update, so a second confirmation fails instead of running twice;
-3. executes it (`executeGoalCreate` or `executeRuntimeAction`), records the result, writes `ai_action_memory` and
+2. for a high-risk action (`goal.stop`, `action.undo`) requires the words its card shows — «أوقف الهدف», «تراجع عن
+   العملية» — compared without hamza, spacing or punctuation, and refuses with `PRECONDITION_FAILED` and an audit row
+   otherwise. The card keeps its button shut until they are typed; a typed «تمام» gets an answer naming them instead of
+   running the action; the phrase typed in the chat confirms it. The server checks them whatever the channel;
+3. moves it to `confirmed` in one conditional update, so a second confirmation fails instead of running twice;
+4. executes it (`executeGoalCreate` or `executeRuntimeAction`), records the result, writes `ai_action_memory` and
    an audit row, and after a new goal drafts a matching budget;
-4. on failure marks it `failed`. `cancelAction` marks it `cancelled`.
+5. on failure marks it `failed`. `cancelAction` marks it `cancelled`.
 
 `action.undo` looks at the most recent executed actions and reverses the newest one that can be undone: creating,
 changing or stopping a goal, recategorizing an expense, creating or changing a wallet, or a profile change.
@@ -162,7 +167,9 @@ database.
 
 ## Rules for changes here
 1. Money numbers come from resolved facts. A model may word them, never produce them; keep the numeric guard.
-2. An action is always a draft first and runs only through `confirmAction`.
+2. An action is always a draft first and runs only through `confirmAction`; one that cannot be taken back gets a
+   phrase in `api/services/action-runtime/confirmation-phrases.ts` and runs only when it is typed. Choosing an
+   action's risk is part of adding it.
 3. One model call per turn at most, and only when the plan says synthesis; deterministic answers cost nothing.
 4. Everything reads and writes by `userId` and `userType`, including memory, contacts and pending actions.
 5. A write to the ledger from here must bump the finance cache generation.
@@ -182,23 +189,21 @@ Checked against the code; each one names where it lives.
 1. **Bug.** A reply to a clarifying question starts over: `sendMessage` stores the clarification state in the conversation's
    metadata, but reads it from `requireOwnedConversation`, which selects only the id, so the state is never found and
    the reply is planned as a new message.
-2. **Security.** The runtime records a risk for each action (stopping a goal and undo are high) but does not act on it: the chat's
-   confirm button and typed confirmations run every action the same way.
-3. **Bug.** A pending action expires 30 minutes after it is drafted plus the server's offset from UTC.
-4. **Bug.** Finance periods are computed with the server's local date functions in
+2. **Bug.** A pending action expires 30 minutes after it is drafted plus the server's offset from UTC.
+3. **Bug.** Finance periods are computed with the server's local date functions in
    `api/services/finance-semantic-layer/period-resolver.ts`, not with `api/lib/app-time.ts` (golden rule 6).
-5. **Gap.** No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the
+4. **Gap.** No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the
    chat. The model id skips `mapModelName` (golden rule 9), the `chatbot_max_tokens_<plan>` settings are read but do
    not limit replies, and the retry time in the daily-limit error is counted to the server's midnight.
-6. **Gap.** Memory embeddings stay off unless `ai_memory_embedding_enabled` is set to `true`, a key
+5. **Gap.** Memory embeddings stay off unless `ai_memory_embedding_enabled` is set to `true`, a key
    `api/lib/system-settings-registry.ts` does not list. The Qdrant, quantized on-disk and in-memory vector stores
    exported by `api/services/ai-memory/index.ts` are used only by tests.
-7. **Bug.** An expense recorded by an action does not clear the classification cache or check budget alerts, as
+6. **Bug.** An expense recorded by an action does not clear the classification cache or check budget alerts, as
    `expense.create` does.
-8. **Bug.** Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in
+7. **Bug.** Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in
    `api/services/action-runtime/extended-actions.ts` leaves them out, so the undo code for them is never reached.
-9. **Bug.** When the kernel throws, the user sees the same message as when an operator turned the assistant off.
-10. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
+8. **Bug.** When the kernel throws, the user sees the same message as when an operator turned the assistant off.
+9. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
 
 ## Related systems
 - [Live voice assistant](voice-calls.md): uses the finance layer, memory and action runtime from a call.

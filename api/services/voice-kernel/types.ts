@@ -140,6 +140,8 @@ export interface VoiceToolFailure {
   tool: string;
   error: string;
   requiresUiConfirmation?: boolean;
+  /** Arabic, for the assistant to say and the call screen to show. */
+  message?: string;
   result?: Record<string, unknown>;
 }
 

@@ -131,6 +131,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/seo-router.ts` | [admin](admin.md) |
 | `api/server.ts` | [voice-calls](voice-calls.md): `ws:/api/voice/live` · rest of the file: [platform](platform.md) |
 | `api/services/action-runtime/artifacts.ts` | [ai-center](ai-center.md) |
+| `api/services/action-runtime/confirmation-phrases.ts` | [ai-center](ai-center.md) |
 | `api/services/action-runtime/extended-actions.ts` | [ai-center](ai-center.md) |
 | `api/services/action-runtime/goal-create.ts` | [ai-center](ai-center.md) |
 | `api/services/action-runtime/index.ts` | [ai-center](ai-center.md) |
