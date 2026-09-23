@@ -12,6 +12,7 @@ import { logApiKeyError } from "../../../lib/error-logger";
 import { getSystemSettings } from "../../../lib/settings-cache";
 import { createCallBrain, type VoiceAppCalls } from "../brain";
 import { GeminiLiveEngine } from "../engine/gemini-live";
+import { summarizeCall } from "../post-call";
 import type { CallIdentity } from "./call-session";
 import { mysqlCallPersistence } from "./persistence";
 import { createVoiceSocketHandler } from "./socket";
@@ -20,9 +21,14 @@ import type { TicketPayload } from "./start-call";
 
 export interface VoiceGatewayOptions {
   appCalls: VoiceAppCalls;
-  /** After a call ends (the post-call summary and facts hook in here). */
+  /** After a call ends; by default the post-call summary and facts (../post-call.ts). */
   onCallEnded?: (callId: string, identity: CallIdentity) => void;
 }
+
+const rememberCall = (callId: string) => {
+  // Failures are recorded on the call and retried by the background sweep.
+  void summarizeCall(callId).catch(() => undefined);
+};
 
 export function createVoiceGateway(options: VoiceGatewayOptions): (ws: WebSocket) => void {
   return createVoiceSocketHandler({
@@ -41,7 +47,7 @@ export function createVoiceGateway(options: VoiceGatewayOptions): (ws: WebSocket
       loadState: loadCallState,
       deleteState: deleteCallState,
       saveTranscript,
-      onEnded: (callId) => options.onCallEnded?.(callId, identity),
+      onEnded: (callId) => (options.onCallEnded ?? rememberCall)(callId, identity),
     }),
     takeTicket: (ticket) => takeTicket<TicketPayload>(ticket),
     loadState: loadCallState,

@@ -18,6 +18,7 @@ flowchart LR
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
+    job_voice_call_memory["Job · voice-call-memory"]
     router_ai["ai API · 1 procedure"]
     router_voice["voice API · 3 procedures"]
     ws__api_voice_live["WebSocket /api/voice/live"]
@@ -54,6 +55,7 @@ flowchart LR
   sys_insights[["Reports, insights and the smart profile (system)"]]
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
+  job_voice_call_memory --> mod_voice
   mod_voice --> ext_gemini
   mod_voice --> sys_accounts
   mod_voice --> sys_ai_center
@@ -78,6 +80,7 @@ flowchart LR
   mod_voice ==> tbl_voice_calls
   mod_voice ==> tbl_voice_usage
   mod_web_voice_call --> ext_capacitor
+  mod_web_voice_call --> sys_ai_center
   mod_web_voice_call --> sys_platform
   mod_web_voice_call --> sys_web_app
   router_ai --> mod_voice
@@ -96,7 +99,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `voice` — Voice | Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 38 |
+| `voice` — Voice | Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 41 |
 | `web-voice-call` — Live voice call UI | The live voice call in the app. The rebuilt call: a store any screen can start the call from (src/lib/voice/call-store.ts), which keeps it running across pages; microphone capture filtered down to 16 kHz with speech detection that sends audio only while the user speaks; the /api/voice/v2 socket client that resumes a dropped call; playback of the assistant's voice; and the call screen with its cards, the Home button and the AI Center tab (src/components/voice). The old call screen and its hook (AIVoiceCall.tsx, useVoiceCall.ts on /api/voice/live) stay for users outside the rollout. | 15 |
 
 ## API procedures
@@ -114,6 +117,7 @@ flowchart LR
 | --- | --- | --- |
 | `/api/voice/live` | websocket | `api/boot.ts`, `api/server.ts` |
 | `/api/voice/v2` | websocket | `api/boot.ts`, `api/server.ts` |
+| `voice-call-memory` | job, `*/10 * * * *` | `api/boot.ts` |
 
 ## Data
 
@@ -155,7 +159,7 @@ Used by: [AI Center](ai-center.md), [Money: expenses, wallets, budgets, goals an
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | yes | `api/services/voice-call-service.ts`, `api/services/voice/brain/tools/market-price.ts`, `api/services/voice/gateway/index.ts` |
+| `GEMINI_API_KEY` | yes | `api/services/voice-call-service.ts`, `api/services/voice/brain/tools/market-price.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
 | `BASE_URL` | frontend | `src/lib/voice/audio-io.ts` |
 | `DEV` | frontend | `src/components/ai/AIVoiceCall.tsx` |
 | `VITE_API_URL` | frontend | `src/lib/voice/call-controller.ts` |
@@ -164,10 +168,11 @@ Used by: [AI Center](ai-center.md), [Money: expenses, wallets, budgets, goals an
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/voice-calls.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>60 files and declarations</summary>
+<details><summary>64 files and declarations</summary>
 
 - `api/ai-router.ts#ai.runVoiceToolQa`
 - `api/ai-router.ts#rest-of-file`
+- `api/boot.ts#job:voice-call-memory`
 - `api/boot.ts#ws:/api/voice/live`
 - `api/boot.ts#ws:/api/voice/v2`
 - `api/server.ts#ws:/api/voice/live`
@@ -190,6 +195,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/voice/brain/honorific.ts`
 - `api/services/voice/brain/index.ts`
 - `api/services/voice/brain/instructions.ts`
+- `api/services/voice/brain/never-kept.ts`
 - `api/services/voice/brain/snapshot.ts`
 - `api/services/voice/brain/spoken.ts`
 - `api/services/voice/brain/tools/app-help.ts`
@@ -210,6 +216,8 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/voice/gateway/socket.ts`
 - `api/services/voice/gateway/start-call.ts`
 - `api/services/voice/gateway/store.ts`
+- `api/services/voice/post-call.ts`
+- `api/services/voice/text-model.ts`
 - `api/voice-router.ts`
 - `src/components/ai/AIVoiceCall.tsx`
 - `src/components/voice/CallSmartButton.tsx`

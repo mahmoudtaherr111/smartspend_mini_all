@@ -14,6 +14,7 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 flowchart LR
   subgraph g_screens["Screens"]
     page_AICenter["AICenter screen"]
+    screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
     router_chat["chat API · 10 procedures"]
@@ -109,6 +110,7 @@ flowchart LR
   router_chat ==> tbl_chat_messages
   router_chat ==> tbl_local_users
   router_chat ==> tbl_users
+  screens_web_app --> router_chat
 ```
 
 ## Journeys
@@ -164,14 +166,14 @@ Drawn in `docs/architecture/flows/ai-chat.c4`; in the interactive map it is the 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
 | `chat.cancelAction` | mutation | `aiProcedure` | — | — | `AICenter` |
-| `chat.clearAllMemories` | mutation | `authedProcedure` | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` | `AICenter` |
+| `chat.clearAllMemories` | mutation | `authedProcedure` | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` | `AICenter`, `App shell` |
 | `chat.clearConversation` | mutation | `authedProcedure` | `chat_conversations` | `ai_conversation_summaries`, `chat_conversations`, `chat_messages` | `AICenter` |
 | `chat.confirmAction` | mutation | `aiProcedure` | — | — | `AICenter` |
-| `chat.forgetMemory` | mutation | `authedProcedure` | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` | `AICenter` |
+| `chat.forgetMemory` | mutation | `authedProcedure` | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` | `AICenter`, `App shell` |
 | `chat.getConversation` | query | `authedProcedure` | `chat_conversations`, `chat_messages` | — | `AICenter` |
 | `chat.getConversations` | query | `authedProcedure` | `chat_conversations` | — | `AICenter` |
 | `chat.getQuickActions` | query | `authedProcedure` | — | — | `AICenter` |
-| `chat.listMemories` | query | `authedProcedure` | `ai_memory_items` | — | `AICenter` |
+| `chat.listMemories` | query | `authedProcedure` | `ai_memory_items` | — | `AICenter`, `App shell` |
 | `chat.sendMessage` | mutation | `aiProcedure` | `ai_pending_actions`, `chat_conversations`, `chat_messages` | `chat_conversations`, `chat_messages`, `local_users`, `users` | `AICenter` |
 
 ## HTTP routes, WebSockets and scheduled jobs

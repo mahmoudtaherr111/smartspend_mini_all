@@ -76,7 +76,8 @@ Registered in `api/boot.ts` and only where `ENABLE_CRONS=true`; each takes a MyS
 the job, so every replica may register it and one runs it (golden rule 7): expired sessions and challenges
 (daily), classification logs older than 180 days (Sundays), scheduled notifications (every minute), the smart
 activity check (20:00), the monthly report (1st at 02:00), the monthly behaviour snapshot (1st at 01:00), the
-rollup reconciliation (04:00), data retention (05:00) and subscription expiry (06:00).
+rollup reconciliation (04:00), data retention (05:00), subscription expiry (06:00), and the live calls' memory
+(every ten minutes; see [voice calls](voice-calls.md)).
 
 ## Where to change what
 | To change | Edit | Check with |

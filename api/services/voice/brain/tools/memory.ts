@@ -9,11 +9,9 @@ import { db } from "../../../../queries/connection";
 import { invalidateMemoryUserCache, retrieveMemoryContext } from "../../../ai-memory";
 import { contentHash } from "../../../ai-memory/text-utils";
 import type { ToolRunOutcome } from "../../gateway/call-session";
+import { AGE_OR_GENDER } from "../never-kept";
 import { extractSpokenNumbers } from "../validator";
 import { num, str, type ToolContext, type VoiceTool } from "./types";
-
-/** Statements of age or gender, which are never stored. */
-const AGE_OR_GENDER = /(عندي\s*\d+\s*سن|عمري|سني|سنّي|أنا\s+(راجل|ست|بنت|ولد|شاب|ست بيت)|انا\s+(راجل|ست|بنت|ولد|شاب)|مواليد|اتولدت)/;
 
 async function search(query: string, ctx: ToolContext): Promise<ToolRunOutcome> {
   const result = await retrieveMemoryContext({ userId: ctx.identity.userId, userType: ctx.identity.userType, query, limit: 4 });

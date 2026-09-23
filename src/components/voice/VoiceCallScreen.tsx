@@ -160,7 +160,7 @@ function IntroPanel() {
   );
 }
 
-function EndPanel({ view }: { view: VoiceCallView }) {
+function EndPanel({ view, onOpenMemory }: { view: VoiceCallView; onOpenMemory(): void }) {
   const ending = view.ending!;
   const seconds = ending.billedSeconds ?? connectedSeconds(view.meter);
   const reason = END_REASON[ending.reason];
@@ -195,9 +195,12 @@ function EndPanel({ view }: { view: VoiceCallView }) {
           </ul>
         </section>
       )}
-      <p className="max-w-sm text-xs text-muted-foreground">
-        ملخص المكالمة بيتحفظ في «ذاكرة سمارت»، وتقدر تشوفه وتمسحه من هناك.
-      </p>
+      <div className="max-w-sm space-y-2 text-xs text-muted-foreground">
+        <p>ملخص المكالمة وأهم اللي قلته بيتحفظوا في «ذاكرة سمارت» خلال ثواني، وتقدر تشوفهم وتمسحهم من هناك.</p>
+        <Button variant="outline" size="sm" className="h-10 rounded-xl" onClick={onOpenMemory}>
+          افتح ذاكرة سمارت
+        </Button>
+      </div>
       <div className="mt-auto flex w-full max-w-sm flex-col gap-2">
         <Button
           size="lg"
@@ -450,7 +453,7 @@ function MiniBar({ view }: { view: VoiceCallView }) {
   );
 }
 
-export default function VoiceCallScreen({ view }: { view: VoiceCallView }) {
+export default function VoiceCallScreen({ view, onOpenMemory }: { view: VoiceCallView; onOpenMemory(): void }) {
   const navigate = useNavigate();
   const inCall = view.phase === "starting" || view.phase === "live" || view.phase === "reconnecting";
   const shown = view.phase !== "idle" && !(inCall && view.minimized);
@@ -482,7 +485,7 @@ export default function VoiceCallScreen({ view }: { view: VoiceCallView }) {
     >
       {view.phase === "intro" && <IntroPanel />}
       {inCall && <LiveCall view={view} onOpenRoute={openRoute} />}
-      {view.phase === "ended" && view.ending && <EndPanel view={view} />}
+      {view.phase === "ended" && view.ending && <EndPanel view={view} onOpenMemory={onOpenMemory} />}
       {view.phase === "failed" && view.failure && !view.failure.legacy && <FailurePanel view={view} onChat={openChat} />}
     </motion.div>
   );

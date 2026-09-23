@@ -126,6 +126,12 @@ scheduleProtectedJob(
   processScheduledNotifications,
 );
 
+// Live calls whose summary did not happen when they ended: tried again while their words are still in Redis.
+scheduleProtectedJob("*/10 * * * *", "voice-call-memory", async () => {
+  const { sweepCallMemories } = await import("./services/voice/post-call");
+  await sweepCallMemories();
+});
+
 // Daily smart inactivity and conversion notifications cron at 8:00 PM (20:00)
 scheduleProtectedJob("0 20 * * *", "smart-activity-notifications", async () => {
   console.log("[Cron] Running daily smart activity notifications check...");

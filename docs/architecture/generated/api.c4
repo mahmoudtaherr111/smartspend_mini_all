@@ -2520,5 +2520,13 @@ model {
         file 'api/boot.ts'
       }
     }
+    voice-call-memory = job 'voice-call-memory' {
+      technology 'cron */10 * * * *'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule '*/10 * * * *'
+        file 'api/boot.ts'
+      }
+    }
   }
 }

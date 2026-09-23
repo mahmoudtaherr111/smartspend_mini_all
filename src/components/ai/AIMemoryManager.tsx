@@ -56,12 +56,18 @@ export const AIMemoryManager: React.FC<AIMemoryManagerProps> = ({ isOpen, onClos
     clearAllMutation.mutate();
   };
 
-  const getMemoryTypeLabel = (type: string) => {
+  const getMemoryTypeLabel = (type: string, fromCall = false) => {
     switch (type) {
       case "fact":
         return { label: "حقيقة ثابتة", color: "bg-blue-500/10 text-blue-400 border-blue-500/20" };
       case "summary":
-        return { label: "ملخص محادثة", color: "bg-purple-500/10 text-purple-400 border-purple-500/20" };
+        return fromCall
+          ? { label: "ملخص مكالمة", color: "bg-teal-500/10 text-teal-400 border-teal-500/20" }
+          : { label: "ملخص محادثة", color: "bg-purple-500/10 text-purple-400 border-purple-500/20" };
+      case "plan":
+        return { label: "خطة", color: "bg-sky-500/10 text-sky-400 border-sky-500/20" };
+      case "agreement":
+        return { label: "اتفاق", color: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20" };
       case "preference":
         return { label: "تفضيل شخصي", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" };
       case "pattern":
@@ -140,7 +146,7 @@ export const AIMemoryManager: React.FC<AIMemoryManagerProps> = ({ isOpen, onClos
               </div>
             ) : (
               memoriesQuery.data?.map((item) => {
-                const typeMeta = getMemoryTypeLabel(item.memoryType);
+                const typeMeta = getMemoryTypeLabel(item.memoryType, item.fromCall);
                 return (
                   <div
                     key={item.id}

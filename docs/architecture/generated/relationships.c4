@@ -442,6 +442,7 @@ model {
   smartspend.api.scheduler.scheduled-notifications -[uses]-> smartspend.api.modules.notifications
   smartspend.api.scheduler.seed-default-templates -[uses]-> smartspend.api.modules.notifications
   smartspend.api.scheduler.smart-activity-notifications -[uses]-> smartspend.api.modules.notifications
+  smartspend.api.scheduler.voice-call-memory -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.admin.addAiProvider -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.admin.addAiProvider -[writes]-> smartspend.mysql.ai_providers
   smartspend.api.trpc.admin.checkProviderHealth -[reads]-> smartspend.mysql.ai_providers
@@ -1100,6 +1101,7 @@ model {
   smartspend.web.modules.web-ui-kit -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-ui-kit -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-voice-call -[imports]-> smartspend.shared.contracts
+  smartspend.web.modules.web-voice-call -[imports]-> smartspend.web.modules.web-ai
   smartspend.web.modules.web-voice-call -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-voice-call -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-voice-call -[imports]-> smartspend.web.modules.web-shell
@@ -1407,6 +1409,9 @@ model {
   smartspend.web.shell -[calls]-> smartspend.api.trpc.analytics.trackEvent
   smartspend.web.shell -[calls]-> smartspend.api.trpc.auth.logout
   smartspend.web.shell -[calls]-> smartspend.api.trpc.auth.me
+  smartspend.web.shell -[calls]-> smartspend.api.trpc.chat.clearAllMemories
+  smartspend.web.shell -[calls]-> smartspend.api.trpc.chat.forgetMemory
+  smartspend.web.shell -[calls]-> smartspend.api.trpc.chat.listMemories
   smartspend.web.shell -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.shell -[calls]-> smartspend.api.trpc.localAuth.me
   smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.getInAppNotifications

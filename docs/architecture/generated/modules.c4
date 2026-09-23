@@ -181,7 +181,7 @@ model {
     voice = module 'Voice' {
       description 'Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month.'
       metadata {
-        files '38'
+        files '41'
         paths 'api/services/voice/**, api/services/entitlements/**, api/services/voice-kernel/**, api/services/voice-call-service.ts, api/services/voice-context-service.ts'
       }
     }

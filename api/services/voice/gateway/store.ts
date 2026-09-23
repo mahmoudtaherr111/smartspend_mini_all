@@ -80,9 +80,9 @@ export async function saveTranscript(callId: string, lines: TranscriptLine[]): P
   await cacheSet(transcriptKey(callId), TRANSCRIPT_TTL_SECONDS, JSON.stringify(lines));
 }
 
-export async function takeTranscript(callId: string): Promise<TranscriptLine[] | null> {
+/** Read without deleting, so a summary that fails can be tried again while the words are still here. */
+export async function readTranscript(callId: string): Promise<TranscriptLine[] | null> {
   const raw = await cacheGet(transcriptKey(callId));
-  await cacheDel(transcriptKey(callId));
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw);
@@ -90,4 +90,8 @@ export async function takeTranscript(callId: string): Promise<TranscriptLine[] |
   } catch {
     return null;
   }
+}
+
+export async function deleteTranscript(callId: string): Promise<void> {
+  await cacheDel(transcriptKey(callId));
 }

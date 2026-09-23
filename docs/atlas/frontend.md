@@ -29,7 +29,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `App shell` — `src/App.tsx`
 
-46 files in its import closure (not counting `src/components/ui/`).
+48 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -38,6 +38,9 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `analytics.trackEvent` | useMutation | `src/hooks/useSessionTracker.ts` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
+| `chat.clearAllMemories` | useMutation | `src/components/ai/AIMemoryManager.tsx` |
+| `chat.forgetMemory` | useMutation | `src/components/ai/AIMemoryManager.tsx` |
+| `chat.listMemories` | useQuery, utils.invalidate | `src/components/ai/AIMemoryManager.tsx`, `src/components/voice/VoiceCallHost.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `profile.getInAppNotifications` | useQuery, utils.invalidate | `src/components/NotificationBell.tsx` |

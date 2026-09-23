@@ -89,7 +89,7 @@
     },
     "ai-center": {
       "files": {
-        "api/chat-router.ts": "345c907c511a",
+        "api/chat-router.ts": "c4eed6de0b4e",
         "api/services/action-runtime/artifacts.ts": "5292dfe6dc80",
         "api/services/action-runtime/confirmation-phrases.ts": "ecf79bb5cfe7",
         "api/services/action-runtime/extended-actions.ts": "c67720db8a89",
@@ -135,13 +135,13 @@
         "api/services/site-guide/retriever.ts": "e276a63d4ba1",
         "api/services/site-guide/types.ts": "18e510c0b423",
         "src/components/ai/AIChatbot.tsx": "66916621b35a",
-        "src/components/ai/AIMemoryManager.tsx": "ed2fb21c8dd8",
+        "src/components/ai/AIMemoryManager.tsx": "b54246a80606",
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "c384e6047412"
       },
-      "checked": "2026-09-23 797ea88",
-      "arabic": "47e04ef7baef",
-      "arabicChecked": "2026-09-23 797ea88"
+      "checked": "2026-09-23 59160a0",
+      "arabic": "98b72f1af7b3",
+      "arabicChecked": "2026-09-23 59160a0"
     },
     "ai-platform": {
       "files": {
@@ -386,7 +386,7 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "b0e1a18ad6a1",
+        "api/boot.ts#rest-of-file": "2dc5aeec04b4",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "f463a8edd4ba",
         "api/lib/app-time.ts": "23f0c001bb84",
@@ -397,7 +397,7 @@
         "api/lib/log.ts": "65a6302d6f7d",
         "api/lib/redis-client.ts": "e5b4196e64a2",
         "api/lib/settings-cache.ts": "8bd804a02a6e",
-        "api/lib/system-settings-registry.ts": "53648b707b0e",
+        "api/lib/system-settings-registry.ts": "640c412506b1",
         "api/middleware.ts": "12291c5b90f3",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "ed01fedd898c",
@@ -418,14 +418,15 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "4f7b341be798"
       },
-      "checked": "2026-09-23 f1a9834",
-      "arabic": "858c678d2bbf",
-      "arabicChecked": "2026-09-23 f1a9834"
+      "checked": "2026-09-23 59160a0",
+      "arabic": "0751deb2a4d6",
+      "arabicChecked": "2026-09-23 59160a0"
     },
     "voice-calls": {
       "files": {
         "api/ai-router.ts#ai.runVoiceToolQa": "b4a547279201",
         "api/ai-router.ts#rest-of-file": "17d48b21e072",
+        "api/boot.ts#job:voice-call-memory": "b713e49fe76e",
         "api/boot.ts#ws:/api/voice/live": "de7ba82545c8",
         "api/boot.ts#ws:/api/voice/v2": "de7ba82545c8",
         "api/server.ts#ws:/api/voice/live": "3c83f6a7e546",
@@ -447,12 +448,13 @@
         "api/services/voice/brain/facts.ts": "2210c496a231",
         "api/services/voice/brain/honorific.ts": "451551920217",
         "api/services/voice/brain/index.ts": "bbc850d5c382",
-        "api/services/voice/brain/instructions.ts": "cbe57466a513",
+        "api/services/voice/brain/instructions.ts": "179043651ebb",
+        "api/services/voice/brain/never-kept.ts": "977be210350d",
         "api/services/voice/brain/snapshot.ts": "1de65fcce64f",
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
         "api/services/voice/brain/tools/app-help.ts": "039eab42299b",
         "api/services/voice/brain/tools/market-price.ts": "fae841bbcdb4",
-        "api/services/voice/brain/tools/memory.ts": "5aaf89acef1e",
+        "api/services/voice/brain/tools/memory.ts": "9750cc87a2a7",
         "api/services/voice/brain/tools/money-query.ts": "646153f01e53",
         "api/services/voice/brain/tools/record.ts": "0e217c9d57c4",
         "api/services/voice/brain/tools/think.ts": "86739788207e",
@@ -462,18 +464,20 @@
         "api/services/voice/engine/gemini-live.ts": "b111b37a4c9b",
         "api/services/voice/engine/types.ts": "59bb80cd2293",
         "api/services/voice/gateway/call-session.ts": "e7b185f99988",
-        "api/services/voice/gateway/index.ts": "c0a8acdc30c2",
+        "api/services/voice/gateway/index.ts": "b17b7ba55698",
         "api/services/voice/gateway/persistence.ts": "9b7295c585e9",
         "api/services/voice/gateway/pricing.ts": "0f769ce256ec",
         "api/services/voice/gateway/socket.ts": "9aadd9f926ff",
         "api/services/voice/gateway/start-call.ts": "6facb7f50e74",
-        "api/services/voice/gateway/store.ts": "b03cdc17fb03",
+        "api/services/voice/gateway/store.ts": "7a1dc82ce092",
+        "api/services/voice/post-call.ts": "de43fde0ba3f",
+        "api/services/voice/text-model.ts": "3b090d144c9a",
         "api/voice-router.ts": "ccbcdb5cdbf8",
         "src/components/ai/AIVoiceCall.tsx": "a48952518da3",
         "src/components/voice/CallSmartButton.tsx": "813a2fbb4e30",
         "src/components/voice/VoiceCallCards.tsx": "db71021d3e90",
-        "src/components/voice/VoiceCallHost.tsx": "409291f9920b",
-        "src/components/voice/VoiceCallScreen.tsx": "1383b3fe952c",
+        "src/components/voice/VoiceCallHost.tsx": "feca23286723",
+        "src/components/voice/VoiceCallScreen.tsx": "f899770068a1",
         "src/components/voice/VoiceCallTab.tsx": "289aba1bd253",
         "src/hooks/useVoiceCall.ts": "06ef098aa2b4",
         "src/hooks/useVoiceCallEntry.ts": "453f2aa5a60c",
@@ -485,9 +489,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-09-23 797ea88",
-      "arabic": "ac214004688b",
-      "arabicChecked": "2026-09-23 797ea88"
+      "checked": "2026-09-23 59160a0",
+      "arabic": "9991b329558e",
+      "arabicChecked": "2026-09-23 59160a0"
     },
     "web-app": {
       "files": {

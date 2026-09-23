@@ -131,7 +131,10 @@ the finance caches are cleared.
   counter. It scores recent capsules, active memories and executed actions by words, importance and recency, and adds
   vector similarity from the stored embeddings only when embeddings are on and no strong word match was found. Query
   embeddings are cached in Redis for two weeks, and provider errors pause embedding calls for a while.
-- **Managing**: `chat.listMemories`, `chat.forgetMemory` and `chat.clearAllMemories`, behind the memory manager.
+- **Managing**: `chat.listMemories`, `chat.forgetMemory` and `chat.clearAllMemories`, behind the memory manager
+  (`src/components/ai/AIMemoryManager.tsx`). `chat.listMemories` also says whether a memory came from a live call
+  (`fromCall`, from its metadata, which does not leave the server otherwise); the manager labels a call's summary, a plan
+  and an agreement. The [voice call](voice-calls.md) opens the same manager from its end screen.
   `chat.clearConversation` deletes a conversation's messages and summary; the memories taken from it stay until they
   are forgotten.
 

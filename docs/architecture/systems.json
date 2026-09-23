@@ -62,7 +62,8 @@
       "clusters": ["voice", "web-voice-call"],
       "routers": ["voice"],
       "procedures": ["ai.runVoiceToolQa"],
-      "websockets": ["/api/voice/live", "/api/voice/v2"]
+      "websockets": ["/api/voice/live", "/api/voice/v2"],
+      "jobs": ["voice-call-memory"]
     },
     {
       "id": "ai-center",

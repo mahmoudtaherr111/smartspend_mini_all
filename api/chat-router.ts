@@ -1230,6 +1230,7 @@ export const chatRouter = router({
         importance: aiMemoryItems.importance,
         createdAt: aiMemoryItems.createdAt,
         updatedAt: aiMemoryItems.updatedAt,
+        metadata: aiMemoryItems.metadata,
       })
       .from(aiMemoryItems)
       .where(
@@ -1242,7 +1243,11 @@ export const chatRouter = router({
       .orderBy(desc(aiMemoryItems.updatedAt))
       .limit(100);
 
-    return items;
+    // Only whether a memory came from a live call leaves the server, not the rest of its metadata.
+    return items.map(({ metadata, ...item }) => {
+      const source = metadata && typeof metadata === "object" ? (metadata as { source?: unknown }).source : undefined;
+      return { ...item, fromCall: source === "voice_call" || source === "voice" };
+    });
   }),
 
   /**

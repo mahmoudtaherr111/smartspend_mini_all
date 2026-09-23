@@ -204,7 +204,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `chat.getConversation` | query | `authedProcedure` | yes | `chat_conversations`, `chat_messages` | — | — | `src/components/ai/AIChatbot.tsx` |
 | `chat.getConversations` | query | `authedProcedure` | no | `chat_conversations` | — | — | `src/components/ai/AIChatbot.tsx` |
 | `chat.getQuickActions` | query | `authedProcedure` | no | — | — | — | `src/components/ai/AIChatbot.tsx` |
-| `chat.listMemories` | query | `authedProcedure` | no | `ai_memory_items` | — | — | `src/components/ai/AIMemoryManager.tsx` |
+| `chat.listMemories` | query | `authedProcedure` | no | `ai_memory_items` | — | — | `src/components/ai/AIMemoryManager.tsx`, `src/components/voice/VoiceCallHost.tsx` |
 | `chat.sendMessage` | mutation | `aiProcedure` | yes | `ai_pending_actions`, `chat_conversations`, `chat_messages` | `chat_conversations`, `chat_messages`, `local_users`, `users` | `api/lib/app-time.ts`, `api/lib/settings-cache.ts`, `api/services/action-runtime/confirmation-phrases.ts`, `api/services/action-runtime/index.ts`, `api/services/ai-cost-policy.ts`, `api/services/ai-kernel/capability-registry.ts`, `api/services/ai-kernel/clarification-machine.ts`, `api/services/ai-kernel/index.ts`, `api/services/ai-kernel/intent-router.ts`, `api/services/ai-memory/index.ts`, `api/services/finance-semantic-layer/category-matcher.ts` | `src/components/ai/AIChatbot.tsx` |
 
 ### `expense` — `api/expense-router.ts`

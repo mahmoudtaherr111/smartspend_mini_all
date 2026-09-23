@@ -66,3 +66,4 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 | `scheduled-notifications` | `* * * * *` | `api/notification-engine.ts` | — | — |
 | `seed-default-templates` | once at boot | `api/notification-engine.ts` | — | — |
 | `smart-activity-notifications` | `0 20 * * *` | `api/notification-engine.ts` | — | — |
+| `voice-call-memory` | `*/10 * * * *` | `api/services/voice/post-call.ts` | — | — |

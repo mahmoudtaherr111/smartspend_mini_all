@@ -21,7 +21,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `jobs` | Scheduled job bodies | 5 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `database`, `platform` | `api-core`, `api-routers` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
-| `voice` | Voice | 38 | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `arabic-nlp`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
+| `voice` | Voice | 41 | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `arabic-nlp`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 13 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs`, `voice` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `receipt-parsing`, `voice` | — |
@@ -40,8 +40,8 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-pages` | Web pages | 15 | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `web-shell` | — |
 | `web-ui-kit` | UI primitives | 55 | `web-hooks`, `web-lib` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-voice-call` | — |
 | `web-admin` | Admin UI | 20 | `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | `fireworks`, `openrouter` |
-| `web-voice-call` | Live voice call UI | 15 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `capacitor` |
-| `web-ai` | AI Center UI | 3 | `web-hooks`, `web-insights`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
+| `web-voice-call` | Live voice call UI | 15 | `contracts`, `web-ai`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `capacitor` |
+| `web-ai` | AI Center UI | 3 | `web-hooks`, `web-insights`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-voice-call` | — |
 | `web-capture` | Expense entry UI | 4 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
 | `web-insights` | Insights UI | 1 | `web-hooks`, `web-shell`, `web-ui-kit` | `web-ai` | — |
 | `web-finance` | Finance UI | 13 | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-account`, `web-pages` | — |
@@ -60,7 +60,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `deepseek` | DeepSeek API | ai-provider | `ai-providers` | `api/lib/llm-provider-chain.ts` |
 | `firebase` | Firebase | push | `notifications`, `web-hooks`, `web-shell` | `api/services/firebase.ts`, `src/hooks/usePushNotifications.ts`, `src/pwa/firebase.ts` |
 | `fireworks` | Fireworks AI | ai-provider | `ai-memory`, `ai-providers`, `api-routers`, `jobs`, `web-admin` | `api/chat-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/fireworks-client.ts`, `api/lib/fireworks-embedding-client.ts`, `api/lib/llm-provider-chain.ts`, `api/services/ai-memory/embedding-settings.ts`, `src/components/admin/settings/AdminPlansTab.tsx` |
-| `gemini` | Google Gemini API | ai-provider | `ai-insights`, `ai-providers`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/goals-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/classifier-contract.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/llm-router.ts`, `api/lib/narrative-decomposer.ts`, `api/lib/receipt-image-parser.ts`, `api/lib/smart-pipeline.ts`, `api/lib/sms-ai-parser.ts`, `api/services/batch-ai-service.ts`, `api/services/voice-call-service.ts`, `api/services/voice/brain/tools/market-price.ts`, `api/services/voice/engine/gemini-live.ts` |
+| `gemini` | Google Gemini API | ai-provider | `ai-insights`, `ai-providers`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/goals-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/classifier-contract.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/llm-router.ts`, `api/lib/narrative-decomposer.ts`, `api/lib/receipt-image-parser.ts`, `api/lib/smart-pipeline.ts`, `api/lib/sms-ai-parser.ts`, `api/services/batch-ai-service.ts`, `api/services/voice-call-service.ts`, `api/services/voice/brain/tools/market-price.ts`, `api/services/voice/engine/gemini-live.ts`, `api/services/voice/text-model.ts` |
 | `google-oauth` | Google OAuth 2.0 | identity | `api-routers` | `api/auth-router.ts` |
 | `groq` | Groq | ai-provider | `ai-providers`, `api-routers` | `api/ai-router.ts`, `api/lib/groq-client.ts`, `api/lib/llm-provider-chain.ts` |
 | `mysql` | MySQL | datastore | `database` | `api/queries/connection.ts` |
@@ -271,6 +271,7 @@ Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech
 | `api/services/voice/brain/honorific.ts` | — | — | — | — |
 | `api/services/voice/brain/index.ts` | `finance-semantic-layer` | — | — | — |
 | `api/services/voice/brain/instructions.ts` | — | — | — | — |
+| `api/services/voice/brain/never-kept.ts` | — | — | — | — |
 | `api/services/voice/brain/snapshot.ts` | `ai-insights`, `database`, `finance-semantic-layer`, `platform` | — | `ai_memory_items`, `expenses`, `local_users`, `users` | — |
 | `api/services/voice/brain/spoken.ts` | — | — | — | — |
 | `api/services/voice/brain/tools/app-help.ts` | `site-guide` | — | — | — |
@@ -291,6 +292,8 @@ Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech
 | `api/services/voice/gateway/socket.ts` | `contracts`, `platform` | — | — | — |
 | `api/services/voice/gateway/start-call.ts` | `ai-providers`, `database`, `platform` | — | — | `voice_calls` |
 | `api/services/voice/gateway/store.ts` | `platform` | — | — | — |
+| `api/services/voice/post-call.ts` | `ai-memory`, `database`, `platform` | — | `ai_memory_items`, `voice_calls` | `ai_memory_items`, `voice_calls` |
+| `api/services/voice/text-model.ts` | `ai-providers`, `platform` | `gemini` | — | — |
 
 ### `ai-providers` — AI provider access
 
@@ -656,7 +659,7 @@ The live voice call in the app. The rebuilt call: a store any screen can start t
 | `src/components/ai/AIVoiceCall.tsx` | `web-hooks`, `web-lib`, `web-ui-kit` | — | — | — |
 | `src/components/voice/CallSmartButton.tsx` | `web-lib`, `web-ui-kit` | — | — | — |
 | `src/components/voice/VoiceCallCards.tsx` | `web-lib`, `web-ui-kit` | — | — | — |
-| `src/components/voice/VoiceCallHost.tsx` | `web-shell` | — | — | — |
+| `src/components/voice/VoiceCallHost.tsx` | `web-ai`, `web-shell` | — | — | — |
 | `src/components/voice/VoiceCallScreen.tsx` | `web-hooks`, `web-lib`, `web-ui-kit` | — | — | — |
 | `src/components/voice/VoiceCallTab.tsx` | `web-ui-kit` | — | — | — |
 | `src/hooks/useVoiceCall.ts` | — | — | — | — |

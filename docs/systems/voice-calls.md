@@ -147,7 +147,8 @@ seconds.
 6. The call ends on the user's `end`, the time limit (a warning a minute before, and 30 seconds more when a draft
    waits for an answer), the daily cost cap, 150 seconds of silence, the provider, or the network. The final row is
    written, the words go to Redis for an hour for the post-call summary and are never written to MySQL, and the app
-   gets the end card: what was done, what was not. The post-call summary itself is not built yet.
+   gets the end card: what was done, what was not. Then the words are summarized into the AI memory
+   ([after the call](#after-the-call)).
 
 ### The tools
 | Tool | What it does |
@@ -181,6 +182,27 @@ tRPC procedures as the user, so a spoken expense is parsed, saved and undone exa
 - **Cost.** `api/services/voice/gateway/pricing.ts` prices the provider's token counts (Google's published Live
   rates); the call's cost and tokens are checkpointed every 15 seconds with the billed seconds and first-audio
   latency (`voice_calls.metrics`).
+
+### After the call
+`api/services/voice/post-call.ts#summarizeCall` runs as soon as a call ends, on the server that ran it
+(`createVoiceGateway` in `api/services/voice/gateway/index.ts`). It claims the call (`memory_status` from
+`pending` to `writing`, so two servers never both do it), reads the words from Redis, and, when the user said more
+than a few words, asks a text model once for a summary of at most two sentences and at most five things to remember
+(plans, agreements, preferences, stable facts), with the user's 30 latest memories so it does not repeat them and can
+name one a new fact replaces. `readCallMemory` holds the answer to the rules whatever the model wrote: at most five
+facts, only known ids replaced, and nothing about age, gender, health, religion or a judgment of the person
+(`api/services/voice/brain/never-kept.ts`). The summary is written to `ai_memory_items` as a `summary` ("مكالمة 23/9:
+…"), the facts under their own types, both with `metadata.source` `voice_call` and the call id; a replaced memory
+becomes `replaced`. Then the words are deleted and the call's `memory_status` becomes `saved` (or `empty`), with the
+model and tokens in `voice_calls.metrics.memory`. A failure leaves the words for another try; after three the words are
+dropped and the status is `failed`. The `voice-call-memory` job (every ten minutes, in `api/boot.ts`) tries again the
+calls still pending and marks `expired` those whose words are gone after an hour.
+
+The model is `voice_memory_model` (default `gemini-3.8-flash`), called directly through
+`api/services/voice/text-model.ts#askTextModel` with the call's keys, then `gemini-3.5-flash` and
+`gemini-3.1-flash-lite` when it is overloaded (Google answers 503 during demand spikes). It does not use the AI
+gateway's routes. The next call's snapshot reads these memories, and the memory screen labels a call's summary
+"ملخص مكالمة"; the end screen of a call opens that screen.
 
 ### In the app
 - **Ways in.** Users the rebuilt call is open to (`voice.eligibility` says `v2`) get a "كلّم سمارت" button on Home
@@ -225,6 +247,8 @@ tRPC procedures as the user, so a spoken expense is parsed, saved and undone exa
   was; a call that cannot start says why and offers the chat. Admins also see a trace (round trip, first-audio
   latency, reconnects, frames sent, noise floor, playback queue).
 - **After a confirmed draft** the app refreshes every query, so what the call recorded shows behind it at once.
+- **After the call** the end screen opens the memory screen (`src/components/ai/AIMemoryManager.tsx`, from
+  `VoiceCallHost`), looked at again six seconds later because the summary is written just after the call.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -245,6 +269,7 @@ tRPC procedures as the user, so a spoken expense is parsed, saved and undone exa
 | Rebuilt call: the tools | `api/services/voice/brain/tools/`, and `api/services/voice/app-calls.ts` for the procedures they call | `api/services/voice/brain/tools/*.test.ts` |
 | Rebuilt call: the number check and the confirmation gate | `api/services/voice/brain/validator.ts`, `api/services/voice/brain/drafts.ts` | `api/services/voice/brain/validator.test.ts`, `api/services/voice/brain/drafts.test.ts` |
 | Messages between the app and the server | `contracts/voice-protocol.ts` | `tests/voice-protocol.test.ts` |
+| Rebuilt call: what is remembered after a call, and what never is | `api/services/voice/post-call.ts`, `api/services/voice/brain/never-kept.ts`, the `voice_memory_model` setting | `api/services/voice/post-call.test.ts` |
 | Rebuilt call: saying a waiting draft is done | `api/services/voice/brain/claims.ts` | `api/services/voice/brain/claims.test.ts` |
 | Rebuilt call in the app: when the user is speaking, and what is sent | `src/lib/voice/speech-detector.ts`, `src/lib/voice/downsampler.ts` | `src/lib/voice/speech-detector.test.ts`, `src/lib/voice/downsampler.test.ts` |
 | Rebuilt call in the app: the line, resuming a dropped call | `src/lib/voice/call-connection.ts` | `src/lib/voice/call-connection.test.ts` |
@@ -262,7 +287,8 @@ tRPC procedures as the user, so a spoken expense is parsed, saved and undone exa
 5. Session state belongs in Redis; the memory fallback exists for development and single-process setups.
 
 ## Tests
-The rebuilt call: `api/services/voice/gateway/gateway.test.ts` runs whole calls over a real socket against
+The rebuilt call: `api/services/voice/post-call.test.ts` (the rules on what is kept, a summary written and its
+words deleted, a call another server took, words already gone, a call with almost nothing said, retries); `api/services/voice/gateway/gateway.test.ts` runs whole calls over a real socket against
 `tests/helpers/fake-gemini-live.ts` (a ticket, a tool call, captions, the end card, a ticket used twice, a dropped
 call resumed on its handle, a wrong resume token, a socket gone silent, the grace period, the time limit, and
 "thinking" held from a tool call until the answer is spoken);
