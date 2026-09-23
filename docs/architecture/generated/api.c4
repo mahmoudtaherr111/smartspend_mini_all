@@ -2129,9 +2129,9 @@ model {
         file 'api/voice-router.ts'
       }
       eligibility = procedure 'voice.eligibility' {
-        #query #authed #uncalled
+        #query #authed
         technology 'authedProcedure'
-        description 'query · authedProcedure · no caller in src/'
+        description 'query · authedProcedure'
         metadata {
           file 'api/voice-router.ts'
           builder 'authedProcedure'
@@ -2139,9 +2139,9 @@ model {
         }
       }
       listCalls = procedure 'voice.listCalls' {
-        #query #authed #uncalled
+        #query #authed
         technology 'authedProcedure'
-        description 'query · authedProcedure · no caller in src/'
+        description 'query · authedProcedure'
         metadata {
           file 'api/voice-router.ts'
           builder 'authedProcedure'

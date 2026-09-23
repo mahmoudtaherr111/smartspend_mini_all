@@ -12,6 +12,11 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 
 ```mermaid
 flowchart LR
+  subgraph g_screens["Screens"]
+    screens_ai_center["Screens of AI Center"]
+    screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
+    screens_web_app["Screens of Web and mobile app shell"]
+  end
   subgraph g_api["API, routes and jobs"]
     router_ai["ai API · 1 procedure"]
     router_voice["voice API · 3 procedures"]
@@ -40,6 +45,7 @@ flowchart LR
     tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
   end
+  ext_capacitor{{"Capacitor native shell"}}
   ext_gemini{{"Google Gemini API"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_ai_center[["AI Center (system)"]]
@@ -71,12 +77,17 @@ flowchart LR
   mod_voice ==> tbl_voice_call_incidents
   mod_voice ==> tbl_voice_calls
   mod_voice ==> tbl_voice_usage
+  mod_web_voice_call --> ext_capacitor
+  mod_web_voice_call --> sys_platform
   mod_web_voice_call --> sys_web_app
   router_ai --> mod_voice
   router_ai --> sys_ai_center
   router_ai --> sys_platform
   router_voice --> mod_voice
   router_voice -.-> tbl_voice_calls
+  screens_ai_center --> router_voice
+  screens_money --> router_voice
+  screens_web_app --> router_voice
   ws__api_voice_live --> mod_voice
   ws__api_voice_v2 --> mod_voice
 ```
@@ -85,16 +96,16 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `voice` — Voice | Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 37 |
-| `web-voice-call` — Live voice call UI | The live voice call screen in the AI Center and its hook: voice selection, microphone capture resampled to 16 kHz PCM, the WebSocket to /api/voice/live, playback of the assistant's audio and the tool trace panel. | 2 |
+| `voice` — Voice | Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 38 |
+| `web-voice-call` — Live voice call UI | The live voice call in the app. The rebuilt call: a store any screen can start the call from (src/lib/voice/call-store.ts), which keeps it running across pages; microphone capture filtered down to 16 kHz with speech detection that sends audio only while the user speaks; the /api/voice/v2 socket client that resumes a dropped call; playback of the assistant's voice; and the call screen with its cards, the Home button and the AI Center tab (src/components/voice). The old call screen and its hook (AIVoiceCall.tsx, useVoiceCall.ts on /api/voice/live) stay for users outside the rollout. | 15 |
 
 ## API procedures
 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
 | `ai.runVoiceToolQa` | mutation | `aiProcedure` | — | — | — |
-| `voice.eligibility` | query | `authedProcedure` | — | — | — |
-| `voice.listCalls` | query | `authedProcedure` | `voice_calls` | — | — |
+| `voice.eligibility` | query | `authedProcedure` | — | — | `AICenter`, `App shell`, `Home` |
+| `voice.listCalls` | query | `authedProcedure` | `voice_calls` | — | `App shell` |
 | `voice.startCall` | mutation | `authedProcedure` | — | — | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
@@ -131,26 +142,29 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | System | Kind | Modules |
 | --- | --- | --- |
+| Capacitor native shell | native-runtime | `web-voice-call` |
 | Google Gemini API | ai-provider | `voice` |
 
 ## Other systems
 
 Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [AI Center](ai-center.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
 | `GEMINI_API_KEY` | yes | `api/services/voice-call-service.ts`, `api/services/voice/brain/tools/market-price.ts`, `api/services/voice/gateway/index.ts` |
+| `BASE_URL` | frontend | `src/lib/voice/audio-io.ts` |
 | `DEV` | frontend | `src/components/ai/AIVoiceCall.tsx` |
+| `VITE_API_URL` | frontend | `src/lib/voice/call-controller.ts` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/voice-calls.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>46 files and declarations</summary>
+<details><summary>60 files and declarations</summary>
 
 - `api/ai-router.ts#ai.runVoiceToolQa`
 - `api/ai-router.ts#rest-of-file`
@@ -170,6 +184,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/voice-kernel/voice-session-state.ts`
 - `api/services/voice-kernel/voice-tool-adapter.ts`
 - `api/services/voice/app-calls.ts`
+- `api/services/voice/brain/claims.ts`
 - `api/services/voice/brain/drafts.ts`
 - `api/services/voice/brain/facts.ts`
 - `api/services/voice/brain/honorific.ts`
@@ -197,6 +212,19 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/voice/gateway/store.ts`
 - `api/voice-router.ts`
 - `src/components/ai/AIVoiceCall.tsx`
+- `src/components/voice/CallSmartButton.tsx`
+- `src/components/voice/VoiceCallCards.tsx`
+- `src/components/voice/VoiceCallHost.tsx`
+- `src/components/voice/VoiceCallScreen.tsx`
+- `src/components/voice/VoiceCallTab.tsx`
 - `src/hooks/useVoiceCall.ts`
+- `src/hooks/useVoiceCallEntry.ts`
+- `src/lib/voice/audio-io.ts`
+- `src/lib/voice/call-connection.ts`
+- `src/lib/voice/call-controller.ts`
+- `src/lib/voice/call-store.ts`
+- `src/lib/voice/downsampler.ts`
+- `src/lib/voice/pcm-player.ts`
+- `src/lib/voice/speech-detector.ts`
 
 </details>

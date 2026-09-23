@@ -34,6 +34,7 @@ describe("buildLiveSetup", () => {
     expect(message.inputAudioTranscription).toEqual({});
     expect(message.outputAudioTranscription).toEqual({});
     expect(message.sessionResumption).toEqual({});
+    expect(message.realtimeInputConfig).toEqual({ automaticActivityDetection: { silenceDurationMs: 1_000 } });
     expect(message.contextWindowCompression).toEqual({ triggerTokens: "16000", slidingWindow: { targetTokens: "8000" } });
     expect(message.tools?.[0].functionDeclarations[0].behavior).toBe("NON_BLOCKING");
     expect(message.generationConfig?.thinkingConfig).toBeUndefined();

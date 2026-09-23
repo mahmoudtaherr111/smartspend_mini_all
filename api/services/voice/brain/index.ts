@@ -5,6 +5,7 @@
  */
 import { getProfileSnapshot } from "../../finance-semantic-layer";
 import type { CallBrain, CallIdentity, SpeechCheck } from "../gateway/call-session";
+import { DONE_CLAIM_NOTE, DoneClaimCheck } from "./claims";
 import { DraftBook } from "./drafts";
 import { FactLedger } from "./facts";
 import { buildInstruction, openingNote } from "./instructions";
@@ -44,6 +45,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
   const ledger = new FactLedger();
   const drafts = new DraftBook(() => now().getTime());
   const validator = new SpokenNumberValidator(ledger);
+  const claims = new DoneClaimCheck();
   const openClarifications: number[] = [];
   const tools = new Map((options.tools ?? VOICE_TOOLS).map((tool) => [tool.declaration.name, tool]));
   let salaryDay: Promise<number | undefined> | null = null;
@@ -93,9 +95,20 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       validator.noteUserWords(text);
     },
 
-    onAssistantWords: (text) => check(validator.addAssistantWords(text)),
+    onAssistantWords(text) {
+      // Saying a waiting draft is done is the worse mistake, so it is corrected first.
+      // An undo draft talks about what was recorded before, so only new records and actions are checked.
+      const waiting = drafts.latestPending();
+      const claimed = claims.add(text, Boolean(waiting) && waiting!.kind !== "undo");
+      const numbers = check(validator.addAssistantWords(text));
+      if (claimed) return { kind: "done_claim_before_confirm", note: DONE_CLAIM_NOTE, incident: { waitingDraft: true } };
+      return numbers;
+    },
 
-    onTurnEnd: () => check(validator.endTurn()),
+    onTurnEnd() {
+      claims.endTurn();
+      return check(validator.endTurn());
+    },
 
     async onCardAction(action, draftId, identity) {
       const draft = drafts.get(draftId);
@@ -109,7 +122,12 @@ export function createCallBrain(options: BrainOptions): CallBrain {
         };
       }
       const gate = drafts.gate(draftId, true);
-      if (!gate.ok) return null;
+      if (!gate.ok) {
+        return {
+          card: drafts.card(drafts.get(draftId) ?? draft),
+          note: "(ملاحظة من التطبيق: المستخدم ضغط تأكيد على مسودة قديمة أو خلصت صلاحيتها، فماتنفذتش. قوله كده في جملة واعرض تجهزها تاني.)",
+        };
+      }
       const result = await executeDraft(gate.draft, context(identity, new AbortController().signal));
       return {
         card: drafts.card(drafts.get(draftId)!),

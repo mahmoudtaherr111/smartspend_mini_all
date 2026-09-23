@@ -360,10 +360,13 @@
     {
       "id": "web-voice-call",
       "title": "Live voice call UI",
-      "description": "The live voice call screen in the AI Center and its hook: voice selection, microphone capture resampled to 16 kHz PCM, the WebSocket to /api/voice/live, playback of the assistant's audio and the tool trace panel.",
+      "description": "The live voice call in the app. The rebuilt call: a store any screen can start the call from (src/lib/voice/call-store.ts), which keeps it running across pages; microphone capture filtered down to 16 kHz with speech detection that sends audio only while the user speaks; the /api/voice/v2 socket client that resumes a dropped call; playback of the assistant's voice; and the call screen with its cards, the Home button and the AI Center tab (src/components/voice). The old call screen and its hook (AIVoiceCall.tsx, useVoiceCall.ts on /api/voice/live) stay for users outside the rollout.",
       "paths": [
         "src/components/ai/AIVoiceCall.tsx",
-        "src/hooks/useVoiceCall.ts"
+        "src/hooks/useVoiceCall.ts",
+        "src/components/voice/**",
+        "src/hooks/useVoiceCallEntry.ts",
+        "src/lib/voice/**"
       ]
     },
     {

@@ -72,6 +72,8 @@ export interface ToolRunOutcome {
 }
 
 export interface SpeechCheck {
+  /** The incident's kind; a number said wrong unless given. */
+  kind?: string;
   note: string | null;
   incident: Record<string, string | number | boolean | null>;
 }
@@ -117,6 +119,8 @@ export interface CallSessionDeps {
   graceMs?: number;
   inactiveMs?: number;
   toolTimeoutMs?: number;
+  /** How long the screen shows "thinking" after a tool answer before assuming the model will not speak. */
+  replyWaitMs?: number;
 }
 
 /** What goes to Redis so another server can continue the call. */
@@ -175,6 +179,9 @@ export class CallSession {
   private ticker: ReturnType<typeof setInterval> | null = null;
   private lastCheckpoint = 0;
   private graceTimer: ReturnType<typeof setTimeout> | null = null;
+  /** A tool was called and the model's spoken answer to it has not started yet. */
+  private replyOwed = false;
+  private replyTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly cancelledTools = new Set<string>();
   private readonly toolAborts = new Map<string, AbortController>();
   private attachChain: Promise<void> = Promise.resolve();
@@ -394,6 +401,7 @@ export class CallSession {
     if (engine !== this.engine || this.status === "ended") return;
     switch (event.type) {
       case "audio":
+        this.replyStarted();
         if (this.speechEndedAt !== null) {
           this.firstAudioMs.push(Date.now() - this.speechEndedAt);
           this.speechEndedAt = null;
@@ -415,6 +423,7 @@ export class CallSession {
         return;
       }
       case "tool_calls":
+        this.expectReply();
         this.setState("thinking");
         void this.runTools(event.calls);
         return;
@@ -425,6 +434,7 @@ export class CallSession {
         }
         return;
       case "interrupted":
+        this.replyStarted();
         this.send({ type: "interrupted" });
         return;
       case "turn_complete":
@@ -432,6 +442,8 @@ export class CallSession {
         this.applySpeechCheck(this.deps.brain.onTurnEnd?.() ?? null);
         return;
       case "idle":
+        // The model's turn ends with a tool call; the call is not listening while the answer is being prepared.
+        if (this.replyOwed) return;
         this.setState(this.deps.brain.awaitingConfirmation?.() ? "awaiting_confirmation" : "listening");
         return;
       case "usage":
@@ -454,9 +466,27 @@ export class CallSession {
     }
   }
 
+  private expectReply(): void {
+    this.replyOwed = true;
+    if (this.replyTimer) clearTimeout(this.replyTimer);
+    // A model that says nothing after a tool answer must not leave the screen on "thinking".
+    this.replyTimer = setTimeout(() => {
+      this.replyTimer = null;
+      if (!this.replyOwed || this.status !== "live") return;
+      this.replyOwed = false;
+      this.setState(this.deps.brain.awaitingConfirmation?.() ? "awaiting_confirmation" : "listening");
+    }, this.deps.replyWaitMs ?? 8_000);
+  }
+
+  private replyStarted(): void {
+    this.replyOwed = false;
+    if (this.replyTimer) clearTimeout(this.replyTimer);
+    this.replyTimer = null;
+  }
+
   private applySpeechCheck(check: SpeechCheck | null): void {
     if (!check) return;
-    this.recordIncident("spoken_number_mismatch", check.incident);
+    this.recordIncident(check.kind ?? "spoken_number_mismatch", check.incident);
     if (check.note) this.engine?.sendText(check.note);
   }
 
@@ -644,6 +674,7 @@ export class CallSession {
   }
 
   private closeEngine(): void {
+    this.replyStarted();
     for (const abort of this.toolAborts.values()) abort.abort();
     this.engine?.close();
     this.engine = null;

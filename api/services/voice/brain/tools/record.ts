@@ -152,7 +152,10 @@ async function recordDraft(args: Record<string, unknown>, ctx: ToolContext): Pro
       items,
       total_say: parsed.items.length > 1 ? total.say : undefined,
       ...(doubleCheck.length ? { double_check: doubleCheck } : {}),
-      say: "اقرا البنود دي بسرعة واسأل يأكد. الأرقام اللي في double_check قولها بوضوح عشان متتلخبطش.",
+      say:
+        "لسه ماتسجلش حاجة. اقرا البنود في جملة واسأل سؤال واحد: «أسجلها؟» لبند واحد، «أسجلهم؟» لأكتر من بند. " +
+        "متقولش «سجلت» ولا «اتسجل» قبل ما confirm يرجع ok. " +
+        "الأرقام اللي في double_check قولها بوضوح عشان متتلخبطش.",
     },
     card: ctx.drafts.card(draft),
   };
@@ -230,7 +233,7 @@ async function changeDraft(args: Record<string, unknown>, ctx: ToolContext): Pro
     lines: [{ label: summary }],
     payload: { actionName, payload },
   });
-  return { response: { ok: true, draft_id: draft.id, summary, say: "اعرض الملخص ده بجملة واسأل يأكد." }, card: ctx.drafts.card(draft) };
+  return { response: { ok: true, draft_id: draft.id, summary, say: "لسه ماتعملش. اعرض الملخص ده بجملة واسأل سؤال واحد زي «أعملها؟». متقولش إنها اتعملت قبل ما confirm يرجع ok." }, card: ctx.drafts.card(draft) };
 }
 
 // ─── Executing a draft (voice or tap) ───────────────────────────────

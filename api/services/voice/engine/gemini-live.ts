@@ -46,6 +46,10 @@ export function buildLiveSetup(setup: EngineSetup, handle: string | null): Json 
       systemInstruction: { parts: [{ text: setup.systemInstruction }] },
       inputAudioTranscription: {},
       outputAudioTranscription: {},
+      // The app decides when the user finished (src/lib/voice/speech-detector.ts) and says so with audioStreamEnd;
+      // it sends at most 200 ms of a pause inside a sentence. Google's own end-of-turn detection waits longer, so it
+      // only decides when the app cannot, and the user talking over the assistant still interrupts it.
+      realtimeInputConfig: { automaticActivityDetection: { silenceDurationMs: 1_000 } },
       sessionResumption: handle ? { handle } : {},
       contextWindowCompression: {
         triggerTokens: String(setup.compression.triggerTokens),

@@ -28,6 +28,7 @@ import {
 import { HomeSummaryCards } from "@/components/dashboard/HomeSummaryCards";
 import { StatsView } from "@/components/dashboard/StatsView";
 import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
+import { CallSmartButton } from "@/components/voice/CallSmartButton";
 import { toast } from "sonner";
 
 const FinancialGoalsPanel = lazy(() =>
@@ -230,6 +231,8 @@ export default function Home() {
           userName={user?.name?.split(" ")[0]}
           currentStreak={profile?.gamification?.currentStreak || 0}
         />
+
+        <CallSmartButton />
 
         <HomeSummaryCards
           totalIncome={summary?.totalIncome}

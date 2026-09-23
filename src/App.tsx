@@ -45,6 +45,7 @@ import { useBiometricOnboarding } from "@/hooks/useBiometricOnboarding";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { useAppResume } from "@/hooks/useAppResume";
 import { useLaunchNavigation } from "@/hooks/useLaunchNavigation";
+import { VoiceCallHost } from "@/components/voice/VoiceCallHost";
 
 import "./3d-effects.css";
 import "./print.css";
@@ -578,6 +579,7 @@ function AuthScopedApplication() {
               </Suspense>
             </Layout>
             <BiometricAppEnhancements />
+            {user && <VoiceCallHost />}
             <Toaster position="top-center" richColors className="pt-safe" />
           </BiometricLockProvider>
         </BrowserRouter>

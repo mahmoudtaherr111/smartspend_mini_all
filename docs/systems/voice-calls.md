@@ -1,8 +1,10 @@
 # Live voice assistant
 
-The live voice call in the AI Center: the browser streams the user's voice over a WebSocket, the server bridges it
-to the Gemini Live API with a short financial context and a small set of tools, streams the assistant's voice
-back, enforces the plan's call minutes, and archives the call into the user's AI memory.
+The live voice call: the app streams the user's voice over a WebSocket, the server bridges it to the Gemini Live
+API with a short financial context and a set of tools, streams the assistant's voice back, enforces the plan's call
+minutes, and keeps what the call should remember. Two versions run side by side: the old call in the AI Center,
+described first, and the rebuilt call ([below](#the-rebuilt-call)), open to staff and the allowlist and to others by
+rollout, which will replace it.
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/voice-calls.md](../atlas/systems/voice-calls.md)
 - The same story for readers who do not read code: [docs/ar/systems/voice-calls.md](../ar/systems/voice-calls.md)
@@ -17,6 +19,8 @@ back, enforces the plan's call minutes, and archives the call into the user's AI
 | Call handler | `api/services/voice-call-service.ts#handleVoiceCallWebSocket` | Authentication, plan limits, session, Gemini Live bridge, tools, end of call |
 | Voice kernel | `api/services/voice-kernel/` | Session state, hot context, system prompt, tools, prefetch, archive |
 | QA procedure | `ai.runVoiceToolQa` in `api/ai-router.ts` | Runs one voice tool without a call; development only |
+| Rebuilt call, app side | `src/lib/voice/`, `src/components/voice/` | One call for the whole app: capture with speech detection, playback, the socket client, the call screen and its ways in |
+| Rebuilt call, server side | `api/voice-router.ts`, `api/services/voice/`, `api/services/entitlements/voice.ts` | Who may call, the ticket, the `/api/voice/v2` socket, the Gemini Live engine, the brain and its tools |
 
 ## One call, step by step
 
@@ -96,9 +100,10 @@ When the browser closes, sends `end_call`, Gemini closes, or the time is up, the
 3. ends and clears the session state;
 4. records an AI cost metric, estimating six tokens a second.
 
-## The rebuilt call (server side done, not yet reachable)
-The call is being rebuilt beside the one above, on its own socket. Nothing routes users to it yet: the app still
-opens the old call, and `voice.startCall` answers `legacy` for everyone outside the rollout.
+## The rebuilt call
+The call is rebuilt beside the one above, on its own socket. Staff and the users in `voice_v2_allowlist` get it
+now, others as `voice_v2_rollout_percent` grows; everyone else keeps the old call, and `voice.startCall` answers
+`legacy` for them.
 
 ### Who may call
 `api/services/entitlements/voice.ts#getVoiceEntitlements` returns one typed object: whether the plan may call
@@ -127,12 +132,13 @@ seconds.
    because they are billed every turn) and nine tools. It connects the engine
    (`api/services/voice/engine/gemini-live.ts#GeminiLiveEngine`): input and output transcription on, session
    resumption, a context window of 16k tokens trimmed to 8k, tools NON_BLOCKING, the key in a header, and the second
-   key when the first cannot open a session. Then it sends `ready` (with a resume token) and an opening note that
-   makes the model greet without numbers.
+   key when the first cannot open a session, and Google's own end-of-turn detection set to wait a full second. Then it
+   sends `ready` (with a resume token) and an opening note that makes the model greet without numbers.
 4. The app sends 16 kHz PCM only while the user speaks and `speech_end` when they stop, which the engine turns into
    `audioStreamEnd` so the model answers without waiting for silence. The model's 24 kHz audio, live captions,
    the state (listening, thinking, speaking, awaiting confirmation) and cards come back. Captions are shown, never
-   stored.
+   stored. From a tool call until the model starts speaking its answer the state stays "thinking" (for 8 seconds at
+   most), instead of showing "listening" while the answer is prepared.
 5. A dropped app does not end the call: the engine is closed with its resumption handle kept, the state goes to
    Redis, and for 45 seconds a `hello` with the resume token continues the call on any server, which reconnects the
    engine on the handle (or a fresh session with the last turns in its note). A server that lost a call to another
@@ -168,9 +174,57 @@ tRPC procedures as the user, so a spoken expense is parsed, saved and undone exa
 - **Writes.** `api/services/voice/brain/drafts.ts#DraftBook`: only the latest pending draft, within two minutes, and
   only after a tap on its card or the user's own yes said after it was presented, with no new number and no "لأ";
   "تمام" said before the draft is not consent.
+- **Saying it is done.** `api/services/voice/brain/claims.ts#DoneClaimCheck`: while a new record or action waits
+  for consent, a reply that calls it recorded or done ("سجلت", "اتسجل", "اتعمل") gets a note at once that makes the
+  model say it is still waiting and ask; the `done_claim_before_confirm` incident records only that it happened.
+  An undo draft is left out, because it speaks of what was recorded before.
 - **Cost.** `api/services/voice/gateway/pricing.ts` prices the provider's token counts (Google's published Live
   rates); the call's cost and tokens are checkpointed every 15 seconds with the billed seconds and first-audio
   latency (`voice_calls.metrics`).
+
+### In the app
+- **Ways in.** Users the rebuilt call is open to (`voice.eligibility` says `v2`) get a "كلّم سمارت" button on Home
+  (`src/components/voice/CallSmartButton.tsx#CallSmartButton`, with the minutes left) and, in the AI Center's call
+  tab, a screen to pick one of four voices and start (`src/components/voice/VoiceCallTab.tsx`,
+  `src/components/voice/CallSmartButton.tsx#VoiceCallLauncher`). Everyone else keeps the old call tab. The first call opens with four lines
+  on what the call is and what is kept.
+- **One call for the whole app.** `src/lib/voice/call-store.ts#voiceCall` holds the call;
+  `src/components/voice/VoiceCallHost.tsx`, mounted in `src/App.tsx` for signed-in users, shows it on every page.
+  Shrinking the call (or the phone's Back button) turns it into a bar at the top of the app while the user moves
+  around; a guide card's button opens its screen and shrinks the call. The audio and socket code
+  (`src/lib/voice/call-controller.ts`) and the call screen load only when a call starts, and are fetched ahead of time
+  while a call button is on screen.
+- **The tap.** Browsers start sound and open the microphone only from a user's tap, so the tap itself creates the
+  AudioContext and asks for the microphone (echo cancellation, noise suppression, automatic gain) in
+  `src/lib/voice/audio-io.ts#primeCallAudio`, in parallel with `voice.startCall`. On iOS the page asks for the
+  play-and-record audio session so the voice comes from the speaker. The screen stays on for the call (Wake Lock).
+- **Hearing the user.** A worklet served from the app's own origin (`public/voice/capture-worklet.js`, because the
+  page's Content-Security-Policy blocks worklets built from `blob:` URLs) hands 20 ms blocks to
+  `src/lib/voice/downsampler.ts#Downsampler`, which filters out everything above 7 kHz before going down to 16 kHz so
+  the hiss of "س" and "ش" does not fold into the band the recognizer hears. `src/lib/voice/speech-detector.ts#SpeechDetector`
+  sends audio only while the user speaks: 300 ms from before the first syllable, pauses inside a sentence up to
+  200 ms, and `speech_end` after 450 ms of silence for a short answer or 700 ms after a longer sentence. Its noise
+  floor is the quietest frame of the last three seconds. While the assistant talks, interrupting it takes a louder
+  voice held for 100 ms, so its own voice from the speaker does not cut it off; the assistant's voice drops at once
+  and stops when the server says `interrupted`. Google's own end-of-turn detection waits a full second
+  (`realtimeInputConfig` in the engine's setup), so the app decides when a turn ends.
+- **The assistant's voice.** `src/lib/voice/pcm-player.ts#PcmPlayer` plays the 24 kHz chunks back to back after a
+  120 ms cushion, which grows by 40 ms (up to 300 ms) each time a reply runs dry.
+- **The line.** `src/lib/voice/call-connection.ts#CallConnection` sends `hello` with the ticket, pings every
+  10 seconds and treats 25 silent seconds as a dead line. When the line drops it tries again at once, then after 1,
+  2, 3 and 5 seconds, and immediately when the network or the app comes back, with the resume token of the latest
+  `ready`, for up to 42 seconds (a little under the server's hold). On the server a socket that sends nothing for
+  45 seconds is closed, which stops the meter and holds the call for the app like any drop. Hanging up waits up to
+  4 seconds for the server's summary.
+- **The screen** (`src/components/voice/VoiceCallScreen.tsx`, cards in `src/components/voice/VoiceCallCards.tsx`): what the call is doing
+  (connecting, listening, the user speaking, thinking, speaking, waiting for consent, bringing the line back), an orb
+  that follows the voices, what was said as captions (on by default, can be hidden, never stored), the cards (a
+  figure with its period and what it leaves out, a draft with confirm and cancel buttons, guide steps with a button
+  to the screen, a price with its source and time), typing instead of speaking, mute, and hang up. A refused
+  microphone keeps the call going by text. The end screen lists what was done and what was not and how long the call
+  was; a call that cannot start says why and offers the chat. Admins also see a trace (round trip, first-audio
+  latency, reconnects, frames sent, noise floor, playback queue).
+- **After a confirmed draft** the app refreshes every query, so what the call recorded shows behind it at once.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -191,6 +245,11 @@ tRPC procedures as the user, so a spoken expense is parsed, saved and undone exa
 | Rebuilt call: the tools | `api/services/voice/brain/tools/`, and `api/services/voice/app-calls.ts` for the procedures they call | `api/services/voice/brain/tools/*.test.ts` |
 | Rebuilt call: the number check and the confirmation gate | `api/services/voice/brain/validator.ts`, `api/services/voice/brain/drafts.ts` | `api/services/voice/brain/validator.test.ts`, `api/services/voice/brain/drafts.test.ts` |
 | Messages between the app and the server | `contracts/voice-protocol.ts` | `tests/voice-protocol.test.ts` |
+| Rebuilt call: saying a waiting draft is done | `api/services/voice/brain/claims.ts` | `api/services/voice/brain/claims.test.ts` |
+| Rebuilt call in the app: when the user is speaking, and what is sent | `src/lib/voice/speech-detector.ts`, `src/lib/voice/downsampler.ts` | `src/lib/voice/speech-detector.test.ts`, `src/lib/voice/downsampler.test.ts` |
+| Rebuilt call in the app: the line, resuming a dropped call | `src/lib/voice/call-connection.ts` | `src/lib/voice/call-connection.test.ts` |
+| Rebuilt call in the app: what the screen shows, playback, mute, typing | `src/lib/voice/call-controller.ts`, `src/lib/voice/pcm-player.ts`, `src/components/voice/` | `src/lib/voice/call-controller.test.ts`, `src/lib/voice/pcm-player.test.ts` |
+| Who sees the ways into the rebuilt call | `src/components/voice/CallSmartButton.tsx`, `src/components/voice/VoiceCallTab.tsx` | |
 
 ## Rules for changes here
 1. The socket is authenticated only by the session: keep `authenticateUser` before anything that reads user data or
@@ -205,10 +264,15 @@ tRPC procedures as the user, so a spoken expense is parsed, saved and undone exa
 ## Tests
 The rebuilt call: `api/services/voice/gateway/gateway.test.ts` runs whole calls over a real socket against
 `tests/helpers/fake-gemini-live.ts` (a ticket, a tool call, captions, the end card, a ticket used twice, a dropped
-call resumed on its handle, a wrong resume token, the grace period, the time limit);
+call resumed on its handle, a wrong resume token, a socket gone silent, the grace period, the time limit, and
+"thinking" held from a tool call until the answer is spoken);
 `api/services/voice/engine/gemini-live.test.ts` (setup, key fallback, GoAway, reconnects); the tests in
 `api/services/voice/brain/` and `api/services/voice/brain/tools/`;
-`api/services/entitlements/voice.test.ts` and `tests/voice-protocol.test.ts`.
+`api/services/entitlements/voice.test.ts` and `tests/voice-protocol.test.ts`. In the app, `src/lib/voice/` tests the
+resampler (a 12 kHz hiss removed, blocks of any size), the speech detector (pre-roll, pauses, the two hangovers,
+the assistant's own voice, a noise that stays), playback, the line (resume with the latest token, giving up, a silent
+line, hanging up while connecting) and a whole call through the controller with a fake socket and fake audio. The
+microphone, the speaker and the screen are checked by hand in a browser.
 
 `api/services/voice-call-service.test.ts` (tool results, the tool budget, confirmation after the budget is spent),
 `api/services/voice-kernel/hot-context.test.ts`, `api/services/voice-kernel/voice-prefetch.test.ts`,
@@ -231,6 +295,11 @@ Checked against the code; each one names where it lives.
    the finance layer's cache.
 7. **Debt.** `api/services/voice-context-service.ts#getUserFinancialContextSummary` has no caller, and `ai.runVoiceToolQa` is
    used only by a development query parameter of the call screen.
+8. **Bug.** Where `api/boot.ts` serves the web app (the website and the PWA), the old call gets no microphone audio:
+   `src/hooks/useVoiceCall.ts` loads its AudioWorklet from a `blob:` URL, and the page's Content-Security-Policy
+   (`api/lib/security-headers.ts`, `script-src` without `blob:`) blocks it. The rebuilt call serves its worklet as a file.
+9. **Debt.** The old call screen shows its technical "Voice trace" panel to every user
+   (`src/components/ai/AIVoiceCall.tsx#VoiceTracePanel`); the rebuilt call shows its trace to admins only.
 
 ## Related systems
 - [AI Center](ai-center.md): the finance semantic layer, AI memory and action runtime the tools call, and the page

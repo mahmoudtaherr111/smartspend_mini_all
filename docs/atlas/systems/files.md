@@ -209,6 +209,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice-kernel/voice-session-state.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice-kernel/voice-tool-adapter.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/app-calls.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/claims.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/drafts.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/facts.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/honorific.ts` | [voice-calls](voice-calls.md) |
@@ -376,6 +377,11 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/ui/toggle-group.tsx` | [web-app](web-app.md) |
 | `src/components/ui/toggle.tsx` | [web-app](web-app.md) |
 | `src/components/ui/tooltip.tsx` | [web-app](web-app.md) |
+| `src/components/voice/CallSmartButton.tsx` | [voice-calls](voice-calls.md) |
+| `src/components/voice/VoiceCallCards.tsx` | [voice-calls](voice-calls.md) |
+| `src/components/voice/VoiceCallHost.tsx` | [voice-calls](voice-calls.md) |
+| `src/components/voice/VoiceCallScreen.tsx` | [voice-calls](voice-calls.md) |
+| `src/components/voice/VoiceCallTab.tsx` | [voice-calls](voice-calls.md) |
 | `src/hooks/use-mobile.ts` | [web-app](web-app.md) |
 | `src/hooks/useAdmin.ts` | [web-app](web-app.md) |
 | `src/hooks/useAds.ts` | [web-app](web-app.md) |
@@ -397,6 +403,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/hooks/useSwipeNavigation.ts` | [web-app](web-app.md) |
 | `src/hooks/useVirtualKeyboard.ts` | [web-app](web-app.md) |
 | `src/hooks/useVoiceCall.ts` | [voice-calls](voice-calls.md) |
+| `src/hooks/useVoiceCallEntry.ts` | [voice-calls](voice-calls.md) |
 | `src/lib/back-button-manager.ts` | [web-app](web-app.md) |
 | `src/lib/backButtonManager.ts` | [web-app](web-app.md) |
 | `src/lib/biometricAuth.ts` | [web-app](web-app.md) |
@@ -407,6 +414,13 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/lib/transactionDisplay.ts` | [web-app](web-app.md) |
 | `src/lib/turnstile-config.ts` | [web-app](web-app.md) |
 | `src/lib/utils.ts` | [web-app](web-app.md) |
+| `src/lib/voice/audio-io.ts` | [voice-calls](voice-calls.md) |
+| `src/lib/voice/call-connection.ts` | [voice-calls](voice-calls.md) |
+| `src/lib/voice/call-controller.ts` | [voice-calls](voice-calls.md) |
+| `src/lib/voice/call-store.ts` | [voice-calls](voice-calls.md) |
+| `src/lib/voice/downsampler.ts` | [voice-calls](voice-calls.md) |
+| `src/lib/voice/pcm-player.ts` | [voice-calls](voice-calls.md) |
+| `src/lib/voice/speech-detector.ts` | [voice-calls](voice-calls.md) |
 | `src/main.tsx` | [web-app](web-app.md) |
 | `src/pages/AICenter.tsx` | [ai-center](ai-center.md) |
 | `src/pages/Admin.tsx` | [admin](admin.md) |
