@@ -7,7 +7,7 @@ import { useHaptics } from "@/hooks/useHaptics";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const AIChatbot = lazy(() => import("@/components/ai/AIChatbot"));
-const AIVoiceCall = lazy(() => import("@/components/ai/AIVoiceCall"));
+const VoiceCallTab = lazy(() => import("@/components/voice/VoiceCallTab"));
 const AIMonthlyReport = lazy(() => import("@/components/ai/AIMonthlyReport"));
 
 type AITab = "chat" | "voice" | "report";
@@ -165,7 +165,7 @@ export default function AICenter() {
             aria-hidden={activeTab !== "voice"}
           >
             <Suspense fallback={<TabSkeleton />}>
-              <AIVoiceCall />
+              <VoiceCallTab />
             </Suspense>
           </div>
         )}

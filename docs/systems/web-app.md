@@ -12,7 +12,7 @@ public pages (landing, privacy, terms and the not-found page).
 | Piece | Where | What it does |
 | --- | --- | --- |
 | Entry | `src/main.tsx` | Mounts React, registers the service worker, consumes a launch event before the first render, and marks a standalone PWA |
-| Shell | `src/App.tsx` | The providers, the route table and its guards, the layout, the error boundary and the per-account query cache |
+| Shell | `src/App.tsx` | The providers, the route table and its guards, the layout, the error boundary, the per-account query cache, and, for signed-in users, the host of the live [voice call](voice-calls.md) (`src/components/voice/VoiceCallHost.tsx`), so a call keeps going, shrunk to a bar, on every page |
 | API client | `src/providers/trpc.ts` | The typed tRPC client, the Bearer header, cookies, form-draft preservation and what happens on a 401 |
 | Identity | `src/hooks/useAuth.ts` | The device's identity snapshot, the verified session, the role and plan helpers, and logout |
 | Offline cache | `src/lib/queryPersister.ts` | The answers kept in IndexedDB per account, and the identity snapshot |

@@ -82,9 +82,10 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 
 | Variable | Read by |
 | --- | --- |
+| `BASE_URL` | `src/lib/voice/audio-io.ts` |
 | `DEV` | `src/components/ai/AIChatbot.tsx`, `src/components/ai/AIVoiceCall.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/insights/AIInsights.tsx`, `src/main.tsx` |
 | `PROD` | `src/pwa/register-sw.ts` |
-| `VITE_API_URL` | `src/providers/trpc.ts` |
+| `VITE_API_URL` | `src/lib/voice/call-controller.ts`, `src/providers/trpc.ts` |
 | `VITE_FIREBASE_API_KEY` | `src/pwa/firebase.ts` |
 | `VITE_FIREBASE_APP_ID` | `src/pwa/firebase.ts` |
 | `VITE_FIREBASE_AUTH_DOMAIN` | `src/pwa/firebase.ts` |

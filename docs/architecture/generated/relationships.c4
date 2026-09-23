@@ -1094,13 +1094,17 @@ model {
   smartspend.web.modules.web-shell -[imports]-> smartspend.web.modules.web-pages
   smartspend.web.modules.web-shell -[imports]-> smartspend.web.modules.web-shared
   smartspend.web.modules.web-shell -[imports]-> smartspend.web.modules.web-ui-kit
+  smartspend.web.modules.web-shell -[imports]-> smartspend.web.modules.web-voice-call
   smartspend.web.modules.web-shell -[uses]-> capacitor
   smartspend.web.modules.web-shell -[uses]-> firebase
   smartspend.web.modules.web-ui-kit -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-ui-kit -[imports]-> smartspend.web.modules.web-lib
+  smartspend.web.modules.web-voice-call -[imports]-> smartspend.shared.contracts
   smartspend.web.modules.web-voice-call -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-voice-call -[imports]-> smartspend.web.modules.web-lib
+  smartspend.web.modules.web-voice-call -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-voice-call -[imports]-> smartspend.web.modules.web-ui-kit
+  smartspend.web.modules.web-voice-call -[uses]-> capacitor
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.ai.compareMonths
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.ai.generateMonthlyInsights
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.ai.getCachedMonthlyInsights
@@ -1119,6 +1123,7 @@ model {
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.export.monthlyReportHtml
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.localAuth.me
+  smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.voice.eligibility
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.addAiProvider
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.clearAllApiKeyErrors
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.createDiscountCode
@@ -1227,6 +1232,7 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.getSmartProfile
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.savePushSubscription
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.submitOnboardingAnswer
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.voice.eligibility
   smartspend.web.pages.Landing -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.auth.googleUrl
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.generateVerificationCode
@@ -1407,5 +1413,7 @@ model {
   smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.getSmartProfile
   smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.markInAppNotificationRead
   smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.sendBiometricPromptNotification
+  smartspend.web.shell -[calls]-> smartspend.api.trpc.voice.eligibility
+  smartspend.web.shell -[calls]-> smartspend.api.trpc.voice.listCalls
   smartspend.web.shell -[calls]-> smartspend.api.trpc.webauthn.checkHasPasskey
 }

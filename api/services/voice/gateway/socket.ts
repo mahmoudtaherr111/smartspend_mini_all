@@ -28,6 +28,8 @@ export interface VoiceSocketDeps {
   takeTicket(ticket: string): Promise<TicketPayload | null>;
   loadState(callId: string): Promise<StoredCall | null>;
   helloTimeoutMs?: number;
+  /** The app pings every 10 seconds; a socket silent for this long is dead even if TCP has not noticed. */
+  silenceLimitMs?: number;
 }
 
 const MAX_AUDIO_FRAME_BYTES = 16 * 1024;
@@ -147,8 +149,16 @@ export function createVoiceSocketHandler(deps: VoiceSocketDeps) {
     const helloTimer = setTimeout(() => {
       if (!session) refuse(channel, "protocol", "الاتصال ماكملش. جرب تاني.");
     }, deps.helloTimeoutMs ?? 5_000);
+    // A phone that lost its network leaves a socket that looks open; ending it here stops the meter and lets the
+    // call wait for the app to come back, as any dropped call does.
+    const silenceLimitMs = deps.silenceLimitMs ?? 45_000;
+    let lastFrameAt = Date.now();
+    const liveness = setInterval(() => {
+      if (Date.now() - lastFrameAt > silenceLimitMs) ws.terminate();
+    }, Math.min(15_000, Math.max(50, Math.floor(silenceLimitMs / 3))));
 
     ws.on("message", (data: Buffer, isBinary: boolean) => {
+      lastFrameAt = Date.now();
       if (isBinary) {
         if (!session || data.length > MAX_AUDIO_FRAME_BYTES) return;
         const now = Date.now();
@@ -187,6 +197,7 @@ export function createVoiceSocketHandler(deps: VoiceSocketDeps) {
 
     ws.on("close", () => {
       clearTimeout(helloTimer);
+      clearInterval(liveness);
       session?.detach(channel);
     });
     ws.on("error", () => undefined);

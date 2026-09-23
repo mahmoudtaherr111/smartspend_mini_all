@@ -29,7 +29,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `App shell` — `src/App.tsx`
 
-35 files in its import closure (not counting `src/components/ui/`).
+46 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -44,13 +44,15 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `profile.getSmartProfile` | useQuery | `src/hooks/useBiometricOnboarding.ts` |
 | `profile.markInAppNotificationRead` | useMutation | `src/components/NotificationBell.tsx` |
 | `profile.sendBiometricPromptNotification` | useMutation | `src/hooks/useBiometricOnboarding.ts` |
+| `voice.eligibility` | utils.invalidate | `src/components/voice/VoiceCallHost.tsx` |
+| `voice.listCalls` | utils.invalidate | `src/components/voice/VoiceCallHost.tsx` |
 | `webauthn.checkHasPasskey` | useQuery | `src/hooks/useBiometricOnboarding.ts` |
 
 ## Pages
 
 ### `AICenter` — `src/pages/AICenter.tsx`
 
-16 files in its import closure (not counting `src/components/ui/`).
+26 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -72,6 +74,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `export.monthlyReportHtml` | useMutation | `src/components/insights/AIInsights.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
+| `voice.eligibility` | useQuery | `src/hooks/useVoiceCallEntry.ts` |
 
 ### `Admin` — `src/pages/Admin.tsx`
 
@@ -176,7 +179,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-30 files in its import closure (not counting `src/components/ui/`).
+39 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -207,6 +210,7 @@ _None._
 | `profile.getSmartProfile` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/pages/Home.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | useMutation | `src/components/OnboardingCard.tsx` |
+| `voice.eligibility` | useQuery | `src/hooks/useVoiceCallEntry.ts` |
 
 ### `Landing` — `src/pages/Landing.tsx`
 

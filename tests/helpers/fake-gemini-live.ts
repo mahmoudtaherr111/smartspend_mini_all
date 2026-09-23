@@ -13,6 +13,7 @@ export interface LiveClientMessage {
     generationConfig?: { thinkingConfig?: { thinkingLevel?: string } };
     inputAudioTranscription?: object;
     outputAudioTranscription?: object;
+    realtimeInputConfig?: { automaticActivityDetection?: { silenceDurationMs?: number } };
     sessionResumption?: { handle?: string };
     contextWindowCompression?: object;
     tools?: Array<{ functionDeclarations: Array<{ name: string; behavior?: string }> }>;

@@ -103,6 +103,7 @@ describe("the /api/voice/v2 socket", () => {
   let server: Server;
   let url: string;
   let graceMs = 2_000;
+  let silenceMs = 45_000;
 
   beforeEach(async () => {
     tickets.clear();
@@ -113,6 +114,7 @@ describe("the /api/voice/v2 socket", () => {
     rows.finals = [];
     rows.incidents = [];
     graceMs = 2_000;
+    silenceMs = 45_000;
     fake = await FakeGeminiLive.start();
     const sessionDeps = (): CallSessionDeps => ({
       createEngine: () => new GeminiLiveEngine({ apiKeys: ["test-key"], url: fake.url }),
@@ -133,6 +135,9 @@ describe("the /api/voice/v2 socket", () => {
         return found;
       },
       loadState: async (callId) => states.get(callId) ?? null,
+      get silenceLimitMs() {
+        return silenceMs;
+      },
     });
     server = createServer();
     const wss = new WebSocketServer({ server });
@@ -195,6 +200,24 @@ describe("the /api/voice/v2 socket", () => {
     expect(states.has(p.callId)).toBe(false);
   });
 
+  it("stays on thinking from a tool call until the answer is spoken", async () => {
+    const { app, live } = await startCall();
+    await live.waitFor((m) => m.clientContent?.turns?.[0]?.parts?.[0]?.text === "[greet]");
+    const states = () => app.messages.flatMap((m) => (m.type === "state" ? [m.state] : []));
+    const before = states().length;
+    app.send({ type: "text", text: "صرفت كام؟" });
+    live.sendToolCall([{ id: "t9", name: "money_query", args: {} }]);
+    // The model's turn ends with the call; that is not the call listening again.
+    live.sendTurnComplete();
+    await live.waitFor((m) => Boolean(m.toolResponse));
+    live.sendAudio(Buffer.from([1, 2]));
+    live.sendTurnComplete();
+    await until(() => states().slice(before).includes("listening") || undefined);
+    expect(states().slice(before)).toEqual(["thinking", "speaking", "listening"]);
+    app.send({ type: "end" });
+    await app.waitFor("ended");
+  });
+
   it("refuses a ticket used twice", async () => {
     const p = payload();
     tickets.set("tk_once_only_0001", p);
@@ -239,6 +262,15 @@ describe("the /api/voice/v2 socket", () => {
     const intruder = await AppClient.connect(url);
     intruder.send({ type: "hello", v: 2, resume: { callId: ready.callId, token: "rt_not_the_right_token" }, codecs: ["pcm16"], client: "web" });
     expect((await intruder.waitFor("error")).code).toBe("ticket");
+  });
+
+  it("lets go of a socket that went silent, and keeps the call for the app to come back", async () => {
+    silenceMs = 300;
+    const { app, ready } = await startCall();
+    await until(() => app.closed);
+    await until(() => rows.checkpoints.some((c) => c.status === "reconnecting"));
+    expect(states.has(ready.callId)).toBe(true);
+    expect(rows.finals).toHaveLength(0);
   });
 
   it("ends a dropped call for the network when nobody comes back", async () => {

@@ -71,6 +71,7 @@ flowchart LR
   mod_web_shell --> mod_web_shared
   mod_web_shell --> mod_web_ui_kit
   mod_web_shell --> sys_accounts
+  mod_web_shell --> sys_voice_calls
   mod_web_ui_kit --> mod_web_hooks
   mod_web_ui_kit --> mod_web_lib
 ```
