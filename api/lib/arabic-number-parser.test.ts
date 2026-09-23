@@ -76,6 +76,25 @@ describe("spoken numbers", () => {
     expect(amounts("الفين وخمسمية")).toEqual([2500]);
   });
 
+  it("reads one as the unit of a tens compound", () => {
+    // "واحد" is not in the lexicon, so "واحد وخمسين" used to come out as 50.
+    expect(amounts("دفعت واحد وخمسين جنيه")).toEqual([51]);
+    expect(amounts("واحد وعشرين الف")).toEqual([21000]);
+    expect(amounts("ميتين وواحد وتلاتين")).toEqual([231]);
+    expect(amounts("واحد و تسعين جنيه")).toEqual([91]);
+  });
+
+  it("reads a joined one that closes an amount", () => {
+    expect(amounts("دفعت مية وواحد جنيه")).toEqual([101]);
+    expect(amounts("الحساب كان ألف وواحد")).toEqual([1001]);
+  });
+
+  it("does not read one as a number outside a compound", () => {
+    expect(amounts("اديت واحد صاحبي 200")).toEqual([200]);
+    expect(amounts("جبت واحد بيبسي بعشرة")).toEqual([10]);
+    expect(amounts("دفعت مية وواحد صاحبي دفع الباقي")).toEqual([100]);
+  });
+
   it("reads slang units", () => {
     // باكو = 1000, أرنب = 1,000,000 — money slang, not vocabulary a general model knows.
     expect(amounts("صرفت باكو على الأكل")).toEqual([1000]);

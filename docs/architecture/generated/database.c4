@@ -427,6 +427,22 @@ model {
         storageClass 'A'
       }
     }
+    voice_call_incidents = table 'voice_call_incidents' {
+      #classE #dualOwner
+      description '7 columns, 3 indexes, storage class E.'
+      metadata {
+        export 'voiceCallIncidents'
+        storageClass 'E'
+      }
+    }
+    voice_calls = table 'voice_calls' {
+      #classE #dualOwner
+      description '25 columns, 3 indexes, storage class E.'
+      metadata {
+        export 'voiceCalls'
+        storageClass 'E'
+      }
+    }
     voice_usage = table 'voice_usage' {
       #classE #dualOwner
       description '7 columns, 1 indexes, storage class E.'

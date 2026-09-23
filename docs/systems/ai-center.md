@@ -137,7 +137,11 @@ the finance caches are cleared.
 
 ## The finance semantic layer
 - Periods (`api/services/finance-semantic-layer/period-resolver.ts#resolveFinancePeriod`): today, yesterday, this
-  week, this month or salary cycle (from the salary day in the profile), last month, or custom dates.
+  week, this month or salary cycle (from the salary day in the profile), last month, or custom dates. They are Cairo
+  business days (`api/lib/app-time.ts`, golden rule 6) whatever timezone the server runs in: the calendar arithmetic
+  happens on business days and only the boundaries become instants, and a custom "YYYY-MM-DD" is read as that
+  business day. Chart buckets (`api/services/finance-semantic-layer/row-aggregators.ts`) and the dates of
+  transactions in facts (`api/services/finance-semantic-layer/resolvers.ts`) use the same business day.
 - Categories are matched through the category registry (`api/services/finance-semantic-layer/category-matcher.ts`).
 - Results are cached per user (`api/services/finance-semantic-layer/cache.ts#withFinanceCache`): a minute for today,
   ten minutes for yesterday, an hour otherwise, a minute for wallet balances and five minutes for goals and the
@@ -190,20 +194,18 @@ Checked against the code; each one names where it lives.
    metadata, but reads it from `requireOwnedConversation`, which selects only the id, so the state is never found and
    the reply is planned as a new message.
 2. **Bug.** A pending action expires 30 minutes after it is drafted plus the server's offset from UTC.
-3. **Bug.** Finance periods are computed with the server's local date functions in
-   `api/services/finance-semantic-layer/period-resolver.ts`, not with `api/lib/app-time.ts` (golden rule 6).
-4. **Gap.** No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the
+3. **Gap.** No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the
    chat. The model id skips `mapModelName` (golden rule 9), the `chatbot_max_tokens_<plan>` settings are read but do
    not limit replies, and the retry time in the daily-limit error is counted to the server's midnight.
-5. **Gap.** Memory embeddings stay off unless `ai_memory_embedding_enabled` is set to `true`, a key
+4. **Gap.** Memory embeddings stay off unless `ai_memory_embedding_enabled` is set to `true`, a key
    `api/lib/system-settings-registry.ts` does not list. The Qdrant, quantized on-disk and in-memory vector stores
    exported by `api/services/ai-memory/index.ts` are used only by tests.
-6. **Bug.** An expense recorded by an action does not clear the classification cache or check budget alerts, as
+5. **Bug.** An expense recorded by an action does not clear the classification cache or check budget alerts, as
    `expense.create` does.
-7. **Bug.** Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in
+6. **Bug.** Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in
    `api/services/action-runtime/extended-actions.ts` leaves them out, so the undo code for them is never reached.
-8. **Bug.** When the kernel throws, the user sees the same message as when an operator turned the assistant off.
-9. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
+7. **Bug.** When the kernel throws, the user sees the same message as when an operator turned the assistant off.
+8. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
 
 ## Related systems
 - [Live voice assistant](voice-calls.md): uses the finance layer, memory and action runtime from a call.

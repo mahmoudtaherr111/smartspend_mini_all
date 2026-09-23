@@ -8,6 +8,7 @@ import type {
   ResolvedFinancePeriod,
 } from "./types";
 import { canonicalCategoryForRow, displayFinanceCategory } from "./category-matcher";
+import { businessDateKey } from "../../lib/app-time";
 
 export interface FinanceRowLike {
   id?: number | null;
@@ -27,19 +28,36 @@ export function amountOf(row: FinanceRowLike): number {
   return Number.isFinite(value) ? value : 0;
 }
 
-function dateKey(value: Date | string | null | undefined, granularity: FinanceGranularity): string {
+/**
+ * The business calendar day (Cairo, golden rule 6) of a stored instant, as a UTC-midnight value used only
+ * for calendar arithmetic. A bare "YYYY-MM-DD" is already a calendar day.
+ */
+function businessCalendarDate(value: Date | string | null | undefined): Date | null {
+  if (typeof value === "string") {
+    const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  }
   const date = value instanceof Date ? value : new Date(value ?? 0);
-  if (Number.isNaN(date.getTime())) return "unknown";
+  if (Number.isNaN(date.getTime())) return null;
+  const [year, month, day] = businessDateKey(date).split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
 
-  if (granularity === "month") return date.toISOString().slice(0, 7);
+function calendarKey(calendar: Date, granularity: FinanceGranularity): string {
+  if (granularity === "month") return calendar.toISOString().slice(0, 7);
   if (granularity === "week") {
-    const start = new Date(date);
-    const day = start.getDay();
+    const start = new Date(calendar);
+    const day = start.getUTCDay();
     const offset = day === 0 ? -6 : 1 - day;
-    start.setDate(start.getDate() + offset);
+    start.setUTCDate(start.getUTCDate() + offset);
     return start.toISOString().slice(0, 10);
   }
-  return date.toISOString().slice(0, 10);
+  return calendar.toISOString().slice(0, 10);
+}
+
+function dateKey(value: Date | string | null | undefined, granularity: FinanceGranularity): string {
+  const calendar = businessCalendarDate(value);
+  return calendar ? calendarKey(calendar, granularity) : "unknown";
 }
 
 function isTimeGranularity(granularity: FinanceGranularity): boolean {
@@ -47,7 +65,7 @@ function isTimeGranularity(granularity: FinanceGranularity): boolean {
 }
 
 function startOfTimeBucket(date: Date, granularity: FinanceGranularity): Date {
-  const bucket = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const bucket = businessCalendarDate(date) ?? new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
   if (granularity === "month") {
     bucket.setUTCDate(1);
   } else if (granularity === "week") {
@@ -75,10 +93,10 @@ function timeBucketLabels(
 
   const labels: string[] = [];
   let cursor = startOfTimeBucket(period.startDate, granularity);
-  const end = period.endDate;
+  const end = businessCalendarDate(period.endDate) ?? period.endDate;
 
   while (cursor <= end && labels.length < 366) {
-    labels.push(dateKey(cursor, granularity));
+    labels.push(calendarKey(cursor, granularity));
     cursor = addTimeBucket(cursor, granularity);
   }
 

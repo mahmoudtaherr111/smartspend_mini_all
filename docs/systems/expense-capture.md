@@ -75,6 +75,10 @@ aside for the full path.
 ### 5. The local classifier, per event
 For each admitted event:
 1. `api/lib/rule-engine.ts#runRuleEngine` finds each amount and classifies the words around it (layers below).
+   Spoken and written amounts become digits in one place, `api/lib/arabic-number-parser.ts#parseArabicNumbers`:
+   Egyptian teens and hundreds ("خمستاشر", "خمسميت"), halves ("ألفين ونص") and Arabic-Indic digits. "واحد" is a
+   number only inside a tens compound ("واحد وخمسين" is 51) or when it closes an amount ("مية وواحد جنيه" is 101), so
+   "واحد صاحبي" stays a person.
 2. Named people are resolved (`api/lib/smart-pipeline.ts#applyPersonResolution`,
    `api/lib/person-resolver.ts#resolvePersonForTransaction`). One amount with several named people is split
    between them unless they are joined by "أو". An unknown person makes the result `clarify` with "مين …؟".
@@ -210,6 +214,7 @@ expense with source `image`, without a review step. The form offers the camera o
 | To change | Edit | Check with |
 | --- | --- | --- |
 | How a sentence splits into events, or what counts as planned, negated or a question | `api/lib/financial-event-plan.ts`, `api/lib/negation-detector.ts`, `api/lib/narrative-decomposer.ts` | the benchmark below |
+| How a spoken or written amount becomes a number | `api/lib/arabic-number-parser.ts` | `api/lib/arabic-number-parser.test.ts`, the benchmark |
 | Words, merchants and phrases that map to categories | `api/lib/rule-engine.ts` (merchant registry, subcategory map), `api/lib/egyptian-dictionary.ts`, `api/lib/taxonomy-adapter.ts` | the benchmark |
 | The categories and their aliases | `api/lib/category-registry.ts#CATEGORIES` | `api/lib/category-registry.integrity.test.ts`, the benchmark |
 | When the model is asked; save, review or ask | `api/lib/classification-decision.ts`, `api/lib/final-acceptance.ts`, the threshold settings | `npm run bench:classify:compare` |

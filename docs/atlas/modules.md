@@ -14,14 +14,14 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
 | `platform` | Platform services | 10 | `database` | `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice` | `mysql` |
-| `contracts` | Shared contracts | 4 | — | `api-core`, `api-routers`, `billing`, `web-capture` | — |
+| `contracts` | Shared contracts | 5 | — | `api-core`, `api-routers`, `billing`, `web-capture` | — |
 | `billing` | Billing | 2 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
 | `ledger` | Ledger aggregates | 2 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `jobs` | — |
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
 | `jobs` | Scheduled job bodies | 5 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `database`, `platform` | `api-core`, `api-routers` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
-| `voice` | Voice | 10 | `ai-actions`, `ai-governance`, `ai-kernel`, `ai-memory`, `auth`, `database`, `finance-semantic-layer`, `platform` | `api-core`, `api-routers` | `gemini` |
+| `voice` | Voice | 12 | `ai-actions`, `ai-governance`, `ai-kernel`, `ai-memory`, `auth`, `database`, `finance-semantic-layer`, `platform` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 13 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs`, `voice` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `receipt-parsing` | — |
@@ -188,6 +188,7 @@ Types, limits and billing plans shared by the web app and the API.
 | `contracts/errors.ts` | — | — | — | — |
 | `contracts/plans.ts` | — | — | — | — |
 | `contracts/types.ts` | — | — | — | — |
+| `contracts/voice-protocol.ts` | — | — | — | — |
 
 ### `billing` — Billing
 
@@ -213,7 +214,7 @@ Account deletion: purgeUserData removes every row a user owns, inside the caller
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/services/user-purge-service.ts` | `database` | — | `chat_conversations`, `expenses`, `user_businesses` | `ad_clicks`, `ai_action_audit_logs`, `ai_action_memory`, `ai_conversation_summaries`, `ai_cost_monthly`, `ai_memory_embeddings`, `ai_memory_items`, `ai_pending_actions`, `ai_summaries`, `ai_token_ledgers`, `auth_challenges`, `business_categories`, `chat_conversations`, `chat_messages`, `classification_logs`, `expense_categories`, `expense_daily_rollups`, `expense_details`, `expenses`, `financial_goals`, `in_app_notifications`, `local_users`, `monthly_behavior_snapshots`, `monthly_reports`, `notification_logs`, `pending_clarifications`, `pro_subscriptions`, `profile_learning_events`, `push_subscriptions`, `raw_sms_events`, `referrals`, `sessions`, `support_tickets`, `user_analytics`, `user_budgets`, `user_businesses`, `user_contacts`, `user_correction_rules`, `user_credentials`, `user_dictionaries`, `user_profiles`, `user_wallets`, `users`, `voice_usage`, `webhook_tokens` |
+| `api/services/user-purge-service.ts` | `database` | — | `chat_conversations`, `expenses`, `user_businesses` | `ad_clicks`, `ai_action_audit_logs`, `ai_action_memory`, `ai_conversation_summaries`, `ai_cost_monthly`, `ai_memory_embeddings`, `ai_memory_items`, `ai_pending_actions`, `ai_summaries`, `ai_token_ledgers`, `auth_challenges`, `business_categories`, `chat_conversations`, `chat_messages`, `classification_logs`, `expense_categories`, `expense_daily_rollups`, `expense_details`, `expenses`, `financial_goals`, `in_app_notifications`, `local_users`, `monthly_behavior_snapshots`, `monthly_reports`, `notification_logs`, `pending_clarifications`, `pro_subscriptions`, `profile_learning_events`, `push_subscriptions`, `raw_sms_events`, `referrals`, `sessions`, `support_tickets`, `user_analytics`, `user_budgets`, `user_businesses`, `user_contacts`, `user_correction_rules`, `user_credentials`, `user_dictionaries`, `user_profiles`, `user_wallets`, `users`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `webhook_tokens` |
 
 ### `jobs` — Scheduled job bodies
 
@@ -221,7 +222,7 @@ Job implementations scheduled from api/boot.ts.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_usage` |
+| `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
 | `api/jobs/monthly-behavior-job.ts` | `api-routers`, `database` | — | `expenses`, `user_profiles` | — |
 | `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
 | `api/jobs/rollup-reconciliation-job.ts` | `database`, `ledger`, `platform` | — | `expense_daily_rollups`, `expenses` | — |
@@ -247,10 +248,11 @@ Baileys WhatsApp client and the in-process OTP state it verifies against.
 
 ### `voice` — Voice
 
-Live voice calls: a WebSocket bridged to the Gemini Live API, with session checks, voice quotas, tools that draft actions, the financial context for the call and the call archive.
+Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
+| `api/services/entitlements/voice.ts` | `database`, `platform` | — | `voice_calls`, `voice_usage` | — |
 | `api/services/voice-call-service.ts` | `ai-governance`, `ai-kernel`, `auth`, `database`, `platform` | `gemini` | `local_users`, `users`, `voice_usage` | `api_key_errors`, `voice_usage` |
 | `api/services/voice-context-service.ts` | `database` | — | `expenses`, `financial_goals`, `user_profiles`, `user_wallets` | — |
 | `api/services/voice-kernel/hot-context.ts` | `database`, `finance-semantic-layer` | — | `ai_action_memory`, `ai_conversation_summaries`, `ai_memory_items` | — |
@@ -261,6 +263,7 @@ Live voice calls: a WebSocket bridged to the Gemini Live API, with session check
 | `api/services/voice-kernel/voice-prompt.ts` | — | — | — | — |
 | `api/services/voice-kernel/voice-session-state.ts` | `platform` | — | — | — |
 | `api/services/voice-kernel/voice-tool-adapter.ts` | `ai-actions`, `ai-kernel`, `ai-memory`, `finance-semantic-layer` | — | — | — |
+| `api/services/voice/brain/spoken.ts` | — | — | — | — |
 
 ### `ai-providers` — AI provider access
 
@@ -437,10 +440,10 @@ Answers factual finance questions from the ledger: period resolution, category m
 | `api/services/finance-semantic-layer/chart-artifacts.ts` | — | — | — | — |
 | `api/services/finance-semantic-layer/index.ts` | — | — | — | — |
 | `api/services/finance-semantic-layer/monthly-report-facts.ts` | `database` | — | `monthly_behavior_snapshots` | — |
-| `api/services/finance-semantic-layer/period-resolver.ts` | — | — | — | — |
+| `api/services/finance-semantic-layer/period-resolver.ts` | `platform` | — | — | — |
 | `api/services/finance-semantic-layer/proactive-insights.ts` | `database` | — | `monthly_behavior_snapshots` | — |
-| `api/services/finance-semantic-layer/resolvers.ts` | `database` | — | `classification_logs`, `expenses`, `financial_goals`, `user_contacts`, `user_profiles`, `user_wallets` | — |
-| `api/services/finance-semantic-layer/row-aggregators.ts` | — | — | — | — |
+| `api/services/finance-semantic-layer/resolvers.ts` | `database`, `platform` | — | `classification_logs`, `expenses`, `financial_goals`, `user_contacts`, `user_profiles`, `user_wallets` | — |
+| `api/services/finance-semantic-layer/row-aggregators.ts` | `platform` | — | — | — |
 | `api/services/finance-semantic-layer/types.ts` | — | — | — | — |
 
 ### `site-guide` — Site guide

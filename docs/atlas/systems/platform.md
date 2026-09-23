@@ -77,6 +77,8 @@ flowchart LR
     tbl_user_profiles[("user_profiles")]
     tbl_user_wallets[("user_wallets")]
     tbl_users[("users")]
+    tbl_voice_call_incidents[("voice_call_incidents")]
+    tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
     tbl_webhook_tokens[("webhook_tokens")]
   end
@@ -210,6 +212,8 @@ flowchart LR
   mod_jobs ==> tbl_pro_subscriptions
   mod_jobs ==> tbl_profile_learning_events
   mod_jobs ==> tbl_user_analytics
+  mod_jobs ==> tbl_voice_call_incidents
+  mod_jobs ==> tbl_voice_calls
   mod_jobs ==> tbl_voice_usage
   mod_platform --> ext_redis
   mod_platform --> ext_sentry
@@ -224,7 +228,7 @@ flowchart LR
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
 | `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 23 |
-| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 4 |
+| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 5 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 5 |
 | `platform` — Platform services | Environment validation, Redis client and cache keys, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 10 |
@@ -298,6 +302,8 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_profiles` | A | `api-routers` | `api-routers`, `jobs` |
 | `user_wallets` | A | `api-routers` | `api-routers` |
 | `users` | A | `api-routers` | `api-core`, `api-routers`, `jobs` |
+| `voice_call_incidents` | E | `jobs` | — |
+| `voice_calls` | E | `jobs` | — |
 | `voice_usage` | E | `api-routers`, `jobs` | `api-routers` |
 | `webhook_tokens` | D | `api-routers` | `api-routers` |
 
@@ -370,7 +376,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>33 files and declarations</summary>
+<details><summary>34 files and declarations</summary>
 
 - `api/boot.ts#ALL /api/trpc/*`
 - `api/boot.ts#GET /health`
@@ -401,6 +407,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `contracts/errors.ts`
 - `contracts/plans.ts`
 - `contracts/types.ts`
+- `contracts/voice-protocol.ts`
 - `db/relations.ts`
 - `db/schema.ts`
 - `db/seed.ts`

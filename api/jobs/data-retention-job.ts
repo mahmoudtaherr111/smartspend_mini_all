@@ -205,6 +205,20 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
     description: "Raw voice call duration records.",
   },
   {
+    tableName: "voice_calls",
+    class: "E",
+    retainDays: 365,
+    dateColumn: "started_at",
+    description: "Live voice calls: billed seconds and provider cost per call (no words).",
+  },
+  {
+    tableName: "voice_call_incidents",
+    class: "E",
+    retainDays: 90,
+    dateColumn: "created_at",
+    description: "Structured quality incidents of live voice calls (no words).",
+  },
+  {
     tableName: "ai_action_audit_logs",
     class: "E",
     retainDays: 365,

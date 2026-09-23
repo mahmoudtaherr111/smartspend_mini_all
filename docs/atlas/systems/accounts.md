@@ -81,6 +81,8 @@ flowchart LR
     tbl_user_profiles[("user_profiles")]
     tbl_user_wallets[("user_wallets")]
     tbl_users[("users")]
+    tbl_voice_call_incidents[("voice_call_incidents")]
+    tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
     tbl_webhook_tokens[("webhook_tokens")]
     tbl_whatsapp_otp_codes[("whatsapp_otp_codes")]
@@ -139,6 +141,8 @@ flowchart LR
   mod_accounts ==> tbl_user_profiles
   mod_accounts ==> tbl_user_wallets
   mod_accounts ==> tbl_users
+  mod_accounts ==> tbl_voice_call_incidents
+  mod_accounts ==> tbl_voice_calls
   mod_accounts ==> tbl_voice_usage
   mod_accounts ==> tbl_webhook_tokens
   mod_auth --> mod_security
@@ -305,6 +309,8 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_profiles` | A | `accounts`, `profile.updateProfile` | `profile.getMyProfile` |
 | `user_wallets` | A | `accounts` | `security` |
 | `users` | A | `accounts`, `auth`, `auth.googleCallback`, `profile.updateUserInfo` | `auth.googleCallback`, `auth.me`, `webauthn.generateRegistrationOptions` |
+| `voice_call_incidents` | E | `accounts` | — |
+| `voice_calls` | E | `accounts` | — |
 | `voice_usage` | E | `accounts` | — |
 | `webhook_tokens` | D | `accounts` | — |
 | `whatsapp_otp_codes` | D | `auth` | `auth` |

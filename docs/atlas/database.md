@@ -16,7 +16,7 @@ Foreign-key constraints declared in the schema: **0**. Every relationship below 
 | `B` | Core Ledger | Forever | MySQL; narrow hot table; covering indexes; never auto-deleted | 2 |
 | `C` | Derived / Rollup | Forever (cheap) | MySQL; tiny; rebuildable from B at any time | 8 |
 | `D` | Operational / Ephemeral | Minutes -> days | Redis primary, MySQL as durable fallback/audit | 7 |
-| `E` | Telemetry / Logs | 30–365 days | MySQL; chunk-pruned on a schedule, rolled up before deletion | 10 |
+| `E` | Telemetry / Logs | 30–365 days | MySQL; chunk-pruned on a schedule, rolled up before deletion | 12 |
 | `F` | AI Memory | Forever (items), rebuildable (vectors) | Text/metadata in MySQL; vectors in vector store or quantized binary | 6 |
 | `G` | Conversation | 90 days raw | MySQL raw for a window, then summarized and pruned | 2 |
 
@@ -103,7 +103,9 @@ Classification logs, token ledgers, analytics, notification logs
 | `profile_learning_events` | `profileLearningEvents` | 9 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/services/user-profile-service.ts` | `api/jobs/data-retention-job.ts`, `api/services/user-profile-service.ts`, `api/services/user-purge-service.ts` |
 | `raw_sms_events` | `rawSmsEvents` | 9 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/profile-router.ts`, `api/sms-router.ts` | `api/services/user-purge-service.ts`, `api/sms-router.ts` |
 | `user_analytics` | `userAnalytics` | 6 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/analytics-router.ts`, `api/lib/ai-usage-policy.ts`, `api/services/ai-cost-analytics.ts` | `api/analytics-router.ts`, `api/jobs/data-retention-job.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/subscription-service.ts`, `api/services/user-purge-service.ts`, `api/session-router.ts` |
-| `voice_usage` | `voiceUsage` | 7 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/ai-router.ts`, `api/services/voice-call-service.ts` | `api/ai-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts`, `api/services/voice-call-service.ts` |
+| `voice_call_incidents` | `voiceCallIncidents` | 7 | 3 | `user_id` + `user_type` | `call → voice_calls`, `localUser → local_users`, `oauthUser → users` | — | `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts` |
+| `voice_calls` | `voiceCalls` | 25 | 3 | `user_id` + `user_type` | `incidents → voice_call_incidents`, `localUser → local_users`, `oauthUser → users` | `api/services/entitlements/voice.ts` | `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts` |
+| `voice_usage` | `voiceUsage` | 7 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/ai-router.ts`, `api/services/entitlements/voice.ts`, `api/services/voice-call-service.ts` | `api/ai-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts`, `api/services/voice-call-service.ts` |
 
 ### Class F — AI Memory
 
@@ -330,6 +332,12 @@ chat_messages and conversation threads
 | `users` | `voiceUsage` | many | `voice_usage` | — |
 | `users` | `wallets` | many | `user_wallets` | — |
 | `users` | `webhookTokens` | many | `webhook_tokens` | — |
+| `voice_call_incidents` | `call` | one | `voice_calls` | `call_id` |
+| `voice_call_incidents` | `localUser` | one | `local_users` | `user_id` |
+| `voice_call_incidents` | `oauthUser` | one | `users` | `user_id` |
+| `voice_calls` | `incidents` | many | `voice_call_incidents` | — |
+| `voice_calls` | `localUser` | one | `local_users` | `user_id` |
+| `voice_calls` | `oauthUser` | one | `users` | `user_id` |
 | `voice_usage` | `localUser` | one | `local_users` | `user_id` |
 | `voice_usage` | `oauthUser` | one | `users` | `user_id` |
 | `webhook_tokens` | `localUser` | one | `local_users` | `user_id` |
@@ -341,5 +349,5 @@ chat_messages and conversation threads
 | --- | --- |
 | No relations in db/relations.ts | `ad_stats_daily`, `ai_cost_monthly`, `expense_daily_rollups`, `expense_details`, `onboarding_questions`, `seo_pages`, `system_settings`, `whatsapp_otp_codes` |
 | Not read or written by any runtime file | — |
-| Written but never read by runtime code | `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `expense_details` |
+| Written but never read by runtime code | `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `expense_details`, `voice_call_incidents` |
 | Read but never written by runtime code | `onboarding_questions` |

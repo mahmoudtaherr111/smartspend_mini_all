@@ -25,7 +25,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 | Job lock | `api/services/scheduler-lock.ts` | A MySQL advisory lock so a job registered on every replica runs on one |
 | Retention | `api/jobs/data-retention-job.ts` | Rolls up and prunes telemetry, conversation and ephemeral tables |
 | File storage | `api/services/storage/` | One driver interface over local disk or S3-compatible storage, plus the avatar service |
-| Shared contracts | `contracts/` | Input limits, plan prices and shared types the web app imports |
+| Shared contracts | `contracts/` | Input limits, plan prices, the live call's wire protocol (`contracts/voice-protocol.ts`) and shared types the web app imports |
 | Error log | `api/lib/error-logger.ts` | Classifies provider errors and records them in `api_key_errors` for the admin console |
 | Logging | `api/lib/log.ts` | The server logger. It redacts the fields that carry message text, codes, tokens and phone numbers (`text`, `body`, `code`, `token`, `phone` and others, three levels deep; a phone keeps its last four digits), and writes an error with its codes and statement but without the values of a failed query |
 | Error reporting | `api/lib/error-reporting.ts` | Sentry, when `SENTRY_DSN` is set, under the same rule: console breadcrumbs are dropped, query strings, request bodies, cookies and credentials are removed, and a failed query's values are cut before an event leaves |
@@ -57,8 +57,8 @@ storage, the contracts shared with the web app, and the retention job that prune
   from A (identity and configuration) to G (conversations), and `tests/table-classes.test.ts` fails when a new
   table has none.
 - The retention job runs daily at 05:00 and walks the declared policies: user analytics after thirty days,
-  classification logs, token ledgers, notification logs, ad clicks and voice usage after ninety, the action
-  audit trail after a year, chat messages after ninety days once the conversation has a summary, and expired
+  classification logs, token ledgers, notification logs, ad clicks, voice usage and live-call incidents after
+  ninety, the action audit trail and live voice calls after a year, chat messages after ninety days once the conversation has a summary, and expired
   challenges and pending actions in between. Token ledgers and ad clicks are rolled up into `ai_cost_monthly`
   and `ad_stats_daily` before the rows go, and deletes run in chunks with a pause between them.
 
@@ -121,12 +121,18 @@ Checked against the code; each one names where it lives.
 5. **Bug.** `user_analytics` is pruned after thirty days, which also drops the upgrade events the founder metrics count
    and the AI cost events the cost overview reads ([admin](admin.md)).
 6. **Debt.** `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
-7. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
+7. **Bug.** Migrations do not create everything `db/schema.ts` declares. `0021_storage_lifecycle_overhaul.sql` was
+   written by hand without a snapshot; `db/migrations/meta/0022_snapshot.json` records 0021's tables but not what no
+   migration applies: the unique index `pro_sub_transaction_unique_idx` on `pro_subscriptions.transaction_id` and
+   the `sessions` changes (`token` nullable without `sessions_token_idx`, `token_hash` as `varchar(64)`, where 0021
+   made it `binary(32)`). The next `npm run db:generate` emits them; until a migration does, a database built from
+   migrations has no unique index on the Paymob transaction id.
+8. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
    update can silently turn into zeroes.
-8. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
+9. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
    entry and `NODE_ENV=production`; `api/server.ts` repeats the WebSocket wiring for the standalone
    deployment, and the two copies have to be kept in step by hand.
-9. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
+10. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
    they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that
    print `error.message` as text print provider, socket and storage errors today, or failed reads whose values
    are ids and dates (`api/ai-router.ts`, `api/services/voice-call-service.ts`,

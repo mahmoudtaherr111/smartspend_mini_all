@@ -27,6 +27,8 @@ import {
   monthlyBehaviorSnapshots,
   userDictionaries,
   voiceUsage,
+  voiceCalls,
+  voiceCallIncidents,
   webhookTokens,
   userBudgets,
   rawSmsEvents,
@@ -321,6 +323,18 @@ export const userDictionariesRelations = relations(userDictionaries, ({ one }) =
 export const voiceUsageRelations = relations(voiceUsage, ({ one }) => ({
   localUser: one(localUsers, { fields: [voiceUsage.userId], references: [localUsers.id] }),
   oauthUser: one(users, { fields: [voiceUsage.userId], references: [users.id] }),
+}));
+
+export const voiceCallsRelations = relations(voiceCalls, ({ one, many }) => ({
+  localUser: one(localUsers, { fields: [voiceCalls.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [voiceCalls.userId], references: [users.id] }),
+  incidents: many(voiceCallIncidents),
+}));
+
+export const voiceCallIncidentsRelations = relations(voiceCallIncidents, ({ one }) => ({
+  localUser: one(localUsers, { fields: [voiceCallIncidents.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [voiceCallIncidents.userId], references: [users.id] }),
+  call: one(voiceCalls, { fields: [voiceCallIncidents.callId], references: [voiceCalls.id] }),
 }));
 
 export const webhookTokensRelations = relations(webhookTokens, ({ one }) => ({

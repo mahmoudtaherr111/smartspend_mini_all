@@ -45,6 +45,8 @@ import {
   userWallets,
   users,
   voiceUsage,
+  voiceCalls,
+  voiceCallIncidents,
   webhookTokens,
 } from "../../db/schema";
 
@@ -126,6 +128,8 @@ export async function purgeUserData(tx: any, userId: number, userType: PurgeUser
   await tx.delete(userDictionaries).where(userScope(userDictionaries, userId, userType));
   await tx.delete(classificationLogs).where(userScope(classificationLogs, userId, userType));
   await tx.delete(voiceUsage).where(userScope(voiceUsage, userId, userType));
+  await tx.delete(voiceCallIncidents).where(userScope(voiceCallIncidents, userId, userType));
+  await tx.delete(voiceCalls).where(userScope(voiceCalls, userId, userType));
   await tx.delete(rawSmsEvents).where(userScope(rawSmsEvents, userId, userType));
   await tx.delete(adClicks).where(userScope(adClicks, userId, userType));
   await tx.delete(inAppNotifications).where(userScope(inAppNotifications, userId, userType));

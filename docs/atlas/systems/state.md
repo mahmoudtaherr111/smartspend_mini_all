@@ -10,18 +10,18 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (63 of
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-16 b51229f | 2026-09-16 0610413 | 17 | — | 5 | 1 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 17 | — | 5 | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | — | 6 | 2 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-22 f79ee5a | 2026-09-22 f79ee5a | 6 | — | 4 | — | 3 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-22 f79ee5a | 2026-09-22 f79ee5a | 4 | — | 6 | 2 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 9 | — | 4 | — | 3 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 4 | — | 5 | 2 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 6 | — | 11 | 2 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 3 | — | 7 | 5 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-18 981a949 | 2026-09-18 981a949 | 14 | **2** | 2 | 4 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | **1** | 1 | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 981a949 | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-18 49da160 | 2026-09-18 49da160 | 4 | — | 4 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-18 49da160 | 2026-09-18 49da160 | 9 | — | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-18 981a949 | 2026-09-18 981a949 | 5 | — | 1 | — | 8 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-18 981a949 | 2026-09-18 981a949 | 7 | **1** | 2 | 2 | 2 |
 
 
@@ -74,7 +74,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - A reply to a clarifying question starts over: `sendMessage` stores the clarification state in the conversation's metadata, but reads it from `requireOwnedConversation`, which selects only the id, so the state is never found and the reply is planned as a new message.
 - A pending action expires 30 minutes after it is drafted plus the server's offset from UTC.
-- Finance periods are computed with the server's local date functions in `api/services/finance-semantic-layer/period-resolver.ts`, not with `api/lib/app-time.ts` (golden rule 6).
 - An expense recorded by an action does not clear the classification cache or check budget alerts, as `expense.create` does.
 - Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in `api/services/action-runtime/extended-actions.ts` leaves them out, so the undo code for them is never reached.
 - When the kernel throws, the user sees the same message as when an operator turned the assistant off.
@@ -129,6 +128,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
 - `user_analytics` is pruned after thirty days, which also drops the upgrade events the founder metrics count and the AI cost events the cost overview reads ([admin](admin.md)).
+- Migrations do not create everything `db/schema.ts` declares. `0021_storage_lifecycle_overhaul.sql` was written by hand without a snapshot; `db/migrations/meta/0022_snapshot.json` records 0021's tables but not what no migration applies: the unique index `pro_sub_transaction_unique_idx` on `pro_subscriptions.transaction_id` and the `sessions` changes (`token` nullable without `sessions_token_idx`, `token_hash` as `varchar(64)`, where 0021 made it `binary(32)`). The next `npm run db:generate` emits them; until a migration does, a database built from migrations has no unique index on the Paymob transaction id.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, so anything recorded offline and not yet sent is lost with the session.

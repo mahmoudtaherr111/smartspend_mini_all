@@ -96,6 +96,26 @@ When the browser closes, sends `end_call`, Gemini closes, or the time is up, the
 3. ends and clears the session state;
 4. records an AI cost metric, estimating six tokens a second.
 
+## The rebuilt call (in progress, not yet reachable)
+The call is being rebuilt beside the one above; nothing routes users to it yet. What exists so far:
+- **Who may call, for how long, on which model.** `api/services/entitlements/voice.ts#getVoiceEntitlements` returns
+  one typed object: whether the plan may call (`voice_call_enabled_<plan>`), minutes a month
+  (`voice_call_limit_<plan>`), seconds a call (`voice_call_duration_<plan>`), the model (`voice_v2_model_<plan>`,
+  else `voice_v2_model`, default `gemini-3.8-live`), the thinking level for the extended-thinking model, a daily
+  provider-cost cap in USD (`voice_daily_cost_cap_usd_<plan>`), and whether this user gets the new call: staff and
+  the users in `voice_v2_allowlist` always, others when their stable bucket falls under
+  `voice_v2_rollout_percent`; `voice_v2_kill_switch` stops it for everyone. Usage is the Cairo month's
+  `voice_calls.billed_seconds` plus the old call's `voice_usage` rows (source `gemini_voice_call`), never
+  dictation seconds.
+- **Where calls are counted.** `voice_calls` holds one row per call (status, engine, model, billed seconds,
+  tokens by modality and cost in USD) and `voice_call_incidents` the structured problems of a call; neither holds
+  anything that was said. Account deletion removes both; retention keeps calls a year and incidents ninety days.
+- **How numbers are said.** `api/services/voice/brain/spoken.ts` writes the Egyptian spoken form of an amount
+  ("تمن آلاف وربعمية", "حوالي خمستاشر ألف", "ألفين ونص"), the rounding a spoken answer may use
+  (`roundForSpeech`), shares ("ربع") and days ("كمان تسع أيام"). Every form parses back to its value through
+  `api/lib/arabic-number-parser.ts`, which the spoken-number check will use.
+- **The wire protocol** between the app and the coming socket `/api/voice/v2`: `contracts/voice-protocol.ts`.
+
 ## Where to change what
 | To change | Edit | Check with |
 | --- | --- | --- |
@@ -120,6 +140,9 @@ When the browser closes, sends `end_call`, Gemini closes, or the time is up, the
 5. Session state belongs in Redis; the memory fallback exists for development and single-process setups.
 
 ## Tests
+The rebuilt call: `api/services/entitlements/voice.test.ts`, `api/services/voice/brain/spoken.test.ts` and
+`tests/voice-protocol.test.ts`.
+
 `api/services/voice-call-service.test.ts` (tool results, the tool budget, confirmation after the budget is spent),
 `api/services/voice-kernel/hot-context.test.ts`, `api/services/voice-kernel/voice-prefetch.test.ts`,
 `api/services/voice-kernel/voice-prompt.test.ts`, `api/services/voice-kernel/voice-session-state.test.ts` and

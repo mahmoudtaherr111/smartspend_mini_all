@@ -14,6 +14,7 @@ import {
   buildMultiCategoryChartData,
 } from "./row-aggregators";
 import { resolveFinancePeriod } from "./period-resolver";
+import { businessDateKey } from "../../lib/app-time";
 import type {
   FinanceBreakdown,
   FinanceCategoryTotal,
@@ -57,9 +58,11 @@ function jsonRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
+/** The business calendar day of a stored instant (golden rule 6); a bare YYYY-MM-DD is kept as written. */
 function dateString(value: unknown): string {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) return value.trim();
   const date = value instanceof Date ? value : new Date(value as string);
-  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+  return Number.isNaN(date.getTime()) ? "" : businessDateKey(date);
 }
 
 function rowCanonicalCategory(row: {

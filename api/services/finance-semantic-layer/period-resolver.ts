@@ -1,3 +1,4 @@
+import { businessDateKey, startOfBusinessDay } from "../../lib/app-time";
 import type {
   FinanceContext,
   FinancePeriodInput,
@@ -7,111 +8,151 @@ import type {
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+/**
+ * A day of the business calendar (Cairo by default, golden rule 6). Arithmetic happens on these calendar
+ * values; only the final boundaries become instants, so a server running in UTC still answers "today" for
+ * the user's today.
+ */
+interface CalendarDay {
+  year: number;
+  month0: number;
+  day: number;
+}
+
 function clampSalaryDay(value: number | null | undefined): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 1;
   return Math.max(1, Math.min(31, Math.floor(parsed)));
 }
 
-function startOfDay(value: Date): Date {
-  const date = new Date(value);
-  date.setHours(0, 0, 0, 0);
-  return date;
+function calendarDay(year: number, month0: number, day: number): CalendarDay {
+  const normalized = new Date(Date.UTC(year, month0, day));
+  return {
+    year: normalized.getUTCFullYear(),
+    month0: normalized.getUTCMonth(),
+    day: normalized.getUTCDate(),
+  };
 }
 
-function endOfDay(value: Date): Date {
-  const date = new Date(value);
-  date.setHours(23, 59, 59, 999);
-  return date;
+function businessDayOf(value: Date): CalendarDay {
+  const [year, month, day] = businessDateKey(value).split("-").map(Number);
+  return { year, month0: month - 1, day };
 }
 
-function parseDateInput(value: Date | string | undefined, fallback: Date): Date {
-  if (!value) return new Date(fallback);
-  const date = value instanceof Date ? new Date(value) : new Date(value);
-  return Number.isNaN(date.getTime()) ? new Date(fallback) : date;
+function addDays(value: CalendarDay, offset: number): CalendarDay {
+  return calendarDay(value.year, value.month0, value.day + offset);
 }
 
-function monthKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+function dayNumber(value: CalendarDay): number {
+  return Date.UTC(value.year, value.month0, value.day) / MS_PER_DAY;
 }
 
-function localDateKey(date: Date): string {
+function dayKey(value: CalendarDay): string {
   return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
+    value.year,
+    String(value.month0 + 1).padStart(2, "0"),
+    String(value.day).padStart(2, "0"),
   ].join("-");
 }
 
+function monthKey(value: CalendarDay): string {
+  return dayKey(value).slice(0, 7);
+}
+
+// A boundary is computed a few times per request for the same handful of days.
+const BOUNDARY_CACHE = new Map<string, Date>();
+
+function startInstant(value: CalendarDay): Date {
+  const key = dayKey(value);
+  const cached = BOUNDARY_CACHE.get(key);
+  if (cached) return new Date(cached);
+  // Noon UTC lies inside the intended calendar day for every deployment timezone (see app-time).
+  const start = startOfBusinessDay(new Date(Date.UTC(value.year, value.month0, value.day, 12)));
+  if (BOUNDARY_CACHE.size > 1024) BOUNDARY_CACHE.clear();
+  BOUNDARY_CACHE.set(key, start);
+  return new Date(start);
+}
+
+function endInstant(value: CalendarDay): Date {
+  return new Date(startInstant(addDays(value, 1)).getTime() - 1);
+}
+
+/** "YYYY-MM-DD" is a business calendar day as written; anything else is an instant placed in that calendar. */
+function parseDayInput(value: Date | string | undefined, fallback: CalendarDay): CalendarDay {
+  if (!value) return fallback;
+  if (typeof value === "string") {
+    const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) return calendarDay(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+  return Number.isNaN(date.getTime()) ? fallback : businessDayOf(date);
+}
+
 function daysInMonth(year: number, month0: number): number {
-  return new Date(year, month0 + 1, 0).getDate();
+  return new Date(Date.UTC(year, month0 + 1, 0)).getUTCDate();
 }
 
 function clampDay(year: number, month0: number, day: number): number {
   return Math.min(day, daysInMonth(year, month0));
 }
 
-function addMonths(date: Date, offset: number): Date {
-  return new Date(date.getFullYear(), date.getMonth() + offset, 1);
+function addMonths(value: CalendarDay, offset: number): CalendarDay {
+  return calendarDay(value.year, value.month0 + offset, 1);
 }
 
-function currentFinancialMonthStart(referenceDate: Date, salaryDay: number): Date {
+function currentFinancialMonthStart(today: CalendarDay, salaryDay: number): CalendarDay {
   if (salaryDay <= 1) {
-    return new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+    return calendarDay(today.year, today.month0, 1);
   }
 
-  const year = referenceDate.getFullYear();
-  const month0 = referenceDate.getMonth();
-  const day = referenceDate.getDate();
-  const startMonth0 = day >= salaryDay ? month0 : month0 - 1;
-  const startDate = new Date(year, startMonth0, 1);
-  const clamped = clampDay(startDate.getFullYear(), startDate.getMonth(), salaryDay);
-  return new Date(startDate.getFullYear(), startDate.getMonth(), clamped, 0, 0, 0, 0);
+  const startMonth = today.day >= salaryDay
+    ? calendarDay(today.year, today.month0, 1)
+    : calendarDay(today.year, today.month0 - 1, 1);
+  return calendarDay(
+    startMonth.year,
+    startMonth.month0,
+    clampDay(startMonth.year, startMonth.month0, salaryDay),
+  );
 }
 
-function financialMonthRange(month: string, salaryDay: number): { startDate: Date; endDate: Date } {
+function financialMonthRange(month: string, salaryDay: number): { start: CalendarDay; end: CalendarDay } {
   const [year, monthNumber] = month.split("-").map(Number);
   const month0 = (monthNumber || 1) - 1;
 
   if (salaryDay <= 1) {
     return {
-      startDate: new Date(year, month0, 1, 0, 0, 0, 0),
-      endDate: new Date(year, month0 + 1, 0, 23, 59, 59, 999),
+      start: calendarDay(year, month0, 1),
+      end: calendarDay(year, month0, daysInMonth(year, month0)),
     };
   }
 
-  const startDay = clampDay(year, month0, salaryDay);
-  const nextMonth = new Date(year, month0 + 1, 1);
-  const nextStartDay = clampDay(nextMonth.getFullYear(), nextMonth.getMonth(), salaryDay);
+  const next = calendarDay(year, month0 + 1, 1);
   return {
-    startDate: new Date(year, month0, startDay, 0, 0, 0, 0),
-    endDate: new Date(nextMonth.getFullYear(), nextMonth.getMonth(), nextStartDay - 1, 23, 59, 59, 999),
+    start: calendarDay(year, month0, clampDay(year, month0, salaryDay)),
+    end: addDays(calendarDay(next.year, next.month0, clampDay(next.year, next.month0, salaryDay)), -1),
   };
 }
 
-function weekStart(referenceDate: Date): Date {
-  const date = startOfDay(referenceDate);
-  const jsDay = date.getDay();
-  const mondayOffset = jsDay === 0 ? -6 : 1 - jsDay;
-  date.setDate(date.getDate() + mondayOffset);
-  return date;
+function weekStart(today: CalendarDay): CalendarDay {
+  const weekday = new Date(Date.UTC(today.year, today.month0, today.day)).getUTCDay();
+  const mondayOffset = weekday === 0 ? -6 : 1 - weekday;
+  return addDays(today, mondayOffset);
 }
 
 function buildResolved(
   kind: FinancePeriodKind,
-  startDate: Date,
-  endDate: Date,
+  start: CalendarDay,
+  end: CalendarDay,
   salaryDay: number,
-  referenceDate: Date,
+  today: CalendarDay,
   isSalaryCycle: boolean,
 ): ResolvedFinancePeriod {
-  const safeStart = startOfDay(startDate);
-  const safeEnd = endOfDay(endDate);
-  const daysTotal = Math.max(1, Math.ceil((safeEnd.getTime() - safeStart.getTime() + 1) / MS_PER_DAY));
-  const elapsedEnd = referenceDate < safeStart ? safeStart : referenceDate > safeEnd ? safeEnd : referenceDate;
-  const daysElapsed = Math.max(1, Math.min(daysTotal, Math.ceil((endOfDay(elapsedEnd).getTime() - safeStart.getTime() + 1) / MS_PER_DAY)));
-  const startKey = localDateKey(safeStart);
-  const endKey = localDateKey(safeEnd);
+  const [first, last] = dayNumber(start) <= dayNumber(end) ? [start, end] : [end, start];
+  const daysTotal = Math.max(1, dayNumber(last) - dayNumber(first) + 1);
+  const elapsedDay = Math.min(Math.max(dayNumber(today), dayNumber(first)), dayNumber(last));
+  const daysElapsed = Math.max(1, Math.min(daysTotal, elapsedDay - dayNumber(first) + 1));
+  const startKey = dayKey(first);
+  const endKey = dayKey(last);
   const label =
     kind === "today"
       ? "اليوم"
@@ -133,8 +174,8 @@ function buildResolved(
     kind,
     key: `${kind}:${startKey}:${endKey}:salary_${salaryDay}`,
     label,
-    startDate: safeStart,
-    endDate: safeEnd,
+    startDate: startInstant(first),
+    endDate: endInstant(last),
     salaryDay,
     daysElapsed,
     daysTotal,
@@ -147,54 +188,50 @@ export function resolveFinancePeriod(
   context: Pick<FinanceContext, "salaryDay" | "referenceDate"> = {},
 ): ResolvedFinancePeriod {
   const referenceDate = context.referenceDate ? new Date(context.referenceDate) : new Date();
+  const today = businessDayOf(referenceDate);
   const salaryDay = clampSalaryDay(context.salaryDay);
   const period = input.period ?? "current_month";
 
   if (period === "today") {
-    return buildResolved(period, referenceDate, referenceDate, salaryDay, referenceDate, false);
+    return buildResolved(period, today, today, salaryDay, today, false);
   }
 
   if (period === "yesterday") {
-    const date = new Date(referenceDate);
-    date.setDate(date.getDate() - 1);
-    return buildResolved(period, date, date, salaryDay, referenceDate, false);
+    const yesterday = addDays(today, -1);
+    return buildResolved(period, yesterday, yesterday, salaryDay, today, false);
   }
 
   if (period === "current_week") {
-    const start = weekStart(referenceDate);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    return buildResolved(period, start, end, salaryDay, referenceDate, false);
+    const start = weekStart(today);
+    return buildResolved(period, start, addDays(start, 6), salaryDay, today, false);
   }
 
   if (period === "custom") {
-    const start = parseDateInput(input.startDate, referenceDate);
-    const end = parseDateInput(input.endDate, start);
-    return buildResolved(period, start, end, salaryDay, referenceDate, false);
+    const start = parseDayInput(input.startDate, today);
+    const end = parseDayInput(input.endDate, start);
+    return buildResolved(period, start, end, salaryDay, today, false);
   }
 
   if (period === "previous_month") {
-    const currentStart = currentFinancialMonthStart(referenceDate, salaryDay);
-    const previousStart = addMonths(currentStart, -1);
+    const previousStart = addMonths(currentFinancialMonthStart(today, salaryDay), -1);
     const range = financialMonthRange(monthKey(previousStart), salaryDay);
-    return buildResolved(period, range.startDate, range.endDate, salaryDay, referenceDate, salaryDay > 1);
+    return buildResolved(period, range.start, range.end, salaryDay, today, salaryDay > 1);
   }
 
   if (period === "salary_cycle" || period === "current_month") {
-    const month = input.month ?? monthKey(currentFinancialMonthStart(referenceDate, salaryDay));
+    const month = input.month ?? monthKey(currentFinancialMonthStart(today, salaryDay));
     const range = financialMonthRange(month, salaryDay);
-    return buildResolved(period, range.startDate, range.endDate, salaryDay, referenceDate, salaryDay > 1);
+    return buildResolved(period, range.start, range.end, salaryDay, today, salaryDay > 1);
   }
 
-  const month = input.month ?? monthKey(referenceDate);
+  const month = input.month ?? monthKey(today);
   const range = financialMonthRange(month, salaryDay);
-  return buildResolved(period, range.startDate, range.endDate, salaryDay, referenceDate, salaryDay > 1);
+  return buildResolved(period, range.start, range.end, salaryDay, today, salaryDay > 1);
 }
 
 export const financePeriodTestUtils = {
-  startOfDay,
-  endOfDay,
+  businessDayOf,
+  dayKey,
   monthKey,
-  localDateKey,
   currentFinancialMonthStart,
 };

@@ -79,6 +79,24 @@ export const SETTINGS: SettingDef[] = [
   { key: "voice_call_limit_ultra", default: "999999" },
   { key: "voice_call_duration_ultra", default: "1200" },
 
+  // ── Live voice call v2 (api/services/voice). Minutes a month and seconds a call are the keys above. ──
+  // Share of users on the new call (0–100); admins and the allowlist ("oauth:12,local:34") always are.
+  { key: "voice_v2_rollout_percent", default: "0" },
+  { key: "voice_v2_allowlist", default: "" },
+  // "true" stops every new call at once.
+  { key: "voice_v2_kill_switch", default: "false" },
+  { key: "voice_v2_model", default: "gemini-3.8-live" },
+  // Per-plan model; empty means voice_v2_model.
+  { key: "voice_v2_model_free", default: "" },
+  { key: "voice_v2_model_pro", default: "" },
+  { key: "voice_v2_model_ultra", default: "" },
+  // Only read by gemini-3.8-live-extended-thinking: low | medium | high.
+  { key: "voice_v2_thinking_level", default: "low" },
+  // Safety cap on provider cost per user per Cairo day, in USD.
+  { key: "voice_daily_cost_cap_usd_free", default: "0.10" },
+  { key: "voice_daily_cost_cap_usd_pro", default: "0.50" },
+  { key: "voice_daily_cost_cap_usd_ultra", default: "1.50" },
+
   // ── Legacy model selectors (reports + ultra fallback) ──
   { key: "ai_model_free", default: () => env.GEMINI_MODEL_FREE || "gemini-2.0-flash" },
   { key: "ai_model_pro", default: () => env.GEMINI_MODEL_PRO || "gemini-1.5-flash" },

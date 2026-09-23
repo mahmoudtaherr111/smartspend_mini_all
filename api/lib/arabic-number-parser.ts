@@ -181,8 +181,34 @@ function stripClitic(word: string): { core: string; hadClitic: boolean } {
   return { core: word, hadClitic: false };
 }
 
+const ONE_FOLDED = normalizeArabic("واحد");
+
+/** True when the words after position `i` are "و<tens>" or "و <tens>", as in "واحد وعشرين". */
+function startsTensCompound(words: string[], i: number): boolean {
+  const isTens = (token: string | undefined) => {
+    if (!token) return false;
+    const value = lookupNumberWord(numMap, FOLDED_NUM, token);
+    return value !== undefined && value >= 20 && value <= 90 && value % 10 === 0;
+  };
+  const next = words[i + 1];
+  if (!next) return false;
+  if (next === "و") return isTens(words[i + 2]);
+  return next.startsWith("و") && isTens(next.slice(1));
+}
+
 /** Currency words act as the unit "one" for a bare fraction: "جنيه ونص" is 1.5. */
 const CURRENCY_UNIT = /^[وبل]?(?:ـ)?(?:ال)?(?:جنيه|جنية|جنيهات|ج)$/;
+
+/**
+ * True when a currency word, a thousand/million, punctuation or the end of the text follows position `i`:
+ * "مية وواحد جنيه", "مية وواحد ألف".
+ */
+function endsAmount(words: string[], i: number): boolean {
+  const next = words[i + 1];
+  if (!next || /^[،؛,;:!؟?….]$/.test(next)) return true;
+  const { core } = stripClitic(next);
+  return CURRENCY_UNIT.test(core) || lookupNumberWord(multiplierMap, FOLDED_MULTIPLIER, core) !== undefined;
+}
 
 function isDigitLiteral(word: string): boolean {
   return /^\d+(?:[.,]\d+)*$/.test(word) && Number.isFinite(parseNumericLiteral(word));
@@ -385,6 +411,20 @@ export function parseArabicNumbers(text: string): string {
     const word_ = lookupNumberWord(numMap, FOLDED_NUM, core);
     if (word_ !== undefined) {
       acc.addWord(word_);
+      continue;
+    }
+
+    // "واحد" stays out of the lexicon ("واحد صاحبي" is a person), but "واحد وخمسين" is 51:
+    // leaving it out read "دفعت واحد وخمسين جنيه" as 50, a pound lost on every such amount.
+    const joinedOne = word.startsWith("و") && normalizeArabic(word.slice(1)) === ONE_FOLDED;
+    const isOne = normalizeArabic(word) === ONE_FOLDED || joinedOne;
+    if (isOne && startsTensCompound(words, i)) {
+      acc.addWord(1);
+      continue;
+    }
+    // "مية وواحد جنيه" is 101: a joined one closes a number when the amount ends there.
+    if (joinedOne && acc.isActive && endsAmount(words, i)) {
+      acc.addWord(1);
       continue;
     }
 

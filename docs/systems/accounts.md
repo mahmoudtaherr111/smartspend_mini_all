@@ -129,7 +129,8 @@ Then, per procedure:
   sends one over WhatsApp when verification is on and keeps it in the process's memory (`api/services/otp-cache.ts`),
   and `profile.confirmPhoneChange` checks it, saves the number and bumps the auth version.
 - `purgeUserData` deletes, inside the caller's transaction, every user-owned row (conversations and memory, the ledger,
-  goals, contacts, sessions, passkeys, the profile, logs and referrals) and then the identity row. `admin.deleteUser`
+  goals, contacts, sessions, passkeys, the profile, logs, voice usage and live calls with their incidents, and referrals)
+  and then the identity row. `admin.deleteUser`
   and `localAuth.deleteUser` call it; `tests/knowledge/architecture.test.ts` fails when a user-owned table is left out.
 
 ## Where to change what

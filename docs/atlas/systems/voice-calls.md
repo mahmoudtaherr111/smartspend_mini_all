@@ -24,7 +24,7 @@ flowchart LR
     tbl_api_key_errors[("api_key_errors")]
     tbl_chat_conversations[("chat_conversations")]
     tbl_chat_messages[("chat_messages")]
-    tbl_more[("9 tables it only reads, listed under Data")]
+    tbl_more[("10 tables it only reads, listed under Data")]
     tbl_voice_usage[("voice_usage")]
   end
   ext_gemini{{"Google Gemini API"}}
@@ -54,7 +54,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `voice` — Voice | Live voice calls: a WebSocket bridged to the Gemini Live API, with session checks, voice quotas, tools that draft actions, the financial context for the call and the call archive. | 10 |
+| `voice` — Voice | Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 12 |
 | `web-voice-call` — Live voice call UI | The live voice call screen in the AI Center and its hook: voice selection, microphone capture resampled to 16 kHz PCM, the WebSocket to /api/voice/live, playback of the assistant's audio and the tool trace panel. | 2 |
 
 ## API procedures
@@ -87,6 +87,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_profiles` | A | — | `voice` |
 | `user_wallets` | A | — | `voice` |
 | `users` | A | — | `voice` |
+| `voice_calls` | E | — | `voice` |
 | `voice_usage` | E | `voice` | `voice` |
 
 ## Outside systems
@@ -112,12 +113,13 @@ Used by: [Server platform and data](platform.md), [Web and mobile app shell](web
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/voice-calls.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>16 files and declarations</summary>
+<details><summary>18 files and declarations</summary>
 
 - `api/ai-router.ts#ai.runVoiceToolQa`
 - `api/ai-router.ts#rest-of-file`
 - `api/boot.ts#ws:/api/voice/live`
 - `api/server.ts#ws:/api/voice/live`
+- `api/services/entitlements/voice.ts`
 - `api/services/voice-call-service.ts`
 - `api/services/voice-context-service.ts`
 - `api/services/voice-kernel/hot-context.ts`
@@ -128,6 +130,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/voice-kernel/voice-prompt.ts`
 - `api/services/voice-kernel/voice-session-state.ts`
 - `api/services/voice-kernel/voice-tool-adapter.ts`
+- `api/services/voice/brain/spoken.ts`
 - `src/components/ai/AIVoiceCall.tsx`
 - `src/hooks/useVoiceCall.ts`
 

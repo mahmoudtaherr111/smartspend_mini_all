@@ -1338,3 +1338,66 @@ export const adStatsDaily = mysqlTable(
   ],
 );
 
+// ─── Live voice calls ───
+// One row per call: what the monthly allowance counts (billed seconds in the Cairo month) and what the call
+// really cost. Never the call's words: no transcript is stored anywhere.
+export const voiceCalls = mysqlTable(
+  "voice_calls",
+  {
+    id: varchar("id", { length: 40 }).primaryKey(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    // starting | live | reconnecting | ended | failed
+    status: varchar("status", { length: 20 }).notNull().default("starting"),
+    engine: varchar("engine", { length: 40 }).notNull(),
+    model: varchar("model", { length: 100 }).notNull(),
+    voice: varchar("voice", { length: 40 }),
+    // web | pwa | android | ios
+    client: varchar("client", { length: 20 }),
+    month: varchar("month", { length: 7 }).notNull(), // Cairo "YYYY-MM"
+    startedAt: datetime("started_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    connectedAt: datetime("connected_at"),
+    endedAt: datetime("ended_at"),
+    lastCheckpointAt: datetime("last_checkpoint_at"),
+    billedSeconds: int("billed_seconds").notNull().default(0),
+    maxSeconds: int("max_seconds").notNull().default(0),
+    endReason: varchar("end_reason", { length: 40 }),
+    turns: int("turns").notNull().default(0),
+    toolCalls: int("tool_calls").notNull().default(0),
+    incidents: int("incidents").notNull().default(0),
+    reconnects: int("reconnects").notNull().default(0),
+    // Provider token counts by direction and modality, e.g. {"input":{"text":900,"audio":400},"output":{"audio":250}}
+    tokens: json("tokens"),
+    costUsd: decimal("cost_usd", { precision: 12, scale: 8 }).notNull().default("0.00000000"),
+    // pending | done | empty | failed — the post-call summary and facts
+    memoryStatus: varchar("memory_status", { length: 20 }).notNull().default("pending"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("voice_calls_user_month_idx").on(t.userId, t.userType, t.month),
+    index("voice_calls_started_idx").on(t.startedAt),
+    index("voice_calls_status_idx").on(t.status),
+  ],
+);
+
+// What went wrong in a call, as structured fields only (golden rule 10): a spoken number that matched no fact,
+// a refused confirmation, a failing tool. The words are never stored.
+export const voiceCallIncidents = mysqlTable(
+  "voice_call_incidents",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    callId: varchar("call_id", { length: 40 }).notNull(),
+    kind: varchar("kind", { length: 40 }).notNull(),
+    detail: json("detail"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("voice_call_incidents_user_idx").on(t.userId, t.userType),
+    index("voice_call_incidents_call_idx").on(t.callId),
+    index("voice_call_incidents_created_idx").on(t.createdAt),
+  ],
+);
+

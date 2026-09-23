@@ -82,6 +82,25 @@ describe("finance row aggregators", () => {
     ]);
   });
 
+  it("puts an expense in its Cairo day, not its UTC day", () => {
+    const twoDays = resolveFinancePeriod(
+      { period: "custom", startDate: "2026-06-14", endDate: "2026-06-15" },
+      { referenceDate: new Date("2026-06-15T12:00:00Z") },
+    );
+    const chart = buildChartData(
+      // 01:30 on 15 June in Cairo is 22:30 UTC on 14 June.
+      [{ id: 1, type: "expense", amount: "50", category: "transport", date: new Date("2026-06-14T22:30:00Z") }],
+      twoDays,
+      "day",
+      7,
+    );
+
+    expect(chart.points).toEqual([
+      { label: "2026-06-14", value: 0, count: 0 },
+      { label: "2026-06-15", value: 50, count: 1 },
+    ]);
+  });
+
   it("fills multi-category monthly chart buckets and filters by canonical category", () => {
     const sixMonthPeriod = resolveFinancePeriod(
       { period: "custom", startDate: "2026-01-01", endDate: "2026-06-15" },

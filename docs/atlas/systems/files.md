@@ -163,6 +163,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/ai-memory/types.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-memory/vector-store.ts` | [ai-center](ai-center.md) |
 | `api/services/batch-ai-service.ts` | [insights](insights.md) |
+| `api/services/entitlements/voice.ts` | [voice-calls](voice-calls.md) |
 | `api/services/expense-rollups.ts` | [money](money.md) |
 | `api/services/finance-semantic-layer/cache.ts` | [ai-center](ai-center.md) |
 | `api/services/finance-semantic-layer/category-matcher.ts` | [ai-center](ai-center.md) |
@@ -207,6 +208,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice-kernel/voice-prompt.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice-kernel/voice-session-state.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice-kernel/voice-tool-adapter.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/spoken.ts` | [voice-calls](voice-calls.md) |
 | `api/services/whatsapp-service.ts` | [notifications](notifications.md) |
 | `api/session-router.ts` | [accounts](accounts.md) |
 | `api/sms-router.ts` | [bank-messages](bank-messages.md) |
@@ -217,6 +219,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `contracts/errors.ts` | [platform](platform.md) |
 | `contracts/plans.ts` | [platform](platform.md) |
 | `contracts/types.ts` | [platform](platform.md) |
+| `contracts/voice-protocol.ts` | [platform](platform.md) |
 | `db/relations.ts` | [platform](platform.md) |
 | `db/schema.ts` | [platform](platform.md) |
 | `db/seed.ts` | [platform](platform.md) |

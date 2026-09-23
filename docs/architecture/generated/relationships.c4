@@ -85,6 +85,8 @@ model {
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.user_profiles
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.user_wallets
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.users
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.voice_call_incidents
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.voice_calls
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.voice_usage
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.webhook_tokens
   smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.ai-governance
@@ -354,6 +356,8 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.pro_subscriptions
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.profile_learning_events
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_analytics
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_call_incidents
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_calls
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_usage
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.platform
@@ -407,6 +411,7 @@ model {
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.users
+  smartspend.api.modules.voice -[reads]-> smartspend.mysql.voice_calls
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.voice_usage
   smartspend.api.modules.voice -[uses]-> gemini
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.api_key_errors
