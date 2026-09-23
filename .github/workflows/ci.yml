@@ -155,6 +155,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - run: npm run backend:build
       - run: npm run test:build
         env:
           DATABASE_URL: "mysql://test:test@localhost:3306/test"

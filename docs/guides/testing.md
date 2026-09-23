@@ -9,7 +9,7 @@ and `.github/workflows/ci.yml`.
 | Unit and component tests | `npm run test` | nothing: `vitest.config.ts` injects dummy environment values | `unit-tests` |
 | Database integration | `npm run test:db` | a MySQL database with the current schema in `DATABASE_URL` | `integration-tests` |
 | Redis integration | `npm run test:redis` | a Redis server in `REDIS_URL` | `integration-tests` |
-| Build output | `npm run test:build` | `npm run build` first | `build` |
+| Build output, and both server bundles start and answer /health | `npm run test:build` | `npm run build` and `npm run backend:build` first | `build` |
 | Knowledge rules | `npx vitest run tests/knowledge` | nothing | `knowledge` |
 | End to end | `npm run test:e2e` | Playwright, configured in `playwright.config.ts` | `e2e-tests` |
 
