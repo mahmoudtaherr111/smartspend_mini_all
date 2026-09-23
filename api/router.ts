@@ -21,6 +21,7 @@ import { webauthnRouter } from "./webauthn-router";
 import { chatRouter } from "./chat-router";
 import { businessRouter } from "./business-router";
 import { budgetRouter } from "./budget-router";
+import { voiceRouter } from "./voice-router";
 
 export const appRouter = router({
   auth: authRouter,
@@ -45,6 +46,7 @@ export const appRouter = router({
   webauthn: webauthnRouter,
   chat: chatRouter,
   business: businessRouter,
+  voice: voiceRouter,
 });
 
 export type AppRouter = typeof appRouter;

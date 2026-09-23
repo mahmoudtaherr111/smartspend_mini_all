@@ -12,7 +12,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (63 of
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 17 | — | 5 | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | — | 6 | 2 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 9 | — | 4 | — | 3 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-23 f1a9834 | 2026-09-23 f1a9834 | 10 | — | 4 | — | 3 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 4 | — | 5 | 2 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 6 | — | 11 | 2 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 3 | — | 7 | 5 | — |
@@ -21,7 +21,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (63 of
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 981a949 | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-18 49da160 | 2026-09-18 49da160 | 4 | — | 4 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-18 49da160 | 2026-09-18 49da160 | 9 | — | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-23 8c4659d | 2026-09-23 fe4b4b3 | 5 | — | 2 | — | 8 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-23 f1a9834 | 2026-09-23 f1a9834 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-18 981a949 | 2026-09-18 981a949 | 7 | **1** | 2 | 2 | 2 |
 
 
@@ -232,7 +232,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the history the admin screens show ends where the ninety-day pruning starts.
 - `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
 - `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library update can silently turn into zeroes.
-- The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the entry and `NODE_ENV=production`; `api/server.ts` repeats the WebSocket wiring for the standalone deployment, and the two copies have to be kept in step by hand.
+- The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the entry and `NODE_ENV=production`; `api/server.ts` repeats the server setup for the standalone deployment. Both route the voice sockets (`/api/voice/live`, `/api/voice/v2`) through the one `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their `upgrade` listeners pass on have to be kept in step by hand.
 - The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten: they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that print `error.message` as text print provider, socket and storage errors today, or failed reads whose values are ids and dates (`api/ai-router.ts`, `api/services/voice-call-service.ts`, `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)

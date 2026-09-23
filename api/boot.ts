@@ -634,31 +634,19 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
   );
   const server = serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
 
-  // Bind WebSocket Server for Live Voice Calls in production mode
-  const { WebSocketServer } = await import("ws");
-  const { handleVoiceCallWebSocket } =
-    await import("./services/voice-call-service");
-  const wss = new WebSocketServer({ noServer: true });
-
-  server.on("upgrade", (request, socket, head) => {
-    const url = new URL(request.url || "", "http://localhost");
-    if (url.pathname.startsWith("/api/voice/live")) {
-      const rawOrigin = request.headers.origin;
-      const origin = Array.isArray(rawOrigin) ? rawOrigin[0] : rawOrigin;
-      if (!isAllowedWebSocketOrigin(origin)) {
-        socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
-        socket.destroy();
-        return;
-      }
-
-      wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit("connection", ws, request);
-      });
-    }
+  // Live voice calls in production mode: the rebuilt call on /api/voice/v2 and, until it has replaced it, the old
+  // one on /api/voice/live.
+  const { handleVoiceCallWebSocket } = await import("./services/voice-call-service");
+  const { createVoiceUpgradeHandler } = await import("./services/voice/gateway");
+  const { createVoiceAppCalls } = await import("./services/voice/app-calls");
+  const handleVoiceUpgrade = createVoiceUpgradeHandler({
+    isAllowedOrigin: isAllowedWebSocketOrigin,
+    appCalls: createVoiceAppCalls(appRouter),
+    legacy: (ws, request) => void handleVoiceCallWebSocket(ws, request),
   });
-
-  wss.on("connection", (ws, request) => {
-    handleVoiceCallWebSocket(ws, request);
+  server.on("upgrade", (request, socket, head) => {
+    const path = new URL(request.url || "", "http://localhost").pathname;
+    if (path.startsWith("/api/voice/v2") || path.startsWith("/api/voice/live")) handleVoiceUpgrade(request, socket, head);
   });
 }
 

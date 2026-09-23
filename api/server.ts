@@ -17,9 +17,11 @@
  */
 import "dotenv/config";
 import { serve } from "@hono/node-server";
-import { WebSocketServer } from "ws";
 import { handleVoiceCallWebSocket } from "./services/voice-call-service";
+import { createVoiceUpgradeHandler } from "./services/voice/gateway";
+import { createVoiceAppCalls } from "./services/voice/app-calls";
 import { app, isAllowedWebSocketOrigin } from "./boot";
+import { appRouter } from "./router";
 import { env } from "./lib/env";
 
 // Prevent DoS from unhandled promise rejections / uncaught exceptions crashing the process
@@ -35,28 +37,15 @@ console.log(`🚀 SmartSpend Standalone Server running on http://localhost:${por
 
 const server = serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
 
-// Bind WebSocket Server for Live Voice Calls
-const wss = new WebSocketServer({ noServer: true });
-
+// Live voice calls: the rebuilt call on /api/voice/v2 and, until it has replaced it, the old one on /api/voice/live.
+const handleVoiceUpgrade = createVoiceUpgradeHandler({
+  isAllowedOrigin: isAllowedWebSocketOrigin,
+  appCalls: createVoiceAppCalls(appRouter),
+  legacy: (ws, request) => void handleVoiceCallWebSocket(ws, request),
+});
 server.on("upgrade", (request, socket, head) => {
-  const url = new URL(request.url || "", "http://localhost");
-  if (url.pathname.startsWith("/api/voice/live")) {
-    const rawOrigin = request.headers.origin;
-    const origin = Array.isArray(rawOrigin) ? rawOrigin[0] : rawOrigin;
-    if (!isAllowedWebSocketOrigin(origin)) {
-      socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
-      socket.destroy();
-      return;
-    }
-
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit("connection", ws, request);
-    });
-  }
+  const path = new URL(request.url || "", "http://localhost").pathname;
+  if (path.startsWith("/api/voice/v2") || path.startsWith("/api/voice/live")) handleVoiceUpgrade(request, socket, head);
 });
 
-wss.on("connection", (ws, request) => {
-  handleVoiceCallWebSocket(ws, request);
-});
-
-export { app, server, wss };
+export { app, server };

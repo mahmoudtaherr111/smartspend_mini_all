@@ -19,7 +19,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/ai-router.ts` | [ai-platform](ai-platform.md): `ai.getUserLimits` · [expense-capture](expense-capture.md): `ai.learnWord`, `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText` · [insights](insights.md): `ai.compareMonths`, `ai.generateMonthlyInsights`, `ai.generateYearlyInsights`, `ai.getCachedMonthlyInsights` · [voice-calls](voice-calls.md): `ai.runVoiceToolQa` · rest of the file: [ai-platform](ai-platform.md), [expense-capture](expense-capture.md), [insights](insights.md), [voice-calls](voice-calls.md) |
 | `api/analytics-router.ts` | [admin](admin.md) |
 | `api/auth-router.ts` | [accounts](accounts.md) |
-| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `GET /api/sse/otp`, `job:daily-auth-cleanup` · [billing](billing.md): `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:nightly-rollup-reconciliation` · [notifications](notifications.md): `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications` · [platform](platform.md): `ALL /api/trpc/*`, `GET /health`, `job:data-retention-lifecycle` · [voice-calls](voice-calls.md): `ws:/api/voice/live` · rest of the file: [platform](platform.md) |
+| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `GET /api/sse/otp`, `job:daily-auth-cleanup` · [billing](billing.md): `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:nightly-rollup-reconciliation` · [notifications](notifications.md): `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications` · [platform](platform.md): `ALL /api/trpc/*`, `GET /health`, `job:data-retention-lifecycle` · [voice-calls](voice-calls.md): `ws:/api/voice/live`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
 | `api/budget-router.ts` | [money](money.md) |
 | `api/business-router.ts` | [money](money.md) |
 | `api/chat-router.ts` | [ai-center](ai-center.md) |
@@ -129,7 +129,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/referral-router.ts` | [billing](billing.md) |
 | `api/router.ts` | [platform](platform.md) |
 | `api/seo-router.ts` | [admin](admin.md) |
-| `api/server.ts` | [voice-calls](voice-calls.md): `ws:/api/voice/live` · rest of the file: [platform](platform.md) |
+| `api/server.ts` | [voice-calls](voice-calls.md): `ws:/api/voice/live`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
 | `api/services/action-runtime/artifacts.ts` | [ai-center](ai-center.md) |
 | `api/services/action-runtime/confirmation-phrases.ts` | [ai-center](ai-center.md) |
 | `api/services/action-runtime/extended-actions.ts` | [ai-center](ai-center.md) |
@@ -208,11 +208,37 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice-kernel/voice-prompt.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice-kernel/voice-session-state.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice-kernel/voice-tool-adapter.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/app-calls.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/drafts.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/facts.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/honorific.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/index.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/instructions.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/snapshot.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/spoken.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/tools/app-help.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/tools/market-price.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/tools/memory.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/tools/money-query.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/tools/record.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/tools/think.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/tools/types.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/validator.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/voices.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/engine/gemini-live.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/engine/types.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/gateway/call-session.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/gateway/index.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/gateway/persistence.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/gateway/pricing.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/gateway/socket.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/gateway/start-call.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/gateway/store.ts` | [voice-calls](voice-calls.md) |
 | `api/services/whatsapp-service.ts` | [notifications](notifications.md) |
 | `api/session-router.ts` | [accounts](accounts.md) |
 | `api/sms-router.ts` | [bank-messages](bank-messages.md) |
 | `api/support-router.ts` | [admin](admin.md) |
+| `api/voice-router.ts` | [voice-calls](voice-calls.md) |
 | `api/wallet-router.ts` | [money](money.md) |
 | `api/webauthn-router.ts` | [accounts](accounts.md) |
 | `contracts/constants.ts` | [platform](platform.md) |

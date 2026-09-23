@@ -102,6 +102,11 @@ views {
     include *
   }
 
+  view router_voice of smartspend.api.trpc.voice {
+    title 'tRPC router · voice'
+    include *
+  }
+
   view router_wallet of smartspend.api.trpc.wallet {
     title 'tRPC router · wallet'
     include *

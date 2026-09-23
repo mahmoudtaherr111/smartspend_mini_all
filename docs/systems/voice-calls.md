@@ -96,25 +96,81 @@ When the browser closes, sends `end_call`, Gemini closes, or the time is up, the
 3. ends and clears the session state;
 4. records an AI cost metric, estimating six tokens a second.
 
-## The rebuilt call (in progress, not yet reachable)
-The call is being rebuilt beside the one above; nothing routes users to it yet. What exists so far:
-- **Who may call, for how long, on which model.** `api/services/entitlements/voice.ts#getVoiceEntitlements` returns
-  one typed object: whether the plan may call (`voice_call_enabled_<plan>`), minutes a month
-  (`voice_call_limit_<plan>`), seconds a call (`voice_call_duration_<plan>`), the model (`voice_v2_model_<plan>`,
-  else `voice_v2_model`, default `gemini-3.8-live`), the thinking level for the extended-thinking model, a daily
-  provider-cost cap in USD (`voice_daily_cost_cap_usd_<plan>`), and whether this user gets the new call: staff and
-  the users in `voice_v2_allowlist` always, others when their stable bucket falls under
-  `voice_v2_rollout_percent`; `voice_v2_kill_switch` stops it for everyone. Usage is the Cairo month's
-  `voice_calls.billed_seconds` plus the old call's `voice_usage` rows (source `gemini_voice_call`), never
-  dictation seconds.
-- **Where calls are counted.** `voice_calls` holds one row per call (status, engine, model, billed seconds,
-  tokens by modality and cost in USD) and `voice_call_incidents` the structured problems of a call; neither holds
-  anything that was said. Account deletion removes both; retention keeps calls a year and incidents ninety days.
-- **How numbers are said.** `api/services/voice/brain/spoken.ts` writes the Egyptian spoken form of an amount
-  ("تمن آلاف وربعمية", "حوالي خمستاشر ألف", "ألفين ونص"), the rounding a spoken answer may use
-  (`roundForSpeech`), shares ("ربع") and days ("كمان تسع أيام"). Every form parses back to its value through
-  `api/lib/arabic-number-parser.ts`, which the spoken-number check will use.
-- **The wire protocol** between the app and the coming socket `/api/voice/v2`: `contracts/voice-protocol.ts`.
+## The rebuilt call (server side done, not yet reachable)
+The call is being rebuilt beside the one above, on its own socket. Nothing routes users to it yet: the app still
+opens the old call, and `voice.startCall` answers `legacy` for everyone outside the rollout.
+
+### Who may call
+`api/services/entitlements/voice.ts#getVoiceEntitlements` returns one typed object: whether the plan may call
+(`voice_call_enabled_<plan>`), minutes a month (`voice_call_limit_<plan>`), seconds a call
+(`voice_call_duration_<plan>`), the model (`voice_v2_model_<plan>`, else `voice_v2_model`, default
+`gemini-3.8-live`), the thinking level for the extended-thinking model, a daily provider-cost cap in USD
+(`voice_daily_cost_cap_usd_<plan>`), and whether this user gets the new call: staff and the users in
+`voice_v2_allowlist` always, others when their stable bucket falls under `voice_v2_rollout_percent`;
+`voice_v2_kill_switch` sends everyone back to the old call. Usage is the Cairo month's
+`voice_calls.billed_seconds` plus the old call's `voice_usage` rows (source `gemini_voice_call`), never dictation
+seconds.
+
+### One call, step by step
+1. `voice.startCall` (`api/voice-router.ts`, `api/services/voice/gateway/start-call.ts#startVoiceCall`) checks the
+   entitlements, twelve starts per ten minutes per user, and that Redis (or the development memory fallback) can hold
+   call state; closes the user's calls a crashed server left open (`closeAbandonedCalls`); writes the
+   `voice_calls` row; and returns a ticket that opens one call within 60 seconds. `voice.eligibility` tells the app
+   which call to show and the minutes left; `voice.listCalls` lists the user's recent calls.
+2. The app opens `/api/voice/v2` (`createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, called from
+   the `upgrade` listeners of `api/boot.ts` and `api/server.ts`; allowed origins only, 64 KB frames) and sends
+   `hello` with the ticket (`contracts/voice-protocol.ts`). The session token never travels in the URL.
+3. `api/services/voice/gateway/call-session.ts#CallSession` builds the call's brain
+   (`api/services/voice/brain/index.ts#createCallBrain`): the snapshot (`api/services/voice/brain/snapshot.ts`: the Cairo day, name and a
+   title from the profession (`api/services/voice/brain/honorific.ts`), today's and the salary cycle's spending, days to payday, the last
+   recorded day, one observation, up to five remembered things), the instructions (`api/services/voice/brain/instructions.ts`, kept short
+   because they are billed every turn) and nine tools. It connects the engine
+   (`api/services/voice/engine/gemini-live.ts#GeminiLiveEngine`): input and output transcription on, session
+   resumption, a context window of 16k tokens trimmed to 8k, tools NON_BLOCKING, the key in a header, and the second
+   key when the first cannot open a session. Then it sends `ready` (with a resume token) and an opening note that
+   makes the model greet without numbers.
+4. The app sends 16 kHz PCM only while the user speaks and `speech_end` when they stop, which the engine turns into
+   `audioStreamEnd` so the model answers without waiting for silence. The model's 24 kHz audio, live captions,
+   the state (listening, thinking, speaking, awaiting confirmation) and cards come back. Captions are shown, never
+   stored.
+5. A dropped app does not end the call: the engine is closed with its resumption handle kept, the state goes to
+   Redis, and for 45 seconds a `hello` with the resume token continues the call on any server, which reconnects the
+   engine on the handle (or a fresh session with the last turns in its note). A server that lost a call to another
+   does not end it. A GoAway from Google moves the engine to a new connection on its own, after any tool answer
+   still owed on the old one.
+6. The call ends on the user's `end`, the time limit (a warning a minute before, and 30 seconds more when a draft
+   waits for an answer), the daily cost cap, 150 seconds of silence, the provider, or the network. The final row is
+   written, the words go to Redis for an hour for the post-call summary and are never written to MySQL, and the app
+   gets the end card: what was done, what was not. The post-call summary itself is not built yet.
+
+### The tools
+| Tool | What it does |
+| --- | --- |
+| `money_query` | Any figure from the finance semantic layer: totals (by category, person or merchant), where the money went, a comparison with the same number of days of the previous period, the latest transactions, wallet balances (said to be as recorded, not a live statement), budgets (`budget.list`) and goals. Each result carries the facts with their spoken form, a note on missing data, and a card |
+| `record_draft` | Parses what the user says they spent or received through `ai.parseExpense`, checks the amounts against what the model understood and against the numbers heard from the user, and drafts; a disagreement asks about that number alone ("خمستاشر ولا خمسين؟") |
+| `change_draft` | Drafts a goal, budget, wallet, profile detail (never age or gender) or recategorization through the action runtime, or undoing what this call recorded |
+| `confirm` / `cancel` | Executes or drops a draft through the gate below; expenses are saved with `expense.batchCreate` with `clientRequestId` `vc:<call>:<draft>:<n>`, so a retry never saves twice |
+| `memory` | Searches the AI memory, remembers what the user asks it to (never age or gender), forgets a memory by id |
+| `app_help` | Steps from the site guide, or says the guide has nothing, with what the call can and cannot do |
+| `think` | Hard questions go to a text model through `executeAiGateway` (purpose `report`) with the user's numbers; numbers it returns survive only if they come from the data, from the user, or one step of arithmetic on them |
+| `market_price` | Gold or currency prices in Egypt from a text model with Google Search (`voice_price_model`), within sane bounds, cached 30 minutes for everyone, with source and time |
+
+The tools reach the app through `api/services/voice/app-calls.ts#createVoiceAppCalls`, which calls the app's own
+tRPC procedures as the user, so a spoken expense is parsed, saved and undone exactly like a typed one.
+
+### The checks
+- **Numbers said.** `api/services/voice/brain/validator.ts` reads the numbers in the assistant's transcribed speech
+  with `api/lib/arabic-number-parser.ts`. A money number that matches no fact of the call
+  (`api/services/voice/brain/facts.ts`), no rounding of one and nothing the user said is recorded as a
+  `spoken_number_mismatch` incident; when the latest tool answer holds the fact it was meant to be, a note makes the
+  model correct itself at once (at most once a turn and three times a call). Amounts are spoken as
+  `api/services/voice/brain/spoken.ts` writes them ("تمن آلاف وربعمية", "حوالي خمستاشر ألف").
+- **Writes.** `api/services/voice/brain/drafts.ts#DraftBook`: only the latest pending draft, within two minutes, and
+  only after a tap on its card or the user's own yes said after it was presented, with no new number and no "لأ";
+  "تمام" said before the draft is not consent.
+- **Cost.** `api/services/voice/gateway/pricing.ts` prices the provider's token counts (Google's published Live
+  rates); the call's cost and tokens are checkpointed every 15 seconds with the billed seconds and first-audio
+  latency (`voice_calls.metrics`).
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -128,6 +184,13 @@ The call is being rebuilt beside the one above; nothing routes users to it yet. 
 | Microphone, playback and the socket in the browser | `src/hooks/useVoiceCall.ts` | |
 | The call screen | `src/components/ai/AIVoiceCall.tsx` | |
 | Which origins may open the socket | `api/lib/origin-policy.ts` | |
+| Rebuilt call: who may call, minutes, model, rollout | `api/services/entitlements/voice.ts` and the `voice_v2_*` settings | `api/services/entitlements/voice.test.ts` |
+| Rebuilt call: the socket, resume, time and cost limits, checkpoints | `api/services/voice/gateway/` | `api/services/voice/gateway/gateway.test.ts` |
+| Rebuilt call: the connection to Gemini Live | `api/services/voice/engine/gemini-live.ts` | `api/services/voice/engine/gemini-live.test.ts` |
+| Rebuilt call: instructions, snapshot, how numbers are spoken | `api/services/voice/brain/instructions.ts`, `api/services/voice/brain/snapshot.ts`, `api/services/voice/brain/spoken.ts` | `api/services/voice/brain/spoken.test.ts` |
+| Rebuilt call: the tools | `api/services/voice/brain/tools/`, and `api/services/voice/app-calls.ts` for the procedures they call | `api/services/voice/brain/tools/*.test.ts` |
+| Rebuilt call: the number check and the confirmation gate | `api/services/voice/brain/validator.ts`, `api/services/voice/brain/drafts.ts` | `api/services/voice/brain/validator.test.ts`, `api/services/voice/brain/drafts.test.ts` |
+| Messages between the app and the server | `contracts/voice-protocol.ts` | `tests/voice-protocol.test.ts` |
 
 ## Rules for changes here
 1. The socket is authenticated only by the session: keep `authenticateUser` before anything that reads user data or
@@ -140,8 +203,12 @@ The call is being rebuilt beside the one above; nothing routes users to it yet. 
 5. Session state belongs in Redis; the memory fallback exists for development and single-process setups.
 
 ## Tests
-The rebuilt call: `api/services/entitlements/voice.test.ts`, `api/services/voice/brain/spoken.test.ts` and
-`tests/voice-protocol.test.ts`.
+The rebuilt call: `api/services/voice/gateway/gateway.test.ts` runs whole calls over a real socket against
+`tests/helpers/fake-gemini-live.ts` (a ticket, a tool call, captions, the end card, a ticket used twice, a dropped
+call resumed on its handle, a wrong resume token, the grace period, the time limit);
+`api/services/voice/engine/gemini-live.test.ts` (setup, key fallback, GoAway, reconnects); the tests in
+`api/services/voice/brain/` and `api/services/voice/brain/tools/`;
+`api/services/entitlements/voice.test.ts` and `tests/voice-protocol.test.ts`.
 
 `api/services/voice-call-service.test.ts` (tool results, the tool budget, confirmation after the budget is spent),
 `api/services/voice-kernel/hot-context.test.ts`, `api/services/voice-kernel/voice-prefetch.test.ts`,

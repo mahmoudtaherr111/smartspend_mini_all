@@ -2,7 +2,7 @@
 
 # Live voice assistant
 
-A live voice call with the assistant over a WebSocket bridged to the Gemini Live API, with session checks, voice quotas, tools that draft actions, the financial context for the call and a call archive.
+A live voice call with the assistant over a WebSocket bridged to the Gemini Live API: who may call and for how long, the tools that answer from the ledger and draft changes behind a confirmation gate, checks on the numbers it speaks, and what each call used and cost.
 
 How it works: [docs/systems/voice-calls.md](../../systems/voice-calls.md) · بالعربي: [docs/ar/systems/voice-calls.md](../../ar/systems/voice-calls.md) · [All systems](README.md)
 
@@ -14,47 +14,78 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 flowchart LR
   subgraph g_api["API, routes and jobs"]
     router_ai["ai API · 1 procedure"]
+    router_voice["voice API · 3 procedures"]
     ws__api_voice_live["WebSocket /api/voice/live"]
+    ws__api_voice_v2["WebSocket /api/voice/v2"]
   end
   subgraph g_modules["Code modules"]
     mod_voice["Voice"]
     mod_web_voice_call["Live voice call UI"]
   end
   subgraph g_tables["MySQL tables"]
+    tbl_ai_action_memory[("ai_action_memory")]
+    tbl_ai_conversation_summaries[("ai_conversation_summaries")]
+    tbl_ai_memory_items[("ai_memory_items")]
     tbl_api_key_errors[("api_key_errors")]
     tbl_chat_conversations[("chat_conversations")]
     tbl_chat_messages[("chat_messages")]
-    tbl_more[("10 tables it only reads, listed under Data")]
+    tbl_expenses[("expenses")]
+    tbl_financial_goals[("financial_goals")]
+    tbl_local_users[("local_users")]
+    tbl_pending_clarifications[("pending_clarifications")]
+    tbl_user_profiles[("user_profiles")]
+    tbl_user_wallets[("user_wallets")]
+    tbl_users[("users")]
+    tbl_voice_call_incidents[("voice_call_incidents")]
+    tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
   end
   ext_gemini{{"Google Gemini API"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_ai_center[["AI Center (system)"]]
   sys_ai_platform[["AI providers and usage limits (system)"]]
+  sys_expense_capture[["Recording spending (system)"]]
+  sys_insights[["Reports, insights and the smart profile (system)"]]
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
   mod_voice --> ext_gemini
   mod_voice --> sys_accounts
   mod_voice --> sys_ai_center
   mod_voice --> sys_ai_platform
+  mod_voice --> sys_expense_capture
+  mod_voice --> sys_insights
   mod_voice --> sys_platform
-  mod_voice -.-> tbl_more
+  mod_voice -.-> tbl_ai_action_memory
+  mod_voice -.-> tbl_ai_conversation_summaries
+  mod_voice -.-> tbl_expenses
+  mod_voice -.-> tbl_financial_goals
+  mod_voice -.-> tbl_local_users
+  mod_voice -.-> tbl_user_profiles
+  mod_voice -.-> tbl_user_wallets
+  mod_voice -.-> tbl_users
+  mod_voice ==> tbl_ai_memory_items
   mod_voice ==> tbl_api_key_errors
   mod_voice ==> tbl_chat_conversations
   mod_voice ==> tbl_chat_messages
+  mod_voice ==> tbl_pending_clarifications
+  mod_voice ==> tbl_voice_call_incidents
+  mod_voice ==> tbl_voice_calls
   mod_voice ==> tbl_voice_usage
   mod_web_voice_call --> sys_web_app
   router_ai --> mod_voice
   router_ai --> sys_ai_center
   router_ai --> sys_platform
+  router_voice --> mod_voice
+  router_voice -.-> tbl_voice_calls
   ws__api_voice_live --> mod_voice
+  ws__api_voice_v2 --> mod_voice
 ```
 
 ## Code modules
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `voice` — Voice | Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 12 |
+| `voice` — Voice | Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 37 |
 | `web-voice-call` — Live voice call UI | The live voice call screen in the AI Center and its hook: voice selection, microphone capture resampled to 16 kHz PCM, the WebSocket to /api/voice/live, playback of the assistant's audio and the tool trace panel. | 2 |
 
 ## API procedures
@@ -62,12 +93,16 @@ flowchart LR
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
 | `ai.runVoiceToolQa` | mutation | `aiProcedure` | — | — | — |
+| `voice.eligibility` | query | `authedProcedure` | — | — | — |
+| `voice.listCalls` | query | `authedProcedure` | `voice_calls` | — | — |
+| `voice.startCall` | mutation | `authedProcedure` | — | — | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
 | Entry point | Kind | Declared in |
 | --- | --- | --- |
 | `/api/voice/live` | websocket | `api/boot.ts`, `api/server.ts` |
+| `/api/voice/v2` | websocket | `api/boot.ts`, `api/server.ts` |
 
 ## Data
 
@@ -77,17 +112,19 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- | --- |
 | `ai_action_memory` | F | — | `voice` |
 | `ai_conversation_summaries` | F | — | `voice` |
-| `ai_memory_items` | F | — | `voice` |
+| `ai_memory_items` | F | `voice` | `voice` |
 | `api_key_errors` | E | `voice` | — |
 | `chat_conversations` | G | `voice` | — |
 | `chat_messages` | G | `voice` | — |
 | `expenses` | B | — | `voice` |
 | `financial_goals` | C | — | `voice` |
 | `local_users` | A | — | `voice` |
+| `pending_clarifications` | D | `voice` | — |
 | `user_profiles` | A | — | `voice` |
 | `user_wallets` | A | — | `voice` |
 | `users` | A | — | `voice` |
-| `voice_calls` | E | — | `voice` |
+| `voice_call_incidents` | E | `voice` | — |
+| `voice_calls` | E | `voice` | `voice`, `voice.listCalls` |
 | `voice_usage` | E | `voice` | `voice` |
 
 ## Outside systems
@@ -98,7 +135,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 Used by: [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
@@ -106,19 +143,21 @@ Used by: [Server platform and data](platform.md), [Web and mobile app shell](web
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | yes | `api/services/voice-call-service.ts` |
+| `GEMINI_API_KEY` | yes | `api/services/voice-call-service.ts`, `api/services/voice/brain/tools/market-price.ts`, `api/services/voice/gateway/index.ts` |
 | `DEV` | frontend | `src/components/ai/AIVoiceCall.tsx` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/voice-calls.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>18 files and declarations</summary>
+<details><summary>46 files and declarations</summary>
 
 - `api/ai-router.ts#ai.runVoiceToolQa`
 - `api/ai-router.ts#rest-of-file`
 - `api/boot.ts#ws:/api/voice/live`
+- `api/boot.ts#ws:/api/voice/v2`
 - `api/server.ts#ws:/api/voice/live`
+- `api/server.ts#ws:/api/voice/v2`
 - `api/services/entitlements/voice.ts`
 - `api/services/voice-call-service.ts`
 - `api/services/voice-context-service.ts`
@@ -130,7 +169,33 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/voice-kernel/voice-prompt.ts`
 - `api/services/voice-kernel/voice-session-state.ts`
 - `api/services/voice-kernel/voice-tool-adapter.ts`
+- `api/services/voice/app-calls.ts`
+- `api/services/voice/brain/drafts.ts`
+- `api/services/voice/brain/facts.ts`
+- `api/services/voice/brain/honorific.ts`
+- `api/services/voice/brain/index.ts`
+- `api/services/voice/brain/instructions.ts`
+- `api/services/voice/brain/snapshot.ts`
 - `api/services/voice/brain/spoken.ts`
+- `api/services/voice/brain/tools/app-help.ts`
+- `api/services/voice/brain/tools/market-price.ts`
+- `api/services/voice/brain/tools/memory.ts`
+- `api/services/voice/brain/tools/money-query.ts`
+- `api/services/voice/brain/tools/record.ts`
+- `api/services/voice/brain/tools/think.ts`
+- `api/services/voice/brain/tools/types.ts`
+- `api/services/voice/brain/validator.ts`
+- `api/services/voice/brain/voices.ts`
+- `api/services/voice/engine/gemini-live.ts`
+- `api/services/voice/engine/types.ts`
+- `api/services/voice/gateway/call-session.ts`
+- `api/services/voice/gateway/index.ts`
+- `api/services/voice/gateway/persistence.ts`
+- `api/services/voice/gateway/pricing.ts`
+- `api/services/voice/gateway/socket.ts`
+- `api/services/voice/gateway/start-call.ts`
+- `api/services/voice/gateway/store.ts`
+- `api/voice-router.ts`
 - `src/components/ai/AIVoiceCall.tsx`
 - `src/hooks/useVoiceCall.ts`
 

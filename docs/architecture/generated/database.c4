@@ -437,7 +437,7 @@ model {
     }
     voice_calls = table 'voice_calls' {
       #classE #dualOwner
-      description '25 columns, 3 indexes, storage class E.'
+      description '26 columns, 3 indexes, storage class E.'
       metadata {
         export 'voiceCalls'
         storageClass 'E'

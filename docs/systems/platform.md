@@ -12,7 +12,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, the `/api/sms` sub-app, `/api/trpc/*`, `/health`, the static files and the voice WebSocket in production, and the cron registrations |
+| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, the `/api/sms` sub-app, `/api/trpc/*`, `/health`, the static files and the voice WebSockets (old and rebuilt call) in production, and the cron registrations |
 | Standalone entry | `api/server.ts` | The same app served on its own, for deploying the API apart from the web app |
 | Request context | `api/context.ts` | Resolves `ctx.user` from the Bearer header, the `smartspend_token`/`local_session` cookie or the `google_session` cookie, and the client IP |
 | Builders | `api/middleware.ts` | The nine procedure builders, their rate limits and their role and plan checks |
@@ -130,8 +130,10 @@ Checked against the code; each one names where it lives.
 8. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
    update can silently turn into zeroes.
 9. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
-   entry and `NODE_ENV=production`; `api/server.ts` repeats the WebSocket wiring for the standalone
-   deployment, and the two copies have to be kept in step by hand.
+   entry and `NODE_ENV=production`; `api/server.ts` repeats the server setup for the standalone deployment. Both
+   route the voice sockets (`/api/voice/live`, `/api/voice/v2`) through the one
+   `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their
+   `upgrade` listeners pass on have to be kept in step by hand.
 10. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
    they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that
    print `error.message` as text print provider, socket and storage errors today, or failed reads whose values

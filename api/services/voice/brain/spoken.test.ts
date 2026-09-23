@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseArabicNumbers } from "../../../lib/arabic-number-parser";
-import { roundForSpeech, spellAmount, spellDays, spellInteger, spellPercent, spellRelativeDay } from "./spoken";
+import { roundForSpeech, spellAmount, spellCount, spellDays, spellInteger, spellPercent, spellRelativeDay } from "./spoken";
 
 /** The numbers the app's own parser reads back from a phrase. */
 const readBack = (text: string): number[] =>
@@ -86,6 +86,7 @@ describe("days", () => {
     expect(spellDays(2)).toBe("يومين");
     expect(spellDays(9)).toBe("تسع أيام");
     expect(spellDays(11)).toBe("حداشر يوم");
+    expect(spellCount(8, { one: "عملية واحدة", two: "عمليتين", few: "عمليات", many: "عملية" })).toBe("تمن عمليات");
   });
 
   it("says a date relative to today", () => {

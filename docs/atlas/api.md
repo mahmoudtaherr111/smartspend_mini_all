@@ -42,6 +42,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `seo` | `api/seo-router.ts` | 5 | 3 | 2 | `adminProcedure`, `publicProcedure` |
 | `session` | `api/session-router.ts` | 5 | 3 | 2 | `adminProcedure`, `authedProcedure` |
 | `support` | `api/support-router.ts` | 7 | 3 | 4 | `adminProcedure`, `authedProcedure` |
+| `voice` | `api/voice-router.ts` | 3 | 2 | 1 | `authedProcedure` |
 | `wallet` | `api/wallet-router.ts` | 5 | 2 | 3 | `authedProcedure` |
 | `webauthn` | `api/webauthn-router.ts` | 5 | 1 | 4 | `authedProcedure`, `strictPublicProcedure` |
 
@@ -347,6 +348,14 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `support.listMine` | query | `authedProcedure` | no | `support_tickets` | — | — | `src/pages/Support.tsx` |
 | `support.respond` | mutation | `adminProcedure` | yes | `support_tickets` | `support_tickets` | — | `src/pages/Admin.tsx` |
 
+### `voice` — `api/voice-router.ts`
+
+| Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `voice.eligibility` | query | `authedProcedure` | no | — | — | `api/services/entitlements/voice.ts`, `api/services/voice/brain/voices.ts` | — |
+| `voice.listCalls` | query | `authedProcedure` | no | `voice_calls` | — | — | — |
+| `voice.startCall` | mutation | `authedProcedure` | yes | — | — | `api/services/voice/gateway/start-call.ts` | — |
+
 ### `wallet` — `api/wallet-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
@@ -371,4 +380,4 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 These are not referenced by the web app. Some may be called by other clients (Android app, iOS shortcuts) or server-side through `createCaller`; the rest are candidates for removal.
 
-`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.runVoiceToolQa`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `budget.create`, `budget.delete`, `budget.list`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `expense.update`, `export.myExpenses`, `goals.delete`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.generateMagicCode`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `wallet.updateWallet`
+`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.runVoiceToolQa`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `budget.create`, `budget.delete`, `budget.list`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `expense.update`, `export.myExpenses`, `goals.delete`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.generateMagicCode`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.eligibility`, `voice.listCalls`, `voice.startCall`, `wallet.updateWallet`

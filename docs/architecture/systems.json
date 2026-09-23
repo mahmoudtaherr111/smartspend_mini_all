@@ -57,11 +57,12 @@
       "id": "voice-calls",
       "title": "Live voice assistant",
       "titleAr": "المكالمة الصوتية",
-      "summary": "A live voice call with the assistant over a WebSocket bridged to the Gemini Live API, with session checks, voice quotas, tools that draft actions, the financial context for the call and a call archive.",
-      "summaryAr": "مكالمة صوتية مباشرة مع المساعد عن طريق WebSocket متوصل بـGemini Live، فيها فحص للجلسة وحصص للصوت وأدوات بتجهّز إجراءات وأرشيف للمكالمات.",
+      "summary": "A live voice call with the assistant over a WebSocket bridged to the Gemini Live API: who may call and for how long, the tools that answer from the ledger and draft changes behind a confirmation gate, checks on the numbers it speaks, and what each call used and cost.",
+      "summaryAr": "مكالمة صوتية مباشرة مع المساعد عن طريق WebSocket متوصل بـGemini Live: مين يكلم وقد إيه، والأدوات اللي بتجاوب من الدفتر وبتجهّز تعديلات ماتتنفذش غير بموافقتك، ومراجعة الأرقام اللي بيقولها، وكل مكالمة استهلكت إيه وكلفت كام.",
       "clusters": ["voice", "web-voice-call"],
+      "routers": ["voice"],
       "procedures": ["ai.runVoiceToolQa"],
-      "websockets": ["/api/voice/live"]
+      "websockets": ["/api/voice/live", "/api/voice/v2"]
     },
     {
       "id": "ai-center",

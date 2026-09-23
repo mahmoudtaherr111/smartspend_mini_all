@@ -92,6 +92,8 @@ export const SETTINGS: SettingDef[] = [
   { key: "voice_v2_model_ultra", default: "" },
   // Only read by gemini-3.8-live-extended-thinking: low | medium | high.
   { key: "voice_v2_thinking_level", default: "low" },
+  // The text model with Google Search that looks up gold and currency prices for the call.
+  { key: "voice_price_model", default: "gemini-3.8-flash" },
   // Safety cap on provider cost per user per Cairo day, in USD.
   { key: "voice_daily_cost_cap_usd_free", default: "0.10" },
   { key: "voice_daily_cost_cap_usd_pro", default: "0.50" },

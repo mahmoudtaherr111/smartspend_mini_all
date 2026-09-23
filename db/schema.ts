@@ -1368,6 +1368,8 @@ export const voiceCalls = mysqlTable(
     reconnects: int("reconnects").notNull().default(0),
     // Provider token counts by direction and modality, e.g. {"input":{"text":900,"audio":400},"output":{"audio":250}}
     tokens: json("tokens"),
+    // Call quality: first-audio latency after the user stops speaking, e.g. {"firstAudioMs":{"count":6,"p50":900,"p95":1700}}
+    metrics: json("metrics"),
     costUsd: decimal("cost_usd", { precision: 12, scale: 8 }).notNull().default("0.00000000"),
     // pending | done | empty | failed — the post-call summary and facts
     memoryStatus: varchar("memory_status", { length: 20 }).notNull().default("pending"),

@@ -109,6 +109,7 @@ export type VoiceEndReason =
   | "time_limit"
   | "month_used"
   | "daily_cost_cap"
+  | "inactive"
   | "provider"
   | "network"
   | "server";

@@ -235,6 +235,7 @@ model {
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.users
+  smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.voice_calls
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.voice_usage
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.webhook_tokens
   smartspend.api.modules.api-routers -[uses]-> fireworks
@@ -397,11 +398,16 @@ model {
   smartspend.api.modules.storage -[uses]-> smartspend.object-storage
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-actions
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-governance
+  smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-insights
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-kernel
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-memory
+  smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-providers
+  smartspend.api.modules.voice -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.voice -[imports]-> smartspend.api.modules.site-guide
+  smartspend.api.modules.voice -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.ai_action_memory
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.ai_conversation_summaries
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.ai_memory_items
@@ -414,9 +420,13 @@ model {
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.voice_calls
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.voice_usage
   smartspend.api.modules.voice -[uses]-> gemini
+  smartspend.api.modules.voice -[writes]-> smartspend.mysql.ai_memory_items
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.api_key_errors
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.chat_messages
+  smartspend.api.modules.voice -[writes]-> smartspend.mysql.pending_clarifications
+  smartspend.api.modules.voice -[writes]-> smartspend.mysql.voice_call_incidents
+  smartspend.api.modules.voice -[writes]-> smartspend.mysql.voice_calls
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.voice_usage
   smartspend.api.modules.whatsapp -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.whatsapp -[imports]-> smartspend.api.modules.platform
@@ -990,6 +1000,9 @@ model {
   smartspend.api.trpc.support.listMine -[reads]-> smartspend.mysql.support_tickets
   smartspend.api.trpc.support.respond -[reads]-> smartspend.mysql.support_tickets
   smartspend.api.trpc.support.respond -[writes]-> smartspend.mysql.support_tickets
+  smartspend.api.trpc.voice.eligibility -[uses]-> smartspend.api.modules.voice
+  smartspend.api.trpc.voice.listCalls -[reads]-> smartspend.mysql.voice_calls
+  smartspend.api.trpc.voice.startCall -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.wallet.createWallet -[writes]-> smartspend.mysql.user_wallets
   smartspend.api.trpc.wallet.deleteWallet -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.wallet.deleteWallet -[writes]-> smartspend.mysql.user_wallets
@@ -1019,6 +1032,7 @@ model {
   smartspend.api.trpc.webauthn.verifyRegistration -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.trpc.webauthn.verifyRegistration -[writes]-> smartspend.mysql.user_credentials
   smartspend.api.ws.voice_live -[uses]-> smartspend.api.modules.voice
+  smartspend.api.ws.voice_v2 -[uses]-> smartspend.api.modules.voice
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-finance
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-lib

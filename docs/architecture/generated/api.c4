@@ -2123,6 +2123,42 @@ model {
         }
       }
     }
+    voice = router 'voice' {
+      description 'api/voice-router.ts — 3 procedures.'
+      metadata {
+        file 'api/voice-router.ts'
+      }
+      eligibility = procedure 'voice.eligibility' {
+        #query #authed #uncalled
+        technology 'authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/voice-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
+      }
+      listCalls = procedure 'voice.listCalls' {
+        #query #authed #uncalled
+        technology 'authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/voice-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
+      }
+      startCall = procedure 'voice.startCall' {
+        #mutation #authed #uncalled
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/voice-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
+    }
     wallet = router 'wallet' {
       description 'api/wallet-router.ts — 5 procedures.'
       metadata {
@@ -2386,6 +2422,14 @@ model {
 
   extend smartspend.api.ws {
     voice_live = endpoint 'WS /api/voice/live' {
+      #websocket
+      description 'Upgrade handled by handleVoiceCallWebSocket.'
+      metadata {
+        handlerFile 'api/services/voice-call-service.ts'
+        wiredIn 'api/boot.ts, api/server.ts'
+      }
+    }
+    voice_v2 = endpoint 'WS /api/voice/v2' {
       #websocket
       description 'Upgrade handled by handleVoiceCallWebSocket.'
       metadata {

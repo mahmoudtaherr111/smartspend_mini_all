@@ -139,6 +139,7 @@ flowchart LR
   mod_api_routers -.-> tbl_notification_logs
   mod_api_routers -.-> tbl_onboarding_questions
   mod_api_routers -.-> tbl_sessions
+  mod_api_routers -.-> tbl_voice_calls
   mod_api_routers ==> tbl_ad_clicks
   mod_api_routers ==> tbl_ads
   mod_api_routers ==> tbl_ai_conversation_summaries
@@ -227,7 +228,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
-| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 23 |
+| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 24 |
 | `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 5 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 5 |
@@ -303,7 +304,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_wallets` | A | `api-routers` | `api-routers` |
 | `users` | A | `api-routers` | `api-core`, `api-routers`, `jobs` |
 | `voice_call_incidents` | E | `jobs` | — |
-| `voice_calls` | E | `jobs` | — |
+| `voice_calls` | E | `jobs` | `api-routers` |
 | `voice_usage` | E | `api-routers`, `jobs` | `api-routers` |
 | `webhook_tokens` | D | `api-routers` | `api-routers` |
 

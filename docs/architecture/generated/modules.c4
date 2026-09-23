@@ -62,7 +62,7 @@ model {
     api-routers = module 'tRPC routers and HTTP sub-apps' {
       description 'One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts.'
       metadata {
-        files '23'
+        files '24'
         paths 'api/*-router.ts'
       }
     }
@@ -181,7 +181,7 @@ model {
     voice = module 'Voice' {
       description 'Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month.'
       metadata {
-        files '12'
+        files '37'
         paths 'api/services/voice/**, api/services/entitlements/**, api/services/voice-kernel/**, api/services/voice-call-service.ts, api/services/voice-context-service.ts'
       }
     }

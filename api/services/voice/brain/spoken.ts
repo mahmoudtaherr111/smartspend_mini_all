@@ -159,13 +159,18 @@ export function spellPercent(percent: number): string {
   return `${spellInteger(p)} في المية`;
 }
 
+/** A count of things with the noun in the form Arabic gives each count: "عمليتين", "تمن عمليات", "حداشر عملية". */
+export function spellCount(count: number, forms: { one: string; two: string; few: string; many: string }): string {
+  const n = Math.round(Math.abs(count));
+  if (n === 1) return forms.one;
+  if (n === 2) return forms.two;
+  if (n >= 3 && n <= 10) return `${THOUSANDS_COUNT[n]} ${forms.few}`;
+  return `${spellInteger(n)} ${forms.many}`;
+}
+
 /** A count of days: "يوم واحد", "يومين", "تلات أيام", "حداشر يوم". */
 export function spellDays(count: number): string {
-  const n = Math.round(Math.abs(count));
-  if (n === 1) return "يوم واحد";
-  if (n === 2) return "يومين";
-  if (n >= 3 && n <= 10) return `${THOUSANDS_COUNT[n]} أيام`;
-  return `${spellInteger(n)} يوم`;
+  return spellCount(count, { one: "يوم واحد", two: "يومين", few: "أيام", many: "يوم" });
 }
 
 function dayNumber(key: string): number {

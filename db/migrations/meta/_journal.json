@@ -162,6 +162,13 @@
       "when": 1790108053944,
       "tag": "0022_voice_calls",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1790129358309,
+      "tag": "0023_voice_call_metrics",
+      "breakpoints": true
     }
   ]
 }
