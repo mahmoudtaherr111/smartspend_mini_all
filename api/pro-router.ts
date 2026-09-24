@@ -12,9 +12,22 @@ import {
 } from "./lib/paymob";
 import { BILLING_PLAN_IDS } from "../contracts/plans";
 import { setPlan } from "./lib/access-control";
+import { getSystemSettings } from "./lib/settings-cache";
+import { buildPlanCatalog, buildPlanCatalogEntry } from "./lib/plan-catalog";
+import { asPlanId, isPlanFeatureEnabled } from "../contracts/plan-features";
 
-function hasPaidFeatures(plan: string, role: string) {
-  return plan === "pro" || plan === "ultra" || role === "admin";
+/** The plan features the screens gate on, from the admin's settings. Admins get all. */
+function planFeatures(settings: Record<string, string>, plan: string, role: string) {
+  const on = (feature: Parameters<typeof isPlanFeatureEnabled>[2]) =>
+    role === "admin" || isPlanFeatureEnabled(settings, plan, feature);
+  return {
+    receipts: on("receipts"),
+    business: on("business"),
+    proReport: on("pro_report"),
+    goalAnalysis: on("goal_analysis"),
+    whatsappReport: on("whatsapp_report"),
+    ads: plan === "free" && role !== "admin",
+  };
 }
 
 export const proRouter = router({
@@ -61,20 +74,21 @@ export const proRouter = router({
       sub.status = "expired";
     }
 
-    const paid = hasPaidFeatures(plan, role);
+    const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
 
     return {
       plan,
       role,
       subscription: sub ?? null,
-      features: {
-        aiRequests: paid ? "unlimited" : "10/day",
-        exports: paid,
-        ads: !paid,
-        advancedStats: paid,
-        prioritySupport: paid,
-      },
+      features: planFeatures(settings, plan, role),
+      included: buildPlanCatalogEntry(settings, asPlanId(plan)),
     };
+  }),
+
+  /** What every plan includes, from the settings the server enforces (the plans screen). */
+  planCatalog: authedProcedure.query(async () => {
+    const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
+    return buildPlanCatalog(settings);
   }),
 
   /** Starts hosted checkout when Paymob is configured; otherwise signals client to use simulate upgrade. */

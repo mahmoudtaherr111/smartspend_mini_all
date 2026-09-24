@@ -91,10 +91,11 @@ cycle, counted in Cairo business days, and whether it is near or over its limit.
 confirmed actions, including the budget it suggests after a new goal.
 
 ## Goals
-- `goals.list` returns the user's goals and, for Free users, an upsell.
-- `goals.create`: a title, a description of up to 120 characters, a target amount and date. Free users may have up to
-  3 active goals.
-- `goals.analyze` (Pro): asks Gemini (`ai_model_pro`, through `mapModelName`, after `assertAiBudget`) for a plan,
+- `goals.list` returns the user's goals and, when the plan has no goal analysis, an upsell.
+- `goals.create`: a title, a description of up to 120 characters, a target amount and date. The number of active
+  goals is the plan's `goals_active_limit_<plan>` (3 on Free by default, 0 = no limit); the assistant's goal action
+  applies the same limit.
+- `goals.analyze` (the plan switch `feature_goal_analysis_<plan>`, Pro and Ultra by default): asks Gemini (`ai_model_pro`, through `mapModelName`, after `assertAiBudget`) for a plan,
   weekly actions, alerts and progress from the goal, this month's spending and the profile summary, records the
   tokens and saves the plan on the goal.
 - `goals.setStatus` (active, completed, paused) and `goals.delete`, which also unlinks the goal's budgets.
@@ -102,7 +103,7 @@ confirmed actions, including the budget it suggests after a new goal.
   with statuses is in the profile view.
 
 ## Business mode
-Pro only (`proProcedure`). A user has one active business with categories that the classification pipeline scores in
+A plan feature (`feature_business_<plan>`, Pro and Ultra by default; `businessProcedure`). A user has one active business with categories that the classification pipeline scores in
 business mode:
 - `business.suggestCategories` asks Gemini for categories with Egyptian keywords and examples from the business
   description;

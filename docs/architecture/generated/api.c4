@@ -991,102 +991,102 @@ model {
         file 'api/business-router.ts'
       }
       addCategory = procedure 'business.addCategory' {
-        #mutation #pro
-        technology 'proProcedure'
-        description 'mutation · proProcedure'
+        #mutation #business
+        technology 'businessProcedure'
+        description 'mutation · businessProcedure'
         metadata {
           file 'api/business-router.ts'
-          builder 'proProcedure'
+          builder 'businessProcedure'
           procedureKind 'mutation'
         }
       }
       create = procedure 'business.create' {
-        #mutation #pro
-        technology 'proProcedure'
-        description 'mutation · proProcedure'
+        #mutation #business
+        technology 'businessProcedure'
+        description 'mutation · businessProcedure'
         metadata {
           file 'api/business-router.ts'
-          builder 'proProcedure'
+          builder 'businessProcedure'
           procedureKind 'mutation'
         }
       }
       delete = procedure 'business.delete' {
-        #mutation #pro
-        technology 'proProcedure'
-        description 'mutation · proProcedure'
+        #mutation #business
+        technology 'businessProcedure'
+        description 'mutation · businessProcedure'
         metadata {
           file 'api/business-router.ts'
-          builder 'proProcedure'
+          builder 'businessProcedure'
           procedureKind 'mutation'
         }
       }
       get = procedure 'business.get' {
-        #query #pro
-        technology 'proProcedure'
-        description 'query · proProcedure'
+        #query #business
+        technology 'businessProcedure'
+        description 'query · businessProcedure'
         metadata {
           file 'api/business-router.ts'
-          builder 'proProcedure'
+          builder 'businessProcedure'
           procedureKind 'query'
         }
       }
       linkContact = procedure 'business.linkContact' {
-        #mutation #pro #uncalled
-        technology 'proProcedure'
-        description 'mutation · proProcedure · no caller in src/'
+        #mutation #business #uncalled
+        technology 'businessProcedure'
+        description 'mutation · businessProcedure · no caller in src/'
         metadata {
           file 'api/business-router.ts'
-          builder 'proProcedure'
+          builder 'businessProcedure'
           procedureKind 'mutation'
         }
       }
       removeCategory = procedure 'business.removeCategory' {
-        #mutation #pro
-        technology 'proProcedure'
-        description 'mutation · proProcedure'
+        #mutation #business
+        technology 'businessProcedure'
+        description 'mutation · businessProcedure'
         metadata {
           file 'api/business-router.ts'
-          builder 'proProcedure'
+          builder 'businessProcedure'
           procedureKind 'mutation'
         }
       }
       suggestCategories = procedure 'business.suggestCategories' {
-        #mutation #proAi
-        technology 'proAiProcedure'
-        description 'mutation · proAiProcedure'
+        #mutation #businessAi
+        technology 'businessAiProcedure'
+        description 'mutation · businessAiProcedure'
         metadata {
           file 'api/business-router.ts'
-          builder 'proAiProcedure'
+          builder 'businessAiProcedure'
           procedureKind 'mutation'
         }
       }
       types = procedure 'business.types' {
-        #query #pro #uncalled
-        technology 'proProcedure'
-        description 'query · proProcedure · no caller in src/'
+        #query #business #uncalled
+        technology 'businessProcedure'
+        description 'query · businessProcedure · no caller in src/'
         metadata {
           file 'api/business-router.ts'
-          builder 'proProcedure'
+          builder 'businessProcedure'
           procedureKind 'query'
         }
       }
       update = procedure 'business.update' {
-        #mutation #pro
-        technology 'proProcedure'
-        description 'mutation · proProcedure'
+        #mutation #business
+        technology 'businessProcedure'
+        description 'mutation · businessProcedure'
         metadata {
           file 'api/business-router.ts'
-          builder 'proProcedure'
+          builder 'businessProcedure'
           procedureKind 'mutation'
         }
       }
       updateCategory = procedure 'business.updateCategory' {
-        #mutation #pro #uncalled
-        technology 'proProcedure'
-        description 'mutation · proProcedure · no caller in src/'
+        #mutation #business #uncalled
+        technology 'businessProcedure'
+        description 'mutation · businessProcedure · no caller in src/'
         metadata {
           file 'api/business-router.ts'
-          builder 'proProcedure'
+          builder 'businessProcedure'
           procedureKind 'mutation'
         }
       }
@@ -1359,12 +1359,12 @@ model {
         }
       }
       monthlyReportHtml = procedure 'export.monthlyReportHtml' {
-        #mutation #pro
-        technology 'proProcedure'
-        description 'mutation · proProcedure'
+        #mutation #proReport
+        technology 'proReportProcedure'
+        description 'mutation · proReportProcedure'
         metadata {
           file 'api/export-router.ts'
-          builder 'proProcedure'
+          builder 'proReportProcedure'
           procedureKind 'mutation'
         }
       }
@@ -1385,12 +1385,12 @@ model {
         file 'api/goals-router.ts'
       }
       analyze = procedure 'goals.analyze' {
-        #mutation #pro
-        technology 'proProcedure'
-        description 'mutation · proProcedure'
+        #mutation #goalAnalysis
+        technology 'goalAnalysisProcedure'
+        description 'mutation · goalAnalysisProcedure'
         metadata {
           file 'api/goals-router.ts'
-          builder 'proProcedure'
+          builder 'goalAnalysisProcedure'
           procedureKind 'mutation'
         }
       }
@@ -1441,12 +1441,12 @@ model {
         file 'api/image-router.ts'
       }
       parseReceipt = procedure 'image.parseReceipt' {
-        #mutation #pro
-        technology 'proProcedure'
-        description 'mutation · proProcedure'
+        #mutation #receipts
+        technology 'receiptsProcedure'
+        description 'mutation · receiptsProcedure'
         metadata {
           file 'api/image-router.ts'
-          builder 'proProcedure'
+          builder 'receiptsProcedure'
           procedureKind 'mutation'
         }
       }
@@ -1578,7 +1578,7 @@ model {
       }
     }
     pro = router 'pro' {
-      description 'api/pro-router.ts — 5 procedures.'
+      description 'api/pro-router.ts — 6 procedures.'
       metadata {
         file 'api/pro-router.ts'
       }
@@ -1613,6 +1613,16 @@ model {
         }
       }
       myPlan = procedure 'pro.myPlan' {
+        #query #authed
+        technology 'authedProcedure'
+        description 'query · authedProcedure'
+        metadata {
+          file 'api/pro-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
+      }
+      planCatalog = procedure 'pro.planCatalog' {
         #query #authed
         technology 'authedProcedure'
         description 'query · authedProcedure'

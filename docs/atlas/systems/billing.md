@@ -21,7 +21,7 @@ flowchart LR
   subgraph g_api["API, routes and jobs"]
     http__api_webhooks["POST /api/webhooks/paymob"]
     job_daily_subscription_expiry["Job · daily-subscription-expiry"]
-    router_pro["pro API · 5 procedures"]
+    router_pro["pro API · 6 procedures"]
     router_referral["referral API · 4 procedures"]
   end
   subgraph g_modules["Code modules"]
@@ -99,7 +99,7 @@ Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it 
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `billing` — Billing | Paymob checkout requests, webhook verification settings and the subscription grant that sets a user's plan. | 2 |
+| `billing` — Billing | Paymob checkout requests, webhook verification settings, the subscription grant that sets a user's plan, and the per-plan catalog of limits and features read from the admin's settings for the plans screen. | 3 |
 
 ## API procedures
 
@@ -109,6 +109,7 @@ Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it 
 | `pro.createCheckoutSession` | mutation | `authedProcedure` | — | — | `More`, `Pro` |
 | `pro.listSubscriptions` | query | `adminProcedure` | `pro_subscriptions` | — | — |
 | `pro.myPlan` | query | `authedProcedure` | `local_users`, `pro_subscriptions`, `users` | `pro_subscriptions` | `Home`, `More`, `Pro` |
+| `pro.planCatalog` | query | `authedProcedure` | — | — | `More`, `Pro` |
 | `pro.upgrade` | mutation | `authedProcedure` | — | — | `More`, `Pro` |
 | `referral.applyCode` | mutation | `authedProcedure` | `local_users`, `referrals`, `users` | `local_users`, `referrals`, `users` | `More`, `Pro` |
 | `referral.listAll` | query | `adminProcedure` | `referrals` | — | — |
@@ -160,12 +161,13 @@ Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [S
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/billing.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>9 files and declarations</summary>
+<details><summary>10 files and declarations</summary>
 
 - `api/boot.ts#POST /api/webhooks/paymob`
 - `api/boot.ts#job:daily-subscription-expiry`
 - `api/jobs/subscription-expiry-job.ts`
 - `api/lib/paymob.ts`
+- `api/lib/plan-catalog.ts`
 - `api/lib/subscription-service.ts`
 - `api/pro-router.ts`
 - `api/referral-router.ts`

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, proProcedure } from "./middleware";
+import { router, receiptsProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
 import { expenses, userDictionaries, users, localUsers } from "../db/schema";
@@ -53,7 +53,7 @@ async function trackImageTokens(
 }
 
 export const imageRouter = router({
-  parseReceipt: proProcedure
+  parseReceipt: receiptsProcedure
     .input(
       z.object({
         imageBase64: z.string().min(100),

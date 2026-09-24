@@ -11,10 +11,15 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `adminProcedure` | `authedProcedure` | inherited | — | admin | — |
 | `aiProcedure` | `authedProcedure` | inherited | 100 per 1 min (`aiRateLimiter`) | — | — |
 | `authedProcedure` | `t.procedure` | yes | 100 per 1 min (`userRateLimiter`) | — | — |
+| `businessAiProcedure` | `planFeatureAiProcedure` | inherited | — | — | — |
+| `businessProcedure` | `planFeatureProcedure` | inherited | — | — | — |
+| `goalAnalysisProcedure` | `planFeatureProcedure` | inherited | — | — | — |
 | `moderatorProcedure` | `authedProcedure` | inherited | — | admin, moderator | — |
 | `proAiProcedure` | `proProcedure` | inherited | 100 per 1 min (`aiRateLimiter`) | — | — |
 | `proProcedure` | `authedProcedure` | inherited | — | admin | pro, ultra |
+| `proReportProcedure` | `planFeatureProcedure` | inherited | — | — | — |
 | `publicProcedure` | `t.procedure` | no | 400 per 1 min (`publicIpLimiter`) | — | — |
+| `receiptsProcedure` | `planFeatureProcedure` | inherited | — | — | — |
 | `strictPublicProcedure` | `t.procedure` | no | 25 per 15 min (`strictPublicIpLimiter`) | — | — |
 | `ultraProcedure` | `authedProcedure` | inherited | — | admin | ultra |
 
@@ -29,14 +34,14 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `analytics` | `api/analytics-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `auth` | `api/auth-router.ts` | 4 | 2 | 2 | `authedProcedure`, `publicProcedure`, `strictPublicProcedure` |
 | `budget` | `api/budget-router.ts` | 4 | 1 | 3 | `authedProcedure` |
-| `business` | `api/business-router.ts` | 10 | 2 | 8 | `proAiProcedure`, `proProcedure` |
+| `business` | `api/business-router.ts` | 10 | 2 | 8 | `businessAiProcedure`, `businessProcedure` |
 | `chat` | `api/chat-router.ts` | 10 | 4 | 6 | `aiProcedure`, `authedProcedure` |
 | `expense` | `api/expense-router.ts` | 14 | 8 | 6 | `authedProcedure` |
-| `export` | `api/export-router.ts` | 3 | 0 | 3 | `adminProcedure`, `authedProcedure`, `proProcedure` |
-| `goals` | `api/goals-router.ts` | 5 | 1 | 4 | `authedProcedure`, `proProcedure` |
-| `image` | `api/image-router.ts` | 1 | 0 | 1 | `proProcedure` |
+| `export` | `api/export-router.ts` | 3 | 0 | 3 | `adminProcedure`, `authedProcedure`, `proReportProcedure` |
+| `goals` | `api/goals-router.ts` | 5 | 1 | 4 | `authedProcedure`, `goalAnalysisProcedure` |
+| `image` | `api/image-router.ts` | 1 | 0 | 1 | `receiptsProcedure` |
 | `localAuth` | `api/local-auth-router.ts` | 12 | 5 | 7 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
-| `pro` | `api/pro-router.ts` | 5 | 2 | 3 | `adminProcedure`, `authedProcedure` |
+| `pro` | `api/pro-router.ts` | 6 | 3 | 3 | `adminProcedure`, `authedProcedure` |
 | `profile` | `api/profile-router.ts` | 25 | 8 | 17 | `authedProcedure` |
 | `referral` | `api/referral-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `seo` | `api/seo-router.ts` | 5 | 3 | 2 | `adminProcedure`, `publicProcedure` |
@@ -85,7 +90,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `admin.getRawSmsLogs` | query | `adminProcedure` | yes | `local_users`, `raw_sms_events`, `users` | — | — | `src/components/admin/AdminRawSmsTab.tsx` |
 | `admin.getSettings` | query | `adminProcedure` | no | — | — | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getStorageRuntimeMetrics` | query | `adminProcedure` | no | — | — | `api/lib/redis-client.ts` | — |
-| `admin.getUserAiQuota` | query | `adminProcedure` | yes | `ai_token_ledgers`, `local_users`, `users` | — | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` |
+| `admin.getUserAiQuota` | query | `adminProcedure` | yes | `ai_token_ledgers`, `local_users`, `users` | — | `api/lib/ai-gateway.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/settings-cache.ts` | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` |
 | `admin.getUserSessions` | query | `adminProcedure` | yes | `sessions` | — | — | `src/hooks/useAdmin.ts`, `src/pages/Admin.tsx` |
 | `admin.getUserSmartProfile` | query | `adminProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/pages/Admin.tsx` |
 | `admin.getVoiceUsageStats` | query | `adminProcedure` | no | `voice_usage` | — | — | `src/hooks/useAdmin.ts` |
@@ -143,7 +148,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `ai.generateMonthlyInsights` | mutation | `aiProcedure` | yes | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `ai_token_ledgers`, `local_users`, `monthly_behavior_snapshots`, `users` | `api/lib/ai-gateway.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/anonymizer.ts`, `api/lib/env.ts`, `api/lib/fireworks-client.ts`, `api/lib/model-mapper.ts`, `api/lib/nvidia-client.ts`, `api/lib/settings-cache.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/financial-month.ts`, `api/services/lifestyle-inference-engine.ts`, `api/services/personal-context-builder.ts`, `api/services/report-personalization-engine.ts`, `api/services/user-profile-service.ts` | `src/components/insights/AIInsights.tsx` |
 | `ai.generateYearlyInsights` | mutation | `aiProcedure` | yes | — | — | `api/lib/ai-usage-policy.ts`, `api/lib/settings-cache.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | — |
 | `ai.getCachedMonthlyInsights` | query | `authedProcedure` | yes | `ai_summaries` | — | — | `src/components/insights/AIInsights.tsx` |
-| `ai.getUserLimits` | query | `authedProcedure` | no | `local_users`, `pro_subscriptions`, `users`, `voice_usage` | — | `api/lib/ai-usage-policy.ts`, `api/lib/settings-cache.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/layout/PlanUsageStrip.tsx` |
+| `ai.getUserLimits` | query | `authedProcedure` | no | `local_users`, `pro_subscriptions`, `users`, `voice_usage` | — | `api/lib/ai-usage-policy.ts`, `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/layout/PlanUsageStrip.tsx` |
 | `ai.learnWord` | mutation | `authedProcedure` | yes | — | `user_dictionaries` | — | — |
 | `ai.parseExpense` | mutation | `aiProcedure` | yes | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries` | `ai_summaries`, `ai_token_ledgers`, `classification_logs`, `local_users`, `pending_clarifications`, `users` | `api/lib/ai-gateway.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/entity-extractor.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/person-resolver.ts`, `api/lib/settings-cache.ts`, `api/lib/smart-pipeline.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/parser-trace.ts`, `api/services/personal-context-builder.ts`, `api/services/user-profile-service.ts` | `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx`, `src/components/expenses/ExpenseForm.tsx` |
 | `ai.parseVoiceExpense` | mutation | `aiProcedure` | yes | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `voice_usage` | `ai_token_ledgers`, `classification_logs`, `local_users`, `pending_clarifications`, `users`, `voice_usage` | `api/lib/ai-gateway.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/entity-extractor.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/person-resolver.ts`, `api/lib/settings-cache.ts`, `api/lib/smart-pipeline.ts`, `api/lib/voice-intake-gate.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/parser-trace.ts`, `api/services/personal-context-builder.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx` |
@@ -181,16 +186,16 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `business.addCategory` | mutation | `proProcedure` | yes | `user_businesses` | `business_categories` | `api/lib/smart-pipeline.ts` | `src/components/settings/BusinessSettingsView.tsx` |
-| `business.create` | mutation | `proProcedure` | yes | `user_businesses` | `business_categories`, `user_businesses` | `api/lib/muscle-memory.ts`, `api/lib/smart-pipeline.ts` | `src/components/settings/BusinessSettingsView.tsx` |
-| `business.delete` | mutation | `proProcedure` | no | `user_businesses` | `business_categories`, `expenses`, `user_businesses`, `user_contacts` | `api/lib/cache-keys.ts`, `api/lib/muscle-memory.ts`, `api/lib/redis-client.ts`, `api/lib/smart-pipeline.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/settings/BusinessSettingsView.tsx` |
-| `business.get` | query | `proProcedure` | yes | `business_categories`, `user_businesses`, `user_contacts` | — | — | `src/components/settings/BusinessSettingsView.tsx`, `src/pages/Home.tsx` |
-| `business.linkContact` | mutation | `proProcedure` | yes | `user_businesses`, `user_contacts` | `user_contacts` | `api/lib/smart-pipeline.ts` | — |
-| `business.removeCategory` | mutation | `proProcedure` | yes | `business_categories`, `user_businesses` | `business_categories` | `api/lib/smart-pipeline.ts` | `src/components/settings/BusinessSettingsView.tsx` |
-| `business.suggestCategories` | mutation | `proAiProcedure` | yes | — | — | `api/lib/env.ts`, `api/lib/settings-cache.ts` | `src/components/settings/BusinessSettingsView.tsx` |
-| `business.types` | query | `proProcedure` | no | — | — | — | — |
-| `business.update` | mutation | `proProcedure` | yes | `user_businesses` | `user_businesses` | `api/lib/smart-pipeline.ts` | `src/components/settings/BusinessSettingsView.tsx` |
-| `business.updateCategory` | mutation | `proProcedure` | yes | `business_categories`, `user_businesses` | `business_categories` | `api/lib/smart-pipeline.ts` | — |
+| `business.addCategory` | mutation | `businessProcedure` | yes | `user_businesses` | `business_categories` | `api/lib/smart-pipeline.ts` | `src/components/settings/BusinessSettingsView.tsx` |
+| `business.create` | mutation | `businessProcedure` | yes | `user_businesses` | `business_categories`, `user_businesses` | `api/lib/muscle-memory.ts`, `api/lib/smart-pipeline.ts` | `src/components/settings/BusinessSettingsView.tsx` |
+| `business.delete` | mutation | `businessProcedure` | no | `user_businesses` | `business_categories`, `expenses`, `user_businesses`, `user_contacts` | `api/lib/cache-keys.ts`, `api/lib/muscle-memory.ts`, `api/lib/redis-client.ts`, `api/lib/smart-pipeline.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/settings/BusinessSettingsView.tsx` |
+| `business.get` | query | `businessProcedure` | yes | `business_categories`, `user_businesses`, `user_contacts` | — | — | `src/components/settings/BusinessSettingsView.tsx`, `src/pages/Home.tsx` |
+| `business.linkContact` | mutation | `businessProcedure` | yes | `user_businesses`, `user_contacts` | `user_contacts` | `api/lib/smart-pipeline.ts` | — |
+| `business.removeCategory` | mutation | `businessProcedure` | yes | `business_categories`, `user_businesses` | `business_categories` | `api/lib/smart-pipeline.ts` | `src/components/settings/BusinessSettingsView.tsx` |
+| `business.suggestCategories` | mutation | `businessAiProcedure` | yes | — | — | `api/lib/env.ts`, `api/lib/settings-cache.ts` | `src/components/settings/BusinessSettingsView.tsx` |
+| `business.types` | query | `businessProcedure` | no | — | — | — | — |
+| `business.update` | mutation | `businessProcedure` | yes | `user_businesses` | `user_businesses` | `api/lib/smart-pipeline.ts` | `src/components/settings/BusinessSettingsView.tsx` |
+| `business.updateCategory` | mutation | `businessProcedure` | yes | `business_categories`, `user_businesses` | `business_categories` | `api/lib/smart-pipeline.ts` | — |
 
 ### `chat` — `api/chat-router.ts`
 
@@ -231,24 +236,24 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `export.allUsers` | mutation | `adminProcedure` | yes | `local_users`, `users` | — | — | `src/pages/Admin.tsx` |
-| `export.monthlyReportHtml` | mutation | `proProcedure` | yes | — | — | `api/services/pro-report-engine.ts` | `src/components/insights/AIInsights.tsx` |
+| `export.monthlyReportHtml` | mutation | `proReportProcedure` | yes | — | — | `api/services/pro-report-engine.ts` | `src/components/insights/AIInsights.tsx` |
 | `export.myExpenses` | mutation | `authedProcedure` | yes | `expenses` | — | — | — |
 
 ### `goals` — `api/goals-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `goals.analyze` | mutation | `proProcedure` | yes | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `users` | `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
-| `goals.create` | mutation | `authedProcedure` | yes | `financial_goals` | `financial_goals` | `api/services/finance-semantic-layer/index.ts`, `contracts/constants.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
+| `goals.analyze` | mutation | `goalAnalysisProcedure` | yes | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `users` | `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
+| `goals.create` | mutation | `authedProcedure` | yes | `financial_goals` | `financial_goals` | `api/lib/settings-cache.ts`, `api/services/finance-semantic-layer/index.ts`, `contracts/constants.ts`, `contracts/plan-features.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.delete` | mutation | `authedProcedure` | yes | — | `financial_goals`, `user_budgets` | `api/services/finance-semantic-layer/index.ts` | — |
-| `goals.list` | query | `authedProcedure` | no | `financial_goals` | — | — | `src/components/goals/FinancialGoalsPanel.tsx`, `src/components/profile/SmartProfileView.tsx` |
+| `goals.list` | query | `authedProcedure` | no | `financial_goals` | — | `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | `src/components/goals/FinancialGoalsPanel.tsx`, `src/components/profile/SmartProfileView.tsx` |
 | `goals.setStatus` | mutation | `authedProcedure` | yes | — | `financial_goals` | `api/services/finance-semantic-layer/index.ts` | `src/components/profile/SmartProfileView.tsx` |
 
 ### `image` — `api/image-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `image.parseReceipt` | mutation | `proProcedure` | yes | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` | `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/category-registry.ts`, `api/lib/env.ts`, `api/lib/image-magic-bytes.ts`, `api/lib/model-mapper.ts`, `api/lib/muscle-memory.ts`, `api/lib/receipt-image-parser.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx` |
+| `image.parseReceipt` | mutation | `receiptsProcedure` | yes | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` | `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/category-registry.ts`, `api/lib/env.ts`, `api/lib/image-magic-bytes.ts`, `api/lib/model-mapper.ts`, `api/lib/muscle-memory.ts`, `api/lib/receipt-image-parser.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx` |
 
 ### `localAuth` — `api/local-auth-router.ts`
 
@@ -274,7 +279,8 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `pro.cancel` | mutation | `authedProcedure` | no | — | `pro_subscriptions` | — | `src/hooks/usePro.ts` |
 | `pro.createCheckoutSession` | mutation | `authedProcedure` | yes | — | — | `api/lib/env.ts`, `api/lib/paymob.ts`, `contracts/plans.ts` | `src/hooks/usePro.ts` |
 | `pro.listSubscriptions` | query | `adminProcedure` | yes | `pro_subscriptions` | — | — | — |
-| `pro.myPlan` | query | `authedProcedure` | no | `local_users`, `pro_subscriptions`, `users` | `pro_subscriptions` | `api/lib/access-control.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/hooks/usePro.ts` |
+| `pro.myPlan` | query | `authedProcedure` | no | `local_users`, `pro_subscriptions`, `users` | `pro_subscriptions` | `api/lib/access-control.ts`, `api/lib/plan-catalog.ts`, `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/hooks/usePro.ts` |
+| `pro.planCatalog` | query | `authedProcedure` | no | — | — | `api/lib/plan-catalog.ts`, `api/lib/settings-cache.ts` | `src/pages/Pro.tsx` |
 | `pro.upgrade` | mutation | `authedProcedure` | yes | — | — | `api/lib/env.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` | `src/hooks/usePro.ts` |
 
 ### `profile` — `api/profile-router.ts`

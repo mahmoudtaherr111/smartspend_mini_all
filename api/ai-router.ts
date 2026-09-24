@@ -112,6 +112,7 @@ import {
   type VoiceToolName,
 } from "./services/voice-kernel";
 import { buildParserTrace } from "./services/parser-trace";
+import { planNumber } from "../contracts/plan-features";
 
 const MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT = 4;
 const VOICE_QA_TOOL_NAMES = ["finance_query", "memory_search", "action_draft"] as const;
@@ -1315,9 +1316,8 @@ export const aiRouter = router({
     );
     const voiceLimit = planValue(voiceLimits, ctx.user.plan, 300);
     const aiBudget = await getAiBudget(ctx.user, "parse", cfg);
-    const offlineLimit = ctx.user.plan === "free"
-      ? parseInt(cfg.offline_limit_free || "3")
-      : parseInt(cfg.offline_limit_pro || "30");
+    // offline_limit_<plan>; Ultra used to read Pro's value because it had no key.
+    const offlineLimit = planNumber(cfg, ctx.user.plan, "offline_limit");
 
     return {
       ai: {

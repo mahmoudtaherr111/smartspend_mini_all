@@ -80,6 +80,7 @@ import { loadAICostOverview } from "./services/ai-cost-analytics";
 import webpush from "web-push";
 import { sendPush, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
 import { purgeUserData } from "./services/user-purge-service";
+import { asPlan, resolvePlanTokenLimit } from "./lib/ai-usage-policy";
 
 // Setup Web Push
 // In a real app these should be in env vars, but we'll use the ones generated earlier
@@ -2144,12 +2145,15 @@ export const adminRouter = router({
       const totalCostEgp = Number(statsRow?.totalCostEgp || 0);
       const totalCostUsd = Number(statsRow?.totalCostUsd || 0);
 
-      const planLimits: Record<string, number> = {
-        free: 50_000,
-        pro: 500_000,
-        ultra: 2_000_000,
-      };
-      const quotaLimit = planLimits[matchedUser.plan] || 50_000;
+      // The limit the server enforces: the user's own override, else <plan>_token_limit.
+      const quotaSettings = await getSystemSettings();
+      const overrideLimit = Number.parseInt(
+        quotaSettings[`user_token_limit_${matchedUser.type}_${matchedUser.id}`] ?? "",
+        10,
+      );
+      const quotaLimit = Number.isFinite(overrideLimit) && overrideLimit >= 0
+        ? overrideLimit
+        : resolvePlanTokenLimit(quotaSettings, asPlan(matchedUser.plan));
 
       return {
         user: matchedUser,
@@ -2159,7 +2163,7 @@ export const adminRouter = router({
         totalTokens,
         totalCostEgp,
         totalCostUsd,
-        percentUsed: Math.min(100, Math.round((totalTokens / quotaLimit) * 100)),
+        percentUsed: quotaLimit > 0 ? Math.min(100, Math.round((totalTokens / quotaLimit) * 100)) : 0,
         byChannel,
         recentRequests,
       };

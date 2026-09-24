@@ -131,16 +131,16 @@ flowchart LR
 | `budget.delete` | mutation | `authedProcedure` | `user_budgets` | `user_budgets` | — |
 | `budget.list` | query | `authedProcedure` | `expenses`, `user_budgets` | — | — |
 | `budget.update` | mutation | `authedProcedure` | `user_budgets` | `user_budgets` | — |
-| `business.addCategory` | mutation | `proProcedure` | `user_businesses` | `business_categories` | `More`, `Settings` |
-| `business.create` | mutation | `proProcedure` | `user_businesses` | `business_categories`, `user_businesses` | `More`, `Settings` |
-| `business.delete` | mutation | `proProcedure` | `user_businesses` | `business_categories`, `expenses`, `user_businesses`, `user_contacts` | `More`, `Settings` |
-| `business.get` | query | `proProcedure` | `business_categories`, `user_businesses`, `user_contacts` | — | `Home`, `More`, `Settings` |
-| `business.linkContact` | mutation | `proProcedure` | `user_businesses`, `user_contacts` | `user_contacts` | — |
-| `business.removeCategory` | mutation | `proProcedure` | `business_categories`, `user_businesses` | `business_categories` | `More`, `Settings` |
-| `business.suggestCategories` | mutation | `proAiProcedure` | — | — | `More`, `Settings` |
-| `business.types` | query | `proProcedure` | — | — | — |
-| `business.update` | mutation | `proProcedure` | `user_businesses` | `user_businesses` | `More`, `Settings` |
-| `business.updateCategory` | mutation | `proProcedure` | `business_categories`, `user_businesses` | `business_categories` | — |
+| `business.addCategory` | mutation | `businessProcedure` | `user_businesses` | `business_categories` | `More`, `Settings` |
+| `business.create` | mutation | `businessProcedure` | `user_businesses` | `business_categories`, `user_businesses` | `More`, `Settings` |
+| `business.delete` | mutation | `businessProcedure` | `user_businesses` | `business_categories`, `expenses`, `user_businesses`, `user_contacts` | `More`, `Settings` |
+| `business.get` | query | `businessProcedure` | `business_categories`, `user_businesses`, `user_contacts` | — | `Home`, `More`, `Settings` |
+| `business.linkContact` | mutation | `businessProcedure` | `user_businesses`, `user_contacts` | `user_contacts` | — |
+| `business.removeCategory` | mutation | `businessProcedure` | `business_categories`, `user_businesses` | `business_categories` | `More`, `Settings` |
+| `business.suggestCategories` | mutation | `businessAiProcedure` | — | — | `More`, `Settings` |
+| `business.types` | query | `businessProcedure` | — | — | — |
+| `business.update` | mutation | `businessProcedure` | `user_businesses` | `user_businesses` | `More`, `Settings` |
+| `business.updateCategory` | mutation | `businessProcedure` | `business_categories`, `user_businesses` | `business_categories` | — |
 | `expense.delete` | mutation | `authedProcedure` | `expenses` | `expenses`, `user_contacts` | `Home` |
 | `expense.getById` | query | `authedProcedure` | `expenses` | — | — |
 | `expense.getMonthSummary` | query | `authedProcedure` | `expense_daily_rollups` | — | `Home` |
@@ -150,7 +150,7 @@ flowchart LR
 | `expense.searchTransactions` | query | `authedProcedure` | `expenses` | — | `Home` |
 | `expense.update` | mutation | `authedProcedure` | `classification_logs`, `expenses` | `classification_logs`, `expenses` | — |
 | `export.myExpenses` | mutation | `authedProcedure` | `expenses` | — | — |
-| `goals.analyze` | mutation | `proProcedure` | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `users` | `Home`, `More`, `Settings` |
+| `goals.analyze` | mutation | `goalAnalysisProcedure` | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `users` | `Home`, `More`, `Settings` |
 | `goals.create` | mutation | `authedProcedure` | `financial_goals` | `financial_goals` | `Home`, `More`, `Settings` |
 | `goals.delete` | mutation | `authedProcedure` | — | `financial_goals`, `user_budgets` | — |
 | `goals.list` | query | `authedProcedure` | `financial_goals` | — | `Home`, `More`, `Settings` |

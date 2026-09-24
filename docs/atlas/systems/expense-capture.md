@@ -186,7 +186,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `expense.createCategory` | mutation | `authedProcedure` | — | `expense_categories` | — |
 | `expense.getCategoryList` | query | `authedProcedure` | `expense_categories` | — | — |
 | `expense.getPendingClarifications` | query | `authedProcedure` | `pending_clarifications` | — | `Home` |
-| `image.parseReceipt` | mutation | `proProcedure` | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` | `Home` |
+| `image.parseReceipt` | mutation | `receiptsProcedure` | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` | `Home` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 

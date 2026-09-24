@@ -151,8 +151,9 @@ Checked against the code; each one names where it lives.
 4. **Bug.** Refreshing a month that already has a report skips the waiting period, so the analysis of that month can be
    regenerated, with a paid model call, as often as the AI rate limit allows. A `report_limit_<plan>` of 0 falls back
    to 30 days.
-5. **Bug.** Only users on the `pro` plan get the WhatsApp report: Ultra users never do, and the job ignores the "send the
-   report on WhatsApp" switch in Settings (`whatsappReportsEnabled`).
+5. **Bug.** The WhatsApp report goes to the plans whose `feature_whatsapp_report_<plan>` switch is on — Pro only by
+   default, so Ultra users do not get it until an admin turns it on — and the job ignores the user's "send the report on
+   WhatsApp" switch in Settings (`whatsappReportsEnabled`).
 6. **Bug.** With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and
    family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the
    financial month only.

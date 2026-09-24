@@ -11,10 +11,21 @@ job that ends subscriptions, referral codes, and the Ultra members page.
 - The plan is a column of the user row (`plan`: `free`, `pro` or `ultra`), separate from `role` (golden rule 2).
 - What can be bought is `contracts/plans.ts#BILLING_PLANS`: Pro monthly, Pro yearly and Ultra monthly, each with an
   exact amount in piastres, a duration and the plan it grants.
-- The server gates features with `proProcedure` (Pro, Ultra or admin) and `ultraProcedure` (Ultra or admin) from
-  `api/middleware.ts`; the web app mirrors them with `hasProAccess` in `src/hooks/useAuth.ts` and the route guards in
-  `src/components/routing/PlanGates.tsx`. The plan-dependent limits of AI features are settings, described in
+- What each plan includes is decided in the admin console, not in code. Features a plan may or may not have —
+  business mode, receipts, the printable Pro report, the goal analysis and the WhatsApp report — are switches per
+  plan (`feature_<feature>_<plan>`), and the numbers that had no setting — active goals, the per-minute AI burst
+  guard, chat, receipt and goal token caps, the offline queue — are `<name>_<plan>` settings. Both are declared once,
+  with their defaults, in `contracts/plan-features.ts`; the defaults are the values that used to be hard-coded
+  (these features for Pro and Ultra, the WhatsApp report for Pro, three active goals on Free).
+- The server gates those features with one builder per feature from `api/middleware.ts` (`businessProcedure`,
+  `businessAiProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`), which read the switch
+  for the caller's plan; an admin always passes. `proProcedure` and `ultraProcedure` remain for plan checks without a
+  setting. The plan-dependent limits of AI features are settings, described in
   [AI providers and usage limits](ai-platform.md) and the systems that use them.
+- `pro.myPlan` returns the caller's feature switches (`features`, which the entry form uses for the receipt camera)
+  and what the plan includes; `pro.planCatalog` returns that list for every plan, built by
+  `api/lib/plan-catalog.ts#buildPlanCatalog` from the same settings the server enforces, and the plans screen renders
+  it instead of fixed text.
 
 ## The pieces
 | Piece | Where | What it does |
@@ -75,7 +86,8 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
 | Webhook verification | the Paymob route in `api/boot.ts` | |
 | What a payment grants | `api/lib/subscription-service.ts` | |
 | When plans end | `api/jobs/subscription-expiry-job.ts` and its schedule in `api/boot.ts` | |
-| A feature only paying users get | `proProcedure` or `ultraProcedure` on the procedure, and `ProFeatureRoute` or `UltraFeatureRoute` on the screen | |
+| Which plan gets a feature, or a plan's limit | the admin console (Settings → plans), no code | `api/lib/plan-features.test.ts` |
+| A new per-plan feature | `contracts/plan-features.ts`, a builder in `api/middleware.ts`, and `api/lib/plan-catalog.ts` for the plans screen | `api/lib/plan-features.test.ts` |
 
 ## Rules for changes here
 1. A plan is granted only by `grantProSubscription`, from a verified webhook or the development simulation.
@@ -97,13 +109,10 @@ Checked against the code; each one names where it lives.
    and the discount codes admins create in `discount_codes` are never applied.
 3. **Gap.** Nothing renews a subscription, since each Paymob payment is a one-time charge; `pro.cancel` only changes the status
    the plans screen shows, and there is no refund path.
-4. **Bug.** The feature list on the plans screen and in `pro.myPlan` is fixed text that does not match the app: ten AI requests a
-   day for Free (the chat's limit is `chatbot_daily_limit_free`, 20 by default), spreadsheet export (no screen calls
-   `export.myExpenses`) and switching AI models.
-5. **Security.** Outside production without `PAYMOB_HMAC_SECRET`, the webhook accepts unsigned callbacks and grants plans
+4. **Security.** Outside production without `PAYMOB_HMAC_SECRET`, the webhook accepts unsigned callbacks and grants plans
    from them.
-6. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
-7. **Debt.** No test covers the webhook's verification, the grant, the expiry job or referrals.
+5. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
+6. **Debt.** No test covers the webhook's verification, the grant, the expiry job or referrals.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): the user rows that carry the plan, and the auth version.

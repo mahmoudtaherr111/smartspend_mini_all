@@ -95,6 +95,8 @@ model {
   smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.ledger
+  smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.ai-actions -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ai-actions -[reads]-> smartspend.mysql.ai_action_memory
   smartspend.api.modules.ai-actions -[reads]-> smartspend.mysql.ai_pending_actions
   smartspend.api.modules.ai-actions -[reads]-> smartspend.mysql.expenses
@@ -108,6 +110,7 @@ model {
   smartspend.api.modules.ai-actions -[writes]-> smartspend.mysql.user_budgets
   smartspend.api.modules.ai-actions -[writes]-> smartspend.mysql.user_wallets
   smartspend.api.modules.ai-governance -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.ai-governance -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ai-governance -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.modules.ai-governance -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.ai-governance -[reads]-> smartspend.mysql.user_analytics
@@ -331,6 +334,7 @@ model {
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.whatsapp
+  smartspend.api.modules.jobs -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.ad_clicks
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.expense_daily_rollups
@@ -380,6 +384,7 @@ model {
   smartspend.api.modules.notifications -[writes]-> smartspend.mysql.notification_logs
   smartspend.api.modules.notifications -[writes]-> smartspend.mysql.notification_templates
   smartspend.api.modules.notifications -[writes]-> smartspend.mysql.push_subscriptions
+  smartspend.api.modules.platform -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.platform -[reads]-> smartspend.mysql.api_key_errors
   smartspend.api.modules.platform -[reads]-> smartspend.mysql.system_settings
   smartspend.api.modules.platform -[uses]-> sentry
@@ -511,7 +516,9 @@ model {
   smartspend.api.trpc.admin.getUserAiQuota -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.admin.getUserAiQuota -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.admin.getUserAiQuota -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.admin.getUserAiQuota -[uses]-> smartspend.api.modules.ai-governance
   smartspend.api.trpc.admin.getUserAiQuota -[uses]-> smartspend.api.modules.ai-providers
+  smartspend.api.trpc.admin.getUserAiQuota -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.admin.getUserSessions -[reads]-> smartspend.mysql.sessions
   smartspend.api.trpc.admin.getUserSmartProfile -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.admin.getVoiceUsageStats -[reads]-> smartspend.mysql.voice_usage
@@ -602,6 +609,7 @@ model {
   smartspend.api.trpc.ai.getUserLimits -[reads]-> smartspend.mysql.voice_usage
   smartspend.api.trpc.ai.getUserLimits -[uses]-> smartspend.api.modules.ai-governance
   smartspend.api.trpc.ai.getUserLimits -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.ai.getUserLimits -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.ai.learnWord -[writes]-> smartspend.mysql.user_dictionaries
   smartspend.api.trpc.ai.parseExpense -[reads]-> smartspend.mysql.business_categories
   smartspend.api.trpc.ai.parseExpense -[reads]-> smartspend.mysql.pending_clarifications
@@ -846,12 +854,15 @@ model {
   smartspend.api.trpc.goals.analyze -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.goals.create -[reads]-> smartspend.mysql.financial_goals
   smartspend.api.trpc.goals.create -[uses]-> smartspend.api.modules.finance-semantic-layer
+  smartspend.api.trpc.goals.create -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.goals.create -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.goals.create -[writes]-> smartspend.mysql.financial_goals
   smartspend.api.trpc.goals.delete -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.goals.delete -[writes]-> smartspend.mysql.financial_goals
   smartspend.api.trpc.goals.delete -[writes]-> smartspend.mysql.user_budgets
   smartspend.api.trpc.goals.list -[reads]-> smartspend.mysql.financial_goals
+  smartspend.api.trpc.goals.list -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.goals.list -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.goals.setStatus -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.goals.setStatus -[writes]-> smartspend.mysql.financial_goals
   smartspend.api.trpc.image.parseReceipt -[reads]-> smartspend.mysql.expenses
@@ -901,7 +912,12 @@ model {
   smartspend.api.trpc.pro.myPlan -[reads]-> smartspend.mysql.pro_subscriptions
   smartspend.api.trpc.pro.myPlan -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.pro.myPlan -[uses]-> smartspend.api.modules.auth
+  smartspend.api.trpc.pro.myPlan -[uses]-> smartspend.api.modules.billing
+  smartspend.api.trpc.pro.myPlan -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.pro.myPlan -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.pro.myPlan -[writes]-> smartspend.mysql.pro_subscriptions
+  smartspend.api.trpc.pro.planCatalog -[uses]-> smartspend.api.modules.billing
+  smartspend.api.trpc.pro.planCatalog -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.pro.upgrade -[uses]-> smartspend.api.modules.billing
   smartspend.api.trpc.pro.upgrade -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.pro.upgrade -[uses]-> smartspend.shared.contracts
@@ -1044,6 +1060,7 @@ model {
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.modules.web-account -[uses]-> turnstile
+  smartspend.web.modules.web-admin -[imports]-> smartspend.shared.contracts
   smartspend.web.modules.web-admin -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-admin -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-admin -[imports]-> smartspend.web.modules.web-ui-kit
@@ -1331,6 +1348,7 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.pro.cancel
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.pro.createCheckoutSession
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.pro.myPlan
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.pro.planCatalog
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.pro.upgrade
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.addContact
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.deleteContact
@@ -1364,6 +1382,7 @@ model {
   smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.pro.cancel
   smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.pro.createCheckoutSession
   smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.pro.myPlan
+  smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.pro.planCatalog
   smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.pro.upgrade
   smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.referral.applyCode
   smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.referral.myCode

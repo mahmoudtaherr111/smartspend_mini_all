@@ -14,7 +14,7 @@ when it is unsure, and the writes that put items in the ledger.
 | Entry form | `src/components/expenses/ExpenseForm.tsx#ExpenseForm`, on the Home screen | Text box, microphone and camera; the review and clarification steps; a queue for text typed offline |
 | Text entry point | `api/ai-router.ts#parseExpense` | Plan and budget checks, loads the user's context, runs the pipeline, stores the trace, opens a clarification |
 | Voice entry point | `api/ai-router.ts#parseVoiceExpense` | Voice quota gate, speech to text, then the same pipeline |
-| Receipt entry point | `api/image-router.ts#parseReceipt` | Pro only: reads a photo and saves one expense directly |
+| Receipt entry point | `api/image-router.ts#parseReceipt` | Plans whose receipts switch is on (Pro and Ultra by default): reads a photo and saves one expense directly |
 | The pipeline | `api/lib/smart-pipeline.ts#runSmartPipeline` | A sentence in; items and a decision out: `auto_save`, `review` or `clarify` |
 | Saving | `expense.create` and `expense.batchCreate` in `api/expense-router.ts` | Writes the items, their rollup delta, contacts and streak in one transaction |
 | Clarifications | `api/expense-router.ts#answerClarification` | Takes the user's answer, re-runs the pipeline and saves |
@@ -207,12 +207,12 @@ at the plan's per-recording limit and at the seconds left this month.
 `ai.speechToText` transcribes without parsing; no screen calls it.
 
 ## Receipts
-`image.parseReceipt` is a Pro procedure. It checks the payload size and the image signature (JPEG, PNG or WebP),
+`image.parseReceipt` is gated by the plan's receipts switch (`receiptsProcedure`, `feature_receipts_<plan>`). It checks the payload size and the image signature (JPEG, PNG or WebP),
 reserves the image budget and calls `api/lib/receipt-image-parser.ts#parseReceiptImage`: with an OCR text hint it
 reads the amount locally and runs the pipeline on a short sentence; otherwise a Gemini vision call (the
 `ai_model_pro` setting, else `GEMINI_MODEL_PRO`, whose default is `gemini-3.5-flash`, through `mapModelName`) reads
 the receipt and the pipeline runs on its OCR text. The first item is normalized against the registry and saved as one
-expense with source `image`, without a review step. The form offers the camera only to Pro users, and only online.
+expense with source `image`, without a review step. The form offers the camera only when `pro.myPlan` reports the receipts feature for the plan, and only online.
 
 ## Clarifications
 `expense.answerClarification` works in one of two modes, chosen by what the clarification stored:

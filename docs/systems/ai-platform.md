@@ -23,7 +23,7 @@ the per-plan token budget every paid call is measured against, and the two place
 | Budgets | `api/lib/ai-usage-policy.ts` | Per-plan monthly limits, per-request ceilings, the burst guard, and the token estimate |
 | Cost metrics | `api/services/ai-cost-policy.ts`, `api/services/ai-cost-analytics.ts` | A second, lighter accounting of AI work as `ai_cost_*` events, and the admin overview over them |
 | Provider clients | `api/lib/deepseek-client.ts`, `api/lib/fireworks-client.ts`, `api/lib/nvidia-client.ts`, `api/lib/groq-client.ts`, `api/lib/fireworks-embedding-client.ts` | The direct calls still used by the AI Center, the report job and the embedding engine |
-| Limits for the app | `ai.getUserLimits` in `api/ai-router.ts` | What the user has left this cycle: AI tokens, voice seconds and offline items |
+| Limits for the app | `ai.getUserLimits` in `api/ai-router.ts` | What the user has left this cycle: AI tokens, voice seconds and offline items (`offline_limit_<plan>`) |
 
 ## Choosing a provider
 1. The caller asks for a purpose and a tier. `resolveAdminRoutes` returns the model the admin marked as the
@@ -87,7 +87,8 @@ id through `mapModelName`. When Google answers 429, 500 or 503 (overloaded) it t
   `user_token_limit_<type>_<id>` setting overrides it for one person ([admin](admin.md)).
 - The per-request ceiling is the admin's `<plan>_max_per_request` (or the report, image and goal settings),
   and then a hard ceiling per plan and channel in the code that the admin's value can only lower.
-- The burst guard refuses more than twenty, sixty or a hundred calls of one channel per minute, counted from
+- The burst guard refuses more than the plan's `burst_limit_per_minute_<plan>` calls of one channel per minute (20, 60
+  and 100 by default, editable in the console, `contracts/plan-features.ts`), counted from
   the `ai_<channel>` events of `user_analytics`.
 - Tokens are estimated from the text before the call — Arabic letters count heavier than Latin ones — and the
   provider's own numbers replace the estimate afterwards.

@@ -24,10 +24,7 @@ export function ReceiptCapture({ onSaved }: ReceiptCaptureProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
 
-  const isPro =
-    planQuery.data?.plan === "pro" ||
-    planQuery.data?.plan === "ultra" ||
-    planQuery.data?.role === "admin";
+  const isPro = planQuery.data?.features?.receipts === true;
 
   if (!isPro) {
     return (

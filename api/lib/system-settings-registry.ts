@@ -19,6 +19,7 @@
  * always saveable.
  */
 import { env } from "./env";
+import { PLAN_IDS, planSettingDefinitions } from "../../contracts/plan-features";
 
 export interface SettingDef {
   key: string;
@@ -204,10 +205,14 @@ export const SETTINGS: SettingDef[] = [
   { key: "sms_limit_pro", default: "999999" },
   { key: "sms_limit_ultra", default: "999999" },
   { key: "promo_code_discount", default: "20" },
-  { key: "offline_limit_free", default: "3" },
-  { key: "offline_limit_pro", default: "30" },
   { key: "pipeline_version", default: "v1" },
   { key: "whatsapp_otp_enabled", default: "true" },
+
+  // ── Per-plan features and limits (contracts/plan-features.ts) ──
+  // The console rendered the chat switches and limits per plan, and saving them was
+  // silently dropped because the keys were not here.
+  ...PLAN_IDS.map((plan) => ({ key: `chatbot_enabled_${plan}`, default: "true" })),
+  ...planSettingDefinitions(),
 ];
 
 export const SETTING_KEYS: ReadonlySet<string> = new Set(SETTINGS.map((s) => s.key));

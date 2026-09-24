@@ -39,7 +39,9 @@ storage, the contracts shared with the web app, and the retention job that prune
    ([accounts](accounts.md)).
 3. The procedure's builder applies its limit and checks: anonymous traffic 400 requests a minute per IP,
    sign-in and registration 25 per quarter hour, a signed-in user 100 a minute, and an AI call another 100 a
-   minute on top. `proProcedure`, `proAiProcedure` and `ultraProcedure` check the plan (an admin passes), and
+   minute on top. `proProcedure`, `proAiProcedure` and `ultraProcedure` check the plan, and the per-feature builders
+   (`businessProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`) read the admin's
+   `feature_<feature>_<plan>` switch (`contracts/plan-features.ts`); an admin passes all of them.
    `moderatorProcedure` and `adminProcedure` check the role.
 4. Errors leave as `TRPCError`; in production an internal error is replaced by one Arabic sentence and the
    stack is dropped.

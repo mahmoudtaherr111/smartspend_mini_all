@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { getDb } from "../queries/connection";
 import { users, localUsers, systemSettings, monthlyReports } from "../../db/schema";
 import { whatsappService } from "../services/whatsapp-service";
@@ -7,6 +7,7 @@ import { buildMonthlyReportFactsPack } from "../services/finance-semantic-layer"
 import { recordAICostMetric, resolveAICostPolicy } from "../services/ai-cost-policy";
 import { callFireworksAPI } from "../lib/fireworks-client";
 import { createLogger, phoneTail } from "../lib/log";
+import { PLAN_IDS, isPlanFeatureEnabled } from "../../contracts/plan-features";
 
 const log = createLogger("monthly-report");
 
@@ -172,13 +173,15 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
       console.warn("[MonthlyReportJob] Missing AI API Key. Deterministic fallback reports will be used.");
     }
 
-    // 2. Fetch all PRO users
-    const proOauthUsers = await db.query.users.findMany({
-      where: eq(users.plan, "pro"),
+    // 2. Fetch the users whose plan gets the WhatsApp report (feature_whatsapp_report_<plan>;
+    // by default Pro only, as before).
+    const reportPlans = PLAN_IDS.filter((plan) => isPlanFeatureEnabled(s, plan, "whatsapp_report"));
+    const proOauthUsers = reportPlans.length === 0 ? [] : await db.query.users.findMany({
+      where: inArray(users.plan, reportPlans),
     });
 
-    const proLocalUsers = await db.query.localUsers.findMany({
-      where: eq(localUsers.plan, "pro"),
+    const proLocalUsers = reportPlans.length === 0 ? [] : await db.query.localUsers.findMany({
+      where: inArray(localUsers.plan, reportPlans),
     });
 
     console.log(

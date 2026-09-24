@@ -327,6 +327,7 @@ _None._
 | `pro.cancel` | useMutation | `src/hooks/usePro.ts` |
 | `pro.createCheckoutSession` | useMutation | `src/hooks/usePro.ts` |
 | `pro.myPlan` | useQuery, utils.invalidate | `src/hooks/usePro.ts` |
+| `pro.planCatalog` | useQuery | `src/pages/Pro.tsx` |
 | `pro.upgrade` | useMutation | `src/hooks/usePro.ts` |
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
@@ -380,6 +381,7 @@ _None._
 | `pro.cancel` | useMutation | `src/hooks/usePro.ts` |
 | `pro.createCheckoutSession` | useMutation | `src/hooks/usePro.ts` |
 | `pro.myPlan` | useQuery, utils.invalidate | `src/hooks/usePro.ts` |
+| `pro.planCatalog` | useQuery | `src/pages/Pro.tsx` |
 | `pro.upgrade` | useMutation | `src/hooks/usePro.ts` |
 | `referral.applyCode` | useMutation | `src/pages/Pro.tsx` |
 | `referral.myCode` | useQuery | `src/pages/Pro.tsx` |

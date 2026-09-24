@@ -59,6 +59,7 @@ flowchart LR
   sys_web_app[["Web and mobile app shell (system)"]]
   mod_web_admin --> ext_fireworks
   mod_web_admin --> ext_openrouter
+  mod_web_admin --> sys_platform
   mod_web_admin --> sys_web_app
   page_Admin --> router_admin
   page_Admin --> router_ads

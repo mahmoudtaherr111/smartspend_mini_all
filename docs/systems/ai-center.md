@@ -99,7 +99,8 @@ The capabilities the planner recognises, with their required details and action 
 Actions are `goal.create`, `goal.update`, `goal.stop`, `expense.create`, `expense.recategorize`, `budget.create`,
 `profile.update`, `wallet.create`, `wallet.update` and `action.undo`. A draft is validated
 (`api/services/action-runtime/extended-actions.ts#validateRuntimeAction`), stored in `ai_pending_actions` with a
-summary and an expiry, and shown as a confirmation card.
+summary and an expiry, and shown as a confirmation card. A new goal respects the plan's active-goal limit
+(`goals_active_limit_<plan>`, the same setting `goals.create` reads).
 
 `api/services/action-runtime/index.ts#confirmAction` (the card's button, `chat.confirmAction`, or a typed
 confirmation):

@@ -88,10 +88,11 @@
     {
       "id": "billing",
       "title": "Billing",
-      "description": "Paymob checkout requests, webhook verification settings and the subscription grant that sets a user's plan.",
+      "description": "Paymob checkout requests, webhook verification settings, the subscription grant that sets a user's plan, and the per-plan catalog of limits and features read from the admin's settings for the plans screen.",
       "paths": [
         "api/lib/paymob.ts",
-        "api/lib/subscription-service.ts"
+        "api/lib/subscription-service.ts",
+        "api/lib/plan-catalog.ts"
       ]
     },
     {

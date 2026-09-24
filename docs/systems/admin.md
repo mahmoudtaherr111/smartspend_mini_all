@@ -41,7 +41,7 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
 | Overview | Registered users, Google and phone accounts, paying users, live sessions, open tickets, and the money and today's flows from the daily rollups; below them daily and weekly active users, new and active Pro subscriptions, the token estimate and upgrade events | `admin.getDashboardStats`, `admin.getFounderMetrics` |
 | Users | Search by name, email or phone with role and plan filters; open a user's smart profile; list their sessions and revoke one; change role or plan; delete the account; export everyone; message one user | `admin.listAllUsers`, `admin.getUserSmartProfile`, `admin.getUserSessions`, `admin.revokeSession`, `admin.updateUserRole`, `admin.updateUserPlanV2`, `admin.deleteUser`, `export.allUsers`, `adminWhatsapp.sendDirectMessage` |
 | Support | Tickets newest first with the user's name and whether they are open; reply, which also marks the ticket resolved; close | `support.listAll`, `support.respond`, `support.close` |
-| AI | Recent API key errors, with resolve and clear; then the command center: consumption, cost and latency this billing period by provider and channel; providers with their keys masked, the models discovered for each and every model's purposes, plans and prices; one user's quota and latest requests; a sandbox that sends a typed sentence through `ai.parseExpense` | `admin.getApiKeyErrors`, `admin.resolveApiKeyError`, `admin.clearAllApiKeyErrors`, `admin.getAiTelemetryOverview`, `admin.getAiProviders`, `admin.getAiModels`, `admin.addAiProvider`, `admin.updateAiProvider`, `admin.deleteAiProvider`, `admin.discoverProviderModels`, `admin.saveAiModels`, `admin.getUserAiQuota` |
+| AI | Recent API key errors, with resolve and clear; then the command center: consumption, cost and latency this billing period by provider and channel; providers with their keys masked, the models discovered for each and every model's purposes, plans and prices; one user's quota, measured against the limit the server enforces (the user's own override, else `<plan>_token_limit`), and latest requests; a sandbox that sends a typed sentence through `ai.parseExpense` | `admin.getApiKeyErrors`, `admin.resolveApiKeyError`, `admin.clearAllApiKeyErrors`, `admin.getAiTelemetryOverview`, `admin.getAiProviders`, `admin.getAiModels`, `admin.addAiProvider`, `admin.updateAiProvider`, `admin.deleteAiProvider`, `admin.discoverProviderModels`, `admin.saveAiModels`, `admin.getUserAiQuota` |
 | Subscriptions | The latest subscriptions with their status | `admin.listSubscriptionsAdmin` |
 | Clarifications | Items the classifier could not settle; mark one resolved or ignored | `admin.getPendingClarifications`, `admin.resolveClarification` |
 | WhatsApp | Connection and QR code, direct messages, broadcasts, the verification switch ([notifications](notifications.md)) | `adminWhatsapp.*` |
@@ -50,7 +50,7 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
 | Raw SMS | Bank and wallet messages as received, with their status and the user they belong to | `admin.getRawSmsLogs` |
 | Audit | The latest sessions with the user's name, IP and device; revoke one | `admin.getActivityLog`, `admin.revokeSession` |
 | Notifications | Templates with create, edit, switch and delete; the activity check on demand; the send log and device statistics; a user search to target one person | the notification procedures of `admin`, `admin.listAllUsers` |
-| Settings | Every setting of `api/lib/system-settings-registry.ts` with secrets masked, plan limits, voice, SMS and token ceilings and model routing; API keys with a live check; discount codes; a settings "backup" | `admin.getSettings`, `admin.updateSettings`, `admin.getAvailableModels`, `admin.validateApiKey`, `admin.getDiscountCodes`, `admin.createDiscountCode`, `admin.deleteDiscountCode`, `admin.triggerBackupDemo` |
+| Settings | Every setting of `api/lib/system-settings-registry.ts` with secrets masked; per plan, in one tab each for Free, Pro and Ultra, the limits (tokens, daily entries, voice, bank messages, offline items, active goals, AI calls a minute, receipt and goal token caps, reports) and the feature switches of `contracts/plan-features.ts`; chat and voice-call limits per plan; model routing; API keys with a live check; discount codes; a settings "backup" | `admin.getSettings`, `admin.updateSettings`, `admin.getAvailableModels`, `admin.validateApiKey`, `admin.getDiscountCodes`, `admin.createDiscountCode`, `admin.deleteDiscountCode`, `admin.triggerBackupDemo` |
 
 ## How the important actions work
 - **Settings.** `admin.getSettings` starts from the registry defaults, overlays the saved values and replaces
@@ -115,30 +115,27 @@ Checked against the code; each one names where it lives.
    settings, deleting an account or sending a message leaves no trail.
 2. **Debt.** A settings change reaches the other replicas only when their five-minute cache expires
    (`api/lib/settings-cache.ts`).
-3. **Bug.** The quota inspector compares usage with fixed ceilings of 50,000, 500,000 and 2,000,000, not with the
-   `<plan>_token_limit` settings and the per-user limit that `api/lib/ai-usage-policy.ts` enforces — and that
-   the settings tab writes.
-4. **Debt.** Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`,
+3. **Debt.** Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`,
    `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would
    show the classification numbers, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted.
-5. **Gap.** The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
+4. **Gap.** The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
    browser; nothing backs up the database.
-6. **Gap.** Answering a ticket does not notify the user, while the support page promises a reply within a day. The
+5. **Gap.** Answering a ticket does not notify the user, while the support page promises a reply within a day. The
    reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses
    them, and `support.assign` has no screen.
-7. **Gap.** Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it
+6. **Gap.** Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it
    would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either
    (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
-8. **Bug.** Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero;
+7. **Bug.** Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero;
    `ads.list` trusts the plan the client sends, and `analytics.trackEvent` stores any event name and metadata a
    signed-in caller sends.
-9. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
+8. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
    `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`,
    `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one),
    `support.getById`, `support.assign` and every statistic of `analytics`.
-10. **Bug.** Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp
+9. **Bug.** Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp
     tab always shows verification as off ([notifications](notifications.md)).
-11. **Bug.** The founder metrics count active users from sessions created since the server's midnight, not Cairo's
+10. **Bug.** The founder metrics count active users from sessions created since the server's midnight, not Cairo's
     (golden rule 6), and upgrades only from `upgrade_to_pro` events, so an upgrade to Ultra is not counted.
 
 ## Related systems

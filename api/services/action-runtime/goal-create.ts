@@ -4,8 +4,9 @@ import { financialGoals } from "../../../db/schema";
 import { db } from "../../queries/connection";
 import { invalidateFinanceUserCache } from "../finance-semantic-layer";
 import type { ActionRuntimeContext, GoalCreatePayload } from "./types";
+import { getSystemSettings } from "../../lib/settings-cache";
+import { planNumber } from "../../../contracts/plan-features";
 
-const FREE_GOALS_LIMIT = 3;
 
 export const goalCreatePayloadSchema = z.object({
   title: z.string().min(2).max(200),
@@ -145,10 +146,11 @@ export async function validateGoalCreate(
       ),
     );
 
-  const isPro = ctx.userPlan === "pro" || ctx.userPlan === "ultra";
+  const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
+  const goalsLimit = planNumber(settings, ctx.userPlan, "goals_active_limit");
   const count = Number(existing[0]?.count || 0);
-  if (!isPro && count >= FREE_GOALS_LIMIT) {
-    throw new Error(`Free plan supports ${FREE_GOALS_LIMIT} active goals`);
+  if (goalsLimit > 0 && count >= goalsLimit) {
+    throw new Error(`Plan supports ${goalsLimit} active goals`);
   }
 
   return parsed;

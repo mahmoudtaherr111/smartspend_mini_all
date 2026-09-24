@@ -12,25 +12,25 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `api-routers` | tRPC routers and HTTP sub-apps | 24 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq`, `web-push` |
 | `auth` | Authentication and sessions | 5 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `voice`, `whatsapp` | — |
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
-| `platform` | Platform services | 10 | `database` | `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
+| `platform` | Platform services | 10 | `contracts`, `database` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice` | `mysql` |
-| `contracts` | Shared contracts | 5 | — | `api-core`, `api-routers`, `billing`, `voice`, `web-capture`, `web-voice-call` | — |
-| `billing` | Billing | 2 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
+| `contracts` | Shared contracts | 6 | — | `ai-actions`, `ai-governance`, `api-core`, `api-routers`, `billing`, `jobs`, `platform`, `voice`, `web-admin`, `web-capture`, `web-voice-call` | — |
+| `billing` | Billing | 3 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
 | `ledger` | Ledger aggregates | 2 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `jobs` | — |
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
-| `jobs` | Scheduled job bodies | 5 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `whatsapp` | `api-core` | `fireworks` |
+| `jobs` | Scheduled job bodies | 5 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `database`, `platform` | `api-core`, `api-routers` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 43 | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `arabic-nlp`, `auth`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 13 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
-| `ai-governance` | AI usage and cost governance | 3 | `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs`, `voice` | — |
+| `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs`, `voice` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `receipt-parsing`, `voice` | — |
 | `ingestion-parsers` | Ingestion parsers | 3 | `ai-providers`, `platform` | `api-routers` | `gemini` |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
 | `classification` | Expense classification pipeline | 33 | `ai-providers`, `arabic-nlp`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-core`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `receipt-parsing`, `voice` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers`, `voice` | — |
-| `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `database`, `finance-semantic-layer`, `ledger` | `api-routers`, `voice` | — |
+| `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | `api-routers`, `voice` | — |
 | `ai-memory` | AI memory | 12 | `ai-governance`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-routers`, `voice` | `fireworks`, `qdrant` |
 | `finance-semantic-layer` | Finance semantic layer | 10 | `classification`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-routers`, `jobs`, `ledger`, `voice` | — |
 | `site-guide` | Site guide | 5 | — | `ai-kernel`, `voice` | — |
@@ -39,7 +39,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-shell` | Web app shell | 18 | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit`, `web-voice-call` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-insights`, `web-pages`, `web-shared`, `web-voice-call` | `capacitor`, `firebase` |
 | `web-pages` | Web pages | 15 | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `web-shell` | — |
 | `web-ui-kit` | UI primitives | 55 | `web-hooks`, `web-lib` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-voice-call` | — |
-| `web-admin` | Admin UI | 20 | `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | `fireworks`, `openrouter` |
+| `web-admin` | Admin UI | 20 | `contracts`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | `fireworks`, `openrouter` |
 | `web-voice-call` | Live voice call UI | 15 | `contracts`, `web-ai`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `capacitor` |
 | `web-ai` | AI Center UI | 3 | `web-hooks`, `web-insights`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-voice-call` | — |
 | `web-capture` | Expense entry UI | 4 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
@@ -85,7 +85,7 @@ Hono app and server entry points, request context, tRPC procedure builders and t
 | --- | --- | --- | --- | --- |
 | `api/boot.ts` | `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | — | — | `auth_challenges`, `classification_logs` |
 | `api/context.ts` | `auth`, `database`, `security` | — | `local_users`, `users` | — |
-| `api/middleware.ts` | `security` | — | — | — |
+| `api/middleware.ts` | `contracts`, `platform`, `security` | — | — | — |
 | `api/router.ts` | `api-routers` | — | — | — |
 | `api/server.ts` | `platform`, `voice` | — | — | — |
 
@@ -98,7 +98,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/admin-router.ts` | `accounts`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `auth`, `classification`, `database`, `notifications`, `platform` | `gemini`, `web-push` | `ads`, `ai_models`, `ai_providers`, `ai_token_ledgers`, `classification_logs`, `discount_codes`, `expense_daily_rollups`, `expenses`, `local_users`, `notification_logs`, `notification_templates`, `onboarding_questions`, `pending_clarifications`, `pro_subscriptions`, `push_subscriptions`, `raw_sms_events`, `sessions`, `support_tickets`, `system_settings`, `user_analytics`, `user_dictionaries`, `users`, `voice_usage` | `ai_models`, `ai_providers`, `discount_codes`, `local_users`, `notification_templates`, `pending_clarifications`, `system_settings`, `user_dictionaries`, `users` |
 | `api/admin-whatsapp-router.ts` | `api-core`, `database`, `platform`, `whatsapp` | — | `local_users`, `users` | `system_settings` |
 | `api/ads-router.ts` | `api-core`, `database` | — | `ads` | `ad_clicks`, `ads` |
-| `api/ai-router.ts` | `ai-governance`, `ai-insights`, `ai-kernel`, `ai-providers`, `api-core`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security`, `voice` | `gemini`, `groq` | `ai_summaries`, `business_categories`, `expenses`, `local_users`, `pending_clarifications`, `pro_subscriptions`, `user_businesses`, `user_dictionaries`, `users`, `voice_usage` | `ai_summaries`, `ai_token_ledgers`, `classification_logs`, `local_users`, `monthly_behavior_snapshots`, `pending_clarifications`, `user_dictionaries`, `users`, `voice_usage` |
+| `api/ai-router.ts` | `ai-governance`, `ai-insights`, `ai-kernel`, `ai-providers`, `api-core`, `arabic-nlp`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security`, `voice` | `gemini`, `groq` | `ai_summaries`, `business_categories`, `expenses`, `local_users`, `pending_clarifications`, `pro_subscriptions`, `user_businesses`, `user_dictionaries`, `users`, `voice_usage` | `ai_summaries`, `ai_token_ledgers`, `classification_logs`, `local_users`, `monthly_behavior_snapshots`, `pending_clarifications`, `user_dictionaries`, `users`, `voice_usage` |
 | `api/analytics-router.ts` | `api-core`, `database`, `platform` | — | `expenses`, `local_users`, `user_analytics`, `users` | `user_analytics` |
 | `api/auth-router.ts` | `api-core`, `auth`, `database`, `platform` | `google-oauth` | `users` | `users` |
 | `api/budget-router.ts` | `api-core`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `security` | — | `expenses`, `user_budgets` | `user_budgets` |
@@ -164,7 +164,7 @@ Environment validation, Redis client and cache keys, system settings, business t
 | `api/lib/log.ts` | — | — | — | — |
 | `api/lib/redis-client.ts` | — | `redis` | — | — |
 | `api/lib/settings-cache.ts` | `database` | — | `system_settings` | — |
-| `api/lib/system-settings-registry.ts` | — | — | — | — |
+| `api/lib/system-settings-registry.ts` | `contracts` | — | — | — |
 | `api/services/scheduler-lock.ts` | `database` | — | — | — |
 
 ### `database` — Database schema and access
@@ -187,17 +187,19 @@ Types, limits and billing plans shared by the web app and the API.
 | --- | --- | --- | --- | --- |
 | `contracts/constants.ts` | — | — | — | — |
 | `contracts/errors.ts` | — | — | — | — |
+| `contracts/plan-features.ts` | — | — | — | — |
 | `contracts/plans.ts` | — | — | — | — |
 | `contracts/types.ts` | — | — | — | — |
 | `contracts/voice-protocol.ts` | — | — | — | — |
 
 ### `billing` — Billing
 
-Paymob checkout requests, webhook verification settings and the subscription grant that sets a user's plan.
+Paymob checkout requests, webhook verification settings, the subscription grant that sets a user's plan, and the per-plan catalog of limits and features read from the admin's settings for the plans screen.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/lib/paymob.ts` | `contracts`, `platform` | `paymob` | — | — |
+| `api/lib/plan-catalog.ts` | `contracts`, `platform` | — | — | — |
 | `api/lib/subscription-service.ts` | `auth`, `contracts`, `database` | — | `pro_subscriptions` | `pro_subscriptions`, `user_analytics` |
 
 ### `ledger` — Ledger aggregates
@@ -225,7 +227,7 @@ Job implementations scheduled from api/boot.ts.
 | --- | --- | --- | --- | --- |
 | `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
 | `api/jobs/monthly-behavior-job.ts` | `api-routers`, `database` | — | `expenses`, `user_profiles` | — |
-| `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
+| `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
 | `api/jobs/rollup-reconciliation-job.ts` | `database`, `ledger`, `platform` | — | `expense_daily_rollups`, `expenses` | — |
 | `api/jobs/subscription-expiry-job.ts` | `auth`, `database` | — | `pro_subscriptions` | `pro_subscriptions` |
 
@@ -323,7 +325,7 @@ Per-plan token limits and per-request caps, burst counting, AI cost metrics and 
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/lib/ai-usage-policy.ts` | `database`, `platform` | — | `classification_logs`, `local_users`, `user_analytics`, `users` | `user_analytics` |
+| `api/lib/ai-usage-policy.ts` | `contracts`, `database`, `platform` | — | `classification_logs`, `local_users`, `user_analytics`, `users` | `user_analytics` |
 | `api/services/ai-cost-analytics.ts` | `database` | — | `user_analytics` | — |
 | `api/services/ai-cost-policy.ts` | `database` | — | — | — |
 
@@ -438,7 +440,7 @@ Actions the assistant proposes, such as recording an expense, updating a wallet 
 | `api/services/action-runtime/artifacts.ts` | `finance-semantic-layer` | — | — | — |
 | `api/services/action-runtime/confirmation-phrases.ts` | — | — | — | — |
 | `api/services/action-runtime/extended-actions.ts` | `ai-insights`, `classification`, `database`, `finance-semantic-layer`, `ledger` | — | `ai_action_memory`, `expenses`, `financial_goals`, `user_wallets` | `expenses`, `financial_goals`, `user_budgets`, `user_wallets` |
-| `api/services/action-runtime/goal-create.ts` | `database`, `finance-semantic-layer` | — | `financial_goals` | `financial_goals` |
+| `api/services/action-runtime/goal-create.ts` | `contracts`, `database`, `finance-semantic-layer`, `platform` | — | `financial_goals` | `financial_goals` |
 | `api/services/action-runtime/index.ts` | `ai-governance`, `ai-memory`, `database` | — | `ai_pending_actions` | `ai_action_audit_logs`, `ai_action_memory`, `ai_pending_actions` |
 | `api/services/action-runtime/types.ts` | — | — | — | — |
 
@@ -648,7 +650,7 @@ Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, 
 | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/settings/AdminCodesTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/settings/AdminKeysTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/admin/settings/AdminPlansTab.tsx` | `web-ui-kit` | `fireworks` | — | — |
+| `src/components/admin/settings/AdminPlansTab.tsx` | `contracts`, `web-ui-kit` | `fireworks` | — | — |
 | `src/components/admin/settings/AdminSettingsShared.tsx` | `web-ui-kit` | — | — | — |
 | `src/components/admin/settings/RoutingRangesEditor.tsx` | `web-ui-kit` | — | — | — |
 

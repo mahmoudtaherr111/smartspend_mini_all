@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (63 of 124 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (61 of 122 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-24 05f7e09 | 2026-09-24 05f7e09 | 17 | — | 5 | 2 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 17 | — | 5 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | — | 6 | 2 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 11 | — | 5 | 1 | 4 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 4 | — | 5 | 3 | 1 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 05f7e09 | 2026-09-24 05f7e09 | 6 | — | 10 | 2 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-24 05f7e09 | 2026-09-24 05f7e09 | 3 | — | 7 | 5 | — |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 4 | — | 5 | 3 | 1 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 6 | — | 10 | 2 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 3 | — | 7 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | **1** | 1 | 3 | 2 |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 981a949 | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-18 49da160 | 2026-09-18 49da160 | 4 | — | 4 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 9 | — | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 5 | — | 2 | — | 8 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 4 | — | 3 | 5 | 2 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 9 | — | 4 | 1 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-23 797ea88 | 2026-09-23 797ea88 | 7 | **1** | 2 | 2 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (63 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (124 issue(s))
+## What is waiting (122 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -48,7 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (58)
+### Bugs (56)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - Answering a clarification twice saves its items twice: `answerClarification` loads the row by id and owner without checking that its status is still `pending`.
@@ -83,7 +83,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The WhatsApp report describes the month that has just started: the scheduler calls `runMonthlyReportJob` without a month at 02:00 on the 1st, and the job takes the month from `new Date().toISOString()`.
 - `getSmartProfile` appends the latest learning events, with literal `\n` text, to the inferred spending behaviour. Every onboarding answer or profile edit saves that value, so it grows until the next behaviour refresh replaces it, and `summarizeProfileForAI` sends it to classification prompts.
 - Refreshing a month that already has a report skips the waiting period, so the analysis of that month can be regenerated, with a paid model call, as often as the AI rate limit allows. A `report_limit_<plan>` of 0 falls back to 30 days.
-- Only users on the `pro` plan get the WhatsApp report: Ultra users never do, and the job ignores the "send the report on WhatsApp" switch in Settings (`whatsappReportsEnabled`).
+- The WhatsApp report goes to the plans whose `feature_whatsapp_report_<plan>` switch is on — Pro only by default, so Ultra users do not get it until an admin turns it on — and the job ignores the user's "send the report on WhatsApp" switch in Settings (`whatsappReportsEnabled`).
 - With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the financial month only.
 - Numbers in a model-written report are measured against the facts but not enforced: unlike the chat, a report with unsupported numbers is shown as it is.
 - The analysis and the comparison show a technical trace (route, tools, tokens, model) to every user, not only in development.
@@ -104,9 +104,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - A phone-number change keeps its code in one process's memory (`api/services/otp-cache.ts`), so confirming it fails when the request reaches another replica (`api/AGENTS.md`, rule 6).
 - Saving the profile in Settings never changes the name or avatar, and says nothing: `SmartProfileSettings` always sends the phone field, which `profile.updateUserInfo` rejects without a code (and rejects when empty, for Google users). Changing a phone number has no screen, and with verification off its code is never sent.
 
-**Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
-- The feature list on the plans screen and in `pro.myPlan` is fixed text that does not match the app: ten AI requests a day for Free (the chat's limit is `chatbot_daily_limit_free`, 20 by default), spreadsheet export (no screen calls `export.myExpenses`) and switching AI models.
-
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - The admin console always shows WhatsApp verification as off: `adminWhatsapp.getSettings` returns a fixed "temporarily disabled" answer, while `adminWhatsapp.toggleOtpVerification` still changes the `whatsapp_otp_enabled` setting that registration reads.
 - The permission prompt promises weekly follow-ups, daily voice reminders and alerts for category budgets and unusual spending; the server sends none of those. The budget alert compares the month with the profile's income, and the reminder reaches only users with a streak whose last recorded day was 12 to 36 hours ago.
@@ -115,7 +112,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
-- The quota inspector compares usage with fixed ceilings of 50,000, 500,000 and 2,000,000, not with the `<plan>_token_limit` settings and the per-user limit that `api/lib/ai-usage-policy.ts` enforces — and that the settings tab writes.
 - Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero; `ads.list` trusts the plan the client sends, and `analytics.trackEvent` stores any event name and metadata a signed-in caller sends.
 - Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp tab always shows verification as off ([notifications](notifications.md)).
 - The founder metrics count active users from sessions created since the server's midnight, not Cairo's (golden rule 6), and upgrades only from `upgrade_to_pro` events, so an upgrade to Ultra is not counted.
