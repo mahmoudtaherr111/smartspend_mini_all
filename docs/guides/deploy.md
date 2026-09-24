@@ -14,6 +14,12 @@ Update this page in the same change when any of them changes.
 
 Every route and scheduled job is listed in [entrypoints](../atlas/entrypoints.md).
 
+The bundle is an ES module, but CommonJS code inside it calls `require`, so the esbuild banner defines one with
+`createRequire`. The banner imports it as `__bannerCreateRequire`: esbuild cannot rename around banner text, and a
+bundled package that imports `createRequire` itself (sharp 0.35 does) would stop the server with a SyntaxError before
+its first request. Sentry and node-cron stay outside the bundle and load from `node_modules`. `npm run test:build`
+starts `dist/boot.js` and `dist/server/server.js` and asks each for /health.
+
 ## Docker
 The image starts from node:20-alpine, runs `npm run build`, and starts with `npm start` on port 3000. It contains `dist`,
 `node_modules` and `package.json` only, so it cannot run migrations (see Database).
@@ -61,7 +67,8 @@ live in `whatsapp_otp_codes`, and an event stream on another instance than the W
 database within a few seconds.
 
 ## API and web app deployed separately
-- API: `npm run backend:build` bundles `api/server.ts` into `dist/server/server.js`, and `npm run backend:start` runs it
+- API: `npm run backend:build` bundles `api/server.ts` into `dist/server/server.js` with the same banner and the same
+  packages left outside, and `npm run backend:start` runs it
   (the script uses POSIX shell syntax for `NODE_ENV`). It loads `.env`, registers the same routes and jobs, serves the voice
   WebSocket, and does not serve the web app. Add the web app's origin to `FRONTEND_URL` or `ALLOWED_ORIGINS`.
 - Web app: copy `.env.frontend.example` to `.env.local`, set `VITE_API_URL` to the API origin, and run
