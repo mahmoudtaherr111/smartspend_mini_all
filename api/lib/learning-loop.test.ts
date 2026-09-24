@@ -88,13 +88,13 @@ describe("a correction changes the next answer", () => {
     const guessed = before.items[0].category;
 
     // The user says: that was not what you thought, it was car servicing.
-    rememberCorrection(text, "خدمات سيارات", "تغيير زيت");
+    rememberCorrection(text, "مواصلات", "صيانة عربية");
 
     const after = await runSmartPipeline(input(text));
-    expect(after.items[0].category).toBe("خدمات سيارات");
-    expect(after.items[0].subCategory).toBe("تغيير زيت");
+    expect(after.items[0].category).toBe("مواصلات");
+    expect(after.items[0].subCategory).toBe("صيانة عربية");
     expect(after.items[0].inferenceSource).toBe("user_correction");
-    expect(after.items[0].category).not.toBe(guessed === "خدمات سيارات" ? "" : guessed);
+    expect(after.items[0].category).not.toBe(guessed === "مواصلات" ? "" : guessed);
   });
 
   it("fires on a rephrasing that keeps the same words, at a different amount", async () => {
@@ -103,17 +103,17 @@ describe("a correction changes the next answer", () => {
     // survive dropping one of its own words: keeping the verb in the key is what stops a
     // correction learned on "دفعت الجمعية" from firing on "قبضت الجمعية" and forcing the
     // wrong direction. Generalising further needs the direction guarded some other way.
-    rememberCorrection("دفعت 200 في الورشة", "خدمات سيارات", "تغيير زيت");
+    rememberCorrection("دفعت 200 في الورشة", "مواصلات", "صيانة عربية");
 
     const restated = await runSmartPipeline(input("في الورشة تاني دفعت 350"));
-    expect(restated.items[0].category).toBe("خدمات سيارات");
+    expect(restated.items[0].category).toBe("مواصلات");
 
     const unrelated = await runSmartPipeline(input("الورشة خدت مني 350"));
-    expect(unrelated.items[0].category).not.toBe("خدمات سيارات");
+    expect(unrelated.items[0].category).not.toBe("مواصلات");
   });
 
   it("does not leak one user's correction into another user's classification", async () => {
-    rememberCorrection("دفعت 200 في الورشة", "خدمات سيارات", "تغيير زيت");
+    rememberCorrection("دفعت 200 في الورشة", "مواصلات", "صيانة عربية");
 
     // storedRules is returned to every query in this mock, so the guard being tested is
     // the pipeline asking for THIS user's rules — the ids on the rows are the user's.
@@ -124,10 +124,10 @@ describe("a correction changes the next answer", () => {
   it("keeps the corrected answer out of the escalation path", async () => {
     // An answer the user taught us must never be sent to a model to be second-guessed,
     // however unsure the local layers feel about it.
-    rememberCorrection("دفعت 200 في الورشة", "خدمات سيارات", "تغيير زيت");
+    rememberCorrection("دفعت 200 في الورشة", "مواصلات", "صيانة عربية");
 
     const result = await runSmartPipeline(input("دفعت 200 في الورشة"));
-    expect(result.items[0].category).toBe("خدمات سيارات");
+    expect(result.items[0].category).toBe("مواصلات");
     expect(result.decision).not.toBe("clarify");
   });
 });

@@ -19,10 +19,10 @@ import {
  * allCanonicalIds() is derived independently.
  */
 const AGGREGATE_GROUP_MAP: Record<string, string[]> = {
-  income: ["salary", "freelance", "investment_income"],
+  income: ["salary", "freelance", "investment_income", "gifts_received", "other_income"],
   saving: ["transfer"],
   bills: ["bills", "daily_commitments"],
-  transport: ["transport", "car_services"],
+  transport: ["transport"],
   entertainment: ["entertainment", "outings"],
 };
 

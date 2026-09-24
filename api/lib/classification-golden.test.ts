@@ -89,12 +89,12 @@ const goldenCases: GoldenCase[] = [
   {
     name: "parking attendant",
     text: "دفعت للسايس 20",
-    expectedItems: [{ amount: 20, category: "خدمات سيارات", subCategory: "ركنة" }],
+    expectedItems: [{ amount: 20, category: "مواصلات", subCategory: "ركنة" }],
   },
   {
     name: "car oil change",
     text: "غيرت زيت العربية 650",
-    expectedItems: [{ amount: 650, category: "خدمات سيارات", subCategory: "تغيير زيت" }],
+    expectedItems: [{ amount: 650, category: "مواصلات", subCategory: "صيانة عربية" }],
   },
   {
     name: "rent",
@@ -134,7 +134,7 @@ const goldenCases: GoldenCase[] = [
   {
     name: "haircut",
     text: "حلقت ب 120",
-    expectedItems: [{ amount: 120, category: "تسوق", subCategory: "عناية شخصية" }],
+    expectedItems: [{ amount: 120, category: "عناية شخصية" }],
   },
   {
     name: "electronics cable",
@@ -313,7 +313,7 @@ const goldenCases: GoldenCase[] = [
     expectedItems: [
       { amount: 35, category: "أكل وشرب", subCategory: "قهوة وكافيه" },
       { amount: 90, category: "مواصلات", subCategory: "أوبر/كريم" },
-      { amount: 500, category: "متنوعات", subCategory: "أشخاص" },
+      { amount: 500, category: "متنوعات", subCategory: "عام" },
       { amount: 450, category: "فواتير", subCategory: "كهرباء" },
     ],
   },

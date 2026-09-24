@@ -106,7 +106,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     tier: "locked",
     split: "frozen",
     text: "اشتركت في نتفلكس بـ 165 في الشهر",
-    expectedItems: [{ amount: 165, type: "expense", category: "اشتراكات", subCategory: "نتفلكس" }],
+    expectedItems: [{ amount: 165, type: "expense", category: "اشتراكات", subCategory: "منصات مشاهدة" }],
     tags: ["subscription"],
   },
   {
@@ -135,7 +135,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     tier: "locked",
     split: "frozen",
     text: "دفعت خمسميت جنيه صيانة للعربية",
-    expectedItems: [{ amount: 500, type: "expense", category: "خدمات سيارات", categoryAnyOf: ["خدمات سيارات", "مواصلات"], subCategoryMode: "soft" }],
+    expectedItems: [{ amount: 500, type: "expense", category: "مواصلات", categoryAnyOf: ["مواصلات"], subCategoryMode: "soft" }],
     tags: ["word_numbers", "meet_hundreds"],
   },
   {
@@ -180,7 +180,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     tier: "locked",
     split: "frozen",
     text: "جالي أرنب من بيع محل",
-    expectedItems: [{ amount: 1000000, type: "income", category: "عوائد استثمار", categoryAnyOf: ["عوائد استثمار", "عمل حر", "مرتب"], subCategoryMode: "soft" }],
+    expectedItems: [{ amount: 1000000, type: "income", category: "عوائد استثمار", categoryAnyOf: ["عوائد استثمار", "عمل حر", "مرتب", "دخل آخر"], subCategoryMode: "soft" }],
     tags: ["slang_units", "arnab", "large_amount"],
   },
   {
@@ -207,7 +207,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     tier: "locked",
     split: "frozen",
     text: "دفعت جنيه ونص للسايس",
-    expectedItems: [{ amount: 1.5, type: "expense", category: "مواصلات", categoryAnyOf: ["مواصلات", "خدمات سيارات"], subCategoryMode: "soft" }],
+    expectedItems: [{ amount: 1.5, type: "expense", category: "مواصلات", categoryAnyOf: ["مواصلات"], subCategoryMode: "soft" }],
     tags: ["fraction", "micro_amount"],
   },
   {
@@ -245,7 +245,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     tier: "locked",
     split: "frozen",
     text: "قبضت الجمعية 12000 الشهر ده",
-    expectedItems: [{ amount: 12000, type: "income", category: "التزامات وجمعيات", subCategory: "قبض جمعية" }],
+    expectedItems: [{ amount: 12000, type: "transfer", category: "تحويل", subCategory: "جمعية" }],
     tags: ["gam3eya_in"],
   },
   {
@@ -254,7 +254,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     tier: "locked",
     split: "frozen",
     text: "عليا قسط الجمعية 1500 لازم أدفعه",
-    expectedItems: [{ amount: 1500, type: "expense", category: "التزامات وجمعيات", subCategory: "قسط جمعية" }],
+    expectedItems: [{ amount: 1500, type: "transfer", category: "تحويل", subCategory: "جمعية" }],
     tags: ["gam3eya_out"],
   },
   {
@@ -264,7 +264,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     split: "frozen",
     text: "سلفت عمر 400 لحد ما ينزله المرتب",
     knownPeople: [OMAR],
-    expectedItems: [{ amount: 400, type: "expense", category: "أصدقاء", subCategory: "عمر صاحبك" }],
+    expectedItems: [{ amount: 400, type: "transfer", category: "تحويل", subCategory: "دين/سلفة" }],
     tags: ["debt_out"],
   },
   {
@@ -274,7 +274,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     split: "frozen",
     text: "استلفت من هدى 700 عشان أكمل الإيجار",
     knownPeople: [HODA],
-    expectedItems: [{ amount: 700, type: "income", typeAnyOf: ["income", "transfer"], category: "تحويل", categoryAnyOf: ["تحويل", "العائلة"], subCategoryMode: "soft" }],
+    expectedItems: [{ amount: 700, type: "transfer", category: "تحويل", subCategory: "دين/سلفة" }],
     tags: ["debt_in"],
   },
   {
@@ -284,7 +284,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     split: "frozen",
     text: "عمر رجعلي الـ 400 اللي كان واخدهم",
     knownPeople: [OMAR],
-    expectedItems: [{ amount: 400, type: "income", typeAnyOf: ["income", "transfer"], category: "تحويل", categoryAnyOf: ["تحويل", "أصدقاء"], subCategoryMode: "soft" }],
+    expectedItems: [{ amount: 400, type: "transfer", category: "تحويل", subCategory: "دين/سلفة" }],
     tags: ["debt_repaid_in"],
   },
   {
@@ -303,7 +303,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     split: "frozen",
     text: "طلعت لرجب البواب 150 بتاع الشهر",
     knownPeople: [RAGAB],
-    expectedItems: [{ amount: 150, type: "expense", category: "موظفين", subCategoryMode: "soft" }],
+    expectedItems: [{ amount: 150, type: "expense", category: "سكن", categoryAnyOf: ["سكن", "موظفين"], subCategoryMode: "soft", why: "البواب دور خدمة: الغرض سكن/خدمات البيت، ورجب في خانة الشخص (docs/decisions/0008)" }],
     tags: ["service_person_out"],
   },
   {
@@ -384,8 +384,8 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     split: "frozen",
     text: "دفعت 250 كوافير و 130 عناية بالبشرة",
     expectedItems: [
-      { amount: 250, type: "expense", category: "تسوق", subCategory: "عناية شخصية", subCategoryMode: "soft" },
-      { amount: 130, type: "expense", category: "تسوق", subCategory: "عناية شخصية", subCategoryMode: "soft" },
+      { amount: 250, type: "expense", category: "عناية شخصية", subCategory: "عام", subCategoryMode: "soft" },
+      { amount: 130, type: "expense", category: "عناية شخصية", subCategory: "عام", subCategoryMode: "soft" },
     ],
     tags: ["personal_care"],
   },
@@ -408,8 +408,8 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     split: "frozen",
     text: "غيرت زيت العربية بـ 1100 وجبت كاوتش بـ 3200",
     expectedItems: [
-      { amount: 1100, type: "expense", category: "خدمات سيارات", subCategory: "تغيير زيت" },
-      { amount: 3200, type: "expense", category: "خدمات سيارات", subCategory: "إطارات" },
+      { amount: 1100, type: "expense", category: "مواصلات", subCategory: "صيانة عربية" },
+      { amount: 3200, type: "expense", category: "مواصلات", subCategory: "صيانة عربية" },
     ],
     tags: ["car_services"],
   },
@@ -472,7 +472,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     split: "frozen",
     text: "بعت موبايلي القديم بـ 4000 واشتريت واحد جديد بـ 12000",
     expectedItems: [
-      { amount: 4000, type: "income", typeAnyOf: ["income", "transfer"], category: "عوائد استثمار", categoryAnyOf: ["عوائد استثمار", "تحويل", "عمل حر"], subCategoryMode: "soft" },
+      { amount: 4000, type: "income", typeAnyOf: ["income", "transfer"], category: "دخل آخر", categoryAnyOf: ["دخل آخر", "عوائد استثمار", "تحويل", "عمل حر"], subCategoryMode: "soft" },
       { amount: 12000, type: "expense", category: "تسوق", subCategory: "أجهزة إلكترونية" },
     ],
     tags: ["sell_then_buy"],
@@ -484,7 +484,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     split: "frozen",
     text: "استرجعت 350 من طلب اتلغى ودفعت 90 دليفري تاني",
     expectedItems: [
-      { amount: 350, type: "income", typeAnyOf: ["income", "transfer"], category: "عوائد استثمار", categoryAnyOf: ["عوائد استثمار", "تحويل"], subCategoryMode: "soft" },
+      { amount: 350, type: "income", typeAnyOf: ["income", "transfer"], category: "دخل آخر", categoryAnyOf: ["دخل آخر", "عوائد استثمار", "تحويل"], subCategoryMode: "soft" },
       { amount: 90, type: "expense", category: "أكل وشرب", subCategory: "دليفري" },
     ],
     tags: ["refund_in"],
@@ -555,7 +555,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     tier: "locked",
     split: "frozen",
     text: "sadadt 1800 est cloud hosting",
-    expectedItems: [{ amount: 1800, type: "expense", category: "خدمات رقمية", categoryAnyOf: ["خدمات رقمية", "عمل"], subCategoryMode: "soft" }],
+    expectedItems: [{ amount: 1800, type: "expense", category: "اشتراكات", categoryAnyOf: ["اشتراكات", "عمل"], subCategoryMode: "soft" }],
     tags: ["franco", "digital_services"],
   },
   {
@@ -622,7 +622,7 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     tier: "locked",
     split: "frozen",
     text: "جددت رخصة العربية بـ 1400",
-    expectedItems: [{ amount: 1400, type: "expense", category: "خدمات حكومية", categoryAnyOf: ["خدمات حكومية", "خدمات سيارات"], subCategoryMode: "soft" }],
+    expectedItems: [{ amount: 1400, type: "expense", category: "خدمات حكومية", categoryAnyOf: ["خدمات حكومية", "مواصلات"], subCategoryMode: "soft" }],
     tags: ["government_vs_car"],
   },
   {
@@ -783,8 +783,8 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     split: "frozen",
     text: "طيب خلاص دفعت اربعمية ايجار جراج وكمان مية صيانة",
     expectedItems: [
-      { amount: 400, type: "expense", category: "مواصلات", categoryAnyOf: ["مواصلات", "سكن", "خدمات سيارات"], subCategoryMode: "soft" },
-      { amount: 100, type: "expense", category: "خدمات سيارات", categoryAnyOf: ["خدمات سيارات", "سكن", "مواصلات"], subCategoryMode: "soft" },
+      { amount: 400, type: "expense", category: "مواصلات", categoryAnyOf: ["مواصلات", "سكن"], subCategoryMode: "soft" },
+      { amount: 100, type: "expense", category: "مواصلات", categoryAnyOf: ["مواصلات", "سكن"], subCategoryMode: "soft" },
     ],
     tags: ["stt_transcript", "no_punctuation"],
   },
@@ -884,8 +884,8 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     expectedItems: [
       { amount: 12000, type: "income", category: "مرتب", subCategory: "مرتب أساسي" },
       { amount: 6000, type: "expense", category: "سكن", subCategory: "إيجار" },
-      { amount: 2000, type: "expense", category: "التزامات وجمعيات", subCategory: "قسط جمعية" },
-      { amount: 500, type: "expense", category: "أصدقاء", subCategory: "عمر صاحبك" },
+      { amount: 2000, type: "transfer", category: "تحويل", subCategory: "جمعية" },
+      { amount: 500, type: "transfer", category: "تحويل", subCategory: "دين/سلفة" },
       { amount: 800, type: "expense", category: "تسوق", subCategory: "ملابس" },
       { amount: 1500, type: "income", category: "عمل حر", subCategoryMode: "soft" },
     ],
@@ -907,8 +907,8 @@ export const FROZEN_CASES: BenchmarkCase[] = [
       { amount: 90, type: "expense", category: "صحة", subCategory: "صيدلية", subCategoryMode: "soft" },
       { amount: 240, type: "expense", category: "سكن", subCategory: "منظفات", subCategoryMode: "soft" },
       { amount: 30, type: "expense", category: "فواتير", subCategory: "شحن رصيد" },
-      { amount: 45, type: "expense", category: "خدمات سيارات", categoryAnyOf: ["خدمات سيارات", "مواصلات"], subCategoryMode: "soft" },
-      { amount: 70, type: "expense", category: "اشتراكات", subCategory: "سبوتيفاي" },
+      { amount: 45, type: "expense", category: "مواصلات", categoryAnyOf: ["مواصلات"], subCategoryMode: "soft" },
+      { amount: 70, type: "expense", category: "اشتراكات", subCategory: "موسيقى" },
     ],
     allowedDecisions: ["auto_save", "review"],
     tags: ["monologue", "seven_items"],

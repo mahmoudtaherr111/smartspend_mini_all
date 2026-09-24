@@ -22,7 +22,7 @@ type SynonymEntry = {
 };
 
 const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
-  // ─── Cars & Transport (مواصلات / خدمات سيارات) ───
+  // ─── Cars & Transport (مواصلات) ───
   // "المشروع" is the shared microbus when you ride it; alone it stays a project.
   "ركبت مشروع": { category: "مواصلات", subCategory: "أتوبيس", confidence: 95 },
   "ركبت المشروع": { category: "مواصلات", subCategory: "أتوبيس", confidence: 95 },
@@ -38,32 +38,32 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     confidence: 97,
   },
   "دفعت للسايس": {
-    category: "خدمات سيارات",
+    category: "مواصلات",
     subCategory: "ركنة",
     confidence: 93,
   },
   "حطيت للراجل بتاع الركنة": {
-    category: "خدمات سيارات",
+    category: "مواصلات",
     subCategory: "ركنة",
     confidence: 91,
   },
-  سايس: { category: "خدمات سيارات", subCategory: "ركنة", confidence: 90 },
+  سايس: { category: "مواصلات", subCategory: "ركنة", confidence: 90 },
   "ركنة العربية": {
-    category: "خدمات سيارات",
+    category: "مواصلات",
     subCategory: "ركنة",
     confidence: 95,
   },
   "غيرت زيت": {
-    category: "خدمات سيارات",
-    subCategory: "تغيير زيت",
+    category: "مواصلات",
+    subCategory: "صيانة عربية",
     confidence: 96,
   },
   "زيت الموتور": {
-    category: "خدمات سيارات",
-    subCategory: "تغيير زيت",
+    category: "مواصلات",
+    subCategory: "صيانة عربية",
     confidence: 95,
   },
-  كارتة: { category: "خدمات سيارات", subCategory: "كارتة", confidence: 94 },
+  كارتة: { category: "مواصلات", subCategory: "كارتة", confidence: 94 },
   "غسلت العربية": {
     category: "مواصلات",
     subCategory: "صيانة عربية",
@@ -128,22 +128,25 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     confidence: 97,
   },
   "اشتركت vpn": {
-    category: "خدمات رقمية",
-    subCategory: "اشتراك VPN",
+    category: "اشتراكات",
+    subCategory: "برمجيات",
     confidence: 95,
   },
   "اشتركت cloud": {
-    category: "خدمات رقمية",
-    subCategory: "اشتراك Cloud",
+    category: "اشتراكات",
+    subCategory: "برمجيات",
     confidence: 95,
   },
   "اشتراك ai": {
-    category: "خدمات رقمية",
+    category: "اشتراكات",
     subCategory: "أدوات AI",
     confidence: 90,
   },
 
   // ─── Utilities (فواتير) ───
+  // An insurance premium is a bill, not an installment on a purchase.
+  "قسط التأمين": { category: "فواتير", subCategory: "تأمين", confidence: 97 },
+  "قسط تأمين": { category: "فواتير", subCategory: "تأمين", confidence: 97 },
   // A gas cylinder is the gas bill of homes without a pipe; "بوتاجاز" alone is the stove.
   "انبوبة البوتاجاز": { category: "فواتير", subCategory: "غاز", confidence: 97 },
   "انبوبة بوتاجاز": { category: "فواتير", subCategory: "غاز", confidence: 97 },
@@ -290,20 +293,20 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   "اشتريت لبس": { category: "تسوق", subCategory: "ملابس", confidence: 98 },
   "هدوم جديدة": { category: "تسوق", subCategory: "ملابس", confidence: 98 },
   "جبت جزمة": { category: "تسوق", subCategory: "أحذية", confidence: 97 },
-  "قصيت شعري": { category: "تسوق", subCategory: "عناية شخصية", confidence: 95 },
-  حلقت: { category: "تسوق", subCategory: "عناية شخصية", confidence: 95 },
-  حلاق: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
-  الحلاق: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
-  كوافير: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
-  الكوافير: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
-  صالون: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
-  الصالون: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
-  "صالون حلاقة": { category: "تسوق", subCategory: "عناية شخصية", confidence: 98 },
-  "صالون تجميل": { category: "تسوق", subCategory: "عناية شخصية", confidence: 98 },
-  حلاقة: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
+  "قصيت شعري": { category: "عناية شخصية", subCategory: "حلاق وكوافير", confidence: 95 },
+  حلقت: { category: "عناية شخصية", subCategory: "حلاق وكوافير", confidence: 95 },
+  حلاق: { category: "عناية شخصية", subCategory: "حلاق وكوافير", confidence: 96 },
+  الحلاق: { category: "عناية شخصية", subCategory: "حلاق وكوافير", confidence: 96 },
+  كوافير: { category: "عناية شخصية", subCategory: "حلاق وكوافير", confidence: 96 },
+  الكوافير: { category: "عناية شخصية", subCategory: "حلاق وكوافير", confidence: 96 },
+  صالون: { category: "عناية شخصية", subCategory: "حلاق وكوافير", confidence: 96 },
+  الصالون: { category: "عناية شخصية", subCategory: "حلاق وكوافير", confidence: 96 },
+  "صالون حلاقة": { category: "عناية شخصية", subCategory: "حلاق وكوافير", confidence: 98 },
+  "صالون تجميل": { category: "عناية شخصية", subCategory: "حلاق وكوافير", confidence: 98 },
+  حلاقة: { category: "عناية شخصية", subCategory: "حلاق وكوافير", confidence: 96 },
   "شامبو ومعجون": {
-    category: "تسوق",
-    subCategory: "عناية شخصية",
+    category: "عناية شخصية",
+    subCategory: "مستحضرات وعناية",
     confidence: 96,
   },
   "موبايل جديد": {
@@ -333,9 +336,26 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   "تحليل دم": { category: "صحة", subCategory: "تحاليل", confidence: 98 },
   "كشف سنان": { category: "صحة", subCategory: "أسنان", confidence: 98 },
 
+  // ─── Kids (أطفال) ───
+  "مصاريف الحضانة": { category: "أطفال", subCategory: "حضانة", confidence: 97 },
+  "قسط الحضانة": { category: "أطفال", subCategory: "حضانة", confidence: 97 },
+  الحضانة: { category: "أطفال", subCategory: "حضانة", confidence: 95 },
+  "لبن اطفال": { category: "أطفال", subCategory: "بامبرز ولبن أطفال", confidence: 97 },
+  "لبن الاطفال": { category: "أطفال", subCategory: "بامبرز ولبن أطفال", confidence: 97 },
+  "لبن للبيبي": { category: "أطفال", subCategory: "بامبرز ولبن أطفال", confidence: 97 },
+  "لبن البيبي": { category: "أطفال", subCategory: "بامبرز ولبن أطفال", confidence: 97 },
+  "لبن صناعي": { category: "أطفال", subCategory: "بامبرز ولبن أطفال", confidence: 97 },
+  "لعب اطفال": { category: "أطفال", subCategory: "هدوم ولعب", confidence: 96 },
+  "لعبة للعيال": { category: "أطفال", subCategory: "هدوم ولعب", confidence: 95 },
+  "لعب للعيال": { category: "أطفال", subCategory: "هدوم ولعب", confidence: 95 },
+  "هدوم العيال": { category: "أطفال", subCategory: "هدوم ولعب", confidence: 96 },
+  "هدوم الولاد": { category: "أطفال", subCategory: "هدوم ولعب", confidence: 95 },
+  "مصروف العيال": { category: "أطفال", subCategory: "مصروف العيال", confidence: 96 },
+  "مصروف الولاد": { category: "أطفال", subCategory: "مصروف العيال", confidence: 96 },
+  "عربية اطفال": { category: "أطفال", subCategory: "عام", confidence: 96 },
+  "عربية البيبي": { category: "أطفال", subCategory: "عام", confidence: 96 },
+
   // ─── Education (تعليم) ───
-  "مصاريف الحضانة": { category: "تعليم", subCategory: "مدرسة", confidence: 97 },
-  "قسط الحضانة": { category: "تعليم", subCategory: "مدرسة", confidence: 97 },
   "مصاريف المدرسة": { category: "تعليم", subCategory: "مدرسة", confidence: 99 },
   "قسط الجامعة": { category: "تعليم", subCategory: "جامعة", confidence: 99 },
   "درس خصوصي": {
@@ -404,7 +424,17 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     subCategory: "صدقة/تبرع",
     confidence: 92,
   },
-  "قسط الجمعية": { category: "فواتير", subCategory: "أقساط", confidence: 92 },
+  "قسط الجمعية": { category: "تحويل", subCategory: "جمعية", confidence: 92 },
+
+  // ─── Bank loans (أقساط وفوايد): the installment and the interest are spending ───
+  "قسط القرض": { category: "أقساط وفوايد", subCategory: "أقساط", confidence: 96 },
+  "قسط قرض": { category: "أقساط وفوايد", subCategory: "أقساط", confidence: 96 },
+  "سددت القرض": { category: "أقساط وفوايد", subCategory: "أقساط", confidence: 94 },
+  "سداد القرض": { category: "أقساط وفوايد", subCategory: "أقساط", confidence: 94 },
+  "فوائد القرض": { category: "أقساط وفوايد", subCategory: "فوايد قروض", confidence: 97 },
+  "فوايد القرض": { category: "أقساط وفوايد", subCategory: "فوايد قروض", confidence: 97 },
+  "فايدة القرض": { category: "أقساط وفوايد", subCategory: "فوايد قروض", confidence: 97 },
+  "فوائد قرض": { category: "أقساط وفوايد", subCategory: "فوايد قروض", confidence: 97 },
 
   // ─── Income & Freelance (مرتب / عمل حر / عوائد استثمار) ───
   "قبضت المرتب": {
@@ -468,7 +498,7 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   },
   "حطيت فلوس في الكارت": {
     category: "تحويل",
-    subCategory: "عام",
+    subCategory: "تحويل بنكي",
     confidence: 75,
     ambiguityFlags: ["card_type_unknown"],
   },

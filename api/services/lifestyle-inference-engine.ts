@@ -3,6 +3,7 @@ import { recordProfileLearningEvent } from "./user-profile-service";
 import { getDb } from "../queries/connection";
 import { expenses, monthlyBehaviorSnapshots } from "../../db/schema";
 import { and, eq, gte, lte } from "drizzle-orm";
+import { DISCRETIONARY_CATEGORIES } from "../../contracts/categories";
 
 export interface TransactionLike {
   amount: string | number;
@@ -116,7 +117,7 @@ export function buildBehaviorSnapshot(
   const spikeDays = spendingByDay.filter(
     (day) => day.amount > Math.max(500, dailyAverage * 2.5),
   );
-  const flexCategories = new Set(["ترفيه", "تسوق", "أكل وشرب", "خروجات"]);
+  const flexCategories = new Set(DISCRETIONARY_CATEGORIES);
   const flexSpend = topCategories
     .filter((cat) => flexCategories.has(cat.name))
     .reduce((sum, cat) => sum + cat.amount, 0);

@@ -5,7 +5,7 @@
 
 import { CATEGORY_DICTIONARY, isKnownLexeme, isWawWhitelisted } from "./egyptian-dictionary";
 import { fuzzyFindCategory, normalizeArabic, matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
-import { detectIntent, type TransactionIntent } from "./intent-detector";
+import { detectIntent, GIFT_NOUN, readsAsSale, type TransactionIntent } from "./intent-detector";
 import { extractAmounts, type ExtractedAmount } from "./entity-extractor";
 import { normalizeText } from "./text-normalizer";
 import { CATEGORIES } from "./category-registry";
@@ -51,6 +51,11 @@ export interface ParsedTransaction {
    * it by testing for the magic values 100 and 98, which is exactly what this replaces.
    */
   evidence?: Evidence;
+  /**
+   * Which way a transfer moved, for the ledger and the list ("حولت" or "اتحولي"). Set for
+   * gam3eya payments, loans and anything else typed `transfer` whose direction is known.
+   */
+  direction?: "incoming" | "outgoing";
   /** Request-local event identity; category changes must not change amount ownership. */
   sourceEventId?: number;
   /** Unresolved facts that a category-only resolver cannot clear. */
@@ -101,7 +106,7 @@ export const SUB_CATEGORY_MAP: Record<
   قهوجي: { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
   قهو: { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
   نسكافيه: { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
-  كافيه: { category: "ترفيه", subCategory: "كافيه" },
+  كافيه: { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
   بقاله: { category: "أكل وشرب", subCategory: "بقالة" },
   بقال: { category: "أكل وشرب", subCategory: "بقالة" },
   سمك: { category: "أكل وشرب", subCategory: "سي فود" },
@@ -164,7 +169,7 @@ export const SUB_CATEGORY_MAP: Record<
   // Was causing "دفعت في المشروع 5000" → مواصلات/أتوبيس (critical misclassification).
   // Bug #10 fix: "قطر" means the country Qatar, not a train.
   // Use "قطار" (train) instead as the keyword.
-  قطار: { category: "مواصلات", subCategory: "قطار" },
+  قطار: { category: "مواصلات", subCategory: "قطر" },
   // Bills subcategories
   كهربا: { category: "فواتير", subCategory: "كهرباء" },
   كهرباء: { category: "فواتير", subCategory: "كهرباء" },
@@ -176,8 +181,8 @@ export const SUB_CATEGORY_MAP: Record<
   راوتر: { category: "فواتير", subCategory: "إنترنت" },
   شحن: { category: "فواتير", subCategory: "شحن رصيد" },
   رصيد: { category: "فواتير", subCategory: "شحن رصيد" },
-  قسط: { category: "فواتير", subCategory: "أقساط" },
-  اقساط: { category: "فواتير", subCategory: "أقساط" },
+  قسط: { category: "أقساط وفوايد", subCategory: "أقساط" },
+  اقساط: { category: "أقساط وفوايد", subCategory: "أقساط" },
   تامين: { category: "فواتير", subCategory: "تأمين" },
   ضرايب: { category: "خدمات حكومية", subCategory: "ضرائب" },
   باقه: { category: "فواتير", subCategory: "إنترنت" },
@@ -233,11 +238,11 @@ export const SUB_CATEGORY_MAP: Record<
   جراب: { category: "تسوق", subCategory: "إكسسوارات" },
   كوتشي: { category: "تسوق", subCategory: "أحذية" },
   جزمه: { category: "تسوق", subCategory: "أحذية" },
-  شوبينج: { category: "تسوق", subCategory: "تسوق عام" },
-  حلاق: { category: "تسوق", subCategory: "عناية شخصية" },
-  كوافير: { category: "تسوق", subCategory: "عناية شخصية" },
-  مغسله: { category: "تسوق", subCategory: "عناية شخصية" },
-  مغسلة: { category: "تسوق", subCategory: "عناية شخصية" },
+  شوبينج: { category: "تسوق", subCategory: "عام" },
+  حلاق: { category: "عناية شخصية", subCategory: "حلاق وكوافير" },
+  كوافير: { category: "عناية شخصية", subCategory: "حلاق وكوافير" },
+  مغسله: { category: "عناية شخصية", subCategory: "عام" },
+  مغسلة: { category: "عناية شخصية", subCategory: "عام" },
   // Bug #8 fix: كارفور removed from SUB_CATEGORY_MAP (dead code — MERCHANT_REGISTRY at L251
   // always runs first and overrides this. Having two conflicting entries is misleading).
   // كارفور: { category: "تسوق", subCategory: "سوبر ماركت" }, ← DELETED
@@ -280,8 +285,8 @@ export const SUB_CATEGORY_MAP: Record<
   مصيف: { category: "ترفيه", subCategory: "سفر" },
   خروجه: { category: "ترفيه", subCategory: "خروجة" },
   عزمت: { category: "ترفيه", subCategory: "خروجة" },
-  فرتكت: { category: "ترفيه", subCategory: "ترفيه عام" },
-  طيرت: { category: "ترفيه", subCategory: "ترفيه عام" },
+  فرتكت: { category: "ترفيه", subCategory: "عام" },
+  طيرت: { category: "ترفيه", subCategory: "عام" },
   // "رميت" removed from استثمار — in Egyptian Arabic "رميت" means "I spent/lost",
   // NOT investment. Was causing "رميت 50 على القهوة" → استثمار/توفير (critical bug).
   الجمعية: { category: "تحويل", subCategory: "ادخار" },
@@ -294,13 +299,13 @@ export const SUB_CATEGORY_MAP: Record<
   بلياردو: { category: "ترفيه", subCategory: "ألعاب" },
   بلايستيشن: { category: "ترفيه", subCategory: "ألعاب" },
   // Subscriptions
-  نتفلكس: { category: "اشتراكات", subCategory: "نتفلكس" },
-  سبوتيفاي: { category: "اشتراكات", subCategory: "سبوتيفاي" },
-  شاهد: { category: "اشتراكات", subCategory: "نتفلكس" },
-  "واتش ات": { category: "اشتراكات", subCategory: "نتفلكس" },
+  نتفلكس: { category: "اشتراكات", subCategory: "منصات مشاهدة" },
+  سبوتيفاي: { category: "اشتراكات", subCategory: "موسيقى" },
+  شاهد: { category: "اشتراكات", subCategory: "منصات مشاهدة" },
+  "واتش ات": { category: "اشتراكات", subCategory: "منصات مشاهدة" },
   يوتيوب: { category: "اشتراكات", subCategory: "عام" },
-  برايم: { category: "اشتراكات", subCategory: "نتفلكس" },
-  انغامي: { category: "اشتراكات", subCategory: "سبوتيفاي" },
+  برايم: { category: "اشتراكات", subCategory: "منصات مشاهدة" },
+  انغامي: { category: "اشتراكات", subCategory: "موسيقى" },
   // Gifts
   هديه: { category: "هدايا وصدقات", subCategory: "عام" },
   صدقه: { category: "هدايا وصدقات", subCategory: "صدقة/تبرع" },
@@ -321,8 +326,8 @@ export const SUB_CATEGORY_MAP: Record<
   بونص: { category: "مرتب", subCategory: "مكافأة/بونص" },
   مكافاه: { category: "مرتب", subCategory: "مكافأة/بونص" },
   قبض: { category: "مرتب", subCategory: "مرتب أساسي" },
-  سلفه: { category: "مرتب", subCategory: "سلف/قروض" },
-  سلفة: { category: "مرتب", subCategory: "سلف/قروض" },
+  سلفه: { category: "تحويل", subCategory: "دين/سلفة" },
+  سلفة: { category: "تحويل", subCategory: "دين/سلفة" },
   سلف: { category: "تحويل", subCategory: "دين/سلفة" },
   عموله: { category: "عمل حر", subCategory: "عمولة" },
   سبوبه: { category: "عمل حر", subCategory: "سبوبة" },
@@ -337,8 +342,8 @@ export const SUB_CATEGORY_MAP: Record<
   شيشة: { category: "تدخين", subCategory: "شيشة/معسل" },
   معسل: { category: "تدخين", subCategory: "شيشة/معسل" },
 
-  بامبرز: { category: "تسوق", subCategory: "عناية شخصية" },
-  حفاظات: { category: "تسوق", subCategory: "عناية شخصية" },
+  بامبرز: { category: "أطفال", subCategory: "بامبرز ولبن أطفال" },
+  حفاظات: { category: "أطفال", subCategory: "بامبرز ولبن أطفال" },
   لبن: { category: "أكل وشرب", subCategory: "بقالة" },
   مناديل: { category: "سكن", subCategory: "منظفات" },
   مسحوق: { category: "سكن", subCategory: "منظفات" },
@@ -402,8 +407,8 @@ export const SUB_CATEGORY_MAP: Record<
   "شحنت رصيد": { category: "فواتير", subCategory: "شحن رصيد" },
   "دفعت شحن رصيد": { category: "فواتير", subCategory: "شحن رصيد" },
   // Digital/Fintech Services
-  تيلدا: { category: "خدمات رقمية", subCategory: "عام" },
-  كلينق: { category: "خدمات رقمية", subCategory: "عام" },
+  تيلدا: { category: "اشتراكات", subCategory: "برمجيات" },
+  كلينق: { category: "اشتراكات", subCategory: "برمجيات" },
   فيزا: { category: "تحويل", subCategory: "تحويل بنكي" },
   استعلام: { category: "تحويل", subCategory: "سحب ATM" },
   تويست: { category: "أكل وشرب", subCategory: "سناكس" },
@@ -411,10 +416,10 @@ export const SUB_CATEGORY_MAP: Record<
   "بلاي ستيشن": { category: "ترفيه", subCategory: "ألعاب" },
   ريدبول: { category: "أكل وشرب", subCategory: "مشروبات" },
   "ريد بول": { category: "أكل وشرب", subCategory: "مشروبات" },
-  فكيت: { category: "تحويل", subCategory: "أخرى" },
-  فك: { category: "تحويل", subCategory: "أخرى" },
-  فكه: { category: "تحويل", subCategory: "أخرى" },
-  كاش: { category: "تحويل", subCategory: "عام" },
+  فكيت: { category: "تحويل", subCategory: "تحويل كاش" },
+  فك: { category: "تحويل", subCategory: "تحويل كاش" },
+  فكه: { category: "تحويل", subCategory: "تحويل كاش" },
+  كاش: { category: "تحويل", subCategory: "تحويل كاش" },
   // Government services
   "جواز سفر": { category: "خدمات حكومية", subCategory: "جواز سفر" },
   جواز: { category: "خدمات حكومية", subCategory: "جواز سفر" },
@@ -441,7 +446,7 @@ export const SUB_CATEGORY_MAP: Record<
   // Missing transport/car words
   ونش: { category: "مواصلات", subCategory: "صيانة عربية" },
   ميكانيكي: { category: "مواصلات", subCategory: "صيانة عربية" },
-  كاوتش: { category: "خدمات سيارات", subCategory: "إطارات" },
+  كاوتش: { category: "مواصلات", subCategory: "صيانة عربية" },
   "غسلت العربية": { category: "مواصلات", subCategory: "صيانة عربية" },
   "غسيل العربية": { category: "مواصلات", subCategory: "صيانة عربية" },
   // Missing health words
@@ -535,10 +540,10 @@ const MERCHANT_REGISTRY: Record<
   اتصالات: { category: "فواتير", subCategory: "شحن رصيد" },
   وي: { category: "فواتير", subCategory: "إنترنت" },
   // ── Subscriptions ──
-  نتفلكس: { category: "اشتراكات", subCategory: "نتفلكس" },
-  سبوتيفاي: { category: "اشتراكات", subCategory: "سبوتيفاي" },
-  شاهد: { category: "اشتراكات", subCategory: "شاهد" },
-  "يوتيوب بريميوم": { category: "اشتراكات", subCategory: "يوتيوب" },
+  نتفلكس: { category: "اشتراكات", subCategory: "منصات مشاهدة" },
+  سبوتيفاي: { category: "اشتراكات", subCategory: "موسيقى" },
+  شاهد: { category: "اشتراكات", subCategory: "منصات مشاهدة" },
+  "يوتيوب بريميوم": { category: "اشتراكات", subCategory: "منصات مشاهدة" },
   // ── Transport Apps ──
   اوبر: { category: "مواصلات", subCategory: "أوبر/كريم" },
   كريم: { category: "مواصلات", subCategory: "أوبر/كريم" },
@@ -546,11 +551,11 @@ const MERCHANT_REGISTRY: Record<
   اندرايفر: { category: "مواصلات", subCategory: "أوبر/كريم" },
   ديدي: { category: "مواصلات", subCategory: "أوبر/كريم" },
   // ── BNPL / Fintech ──
-  فاليو: { category: "فواتير", subCategory: "أقساط" },
-  سهوله: { category: "فواتير", subCategory: "أقساط" },
-  خزنه: { category: "فواتير", subCategory: "أقساط" },
-  فوري: { category: "فواتير", subCategory: "خدمات" },
-  انستاباي: { category: "تحويل", subCategory: "تحويل" },
+  فاليو: { category: "أقساط وفوايد", subCategory: "أقساط" },
+  سهوله: { category: "أقساط وفوايد", subCategory: "أقساط" },
+  خزنه: { category: "أقساط وفوايد", subCategory: "أقساط" },
+  فوري: { category: "فواتير", subCategory: "عام" },
+  انستاباي: { category: "تحويل", subCategory: "انستاباي" },
   "فودافون كاش": { category: "تحويل", subCategory: "فودافون كاش" },
   "اورنج كاش": { category: "تحويل", subCategory: "فودافون كاش" },
   "أورنج كاش": { category: "تحويل", subCategory: "فودافون كاش" },
@@ -796,6 +801,13 @@ export function isSimpleText(text: string): boolean {
  */
 export const PERSON_CATEGORIES = ["العائلة", "أصدقاء", "موظفين"];
 
+/** The subcategories that name how money moved (a card, a wallet, a bank), not what for. */
+const PAYMENT_RAIL_SUBCATEGORIES = new Set(["تحويل بنكي", "انستاباي", "فودافون كاش", "تحويل كاش"]);
+
+function isPaymentRailHit(hit: { category: string; subCategory: string }): boolean {
+  return hit.category === "تحويل" && PAYMENT_RAIL_SUBCATEGORIES.has(hit.subCategory);
+}
+
 const DISAMBIGUATION_RULES: Record<string, Array<{
   contextPattern: RegExp;
   category: string;
@@ -804,12 +816,12 @@ const DISAMBIGUATION_RULES: Record<string, Array<{
   "عربية": [
     { contextPattern: /فول|كبد[ةه]|خضار|بطاطس|طعمي[ةه]|بيض|لبن/, category: "أكل وشرب", subCategory: "مطعم" },
     { contextPattern: /اشتريت|جبت|جديد|مستعمل/, category: "تسوق", subCategory: "أجهزة إلكترونية" },
-    { contextPattern: /طفل|بيبي|حضان[ةه]|عربان[ةه]/, category: "تسوق", subCategory: "عام" },
+    { contextPattern: /طفل|اطفال|أطفال|بيبي|حضان[ةه]|عربان[ةه]/, category: "أطفال", subCategory: "عام" },
   ],
   "عربيه": [
     { contextPattern: /فول|كبد[ةه]|خضار|بطاطس|طعمي[ةه]|بيض|لبن/, category: "أكل وشرب", subCategory: "مطعم" },
     { contextPattern: /اشتريت|جبت|جديد|مستعمل/, category: "تسوق", subCategory: "أجهزة إلكترونية" },
-    { contextPattern: /طفل|بيبي|حضان[ةه]|عربان[ةه]/, category: "تسوق", subCategory: "عام" },
+    { contextPattern: /طفل|اطفال|أطفال|بيبي|حضان[ةه]|عربان[ةه]/, category: "أطفال", subCategory: "عام" },
   ],
   "نور": [
     { contextPattern: /^(?!.*(?:كهربا|نور\s+القطع|قطع\s+النور|سداد|فاتورة|عداد|شركة|فواتير|دفع)).*(?:(?:سلفت|اديت|أديت|حولت|بعت|سلفت|عطيت|سلكت|صفيت|صفّيت|طلعت|بعتت|رديت|وديت|رجعت|فكيت|خدت|اخدت).*(?:نور)|(?:نور).*(?:سلفت|اديت|أديت|حولت|بعت|سلفت|عطيت|سلكت|صفيت|صفّيت|طلعت|بعتت|رديت|وديت|رجعت|فكيت|خدت|اخدت))/, category: "تحويل", subCategory: "أشخاص" },
@@ -820,7 +832,7 @@ const DISAMBIGUATION_RULES: Record<string, Array<{
   // Brand names that are also everyday words: Careem the ride vs a face cream,
   // Shell the station vs a shawl.
   "كريم": [
-    { contextPattern: /(?:^|\s)(?:لل|ل|ال)?(?:وش|شعر|بشره|جسم|ايد)(?:ي)?(?=\s|$)|مرطب|واقي|تفتيح|حلاق[ةه]|صيدلي[ةه]|كوافير/, category: "تسوق", subCategory: "عناية شخصية" },
+    { contextPattern: /(?:^|\s)(?:لل|ل|ال)?(?:وش|شعر|بشره|جسم|ايد)(?:ي)?(?=\s|$)|مرطب|واقي|تفتيح|حلاق[ةه]|صيدلي[ةه]|كوافير/, category: "عناية شخصية", subCategory: "مستحضرات وعناية" },
   ],
   "شيل": [
     { contextPattern: /جاكيت|جاكت|طرح[ةه]|فستان|لبس|هدوم|شال/, category: "تسوق", subCategory: "ملابس" },
@@ -862,7 +874,7 @@ const DISAMBIGUATION_RULES: Record<string, Array<{
     },
   ],
   "كفر": [
-    { contextPattern: /عربي?[ةه]|كاوتش|إطار|اطار|تاير|tire/i, category: "خدمات سيارات", subCategory: "إطارات" },
+    { contextPattern: /عربي?[ةه]|كاوتش|إطار|اطار|تاير|tire/i, category: "مواصلات", subCategory: "صيانة عربية" },
   ],
   "المنصورة": [
     { contextPattern: /سافرت|روحت|خروج[ةه]|مصيف|رحل[ةه]/, category: "ترفيه", subCategory: "سفر" },
@@ -872,11 +884,15 @@ const DISAMBIGUATION_RULES: Record<string, Array<{
   ],
   "مشروع": [
     { contextPattern: /ركبت|نزلت|موقف|سواق|ميكروباص|اجرة|أجرة/, category: "مواصلات", subCategory: "أتوبيس" },
-    { contextPattern: /بزنس|شغل|استثمار|شراكة|ارباح|أرباح|افتتاح/, category: "استثمار", subCategory: "عام" },
+    { contextPattern: /بزنس|شغل|استثمار|شراكة|ارباح|أرباح|افتتاح/, category: "استثمار", subCategory: "أسهم" },
+  ],
+  // Cash taken from a card is an ATM withdrawal, not a bank transfer.
+  "فيزا": [
+    { contextPattern: /سحبت|سحب|atm|مكن[ةه]|ماكين[ةه]/i, category: "تحويل", subCategory: "سحب ATM" },
   ],
   "حساب": [
     { contextPattern: /مطعم|كافيه|قهوة|اكل|شرب|سوبر|ماركت|دكان|محل/, category: "أكل وشرب", subCategory: "مطعم" },
-    { contextPattern: /بنك|فيزا|كارت|تحويل|سحب|ايداع|إيداع/, category: "تحويل", subCategory: "بنك" },
+    { contextPattern: /بنك|فيزا|كارت|تحويل|سحب|ايداع|إيداع/, category: "تحويل", subCategory: "تحويل بنكي" },
   ],
 };
 
@@ -1129,7 +1145,7 @@ export async function runRuleEngine(
 
     let category =
       intentResult.intent === "income"
-        ? "مرتب"
+        ? "دخل آخر"
         : intentResult.intent === "transfer"
           ? "تحويل"
           : intentResult.intent === "investment"
@@ -1227,6 +1243,13 @@ export async function runRuleEngine(
       }
     }
 
+    // A payment rail (a card, a wallet, a bank) and a kinship word say how and to whom the
+    // money moved, not what it was for. Their answers are held while the later layers look
+    // for a purpose, and used only when none is found
+    // (docs/decisions/0008-money-movements-and-taxonomy.md).
+    let heldRail: { category: string; subCategory: string; confidence: number } | null = null;
+    let heldPerson: { category: string; subCategory: string; confidence: number; flags?: string[] } | null = null;
+
     // 1.5 Merchant Registry (Strategy 2: instant brand recognition, 0 tokens)
     if (!found) {
       // Check multi-word merchant names first (longer = more specific)
@@ -1235,8 +1258,15 @@ export async function runRuleEngine(
       );
       for (const merchant of merchantKeys) {
         if (matchArabicPhrase(allContext, merchant)) {
-          category = MERCHANT_REGISTRY[merchant].category;
-          subCategory = MERCHANT_REGISTRY[merchant].subCategory;
+          const registered = MERCHANT_REGISTRY[merchant];
+          // "دفعت 200 بفودافون كاش للسباك": a wallet or a bank is how the money moved.
+          // Its answer is held while the layers below look for what it paid for.
+          if (isPaymentRailHit(registered)) {
+            heldRail = { category: registered.category, subCategory: registered.subCategory, confidence: 100 };
+            break;
+          }
+          category = registered.category;
+          subCategory = registered.subCategory;
           confidence = setMatch(100, "merchant_registry");
           inferenceSource = "dictionary";
           ambiguityFlags = ["merchant_registry_hit"];
@@ -1254,9 +1284,18 @@ export async function runRuleEngine(
       }
     }
 
+    // A kinship word says who the money was for, not what it bought: "دفعت مصاريف مدرسة
+    // ابني" is تعليم for ابني.
     if (!found) {
       const synonymMatch = findTaxonomyMatch(allContext);
-      if (synonymMatch) {
+      if (synonymMatch && PERSON_CATEGORIES.includes(synonymMatch.category)) {
+        heldPerson = {
+          category: synonymMatch.category,
+          subCategory: synonymMatch.subCategory,
+          confidence: synonymMatch.confidence,
+          flags: synonymMatch.ambiguityFlags,
+        };
+      } else if (synonymMatch) {
         category = synonymMatch.category;
         subCategory = synonymMatch.subCategory;
         confidence = setMatch(synonymMatch.confidence, "synonym_graph");
@@ -1365,6 +1404,11 @@ export async function runRuleEngine(
           SUB_CATEGORY_MAP[word] ||
           SUB_CATEGORY_MAP[normalizedWord] ||
           (stripped !== normalizedWord ? SUB_CATEGORY_MAP[stripped] : undefined);
+        // "دفعت بالفيزا في المطعم": the card is how it was paid, not what it paid for.
+        // A payment rail after ب is skipped so the purpose can answer.
+        if (hit && isPaymentRailHit(hit) && /^ب/.test(normalizedWord) && stripped !== normalizedWord) {
+          continue;
+        }
         if (hit) {
           const isExact = SUB_CATEGORY_MAP[word] || SUB_CATEGORY_MAP[normalizedWord];
           const baseScore = isExact ? 85 : 82; // Calibrated: single-word exact = auto-save borderline, prefix = review
@@ -1508,6 +1552,37 @@ export async function runRuleEngine(
       }
     }
 
+    if (heldPerson || heldRail) {
+      const purposeFound =
+        found &&
+        !PERSON_CATEGORIES.includes(category) &&
+        !["متنوعات", "تحويل"].includes(category) &&
+        // setMatch assigns matchKind inside a closure, which the compiler cannot follow.
+        (matchKind as MatchKind) !== "fuzzy";
+      if (purposeFound) {
+        ambiguityFlags = [
+          ...(ambiguityFlags || []),
+          ...(heldPerson ? ["person_beside_purpose"] : []),
+          ...(heldRail ? ["paid_through_rail"] : []),
+        ];
+      } else if (heldPerson) {
+        // Money handed to someone with no purpose: the person's category.
+        category = heldPerson.category;
+        subCategory = heldPerson.subCategory;
+        confidence = setMatch(heldPerson.confidence, "synonym_graph");
+        inferenceSource = "synonym";
+        ambiguityFlags = heldPerson.flags;
+        found = true;
+      } else if (heldRail) {
+        category = heldRail.category;
+        subCategory = heldRail.subCategory;
+        confidence = setMatch(heldRail.confidence, "merchant_registry");
+        inferenceSource = "dictionary";
+        ambiguityFlags = ["merchant_registry_hit"];
+        found = true;
+      }
+    }
+
     // 7. Semantic Hybrid Fallback (local n-gram + Fireworks embedding)
     if ((!found || confidence < 80)) {
       try {
@@ -1529,9 +1604,9 @@ export async function runRuleEngine(
       }
     }
 
-    // Income with no specific category
+    // Income with no specific category: other income, never a salary nobody named.
     if (intentResult.intent === "income" && !found) {
-      category = "مرتب";
+      category = "دخل آخر";
       subCategory = "عام";
       confidence = setMatch(intentResult.confidence, "intent_only");
     }
@@ -1629,8 +1704,8 @@ export async function runRuleEngine(
     // ── Direction-governed nouns ──────────────────────────────────────────────
     // The verb governs direction, the noun governs category. Without this the generic
     // verb keyword wins the category outright: "قبضت الجمعية" matched قبض → مرتب and
-    // "دفعت قسط الجمعية" matched قسط → فواتير, leaving the registry's own قبض جمعية and
-    // قسط جمعية subcategories unreachable and filing a gam3eya payout as salary.
+    // "دفعت قسط الجمعية" matched قسط → فواتير, leaving the registry's own تحويل/جمعية
+    // unreachable and filing a gam3eya payout as salary.
     const governed = resolveGovernedTaxonomy(allContextNorm);
     if (governed) {
       matchKind = "governed_noun";
@@ -1650,29 +1725,54 @@ export async function runRuleEngine(
     let finalCategory = governedCategory;
     let finalSubCategory = governed ? governed.subCategory : refinedSubCategory;
 
-    // A loan to someone we know is filed under that person, not under the generic
-    // تحويل bucket: "سلفت سيف تلتمية" belongs in أصدقاء/سيف صاحبك, which is the whole
-    // point of resolving the person. The verb still governs direction — only the
-    // category comes from the more specific noun. Limited to the debt family, because
-    // a gam3eya installment stays التزامات وجمعيات no matter who was handed the money.
-    if (governed?.id === "debt" && PERSON_CATEGORIES.includes(category)) {
-      finalCategory = category;
-      finalSubCategory = refinedSubCategory;
-    }
-    if (!governed && effectiveIntent === "income" && registeredType === "expense") {
-      if (/(رجع|استرد|استرجع|باقي|بقيت)/.test(allContextNorm)) {
-        finalCategory = "مرتب";
-        finalSubCategory = "استرداد نقدي";
+    // The noun named a spending category (or the verb بعت named a transfer), yet the
+    // direction says money came in. The income category is chosen from what came in,
+    // never guessed as salary (docs/decisions/0008-money-movements-and-taxonomy.md).
+    if (
+      !governed &&
+      effectiveIntent === "income" &&
+      registeredType === "transfer" &&
+      readsAsSale(allContextNorm)
+    ) {
+      // "بعت الموبايل القديم ب 4000": the price of something sold.
+      finalCategory = "دخل آخر";
+      finalSubCategory = "بيع حاجة";
+      finalConfidence = Math.min(finalConfidence, 80);
+      matchKind = "intent_only";
+      registeredType = "income";
+    } else if (!governed && effectiveIntent === "income" && registeredType === "expense") {
+      if (category === "هدايا وصدقات" || GIFT_NOUN.test(allContextNorm)) {
+        // "خدت عيدية 500": a gift the user received.
+        finalCategory = "هدايا وعيديات";
+        finalSubCategory = /عيدي/.test(allContextNorm)
+          ? "عيدية"
+          : /نقط|نقوط/.test(allContextNorm)
+            ? "نقطة"
+            : "هدية فلوس";
+      } else if (/(رجع|استرد|استرجع|مرتجع|باقي|بقيت)/.test(allContextNorm)) {
+        // "رجعت الجزمة واخدت فلوسي": money back from a purchase.
+        finalCategory = "دخل آخر";
+        finalSubCategory = "مرتجعات واسترداد";
       } else if (PERSON_CATEGORIES.includes(category)) {
-        // Preserve person subcategory — e.g., "استلمت من أحمد" stays as أصدقاء/عام
-        // instead of being overridden to مرتب. The person category is meaningful here.
+        // Preserve person subcategory — e.g., "استلمت من أحمد" stays as أصدقاء/عام.
         finalCategory = category;
         finalSubCategory = refinedSubCategory;
-      } else {
-        // The noun named something bought ("هدية", "جزمة"), yet the direction says money
-        // came in: مرتب is a guess about the source, not evidence of it. It stays, but
-        // at intent strength, so it goes to review instead of being saved as salary.
+      } else if (/(?:^|\s)[وف]?(?:بعت|بيعت|بايع|بيع)(?=\s|$)/.test(allContextNorm)) {
+        // "بعت الموبايل القديم ب 4000": the noun is what was sold.
+        finalCategory = "دخل آخر";
+        finalSubCategory = "بيع حاجة";
+        finalConfidence = Math.min(finalConfidence, 80);
+        matchKind = "intent_only";
+      } else if (/(?:^|\s)من\s+(?:ال)?شغل(?:ي|ه|ها|نا)?(?=\s|$)/.test(allContextNorm)) {
+        // "جاني 1500 من الشغل": pay from the job is the salary.
         finalCategory = "مرتب";
+        finalSubCategory = "مرتب أساسي";
+        finalConfidence = Math.min(finalConfidence, 80);
+        matchKind = "intent_only";
+      } else {
+        // Nothing names the source. It is other income at intent strength, so it goes to
+        // review instead of being saved as a salary nobody mentioned.
+        finalCategory = "دخل آخر";
         finalSubCategory = "عام";
         finalConfidence = Math.min(finalConfidence, 80);
         matchKind = "intent_only";
@@ -1698,6 +1798,9 @@ export async function runRuleEngine(
           description,
           type: finalType,
           confidence: finalConfidence,
+          ...(governed && finalType === "transfer"
+            ? { direction: governed.direction === "in" ? ("incoming" as const) : ("outgoing" as const) }
+            : {}),
           currency: "EGP",
           needsReview: finalConfidence < 85,
           reviewReasons: finalConfidence < 85 ? ["raw_category_confidence"] : undefined,
@@ -1755,11 +1858,12 @@ function applyProfileHints(
 
   if (
     profileContext.hasChildren === true &&
-    /(مدرس|مدرسة|حضانة|درس|دروس|كتب|يونيفورم)/.test(context)
+    /(مدرس|مدرسة|حضانة|حضانه|درس|دروس|كتب|يونيفورم)/.test(context)
   ) {
     if (next.category === "متنوعات" || next.confidence < 92) {
-      next.category = "تعليم";
-      next.subCategory = /درس|دروس/.test(context) ? "دروس خصوصية" : "مدرسة";
+      const nursery = /حضان[ةه]/.test(context);
+      next.category = nursery ? "أطفال" : "تعليم";
+      next.subCategory = nursery ? "حضانة" : /درس|دروس/.test(context) ? "دروس خصوصية" : "مدرسة";
       next.confidence = Math.max(next.confidence, 92);
       next.needsReview = false;
       flags.add("profile_children_education_hint");

@@ -67,12 +67,15 @@ const EXPENSE_ONLY_CATEGORIES = new Set([
   "تدخين",
   "حيوانات أليفة",
   "عمل",
-  "خدمات رقمية",
-  "خدمات سيارات",
+  "عناية شخصية",
+  "أطفال",
+  "أقساط وفوايد",
+  "هدايا وصدقات",
+  "خدمات حكومية",
   // "متنوعات" — REMOVED: neutral fallback, not expense-only
 ]);
 
-const INCOME_ONLY_CATEGORIES = new Set(["مرتب", "عمل حر", "عوائد استثمار"]);
+const INCOME_ONLY_CATEGORIES = new Set(["مرتب", "عمل حر", "عوائد استثمار", "هدايا وعيديات", "دخل آخر"]);
 
 // ─── Max Amount Constant ─────────────────────────────────────────
 

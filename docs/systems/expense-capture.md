@@ -64,7 +64,9 @@ amount. When no event is admitted, the pipeline answers `clarify` with a questio
 3. **Muscle memory**, for single-event sentences: `api/lib/muscle-memory.ts#muscleMemoryLookup` compares the
    sentence's template (its amount replaced by a placeholder) with patterns learned from the user's own
    classification logs of the last 90 days: single-item, auto-saved, uncorrected results that repeated with the
-   same outcome. A match scoring 90 or more answers, after the named people are resolved.
+   same outcome. A result logged under an old category is learned in its current place (`LEGACY_TAXONOMY`), and an
+   old money movement booked as spending or income is not learned at all. A match scoring 90 or more answers, after
+   the named people are resolved.
 4. **Business scoring**, in business mode only: keywords of the business's categories are weighed against
    personal keywords; a dominant match on a sentence with exactly one amount becomes `مشروع` with the business
    category as subcategory, its direction taken from the verb.
@@ -85,10 +87,14 @@ For each admitted event:
    after "بنزين" as the grade when another number gives the price.
 2. Named people are resolved (`api/lib/smart-pipeline.ts#applyPersonResolution`,
    `api/lib/person-resolver.ts#resolvePersonForTransaction`). One amount with several named people is split
-   between them unless they are joined by "أو". An unknown person makes the result `clarify` with "مين …؟". A
+   between them unless they are joined by "أو". The category stays what the money was for and the person is kept
+   beside it (`person_mentioned`): "دفعت مصاريف مدرسة ابني" is تعليم for ابني. Only money handed to someone with no
+   stated purpose ("اديت ماما 1000") takes the person's category (العائلة، أصدقاء، موظفين), and only then does an
+   unknown person make the result `clarify` with "مين …؟"; a loan keeps تحويل/دين/سلفة and still asks who. A
    word is taken as a person only when it is one of the user's contacts, a family word or a name the names
    dictionary knows (`api/lib/egyptian-names-dictionary.ts#isLikelyPersonName`); a leading fa is not peeled
-   ("فلوسي" is not "لوسي"), and "منه" right after a receiving verb is a pronoun.
+   ("فلوسي" is not "لوسي"), "منه" right after a receiving verb is a pronoun, and the lam of "حولت لامي" is the
+   preposition, so the person is "امي".
 3. The user's stored corrections replace the answer (`api/lib/correction-rules.ts#applyCorrectionRules`).
 4. Calibration turns each item's evidence into a probability (`api/lib/confidence-calibrator.ts#applyCalibration`,
    measured table `api/lib/confidence-calibration.generated.ts#CONFIDENCE_CALIBRATION`).
@@ -109,15 +115,28 @@ The layers `runRuleEngine` tries for the text around one amount, with the eviden
 | A single word in the subcategory map, then in the category dictionary | `subcat_unigram`, `dict_unigram` |
 | Typo match, with an edit budget scaled to the word's length | `fuzzy` |
 | Semantic match on a local character n-gram index, and Fireworks embeddings when the request carries a Fireworks key (`api/lib/embedding-engine.ts#matchSegment`) | `embedding` |
-| Direction only: income becomes `مرتب`, an expense `متنوعات` at low confidence | `intent_only` |
+| Direction only: income becomes `دخل آخر`, an expense `متنوعات` at low confidence | `intent_only` |
+
+A kinship word from the synonym graph (أمي، ابني) and a payment rail from the merchant registry (a card, a wallet, a
+bank: بالفيزا، بفودافون كاش، بانستاباي) say to whom and how the money moved, not what for. Their answers are held
+while the later layers look for a purpose and are used only when none is found: "دفعت بالفيزا 300 في المطعم" is أكل
+وشرب, "دفعت مصاريف مدرسة ابني" is تعليم, and "حولت 1000 بانستاباي" stays تحويل/انستاباي.
 
 Direction comes from `api/lib/intent-detector.ts#detectIntent`. Gift words (هدية، عيدية، نقطة) are spending on their
-own and income only beside a receiving verb (خدت، جالي، وصلني). When the direction is income but the words named
-something bought, the item becomes `مرتب` at intent strength (`intent_only`), so it goes to review.
+own and income only beside a receiving verb (خدت، جالي، وصلني). Money back from a returned purchase ("رجعت الجزمة
+واخدت فلوسي") and the price of something sold ("بعت الموبايل ب 4000", but not an errand: "بعت الواد يجيب عيش") read
+as income too. When the direction is income but the words named something bought, the source decides the category:
+a gift received is هدايا وعيديات, a refund دخل آخر/مرتجعات واسترداد, a sale دخل آخر/بيع حاجة, pay "من الشغل" مرتب,
+and anything else دخل آخر. Those are capped at intent strength (`intent_only`) and go to review; income is filed as
+مرتب only when salary is named (مرتب، راتب، قبضت) (docs/decisions/0008-money-movements-and-taxonomy.md).
 
-After a layer answers, negated clauses are dropped, nouns whose direction depends on the verb (الجمعية, قسط,
-سلفة) take their subcategory from `api/lib/direction-governed-taxonomy.ts#resolveGovernedTaxonomy`, and profile
-hints apply (children lead to education, running the household to groceries).
+After a layer answers, negated clauses are dropped, and the money movements whose direction depends on the verb
+(الجمعية, سلفة, رجعلي, "اللي عليا") become transfers through
+`api/lib/direction-governed-taxonomy.ts#resolveGovernedTaxonomy`: تحويل/جمعية or تحويل/دين/سلفة, with the direction
+the verb gave (`direction`: `incoming` or `outgoing`). A bank loan's installment or interest paid ("دفعت قسط القرض",
+"دفعت فوائد القرض") is not a loan moving but spending under أقساط وفوايد. Profile
+hints apply last (children lead to education, or to أطفال/حضانة for a nursery; running the household to
+groceries).
 
 ### 6. The model, only for what is left
 When events escalated, the pipeline:
@@ -145,9 +164,11 @@ instead of the model (see known issues).
 - **Clean-up**: duplicates from different parsers are merged, implausible amounts for investment, real estate
   and rent fall back to `متنوعات`, category names are normalized against the registry
   (`api/lib/category-registry.ts#normalizeTransactionTaxonomyList`), and `متنوعات` items are rescued through the
-  subcategory map. Normalization keeps a category the item already has: evidence from the sentence may only fill
-  a missing or `متنوعات` category, refine the income default `مرتب` (to عمل حر or عوائد استثمار) and `استثمار` (to
-  its returns), and remap legacy names.
+  subcategory map. Normalization first moves old names to the current taxonomy (`LEGACY_TAXONOMY` in
+  `contracts/categories.ts`: a retired category, a merged subcategory, a money movement once booked as spending or
+  income). It keeps a category the item already has: evidence from the sentence may only fill a missing or
+  `متنوعات` category, refine `مرتب` (to عمل حر or عوائد استثمار), the unknown-income default `دخل آخر` (to مرتب, عمل
+  حر or عوائد استثمار) and `استثمار` (to its returns).
 - **Verifier**: `api/lib/post-classifier-verifier.ts#verifyClassifiedItems` flags duplicates, conflicts between
   direction and category, unknown categories, amount sanity and anomalies against the month's income and
   expense. Setting `parser_local_verifier_enabled` switches it off.
@@ -183,13 +204,18 @@ panel, to admins only.
 - `auto_save`: the form saves at once, one item through `expense.create` and several through
   `expense.batchCreate`, with source `ai_parsed` or `voice`, the log id and, for queued offline text, a client
   request id. When saving fails, the items are shown for review.
-- `review`: editable cards with totals per direction; the user fixes or removes rows, then saves.
+- `review`: editable cards with totals per direction; the user fixes or removes rows, then saves. A card's
+  category list holds the categories of its item's kind (`src/lib/financial-taxonomy.ts#getCategoryOptionsForType`),
+  and a newly picked category starts at its general subcategory.
 - `clarify`: the question, with relation shortcuts (أبويا, أمي, أخويا, صاحبي, ...) for "who is" questions and a
   skip button. Answers go to `expense.answerClarification`.
 
 `expense.create` and `expense.batchCreate` (up to 100 items) are idempotent on `clientRequestId`, check that
 referenced wallets, businesses and contacts belong to the user
-(`api/lib/ownership-guard.ts#assertEntityOwnership`), and turn a person subcategory into a contact. In one
+(`api/lib/ownership-guard.ts#assertEntityOwnership`), and link the named person to a contact
+(`api/expense-router.ts#namedPersonOf`): the person subcategory of a person category, or the `personName` and
+`personRelationship` the form sends for a person named beside a purpose. A transfer's direction is stored in
+`parsed_metadata.direction`. In one
 transaction they insert the rows and their `expense_details`, apply the daily rollup delta
 (`api/services/expense-rollups.ts#applyExpenseRollupDelta`), count the contact's transactions and update the
 streak. Afterwards they clear muscle memory, the classification cache and the finance caches, and check budget
@@ -232,7 +258,8 @@ it. The live call reads them and can finish one with the user's answer ([voice c
 | How a sentence splits into events, or what counts as planned, negated or a question | `api/lib/financial-event-plan.ts`, `api/lib/negation-detector.ts`, `api/lib/narrative-decomposer.ts` | the benchmark below |
 | How a spoken or written amount becomes a number | `api/lib/arabic-number-parser.ts` | `api/lib/arabic-number-parser.test.ts`, the benchmark |
 | Words, merchants and phrases that map to categories | `api/lib/rule-engine.ts` (merchant registry, subcategory map), `api/lib/egyptian-dictionary.ts`, `api/lib/taxonomy-adapter.ts` | the benchmark |
-| The categories and their aliases | `api/lib/category-registry.ts#CATEGORIES` | `api/lib/category-registry.integrity.test.ts`, the benchmark |
+| The categories and their subcategories | `contracts/categories.ts#CATEGORIES`, shared with the web app; moving or renaming a pair needs a `LEGACY_TAXONOMY` rule there, which stored rows then follow through the `taxonomy-migration` job ([Money](money.md)) | `api/lib/category-registry.integrity.test.ts`, `src/lib/financial-taxonomy.contract.test.ts`, the benchmark |
+| Category aliases and the evidence that refines a category | `api/lib/category-registry.ts` | `api/lib/category-registry.integrity.test.ts`, the benchmark |
 | When the model is asked; save, review or ask | `api/lib/classification-decision.ts`, `api/lib/final-acceptance.ts`, the threshold settings | `npm run bench:classify:compare` |
 | The probabilities | re-measure with `npm run bench:classify:calibrate`; never edit the generated table by hand | the benchmark |
 | What the model is asked, and what is accepted from it | `api/lib/classification-prompt.ts`, `api/lib/classifier-contract.ts`, `api/lib/classification-merge.ts` | `api/lib/classifier-contract.test.ts`, `api/lib/classification-prompt-injection.test.ts` |
@@ -259,7 +286,8 @@ it. The live call reads them and can finish one with the user's answer ([voice c
 - Pipeline behaviour: `api/lib/smart-pipeline.test.ts`, `api/lib/smart-pipeline-failover.test.ts`,
   `api/lib/financial-event-pipeline.test.ts`, `api/lib/financial-event-quality.test.ts`,
   `api/lib/financial-event-verification.test.ts`, `api/lib/classification-acceptance.test.ts`,
-  `api/lib/classification-golden.test.ts`.
+  `api/lib/classification-golden.test.ts`, `api/lib/everyday-phrases.test.ts` (everyday Egyptian sentences the
+  engine used to save wrongly).
 - Single pieces: `api/lib/admissibility-gate.test.ts`, `api/lib/amount-ledger.test.ts`,
   `api/lib/correction-rules.test.ts`, `api/lib/muscle-memory.regression.test.ts`,
   `api/lib/negation-detector.test.ts`, `api/lib/classification-cache-scope.test.ts`,

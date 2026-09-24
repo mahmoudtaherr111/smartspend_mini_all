@@ -34,7 +34,7 @@ spending, and the people they deal with. Classification prompts read the same pr
    1st, calendar months otherwise. A month without rows returns a fixed "nothing recorded yet" answer that is not saved.
 4. **Server-side analysis.** From the rows it computes the behaviour snapshot, category and subcategory totals and
    their change from the previous period, a personality (balanced, impulsive, conservative or stressed, from the share
-   of flexible categories and the monthly change), alerts (one dominant category, a large rise or fall, spending close
+   of discretionary categories, `DISCRETIONARY_CATEGORIES` in `contracts/categories.ts`, and the monthly change), alerts (one dominant category, a large rise or fall, spending close
    to or far below income), bills that were paid last period but not yet this one, and a month-end forecast for the
    current month.
 5. **Model settings.** `getAiClient("report", plan)` in `api/ai-router.ts` refuses the request when
@@ -177,8 +177,6 @@ Checked against the code; each one names where it lives.
     `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are
     not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called
     only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.
-16. **Bug.** The flexible-spending lists in `generateMonthlyInsights` and `buildBehaviorSnapshot` name categories that
-    `api/lib/category-registry.ts` no longer has (رفاهية, خروجات) or stores under another name (هدايا وصدقات).
 
 ## Related systems
 - [AI Center](ai-center.md): hosts the analysis tab and owns the finance layer the facts come from.

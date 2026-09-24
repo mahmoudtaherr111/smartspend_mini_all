@@ -126,6 +126,13 @@ scheduleProtectedJob(
   processScheduledNotifications,
 );
 
+// Stored rows move to the current category taxonomy in bounded batches; once every row is
+// current a run finds nothing (docs/decisions/0008-money-movements-and-taxonomy.md).
+scheduleProtectedJob("*/30 * * * *", "taxonomy-migration", async () => {
+  const { runTaxonomyMigrationJob } = await import("./jobs/taxonomy-migration-job");
+  await runTaxonomyMigrationJob();
+});
+
 // Live calls whose summary did not happen when they ended: tried again while their words are still in Redis.
 scheduleProtectedJob("*/10 * * * *", "voice-call-memory", async () => {
   const { sweepCallMemories } = await import("./services/voice/post-call");

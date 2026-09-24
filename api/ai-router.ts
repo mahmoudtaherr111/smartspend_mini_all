@@ -113,6 +113,7 @@ import {
 } from "./services/voice-kernel";
 import { buildParserTrace } from "./services/parser-trace";
 import { planNumber } from "../contracts/plan-features";
+import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
 
 const MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT = 4;
 const VOICE_QA_TOOL_NAMES = ["finance_query", "memory_search", "action_draft"] as const;
@@ -2367,7 +2368,7 @@ export const aiRouter = router({
           : 0;
 
       // ── 3. Financial Personality Detection (Backend) ──
-      const flexCats = ["ترفيه", "تسوق", "أكل وشرب", "رفاهية", "هدايا"];
+      const flexCats = [...DISCRETIONARY_CATEGORIES];
       const currentFlexSpend = sortedCats
         .filter(([k]) => flexCats.includes(k))
         .reduce((s, [, v]) => s + v, 0);

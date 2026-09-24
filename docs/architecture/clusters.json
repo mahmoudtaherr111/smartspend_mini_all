@@ -244,7 +244,6 @@
         "api/lib/category-registry.ts",
         "api/lib/taxonomy-*.ts",
         "api/lib/direction-governed-taxonomy.ts",
-        "api/lib/keyword-category-priors.ts",
         "api/lib/entity-extractor.ts",
         "api/lib/narrative-decomposer.ts",
         "api/lib/intent-detector.ts",
@@ -254,7 +253,6 @@
         "api/lib/amount-linker.ts",
         "api/lib/financial-event-plan.ts",
         "api/lib/voice-intake-gate.ts",
-        "api/lib/anomaly-detector.ts",
         "api/services/parser-trace.ts"
       ]
     },

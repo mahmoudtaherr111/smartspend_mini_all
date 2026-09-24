@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { MySqlDialect } from "drizzle-orm/mysql-core";
 import type { SQL } from "drizzle-orm";
-import { expenseRouter } from "./expense-router";
+import { expenseRouter, namedPersonOf } from "./expense-router";
 import { db } from "./queries/connection";
 import { expenses } from "../db/schema";
 
@@ -89,5 +89,25 @@ describe("Expense Router", () => {
       /^\(`expenses`\.`user_id` = \? and `expenses`\.`user_type` = \? and \(.+ or .+\)\)$/,
     );
     expect(query.params.slice(0, 2)).toEqual([7, "local"]);
+  });
+});
+
+describe("the person a saved item names", () => {
+  it("reads the person category's subcategory", () => {
+    expect(namedPersonOf({ category: "أصدقاء", subCategory: "أحمد صاحبي" })).toEqual({
+      name: "أحمد",
+      relationship: "صاحبي",
+    });
+  });
+
+  it("keeps the person named beside a purpose, so the save links the contact", () => {
+    expect(
+      namedPersonOf({ category: "تعليم", subCategory: "مدرسة", personName: " ابني ", personRelationship: "ابن" }),
+    ).toEqual({ name: "ابني", relationship: "ابن" });
+  });
+
+  it("links nothing without a name and a relationship", () => {
+    expect(namedPersonOf({ category: "تعليم", subCategory: "مدرسة", personName: "مروان" })).toBeNull();
+    expect(namedPersonOf({ category: "العائلة", subCategory: "عام" })).toBeNull();
   });
 });

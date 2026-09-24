@@ -13,32 +13,33 @@ import { checkTaxonomyPair } from "./benchmark-taxonomy-assert";
 describe("direction-governed taxonomy", () => {
   it("routes a gam3eya by its verb", () => {
     const received = resolveGovernedTaxonomy("قبضت جمعيه 5000");
+    // A gam3eya is saving: both directions are transfers, told apart by `direction`.
     expect(received).toMatchObject({
-      category: "التزامات وجمعيات",
-      subCategory: "قبض جمعية",
-      type: "income",
+      category: "تحويل",
+      subCategory: "جمعية",
+      type: "transfer",
       direction: "in",
     });
 
     const paid = resolveGovernedTaxonomy("دفعت قسط الجمعيه 2000");
     expect(paid).toMatchObject({
-      category: "التزامات وجمعيات",
-      subCategory: "قسط جمعية",
-      type: "expense",
+      category: "تحويل",
+      subCategory: "جمعية",
+      type: "transfer",
       direction: "out",
     });
   });
 
   it("reads an obligation phrased without a verb", () => {
     expect(resolveGovernedTaxonomy("عليا قسط الجمعيه 5000")).toMatchObject({
-      subCategory: "قسط جمعية",
-      type: "expense",
+      subCategory: "جمعية",
+      direction: "out",
     });
   });
 
   it("defaults a bare gam3eya to the monthly payment, the common case", () => {
     expect(resolveGovernedTaxonomy("الجمعيه 1000")).toMatchObject({
-      subCategory: "قسط جمعية",
+      subCategory: "جمعية",
       direction: "out",
     });
   });
@@ -90,8 +91,8 @@ describe("direction-governed taxonomy", () => {
     const block = buildDirectionRulesBlock();
     // The prompt used to assert الجمعية was income in one line and a transfer in
     // another. Generating it means the two can no longer disagree.
-    expect(block).toContain("قبض جمعية");
-    expect(block).toContain("قسط جمعية");
+    expect(block).toContain("تحويل/جمعية");
+    expect(block).toContain("قبضت/استلمت/جالي الجمعية");
     expect(block).toContain("استلفت");
   });
 });

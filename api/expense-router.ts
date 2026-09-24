@@ -36,6 +36,7 @@ import {
 } from "./services/expense-rollups";
 import { businessDayRange } from "./lib/app-time";
 import { assertEntityOwnership } from "./lib/ownership-guard";
+import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
 
 async function invalidateExpenseCache(userId: number | string, userType: string) {
   try {
@@ -132,7 +133,6 @@ const PERSON_EXPENSE_CATEGORIES = new Set([
   "العائلة",
   "أصدقاء",
   "موظفين",
-  "خدمات سيارات",
   "أخرى",
 ]);
 
@@ -141,6 +141,9 @@ type ExpenseReferenceInput = {
   subCategory?: string;
   contactId?: number;
   classificationLogId?: number;
+  /** The person the sentence named, when the category is the purpose ("مصاريف مدرسة ابني"). */
+  personName?: string;
+  personRelationship?: string;
 };
 
 type ExpenseReferenceResult = {
@@ -152,6 +155,22 @@ type ExpenseReferenceResult = {
     totalContacts: number;
   } | null;
 };
+
+/**
+ * The person a saved item names, to link to a contact. It is either the category
+ * ("اديت ماما 1000" → العائلة/ماما والدتك) or, when the category is the purpose, named
+ * beside it ("مصاريف مدرسة ابني" → تعليم, ابني).
+ */
+export function namedPersonOf(
+  item: Pick<ExpenseReferenceInput, "category" | "subCategory" | "personName" | "personRelationship">,
+): { name: string; relationship: string } | null {
+  if (PERSON_EXPENSE_CATEGORIES.has(item.category) && item.subCategory && item.subCategory !== "عام") {
+    return parseNameAndRelationship(item.subCategory, item.category);
+  }
+  const name = item.personName?.trim();
+  const relationship = item.personRelationship?.trim();
+  return name && relationship ? { name, relationship } : null;
+}
 
 async function resolveBatchExpenseReferences(
   items: ExpenseReferenceInput[],
@@ -244,17 +263,12 @@ async function resolveBatchExpenseReferences(
     let contactId = item.contactId || null;
     let newlyAddedContact: ExpenseReferenceResult["newlyAddedContact"] = null;
 
+    const namedPerson = namedPersonOf(item);
+
     if (contactId) {
       contactId = item.contactId!;
-    } else if (
-      PERSON_EXPENSE_CATEGORIES.has(item.category) &&
-      item.subCategory &&
-      item.subCategory !== "عام"
-    ) {
-      const { name, relationship } = parseNameAndRelationship(
-        item.subCategory,
-        item.category,
-      );
+    } else if (namedPerson) {
+      const { name, relationship } = namedPerson;
       if (name && name !== "عام" && name !== "شخص") {
         const cacheKey = `${name}:::${relationship || ""}`;
         if (dynamicContactCache.has(cacheKey)) {
@@ -469,6 +483,8 @@ export const expenseRouter = router({
         walletId: z.number().int().positive().optional(),
         clientRequestId: z.string().min(1).max(64).optional(),
         direction: z.enum(["incoming", "outgoing"]).optional(),
+        personName: z.string().max(60).optional(),
+        personRelationship: z.string().max(40).optional(),
         parsedMetadata: z.record(z.string(), z.any()).optional(),
       }),
     )
@@ -636,6 +652,11 @@ export const expenseRouter = router({
           businessId: z.number().int().positive().optional(),
           walletId: z.number().int().positive().optional(),
           clientRequestId: z.string().min(1).max(64).optional(),
+          // Which way a transfer moved (a loan given or received, a gam3eya payment or payout).
+          direction: z.enum(["incoming", "outgoing"]).optional(),
+          // The person named beside a purpose category, linked to a contact on save.
+          personName: z.string().max(60).optional(),
+          personRelationship: z.string().max(40).optional(),
         })
       ).max(100, "حد أقصى 100 عملية في الطلب الواحد")
     )
@@ -712,6 +733,7 @@ export const expenseRouter = router({
         businessId: item.businessId || null,
         walletId: item.walletId || null,
         clientRequestId: item.clientRequestId || null,
+        parsedMetadata: item.direction ? { direction: item.direction } : null,
         date: item.date ? new Date(item.date) : new Date(),
       }));
 
@@ -1033,7 +1055,6 @@ export const expenseRouter = router({
         "العائلة",
         "أصدقاء",
         "موظفين",
-        "خدمات سيارات",
         "أخرى",
       ];
       if (
@@ -1776,7 +1797,7 @@ export const expenseRouter = router({
         }))
         .sort((a, b) => Math.abs(b.netBalance) - Math.abs(a.netBalance));
 
-      const flexCategories = new Set(["ترفيه", "تسوق", "أكل وشرب", "خروجات"]);
+      const flexCategories = new Set(DISCRETIONARY_CATEGORIES);
       const flexSpend = sortedCategories
         .filter((cat) => flexCategories.has(cat.name))
         .reduce((sum, cat) => sum + cat.value, 0);

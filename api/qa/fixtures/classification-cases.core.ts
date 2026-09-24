@@ -47,9 +47,9 @@ const DIRECTION_TRAPS: BenchmarkCase[] = [
     expectedItems: [
       {
         amount: 5000,
-        type: "income",
-        category: "التزامات وجمعيات",
-        subCategory: "قبض جمعية",
+        type: "transfer",
+        category: "تحويل",
+        subCategory: "جمعية",
         why: "قبضت = المال داخل",
       },
     ],
@@ -63,9 +63,9 @@ const DIRECTION_TRAPS: BenchmarkCase[] = [
     expectedItems: [
       {
         amount: 5000,
-        type: "expense",
-        category: "التزامات وجمعيات",
-        subCategory: "قسط جمعية",
+        type: "transfer",
+        category: "تحويل",
+        subCategory: "جمعية",
         why: "عليا قسط = التزام خارج",
       },
     ],
@@ -79,15 +79,15 @@ const DIRECTION_TRAPS: BenchmarkCase[] = [
     expectedItems: [
       {
         amount: 2000,
-        type: "expense",
-        category: "التزامات وجمعيات",
-        subCategory: "قسط جمعية",
+        type: "transfer",
+        category: "تحويل",
+        subCategory: "جمعية",
       },
       {
         amount: 8000,
-        type: "income",
-        category: "التزامات وجمعيات",
-        subCategory: "قبض جمعية",
+        type: "transfer",
+        category: "تحويل",
+        subCategory: "جمعية",
       },
     ],
     tags: ["gam3eya", "mixed_direction_single_message", "direction"],
@@ -102,15 +102,13 @@ const DIRECTION_TRAPS: BenchmarkCase[] = [
     expectedItems: [
       {
         amount: 2000,
-        type: "expense",
-        category: "العائلة",
-        subCategory: "مروان أخوك",
+        type: "transfer",
+        category: "تحويل",
+        subCategory: "دين/سلفة",
         personMentioned: "مروان",
         why:
-          "سلفت = فلوس خرجت فعلاً فالرصيد ينقص، وتُنسب للشخص نفسه. " +
-          "هذه الحالة كانت تتوقع transfer/تحويل بينما MON-002 وMIX-003 تتوقع expense " +
-          "لنفس الفعل — تناقض داخل الطبقة المقفلة حُسم لصالح expense، وأثر الدين " +
-          "يبقى مسجّلاً في direction_governed:سلفت:out بدل إخفاء الحركة.",
+          "سلفت = فلوس خرجت وهترجع: تحويل صادر، مش صرف (docs/decisions/0008). " +
+          "الشخص في person_mentioned، والفئة تفضل تحويل/دين/سلفة.",
       },
     ],
     tags: ["debt_out", "known_person", "word_number"],
@@ -125,14 +123,10 @@ const DIRECTION_TRAPS: BenchmarkCase[] = [
     expectedItems: [
       {
         amount: 2000,
-        type: "income",
-        typeAnyOf: ["income", "transfer"],
+        type: "transfer",
         category: "تحويل",
-        categoryAnyOf: ["تحويل", "العائلة"],
-        subCategoryMode: "soft",
-        why:
-          "استلفت = المال داخل. الفئة تُقبل تحويل أو فئة الشخص نفسه — " +
-          "الحالة هنا عن الاتجاه لا عن الفئة",
+        subCategory: "دين/سلفة",
+        why: "استلفت = فلوس داخلة وهترجع: تحويل وارد، مش دخل",
       },
     ],
     tags: ["debt_in", "taxonomy_gap"],
@@ -147,12 +141,10 @@ const DIRECTION_TRAPS: BenchmarkCase[] = [
     expectedItems: [
       {
         amount: 2000,
-        type: "income",
-        typeAnyOf: ["income", "transfer"],
+        type: "transfer",
         category: "تحويل",
-        categoryAnyOf: ["تحويل", "العائلة"],
-        subCategoryMode: "soft",
-        why: "رجعلي = سداد وارد؛ الفئة تُقبل تحويل أو فئة الشخص",
+        subCategory: "دين/سلفة",
+        why: "رجعلي = سلفة راجعة: تحويل وارد، مش دخل",
       },
     ],
     tags: ["debt_repaid_in", "taxonomy_gap"],
@@ -294,7 +286,7 @@ const NUMERIC_FORMS: BenchmarkCase[] = [
     tier: "locked",
     text: "دفعت خمستاشر جنيه للسايس",
     expectedItems: [
-      { amount: 15, type: "expense", category: "خدمات سيارات", subCategory: "ركنة" },
+      { amount: 15, type: "expense", category: "مواصلات", subCategory: "ركنة" },
     ],
     tags: ["teens_word_number", "sayes"],
   },
@@ -318,7 +310,7 @@ const NUMERIC_FORMS: BenchmarkCase[] = [
         amount: 1000000,
         type: "income",
         category: "عوائد استثمار",
-        categoryAnyOf: ["عوائد استثمار", "متنوعات"],
+        categoryAnyOf: ["عوائد استثمار", "متنوعات", "دخل آخر"],
         subCategoryMode: "soft",
       },
     ],
@@ -454,7 +446,7 @@ const ENTITY_AMBIGUITY: BenchmarkCase[] = [
     expectedDecision: "clarify",
     expectedQuestionIncludes: "مين باسم",
     expectedItems: [
-      { amount: 100, type: "expense", category: "متنوعات", subCategory: "أشخاص" },
+      { amount: 100, type: "expense", category: "متنوعات", subCategory: "عام" },
     ],
     tags: ["unknown_person", "clarify"],
   },
@@ -508,7 +500,7 @@ const ENTITY_AMBIGUITY: BenchmarkCase[] = [
         amount: 150,
         type: "income",
         category: "تحويل",
-        categoryAnyOf: ["تحويل", "متنوعات", "مرتب"],
+        categoryAnyOf: ["تحويل", "متنوعات", "مرتب", "دخل آخر"],
         subCategoryMode: "soft",
         why: "منه ضمير لا اسم — والاتجاه وارد",
       },
@@ -712,7 +704,7 @@ const SINGLE_CLAUSE: BenchmarkCase[] = [
     tier: "locked",
     text: "جددت اشتراك نتفلكس بـ 200",
     expectedItems: [
-      { amount: 200, type: "expense", category: "اشتراكات", subCategory: "نتفلكس" },
+      { amount: 200, type: "expense", category: "اشتراكات", subCategory: "منصات مشاهدة" },
     ],
     tags: ["subscriptions"],
   },
@@ -725,7 +717,7 @@ const SINGLE_CLAUSE: BenchmarkCase[] = [
       {
         amount: 900,
         type: "expense",
-        category: "خدمات رقمية",
+        category: "عمل",
         subCategory: "استضافة",
         subCategoryMode: "soft",
       },
@@ -771,8 +763,8 @@ const SINGLE_CLAUSE: BenchmarkCase[] = [
       {
         amount: 650,
         type: "expense",
-        category: "خدمات سيارات",
-        subCategory: "تغيير زيت",
+        category: "مواصلات",
+        subCategory: "صيانة عربية",
       },
     ],
     tags: ["car_services"],
@@ -807,7 +799,7 @@ const COMPOUND: BenchmarkCase[] = [
     text: "روحت البنزينة حطيت بنزين بـ 400 واديت السايس عشرة جنيه",
     expectedItems: [
       { amount: 400, type: "expense", category: "مواصلات", subCategory: "بنزين" },
-      { amount: 10, type: "expense", category: "خدمات سيارات", subCategory: "ركنة" },
+      { amount: 10, type: "expense", category: "مواصلات", subCategory: "ركنة" },
     ],
     tags: ["word_number_second_clause", "sayes"],
   },
@@ -989,15 +981,8 @@ const MIXED_DIRECTION: BenchmarkCase[] = [
     text: "سلفت أحمد 1000 وبعدين عماد رجعلي 500 كان واخدهم",
     knownPeople: [AHMED, EMAD],
     expectedItems: [
-      { amount: 1000, type: "expense", category: "أصدقاء", subCategory: "أحمد صاحبك" },
-      {
-        amount: 500,
-        type: "income",
-        typeAnyOf: ["income", "transfer"],
-        category: "تحويل",
-        categoryAnyOf: ["تحويل", "موظفين"],
-        subCategoryMode: "soft",
-      },
+      { amount: 1000, type: "transfer", category: "تحويل", subCategory: "دين/سلفة" },
+      { amount: 500, type: "transfer", category: "تحويل", subCategory: "دين/سلفة" },
     ],
     tags: ["debt_out", "debt_repaid_in"],
   },
@@ -1013,9 +998,9 @@ const MIXED_DIRECTION: BenchmarkCase[] = [
       { amount: 1000, type: "expense", category: "أصدقاء", subCategory: "علي صاحبك" },
       {
         amount: 5000,
-        type: "income",
-        category: "التزامات وجمعيات",
-        subCategory: "قبض جمعية",
+        type: "transfer",
+        category: "تحويل",
+        subCategory: "جمعية",
       },
     ],
     tags: ["gam3eya", "known_person", "mixed"],
@@ -1030,7 +1015,7 @@ const MIXED_DIRECTION: BenchmarkCase[] = [
         amount: 500,
         type: "income",
         category: "عوائد استثمار",
-        categoryAnyOf: ["عوائد استثمار", "عمل حر", "مرتب"],
+        categoryAnyOf: ["عوائد استثمار", "عمل حر", "مرتب", "دخل آخر"],
         subCategoryMode: "soft",
       },
       { amount: 100, type: "expense", category: "فواتير", subCategory: "كهرباء" },
@@ -1056,7 +1041,7 @@ const MIXED_DIRECTION: BenchmarkCase[] = [
     expectedItems: [
       { amount: 30, type: "income", category: "عوائد استثمار", subCategory: "كاش باك" },
       { amount: 50, type: "expense", category: "فواتير", subCategory: "شحن رصيد" },
-      { amount: 600, type: "expense", category: "فواتير", subCategory: "أقساط" },
+      { amount: 600, type: "expense", category: "أقساط وفوايد", subCategory: "أقساط" },
     ],
     tags: ["cashback", "installment", "three_items"],
   },

@@ -56,8 +56,8 @@ describe("GROUP 1: Egyptian Slang & Complex Multi-Item Ingestion", () => {
     expect(r.items.length).toBeGreaterThanOrEqual(2);
     const cat120 = r.items.find(i => i.amount === 120);
     const cat65 = r.items.find(i => i.amount === 65);
-    // حلاق maps to تسوق > عناية شخصية in the registry
-    expect(cat120?.category).toBe("تسوق");
+    // The barber is personal care, its own category since the 2026-09 taxonomy.
+    expect(cat120?.category).toBe("عناية شخصية");
     expect(cat65?.category).toBe("مواصلات");
   });
 
@@ -522,16 +522,16 @@ describe("GROUP 4: 20 Real Bugs Regression Tests", () => {
 
   it("4. Category match keywords (حلاق, بنزينة, صالون, كوافير)", async () => {
     const r1 = await run("روحت للحلاق ودفعنا 150 جنيه");
-    expect(r1.items[0].category).toBe("تسوق");
-    expect(r1.items[0].subCategory).toBe("عناية شخصية");
+    expect(r1.items[0].category).toBe("عناية شخصية");
+    expect(r1.items[0].subCategory).toBe("حلاق وكوافير");
 
     const r2 = await run("روحت البنزينة 400 جنيه");
     expect(r2.items[0].category).toBe("مواصلات");
     expect(r2.items[0].subCategory).toBe("بنزين");
 
     const r3 = await run("كوافير 500 جنيه");
-    expect(r3.items[0].category).toBe("تسوق");
-    expect(r3.items[0].subCategory).toBe("عناية شخصية");
+    expect(r3.items[0].category).toBe("عناية شخصية");
+    expect(r3.items[0].subCategory).toBe("حلاق وكوافير");
   });
 
   it("5. Income detection & routing", async () => {
@@ -539,9 +539,10 @@ describe("GROUP 4: 20 Real Bugs Regression Tests", () => {
     expect(r1.items[0].type).toBe("income");
     expect(r1.items[0].category).toBe("مرتب");
 
+    // Money someone gave back is a loan repaid: a transfer in, not salary.
     const r2 = await run("رجعلي 200 جنيه");
-    expect(r2.items[0].type).toBe("income");
-    expect(r2.items[0].category).toBe("مرتب");
+    expect(r2.items[0].type).toBe("transfer");
+    expect(r2.items[0].category).toBe("تحويل");
   });
 
   it("6. Decomposed segments with inline relationship in parentheses and preposition prefix", async () => {

@@ -37,6 +37,7 @@ flowchart LR
   sys_bank_messages[["Bank and wallet messages (system)"]]
   sys_expense_capture[["Recording spending (system)"]]
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
+  sys_platform[["Server platform and data (system)"]]
   sys_voice_calls[["Live voice assistant (system)"]]
   mod_web_growth --> mod_web_hooks
   mod_web_growth --> mod_web_shell
@@ -45,6 +46,7 @@ flowchart LR
   mod_web_hooks --> mod_web_lib
   mod_web_hooks --> mod_web_shell
   mod_web_lib --> ext_capacitor
+  mod_web_lib --> sys_platform
   mod_web_pages --> mod_web_growth
   mod_web_pages --> mod_web_hooks
   mod_web_pages --> mod_web_lib
@@ -111,7 +113,7 @@ _None._
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Live voice assistant](voice-calls.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md).
 
 Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Live voice assistant](voice-calls.md).
 

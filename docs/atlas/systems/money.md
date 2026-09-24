@@ -20,6 +20,7 @@ flowchart LR
   end
   subgraph g_api["API, routes and jobs"]
     job_nightly_rollup_reconciliation["Job · nightly-rollup-reconciliation"]
+    job_taxonomy_migration["Job · taxonomy-migration"]
     router_budget["budget API · 4 procedures"]
     router_business["business API · 10 procedures"]
     router_expense["expense API · 8 procedures"]
@@ -55,6 +56,7 @@ flowchart LR
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
   job_nightly_rollup_reconciliation --> sys_platform
+  job_taxonomy_migration --> sys_platform
   mod_ledger --> sys_ai_center
   mod_ledger --> sys_platform
   mod_ledger -.-> tbl_expenses
@@ -171,6 +173,7 @@ flowchart LR
 | Entry point | Kind | Declared in |
 | --- | --- | --- |
 | `nightly-rollup-reconciliation` | job, `0 4 * * *` | `api/boot.ts` |
+| `taxonomy-migration` | job, `*/30 * * * *` | `api/boot.ts` |
 
 ## Data
 
@@ -210,9 +213,10 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>39 files and declarations</summary>
+<details><summary>41 files and declarations</summary>
 
 - `api/boot.ts#job:nightly-rollup-reconciliation`
+- `api/boot.ts#job:taxonomy-migration`
 - `api/budget-router.ts`
 - `api/business-router.ts`
 - `api/expense-router.ts#expense.delete`
@@ -228,6 +232,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/export-router.ts#rest-of-file`
 - `api/goals-router.ts`
 - `api/jobs/rollup-reconciliation-job.ts`
+- `api/jobs/taxonomy-migration-job.ts`
 - `api/profile-router.ts#profile.addContact`
 - `api/profile-router.ts#profile.deleteContact`
 - `api/profile-router.ts#profile.listContacts`

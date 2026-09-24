@@ -217,8 +217,13 @@ export async function parseSmsFinancialData(
 }
 
 /**
- * Maps SMS category + direction to SmartSpend expense categories.
+ * Maps SMS category + direction to a stored category, subcategory and type.
  * Works with both AI parser output and Rule-Based parser output.
+ *
+ * Every pair is one the category registry holds (it used to write "انستاباي وارد",
+ * "سحب نقدي / ATM", "Apple Pay" and the merchant's name as subcategories), and cash
+ * taken from an ATM is a transfer to your own pocket, not spending — counting it as
+ * spending counted the same money twice once the cash was spent and recorded.
  */
 export function mapSmsToExpenseCategory(result: {
   direction?: "incoming" | "outgoing" | null;
@@ -228,57 +233,40 @@ export function mapSmsToExpenseCategory(result: {
 }): {
   category: string;
   subCategory: string;
-  type: "income" | "expense";
+  type: "income" | "expense" | "transfer";
 } {
   const dir = result.direction;
   const cat = result.category || "unknown";
   const provider = result.provider || "Unknown";
   const type: "income" | "expense" = dir === "incoming" ? "income" : "expense";
+  const rail = /InstaPay/i.test(provider)
+    ? "انستاباي"
+    : /Vodafone/i.test(provider)
+      ? "فودافون كاش"
+      : "تحويل بنكي";
 
   // ── INCOMING (money in) ──
+  // Salary only when the message says salary; any other credit is income from a source
+  // the message does not name. The rail (InstaPay, wallet) stays in the description.
   if (dir === "incoming") {
     if (cat === "income")
-      return { category: "مرتب", subCategory: "راتب أساسي", type: "income" };
-    if (cat === "deposit") {
-      if (/InstaPay/i.test(provider))
-        return {
-          category: "تحويل",
-          subCategory: "انستاباي وارد",
-          type: "income",
-        };
-      if (/Vodafone|Etisalat|Orange|WE/i.test(provider))
-        return {
-          category: "تحويل",
-          subCategory: "محفظة إلكترونية وارد",
-          type: "income",
-        };
-      return { category: "تحويل", subCategory: "إيداع بنكي", type: "income" };
-    }
-    return { category: "تحويل", subCategory: "دخل وارد", type: "income" };
+      return { category: "مرتب", subCategory: "مرتب أساسي", type: "income" };
+    return { category: "دخل آخر", subCategory: "عام", type: "income" };
   }
 
   // ── OUTGOING (money out) ──
   switch (cat) {
     case "transfer":
-      if (/InstaPay/i.test(provider))
-        return { category: "تحويل", subCategory: "انستاباي صادر", type };
-      if (/Vodafone|Etisalat|Orange|WE/i.test(provider))
-        return { category: "تحويل", subCategory: "محفظة إلكترونية صادر", type };
-      return { category: "تحويل", subCategory: "تحويل بنكي", type };
+      return { category: "تحويل", subCategory: rail, type };
     case "payment":
-      if (/ApplePay/i.test(provider))
-        return { category: "متنوعات", subCategory: "Apple Pay", type };
-      if (result.merchant)
-        return {
-          category: "تسوق",
-          subCategory: result.merchant.slice(0, 50),
-          type,
-        };
-      return { category: "متنوعات", subCategory: "مدفوعات", type };
+      // The merchant stays in the description; a card payment is not always shopping,
+      // but "تسوق/عام" is the honest default until the merchant is classified.
+      if (result.merchant) return { category: "تسوق", subCategory: "عام", type };
+      return { category: "متنوعات", subCategory: "عام", type };
     case "bills":
-      return { category: "فواتير", subCategory: "فواتير ومرافق", type };
+      return { category: "فواتير", subCategory: "عام", type };
     case "withdrawal":
-      return { category: "متنوعات", subCategory: "سحب نقدي / ATM", type };
+      return { category: "تحويل", subCategory: "سحب ATM", type: "transfer" };
     default:
       return { category: "متنوعات", subCategory: "عام", type };
   }

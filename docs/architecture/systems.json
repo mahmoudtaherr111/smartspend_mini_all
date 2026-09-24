@@ -109,7 +109,7 @@
       "routers": ["expense", "wallet", "budget", "goals", "business"],
       "procedures": ["export.myExpenses", "profile.listContacts", "profile.addContact", "profile.updateContact", "profile.deleteContact", "profile.mergeContacts"],
       "pages": ["Home"],
-      "jobs": ["nightly-rollup-reconciliation"]
+      "jobs": ["nightly-rollup-reconciliation", "taxonomy-migration"]
     },
     {
       "id": "accounts",

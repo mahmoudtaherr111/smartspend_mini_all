@@ -13,11 +13,12 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 | --- | --- | --- |
 | Home screen | `src/pages/Home.tsx#Home` | Three tabs (record, statistics, calendar) for one month, the summary cards, business mode, the onboarding card, and, for users the rebuilt [voice call](voice-calls.md) is open to, a button that starts it (`src/components/voice/CallSmartButton.tsx#CallSmartButton`) |
 | Header and summary | `src/components/dashboard/HomeHeader.tsx`, `src/components/dashboard/HomeSummaryCards.tsx` | Month switcher, tabs, business toggle, streak, the month's spending as a share of income, income and spending totals |
-| Record tab | `src/components/expenses/RecentExpenses.tsx`, `src/components/goals/FinancialGoalsPanel.tsx#FinancialGoalsPanel` | Beside the entry form: the month's latest items with delete, and the goal creation card |
+| Record tab | `src/components/expenses/RecentExpenses.tsx`, `src/components/goals/FinancialGoalsPanel.tsx#FinancialGoalsPanel` | Beside the entry form: the month's latest items with delete, each category badge in the colour the taxonomy gives it, and the goal creation card |
 | Statistics tab | `src/components/dashboard/StatsView.tsx#StatsView`, `src/components/dashboard/ExpenseChart.tsx#ExpenseChart`, `src/components/dashboard/BehaviorInsights.tsx`, `src/components/dashboard/GlobalSearch.tsx#GlobalSearch` | Daily average, change, top category and personality; charts by category, family, electronic payments, budget and timing; search; bank-message totals; top categories |
 | Calendar tab | `src/components/dashboard/MonthlyCalendar.tsx` | Spending per day of the calendar month, and the items of a chosen day |
 | Ledger API | `api/expense-router.ts` (`expense.list`, `expense.searchTransactions`, `expense.getById`, `expense.update`, `expense.delete`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`) | Reads, edits and deletes items and computes the month and year figures |
 | Daily rollups | `api/services/expense-rollups.ts`, `api/jobs/rollup-reconciliation-job.ts#runRollupReconciliationJob` | Per-day totals kept in step with every write, and repaired every night |
+| Taxonomy migration | `api/jobs/taxonomy-migration-job.ts#runTaxonomyMigrationJob` | Moves stored rows still filed under an old category to the current taxonomy |
 | Financial month | `api/services/financial-month.ts#getFinancialMonthDayRange` | Month boundaries from a salary day, in Cairo business days |
 | Wallets, budgets, goals, business | `api/wallet-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/business-router.ts` | Their own records and rules |
 | People | the contact procedures in `api/profile-router.ts` (`profile.listContacts`, `profile.addContact`, `profile.updateContact`, `profile.deleteContact`, `profile.mergeContacts`) | The people behind transfers and family spending |
@@ -50,6 +51,18 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   caches bumped when anything changed.
 - **Streak.** Saving an item updates the user's streak in the same transaction (`updateStreak`): the same Cairo day
   keeps it, the next day adds one, a gap restarts it.
+- **Money movements.** A gam3eya payment or payout, a loan given, taken or repaid, and an ATM withdrawal are
+  `transfer` items (تحويل/جمعية, تحويل/دين/سلفة, تحويل/سحب ATM), so they count as neither spending nor income. Which
+  way the money went is in `parsed_metadata.direction` (`incoming` or `outgoing`)
+  (docs/decisions/0008-money-movements-and-taxonomy.md).
+- **Taxonomy migration.** `taxonomy-migration` runs every 30 minutes on replicas with `ENABLE_CRONS=true` and moves
+  up to 500 stored items still filed in an old place (`LEGACY_TAXONOMY` in `contracts/categories.ts`: a retired
+  category, a merged subcategory, a money movement booked as spending or income) to where they live now. Each item
+  moves in its own transaction: it keeps its old category, subcategory and type in
+  `parsed_metadata.legacy_taxonomy` (also in `expense_details`), and when its type changes the rollup delta moves
+  with it. User dictionaries, correction rules and budgets that name a retired category follow. Once every row is
+  current a run changes nothing. Undoing it means restoring the three values from `legacy_taxonomy` and moving the
+  rollup delta back.
 
 ## The home screen
 - **Month and cycle.** The month comes from the address or today's month. When the profile has a fixed salary switched
@@ -65,7 +78,8 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   - a comparison with the same week of the previous period until day 24, and with the whole previous period after;
   - money sent to and received from each family member;
   - a spending behaviour (planned, spiky, emotional or concentrated, overridden by impulsive or conservative from the
-    share of income spent);
+    share of income spent), whose discretionary share counts `DISCRETIONARY_CATEGORIES` from
+    `contracts/categories.ts` (ترفيه، تسوق، أكل وشرب، عناية شخصية، اشتراكات);
   - the daily average and the month's latest 200 items.
 - **Search** (`expense.searchTransactions`): up to 20 of the user's items whose category, subcategory, description or
   original text contains the query, newest first.
@@ -125,6 +139,7 @@ business mode:
 | To change | Edit | Check with |
 | --- | --- | --- |
 | How a write updates the daily totals | `api/services/expense-rollups.ts` | `tests/expense-rollups.test.ts` |
+| Where old categories move, and how stored rows follow | `LEGACY_TAXONOMY` in `contracts/categories.ts`; the job in `api/jobs/taxonomy-migration-job.ts` | `api/jobs/taxonomy-migration-job.test.ts`, `tests/taxonomy-migration.test.ts` (`npm run test:db`) |
 | The month summary or the statistics | `expense.getMonthSummary`, `expense.getMonthlyStats` in `api/expense-router.ts` | |
 | Search and the expense list | `expense.searchTransactions`, `expense.list` in `api/expense-router.ts` | `api/expense-router.test.ts` |
 | Salary-cycle boundaries | `api/services/financial-month.ts` | |
@@ -145,8 +160,10 @@ business mode:
    `getFinancialMonthDayRange`, never server-local dates.
 
 ## Tests
-`api/expense-router.test.ts` (including the search's user filter), `tests/expense-rollups.test.ts`, whose database
-cases run with `npm run test:db` (`docs/guides/testing.md`), and `src/components/dashboard/NativeTabPanels.test.tsx`.
+`api/expense-router.test.ts` (including the search's user filter and the person a saved item names),
+`tests/expense-rollups.test.ts` and `tests/taxonomy-migration.test.ts`, whose database cases run with
+`npm run test:db` (`docs/guides/testing.md`), `api/jobs/taxonomy-migration-job.test.ts`, and
+`src/components/dashboard/NativeTabPanels.test.tsx`.
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -173,6 +190,8 @@ Checked against the code; each one names where it lives.
 11. **Bug.** Wallet balances are stored as whatever text the client sends.
 12. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
     as spending, every source except voice as manual, and dates by UTC day.
+13. **Gap.** A refund is income under دخل آخر/مرتجعات واسترداد; the category the purchase came from keeps its full amount.
+    Netting it waits for one definition of spending that every screen reads (docs/decisions/0008-money-movements-and-taxonomy.md).
 
 ## Related systems
 - [Recording spending](expense-capture.md): creates the items this system reads, and triggers the budget alert.

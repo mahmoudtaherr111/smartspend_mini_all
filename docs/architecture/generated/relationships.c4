@@ -118,6 +118,7 @@ model {
   smartspend.api.modules.ai-governance -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.modules.ai-insights -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.ai-insights -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.ai-insights -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ai-insights -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.ai-insights -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.ai-insights -[reads]-> smartspend.mysql.profile_learning_events
@@ -305,6 +306,7 @@ model {
   smartspend.api.modules.billing -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.arabic-nlp
+  smartspend.api.modules.classification -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.classification -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.modules.classification -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.classification -[reads]-> smartspend.mysql.user_correction_rules
@@ -338,10 +340,14 @@ model {
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.ad_clicks
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.expense_daily_rollups
+  smartspend.api.modules.jobs -[reads]-> smartspend.mysql.expense_details
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.monthly_reports
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.pro_subscriptions
+  smartspend.api.modules.jobs -[reads]-> smartspend.mysql.user_budgets
+  smartspend.api.modules.jobs -[reads]-> smartspend.mysql.user_correction_rules
+  smartspend.api.modules.jobs -[reads]-> smartspend.mysql.user_dictionaries
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.users
   smartspend.api.modules.jobs -[uses]-> fireworks
@@ -355,12 +361,17 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.chat_messages
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.classification_logs
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.expense_details
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.expenses
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.monthly_reports
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.notification_logs
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.pro_subscriptions
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.profile_learning_events
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_analytics
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_budgets
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_correction_rules
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_dictionaries
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_call_incidents
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_calls
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_usage
@@ -451,6 +462,7 @@ model {
   smartspend.api.scheduler.scheduled-notifications -[uses]-> smartspend.api.modules.notifications
   smartspend.api.scheduler.seed-default-templates -[uses]-> smartspend.api.modules.notifications
   smartspend.api.scheduler.smart-activity-notifications -[uses]-> smartspend.api.modules.notifications
+  smartspend.api.scheduler.taxonomy-migration -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.voice-call-memory -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.admin.addAiProvider -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.admin.addAiProvider -[writes]-> smartspend.mysql.ai_providers
@@ -593,6 +605,7 @@ model {
   smartspend.api.trpc.ai.generateMonthlyInsights -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.ai.generateMonthlyInsights -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.ai.generateMonthlyInsights -[uses]-> smartspend.api.modules.security
+  smartspend.api.trpc.ai.generateMonthlyInsights -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.ai_summaries
   smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.local_users
@@ -821,6 +834,7 @@ model {
   smartspend.api.trpc.expense.getMonthlyStats -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.getMonthlyStats -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.getMonthlyStats -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.expense.getMonthlyStats -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.expense.getPendingClarifications -[reads]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.expense.getYearlyStats -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.trpc.expense.getYearlyStats -[uses]-> smartspend.api.modules.platform
@@ -1091,6 +1105,7 @@ model {
   smartspend.web.modules.web-insights -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-insights -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-insights -[imports]-> smartspend.web.modules.web-ui-kit
+  smartspend.web.modules.web-lib -[imports]-> smartspend.shared.contracts
   smartspend.web.modules.web-lib -[uses]-> capacitor
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-account
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-admin

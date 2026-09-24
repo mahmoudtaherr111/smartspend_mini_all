@@ -7,7 +7,7 @@
  *
  * Without it the generic verb keyword wins the category outright. "قبضت الجمعية"
  * matched `قبض` → مرتب and "دفعت قسط الجمعية" matched `قسط` → فواتير, so the two
- * subcategories the registry provides for exactly this case — قبض جمعية and قسط جمعية —
+ * subcategory the registry provides for exactly this case — تحويل/جمعية, with its direction —
  * were unreachable, and a gam3eya payout was filed as salary.
  *
  * One table, read by the rule engine and by the classifier prompt, so the two can no
@@ -41,6 +41,14 @@ interface GovernedEntry {
    * here — اديت and دفعت are excluded because they are ordinary spending.
    */
   standaloneVerbs?: string[];
+  /** Words that stop a standalone verb from implying the noun ("رجعلي الباقي" is change). */
+  standaloneExclusions?: string[];
+  /**
+   * Words that make an outgoing payment something other than this movement: "دفعت قسط
+   * القرض" and "دفعت فوائد القرض" pay a bank's installment and interest, which are
+   * spending under أقساط وفوايد, not a loan handed to someone.
+   */
+  outExclusions?: string[];
   category: string;
   inVerbs: string[];
   outVerbs: string[];
@@ -54,41 +62,45 @@ const ENTRIES: GovernedEntry[] = [
   {
     id: "gam3eya",
     nouns: ["جمعية", "جمعيه", "الجمعية", "الجمعيه", "جمعيتي", "جمعيات"],
-    category: "التزامات وجمعيات",
+    category: "تحويل",
     inVerbs: ["قبضت", "قبضنا", "قبض", "استلمت", "جالي", "جاتلي", "نزلت", "نزل", "وصلني", "خدت", "اخدت", "أخدت"],
     outVerbs: ["دفعت", "سددت", "سدد", "طلعت", "وديت", "حوشت", "عليا", "علينا", "قسط", "اقساط", "أقساط"],
+    // A gam3eya is saving with friends: paying in and receiving are money moving between
+    // your own pockets, not spending and not income. Both are transfers; the direction
+    // says which way (docs/decisions/0008-money-movements-and-taxonomy.md).
     resolve: {
-      in: { subCategory: "قبض جمعية", type: "income" },
-      out: { subCategory: "قسط جمعية", type: "expense" },
+      in: { subCategory: "جمعية", type: "transfer" },
+      out: { subCategory: "جمعية", type: "transfer" },
     },
     // Paying into a gam3eya is the far more frequent monthly event than receiving one.
     defaultDirection: "out",
     promptRule:
-      'الجمعية: "قبضت/استلمت/جالي الجمعية" = income → التزامات وجمعيات/قبض جمعية. ' +
-      '"دفعت/سددت/عليا قسط الجمعية" = expense → التزامات وجمعيات/قسط جمعية.',
+      'الجمعية: "قبضت/استلمت/جالي الجمعية" و"دفعت/سددت/عليا قسط الجمعية" = transfer → تحويل/جمعية ' +
+      "(ادخار، مش صرف ولا دخل؛ الاتجاه من الفعل).",
   },
   {
     id: "debt",
-    nouns: ["سلفة", "سلفه", "سلف", "دين", "ديون", "قرض", "قروض"],
-    standaloneVerbs: ["استلفت", "اتسلفت", "اقترضت", "سلفت", "سلفته", "سلفتها"],
+    // "رجعت لمحمد الفلوس اللي عليا": what one owes is a debt even when no debt word is said.
+    nouns: ["سلفة", "سلفه", "سلف", "دين", "ديون", "قرض", "قروض", "اللي عليا", "اللي علينا", "اللي عليه", "اللي عليها", "اللي ليا عنده", "اللي ليا عندها"],
+    // "رجعلي" alone is a loan paid back ("مروان رجعلي فلوسي الفين") — except the change a
+    // shop hands back ("رجعلي الباقي"), which `standaloneExclusions` keeps out.
+    standaloneVerbs: ["استلفت", "اتسلفت", "اقترضت", "سلفت", "سلفته", "سلفتها", "رجعلي", "رجعولي", "رجعتلي"],
+    standaloneExclusions: ["الباقي", "باقي", "الفكه", "فكه", "المرتجع", "مرتجع"],
+    outExclusions: ["قسط", "القسط", "اقساط", "أقساط", "فوائد", "فوايد", "فايدة", "فايده", "بنك", "البنك", "للبنك"],
     category: "تحويل",
     inVerbs: ["استلفت", "اتسلفت", "اقترضت", "خدت", "اخدت", "أخدت", "رجعلي", "رجعولي", "سددلي", "صفالي"],
     outVerbs: ["سلفت", "سلفته", "اديت", "أديت", "وديت", "سددت", "رجعت", "صفيت", "دفعت"],
-    // Both directions share one taxonomy slot — the registry has a single debt
-    // subcategory — but they are opposite money movements, so they cannot share a type.
-    // They used to: both resolved to `transfer`, which made "سلفت سيف" (money out) and
-    // "استلفت من محمود" (money in) indistinguishable to the wallet, the charts and the
-    // benchmark alike. The comment claimed direction was "carried by type" while type
-    // was the one field that did not carry it.
+    // A loan comes back, so it is neither spending nor income: lending and borrowing are
+    // transfers, and `direction` carries which way the money moved ("سلفت سيف" out,
+    // "استلفت من محمود" in). The person goes to the contact, not to the category.
     resolve: {
-      in: { subCategory: "دين/سلفة", type: "income" },
-      out: { subCategory: "دين/سلفة", type: "expense" },
+      in: { subCategory: "دين/سلفة", type: "transfer" },
+      out: { subCategory: "دين/سلفة", type: "transfer" },
     },
     defaultDirection: "out",
     promptRule:
-      '"سلفت فلان" = صادر (expense), "استلفت من فلان" = وارد (income), ' +
-      '"فلان رجعلي" = وارد, "رجعت لفلان" = صادر — الفئة تحويل/دين/سلفة، ' +
-      "أو فئة الشخص نفسه لو كان معروفاً.",
+      '"سلفت فلان" و"رجعت لفلان" = transfer صادر، "استلفت من فلان" و"فلان رجعلي" = transfer وارد — ' +
+      "الفئة تحويل/دين/سلفة، والشخص في خانته.",
   },
 ];
 
@@ -105,9 +117,12 @@ export function resolveGovernedTaxonomy(text: string): GovernedResolution | null
   const tokens = buildTokenSet(text);
 
   for (const entry of ENTRIES) {
+    const excluded = entry.standaloneExclusions
+      ? findMatchingWord(text, entry.standaloneExclusions, tokens) !== undefined
+      : false;
     const matchedNoun =
       findMatchingWord(text, entry.nouns, tokens) ??
-      (entry.standaloneVerbs ? findMatchingWord(text, entry.standaloneVerbs, tokens) : undefined);
+      (entry.standaloneVerbs && !excluded ? findMatchingWord(text, entry.standaloneVerbs, tokens) : undefined);
     if (!matchedNoun) continue;
 
     const strongIn = findMatchingWord(text, STRONG_IN_OVERRIDE, tokens) ?? null;
@@ -133,6 +148,10 @@ export function resolveGovernedTaxonomy(text: string): GovernedResolution | null
     } else {
       direction = entry.defaultDirection;
       matchedVerb = null;
+    }
+
+    if (direction === "out" && entry.outExclusions && findMatchingWord(text, entry.outExclusions, tokens)) {
+      continue;
     }
 
     const resolved = entry.resolve[direction];

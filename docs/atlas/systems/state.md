@@ -4,32 +4,32 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (61 of 122 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (60 of 123 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 17 | — | 5 | 2 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | — | 6 | 2 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 4 | — | 5 | 3 | 1 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 6 | — | 10 | 2 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 3 | — | 7 | 5 | — |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-24 45b800e | 2026-09-24 45b800e | 18 | — | 5 | 2 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-24 45b800e | 2026-09-24 45b800e | 2 | — | 5 | 3 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-24 45b800e | 2026-09-24 45b800e | 4 | — | 6 | 3 | 1 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 45b800e | 2026-09-24 45b800e | 6 | — | 9 | 2 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-24 45b800e | 2026-09-24 45b800e | 5 | — | 7 | 6 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-24 6739377 | 2026-09-24 6739377 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 981a949 | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 4 | — | 3 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 9 | — | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 5 | — | 2 | — | 8 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-23 797ea88 | 2026-09-23 797ea88 | 7 | **1** | 2 | 2 | 2 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 45b800e | 2026-09-24 d9d553a | 9 | — | 4 | 1 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-24 45b800e | 2026-09-24 45b800e | 5 | — | 2 | — | 8 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-24 45b800e | 2026-09-24 45b800e | 7 | **1** | 2 | 2 | 2 |
 
 
 ## Where the risk is
 
 Every system's explanation names at least one test.
 
-## What is waiting (122 issue(s))
+## What is waiting (123 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -48,7 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (56)
+### Bugs (55)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - Answering a clarification twice saves its items twice: `answerClarification` loads the row by id and owner without checking that its status is still `pending`.
@@ -60,7 +60,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - Connecting Android fails for phone and password accounts: `AndroidSetupFlow` sends `auth_token` from browser storage, which the app never writes (login stores `local_auth_token`, and the `smartspend_token` session cookie is HttpOnly), while `getUserFromSession` accepts only the `google_session` cookie or a Bearer header.
 - The APK link, `/downloads/smartspend-sync.apk`, is not in the repository, so the download serves the web app instead (`android-app/README.md`).
-- Most subcategories `mapSmsToExpenseCategory` writes (for example "انستاباي وارد", "سحب نقدي / ATM", "Apple Pay") are not in the category registry, card payments use the merchant's name as subcategory, and nothing normalizes them against the registry.
 - The monthly limit counts from the first of the month in server time rather than Cairo business time (golden rule 6).
 - The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
 - With several server processes, a one-time code created on one cannot be exchanged on another, and each process counts the rate limit on its own.
@@ -78,6 +77,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - An expense recorded by an action does not clear the classification cache or check budget alerts, as `expense.create` does.
 - Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in `api/services/action-runtime/extended-actions.ts` leaves them out, so the undo code for them is never reached.
 - When the kernel throws, the user sees the same message as when an operator turned the assistant off.
+- Breakdowns, charts, comparison drivers and the business cash flow count every row that is not income as spending (`buildBreakdown`, `buildChartData` and `buildMultiCategoryChartData` in `api/services/finance-semantic-layer/row-aggregators.ts`, `getBusinessCashflow`), so transfers (a gam3eya payment, a loan, an ATM withdrawal) and investments are listed among spending while the period's totals count expenses only, as Home does. A row's category is also read from its description before its stored category (`canonicalCategoryForRow`), so the chat can total a row under a category the user never saw.
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - The WhatsApp report describes the month that has just started: the scheduler calls `runMonthlyReportJob` without a month at 02:00 on the 1st, and the job takes the month from `new Date().toISOString()`.
@@ -89,7 +89,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The analysis and the comparison show a technical trace (route, tools, tokens, model) to every user, not only in development.
 - The basic report says the user ran out of AI tokens whenever there is no Gemini client, including when no key is configured; and when the client cannot be built, the `<plan>_ai_analysis` switch is never checked.
 - Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is ahead of UTC; snapshot days are grouped by UTC date.
-- The flexible-spending lists in `generateMonthlyInsights` and `buildBehaviorSnapshot` name categories that `api/lib/category-registry.ts` no longer has (رفاهية, خروجات) or stores under another name (هدايا وصدقات).
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The home screen uses the salary cycle only when "fixed salary" is switched on in Settings (`hasFixedSalary`); a salary day given in the onboarding questions does not change it, while the AI Center and the reports use the salary day either way.
@@ -130,7 +129,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, so anything recorded offline and not yet sent is lost with the session.
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (31)
+### Gaps (33)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - Correction learning cannot be reached from the app: `api/lib/correction-rules.ts#recordCorrection` runs only in `expense.update`, which the web app does not call. `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere.
@@ -138,6 +137,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY` directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
+- The category comes from the fixed map in `mapSmsToExpenseCategory`, not from the classification pipeline: a card payment is `تسوق/عام` whatever the merchant (a restaurant or a fuel station included), and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory.
 - Saving a message does not check budget alerts as `expense.create` does, and `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
@@ -158,6 +158,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - A saved item cannot be edited in the web app: nothing calls `expense.update`, so the corrections it records never happen (`api/lib/AGENTS.md`, rule 5).
 - `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record; `business.get` returns the user's first business even when it is inactive.
 - `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments as spending, every source except voice as manual, and dates by UTC day.
+- A refund is income under دخل آخر/مرتجعات واسترداد; the category the purchase came from keeps its full amount. Netting it waits for one definition of spending that every screen reads (docs/decisions/0008-money-movements-and-taxonomy.md).
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - Verification is the setting `whatsapp_otp_enabled`: while it is off any number registers without proof that it belongs to the person, and the admin console shows it as off whatever its value ([notifications](notifications.md)).

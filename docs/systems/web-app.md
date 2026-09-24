@@ -23,7 +23,7 @@ public pages (landing, privacy, terms and the not-found page).
 | Lock | `src/providers/BiometricLockProvider.tsx`, `src/lib/biometricAuth.ts` | The app lock and the passkey prompt ([accounts](accounts.md)) |
 | Robot check | `src/lib/turnstile-config.ts`, `src/components/auth/TurnstileWidget.tsx` | The Cloudflare Turnstile widget on the sign-up form, built in only when `VITE_TURNSTILE_SITE_KEY` is set ([accounts](accounts.md)) |
 | Behaviour hooks | `src/hooks/useAppResume.ts`, `src/hooks/useScrollRestoration.ts`, `src/hooks/useVirtualKeyboard.ts`, `src/hooks/useSwipeNavigation.ts` | Returning to the app, scroll position, the on-screen keyboard and swipe gestures |
-| Utilities | `src/lib/transactionDisplay.ts`, `src/lib/financial-taxonomy.ts`, `src/lib/utils.ts` | How a transaction is presented, the category labels and the class-name helper |
+| Utilities | `src/lib/transactionDisplay.ts`, `src/lib/financial-taxonomy.ts`, `src/lib/utils.ts` | How a transaction is presented; the category pickers, icons and colours, read from the server's taxonomy in `contracts/categories.ts` rather than a copy; the class-name helper |
 | Public pages | `src/pages/Landing.tsx`, `src/pages/More.tsx`, `src/pages/Privacy.tsx`, `src/pages/Terms.tsx`, `src/pages/NotFound.tsx` | The landing page, the settings menu, the two legal pages and the 404 |
 
 ## Routes and who may open them

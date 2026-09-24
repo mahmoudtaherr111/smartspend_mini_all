@@ -62,9 +62,11 @@ the rule parser and the model that read them, and the setup screens.
 
 ### 4. Saving
 - `api/lib/sms-ai-parser.ts#mapSmsToExpenseCategory` turns direction, message category and provider into a
-  category, subcategory and type: incoming salary becomes `مرتب`; other incoming money becomes `تحويل`
-  (InstaPay, wallet or bank deposit); an outgoing transfer is `تحويل`; a card payment is `تسوق` with the merchant as
-  subcategory, or `متنوعات`; bills are `فواتير`; ATM withdrawals and anything else are `متنوعات`.
+  category, subcategory and type, always a pair the taxonomy holds: incoming salary becomes `مرتب/مرتب أساسي`;
+  other incoming money is `دخل آخر/عام` (the message does not say where it came from); an outgoing transfer is
+  `تحويل` with its rail (`انستاباي`, `فودافون كاش` or `تحويل بنكي`) as subcategory; a card payment is `تسوق/عام`
+  with a merchant, else `متنوعات/عام`; bills are `فواتير/عام`; an ATM withdrawal is `تحويل/سحب ATM` of type
+  `transfer`, because the cash is still the user's (docs/decisions/0008-money-movements-and-taxonomy.md).
 - In one database transaction the route inserts the expense (source `sms`, the message as raw text, a description
   from provider, merchant and sender, the message's timestamp as its date when it parses, the parse details as
   metadata), writes its `expense_details` and the daily rollup delta
@@ -128,7 +130,8 @@ statistics per provider) and `GET /api/sms/unparsed`.
 
 ## Tests
 `tests/adversarial-challenger-2.test.ts` checks that condensing messages from several banks keeps their amounts,
-cards, dates and balances. Nothing tests the ingest route, the rule templates or the category mapping directly.
+cards, dates and balances. `api/lib/sms-ai-parser.test.ts` checks the category mapping. Nothing tests the ingest
+route or the rule templates directly.
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -139,9 +142,9 @@ Checked against the code; each one names where it lives.
    instead (`android-app/README.md`).
 3. **Gap.** The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY`
    directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
-4. **Bug.** Most subcategories `mapSmsToExpenseCategory` writes (for example "انستاباي وارد", "سحب نقدي / ATM",
-   "Apple Pay") are not in the category registry, card payments use the merchant's name as subcategory, and nothing
-   normalizes them against the registry.
+4. **Gap.** The category comes from the fixed map in `mapSmsToExpenseCategory`, not from the classification pipeline:
+   a card payment is `تسوق/عام` whatever the merchant (a restaurant or a fuel station included), and an outgoing
+   transfer is saved as spending under `تحويل`, its rail as subcategory.
 5. **Bug.** The monthly limit counts from the first of the month in server time rather than Cairo business time (golden
    rule 6).
 6. **Debt.** `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but

@@ -30,6 +30,8 @@ import { ExpenseInputLimits } from "@contracts/constants";
 import { cn } from "@/lib/utils";
 import {
   CATEGORY_OPTIONS,
+  defaultSubCategory,
+  getCategoryOptionsForType,
   getSubCategoryOptions,
 } from "@/lib/financial-taxonomy";
 import { Badge } from "@/components/ui/badge";
@@ -1036,6 +1038,21 @@ export function ExpenseForm({
       : "expense";
   };
 
+  /** The direction the parser found for a transfer (a loan, a gam3eya), if it found one. */
+  const transferDirectionOf = (item: { direction?: unknown }): "incoming" | "outgoing" | undefined =>
+    item.direction === "incoming" || item.direction === "outgoing" ? item.direction : undefined;
+
+  /**
+   * The person the parser found beside the purpose ("مصاريف مدرسة ابني" is تعليم for ابني),
+   * which the save links to a contact.
+   */
+  const personOf = (item: { person_mentioned?: unknown; person_relationship?: unknown }) => {
+    const name = typeof item.person_mentioned === "string" ? item.person_mentioned.trim().slice(0, 60) : "";
+    const relationship =
+      typeof item.person_relationship === "string" ? item.person_relationship.trim().slice(0, 40) : "";
+    return name && relationship ? { personName: name, personRelationship: relationship } : {};
+  };
+
   const saveItems = async (
     items: any[],
     isAuto: boolean = false,
@@ -1082,6 +1099,8 @@ export function ExpenseForm({
           date: item.date,
           classificationLogId: traceLogId || undefined,
           businessId,
+          direction: item.type === "transfer" ? transferDirectionOf(item) : undefined,
+          ...personOf(item),
           clientRequestId: effectiveClientRequestId
             ? `${effectiveClientRequestId}:${index}`
             : undefined,
@@ -1100,6 +1119,8 @@ export function ExpenseForm({
           date: item.date,
           classificationLogId: traceLogId || undefined,
           businessId,
+          direction: item.type === "transfer" ? transferDirectionOf(item) : undefined,
+          ...personOf(item),
           clientRequestId: effectiveClientRequestId || undefined,
         });
       }
@@ -2038,22 +2059,20 @@ export function ExpenseForm({
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label className="text-[10px] opacity-70">
-                        الفئة الرئيسة
+                        الفئة الرئيسية
                       </Label>
                       <select
                         value={item.category}
                         onChange={(e) => {
                           const category = e.target.value;
-                          const subCategory =
-                            getSubCategoryOptions(category)[0] || "عام";
                           handleUpdateParsedItem(idx, {
                             category,
-                            subCategory,
+                            subCategory: defaultSubCategory(category),
                           });
                         }}
                         className="w-full text-xs h-9 rounded-lg border bg-white/50 dark:bg-black/20 px-2 outline-none focus:ring-1 ring-emerald-500"
                       >
-                        {categories.map((c) => (
+                        {getCategoryOptionsForType(normalizeType(item.type), item.category).map((c) => (
                           <option key={c} value={c}>
                             {c}
                           </option>
@@ -2506,7 +2525,7 @@ function ManualForm({
             onChange={(e) => {
               const nextCategory = e.target.value;
               setCategory(nextCategory);
-              setSubCategory(getSubCategoryOptions(nextCategory)[0] || "عام");
+              setSubCategory(defaultSubCategory(nextCategory));
             }}
             className="w-full h-11 rounded-md border text-sm px-2 bg-white dark:bg-slate-900"
           >

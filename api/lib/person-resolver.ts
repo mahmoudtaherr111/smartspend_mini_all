@@ -405,6 +405,36 @@ export function resolvePersonForTransaction(input: {
   knownPeople: KnownPersonForResolver[];
   aiRelationship?: string | null;
 }): PersonResolution {
+  return withoutPreposition(resolvePerson(input));
+}
+
+/**
+ * "حولت لماما" reaches the resolver as "لماما". The relationship is read from that form
+ * (the kinship matcher keys on it), but the lam is the preposition: the name shown and
+ * linked to a contact is "ماما", not "لماما والدتك".
+ */
+function withoutPreposition(result: PersonResolution): PersonResolution {
+  const name = result.name;
+  if (!name || result.isKnown || !name.startsWith("ل") || name.length <= 3) return result;
+  const bare = name.slice(1);
+  const bareCategory = normalizeRelationship(bare).category;
+  if (!PERSON_CATEGORIES.has(bareCategory) || bareCategory !== normalizeRelationship(name).category) return result;
+  return {
+    ...result,
+    name: bare,
+    subCategory: result.subCategory?.startsWith(name)
+      ? `${bare}${result.subCategory.slice(name.length)}`
+      : result.subCategory,
+  };
+}
+
+function resolvePerson(input: {
+  candidateName?: string | null;
+  transactionText: string;
+  originalText: string;
+  knownPeople: KnownPersonForResolver[];
+  aiRelationship?: string | null;
+}): PersonResolution {
   const name = cleanPersonName(input.candidateName, input.transactionText);
   if (!name) {
     return {
