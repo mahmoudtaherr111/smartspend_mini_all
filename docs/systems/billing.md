@@ -105,8 +105,9 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
 Checked against the code; each one names where it lives.
 1. **Gap.** Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that `src/App.tsx` guards only with a
    sign-in, not with `UltraFeatureRoute`; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
-2. **Gap.** The referral discount is only shown: checkout always charges the plan's full price, nothing rewards the referrer,
-   and the discount codes admins create in `discount_codes` are never applied.
+2. **Gap.** Referrals give nothing yet: checkout always charges the plan's full price and nothing rewards the referrer, so
+   `referral.myCode` returns no discount (`REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT` in `api/referral-router.ts`) and the
+   plans screen promises none; the discount codes admins create in `discount_codes` are never applied.
 3. **Gap.** Nothing renews a subscription, since each Paymob payment is a one-time charge; `pro.cancel` only changes the status
    the plans screen shows, and there is no refund path.
 4. **Security.** Outside production without `PAYMOB_HMAC_SECRET`, the webhook accepts unsigned callbacks and grants plans

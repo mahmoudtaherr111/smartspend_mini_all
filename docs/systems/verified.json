@@ -203,13 +203,13 @@
         "api/lib/plan-catalog.ts": "38c562ef024d",
         "api/lib/subscription-service.ts": "f3666e029e61",
         "api/pro-router.ts": "ae4da5c10100",
-        "api/referral-router.ts": "2f418245f778",
+        "api/referral-router.ts": "b298497fadda",
         "src/pages/Pro.tsx": "8c4f5bf5acf2",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "checked": "2026-09-24 d9d553a",
-      "arabic": "eba2def7dc95",
-      "arabicChecked": "2026-09-24 d9d553a"
+      "checked": "2026-09-24 6739377",
+      "arabic": "b0aa48220bc3",
+      "arabicChecked": "2026-09-24 6739377"
     },
     "expense-capture": {
       "files": {

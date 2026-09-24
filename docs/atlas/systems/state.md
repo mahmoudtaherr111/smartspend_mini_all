@@ -17,7 +17,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (61 of
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 6 | — | 10 | 2 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 3 | — | 7 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 1 | **1** | — | 3 | 2 |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-24 6739377 | 2026-09-24 6739377 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 981a949 | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 4 | — | 3 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 d9d553a | 2026-09-24 d9d553a | 9 | — | 4 | 1 | 4 |
@@ -167,7 +167,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
 - Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that `src/App.tsx` guards only with a sign-in, not with `UltraFeatureRoute`; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
-- The referral discount is only shown: checkout always charges the plan's full price, nothing rewards the referrer, and the discount codes admins create in `discount_codes` are never applied.
+- Referrals give nothing yet: checkout always charges the plan's full price and nothing rewards the referrer, so `referral.myCode` returns no discount (`REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT` in `api/referral-router.ts`) and the plans screen promises none; the discount codes admins create in `discount_codes` are never applied.
 - Nothing renews a subscription, since each Paymob payment is a one-time charge; `pro.cancel` only changes the status the plans screen shows, and there is no refund path.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
