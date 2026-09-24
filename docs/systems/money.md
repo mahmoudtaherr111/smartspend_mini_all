@@ -163,7 +163,7 @@ Checked against the code; each one names where it lives.
    snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 6. **Bug.** In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
 7. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
-   (`src/components/goals/FinancialGoalsPanel.tsx`); the upsell Free users see says "SpinSmart Pro".
+   (`src/components/goals/FinancialGoalsPanel.tsx`).
 8. **Gap.** A saved item cannot be edited in the web app: nothing calls `expense.update`, so the corrections it records never
    happen (`api/lib/AGENTS.md`, rule 5).
 9. **Bug.** The calendar's day list sends local times without a time zone, which the server reads in its own zone.

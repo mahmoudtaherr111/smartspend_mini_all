@@ -61,10 +61,11 @@ describe("ExpenseForm quick save flow", () => {
     expect(manualSyncBlock).toContain("createMutation.mutateAsync");
   });
 
-  it("surfaces parser trace returned by text and voice parsing", () => {
+  it("surfaces parser trace returned by text and voice parsing, to admins only", () => {
     expect(source).toContain("function ParserTracePanel");
     expect(source).toContain("parser-trace route=");
-    expect(source).toContain("<ParserTracePanel trace={latestParserTrace} />");
+    expect(source).toContain('const canSeeParserTrace = planQuery.data?.role === "admin";');
+    expect(source).toContain("{canSeeParserTrace && <ParserTracePanel trace={latestParserTrace} />}");
     expect(source).toContain("setLatestParserTrace(asParserTrace((data as { trace?: unknown }).trace))");
   });
 

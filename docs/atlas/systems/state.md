@@ -4,18 +4,18 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (64 of 125 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (63 of 124 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-24 454bede | 2026-09-24 454bede | 17 | — | 5 | 2 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-24 05f7e09 | 2026-09-24 05f7e09 | 17 | — | 5 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | — | 6 | 2 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 11 | — | 5 | 1 | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 4 | — | 5 | 3 | 1 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 6 | — | 11 | 2 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-23 797ea88 | 2026-09-23 797ea88 | 3 | — | 7 | 5 | — |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 05f7e09 | 2026-09-24 05f7e09 | 6 | — | 10 | 2 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-24 05f7e09 | 2026-09-24 05f7e09 | 3 | — | 7 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | **1** | 1 | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 981a949 | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (64 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (125 issue(s))
+## What is waiting (124 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -48,7 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (59)
+### Bugs (58)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - Answering a clarification twice saves its items twice: `answerClarification` loads the row by id and owner without checking that its status is still `pending`.
@@ -89,7 +89,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The analysis and the comparison show a technical trace (route, tools, tokens, model) to every user, not only in development.
 - The basic report says the user ran out of AI tokens whenever there is no Gemini client, including when no key is configured; and when the client cannot be built, the `<plan>_ai_analysis` switch is never checked.
 - Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is ahead of UTC; snapshot days are grouped by UTC date.
-- The printable report is branded "SpinSmart" in its default header and footer (`api/services/pro-report-engine.ts`).
 - The flexible-spending lists in `generateMonthlyInsights` and `buildBehaviorSnapshot` name categories that `api/lib/category-registry.ts` no longer has (رفاهية, خروجات) or stores under another name (هدايا وصدقات).
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
@@ -159,7 +158,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - Budgets have no screen and no alert of their own: the "budget exceeded" notification compares the calendar month's spending, business included, with the monthly income in the profile, not with `user_budgets`.
-- The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP (`src/components/goals/FinancialGoalsPanel.tsx`); the upsell Free users see says "SpinSmart Pro".
+- The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP (`src/components/goals/FinancialGoalsPanel.tsx`).
 - A saved item cannot be edited in the web app: nothing calls `expense.update`, so the corrections it records never happen (`api/lib/AGENTS.md`, rule 5).
 - `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record; `business.get` returns the user's first business even when it is inactive.
 - `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments as spending, every source except voice as manual, and dates by UTC day.

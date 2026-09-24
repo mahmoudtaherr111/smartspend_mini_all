@@ -167,10 +167,9 @@ Checked against the code; each one names where it lives.
 11. **Bug.** Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period
     is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is
     ahead of UTC; snapshot days are grouped by UTC date.
-12. **Bug.** The printable report is branded "SpinSmart" in its default header and footer (`api/services/pro-report-engine.ts`).
-13. **Debt.** `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns
+12. **Debt.** `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns
     with `ALTER TABLE` when a read fails, outside the migrations in `db/`.
-14. **Debt.** The behaviour snapshots are written but not read: `getProactiveInsights` in
+13. **Debt.** The behaviour snapshots are written but not read: `getProactiveInsights` in
     `api/services/finance-semantic-layer/proactive-insights.ts` has no caller, and no caller asks the facts pack to
     prefer a snapshot.
 15. **Debt.** Unused code: `api/services/batch-ai-service.ts` only simulates a Gemini batch job; `buildProReportPrompt` and

@@ -372,6 +372,8 @@ export function ExpenseForm({
     planQuery.data?.plan === "pro" ||
     planQuery.data?.plan === "ultra" ||
     planQuery.data?.role === "admin";
+  // The parser trace is an English diagnostic (engine, decision, tokens): admins only.
+  const canSeeParserTrace = planQuery.data?.role === "admin";
 
   const parseReceiptMutation = trpc.image.parseReceipt.useMutation({
     onSuccess: (data) => {
@@ -1755,7 +1757,7 @@ export function ExpenseForm({
           </div>
         </form>
 
-        <ParserTracePanel trace={latestParserTrace} />
+        {canSeeParserTrace && <ParserTracePanel trace={latestParserTrace} />}
 
         {/* ─── Processing View (Skeleton Loader) ─── */}
         {flowStage === "processing" && (

@@ -38,7 +38,7 @@ function isMissingGoalsTable(err: unknown): boolean {
 }
 
 const PRO_UPSELL = {
-  title: "أهداف أذكى مع SpinSmart Pro",
+  title: "أهداف أذكى مع SmartSpend Pro",
   bullets: [
     "خطة ادخار أسبوعية مولّدة بالذكاء الاصطناعي",
     "تنبيهات قبل تجاوز الهدف",
@@ -233,7 +233,7 @@ export const goalsRouter = router({
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
         model: modelName,
-        systemInstruction: `أنت مستشار أهداف مالية Pro في SpinSmart.
+        systemInstruction: `أنت مستشار أهداف مالية Pro في SmartSpend.
 أعد JSON: plan (خطة 4-6 خطوات), weekly_actions (مصفوفة), alerts (تنبيهات), progress_percent (0-100), insight (فقرة واحدة).`,
         generationConfig: {
           temperature: 0.5,
