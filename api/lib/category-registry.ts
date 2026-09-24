@@ -609,7 +609,21 @@ const GOVERNED_NOUNS = governedNouns();
  */
 const FREELANCE_NOUNS = ["فريلانس", "عمل حر", "سبوبة", "سبوبه", "كلاينت", "freelance"];
 
-function inferCategoryFromEvidence(
+/**
+ * Whether sentence evidence may replace a category the item already has. Only the
+ * catch-alls give way: nothing (or متنوعات) to anything, the income default مرتب to a
+ * more specific income ("قبضت 5000 من كلاينت" is عمل حر), and استثمار to its returns
+ * ("جالي عائد شهادات" is عوائد استثمار).
+ */
+function mayRefine(current: string | undefined, inferred: string): boolean {
+  if (!current || current === "متنوعات") return true;
+  if (current === "مرتب") return inferred === "عمل حر" || inferred === "عوائد استثمار";
+  if (current === "استثمار") return inferred === "عوائد استثمار";
+  return false;
+}
+
+/** Old category names that now live elsewhere; they depend on the name, not the sentence. */
+function inferLegacyCategory(
   rawCategory: string,
   evidence: string,
 ): string | undefined {
@@ -638,6 +652,16 @@ function inferCategoryFromEvidence(
   ) {
     return "فواتير";
   }
+
+  return undefined;
+}
+
+/** Guesses a category from the sentence, for an item that arrived without a real one. */
+function inferCategoryFromEvidence(
+  rawCategory: string,
+  evidence: string,
+): string | undefined {
+  const categoryText = `${rawCategory} ${evidence}`;
 
   if (
     hasAny(categoryText, [
@@ -887,10 +911,18 @@ export function normalizeCategoryName(
   fallback = "متنوعات",
 ): string {
   const raw = String(rawCategory || "").trim();
-  const inferred = inferCategoryFromEvidence(raw, evidence);
-  if (inferred && findCategoryByAnyName(inferred)) return inferred;
-
   const direct = findCategoryByAnyName(raw);
+  // A category that already names something is kept. Re-reading the whole sentence
+  // used to overwrite correct answers on the way to storage: "ركبت مشروع" (the
+  // microbus) became عمل حر, "استلمت من أحمد" became مرتب. Evidence may still fill a
+  // missing or catch-all category, and remap the legacy names.
+  const legacy = inferLegacyCategory(raw, evidence);
+  if (legacy) return legacy;
+
+  const inferred = inferCategoryFromEvidence(raw, evidence);
+  if (inferred && findCategoryByAnyName(inferred) && mayRefine(direct?.name_ar, inferred)) {
+    return inferred;
+  }
   if (direct) return direct.name_ar;
 
   const normalized = comparableArabic(raw);

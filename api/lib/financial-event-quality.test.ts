@@ -47,17 +47,22 @@ function metrics() {
 }
 
 it("does not regress the recorded audit's overall record F1", () => {
-  expect(metrics().overall.tripleF1).toBeGreaterThanOrEqual(0.8730);
+  // Raised from 0.8730 after whole-word synonyms, spoken hundreds and gift direction.
+  expect(metrics().overall.tripleF1).toBeGreaterThanOrEqual(0.8923);
 });
 it("does not regress the recorded audit's dev record F1", () => {
   expect(metrics().dev.tripleF1).toBeGreaterThanOrEqual(0.9634);
 });
 it("does not regress the recorded audit's frozen record F1", () => {
-  expect(metrics().frozen.tripleF1).toBeGreaterThanOrEqual(0.7825);
+  expect(metrics().frozen.tripleF1).toBeGreaterThanOrEqual(0.8173);
 });
 it("reduces unsafe auto saves without routing every clear input to review", () => {
-  expect(metrics().system.unsafeAutoSaves).toBeLessThan(6);
+  expect(metrics().system.unsafeAutoSaves).toBeLessThanOrEqual(2);
   expect(metrics().decisions.auto_save).toBeGreaterThanOrEqual(65);
+});
+it("does not ask about people who are not people", () => {
+  // "مين لوسي؟" (from "فلوسي"), "مين دهب؟", "مين منه؟" each counted here.
+  expect(metrics().system.needlessClarifications).toBeLessThanOrEqual(18);
 });
 it("keeps the corpus free of taxonomy violations and nonfinancial phantom records", () => {
   expect(rows.reduce((sum, row) => sum + row.score.taxonomyViolations, 0)).toBe(0);

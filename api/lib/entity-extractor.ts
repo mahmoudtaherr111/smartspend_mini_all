@@ -186,6 +186,13 @@ export function extractAmounts(rawText: string): ExtractedAmount[] {
   // four-digit year. Keep their positions so neighbouring price anchors stay bound.
   const excludedSpans = [...text.matchAll(/\d{1,4}[/:-]\d{1,2}(?:[/-]\d{1,4})?|\d+(?:[.,]\d+)?\s*[%٪]/g)]
     .map((m) => ({ start: m.index, end: m.index + m[0].length }));
+  // "بنزين 92 ب 400": 80/90/92/95 right after the fuel is its grade, not a second
+  // payment — but only when another number is there to be the price.
+  for (const m of text.matchAll(/(?:بنزين|بنزينه|بنزينة)\s+(80|90|92|95)(?=\s|$)/g)) {
+    const gradeStart = m.index + m[0].length - m[1].length;
+    const rest = text.slice(0, gradeStart) + text.slice(gradeStart + m[1].length);
+    if (/\d/.test(rest)) excludedSpans.push({ start: gradeStart, end: gradeStart + m[1].length });
+  }
   const amountPattern = /(\d+(?:[.,]\d{3})*(?:[.,]\d+)?)\s*(جنيه|ج\.م|ج|الف|ألف)?/g;
   let match: RegExpExecArray | null;
 
@@ -279,7 +286,9 @@ export function extractPeople(
         let rawCandidate = words[i + j].replace(/[^\u0600-\u06FF]/g, "");
         if (!rawCandidate) continue;
 
-        let candidateWithoutPrefix = rawCandidate.replace(/^[وف]/, "");
+        // Only a waw is peeled: "وأحمد" is "and Ahmed", but a leading fa is almost always
+        // part of the word — peeling it turned "فلوسي" (my money) into the name "لوسي".
+        let candidateWithoutPrefix = rawCandidate.replace(/^و/, "");
         let candidatesToTest = [rawCandidate, candidateWithoutPrefix];
 
         for (let c of candidatesToTest) {

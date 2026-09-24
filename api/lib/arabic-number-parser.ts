@@ -114,7 +114,34 @@ const UNIT_PHRASES: Array<[RegExp, string]> = [
  * "فاتورة المية" for the water bill and "مية وخمسين" for 150; only the surrounding
  * words separate them.
  */
-const WATER_CONTEXT = /(فاتور|عداد|شرب|كوباي|ازاز|زجاج|عبو|مياه|سخان|فلتر|خرطوم|حنفي|معدني|معدنيه|معدنية)/;
+const WATER_BEFORE = /(فاتور|عداد|شرب|كوباي|ازاز|إزاز|زجاج|عبو|سخان|فلتر|خرطوم|حنفي|جركن|جركل|كرتون)/;
+const WATER_AFTER = /^(?:معدني|معدنيه|معدنية|ساقع|ساقعه|ساقعة|سخن|سخنه|سخنة|صحي|صحيه|صحية)$/;
+
+/**
+ * True when "مية" at position `i` is water. Only the neighbouring words decide:
+ * "ازازة مية 10" and "مية معدنية" are water, while "فاتورة المياه مية وخمسين" is a
+ * bill of 150 — a water word elsewhere in the sentence says nothing about this one.
+ */
+function isWaterMention(words: string[], i: number): boolean {
+  const before = words[i - 1];
+  const after = words[i + 1];
+  return Boolean((before && WATER_BEFORE.test(before)) || (after && WATER_AFTER.test(after)));
+}
+
+/**
+ * True when "تمن" at position `i` means "the price of" rather than 8: the next word is
+ * a noun, not a number, a currency or a thousand ("تمن جنيه", "تمن تلاف" stay numbers).
+ */
+function isPriceOf(words: string[], i: number): boolean {
+  const next = words[i + 1];
+  if (!next) return false;
+  if (/^[،؛,;:!؟?….]$/.test(next)) return false;
+  const { core } = stripClitic(next);
+  if (isKnownNumberWord(core) || CURRENCY_UNIT.test(core)) return false;
+  if (core === "و" || core === "وا") return false;
+  if (/^\d/.test(core)) return false;
+  return /^[؀-ۿ]/.test(core);
+}
 
 /**
  * The rules path normalizes Arabic letters before this parser runs (أ→ا, ة→ه, ئ→ي), so
@@ -258,6 +285,12 @@ class NumberAccumulator {
 
   /** Returns true when the token was consumed as part of the current number. */
   addWord(value: number): boolean {
+    // "خمس مية" is 500, not 105: a spoken unit before a bare hundred multiplies it.
+    if (value === 100 && this.segment >= 2 && this.segment <= 9 && !this.lastWasDigitLiteral) {
+      this.segment *= 100;
+      this.active = true;
+      return true;
+    }
     this.segment += value;
     this.active = true;
     this.lastWasDigitLiteral = false;
@@ -403,8 +436,22 @@ export function parseArabicNumbers(text: string): string {
       continue;
     }
 
-    if ((core === "مية" || core === "ميه") && !WATER_CONTEXT.test(processed)) {
-      acc.addWord(100);
+    if (core === "مية" || core === "ميه") {
+      if (!isWaterMention(words, i)) {
+        acc.addWord(100);
+        continue;
+      }
+      // Water: the letter-folded lexicon also knows "ميه" (from "مئة"), so it must not
+      // be looked up below — "ازازة مية 10" was read as 110.
+      flushInto();
+      out.push(word);
+      continue;
+    }
+
+    // "تمن" is 8 only as a number: "دفعت تمن الأكل 50" names the price of the food.
+    if ((core === "تمن" || core === "ثمن") && isPriceOf(words, i)) {
+      flushInto();
+      out.push(word);
       continue;
     }
 

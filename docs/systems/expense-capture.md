@@ -45,7 +45,8 @@ built-in limits; the local pipeline still runs.
 - **admitted**: a transaction that happened, with an amount;
 - **incomplete**: no amount, such as "دفعت الكهربا";
 - **rejected**: a question, a plan or future tense ("هدفع بكرة"), or a negation ("ماشتريتش"), detected by
-  `api/lib/negation-detector.ts#detectNegation`.
+  `api/lib/negation-detector.ts#detectNegation`. "غدا" is not a plan marker: in Egyptian it is lunch ("جبت غدا ب
+  150"), and a real "tomorrow" comes with a future verb.
 
 It also keeps a stated total ("والإجمالي 500") as a check, applies a "قصدي 300" correction to the amount beside
 it, and adds review reasons for approximate wording, foreign currencies, dates and clauses with more than one
@@ -76,12 +77,18 @@ aside for the full path.
 For each admitted event:
 1. `api/lib/rule-engine.ts#runRuleEngine` finds each amount and classifies the words around it (layers below).
    Spoken and written amounts become digits in one place, `api/lib/arabic-number-parser.ts#parseArabicNumbers`:
-   Egyptian teens and hundreds ("خمستاشر", "خمسميت"), halves ("ألفين ونص") and Arabic-Indic digits. "واحد" is a
-   number only inside a tens compound ("واحد وخمسين" is 51) or when it closes an amount ("مية وواحد جنيه" is 101), so
-   "واحد صاحبي" stays a person.
+   Egyptian teens and hundreds ("خمستاشر", "خمسميت"), a spoken unit before a separate hundred ("خمس مية" is 500),
+   halves ("ألفين ونص") and Arabic-Indic digits. "واحد" is a number only inside a tens compound ("واحد وخمسين" is
+   51) or when it closes an amount ("مية وواحد جنيه" is 101), so "واحد صاحبي" stays a person. "مية" is water when
+   the word before it is a container or a bill ("ازازة مية 10") or the word after it is "معدنية"; "تمن" before a
+   noun is a price ("دفعت تمن الأكل 50"); and `api/lib/entity-extractor.ts#extractAmounts` reads 80/90/92/95 right
+   after "بنزين" as the grade when another number gives the price.
 2. Named people are resolved (`api/lib/smart-pipeline.ts#applyPersonResolution`,
    `api/lib/person-resolver.ts#resolvePersonForTransaction`). One amount with several named people is split
-   between them unless they are joined by "أو". An unknown person makes the result `clarify` with "مين …؟".
+   between them unless they are joined by "أو". An unknown person makes the result `clarify` with "مين …؟". A
+   word is taken as a person only when it is one of the user's contacts, a family word or a name the names
+   dictionary knows (`api/lib/egyptian-names-dictionary.ts#isLikelyPersonName`); a leading fa is not peeled
+   ("فلوسي" is not "لوسي"), and "منه" right after a receiving verb is a pronoun.
 3. The user's stored corrections replace the answer (`api/lib/correction-rules.ts#applyCorrectionRules`).
 4. Calibration turns each item's evidence into a probability (`api/lib/confidence-calibrator.ts#applyCalibration`,
    measured table `api/lib/confidence-calibration.generated.ts#CONFIDENCE_CALIBRATION`).
@@ -97,12 +104,16 @@ The layers `runRuleEngine` tries for the text around one amount, with the eviden
 | Verb and noun patterns: coffee, fast food, recharges, rides | `verb_noun_regex` |
 | The user's own dictionary, which overrides the patterns | `user_dictionary` |
 | Merchant registry of brand names, with disambiguation for names that are also people | `merchant_registry` |
-| Synonym graph, `api/lib/taxonomy-adapter.ts#findTaxonomyMatch` | `synonym_graph` |
+| Synonym graph, `api/lib/taxonomy-adapter.ts#findTaxonomyMatch`, matched on whole words (`api/lib/arabic-token-match.ts`), so "واخيرا" does not match "اخي" | `synonym_graph` |
 | Category dictionary phrases, then subcategory phrases, of three and two words | `dict_trigram`, `dict_bigram`, `subcat_trigram`, `subcat_bigram` |
 | A single word in the subcategory map, then in the category dictionary | `subcat_unigram`, `dict_unigram` |
 | Typo match, with an edit budget scaled to the word's length | `fuzzy` |
 | Semantic match on a local character n-gram index, and Fireworks embeddings when the request carries a Fireworks key (`api/lib/embedding-engine.ts#matchSegment`) | `embedding` |
 | Direction only: income becomes `مرتب`, an expense `متنوعات` at low confidence | `intent_only` |
+
+Direction comes from `api/lib/intent-detector.ts#detectIntent`. Gift words (هدية، عيدية، نقطة) are spending on their
+own and income only beside a receiving verb (خدت، جالي، وصلني). When the direction is income but the words named
+something bought, the item becomes `مرتب` at intent strength (`intent_only`), so it goes to review.
 
 After a layer answers, negated clauses are dropped, nouns whose direction depends on the verb (الجمعية, قسط,
 سلفة) take their subcategory from `api/lib/direction-governed-taxonomy.ts#resolveGovernedTaxonomy`, and profile
@@ -134,7 +145,9 @@ instead of the model (see known issues).
 - **Clean-up**: duplicates from different parsers are merged, implausible amounts for investment, real estate
   and rent fall back to `متنوعات`, category names are normalized against the registry
   (`api/lib/category-registry.ts#normalizeTransactionTaxonomyList`), and `متنوعات` items are rescued through the
-  subcategory map.
+  subcategory map. Normalization keeps a category the item already has: evidence from the sentence may only fill
+  a missing or `متنوعات` category, refine the income default `مرتب` (to عمل حر or عوائد استثمار) and `استثمار` (to
+  its returns), and remap legacy names.
 - **Verifier**: `api/lib/post-classifier-verifier.ts#verifyClassifiedItems` flags duplicates, conflicts between
   direction and category, unknown categories, amount sanity and anomalies against the month's income and
   expense. Setting `parser_local_verifier_enabled` switches it off.

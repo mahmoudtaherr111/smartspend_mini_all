@@ -92,9 +92,9 @@ const INCOME_KEYWORDS = [
   "عموله",
   "براني",
   "شغلانه",
-  "هديه",
-  "عيديه",
-  "نقطه",
+  // "هديه", "عيديه" and "نقطه" are not income words on their own: in a spending app
+  // "عيدية للعيال 500" and "نقطة فرح صاحبي" are money given. They count as income only
+  // with a receiving verb (see GIFT_RECEIVED below).
   "نفقه",
 ];
 
@@ -299,6 +299,11 @@ function wordPattern(word: string): RegExp {
   return cached;
 }
 
+/** Gift, eidiya and wedding money: given by default, received only with a receiving verb. */
+const GIFT_NOUN = /(?:^|\s)[وبلف]?(?:ال)?(?:هديه|هدايا|عيديه|عيديات|نقطه|نقوط)(?=\s|$)/;
+const GIFT_RECEIVED =
+  /(?:^|\s)[وف]?(?:خدت|اخدت|أخدت|جالي|جاتلي|جاني|جاتني|وصلني|وصلتلي|اتهاديت|اتعيدت|عيدوني|نقطوني|استلمت)(?=\s|$)/;
+
 function includesWord(text: string, word: string): boolean {
   return wordPattern(word).test(text);
 }
@@ -379,6 +384,13 @@ export function detectIntent(context: string): IntentResult {
   if (/(?:دخلت|دخلنا)\s+(?:سينما|فيلم|ملاهي|حفله|حفلة|متحف)/.test(normContext)) {
     expenseScore += 80;
     incomeScore -= 50;
+  }
+  if (GIFT_NOUN.test(normContext)) {
+    if (GIFT_RECEIVED.test(normContext)) {
+      incomeScore += 60;
+    } else {
+      expenseScore += 30;
+    }
   }
   if (/(?:هديه|هدية)\s+(?:عيد|ميلاد|فرح|خطوبه|خطوبة)/.test(normContext)) {
     expenseScore += 70;

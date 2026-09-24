@@ -4,6 +4,7 @@ import {
   normalizeCategoryName,
   normalizeSubCategoryName,
 } from "./category-registry";
+import { buildTokenSet, matchesWord } from "./arabic-token-match";
 
 export interface TaxonomyMatch {
   category: string;
@@ -22,6 +23,13 @@ type SynonymEntry = {
 
 const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   // ─── Cars & Transport (مواصلات / خدمات سيارات) ───
+  // "المشروع" is the shared microbus when you ride it; alone it stays a project.
+  "ركبت مشروع": { category: "مواصلات", subCategory: "أتوبيس", confidence: 95 },
+  "ركبت المشروع": { category: "مواصلات", subCategory: "أتوبيس", confidence: 95 },
+  "نزلت من المشروع": { category: "مواصلات", subCategory: "أتوبيس", confidence: 95 },
+  // Renting a car is transport, not the home's rent.
+  "ايجار العربية": { category: "مواصلات", subCategory: "عام", confidence: 96 },
+  "ايجار عربية": { category: "مواصلات", subCategory: "عام", confidence: 96 },
   "فكيت بنزين": { category: "مواصلات", subCategory: "بنزين", confidence: 94 },
   تفويلة: { category: "مواصلات", subCategory: "بنزين", confidence: 96 },
   "بنزين للعربية": {
@@ -136,6 +144,11 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   },
 
   // ─── Utilities (فواتير) ───
+  // A gas cylinder is the gas bill of homes without a pipe; "بوتاجاز" alone is the stove.
+  "انبوبة البوتاجاز": { category: "فواتير", subCategory: "غاز", confidence: 97 },
+  "انبوبة بوتاجاز": { category: "فواتير", subCategory: "غاز", confidence: 97 },
+  "انبوبة غاز": { category: "فواتير", subCategory: "غاز", confidence: 97 },
+  "انبوبة الغاز": { category: "فواتير", subCategory: "غاز", confidence: 97 },
   "دفعت للكهربا": {
     category: "فواتير",
     subCategory: "كهرباء",
@@ -198,6 +211,15 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   },
 
   // ─── Food & Groceries (أكل وشرب) ───
+  // Drinking water is a drink, not the water bill ("ازازة مية 10").
+  "ازازة مية": { category: "أكل وشرب", subCategory: "مشروبات", confidence: 97 },
+  "ازازة ميه": { category: "أكل وشرب", subCategory: "مشروبات", confidence: 97 },
+  "زجاجة مية": { category: "أكل وشرب", subCategory: "مشروبات", confidence: 97 },
+  "زجاجة ميه": { category: "أكل وشرب", subCategory: "مشروبات", confidence: 97 },
+  "كرتونة مية": { category: "أكل وشرب", subCategory: "مشروبات", confidence: 97 },
+  "مية معدنية": { category: "أكل وشرب", subCategory: "مشروبات", confidence: 97 },
+  ياميش: { category: "أكل وشرب", subCategory: "عام", confidence: 93 },
+  كحك: { category: "أكل وشرب", subCategory: "مخبوزات", confidence: 93 },
   فطرت: { category: "أكل وشرب", subCategory: "وجبات سريعة", confidence: 95 },
   اتعشيت: { category: "أكل وشرب", subCategory: "وجبات سريعة", confidence: 95 },
   "جبت غدا": {
@@ -312,6 +334,8 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   "كشف سنان": { category: "صحة", subCategory: "أسنان", confidence: 98 },
 
   // ─── Education (تعليم) ───
+  "مصاريف الحضانة": { category: "تعليم", subCategory: "مدرسة", confidence: 97 },
+  "قسط الحضانة": { category: "تعليم", subCategory: "مدرسة", confidence: 97 },
   "مصاريف المدرسة": { category: "تعليم", subCategory: "مدرسة", confidence: 99 },
   "قسط الجامعة": { category: "تعليم", subCategory: "جامعة", confidence: 99 },
   "درس خصوصي": {
@@ -351,6 +375,13 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   "حجر شيشة": { category: "تدخين", subCategory: "شيشة/معسل", confidence: 96 },
 
   // ─── Gifts & Charity (هدايا وصدقات) ───
+  // Egyptian social obligations: money given at a wedding, a funeral, a birth. Kept just
+  // under the person entries (95), so "نقطة فرح صاحبي" still files under the friend.
+  "واجب عزا": { category: "هدايا وصدقات", subCategory: "عام", confidence: 94 },
+  "واجب العزا": { category: "هدايا وصدقات", subCategory: "عام", confidence: 94 },
+  "نقطة فرح": { category: "هدايا وصدقات", subCategory: "فرح/خطوبة", confidence: 94 },
+  "نقطة الفرح": { category: "هدايا وصدقات", subCategory: "فرح/خطوبة", confidence: 94 },
+  سبوع: { category: "هدايا وصدقات", subCategory: "عام", confidence: 92 },
   صدقة: { category: "هدايا وصدقات", subCategory: "صدقة/تبرع", confidence: 98 },
   اتبرعت: {
     category: "هدايا وصدقات",
@@ -505,9 +536,11 @@ export function findTaxonomyMatch(text: string): TaxonomyMatch | null {
   const comparable = comparableArabic(normalized);
   if (!normalized) return null;
 
+  // Whole words only: "واخيرا" must not match "اخي", nor "ياميش" match "امي".
+  const tokens = buildTokenSet(comparable);
   let best: TaxonomyMatch | null = null;
   for (const [phrase, entry] of Object.entries(SYNONYM_GRAPH)) {
-    if (!comparable.includes(comparableArabic(phrase))) continue;
+    if (!matchesWord(comparable, comparableArabic(phrase), tokens)) continue;
     const candidate: TaxonomyMatch = {
       category: toBackwardCompatibleCategory(entry.category),
       subCategory: "",

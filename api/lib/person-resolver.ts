@@ -367,10 +367,26 @@ export function pickAllPersonCandidates(
     );
     if (directedMatch?.[1]) {
       const cleanedMatch = cleanPersonName(directedMatch[1], transactionText);
-      if (cleanedMatch && !candidates.includes(cleanedMatch)) {
+      // Any word after a verb is not a person: "حولت دهب", "شحنت موبايلي" and "خدت فلوسي"
+      // each produced a "مين …؟" question about nobody. Only a name the dictionary knows,
+      // a family word, or one of the user's contacts is taken from this fallback.
+      const plausible = cleanedMatch && (
+        isLikelyPersonName(cleanedMatch) ||
+        knownNames.some((known) => known === cleanedMatch || matchArabicPhrase(known, cleanedMatch))
+      );
+      if (plausible && cleanedMatch && !candidates.includes(cleanedMatch)) {
          candidates.push(cleanedMatch);
       }
     }
+  }
+
+  // "خدت منه 150" is "I took it from him": right after a verb, منه/منها is a pronoun,
+  // not the name Menna, unless the user has a contact by that name.
+  const pronounAfterVerb = /(?:^|\s)[وف]?(?:خدت|اخدت|أخدت|أخذت|استلمت|قبضت|استلفت|سحبت|جالي|جاني)\s+(منه|منها|منهم)(?=\s|$)/u
+    .exec(transactionText)?.[1];
+  if (pronounAfterVerb && !knownNames.includes(pronounAfterVerb)) {
+    const index = candidates.indexOf(pronounAfterVerb);
+    if (index >= 0) candidates.splice(index, 1);
   }
 
   // If we have specific person names, filter out generic descriptors that describe them

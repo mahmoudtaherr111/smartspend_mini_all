@@ -223,9 +223,14 @@ const FILLER_WORDS = [
   "اساسا",
   "أساسا",
   "المهم",
-  "بتاع",
-  "بتاعة",
 ];
+
+/**
+ * "بتاع" is filler in "العربية بتاعتي" but names a trade in "بتاع اللبن" (the milkman),
+ * "بتاع الخضار", "بتاع الانابيب" — entries the dictionary has and stripping killed.
+ * It is dropped only when no definite noun follows it.
+ */
+const BITAA_FILLER = /(?:^|\s)(?:بتاع|بتاعة|بتاعه)(?=\s|$)(?!\s+ال)/g;
 
 const COMMON_PHRASE_NORMALIZATIONS: Record<string, string> = {
   "فكيت بنزين": "دفعت بنزين",
@@ -309,6 +314,7 @@ export function normalizeText(text: string): string {
     "gi",
   );
   result = result.replace(fillerRegex, " ");
+  result = result.replace(BITAA_FILLER, " ");
 
   // 3. Remove weird symbols but keep Arabic, English, numbers, basic punctuation
   result = result.replace(

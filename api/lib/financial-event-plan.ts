@@ -27,7 +27,9 @@ export interface FinancialEventPlan {
 
 const verbs = new Set(ALL_FINANCIAL_VERBS.map(normalizeArabic));
 const future = /(?:^|\s)(?:[وف])?(?:ه|ح)(?:دفع|صرف|شتري|جيب|حول|سدد|شحن|قبض|ستلم|روح|ركب|طلب|حجز)(?:\S*)?(?=\s|$)/;
-const planned = /(?:^|\s)(?:بكره|غدا|سوف|ناوي|ناويه|عايز اشتري|عايزه اشتري|لو اشتريت)(?=\s|$)/;
+// "غدا" is not here: in Egyptian it is lunch ("جبت غدا ب 150"), and a real "tomorrow"
+// comes with a future verb ("هدفع غدا") that `future` already catches.
+const planned = /(?:^|\s)(?:بكره|بكرة|سوف|ناوي|ناويه|عايز اشتري|عايزه اشتري|لو اشتريت)(?=\s|$)/;
 const approximate = /(?:^|\s)(?:حوالي|تقريبا|قرابه|يمكن|مش فاكر|او|أو)(?=\s|$)/;
 const foreignCurrency = /(?:^|\s)(?:دولار|يورو|ريال|درهم|USD|EUR|SAR|AED|GBP)(?=\s|$)/i;
 const dateHint = /(?:^|\s)(?:امبارح|أمس|اول الشهر|أول الشهر|يوم|سنه|سنة|عام)(?=\s|$)|\d{1,4}[/-]\d{1,2}[/-]\d{1,4}/;

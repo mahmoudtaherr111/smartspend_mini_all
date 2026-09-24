@@ -406,7 +406,7 @@ smart-pipeline.ts and the modules it composes: financial events, admissibility, 
 | `api/lib/relationship-normalizer.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/rule-engine.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/smart-pipeline.ts` | `ai-providers`, `arabic-nlp`, `database` | `gemini` | `expenses` | — |
-| `api/lib/taxonomy-adapter.ts` | — | — | — | — |
+| `api/lib/taxonomy-adapter.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/taxonomy-ssot.ts` | — | — | — | — |
 | `api/lib/voice-intake-gate.ts` | — | — | — | — |
 | `api/services/parser-trace.ts` | — | — | — | — |

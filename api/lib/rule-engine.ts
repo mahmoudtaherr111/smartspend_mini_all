@@ -817,6 +817,14 @@ const DISAMBIGUATION_RULES: Record<string, Array<{
   "سيف": [
     { contextPattern: /^(?!.*(?:صيدلي[ةه]|صيدليات|دوا|علاج|روشت[ةه]|روشته)).*(?:(?:سلفت|اديت|أديت|حولت|بعت|سلفت|عطيت|سلكت|صفيت|صفّيت|طلعت|بعتت|رديت|وديت|رجعت|فكيت|خدت|اخدت).*(?:سيف)|(?:سيف).*(?:سلفت|اديت|أديت|حولت|بعت|سلفت|عطيت|سلكت|صفيت|صفّيت|طلعت|بعتت|رديت|وديت|رجعت|فكيت|خدت|اخدت))/, category: "تحويل", subCategory: "أشخاص" },
   ],
+  // Brand names that are also everyday words: Careem the ride vs a face cream,
+  // Shell the station vs a shawl.
+  "كريم": [
+    { contextPattern: /(?:^|\s)(?:لل|ل|ال)?(?:وش|شعر|بشره|جسم|ايد)(?:ي)?(?=\s|$)|مرطب|واقي|تفتيح|حلاق[ةه]|صيدلي[ةه]|كوافير/, category: "تسوق", subCategory: "عناية شخصية" },
+  ],
+  "شيل": [
+    { contextPattern: /جاكيت|جاكت|طرح[ةه]|فستان|لبس|هدوم|شال/, category: "تسوق", subCategory: "ملابس" },
+  ],
   "تذكرة": [
     { contextPattern: /سينما|فيلم/, category: "ترفيه", subCategory: "سينما" },
     { contextPattern: /طيران|طيار[ةه]|flight/i, category: "مواصلات", subCategory: "طيران" },
@@ -1661,8 +1669,13 @@ export async function runRuleEngine(
         finalCategory = category;
         finalSubCategory = refinedSubCategory;
       } else {
+        // The noun named something bought ("هدية", "جزمة"), yet the direction says money
+        // came in: مرتب is a guess about the source, not evidence of it. It stays, but
+        // at intent strength, so it goes to review instead of being saved as salary.
         finalCategory = "مرتب";
         finalSubCategory = "عام";
+        finalConfidence = Math.min(finalConfidence, 80);
+        matchKind = "intent_only";
       }
       registeredType = "income";
     }
