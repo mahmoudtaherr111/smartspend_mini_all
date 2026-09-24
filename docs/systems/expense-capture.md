@@ -195,8 +195,9 @@ at the plan's per-recording limit and at the seconds left this month.
 ## Receipts
 `image.parseReceipt` is a Pro procedure. It checks the payload size and the image signature (JPEG, PNG or WebP),
 reserves the image budget and calls `api/lib/receipt-image-parser.ts#parseReceiptImage`: with an OCR text hint it
-reads the amount locally and runs the pipeline on a short sentence; otherwise a Gemini vision call reads the
-receipt and the pipeline runs on its OCR text. The first item is normalized against the registry and saved as one
+reads the amount locally and runs the pipeline on a short sentence; otherwise a Gemini vision call (the
+`ai_model_pro` setting, else `GEMINI_MODEL_PRO`, whose default is `gemini-3.5-flash`, through `mapModelName`) reads
+the receipt and the pipeline runs on its OCR text. The first item is normalized against the registry and saved as one
 expense with source `image`, without a review step. The form offers the camera only to Pro users, and only online.
 
 ## Clarifications
@@ -208,7 +209,8 @@ expense with source `image`, without a review step. The form offers the camera o
 - **Free answer**: the answer is appended to the sentence and the pipeline runs again. Another `clarify` updates
   the question; a result under 70 is refused; anything else is saved.
 
-`expense.getPendingClarifications` lists the open questions.
+`expense.getPendingClarifications` lists the open questions, but no screen shows that list: the form only refreshes
+it. The live call reads them and can finish one with the user's answer ([voice calls](voice-calls.md#the-tools)).
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -276,6 +278,10 @@ Checked against the code; each one names where it lives.
    not rendered anywhere.
 7. **Debt.** The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win;
    the code reads the `parser_*` keys first.
+8. **Gap.** An entry whose question the user left unanswered stays unrecorded, and the app never shows it again: the
+   form asks only while it is open, and `src/components/expenses/ExpenseForm.tsx` refreshes
+   `expense.getPendingClarifications` without displaying it. Only the live call (`money_query` `pending`) and the
+   admin's clarifications tab list them.
 
 ## Related systems
 - [Money](money.md): lists, statistics, wallets, budgets, and the rollups these saves feed.

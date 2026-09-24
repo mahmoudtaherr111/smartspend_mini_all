@@ -38,6 +38,16 @@ the per-plan token budget every paid call is measured against, and the two place
    Google SDK; everything else speaks the OpenAI-compatible shape, which is why adding a provider is a row and
    a key rather than code.
 
+The Gemini text models this app uses are `gemini-3.8-flash`, `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite`
+(`GEMINI_TEXT_CHAIN` in `api/lib/model-mapper.ts`, strongest first; all three answered on Google's API on 2026-09-24).
+Google does not serve `gemini-3.1-pro` (it answers 404), so that name, the older Pro names and the `pro`/`ultra`
+shorthand map to `gemini-3.8-flash`, which is also Ultra's default. `executeAiGateway`, which the voice call's `think`
+tool uses, takes the admin's route for the purpose and plan, else Gemini with the plan's default
+(`defaultGeminiModelForPlan`: `gemini-3.8-flash` for Ultra, `gemini-3.1-flash-lite` otherwise), and passes a Gemini
+id through `mapModelName`. When Google answers 429, 500 or 503 (overloaded) it tries the next model of
+`geminiFallbackChain`, lighter ones first and then the stronger ones nearest first, and logs
+`ai_gateway.model_overloaded`. The voice call's post-call summary uses the same chain.
+
 ## Provider keys
 - The admin console saves a provider's key sealed with AES-256-GCM under SHA-256 of `AI_GATEWAY_SECRET`, or of
   `JWT_SECRET` while that is unset (`api/lib/provider-key-crypto.ts`). The stored shape, `<iv>:<tag>:<data>`, is
@@ -124,8 +134,8 @@ There are two accountings, and they do not cover the same calls:
 ## Known issues
 Checked against the code; each one names where it lives.
 1. **Debt.** `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost
-   calculation and ledger write — has no caller. Only its route resolution is used, by
-   `api/lib/smart-pipeline.ts`.
+   calculation and ledger write — has one caller, the rebuilt voice call's `think` tool. Elsewhere only its route
+   resolution is used, by `api/lib/smart-pipeline.ts`.
 2. **Bug.** Cost in `ai_token_ledgers` is not the model's price: `trackTokens` bills every call at 0.14 USD per million
    tokens and converts at a fixed 50.5, while the settings hold an exchange rate that only the unused gateway
    reads. The admin's cost and telemetry screens show those numbers.

@@ -74,13 +74,13 @@ export const MODEL_CATALOG: ModelEntry[] = [
     descriptionAr: "خفيف وسريع جداً للمهام الكبيرة",
   },
   {
-    id: "gemini-3.1-pro",
+    id: "gemini-3.8-flash",
     provider: "gemini",
-    displayName: "Gemini 3.1 Pro",
+    displayName: "Gemini 3.8 Flash",
     tiers: ["pro", "ultra"],
     purposes: ["report", "chat", "image"],
     pricingHint: "Professional Tier",
-    descriptionAr: "النموذج الاحترافي الأقوى — للتقارير والمهام المعقدة",
+    descriptionAr: "الأقوى والأحدث من Flash — للتقارير والمهام المعقدة",
   },
   {
     id: "gemini-3.1-flash-lite",
@@ -307,16 +307,17 @@ export const DEPRECATED_MODEL_MAP: Record<string, string> = {
   "gemini-1.5-flash-001":   "gemini-3.1-flash-lite",
   "gemini-1.5-flash-002":   "gemini-3.1-flash-lite",
   "gemini-1.5-flash-8b":    "gemini-3.1-flash-lite",
-  "gemini-1.5-pro":         "gemini-3.1-pro",
-  "gemini-1.5-pro-001":     "gemini-3.1-pro",
-  "gemini-1.5-pro-002":     "gemini-3.1-pro",
+  "gemini-1.5-pro":         "gemini-3.8-flash",
+  "gemini-1.5-pro-001":     "gemini-3.8-flash",
+  "gemini-1.5-pro-002":     "gemini-3.8-flash",
   "gemini-2.0-flash":       "gemini-3.1-flash-lite",
   "gemini-2.0-flash-001":   "gemini-3.1-flash-lite",
   "gemini-2.0-flash-lite":  "gemini-3.1-flash-lite",
   "gemini-2.5-flash":       "gemini-3.5-flash",
-  "gemini-2.5-pro":         "gemini-3.1-pro",
-  // Phantom model that was never released
-  "gemini-3.5-pro":         "gemini-3.1-pro",
+  "gemini-2.5-pro":         "gemini-3.8-flash",
+  // Phantom models that Google does not serve
+  "gemini-3.5-pro":         "gemini-3.8-flash",
+  "gemini-3.1-pro":         "gemini-3.8-flash",
   // Deprecated Nvidia alias
   "deepseek-ai/deepseek-v4-flash": "deepseek-ai/deepseek-v4-flash-0731",
   "meta/llama-3.3-70b-instruct": "meta/llama-3.2-11b-vision-instruct",
@@ -328,11 +329,11 @@ export const DEPRECATED_MODEL_MAP: Record<string, string> = {
 export function defaultGeminiModel(plan: AiPlanName, purpose: AiPurpose = "classification"): string {
   if (purpose === "voice_call") return "gemini-2.5-flash-native-audio-latest";
   if (purpose === "report" || purpose === "image") {
-    return plan === "ultra" ? "gemini-3.1-pro" : "gemini-3.5-flash";
+    return plan === "ultra" ? "gemini-3.8-flash" : "gemini-3.5-flash";
   }
   if (purpose === "stt") return "gemini-3.5-flash";
   // classification / chat / batch
-  if (plan === "ultra") return "gemini-3.1-pro";
+  if (plan === "ultra") return "gemini-3.8-flash";
   return "gemini-3.1-flash-lite";
 }
 

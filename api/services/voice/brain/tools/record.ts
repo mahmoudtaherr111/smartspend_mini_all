@@ -30,6 +30,8 @@ interface ExpenseDraftPayload {
   items: ParsedExpenseItem[];
   rawText: string;
   classificationLogId?: number;
+  /** The waiting entry (a pending clarification) this draft finishes, closed once it is saved. */
+  answers?: number;
 }
 
 interface ActionDraftPayload {
@@ -92,7 +94,16 @@ async function recordDraft(args: Record<string, unknown>, ctx: ToolContext): Pro
     ? args.items.map((item) => num((item as Record<string, unknown>)?.amount)).filter((n): n is number => n !== undefined && n > 0)
     : [];
 
-  const parsed = await ctx.app.parseExpense(ctx.identity, words);
+  // An answer to an entry left waiting from before (money_query pending) is recorded the way the app records one:
+  // what the user first typed, then the answer in brackets. The first words come from the database, not the model.
+  const clarificationId = num(args.clarification_id);
+  const waiting = clarificationId !== undefined ? await ctx.app.waitingEntry(ctx.identity, clarificationId) : null;
+  if (clarificationId !== undefined && !waiting) {
+    return { response: { ok: false, error: "not_waiting", say: "العملية دي مابقتش مستنية رد (اتسجلت أو اتقفلت). اسأله لو لسه عايز يسجلها." } };
+  }
+  const text = waiting ? `${waiting.words} (${words})` : words;
+
+  const parsed = await ctx.app.parseExpense(ctx.identity, text);
   // The parser opens a question on the home screen; the call asks it itself and closes it once recorded.
   if (parsed.clarificationId) ctx.openClarifications.push(parsed.clarificationId);
   if (parsed.decision === "clarify" || parsed.items.length === 0) {
@@ -108,7 +119,11 @@ async function recordDraft(args: Record<string, unknown>, ctx: ToolContext): Pro
   }
 
   const amounts = parsed.items.map((item) => item.amount);
-  const heard = extractSpokenNumbers(ctx.drafts.wordsSince(ctx.now().getTime() - 45_000)).map((n) => n.value);
+  // Numbers the user typed in a waiting entry are theirs as much as the ones just said.
+  const heard = [
+    ...extractSpokenNumbers(ctx.drafts.wordsSince(ctx.now().getTime() - 45_000)),
+    ...(waiting ? extractSpokenNumbers(waiting.words) : []),
+  ].map((n) => n.value);
   const unheard = heard.length ? amounts.filter((amount) => !heard.some((value) => Math.abs(value - amount) < 0.5)) : [];
   const modelDisagrees = understood.length > 0 && !sameAmounts(understood, amounts);
   if (unheard.length || modelDisagrees) {
@@ -132,7 +147,12 @@ async function recordDraft(args: Record<string, unknown>, ctx: ToolContext): Pro
     title: parsed.items.length === 1 ? "تسجيل مصروف" : `تسجيل ${operations(parsed.items.length)}`,
     lines: parsed.items.map(lineFor),
     total: parsed.items.reduce((sum, item) => sum + item.amount, 0),
-    payload: { items: parsed.items, rawText: words, classificationLogId: parsed.classificationLogId },
+    payload: {
+      items: parsed.items,
+      rawText: text,
+      classificationLogId: parsed.classificationLogId,
+      ...(waiting ? { answers: clarificationId } : {}),
+    },
   });
 
   ctx.ledger.nextBatch();
@@ -247,7 +267,8 @@ async function execute(draft: Draft, ctx: ToolContext): Promise<{ ok: boolean; m
       classificationLogId: payload.classificationLogId,
       clientRequestId: `vc:${ctx.identity.callId}:${draft.id}:${index}`.slice(0, 64),
     })));
-    for (const id of ctx.openClarifications.splice(0)) await ctx.app.dismissClarification(ctx.identity, id).catch(() => undefined);
+    const closes = [...ctx.openClarifications.splice(0), ...(payload.answers !== undefined ? [payload.answers] : [])];
+    for (const id of closes) await ctx.app.dismissClarification(ctx.identity, id).catch(() => undefined);
     if (ids.length !== payload.items.length) throw new Error("save_incomplete");
     const message = payload.items.length === 1
       ? `اتسجل ${lineFor(payload.items[0]).label} بـ ${spellAmount(payload.items[0].amount, { exact: true }).text}`
@@ -328,6 +349,7 @@ export const recordDraftTool: VoiceTool = {
           type: "array",
           items: { type: "object", properties: { amount: { type: "number" }, what: { type: "string" } }, required: ["amount"] },
         },
+        clarification_id: { type: "number", description: "Answering a waiting entry from money_query pending: its id (words = their answer)" },
       },
       required: ["words"],
     },

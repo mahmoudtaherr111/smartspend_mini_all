@@ -21,14 +21,14 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `jobs` | Scheduled job bodies | 5 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `database`, `platform` | `api-core`, `api-routers` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
-| `voice` | Voice | 41 | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `arabic-nlp`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
+| `voice` | Voice | 43 | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `arabic-nlp`, `auth`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 13 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs`, `voice` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `receipt-parsing`, `voice` | — |
 | `ingestion-parsers` | Ingestion parsers | 3 | `ai-providers`, `platform` | `api-routers` | `gemini` |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
-| `classification` | Expense classification pipeline | 33 | `ai-providers`, `arabic-nlp`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-core`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `receipt-parsing` | `gemini` |
+| `classification` | Expense classification pipeline | 33 | `ai-providers`, `arabic-nlp`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-core`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `receipt-parsing`, `voice` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers`, `voice` | — |
 | `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `database`, `finance-semantic-layer`, `ledger` | `api-routers`, `voice` | — |
 | `ai-memory` | AI memory | 12 | `ai-governance`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-routers`, `voice` | `fireworks`, `qdrant` |
@@ -264,7 +264,7 @@ Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech
 | `api/services/voice-kernel/voice-prompt.ts` | — | — | — | — |
 | `api/services/voice-kernel/voice-session-state.ts` | `platform` | — | — | — |
 | `api/services/voice-kernel/voice-tool-adapter.ts` | `ai-actions`, `ai-kernel`, `ai-memory`, `finance-semantic-layer` | — | — | — |
-| `api/services/voice/app-calls.ts` | `database` | — | `expenses`, `local_users`, `users` | `pending_clarifications` |
+| `api/services/voice/app-calls.ts` | `database` | — | `expenses`, `local_users`, `pending_clarifications`, `users` | `pending_clarifications` |
 | `api/services/voice/brain/claims.ts` | — | — | — | — |
 | `api/services/voice/brain/drafts.ts` | — | — | — | — |
 | `api/services/voice/brain/facts.ts` | — | — | — | — |
@@ -272,13 +272,15 @@ Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech
 | `api/services/voice/brain/index.ts` | `finance-semantic-layer` | — | — | — |
 | `api/services/voice/brain/instructions.ts` | — | — | — | — |
 | `api/services/voice/brain/never-kept.ts` | — | — | — | — |
+| `api/services/voice/brain/profile-questions.ts` | `ai-insights`, `arabic-nlp`, `database` | — | `user_profiles` | — |
 | `api/services/voice/brain/snapshot.ts` | `ai-insights`, `database`, `finance-semantic-layer`, `platform` | — | `ai_memory_items`, `expenses`, `local_users`, `users` | — |
 | `api/services/voice/brain/spoken.ts` | — | — | — | — |
 | `api/services/voice/brain/tools/app-help.ts` | `site-guide` | — | — | — |
 | `api/services/voice/brain/tools/market-price.ts` | `ai-providers`, `platform` | `gemini` | — | — |
-| `api/services/voice/brain/tools/memory.ts` | `ai-memory`, `database` | — | `ai_memory_items` | `ai_memory_items` |
-| `api/services/voice/brain/tools/money-query.ts` | `finance-semantic-layer`, `platform` | — | — | — |
+| `api/services/voice/brain/tools/memory.ts` | `ai-insights`, `ai-memory`, `database`, `platform` | — | `ai_memory_items` | `ai_memory_items` |
+| `api/services/voice/brain/tools/money-query.ts` | `classification`, `finance-semantic-layer`, `platform` | — | — | — |
 | `api/services/voice/brain/tools/record.ts` | `ai-actions` | — | — | — |
+| `api/services/voice/brain/tools/reports.ts` | `database`, `platform` | — | `ai_summaries`, `monthly_reports`, `pending_clarifications` | — |
 | `api/services/voice/brain/tools/think.ts` | `ai-providers`, `finance-semantic-layer` | — | — | — |
 | `api/services/voice/brain/tools/types.ts` | — | — | — | — |
 | `api/services/voice/brain/validator.ts` | `arabic-nlp` | — | — | — |

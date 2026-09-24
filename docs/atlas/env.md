@@ -26,7 +26,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `GEMINI_API_KEY` | yes | — | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/system-settings-registry.ts`, `api/services/batch-ai-service.ts`, `api/services/voice-call-service.ts`, `api/services/voice/brain/tools/market-price.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
 | `GEMINI_MODEL_FREE` | no | `gemini-3.1-flash-lite` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_PRO` | no | `gemini-3.5-flash` | `api/ai-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
-| `GEMINI_MODEL_REPORTS` | no | `gemini-3.1-pro` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
+| `GEMINI_MODEL_REPORTS` | no | `gemini-3.8-flash` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GOOGLE_CLIENT_ID` | yes | — | `api/auth-router.ts` |
 | `GOOGLE_CLIENT_SECRET` | yes | — | `api/auth-router.ts` |
 | `GOOGLE_REDIRECT_URI` | no | `http://localhost:3000/api/auth/google/callback` | `api/auth-router.ts` |

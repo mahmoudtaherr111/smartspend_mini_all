@@ -12,6 +12,7 @@ import type {
   VoiceCard,
   VoiceClientPlatform,
   VoiceEndReason,
+  VoiceWaitDetail,
 } from "@contracts/voice-protocol";
 import type { AppRouter } from "../../../api/router";
 import { primeCallAudio } from "./audio-io";
@@ -67,6 +68,8 @@ export interface CallTrace {
 export interface VoiceCallView {
   phase: CallPhase;
   activity: CallActivity;
+  /** While thinking: what it is fetching, when the server says. */
+  activityDetail: VoiceWaitDetail | null;
   minimized: boolean;
   callId: string | null;
   maxSeconds: number;
@@ -109,6 +112,7 @@ function idleView(): VoiceCallView {
   return {
     phase: "idle",
     activity: "connecting",
+    activityDetail: null,
     minimized: false,
     callId: null,
     maxSeconds: 0,

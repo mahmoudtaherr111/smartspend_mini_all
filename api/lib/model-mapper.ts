@@ -6,6 +6,24 @@ import { DEPRECATED_MODEL_MAP } from "./ai-provider-registry";
  * and safely maps them using ai-provider-registry.
  */
 
+/**
+ * Google's text models, strongest first, as the key serves them (its model list, 2026-09-24). When the one asked for
+ * is overloaded, the next answers; `gemini-3.1-pro` is not served at all and maps to the first.
+ */
+export const GEMINI_TEXT_CHAIN = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"] as const;
+
+/**
+ * The model asked for, then the lighter models of the chain (they answer fastest), then the stronger ones nearest
+ * first, so the lightest model, the free and Pro default, has somewhere to go too.
+ */
+export function geminiFallbackChain(modelName: string): string[] {
+  const first = mapModelName(modelName);
+  const at = GEMINI_TEXT_CHAIN.indexOf(first as (typeof GEMINI_TEXT_CHAIN)[number]);
+  const lighter = at >= 0 ? GEMINI_TEXT_CHAIN.slice(at + 1) : GEMINI_TEXT_CHAIN.slice(1);
+  const stronger = at >= 0 ? GEMINI_TEXT_CHAIN.slice(0, at).reverse() : GEMINI_TEXT_CHAIN.slice(0, 1);
+  return [first, ...lighter, ...stronger].filter((model, index, all) => all.indexOf(model) === index);
+}
+
 export function mapModelName(modelName: string): string {
   let normalized = String(modelName || "")
     .trim()
@@ -22,7 +40,7 @@ export function mapModelName(modelName: string): string {
     return "gemini-3.1-flash-lite";
   }
   if (normalized === "pro" || normalized === "ultra") {
-    return "gemini-3.1-pro";
+    return GEMINI_TEXT_CHAIN[0];
   }
 
   // Check deprecated model map and log warning
@@ -85,7 +103,7 @@ export function defaultNvidiaModelForPlan(plan: AiPlanName): string {
 }
 
 export function defaultGeminiModelForPlan(plan: AiPlanName): string {
-  if (plan === "ultra") return "gemini-3.1-pro";
+  if (plan === "ultra") return GEMINI_TEXT_CHAIN[0];
   if (plan === "pro") return "gemini-3.1-flash-lite";
   return "gemini-3.1-flash-lite";
 }

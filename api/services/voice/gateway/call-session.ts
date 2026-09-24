@@ -14,6 +14,7 @@ import {
   type VoiceClientMessage,
   type VoiceEndReason,
   type VoiceServerMessage,
+  type VoiceWaitDetail,
 } from "../../../../contracts/voice-protocol";
 import { createLogger } from "../../../lib/log";
 import type {
@@ -84,6 +85,8 @@ export interface CallBrain {
   /** A note that makes the model open the call, or continue it after a reconnect without greeting again. */
   openingNote(resumed: boolean, recent: TranscriptLine[]): string;
   runTool(call: ToolCallRequest, context: ToolRunContext): Promise<ToolRunOutcome>;
+  /** What the screen should say the assistant is doing while these tools run. */
+  waitDetail?(calls: ToolCallRequest[]): VoiceWaitDetail | undefined;
   /** Called with the user's words as transcribed. */
   onUserWords?(text: string): void;
   /**
@@ -158,6 +161,7 @@ export class CallSession {
   private engine: VoiceEngine | null = null;
   private channel: ClientChannel | null = null;
   private state: VoiceCallState = "connecting";
+  private stateDetail: VoiceWaitDetail | undefined;
   private status: "starting" | "live" | "reconnecting" | "ended" = "starting";
   private resumeToken = "";
   private resumeTokenHash = "";
@@ -424,7 +428,7 @@ export class CallSession {
       }
       case "tool_calls":
         this.expectReply();
-        this.setState("thinking");
+        this.setState("thinking", this.deps.brain.waitDetail?.(event.calls));
         void this.runTools(event.calls);
         return;
       case "tool_cancel":
@@ -495,6 +499,7 @@ export class CallSession {
     const results = await Promise.all(calls.map(async (call): Promise<ToolCallResult | null> => {
       this.toolCalls += 1;
       const abort = new AbortController();
+      const startedAt = Date.now();
       this.toolAborts.set(call.id, abort);
       const timeout = setTimeout(() => abort.abort(), this.deps.toolTimeoutMs ?? 12_000);
       try {
@@ -503,10 +508,18 @@ export class CallSession {
           new Promise<never>((_, reject) => abort.signal.addEventListener("abort", () => reject(new Error("tool_timeout")))),
         ]);
         if (outcome.card) this.send({ type: "card", card: outcome.card });
+        // The tool, how long it took and whether it answered; never its arguments or its answer (golden rule 10).
+        // A tool's refusal is a short code ("missing_search"), which the logger keeps; on success there is none.
+        const code = typeof outcome.response.error === "string" ? { code: outcome.response.error } : {};
+        log.info(
+          { event: "voice.tool", callId: this.callId, tool: call.name, ms: Date.now() - startedAt, ok: outcome.response.ok !== false, ...code },
+          "Tool answered",
+        );
         return { id: call.id, name: call.name, response: outcome.response, scheduling: outcome.scheduling };
       } catch (error) {
         const reason = error instanceof Error && /^[a-z_]+$/.test(error.message) ? error.message : "tool_failed";
         this.recordIncident("tool_error", { tool: call.name, reason });
+        log.warn({ event: "voice.tool_failed", callId: this.callId, tool: call.name, ms: Date.now() - startedAt, reason, err: error }, "Tool failed");
         return {
           id: call.id,
           name: call.name,
@@ -586,10 +599,11 @@ export class CallSession {
     if (cost >= budget && !this.deps.brain.awaitingConfirmation?.()) void this.end("daily_cost_cap");
   }
 
-  private setState(state: VoiceCallState): void {
-    if (this.state === state) return;
+  private setState(state: VoiceCallState, detail?: VoiceWaitDetail): void {
+    if (this.state === state && this.stateDetail === detail) return;
     this.state = state;
-    this.send({ type: "state", state });
+    this.stateDetail = detail;
+    this.send(detail ? { type: "state", state, detail } : { type: "state", state });
   }
 
   private send(message: VoiceServerMessage): void {

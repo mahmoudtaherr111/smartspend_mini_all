@@ -27,7 +27,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 | File storage | `api/services/storage/` | One driver interface over local disk or S3-compatible storage, plus the avatar service |
 | Shared contracts | `contracts/` | Input limits, plan prices, the live call's wire protocol (`contracts/voice-protocol.ts`) and shared types the web app imports |
 | Error log | `api/lib/error-logger.ts` | Classifies provider errors and records them in `api_key_errors` for the admin console |
-| Logging | `api/lib/log.ts` | The server logger. It redacts the fields that carry message text, codes, tokens and phone numbers (`text`, `body`, `code`, `token`, `phone` and others, three levels deep; a phone keeps its last four digits), and writes an error with its codes and statement but without the values of a failed query |
+| Logging | `api/lib/log.ts` | The server logger. It redacts the fields that carry message text, codes, tokens and phone numbers (`text`, `body`, `code`, `token`, `phone` and others, three levels deep; a phone keeps its last four digits, and a `code` without a run of four digits, such as an error's code or a tool's refusal, is kept), and writes an error with its codes and statement but without the values of a failed query |
 | Error reporting | `api/lib/error-reporting.ts` | Sentry, when `SENTRY_DSN` is set, under the same rule: console breadcrumbs are dropped, query strings, request bodies, cookies and credentials are removed, and a failed query's values are cut before an event leaves |
 
 ## A request, end to end

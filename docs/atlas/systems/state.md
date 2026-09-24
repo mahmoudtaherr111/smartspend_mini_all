@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (64 of 122 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (64 of 125 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 17 | — | 5 | 1 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 17 | — | 5 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | — | 6 | 2 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-23 59160a0 | 2026-09-23 59160a0 | 11 | — | 5 | — | 4 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-23 59160a0 | 2026-09-23 59160a0 | 4 | — | 5 | 2 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 11 | — | 5 | 1 | 4 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 4 | — | 5 | 3 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 6 | — | 11 | 2 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-23 797ea88 | 2026-09-23 797ea88 | 3 | — | 7 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | **1** | 1 | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 981a949 | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-18 49da160 | 2026-09-18 49da160 | 4 | — | 4 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-18 49da160 | 2026-09-18 49da160 | 9 | — | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-23 59160a0 | 2026-09-23 59160a0 | 5 | — | 2 | — | 8 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 9 | — | 4 | 1 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-23 797ea88 | 2026-09-23 797ea88 | 7 | **1** | 2 | 2 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (64 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (122 issue(s))
+## What is waiting (125 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -135,18 +135,23 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, so anything recorded offline and not yet sent is lost with the session.
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (28)
+### Gaps (31)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - Correction learning cannot be reached from the app: `api/lib/correction-rules.ts#recordCorrection` runs only in `expense.update`, which the web app does not call. `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere.
+- An entry whose question the user left unanswered stays unrecorded, and the app never shows it again: the form asks only while it is open, and `src/components/expenses/ExpenseForm.tsx` refreshes `expense.getPendingClarifications` without displaying it. Only the live call (`money_query` `pending`) and the admin's clarifications tab list them.
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY` directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
 - Saving a message does not check budget alerts as `expense.create` does, and `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
+**Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
+- A profile question the user lets pass, neither answered nor refused, is offered again in the next call: only an answer or a refusal saved through `memory answer` takes it off the list, and the call never sets the Home card's one-day pause (`user_profiles.last_asked_at`), which it only reads (`api/services/voice/brain/profile-questions.ts#nextCallQuestion`).
+
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the chat. The model id skips `mapModelName` (golden rule 9), the `chatbot_max_tokens_<plan>` settings are read but do not limit replies, and the retry time in the daily-limit error is counted to the server's midnight.
 - Memory embeddings stay off unless `ai_memory_embedding_enabled` is set to `true`, a key `api/lib/system-settings-registry.ts` does not list. The Qdrant, quantized on-disk and in-memory vector stores exported by `api/services/ai-memory/index.ts` are used only by tests.
+- A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest 10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`) and says nothing about the rest; only the period's totals are exact at any size.
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - Names given in the onboarding questions (children, partner, siblings, parents, pets, regular contacts) are saved in the profile but never copied into `user_contacts` once the profile is marked as migrated, which its first save does; `getSmartProfile` then blanks those lists, so classification prompts and reports never see them.
@@ -222,7 +227,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would show the classification numbers, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted.
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
-- `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost calculation and ledger write — has no caller. Only its route resolution is used, by `api/lib/smart-pipeline.ts`.
+- `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost calculation and ledger write — has one caller, the rebuilt voice call's `think` tool. Elsewhere only its route resolution is used, by `api/lib/smart-pipeline.ts`.
 - `api/lib/ai-provider-registry.ts` carries a model catalogue with tiers, purposes and prices, "last verified" in a comment, and nothing reads it: `isKnownModel`, `getModelEntry`, `listModels`, `resolveApiKey` and the per-plan defaults have no caller, and only `DEPRECATED_MODEL_MAP` is used. Model defaults live a second time in `api/lib/model-mapper.ts` and a third time in the fixed lists of `admin.getAvailableModels`.
 - The breaker, the route cache (one minute) and the settings cache (five minutes) are per process, so during an outage each replica learns on its own and an admin's change reaches them at different times.
 - The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat, report, SMS and voice paths do not.

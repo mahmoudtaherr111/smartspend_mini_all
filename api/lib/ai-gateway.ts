@@ -19,6 +19,7 @@ import { businessDateKey } from "./app-time";
 import { env } from "./env";
 import { createLogger } from "./log";
 import { keyRing, needsReseal, openProviderKey, sealProviderKey, type OpenedKey } from "./provider-key-crypto";
+import { defaultGeminiModelForPlan, geminiFallbackChain, mapModelName } from "./model-mapper";
 
 const log = createLogger("ai-gateway");
 
@@ -477,8 +478,11 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
   const exchangeRate = Number(sysSettings.usd_to_egp_rate || 48.5);
 
   let providerSlug = route?.provider.slug || "gemini";
-  let modelId = route?.model.modelId || (tier === "ultra" ? "gemini-3.1-pro" : "gemini-3.1-flash-lite");
   let protocol = route?.provider.protocol || "gemini";
+  // Gemini ids go through the mapper (golden rule 9), so a route or setting still naming a model Google no longer
+  // serves reaches one it does.
+  let modelId = route?.model.modelId || defaultGeminiModelForPlan(tier);
+  if (protocol === "gemini") modelId = mapModelName(modelId);
   let baseUrl = route?.provider.baseUrl || "https://generativelanguage.googleapis.com";
   let apiKey = route?.provider.apiKey || sysSettings.ai_api_key || process.env.GEMINI_API_KEY || "";
 
@@ -502,22 +506,37 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
 
   if (protocol === "gemini" || (!route && providerSlug === "gemini")) {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const geminiModel = genAI.getGenerativeModel({
-      model: modelId,
-      systemInstruction: params.systemPrompt,
-      generationConfig: {
-        maxOutputTokens: params.maxTokens || 2048,
-        temperature: params.temperature ?? 0.2,
-        responseMimeType: params.responseFormat?.type === "json_object" ? "application/json" : undefined,
-      },
-    });
-
     const userPromptContent = params.messages
       .filter((m) => m.role === "user" || m.role === "assistant")
       .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
       .join("\n\n");
 
-    const result = await geminiModel.generateContent(userPromptContent || params.userQuery || "تحليل البيانات");
+    // Google answers 503 (and sometimes 429 or 500) when a model is overloaded; a lighter model then answers instead.
+    const candidates = geminiFallbackChain(modelId);
+    let result: Awaited<ReturnType<ReturnType<GoogleGenerativeAI["getGenerativeModel"]>["generateContent"]>> | null = null;
+    for (const [index, candidate] of candidates.entries()) {
+      try {
+        result = await genAI
+          .getGenerativeModel({
+            model: candidate,
+            systemInstruction: params.systemPrompt,
+            generationConfig: {
+              maxOutputTokens: params.maxTokens || 2048,
+              temperature: params.temperature ?? 0.2,
+              responseMimeType: params.responseFormat?.type === "json_object" ? "application/json" : undefined,
+            },
+          })
+          .generateContent(userPromptContent || params.userQuery || "تحليل البيانات");
+        modelId = candidate;
+        break;
+      } catch (error) {
+        const status = (error as { status?: number }).status;
+        const overloaded = status === 429 || status === 500 || status === 503;
+        if (!overloaded || index === candidates.length - 1) throw error;
+        log.warn({ event: "ai_gateway.model_overloaded", model: candidate, next: candidates[index + 1], status }, "Model overloaded");
+      }
+    }
+    if (!result) throw new Error("no_model_answered");
     text = result.response.text();
     promptTokens = result.response.usageMetadata?.promptTokenCount || anatomy.systemPromptTokens + anatomy.userInputTokens;
     completionTokens = result.response.usageMetadata?.candidatesTokenCount || estimateTokens(text);

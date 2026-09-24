@@ -53,6 +53,9 @@ export type VoiceCallState =
   | "awaiting_confirmation"
   | "reconnecting";
 
+/** What the assistant is fetching while it thinks, so the screen can say it ("بيراجع حساباتك…"). */
+export type VoiceWaitDetail = "records" | "report" | "memory" | "thinking" | "price" | "guide" | "saving";
+
 export interface VoiceFactCard {
   kind: "fact";
   id: string;
@@ -134,7 +137,7 @@ export type VoiceServerMessage =
       /** True when this `ready` continues a call after a reconnect. */
       resumed: boolean;
     }
-  | { type: "state"; state: VoiceCallState }
+  | { type: "state"; state: VoiceCallState; detail?: VoiceWaitDetail }
   /** Live captions; shown, never stored. */
   | { type: "caption"; role: "user" | "assistant"; text: string }
   | { type: "card"; card: VoiceCard }

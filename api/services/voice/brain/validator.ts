@@ -102,20 +102,38 @@ export class SpokenNumberValidator {
     return found;
   }
 
-  /** The fact from the latest answer closest to what was said, if one is close enough to have been meant. */
+  /**
+   * The fact from the latest answer that was plainly meant: the same size and at most double what was said (a slipped
+   * digit, "خمسمية وعشرين" for 320), or its teen/tens twin ("خمستاشر" for "خمسين", 1,500 for 5,000). Anything
+   * further is recorded but not corrected, because a correction toward the wrong fact turns a right number wrong.
+   */
   private intendedFact(spoken: number): CallFact | null {
     let best: CallFact | null = null;
     let bestRatio = Infinity;
     for (const fact of this.ledger.latestBatch()) {
       if (fact.value <= 0) continue;
       const ratio = Math.max(spoken, fact.value) / Math.min(spoken, fact.value);
-      if (ratio <= 3 && ratio < bestRatio) {
+      const sameSize = Math.floor(Math.log10(spoken)) === Math.floor(Math.log10(fact.value));
+      if (((sameSize && ratio <= 2) || teenTensTwins(spoken, fact.value)) && ratio < bestRatio) {
         best = fact;
         bestRatio = ratio;
       }
     }
     return best;
   }
+}
+
+const TEEN_TENS: ReadonlyArray<[number, number]> = [[13, 30], [14, 40], [15, 50], [16, 60], [17, 70], [18, 80], [19, 90]];
+
+/** Two amounts that differ only as a heard teen and ten do: 15 and 50, 1,700 and 7,000. */
+export function teenTensTwins(a: number, b: number): boolean {
+  for (let scale = 1; scale <= 1_000_000; scale *= 10) {
+    if (a % scale !== 0 || b % scale !== 0) break;
+    const x = a / scale;
+    const y = b / scale;
+    if (TEEN_TENS.some(([teen, ten]) => (x === teen && y === ten) || (x === ten && y === teen))) return true;
+  }
+  return false;
 }
 
 /** The note that makes the model correct itself, in its own words. */

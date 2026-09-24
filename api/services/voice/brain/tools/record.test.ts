@@ -17,6 +17,8 @@ function context(parse: ParseOutcome, clock = { now: 1_000_000 }) {
     deleteExpenses: vi.fn(async (_identity, ids: number[]) => { deleted.push(ids); }),
     listBudgets: vi.fn(async () => []),
     dismissClarification: vi.fn(async (_identity, id: number) => { dismissed.push(id); }),
+    waitingEntry: vi.fn(async (_identity, id: number) => (id === 44 ? { words: "150 يوم الخميس" } : null)),
+    answerProfileQuestion: vi.fn(),
   };
   const drafts = new DraftBook(() => clock.now);
   const ctx: ToolContext = {
@@ -110,6 +112,31 @@ describe("confirm", () => {
     ]);
     expect(saved[0][0]).toMatchObject({ rawText: "دفعت ستين مواصلات وسبعين فطار", classificationLogId: 91 });
     expect(done.card).toMatchObject({ status: "executed" });
+  });
+
+  it("finishes an entry left waiting with the user's answer, and closes it only once it is saved", async () => {
+    const waitingFood: ParseOutcome = { decision: "review", items: [{ amount: 150, type: "expense", category: "أكل وشرب" }] };
+    const { ctx, app, saved, dismissed, clock } = context(waitingFood);
+    // The user answers without repeating the amount they typed back then; it is still theirs.
+    ctx.drafts.heardUser("كانت أكل");
+    const draft = await recordDraftTool.run({ words: "كانت أكل", clarification_id: 44, items: [{ amount: 150 }] }, ctx);
+    expect(app.parseExpense).toHaveBeenCalledWith(ctx.identity, "150 يوم الخميس (كانت أكل)");
+    expect(draft.response).toMatchObject({ ok: true, items: [{ say: "مية وخمسين" }] });
+    expect(dismissed).toEqual([]);
+
+    // The yes comes after the draft is read back, not within the same utterance.
+    clock.now += 4_000;
+    ctx.drafts.heardUser("آه");
+    expect((await confirmTool.run({ draft_id: draft.response.draft_id }, ctx)).response).toMatchObject({ ok: true });
+    expect(saved[0][0]).toMatchObject({ rawText: "150 يوم الخميس (كانت أكل)" });
+    expect(dismissed).toEqual([44]);
+  });
+
+  it("refuses to finish an entry that is no longer waiting", async () => {
+    const { ctx, app } = context(twoItems);
+    expect((await recordDraftTool.run({ words: "كانت أكل", clarification_id: 45 }, ctx)).response)
+      .toMatchObject({ ok: false, error: "not_waiting" });
+    expect(app.parseExpense).not.toHaveBeenCalled();
   });
 
   it("refuses a yes that changes an amount", async () => {

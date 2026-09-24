@@ -125,6 +125,7 @@ describe("VoiceCallController", () => {
     view = {
       phase: "starting",
       activity: "connecting",
+      activityDetail: null,
       minimized: false,
       callId: null,
       maxSeconds: 0,

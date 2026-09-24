@@ -216,6 +216,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice/brain/index.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/instructions.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/never-kept.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/profile-questions.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/snapshot.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/spoken.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/tools/app-help.ts` | [voice-calls](voice-calls.md) |
@@ -223,6 +224,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice/brain/tools/memory.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/tools/money-query.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/tools/record.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/tools/reports.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/tools/think.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/tools/types.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/validator.ts` | [voice-calls](voice-calls.md) |

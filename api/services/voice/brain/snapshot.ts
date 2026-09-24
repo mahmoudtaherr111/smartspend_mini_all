@@ -13,12 +13,17 @@ import { getSmartProfile } from "../../user-profile-service";
 import type { CallIdentity } from "../gateway/call-session";
 import type { FactLedger } from "./facts";
 import { honorificFor } from "./honorific";
+import { lastAskedAt, nextCallQuestion, questionLine } from "./profile-questions";
+import type { AdaptiveQuestion } from "../../adaptive-question-engine";
 import { spellDays, spellRelativeDay } from "./spoken";
+import { extractSpokenNumbers } from "./validator";
 
 export interface CallSnapshot {
   firstName: string | null;
   title: string | null;
   text: string;
+  /** The profile question the call may ask once, if any. */
+  question: AdaptiveQuestion | null;
 }
 
 const WEEKDAYS = ["الأحد", "الاتنين", "التلات", "الأربع", "الخميس", "الجمعة", "السبت"];
@@ -72,7 +77,7 @@ export async function loadCallSnapshot(identity: CallIdentity, ledger: FactLedge
   const base = { userId: identity.userId, userType: identity.userType };
   const profileSnapshot = await capture(() => getProfileSnapshot(base));
   const ctx = { ...base, salaryDay: profileSnapshot?.salaryDay };
-  const [firstName, profile, today, cycle, memory, lastDay, insights] = await Promise.all([
+  const [firstName, profile, today, cycle, memory, lastDay, insights, askedAt] = await Promise.all([
     capture(() => firstNameOf(identity)),
     capture(() => getSmartProfile(identity.userId, identity.userType)),
     capture(() => getFinanceSummary(ctx, { period: "today" })),
@@ -80,6 +85,7 @@ export async function loadCallSnapshot(identity: CallIdentity, ledger: FactLedge
     capture(() => rememberedLines(identity)),
     capture(() => lastRecordedDay(identity)),
     capture(() => getProactiveInsights({ ...base, limit: 3 })),
+    capture(() => lastAskedAt(identity.userId, identity.userType)),
   ]);
 
   const todayKey = businessDateKey(now);
@@ -120,7 +126,15 @@ export async function loadCallSnapshot(identity: CallIdentity, ledger: FactLedge
   }
   if (memory?.length) {
     lines.push("من المكالمات والمحادثات اللي فاتت:");
-    for (const line of memory) lines.push(`- ${line}`);
+    for (const line of memory) {
+      lines.push(`- ${line}`);
+      // What the user told us before may be said back ("بتحوش خمس آلاف كل شهر"); it is theirs, not a wrong number.
+      for (const number of extractSpokenNumbers(line)) ledger.noteUserValue(number.value);
+    }
   }
-  return { firstName, title, text: lines.join("\n") };
+  const question = profile ? nextCallQuestion(profile.onboardingAnswers ?? {}, askedAt ?? null, now) : null;
+  if (question) {
+    lines.push(`حاجة لسه التطبيق مايعرفهاش (اسألها مرة واحدة بس، لما يخلص اللي كلّمك عشانه): ${questionLine(question)}.`);
+  }
+  return { firstName, title, text: lines.join("\n"), question };
 }

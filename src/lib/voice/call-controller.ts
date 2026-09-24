@@ -230,7 +230,7 @@ export class VoiceCallController {
         }
         if (this.listeningTimer) clearTimeout(this.listeningTimer);
         if (message.state === "thinking") this.closeCaption();
-        this.patch({ activity: message.state });
+        this.patch({ activity: message.state, activityDetail: message.detail ?? null });
         return;
       case "caption":
         this.addCaption(message.role, message.text);
@@ -259,7 +259,7 @@ export class VoiceCallController {
       this.listeningTimer = setTimeout(() => this.showWhenPlayed(state), this.player.bufferedMs + 30);
       return;
     }
-    if (!this.detector.speaking) this.patch({ activity: state });
+    if (!this.detector.speaking) this.patch({ activity: state, activityDetail: null });
   }
 
   private showNotice(notice: CallNotice, forMs: number): void {

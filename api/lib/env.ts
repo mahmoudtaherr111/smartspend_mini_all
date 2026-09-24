@@ -24,7 +24,7 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().min(1),
   GEMINI_MODEL_FREE: z.string().default("gemini-3.1-flash-lite"),
   GEMINI_MODEL_PRO: z.string().default("gemini-3.5-flash"),
-  GEMINI_MODEL_REPORTS: z.string().default("gemini-3.1-pro"),
+  GEMINI_MODEL_REPORTS: z.string().default("gemini-3.8-flash"),
   GROQ_API_KEY: z.string().optional(),
   FIREWORKS_API_KEY: z.string().optional(),
   NVIDIA_API_KEY: z.string().optional(),

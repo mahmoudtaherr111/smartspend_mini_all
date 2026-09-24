@@ -13,3 +13,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0003](0003-local-first-classification.md) | Local-first classification; a model only chooses categories |
 | [0004](0004-commercial-module-scope.md) | Scope of the commercial (B2B) module |
 | [0005](0005-provider-key-ring.md) | Provider keys: a key ring over the existing format, resealed on load |
+| [0006](0006-gemini-model-chain.md) | Gemini models: a chain of served text models, and the plain Live model for calls |

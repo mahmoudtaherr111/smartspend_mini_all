@@ -4,6 +4,7 @@
  * to another server.
  */
 import { getProfileSnapshot } from "../../finance-semantic-layer";
+import type { VoiceWaitDetail } from "../../../../contracts/voice-protocol";
 import type { CallBrain, CallIdentity, SpeechCheck } from "../gateway/call-session";
 import { DONE_CLAIM_NOTE, DoneClaimCheck } from "./claims";
 import { DraftBook } from "./drafts";
@@ -83,6 +84,17 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     },
 
     openingNote,
+
+    waitDetail(calls) {
+      const call = calls[0];
+      if (!call) return undefined;
+      if (call.name === "money_query") return call.args?.metric === "report" ? "report" : "records";
+      const byTool: Record<string, VoiceWaitDetail> = {
+        memory: "memory", think: "thinking", market_price: "price", app_help: "guide",
+        record_draft: "saving", change_draft: "saving", confirm: "saving", cancel: "saving",
+      };
+      return byTool[call.name];
+    },
 
     async runTool(call, runContext) {
       const tool = tools.get(call.name);

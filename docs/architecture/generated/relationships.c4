@@ -404,6 +404,7 @@ model {
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.auth
+  smartspend.api.modules.voice -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.site-guide
@@ -411,9 +412,12 @@ model {
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.ai_action_memory
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.ai_conversation_summaries
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.ai_memory_items
+  smartspend.api.modules.voice -[reads]-> smartspend.mysql.ai_summaries
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.financial_goals
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.local_users
+  smartspend.api.modules.voice -[reads]-> smartspend.mysql.monthly_reports
+  smartspend.api.modules.voice -[reads]-> smartspend.mysql.pending_clarifications
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.users

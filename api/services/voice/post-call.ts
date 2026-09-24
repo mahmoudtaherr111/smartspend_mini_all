@@ -236,7 +236,6 @@ const databaseDeps: PostCallDeps = {
     const answer = await askTextModel({
       modelSetting: "voice_memory_model",
       defaultModel: "gemini-3.8-flash",
-      fallbackModels: ["gemini-3.5-flash", "gemini-3.1-flash-lite"],
       system: MEMORY_SYSTEM,
       prompt,
       json: true,

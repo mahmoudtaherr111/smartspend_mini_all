@@ -96,6 +96,11 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
         }));
     },
 
+    async answerProfileQuestion(identity, key, value, skipped) {
+      const caller = await callerFor(identity);
+      await caller.profile.submitOnboardingAnswer({ key, value: skipped ? undefined : (value as never), skipped });
+    },
+
     async dismissClarification(identity, clarificationId) {
       await db.update(pendingClarifications).set({ status: "resolved" }).where(and(
         eq(pendingClarifications.id, clarificationId),
@@ -103,6 +108,20 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
         eq(pendingClarifications.userType, identity.userType),
         eq(pendingClarifications.status, "pending"),
       ));
+    },
+
+    async waitingEntry(identity, clarificationId) {
+      const [row] = await db
+        .select({ words: pendingClarifications.originalText })
+        .from(pendingClarifications)
+        .where(and(
+          eq(pendingClarifications.id, clarificationId),
+          eq(pendingClarifications.userId, identity.userId),
+          eq(pendingClarifications.userType, identity.userType),
+          eq(pendingClarifications.status, "pending"),
+        ))
+        .limit(1);
+      return row ? { words: String(row.words ?? "") } : null;
     },
   };
 }

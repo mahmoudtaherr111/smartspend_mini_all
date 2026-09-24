@@ -128,8 +128,9 @@ seconds.
 3. `api/services/voice/gateway/call-session.ts#CallSession` builds the call's brain
    (`api/services/voice/brain/index.ts#createCallBrain`): the snapshot (`api/services/voice/brain/snapshot.ts`: the Cairo day, name and a
    title from the profession (`api/services/voice/brain/honorific.ts`), today's and the salary cycle's spending, days to payday, the last
-   recorded day, one observation, up to five remembered things), the instructions (`api/services/voice/brain/instructions.ts`, kept short
-   because they are billed every turn) and nine tools. It connects the engine
+   recorded day, one observation, up to five remembered things, and the next profile question the app has no answer
+   to, from `api/services/voice/brain/profile-questions.ts`), the instructions
+   (`api/services/voice/brain/instructions.ts`, kept short because they are billed every turn) and nine tools. It connects the engine
    (`api/services/voice/engine/gemini-live.ts#GeminiLiveEngine`): input and output transcription on, session
    resumption, a context window of 16k tokens trimmed to 8k, tools NON_BLOCKING, the key in a header, and the second
    key when the first cannot open a session, and Google's own end-of-turn detection set to wait a full second. Then it
@@ -138,7 +139,11 @@ seconds.
    `audioStreamEnd` so the model answers without waiting for silence. The model's 24 kHz audio, live captions,
    the state (listening, thinking, speaking, awaiting confirmation) and cards come back. Captions are shown, never
    stored. From a tool call until the model starts speaking its answer the state stays "thinking" (for 8 seconds at
-   most), instead of showing "listening" while the answer is prepared.
+   most), instead of showing "listening" while the answer is prepared. The state carries what the call is waiting on
+   (`VoiceWaitDetail`: records, a report, memory, a calculation, a price, the guide, a draft), named by
+   `waitDetail` in the brain from the tools called, so the screen can say "بيراجع حساباتك…" or "بيجيب السعر…".
+   Each tool call is logged with its name, how long it took, whether it answered and a refusal's short code
+   (`voice.tool`), never its arguments or its answer.
 5. A dropped app does not end the call: the engine is closed with its resumption handle kept, the state goes to
    Redis, and for 45 seconds a `hello` with the resume token continues the call on any server, which reconnects the
    engine on the handle (or a fresh session with the last turns in its note). A server that lost a call to another
@@ -153,11 +158,11 @@ seconds.
 ### The tools
 | Tool | What it does |
 | --- | --- |
-| `money_query` | Any figure from the finance semantic layer: totals (by category, person or merchant), where the money went, a comparison with the same number of days of the previous period, the latest transactions, wallet balances (said to be as recorded, not a live statement), budgets (`budget.list`) and goals. Each result carries the facts with their spoken form, a note on missing data, and a card |
-| `record_draft` | Parses what the user says they spent or received through `ai.parseExpense`, checks the amounts against what the model understood and against the numbers heard from the user, and drafts; a disagreement asks about that number alone ("خمستاشر ولا خمسين؟") |
+| `money_query` | Any figure from the finance semantic layer, one call per question: totals (by category, person or merchant), where the money went, a comparison with the same number of days of the previous period and which categories drove it, the latest transactions, why one transaction got its category (found by a word from it, a category or its amount), what a category counts, a month's report already written (below), whether an amount is affordable (the month so far, the wallet total and the active goals, for `think` to judge), wallet balances (said to be as recorded, not a live statement), budgets (`budget.list`), goals, and the entries still waiting for the user's answer (below). Looking up a transaction searches the last 90 days unless a period is named. Categories are said in Arabic. Each result carries the facts with their spoken form, a note on missing data, and a card |
+| `record_draft` | Parses what the user says they spent or received through `ai.parseExpense`, checks the amounts against what the model understood and against the numbers heard from the user, and drafts; a disagreement asks about that number alone ("خمستاشر ولا خمسين؟"). With a `clarification_id` it finishes an entry left waiting: the words the user first typed, read from the database, with their answer in brackets, joined as `expense.answerClarification` joins them; the numbers of those first words count as heard from the user, and the entry is closed only when that draft is confirmed |
 | `change_draft` | Drafts a goal, budget, wallet, profile detail (never age or gender) or recategorization through the action runtime, or undoing what this call recorded |
 | `confirm` / `cancel` | Executes or drops a draft through the gate below; expenses are saved with `expense.batchCreate` with `clientRequestId` `vc:<call>:<draft>:<n>`, so a retry never saves twice |
-| `memory` | Searches the AI memory, remembers what the user asks it to (never age or gender), forgets a memory by id |
+| `memory` | Searches the AI memory, remembers what the user asks it to (never age or gender), forgets a memory by id, lists what the app knows when asked ("إنت عارف عني إيه": job, payday, income, goal, monthly debt payment, the eight latest memories, and the screen where they can be seen and deleted), and saves the answer to the call's profile question, or its refusal, through `profile.submitOnboardingAnswer` once the answer fits the question's type |
 | `app_help` | Steps from the site guide, or says the guide has nothing, with what the call can and cannot do |
 | `think` | Hard questions go to a text model through `executeAiGateway` (purpose `report`) with the user's numbers; numbers it returns survive only if they come from the data, from the user, or one step of arithmetic on them |
 | `market_price` | Gold or currency prices in Egypt from a text model with Google Search (`voice_price_model`), within sane bounds, cached 30 minutes for everyone, with source and time |
@@ -165,13 +170,28 @@ seconds.
 The tools reach the app through `api/services/voice/app-calls.ts#createVoiceAppCalls`, which calls the app's own
 tRPC procedures as the user, so a spoken expense is parsed, saved and undone exactly like a typed one.
 
+What was already written is read, not worked out again. A month's report (last month unless one is named) is the
+month's figures and three largest categories from the finance layer, plus the report the app stored for that month:
+`api/services/voice/brain/tools/reports.ts#readStoredReport` takes the AI report of the analysis tab (`ai_summaries`,
+period `monthly`), else the month-end job's `monthly_reports` row, and hands the call its first three points (140
+characters each, without markdown) with the Cairo date it was written; numbers the report states may be said back.
+A month without one says so. The same file reads the entries waiting for the user's answer in `pending_clarifications`
+(the question and the words first typed, newest first). Nothing else in the app lists them once the form that asked
+is closed, so the call can offer to finish one through `record_draft`.
+Finance answers come from the finance layer's per-user Redis cache when it holds them (see the
+[AI Center](ai-center.md#the-finance-semantic-layer)); every result is kept to a few facts because the live model
+is billed again for it on every later turn.
+
 ### The checks
 - **Numbers said.** `api/services/voice/brain/validator.ts` reads the numbers in the assistant's transcribed speech
   with `api/lib/arabic-number-parser.ts`. A money number that matches no fact of the call
   (`api/services/voice/brain/facts.ts`), no rounding of one and nothing the user said is recorded as a
   `spoken_number_mismatch` incident; when the latest tool answer holds the fact it was meant to be, a note makes the
-  model correct itself at once (at most once a turn and three times a call). Amounts are spoken as
-  `api/services/voice/brain/spoken.ts` writes them ("تمن آلاف وربعمية", "حوالي خمستاشر ألف").
+  model correct itself at once (at most once a turn and three times a call). The fact it was meant to be must have the
+  same number of digits and be at most twice or half the number said, or be its teen-and-tens twin (15 and 50, heard
+  alike), so a number is never "corrected" into an unrelated figure. Numbers in the remembered things the call starts
+  with, and the income and debt payment `memory list` reads, count as the user's own. Amounts are spoken as `api/services/voice/brain/spoken.ts` writes them
+  ("تمن آلاف وربعمية", "حوالي خمستاشر ألف").
 - **Writes.** `api/services/voice/brain/drafts.ts#DraftBook`: only the latest pending draft, within two minutes, and
   only after a tap on its card or the user's own yes said after it was presented, with no new number and no "لأ";
   "تمام" said before the draft is not consent.
@@ -199,9 +219,10 @@ dropped and the status is `failed`. The `voice-call-memory` job (every ten minut
 calls still pending and marks `expired` those whose words are gone after an hour.
 
 The model is `voice_memory_model` (default `gemini-3.8-flash`), called directly through
-`api/services/voice/text-model.ts#askTextModel` with the call's keys, then `gemini-3.5-flash` and
-`gemini-3.1-flash-lite` when it is overloaded (Google answers 503 during demand spikes). It does not use the AI
-gateway's routes. The next call's snapshot reads these memories, and the memory screen labels a call's summary
+`api/services/voice/text-model.ts#askTextModel` with the call's keys, then the other models of the shared chain
+(`api/lib/model-mapper.ts#geminiFallbackChain`: `gemini-3.5-flash-lite`, then `gemini-3.1-flash-lite`) when it is
+overloaded or does not answer in time (Google answers 503 during demand spikes). It does not use the AI gateway's
+routes. The next call's snapshot reads these memories, and the memory screen labels a call's summary
 "ملخص مكالمة"; the end screen of a call opens that screen.
 
 ### In the app
@@ -239,7 +260,8 @@ gateway's routes. The next call's snapshot reads these memories, and the memory 
   45 seconds is closed, which stops the meter and holds the call for the app like any drop. Hanging up waits up to
   4 seconds for the server's summary.
 - **The screen** (`src/components/voice/VoiceCallScreen.tsx`, cards in `src/components/voice/VoiceCallCards.tsx`): what the call is doing
-  (connecting, listening, the user speaking, thinking, speaking, waiting for consent, bringing the line back), an orb
+  (connecting, listening, the user speaking, thinking and what it is waiting on, speaking, waiting for consent,
+  bringing the line back), an orb
   that follows the voices, what was said as captions (on by default, can be hidden, never stored), the cards (a
   figure with its period and what it leaves out, a draft with confirm and cancel buttons, guide steps with a button
   to the screen, a price with its source and time), typing instead of speaking, mute, and hang up. A refused
@@ -266,7 +288,10 @@ gateway's routes. The next call's snapshot reads these memories, and the memory 
 | Rebuilt call: the socket, resume, time and cost limits, checkpoints | `api/services/voice/gateway/` | `api/services/voice/gateway/gateway.test.ts` |
 | Rebuilt call: the connection to Gemini Live | `api/services/voice/engine/gemini-live.ts` | `api/services/voice/engine/gemini-live.test.ts` |
 | Rebuilt call: instructions, snapshot, how numbers are spoken | `api/services/voice/brain/instructions.ts`, `api/services/voice/brain/snapshot.ts`, `api/services/voice/brain/spoken.ts` | `api/services/voice/brain/spoken.test.ts` |
-| Rebuilt call: the tools | `api/services/voice/brain/tools/`, and `api/services/voice/app-calls.ts` for the procedures they call | `api/services/voice/brain/tools/*.test.ts` |
+| Rebuilt call: the tools | `api/services/voice/brain/tools/`, and `api/services/voice/app-calls.ts` for the procedures they call | `api/services/voice/brain/tools/*.test.ts`; `api/services/voice/brain/tools/declarations.test.ts` holds every field typed and all declarations under 6,500 characters |
+| Rebuilt call: the stored reports and waiting questions it reads | `api/services/voice/brain/tools/reports.ts` | `api/services/voice/brain/tools/reports.test.ts` |
+| Rebuilt call: which profile questions a call may ask, and how an answer is checked | `api/services/voice/brain/profile-questions.ts` | `api/services/voice/brain/profile-questions.test.ts` |
+| Rebuilt call: what the screen says while a tool runs | `waitDetail` in `api/services/voice/brain/index.ts`, `WAITING` in `src/components/voice/VoiceCallScreen.tsx` | |
 | Rebuilt call: the number check and the confirmation gate | `api/services/voice/brain/validator.ts`, `api/services/voice/brain/drafts.ts` | `api/services/voice/brain/validator.test.ts`, `api/services/voice/brain/drafts.test.ts` |
 | Messages between the app and the server | `contracts/voice-protocol.ts` | `tests/voice-protocol.test.ts` |
 | Rebuilt call: what is remembered after a call, and what never is | `api/services/voice/post-call.ts`, `api/services/voice/brain/never-kept.ts`, the `voice_memory_model` setting | `api/services/voice/post-call.test.ts` |
@@ -293,7 +318,8 @@ words deleted, a call another server took, words already gone, a call with almos
 call resumed on its handle, a wrong resume token, a socket gone silent, the grace period, the time limit, and
 "thinking" held from a tool call until the answer is spoken);
 `api/services/voice/engine/gemini-live.test.ts` (setup, key fallback, GoAway, reconnects); the tests in
-`api/services/voice/brain/` and `api/services/voice/brain/tools/`;
+`api/services/voice/brain/` and `api/services/voice/brain/tools/` (among them the number check leaving an unrelated
+figure alone, the profile questions and their answers, the stored reports, and every kind of `money_query`);
 `api/services/entitlements/voice.test.ts` and `tests/voice-protocol.test.ts`. In the app, `src/lib/voice/` tests the
 resampler (a 12 kHz hiss removed, blocks of any size), the speech detector (pre-roll, pauses, the two hangovers,
 the assistant's own voice, a noise that stays), playback, the line (resume with the latest token, giving up, a silent
@@ -326,6 +352,10 @@ Checked against the code; each one names where it lives.
    (`api/lib/security-headers.ts`, `script-src` without `blob:`) blocks it. The rebuilt call serves its worklet as a file.
 9. **Debt.** The old call screen shows its technical "Voice trace" panel to every user
    (`src/components/ai/AIVoiceCall.tsx#VoiceTracePanel`); the rebuilt call shows its trace to admins only.
+10. **Gap.** A profile question the user lets pass, neither answered nor refused, is offered again in the next call:
+    only an answer or a refusal saved through `memory answer` takes it off the list, and the call never sets the
+    Home card's one-day pause (`user_profiles.last_asked_at`), which it only reads
+    (`api/services/voice/brain/profile-questions.ts#nextCallQuestion`).
 
 ## Related systems
 - [AI Center](ai-center.md): the finance semantic layer, AI memory and action runtime the tools call, and the page

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FactLedger } from "./facts";
-import { correctionNote, extractSpokenNumbers, SpokenNumberValidator } from "./validator";
+import { correctionNote, extractSpokenNumbers, SpokenNumberValidator, teenTensTwins } from "./validator";
 
 function setup(facts: Array<[string, number]>) {
   const ledger = new FactLedger();
@@ -51,6 +51,21 @@ describe("SpokenNumberValidator", () => {
     const mismatch = validator.addAssistantWords("وعلى السنة ده حوالي عشرين ألف جنيه تقريبا.");
     expect(mismatch).toMatchObject({ spoken: 20_000, intended: null });
     expect(validator.shouldCorrect(mismatch!)).toBe(false);
+  });
+
+  it("does not correct toward a fact that is far from what was said", () => {
+    const { validator } = setup([["التقدم في الهدف", 1815]]);
+    const mismatch = validator.addAssistantWords("بتحوش خمس آلاف جنيه كل شهر للعربية.");
+    expect(mismatch).toMatchObject({ spoken: 5000, intended: null });
+    expect(validator.shouldCorrect(mismatch!)).toBe(false);
+  });
+
+  it("knows a heard teen from a ten", () => {
+    expect(teenTensTwins(15, 50)).toBe(true);
+    expect(teenTensTwins(1500, 5000)).toBe(true);
+    expect(teenTensTwins(170, 7000)).toBe(false);
+    const { validator } = setup([["مصروف المواصلات", 50]]);
+    expect(validator.addAssistantWords("صرفت خمستاشر جنيه مواصلات بس.")).toMatchObject({ spoken: 15, intended: { value: 50 } });
   });
 
   it("lets the assistant repeat what the user said", () => {

@@ -146,11 +146,17 @@ the finance caches are cleared.
   business day. Chart buckets (`api/services/finance-semantic-layer/row-aggregators.ts`) and the dates of
   transactions in facts (`api/services/finance-semantic-layer/resolvers.ts`) use the same business day.
 - Categories are matched through the category registry (`api/services/finance-semantic-layer/category-matcher.ts`).
+- A period's totals (`getFinanceSummary`) are one SQL aggregate over `expenses`, so they hold for any number of
+  entries. Breakdowns, lookups and category totals read the period's entries instead: only the columns they use, and
+  the newest 10,000 at most (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Both cover the
+  personal ledger only, as Home does: an expense with a `business_id` belongs to that business.
 - Results are cached per user (`api/services/finance-semantic-layer/cache.ts#withFinanceCache`): a minute for today,
   ten minutes for yesterday, an hour otherwise, a minute for wallet balances and five minutes for goals and the
   profile snapshot. After writing, the expense, receipt and bank-message routers, the budget, goal and business
   routers and the action runtime bump the user's generation (`invalidateFinanceUserCache`, also exported as
-  `bumpFinanceCacheGen`), which drops these results and the expense caches.
+  `bumpFinanceCacheGen`), which drops these results and the expense caches. The keys also carry a schema version
+  (`CACHE_SCHEMA_VERSION` in `api/services/finance-semantic-layer/cache.ts`, with the category taxonomy's version),
+  raised whenever a result's shape or meaning changes, so a deploy never serves an older kind of result.
 - The same layer serves the voice call's tools and prefetch, and the monthly report, month comparison and yearly
   summary of [insights](insights.md), including its WhatsApp monthly report job.
 
@@ -209,6 +215,9 @@ Checked against the code; each one names where it lives.
    `api/services/action-runtime/extended-actions.ts` leaves them out, so the undo code for them is never reached.
 7. **Bug.** When the kernel throws, the user sees the same message as when an operator turned the assistant off.
 8. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
+9. **Gap.** A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest
+   10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`) and says nothing about the rest; only
+   the period's totals are exact at any size.
 
 ## Related systems
 - [Live voice assistant](voice-calls.md): uses the finance layer, memory and action runtime from a call.

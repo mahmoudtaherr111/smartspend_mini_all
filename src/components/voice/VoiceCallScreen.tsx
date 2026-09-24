@@ -32,6 +32,7 @@ import {
   type CallEnding,
   type VoiceCallView,
 } from "@/lib/voice/call-store";
+import type { VoiceWaitDetail } from "@contracts/voice-protocol";
 import { VoiceCallCard } from "./VoiceCallCards";
 
 const ACTIVITY: Record<CallActivity, string> = {
@@ -43,6 +44,21 @@ const ACTIVITY: Record<CallActivity, string> = {
   awaiting_confirmation: "مستني موافقتك",
   reconnecting: "بنرجّع الخط…",
 };
+
+/** What it is fetching while it thinks. */
+const WAITING: Record<VoiceWaitDetail, string> = {
+  records: "بيراجع حساباتك…",
+  report: "بيفتح تقرير الشهر…",
+  memory: "بيفتكر…",
+  thinking: "بيحسبها…",
+  price: "بيجيب السعر…",
+  guide: "بيبص في دليل التطبيق…",
+  saving: "بيجهّز التسجيل…",
+};
+
+function activityLabel(view: VoiceCallView): string {
+  return view.activity === "thinking" && view.activityDetail ? WAITING[view.activityDetail] : ACTIVITY[view.activity];
+}
 
 const END_REASON: Partial<Record<CallEnding["reason"], string>> = {
   time_limit: "خلص وقت المكالمة.",
@@ -343,7 +359,7 @@ function LiveCall({ view, onOpenRoute }: { view: VoiceCallView; onOpenRoute(rout
       <div className="flex flex-col items-center gap-2 pb-2 pt-2">
         <CallOrb activity={view.activity} live={live} />
         <p className="text-sm font-medium" aria-live="polite">
-          {ACTIVITY[view.activity]}
+          {activityLabel(view)}
         </p>
       </div>
 
@@ -435,7 +451,7 @@ function MiniBar({ view }: { view: VoiceCallView }) {
       <div className="pointer-events-auto mt-2 flex items-center gap-1 rounded-full bg-emerald-600 py-1 pe-1 ps-3 text-white shadow-lg">
         <button type="button" className="flex items-center gap-2 py-1.5 text-sm" onClick={() => voiceCall.expand()}>
           <span className={cn("h-2 w-2 rounded-full bg-white", view.phase === "live" ? "animate-pulse" : "opacity-50")} />
-          <span>{ACTIVITY[view.activity]}</span>
+          <span>{activityLabel(view)}</span>
           <span className="font-mono text-xs opacity-90" dir="ltr">
             {clock(connectedSeconds(view.meter))}
           </span>

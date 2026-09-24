@@ -47,6 +47,10 @@ export interface VoiceAppCalls {
   listBudgets(identity: CallIdentity): Promise<BudgetStatus[]>;
   /** A question the parser opened for the home screen that the call has answered itself. */
   dismissClarification(identity: CallIdentity, clarificationId: number): Promise<void>;
+  /** The words of an entry still waiting for the user's answer, when it is theirs and still waiting. */
+  waitingEntry(identity: CallIdentity, clarificationId: number): Promise<{ words: string } | null>;
+  /** The user's answer to a profile question, saved as a tap on the Home card would save it. */
+  answerProfileQuestion(identity: CallIdentity, key: string, value: unknown, skipped: boolean): Promise<void>;
 }
 
 export interface ToolContext {

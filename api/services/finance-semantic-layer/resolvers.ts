@@ -1,5 +1,5 @@
 import type { InferSelectModel } from "drizzle-orm";
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { classificationLogs, financialGoals, expenses, userContacts, userProfiles, userWallets } from "../../../db/schema";
 import { db } from "../../queries/connection";
 import type { Artifact, DataNeed, DataNeedKind, ResolvedFact } from "../ai-kernel/types";
@@ -7,7 +7,6 @@ import { collectFinanceCacheTrace, financeCacheKey, financeCacheTtl, withFinance
 import { canonicalCategoryForRow, getCategoryAliases, displayFinanceCategory } from "./category-matcher";
 import { createFinanceChartArtifact } from "./chart-artifacts";
 import {
-  aggregateFinanceSummary,
   amountOf,
   buildBreakdown,
   buildChartData,
@@ -39,7 +38,24 @@ import type {
   ResolvedFinancePeriod,
 } from "./types";
 
-type ExpenseRow = InferSelectModel<typeof expenses>;
+/** The columns the layer reads from an expense; parsed metadata and bookkeeping columns stay in MySQL. */
+const ROW_COLUMNS = {
+  id: expenses.id,
+  type: expenses.type,
+  amount: expenses.amount,
+  category: expenses.category,
+  subCategory: expenses.subCategory,
+  description: expenses.description,
+  rawText: expenses.rawText,
+  placeHint: expenses.placeHint,
+  paymentMethod: expenses.paymentMethod,
+  contactId: expenses.contactId,
+  date: expenses.date,
+};
+type ExpenseRow = Pick<InferSelectModel<typeof expenses>, keyof typeof ROW_COLUMNS>;
+
+/** The personal ledger, as Home counts it: the expenses of a business (the B2B module) are that business's own. */
+const personalLedger = () => or(isNull(expenses.businessId), eq(expenses.businessId, 0));
 type GoalRow = InferSelectModel<typeof financialGoals>;
 type WalletRow = InferSelectModel<typeof userWallets>;
 
@@ -118,23 +134,27 @@ function makeFact(
   };
 }
 
+/** Rows a breakdown may read; totals never load rows (getFinanceSummary aggregates in MySQL). */
+const ROW_LIMIT = 10_000;
+
 async function loadRowsForPeriod(
   ctx: FinanceContext,
   period: ResolvedFinancePeriod,
 ): Promise<ExpenseRow[]> {
   return db
-    .select()
+    .select(ROW_COLUMNS)
     .from(expenses)
     .where(
       and(
         eq(expenses.userId, ctx.userId),
         eq(expenses.userType, ctx.userType),
+        personalLedger(),
         gte(expenses.date, period.startDate),
         lte(expenses.date, period.endDate),
       ),
     )
     .orderBy(desc(expenses.date))
-    .limit(2000);
+    .limit(ROW_LIMIT);
 }
 
 function resolveInputFromNeed(need: DataNeed): FinancePeriodInput {
@@ -167,34 +187,45 @@ export async function getFinanceSummary(
   const key = financeCacheKey(ctx.userId, ctx.userType, "summary", period.key);
 
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
-    // SQL Aggregation Fast Path: compute totals in MySQL for precision
-    const { sql } = await import("drizzle-orm");
-    const [sqlTotals] = await db
+    // One aggregate in MySQL, without loading the rows: exact at any size (a year of forwarded bank messages is
+    // thousands of rows), and the same totals the Home screen's daily rollups add up to.
+    const sum = (type: string) =>
+      sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = ${type} THEN ${expenses.amount} ELSE 0 END), 0)`;
+    const count = (type: string) => sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = ${type} THEN 1 ELSE 0 END), 0)`;
+    const [totals] = await db
       .select({
-        totalIncome: sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = 'income' THEN ${expenses.amount} ELSE 0 END), 0)`,
-        totalExpense: sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = 'expense' THEN ${expenses.amount} ELSE 0 END), 0)`,
-        count: sql<number>`COUNT(*)`,
+        income: sum("income"),
+        expense: sum("expense"),
+        transfers: sum("transfer"),
+        investments: sum("investment"),
+        all: sql<string>`COUNT(*)`,
+        incomeCount: count("income"),
+        expenseCount: count("expense"),
       })
       .from(expenses)
       .where(
         and(
           eq(expenses.userId, ctx.userId),
           eq(expenses.userType, ctx.userType),
+          personalLedger(),
           gte(expenses.date, period.startDate),
           lte(expenses.date, period.endDate),
         ),
       );
-
-    // Load rows for category breakdown (needs per-row normalization)
-    const rows = await loadRowsForPeriod(ctx, period);
-    const fullSummary = aggregateFinanceSummary(rows, period);
-
-    // Override totals with precise SQL-computed values
-    fullSummary.totalIncome = numeric(sqlTotals.totalIncome);
-    fullSummary.totalExpense = numeric(sqlTotals.totalExpense);
-    fullSummary.transactionCount = Number(sqlTotals.count);
-
-    return fullSummary;
+    const totalIncome = numeric(totals.income);
+    const totalExpense = numeric(totals.expense);
+    return {
+      period,
+      totalIncome,
+      totalExpense,
+      totalTransfers: numeric(totals.transfers),
+      totalInvestments: numeric(totals.investments),
+      netFlow: totalIncome - totalExpense,
+      transactionCount: numeric(totals.all),
+      expenseCount: numeric(totals.expenseCount),
+      incomeCount: numeric(totals.incomeCount),
+      dailyAverageExpense: Math.round((totalExpense / Math.max(1, period.daysElapsed)) * 100) / 100,
+    };
   });
 }
 
