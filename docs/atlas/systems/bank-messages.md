@@ -14,11 +14,12 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 flowchart LR
   subgraph g_screens["Screens"]
     page_BankSyncPage["BankSyncPage screen"]
+    screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
     http__api_sms["HTTP /api/sms/… · 10 routes"]
-    router_profile["profile API · 4 procedures"]
+    router_profile["profile API · 7 procedures"]
   end
   subgraph g_modules["Code modules"]
     mod_ingestion_parsers["Ingestion parsers"]
@@ -35,27 +36,34 @@ flowchart LR
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_ai_center[["AI Center (system)"]]
   sys_ai_platform[["AI providers and usage limits (system)"]]
+  sys_expense_capture[["Recording spending (system)"]]
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
   http__api_sms --> mod_ingestion_parsers
   http__api_sms --> sys_accounts
   http__api_sms --> sys_ai_center
-  http__api_sms --> sys_money
   http__api_sms --> sys_platform
   http__api_sms -.-> tbl_local_users
   http__api_sms -.-> tbl_users
-  http__api_sms ==> tbl_expenses
   http__api_sms ==> tbl_raw_sms_events
   http__api_sms ==> tbl_webhook_tokens
   mod_ingestion_parsers --> ext_gemini
   mod_ingestion_parsers --> sys_ai_platform
+  mod_ingestion_parsers --> sys_expense_capture
+  mod_ingestion_parsers --> sys_money
   mod_ingestion_parsers --> sys_platform
+  mod_ingestion_parsers ==> tbl_expenses
+  mod_ingestion_parsers ==> tbl_raw_sms_events
   mod_web_bank_sync --> sys_web_app
   page_BankSyncPage --> router_profile
+  router_profile --> mod_ingestion_parsers
+  router_profile --> sys_ai_center
+  router_profile --> sys_expense_capture
   router_profile --> sys_platform
   router_profile -.-> tbl_raw_sms_events
   router_profile ==> tbl_webhook_tokens
+  screens_money --> router_profile
   screens_web_app --> router_profile
 ```
 
@@ -63,7 +71,7 @@ flowchart LR
 
 ### a bank message forwarded from a phone
 
-The Android companion or an iOS Shortcut posts message text with the user’s webhook token. The route resolves the token, stores the raw message, parses it with the rule parser and falls back to the AI parser, then writes the transaction, its rollup delta and the raw message status in one database transaction.
+The Android companion or an iOS Shortcut posts message text with the user’s webhook token. The route resolves the token, refuses a duplicate, stores the raw message and parses it with the rule parser, falling back to the AI parser. Within the plan’s monthly limit it files the message (a known merchant takes its category) and writes the transaction, its rollup delta and the raw message status in one database transaction. Past the limit the rules alone read it and the raw message is kept as a suggestion the user confirms from the home screen.
 
 ```mermaid
 sequenceDiagram
@@ -79,11 +87,12 @@ sequenceDiagram
   p1->>p2: POST the notification text with the webhook token
   p2->>p3: resolve the token to a user
   p2->>p4: store the raw message
-  p2->>p5: rule parser first, AI parser when the rules cannot read it
+  p2->>p5: rule parser first, AI parser when the rules cannot read it, file the message
   p5->>p6: AI parse
-  p2->>p7: insert the transaction
-  p2->>p8: rollup delta
+  p5->>p7: insert the transaction
+  p5->>p8: rollup delta
   p8->>p9: upsert the day
+  p2->>p4: mark it processed, or keep it as a suggestion past the monthly limit
 ```
 
 Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is the view `flow_sms_ingest`.
@@ -92,16 +101,19 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `ingestion-parsers` — Ingestion parsers | Bank SMS parsing (rules first, then an AI parser with a per-user cache) and the generator of the personal iOS Shortcut. | 3 |
-| `web-bank-sync` — Bank sync UI | The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel. | 4 |
+| `ingestion-parsers` — Ingestion parsers | Bank SMS parsing (rules first, then an AI parser with a per-user cache), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut. | 4 |
+| `web-bank-sync` — Bank sync UI | The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel. | 5 |
 
 ## API procedures
 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
+| `profile.confirmSmsSuggestion` | mutation | `authedProcedure` | — | — | `Home` |
+| `profile.dismissSmsSuggestion` | mutation | `authedProcedure` | — | — | `Home` |
 | `profile.generateMagicCode` | mutation | `authedProcedure` | `webhook_tokens` | — | — |
 | `profile.generateWebhookToken` | mutation | `authedProcedure` | — | `webhook_tokens` | `BankSyncPage`, `More` |
 | `profile.getSmsLogs` | query | `authedProcedure` | `raw_sms_events` | — | `BankSyncPage`, `More` |
+| `profile.getSmsSuggestions` | query | `authedProcedure` | `raw_sms_events` | — | `Home` |
 | `profile.getWebhookToken` | query | `authedProcedure` | `webhook_tokens` | — | `BankSyncPage`, `More` |
 
 ## HTTP routes, WebSockets and scheduled jobs
@@ -125,9 +137,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
-| `expenses` | B | `POST /api/sms/ingest` | — |
+| `expenses` | B | `ingestion-parsers` | — |
 | `local_users` | A | — | `POST /api/sms/ingest` |
-| `raw_sms_events` | E | `POST /api/sms/ingest` | `GET /api/sms/logs`, `GET /api/sms/metrics`, `GET /api/sms/unparsed`, `POST /api/sms/ingest`, `profile.getSmsLogs` |
+| `raw_sms_events` | E | `POST /api/sms/ingest`, `ingestion-parsers` | `GET /api/sms/logs`, `GET /api/sms/metrics`, `GET /api/sms/unparsed`, `POST /api/sms/ingest`, `ingestion-parsers`, `profile.getSmsLogs`, `profile.getSmsSuggestions` |
 | `users` | A | — | `POST /api/sms/ingest` |
 | `webhook_tokens` | D | `GET /api/sms/android-connect`, `POST /api/sms/token/generate`, `profile.generateWebhookToken` | `GET /api/sms/android-connect`, `GET /api/sms/token`, `POST /api/sms/android-status`, `POST /api/sms/ingest`, `profile.generateMagicCode`, `profile.getWebhookToken` |
 
@@ -139,9 +151,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -153,7 +165,7 @@ Used by: [Server platform and data](platform.md), [Web and mobile app shell](web
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>19 files and declarations</summary>
+<details><summary>24 files and declarations</summary>
 
 - `.github/workflows/build-apk.yml`
 - `android-app/app/build.gradle`
@@ -163,15 +175,20 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/shortcut-generator.ts`
 - `api/lib/sms-ai-parser.ts`
 - `api/lib/sms-rule-parser.ts`
+- `api/profile-router.ts#profile.confirmSmsSuggestion`
+- `api/profile-router.ts#profile.dismissSmsSuggestion`
 - `api/profile-router.ts#profile.generateMagicCode`
 - `api/profile-router.ts#profile.generateWebhookToken`
 - `api/profile-router.ts#profile.getSmsLogs`
+- `api/profile-router.ts#profile.getSmsSuggestions`
 - `api/profile-router.ts#profile.getWebhookToken`
 - `api/profile-router.ts#rest-of-file`
+- `api/services/sms-ledger.ts`
 - `api/sms-router.ts`
 - `src/components/bank-sync/AndroidSetupFlow.tsx`
 - `src/components/bank-sync/DigitalBankingSuite.tsx`
 - `src/components/bank-sync/IosSetupFlow.tsx`
+- `src/components/bank-sync/SmsSuggestionsCard.tsx`
 - `src/components/settings/SmsWebhookSettings.tsx`
 - `src/pages/BankSyncPage.tsx`
 

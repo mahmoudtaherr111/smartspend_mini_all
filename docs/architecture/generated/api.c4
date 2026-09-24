@@ -1644,7 +1644,7 @@ model {
       }
     }
     profile = router 'profile' {
-      description 'api/profile-router.ts — 25 procedures.'
+      description 'api/profile-router.ts — 28 procedures.'
       metadata {
         file 'api/profile-router.ts'
       }
@@ -1668,6 +1668,16 @@ model {
           procedureKind 'mutation'
         }
       }
+      confirmSmsSuggestion = procedure 'profile.confirmSmsSuggestion' {
+        #mutation #authed
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure'
+        metadata {
+          file 'api/profile-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
       deleteContact = procedure 'profile.deleteContact' {
         #mutation #authed
         technology 'authedProcedure'
@@ -1679,6 +1689,16 @@ model {
         }
       }
       dismissOnboarding = procedure 'profile.dismissOnboarding' {
+        #mutation #authed
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure'
+        metadata {
+          file 'api/profile-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      dismissSmsSuggestion = procedure 'profile.dismissSmsSuggestion' {
         #mutation #authed
         technology 'authedProcedure'
         description 'mutation · authedProcedure'
@@ -1759,6 +1779,16 @@ model {
         }
       }
       getSmsLogs = procedure 'profile.getSmsLogs' {
+        #query #authed
+        technology 'authedProcedure'
+        description 'query · authedProcedure'
+        metadata {
+          file 'api/profile-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
+      }
+      getSmsSuggestions = procedure 'profile.getSmsSuggestions' {
         #query #authed
         technology 'authedProcedure'
         description 'query · authedProcedure'

@@ -182,7 +182,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-39 files in its import closure (not counting `src/components/ui/`).
+40 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -196,10 +196,10 @@ _None._
 | `expense.batchCreate` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.create` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.delete` | useMutation | `src/components/expenses/RecentExpenses.tsx` |
-| `expense.getMonthSummary` | useQuery, utils.invalidate, utils.prefetch | `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
-| `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
+| `expense.getMonthSummary` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
+| `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
 | `expense.getPendingClarifications` | utils.invalidate | `src/components/expenses/ExpenseForm.tsx` |
-| `expense.list` | useQuery, utils.cancel, utils.getData, utils.invalidate, utils.setData | `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.list` | useQuery, utils.cancel, utils.getData, utils.invalidate, utils.setData | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.searchTransactions` | useQuery | `src/components/dashboard/GlobalSearch.tsx` |
 | `goals.analyze` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.create` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
@@ -208,9 +208,12 @@ _None._
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `pro.myPlan` | useQuery | `src/components/expenses/ExpenseForm.tsx` |
+| `profile.confirmSmsSuggestion` | useMutation | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.dismissOnboarding` | useMutation | `src/components/OnboardingCard.tsx` |
+| `profile.dismissSmsSuggestion` | useMutation | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.getNextOnboardingQuestion` | useQuery | `src/components/OnboardingCard.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/pages/Home.tsx` |
+| `profile.getSmsSuggestions` | useQuery, utils.invalidate | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | useMutation | `src/components/OnboardingCard.tsx` |
 | `voice.eligibility` | useQuery | `src/hooks/useVoiceCallEntry.ts` |

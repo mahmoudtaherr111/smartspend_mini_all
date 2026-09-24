@@ -28,7 +28,7 @@
         "api/profile-router.ts#profile.requestPhoneChange": "e167392e505a",
         "api/profile-router.ts#profile.updateProfile": "9aba6a0c3710",
         "api/profile-router.ts#profile.updateUserInfo": "ae7508bea9bd",
-        "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
+        "api/profile-router.ts#rest-of-file": "edf9095ff413",
         "api/services/phone-challenge.ts": "9c5aa7cfebc9",
         "api/services/turnstile-service.ts": "89a28fc96d49",
         "api/services/user-purge-service.ts": "2332c1615605",
@@ -47,7 +47,7 @@
         "src/pages/Login.tsx": "63a52d38688f",
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
-      "checked": "2026-09-23 fe4b4b3",
+      "checked": "2026-09-24 37a55fb",
       "arabic": "fb49e1dcb4e4",
       "arabicChecked": "2026-09-23 fe4b4b3"
     },
@@ -77,15 +77,15 @@
         "src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx": "10ff32f1e785",
         "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
-        "src/components/admin/settings/AdminPlansTab.tsx": "7fa1e727fa39",
+        "src/components/admin/settings/AdminPlansTab.tsx": "47a3e216b406",
         "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
         "src/components/admin/settings/RoutingRangesEditor.tsx": "b6e5b3e17c88",
         "src/pages/Admin.tsx": "42d9a43037ce",
         "src/pages/Support.tsx": "9175518fbc4c"
       },
-      "checked": "2026-09-24 d9d553a",
-      "arabic": "2acadba21277",
-      "arabicChecked": "2026-09-24 d9d553a"
+      "checked": "2026-09-24 37a55fb",
+      "arabic": "8ff6610c42a9",
+      "arabicChecked": "2026-09-24 37a55fb"
     },
     "ai-center": {
       "files": {
@@ -178,21 +178,26 @@
         "api/lib/shortcut-generator.ts": "fbf02d8e0f5d",
         "api/lib/sms-ai-parser.ts": "f748c952734f",
         "api/lib/sms-rule-parser.ts": "e6e1e7b524d5",
+        "api/profile-router.ts#profile.confirmSmsSuggestion": "dca65bd219b9",
+        "api/profile-router.ts#profile.dismissSmsSuggestion": "2aea8fd37c7d",
         "api/profile-router.ts#profile.generateMagicCode": "7030c40bf22b",
         "api/profile-router.ts#profile.generateWebhookToken": "be8d7316579a",
         "api/profile-router.ts#profile.getSmsLogs": "c25c54979dfd",
+        "api/profile-router.ts#profile.getSmsSuggestions": "e7e02adbedc1",
         "api/profile-router.ts#profile.getWebhookToken": "8a850e31cd9d",
-        "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
-        "api/sms-router.ts": "ade33db053eb",
+        "api/profile-router.ts#rest-of-file": "edf9095ff413",
+        "api/services/sms-ledger.ts": "8f28adc733f5",
+        "api/sms-router.ts": "aef3f4edceb7",
         "src/components/bank-sync/AndroidSetupFlow.tsx": "68fd301a1dfb",
         "src/components/bank-sync/DigitalBankingSuite.tsx": "b5ee9812af75",
         "src/components/bank-sync/IosSetupFlow.tsx": "e3bd2e8139d6",
+        "src/components/bank-sync/SmsSuggestionsCard.tsx": "cd1997539ec1",
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-24 45b800e",
-      "arabic": "c51bcfa9dc78",
-      "arabicChecked": "2026-09-24 45b800e"
+      "checked": "2026-09-24 37a55fb",
+      "arabic": "4a1912f4c7af",
+      "arabicChecked": "2026-09-24 37a55fb"
     },
     "billing": {
       "files": {
@@ -243,7 +248,7 @@
         "api/lib/confidence-calibrator.ts": "58da107f111a",
         "api/lib/correction-rules.ts": "93becb12cb67",
         "api/lib/direction-governed-taxonomy.ts": "d0aaf7c28792",
-        "api/lib/egyptian-dictionary.ts": "0ad26bbef5f6",
+        "api/lib/egyptian-dictionary.ts": "12dda0ce51a7",
         "api/lib/egyptian-names-dictionary.ts": "ce14f79a3952",
         "api/lib/embedding-engine.ts": "39de1eb4636a",
         "api/lib/entity-extractor.ts": "6e9e6a0ba9be",
@@ -275,7 +280,7 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-24 45b800e",
+      "checked": "2026-09-24 37a55fb",
       "arabic": "d9a758b3d131",
       "arabicChecked": "2026-09-24 45b800e"
     },
@@ -299,7 +304,7 @@
         "api/profile-router.ts#profile.refreshInferences": "a5e6ec461dbc",
         "api/profile-router.ts#profile.submitOnboardingAnswer": "a596328fbc29",
         "api/profile-router.ts#profile.updateSmartProfile": "28d67008ded5",
-        "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
+        "api/profile-router.ts#rest-of-file": "edf9095ff413",
         "api/services/adaptive-question-engine.ts": "a6437894905a",
         "api/services/batch-ai-service.ts": "d0e332df353f",
         "api/services/lifestyle-inference-engine.ts": "2a6365c8cb6e",
@@ -309,7 +314,7 @@
         "api/services/user-profile-service.ts": "70cb6f7c802a",
         "src/components/insights/AIInsights.tsx": "4b618cdf3ad2"
       },
-      "checked": "2026-09-24 45b800e",
+      "checked": "2026-09-24 37a55fb",
       "arabic": "9bdd405dd970",
       "arabicChecked": "2026-09-24 45b800e"
     },
@@ -338,7 +343,7 @@
         "api/profile-router.ts#profile.listContacts": "90da0645d250",
         "api/profile-router.ts#profile.mergeContacts": "7ade643df213",
         "api/profile-router.ts#profile.updateContact": "a729d41858de",
-        "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
+        "api/profile-router.ts#rest-of-file": "edf9095ff413",
         "api/services/expense-rollups.ts": "55147ed1287a",
         "api/services/financial-month.ts": "50ad98190246",
         "api/wallet-router.ts": "7d5e5a1398e9",
@@ -355,11 +360,11 @@
         "src/components/dashboard/UserIntelligencePanel.tsx": "ed213db74bae",
         "src/components/expenses/RecentExpenses.tsx": "51923612ccee",
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
-        "src/pages/Home.tsx": "0eb63c5cb36c"
+        "src/pages/Home.tsx": "fbdc4529b1c2"
       },
-      "checked": "2026-09-24 45b800e",
-      "arabic": "44d844b82b9f",
-      "arabicChecked": "2026-09-24 45b800e"
+      "checked": "2026-09-24 37a55fb",
+      "arabic": "5c9afd7ca720",
+      "arabicChecked": "2026-09-24 37a55fb"
     },
     "notifications": {
       "files": {
@@ -372,12 +377,12 @@
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
         "api/profile-router.ts#profile.savePushSubscription": "788ec5760eef",
         "api/profile-router.ts#profile.sendBiometricPromptNotification": "ae8ae7ea27ee",
-        "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
+        "api/profile-router.ts#rest-of-file": "edf9095ff413",
         "api/services/firebase.ts": "3b9319b2c3a5",
         "api/services/otp-cache.ts": "e6343a8abd07",
         "api/services/whatsapp-service.ts": "1177804a1f23"
       },
-      "checked": "2026-09-18 981a949",
+      "checked": "2026-09-24 37a55fb",
       "arabic": "92a3a240b12b",
       "arabicChecked": "2026-09-18 981a949"
     },

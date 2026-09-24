@@ -319,8 +319,8 @@ function PlanAdvancedLimits({
           unit="ثانية"
         />
         <NumInput
-          label="حد SMS/شهر"
-          hint="عدد رسائل SMS المصرح بمعالجتها شهرياً. يُقرأ من sms-router"
+          label="حد رسايل البنك/شهر"
+          hint="عدد رسايل البنك اللي بتتسجل لوحدها في الشهر. اللي بعد الحد بتتحفظ اقتراحات يأكدها المستخدم بضغطة"
           settingKey={`sms_limit_${plan}`}
           formData={formData}
           updateField={updateField}

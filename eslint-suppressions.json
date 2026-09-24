@@ -736,7 +736,7 @@
   },
   "api/sms-router.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 14
+      "count": 10
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1

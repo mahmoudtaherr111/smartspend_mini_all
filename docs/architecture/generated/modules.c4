@@ -116,10 +116,10 @@ model {
       }
     }
     ingestion-parsers = module 'Ingestion parsers' {
-      description 'Bank SMS parsing (rules first, then an AI parser with a per-user cache) and the generator of the personal iOS Shortcut.'
+      description 'Bank SMS parsing (rules first, then an AI parser with a per-user cache), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut.'
       metadata {
-        files '3'
-        paths 'api/lib/sms-ai-parser.ts, api/lib/sms-rule-parser.ts, api/lib/shortcut-generator.ts'
+        files '4'
+        paths 'api/lib/sms-ai-parser.ts, api/lib/sms-rule-parser.ts, api/lib/shortcut-generator.ts, api/services/sms-ledger.ts'
       }
     }
     jobs = module 'Scheduled job bodies' {
@@ -229,7 +229,7 @@ model {
     web-bank-sync = module 'Bank sync UI' {
       description 'The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel.'
       metadata {
-        files '4'
+        files '5'
         paths 'src/components/bank-sync/**, src/components/settings/SmsWebhookSettings.tsx'
       }
     }

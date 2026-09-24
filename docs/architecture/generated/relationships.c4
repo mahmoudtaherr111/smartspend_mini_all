@@ -30,9 +30,7 @@ model {
   smartspend.api.http.post_sms_ingest -[reads]-> smartspend.mysql.webhook_tokens
   smartspend.api.http.post_sms_ingest -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.http.post_sms_ingest -[uses]-> smartspend.api.modules.ingestion-parsers
-  smartspend.api.http.post_sms_ingest -[uses]-> smartspend.api.modules.ledger
   smartspend.api.http.post_sms_ingest -[uses]-> smartspend.api.modules.platform
-  smartspend.api.http.post_sms_ingest -[writes]-> smartspend.mysql.expenses
   smartspend.api.http.post_sms_ingest -[writes]-> smartspend.mysql.raw_sms_events
   smartspend.api.http.post_sms_token_generate -[uses]-> smartspend.api.modules.auth
   smartspend.api.http.post_sms_token_generate -[writes]-> smartspend.mysql.webhook_tokens
@@ -325,8 +323,14 @@ model {
   smartspend.api.modules.finance-semantic-layer -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.modules.finance-semantic-layer -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.ai-providers
+  smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.arabic-nlp
+  smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.classification
+  smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.ingestion-parsers -[reads]-> smartspend.mysql.raw_sms_events
   smartspend.api.modules.ingestion-parsers -[uses]-> gemini
+  smartspend.api.modules.ingestion-parsers -[writes]-> smartspend.mysql.expenses
+  smartspend.api.modules.ingestion-parsers -[writes]-> smartspend.mysql.raw_sms_events
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.ai-governance
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.ai-insights
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.ai-providers
@@ -943,6 +947,9 @@ model {
   smartspend.api.trpc.profile.confirmPhoneChange -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.profile.confirmPhoneChange -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.trpc.profile.confirmPhoneChange -[writes]-> smartspend.mysql.local_users
+  smartspend.api.trpc.profile.confirmSmsSuggestion -[uses]-> smartspend.api.modules.classification
+  smartspend.api.trpc.profile.confirmSmsSuggestion -[uses]-> smartspend.api.modules.finance-semantic-layer
+  smartspend.api.trpc.profile.confirmSmsSuggestion -[uses]-> smartspend.api.modules.ingestion-parsers
   smartspend.api.trpc.profile.deleteContact -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.deleteContact -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.trpc.profile.deleteContact -[uses]-> smartspend.api.modules.classification
@@ -950,6 +957,7 @@ model {
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.user_profiles
   smartspend.api.trpc.profile.dismissOnboarding -[writes]-> smartspend.mysql.user_profiles
+  smartspend.api.trpc.profile.dismissSmsSuggestion -[uses]-> smartspend.api.modules.ingestion-parsers
   smartspend.api.trpc.profile.generateMagicCode -[reads]-> smartspend.mysql.webhook_tokens
   smartspend.api.trpc.profile.generateMagicCode -[uses]-> smartspend.api.modules.api-routers
   smartspend.api.trpc.profile.generateWebhookToken -[writes]-> smartspend.mysql.webhook_tokens
@@ -961,6 +969,7 @@ model {
   smartspend.api.trpc.profile.getQuestions -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.profile.getSmartProfile -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.profile.getSmsLogs -[reads]-> smartspend.mysql.raw_sms_events
+  smartspend.api.trpc.profile.getSmsSuggestions -[reads]-> smartspend.mysql.raw_sms_events
   smartspend.api.trpc.profile.getWebhookToken -[reads]-> smartspend.mysql.webhook_tokens
   smartspend.api.trpc.profile.listContacts -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.profile.listContacts -[reads]-> smartspend.mysql.user_contacts
@@ -1085,6 +1094,7 @@ model {
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-ui-kit
+  smartspend.web.modules.web-bank-sync -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-bank-sync -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-bank-sync -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.modules.web-capture -[imports]-> smartspend.shared.contracts
@@ -1265,9 +1275,12 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.localAuth.me
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.pro.myPlan
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.confirmSmsSuggestion
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.dismissOnboarding
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.dismissSmsSuggestion
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.getNextOnboardingQuestion
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.getSmartProfile
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.getSmsSuggestions
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.savePushSubscription
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.submitOnboardingAnswer
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.voice.eligibility

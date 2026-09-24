@@ -37,7 +37,7 @@
         "android-app/app/build.gradle",
         ".github/workflows/build-apk.yml"
       ],
-      "procedures": ["profile.generateWebhookToken", "profile.getWebhookToken", "profile.getSmsLogs", "profile.generateMagicCode"],
+      "procedures": ["profile.generateWebhookToken", "profile.getWebhookToken", "profile.getSmsLogs", "profile.generateMagicCode", "profile.getSmsSuggestions", "profile.confirmSmsSuggestion", "profile.dismissSmsSuggestion"],
       "pages": ["BankSyncPage"],
       "routes": [
         "GET /api/sms/android-connect",

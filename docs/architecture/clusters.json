@@ -200,11 +200,12 @@
     {
       "id": "ingestion-parsers",
       "title": "Ingestion parsers",
-      "description": "Bank SMS parsing (rules first, then an AI parser with a per-user cache) and the generator of the personal iOS Shortcut.",
+      "description": "Bank SMS parsing (rules first, then an AI parser with a per-user cache), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut.",
       "paths": [
         "api/lib/sms-ai-parser.ts",
         "api/lib/sms-rule-parser.ts",
-        "api/lib/shortcut-generator.ts"
+        "api/lib/shortcut-generator.ts",
+        "api/services/sms-ledger.ts"
       ]
     },
     {

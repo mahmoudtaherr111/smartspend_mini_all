@@ -18,6 +18,8 @@ the rule parser and the model that read them, and the setup screens.
 | Android companion | `android-app/app/src/main/java/com/smartspend/sync/SyncService.kt#SyncService` and `DeepLinkActivity` | Reads notifications, keeps the bank and wallet ones, posts them to the ingest route |
 | Ingest route | `POST /api/sms/ingest` in `api/sms-router.ts#smsApp` | Token check, limits, duplicate check, parsing, saving |
 | Parsers | `api/lib/sms-rule-parser.ts#parseSmsByRules`, `api/lib/sms-ai-parser.ts#parseSmsFinancialData` | Provider templates first, a Gemini call when the templates are not sure |
+| Filing | `api/services/sms-ledger.ts` | The category of a parsed message, the ledger write, and the suggestions kept over the monthly limit |
+| Suggestions | `profile.getSmsSuggestions`, `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion` in `api/profile-router.ts`; `src/components/bank-sync/SmsSuggestionsCard.tsx#SmsSuggestionsCard` on the Home record tab | Messages kept over the monthly limit, which the user saves or dismisses |
 | Token and log procedures | `profile.getWebhookToken`, `profile.generateWebhookToken`, `profile.getSmsLogs`, `profile.generateMagicCode` in `api/profile-router.ts` | What the setup screens call |
 
 ## One message, step by step
@@ -38,9 +40,10 @@ the rule parser and the model that read them, and the setup screens.
 - reads the token from `Authorization: Bearer` or the `token` query parameter; an unknown token gets 403;
 - allows 30 messages an hour per token, counted in process memory (`api/sms-router.ts#checkRateLimit`);
 - needs a `message` of at least five characters;
-- applies the plan's monthly limit on messages processed since the first of the month: setting `sms_limit_<plan>`,
-  and 5 on the free plan when the setting is absent;
 - refuses with 409 the same message text from the same user within 24 hours;
+- counts the messages saved automatically (`processed`) since the first of the Cairo month against the plan's limit,
+  `sms_limit_<plan>` (5 on the free plan when the setting is absent). A message past it is kept as a suggestion
+  instead of being saved (step 5);
 - stores the message in `raw_sms_events` with status `pending`.
 
 ### 3. Rules first, the model second
@@ -61,17 +64,36 @@ the rule parser and the model that read them, and the setup screens.
   its reason (`not_financial` or `low_confidence`) and the route answers 200 with `transaction_detected: false`.
 
 ### 4. Saving
-- `api/lib/sms-ai-parser.ts#mapSmsToExpenseCategory` turns direction, message category and provider into a
+- `api/services/sms-ledger.ts#categorizeSms` files the message.
+  `api/lib/sms-ai-parser.ts#mapSmsToExpenseCategory` turns direction, message category and provider into a
   category, subcategory and type, always a pair the taxonomy holds: incoming salary becomes `مرتب/مرتب أساسي`;
   other incoming money is `دخل آخر/عام` (the message does not say where it came from); an outgoing transfer is
   `تحويل` with its rail (`انستاباي`, `فودافون كاش` or `تحويل بنكي`) as subcategory; a card payment is `تسوق/عام`
   with a merchant, else `متنوعات/عام`; bills are `فواتير/عام`; an ATM withdrawal is `تحويل/سحب ATM` of type
   `transfer`, because the cash is still the user's (docs/decisions/0008-money-movements-and-taxonomy.md).
+- A card payment to a merchant the classification engine knows well takes the merchant's category instead
+  (`classifySmsMerchant`): the rule engine reads the merchant's name, normalized and then as written, since bank
+  messages spell merchants in Latin letters, and only a merchant, synonym or dictionary match counts. "UBER *TRIP"
+  is مواصلات/أوبر/كريم and "Talabat" أكل وشرب.
 - In one database transaction the route inserts the expense (source `sms`, the message as raw text, a description
   from provider, merchant and sender, the message's timestamp as its date when it parses, the parse details as
   metadata), writes its `expense_details` and the daily rollup delta
   (`api/services/expense-rollups.ts#applyExpenseRollupDelta`), and marks the raw message `processed`. It then bumps
   the finance cache generation.
+
+### 5. Over the monthly limit
+A message past the plan's limit is not lost (docs/decisions/0009-bank-messages-over-the-limit.md):
+- it is read by the rules alone, so no model is paid for; when they find a transaction with an amount, the raw
+  message gets status `suggested` and a suggestion in its metadata (amount, direction, type, category from
+  `categorizeSms`, provider, merchant, description, time); otherwise it is `ignored` with reason
+  `monthly_limit_unread`;
+- the route answers 200 with `saved: false` and `suggested`, so the phone does not retry it;
+- the Home record tab shows the waiting suggestions (`SmsSuggestionsCard`, from `profile.getSmsSuggestions`). The
+  user keeps or changes the category (a list of the categories of the message's kind) and saves it
+  (`profile.confirmSmsSuggestion`), or dismisses it (`profile.dismissSmsSuggestion`, status `dismissed`);
+- saving moves the status from `suggested` to `confirmed` in the same transaction as the expense, the day's rollup
+  delta and the details, and only when it was still `suggested`, so a second tap saves nothing. The finance caches
+  are bumped. A confirmed message does not count toward the limit.
 
 ## Setting up a phone
 **Android**
@@ -102,7 +124,8 @@ statistics per provider) and `GET /api/sms/unparsed`.
 
 ## Data
 - `webhook_tokens`: one token per user, `sms_` followed by random hex.
-- `raw_sms_events`: every message received, with its status (`pending`, `processed`, `ignored`) and parse metadata.
+- `raw_sms_events`: every message received, with its status (`pending`, `processed`, `ignored`, `suggested`,
+  `confirmed`, `dismissed`) and parse metadata; a suggestion is in `metadata.suggestion`.
 - Account deletion removes both (`api/services/user-purge-service.ts`). An admin procedure in `api/admin-router.ts`
   lists raw messages across users.
 
@@ -112,8 +135,9 @@ statistics per provider) and `GET /api/sms/unparsed`.
 | Which notifications the Android app forwards | `android-app/app/src/main/java/com/smartspend/sync/SyncService.kt` | a build of the app (`android-app/README.md`) |
 | The bank and wallet formats the rules read | `api/lib/sms-rule-parser.ts` (provider detection, `parseDirection`, amount and balance extraction) | `tests/adversarial-challenger-2.test.ts`, plus new cases |
 | When the model is asked and what it is asked | `api/lib/sms-ai-parser.ts` (prompt, schema, cache); the thresholds in the ingest route | |
-| How a parsed message becomes a category | `api/lib/sms-ai-parser.ts#mapSmsToExpenseCategory` | |
+| How a parsed message becomes a category | `api/lib/sms-ai-parser.ts#mapSmsToExpenseCategory`; merchants in `api/services/sms-ledger.ts#classifySmsMerchant` and the classification dictionaries | `api/lib/sms-ai-parser.test.ts`, `api/services/sms-ledger.test.ts` |
 | Plan limits | the `sms_limit_<plan>` settings | |
+| What happens over the limit, and saving or dismissing a suggestion | the ingest route, `api/services/sms-ledger.ts`, the suggestion procedures, `src/components/bank-sync/SmsSuggestionsCard.tsx` | `api/services/sms-ledger.test.ts` |
 | The setup screens | `src/components/bank-sync/`, `src/pages/BankSyncPage.tsx` | |
 | Building and publishing the APK | `.github/workflows/build-apk.yml`, `android-app/` | |
 
@@ -130,8 +154,9 @@ statistics per provider) and `GET /api/sms/unparsed`.
 
 ## Tests
 `tests/adversarial-challenger-2.test.ts` checks that condensing messages from several banks keeps their amounts,
-cards, dates and balances. `api/lib/sms-ai-parser.test.ts` checks the category mapping. Nothing tests the ingest
-route or the rule templates directly.
+cards, dates and balances. `api/lib/sms-ai-parser.test.ts` checks the category mapping, and
+`api/services/sms-ledger.test.ts` the merchant categories, the suggestions and a confirmation saved once. Nothing
+tests the ingest route or the rule templates directly.
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -142,18 +167,16 @@ Checked against the code; each one names where it lives.
    instead (`android-app/README.md`).
 3. **Gap.** The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY`
    directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
-4. **Gap.** The category comes from the fixed map in `mapSmsToExpenseCategory`, not from the classification pipeline:
-   a card payment is `تسوق/عام` whatever the merchant (a restaurant or a fuel station included), and an outgoing
-   transfer is saved as spending under `تحويل`, its rail as subcategory.
-5. **Bug.** The monthly limit counts from the first of the month in server time rather than Cairo business time (golden
-   rule 6).
-6. **Debt.** `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but
+4. **Gap.** Only a merchant the engine knows well changes the fixed map: a card payment to any other merchant is
+   `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not
+   classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
+5. **Debt.** `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but
    `api/jobs/data-retention-job.ts` has no policy for it: full message texts stay until the account is deleted.
-7. **Bug.** The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
-8. **Bug.** With several server processes, a one-time code created on one cannot be exchanged on another, and each process
+6. **Bug.** The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
+7. **Bug.** With several server processes, a one-time code created on one cannot be exchanged on another, and each process
    counts the rate limit on its own.
-9. **Gap.** Saving a message does not check budget alerts as `expense.create` does, and
-   `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
+8. **Gap.** Saving a message, automatically or from a suggestion, does not check budget alerts as `expense.create`
+   does, and `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 ## Related systems
 - [Money](money.md): the ledger the messages are saved into, and the wallets the digital wallet view manages.
