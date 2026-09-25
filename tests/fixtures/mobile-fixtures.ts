@@ -196,6 +196,9 @@ export const test = base.extend<MobileTestFixtures>({
             };
           }
           if (procedure === "profile.getInAppNotifications") return [];
+          if (procedure === "profile.getSmsSuggestions") return [];
+          if (procedure === "expense.getPendingClarifications") return [];
+          if (procedure === "budget.list") return { budgets: [] };
           if (procedure === "chat.getQuickActions") return [];
           if (procedure === "chat.getConversations") return [];
           if (procedure === "ads.list") return [];

@@ -191,11 +191,11 @@
         "src/components/bank-sync/AndroidSetupFlow.tsx": "a46afb8f98d0",
         "src/components/bank-sync/DigitalBankingSuite.tsx": "b5ee9812af75",
         "src/components/bank-sync/IosSetupFlow.tsx": "e3bd2e8139d6",
-        "src/components/bank-sync/SmsSuggestionsCard.tsx": "cd1997539ec1",
+        "src/components/bank-sync/SmsSuggestionsCard.tsx": "7780bf865dce",
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-25 010e167",
+      "checked": "2026-09-25 46f2396",
       "arabic": "a2ac2c09a91d",
       "arabicChecked": "2026-09-25 010e167"
     },
@@ -209,10 +209,10 @@
         "api/lib/subscription-service.ts": "f3666e029e61",
         "api/pro-router.ts": "ae4da5c10100",
         "api/referral-router.ts": "b298497fadda",
-        "src/pages/Pro.tsx": "8c4f5bf5acf2",
+        "src/pages/Pro.tsx": "6ef8aa74b071",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "checked": "2026-09-24 6739377",
+      "checked": "2026-09-25 46f2396",
       "arabic": "b0aa48220bc3",
       "arabicChecked": "2026-09-24 6739377"
     },
@@ -349,7 +349,7 @@
         "api/services/expense-rollups.ts": "55147ed1287a",
         "api/services/financial-month.ts": "50ad98190246",
         "api/wallet-router.ts": "7d5e5a1398e9",
-        "src/components/budgets/BudgetsPanel.tsx": "9489aeff32d1",
+        "src/components/budgets/BudgetsPanel.tsx": "514a88e41280",
         "src/components/dashboard/BehaviorInsights.tsx": "47729e6b7532",
         "src/components/dashboard/ExpenseChart.tsx": "401963f07c4c",
         "src/components/dashboard/GlobalSearch.tsx": "8654dcb76f56",
@@ -362,12 +362,12 @@
         "src/components/dashboard/StreakCounter.tsx": "86c3f654ff1d",
         "src/components/dashboard/UserIntelligencePanel.tsx": "ed213db74bae",
         "src/components/expenses/EditExpenseDialog.tsx": "343360a2579f",
-        "src/components/expenses/PendingQuestionsCard.tsx": "6716b7d289ba",
+        "src/components/expenses/PendingQuestionsCard.tsx": "c9060c4019d5",
         "src/components/expenses/RecentExpenses.tsx": "955f7cf3d980",
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/pages/Home.tsx": "7e4da1302279"
       },
-      "checked": "2026-09-25 6ec98ec",
+      "checked": "2026-09-25 46f2396",
       "arabic": "9a70cf383dd8",
       "arabicChecked": "2026-09-25 6ec98ec"
     },

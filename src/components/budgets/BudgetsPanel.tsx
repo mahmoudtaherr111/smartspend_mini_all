@@ -36,7 +36,7 @@ export function BudgetsPanel() {
   });
   const remove = trpc.budget.delete.useMutation({ onSuccess: refresh });
 
-  const items = budgets.data?.budgets ?? [];
+  const items = Array.isArray(budgets.data?.budgets) ? budgets.data.budgets : [];
 
   const submit = () => {
     const value = Number(limit);

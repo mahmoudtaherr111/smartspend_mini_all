@@ -43,7 +43,8 @@ export function SmsSuggestionsCard() {
     onSuccess: () => void utils.profile.getSmsSuggestions.invalidate(),
   });
 
-  const items = suggestions.data ?? [];
+  // A card on Home must never take Home down: anything but a list renders nothing.
+  const items = Array.isArray(suggestions.data) ? suggestions.data : [];
   if (items.length === 0) return null;
   const busy = confirm.isPending || dismiss.isPending;
 

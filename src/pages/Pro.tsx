@@ -40,7 +40,10 @@ export default function Pro() {
   // What each plan includes comes from the admin's settings (pro.planCatalog), the same
   // numbers the server enforces — not fixed marketing text.
   const catalog = trpc.pro.planCatalog.useQuery();
-  const rowsFor = (id: "free" | "pro" | "ultra") => catalog.data?.[id] ?? [];
+  const rowsFor = (id: "free" | "pro" | "ultra") => {
+    const rows = catalog.data?.[id];
+    return Array.isArray(rows) ? rows : [];
+  };
 
   const handleCopy = () => {
     if (referral.data?.code) {

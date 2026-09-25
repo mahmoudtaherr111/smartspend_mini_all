@@ -35,7 +35,8 @@ export function PendingQuestionsCard() {
   });
   const dismiss = trpc.expense.dismissClarification.useMutation({ onSuccess: refresh });
 
-  const items = pending.data ?? [];
+  // A card on Home must never take Home down: anything but a list renders nothing.
+  const items = Array.isArray(pending.data) ? pending.data : [];
   if (items.length === 0) return null;
   const busy = answer.isPending || dismiss.isPending;
 
