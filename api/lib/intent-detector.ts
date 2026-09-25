@@ -306,8 +306,8 @@ const GIFT_RECEIVED =
 
 /** "رجعت الجزمة واخدت فلوسي": a purchase returned and its money taken back. */
 const REFUND_TAKEN =
-  /(?:^|\s)[وف]?(?:رجعت|رجعنا|رجعتها|رجعته)\s+.*(?:خدت|اخدت|أخدت|استلمت|استرديت|استرجعت|جالي|رجعولي|رجعلي)\s+(?:فلوسي|فلوسها|فلوسه|الفلوس|فلوس|تمنها|تمنه|حقها|حقه)(?=\s|$)/;
-const REFUND_WORD = /(?:^|\s)[وف]?(?:استرجعت|استرديت|مرتجع|المرتجع|استرجاع|استرداد)(?=\s|$)/;
+  /(?:^|\s)[وف]?(?:رجعت|رجعنا|رجعتها|رجعته)\s+.*(?:خدت|اخدت|أخدت|استلمت|استرديت|استردت|استرجعت|جالي|رجعولي|رجعلي)\s+(?:فلوسي|فلوسها|فلوسه|الفلوس|فلوس|تمنها|تمنه|حقها|حقه)(?=\s|$)/;
+const REFUND_WORD = /(?:^|\s)[وف]?(?:استرجعت|استرديت|استردت|استرجعنا|مرتجع|المرتجع|استرجاع|استرداد)(?=\s|$)/;
 /**
  * "بعت الموبايل القديم ب 4000": بعت followed by a thing and its price is a sale. Sending
  * names a person or money after the verb ("بعت لماما 500", "بعت الفلوس"), never a price.
@@ -318,6 +318,11 @@ const SOLD_FOR =
   /(?:^|\s)[وف]?(?:بعت|بيعت)\s+(?!ل|فلوس|الفلوس|مبلغ|تحويل|كاش|رساله|[0-9٠-٩])\S+(?:\s+\S+){0,2}?\s+(?:بـ?|بمبلغ)(?=\s|$|[0-9٠-٩])/;
 /** "بعت الواد يجيب عيش ب 20": sent someone on an errand, which is spending. */
 const ERRAND = /(?:^|\s)(?:يجيب|تجيب|يجيبلي|تجيبلي|يجيبلنا|يشتري|تشتري|يشتريلي|يدفع|تدفع)(?=\s|$)/;
+
+/** Whether normalized text reads as money back from something bought ("رجعت الجزمة واخدت فلوسي"). */
+export function readsAsRefund(normContext: string): boolean {
+  return REFUND_TAKEN.test(normContext) || REFUND_WORD.test(normContext);
+}
 
 /** Whether normalized text reads as selling something for a price. */
 export function readsAsSale(normContext: string): boolean {

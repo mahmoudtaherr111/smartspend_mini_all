@@ -114,7 +114,7 @@ function DayTransactionsDialog({
                     </div>
                     <div className={cn("font-extrabold text-base shrink-0", meta.amountClass)} dir="ltr">
                       {meta.sign}
-                      {Number(item.amount).toLocaleString("en-US", { maximumFractionDigits: 0 })} ج
+                      {Math.abs(Number(item.amount)).toLocaleString("en-US", { maximumFractionDigits: 0 })} ج
                     </div>
                   </div>
                 );

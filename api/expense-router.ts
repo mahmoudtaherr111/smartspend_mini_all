@@ -30,6 +30,7 @@ import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
 import {
   applyExpenseRollupDelta,
   expenseToRollupDelta,
+  ledgerAmount,
   syncExpenseDetails,
   deleteExpenseDetails,
   toDayString,
@@ -639,7 +640,7 @@ export const expenseRouter = router({
             userId,
             userType: requestUserType,
             type: input.type,
-            amount: input.amount.toString(),
+            amount: ledgerAmount(input.type, input.direction, input.amount).toString(),
             category: input.category,
             subCategory: input.subCategory || "عام",
             description: input.description || "",
@@ -667,7 +668,7 @@ export const expenseRouter = router({
               businessId: input.businessId,
               date: expenseDate,
               type: input.type,
-              amount: input.amount,
+              amount: ledgerAmount(input.type, input.direction, input.amount),
               source: input.source,
             },
             1,
@@ -813,7 +814,7 @@ export const expenseRouter = router({
         userId,
         userType: requestUserType,
         type: item.type,
-        amount: item.amount.toString(),
+        amount: ledgerAmount(item.type, item.direction, item.amount).toString(),
         category: item.category,
         subCategory: item.subCategory || "عام",
         description: item.description || "",
@@ -1042,6 +1043,8 @@ export const expenseRouter = router({
         id: z.number(),
         amount: expenseAmount.optional(),
         type: transactionTypeSchema.optional(),
+        /** An expense whose money came back; stored negative (ledgerAmount). */
+        refund: z.boolean().optional(),
         category: expenseCategory.optional(),
         subCategory: z
           .string()
@@ -1082,8 +1085,6 @@ export const expenseRouter = router({
           : undefined;
 
       const updateData: Record<string, any> = {};
-      if (input.amount !== undefined)
-        updateData.amount = input.amount.toString();
       if (input.type !== undefined) updateData.type = input.type;
       if (category !== undefined) updateData.category = category;
       if (subCategory !== undefined)
@@ -1115,6 +1116,19 @@ export const expenseRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
         }
         originalExpense = row;
+
+        // The stored sign follows the kind and whether the money came back: a refund is
+        // a negative expense, anything else is positive.
+        if (input.amount !== undefined || input.type !== undefined || input.refund !== undefined) {
+          const type = input.type ?? row.type;
+          const wasRefund = row.type === "expense" && Number(row.amount) < 0;
+          const refund = input.refund ?? wasRefund;
+          updateData.amount = ledgerAmount(
+            type,
+            refund ? "incoming" : null,
+            input.amount ?? Math.abs(Number(row.amount)),
+          ).toString();
+        }
 
         await tx
           .update(expenses)
@@ -1245,7 +1259,7 @@ export const expenseRouter = router({
             category: newCategory,
             subCategory: newSubCategory,
             type: input.type ?? originalExpense.type,
-            amount: Number(input.amount ?? originalExpense.amount) || 0,
+            amount: Math.abs(Number(input.amount ?? originalExpense.amount)) || 0,
             sourceLogId: latestClassificationLog?.id ?? null,
           });
         } catch (learnErr) {
@@ -2399,7 +2413,7 @@ export const expenseRouter = router({
               const [insertedRow] = await tx.insert(expenses).values({
                 userId: userId as number,
                 userType: userType as string,
-                amount: item.amount.toString(),
+                amount: ledgerAmount(item.type, (item as { direction?: string }).direction, item.amount).toString(),
                 description: item.description || enrichedText,
                 category: item.category,
                 subCategory: item.subCategory,
@@ -2410,6 +2424,9 @@ export const expenseRouter = router({
                 contactId: references.contactId,
                 classificationLogId: references.classificationLogId,
                 businessId: (item as any).businessId || null,
+                parsedMetadata: (item as { direction?: string }).direction
+                  ? { direction: (item as { direction?: string }).direction }
+                  : null,
               });
 
               if (insertedRow?.insertId) {
@@ -2423,7 +2440,7 @@ export const expenseRouter = router({
                   businessId: (item as any).businessId || null,
                   date: new Date(),
                   type: item.type,
-                  amount: item.amount,
+                  amount: ledgerAmount(item.type, (item as { direction?: string }).direction, item.amount),
                   source: "manual",
                 },
                 1,
@@ -2607,7 +2624,7 @@ export const expenseRouter = router({
                const [insertedRow] = await tx.insert(expenses).values({
                  userId: userId as number,
                  userType: userType as string,
-                 amount: item.amount.toString(),
+                 amount: ledgerAmount(item.type, item.direction, item.amount).toString(),
                  description: item.description || enrichedText,
                  category: item.category,
                  subCategory: item.subCategory,
@@ -2616,6 +2633,7 @@ export const expenseRouter = router({
                  source: "manual",
                  rawText: enrichedText,
                  businessId: (item as any).businessId || null,
+                 parsedMetadata: item.direction ? { direction: item.direction } : null,
                });
 
                if (insertedRow?.insertId) {
@@ -2629,7 +2647,7 @@ export const expenseRouter = router({
                    businessId: (item as any).businessId || null,
                    date: new Date(),
                    type: item.type,
-                   amount: item.amount,
+                   amount: ledgerAmount(item.type, item.direction, item.amount),
                    source: "manual",
                  },
                  1,

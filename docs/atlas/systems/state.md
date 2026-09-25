@@ -10,19 +10,19 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (54 of
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 6ec98ec | 2026-09-25 c129eda | 18 | — | 4 | 1 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 d295dd5 | 2026-09-25 d295dd5 | 18 | — | 4 | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 46f2396 | 2026-09-25 010e167 | 3 | — | 2 | 3 | 2 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 5e20684 | 2026-09-25 5e20684 | 4 | — | 5 | 3 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 37a55fb | 2026-09-24 45b800e | 6 | — | 9 | 2 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 5f45817 | 2026-09-25 5f45817 | 5 | — | 6 | 5 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 d295dd5 | 2026-09-25 d295dd5 | 5 | — | 6 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-24 37a55fb | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 46f2396 | 2026-09-24 6739377 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 339aea2 | 2026-09-25 339aea2 | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-24 37a55fb | 2026-09-24 37a55fb | 4 | — | 3 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 45b800e | 2026-09-24 d9d553a | 9 | — | 4 | 1 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-24 45b800e | 2026-09-24 45b800e | 5 | — | 2 | — | 8 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-25 f14681b | 2026-09-24 45b800e | 7 | **1** | 2 | 2 | 2 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-25 d295dd5 | 2026-09-24 45b800e | 7 | **1** | 2 | 2 | 2 |
 
 
 ## Where the risk is
@@ -150,7 +150,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP (`src/components/goals/FinancialGoalsPanel.tsx`).
 - `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record; `business.get` returns the user's first business even when it is inactive.
 - `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments as spending, every source except voice as manual, and dates by UTC day.
-- A refund is income under دخل آخر/مرتجعات واسترداد; the category the purchase came from keeps its full amount. Netting it waits for one definition of spending that every screen reads (docs/decisions/0008-money-movements-and-taxonomy.md).
+- Refunds net their category only from sentences: a bank message's card refund arrives as an incoming credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative spending in a month when the purchase fell in an earlier one.
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - Verification is the setting `whatsapp_otp_enabled`: while it is off any number registers without proof that it belongs to the person, and the admin console shows it as off whatever its value ([notifications](notifications.md)).

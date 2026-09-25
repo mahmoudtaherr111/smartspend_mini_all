@@ -1040,6 +1040,16 @@ export function ExpenseForm({
       : "expense";
   };
 
+  /**
+   * The direction saved with an item: a transfer's (a loan, a gam3eya) when the parser
+   * found one, and "incoming" for an expense whose money came back (a refund).
+   */
+  const directionToSave = (item: { type?: unknown; direction?: unknown }): "incoming" | "outgoing" | undefined =>
+    item.type === "transfer"
+      ? transferDirectionOf(item)
+      : item.type === "expense" && item.direction === "incoming"
+        ? "incoming"
+        : undefined;
   /** The direction the parser found for a transfer (a loan, a gam3eya), if it found one. */
   const transferDirectionOf = (item: { direction?: unknown }): "incoming" | "outgoing" | undefined =>
     item.direction === "incoming" || item.direction === "outgoing" ? item.direction : undefined;
@@ -1102,7 +1112,7 @@ export function ExpenseForm({
           date: item.date,
           classificationLogId: traceLogId || undefined,
           businessId,
-          direction: item.type === "transfer" ? transferDirectionOf(item) : undefined,
+          direction: directionToSave(item),
           ...personOf(item),
           clientRequestId: effectiveClientRequestId
             ? `${effectiveClientRequestId}:${index}`
@@ -1123,7 +1133,7 @@ export function ExpenseForm({
           date: item.date,
           classificationLogId: traceLogId || undefined,
           businessId,
-          direction: item.type === "transfer" ? transferDirectionOf(item) : undefined,
+          direction: directionToSave(item),
           ...personOf(item),
           clientRequestId: effectiveClientRequestId || undefined,
         });
@@ -1979,7 +1989,7 @@ export function ExpenseForm({
                 (acc, it) => {
                   const amount = Number(it.amount) || 0;
                   if (it.type === "income") acc.income += amount;
-                  else if (it.type === "expense") acc.expense += amount;
+                  else if (it.type === "expense") acc.expense += it.direction === "incoming" ? -amount : amount;
                   else acc.other += amount;
                   return acc;
                 },
@@ -2054,7 +2064,7 @@ export function ExpenseForm({
                     <Badge
                       className={cn(
                         "capitalize",
-                        item.type === "income"
+                        item.type === "income" || (item.type === "expense" && item.direction === "incoming")
                           ? "bg-emerald-500"
                           : item.type === "transfer"
                             ? "bg-sky-500"
@@ -2069,7 +2079,9 @@ export function ExpenseForm({
                           ? "تحويل"
                           : item.type === "investment"
                             ? "استثمار"
-                            : "مصروف"}
+                            : item.direction === "incoming"
+                              ? "مرتجع"
+                              : "مصروف"}
                     </Badge>
                     <button
                       type="button"

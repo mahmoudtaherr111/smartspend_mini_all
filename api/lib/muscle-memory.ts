@@ -202,6 +202,9 @@ async function loadUserPatterns(
       const logged = finalResult[0];
       const legacy = resolveLegacyTaxonomy(logged?.category, logged?.subCategory, logged?.type);
       if (legacy?.type) continue;
+      // A pattern replays category and type only. An answer that also carried which way
+      // the money moved (a refund, a loan repaid) would come back without it.
+      if ((logged as { direction?: string } | undefined)?.direction) continue;
       const first = legacy
         ? { ...logged, category: legacy.category, subCategory: legacy.subCategory }
         : logged;

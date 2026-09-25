@@ -46,7 +46,8 @@ built-in limits; the local pipeline still runs.
 - **incomplete**: no amount, such as "دفعت الكهربا";
 - **rejected**: a question, a plan or future tense ("هدفع بكرة"), or a negation ("ماشتريتش"), detected by
   `api/lib/negation-detector.ts#detectNegation`. "غدا" is not a plan marker: in Egyptian it is lunch ("جبت غدا ب
-  150"), and a real "tomorrow" comes with a future verb.
+  150"), and a real "tomorrow" comes with a future verb. "استرجعت" cancels only when no money is named
+  ("استرجعت الاوردر"); "استرجعت فلوس الكورس" is a refund.
 
 It also keeps a stated total ("والإجمالي 500") as a check, applies a "قصدي 300" correction to the amount beside
 it, and adds review reasons for approximate wording, foreign currencies, dates and clauses with more than one
@@ -65,7 +66,8 @@ amount. When no event is admitted, the pipeline answers `clarify` with a questio
    sentence's template (its amount replaced by a placeholder) with patterns learned from the user's own
    classification logs of the last 90 days: single-item, auto-saved, uncorrected results that repeated with the
    same outcome. A result logged under an old category is learned in its current place (`LEGACY_TAXONOMY`), and an
-   old money movement booked as spending or income is not learned at all. A match scoring 90 or more answers, after
+   old money movement booked as spending or income is not learned at all, nor is an answer that carried a direction
+   (a refund, a loan repaid), since a pattern replays only category and type. A match scoring 90 or more answers, after
    the named people are resolved.
 4. **Business scoring**, in business mode only: keywords of the business's categories are weighed against
    personal keywords; a dominant match on a sentence with exactly one amount becomes `مشروع` with the business
@@ -130,7 +132,9 @@ Direction comes from `api/lib/intent-detector.ts#detectIntent`. Gift words (هد
 own and income only beside a receiving verb (خدت، جالي، وصلني). Money back from a returned purchase ("رجعت الجزمة
 واخدت فلوسي") and the price of something sold ("بعت الموبايل ب 4000", but not an errand: "بعت الواد يجيب عيش") read
 as income too. When the direction is income but the words named something bought, the source decides the category:
-a gift received is هدايا وعيديات, a refund دخل آخر/مرتجعات واسترداد, a sale دخل آخر/بيع حاجة, pay "من الشغل" مرتب,
+a gift received is هدايا وعيديات, a refund an expense in the bought thing's category with direction `incoming`
+(stored negative, docs/decisions/0010-refunds-net-their-category.md; money back from nothing named stays دخل
+آخر/مرتجعات واسترداد), a sale دخل آخر/بيع حاجة, pay "من الشغل" مرتب,
 and anything else دخل آخر. Those are capped at intent strength (`intent_only`) and go to review; income is filed as
 مرتب only when salary is named (مرتب، راتب، قبضت) (docs/decisions/0008-money-movements-and-taxonomy.md).
 

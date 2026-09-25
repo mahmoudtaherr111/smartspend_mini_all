@@ -179,11 +179,13 @@ function getTypeMeta(
   type: string | null | undefined,
   category?: string | null,
   parsedMetadata?: any,
+  amount?: string | number | null,
 ) {
   return getTransactionDisplayMeta({
     type,
     category,
     parsedMetadata,
+    amount,
   });
 }
 
@@ -470,6 +472,7 @@ function ExpenseItem({
     expense.type,
     expense.category,
     expense.parsedMetadata,
+    expense.amount,
   );
   const dateStr = date.toLocaleDateString("ar-EG", {
     day: "numeric",
@@ -554,7 +557,7 @@ function ExpenseItem({
               className={cn("font-bold text-lg truncate", typeMeta.amountClass)}
             >
               {typeMeta.sign}
-              {Number(expense.amount).toFixed(0)} جنيه
+              {Math.abs(Number(expense.amount)).toFixed(0)} جنيه
             </div>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground truncate">
               <Calendar className="w-3 h-3 flex-shrink-0" />
@@ -628,7 +631,7 @@ function ExpenseItem({
                     className={cn("font-bold text-base", typeMeta.amountClass)}
                   >
                     {typeMeta.sign}
-                    {Number(expense.amount).toFixed(2)} جنيه
+                    {Math.abs(Number(expense.amount)).toFixed(2)} جنيه
                   </span>
                 </div>
                 {isSms && expense.parsedMetadata?.provider && (

@@ -78,3 +78,15 @@ describe("transactionDisplay helper", () => {
     expect(meta.label).toBe("استثمار");
   });
 });
+
+describe("a refund in the list", () => {
+  it("shows a negative expense as money back, not spending", () => {
+    const meta = getTransactionDisplayMeta({ type: "expense", category: "تسوق", amount: "-300.00" });
+    expect(meta.label).toContain("مرتجع");
+    expect(meta.sign).toBe("+");
+  });
+
+  it("shows a positive expense as spending", () => {
+    expect(getTransactionDisplayMeta({ type: "expense", category: "تسوق", amount: "300.00" }).sign).toBe("-");
+  });
+});

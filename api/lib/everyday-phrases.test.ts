@@ -60,10 +60,26 @@ describe("gifts given are spending", () => {
 });
 
 describe("money coming in is named by where it came from", () => {
-  it("files money back from a return as a refund", async () => {
-    const result = await parse("رجعت الجزمة واخدت فلوسي 300");
-    expect(brief(result)).toEqual([[300, "دخل آخر", "income"]]);
+  it("returns a refund's money to the category it was bought from", async () => {
+    for (const [text, category] of [
+      ["رجعت الجزمة واخدت فلوسي 300", "تسوق"],
+      ["رجعت الموبايل واستردت فلوسه 5000", "تسوق"],
+      ["استرجعت فلوس الكورس 1500", "تعليم"],
+    ] as const) {
+      const result = await parse(text);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toMatchObject({ type: "expense", category, direction: "incoming" });
+    }
+  });
+
+  it("keeps money back from something unnamed as refund income", async () => {
+    const result = await parse("جالي استرداد 200");
+    expect(brief(result)).toEqual([[200, "دخل آخر", "income"]]);
     expect(result.items[0]?.subCategory).toBe("مرتجعات واسترداد");
+  });
+
+  it("still reads an order taken back with no money named as cancelled", async () => {
+    expect((await parse("استرجعت الاوردر 200")).items).toHaveLength(0);
   });
 
   it("files the price of something sold as a sale", async () => {

@@ -56,3 +56,12 @@ describe("Egyptian negation and counterfactual detection", () => {
     expect(detectNegation("النهاردة الجو جميل").negated).toBe(false);
   });
 });
+
+describe("money back is not a cancellation", () => {
+  it("records a refund that names the money", () => {
+    expect(detectNegation("استرجعت فلوس الكورس 1500").negated).toBe(false);
+  });
+  it("still reads an order taken back as cancelled", () => {
+    expect(detectNegation("استرجعت الاوردر").negated).toBe(true);
+  });
+});

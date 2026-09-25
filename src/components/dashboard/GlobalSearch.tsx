@@ -57,9 +57,10 @@ export function GlobalSearch() {
                       {item.category}
                     </span>
                     <span
-                      className={`font-bold text-sm whitespace-nowrap ${item.type === "expense" ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}
+                      className={`font-bold text-sm whitespace-nowrap ${item.type === "expense" && Number(item.amount) > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}
                     >
-                      {Number(item.amount).toLocaleString()} ج
+                      {Number(item.amount) < 0 ? "مرتجع " : ""}
+                      {Math.abs(Number(item.amount)).toLocaleString()} ج
                     </span>
                   </div>
                   {(item.subCategory || item.description || item.rawText) && (

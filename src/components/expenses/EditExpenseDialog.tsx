@@ -31,11 +31,19 @@ export interface EditableExpense {
 
 const TYPE_OPTIONS = [
   { value: "expense", label: "مصروف" },
+  { value: "refund", label: "مرتجع" },
   { value: "income", label: "دخل" },
   { value: "transfer", label: "تحويل" },
   { value: "investment", label: "استثمار" },
 ] as const;
+/** What the dialog offers: the four kinds, and a refund (an expense whose money came back). */
 type ExpenseType = (typeof TYPE_OPTIONS)[number]["value"];
+
+/** A refund is stored as a negative expense (ledgerAmount on the server). */
+function kindOf(expense: { type: string; amount: string | number }): ExpenseType {
+  if (expense.type === "expense" && Number(expense.amount) < 0) return "refund";
+  return (expense.type as ExpenseType) || "expense";
+}
 
 /** The day of an instant on this device, as the date input shows it (YYYY-MM-DD). */
 function dayOf(value: string | Date): string {
@@ -60,8 +68,10 @@ export function EditExpenseDialog({
   onSaved?: () => void;
 }) {
   const utils = trpc.useUtils();
-  const [amount, setAmount] = useState(String(Number(expense.amount)));
-  const [type, setType] = useState<ExpenseType>((expense.type as ExpenseType) || "expense");
+  const originalKind = kindOf(expense);
+  const originalAmount = Math.abs(Number(expense.amount));
+  const [amount, setAmount] = useState(String(originalAmount));
+  const [type, setType] = useState<ExpenseType>(originalKind);
   const [category, setCategory] = useState(expense.category);
   const [subCategory, setSubCategory] = useState(expense.subCategory || "عام");
   const [day, setDay] = useState(dayOf(expense.date));
@@ -87,8 +97,12 @@ export function EditExpenseDialog({
     }
     // Only what changed is sent, so an untouched date keeps its time of day.
     const changes: Parameters<typeof update.mutate>[0] = { id: expense.id };
-    if (value !== Number(expense.amount)) changes.amount = value;
-    if (type !== expense.type) changes.type = type;
+    if (value !== originalAmount) changes.amount = value;
+    if (type !== originalKind) {
+      const storedType = type === "refund" ? "expense" : type;
+      if (storedType !== expense.type) changes.type = storedType;
+      changes.refund = type === "refund";
+    }
     if (category !== expense.category) changes.category = category;
     if (subCategory !== (expense.subCategory || "عام") || changes.category) changes.subCategory = subCategory;
     if (day !== dayOf(expense.date)) changes.date = new Date(`${day}T12:00:00`).toISOString();
@@ -100,7 +114,7 @@ export function EditExpenseDialog({
     update.mutate(changes);
   };
 
-  const categories = getCategoryOptionsForType(type, category);
+  const categories = getCategoryOptionsForType(type === "refund" ? "expense" : type, category);
 
   return (
     <AdaptiveDialog open={open} onOpenChange={onOpenChange}>
@@ -130,7 +144,7 @@ export function EditExpenseDialog({
               onChange={(event) => {
                 const nextType = event.target.value as ExpenseType;
                 setType(nextType);
-                const options = getCategoryOptionsForType(nextType);
+                const options = getCategoryOptionsForType(nextType === "refund" ? "expense" : nextType);
                 if (!options.includes(category)) {
                   setCategory(options[0]);
                   setSubCategory(defaultSubCategory(options[0]));

@@ -997,7 +997,7 @@ export function ExpenseChart({
                               </span>
                             </div>
                             <div className="font-bold text-xs text-red-500">
-                              {Number(item.amount).toLocaleString("en-US", {
+                              {Math.abs(Number(item.amount)).toLocaleString("en-US", {
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0,
                               })}{" "}
@@ -1027,7 +1027,7 @@ export function ExpenseChart({
                     </span>
                   </div>
                   <div className="font-bold whitespace-nowrap text-red-500">
-                    {Number(item.amount).toLocaleString("en-US", {
+                    {Math.abs(Number(item.amount)).toLocaleString("en-US", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,
                     })}{" "}
@@ -1106,7 +1106,7 @@ export function ExpenseChart({
                           )}
                         >
                           {displayMeta.sign}
-                          {Number(item.amount).toLocaleString("ar-EG")} ج.م
+                          {Math.abs(Number(item.amount)).toLocaleString("ar-EG")} ج.م
                         </span>
                         {typeof item.parsedMetadata?.balance_after ===
                           "number" && (

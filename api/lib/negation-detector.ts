@@ -87,6 +87,8 @@ const CANCELLED = normalizeMarkers([
   "لغيت", "كنسلت", "الغيت", "بطلت", "رجعت الاوردر", "استرجعت",
 ]);
 
+const CANCELLED_REFUND_VERB = normalizeMarkers(["استرجعت"])[0];
+
 const PAID_BY_OTHERS = normalizeMarkers([
   "عزمني", "عزمتني", "عزمنا", "ببلاش", "مجانا",
   "ولا مليم", "ولا قرش", "الحساب عليه", "هو اللي دفع",
@@ -115,7 +117,11 @@ export function detectNegation(text: string): NegationResult {
     }
   }
 
+  // "استرجعت فلوس الكورس" is money back from a purchase, a refund to record; only an
+  // order taken back with no money named ("استرجعت الاوردر") is a cancellation.
+  const moneyBack = /(?:^|\s)(?:فلوس|فلوسي|فلوسه|فلوسها|الفلوس|تمن|تمنه|تمنها|حقي|حقه|حقها)(?=\s|$)/.test(norm);
   for (const marker of CANCELLED) {
+    if (marker === CANCELLED_REFUND_VERB && moneyBack) continue;
     if (norm.includes(marker)) return { negated: true, kind: "cancelled", marker };
   }
 

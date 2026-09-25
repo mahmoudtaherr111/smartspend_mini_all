@@ -33,6 +33,11 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
 - An item is a row of `expenses` with a type (income, expense, transfer, investment), an amount, a category and
   subcategory, a date, a source, a status, and optional wallet, business and contact. Its original text and parsed
   metadata sit beside it in `expense_details` (`syncExpenseDetails`).
+- **Refunds.** An expense whose money came back (direction `incoming`) is stored with a negative amount in the
+  category it was bought from (`ledgerAmount` in `api/services/expense-rollups.ts`), so the rollups, the category
+  breakdown, budgets and the AI Center net it without knowing about refunds. `expense.update` takes `refund` and keeps
+  the stored sign in line with the kind; the list, calendar, search and edit dialog show the magnitude as "مرتجع"
+  (docs/decisions/0010-refunds-net-their-category.md).
 - Every write that adds, changes or removes an item runs in a transaction that applies a delta to
   `expense_daily_rollups`, one row per user, business (0 for personal) and Cairo business day
   (`expenseToRollupDelta`, `applyExpenseRollupDelta`). Only confirmed items count; items from bank messages also
@@ -191,8 +196,9 @@ Checked against the code; each one names where it lives.
 9. **Bug.** Wallet balances are stored as whatever text the client sends.
 10. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
     as spending, every source except voice as manual, and dates by UTC day.
-11. **Gap.** A refund is income under دخل آخر/مرتجعات واسترداد; the category the purchase came from keeps its full amount.
-    Netting it waits for one definition of spending that every screen reads (docs/decisions/0008-money-movements-and-taxonomy.md).
+11. **Gap.** Refunds net their category only from sentences: a bank message's card refund arrives as an incoming
+    credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative
+    spending in a month when the purchase fell in an earlier one.
 
 ## Related systems
 - [Recording spending](expense-capture.md): creates the items this system reads, and triggers the budget alert.

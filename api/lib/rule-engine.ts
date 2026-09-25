@@ -5,7 +5,7 @@
 
 import { CATEGORY_DICTIONARY, isKnownLexeme, isWawWhitelisted } from "./egyptian-dictionary";
 import { fuzzyFindCategory, normalizeArabic, matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
-import { detectIntent, GIFT_NOUN, readsAsSale, type TransactionIntent } from "./intent-detector";
+import { detectIntent, GIFT_NOUN, readsAsRefund, readsAsSale, type TransactionIntent } from "./intent-detector";
 import { extractAmounts, type ExtractedAmount } from "./entity-extractor";
 import { normalizeText } from "./text-normalizer";
 import { CATEGORIES } from "./category-registry";
@@ -1735,6 +1735,10 @@ export async function runRuleEngine(
 
     let finalCategory = governedCategory;
     let finalSubCategory = governed ? governed.subCategory : refinedSubCategory;
+    // Money back from something bought is spending coming back to the category it was
+    // bought from, not income: it is saved as a negative expense there, so every total of
+    // spending nets it (docs/decisions/0010-refunds-net-their-category.md).
+    let isRefund = false;
 
     // The noun named a spending category (or the verb بعت named a transfer), yet the
     // direction says money came in. The income category is chosen from what came in,
@@ -1760,6 +1764,14 @@ export async function runRuleEngine(
           : /نقط|نقوط/.test(allContextNorm)
             ? "نقطة"
             : "هدية فلوس";
+      } else if (readsAsRefund(allContextNorm) && !PERSON_CATEGORIES.includes(category)) {
+        // "رجعت الجزمة واخدت فلوسي 300": the shoes' category gets its money back.
+        isRefund = true;
+        finalCategory = category;
+        finalSubCategory = refinedSubCategory;
+        if (category === "متنوعات") {
+          finalConfidence = Math.min(finalConfidence, 70);
+        }
       } else if (/(رجع|استرد|استرجع|مرتجع|باقي|بقيت)/.test(allContextNorm)) {
         // "رجعت الجزمة واخدت فلوسي": money back from a purchase.
         finalCategory = "دخل آخر";
@@ -1788,17 +1800,26 @@ export async function runRuleEngine(
         finalConfidence = Math.min(finalConfidence, 80);
         matchKind = "intent_only";
       }
-      registeredType = "income";
+      registeredType = isRefund ? "expense" : "income";
     }
 
     const isNeutralCategory = ["متنوعات", ...PERSON_CATEGORIES].includes(finalCategory);
     let finalType = isNeutralCategory ? effectiveIntent : (registeredType || effectiveIntent);
     if (effectiveIntent === "income") {
-      finalType = "income";
+      finalType = isRefund ? "expense" : "income";
     }
     // A governed noun decided the direction from its verb; nothing downstream may
     // override it, otherwise "قبضت الجمعية" reverts to the category's default type.
     if (governed) finalType = governed.type;
+    if (!governed && readsAsRefund(allContextNorm)) {
+      if (finalType === "expense" && !PERSON_CATEGORIES.includes(finalCategory)) {
+        // "رجعت الموبايل واستردت فلوسه": the verb read as buying, the money came back.
+        isRefund = true;
+      } else if (finalType === "income" && finalCategory === "دخل آخر" && finalSubCategory === "عام") {
+        // "جالي استرداد 200": money back from something unnamed stays income, named.
+        finalSubCategory = "مرتجعات واسترداد";
+      }
+    }
 
     items.push(
       applyProfileHints(
@@ -1809,6 +1830,7 @@ export async function runRuleEngine(
           description,
           type: finalType,
           confidence: finalConfidence,
+          ...(isRefund ? { direction: "incoming" as const } : {}),
           ...(governed && finalType === "transfer"
             ? { direction: governed.direction === "in" ? ("incoming" as const) : ("outgoing" as const) }
             : {}),
