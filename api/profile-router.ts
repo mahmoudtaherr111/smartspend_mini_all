@@ -24,12 +24,14 @@ import {
   saveSmartProfile,
   updateSmartProfile,
   getUserContacts,
+  addDynamicContact,
 } from "./services/user-profile-service";
 import { invalidateUserClassificationCache } from "./lib/smart-pipeline";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 import {
   ADAPTIVE_ONBOARDING_QUESTIONS,
   applyOnboardingAnswer,
+  namedPeopleOfAnswer,
   getNextOnboardingQuestion,
 } from "./services/adaptive-question-engine";
 import { buildBehaviorSnapshot } from "./services/lifestyle-inference-engine";
@@ -393,6 +395,12 @@ export const profileRouter = router({
       );
 
       await saveSmartProfile(ctx.user.id, ctx.user.type, nextProfile);
+      // Names given here are people the classifier should already know.
+      if (!input.skipped) {
+        for (const person of namedPeopleOfAnswer(input.key, input.value)) {
+          await addDynamicContact(ctx.user.id, ctx.user.type, person.name, person.relationship).catch(() => null);
+        }
+      }
       return {
         success: true,
         profile: nextProfile,

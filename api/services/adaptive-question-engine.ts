@@ -372,3 +372,33 @@ export function applyOnboardingAnswer(
     profileCompleted: complete || profile.profileCompleted,
   };
 }
+
+/** The relationship each onboarding question's names are saved under in the contacts. */
+const NAMED_PEOPLE_QUESTIONS: Record<string, string> = {
+  children_names: "ابن/ابنة",
+  partner_name: "زوج/زوجة",
+  siblings_names: "أخ/أخت",
+  parents_names: "والد/والدة",
+  regular_contacts: "شخص معروف",
+};
+
+/**
+ * The people an onboarding answer names, with the relationship the question implies. They
+ * are added to the contacts when the answer is saved, so the app does not later ask "مين
+ * أحمد؟" about someone the user already named. A name shorter than two letters is dropped.
+ */
+export function namedPeopleOfAnswer(key: string, value: unknown): Array<{ name: string; relationship: string }> {
+  const relationship = NAMED_PEOPLE_QUESTIONS[key];
+  if (!relationship) return [];
+  const names = Array.isArray(value) ? value : typeof value === "string" ? value.split(/[،,\n]+/) : [];
+  const seen = new Set<string>();
+  const people: Array<{ name: string; relationship: string }> = [];
+  for (const raw of names) {
+    if (typeof raw !== "string") continue;
+    const name = raw.trim();
+    if (name.length < 2 || seen.has(name)) continue;
+    seen.add(name);
+    people.push({ name, relationship });
+  }
+  return people;
+}

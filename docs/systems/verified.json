@@ -28,7 +28,7 @@
         "api/profile-router.ts#profile.requestPhoneChange": "e167392e505a",
         "api/profile-router.ts#profile.updateProfile": "9aba6a0c3710",
         "api/profile-router.ts#profile.updateUserInfo": "ae7508bea9bd",
-        "api/profile-router.ts#rest-of-file": "edf9095ff413",
+        "api/profile-router.ts#rest-of-file": "b95a7ad3787b",
         "api/services/phone-challenge.ts": "9c5aa7cfebc9",
         "api/services/turnstile-service.ts": "89a28fc96d49",
         "api/services/user-purge-service.ts": "2332c1615605",
@@ -47,7 +47,7 @@
         "src/pages/Login.tsx": "63a52d38688f",
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
-      "checked": "2026-09-24 37a55fb",
+      "checked": "2026-09-25 dd02a18",
       "arabic": "fb49e1dcb4e4",
       "arabicChecked": "2026-09-23 fe4b4b3"
     },
@@ -186,7 +186,7 @@
         "api/profile-router.ts#profile.getSmsLogs": "c25c54979dfd",
         "api/profile-router.ts#profile.getSmsSuggestions": "e7e02adbedc1",
         "api/profile-router.ts#profile.getWebhookToken": "8a850e31cd9d",
-        "api/profile-router.ts#rest-of-file": "edf9095ff413",
+        "api/profile-router.ts#rest-of-file": "b95a7ad3787b",
         "api/services/sms-ledger.ts": "8f28adc733f5",
         "api/sms-router.ts": "86e5a8c4a6ef",
         "src/components/bank-sync/AndroidSetupFlow.tsx": "a46afb8f98d0",
@@ -196,7 +196,7 @@
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-25 46f2396",
+      "checked": "2026-09-25 dd02a18",
       "arabic": "a2ac2c09a91d",
       "arabicChecked": "2026-09-25 010e167"
     },
@@ -304,10 +304,10 @@
         "api/profile-router.ts#profile.getQuestions": "ec6916cf9c0c",
         "api/profile-router.ts#profile.getSmartProfile": "cd843b296675",
         "api/profile-router.ts#profile.refreshInferences": "a5e6ec461dbc",
-        "api/profile-router.ts#profile.submitOnboardingAnswer": "a596328fbc29",
+        "api/profile-router.ts#profile.submitOnboardingAnswer": "6a50afa4a2ab",
         "api/profile-router.ts#profile.updateSmartProfile": "28d67008ded5",
-        "api/profile-router.ts#rest-of-file": "edf9095ff413",
-        "api/services/adaptive-question-engine.ts": "a6437894905a",
+        "api/profile-router.ts#rest-of-file": "b95a7ad3787b",
+        "api/services/adaptive-question-engine.ts": "99cc2c586b1f",
         "api/services/batch-ai-service.ts": "d0e332df353f",
         "api/services/lifestyle-inference-engine.ts": "2a6365c8cb6e",
         "api/services/personal-context-builder.ts": "fd10e7c32f57",
@@ -316,9 +316,9 @@
         "api/services/user-profile-service.ts": "70cb6f7c802a",
         "src/components/insights/AIInsights.tsx": "4b618cdf3ad2"
       },
-      "checked": "2026-09-24 37a55fb",
-      "arabic": "9bdd405dd970",
-      "arabicChecked": "2026-09-24 45b800e"
+      "checked": "2026-09-25 dd02a18",
+      "arabic": "e4447b869ee6",
+      "arabicChecked": "2026-09-25 dd02a18"
     },
     "money": {
       "files": {
@@ -345,7 +345,7 @@
         "api/profile-router.ts#profile.listContacts": "90da0645d250",
         "api/profile-router.ts#profile.mergeContacts": "7ade643df213",
         "api/profile-router.ts#profile.updateContact": "a729d41858de",
-        "api/profile-router.ts#rest-of-file": "edf9095ff413",
+        "api/profile-router.ts#rest-of-file": "b95a7ad3787b",
         "api/services/budget-status.ts": "e6c46c341118",
         "api/services/expense-rollups.ts": "08cab329ba18",
         "api/services/financial-month.ts": "50ad98190246",
@@ -368,7 +368,7 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/pages/Home.tsx": "7e4da1302279"
       },
-      "checked": "2026-09-25 14feab9",
+      "checked": "2026-09-25 dd02a18",
       "arabic": "1a37aad89ca3",
       "arabicChecked": "2026-09-25 d295dd5"
     },
@@ -383,12 +383,12 @@
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
         "api/profile-router.ts#profile.savePushSubscription": "788ec5760eef",
         "api/profile-router.ts#profile.sendBiometricPromptNotification": "ae8ae7ea27ee",
-        "api/profile-router.ts#rest-of-file": "edf9095ff413",
+        "api/profile-router.ts#rest-of-file": "b95a7ad3787b",
         "api/services/firebase.ts": "3b9319b2c3a5",
         "api/services/otp-cache.ts": "e6343a8abd07",
         "api/services/whatsapp-service.ts": "1177804a1f23"
       },
-      "checked": "2026-09-25 339aea2",
+      "checked": "2026-09-25 dd02a18",
       "arabic": "23206f84bd39",
       "arabicChecked": "2026-09-25 339aea2"
     },

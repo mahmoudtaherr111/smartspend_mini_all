@@ -142,9 +142,10 @@ printable HTML file that the browser downloads.
 Checked against the code; each one names where it lives.
 1. **Bug.** The WhatsApp report describes the month that has just started: the scheduler calls `runMonthlyReportJob` without a
    month at 02:00 on the 1st, and the job takes the month from `new Date().toISOString()`.
-2. **Gap.** Names given in the onboarding questions (children, partner, siblings, parents, pets, regular contacts) are saved
-   in the profile but never copied into `user_contacts` once the profile is marked as migrated, which its first save
-   does; `getSmartProfile` then blanks those lists, so classification prompts and reports never see them.
+2. **Gap.** Names given in the onboarding questions (children, partner, siblings, parents, regular contacts) become
+   contacts when the answer is saved (`namedPeopleOfAnswer` in `api/services/adaptive-question-engine.ts`, called by
+   `profile.submitOnboardingAnswer`). Names answered before that, after the profile was marked as migrated, stay in the
+   profile only, and `getSmartProfile` blanks those lists; pet names are never contacts.
 3. **Bug.** `getSmartProfile` appends the latest learning events, with literal `\n` text, to the inferred spending behaviour.
    Every onboarding answer or profile edit saves that value, so it grows until the next behaviour refresh replaces
    it, and `summarizeProfileForAI` sends it to classification prompts.

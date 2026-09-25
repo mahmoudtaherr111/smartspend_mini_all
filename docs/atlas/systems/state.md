@@ -11,14 +11,14 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (53 of
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 bc91a31 | 2026-09-25 d5e7b7e | 18 | — | 3 | 2 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 46f2396 | 2026-09-25 010e167 | 3 | — | 2 | 3 | 2 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 dd02a18 | 2026-09-25 010e167 | 3 | — | 2 | 3 | 2 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 5e20684 | 2026-09-25 5e20684 | 4 | — | 5 | 3 | 1 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 37a55fb | 2026-09-24 45b800e | 6 | — | 9 | 2 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 14feab9 | 2026-09-25 d295dd5 | 5 | — | 6 | 5 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-24 37a55fb | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 dd02a18 | 2026-09-25 dd02a18 | 6 | — | 9 | 2 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 dd02a18 | 2026-09-25 d295dd5 | 5 | — | 6 | 5 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-25 dd02a18 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 46f2396 | 2026-09-24 6739377 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 339aea2 | 2026-09-25 339aea2 | 1 | **1** | 5 | 1 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 dd02a18 | 2026-09-25 339aea2 | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 4c48fe5 | 2026-09-25 4c48fe5 | 4 | — | 3 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 45b800e | 2026-09-24 d9d553a | 9 | — | 4 | 1 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-24 45b800e | 2026-09-24 45b800e | 5 | — | 2 | — | 8 |
@@ -142,7 +142,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest 10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`) and says nothing about the rest; only the period's totals are exact at any size.
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
-- Names given in the onboarding questions (children, partner, siblings, parents, pets, regular contacts) are saved in the profile but never copied into `user_contacts` once the profile is marked as migrated, which its first save does; `getSmartProfile` then blanks those lists, so classification prompts and reports never see them.
+- Names given in the onboarding questions (children, partner, siblings, parents, regular contacts) become contacts when the answer is saved (`namedPeopleOfAnswer` in `api/services/adaptive-question-engine.ts`, called by `profile.submitOnboardingAnswer`). Names answered before that, after the profile was marked as migrated, stay in the profile only, and `getSmartProfile` blanks those lists; pet names are never contacts.
 - No `assertAiBudget` check runs before either report model call, and the WhatsApp job records no tokens for the user (`api/AGENTS.md`, rule 5).
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
