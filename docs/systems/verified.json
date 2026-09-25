@@ -298,7 +298,7 @@
         "api/export-router.ts#export.monthlyReportHtml": "335e0925b0ca",
         "api/export-router.ts#rest-of-file": "45767b678670",
         "api/jobs/monthly-behavior-job.ts": "41da3de3a5f6",
-        "api/jobs/monthly-report-job.ts": "6ec01f2d367f",
+        "api/jobs/monthly-report-job.ts": "81033d38bdee",
         "api/profile-router.ts#profile.dismissOnboarding": "575744cb7639",
         "api/profile-router.ts#profile.getNextOnboardingQuestion": "45b300c9691a",
         "api/profile-router.ts#profile.getQuestions": "ec6916cf9c0c",
@@ -316,9 +316,9 @@
         "api/services/user-profile-service.ts": "70cb6f7c802a",
         "src/components/insights/AIInsights.tsx": "4b618cdf3ad2"
       },
-      "checked": "2026-09-25 dd02a18",
-      "arabic": "e4447b869ee6",
-      "arabicChecked": "2026-09-25 dd02a18"
+      "checked": "2026-09-25 614093e",
+      "arabic": "8315c817ca7a",
+      "arabicChecked": "2026-09-25 614093e"
     },
     "money": {
       "files": {

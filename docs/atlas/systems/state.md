@@ -4,7 +4,7 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (53 of 116 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (52 of 116 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
@@ -14,7 +14,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (53 of
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 dd02a18 | 2026-09-25 010e167 | 3 | — | 2 | 3 | 2 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 5e20684 | 2026-09-25 5e20684 | 4 | — | 5 | 3 | 1 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 dd02a18 | 2026-09-25 dd02a18 | 6 | — | 9 | 2 | 3 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 614093e | 2026-09-25 614093e | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 dd02a18 | 2026-09-25 d295dd5 | 5 | — | 6 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-25 dd02a18 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 46f2396 | 2026-09-24 6739377 | 1 | **1** | — | 3 | 2 |
@@ -48,7 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (48)
+### Bugs (47)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - Receipts are saved without review. The saved amount is the first item the pipeline read from the OCR text, which can differ from the total the vision model returned, and a base64 image longer than the parser's cap is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the procedure accepts larger payloads.
@@ -74,7 +74,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - When the kernel throws, the user sees the same message as when an operator turned the assistant off.
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
-- The WhatsApp report describes the month that has just started: the scheduler calls `runMonthlyReportJob` without a month at 02:00 on the 1st, and the job takes the month from `new Date().toISOString()`.
 - `getSmartProfile` appends the latest learning events, with literal `\n` text, to the inferred spending behaviour. Every onboarding answer or profile edit saves that value, so it grows until the next behaviour refresh replaces it, and `summarizeProfileForAI` sends it to classification prompts.
 - Refreshing a month that already has a report skips the waiting period, so the analysis of that month can be regenerated, with a paid model call, as often as the AI rate limit allows. A `report_limit_<plan>` of 0 falls back to 30 days.
 - The WhatsApp report goes to the plans whose `feature_whatsapp_report_<plan>` switch is on — Pro only by default, so Ultra users do not get it until an admin turns it on — and the job ignores the user's "send the report on WhatsApp" switch in Settings (`whatsappReportsEnabled`).
@@ -122,7 +121,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, so anything recorded offline and not yet sent is lost with the session.
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (32)
+### Gaps (33)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -142,6 +141,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest 10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`) and says nothing about the rest; only the period's totals are exact at any size.
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
+- The scheduled report describes the Cairo month that ended (`reportMonthFor` in `api/jobs/monthly-report-job.ts`); a report asked for from the app or the admin still names its month explicitly, and nothing re-sends a month whose scheduled run failed.
 - Names given in the onboarding questions (children, partner, siblings, parents, regular contacts) become contacts when the answer is saved (`namedPeopleOfAnswer` in `api/services/adaptive-question-engine.ts`, called by `profile.submitOnboardingAnswer`). Names answered before that, after the profile was marked as migrated, stay in the profile only, and `getSmartProfile` blanks those lists; pet names are never contacts.
 - No `assertAiBudget` check runs before either report model call, and the WhatsApp job records no tokens for the user (`api/AGENTS.md`, rule 5).
 

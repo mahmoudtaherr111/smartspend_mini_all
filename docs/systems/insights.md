@@ -140,8 +140,9 @@ printable HTML file that the browser downloads.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Bug.** The WhatsApp report describes the month that has just started: the scheduler calls `runMonthlyReportJob` without a
-   month at 02:00 on the 1st, and the job takes the month from `new Date().toISOString()`.
+1. **Gap.** The scheduled report describes the Cairo month that ended (`reportMonthFor` in
+   `api/jobs/monthly-report-job.ts`); a report asked for from the app or the admin still names its month explicitly,
+   and nothing re-sends a month whose scheduled run failed.
 2. **Gap.** Names given in the onboarding questions (children, partner, siblings, parents, regular contacts) become
    contacts when the answer is saved (`namedPeopleOfAnswer` in `api/services/adaptive-question-engine.ts`, called by
    `profile.submitOnboardingAnswer`). Names answered before that, after the profile was marked as migrated, stay in the
