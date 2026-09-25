@@ -14,7 +14,7 @@ import { mapSmsToExpenseCategory, type SmsParseResult } from "../lib/sms-ai-pars
 import type { RuleBasedSmsResult } from "../lib/sms-rule-parser";
 import { runRuleEngine } from "../lib/rule-engine";
 import { normalizeText } from "../lib/text-normalizer";
-import { applyExpenseRollupDelta, expenseToRollupDelta, ledgerAmount, syncExpenseDetails } from "./expense-rollups";
+import { applyExpenseRollupDelta, expenseToRollupDelta, ledgerAmount } from "./expense-rollups";
 
 export interface SmsCategory {
   category: string;
@@ -206,7 +206,6 @@ export async function insertSmsExpense(
     parsedMetadata: input.metadata,
   });
   const expenseId = Number((insertResult as { insertId?: number })?.insertId ?? 0) || null;
-  if (expenseId) await syncExpenseDetails(tx, expenseId, input.message, input.metadata);
 
   await applyExpenseRollupDelta(
     tx,

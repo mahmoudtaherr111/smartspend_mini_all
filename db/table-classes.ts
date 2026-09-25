@@ -83,7 +83,6 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
 
   // Class B: Core Ledger (Forever, Never auto-deleted)
   expenses: "B",
-  expense_details: "B",
 
   // Class C: Derived / Rollup (Rebuildable from B)
   expense_daily_rollups: "C",

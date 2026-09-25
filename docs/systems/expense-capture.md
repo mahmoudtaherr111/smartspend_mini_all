@@ -230,7 +230,7 @@ referenced wallets, businesses and contacts belong to the user
 (`api/expense-router.ts#namedPersonOf`): the person subcategory of a person category, or the `personName` and
 `personRelationship` the form sends for a person named beside a purpose. A transfer's direction is stored in
 `parsed_metadata.direction`. In one
-transaction they insert the rows and their `expense_details`, apply the daily rollup delta
+transaction they insert the rows, apply the daily rollup delta
 (`api/services/expense-rollups.ts#applyExpenseRollupDelta`), count the contact's transactions and update the
 streak. Afterwards they clear muscle memory, the classification cache and the finance caches, and check budget
 alerts (`api/notification-engine.ts#checkUserBudgetExceeded`).

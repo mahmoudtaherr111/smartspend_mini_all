@@ -187,14 +187,6 @@ model {
         storageClass 'C'
       }
     }
-    expense_details = table 'expense_details' {
-      #classB
-      description '4 columns, 0 indexes, storage class B.'
-      metadata {
-        export 'expenseDetails'
-        storageClass 'B'
-      }
-    }
     expenses = table 'expenses' {
       #classB #dualOwner
       description '22 columns, 11 indexes, storage class B.'

@@ -18,7 +18,6 @@ import {
   classificationLogs,
   expenseCategories,
   expenseDailyRollups,
-  expenseDetails,
   expenses,
   financialGoals,
   inAppNotifications,
@@ -93,7 +92,6 @@ export async function purgeUserData(tx: any, userId: number, userType: PurgeUser
     .where(userScope(expenses, userId, userType));
   const expenseIds = userExpenses.map((row: { id: number }) => row.id);
   if (expenseIds.length) {
-    await tx.delete(expenseDetails).where(inArray(expenseDetails.expenseId, expenseIds));
   }
   await tx.delete(expenses).where(userScope(expenses, userId, userType));
   await tx.delete(expenseDailyRollups).where(userScope(expenseDailyRollups, userId, userType));

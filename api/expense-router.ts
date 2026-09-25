@@ -31,8 +31,6 @@ import {
   applyExpenseRollupDelta,
   expenseToRollupDelta,
   ledgerAmount,
-  syncExpenseDetails,
-  deleteExpenseDetails,
   toDayString,
 } from "./services/expense-rollups";
 import { businessDayRange } from "./lib/app-time";
@@ -263,7 +261,6 @@ async function saveClarifiedItems(
       parsedMetadata: item.direction ? { direction: item.direction } : null,
     });
     const id = Number((insertedRow as { insertId?: number })?.insertId ?? 0);
-    if (id) await syncExpenseDetails(tx, id, options.rawText);
     await applyExpenseRollupDelta(
       tx,
       expenseToRollupDelta(
@@ -788,10 +785,6 @@ export const expenseRouter = router({
 
           insertId = result?.insertId;
 
-          if (insertId) {
-            await syncExpenseDetails(tx, insertId, input.rawText, metadata);
-          }
-
           const delta = expenseToRollupDelta(
             {
               userId: userId as number,
@@ -976,7 +969,6 @@ export const expenseRouter = router({
               rawText: v.rawText,
               parsedMetadata: (v as any).parsedMetadata,
             }));
-            await syncExpenseDetails(tx, insertedExpenses);
           }
 
           for (const val of valuesToInsert) {
@@ -1285,9 +1277,6 @@ export const expenseRouter = router({
         const newDelta = expenseToRollupDelta(updatedExpenseObj, 1);
         await applyExpenseRollupDelta(tx, newDelta);
 
-        if (input.rawText !== undefined) {
-          await syncExpenseDetails(tx, input.id, input.rawText);
-        }
       });
 
       // Phase 2: Forget everything that could still serve the answer we just corrected.
@@ -1431,8 +1420,6 @@ export const expenseRouter = router({
         await tx
           .delete(expenses)
           .where(eq(expenses.id, expense.id));
-
-        await deleteExpenseDetails(tx, expense.id);
 
         const delta = expenseToRollupDelta(expense, -1);
         await applyExpenseRollupDelta(tx, delta);

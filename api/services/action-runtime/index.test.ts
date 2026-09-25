@@ -57,7 +57,6 @@ vi.mock("../../queries/connection", () => ({
 vi.mock("../expense-rollups", () => ({
   applyExpenseRollupDelta: vi.fn(async () => undefined),
   expenseToRollupDelta: vi.fn(() => ({})),
-  syncExpenseDetails: vi.fn(async () => undefined),
 }));
 
 vi.mock("../finance-semantic-layer", () => ({

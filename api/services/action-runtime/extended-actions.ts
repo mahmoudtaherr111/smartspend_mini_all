@@ -462,7 +462,6 @@ async function executeExpenseCreate(
   const {
     applyExpenseRollupDelta,
     expenseToRollupDelta,
-    syncExpenseDetails,
   } = await import("../expense-rollups");
 
   let insertedId = 0;
@@ -483,9 +482,6 @@ async function executeExpenseCreate(
 
     insertedId = Number((inserted as any)?.insertId || 0);
 
-    if (insertedId) {
-      await syncExpenseDetails(tx, insertedId, expense.rawText);
-    }
 
     const delta = expenseToRollupDelta(
       {
@@ -983,7 +979,6 @@ async function executeUndo(
     const {
       applyExpenseRollupDelta,
       expenseToRollupDelta,
-      deleteExpenseDetails,
     } = await import("../expense-rollups");
 
     await db.transaction(async (tx) => {
@@ -1003,7 +998,6 @@ async function executeUndo(
         throw new Error(`Expense ${expenseId} not found to undo`);
       }
 
-      await deleteExpenseDetails(tx, expenseId);
       const delta = expenseToRollupDelta(existing, -1);
       await applyExpenseRollupDelta(tx, delta);
 

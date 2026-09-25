@@ -31,8 +31,10 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
 
 ## The ledger and its daily rollups
 - An item is a row of `expenses` with a type (income, expense, transfer, investment), an amount, a category and
-  subcategory, a date, a source, a status, and optional wallet, business and contact. Its original text and parsed
-  metadata sit beside it in `expense_details` (`syncExpenseDetails`).
+  subcategory, a date, a source, a status, and optional wallet, business and contact, with its original text
+  (`raw_text`) and parsed metadata (`parsed_metadata`) on the same row. A side table that copied those two,
+  `expense_details`, was read by nothing and kept the text of deleted expenses; migration
+  `db/migrations/0025_drop_expense_details.sql` removed it.
 - **Refunds.** An expense whose money came back (direction `incoming`) is stored with a negative amount in the
   category it was bought from (`ledgerAmount` in `api/services/expense-rollups.ts`), so the rollups, the category
   breakdown, budgets and the AI Center net it without knowing about refunds. `expense.update` takes `refund` and keeps
@@ -64,7 +66,7 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   up to 500 stored items still filed in an old place (`LEGACY_TAXONOMY` in `contracts/categories.ts`: a retired
   category, a merged subcategory, a money movement booked as spending or income) to where they live now. Each item
   moves in its own transaction: it keeps its old category, subcategory and type in
-  `parsed_metadata.legacy_taxonomy` (also in `expense_details`), and when its type changes the rollup delta moves
+  `parsed_metadata.legacy_taxonomy`, and when its type changes the rollup delta moves
   with it. User dictionaries, correction rules and budgets that name a retired category follow. Once every row is
   current a run changes nothing. Undoing it means restoring the three values from `legacy_taxonomy` and moving the
   rollup delta back.

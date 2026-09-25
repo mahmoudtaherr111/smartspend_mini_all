@@ -77,7 +77,7 @@ the rule parser and the model that read them, and the setup screens.
   is مواصلات/أوبر/كريم and "Talabat" أكل وشرب.
 - In one database transaction the route inserts the expense (source `sms`, the message as raw text, a description
   from provider, merchant and sender, the message's timestamp as its date when it parses, the parse details as
-  metadata), writes its `expense_details` and the daily rollup delta
+  metadata), writes the daily rollup delta
   (`api/services/expense-rollups.ts#applyExpenseRollupDelta`), and marks the raw message `processed`. It then bumps
   the finance cache generation.
 

@@ -176,6 +176,13 @@
       "when": 1790343008317,
       "tag": "0024_purge_forgotten_memories",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1790348183824,
+      "tag": "0025_drop_expense_details",
+      "breakpoints": true
     }
   ]
 }

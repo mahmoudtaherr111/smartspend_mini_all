@@ -206,13 +206,13 @@ Paymob checkout requests, webhook verification settings, the subscription grant 
 
 ### `ledger` — Ledger aggregates
 
-Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges.
+Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger) and salary-cycle month ranges.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/services/budget-status.ts` | `database`, `platform` | — | `expenses`, `user_budgets` | `user_budgets` |
 | `api/services/debt-ledger.ts` | `database` | — | `expenses`, `user_contacts` | — |
-| `api/services/expense-rollups.ts` | `database`, `finance-semantic-layer`, `platform` | — | `expense_daily_rollups`, `expenses` | `expense_daily_rollups`, `expense_details` |
+| `api/services/expense-rollups.ts` | `database`, `finance-semantic-layer`, `platform` | — | `expense_daily_rollups`, `expenses` | `expense_daily_rollups` |
 | `api/services/financial-month.ts` | `platform` | — | — | — |
 
 ### `accounts` — Account lifecycle
@@ -221,7 +221,7 @@ Account deletion: purgeUserData removes every row a user owns, inside the caller
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/services/user-purge-service.ts` | `database` | — | `chat_conversations`, `expenses`, `user_businesses` | `ad_clicks`, `ai_action_audit_logs`, `ai_action_memory`, `ai_conversation_summaries`, `ai_cost_monthly`, `ai_memory_embeddings`, `ai_memory_items`, `ai_pending_actions`, `ai_summaries`, `ai_token_ledgers`, `auth_challenges`, `business_categories`, `chat_conversations`, `chat_messages`, `classification_logs`, `expense_categories`, `expense_daily_rollups`, `expense_details`, `expenses`, `financial_goals`, `in_app_notifications`, `local_users`, `monthly_behavior_snapshots`, `monthly_reports`, `notification_logs`, `pending_clarifications`, `pro_subscriptions`, `profile_learning_events`, `push_subscriptions`, `raw_sms_events`, `referrals`, `sessions`, `support_tickets`, `user_analytics`, `user_budgets`, `user_businesses`, `user_contacts`, `user_correction_rules`, `user_credentials`, `user_dictionaries`, `user_profiles`, `user_wallets`, `users`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `webhook_tokens` |
+| `api/services/user-purge-service.ts` | `database` | — | `chat_conversations`, `expenses`, `user_businesses` | `ad_clicks`, `ai_action_audit_logs`, `ai_action_memory`, `ai_conversation_summaries`, `ai_cost_monthly`, `ai_memory_embeddings`, `ai_memory_items`, `ai_pending_actions`, `ai_summaries`, `ai_token_ledgers`, `auth_challenges`, `business_categories`, `chat_conversations`, `chat_messages`, `classification_logs`, `expense_categories`, `expense_daily_rollups`, `expenses`, `financial_goals`, `in_app_notifications`, `local_users`, `monthly_behavior_snapshots`, `monthly_reports`, `notification_logs`, `pending_clarifications`, `pro_subscriptions`, `profile_learning_events`, `push_subscriptions`, `raw_sms_events`, `referrals`, `sessions`, `support_tickets`, `user_analytics`, `user_budgets`, `user_businesses`, `user_contacts`, `user_correction_rules`, `user_credentials`, `user_dictionaries`, `user_profiles`, `user_wallets`, `users`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `webhook_tokens` |
 
 ### `jobs` — Scheduled job bodies
 
@@ -234,7 +234,7 @@ Job implementations scheduled from api/boot.ts.
 | `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
 | `api/jobs/rollup-reconciliation-job.ts` | `database`, `ledger`, `platform` | — | `expense_daily_rollups`, `expenses` | — |
 | `api/jobs/subscription-expiry-job.ts` | `auth`, `database`, `notifications`, `platform` | — | `pro_subscriptions` | `pro_subscriptions` |
-| `api/jobs/taxonomy-migration-job.ts` | `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | — | `expense_details`, `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` | `expense_details`, `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` |
+| `api/jobs/taxonomy-migration-job.ts` | `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | — | `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` | `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` |
 
 ### `notifications` — Notifications
 

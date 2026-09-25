@@ -98,7 +98,7 @@
     {
       "id": "ledger",
       "title": "Ledger aggregates",
-      "description": "Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges.",
+      "description": "Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger) and salary-cycle month ranges.",
       "paths": [
         "api/services/expense-rollups.ts",
         "api/services/financial-month.ts",

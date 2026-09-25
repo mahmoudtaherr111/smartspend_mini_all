@@ -31,7 +31,7 @@
         "api/profile-router.ts#rest-of-file": "b95a7ad3787b",
         "api/services/phone-challenge.ts": "9c5aa7cfebc9",
         "api/services/turnstile-service.ts": "89a28fc96d49",
-        "api/services/user-purge-service.ts": "2332c1615605",
+        "api/services/user-purge-service.ts": "5c1e82099bf4",
         "api/session-router.ts": "e255f9db4207",
         "api/webauthn-router.ts": "10e55c7473d8",
         "src/components/auth/BiometricLockOverlay.tsx": "c1ce277a617a",
@@ -47,7 +47,7 @@
         "src/pages/Login.tsx": "63a52d38688f",
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
-      "checked": "2026-09-25 dd02a18",
+      "checked": "2026-09-25 f2b0086",
       "arabic": "fb49e1dcb4e4",
       "arabicChecked": "2026-09-23 fe4b4b3"
     },
@@ -94,7 +94,7 @@
         "api/chat-router.ts": "08a98de3c134",
         "api/services/action-runtime/artifacts.ts": "5292dfe6dc80",
         "api/services/action-runtime/confirmation-phrases.ts": "ecf79bb5cfe7",
-        "api/services/action-runtime/extended-actions.ts": "c67720db8a89",
+        "api/services/action-runtime/extended-actions.ts": "7efec8c4819c",
         "api/services/action-runtime/goal-create.ts": "f3335e61e751",
         "api/services/action-runtime/index.ts": "67c36d3f009e",
         "api/services/action-runtime/types.ts": "2a4e9b66ec6e",
@@ -141,7 +141,7 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "c384e6047412"
       },
-      "checked": "2026-09-25 8acb52d",
+      "checked": "2026-09-25 f2b0086",
       "arabic": "ed714b6b7bb8",
       "arabicChecked": "2026-09-25 8acb52d"
     },
@@ -188,7 +188,7 @@
         "api/profile-router.ts#profile.getSmsSuggestions": "e7e02adbedc1",
         "api/profile-router.ts#profile.getWebhookToken": "8a850e31cd9d",
         "api/profile-router.ts#rest-of-file": "b95a7ad3787b",
-        "api/services/sms-ledger.ts": "73d84a7c9f39",
+        "api/services/sms-ledger.ts": "079eab469b7d",
         "api/sms-router.ts": "c7b73ec30d41",
         "src/components/bank-sync/AndroidSetupFlow.tsx": "a46afb8f98d0",
         "src/components/bank-sync/DigitalBankingSuite.tsx": "b5ee9812af75",
@@ -197,9 +197,9 @@
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-25 9a9c8ca",
-      "arabic": "7701bd8e140d",
-      "arabicChecked": "2026-09-25 9a9c8ca"
+      "checked": "2026-09-25 f2b0086",
+      "arabic": "ec3912db93e8",
+      "arabicChecked": "2026-09-25 f2b0086"
     },
     "billing": {
       "files": {
@@ -227,14 +227,14 @@
         "api/ai-router.ts#rest-of-file": "1f5dd6ffd8de",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
         "api/expense-router.ts#expense.answerClarification": "d4ea3c8db510",
-        "api/expense-router.ts#expense.batchCreate": "e548f0ab9ff5",
-        "api/expense-router.ts#expense.create": "f3c4b7b53269",
+        "api/expense-router.ts#expense.batchCreate": "5676484883da",
+        "api/expense-router.ts#expense.create": "ab7d24a211b3",
         "api/expense-router.ts#expense.createCategory": "8b691f7a3e91",
         "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "6612e66473e8",
-        "api/image-router.ts": "653bd18f45c3",
+        "api/expense-router.ts#rest-of-file": "6d25294a8d34",
+        "api/image-router.ts": "32d626f56c84",
         "api/lib/admissibility-gate.ts": "9a24ae0cb1da",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
         "api/lib/amount-linker.ts": "23fb47c27442",
@@ -283,9 +283,9 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-25 8acb52d",
-      "arabic": "a53dc1084bfb",
-      "arabicChecked": "2026-09-25 8acb52d"
+      "checked": "2026-09-25 f2b0086",
+      "arabic": "a88c9bbba673",
+      "arabicChecked": "2026-09-25 f2b0086"
     },
     "insights": {
       "files": {
@@ -327,7 +327,7 @@
         "api/boot.ts#job:taxonomy-migration": "5864e301b433",
         "api/budget-router.ts": "106bf2ec3b6c",
         "api/business-router.ts": "b6f0bc60473a",
-        "api/expense-router.ts#expense.delete": "188765ac89cc",
+        "api/expense-router.ts#expense.delete": "1a07ba6a54af",
         "api/expense-router.ts#expense.getById": "883d7c8c2233",
         "api/expense-router.ts#expense.getDebtBalances": "821a765233cc",
         "api/expense-router.ts#expense.getMonthSummary": "57385a63157f",
@@ -335,13 +335,13 @@
         "api/expense-router.ts#expense.getYearlyStats": "5267d3d55014",
         "api/expense-router.ts#expense.list": "1540eca4d7f5",
         "api/expense-router.ts#expense.searchTransactions": "9d92514f1158",
-        "api/expense-router.ts#expense.update": "7b999e42e194",
-        "api/expense-router.ts#rest-of-file": "6612e66473e8",
+        "api/expense-router.ts#expense.update": "e6e087556b24",
+        "api/expense-router.ts#rest-of-file": "6d25294a8d34",
         "api/export-router.ts#export.myExpenses": "d0acca7338ba",
         "api/export-router.ts#rest-of-file": "45767b678670",
         "api/goals-router.ts": "9b542bba317d",
         "api/jobs/rollup-reconciliation-job.ts": "07b3be75e8b0",
-        "api/jobs/taxonomy-migration-job.ts": "9f20048c1ac9",
+        "api/jobs/taxonomy-migration-job.ts": "84e501423147",
         "api/profile-router.ts#profile.addContact": "38af2a56ae72",
         "api/profile-router.ts#profile.deleteContact": "970869a36a13",
         "api/profile-router.ts#profile.listContacts": "90da0645d250",
@@ -350,7 +350,7 @@
         "api/profile-router.ts#rest-of-file": "b95a7ad3787b",
         "api/services/budget-status.ts": "e6c46c341118",
         "api/services/debt-ledger.ts": "06bd076c0c6d",
-        "api/services/expense-rollups.ts": "08cab329ba18",
+        "api/services/expense-rollups.ts": "cb4bb8b6e996",
         "api/services/financial-month.ts": "50ad98190246",
         "api/wallet-router.ts": "7d5e5a1398e9",
         "src/components/budgets/BudgetsPanel.tsx": "514a88e41280",
@@ -372,9 +372,9 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/pages/Home.tsx": "1c9404819a8b"
       },
-      "checked": "2026-09-25 8626db8",
-      "arabic": "4fdf04b8e127",
-      "arabicChecked": "2026-09-25 8626db8"
+      "checked": "2026-09-25 f2b0086",
+      "arabic": "6a70e658be4f",
+      "arabicChecked": "2026-09-25 f2b0086"
     },
     "notifications": {
       "files": {
@@ -432,11 +432,11 @@
         "contracts/voice-models.ts": "7344fabca2a2",
         "contracts/voice-protocol.ts": "bf0ad56c14c8",
         "db/relations.ts": "3b914b951354",
-        "db/schema.ts": "06e192a18dcd",
+        "db/schema.ts": "9c5067443dad",
         "db/seed.ts": "811d2a0df636",
-        "db/table-classes.ts": "4f7b341be798"
+        "db/table-classes.ts": "249d087e3b9c"
       },
-      "checked": "2026-09-25 8acb52d",
+      "checked": "2026-09-25 f2b0086",
       "arabic": "1c7eef961f51",
       "arabicChecked": "2026-09-25 8acb52d"
     },

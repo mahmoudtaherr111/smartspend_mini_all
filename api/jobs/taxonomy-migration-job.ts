@@ -20,7 +20,6 @@
 import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import { db } from "../queries/connection";
 import {
-  expenseDetails,
   expenses,
   userBudgets,
   userCorrectionRules,
@@ -148,18 +147,6 @@ export async function runTaxonomyMigrationJob(batchSize = 500): Promise<{
           parsedMetadata: metadata,
         })
         .where(and(eq(expenses.id, row.id), eq(expenses.userId, row.userId), eq(expenses.userType, row.userType)));
-
-      const [details] = await tx
-        .select({ parsedMetadata: expenseDetails.parsedMetadata })
-        .from(expenseDetails)
-        .where(eq(expenseDetails.expenseId, row.id))
-        .limit(1);
-      if (details) {
-        await tx
-          .update(expenseDetails)
-          .set({ parsedMetadata: withLegacy(details.parsedMetadata, row, change) })
-          .where(eq(expenseDetails.expenseId, row.id));
-      }
 
       // Money moves between the rollup's columns only when the type changed.
       if (change.type !== row.type) {

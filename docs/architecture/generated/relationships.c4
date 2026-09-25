@@ -58,7 +58,6 @@ model {
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.expense_categories
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.expense_daily_rollups
-  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.expense_details
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.expenses
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.financial_goals
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.in_app_notifications
@@ -347,7 +346,6 @@ model {
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.ad_clicks
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.expense_daily_rollups
-  smartspend.api.modules.jobs -[reads]-> smartspend.mysql.expense_details
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.jobs -[reads]-> smartspend.mysql.monthly_reports
@@ -368,7 +366,6 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.chat_messages
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.classification_logs
-  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.expense_details
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.expenses
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.monthly_reports
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.notification_logs
@@ -390,7 +387,6 @@ model {
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.user_budgets
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.modules.ledger -[writes]-> smartspend.mysql.expense_daily_rollups
-  smartspend.api.modules.ledger -[writes]-> smartspend.mysql.expense_details
   smartspend.api.modules.ledger -[writes]-> smartspend.mysql.user_budgets
   smartspend.api.modules.notifications -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.notifications -[imports]-> smartspend.api.modules.platform

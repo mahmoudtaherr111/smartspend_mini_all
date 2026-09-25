@@ -35,7 +35,6 @@ vi.mock("./expense-rollups", () => ({
   expenseToRollupDelta: () => ({}),
   ledgerAmount: (type: string, direction: string | null | undefined, amount: number) =>
     type === "expense" && direction === "incoming" ? -Math.abs(amount) : Math.abs(amount),
-  syncExpenseDetails: async () => undefined,
 }));
 
 import {

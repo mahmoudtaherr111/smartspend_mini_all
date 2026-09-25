@@ -49,7 +49,6 @@ flowchart LR
     tbl_discount_codes[("discount_codes")]
     tbl_expense_categories[("expense_categories")]
     tbl_expense_daily_rollups[("expense_daily_rollups")]
-    tbl_expense_details[("expense_details")]
     tbl_expenses[("expenses")]
     tbl_financial_goals[("financial_goals")]
     tbl_in_app_notifications[("in_app_notifications")]
@@ -209,7 +208,6 @@ flowchart LR
   mod_jobs ==> tbl_auth_challenges
   mod_jobs ==> tbl_chat_messages
   mod_jobs ==> tbl_classification_logs
-  mod_jobs ==> tbl_expense_details
   mod_jobs ==> tbl_expenses
   mod_jobs ==> tbl_monthly_reports
   mod_jobs ==> tbl_notification_logs
@@ -284,7 +282,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `discount_codes` | A | `api-routers` | `api-routers` |
 | `expense_categories` | A | `api-routers` | `api-routers` |
 | `expense_daily_rollups` | C | — | `api-routers`, `jobs` |
-| `expense_details` | B | `jobs` | `jobs` |
 | `expenses` | B | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `financial_goals` | C | `api-routers` | `api-routers` |
 | `in_app_notifications` | D | `api-routers` | `api-routers` |

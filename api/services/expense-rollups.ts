@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import Decimal from "decimal.js";
-import { expenseDailyRollups, expenses, expenseDetails } from "../../db/schema";
+import { expenseDailyRollups, expenses } from "../../db/schema";
 import { db } from "../queries/connection";
 import { businessDateKey, startOfBusinessDay } from "../lib/app-time";
 
@@ -271,62 +271,6 @@ export async function transferBusinessRollupsToPersonal(
     WHERE user_id = ${userId}
       AND user_type = ${userType}
       AND business_id = ${businessId}
-  `);
-}
-
-/**
- * Dual-writes side-table expense_details on expense creation / update (§3.9).
- * Supports single expense or batch array of expenses.
- */
-export async function syncExpenseDetails(
-  executor: any,
-  expenseIdOrList: number | Array<{ id: number; rawText?: string | null; parsedMetadata?: any }>,
-  rawText?: string | null,
-  parsedMetadata?: any,
-): Promise<void> {
-  if (Array.isArray(expenseIdOrList)) {
-    const valid = expenseIdOrList.filter(
-      (item) => item.id && (item.rawText !== undefined || item.parsedMetadata !== undefined),
-    );
-    if (valid.length === 0) return;
-    for (const item of valid) {
-      const metadataJson =
-        item.parsedMetadata !== undefined ? JSON.stringify(item.parsedMetadata) : null;
-      await executor.execute(sql`
-        INSERT INTO expense_details (expense_id, raw_text, parsed_metadata)
-        VALUES (${item.id}, ${item.rawText ?? null}, ${metadataJson})
-        ON DUPLICATE KEY UPDATE
-          raw_text = COALESCE(VALUES(raw_text), raw_text),
-          parsed_metadata = COALESCE(VALUES(parsed_metadata), parsed_metadata)
-      `);
-    }
-    return;
-  }
-
-  const expenseId = expenseIdOrList;
-  if (rawText === undefined && parsedMetadata === undefined) return;
-
-  const metadataJson =
-    parsedMetadata !== undefined ? JSON.stringify(parsedMetadata) : null;
-
-  await executor.execute(sql`
-    INSERT INTO expense_details (expense_id, raw_text, parsed_metadata)
-    VALUES (${expenseId}, ${rawText ?? null}, ${metadataJson})
-    ON DUPLICATE KEY UPDATE
-      raw_text = COALESCE(VALUES(raw_text), raw_text),
-      parsed_metadata = COALESCE(VALUES(parsed_metadata), parsed_metadata)
-  `);
-}
-
-/**
- * Deletes side-table details on expense deletion.
- */
-export async function deleteExpenseDetails(
-  executor: any,
-  expenseId: number,
-): Promise<void> {
-  await executor.execute(sql`
-    DELETE FROM expense_details WHERE expense_id = ${expenseId}
   `);
 }
 

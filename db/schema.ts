@@ -1256,17 +1256,6 @@ export const userCorrectionRules = mysqlTable(
   ],
 );
 
-// ─── Expense Details (Side Table for Hot Table Diet - §3.9) ───
-export const expenseDetails = mysqlTable(
-  "expense_details",
-  {
-    expenseId: int("expense_id").primaryKey(),
-    rawText: text("raw_text"),
-    parsedMetadata: json("parsed_metadata"),
-    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-  },
-);
-
 // ─── Expense Daily Rollups (Day-grain Aggregates - §3.2) ───
 export const expenseDailyRollups = mysqlTable(
   "expense_daily_rollups",

@@ -37,7 +37,6 @@ flowchart LR
     tbl_business_categories[("business_categories")]
     tbl_classification_logs[("classification_logs")]
     tbl_expense_daily_rollups[("expense_daily_rollups")]
-    tbl_expense_details[("expense_details")]
     tbl_expenses[("expenses")]
     tbl_financial_goals[("financial_goals")]
     tbl_local_users[("local_users")]
@@ -62,7 +61,6 @@ flowchart LR
   mod_ledger -.-> tbl_expenses
   mod_ledger -.-> tbl_user_contacts
   mod_ledger ==> tbl_expense_daily_rollups
-  mod_ledger ==> tbl_expense_details
   mod_ledger ==> tbl_user_budgets
   mod_web_finance --> sys_platform
   mod_web_finance --> sys_web_app
@@ -127,7 +125,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges. | 4 |
+| `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger) and salary-cycle month ranges. | 4 |
 | `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 17 |
 
 ## API procedures
@@ -190,7 +188,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `business_categories` | A | `business.addCategory`, `business.create`, `business.delete`, `business.removeCategory`, `business.updateCategory` | `business.get`, `business.removeCategory`, `business.updateCategory` |
 | `classification_logs` | E | `expense.update` | `expense.update` |
 | `expense_daily_rollups` | C | `ledger` | `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`, `ledger` |
-| `expense_details` | B | `ledger` | — |
 | `expenses` | B | `business.delete`, `expense.delete`, `expense.update`, `profile.deleteContact`, `profile.mergeContacts`, `wallet.deleteWallet` | `expense.delete`, `expense.getById`, `expense.getMonthlyStats`, `expense.list`, `expense.searchTransactions`, `expense.update`, `export.myExpenses`, `goals.analyze`, `ledger`, `profile.listContacts`, `profile.mergeContacts`, `wallet.getWalletTransactions` |
 | `financial_goals` | C | `goals.analyze`, `goals.create`, `goals.delete`, `goals.setStatus` | `goals.analyze`, `goals.create`, `goals.list` |
 | `local_users` | A | `goals.analyze` | — |

@@ -55,7 +55,6 @@ flowchart LR
     tbl_classification_logs[("classification_logs")]
     tbl_expense_categories[("expense_categories")]
     tbl_expense_daily_rollups[("expense_daily_rollups")]
-    tbl_expense_details[("expense_details")]
     tbl_expenses[("expenses")]
     tbl_financial_goals[("financial_goals")]
     tbl_in_app_notifications[("in_app_notifications")]
@@ -115,7 +114,6 @@ flowchart LR
   mod_accounts ==> tbl_classification_logs
   mod_accounts ==> tbl_expense_categories
   mod_accounts ==> tbl_expense_daily_rollups
-  mod_accounts ==> tbl_expense_details
   mod_accounts ==> tbl_expenses
   mod_accounts ==> tbl_financial_goals
   mod_accounts ==> tbl_in_app_notifications
@@ -283,7 +281,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `classification_logs` | E | `accounts` | — |
 | `expense_categories` | A | `accounts` | — |
 | `expense_daily_rollups` | C | `accounts` | — |
-| `expense_details` | B | `accounts` | — |
 | `expenses` | B | `accounts` | `accounts`, `localAuth.getStats`, `localAuth.listUsers` |
 | `financial_goals` | C | `accounts` | `security` |
 | `in_app_notifications` | D | `accounts` | — |

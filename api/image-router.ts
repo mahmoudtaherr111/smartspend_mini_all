@@ -186,7 +186,6 @@ export const imageRouter = router({
         const {
           applyExpenseRollupDelta,
           expenseToRollupDelta,
-          syncExpenseDetails,
         } = await import("./services/expense-rollups");
 
         await db.transaction(async (tx) => {
@@ -208,19 +207,6 @@ export const imageRouter = router({
             },
           }).$returningId();
           expenseId = createdExpense.id;
-
-          if (expenseId) {
-            await syncExpenseDetails(
-              tx,
-              expenseId,
-              parsed.ocrText || `[image] ${parsed.description}`,
-              {
-                parsedBy: parsed.parsedBy,
-                merchant: parsed.merchant,
-                confidence: parsed.confidence,
-              },
-            );
-          }
 
           const delta = expenseToRollupDelta(
             {

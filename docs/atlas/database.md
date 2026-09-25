@@ -13,7 +13,7 @@ Foreign-key constraints declared in the schema: **0**. Every relationship below 
 | Class | Name | Lifetime | Storage rule | Tables |
 | --- | --- | --- | --- | --- |
 | `A` | Identity & Config | Forever | MySQL; small; cached aggressively in Redis with explicit invalidation | 21 |
-| `B` | Core Ledger | Forever | MySQL; narrow hot table; covering indexes; never auto-deleted | 2 |
+| `B` | Core Ledger | Forever | MySQL; narrow hot table; covering indexes; never auto-deleted | 1 |
 | `C` | Derived / Rollup | Forever (cheap) | MySQL; tiny; rebuildable from B at any time | 8 |
 | `D` | Operational / Ephemeral | Minutes -> days | Redis primary, MySQL as durable fallback/audit | 7 |
 | `E` | Telemetry / Logs | 30–365 days | MySQL; chunk-pruned on a schedule, rolled up before deletion | 12 |
@@ -56,7 +56,6 @@ expenses — the truth about user money
 
 | Table | Export | Columns | Indexes | Owner pair | Relations | Read by | Written by |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `expense_details` | `expenseDetails` | 4 | 0 | — | — | `api/jobs/taxonomy-migration-job.ts` | `api/jobs/taxonomy-migration-job.ts`, `api/services/expense-rollups.ts`, `api/services/user-purge-service.ts` |
 | `expenses` | `expenses` | 22 | 11 | `user_id` + `user_type` | `business → user_businesses`, `clarifications → pending_clarifications`, `classificationLog → classification_logs`, `contact → user_contacts`, `localUser → local_users`, `oauthUser → users`, `wallet → user_wallets` | `api/admin-router.ts`, `api/ai-router.ts`, `api/analytics-router.ts`, `api/expense-router.ts`, `api/export-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/jobs/monthly-behavior-job.ts`, `api/jobs/rollup-reconciliation-job.ts`, `api/jobs/taxonomy-migration-job.ts`, `api/lib/smart-pipeline.ts`, `api/local-auth-router.ts`, `api/profile-router.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/budget-status.ts`, `api/services/debt-ledger.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/resolvers.ts`, `api/services/lifestyle-inference-engine.ts`, `api/services/user-purge-service.ts`, `api/services/voice/app-calls.ts`, `api/services/voice/brain/snapshot.ts`, `api/wallet-router.ts` | `api/business-router.ts`, `api/expense-router.ts`, `api/image-router.ts`, `api/jobs/taxonomy-migration-job.ts`, `api/profile-router.ts`, `api/services/action-runtime/extended-actions.ts`, `api/services/sms-ledger.ts`, `api/services/user-purge-service.ts`, `api/wallet-router.ts` |
 
 ### Class C — Derived / Rollup
@@ -347,7 +346,7 @@ chat_messages and conversation threads
 
 | Check | Tables |
 | --- | --- |
-| No relations in db/relations.ts | `ad_stats_daily`, `ai_cost_monthly`, `expense_daily_rollups`, `expense_details`, `onboarding_questions`, `seo_pages`, `system_settings`, `whatsapp_otp_codes` |
+| No relations in db/relations.ts | `ad_stats_daily`, `ai_cost_monthly`, `expense_daily_rollups`, `onboarding_questions`, `seo_pages`, `system_settings`, `whatsapp_otp_codes` |
 | Not read or written by any runtime file | — |
 | Written but never read by runtime code | `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly` |
 | Read but never written by runtime code | `onboarding_questions` |
