@@ -49,7 +49,7 @@ import { runMonthlyReportJob } from "./jobs/monthly-report-job";
 import { runMonthlyBehaviorJob } from "./jobs/monthly-behavior-job";
 import { runRollupReconciliationJob } from "./jobs/rollup-reconciliation-job";
 import { runDataRetentionJob } from "./jobs/data-retention-job";
-import { runSubscriptionExpiryJob } from "./jobs/subscription-expiry-job";
+import { runSubscriptionExpiryJob, runRenewalReminders } from "./jobs/subscription-expiry-job";
 
 function directPeerAddress(c: HonoContext): string | undefined {
   try {
@@ -175,6 +175,7 @@ scheduleProtectedJob("0 5 * * *", "data-retention-lifecycle", async () => {
 scheduleProtectedJob("0 6 * * *", "daily-subscription-expiry", async () => {
   console.log("[Cron] Starting daily subscription expiry check...");
   await runSubscriptionExpiryJob();
+  await runRenewalReminders();
 });
 
 // Boot-time Redis health check (non-blocking — logs warning if unavailable)

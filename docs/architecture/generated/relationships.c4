@@ -339,6 +339,7 @@ model {
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.ledger
+  smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.notifications
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.whatsapp
   smartspend.api.modules.jobs -[imports]-> smartspend.shared.contracts

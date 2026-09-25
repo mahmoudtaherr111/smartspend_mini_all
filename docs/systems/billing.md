@@ -66,7 +66,9 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
 - `pro.cancel` marks the user's active subscriptions `cancelled`; the plan stays until the end date.
 - `daily-subscription-expiry` runs at 06:00 on replicas with `ENABLE_CRONS=true`: subscriptions that are active or
   cancelled and past their end date become `expired`, and a user without another running subscription goes back to
-  Free, with the auth version bumped. One run handles up to 500 subscriptions.
+  Free, with the auth version bumped. One run handles up to 500 subscriptions. The same run then reminds users whose
+  plan ends in three days, and again on its last day (`runRenewalReminders`, event `subscription_ending`, opening
+  the plans screen), unless a paid renewal already runs past it.
 - `pro.myPlan` also expires the latest subscription when it finds it past its end date, and returns the plan, the role,
   that subscription and a fixed list of paid features.
 
@@ -108,8 +110,9 @@ Checked against the code; each one names where it lives.
 2. **Gap.** Referrals give nothing yet: checkout always charges the plan's full price and nothing rewards the referrer, so
    `referral.myCode` returns no discount (`REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT` in `api/referral-router.ts`) and the
    plans screen promises none; the discount codes admins create in `discount_codes` are never applied.
-3. **Gap.** Nothing renews a subscription, since each Paymob payment is a one-time charge; `pro.cancel` only changes the status
-   the plans screen shows, and there is no refund path.
+3. **Gap.** Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days
+   and one day before the end and pays again. `pro.cancel` only changes the status the plans screen shows, and there is no
+   refund path.
 4. **Security.** Outside production without `PAYMOB_HMAC_SECRET`, the webhook accepts unsigned callbacks and grants plans
    from them.
 5. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.

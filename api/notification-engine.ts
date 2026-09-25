@@ -605,6 +605,16 @@ export async function seedDefaultTemplates() {
       bodyTemplateEn: "You spent {{spent}} of {{limit}} EGP ({{percentage}}%).",
     },
     {
+      name: "الاشتراك قرب يخلص",
+      eventType: "subscription_ending",
+      titleTemplate: "اشتراك {{planName}} بيخلص {{daysLeft}}",
+      bodyTemplate: "جدّد دلوقتي عشان تفضل مميزاتك شغالة من غير ما تقف.",
+      titleTemplateAr: "اشتراك {{planName}} بيخلص {{daysLeft}}",
+      bodyTemplateAr: "جدّد دلوقتي عشان تفضل مميزاتك شغالة من غير ما تقف.",
+      titleTemplateEn: "Your {{planName}} plan ends soon",
+      bodyTemplateEn: "Renew now to keep your features running.",
+    },
+    {
       name: "ميزانية عدّت الحد",
       eventType: "budget_category_exceeded",
       titleTemplate: "ميزانية {{budgetTitle}} عدّت الحد",

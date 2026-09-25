@@ -18,8 +18,8 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `billing` | Billing | 3 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
 | `ledger` | Ledger aggregates | 3 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `ingestion-parsers`, `jobs`, `notifications` | — |
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
-| `jobs` | Scheduled job bodies | 6 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `whatsapp` | `api-core` | `fireworks` |
-| `notifications` | Notifications | 2 | `database`, `ledger`, `platform` | `api-core`, `api-routers` | `firebase`, `web-push` |
+| `jobs` | Scheduled job bodies | 6 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `api-core` | `fireworks` |
+| `notifications` | Notifications | 2 | `database`, `ledger`, `platform` | `api-core`, `api-routers`, `jobs` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 43 | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `arabic-nlp`, `auth`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 13 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
@@ -231,7 +231,7 @@ Job implementations scheduled from api/boot.ts.
 | `api/jobs/monthly-behavior-job.ts` | `api-routers`, `database` | — | `expenses`, `user_profiles` | — |
 | `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
 | `api/jobs/rollup-reconciliation-job.ts` | `database`, `ledger`, `platform` | — | `expense_daily_rollups`, `expenses` | — |
-| `api/jobs/subscription-expiry-job.ts` | `auth`, `database` | — | `pro_subscriptions` | `pro_subscriptions` |
+| `api/jobs/subscription-expiry-job.ts` | `auth`, `database`, `notifications`, `platform` | — | `pro_subscriptions` | `pro_subscriptions` |
 | `api/jobs/taxonomy-migration-job.ts` | `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | — | `expense_details`, `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` | `expense_details`, `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` |
 
 ### `notifications` — Notifications

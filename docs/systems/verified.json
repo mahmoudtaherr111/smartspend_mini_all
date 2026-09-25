@@ -203,8 +203,8 @@
     "billing": {
       "files": {
         "api/boot.ts#POST /api/webhooks/paymob": "963235ae5bce",
-        "api/boot.ts#job:daily-subscription-expiry": "09b9a4b6fc93",
-        "api/jobs/subscription-expiry-job.ts": "a872fab7affa",
+        "api/boot.ts#job:daily-subscription-expiry": "3559570d054c",
+        "api/jobs/subscription-expiry-job.ts": "6d27cb8a3ee7",
         "api/lib/paymob.ts": "356f82099a7d",
         "api/lib/plan-catalog.ts": "38c562ef024d",
         "api/lib/subscription-service.ts": "f3666e029e61",
@@ -213,9 +213,9 @@
         "src/pages/Pro.tsx": "6ef8aa74b071",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "checked": "2026-09-25 46f2396",
-      "arabic": "b0aa48220bc3",
-      "arabicChecked": "2026-09-24 6739377"
+      "checked": "2026-09-25 e6b668b",
+      "arabic": "c6de10e5ded2",
+      "arabicChecked": "2026-09-25 e6b668b"
     },
     "expense-capture": {
       "files": {
@@ -378,7 +378,7 @@
         "api/boot.ts#job:scheduled-notifications": "6ea4c4d1ef31",
         "api/boot.ts#job:seed-default-templates": "d552cda74417",
         "api/boot.ts#job:smart-activity-notifications": "f8e2642a5b89",
-        "api/notification-engine.ts": "e4deac530e96",
+        "api/notification-engine.ts": "69e8b957995c",
         "api/profile-router.ts#profile.getInAppNotifications": "ff2aee79554d",
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
         "api/profile-router.ts#profile.savePushSubscription": "788ec5760eef",
@@ -388,16 +388,16 @@
         "api/services/otp-cache.ts": "e6343a8abd07",
         "api/services/whatsapp-service.ts": "1177804a1f23"
       },
-      "checked": "2026-09-25 dd02a18",
-      "arabic": "23206f84bd39",
-      "arabicChecked": "2026-09-25 339aea2"
+      "checked": "2026-09-25 e6b668b",
+      "arabic": "0f3f4cb8f70f",
+      "arabicChecked": "2026-09-25 e6b668b"
     },
     "platform": {
       "files": {
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "cc7fc159ff36",
+        "api/boot.ts#rest-of-file": "b235ae9cd939",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "295ff3f7c233",
         "api/lib/app-time.ts": "23f0c001bb84",
@@ -431,7 +431,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "4f7b341be798"
       },
-      "checked": "2026-09-25 3cd03f9",
+      "checked": "2026-09-25 e6b668b",
       "arabic": "af9f262db317",
       "arabicChecked": "2026-09-25 3cd03f9"
     },

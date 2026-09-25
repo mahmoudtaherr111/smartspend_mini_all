@@ -17,11 +17,11 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (52 of
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 614093e | 2026-09-25 614093e | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 dd02a18 | 2026-09-25 d295dd5 | 5 | — | 6 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-25 dd02a18 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 46f2396 | 2026-09-24 6739377 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 dd02a18 | 2026-09-25 339aea2 | 1 | **1** | 5 | 1 | 2 |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | — | 3 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 4c48fe5 | 2026-09-25 4c48fe5 | 4 | — | 3 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 45b800e | 2026-09-24 d9d553a | 9 | — | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 3cd03f9 | 2026-09-25 3cd03f9 | 5 | — | 2 | — | 8 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 e6b668b | 2026-09-25 3cd03f9 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-25 14feab9 | 2026-09-24 45b800e | 7 | **1** | 2 | 2 | 2 |
 
 
@@ -162,7 +162,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
 - Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that `src/App.tsx` guards only with a sign-in, not with `UltraFeatureRoute`; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
 - Referrals give nothing yet: checkout always charges the plan's full price and nothing rewards the referrer, so `referral.myCode` returns no discount (`REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT` in `api/referral-router.ts`) and the plans screen promises none; the discount codes admins create in `discount_codes` are never applied.
-- Nothing renews a subscription, since each Paymob payment is a one-time charge; `pro.cancel` only changes the status the plans screen shows, and there is no refund path.
+- Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days and one day before the end and pays again. `pro.cancel` only changes the status the plans screen shows, and there is no refund path.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - Push cannot be turned off from the app, a device cannot be removed, the bell has no "mark all read" or clearing, and nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion.
