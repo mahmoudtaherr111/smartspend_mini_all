@@ -24,8 +24,9 @@ when it is unsure, and the writes that put items in the ledger.
 ### 1. The form sends the text
 `ExpenseForm` calls `ai.parseExpense` with the text, `inputChannel` and `businessMode`. Offline, it keeps the
 text in the browser (`smartspend_offline_texts`, up to the plan's offline limit from `ai.getUserLimits`) and
-parses it when the connection returns: what the pipeline would auto-save is saved, anything else stays queued
-for the user to review.
+parses it when the connection returns: what the pipeline would auto-save is saved, anything else stays queued,
+marked for review, while the rest of the queue keeps syncing. At the end the first entry waiting for review is parsed
+again so its review card is the one on screen.
 
 ### 2. The entry point checks and gathers context
 `parseExpense`:

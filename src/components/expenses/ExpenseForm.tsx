@@ -1322,9 +1322,18 @@ export function ExpenseForm({
       setIsSyncing(true);
       setSyncRemaining(totalToSync);
 
-      // 1. Sync Text (AI) Transactions
-      while (offlineTexts.length > 0) {
-        const item = offlineTexts[0];
+      // 1. Sync Text (AI) Transactions. An item that needs the user's review stays in the
+      // queue marked, and the rest keep syncing; the first such item is reopened at the end
+      // so its review card is the one on screen.
+      let firstForReview: { id: string; text: string } | null = null;
+      let index = 0;
+      while (index < offlineTexts.length) {
+        const item = offlineTexts[index];
+        if (item.status === "needs_review" || item.status === "needs_clarification") {
+          firstForReview ||= item;
+          index += 1;
+          continue;
+        }
         try {
           toast.loading(
             `جاري تحليل عملية أوفلاين: "${item.text.slice(0, 20)}..."`,
@@ -1358,19 +1367,14 @@ export function ExpenseForm({
               "smartspend_offline_texts",
               JSON.stringify(offlineTexts),
             );
-            setPendingOfflineTextId(item.id);
             window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
-            toast.info(
-              "هذه العملية تحتاج مراجعتك قبل الحفظ، لذلك لم نحذفها من صندوق الأوفلاين.",
-              { id: "sync-toast" },
-            );
-            syncInProgressRef.current = false;
-            setIsSyncing(false);
-            return;
+            firstForReview ||= item;
+            index += 1;
+            continue;
           }
 
-          // Success: pop from queue and update storage
-          offlineTexts.shift();
+          // Success: take it out of the queue and update storage
+          offlineTexts.splice(index, 1);
           localStorage.setItem(
             "smartspend_offline_texts",
             JSON.stringify(offlineTexts),
@@ -1422,9 +1426,25 @@ export function ExpenseForm({
         }
       }
 
-      toast.success("✅ تم مزامنة كافة المعاملات بنجاح!", { id: "sync-toast" });
       syncInProgressRef.current = false;
       setIsSyncing(false);
+      if (firstForReview) {
+        // Reopen the first entry that waits for review, so its card is the one showing.
+        const waiting = offlineTexts.filter(
+          (entry: { status?: string }) => entry.status === "needs_review" || entry.status === "needs_clarification",
+        ).length;
+        toast.info(
+          waiting === 1
+            ? "اتبعت كل اللي اتكتب أوفلاين، وفاضل تسجيل واحد محتاج مراجعتك."
+            : `اتبعت كل اللي اتكتب أوفلاين، وفاضل ${waiting} تسجيلات محتاجة مراجعتك.`,
+          { id: "sync-toast" },
+        );
+        setPendingOfflineTextId(firstForReview.id);
+        setText(firstForReview.text);
+        parseMutation.mutate({ text: firstForReview.text, inputChannel: "text", businessMode: businessMode || false });
+      } else {
+        toast.success("اتبعت كل اللي اتكتب أوفلاين", { id: "sync-toast" });
+      }
 
       // Invalidate queries to refresh lists
       utilsTrpc.expense.list.invalidate();

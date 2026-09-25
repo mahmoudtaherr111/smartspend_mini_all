@@ -277,14 +277,14 @@
         "api/lib/unified-normalizer.ts": "603756615433",
         "api/lib/voice-intake-gate.ts": "6213ffc0c8da",
         "api/services/parser-trace.ts": "d02875bad059",
-        "src/components/expenses/ExpenseForm.tsx": "28a20ea36e81",
+        "src/components/expenses/ExpenseForm.tsx": "b49a3f3a3a89",
         "src/components/expenses/ReceiptCapture.tsx": "5940b1b1e056",
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-25 8626db8",
-      "arabic": "e9b7cde637bd",
-      "arabicChecked": "2026-09-25 66236cf"
+      "checked": "2026-09-25 21b72a3",
+      "arabic": "ded433b4ec30",
+      "arabicChecked": "2026-09-25 21b72a3"
     },
     "insights": {
       "files": {
@@ -617,7 +617,7 @@
         "src/lib/utils.ts": "fe02cb01defc",
         "src/main.tsx": "edecd8a6865f",
         "src/pages/Landing.tsx": "c618847f38a4",
-        "src/pages/More.tsx": "04808faecec6",
+        "src/pages/More.tsx": "e68fe6b6e2ab",
         "src/pages/NotFound.tsx": "8c62f9d22119",
         "src/pages/Privacy.tsx": "d888313990ad",
         "src/pages/Terms.tsx": "4ff361a45f01",
@@ -628,9 +628,9 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-09-25 14feab9",
-      "arabic": "c831f848ac25",
-      "arabicChecked": "2026-09-24 45b800e"
+      "checked": "2026-09-25 21b72a3",
+      "arabic": "6d22cba27698",
+      "arabicChecked": "2026-09-25 21b72a3"
     }
   }
 }
