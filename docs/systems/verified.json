@@ -224,13 +224,14 @@
         "api/ai-router.ts#ai.speechToText": "26e0ee0346da",
         "api/ai-router.ts#rest-of-file": "2060e3c49538",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
-        "api/expense-router.ts#expense.answerClarification": "272268df19ee",
+        "api/expense-router.ts#expense.answerClarification": "3d5be98dcad7",
         "api/expense-router.ts#expense.batchCreate": "3e2fb88d5777",
         "api/expense-router.ts#expense.create": "399857c8e862",
         "api/expense-router.ts#expense.createCategory": "8b691f7a3e91",
+        "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "9905f7c28be8",
+        "api/expense-router.ts#rest-of-file": "b05bd82f06bf",
         "api/image-router.ts": "95cb317266d6",
         "api/lib/admissibility-gate.ts": "9a24ae0cb1da",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
@@ -280,9 +281,9 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-25 7f5c5e3",
-      "arabic": "d83c1c18a61b",
-      "arabicChecked": "2026-09-25 ccd8203"
+      "checked": "2026-09-25 c129eda",
+      "arabic": "200d2afd571b",
+      "arabicChecked": "2026-09-25 c129eda"
     },
     "insights": {
       "files": {
@@ -332,7 +333,7 @@
         "api/expense-router.ts#expense.list": "1540eca4d7f5",
         "api/expense-router.ts#expense.searchTransactions": "9d92514f1158",
         "api/expense-router.ts#expense.update": "1d6571db5314",
-        "api/expense-router.ts#rest-of-file": "9905f7c28be8",
+        "api/expense-router.ts#rest-of-file": "b05bd82f06bf",
         "api/export-router.ts#export.myExpenses": "d0acca7338ba",
         "api/export-router.ts#rest-of-file": "45767b678670",
         "api/goals-router.ts": "9b542bba317d",
@@ -359,13 +360,14 @@
         "src/components/dashboard/StreakCounter.tsx": "86c3f654ff1d",
         "src/components/dashboard/UserIntelligencePanel.tsx": "ed213db74bae",
         "src/components/expenses/EditExpenseDialog.tsx": "343360a2579f",
+        "src/components/expenses/PendingQuestionsCard.tsx": "6716b7d289ba",
         "src/components/expenses/RecentExpenses.tsx": "955f7cf3d980",
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
-        "src/pages/Home.tsx": "fbdc4529b1c2"
+        "src/pages/Home.tsx": "4ff6e1ba0cc7"
       },
-      "checked": "2026-09-25 7f5c5e3",
-      "arabic": "b9a4b53fc888",
-      "arabicChecked": "2026-09-25 f14681b"
+      "checked": "2026-09-25 c129eda",
+      "arabic": "2417db769423",
+      "arabicChecked": "2026-09-25 c129eda"
     },
     "notifications": {
       "files": {

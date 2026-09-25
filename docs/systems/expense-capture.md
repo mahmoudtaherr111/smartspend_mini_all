@@ -257,8 +257,13 @@ expense with source `image`, without a review step. The form offers the camera o
 - **Free answer**: the answer is appended to the sentence and the pipeline runs again. Another `clarify` updates
   the question; a result under 70 is refused; anything else is saved.
 
-`expense.getPendingClarifications` lists the open questions, but no screen shows that list: the form only refreshes
-it. The live call reads them and can finish one with the user's answer ([voice calls](voice-calls.md#the-tools)).
+A question is answered once: the save transaction moves it from `pending` to `resolved` only if it was still
+pending (`claimClarification`), so a second tap or a retry saves nothing and gets "اتجاوب قبل كده".
+
+`expense.getPendingClarifications` lists the open questions. The Home record tab shows them under "محتاج ردك"
+(`src/components/expenses/PendingQuestionsCard.tsx`): each can be answered there, which saves it, or dropped with
+`expense.dismissClarification` (status `ignored`). The live call reads them too and can finish one with the user's
+answer ([voice calls](voice-calls.md#the-tools)).
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -308,30 +313,24 @@ it. The live call reads them and can finish one with the user's answer ([voice c
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Bug.** Answering a clarification twice saves its items twice: `answerClarification` loads the row by id and owner
-   without checking that its status is still `pending`.
-2. **Bug.** Saves made from a clarification skip what `expense.create` does after writing: muscle memory and the
+1. **Bug.** Saves made from a clarification skip what `expense.create` does after writing: muscle memory and the
    classification cache are not cleared, the streak is not updated, the rows get source `manual`, and the
    free-answer mode links no contact and no classification log.
-3. **Bug.** Receipts are saved without review. The saved amount is the first item the pipeline read from the OCR text,
+2. **Bug.** Receipts are saved without review. The saved amount is the first item the pipeline read from the OCR text,
    which can differ from the total the vision model returned, and a base64 image longer than the parser's cap
    is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the
    procedure accepts larger payloads.
-4. **Bug.** The voice endpoints count the month differently: `speechToText` from the subscription or sign-up day,
+3. **Bug.** The voice endpoints count the month differently: `speechToText` from the subscription or sign-up day,
    `parseVoiceExpense` from the first of the calendar month. `parseVoiceExpense` also creates contacts for the
    people it resolves while parsing, before the user saves anything.
-5. **Bug.** When every event escalates and a Fireworks key is present, the whole-sentence embedding shortcut makes one item
+4. **Bug.** When every event escalates and a Fireworks key is present, the whole-sentence embedding shortcut makes one item
    from the first amount; the other amounts then become a question.
-6. **Gap.** A category changed on the review card teaches a rule only when the sentence was one item
+5. **Gap.** A category changed on the review card teaches a rule only when the sentence was one item
    (`api/expense-router.ts#reviewCorrection`); in a multi-item sentence it is saved but not learned. `ai.learnWord`, `expense.createCategory` and
    `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is
    not rendered anywhere.
-7. **Debt.** The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win;
+6. **Debt.** The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win;
    the code reads the `parser_*` keys first.
-8. **Gap.** An entry whose question the user left unanswered stays unrecorded, and the app never shows it again: the
-   form asks only while it is open, and `src/components/expenses/ExpenseForm.tsx` refreshes
-   `expense.getPendingClarifications` without displaying it. Only the live call (`money_query` `pending`) and the
-   admin's clarifications tab list them.
 
 ## Related systems
 - [Money](money.md): lists, statistics, wallets, budgets, and the rollups these saves feed.

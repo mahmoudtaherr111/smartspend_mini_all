@@ -182,7 +182,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-41 files in its import closure (not counting `src/components/ui/`).
+42 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -192,14 +192,15 @@ _None._
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `business.get` | useQuery | `src/pages/Home.tsx` |
-| `expense.answerClarification` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
+| `expense.answerClarification` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.batchCreate` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.create` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.delete` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
-| `expense.getMonthSummary` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
-| `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
-| `expense.getPendingClarifications` | utils.invalidate | `src/components/expenses/ExpenseForm.tsx` |
-| `expense.list` | useQuery, utils.cancel, utils.getData, utils.invalidate, utils.setData | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.dismissClarification` | useMutation | `src/components/expenses/PendingQuestionsCard.tsx` |
+| `expense.getMonthSummary` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/pages/Home.tsx` |
+| `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/pages/Home.tsx` |
+| `expense.getPendingClarifications` | useQuery, utils.invalidate | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
+| `expense.list` | useQuery, utils.cancel, utils.getData, utils.invalidate, utils.setData | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.searchTransactions` | useQuery | `src/components/dashboard/GlobalSearch.tsx` |
 | `expense.update` | useMutation | `src/components/expenses/EditExpenseDialog.tsx` |
 | `goals.analyze` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |

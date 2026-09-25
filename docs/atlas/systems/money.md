@@ -124,7 +124,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges. | 2 |
-| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 14 |
+| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 15 |
 
 ## API procedures
 
@@ -214,7 +214,7 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>42 files and declarations</summary>
+<details><summary>43 files and declarations</summary>
 
 - `api/boot.ts#job:nightly-rollup-reconciliation`
 - `api/boot.ts#job:taxonomy-migration`
@@ -255,6 +255,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/dashboard/StreakCounter.tsx`
 - `src/components/dashboard/UserIntelligencePanel.tsx`
 - `src/components/expenses/EditExpenseDialog.tsx`
+- `src/components/expenses/PendingQuestionsCard.tsx`
 - `src/components/expenses/RecentExpenses.tsx`
 - `src/components/goals/FinancialGoalsPanel.tsx`
 - `src/pages/Home.tsx`

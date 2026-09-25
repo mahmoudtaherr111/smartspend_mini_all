@@ -831,6 +831,7 @@ model {
   smartspend.api.trpc.expense.delete -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.delete -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.delete -[writes]-> smartspend.mysql.user_contacts
+  smartspend.api.trpc.expense.dismissClarification -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.expense.getById -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.getCategoryList -[reads]-> smartspend.mysql.expense_categories
   smartspend.api.trpc.expense.getMonthSummary -[reads]-> smartspend.mysql.expense_daily_rollups
@@ -1266,6 +1267,7 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.batchCreate
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.create
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.delete
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.dismissClarification
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getMonthSummary
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getMonthlyStats
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getPendingClarifications

@@ -20,7 +20,7 @@ flowchart LR
   subgraph g_api["API, routes and jobs"]
     job_classification_log_cleanup["Job · classification-log-cleanup"]
     router_ai["ai API · 4 procedures"]
-    router_expense["expense API · 6 procedures"]
+    router_expense["expense API · 7 procedures"]
     router_image["image API · 1 procedure"]
   end
   subgraph g_modules["Code modules"]
@@ -185,6 +185,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `expense.batchCreate` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
 | `expense.create` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
 | `expense.createCategory` | mutation | `authedProcedure` | — | `expense_categories` | — |
+| `expense.dismissClarification` | mutation | `authedProcedure` | — | `pending_clarifications` | `Home` |
 | `expense.getCategoryList` | query | `authedProcedure` | `expense_categories` | — | — |
 | `expense.getPendingClarifications` | query | `authedProcedure` | `pending_clarifications` | — | `Home` |
 | `image.parseReceipt` | mutation | `receiptsProcedure` | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` | `Home` |
@@ -208,7 +209,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `expense_categories` | A | `expense.createCategory` | `expense.getCategoryList` |
 | `expenses` | B | `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `classification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` |
 | `local_users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |
-| `pending_clarifications` | D | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.getPendingClarifications` |
+| `pending_clarifications` | D | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.dismissClarification` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.getPendingClarifications` |
 | `pro_subscriptions` | A | — | `ai.speechToText` |
 | `user_businesses` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` |
 | `user_contacts` | A | `expense.answerClarification`, `expense.batchCreate`, `expense.create` | `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
@@ -240,7 +241,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/expense-capture.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>61 files and declarations</summary>
+<details><summary>62 files and declarations</summary>
 
 - `api/ai-router.ts#ai.learnWord`
 - `api/ai-router.ts#ai.parseExpense`
@@ -252,6 +253,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/expense-router.ts#expense.batchCreate`
 - `api/expense-router.ts#expense.create`
 - `api/expense-router.ts#expense.createCategory`
+- `api/expense-router.ts#expense.dismissClarification`
 - `api/expense-router.ts#expense.getCategoryList`
 - `api/expense-router.ts#expense.getPendingClarifications`
 - `api/expense-router.ts#rest-of-file`

@@ -18,6 +18,7 @@
         "expense.batchCreate",
         "expense.answerClarification",
         "expense.getPendingClarifications",
+        "expense.dismissClarification",
         "expense.createCategory",
         "expense.getCategoryList"
       ],

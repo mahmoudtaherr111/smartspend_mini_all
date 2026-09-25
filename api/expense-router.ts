@@ -161,6 +161,27 @@ type ExpenseReferenceResult = {
 };
 
 /**
+ * Marks a clarification resolved inside the transaction that saves its items, only when it
+ * was still pending. Two answers to one question used to save its items twice.
+ */
+async function claimClarification(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], id: number, userId: number, userType: string): Promise<void> {
+  const [result] = await tx
+    .update(pendingClarifications)
+    .set({ status: "resolved" })
+    .where(
+      and(
+        eq(pendingClarifications.id, id),
+        eq(pendingClarifications.userId, userId),
+        eq(pendingClarifications.userType, userType),
+        eq(pendingClarifications.status, "pending"),
+      ),
+    );
+  if (Number((result as { affectedRows?: number })?.affectedRows ?? 0) !== 1) {
+    throw new TRPCError({ code: "CONFLICT", message: "السؤال ده اتجاوب قبل كده" });
+  }
+}
+
+/**
  * What the user changed on the review card before saving, compared with what the parser
  * proposed. Only a sentence the parser read as ONE item teaches a rule: its whole text is
  * the pattern, and a multi-item sentence would teach one category for all of its parts.
@@ -2121,6 +2142,24 @@ export const expenseRouter = router({
       return items;
     }),
 
+  /** Drops a question the user does not want to answer; its entry stays unrecorded. */
+  dismissClarification: authedProcedure
+    .input(z.object({ clarificationId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const [result] = await getDb()
+        .update(pendingClarifications)
+        .set({ status: "ignored" })
+        .where(
+          and(
+            eq(pendingClarifications.id, input.clarificationId),
+            eq(pendingClarifications.userId, ctx.user!.id),
+            eq(pendingClarifications.userType, ctx.user!.type),
+            eq(pendingClarifications.status, "pending"),
+          ),
+        );
+      return { success: Number((result as { affectedRows?: number })?.affectedRows ?? 0) === 1 };
+    }),
+
   answerClarification: authedProcedure
     .input(
       z.object({
@@ -2142,6 +2181,7 @@ export const expenseRouter = router({
             eq(pendingClarifications.id, input.clarificationId),
             eq(pendingClarifications.userId, userId),
             eq(pendingClarifications.userType, userType),
+            eq(pendingClarifications.status, "pending"),
           ),
         );
 
@@ -2324,6 +2364,8 @@ export const expenseRouter = router({
             : Array.isArray(ctxData.items) ? ctxData.items : [];
 
           await db.transaction(async (tx) => {
+            // The answer is taken once: a second tap, or a retry, finds it resolved and saves nothing.
+            await claimClarification(tx, input.clarificationId, userId as number, userType as string);
             for (const item of itemsToSave) {
               const references = await resolveExpenseReferences(
                 {
@@ -2542,6 +2584,8 @@ export const expenseRouter = router({
 
         if (pipeline.items && pipeline.items.length > 0) {
           await db.transaction(async (tx) => {
+            // The answer is taken once: a second tap, or a retry, finds it resolved and saves nothing.
+            await claimClarification(tx, input.clarificationId, userId as number, userType as string);
             for (const item of pipeline.items) {
                const [insertedRow] = await tx.insert(expenses).values({
                  userId: userId as number,

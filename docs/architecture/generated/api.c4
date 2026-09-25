@@ -1198,7 +1198,7 @@ model {
       }
     }
     expense = router 'expense' {
-      description 'api/expense-router.ts — 14 procedures.'
+      description 'api/expense-router.ts — 15 procedures.'
       metadata {
         file 'api/expense-router.ts'
       }
@@ -1243,6 +1243,16 @@ model {
         }
       }
       delete = procedure 'expense.delete' {
+        #mutation #authed
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure'
+        metadata {
+          file 'api/expense-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      dismissClarification = procedure 'expense.dismissClarification' {
         #mutation #authed
         technology 'authedProcedure'
         description 'mutation · authedProcedure'
