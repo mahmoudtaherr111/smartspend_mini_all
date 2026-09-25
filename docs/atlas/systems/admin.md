@@ -21,7 +21,7 @@ flowchart LR
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
-    router_admin["admin API · 56 procedures"]
+    router_admin["admin API · 57 procedures"]
     router_ads["ads API · 7 procedures"]
     router_analytics["analytics API · 4 procedures"]
     router_export["export API · 1 procedure"]
@@ -59,6 +59,7 @@ flowchart LR
   sys_web_app[["Web and mobile app shell (system)"]]
   mod_web_admin --> ext_fireworks
   mod_web_admin --> ext_openrouter
+  mod_web_admin --> sys_platform
   mod_web_admin --> sys_web_app
   page_Admin --> router_admin
   page_Admin --> router_ads
@@ -114,7 +115,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `web-admin` — Admin UI | Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration. | 20 |
+| `web-admin` — Admin UI | Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration. | 21 |
 
 ## API procedures
 
@@ -141,6 +142,7 @@ flowchart LR
 | `admin.getApiKeyErrors` | query | `adminProcedure` | — | — | `Admin`, `More` |
 | `admin.getAvailableModels` | query | `adminProcedure` | — | — | `Admin`, `More` |
 | `admin.getClassificationLogs` | query | `adminProcedure` | `classification_logs`, `local_users`, `users` | — | `Admin`, `More` |
+| `admin.getClassificationQuality` | query | `adminProcedure` | `classification_logs` | — | `Admin`, `More` |
 | `admin.getDashboardStats` | query | `adminProcedure` | `expense_daily_rollups`, `local_users`, `sessions`, `support_tickets`, `users` | — | `Admin`, `More` |
 | `admin.getDiscountCodes` | query | `adminProcedure` | `discount_codes` | — | `Admin`, `More` |
 | `admin.getFounderMetrics` | query | `adminProcedure` | `local_users`, `pro_subscriptions`, `sessions`, `support_tickets`, `user_analytics`, `users` | — | `Admin`, `More` |
@@ -216,7 +218,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_models` | A | `admin.deleteAiProvider`, `admin.saveAiModels` | `admin.getAiModels`, `admin.saveAiModels` |
 | `ai_providers` | A | `admin.addAiProvider`, `admin.checkProviderHealth`, `admin.deleteAiProvider`, `admin.updateAiProvider` | `admin.checkProviderHealth`, `admin.getAiProviders` |
 | `ai_token_ledgers` | E | — | `admin.getAiTelemetryOverview`, `admin.getAiTokenLedger`, `admin.getUserAiQuota` |
-| `classification_logs` | E | — | `admin.getAIClassificationStats`, `admin.getClassificationLogs`, `admin.getPipelineVersionStats` |
+| `classification_logs` | E | — | `admin.getAIClassificationStats`, `admin.getClassificationLogs`, `admin.getClassificationQuality`, `admin.getPipelineVersionStats` |
 | `discount_codes` | A | `admin.createDiscountCode`, `admin.deleteDiscountCode` | `admin.createDiscountCode`, `admin.getDiscountCodes`, `admin.triggerBackupDemo` |
 | `expense_daily_rollups` | C | — | `admin.getDashboardStats` |
 | `expenses` | B | — | `admin.listAllUsers`, `analytics.getAllUserStats`, `analytics.getDashboardStats` |
@@ -258,7 +260,7 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/admin.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>29 files and declarations</summary>
+<details><summary>30 files and declarations</summary>
 
 - `api/admin-router.ts`
 - `api/ads-router.ts`
@@ -282,6 +284,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx`
 - `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx`
 - `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx`
+- `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx`
 - `src/components/admin/settings/AdminCodesTab.tsx`
 - `src/components/admin/settings/AdminKeysTab.tsx`
 - `src/components/admin/settings/AdminPlansTab.tsx`

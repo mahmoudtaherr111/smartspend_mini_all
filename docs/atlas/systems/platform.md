@@ -49,6 +49,7 @@ flowchart LR
     tbl_discount_codes[("discount_codes")]
     tbl_expense_categories[("expense_categories")]
     tbl_expense_daily_rollups[("expense_daily_rollups")]
+    tbl_expense_details[("expense_details")]
     tbl_expenses[("expenses")]
     tbl_financial_goals[("financial_goals")]
     tbl_in_app_notifications[("in_app_notifications")]
@@ -72,6 +73,7 @@ flowchart LR
     tbl_user_budgets[("user_budgets")]
     tbl_user_businesses[("user_businesses")]
     tbl_user_contacts[("user_contacts")]
+    tbl_user_correction_rules[("user_correction_rules")]
     tbl_user_credentials[("user_credentials")]
     tbl_user_dictionaries[("user_dictionaries")]
     tbl_user_profiles[("user_profiles")]
@@ -185,6 +187,7 @@ flowchart LR
   mod_database --> mod_platform
   mod_jobs --> ext_fireworks
   mod_jobs --> mod_api_routers
+  mod_jobs --> mod_contracts
   mod_jobs --> mod_platform
   mod_jobs --> sys_accounts
   mod_jobs --> sys_ai_center
@@ -193,7 +196,6 @@ flowchart LR
   mod_jobs --> sys_money
   mod_jobs --> sys_notifications
   mod_jobs -.-> tbl_expense_daily_rollups
-  mod_jobs -.-> tbl_expenses
   mod_jobs -.-> tbl_local_users
   mod_jobs -.-> tbl_user_profiles
   mod_jobs -.-> tbl_users
@@ -207,17 +209,24 @@ flowchart LR
   mod_jobs ==> tbl_auth_challenges
   mod_jobs ==> tbl_chat_messages
   mod_jobs ==> tbl_classification_logs
+  mod_jobs ==> tbl_expense_details
+  mod_jobs ==> tbl_expenses
   mod_jobs ==> tbl_monthly_reports
   mod_jobs ==> tbl_notification_logs
   mod_jobs ==> tbl_pending_clarifications
   mod_jobs ==> tbl_pro_subscriptions
   mod_jobs ==> tbl_profile_learning_events
+  mod_jobs ==> tbl_raw_sms_events
   mod_jobs ==> tbl_user_analytics
+  mod_jobs ==> tbl_user_budgets
+  mod_jobs ==> tbl_user_correction_rules
+  mod_jobs ==> tbl_user_dictionaries
   mod_jobs ==> tbl_voice_call_incidents
   mod_jobs ==> tbl_voice_calls
   mod_jobs ==> tbl_voice_usage
   mod_platform --> ext_redis
   mod_platform --> ext_sentry
+  mod_platform --> mod_contracts
   mod_platform -.-> tbl_system_settings
   mod_platform ==> tbl_api_key_errors
   mod_storage --> ext_object_storage
@@ -229,9 +238,9 @@ flowchart LR
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
 | `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 24 |
-| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 5 |
+| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 7 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
-| `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 5 |
+| `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
 | `platform` — Platform services | Environment validation, Redis client and cache keys, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 10 |
 | `storage` — File storage | File storage behind one driver interface (local disk or S3-compatible storage such as R2), plus the avatar service. | 5 |
 
@@ -275,7 +284,8 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `discount_codes` | A | `api-routers` | `api-routers` |
 | `expense_categories` | A | `api-routers` | `api-routers` |
 | `expense_daily_rollups` | C | — | `api-routers`, `jobs` |
-| `expenses` | B | `api-routers` | `api-routers`, `jobs` |
+| `expense_details` | B | `jobs` | `jobs` |
+| `expenses` | B | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `financial_goals` | C | `api-routers` | `api-routers` |
 | `in_app_notifications` | D | `api-routers` | `api-routers` |
 | `local_users` | A | `api-routers` | `api-core`, `api-routers`, `jobs` |
@@ -288,18 +298,19 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `pro_subscriptions` | A | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `profile_learning_events` | E | `jobs` | — |
 | `push_subscriptions` | A | `api-routers` | `api-routers` |
-| `raw_sms_events` | E | `api-routers` | `api-routers` |
+| `raw_sms_events` | E | `api-routers`, `jobs` | `api-routers` |
 | `referrals` | A | `api-routers` | `api-routers` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
 | `sessions` | D | — | `api-routers` |
 | `support_tickets` | A | `api-routers` | `api-routers` |
 | `system_settings` | A | `api-routers` | `api-routers`, `platform` |
 | `user_analytics` | E | `api-routers`, `jobs` | `api-routers` |
-| `user_budgets` | C | `api-routers` | `api-routers` |
+| `user_budgets` | C | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `user_businesses` | A | `api-routers` | `api-routers` |
 | `user_contacts` | A | `api-routers` | `api-routers` |
+| `user_correction_rules` | F | `jobs` | `jobs` |
 | `user_credentials` | A | `api-routers` | `api-routers` |
-| `user_dictionaries` | F | `api-routers` | `api-routers` |
+| `user_dictionaries` | F | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `user_profiles` | A | `api-routers` | `api-routers`, `jobs` |
 | `user_wallets` | A | `api-routers` | `api-routers` |
 | `users` | A | `api-routers` | `api-core`, `api-routers`, `jobs` |
@@ -326,7 +337,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Live voice assistant](voice-calls.md).
 
-Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Live voice assistant](voice-calls.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -377,7 +388,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>34 files and declarations</summary>
+<details><summary>36 files and declarations</summary>
 
 - `api/boot.ts#ALL /api/trpc/*`
 - `api/boot.ts#GET /health`
@@ -404,8 +415,10 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/storage/local-driver.ts`
 - `api/services/storage/s3-driver.ts`
 - `api/services/storage/types.ts`
+- `contracts/categories.ts`
 - `contracts/constants.ts`
 - `contracts/errors.ts`
+- `contracts/plan-features.ts`
 - `contracts/plans.ts`
 - `contracts/types.ts`
 - `contracts/voice-protocol.ts`

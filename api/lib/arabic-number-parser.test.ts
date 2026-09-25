@@ -138,3 +138,43 @@ describe("several amounts in one utterance", () => {
     expect(amounts("دفعت 100 وبعدين خمسميت")).toEqual([100, 500]);
   });
 });
+
+describe("spoken hundreds and words that only look like numbers", () => {
+  it("multiplies a spoken unit by a separate hundred", () => {
+    // "خمس مية" was summed to 105 and saved on its own as the rent.
+    expect(amounts("دفعت خمس مية ايجار")).toEqual([500]);
+    expect(amounts("دفعت تلات مية كهربا")).toEqual([300]);
+    expect(amounts("ست مية جنيه هدوم")).toEqual([600]);
+    expect(amounts("دفعت ألف وخمس مية")).toEqual([1500]);
+    expect(amounts("دفعت تلات مية وخمسين")).toEqual([350]);
+  });
+
+  it("keeps a hundred on its own as a hundred", () => {
+    expect(amounts("دفعت مية جنيه")).toEqual([100]);
+    expect(amounts("دفعت مية وخمسين")).toEqual([150]);
+  });
+
+  it("reads water next to its container as water", () => {
+    // The folded lexicon knew "ميه" from "مئة", so the water guard never held:
+    // "ازازة مية 10" was 110.
+    expect(amounts("ازازة مية 10")).toEqual([10]);
+    expect(amounts("اشتريت زجاجة مية ب 15")).toEqual([15]);
+    expect(amounts("جبت مية معدنية ب 20")).toEqual([20]);
+  });
+
+  it("reads a water word elsewhere in the sentence as irrelevant", () => {
+    expect(amounts("دفعت فاتورة المياه مية وخمسين")).toEqual([150]);
+  });
+
+  it("reads تمن before a noun as a price, not 8", () => {
+    expect(amounts("دفعت تمن الأكل 50")).toEqual([50]);
+    expect(amounts("دفعت تمن التذكرة 200")).toEqual([200]);
+    expect(amounts("دفعت تمن جنيه")).toEqual([8]);
+    expect(amounts("دفعت تمن تلاف")).toEqual([8000]);
+  });
+
+  it("reads a fuel grade as a grade when the price is also given", () => {
+    expect(amounts("بنزين 92 ب 400")).toEqual([400]);
+    expect(amounts("حطيت بنزين 95 ب 500 جنيه")).toEqual([500]);
+  });
+});

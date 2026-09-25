@@ -5,6 +5,8 @@ specification {
   tag admin
   tag ai
   tag authed
+  tag business
+  tag businessAi
   tag classA
   tag classB
   tag classC
@@ -13,12 +15,13 @@ specification {
   tag classF
   tag classG
   tag dualOwner
+  tag goalAnalysis
   tag http
   tag mutation
-  tag pro
-  tag proAi
+  tag proReport
   tag public
   tag query
+  tag receipts
   tag sse
   tag strictPublic
   tag trpc

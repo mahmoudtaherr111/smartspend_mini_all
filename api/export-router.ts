@@ -3,7 +3,7 @@ import {
   router,
   authedProcedure,
   adminProcedure,
-  proProcedure,
+  proReportProcedure,
 } from "./middleware";
 import { wrapReportAsPrintableHtml } from "./services/pro-report-engine";
 import { db } from "./queries/connection";
@@ -158,7 +158,7 @@ export const exportRouter = router({
       };
     }),
 
-  monthlyReportHtml: proProcedure
+  monthlyReportHtml: proReportProcedure
     .input(
       z.object({
         month: z.string().regex(/^\d{4}-\d{2}$/),

@@ -75,12 +75,12 @@ export function buildProReportPrompt(input: {
       ? `5 أقسام: (1) ملخص تنفيذي بالأرقام (2) تحليل فئات فرعية (3) سلوك واتجاهات (4) مخاطر وفرص (5) خطة 30 يوم بأرقام`
       : `3 أقسام: (1) ملخص مالي (2) تحليل فئات (3) توصيات عملية`;
 
-  const systemInstruction = `أنت مستشار مالي Pro في SpinSmart — تقارير شهرية بمستوى استشاري.
+  const systemInstruction = `أنت مستشار مالي Pro في SmartSpend — تقارير شهرية بمستوى استشاري.
 أسلوب: عربي فصيح معاصر، ضمير "أنت"، أرقام حقيقية من البيانات، بدون عناوين آلية مكررة.
 ${goalFocus}
 الطول المطلوب لـ response_text: حوالي ${input.targetWords} كلمة.
 الهيكل: ${sectionGuide}
-أضف invoice_header و invoice_footer قصيرين يعطيان إحساس تقرير مالي رسمي (اسم الشهر، SpinSmart Pro).`;
+أضف invoice_header و invoice_footer قصيرين يعطيان إحساس تقرير مالي رسمي (اسم الشهر، SmartSpend Pro).`;
 
   const userPrompt = `[بيانات الشهر — محسوبة مسبقاً]
 ${buildProReportDataBlock(input.summary)}
@@ -127,13 +127,13 @@ export function wrapReportAsPrintableHtml(
   const headerRaw =
     reportJson.invoice_header !== undefined && reportJson.invoice_header !== null
       ? String(reportJson.invoice_header)
-      : `تقرير SpinSmart Pro — ${month}`;
+      : `تقرير SmartSpend Pro — ${month}`;
   const header = escapeHtml(headerRaw);
 
   const footerRaw =
     reportJson.invoice_footer !== undefined && reportJson.invoice_footer !== null
       ? String(reportJson.invoice_footer)
-      : "تم إنشاؤه بواسطة SpinSmart";
+      : "تم إنشاؤه بواسطة SmartSpend";
   const footer = escapeHtml(footerRaw);
 
   const safeMonth = escapeHtml(String(month || ""));

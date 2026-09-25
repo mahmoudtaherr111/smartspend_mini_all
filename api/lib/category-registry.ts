@@ -5,447 +5,17 @@
 
 import { governedNouns } from "./direction-governed-taxonomy";
 
-export interface SubCategory {
-  id: string;
-  name: string;
-  name_ar: string;
-}
+import {
+  CATEGORIES,
+  resolveLegacyTaxonomy,
+  type MainCategory,
+  type SubCategory,
+} from "../../contracts/categories";
 
-export interface MainCategory {
-  id: string;
-  name: string;
-  name_ar: string;
-  icon: string;
-  color: string;
-  type: "expense" | "income" | "transfer" | "investment";
-  subcategories: SubCategory[];
-}
-
-export const CATEGORIES: MainCategory[] = [
-  {
-    id: "food",
-    name: "Food & Drinks",
-    name_ar: "أكل وشرب",
-    icon: "🍔",
-    color: "#f97316",
-    type: "expense",
-    subcategories: [
-      { id: "fast_food", name: "Fast Food", name_ar: "وجبات سريعة" },
-      { id: "restaurant", name: "Restaurant", name_ar: "مطعم" },
-      { id: "coffee", name: "Coffee & Cafe", name_ar: "قهوة وكافيه" },
-      { id: "snacks", name: "Snacks", name_ar: "سناكس" },
-      { id: "groceries", name: "Groceries", name_ar: "بقالة" },
-      { id: "bakery", name: "Bakery", name_ar: "مخبوزات" },
-      { id: "drinks", name: "Drinks", name_ar: "مشروبات" },
-      { id: "delivery", name: "Delivery", name_ar: "دليفري" },
-      { id: "meat_poultry", name: "Meat & Poultry", name_ar: "لحوم ودواجن" },
-      { id: "seafood", name: "Seafood", name_ar: "سي فود" },
-      { id: "general_food", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "transport",
-    name: "Transport",
-    name_ar: "مواصلات",
-    icon: "🚗",
-    color: "#3b82f6",
-    type: "expense",
-    subcategories: [
-      { id: "uber", name: "Uber/Careem", name_ar: "أوبر/كريم" },
-      { id: "metro", name: "Metro", name_ar: "مترو" },
-      { id: "bus", name: "Bus", name_ar: "أتوبيس" },
-      { id: "taxi", name: "Taxi", name_ar: "تاكسي" },
-      { id: "fuel", name: "Fuel", name_ar: "بنزين" },
-      { id: "parking", name: "Parking", name_ar: "ركنة" },
-      { id: "maintenance", name: "Car Maintenance", name_ar: "صيانة عربية" },
-      { id: "toktok", name: "TokTok", name_ar: "توكتوك" },
-      { id: "flight", name: "Flight", name_ar: "طيران" },
-      { id: "general_transport", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "bills",
-    name: "Bills",
-    name_ar: "فواتير",
-    icon: "📄",
-    color: "#ef4444",
-    type: "expense",
-    subcategories: [
-      { id: "electricity", name: "Electricity", name_ar: "كهرباء" },
-      { id: "water", name: "Water", name_ar: "مياه" },
-      { id: "gas", name: "Gas", name_ar: "غاز" },
-      { id: "internet", name: "Internet", name_ar: "إنترنت" },
-      { id: "phone", name: "Phone", name_ar: "تليفون" },
-      { id: "mobile_recharge", name: "Mobile Recharge", name_ar: "شحن رصيد" },
-      { id: "installments", name: "Installments", name_ar: "أقساط" },
-      { id: "insurance", name: "Insurance", name_ar: "تأمين" },
-      { id: "taxes", name: "Taxes", name_ar: "ضرائب" },
-      { id: "general_bills", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "home",
-    name: "Home",
-    name_ar: "سكن",
-    icon: "🏠",
-    color: "#8b5cf6",
-    type: "expense",
-    subcategories: [
-      { id: "rent", name: "Rent", name_ar: "إيجار" },
-      { id: "furniture", name: "Furniture", name_ar: "أثاث" },
-      { id: "home_maintenance", name: "Maintenance", name_ar: "صيانة" },
-      { id: "cleaning", name: "Cleaning", name_ar: "نظافة" },
-      { id: "appliances", name: "Appliances", name_ar: "أجهزة منزلية" },
-      { id: "cleaning_supplies", name: "Cleaning Supplies", name_ar: "منظفات" },
-      { id: "general_home", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "shopping",
-    name: "Shopping",
-    name_ar: "تسوق",
-    icon: "🛍️",
-    color: "#ec4899",
-    type: "expense",
-    subcategories: [
-      { id: "clothes", name: "Clothes", name_ar: "ملابس" },
-      { id: "electronics", name: "Electronics", name_ar: "أجهزة إلكترونية" },
-      { id: "personal_care", name: "Personal Care", name_ar: "عناية شخصية" },
-      { id: "accessories", name: "Accessories", name_ar: "إكسسوارات" },
-      { id: "shoes", name: "Shoes", name_ar: "أحذية" },
-      { id: "general_shopping", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "health",
-    name: "Health",
-    name_ar: "صحة",
-    icon: "🏥",
-    color: "#10b981",
-    type: "expense",
-    subcategories: [
-      { id: "doctor", name: "Doctor", name_ar: "دكتور" },
-      { id: "pharmacy", name: "Pharmacy", name_ar: "صيدلية" },
-      { id: "lab", name: "Lab Tests", name_ar: "تحاليل" },
-      { id: "hospital", name: "Hospital", name_ar: "مستشفى" },
-      { id: "dental", name: "Dental", name_ar: "أسنان" },
-      { id: "optical", name: "Optical", name_ar: "نظارات" },
-      { id: "general_health", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "education",
-    name: "Education",
-    name_ar: "تعليم",
-    icon: "📚",
-    color: "#6366f1",
-    type: "expense",
-    subcategories: [
-      { id: "school", name: "School", name_ar: "مدرسة" },
-      { id: "university", name: "University", name_ar: "جامعة" },
-      { id: "courses", name: "Courses", name_ar: "كورسات" },
-      { id: "books", name: "Books", name_ar: "كتب" },
-      { id: "tutoring", name: "Tutoring", name_ar: "دروس خصوصية" },
-      { id: "general_education", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "entertainment",
-    name: "Entertainment",
-    name_ar: "ترفيه",
-    icon: "🎮",
-    color: "#f59e0b",
-    type: "expense",
-    subcategories: [
-      { id: "cinema", name: "Cinema", name_ar: "سينما" },
-      { id: "cafe", name: "Cafe", name_ar: "كافيه" },
-      { id: "travel", name: "Travel", name_ar: "سفر" },
-      { id: "sports", name: "Sports & Gym", name_ar: "رياضة وجيم" },
-      { id: "gaming", name: "Gaming", name_ar: "ألعاب" },
-      { id: "streaming", name: "Streaming", name_ar: "منصات مشاهدة" },
-      { id: "outing", name: "Outing", name_ar: "خروجة" },
-      { id: "playstation", name: "PlayStation", name_ar: "PlayStation" },
-      { id: "board_games", name: "Board Games", name_ar: "كافيه بورد جيم" },
-      { id: "friends_outing", name: "Friends Outing", name_ar: "خروجة صحاب" },
-      { id: "corniche", name: "Corniche", name_ar: "كورنيش" },
-      { id: "general_entertainment", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "subscriptions",
-    name: "Subscriptions",
-    name_ar: "اشتراكات",
-    icon: "📱",
-    color: "#14b8a6",
-    type: "expense",
-    subcategories: [
-      { id: "netflix", name: "Netflix", name_ar: "نتفلكس" },
-      { id: "spotify", name: "Spotify", name_ar: "سبوتيفاي" },
-      { id: "chatgpt", name: "ChatGPT", name_ar: "شات جي بي تي" },
-      { id: "google_ai", name: "Google AI", name_ar: "جوجل AI" },
-      { id: "saas", name: "SaaS", name_ar: "برمجيات" },
-      { id: "general_subs", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "smoking",
-    name: "Smoking",
-    name_ar: "تدخين",
-    icon: "🚬",
-    color: "#6b7280",
-    type: "expense",
-    subcategories: [
-      { id: "cigarettes", name: "Cigarettes", name_ar: "سجائر" },
-      { id: "vape", name: "Vape", name_ar: "فيب/ليكود" },
-      { id: "shisha", name: "Shisha", name_ar: "شيشة/معسل" },
-      { id: "smoking_general", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "gifts",
-    name: "Gifts & Charity",
-    name_ar: "هدايا وصدقات",
-    icon: "🎁",
-    color: "#f43f5e",
-    type: "expense",
-    subcategories: [
-      { id: "birthday", name: "Birthday", name_ar: "عيد ميلاد" },
-      { id: "wedding", name: "Wedding", name_ar: "فرح/خطوبة" },
-      { id: "charity", name: "Charity", name_ar: "صدقة/تبرع" },
-      { id: "zakat", name: "Zakat", name_ar: "زكاة" },
-      { id: "eidiya", name: "Eidiya", name_ar: "عيدية" },
-      { id: "general_gifts", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "pets",
-    name: "Pets",
-    name_ar: "حيوانات أليفة",
-    icon: "🐾",
-    color: "#a855f7",
-    type: "expense",
-    subcategories: [
-      { id: "pet_food", name: "Pet Food", name_ar: "أكل" },
-      { id: "vet", name: "Vet", name_ar: "طبيب بيطري" },
-      { id: "pet_accessories", name: "Accessories", name_ar: "مستلزمات" },
-    ],
-  },
-  {
-    id: "work",
-    name: "Work",
-    name_ar: "عمل",
-    icon: "💼",
-    color: "#64748b",
-    type: "expense",
-    subcategories: [
-      {
-        id: "office_supplies",
-        name: "Office Supplies",
-        name_ar: "مستلزمات مكتب",
-      },
-      { id: "hosting", name: "Hosting", name_ar: "استضافة" },
-      { id: "apis", name: "APIs", name_ar: "واجهات برمجية" },
-      { id: "coworking", name: "Coworking", name_ar: "مساحة عمل" },
-      { id: "general_work", name: "General", name_ar: "عام" },
-    ],
-  },
-  // ─── Income Categories ───
-  {
-    id: "salary",
-    name: "Salary",
-    name_ar: "مرتب",
-    icon: "💵",
-    color: "#22c55e",
-    type: "income",
-    subcategories: [
-      { id: "main_salary", name: "Main Salary", name_ar: "مرتب أساسي" },
-      { id: "overtime", name: "Overtime", name_ar: "أوفر تايم" },
-      { id: "bonus", name: "Bonus", name_ar: "مكافأة/بونص" },
-      { id: "allowance", name: "Allowance", name_ar: "بدلات" },
-    ],
-  },
-  {
-    id: "freelance",
-    name: "Freelance",
-    name_ar: "عمل حر",
-    icon: "💻",
-    color: "#06b6d4",
-    type: "income",
-    subcategories: [
-      { id: "project", name: "Project", name_ar: "مشروع" },
-      { id: "commission", name: "Commission", name_ar: "عمولة" },
-      { id: "side_hustle", name: "Side Hustle", name_ar: "سبوبة" },
-    ],
-  },
-  {
-    id: "investment_income",
-    name: "Investment Income",
-    name_ar: "عوائد استثمار",
-    icon: "📈",
-    color: "#84cc16",
-    type: "income",
-    subcategories: [
-      { id: "dividends", name: "Dividends", name_ar: "أرباح" },
-      { id: "interest", name: "Interest", name_ar: "فوائد" },
-      { id: "cashback", name: "Cashback", name_ar: "كاش باك" },
-      { id: "refund", name: "Refund", name_ar: "استرجاع" },
-    ],
-  },
-  // ─── Financial / Transfer Categories ───
-  {
-    id: "transfer",
-    name: "Transfer",
-    name_ar: "تحويل",
-    icon: "🏧",
-    color: "#0ea5e9",
-    type: "transfer",
-    subcategories: [
-      { id: "atm", name: "ATM Withdrawal", name_ar: "سحب ATM" },
-      { id: "bank_transfer", name: "Bank Transfer", name_ar: "تحويل بنكي" },
-      { id: "instapay", name: "Instapay", name_ar: "انستاباي" },
-      { id: "vodafone_cash", name: "Vodafone Cash", name_ar: "فودافون كاش" },
-      { id: "savings", name: "Savings", name_ar: "ادخار" },
-      { id: "debt", name: "Debt/Loan", name_ar: "دين/سلفة" },
-      { id: "cash_transfer", name: "Cash Transfer", name_ar: "تحويل كاش" },
-      { id: "people", name: "People", name_ar: "أشخاص" },
-    ],
-  },
-  {
-    id: "investment",
-    name: "Investment",
-    name_ar: "استثمار",
-    icon: "📊",
-    color: "#eab308",
-    type: "investment",
-    subcategories: [
-      { id: "gold", name: "Gold", name_ar: "ذهب" },
-      { id: "stocks", name: "Stocks", name_ar: "أسهم" },
-      { id: "certificates", name: "Certificates", name_ar: "شهادات" },
-      { id: "real_estate", name: "Real Estate", name_ar: "عقارات" },
-      { id: "crypto", name: "Crypto", name_ar: "عملات رقمية" },
-    ],
-  },
-  // "التزامات يومية" merged into "فواتير" — removed as separate category
-  {
-    id: "digital_services",
-    name: "Digital Services",
-    name_ar: "خدمات رقمية",
-    icon: "💻",
-    color: "#0ea5e9",
-    type: "expense",
-    subcategories: [
-      { id: "vpn_sub", name: "VPN", name_ar: "اشتراك VPN" },
-      { id: "cloud_sub", name: "Cloud", name_ar: "اشتراك Cloud" },
-      { id: "ai_tools", name: "AI Tools", name_ar: "أدوات AI" },
-      { id: "domains", name: "Domains", name_ar: "دومينات" },
-      { id: "hosting_new", name: "Hosting", name_ar: "استضافة" },
-      { id: "digital_general", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "car_services",
-    name: "Car Services",
-    name_ar: "خدمات سيارات",
-    icon: "🚗",
-    color: "#3b82f6",
-    type: "expense",
-    subcategories: [
-      { id: "toll", name: "Toll", name_ar: "كارتة" },
-      { id: "parking_valet", name: "Parking", name_ar: "ركنة" },
-      { id: "oil_change", name: "Oil Change", name_ar: "تغيير زيت" },
-      { id: "car_violation", name: "Violation", name_ar: "مخالفة" },
-      { id: "battery", name: "Battery", name_ar: "بطارية" },
-      { id: "tires", name: "Tires", name_ar: "إطارات" },
-      { id: "car_general", name: "General", name_ar: "عام" },
-    ],
-  },
-  // "خروجات" merged into "ترفيه" — removed as separate category
-  {
-    id: "family_transactions",
-    name: "Family Transactions",
-    name_ar: "العائلة",
-    icon: "👨‍👩‍👧‍👦",
-    color: "#f43f5e",
-    type: "expense",
-    subcategories: [
-      { id: "general_family", name: "General", name_ar: "عام" },
-      { id: "parents", name: "Parents", name_ar: "الوالدين" },
-      { id: "siblings", name: "Siblings", name_ar: "الإخوة" },
-      { id: "children", name: "Children", name_ar: "الأبناء" },
-    ],
-  },
-  {
-    id: "friends_transactions",
-    name: "Friends Transactions",
-    name_ar: "أصدقاء",
-    icon: "🤝",
-    color: "#10b981",
-    type: "expense",
-    subcategories: [{ id: "general_friends", name: "General", name_ar: "عام" }],
-  },
-  {
-    id: "employees_transactions",
-    name: "Employees Transactions",
-    name_ar: "موظفين",
-    icon: "👷",
-    color: "#64748b",
-    type: "expense",
-    subcategories: [
-      { id: "general_employees", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "liabilities_and_gam3eyat",
-    name: "Liabilities & Gam3eyat",
-    name_ar: "التزامات وجمعيات",
-    icon: "📜",
-    color: "#8b5cf6",
-    type: "expense", // mixed, but mostly expense
-    subcategories: [
-      {
-        id: "gam3eya_installment",
-        name: "Gam3eya Installment",
-        name_ar: "قسط جمعية",
-      },
-      { id: "gam3eya_payout", name: "Gam3eya Payout", name_ar: "قبض جمعية" },
-      {
-        id: "corporate_installment",
-        name: "Corporate Installment",
-        name_ar: "أقساط شركات",
-      },
-      { id: "general", name: "General", name_ar: "عام" },
-    ],
-  },
-  {
-    id: "miscellaneous",
-    name: "Miscellaneous",
-    name_ar: "متنوعات",
-    icon: "📦",
-    color: "#94a3b8",
-    type: "expense",
-    subcategories: [
-      { id: "general", name: "General", name_ar: "عام" },
-      { id: "people", name: "People", name_ar: "أشخاص" },
-    ],
-  },
-  {
-    id: "government_services",
-    name: "Government Services",
-    name_ar: "خدمات حكومية",
-    icon: "🏛️",
-    color: "#78716c",
-    type: "expense",
-    subcategories: [
-      { id: "license", name: "License", name_ar: "رخصة" },
-      { id: "passport", name: "Passport", name_ar: "جواز سفر" },
-      { id: "national_id", name: "National ID", name_ar: "بطاقة رقم قومي" },
-      { id: "traffic_violation", name: "Traffic Violation", name_ar: "مخالفة مرور" },
-      { id: "taxes_gov", name: "Taxes", name_ar: "ضرائب" },
-      { id: "documentation", name: "Documentation", name_ar: "توثيق" },
-      { id: "gov_general", name: "General", name_ar: "عام" },
-    ],
-  },
-];
+// The list itself lives in contracts/categories.ts, shared with the web app and the
+// data migration; this module adds the lookups and the normalization.
+export { CATEGORIES, resolveLegacyTaxonomy };
+export type { MainCategory, SubCategory };
 
 /** Get category by Arabic name */
 export function getCategoryByArabicName(
@@ -485,7 +55,7 @@ const CATEGORY_ALIASES: Array<[string, string]> = [
   ["أخرى", "متنوعات"],
   ["مصروف شخصي", "متنوعات"],
   ["مدفوعات طوارئ", "متنوعات"],
-  ["دخل", "مرتب"],
+  ["دخل", "دخل آخر"],
   ["راتب", "مرتب"],
   ["سكن وفواتير", "فواتير"],
   ["التزامات يومية", "فواتير"],
@@ -493,8 +63,14 @@ const CATEGORY_ALIASES: Array<[string, string]> = [
   ["خروجات", "ترفيه"],
   ["Outings", "ترفيه"],
   ["ملابس", "تسوق"],
-  ["سيارات", "خدمات سيارات"],
-  ["تكنولوجيا", "خدمات رقمية"],
+  ["عناية", "عناية شخصية"],
+  ["أولاد", "أطفال"],
+  ["عيال", "أطفال"],
+  ["مرتجعات", "دخل آخر"],
+  ["سيارات", "مواصلات"],
+  ["خدمات سيارات", "مواصلات"],
+  ["تكنولوجيا", "اشتراكات"],
+  ["خدمات رقمية", "اشتراكات"],
   ["أهل وبيت", "سكن"],
   ["تحويلات", "تحويل"],
   ["عائلة", "العائلة"],
@@ -523,11 +99,12 @@ const CATEGORY_ALIASES: Array<[string, string]> = [
   ["صنايعي", "موظفين"],
   ["موظفين وعمال", "موظفين"],
   ["شريك", "عمل"],
-  ["جمعية", "التزامات وجمعيات"],
-  ["جمعيتي", "التزامات وجمعيات"],
-  ["قسط جمعية", "التزامات وجمعيات"],
-  ["أقساط شركات", "التزامات وجمعيات"],
-  ["فاليو", "التزامات وجمعيات"],
+  ["جمعية", "تحويل"],
+  ["التزامات وجمعيات", "أقساط وفوايد"],
+  ["جمعيتي", "تحويل"],
+  ["قسط جمعية", "تحويل"],
+  ["أقساط شركات", "أقساط وفوايد"],
+  ["فاليو", "أقساط وفوايد"],
   ["حكومي", "خدمات حكومية"],
   ["خدمات حكومة", "خدمات حكومية"],
   ["رسوم حكومية", "خدمات حكومية"],
@@ -535,19 +112,20 @@ const CATEGORY_ALIASES: Array<[string, string]> = [
   ["مجاملات", "هدايا وصدقات"],
   ["صيانة", "سكن"],
   ["أدوات شغل", "عمل"],
-  ["أقساط", "فواتير"],
+  ["أقساط", "أقساط وفوايد"],
+  ["قسط", "أقساط وفوايد"],
   ["تحويلات", "تحويل"],
   ["Bills", "فواتير"],
   ["Home & Bills", "فواتير"],
   ["Daily Commitments", "فواتير"],
-  ["Income", "مرتب"],
+  ["Income", "دخل آخر"],
   ["Salary", "مرتب"],
   ["Freelance", "عمل حر"],
   ["Transfer", "تحويل"],
   ["Shopping", "تسوق"],
   ["Transport", "مواصلات"],
-  ["Car Services", "خدمات سيارات"],
-  ["Digital Services", "خدمات رقمية"],
+  ["Car Services", "مواصلات"],
+  ["Digital Services", "اشتراكات"],
   ["Miscellaneous", "متنوعات"],
 ];
 
@@ -609,7 +187,22 @@ const GOVERNED_NOUNS = governedNouns();
  */
 const FREELANCE_NOUNS = ["فريلانس", "عمل حر", "سبوبة", "سبوبه", "كلاينت", "freelance"];
 
-function inferCategoryFromEvidence(
+/**
+ * Whether sentence evidence may replace a category the item already has. Only the
+ * catch-alls give way: nothing (or متنوعات) to anything, مرتب and the unknown-income
+ * default دخل آخر to a more specific income ("قبضت 5000 من كلاينت" is عمل حر), and
+ * استثمار to its returns ("جالي عائد شهادات" is عوائد استثمار).
+ */
+function mayRefine(current: string | undefined, inferred: string): boolean {
+  if (!current || current === "متنوعات") return true;
+  if (current === "مرتب") return inferred === "عمل حر" || inferred === "عوائد استثمار";
+  if (current === "دخل آخر") return inferred === "مرتب" || inferred === "عمل حر" || inferred === "عوائد استثمار";
+  if (current === "استثمار") return inferred === "عوائد استثمار";
+  return false;
+}
+
+/** Old category names that now live elsewhere; they depend on the name, not the sentence. */
+function inferLegacyCategory(
   rawCategory: string,
   evidence: string,
 ): string | undefined {
@@ -639,13 +232,24 @@ function inferCategoryFromEvidence(
     return "فواتير";
   }
 
+  return undefined;
+}
+
+/** Guesses a category from the sentence, for an item that arrived without a real one. */
+function inferCategoryFromEvidence(
+  rawCategory: string,
+  evidence: string,
+): string | undefined {
+  const categoryText = `${rawCategory} ${evidence}`;
+
   if (
     hasAny(categoryText, [
       "مرتب",
       "راتب",
       "قبضت",
-      "استلمت",
       "جالي مرتب",
+      "من الشغل",
+      "من شغلي",
       "المعاش",
       "بونص",
       "مكافأة",
@@ -653,7 +257,7 @@ function inferCategoryFromEvidence(
     !hasAny(categoryText, ["دفعت", "صرفت", "اشتريت", "قسط"]) &&
     // A direction-governed noun is more specific than the income verb beside it.
     // "قبضت الجمعية" contains قبضت, but it is a gam3eya payout, not salary — and the
-    // rule engine has already resolved it to التزامات وجمعيات/قبض جمعية. Without this
+    // rule engine has already resolved it to تحويل/جمعية. Without this
     // guard the evidence scan overwrote that correct answer on the way to storage.
     !hasAny(categoryText, GOVERNED_NOUNS) &&
     !hasAny(categoryText, FREELANCE_NOUNS)
@@ -674,7 +278,11 @@ function inferCategoryFromEvidence(
     return "عمل حر";
   }
 
-  if (hasAny(categoryText, ["أرباح", "فوائد", "كاش باك", "استرجاع", "عائد"])) {
+  if (hasAny(categoryText, ["مرتجع", "استرجاع", "استرداد", "refund"])) {
+    return "دخل آخر";
+  }
+
+  if (hasAny(categoryText, ["أرباح", "فوائد", "كاش باك", "عائد"])) {
     return "عوائد استثمار";
   }
 
@@ -699,22 +307,7 @@ function inferSubCategory(
       if (hasAny(evidence, ["شحن", "رصيد", "كارت فكة", "كارت شحن"]))
         return "شحن رصيد";
       if (hasAny(evidence, ["تليفون", "هاتف", "ارضي", "أرضي"])) return "تليفون";
-      if (
-        hasAny(evidence, [
-          "قسط",
-          "أقساط",
-          "اقساط",
-          "فاليو",
-          "سهولة",
-          "دين",
-          "سلفة",
-          "قرض",
-          "تمويل",
-        ])
-      )
-        return "أقساط";
       if (hasAny(evidence, ["تأمين", "تامين"])) return "تأمين";
-      if (hasAny(evidence, ["ضريبة", "ضرائب", "ضرايب"])) return "ضرائب";
       return undefined;
     case "تسوق":
       if (
@@ -735,8 +328,30 @@ function inferSubCategory(
         ])
       )
         return "أجهزة إلكترونية";
-      if (hasAny(evidence, ["حلاق", "عناية", "ميكاب", "برفان", "عطر", "شامبو"]))
-        return "عناية شخصية";
+      return undefined;
+    case "عناية شخصية":
+      if (hasAny(evidence, ["حلاق", "كوافير", "صالون", "حلاقة"])) return "حلاق وكوافير";
+      if (hasAny(evidence, ["ميكاب", "برفان", "عطر", "شامبو", "كريم", "مرطب", "مزيل"]))
+        return "مستحضرات وعناية";
+      return undefined;
+    case "أطفال":
+      if (hasAny(evidence, ["حضانة", "حضانه"])) return "حضانة";
+      if (hasAny(evidence, ["بامبرز", "حفاضات", "لبن اطفال", "لبن أطفال", "لبن للبيبي", "رضعة"]))
+        return "بامبرز ولبن أطفال";
+      if (hasAny(evidence, ["لعب", "لعبة", "هدوم"])) return "هدوم ولعب";
+      if (hasAny(evidence, ["مصروف"])) return "مصروف العيال";
+      return undefined;
+    case "أقساط وفوايد":
+      if (hasAny(evidence, ["فوايد", "فوائد", "فايدة"])) return "فوايد قروض";
+      return "أقساط";
+    case "هدايا وعيديات":
+      if (hasAny(evidence, ["عيدية", "عيديه"])) return "عيدية";
+      if (hasAny(evidence, ["نقطة", "نقطه", "نقوط"])) return "نقطة";
+      return "هدية فلوس";
+    case "دخل آخر":
+      if (hasAny(evidence, ["مرتجع", "رجعت", "استرجاع", "استرداد", "refund"]))
+        return "مرتجعات واسترداد";
+      if (hasAny(evidence, ["بعت", "بيع", "بايع"])) return "بيع حاجة";
       return undefined;
     case "أكل وشرب":
       if (
@@ -764,18 +379,14 @@ function inferSubCategory(
     case "مواصلات":
       if (hasAny(evidence, ["اوبر", "أوبر", "كريم", "ان درايف", "اندرايف", "ديدي"])) return "أوبر/كريم";
       if (hasAny(evidence, ["مترو", "تذكرة", "تيكت"])) return "مترو";
-      if (hasAny(evidence, ["اتوبيس", "باص", "ميكروباص", "سويفل", "مشروع"])) return "أتوبيس";
+      if (hasAny(evidence, ["ميكروباص", "مشروع"])) return "ميكروباص";
+      if (hasAny(evidence, ["قطر", "قطار"])) return "قطر";
+      if (hasAny(evidence, ["اتوبيس", "باص", "سويفل"])) return "أتوبيس";
+      if (hasAny(evidence, ["كارتة", "كارته"])) return "كارتة";
       if (hasAny(evidence, ["تاكسي", "تكسي"])) return "تاكسي";
       if (hasAny(evidence, ["بنزين", "تفويلة"])) return "بنزين";
-      if (hasAny(evidence, ["ركنة", "جراج"])) return "ركنة";
-      return undefined;
-    case "خدمات سيارات":
-      if (hasAny(evidence, ["كارتة"])) return "كارتة";
-      if (hasAny(evidence, ["ركنة", "سايس", "جراج"])) return "ركنة";
-      if (hasAny(evidence, ["زيت", "تغيير زيت"])) return "تغيير زيت";
-      if (hasAny(evidence, ["مخالفة"])) return "مخالفة";
-      if (hasAny(evidence, ["بطارية"])) return "بطارية";
-      if (hasAny(evidence, ["كاوتش", "إطارات", "اطارات"])) return "إطارات";
+      if (hasAny(evidence, ["ركنة", "جراج", "سايس"])) return "ركنة";
+      if (hasAny(evidence, ["زيت", "بطارية", "كاوتش", "إطارات", "اطارات", "ميكانيكي"])) return "صيانة عربية";
       return undefined;
     case "سكن":
       if (hasAny(evidence, ["ايجار", "إيجار", "اجار"])) return "إيجار";
@@ -785,6 +396,7 @@ function inferSubCategory(
       if (hasAny(evidence, ["منظفات", "مسحوق", "صابون"])) return "منظفات";
       if (hasAny(evidence, ["تلاجة", "غسالة", "بوتاجاز"]))
         return "أجهزة منزلية";
+      if (hasAny(evidence, ["بواب", "زبال", "شغالة", "مكوجي", "دادة"])) return "خدمات البيت";
       return undefined;
     case "صحة":
       if (hasAny(evidence, ["دكتور", "كشف", "عيادة", "طبيب"])) return "دكتور";
@@ -803,7 +415,6 @@ function inferSubCategory(
       return undefined;
     case "ترفيه":
       if (hasAny(evidence, ["سينما", "فيلم"])) return "سينما";
-      if (hasAny(evidence, ["كافيه", "قهوة", "شاي", "عصير"])) return "كافيه";
       if (hasAny(evidence, ["سفر", "مصيف", "رحلة"])) return "سفر";
       if (hasAny(evidence, ["جيم", "رياضة", "رياضه", "بروتين", "كرة", "كورة", "ملعب", "ماتش", "حجز", "بادل", "خماسي", "تراك"])) return "رياضة وجيم";
       if (hasAny(evidence, ["بلايستيشن", "العاب", "ألعاب", "gaming", "بلياردو"]))
@@ -814,17 +425,17 @@ function inferSubCategory(
       if (hasAny(evidence, ["صدقة", "تبرع", "زكاة", "رسالة", "جامع"]))
         return "صدقة/تبرع";
       if (hasAny(evidence, ["عيدية"])) return "عيدية";
+      if (hasAny(evidence, ["نقطة", "نقطه", "واجب", "عزا", "سبوع"])) return "نقطة وواجب";
+      if (hasAny(evidence, ["اضحية", "أضحية", "ضحية"])) return "أضحية";
       if (hasAny(evidence, ["فرح", "خطوبة"])) return "فرح/خطوبة";
       if (hasAny(evidence, ["عيد ميلاد"])) return "عيد ميلاد";
       return undefined;
     case "اشتراكات":
-      if (hasAny(evidence, ["نتفلكس", "netflix", "شاهد", "برايم", "واتش ات"])) return "نتفلكس";
-      if (hasAny(evidence, ["سبوتيفاي", "spotify", "انغامي"])) return "سبوتيفاي";
-      if (hasAny(evidence, ["شات جي بي تي", "chatgpt", "gpt"]))
-        return "شات جي بي تي";
-      if (hasAny(evidence, ["جوجل ai", "google ai", "gemini"]))
-        return "جوجل AI";
-      if (hasAny(evidence, ["saas", "برنامج", "برمجيات", "يوتيوب"])) return "برمجيات";
+      if (hasAny(evidence, ["نتفلكس", "netflix", "شاهد", "برايم", "واتش ات", "يوتيوب"])) return "منصات مشاهدة";
+      if (hasAny(evidence, ["سبوتيفاي", "spotify", "انغامي"])) return "موسيقى";
+      if (hasAny(evidence, ["شات جي بي تي", "chatgpt", "gpt", "جوجل ai", "google ai", "gemini", "claude"]))
+        return "أدوات AI";
+      if (hasAny(evidence, ["saas", "برنامج", "برمجيات", "vpn", "cloud", "كلاود"])) return "برمجيات";
       return undefined;
     case "تدخين":
       if (hasAny(evidence, ["سجاير", "سجائر", "علبة"])) return "سجائر";
@@ -836,14 +447,6 @@ function inferSubCategory(
       if (hasAny(evidence, ["api", "واجهة", "واجهات"])) return "واجهات برمجية";
       if (hasAny(evidence, ["مكتب", "أدوات", "ادوات"])) return "مستلزمات مكتب";
       if (hasAny(evidence, ["مساحة عمل", "coworking"])) return "مساحة عمل";
-      return undefined;
-    case "خدمات رقمية":
-      if (hasAny(evidence, ["vpn"])) return "اشتراك VPN";
-      if (hasAny(evidence, ["cloud", "كلاود"])) return "اشتراك Cloud";
-      if (hasAny(evidence, ["ai", "ذكاء", "chatgpt", "جيميناي"]))
-        return "أدوات AI";
-      if (hasAny(evidence, ["دومين", "domain"])) return "دومينات";
-      if (hasAny(evidence, ["استضافة", "hosting"])) return "استضافة";
       return undefined;
     case "مرتب":
       if (hasAny(evidence, ["بونص", "مكافأة", "مكافاه"])) return "مكافأة/بونص";
@@ -858,12 +461,12 @@ function inferSubCategory(
     case "عوائد استثمار":
       if (hasAny(evidence, ["فوائد", "فايدة"])) return "فوائد";
       if (hasAny(evidence, ["كاش باك", "cashback"])) return "كاش باك";
-      if (hasAny(evidence, ["استرجاع", "refund"])) return "استرجاع";
       return "أرباح";
     case "تحويل":
       if (hasAny(evidence, ["atm", "سحب"])) return "سحب ATM";
       if (hasAny(evidence, ["انستاباي", "instapay"])) return "انستاباي";
       if (hasAny(evidence, ["فودافون كاش"])) return "فودافون كاش";
+      if (hasAny(evidence, ["جمعية", "جمعيه"])) return "جمعية";
       if (hasAny(evidence, ["ادخار", "تحويش"])) return "ادخار";
       if (hasAny(evidence, ["دين", "سلف", "سلفة", "قرض", "loan"])) return "دين/سلفة";
       if (hasAny(evidence, ["أشخاص"])) return "أشخاص";
@@ -887,18 +490,26 @@ export function normalizeCategoryName(
   fallback = "متنوعات",
 ): string {
   const raw = String(rawCategory || "").trim();
+  // A category that already names something is kept. Re-reading the whole sentence
+  // used to overwrite correct answers on the way to storage: "ركبت مشروع" (the
+  // microbus) became عمل حر, "استلمت من أحمد" became مرتب. Evidence may still fill a
+  // missing or catch-all category, and remap the legacy names.
+  const legacy = inferLegacyCategory(raw, evidence);
+  if (legacy) return legacy;
+
+  // An exact name, or an alias of one (old names such as "خدمات سيارات" included).
+  let direct = findCategoryByAnyName(raw);
+  if (!direct && raw) {
+    const normalized = comparableArabic(raw);
+    const alias = CATEGORY_ALIASES.find(([from]) => comparableArabic(from) === normalized);
+    if (alias) direct = findCategoryByAnyName(alias[1]);
+  }
+
   const inferred = inferCategoryFromEvidence(raw, evidence);
-  if (inferred && findCategoryByAnyName(inferred)) return inferred;
-
-  const direct = findCategoryByAnyName(raw);
+  if (inferred && findCategoryByAnyName(inferred) && mayRefine(direct?.name_ar, inferred)) {
+    return inferred;
+  }
   if (direct) return direct.name_ar;
-
-  const normalized = comparableArabic(raw);
-  const alias = CATEGORY_ALIASES.find(
-    ([from]) => comparableArabic(from) === normalized,
-  );
-  if (alias && findCategoryByAnyName(alias[1])) return alias[1];
-
   return fallback;
 }
 
@@ -941,28 +552,36 @@ export function normalizeTransactionTaxonomy<
   item: T,
   evidence = "",
 ): T & { category: string; subCategory: string; type: TransactionType } {
-  const combinedEvidence = `${item.description || ""} ${item.subCategory || ""} ${evidence}`;
-  const category = normalizeCategoryName(item.category, combinedEvidence);
+  // An old pair (a retired category, a merged subcategory, a money movement that was
+  // booked as spending) is moved to where it lives now before anything else reads it.
+  const legacy = resolveLegacyTaxonomy(item.category, item.subCategory, item.type);
+  const source = legacy
+    ? { ...item, category: legacy.category, subCategory: legacy.subCategory, type: legacy.type ?? item.type }
+    : item;
+
+  const combinedEvidence = `${source.description || ""} ${source.subCategory || ""} ${evidence}`;
+  const category = normalizeCategoryName(source.category, combinedEvidence);
   const subCategory = normalizeSubCategoryName(
     category,
-    item.subCategory,
+    source.subCategory,
     combinedEvidence,
   );
 
   // Preserve explicit type if valid, otherwise fall back to category default type
   const type =
-    item.type === "income" ||
-    item.type === "expense" ||
-    item.type === "transfer" ||
-    item.type === "investment"
-      ? (item.type as TransactionType)
+    source.type === "income" ||
+    source.type === "expense" ||
+    source.type === "transfer" ||
+    source.type === "investment"
+      ? (source.type as TransactionType)
       : (getCategoryType(category) as TransactionType);
 
   return {
-    ...item,
+    ...source,
     category,
     subCategory,
     type,
+    ...(legacy?.direction ? { direction: legacy.direction } : {}),
   };
 }
 
@@ -1037,8 +656,13 @@ export const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   ["جزمة", "shopping"],
   ["كوتشي", "shopping"],
   ["شوز", "shopping"],
-  ["عنايه شخصيه", "shopping"],
-  ["عطر", "shopping"],
+  ["عنايه شخصيه", "personal_care"],
+  ["بامبرز", "kids"],
+  ["حفاضات", "kids"],
+  ["حضانه", "kids"],
+  ["حضانة", "kids"],
+  ["لبن اطفال", "kids"],
+  ["عطر", "personal_care"],
   ["دكتور", "health"],
   ["صيدليه", "health"],
   ["صيدلية", "health"],
@@ -1058,14 +682,14 @@ export const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   ["رصيد", "bills"],
   ["فاتوره", "bills"],
   ["فاتورة", "bills"],
-  ["قسط", "bills"],
-  ["اقساط", "bills"],
-  ["أقساط", "bills"],
+  ["قسط", "installments"],
+  ["اقساط", "installments"],
+  ["أقساط", "installments"],
   ["مرتب", "salary"],
   ["راتب", "salary"],
   ["salary", "salary"],
   ["قبض", "salary"],
-  ["دخل", "salary"],
+  ["دخل", "other_income"],
   ["بونص", "salary"],
   ["مكافاه", "salary"],
   ["مكافأة", "salary"],
@@ -1074,7 +698,8 @@ export const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   ["عموله", "freelance"],
   ["كاش باك", "investment_income"],
   ["كاشباك", "investment_income"],
-  ["استرجاع", "investment_income"],
+  ["استرجاع", "other_income"],
+  ["مرتجع", "other_income"],
   ["ارباح", "investment_income"],
   ["أرباح", "investment_income"],
   ["فوائد", "investment_income"],
@@ -1146,27 +771,27 @@ export const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   ["فرح", "gifts"],
   ["خطوبه", "gifts"],
   ["خطوبة", "gifts"],
-  ["كارتة", "car_services"],
-  ["ركنه", "car_services"],
-  ["ركنة", "car_services"],
-  ["زيت", "car_services"],
-  ["مخالفه", "car_services"],
-  ["مخالفة", "car_services"],
-  ["بطاريه", "car_services"],
-  ["بطارية", "car_services"],
-  ["كاوتش", "car_services"],
-  ["إطارات", "car_services"],
-  ["اطارات", "car_services"],
-  [" vpn", "digital_services"],
-  ["vpn", "digital_services"],
-  ["cloud", "digital_services"],
-  ["كلاود", "digital_services"],
-  ["دومين", "digital_services"],
-  ["domain", "digital_services"],
+  ["كارتة", "transport"],
+  ["ركنه", "transport"],
+  ["ركنة", "transport"],
+  ["زيت", "transport"],
+  ["مخالفه", "government_services"],
+  ["مخالفة", "government_services"],
+  ["بطاريه", "transport"],
+  ["بطارية", "transport"],
+  ["كاوتش", "transport"],
+  ["إطارات", "transport"],
+  ["اطارات", "transport"],
+  [" vpn", "subscriptions"],
+  ["vpn", "subscriptions"],
+  ["cloud", "subscriptions"],
+  ["كلاود", "subscriptions"],
+  ["دومين", "work"],
+  ["domain", "work"],
   // "hosting" was declared twice; buildAliasMap() writes in array order, so the later
   // `work` entry silently won. Both categories happen to declare an استضافة
-  // subcategory, but hosting belongs with domains and cloud under digital_services.
-  ["hosting", "digital_services"],
+  // subcategory, but hosting belongs with domains and cloud under work.
+  ["hosting", "work"],
   ["استضافه", "work"],
   ["استضافة", "work"],
   ["api", "work"],
@@ -1184,10 +809,10 @@ export const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   ["كتاب", "education"],
   ["كتب", "education"],
   ["دروس", "education"],
-  ["جمعيه", "liabilities_and_gam3eyat"],
-  ["جمعية", "liabilities_and_gam3eyat"],
-  ["فاليو", "liabilities_and_gam3eyat"],
-  ["تمويل", "liabilities_and_gam3eyat"],
+  ["جمعيه", "transfer"],
+  ["جمعية", "transfer"],
+  ["فاليو", "installments"],
+  ["تمويل", "installments"],
 
   // ── Migrated from taxonomy-ssot.ts ──────────────────────────────────────────
   // taxonomy-ssot.ts carried a richer Egyptian alias set than this table but was
@@ -1199,7 +824,7 @@ export const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   //
   // Only aliases that resolved to NOTHING before are added: where the ssot and this
   // table disagreed the existing mapping wins, because it is generally the better one
-  // (ركنة is car_services, netflix is subscriptions, جيم is entertainment).
+  // (ركنة is transport, netflix is subscriptions, جيم is entertainment).
   //
   // Deliberately NOT migrated, because canonicalCategoryId() falls back to an
   // unanchored substring scan over aliases of length >= 3, so a common word here
@@ -1250,16 +875,16 @@ export const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   ["noon", "shopping"],
   ["نظارة", "shopping"],
   ["ساعة", "shopping"],
-  ["حلاق", "shopping"],
-  ["حلاقة", "shopping"],
-  ["دقن", "shopping"],
-  ["كوافير", "shopping"],
-  ["بيوتي سنتر", "shopping"],
-  ["برفيوم", "shopping"],
-  ["مكياج", "shopping"],
+  ["حلاق", "personal_care"],
+  ["حلاقة", "personal_care"],
+  ["دقن", "personal_care"],
+  ["كوافير", "personal_care"],
+  ["بيوتي سنتر", "personal_care"],
+  ["برفيوم", "personal_care"],
+  ["مكياج", "personal_care"],
   ["مناديل", "shopping"],
-  ["شامبو", "shopping"],
-  ["معجون سنان", "shopping"],
+  ["شامبو", "personal_care"],
+  ["معجون سنان", "personal_care"],
 
   ["طبيب", "health"],
   ["كشف", "health"],
@@ -1299,12 +924,12 @@ export const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   ["thndr", "investment"],
   ["ربح", "investment_income"],
   ["مبيعات", "freelance"],
-  ["حوالة واردة", "salary"],
+  ["حوالة واردة", "transfer"],
 
-  ["ديون", "liabilities_and_gam3eyat"],
-  ["سداد", "liabilities_and_gam3eyat"],
-  ["تسديد", "liabilities_and_gam3eyat"],
-  ["ارجاع فلوس", "liabilities_and_gam3eyat"],
+  ["ديون", "transfer"],
+  ["سداد", "installments"],
+  ["تسديد", "installments"],
+  ["ارجاع فلوس", "transfer"],
 
   ["غير مصنف", "miscellaneous"],
   ["نثرية", "miscellaneous"],
@@ -1449,7 +1074,7 @@ export function storageCategoryName(input: string | null | undefined): string {
   const id = canonicalCategoryId(input);
   if (VIRTUAL_AGGREGATE_IDS[id]) {
     if (id === "saving") return "تحويل";
-    if (id === "income") return "مرتب";
+    if (id === "income") return "دخل آخر";
     return "متنوعات";
   }
   return CATEGORY_ID_MAP.get(id)?.name_ar ?? "متنوعات";
@@ -1462,5 +1087,5 @@ export function normalizeStoredCategory(stored: string | null | undefined): stri
 }
 
 export function taxonomyVersion(): string {
-  return "tax_v2_2026_06";
+  return "tax_v3_2026_09";
 }

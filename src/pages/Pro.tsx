@@ -9,9 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Crown,
   Zap,
-  Infinity as InfinityIcon,
-  Download,
-  Headphones,
   Sparkles,
   Check,
   X,
@@ -40,49 +37,13 @@ export default function Pro() {
   const isUltraTier = tier === "ultra";
   const referralDiscount = referral.data?.discount;
 
-  const features = [
-    {
-      icon: <InfinityIcon className="w-5 h-5" />,
-      title: "المساعد الذكي",
-      free: "10 طلبات/يوم",
-      paidTitle: "استخدام AI غير محدود",
-      pro: true,
-    },
-    {
-      icon: <Download className="w-5 h-5" />,
-      title: "تصدير Excel & CSV",
-      free: false,
-      pro: true,
-      paidTitle: undefined,
-    },
-    {
-      icon: <Sparkles className="w-5 h-5" />,
-      title: "تحليلات متقدمة",
-      free: false,
-      pro: true,
-      paidTitle: undefined,
-    },
-    {
-      icon: <Headphones className="w-5 h-5" />,
-      title: "دعم أولوي",
-      free: false,
-      pro: true,
-      paidTitle: undefined,
-    },
-    {
-      icon: <Zap className="w-5 h-5" />,
-      title: "بدون إعلانات",
-      free: false,
-      pro: true,
-      paidTitle: undefined,
-    },
-    {
-      icon: <Crown className="w-5 h-5" />,
-      title: "تبديل نماذج AI",
-      free: false,
-      pro: true,
-    },
-  ];
+  // What each plan includes comes from the admin's settings (pro.planCatalog), the same
+  // numbers the server enforces — not fixed marketing text.
+  const catalog = trpc.pro.planCatalog.useQuery();
+  const rowsFor = (id: "free" | "pro" | "ultra") => {
+    const rows = catalog.data?.[id];
+    return Array.isArray(rows) ? rows : [];
+  };
 
   const handleCopy = () => {
     if (referral.data?.code) {
@@ -185,21 +146,7 @@ export default function Pro() {
                 </span>
               </p>
               <ul className="space-y-3 mb-6">
-                {features.map((f, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm">
-                    {f.free ? (
-                      <Check className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <X className="w-4 h-4 text-red-400" />
-                    )}
-                    <span className="text-muted-foreground">{f.title}</span>
-                    {typeof f.free === "string" && (
-                      <Badge variant="secondary" className="me-auto">
-                        {f.free}
-                      </Badge>
-                    )}
-                  </li>
-                ))}
+                <PlanRows rows={rowsFor("free")} checkClass="text-green-500" />
               </ul>
               {!isPaid ? (
                 <Button className="w-full" variant="outline" disabled>
@@ -242,12 +189,7 @@ export default function Pro() {
                 </span>
               </p>
               <ul className="space-y-3 mb-6">
-                {features.map((f, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span>{f.paidTitle || f.title}</span>
-                  </li>
-                ))}
+                <PlanRows rows={rowsFor("pro")} checkClass="text-green-500" />
               </ul>
               {isUltraTier ? (
                 <Button className="w-full" variant="outline" asChild>
@@ -292,16 +234,7 @@ export default function Pro() {
                 <span className="text-sm text-slate-400 font-normal">/شهر</span>
               </p>
               <ul className="space-y-3 mb-6">
-                {features.map((f, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm">
-                    <Check className="w-4 h-4 text-cyan-400" />
-                    <span>{f.paidTitle || f.title}</span>
-                  </li>
-                ))}
-                <li className="flex items-center gap-3 text-sm text-cyan-300 font-medium">
-                  <Check className="w-4 h-4 text-cyan-400" />
-                  <span>دعم كامل لعائلتك</span>
-                </li>
+                <PlanRows rows={rowsFor("ultra")} checkClass="text-cyan-400" />
               </ul>
               {isUltraTier ? (
                 <Button
@@ -400,5 +333,30 @@ export default function Pro() {
         </Card>
       </div>
     </div>
+  );
+}
+
+type PlanRow = { key: string; label: string; value: boolean | string };
+
+/** One plan's included rows: a check with the amount, or a cross when not included. */
+function PlanRows({ rows, checkClass }: { rows: PlanRow[]; checkClass: string }) {
+  return (
+    <>
+      {rows.map((row) => (
+        <li key={row.key} className="flex items-center gap-3 text-sm">
+          {row.value === false ? (
+            <X className="w-4 h-4 text-red-400 shrink-0" />
+          ) : (
+            <Check className={`w-4 h-4 shrink-0 ${checkClass}`} />
+          )}
+          <span className={row.value === false ? "text-muted-foreground" : undefined}>{row.label}</span>
+          {typeof row.value === "string" && (
+            <Badge variant="secondary" className="me-auto whitespace-nowrap">
+              {row.value}
+            </Badge>
+          )}
+        </li>
+      ))}
+    </>
   );
 }

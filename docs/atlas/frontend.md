@@ -81,7 +81,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `Admin` — `src/pages/Admin.tsx`
 
-28 files in its import closure (not counting `src/components/ui/`).
+29 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -104,6 +104,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
 | `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
+| `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
 | `admin.getDashboardStats` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getDiscountCodes` | useQuery, utils.invalidate | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |
@@ -182,7 +183,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-39 files in its import closure (not counting `src/components/ui/`).
+45 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -191,16 +192,22 @@ _None._
 | `ai.parseVoiceExpense` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
+| `budget.create` | useMutation | `src/components/budgets/BudgetsPanel.tsx` |
+| `budget.delete` | useMutation | `src/components/budgets/BudgetsPanel.tsx` |
+| `budget.list` | useQuery, utils.invalidate | `src/components/budgets/BudgetsPanel.tsx`, `src/components/dashboard/ExpenseChart.tsx` |
 | `business.get` | useQuery | `src/pages/Home.tsx` |
-| `expense.answerClarification` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
+| `expense.answerClarification` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.batchCreate` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.create` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
-| `expense.delete` | useMutation | `src/components/expenses/RecentExpenses.tsx` |
-| `expense.getMonthSummary` | useQuery, utils.invalidate, utils.prefetch | `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
-| `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
-| `expense.getPendingClarifications` | utils.invalidate | `src/components/expenses/ExpenseForm.tsx` |
-| `expense.list` | useQuery, utils.cancel, utils.getData, utils.invalidate, utils.setData | `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.delete` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.dismissClarification` | useMutation | `src/components/expenses/PendingQuestionsCard.tsx` |
+| `expense.getDebtBalances` | useQuery | `src/components/debts/DebtsPanel.tsx` |
+| `expense.getMonthSummary` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/pages/Home.tsx` |
+| `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/pages/Home.tsx` |
+| `expense.getPendingClarifications` | useQuery, utils.invalidate | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
+| `expense.list` | useQuery, utils.cancel, utils.getData, utils.invalidate, utils.setData | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.searchTransactions` | useQuery | `src/components/dashboard/GlobalSearch.tsx` |
+| `expense.update` | useMutation | `src/components/expenses/EditExpenseDialog.tsx` |
 | `goals.analyze` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.create` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.list` | useQuery | `src/components/goals/FinancialGoalsPanel.tsx` |
@@ -208,9 +215,12 @@ _None._
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `pro.myPlan` | useQuery | `src/components/expenses/ExpenseForm.tsx` |
+| `profile.confirmSmsSuggestion` | useMutation | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.dismissOnboarding` | useMutation | `src/components/OnboardingCard.tsx` |
+| `profile.dismissSmsSuggestion` | useMutation | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.getNextOnboardingQuestion` | useQuery | `src/components/OnboardingCard.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/pages/Home.tsx` |
+| `profile.getSmsSuggestions` | useQuery, utils.invalidate | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | useMutation | `src/components/OnboardingCard.tsx` |
 | `voice.eligibility` | useQuery | `src/hooks/useVoiceCallEntry.ts` |
@@ -240,7 +250,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-53 files in its import closure (not counting `src/components/ui/`).
+54 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -263,6 +273,7 @@ _None._
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
 | `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
+| `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
 | `admin.getDashboardStats` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getDiscountCodes` | useQuery, utils.invalidate | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |
@@ -327,6 +338,7 @@ _None._
 | `pro.cancel` | useMutation | `src/hooks/usePro.ts` |
 | `pro.createCheckoutSession` | useMutation | `src/hooks/usePro.ts` |
 | `pro.myPlan` | useQuery, utils.invalidate | `src/hooks/usePro.ts` |
+| `pro.planCatalog` | useQuery | `src/pages/Pro.tsx` |
 | `pro.upgrade` | useMutation | `src/hooks/usePro.ts` |
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
@@ -380,6 +392,7 @@ _None._
 | `pro.cancel` | useMutation | `src/hooks/usePro.ts` |
 | `pro.createCheckoutSession` | useMutation | `src/hooks/usePro.ts` |
 | `pro.myPlan` | useQuery, utils.invalidate | `src/hooks/usePro.ts` |
+| `pro.planCatalog` | useQuery | `src/pages/Pro.tsx` |
 | `pro.upgrade` | useMutation | `src/hooks/usePro.ts` |
 | `referral.applyCode` | useMutation | `src/pages/Pro.tsx` |
 | `referral.myCode` | useQuery | `src/pages/Pro.tsx` |

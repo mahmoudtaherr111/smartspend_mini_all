@@ -4,13 +4,14 @@ import { classificationLogs, financialGoals, expenses, userContacts, userProfile
 import { db } from "../../queries/connection";
 import type { Artifact, DataNeed, DataNeedKind, ResolvedFact } from "../ai-kernel/types";
 import { collectFinanceCacheTrace, financeCacheKey, financeCacheTtl, withFinanceCache } from "./cache";
-import { canonicalCategoryForRow, getCategoryAliases, displayFinanceCategory, financeCategoryId } from "./category-matcher";
+import { canonicalCategoryForRow, getCategoryAliases, displayFinanceCategory, financeCategoryId, financeCategoryIds } from "./category-matcher";
 import { createFinanceChartArtifact } from "./chart-artifacts";
 import {
   amountOf,
   buildBreakdown,
   buildChartData,
   buildMultiCategoryChartData,
+  isSpendingRow,
 } from "./row-aggregators";
 import { resolveFinancePeriod } from "./period-resolver";
 import { businessDateKey } from "../../lib/app-time";
@@ -98,8 +99,8 @@ function rowMatchesCategory(row: {
   rawText?: string | null;
   placeHint?: string | null;
 }, category: string): boolean {
-  // Callers name a category as the user did ("أكل"); rows carry the registry's id ("food").
-  return rowCanonicalCategory(row) === financeCategoryId(category);
+  // Callers name a category as the user did ("أكل", "الدخل"); rows carry the registry's id ("food", "salary").
+  return financeCategoryIds(category).includes(rowCanonicalCategory(row));
 }
 
 function rowMatchesAnyCategory(row: {
@@ -308,8 +309,9 @@ export async function getCategoryTotal(
 ): Promise<FinanceCategoryTotal> {
   const period = resolveFinancePeriod(input, ctx);
   const aliases = getCategoryAliases(financeCategoryId(category));
-  // Keyed by the category's id, so "أكل" and "الأكل" share one cached answer.
-  const key = financeCacheKey(ctx.userId, ctx.userType, "category_total", period.key, financeCategoryId(category));
+  // Keyed by the ids the name covers, so "أكل" and "الأكل" share one cached answer and "الدخل" does not share one
+  // with "other_income".
+  const key = financeCacheKey(ctx.userId, ctx.userType, "category_total", period.key, financeCategoryIds(category).join("+"));
 
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
     const rows = (await loadRowsForPeriod(ctx, period)).filter((row) => rowMatchesCategory(row, category));
@@ -810,7 +812,7 @@ export async function getBusinessCashflow(
     const cat = canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint);
     if (row.type === "income") {
       incomeByCategory.set(cat, (incomeByCategory.get(cat) ?? 0) + amount);
-    } else {
+    } else if (isSpendingRow(row)) {
       expenseByCategory.set(cat, (expenseByCategory.get(cat) ?? 0) + amount);
     }
   }

@@ -1,0 +1,21 @@
+// The Android Gradle plugin and the AndroidX libraries are published on Google's Maven
+// repository, which the build never listed: every CI build failed resolving
+// com.android.application before compiling anything.
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "SmartSpendSync"
+include ':app'

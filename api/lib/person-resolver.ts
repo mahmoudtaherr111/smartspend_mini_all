@@ -367,10 +367,26 @@ export function pickAllPersonCandidates(
     );
     if (directedMatch?.[1]) {
       const cleanedMatch = cleanPersonName(directedMatch[1], transactionText);
-      if (cleanedMatch && !candidates.includes(cleanedMatch)) {
+      // Any word after a verb is not a person: "حولت دهب", "شحنت موبايلي" and "خدت فلوسي"
+      // each produced a "مين …؟" question about nobody. Only a name the dictionary knows,
+      // a family word, or one of the user's contacts is taken from this fallback.
+      const plausible = cleanedMatch && (
+        isLikelyPersonName(cleanedMatch) ||
+        knownNames.some((known) => known === cleanedMatch || matchArabicPhrase(known, cleanedMatch))
+      );
+      if (plausible && cleanedMatch && !candidates.includes(cleanedMatch)) {
          candidates.push(cleanedMatch);
       }
     }
+  }
+
+  // "خدت منه 150" is "I took it from him": right after a verb, منه/منها is a pronoun,
+  // not the name Menna, unless the user has a contact by that name.
+  const pronounAfterVerb = /(?:^|\s)[وف]?(?:خدت|اخدت|أخدت|أخذت|استلمت|قبضت|استلفت|سحبت|جالي|جاني)\s+(منه|منها|منهم)(?=\s|$)/u
+    .exec(transactionText)?.[1];
+  if (pronounAfterVerb && !knownNames.includes(pronounAfterVerb)) {
+    const index = candidates.indexOf(pronounAfterVerb);
+    if (index >= 0) candidates.splice(index, 1);
   }
 
   // If we have specific person names, filter out generic descriptors that describe them
@@ -383,6 +399,36 @@ export function pickAllPersonCandidates(
 }
 
 export function resolvePersonForTransaction(input: {
+  candidateName?: string | null;
+  transactionText: string;
+  originalText: string;
+  knownPeople: KnownPersonForResolver[];
+  aiRelationship?: string | null;
+}): PersonResolution {
+  return withoutPreposition(resolvePerson(input));
+}
+
+/**
+ * "حولت لماما" reaches the resolver as "لماما". The relationship is read from that form
+ * (the kinship matcher keys on it), but the lam is the preposition: the name shown and
+ * linked to a contact is "ماما", not "لماما والدتك".
+ */
+function withoutPreposition(result: PersonResolution): PersonResolution {
+  const name = result.name;
+  if (!name || result.isKnown || !name.startsWith("ل") || name.length <= 3) return result;
+  const bare = name.slice(1);
+  const bareCategory = normalizeRelationship(bare).category;
+  if (!PERSON_CATEGORIES.has(bareCategory) || bareCategory !== normalizeRelationship(name).category) return result;
+  return {
+    ...result,
+    name: bare,
+    subCategory: result.subCategory?.startsWith(name)
+      ? `${bare}${result.subCategory.slice(name.length)}`
+      : result.subCategory,
+  };
+}
+
+function resolvePerson(input: {
   candidateName?: string | null;
   transactionText: string;
   originalText: string;

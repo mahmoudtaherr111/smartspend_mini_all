@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, authedProcedure, proProcedure } from "./middleware";
+import { router, authedProcedure, goalAnalysisProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
 import { financialGoals, expenses, users, localUsers, userBudgets } from "../db/schema";
@@ -23,9 +23,17 @@ import {
 import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
 import { businessMonthRange } from "./lib/app-time";
 import { ExpenseInputLimits } from "../contracts/constants";
+import { getSystemSettings } from "./lib/settings-cache";
+import { isPlanFeatureEnabled, planNumber } from "../contracts/plan-features";
 
 const FREE_DESCRIPTION_MAX = 120;
-const FREE_GOALS_LIMIT = 3;
+
+/** Whether the plan gets the AI goal analysis, which is what the upsell is about. */
+async function hasGoalAnalysis(user: { plan?: string | null; role?: string | null }): Promise<boolean> {
+  if (user.role === "admin") return true;
+  const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
+  return isPlanFeatureEnabled(settings, user.plan, "goal_analysis");
+}
 
 function isMissingGoalsTable(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? "");
@@ -38,7 +46,7 @@ function isMissingGoalsTable(err: unknown): boolean {
 }
 
 const PRO_UPSELL = {
-  title: "أهداف أذكى مع SpinSmart Pro",
+  title: "أهداف أذكى مع SmartSpend Pro",
   bullets: [
     "خطة ادخار أسبوعية مولّدة بالذكاء الاصطناعي",
     "تنبيهات قبل تجاوز الهدف",
@@ -88,10 +96,7 @@ export const goalsRouter = router({
         )
         .orderBy(desc(financialGoals.createdAt));
 
-      const isPro =
-        ctx.user.plan === "pro" ||
-        ctx.user.plan === "ultra" ||
-        ctx.user.role === "admin";
+      const isPro = await hasGoalAnalysis(ctx.user);
 
       return {
         goals,
@@ -100,10 +105,7 @@ export const goalsRouter = router({
       };
     } catch (err) {
       if (isMissingGoalsTable(err)) {
-        const isPro =
-          ctx.user.plan === "pro" ||
-          ctx.user.plan === "ultra" ||
-          ctx.user.role === "admin";
+        const isPro = await hasGoalAnalysis(ctx.user);
         return {
           goals: [],
           isPro,
@@ -128,12 +130,11 @@ export const goalsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const isPro =
-        ctx.user.plan === "pro" ||
-        ctx.user.plan === "ultra" ||
-        ctx.user.role === "admin";
+      // Active goals allowed on this plan (goals_active_limit_<plan>; 0 = no limit).
+      const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
+      const goalsLimit = ctx.user.role === "admin" ? 0 : planNumber(settings, ctx.user.plan, "goals_active_limit");
 
-      if (!isPro) {
+      if (goalsLimit > 0) {
         const existing = await db
           .select({ count: sql<number>`COUNT(*)` })
           .from(financialGoals)
@@ -145,10 +146,10 @@ export const goalsRouter = router({
             ),
           );
         const count = Number(existing[0]?.count || 0);
-        if (count >= FREE_GOALS_LIMIT) {
+        if (count >= goalsLimit) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: `يمكنك إنشاء حتى ${FREE_GOALS_LIMIT} أهداف نشطة في الخطة المجانية. رقّي لـ Pro لإنشاء أهداف غير محدودة.`,
+            message: `باقتك الحالية بتسمح بـ ${goalsLimit} أهداف نشطة بس. خلّص هدف أو غيّر باقتك عشان تضيف أهداف أكتر.`,
           });
         }
       }
@@ -171,7 +172,7 @@ export const goalsRouter = router({
       };
     }),
 
-  analyze: proProcedure
+  analyze: goalAnalysisProcedure
     .input(z.object({ goalId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const [goal] = await db
@@ -233,7 +234,7 @@ export const goalsRouter = router({
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
         model: modelName,
-        systemInstruction: `أنت مستشار أهداف مالية Pro في SpinSmart.
+        systemInstruction: `أنت مستشار أهداف مالية Pro في SmartSpend.
 أعد JSON: plan (خطة 4-6 خطوات), weekly_actions (مصفوفة), alerts (تنبيهات), progress_percent (0-100), insight (فقرة واحدة).`,
         generationConfig: {
           temperature: 0.5,

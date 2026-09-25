@@ -61,6 +61,7 @@ flowchart LR
   mod_ai_actions --> sys_expense_capture
   mod_ai_actions --> sys_insights
   mod_ai_actions --> sys_money
+  mod_ai_actions --> sys_platform
   mod_ai_actions ==> tbl_ai_action_audit_logs
   mod_ai_actions ==> tbl_ai_action_memory
   mod_ai_actions ==> tbl_ai_pending_actions

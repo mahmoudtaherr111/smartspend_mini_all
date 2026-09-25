@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { MySqlDialect } from "drizzle-orm/mysql-core";
 import type { SQL } from "drizzle-orm";
-import { expenseRouter } from "./expense-router";
+import { clarifiedItemDate, expenseRouter, namedPersonOf, reviewCorrection } from "./expense-router";
 import { db } from "./queries/connection";
 import { expenses } from "../db/schema";
 
@@ -89,5 +89,53 @@ describe("Expense Router", () => {
       /^\(`expenses`\.`user_id` = \? and `expenses`\.`user_type` = \? and \(.+ or .+\)\)$/,
     );
     expect(query.params.slice(0, 2)).toEqual([7, "local"]);
+  });
+});
+
+describe("the person a saved item names", () => {
+  it("reads the person category's subcategory", () => {
+    expect(namedPersonOf({ category: "أصدقاء", subCategory: "أحمد صاحبي" })).toEqual({
+      name: "أحمد",
+      relationship: "صاحبي",
+    });
+  });
+
+  it("keeps the person named beside a purpose, so the save links the contact", () => {
+    expect(
+      namedPersonOf({ category: "تعليم", subCategory: "مدرسة", personName: " ابني ", personRelationship: "ابن" }),
+    ).toEqual({ name: "ابني", relationship: "ابن" });
+  });
+
+  it("links nothing without a name and a relationship", () => {
+    expect(namedPersonOf({ category: "تعليم", subCategory: "مدرسة", personName: "مروان" })).toBeNull();
+    expect(namedPersonOf({ category: "العائلة", subCategory: "عام" })).toBeNull();
+  });
+});
+
+describe("learning from the review card", () => {
+  const saved = { category: "عناية شخصية", subCategory: "عام", type: "expense", amount: 150 };
+
+  it("reads a category changed on a one-item sentence as a correction", () => {
+    expect(reviewCorrection([{ category: "مواصلات", subCategory: "أوبر/كريم" }], saved)).toEqual({
+      previousCategory: "مواصلات",
+      previousSubCategory: "أوبر/كريم",
+    });
+  });
+
+  it("learns nothing when the category was kept or the sentence held several items", () => {
+    expect(reviewCorrection([{ category: "عناية شخصية" }], saved)).toBeNull();
+    expect(reviewCorrection([{ category: "مواصلات" }, { category: "أكل وشرب" }], saved)).toBeNull();
+    expect(reviewCorrection(null, saved)).toBeNull();
+  });
+});
+
+describe("the date an answered question saves on", () => {
+  const asked = new Date("2026-09-20T10:00:00Z");
+  it("keeps the day the sentence named", () => {
+    expect(clarifiedItemDate({ date: "2026-09-19T12:00:00Z" }, asked).toISOString()).toBe("2026-09-19T12:00:00.000Z");
+  });
+  it("falls back to the day the question was asked, not the day it was answered", () => {
+    expect(clarifiedItemDate({}, asked).toISOString()).toBe(asked.toISOString());
+    expect(clarifiedItemDate({ date: "not a date" }, asked).toISOString()).toBe(asked.toISOString());
   });
 });

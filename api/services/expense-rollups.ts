@@ -19,6 +19,21 @@ export type ExpenseRollupDelta = {
 };
 
 /**
+ * The amount a ledger row stores. An expense whose money came back (a refund,
+ * direction "incoming") is stored negative in the category it was bought from, so
+ * every total of spending nets it; every other row stores the amount as given
+ * (docs/decisions/0010-refunds-net-their-category.md).
+ */
+export function ledgerAmount(
+  type: string,
+  direction: string | null | undefined,
+  amount: number | string,
+): number {
+  const magnitude = Math.abs(Number(amount));
+  return type === "expense" && direction === "incoming" ? -magnitude : magnitude;
+}
+
+/**
  * Returns YYYY-MM-DD in Cairo business timezone.
  */
 export function toDayString(date: Date | string): string {

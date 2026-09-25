@@ -92,9 +92,9 @@ const INCOME_KEYWORDS = [
   "عموله",
   "براني",
   "شغلانه",
-  "هديه",
-  "عيديه",
-  "نقطه",
+  // "هديه", "عيديه" and "نقطه" are not income words on their own: in a spending app
+  // "عيدية للعيال 500" and "نقطة فرح صاحبي" are money given. They count as income only
+  // with a receiving verb (see GIFT_RECEIVED below).
   "نفقه",
 ];
 
@@ -299,6 +299,36 @@ function wordPattern(word: string): RegExp {
   return cached;
 }
 
+/** Gift, eidiya and wedding money: given by default, received only with a receiving verb. */
+export const GIFT_NOUN = /(?:^|\s)[وبلف]?(?:ال)?(?:هديه|هدايا|عيديه|عيديات|نقطه|نقوط)(?=\s|$)/;
+const GIFT_RECEIVED =
+  /(?:^|\s)[وف]?(?:خدت|اخدت|أخدت|جالي|جاتلي|جاني|جاتني|وصلني|وصلتلي|اتهاديت|اتعيدت|عيدوني|نقطوني|استلمت)(?=\s|$)/;
+
+/** "رجعت الجزمة واخدت فلوسي": a purchase returned and its money taken back. */
+const REFUND_TAKEN =
+  /(?:^|\s)[وف]?(?:رجعت|رجعنا|رجعتها|رجعته)\s+.*(?:خدت|اخدت|أخدت|استلمت|استرديت|استردت|استرجعت|جالي|رجعولي|رجعلي)\s+(?:فلوسي|فلوسها|فلوسه|الفلوس|فلوس|تمنها|تمنه|حقها|حقه)(?=\s|$)/;
+const REFUND_WORD = /(?:^|\s)[وف]?(?:استرجعت|استرديت|استردت|استرجعنا|مرتجع|المرتجع|استرجاع|استرداد)(?=\s|$)/;
+/**
+ * "بعت الموبايل القديم ب 4000": بعت followed by a thing and its price is a sale. Sending
+ * names a person or money after the verb ("بعت لماما 500", "بعت الفلوس"), never a price.
+ * The rule engine passes the words around the amount without the amount itself, so the
+ * price shows as a lone ب.
+ */
+const SOLD_FOR =
+  /(?:^|\s)[وف]?(?:بعت|بيعت)\s+(?!ل|فلوس|الفلوس|مبلغ|تحويل|كاش|رساله|[0-9٠-٩])\S+(?:\s+\S+){0,2}?\s+(?:بـ?|بمبلغ)(?=\s|$|[0-9٠-٩])/;
+/** "بعت الواد يجيب عيش ب 20": sent someone on an errand, which is spending. */
+const ERRAND = /(?:^|\s)(?:يجيب|تجيب|يجيبلي|تجيبلي|يجيبلنا|يشتري|تشتري|يشتريلي|يدفع|تدفع)(?=\s|$)/;
+
+/** Whether normalized text reads as money back from something bought ("رجعت الجزمة واخدت فلوسي"). */
+export function readsAsRefund(normContext: string): boolean {
+  return REFUND_TAKEN.test(normContext) || REFUND_WORD.test(normContext);
+}
+
+/** Whether normalized text reads as selling something for a price. */
+export function readsAsSale(normContext: string): boolean {
+  return SOLD_FOR.test(normContext) && !ERRAND.test(normContext);
+}
+
 function includesWord(text: string, word: string): boolean {
   return wordPattern(word).test(text);
 }
@@ -380,9 +410,25 @@ export function detectIntent(context: string): IntentResult {
     expenseScore += 80;
     incomeScore -= 50;
   }
+  if (GIFT_NOUN.test(normContext)) {
+    if (GIFT_RECEIVED.test(normContext)) {
+      incomeScore += 60;
+    } else {
+      expenseScore += 30;
+    }
+  }
   if (/(?:هديه|هدية)\s+(?:عيد|ميلاد|فرح|خطوبه|خطوبة)/.test(normContext)) {
     expenseScore += 70;
     incomeScore -= 50;
+  }
+  // Money back from a return, and the price of something sold, come in.
+  if (REFUND_TAKEN.test(normContext) || REFUND_WORD.test(normContext)) {
+    incomeScore += 100;
+    transferScore -= 40;
+  }
+  if (readsAsSale(normContext)) {
+    incomeScore += 100;
+    transferScore -= 60;
   }
 
   // Determine winner

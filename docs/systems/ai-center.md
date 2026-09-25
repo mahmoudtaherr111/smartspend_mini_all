@@ -99,7 +99,8 @@ The capabilities the planner recognises, with their required details and action 
 Actions are `goal.create`, `goal.update`, `goal.stop`, `expense.create`, `expense.recategorize`, `budget.create`,
 `profile.update`, `wallet.create`, `wallet.update` and `action.undo`. A draft is validated
 (`api/services/action-runtime/extended-actions.ts#validateRuntimeAction`), stored in `ai_pending_actions` with a
-summary and an expiry, and shown as a confirmation card.
+summary and an expiry, and shown as a confirmation card. A new goal respects the plan's active-goal limit
+(`goals_active_limit_<plan>`, the same setting `goals.create` reads).
 
 `api/services/action-runtime/index.ts#confirmAction` (the card's button, `chat.confirmAction`, or a typed
 confirmation):
@@ -148,7 +149,13 @@ the finance caches are cleared.
 - Categories are matched through the category registry (`api/services/finance-semantic-layer/category-matcher.ts`).
   A category may be named as the user says it ("أكل", "المطاعم") or by its id (`food`): `financeCategoryId` turns
   the name into the registry's id before rows are compared, and a name the registry does not know matches nothing
-  rather than the uncategorized rows.
+  rather than the uncategorized rows; a group name sweeps its members (`financeCategoryIds`: "الدخل" every income
+  category, "فواتير" bills and daily commitments). A question about income sweeps every income category (مرتب، عمل حر، عوائد استثمار، هدايا وعيديات، دخل آخر). A
+  row counts under its stored category; its text is read only when it is stored as uncategorized or متنوعات
+  (`canonicalCategoryForRow`).
+- Spending is an expense row, as on Home (`isSpendingRow` in `api/services/finance-semantic-layer/row-aggregators.ts`):
+  breakdowns, charts, comparison drivers and the business cash flow leave transfers (a gam3eya payment, a loan, an
+  ATM withdrawal) and investments out.
 - A period's totals (`getFinanceSummary`) are one SQL aggregate over `expenses`, so they hold for any number of
   entries. Breakdowns, lookups and category totals read the period's entries instead: only the columns they use, and
   the newest 10,000 at most (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Both cover the

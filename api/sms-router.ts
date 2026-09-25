@@ -14,17 +14,24 @@ import { getDb } from "./queries/connection";
 import {
   webhookTokens,
   rawSmsEvents,
-  expenses,
   users,
   localUsers,
 } from "../db/schema";
 import { eq, and, desc, gte } from "drizzle-orm";
 import {
   parseSmsFinancialData,
-  mapSmsToExpenseCategory,
   type SmsParseResult,
 } from "./lib/sms-ai-parser";
 import { parseSmsByRules } from "./lib/sms-rule-parser";
+import {
+  buildSmsSuggestion,
+  categorizeSms,
+  describeSms,
+  insertSmsExpense,
+  ruleParseResult,
+  smsDate,
+} from "./services/sms-ledger";
+import { businessMonthRange } from "./lib/app-time";
 import { randomBytes } from "crypto";
 import { env } from "./lib/env";
 import { validateActiveSessionToken } from "./lib/session-validation";
@@ -156,6 +163,14 @@ async function getUserFromSession(c: any): Promise<{
       if (activeSession) return { id: activeSession.userId, type: activeSession.userType };
     }
   }
+
+  // 3. The HttpOnly session cookie of a phone and password account, which the web app
+  // cannot read and so could never send as a Bearer header.
+  const localToken = getCookie(c, "smartspend_token") || getCookie(c, "local_session");
+  if (localToken) {
+    const activeSession = await validateActiveSessionToken(localToken.trim());
+    if (activeSession) return { id: activeSession.userId, type: activeSession.userType };
+  }
   return null;
 }
 
@@ -216,57 +231,7 @@ smsApp.post("/ingest", async (c) => {
   const userId = tokenRecord.userId;
   const userType = tokenRecord.userType as "local" | "oauth";
 
-  // ── Plan-based limits ──
-  const userTable = userType === "oauth" ? users : localUsers;
-  const [userRecord] = await db
-    .select()
-    .from(userTable)
-    .where(eq(userTable.id, userId as any))
-    .limit(1);
-  const userPlan = (userRecord as any)?.plan || "free";
-
-  // Get configurable limit from system_settings (admin dashboard), default: free=5, pro/ultra=unlimited
-  let smsMonthlyLimit = userPlan === "free" ? 5 : 999999;
-  try {
-    const { getSystemSettings } = await import("./lib/settings-cache");
-    const settings = await getSystemSettings();
-    const val = settings[`sms_limit_${userPlan}`];
-    if (val)
-      smsMonthlyLimit = parseInt(val) || smsMonthlyLimit;
-  } catch {
-    /* use default */
-  }
-
-  // Count processed SMS this month
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const { sql: sqlFn } = await import("drizzle-orm");
-  const [countResult] = await db
-    .select({ count: sqlFn`COUNT(*)` })
-    .from(rawSmsEvents)
-    .where(
-      and(
-        eq(rawSmsEvents.userId, userId),
-        eq(rawSmsEvents.userType, userType),
-        eq(rawSmsEvents.status, "processed"),
-        gte(rawSmsEvents.createdAt, monthStart),
-      ),
-    );
-  const usedThisMonth = Number((countResult as any)?.count || 0);
-
-  if (usedThisMonth >= smsMonthlyLimit) {
-    return c.json(
-      {
-        error: `الحد الشهري للرسائل (${smsMonthlyLimit}) انتهى. قم بترقية خطتك لزيادة الحد.`,
-        limit: smsMonthlyLimit,
-        used: usedThisMonth,
-        plan: userPlan,
-      },
-      403,
-    );
-  }
-
-  // Prevent duplicate SMS submissions (same user, exact message within last 24h)
+  // A message already received is not counted, kept or saved again (same text within 24h).
   const duplicateCheck = await db
     .select({ id: rawSmsEvents.id })
     .from(rawSmsEvents)
@@ -290,6 +255,44 @@ smsApp.post("/ingest", async (c) => {
     );
   }
 
+  // ── Plan-based limits ──
+  const userTable = userType === "oauth" ? users : localUsers;
+  const [userRecord] = await db
+    .select()
+    .from(userTable)
+    .where(eq(userTable.id, userId as any))
+    .limit(1);
+  const userPlan = (userRecord as any)?.plan || "free";
+
+  // Get configurable limit from system_settings (admin dashboard), default: free=5, pro/ultra=unlimited
+  let smsMonthlyLimit = userPlan === "free" ? 5 : 999999;
+  try {
+    const { getSystemSettings } = await import("./lib/settings-cache");
+    const settings = await getSystemSettings();
+    const val = settings[`sms_limit_${userPlan}`];
+    if (val)
+      smsMonthlyLimit = parseInt(val) || smsMonthlyLimit;
+  } catch {
+    /* use default */
+  }
+
+  // Messages saved automatically this Cairo month (golden rule 6).
+  const { start: monthStart } = businessMonthRange();
+  const { sql: sqlFn } = await import("drizzle-orm");
+  const [countResult] = await db
+    .select({ count: sqlFn`COUNT(*)` })
+    .from(rawSmsEvents)
+    .where(
+      and(
+        eq(rawSmsEvents.userId, userId),
+        eq(rawSmsEvents.userType, userType),
+        eq(rawSmsEvents.status, "processed"),
+        gte(rawSmsEvents.createdAt, monthStart),
+      ),
+    );
+  const usedThisMonth = Number((countResult as any)?.count || 0);
+  const overLimit = usedThisMonth >= smsMonthlyLimit;
+
   // ── Step 1: Save Raw SMS Event (Audit Log) ──
   let smsId: number | null = null;
   try {
@@ -308,6 +311,56 @@ smsApp.post("/ingest", async (c) => {
 
   // ── Step 2: Run Rule-Based Parser (Fast Path) ──
   const ruleResult = parseSmsByRules(message);
+  const ruleSummary = {
+    transaction_detected: ruleResult.transaction_detected,
+    amount: ruleResult.amount,
+    direction: ruleResult.direction,
+    confidence: ruleResult.confidence,
+    matched_rule: ruleResult.matched_rule,
+    provider: ruleResult.provider,
+  };
+
+  // ── Over the monthly limit: kept as a suggestion, never lost ──
+  // The rules read it (no model is paid for), and the user saves it with one tap from the
+  // home screen (docs/decisions/0009-bank-messages-over-the-limit.md).
+  if (overLimit) {
+    const read = await buildSmsSuggestion(ruleParseResult(ruleResult), { sender, timestamp, message });
+    // Without its raw row a suggestion has nowhere to wait, so it is not claimed as kept.
+    const suggestion = smsId ? read : null;
+    if (smsId) {
+      await db
+        .update(rawSmsEvents)
+        .set(
+          suggestion
+            ? { status: "suggested", metadata: { reason: "monthly_limit", suggestion, parsed_by: "rules" } }
+            : { status: "ignored", metadata: { reason: "monthly_limit_unread", rule_result: ruleSummary } },
+        )
+        .where(
+          and(
+            eq(rawSmsEvents.id, smsId),
+            eq(rawSmsEvents.userId, userId),
+            eq(rawSmsEvents.userType, userType),
+          ),
+        );
+    }
+    log.info(
+      { event: "sms.suggested", userId, userType, kept: Boolean(suggestion), provider: ruleResult.provider },
+      "Bank message over the monthly limit kept for the user to confirm",
+    );
+    return c.json(
+      {
+        success: true,
+        transaction_detected: Boolean(suggestion),
+        saved: false,
+        suggested: Boolean(suggestion),
+        reason: "monthly_limit",
+        limit: smsMonthlyLimit,
+        used: usedThisMonth,
+        plan: userPlan,
+      },
+      200,
+    );
+  }
 
   // ── Step 3: Hybrid Engine Selection (Rules vs AI) ──
   let parseResult: SmsParseResult | null = null;
@@ -315,19 +368,7 @@ smsApp.post("/ingest", async (c) => {
 
   // Fast path: high-confidence rule match (>= 0.85) bypasses AI call
   if (ruleResult.transaction_detected && ruleResult.confidence >= 0.85 && ruleResult.amount) {
-    parseResult = {
-      transaction_detected: true,
-      amount: ruleResult.amount,
-      currency: ruleResult.currency || "EGP",
-      direction: ruleResult.direction,
-      provider: (ruleResult.provider as any) || "Unknown",
-      category: (ruleResult.category as any) || "unknown",
-      fee: ruleResult.fee,
-      merchant: ruleResult.merchant,
-      balance_after: ruleResult.balance_after,
-      confidence: ruleResult.confidence,
-      raw_extracted: { rule_result: ruleResult },
-    };
+    parseResult = ruleParseResult(ruleResult);
     parsedBy = "rules";
   } else {
     // Fall back to Gemini AI parser with tenant-isolated user context
@@ -338,16 +379,7 @@ smsApp.post("/ingest", async (c) => {
     } else if (ruleResult.transaction_detected && ruleResult.amount) {
       // Secondary fallback to rule result if AI was inconclusive or returned null
       parseResult = {
-        transaction_detected: true,
-        amount: ruleResult.amount,
-        currency: ruleResult.currency || "EGP",
-        direction: ruleResult.direction,
-        provider: (ruleResult.provider as any) || "Unknown",
-        category: (ruleResult.category as any) || "unknown",
-        fee: ruleResult.fee,
-        merchant: ruleResult.merchant,
-        balance_after: ruleResult.balance_after,
-        confidence: ruleResult.confidence,
+        ...ruleParseResult(ruleResult),
         raw_extracted: { rule_result: ruleResult, ai_result: aiResult },
       };
       parsedBy = "rules_fallback";
@@ -381,14 +413,7 @@ smsApp.post("/ingest", async (c) => {
               : "low_confidence",
             confidence: parseResult.confidence,
             parsed_by: parsedBy,
-            rule_result: {
-              transaction_detected: ruleResult.transaction_detected,
-              amount: ruleResult.amount,
-              direction: ruleResult.direction,
-              confidence: ruleResult.confidence,
-              matched_rule: ruleResult.matched_rule,
-              provider: ruleResult.provider,
-            },
+            rule_result: ruleSummary,
           },
         })
         .where(eq(rawSmsEvents.id, smsId));
@@ -401,83 +426,40 @@ smsApp.post("/ingest", async (c) => {
           ? "not_financial"
           : "low_confidence",
         confidence: parseResult.confidence,
-        rule_result: {
-          transaction_detected: ruleResult.transaction_detected,
-          amount: ruleResult.amount,
-          direction: ruleResult.direction,
-          confidence: ruleResult.confidence,
-          matched_rule: ruleResult.matched_rule,
-          provider: ruleResult.provider,
-        },
+        rule_result: ruleSummary,
       },
       200,
     );
   }
 
   // ── Step 4: Save as Transaction ──
-  const { category, subCategory, type } = mapSmsToExpenseCategory(parseResult);
-
-  const descriptionParts = [
-    parseResult.provider !== "Unknown" ? parseResult.provider : null,
-    parseResult.merchant || null,
-    sender ? `من: ${sender}` : null,
-  ].filter(Boolean);
-
-  const description = descriptionParts.join(" — ") || "SMS تلقائي";
-
-  let transactionDate = timestamp ? new Date(timestamp) : new Date();
-  if (isNaN(transactionDate.getTime())) {
-    transactionDate = new Date();
-  }
+  // A card payment to a merchant the classification engine knows takes that merchant's
+  // category; everything else follows the fixed map (`categorizeSms`).
+  const smsCategory = await categorizeSms(parseResult, message);
+  const { category, subCategory, type } = smsCategory;
+  const parsed = parseResult;
 
   await db.transaction(async (tx) => {
-    const metadataObj = {
-      sms_id: smsId,
-      provider: parseResult!.provider,
-      direction: parseResult!.direction,
-      sms_category: parseResult!.category,
-      confidence: parseResult!.confidence,
-      fee: parseResult!.fee,
-      balance_after: parseResult!.balance_after,
-      parsed_by: parsedBy,
-    };
-
-    const [insertResult] = await tx.insert(expenses).values({
+    await insertSmsExpense(tx, {
       userId,
       userType,
-      type,
-      amount: parseResult!.amount!.toString(),
-      category,
-      subCategory,
-      description,
-      rawText: message.trim(),
-      source: "sms",
-      date: transactionDate,
-      parsedMetadata: metadataObj,
-    });
-
-    const {
-      applyExpenseRollupDelta,
-      expenseToRollupDelta,
-      syncExpenseDetails,
-    } = await import("./services/expense-rollups");
-
-    if (insertResult?.insertId) {
-      await syncExpenseDetails(tx, insertResult.insertId, message.trim(), metadataObj);
-    }
-
-    const delta = expenseToRollupDelta(
-      {
-        userId,
-        userType,
-        date: transactionDate,
-        type,
-        amount: parseResult!.amount!,
-        source: "sms",
+      message: message.trim(),
+      amount: parsed.amount!,
+      date: smsDate(timestamp),
+      category: smsCategory,
+      direction: parsed.direction,
+      description: describeSms(parsed, sender),
+      metadata: {
+        sms_id: smsId,
+        provider: parsed.provider,
+        direction: parsed.direction,
+        sms_category: parsed.category,
+        confidence: parsed.confidence,
+        fee: parsed.fee,
+        balance_after: parsed.balance_after,
+        parsed_by: parsedBy,
       },
-      1,
-    );
-    await applyExpenseRollupDelta(tx, delta);
+    });
 
     // ── Step 5: Update SMS status ──
     if (smsId) {
@@ -487,10 +469,10 @@ smsApp.post("/ingest", async (c) => {
           status: "processed",
           metadata: {
             transaction_saved: true,
-            amount: parseResult!.amount,
+            amount: parsed.amount,
             category,
             type,
-            confidence: parseResult!.confidence,
+            confidence: parsed.confidence,
             parsed_by: parsedBy,
           },
         })
@@ -505,6 +487,10 @@ smsApp.post("/ingest", async (c) => {
   });
 
   await bumpFinanceCacheGen(userId, userType);
+  if (type === "expense") {
+    const { checkUserBudgetExceeded } = await import("./notification-engine");
+    void checkUserBudgetExceeded(userId, userType);
+  }
 
   // The amount and the category are the user's finances: they are in the ledger, not in the log.
   log.info({ event: "sms.ingested", userId, userType, type, provider: parseResult.provider }, "Bank message recorded");

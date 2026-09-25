@@ -12,6 +12,9 @@ import { getSystemSettings } from "./lib/settings-cache";
 import { eq, and, sql, count, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
+/** Turn on together with applying the discount in checkout. */
+const REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT = false;
+
 function generateCode() {
   return "SS" + randomBytes(4).toString("hex").toUpperCase().slice(0, 6);
 }
@@ -76,8 +79,12 @@ export const referralRouter = router({
         ),
       );
 
-    const settings = await getSystemSettings();
-    const discount = settings["promo_code_discount"] || "20";
+    // Checkout (api/lib/paymob.ts) always charges the plan's full price, so no discount is
+    // promised on screen until checkout applies `promo_code_discount`: a shown discount
+    // that is never given is a broken promise to a paying user.
+    const discount: string | null = REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT
+      ? (await getSystemSettings())["promo_code_discount"] || "20"
+      : null;
 
     return {
       code,

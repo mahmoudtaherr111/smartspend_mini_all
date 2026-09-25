@@ -27,6 +27,7 @@ import {
   ChevronDown,
   ChevronUp,
   Wallet,
+  Pencil,
 } from "lucide-react";
 import {
   motion,
@@ -36,6 +37,8 @@ import {
   useTransform,
 } from "framer-motion";
 import { useHaptics } from "@/hooks/useHaptics";
+import { getCategoryAppearance } from "@/lib/financial-taxonomy";
+import { EditExpenseDialog } from "./EditExpenseDialog";
 
 interface RecentExpensesProps {
   onRefresh?: () => void;
@@ -44,59 +47,15 @@ interface RecentExpensesProps {
   salaryDay?: number;
 }
 
-const categoryColors: Record<string, string> = {
-  أكل: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-200",
-  "أكل وشرب": "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-200",
-  مواصلات: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-200",
-  تسوق: "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-200",
-  فواتير:
-    "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-200",
-  صحة: "bg-pink-100 text-pink-700 dark:bg-pink-950/40 dark:text-pink-200",
-  ترفيه:
-    "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-200",
-  تعليم: "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-200",
-  ملابس:
-    "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-200",
-  إيجار:
-    "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200",
-  بنزين: "bg-gray-100 text-gray-700 dark:bg-gray-900/40 dark:text-gray-200",
-  إنترنت: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200",
-  موبايل: "bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-200",
-  "أهل وبيت":
-    "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-200",
-  هدايا:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200",
-  صيانة:
-    "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-200",
-  اشتراكات: "bg-lime-100 text-lime-700 dark:bg-lime-950/40 dark:text-lime-200",
-  أخرى: "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200",
-  متنوعات:
-    "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200",
-  العائلة: "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-200",
-  أصدقاء:
-    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200",
-  موظفين:
-    "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200",
-  "التزامات وجمعيات":
-    "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-200",
-  خروجات:
-    "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-200",
-  "حيوانات أليفة":
-    "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-200",
-  عمل: "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200",
-  مرتب: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200",
-  "عمل حر": "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-200",
-  "عوائد استثمار":
-    "bg-lime-100 text-lime-700 dark:bg-lime-950/40 dark:text-lime-200",
-  تحويل: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200",
-  استثمار:
-    "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-200",
-  "التزامات يومية":
-    "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-200",
-  "خدمات رقمية": "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200",
-  "خدمات سيارات":
-    "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-200",
-};
+/**
+ * A category badge in the category's own colour from the taxonomy
+ * (`contracts/categories.ts`), the same colour the charts use. A tinted background and a
+ * solid text colour keep it readable in both themes.
+ */
+function categoryBadgeStyle(category: string | null | undefined): React.CSSProperties {
+  const { color } = getCategoryAppearance(category);
+  return { backgroundColor: `${color}1f`, color };
+}
 
 const providerMeta: Record<
   string,
@@ -220,11 +179,13 @@ function getTypeMeta(
   type: string | null | undefined,
   category?: string | null,
   parsedMetadata?: any,
+  amount?: string | number | null,
 ) {
   return getTransactionDisplayMeta({
     type,
     category,
     parsedMetadata,
+    amount,
   });
 }
 
@@ -511,6 +472,7 @@ function ExpenseItem({
     expense.type,
     expense.category,
     expense.parsedMetadata,
+    expense.amount,
   );
   const dateStr = date.toLocaleDateString("ar-EG", {
     day: "numeric",
@@ -520,6 +482,8 @@ function ExpenseItem({
 
   const controls = useAnimation();
   const { lightTap, heavyTap } = useHaptics();
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const isRTL =
     typeof document !== "undefined" && document.documentElement.dir === "rtl";
   const dragConstraints = isRTL
@@ -593,7 +557,7 @@ function ExpenseItem({
               className={cn("font-bold text-lg truncate", typeMeta.amountClass)}
             >
               {typeMeta.sign}
-              {Number(expense.amount).toFixed(0)} جنيه
+              {Math.abs(Number(expense.amount)).toFixed(0)} جنيه
             </div>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground truncate">
               <Calendar className="w-3 h-3 flex-shrink-0" />
@@ -638,11 +602,8 @@ function ExpenseItem({
               </Badge>
             )}
             <Badge
-              className={cn(
-                "border-0",
-                categoryColors[expense.category] ||
-                  "bg-gray-100 dark:bg-gray-800",
-              )}
+              className="border-0"
+              style={categoryBadgeStyle(expense.category)}
             >
               {expense.category}
             </Badge>
@@ -652,7 +613,7 @@ function ExpenseItem({
               </span>
             )}
           </div>
-          <AdaptiveDialog snapPoints={[0.6, 0.95]}>
+          <AdaptiveDialog snapPoints={[0.6, 0.95]} open={detailsOpen} onOpenChange={setDetailsOpen}>
             <AdaptiveDialogTrigger
               aria-label="تفاصيل العملية"
               className="inline-flex h-11 w-11 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground border shadow-sm bg-white dark:bg-slate-800"
@@ -670,7 +631,7 @@ function ExpenseItem({
                     className={cn("font-bold text-base", typeMeta.amountClass)}
                   >
                     {typeMeta.sign}
-                    {Number(expense.amount).toFixed(2)} جنيه
+                    {Math.abs(Number(expense.amount)).toFixed(2)} جنيه
                   </span>
                 </div>
                 {isSms && expense.parsedMetadata?.provider && (
@@ -732,12 +693,7 @@ function ExpenseItem({
                 </div>
                 <div className="flex justify-between border-b pb-2">
                   <span className="text-sm text-muted-foreground">الفئة:</span>
-                  <Badge
-                    className={
-                      categoryColors[expense.category] ||
-                      "bg-gray-100 text-gray-700 dark:bg-gray-800"
-                    }
-                  >
+                  <Badge className="border-0" style={categoryBadgeStyle(expense.category)}>
                     {expense.category}
                   </Badge>
                 </div>
@@ -781,8 +737,33 @@ function ExpenseItem({
                   <span>{date.toLocaleString("ar-EG")}</span>
                 </div>
               </div>
+              <AdaptiveDialogFooter className="flex-row gap-2 sm:gap-0">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl text-destructive"
+                  disabled={isDeleting}
+                  onClick={() => {
+                    setDetailsOpen(false);
+                    onRequestDelete(expense.id);
+                  }}
+                >
+                  <Trash2 className="me-1 h-4 w-4" />
+                  امسح
+                </Button>
+                <Button
+                  className="flex-1 rounded-xl"
+                  onClick={() => {
+                    setDetailsOpen(false);
+                    setEditOpen(true);
+                  }}
+                >
+                  <Pencil className="me-1 h-4 w-4" />
+                  تعديل
+                </Button>
+              </AdaptiveDialogFooter>
             </AdaptiveDialogContent>
           </AdaptiveDialog>
+          {editOpen && <EditExpenseDialog expense={expense} open onOpenChange={setEditOpen} />}
         </div>
       </motion.div>
     </div>

@@ -103,7 +103,7 @@ test.describe("Mobile Fidelity Track: Comprehensive 4-Tier E2E Specification", (
 
       // Trigger a click on navigation tab
       const statsLink = page
-        .locator("nav a[href*='tab=stats'], nav button")
+        .locator("[data-testid='mobile-bottom-nav'] a[href*='tab=stats']")
         .first();
       if ((await statsLink.count()) > 0) {
         await statsLink.click();
@@ -159,9 +159,9 @@ test.describe("Mobile Fidelity Track: Comprehensive 4-Tier E2E Specification", (
       await page.goto("/dashboard?tab=record");
       await page.waitForLoadState("domcontentloaded");
 
-      const statsTab = page.locator("nav").getByText("إحصائيات").first();
-      const calendarTab = page.locator("nav").getByText("التقويم").first();
-      const recordTab = page.locator("nav").getByText("تسجيل").first();
+      const statsTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("إحصائيات").first();
+      const calendarTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("التقويم").first();
+      const recordTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تسجيل").first();
 
       if ((await statsTab.count()) > 0) {
         await statsTab.click({ force: true });
@@ -251,7 +251,7 @@ test.describe("Mobile Fidelity Track: Comprehensive 4-Tier E2E Specification", (
       await page.goto("/dashboard");
       await page.waitForLoadState("domcontentloaded");
 
-      const aiNavBtn = page.locator("nav").getByText("مركز AI").first();
+      const aiNavBtn = page.locator("[data-testid='mobile-bottom-nav']").getByText("مركز AI").first();
       if ((await aiNavBtn.count()) > 0) {
         await aiNavBtn.click();
         await page.waitForTimeout(150);
@@ -284,14 +284,14 @@ test.describe("Mobile Fidelity Track: Comprehensive 4-Tier E2E Specification", (
       }
 
       // Step 2: Switch to Stats
-      const statsTab = page.locator("nav").getByText("إحصائيات").first();
+      const statsTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("إحصائيات").first();
       if ((await statsTab.count()) > 0) {
         await statsTab.click();
         await page.waitForTimeout(100);
       }
 
       // Step 3: Switch to AI Center
-      const aiTab = page.locator("nav").getByText("مركز AI").first();
+      const aiTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("مركز AI").first();
       if ((await aiTab.count()) > 0) {
         await aiTab.click();
         await page.waitForTimeout(100);
@@ -300,7 +300,7 @@ test.describe("Mobile Fidelity Track: Comprehensive 4-Tier E2E Specification", (
 
       // Step 4: Return to Dashboard
       const dashboardTab = page
-        .locator("nav")
+        .locator("[data-testid='mobile-bottom-nav']")
         .getByText("الرئيسية, تسجيل")
         .first();
       if ((await dashboardTab.count()) > 0) {

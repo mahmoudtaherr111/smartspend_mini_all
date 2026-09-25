@@ -41,7 +41,7 @@ describe("finance row aggregators", () => {
     ]);
   });
 
-  it("canonicalizes obvious category aliases and descriptions for AI facts", () => {
+  it("counts a row under its stored category, and reads the text only of a row without one", () => {
     const breakdown = buildBreakdown(
       [
         { id: 1, type: "expense", amount: "120", category: "food", description: "غدا كشري", date: "2026-06-03" },
@@ -54,10 +54,27 @@ describe("finance row aggregators", () => {
       5,
     );
 
+    // The Carrefour row was saved as تسوق: the chat counts it there, as Home does.
     expect(breakdown.items).toEqual([
-      { name: "أكل وشرب", amount: 550.5, count: 3, percent: 87 },
+      { name: "تسوق", amount: 375, count: 1, percent: 59 },
+      { name: "أكل وشرب", amount: 175.5, count: 2, percent: 28 },
       { name: "مواصلات", amount: 80, count: 1, percent: 13 },
     ]);
+  });
+
+  it("does not count transfers and investments as spending", () => {
+    const breakdown = buildBreakdown(
+      [
+        { id: 1, type: "expense", amount: "100", category: "food", date: "2026-06-03" },
+        { id: 2, type: "transfer", amount: "1000", category: "transfer", subCategory: "جمعية", date: "2026-06-04" },
+        { id: 3, type: "investment", amount: "5000", category: "investment", date: "2026-06-05" },
+      ],
+      period,
+      "category",
+      5,
+    );
+    expect(breakdown.totalExpense).toBe(100);
+    expect(breakdown.items.map((item) => item.name)).toEqual(["أكل وشرب"]);
   });
 
   it("fills empty monthly chart buckets inside the requested range", () => {
@@ -149,7 +166,7 @@ describe("finance row aggregators", () => {
       { label: "2026-03", value: 0, count: 0, food: 0, transport: 0 },
       { label: "2026-04", value: 0, count: 0, food: 0, transport: 0 },
       { label: "2026-05", value: 0, count: 0, food: 0, transport: 0 },
-      { label: "2026-06", value: 635, count: 2, food: 375, transport: 260 },
+      { label: "2026-06", value: 260, count: 1, food: 0, transport: 260 },
     ]);
   });
 });

@@ -103,7 +103,7 @@ flowchart LR
 | `ai.generateMonthlyInsights` | mutation | `aiProcedure` | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `ai_token_ledgers`, `local_users`, `monthly_behavior_snapshots`, `users` | `AICenter` |
 | `ai.generateYearlyInsights` | mutation | `aiProcedure` | — | — | — |
 | `ai.getCachedMonthlyInsights` | query | `authedProcedure` | `ai_summaries` | — | `AICenter` |
-| `export.monthlyReportHtml` | mutation | `proProcedure` | — | — | `AICenter` |
+| `export.monthlyReportHtml` | mutation | `proReportProcedure` | — | — | `AICenter` |
 | `profile.dismissOnboarding` | mutation | `authedProcedure` | — | `user_profiles` | `Home` |
 | `profile.getNextOnboardingQuestion` | query | `authedProcedure` | `user_profiles` | — | `Home`, `More`, `Settings` |
 | `profile.getQuestions` | query | `authedProcedure` | `onboarding_questions` | — | — |

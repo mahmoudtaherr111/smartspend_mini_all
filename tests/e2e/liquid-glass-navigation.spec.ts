@@ -28,6 +28,8 @@ test.describe("R2: Floating Liquid Glass Navigation Capsule & Touch Gesture Phys
       )
       .first();
     await expect(nav).toBeVisible();
+    // The shell mounts again once the session is known; wait for the settled nav.
+    await expect(nav).toHaveCSS("position", /fixed|sticky/);
 
     // Verify backdrop-filter styling (blur and saturation)
     const navComputed = await nav.evaluate((el) => {

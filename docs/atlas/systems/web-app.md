@@ -37,6 +37,7 @@ flowchart LR
   sys_bank_messages[["Bank and wallet messages (system)"]]
   sys_expense_capture[["Recording spending (system)"]]
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
+  sys_platform[["Server platform and data (system)"]]
   sys_voice_calls[["Live voice assistant (system)"]]
   mod_web_growth --> mod_web_hooks
   mod_web_growth --> mod_web_shell
@@ -45,6 +46,7 @@ flowchart LR
   mod_web_hooks --> mod_web_lib
   mod_web_hooks --> mod_web_shell
   mod_web_lib --> ext_capacitor
+  mod_web_lib --> sys_platform
   mod_web_pages --> mod_web_growth
   mod_web_pages --> mod_web_hooks
   mod_web_pages --> mod_web_lib
@@ -82,7 +84,7 @@ flowchart LR
 | --- | --- | --- |
 | `web-growth` — Ads and SEO UI | The ad banner and SEO meta tags. | 2 |
 | `web-hooks` — Web hooks | React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics. | 20 |
-| `web-lib` — Web utilities | Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/. | 8 |
+| `web-lib` — Web utilities | Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/. | 9 |
 | `web-pages` — Web pages | Route-level page components lazy-loaded by src/App.tsx. | 15 |
 | `web-shared` — Shared web components | Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton. | 5 |
 | `web-shell` — Web app shell | Entry point, providers, layout, route guards and PWA or native integration. | 18 |
@@ -111,7 +113,7 @@ _None._
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Live voice assistant](voice-calls.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md).
 
 Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Live voice assistant](voice-calls.md).
 
@@ -136,7 +138,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/web-app.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>113 files and declarations</summary>
+<details><summary>114 files and declarations</summary>
 
 - `src/App.tsx`
 - `src/components/NotificationBell.tsx`
@@ -236,6 +238,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/lib/biometricAuth.ts`
 - `src/lib/financial-taxonomy.ts`
 - `src/lib/queryPersister.ts`
+- `src/lib/saved-toast.ts`
 - `src/lib/transactionDisplay.ts`
 - `src/lib/turnstile-config.ts`
 - `src/lib/utils.ts`

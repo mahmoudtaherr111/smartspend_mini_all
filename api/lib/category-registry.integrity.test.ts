@@ -110,10 +110,10 @@ describe("category registry integrity", () => {
       ["swvl", "transport"],
       ["thndr", "investment"],
       ["بواب", "home"],
-      ["كوافير", "shopping"],
+      ["كوافير", "personal_care"],
       ["روشتة", "health"],
       ["نتفليكس", "subscriptions"],
-      ["ديون", "liabilities_and_gam3eyat"],
+      ["ديون", "transfer"],
     ];
     for (const [alias, id] of expected) {
       expect(canonicalCategoryId(alias), `"${alias}" لم تُحلّ إلى ${id}`).toBe(id);
@@ -122,7 +122,7 @@ describe("category registry integrity", () => {
 
   it("keeps the registry mapping where the old view disagreed", () => {
     // The migrated view wanted these elsewhere; the registry's answer is the better one.
-    expect(canonicalCategoryId("ركنة")).toBe("car_services");
+    expect(canonicalCategoryId("ركنة")).toBe("transport");
     expect(canonicalCategoryId("netflix")).toBe("subscriptions");
     expect(canonicalCategoryId("جيم")).toBe("entertainment");
   });

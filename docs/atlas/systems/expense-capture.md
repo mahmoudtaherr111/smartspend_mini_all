@@ -20,7 +20,7 @@ flowchart LR
   subgraph g_api["API, routes and jobs"]
     job_classification_log_cleanup["Job · classification-log-cleanup"]
     router_ai["ai API · 4 procedures"]
-    router_expense["expense API · 6 procedures"]
+    router_expense["expense API · 7 procedures"]
     router_image["image API · 1 procedure"]
   end
   subgraph g_modules["Code modules"]
@@ -61,6 +61,7 @@ flowchart LR
   mod_classification --> ext_gemini
   mod_classification --> mod_arabic_nlp
   mod_classification --> sys_ai_platform
+  mod_classification --> sys_platform
   mod_classification -.-> tbl_classification_logs
   mod_classification -.-> tbl_expenses
   mod_classification ==> tbl_user_correction_rules
@@ -95,9 +96,9 @@ flowchart LR
   router_expense --> sys_notifications
   router_expense --> sys_platform
   router_expense -.-> tbl_business_categories
-  router_expense -.-> tbl_classification_logs
   router_expense -.-> tbl_user_businesses
   router_expense -.-> tbl_user_dictionaries
+  router_expense ==> tbl_classification_logs
   router_expense ==> tbl_expense_categories
   router_expense ==> tbl_expenses
   router_expense ==> tbl_local_users
@@ -167,7 +168,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | Module | What it does | Files |
 | --- | --- | --- |
 | `arabic-nlp` — Arabic and Egyptian text processing | Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matching and speech-to-text corrections. | 10 |
-| `classification` — Expense classification pipeline | smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance. | 33 |
+| `classification` — Expense classification pipeline | smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance. | 30 |
 | `classification-qa` — Classification benchmark helpers | Helpers used only by the classification benchmark and QA scripts: taxonomy assertions and simulated users. | 2 |
 | `receipt-parsing` — Receipt parsing | Receipt parsing with a vision model. | 1 |
 | `web-capture` — Expense entry UI | The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded. | 4 |
@@ -180,13 +181,14 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `ai.parseExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries` | `ai_summaries`, `ai_token_ledgers`, `classification_logs`, `local_users`, `pending_clarifications`, `users` | `Admin`, `Home`, `More` |
 | `ai.parseVoiceExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `voice_usage` | `ai_token_ledgers`, `classification_logs`, `local_users`, `pending_clarifications`, `users`, `voice_usage` | `Home` |
 | `ai.speechToText` | mutation | `aiProcedure` | `local_users`, `pro_subscriptions`, `users`, `voice_usage` | `ai_token_ledgers`, `local_users`, `users`, `voice_usage` | — |
-| `expense.answerClarification` | mutation | `authedProcedure` | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `expenses`, `pending_clarifications`, `user_contacts` | `Home` |
-| `expense.batchCreate` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
-| `expense.create` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
+| `expense.answerClarification` | mutation | `authedProcedure` | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `expenses`, `local_users`, `pending_clarifications`, `user_contacts`, `users` | `Home` |
+| `expense.batchCreate` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
+| `expense.create` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
 | `expense.createCategory` | mutation | `authedProcedure` | — | `expense_categories` | — |
+| `expense.dismissClarification` | mutation | `authedProcedure` | — | `pending_clarifications` | `Home` |
 | `expense.getCategoryList` | query | `authedProcedure` | `expense_categories` | — | — |
 | `expense.getPendingClarifications` | query | `authedProcedure` | `pending_clarifications` | — | `Home` |
-| `image.parseReceipt` | mutation | `proProcedure` | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` | `Home` |
+| `image.parseReceipt` | mutation | `receiptsProcedure` | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` | `Home` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -203,17 +205,17 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_summaries` | C | `ai.parseExpense` | — |
 | `ai_token_ledgers` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText` | — |
 | `business_categories` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` |
-| `classification_logs` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `classification-log-cleanup` | `classification`, `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
+| `classification_logs` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `classification-log-cleanup`, `expense.batchCreate`, `expense.create` | `classification`, `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
 | `expense_categories` | A | `expense.createCategory` | `expense.getCategoryList` |
 | `expenses` | B | `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `classification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` |
-| `local_users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |
-| `pending_clarifications` | D | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.getPendingClarifications` |
+| `local_users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |
+| `pending_clarifications` | D | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.dismissClarification` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.getPendingClarifications` |
 | `pro_subscriptions` | A | — | `ai.speechToText` |
 | `user_businesses` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` |
 | `user_contacts` | A | `expense.answerClarification`, `expense.batchCreate`, `expense.create` | `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
 | `user_correction_rules` | F | `classification` | `classification` |
 | `user_dictionaries` | F | `ai.learnWord` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `image.parseReceipt` |
-| `users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |
+| `users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |
 | `voice_usage` | E | `ai.parseVoiceExpense`, `ai.speechToText` | `ai.parseVoiceExpense`, `ai.speechToText` |
 
 ## Outside systems
@@ -226,7 +228,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
+Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -239,7 +241,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/expense-capture.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>64 files and declarations</summary>
+<details><summary>62 files and declarations</summary>
 
 - `api/ai-router.ts#ai.learnWord`
 - `api/ai-router.ts#ai.parseExpense`
@@ -251,6 +253,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/expense-router.ts#expense.batchCreate`
 - `api/expense-router.ts#expense.create`
 - `api/expense-router.ts#expense.createCategory`
+- `api/expense-router.ts#expense.dismissClarification`
 - `api/expense-router.ts#expense.getCategoryList`
 - `api/expense-router.ts#expense.getPendingClarifications`
 - `api/expense-router.ts#rest-of-file`
@@ -258,7 +261,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/admissibility-gate.ts`
 - `api/lib/amount-ledger.ts`
 - `api/lib/amount-linker.ts`
-- `api/lib/anomaly-detector.ts`
 - `api/lib/arabic-number-parser.ts`
 - `api/lib/arabic-token-match.ts`
 - `api/lib/benchmark-taxonomy-assert.ts`
@@ -270,7 +272,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/classifier-contract.ts`
 - `api/lib/confidence-calibration.generated.ts`
 - `api/lib/confidence-calibrator.ts`
-- `api/lib/confidence-scorer.ts`
 - `api/lib/correction-rules.ts`
 - `api/lib/direction-governed-taxonomy.ts`
 - `api/lib/egyptian-dictionary.ts`
@@ -282,7 +283,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/fuzzy-match.ts`
 - `api/lib/generate-embeddings-cache.ts`
 - `api/lib/intent-detector.ts`
-- `api/lib/keyword-category-priors.ts`
 - `api/lib/muscle-memory.ts`
 - `api/lib/narrative-decomposer.ts`
 - `api/lib/negation-detector.ts`

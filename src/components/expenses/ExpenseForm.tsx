@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/providers/trpc";
 import { toast } from "sonner";
+import { announceSaved } from "@/lib/saved-toast";
 import {
   Mic,
   Plus,
@@ -30,6 +31,8 @@ import { ExpenseInputLimits } from "@contracts/constants";
 import { cn } from "@/lib/utils";
 import {
   CATEGORY_OPTIONS,
+  defaultSubCategory,
+  getCategoryOptionsForType,
   getSubCategoryOptions,
 } from "@/lib/financial-taxonomy";
 import { Badge } from "@/components/ui/badge";
@@ -205,7 +208,7 @@ export function ExpenseForm({
     | "review"
     | "error"
   >("idle");
-  const [inputSource, setInputSource] = useState<"text" | "voice">("text");
+  const [inputSource, setInputSource] = useState<"text" | "voice" | "image">("text");
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("المعالجة الذكية...");
   const [localSuggestion, setLocalSuggestion] = useState<any>(null);
@@ -346,9 +349,15 @@ export function ExpenseForm({
           removeQueuedText(pendingOfflineTextId);
           if ((data as any).newlyAddedContact) {
             showNewContactToast((data as any).newlyAddedContact);
-          } else {
-            toast.success("تم حفظ التوضيح وتسجيل العملية.");
           }
+          // Say what the answer saved, and offer to take it back.
+          announceSaved(Array.isArray(data.saved) ? data.saved : [], (ids) =>
+            Promise.all(ids.map((id) => deleteSavedMutation.mutateAsync({ id }))).finally(() => {
+              void utilsTrpc.expense.list.invalidate();
+              void utilsTrpc.expense.getMonthSummary.invalidate();
+              void utilsTrpc.expense.getMonthlyStats.invalidate();
+            }),
+          );
           if (onSuccess) onSuccess();
         }
       },
@@ -368,17 +377,37 @@ export function ExpenseForm({
   const [showProUpgrade, setShowProUpgrade] = useState(false);
 
   const planQuery = trpc.pro.myPlan.useQuery();
-  const isPro =
-    planQuery.data?.plan === "pro" ||
-    planQuery.data?.plan === "ultra" ||
-    planQuery.data?.role === "admin";
+  // Receipts are a per-plan switch in the admin console (feature_receipts_<plan>).
+  const isPro = planQuery.data?.features?.receipts === true;
+  // The parser trace is an English diagnostic (engine, decision, tokens): admins only.
+  const canSeeParserTrace = planQuery.data?.role === "admin";
 
+  // A receipt is read, not saved: its amount and category open the review card like a
+  // typed sentence, so a misread total or category is caught before it reaches the ledger.
   const parseReceiptMutation = trpc.image.parseReceipt.useMutation({
     onSuccess: (data) => {
-      toast.success(`تم حفظ ${data.amount} ج.م — ${data.category}`);
-      utilsTrpc.expense.getMonthSummary.invalidate();
-      utilsTrpc.expense.getMonthlyStats.invalidate();
-      if (onSuccess) onSuccess();
+      hapticSuccess();
+      setClassificationLogId(null);
+      setClarificationQuestion(null);
+      setClarificationId(null);
+      setInputSource("image");
+      setText(data.merchant ? `${data.description} — ${data.merchant}` : data.description);
+      setDecision("review");
+      setParsedItems([
+        {
+          amount: data.amount,
+          category: data.category,
+          subCategory: data.subCategory,
+          type: data.type,
+          description: data.description,
+          merchant: data.merchant,
+          confidence: data.confidence,
+          currency: "EGP",
+          needsReview: true,
+          parsedBy: "ai",
+        },
+      ]);
+      setFlowStage("review");
     },
     onError: (e) => {
       hapticError();
@@ -426,7 +455,7 @@ export function ExpenseForm({
       parseReceiptMutation.mutate({
         imageBase64: base64,
         mimeType: "image/jpeg",
-        saveExpense: true,
+        saveExpense: false,
       });
     } catch (err: any) {
       toast.error(err.message || "حدث خطأ أثناء معالجة وتصغير الصورة");
@@ -668,6 +697,8 @@ export function ExpenseForm({
       if (onSuccess) onSuccess();
     },
   });
+
+  const deleteSavedMutation = trpc.expense.delete.useMutation();
 
   const batchCreateMutation = trpc.expense.batchCreate.useMutation({
     onMutate: async () => {
@@ -1036,6 +1067,31 @@ export function ExpenseForm({
       : "expense";
   };
 
+  /**
+   * The direction saved with an item: a transfer's (a loan, a gam3eya) when the parser
+   * found one, and "incoming" for an expense whose money came back (a refund).
+   */
+  const directionToSave = (item: { type?: unknown; direction?: unknown }): "incoming" | "outgoing" | undefined =>
+    item.type === "transfer"
+      ? transferDirectionOf(item)
+      : item.type === "expense" && item.direction === "incoming"
+        ? "incoming"
+        : undefined;
+  /** The direction the parser found for a transfer (a loan, a gam3eya), if it found one. */
+  const transferDirectionOf = (item: { direction?: unknown }): "incoming" | "outgoing" | undefined =>
+    item.direction === "incoming" || item.direction === "outgoing" ? item.direction : undefined;
+
+  /**
+   * The person the parser found beside the purpose ("مصاريف مدرسة ابني" is تعليم for ابني),
+   * which the save links to a contact.
+   */
+  const personOf = (item: { person_mentioned?: unknown; person_relationship?: unknown }) => {
+    const name = typeof item.person_mentioned === "string" ? item.person_mentioned.trim().slice(0, 60) : "";
+    const relationship =
+      typeof item.person_relationship === "string" ? item.person_relationship.trim().slice(0, 40) : "";
+    return name && relationship ? { personName: name, personRelationship: relationship } : {};
+  };
+
   const saveItems = async (
     items: any[],
     isAuto: boolean = false,
@@ -1069,6 +1125,7 @@ export function ExpenseForm({
     }
 
     isSubmittingMutationRef.current = true;
+    let savedIds: number[] = [];
     try {
       if (normalizedItems.length > 1) {
         const payload = normalizedItems.map((item, index) => ({
@@ -1078,30 +1135,37 @@ export function ExpenseForm({
           subCategory: item.subCategory,
           description: item.description,
           rawText: overrideText || text || "إدخال صوتي",
-          source: (inputSource === "voice" ? "voice" : "ai_parsed") as any,
+          source: (inputSource === "voice" ? "voice" : inputSource === "image" ? "image" : "ai_parsed") as any,
           date: item.date,
           classificationLogId: traceLogId || undefined,
           businessId,
+          direction: directionToSave(item),
+          ...personOf(item),
           clientRequestId: effectiveClientRequestId
             ? `${effectiveClientRequestId}:${index}`
             : undefined,
         }));
-        await batchCreateMutation.mutateAsync(payload);
+        const saved = await batchCreateMutation.mutateAsync(payload);
+        savedIds = (saved as { ids?: number[] })?.ids ?? [];
       } else {
         const item = normalizedItems[0];
-        await createMutation.mutateAsync({
+        const saved = await createMutation.mutateAsync({
           amount: item.amount,
           type: item.type,
           category: item.category,
           subCategory: item.subCategory,
           description: item.description,
           rawText: overrideText || text || "إدخال صوتي",
-          source: inputSource === "voice" ? "voice" : "ai_parsed",
+          source: inputSource === "voice" ? "voice" : inputSource === "image" ? "image" : "ai_parsed",
           date: item.date,
           classificationLogId: traceLogId || undefined,
           businessId,
+          direction: directionToSave(item),
+          ...personOf(item),
           clientRequestId: effectiveClientRequestId || undefined,
         });
+        const savedId = (saved as { id?: number })?.id;
+        savedIds = savedId ? [savedId] : [];
       }
       setParsedItems(null);
       setDecision(null);
@@ -1113,11 +1177,31 @@ export function ExpenseForm({
       setFlowStage("idle");
       setShowSuccessAnim(true);
       setTimeout(() => setShowSuccessAnim(false), 2000);
-      toast.success(
-        isAuto
-          ? `تم الحفظ تلقائياً (${normalizedItems.length} عملية)`
-          : "تم الحفظ بنجاح.",
-      );
+      // Say what was saved, and offer to take it back.
+      const first = normalizedItems[0];
+      const summary =
+        normalizedItems.length === 1
+          ? `${first.amount.toLocaleString("ar-EG")} ج · ${first.category}${first.subCategory && first.subCategory !== "عام" ? `/${first.subCategory}` : ""}`
+          : `${normalizedItems.length} عمليات · ${normalizedItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString("ar-EG")} ج`;
+      toast.success(isAuto ? `اتحفظت لوحدها: ${summary}` : `اتحفظت: ${summary}`, {
+        duration: 7000,
+        action:
+          savedIds.length > 0
+            ? {
+                label: "تراجع",
+                onClick: () => {
+                  void Promise.all(savedIds.map((id) => deleteSavedMutation.mutateAsync({ id })))
+                    .then(() => toast.success("اترجعت"))
+                    .catch(() => toast.error("ماقدرناش نرجعها، امسحها من القايمة"))
+                    .finally(() => {
+                      void utilsTrpc.expense.list.invalidate();
+                      void utilsTrpc.expense.getMonthSummary.invalidate();
+                      void utilsTrpc.expense.getMonthlyStats.invalidate();
+                    });
+                },
+              }
+            : undefined,
+      });
       removeQueuedText(pendingOfflineTextId);
       return true;
     } catch {
@@ -1238,9 +1322,18 @@ export function ExpenseForm({
       setIsSyncing(true);
       setSyncRemaining(totalToSync);
 
-      // 1. Sync Text (AI) Transactions
-      while (offlineTexts.length > 0) {
-        const item = offlineTexts[0];
+      // 1. Sync Text (AI) Transactions. An item that needs the user's review stays in the
+      // queue marked, and the rest keep syncing; the first such item is reopened at the end
+      // so its review card is the one on screen.
+      let firstForReview: { id: string; text: string } | null = null;
+      let index = 0;
+      while (index < offlineTexts.length) {
+        const item = offlineTexts[index];
+        if (item.status === "needs_review" || item.status === "needs_clarification") {
+          firstForReview ||= item;
+          index += 1;
+          continue;
+        }
         try {
           toast.loading(
             `جاري تحليل عملية أوفلاين: "${item.text.slice(0, 20)}..."`,
@@ -1274,19 +1367,14 @@ export function ExpenseForm({
               "smartspend_offline_texts",
               JSON.stringify(offlineTexts),
             );
-            setPendingOfflineTextId(item.id);
             window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
-            toast.info(
-              "هذه العملية تحتاج مراجعتك قبل الحفظ، لذلك لم نحذفها من صندوق الأوفلاين.",
-              { id: "sync-toast" },
-            );
-            syncInProgressRef.current = false;
-            setIsSyncing(false);
-            return;
+            firstForReview ||= item;
+            index += 1;
+            continue;
           }
 
-          // Success: pop from queue and update storage
-          offlineTexts.shift();
+          // Success: take it out of the queue and update storage
+          offlineTexts.splice(index, 1);
           localStorage.setItem(
             "smartspend_offline_texts",
             JSON.stringify(offlineTexts),
@@ -1338,9 +1426,25 @@ export function ExpenseForm({
         }
       }
 
-      toast.success("✅ تم مزامنة كافة المعاملات بنجاح!", { id: "sync-toast" });
       syncInProgressRef.current = false;
       setIsSyncing(false);
+      if (firstForReview) {
+        // Reopen the first entry that waits for review, so its card is the one showing.
+        const waiting = offlineTexts.filter(
+          (entry: { status?: string }) => entry.status === "needs_review" || entry.status === "needs_clarification",
+        ).length;
+        toast.info(
+          waiting === 1
+            ? "اتبعت كل اللي اتكتب أوفلاين، وفاضل تسجيل واحد محتاج مراجعتك."
+            : `اتبعت كل اللي اتكتب أوفلاين، وفاضل ${waiting} تسجيلات محتاجة مراجعتك.`,
+          { id: "sync-toast" },
+        );
+        setPendingOfflineTextId(firstForReview.id);
+        setText(firstForReview.text);
+        parseMutation.mutate({ text: firstForReview.text, inputChannel: "text", businessMode: businessMode || false });
+      } else {
+        toast.success("اتبعت كل اللي اتكتب أوفلاين", { id: "sync-toast" });
+      }
 
       // Invalidate queries to refresh lists
       utilsTrpc.expense.list.invalidate();
@@ -1435,7 +1539,7 @@ export function ExpenseForm({
     setLatestParserTrace(null);
     parseMutation.mutate({
       text: newText,
-      inputChannel: inputSource,
+      inputChannel: inputSource === "voice" ? "voice" : "text",
       businessMode: businessMode || false,
     });
   };
@@ -1755,7 +1859,7 @@ export function ExpenseForm({
           </div>
         </form>
 
-        <ParserTracePanel trace={latestParserTrace} />
+        {canSeeParserTrace && <ParserTracePanel trace={latestParserTrace} />}
 
         {/* ─── Processing View (Skeleton Loader) ─── */}
         {flowStage === "processing" && (
@@ -1932,7 +2036,7 @@ export function ExpenseForm({
                 (acc, it) => {
                   const amount = Number(it.amount) || 0;
                   if (it.type === "income") acc.income += amount;
-                  else if (it.type === "expense") acc.expense += amount;
+                  else if (it.type === "expense") acc.expense += it.direction === "incoming" ? -amount : amount;
                   else acc.other += amount;
                   return acc;
                 },
@@ -2007,7 +2111,7 @@ export function ExpenseForm({
                     <Badge
                       className={cn(
                         "capitalize",
-                        item.type === "income"
+                        item.type === "income" || (item.type === "expense" && item.direction === "incoming")
                           ? "bg-emerald-500"
                           : item.type === "transfer"
                             ? "bg-sky-500"
@@ -2022,7 +2126,9 @@ export function ExpenseForm({
                           ? "تحويل"
                           : item.type === "investment"
                             ? "استثمار"
-                            : "مصروف"}
+                            : item.direction === "incoming"
+                              ? "مرتجع"
+                              : "مصروف"}
                     </Badge>
                     <button
                       type="button"
@@ -2038,22 +2144,20 @@ export function ExpenseForm({
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label className="text-[10px] opacity-70">
-                        الفئة الرئيسة
+                        الفئة الرئيسية
                       </Label>
                       <select
                         value={item.category}
                         onChange={(e) => {
                           const category = e.target.value;
-                          const subCategory =
-                            getSubCategoryOptions(category)[0] || "عام";
                           handleUpdateParsedItem(idx, {
                             category,
-                            subCategory,
+                            subCategory: defaultSubCategory(category),
                           });
                         }}
                         className="w-full text-xs h-9 rounded-lg border bg-white/50 dark:bg-black/20 px-2 outline-none focus:ring-1 ring-emerald-500"
                       >
-                        {categories.map((c) => (
+                        {getCategoryOptionsForType(normalizeType(item.type), item.category).map((c) => (
                           <option key={c} value={c}>
                             {c}
                           </option>
@@ -2506,7 +2610,7 @@ function ManualForm({
             onChange={(e) => {
               const nextCategory = e.target.value;
               setCategory(nextCategory);
-              setSubCategory(getSubCategoryOptions(nextCategory)[0] || "عام");
+              setSubCategory(defaultSubCategory(nextCategory));
             }}
             className="w-full h-11 rounded-md border text-sm px-2 bg-white dark:bg-slate-900"
           >

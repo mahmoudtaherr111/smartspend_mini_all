@@ -15,6 +15,8 @@ import { BarChart3 } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { RecentExpenses } from "@/components/expenses/RecentExpenses";
+import { SmsSuggestionsCard } from "@/components/bank-sync/SmsSuggestionsCard";
+import { PendingQuestionsCard } from "@/components/expenses/PendingQuestionsCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OnboardingCard } from "@/components/OnboardingCard";
 import { cn } from "@/lib/utils";
@@ -27,6 +29,8 @@ import {
 } from "@/components/dashboard/HomeHeader";
 import { HomeSummaryCards } from "@/components/dashboard/HomeSummaryCards";
 import { StatsView } from "@/components/dashboard/StatsView";
+import { BudgetsPanel } from "@/components/budgets/BudgetsPanel";
+import { DebtsPanel } from "@/components/debts/DebtsPanel";
 import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
 import { CallSmartButton } from "@/components/voice/CallSmartButton";
 import { toast } from "sonner";
@@ -274,6 +278,8 @@ export default function Home() {
                     }}
                   />
                   <div className="space-y-4">
+                    <PendingQuestionsCard />
+                    <SmsSuggestionsCard />
                     <RecentExpenses
                       limit={7}
                       month={month}
@@ -319,7 +325,9 @@ export default function Home() {
               </div>
             ),
             stats: (
-              <div>
+              <div className="space-y-5">
+                <BudgetsPanel />
+                <DebtsPanel />
                 {statsError ? (
                   <Card className="border-destructive/30">
                     <CardContent className="py-8 text-center space-y-3">

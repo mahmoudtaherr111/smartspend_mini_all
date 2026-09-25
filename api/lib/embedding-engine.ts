@@ -93,7 +93,7 @@ const CATEGORY_DESCRIPTORS: Array<{
   // ── Expense Categories ──
   {
     category: "أكل وشرب",
-    subCategory: "مطاعم ووجبات",
+    subCategory: "مطعم",
     descriptors: [
       "أكل",
       "شرب",
@@ -149,7 +149,7 @@ const CATEGORY_DESCRIPTORS: Array<{
   },
   {
     category: "أكل وشرب",
-    subCategory: "بقالة ولحوم",
+    subCategory: "بقالة",
     descriptors: [
       "بقالة",
       "سوبر ماركت",
@@ -182,7 +182,7 @@ const CATEGORY_DESCRIPTORS: Array<{
   },
   {
     category: "أكل وشرب",
-    subCategory: "تسالي وحلويات",
+    subCategory: "سناكس",
     descriptors: [
       "شوكولاتة",
       "شيبسي",
@@ -202,12 +202,12 @@ const CATEGORY_DESCRIPTORS: Array<{
 
   {
     category: "مواصلات",
-    subCategory: "أوبر وكريم",
+    subCategory: "أوبر/كريم",
     descriptors: ["أوبر", "كريم", "توصيلة", "اندرايفر", "ديدي"],
   },
   {
     category: "مواصلات",
-    subCategory: "مواصلات عامة",
+    subCategory: "أتوبيس",
     descriptors: [
       "مواصلات",
       "مشوار",
@@ -232,12 +232,12 @@ const CATEGORY_DESCRIPTORS: Array<{
 
   {
     category: "فواتير",
-    subCategory: "كهرباء وغاز ومياه",
+    subCategory: "كهرباء",
     descriptors: ["فاتورة", "كهرباء", "مياه", "غاز", "وصل مياه", "وصل نور"],
   },
   {
     category: "فواتير",
-    subCategory: "إنترنت وموبايل",
+    subCategory: "إنترنت",
     descriptors: [
       "نت",
       "إنترنت",
@@ -256,8 +256,8 @@ const CATEGORY_DESCRIPTORS: Array<{
     ],
   },
   {
-    category: "فواتير",
-    subCategory: "أقساط وديون",
+    category: "أقساط وفوايد",
+    subCategory: "أقساط",
     descriptors: ["قسط", "أقساط", "سداد دين", "فاليو", "أمان", "سهولة"],
   },
 
@@ -268,7 +268,7 @@ const CATEGORY_DESCRIPTORS: Array<{
   },
   {
     category: "سكن",
-    subCategory: "صيانة وتصليح",
+    subCategory: "صيانة",
     descriptors: [
       "صيانة",
       "سباك",
@@ -284,7 +284,7 @@ const CATEGORY_DESCRIPTORS: Array<{
   },
   {
     category: "سكن",
-    subCategory: "مستلزمات منزلية",
+    subCategory: "منظفات",
     descriptors: [
       "أثاث",
       "شغالة",
@@ -306,7 +306,7 @@ const CATEGORY_DESCRIPTORS: Array<{
 
   {
     category: "تسوق",
-    subCategory: "ملابس وأحذية",
+    subCategory: "ملابس",
     descriptors: [
       "تسوق",
       "شوبينج",
@@ -352,8 +352,8 @@ const CATEGORY_DESCRIPTORS: Array<{
     ],
   },
   {
-    category: "تسوق",
-    subCategory: "عناية شخصية",
+    category: "عناية شخصية",
+    subCategory: "مستحضرات وعناية",
     descriptors: [
       "تجميل",
       "مكياج",
@@ -372,7 +372,7 @@ const CATEGORY_DESCRIPTORS: Array<{
 
   {
     category: "صحة",
-    subCategory: "كشف ودكتور",
+    subCategory: "دكتور",
     descriptors: [
       "دكتور",
       "مستشفى",
@@ -387,7 +387,7 @@ const CATEGORY_DESCRIPTORS: Array<{
   },
   {
     category: "صحة",
-    subCategory: "أدوية وصيدلية",
+    subCategory: "صيدلية",
     descriptors: [
       "صحة",
       "صيدلية",
@@ -404,12 +404,12 @@ const CATEGORY_DESCRIPTORS: Array<{
 
   {
     category: "تعليم",
-    subCategory: "مدارس وجامعات",
+    subCategory: "مدرسة",
     descriptors: ["تعليم", "مدرسة", "جامعة", "مصاريف دراسة", "ترم", "كلية"],
   },
   {
     category: "تعليم",
-    subCategory: "كورسات ودروس",
+    subCategory: "كورسات",
     descriptors: [
       "كورس",
       "درس",
@@ -426,7 +426,7 @@ const CATEGORY_DESCRIPTORS: Array<{
 
   {
     category: "ترفيه",
-    subCategory: "خروجات وسينما",
+    subCategory: "خروجة",
     descriptors: [
       "ترفيه",
       "سينما",
@@ -448,7 +448,7 @@ const CATEGORY_DESCRIPTORS: Array<{
   },
   {
     category: "ترفيه",
-    subCategory: "جيم ورياضة",
+    subCategory: "رياضة وجيم",
     descriptors: ["جيم", "اشتراك الجيم", "بروتين", "كملات غذائية", "فورمة"],
   },
 
@@ -466,18 +466,18 @@ const CATEGORY_DESCRIPTORS: Array<{
   },
   {
     category: "تدخين",
-    subCategory: "فيب",
+    subCategory: "فيب/ليكود",
     descriptors: ["فيب", "ليكود", "بود", "كويل", "سيجارة إلكترونية"],
   },
   {
     category: "تدخين",
-    subCategory: "شيشة",
+    subCategory: "شيشة/معسل",
     descriptors: ["دخان", "معسل", "شيشة", "ارجيلة", "فحم"],
   },
 
   {
     category: "اشتراكات",
-    subCategory: "باقات رقمية",
+    subCategory: "عام",
     descriptors: [
       "اشتراك",
       "نتفلكس",
@@ -495,7 +495,7 @@ const CATEGORY_DESCRIPTORS: Array<{
 
   {
     category: "هدايا وصدقات",
-    subCategory: "هدايا",
+    subCategory: "عام",
     descriptors: [
       "هدية",
       "عيدية",
@@ -508,7 +508,7 @@ const CATEGORY_DESCRIPTORS: Array<{
   },
   {
     category: "هدايا وصدقات",
-    subCategory: "صدقات وتبرعات",
+    subCategory: "صدقة/تبرع",
     descriptors: [
       "صدقة",
       "زكاة",
@@ -536,7 +536,7 @@ const CATEGORY_DESCRIPTORS: Array<{
   },
   {
     category: "استثمار",
-    subCategory: "أسهم وشهادات",
+    subCategory: "شهادات",
     descriptors: [
       "أسهم",
       "شهادات",
@@ -552,8 +552,8 @@ const CATEGORY_DESCRIPTORS: Array<{
   },
 
   {
-    category: "خدمات سيارات",
-    subCategory: "صيانة",
+    category: "مواصلات",
+    subCategory: "صيانة عربية",
     descriptors: [
       "عربية",
       "صيانة عربية",
@@ -568,8 +568,8 @@ const CATEGORY_DESCRIPTORS: Array<{
     ],
   },
   {
-    category: "خدمات سيارات",
-    subCategory: "أخرى",
+    category: "مواصلات",
+    subCategory: "صيانة عربية",
     descriptors: [
       "كارتة",
       "مخالفة",
@@ -584,18 +584,28 @@ const CATEGORY_DESCRIPTORS: Array<{
   // ── Income Categories ──
   {
     category: "مرتب",
-    subCategory: "راتب أساسي",
+    subCategory: "مرتب أساسي",
     descriptors: ["مرتب", "راتب", "قبضت", "القبض", "شيك", "معاش"],
   },
   {
     category: "مرتب",
-    subCategory: "حوافز ومكافآت",
-    descriptors: ["بونص", "مكافأة", "أوفر تايم", "بدل", "حوافز", "زيادة"],
+    subCategory: "مكافأة/بونص",
+    descriptors: ["بونص", "مكافأة", "حوافز", "زيادة"],
+  },
+  {
+    category: "مرتب",
+    subCategory: "أوفر تايم",
+    descriptors: ["أوفر تايم", "اوفر تايم", "إضافي", "اضافي", "ساعات زيادة"],
+  },
+  {
+    category: "مرتب",
+    subCategory: "بدلات",
+    descriptors: ["بدل", "بدلات", "بدل انتقال", "بدل سكن"],
   },
 
   {
     category: "عمل حر",
-    subCategory: "مشاريع",
+    subCategory: "مشروع",
     descriptors: [
       "فريلانس",
       "عمل حر",
@@ -617,7 +627,6 @@ const CATEGORY_DESCRIPTORS: Array<{
       "أرباح",
       "فوائد",
       "كاش باك",
-      "استرجاع",
       "عائد",
       "ربح",
       "كوبونات",
@@ -627,17 +636,17 @@ const CATEGORY_DESCRIPTORS: Array<{
 
   {
     category: "تحويل",
-    subCategory: "إيداع واستلام",
+    subCategory: "تحويل بنكي",
     descriptors: ["حوالة", "إيداع", "فودافون كاش", "انستاباي", "استلمت تحويل"],
   },
   {
     category: "تحويل",
-    subCategory: "سلف وديون",
+    subCategory: "دين/سلفة",
     descriptors: ["دين", "سلفة", "استلفت", "سلفت", "قرض", "سداد"],
   },
   {
     category: "تحويل",
-    subCategory: "جمعيات",
+    subCategory: "جمعية",
     descriptors: ["جمعية", "قسط جمعية", "قبض الجمعية", "دفعت الجمعية"],
   },
 ];

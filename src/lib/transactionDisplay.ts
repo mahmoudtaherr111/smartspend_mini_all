@@ -21,6 +21,8 @@ export function getTransactionDisplayMeta(input: {
   category?: string | null;
   parsedMetadata?: unknown;
   direction?: string | null;
+  /** The stored amount: a negative expense is a refund. */
+  amount?: string | number | null;
 }): TransactionDisplayMeta {
   const rawType = (input.type || "expense").toLowerCase();
   const category = input.category || "";
@@ -57,6 +59,22 @@ export function getTransactionDisplayMeta(input: {
       badgeClass: isIncoming
         ? "bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 font-bold"
         : "bg-sky-50 text-sky-700 border border-sky-300 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800 font-bold",
+    };
+  }
+
+  if (rawType === "expense" && (Number(input.amount) < 0 || explicitDirection === "incoming")) {
+    // Money back from something bought, netted against its category.
+    return {
+      isTransfer: false,
+      isIncome: false,
+      isExpense: true,
+      isInvestment: false,
+      direction: "incoming",
+      label: "مرتجع ↙️",
+      sign: "+",
+      amountClass: "text-emerald-600 dark:text-emerald-400",
+      badgeClass:
+        "bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 font-bold",
     };
   }
 

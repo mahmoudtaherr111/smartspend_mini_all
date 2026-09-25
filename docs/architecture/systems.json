@@ -18,6 +18,7 @@
         "expense.batchCreate",
         "expense.answerClarification",
         "expense.getPendingClarifications",
+        "expense.dismissClarification",
         "expense.createCategory",
         "expense.getCategoryList"
       ],
@@ -37,7 +38,7 @@
         "android-app/app/build.gradle",
         ".github/workflows/build-apk.yml"
       ],
-      "procedures": ["profile.generateWebhookToken", "profile.getWebhookToken", "profile.getSmsLogs", "profile.generateMagicCode"],
+      "procedures": ["profile.generateWebhookToken", "profile.getWebhookToken", "profile.getSmsLogs", "profile.generateMagicCode", "profile.getSmsSuggestions", "profile.confirmSmsSuggestion", "profile.dismissSmsSuggestion"],
       "pages": ["BankSyncPage"],
       "routes": [
         "GET /api/sms/android-connect",
@@ -109,7 +110,7 @@
       "routers": ["expense", "wallet", "budget", "goals", "business"],
       "procedures": ["export.myExpenses", "profile.listContacts", "profile.addContact", "profile.updateContact", "profile.deleteContact", "profile.mergeContacts"],
       "pages": ["Home"],
-      "jobs": ["nightly-rollup-reconciliation"]
+      "jobs": ["nightly-rollup-reconciliation", "taxonomy-migration"]
     },
     {
       "id": "accounts",

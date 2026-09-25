@@ -1,4 +1,5 @@
-import { and, eq } from "drizzle-orm";
+import { businessDateKey } from "../lib/app-time";
+import { and, eq, inArray } from "drizzle-orm";
 import { getDb } from "../queries/connection";
 import { users, localUsers, systemSettings, monthlyReports } from "../../db/schema";
 import { whatsappService } from "../services/whatsapp-service";
@@ -7,6 +8,7 @@ import { buildMonthlyReportFactsPack } from "../services/finance-semantic-layer"
 import { recordAICostMetric, resolveAICostPolicy } from "../services/ai-cost-policy";
 import { callFireworksAPI } from "../lib/fireworks-client";
 import { createLogger, phoneTail } from "../lib/log";
+import { PLAN_IDS, isPlanFeatureEnabled } from "../../contracts/plan-features";
 
 const log = createLogger("monthly-report");
 
@@ -134,13 +136,23 @@ function parseReportText(raw: string): string {
  * to generate a comprehensive, personalized monthly report by pulling data dynamically
  * through function calls, then sends the final report via WhatsApp.
  */
+/**
+ * The month a scheduled report describes: the Cairo month that ended before `now`. The job
+ * runs early on the 1st, when the current month has barely begun.
+ */
+export function reportMonthFor(now = new Date()): string {
+  const [year, month] = businessDateKey(now).split("-").map(Number);
+  const previous = new Date(Date.UTC(year, month - 2, 1));
+  return `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
 export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJobOptions) {
   console.log("[MonthlyReportJob] Starting execution...");
 
   const db = getDb();
   const options: MonthlyReportJobOptions =
     typeof targetMonth === "string" ? { month: targetMonth } : targetMonth ?? {};
-  const month = options.month || new Date().toISOString().slice(0, 7);
+  const month = options.month || reportMonthFor();
   const forceRefresh = options.forceRefresh === true;
   const sendWhatsApp = options.sendWhatsApp !== false;
 
@@ -172,13 +184,15 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
       console.warn("[MonthlyReportJob] Missing AI API Key. Deterministic fallback reports will be used.");
     }
 
-    // 2. Fetch all PRO users
-    const proOauthUsers = await db.query.users.findMany({
-      where: eq(users.plan, "pro"),
+    // 2. Fetch the users whose plan gets the WhatsApp report (feature_whatsapp_report_<plan>;
+    // by default Pro only, as before).
+    const reportPlans = PLAN_IDS.filter((plan) => isPlanFeatureEnabled(s, plan, "whatsapp_report"));
+    const proOauthUsers = reportPlans.length === 0 ? [] : await db.query.users.findMany({
+      where: inArray(users.plan, reportPlans),
     });
 
-    const proLocalUsers = await db.query.localUsers.findMany({
-      where: eq(localUsers.plan, "pro"),
+    const proLocalUsers = reportPlans.length === 0 ? [] : await db.query.localUsers.findMany({
+      where: inArray(localUsers.plan, reportPlans),
     });
 
     console.log(

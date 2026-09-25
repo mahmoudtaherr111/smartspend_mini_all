@@ -135,6 +135,12 @@ export const test = base.extend<MobileTestFixtures>({
       await page.addInitScript((user) => {
         try {
           window.localStorage.setItem("smartspend_user", JSON.stringify(user));
+          // The device identity snapshot a returning user has (src/lib/queryPersister.ts), so
+          // the shell mounts once with the user from the first frame, as it does on a phone.
+          window.localStorage.setItem(
+            "smartspend_offline_identity_v1",
+            JSON.stringify({ id: user.id, type: user.type, name: user.name, plan: user.plan, role: user.role, savedAt: Date.now() }),
+          );
           window.localStorage.setItem("smartspend_pwa_standalone", "true");
           window.localStorage.setItem("smartspend_theme", "dark");
           window.localStorage.setItem("theme", "dark");
@@ -196,6 +202,10 @@ export const test = base.extend<MobileTestFixtures>({
             };
           }
           if (procedure === "profile.getInAppNotifications") return [];
+          if (procedure === "profile.getSmsSuggestions") return [];
+          if (procedure === "expense.getPendingClarifications") return [];
+          if (procedure === "budget.list") return { budgets: [] };
+          if (procedure === "expense.getDebtBalances") return { balances: [], owedToYou: 0, youOwe: 0 };
           if (procedure === "chat.getQuickActions") return [];
           if (procedure === "chat.getConversations") return [];
           if (procedure === "ads.list") return [];
@@ -309,6 +319,8 @@ export const test = base.extend<MobileTestFixtures>({
       const getTabCenter = async (
         id: string,
       ): Promise<{ x: number; y: number }> => {
+        // The shell mounts again once the session is known; measure the settled nav.
+        await expect(page.getByTestId("mobile-bottom-nav")).toHaveCSS("position", "fixed");
         const selectorCandidates = [
           `[data-testid="nav-tab-${id}"]`,
           `[data-tab="${id}"]`,

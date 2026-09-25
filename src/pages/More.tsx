@@ -109,9 +109,24 @@ function preloadDestination(href: string) {
   return Promise.resolve();
 }
 
+/** How many entries were written offline and are still waiting to be sent. */
+function countUnsentOffline(): number {
+  const count = (key: string) => {
+    try {
+      const items: unknown = JSON.parse(localStorage.getItem(key) || "[]");
+      return Array.isArray(items) ? items.length : 0;
+    } catch {
+      return 0;
+    }
+  };
+  return count("smartspend_offline_texts") + count("smartspend_offline_manual");
+}
+
 export default function More() {
   const { user, isAdmin, logout } = useAuth();
   const [logoutOpen, setLogoutOpen] = useState(false);
+  // Logging out clears the offline queue (it belongs to this account); say so first.
+  const unsentCount = logoutOpen ? countUnsentOffline() : 0;
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const confirmLogout = async () => {
@@ -258,6 +273,12 @@ export default function More() {
                     <AdaptiveDialogDescription>
                       هتحتاج تسجل دخولك مرة تانية للوصول لبياناتك على الجهاز ده.
                     </AdaptiveDialogDescription>
+                    {unsentCount > 0 && (
+                      <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                        عندك {unsentCount} تسجيل اتكتب من غير نت ولسه ماتبعتش. لو خرجت دلوقتي هيتمسحوا من الجهاز ده؛
+                        وصّل النت واستنى لما يتبعتوا الأول.
+                      </p>
+                    )}
                   </AdaptiveDialogHeader>
                   <AdaptiveDialogFooter>
                     <AdaptiveDialogClose asChild>

@@ -44,12 +44,14 @@ flowchart LR
   ext_web_push{{"Web Push"}}
   ext_whatsapp{{"WhatsApp through Baileys"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
+  sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_platform[["Server platform and data (system)"]]
   job_scheduled_notifications --> mod_notifications
   job_seed_default_templates --> mod_notifications
   job_smart_activity_notifications --> mod_notifications
   mod_notifications --> ext_firebase
   mod_notifications --> ext_web_push
+  mod_notifications --> sys_money
   mod_notifications --> sys_platform
   mod_notifications -.-> tbl_expense_daily_rollups
   mod_notifications -.-> tbl_local_users
@@ -135,9 +137,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [Server platform and data](platform.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md).
 
-Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 

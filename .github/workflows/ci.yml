@@ -99,6 +99,31 @@ jobs:
           TRUST_PROXY: "true"
           REDIS_URL: ""
 
+  classification-quality:
+    name: Classification quality (benchmark against the frozen baseline)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The local engine on the labelled sentences (no model is called), then the gates of
+      # api/qa/classification-baseline.ts: a change that loses accuracy or saves more wrong
+      # answers on its own than the frozen baseline fails here.
+      - run: npm run bench:classify
+        env: &bench-env
+          DATABASE_URL: "mysql://test:test@localhost:3306/test"
+          GOOGLE_CLIENT_ID: test
+          GOOGLE_CLIENT_SECRET: test
+          JWT_SECRET: test-secret-for-ci
+          GEMINI_API_KEY: test
+          NODE_ENV: test
+          REDIS_URL: ""
+      - run: npm run bench:classify:compare
+        env: *bench-env
+
   integration-tests:
     name: Integration tests (MySQL and Redis)
     runs-on: ubuntu-latest

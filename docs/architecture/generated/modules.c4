@@ -81,17 +81,17 @@ model {
       }
     }
     billing = module 'Billing' {
-      description 'Paymob checkout requests, webhook verification settings and the subscription grant that sets a user’s plan.'
+      description 'Paymob checkout requests, webhook verification settings, the subscription grant that sets a user’s plan, and the per-plan catalog of limits and features read from the admin’s settings for the plans screen.'
       metadata {
-        files '2'
-        paths 'api/lib/paymob.ts, api/lib/subscription-service.ts'
+        files '3'
+        paths 'api/lib/paymob.ts, api/lib/subscription-service.ts, api/lib/plan-catalog.ts'
       }
     }
     classification = module 'Expense classification pipeline' {
       description 'smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.'
       metadata {
-        files '33'
-        paths 'api/lib/smart-pipeline.ts, api/lib/rule-engine.ts, api/lib/muscle-memory.ts, api/lib/embedding-engine.ts, api/lib/generate-embeddings-cache.ts, api/lib/post-classifier-verifier.ts, api/lib/admissibility-gate.ts, api/lib/final-acceptance.ts, api/lib/classification-*.ts, api/lib/classifier-contract.ts, api/lib/confidence-*.ts, api/lib/correction-rules.ts, api/lib/category-registry.ts, api/lib/taxonomy-*.ts, api/lib/direction-governed-taxonomy.ts, api/lib/keyword-category-priors.ts, api/lib/entity-extractor.ts, api/lib/narrative-decomposer.ts, api/lib/intent-detector.ts, api/lib/person-resolver.ts, api/lib/relationship-normalizer.ts, api/lib/amount-ledger.ts, api/lib/amount-linker.ts, api/lib/financial-event-plan.ts, api/lib/voice-intake-gate.ts, api/lib/anomaly-detector.ts, api/services/parser-trace.ts'
+        files '30'
+        paths 'api/lib/smart-pipeline.ts, api/lib/rule-engine.ts, api/lib/muscle-memory.ts, api/lib/embedding-engine.ts, api/lib/generate-embeddings-cache.ts, api/lib/post-classifier-verifier.ts, api/lib/admissibility-gate.ts, api/lib/final-acceptance.ts, api/lib/classification-*.ts, api/lib/classifier-contract.ts, api/lib/confidence-*.ts, api/lib/correction-rules.ts, api/lib/category-registry.ts, api/lib/taxonomy-*.ts, api/lib/direction-governed-taxonomy.ts, api/lib/entity-extractor.ts, api/lib/narrative-decomposer.ts, api/lib/intent-detector.ts, api/lib/person-resolver.ts, api/lib/relationship-normalizer.ts, api/lib/amount-ledger.ts, api/lib/amount-linker.ts, api/lib/financial-event-plan.ts, api/lib/voice-intake-gate.ts, api/services/parser-trace.ts'
       }
     }
     classification-qa = module 'Classification benchmark helpers' {
@@ -116,24 +116,24 @@ model {
       }
     }
     ingestion-parsers = module 'Ingestion parsers' {
-      description 'Bank SMS parsing (rules first, then an AI parser with a per-user cache) and the generator of the personal iOS Shortcut.'
+      description 'Bank SMS parsing (rules first, then an AI parser with a per-user cache), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut.'
       metadata {
-        files '3'
-        paths 'api/lib/sms-ai-parser.ts, api/lib/sms-rule-parser.ts, api/lib/shortcut-generator.ts'
+        files '4'
+        paths 'api/lib/sms-ai-parser.ts, api/lib/sms-rule-parser.ts, api/lib/shortcut-generator.ts, api/services/sms-ledger.ts'
       }
     }
     jobs = module 'Scheduled job bodies' {
       description 'Job implementations scheduled from api/boot.ts.'
       metadata {
-        files '5'
+        files '6'
         paths 'api/jobs/**'
       }
     }
     ledger = module 'Ledger aggregates' {
       description 'Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges.'
       metadata {
-        files '2'
-        paths 'api/services/expense-rollups.ts, api/services/financial-month.ts'
+        files '4'
+        paths 'api/services/expense-rollups.ts, api/services/financial-month.ts, api/services/budget-status.ts, api/services/debt-ledger.ts'
       }
     }
     notifications = module 'Notifications' {
@@ -198,7 +198,7 @@ model {
     contracts = module 'Shared contracts' {
       description 'Types, limits and billing plans shared by the web app and the API.'
       metadata {
-        files '5'
+        files '7'
         paths 'contracts/**'
       }
     }
@@ -215,7 +215,7 @@ model {
     web-admin = module 'Admin UI' {
       description 'Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.'
       metadata {
-        files '20'
+        files '21'
         paths 'src/components/admin/**'
       }
     }
@@ -229,7 +229,7 @@ model {
     web-bank-sync = module 'Bank sync UI' {
       description 'The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel.'
       metadata {
-        files '4'
+        files '5'
         paths 'src/components/bank-sync/**, src/components/settings/SmsWebhookSettings.tsx'
       }
     }
@@ -243,8 +243,8 @@ model {
     web-finance = module 'Finance UI' {
       description 'Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals.'
       metadata {
-        files '13'
-        paths 'src/components/dashboard/**, src/components/expenses/**, src/components/goals/**'
+        files '17'
+        paths 'src/components/dashboard/**, src/components/expenses/**, src/components/goals/**, src/components/budgets/**, src/components/debts/**'
       }
     }
     web-growth = module 'Ads and SEO UI' {
@@ -271,7 +271,7 @@ model {
     web-lib = module 'Web utilities' {
       description 'Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/.'
       metadata {
-        files '8'
+        files '9'
         paths 'src/lib/**, src/types/**, src/*.ts'
       }
     }

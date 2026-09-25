@@ -27,6 +27,14 @@ import {
   SectionHeader,
 } from "./AdminSettingsShared";
 import { RoutingRangesEditor } from "./RoutingRangesEditor";
+import {
+  PLAN_FEATURE_DEFAULTS,
+  PLAN_FEATURE_LABELS,
+  planFeatureKey,
+  planNumberKey,
+  type PlanFeature,
+  type PlanId,
+} from "@contracts/plan-features";
 
 // ─── STT Plan Config ───
 function SttPlanConfig({
@@ -311,8 +319,8 @@ function PlanAdvancedLimits({
           unit="ثانية"
         />
         <NumInput
-          label="حد SMS/شهر"
-          hint="عدد رسائل SMS المصرح بمعالجتها شهرياً. يُقرأ من sms-router"
+          label="حد رسايل البنك/شهر"
+          hint="عدد رسايل البنك اللي بتتسجل لوحدها في الشهر. اللي بعد الحد بتتحفظ اقتراحات يأكدها المستخدم بضغطة"
           settingKey={`sms_limit_${plan}`}
           formData={formData}
           updateField={updateField}
@@ -325,6 +333,38 @@ function PlanAdvancedLimits({
           formData={formData}
           updateField={updateField}
           unit="عملية"
+        />
+        <NumInput
+          label="الأهداف النشطة"
+          hint="أقصى عدد أهداف مالية نشطة في نفس الوقت. 0 = بدون حد"
+          settingKey={planNumberKey("goals_active_limit", plan as PlanId)}
+          formData={formData}
+          updateField={updateField}
+          unit="هدف"
+        />
+        <NumInput
+          label="طلبات AI في الدقيقة"
+          hint="حماية من الإساءة: أقصى عدد طلبات ذكاء اصطناعي في الدقيقة لكل قناة"
+          settingKey={planNumberKey("burst_limit_per_minute", plan as PlanId)}
+          formData={formData}
+          updateField={updateField}
+          unit="طلب/دقيقة"
+        />
+        <NumInput
+          label="max tokens / إيصال"
+          hint="الحد الأقصى للـ output tokens في قراءة إيصال بالصورة. 0 = الإيصالات مقفولة للباقة"
+          settingKey={planNumberKey("image_max_tokens", plan as PlanId)}
+          formData={formData}
+          updateField={updateField}
+          unit="token"
+        />
+        <NumInput
+          label="max tokens / تحليل هدف"
+          hint="الحد الأقصى للـ output tokens في تحليل الأهداف بالذكاء الاصطناعي"
+          settingKey={planNumberKey("goal_max_tokens", plan as PlanId)}
+          formData={formData}
+          updateField={updateField}
+          unit="token"
         />
       </div>
 
@@ -416,6 +456,20 @@ function PlanAdvancedLimits({
               }
             />
           </div>
+          {(Object.keys(PLAN_FEATURE_LABELS) as PlanFeature[]).map((feature) => {
+            const key = planFeatureKey(feature, plan as PlanId);
+            const fallback = PLAN_FEATURE_DEFAULTS[feature][plan as PlanId];
+            const checked = formData[key] ? formData[key] === "true" : fallback;
+            return (
+              <div key={key} className="flex items-center justify-between">
+                <Label className="cursor-pointer font-medium">{PLAN_FEATURE_LABELS[feature]}</Label>
+                <Switch
+                  checked={checked}
+                  onCheckedChange={(c) => updateField(key, c ? "true" : "false")}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -594,7 +648,13 @@ export function AdminPlansTab({
             value="pro"
             className="text-lg pb-3 data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:bg-transparent"
           >
-            الباقة المدفوعة (Pro / Ultra)
+            باقة البرو (Pro)
+          </TabsTrigger>
+          <TabsTrigger
+            value="ultra"
+            className="text-lg pb-3 data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:bg-transparent"
+          >
+            باقة الألترا (Ultra)
           </TabsTrigger>
         </TabsList>
 
@@ -672,6 +732,23 @@ export function AdminPlansTab({
             </Card>
           </TabsContent>
         ))}
+
+        <TabsContent value="ultra" className="space-y-8 animate-in slide-in-from-end-4">
+          <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden">
+            <SectionHeader
+              icon={<ShieldCheck className="w-5 h-5 text-slate-600" />}
+              title="القواعد الاستهلاكية والحدود الكاملة (Ultra)"
+              description="حدود وميزات باقة الألترا لوحدها. توجيه موديلات التصنيف لألترا بيستخدم نطاقات البرو."
+            />
+            <CardContent className="p-6">
+              <PlanAdvancedLimits
+                plan="ultra"
+                formData={formData}
+                updateField={updateField}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* AI Voice Call Settings */}

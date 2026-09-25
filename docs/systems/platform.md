@@ -25,7 +25,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 | Job lock | `api/services/scheduler-lock.ts` | A MySQL advisory lock so a job registered on every replica runs on one |
 | Retention | `api/jobs/data-retention-job.ts` | Rolls up and prunes telemetry, conversation and ephemeral tables |
 | File storage | `api/services/storage/` | One driver interface over local disk or S3-compatible storage, plus the avatar service |
-| Shared contracts | `contracts/` | Input limits, plan prices, the live call's wire protocol (`contracts/voice-protocol.ts`) and shared types the web app imports |
+| Shared contracts | `contracts/` | Input limits, plan prices and plan features, the category taxonomy (`contracts/categories.ts`, with the map from old category names), the live call's wire protocol (`contracts/voice-protocol.ts`) and shared types the web app imports |
 | Error log | `api/lib/error-logger.ts` | Classifies provider errors and records them in `api_key_errors` for the admin console |
 | Logging | `api/lib/log.ts` | The server logger. It redacts the fields that carry message text, codes, tokens and phone numbers (`text`, `body`, `code`, `token`, `phone` and others, three levels deep; a phone keeps its last four digits, and a `code` without a run of four digits, such as an error's code or a tool's refusal, is kept), and writes an error with its codes and statement but without the values of a failed query |
 | Error reporting | `api/lib/error-reporting.ts` | Sentry, when `SENTRY_DSN` is set, under the same rule: console breadcrumbs are dropped, query strings, request bodies, cookies and credentials are removed, and a failed query's values are cut before an event leaves |
@@ -39,7 +39,9 @@ storage, the contracts shared with the web app, and the retention job that prune
    ([accounts](accounts.md)).
 3. The procedure's builder applies its limit and checks: anonymous traffic 400 requests a minute per IP,
    sign-in and registration 25 per quarter hour, a signed-in user 100 a minute, and an AI call another 100 a
-   minute on top. `proProcedure`, `proAiProcedure` and `ultraProcedure` check the plan (an admin passes), and
+   minute on top. `proProcedure`, `proAiProcedure` and `ultraProcedure` check the plan, and the per-feature builders
+   (`businessProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`) read the admin's
+   `feature_<feature>_<plan>` switch (`contracts/plan-features.ts`); an admin passes all of them.
    `moderatorProcedure` and `adminProcedure` check the role.
 4. Errors leave as `TRPCError`; in production an internal error is replaced by one Arabic sentence and the
    stack is dropped.
@@ -57,8 +59,8 @@ storage, the contracts shared with the web app, and the retention job that prune
   from A (identity and configuration) to G (conversations), and `tests/table-classes.test.ts` fails when a new
   table has none.
 - The retention job runs daily at 05:00 and walks the declared policies: user analytics after thirty days,
-  classification logs, token ledgers, notification logs, ad clicks, voice usage and live-call incidents after
-  ninety, the action audit trail and live voice calls after a year, chat messages after ninety days once the conversation has a summary, and expired
+  classification logs, token ledgers, notification logs, ad clicks, raw bank messages (`raw_sms_events`, suggestions
+  included), voice usage and live-call incidents after ninety, the action audit trail and live voice calls after a year, chat messages after ninety days once the conversation has a summary, and expired
   challenges and pending actions in between. Token ledgers and ad clicks are rolled up into `ai_cost_monthly`
   and `ad_stats_daily` before the rows go, and deletes run in chunks with a pause between them.
 
@@ -148,4 +150,4 @@ Checked against the code; each one names where it lives.
 - [Notifications and WhatsApp](notifications.md), [Reports, insights and the smart
   profile](insights.md), [Plans and payments](billing.md): the scheduled jobs registered here.
 - [Money: expenses, wallets, budgets, goals and businesses](money.md): the rollups the reconciliation job
-  repairs.
+  repairs, and the taxonomy migration job.

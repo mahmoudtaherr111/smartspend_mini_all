@@ -27,7 +27,7 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 | GET | `/api/sms/android-connect` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `webhook_tokens` | `webhook_tokens` |
 | POST | `/api/sms/android-status` | http | `api/sms-router.ts` | — | `webhook_tokens` | — |
 | POST | `/api/sms/exchange` | http | `api/sms-router.ts` | — | — | — |
-| POST | `/api/sms/ingest` | http | `api/sms-router.ts` | `api/lib/settings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/sms-rule-parser.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts` | `local_users`, `raw_sms_events`, `users`, `webhook_tokens` | `expenses`, `raw_sms_events` |
+| POST | `/api/sms/ingest` | http | `api/sms-router.ts` | `api/lib/app-time.ts`, `api/lib/settings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/sms-rule-parser.ts`, `api/notification-engine.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/sms-ledger.ts` | `local_users`, `raw_sms_events`, `users`, `webhook_tokens` | `raw_sms_events` |
 | GET | `/api/sms/logs` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `raw_sms_events` | — |
 | GET | `/api/sms/metrics` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `raw_sms_events` | — |
 | GET | `/api/sms/shortcut-download` | http | `api/sms-router.ts` | `api/lib/shortcut-generator.ts` | — | — |
@@ -59,11 +59,12 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 | `classification-log-cleanup` | `0 3 * * 0` | — | — | `classification_logs` |
 | `daily-auth-cleanup` | `0 0 * * *` | `api/lib/access-control.ts`, `api/services/phone-challenge.ts` | — | `auth_challenges` |
 | `daily-subscription-expiry` | `0 6 * * *` | `api/jobs/subscription-expiry-job.ts` | `pro_subscriptions` | `pro_subscriptions` |
-| `data-retention-lifecycle` | `0 5 * * *` | `api/jobs/data-retention-job.ts` | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
+| `data-retention-lifecycle` | `0 5 * * *` | `api/jobs/data-retention-job.ts` | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `raw_sms_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
 | `monthly-behavior-snapshots` | `0 1 1 * *` | `api/jobs/monthly-behavior-job.ts` | `expenses`, `user_profiles` | — |
 | `monthly-report-generation` | `0 2 1 * *` | `api/jobs/monthly-report-job.ts` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
 | `nightly-rollup-reconciliation` | `0 4 * * *` | `api/jobs/rollup-reconciliation-job.ts` | `expense_daily_rollups`, `expenses` | — |
 | `scheduled-notifications` | `* * * * *` | `api/notification-engine.ts` | — | — |
 | `seed-default-templates` | once at boot | `api/notification-engine.ts` | — | — |
 | `smart-activity-notifications` | `0 20 * * *` | `api/notification-engine.ts` | — | — |
+| `taxonomy-migration` | `*/30 * * * *` | `api/jobs/taxonomy-migration-job.ts` | `expense_details`, `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` | `expense_details`, `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` |
 | `voice-call-memory` | `*/10 * * * *` | `api/services/voice/post-call.ts` | — | — |

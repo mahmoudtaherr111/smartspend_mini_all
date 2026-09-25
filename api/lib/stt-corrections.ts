@@ -15,6 +15,12 @@ const damerauLevenshtein = (a: string, b: string): number => {
 };
 
 // ─── Common STT / Typing Error → Correct Form ───
+//
+// A key here must be a misspelling, never a real word: a correction whose source is a
+// word someone might mean changes the sentence. Removed for that reason: دفعة (an
+// installment), جيبة (a skirt), اكلة (a meal), ركبة (a knee), مرطب (a moisturizer, which
+// became مرتب — salary), جمعه (Friday, or the gam3eya), طعمية (the food itself), دين (a
+// debt), خدة and قبط.
 export const STT_CORRECTION_MAP: Record<string, string> = {
   // ── مواصلات ──
   اوبار: "اوبر",
@@ -77,8 +83,6 @@ export const STT_CORRECTION_MAP: Record<string, string> = {
   ساندوتش: "سندوتشات",
   فلفال: "فلافل",
   فلافيل: "فلافل",
-  طعمية: "فلافل",
-  طعميه: "فلافل",
   فاكها: "فاكهة",
   فاكهه: "فاكهة",
   خدار: "خضار",
@@ -206,7 +210,6 @@ export const STT_CORRECTION_MAP: Record<string, string> = {
   مدرسه: "مدرسة",
   مدرصة: "مدرسة",
   جامعه: "جامعة",
-  جمعه: "جامعة",
   كورص: "كورس",
   كوورس: "كورس",
   كرسات: "كورسات",
@@ -237,10 +240,8 @@ export const STT_CORRECTION_MAP: Record<string, string> = {
 
   // ── دخل ──
   مرتيب: "مرتب",
-  مرطب: "مرتب",
   مرتتب: "مرتب",
   مرتبي: "مرتب",
-  قبط: "قبضت",
   بونس: "بونص",
   بونوص: "بونص",
   "اوفر تايم": "إضافي",
@@ -267,7 +268,6 @@ export const STT_CORRECTION_MAP: Record<string, string> = {
   ادييت: "اديت",
   سلافت: "سلفت",
   سلافة: "سلفة",
-  دين: "سلفة",
 
   // ── هدايا وصدقات ──
   هديه: "هدية",
@@ -279,21 +279,16 @@ export const STT_CORRECTION_MAP: Record<string, string> = {
   تبرعع: "تبرع",
 
   // ── أفعال شائعة وتعبيرات عامية ──
-  دفعة: "دفعت",
   دفعط: "دفعت",
   اشتريط: "اشتريت",
   اشترية: "اشتريت",
   شريت: "اشتريت",
   جبط: "جبت",
-  جيبة: "جبت",
-  ركبة: "ركبت",
   ركبط: "ركبت",
-  اكلة: "اكلت",
   اكلط: "اكلت",
   كلت: "اكلت",
   صرفة: "صرفت",
   صرفط: "صرفت",
-  خدة: "خدت",
   خدط: "خدت",
   قبدت: "قبضت",
   قبظت: "قبضت",
@@ -310,22 +305,24 @@ export const STT_CORRECTION_MAP: Record<string, string> = {
  * Replaces known misspelled words with their correct forms.
  */
 export function applySttCorrections(text: string): string {
-  let result = text;
+  return text.replace(correctionPattern(), (wrong) => STT_CORRECTION_MAP[wrong] ?? wrong);
+}
 
-  // Sort keys by length (longest first) to avoid partial replacements
-  const sortedKeys = Object.keys(STT_CORRECTION_MAP).sort(
-    (a, b) => b.length - a.length,
-  );
+let compiledCorrections: RegExp | null = null;
 
-  for (const wrong of sortedKeys) {
-    // Word boundary-aware replacement using split/join for simple cases
-    // and regex for more complex patterns
-    const escaped = wrong.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(`(?:^|(?<=\\s))${escaped}(?=\\s|$)`, "g");
-    result = result.replace(regex, STT_CORRECTION_MAP[wrong]);
+/**
+ * One alternation of every key, longest first, built once. It used to be ~300 regexes
+ * compiled on every call, and a sequential pass could also rewrite its own output.
+ */
+function correctionPattern(): RegExp {
+  if (!compiledCorrections) {
+    const alternatives = Object.keys(STT_CORRECTION_MAP)
+      .sort((a, b) => b.length - a.length)
+      .map((wrong) => wrong.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    compiledCorrections = new RegExp(`(?:^|(?<=\\s))(?:${alternatives.join("|")})(?=\\s|$)`, "g");
   }
-
-  return result;
+  compiledCorrections.lastIndex = 0;
+  return compiledCorrections;
 }
 
 /**

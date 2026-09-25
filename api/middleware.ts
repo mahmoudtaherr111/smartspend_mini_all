@@ -1,6 +1,8 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { Context } from "./context";
 import { createRateLimiter } from "./lib/rate-limit";
+import { getSystemSettings } from "./lib/settings-cache";
+import { isPlanFeatureEnabled, type PlanFeature } from "../contracts/plan-features";
 
 const t = initTRPC.context<Context>().create({
   errorFormatter({ shape, error }) {
@@ -129,3 +131,41 @@ export const ultraProcedure = authedProcedure.use(async ({ ctx, next }) => {
 
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
+
+/**
+ * A feature the admin switches on or off per plan (`feature_<feature>_<plan>` in the
+ * settings, defaults in `contracts/plan-features.ts`). Admins always pass.
+ */
+function planFeatureProcedure(feature: PlanFeature) {
+  return authedProcedure.use(async ({ ctx, next }) => {
+    if (ctx.user.role !== "admin") {
+      // Unreadable settings fall back to the defaults, never to "everything allowed".
+      const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
+      if (!isPlanFeatureEnabled(settings, ctx.user.plan, feature)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "الميزة دي مش متاحة في باقتك الحالية. تقدر تشوف الباقات من صفحة الاشتراك.",
+        });
+      }
+    }
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  });
+}
+
+/** A plan feature that calls a model: the feature gate plus the AI rate limit. */
+function planFeatureAiProcedure(feature: PlanFeature) {
+  return planFeatureProcedure(feature).use(async ({ ctx, next }) => {
+    await aiRateLimiter.hit(
+      `ai:${ctx.user.type}:${ctx.user.id}`,
+      "طلبات الذكاء الاصطناعي كتير جداً! استنى شوية وحاول تاني.",
+    );
+    return next({ ctx: { ...ctx, user: ctx.user } });
+  });
+}
+
+// One builder per plan feature, so every procedure names what gates it.
+export const businessProcedure = planFeatureProcedure("business");
+export const businessAiProcedure = planFeatureAiProcedure("business");
+export const receiptsProcedure = planFeatureProcedure("receipts");
+export const proReportProcedure = planFeatureProcedure("pro_report");
+export const goalAnalysisProcedure = planFeatureProcedure("goal_analysis");

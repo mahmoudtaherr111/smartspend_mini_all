@@ -12,8 +12,10 @@ and `.github/workflows/ci.yml`.
 | Build output, and both server bundles start and answer /health | `npm run test:build` | `npm run build` and `npm run backend:build` first | `build` |
 | Knowledge rules | `npx vitest run tests/knowledge` | nothing | `knowledge` |
 | End to end | `npm run test:e2e` | Playwright, configured in `playwright.config.ts` | `e2e-tests` |
+| Classification quality: the local engine on the labelled sentences, then the gates against the frozen baseline | `npm run bench:classify`, then `npm run bench:classify:compare` | nothing: no model is called | `classification-quality` |
 
-The classification benchmark has its own commands; see `api/lib/AGENTS.md`.
+The benchmark's other commands (calibration, live providers, freezing a new baseline) are in `api/lib/AGENTS.md`.
+`bench:classify` rewrites the reports in `docs/reports/`; on your machine, `git checkout -- docs/reports` afterwards.
 
 ## Rules for tests
 - Test the code the product runs: import the module, or render the component. A test that defines its own

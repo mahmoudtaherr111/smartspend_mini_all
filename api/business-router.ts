@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { router, proProcedure, proAiProcedure } from "./middleware";
+// Business mode is a plan feature the admin switches per plan (feature_business_<plan>).
+import { router, businessProcedure, businessAiProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
 import {
@@ -42,7 +43,7 @@ async function getApiKey(): Promise<string> {
 }
 
 export const businessRouter = router({
-  get: proProcedure
+  get: businessProcedure
     .input(z.object({}).optional())
     .query(async ({ ctx }) => {
       const businesses = await db
@@ -99,10 +100,10 @@ export const businessRouter = router({
       };
     }),
 
-  types: proProcedure
+  types: businessProcedure
     .query(() => BUSINESS_TYPES),
 
-  suggestCategories: proAiProcedure
+  suggestCategories: businessAiProcedure
     .input(z.object({
       description: z.string().min(10).max(2000),
       businessName: z.string().min(1).max(255),
@@ -164,7 +165,7 @@ export const businessRouter = router({
       }
     }),
 
-  create: proProcedure
+  create: businessProcedure
     .input(z.object({
       name: z.string().min(1).max(255),
       type: z.string().min(1).max(100),
@@ -233,7 +234,7 @@ export const businessRouter = router({
       return { id: business.insertId, success: true };
     }),
 
-  update: proProcedure
+  update: businessProcedure
     .input(z.object({
       name: z.string().min(1).max(255).optional(),
       description: z.string().max(2000).optional(),
@@ -271,7 +272,7 @@ export const businessRouter = router({
       return { success: true };
     }),
 
-  delete: proProcedure
+  delete: businessProcedure
     .mutation(async ({ ctx }) => {
       const existing = await db
         .select()
@@ -319,7 +320,7 @@ export const businessRouter = router({
       return { success: true };
     }),
 
-  addCategory: proProcedure
+  addCategory: businessProcedure
     .input(z.object({
       name: z.string().min(1).max(100),
       nameAr: z.string().min(1).max(100),
@@ -361,7 +362,7 @@ export const businessRouter = router({
       return { id: cat.insertId, success: true };
     }),
 
-  updateCategory: proProcedure
+  updateCategory: businessProcedure
     .input(z.object({
       id: z.number(),
       name: z.string().min(1).max(100).optional(),
@@ -420,7 +421,7 @@ export const businessRouter = router({
       return { success: true };
     }),
 
-  removeCategory: proProcedure
+  removeCategory: businessProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const business = await db
@@ -462,7 +463,7 @@ export const businessRouter = router({
       return { success: true };
     }),
 
-  linkContact: proProcedure
+  linkContact: businessProcedure
     .input(z.object({
       contactId: z.number(),
       contactType: z.enum(["business_supplier", "business_customer", "business_employee"]),

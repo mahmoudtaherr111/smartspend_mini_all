@@ -501,6 +501,27 @@ export async function triggerEventNotification(eventType: string, user: { id: nu
  */
 export async function checkUserBudgetExceeded(userId: number, userType: string) {
   try {
+    // The user's own budgets decide when to warn: each one at its alert threshold and
+    // again past its limit, once per cycle. Only a user without budgets is compared with
+    // the monthly income in their profile.
+    const { checkBudgetAlerts, listBudgetStatuses } = await import("./services/budget-status");
+    if ((await listBudgetStatuses(userId, userType)).length > 0) {
+      await checkBudgetAlerts(userId, userType, async (alert, status) => {
+        await triggerEventNotification(
+          alert === "exceeded" ? "budget_category_exceeded" : "budget_near_limit",
+          { id: userId, type: userType },
+          {
+            budgetTitle: status.title,
+            spent: status.currentSpent.toLocaleString("ar-EG"),
+            limit: Number(status.monthlyLimit).toLocaleString("ar-EG"),
+            percentage: String(status.percentage),
+          },
+          "/#budget",
+        );
+      });
+      return;
+    }
+
     // 1. Fetch user's profile monthly income budget
     const profile = await db.select({ monthlyIncome: userProfiles.monthlyIncome })
       .from(userProfiles)
@@ -573,6 +594,36 @@ export async function checkUserBudgetExceeded(userId: number, userType: string) 
 
 export async function seedDefaultTemplates() {
   const defaults = [
+    {
+      name: "ميزانية قربت تخلص",
+      eventType: "budget_near_limit",
+      titleTemplate: "ميزانية {{budgetTitle}} قربت تخلص",
+      bodyTemplate: "صرفت {{spent}} من {{limit}} جنيه ({{percentage}}%). خلّي بالك الأيام الجاية.",
+      titleTemplateAr: "ميزانية {{budgetTitle}} قربت تخلص",
+      bodyTemplateAr: "صرفت {{spent}} من {{limit}} جنيه ({{percentage}}%). خلّي بالك الأيام الجاية.",
+      titleTemplateEn: "{{budgetTitle}} budget almost used",
+      bodyTemplateEn: "You spent {{spent}} of {{limit}} EGP ({{percentage}}%).",
+    },
+    {
+      name: "الاشتراك قرب يخلص",
+      eventType: "subscription_ending",
+      titleTemplate: "اشتراك {{planName}} بيخلص {{daysLeft}}",
+      bodyTemplate: "جدّد دلوقتي عشان تفضل مميزاتك شغالة من غير ما تقف.",
+      titleTemplateAr: "اشتراك {{planName}} بيخلص {{daysLeft}}",
+      bodyTemplateAr: "جدّد دلوقتي عشان تفضل مميزاتك شغالة من غير ما تقف.",
+      titleTemplateEn: "Your {{planName}} plan ends soon",
+      bodyTemplateEn: "Renew now to keep your features running.",
+    },
+    {
+      name: "ميزانية عدّت الحد",
+      eventType: "budget_category_exceeded",
+      titleTemplate: "ميزانية {{budgetTitle}} عدّت الحد",
+      bodyTemplate: "صرفت {{spent}} والحد كان {{limit}} جنيه ({{percentage}}%).",
+      titleTemplateAr: "ميزانية {{budgetTitle}} عدّت الحد",
+      bodyTemplateAr: "صرفت {{spent}} والحد كان {{limit}} جنيه ({{percentage}}%).",
+      titleTemplateEn: "{{budgetTitle}} budget exceeded",
+      bodyTemplateEn: "You spent {{spent}}; the limit was {{limit}} EGP ({{percentage}}%).",
+    },
     {
       name: "تنبيه تجاوز الميزانية",
       eventType: "budget_exceeded",

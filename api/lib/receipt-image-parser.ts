@@ -98,7 +98,7 @@ export async function parseReceiptWithVision(
     model: mapModelName(modelName || "gemini-2.5-flash"),
     systemInstruction: `استخرج عملية مالية واحدة من صورة إيصال/سكرين شوت بنك أو فاتورة مصرية.
 أعد JSON: amount, description, main_category, sub_category, merchant, transaction_type (expense|income), confidence, ocr_text.
-استخدم الفئات العربية المعتادة في SpinSmart.`,
+استخدم الفئات العربية المعتادة في SmartSpend.`,
     generationConfig: {
       temperature: 0.1,
       maxOutputTokens: maxTokens,

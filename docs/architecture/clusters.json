@@ -88,10 +88,11 @@
     {
       "id": "billing",
       "title": "Billing",
-      "description": "Paymob checkout requests, webhook verification settings and the subscription grant that sets a user's plan.",
+      "description": "Paymob checkout requests, webhook verification settings, the subscription grant that sets a user's plan, and the per-plan catalog of limits and features read from the admin's settings for the plans screen.",
       "paths": [
         "api/lib/paymob.ts",
-        "api/lib/subscription-service.ts"
+        "api/lib/subscription-service.ts",
+        "api/lib/plan-catalog.ts"
       ]
     },
     {
@@ -100,7 +101,9 @@
       "description": "Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges.",
       "paths": [
         "api/services/expense-rollups.ts",
-        "api/services/financial-month.ts"
+        "api/services/financial-month.ts",
+        "api/services/budget-status.ts",
+        "api/services/debt-ledger.ts"
       ]
     },
     {
@@ -199,11 +202,12 @@
     {
       "id": "ingestion-parsers",
       "title": "Ingestion parsers",
-      "description": "Bank SMS parsing (rules first, then an AI parser with a per-user cache) and the generator of the personal iOS Shortcut.",
+      "description": "Bank SMS parsing (rules first, then an AI parser with a per-user cache), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut.",
       "paths": [
         "api/lib/sms-ai-parser.ts",
         "api/lib/sms-rule-parser.ts",
-        "api/lib/shortcut-generator.ts"
+        "api/lib/shortcut-generator.ts",
+        "api/services/sms-ledger.ts"
       ]
     },
     {
@@ -243,7 +247,6 @@
         "api/lib/category-registry.ts",
         "api/lib/taxonomy-*.ts",
         "api/lib/direction-governed-taxonomy.ts",
-        "api/lib/keyword-category-priors.ts",
         "api/lib/entity-extractor.ts",
         "api/lib/narrative-decomposer.ts",
         "api/lib/intent-detector.ts",
@@ -253,7 +256,6 @@
         "api/lib/amount-linker.ts",
         "api/lib/financial-event-plan.ts",
         "api/lib/voice-intake-gate.ts",
-        "api/lib/anomaly-detector.ts",
         "api/services/parser-trace.ts"
       ]
     },
@@ -403,7 +405,9 @@
       "paths": [
         "src/components/dashboard/**",
         "src/components/expenses/**",
-        "src/components/goals/**"
+        "src/components/goals/**",
+        "src/components/budgets/**",
+        "src/components/debts/**"
       ]
     },
     {

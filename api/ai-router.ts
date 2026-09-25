@@ -112,6 +112,8 @@ import {
   type VoiceToolName,
 } from "./services/voice-kernel";
 import { buildParserTrace } from "./services/parser-trace";
+import { planNumber } from "../contracts/plan-features";
+import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
 
 const MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT = 4;
 const VOICE_QA_TOOL_NAMES = ["finance_query", "memory_search", "action_draft"] as const;
@@ -1315,9 +1317,8 @@ export const aiRouter = router({
     );
     const voiceLimit = planValue(voiceLimits, ctx.user.plan, 300);
     const aiBudget = await getAiBudget(ctx.user, "parse", cfg);
-    const offlineLimit = ctx.user.plan === "free"
-      ? parseInt(cfg.offline_limit_free || "3")
-      : parseInt(cfg.offline_limit_pro || "30");
+    // offline_limit_<plan>; Ultra used to read Pro's value because it had no key.
+    const offlineLimit = planNumber(cfg, ctx.user.plan, "offline_limit");
 
     return {
       ai: {
@@ -2019,6 +2020,7 @@ export const aiRouter = router({
             status: "pending",
             contextData: {
               items: parseResult.items,
+              source: "voice",
               classificationLogId,
               decision: parseResult.decision,
               confidence: parseResult.overallConfidence,
@@ -2367,7 +2369,7 @@ export const aiRouter = router({
           : 0;
 
       // ── 3. Financial Personality Detection (Backend) ──
-      const flexCats = ["ترفيه", "تسوق", "أكل وشرب", "رفاهية", "هدايا"];
+      const flexCats = [...DISCRETIONARY_CATEGORIES];
       const currentFlexSpend = sortedCats
         .filter(([k]) => flexCats.includes(k))
         .reduce((s, [, v]) => s + v, 0);

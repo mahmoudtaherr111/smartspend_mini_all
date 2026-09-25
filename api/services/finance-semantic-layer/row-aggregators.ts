@@ -103,6 +103,15 @@ function timeBucketLabels(
   return labels.slice(-Math.max(1, limit));
 }
 
+/**
+ * Spending, as Home counts it: an expense row. Transfers (a gam3eya payment, a loan, an
+ * ATM withdrawal), investments and income are money that moved or came in, not money
+ * spent (docs/decisions/0008-money-movements-and-taxonomy.md).
+ */
+export function isSpendingRow(row: Pick<FinanceRowLike, "type">): boolean {
+  return row.type !== "income" && row.type !== "transfer" && row.type !== "investment";
+}
+
 export function aggregateFinanceSummary(
   rows: FinanceRowLike[],
   period: ResolvedFinancePeriod,
@@ -149,7 +158,7 @@ export function buildBreakdown(
   granularity: FinanceGranularity,
   limit = 10,
 ): FinanceBreakdown {
-  const expenseRows = rows.filter((row) => row.type !== "income");
+  const expenseRows = rows.filter(isSpendingRow);
   const totalExpense = expenseRows.reduce((sum, row) => sum + amountOf(row), 0);
   const grouped = new Map<string, { amount: number; count: number }>();
 
@@ -193,7 +202,7 @@ export function buildChartData(
 ): FinanceChartData {
   if (isTimeGranularity(granularity)) {
     const grouped = new Map<string, { amount: number; count: number }>();
-    for (const row of rows.filter((item) => item.type !== "income")) {
+    for (const row of rows.filter(isSpendingRow)) {
       const key = dateKey(row.date, granularity);
       if (key === "unknown") continue;
       const existing = grouped.get(key) ?? { amount: 0, count: 0 };
@@ -256,7 +265,7 @@ export function buildMultiCategoryChartData(
   const grouped = new Map<string, FinanceChartPoint>();
 
   for (const row of rows) {
-    if (row.type === "income") continue;
+    if (!isSpendingRow(row)) continue;
     const matchedCategory = series.find((category) => canonicalCategoryOf(row) === category);
     if (!matchedCategory) continue;
 

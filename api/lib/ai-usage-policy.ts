@@ -40,7 +40,9 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
     parse: 1_500,
     speech: 2_000,
     report: 2_000,
-    image: 0,
+    // Receipts stay off for free through feature_receipts_free and image_max_tokens_free
+    // (0 by default); this ceiling only lets an admin who turns them on be obeyed.
+    image: 2_500,
     sms: 800,
     goal: 500,
   },
@@ -62,12 +64,8 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
   },
 };
 
-/** Max AI channel events per user per minute (abuse guard) */
-const BURST_LIMIT_PER_MINUTE: Record<PlanId, number> = {
-  free: 20,
-  pro: 60,
-  ultra: 100,
-};
+// Max AI channel events per user per minute (abuse guard): the admin's
+// burst_limit_per_minute_<plan>, defaults 20 / 60 / 100 in contracts/plan-features.ts.
 
 export function asPlan(plan: string | undefined): PlanId {
   return plan === "pro" || plan === "ultra" ? plan : "free";
@@ -82,6 +80,7 @@ export function parseSafeInt(
 }
 
 import { getSystemSettings } from "./settings-cache";
+import { planNumber } from "../../contracts/plan-features";
 
 export async function loadSystemConfig(): Promise<Record<string, string>> {
   return await getSystemSettings();
@@ -205,7 +204,8 @@ export async function assertAiAbuseGuard(
   channel: AiUsageChannel,
 ): Promise<void> {
   const plan = asPlan(user.plan);
-  const limit = BURST_LIMIT_PER_MINUTE[plan];
+  const settings = await loadSystemConfig().catch(() => ({} as Record<string, string>));
+  const limit = planNumber(settings, plan, "burst_limit_per_minute") || Number.MAX_SAFE_INTEGER;
   const burst = await countBurstAiEvents(user, channel);
   if (burst >= limit) {
     throw new TRPCError({

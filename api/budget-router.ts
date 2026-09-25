@@ -2,108 +2,17 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
 import { db } from "./queries/connection";
-import { userBudgets, expenses } from "../db/schema";
-import { eq, and, desc, gte, lt } from "drizzle-orm";
+import { userBudgets } from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
-import { businessDateKey, startOfBusinessDay } from "./lib/app-time";
+import { listBudgetStatuses } from "./services/budget-status";
+import { storageCategoryName } from "./lib/category-registry";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { assertEntityOwnership } from "./lib/ownership-guard";
 
-function getFinancialMonthDates(reference: Date, periodStartDay: number) {
-  const [year, month] = businessDateKey(reference).split("-").map(Number);
-  const currentDay = Number(businessDateKey(reference).slice(-2));
-  let startYear = year;
-  let startMonthIndex = month - 1;
-  if (currentDay < periodStartDay) {
-    startMonthIndex -= 1;
-    if (startMonthIndex < 0) {
-      startMonthIndex = 11;
-      startYear -= 1;
-    }
-  }
-  const startDay = Math.min(periodStartDay, new Date(Date.UTC(startYear, startMonthIndex + 1, 0)).getUTCDate());
-  let endYear = startYear;
-  let endMonthIndex = startMonthIndex + 1;
-  if (endMonthIndex > 11) {
-    endMonthIndex = 0;
-    endYear += 1;
-  }
-  const endDay = Math.min(periodStartDay, new Date(Date.UTC(endYear, endMonthIndex + 1, 0)).getUTCDate());
-  return {
-    startDate: startOfBusinessDay(new Date(Date.UTC(startYear, startMonthIndex, startDay, 12))),
-    endDate: startOfBusinessDay(new Date(Date.UTC(endYear, endMonthIndex, endDay, 12))),
-  };
-}
-
 export const budgetRouter = router({
   list: authedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.user.id;
-    const userType = ctx.user.type;
-
-    const budgets = await db
-      .select()
-      .from(userBudgets)
-      .where(
-        and(
-          eq(userBudgets.userId, userId),
-          eq(userBudgets.userType, userType),
-        ),
-      )
-      .orderBy(desc(userBudgets.createdAt));
-
-    const now = new Date();
-    const budgetPeriods = budgets.map((budget) => ({
-      id: budget.id,
-      ...getFinancialMonthDates(now, budget.periodStartDay || 1),
-    }));
-    const earliestStart = budgetPeriods.reduce(
-      (earliest, period) => (!earliest || period.startDate < earliest ? period.startDate : earliest),
-      null as Date | null,
-    );
-    const latestEnd = budgetPeriods.reduce(
-      (latest, period) => (!latest || period.endDate > latest ? period.endDate : latest),
-      null as Date | null,
-    );
-
-    const spendingRows = earliestStart && latestEnd ? await db
-      .select({
-        category: expenses.category,
-        amount: expenses.amount,
-        date: expenses.date,
-      })
-      .from(expenses)
-      .where(
-        and(
-          eq(expenses.userId, userId),
-          eq(expenses.userType, userType),
-          eq(expenses.type, "expense"),
-          gte(expenses.date, earliestStart),
-          lt(expenses.date, latestEnd),
-        ),
-      ) : [];
-
-    const enrichedBudgets = budgets.map((b) => {
-      const period = budgetPeriods.find((candidate) => candidate.id === b.id)!;
-      const spent = spendingRows
-        .filter((row) => row.date >= period.startDate && row.date < period.endDate && (!b.category || row.category === b.category))
-        .reduce((total, row) => total + Number(row.amount), 0);
-      const limit = Number(b.monthlyLimit) || 1;
-      const percentage = Math.round((spent / limit) * 100);
-      const isExceeded = spent > limit;
-      const isNearLimit = percentage >= (b.alertThresholdPercent ?? 80);
-
-      return {
-        ...b,
-        currentSpent: spent,
-        percentage,
-        isExceeded,
-        isNearLimit,
-      };
-    });
-
-    return {
-      budgets: enrichedBudgets,
-    };
+    return { budgets: await listBudgetStatuses(ctx.user.id as number, ctx.user.type) };
   }),
 
   create: authedProcedure
@@ -130,7 +39,8 @@ export const budgetRouter = router({
         userId: ctx.user.id,
         userType: ctx.user.type,
         title: input.title.trim(),
-        category: input.category?.trim() || null,
+        // A budget names a category the ledger stores, or it would never see any spending.
+        category: input.category?.trim() ? storageCategoryName(input.category.trim()) : null,
         monthlyLimit: String(input.monthlyLimit),
         periodStartDay: input.periodStartDay,
         linkedGoalId: input.linkedGoalId || null,
@@ -185,7 +95,7 @@ export const budgetRouter = router({
 
       const updateData: Record<string, unknown> = {};
       if (input.title !== undefined) updateData.title = input.title.trim();
-      if (input.category !== undefined) updateData.category = input.category.trim() || null;
+      if (input.category !== undefined) updateData.category = input.category.trim() ? storageCategoryName(input.category.trim()) : null;
       if (input.monthlyLimit !== undefined) updateData.monthlyLimit = String(input.monthlyLimit);
       if (input.periodStartDay !== undefined) updateData.periodStartDay = input.periodStartDay;
       if (input.linkedGoalId !== undefined) updateData.linkedGoalId = input.linkedGoalId;

@@ -13,11 +13,12 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 | --- | --- | --- |
 | Home screen | `src/pages/Home.tsx#Home` | Three tabs (record, statistics, calendar) for one month, the summary cards, business mode, the onboarding card, and, for users the rebuilt [voice call](voice-calls.md) is open to, a button that starts it (`src/components/voice/CallSmartButton.tsx#CallSmartButton`) |
 | Header and summary | `src/components/dashboard/HomeHeader.tsx`, `src/components/dashboard/HomeSummaryCards.tsx` | Month switcher, tabs, business toggle, streak, the month's spending as a share of income, income and spending totals |
-| Record tab | `src/components/expenses/RecentExpenses.tsx`, `src/components/goals/FinancialGoalsPanel.tsx#FinancialGoalsPanel` | Beside the entry form: the month's latest items with delete, and the goal creation card |
+| Record tab | `src/components/expenses/RecentExpenses.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/goals/FinancialGoalsPanel.tsx#FinancialGoalsPanel` | Beside the entry form: the entries waiting for an answer to their question ("محتاج ردك", [recording spending](expense-capture.md#clarifications)), the bank messages waiting for the user's confirmation when there are any ([bank messages](bank-messages.md#5-over-the-monthly-limit)), the month's latest items, each with details, an edit dialog (amount, kind, category, date, description; `expense.update` stores the category through the registry and records a changed one as the user's correction) and delete, each category badge in the colour the taxonomy gives it, and the goal creation card |
 | Statistics tab | `src/components/dashboard/StatsView.tsx#StatsView`, `src/components/dashboard/ExpenseChart.tsx#ExpenseChart`, `src/components/dashboard/BehaviorInsights.tsx`, `src/components/dashboard/GlobalSearch.tsx#GlobalSearch` | Daily average, change, top category and personality; charts by category, family, electronic payments, budget and timing; search; bank-message totals; top categories |
 | Calendar tab | `src/components/dashboard/MonthlyCalendar.tsx` | Spending per day of the calendar month, and the items of a chosen day |
 | Ledger API | `api/expense-router.ts` (`expense.list`, `expense.searchTransactions`, `expense.getById`, `expense.update`, `expense.delete`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`) | Reads, edits and deletes items and computes the month and year figures |
 | Daily rollups | `api/services/expense-rollups.ts`, `api/jobs/rollup-reconciliation-job.ts#runRollupReconciliationJob` | Per-day totals kept in step with every write, and repaired every night |
+| Taxonomy migration | `api/jobs/taxonomy-migration-job.ts#runTaxonomyMigrationJob` | Moves stored rows still filed under an old category to the current taxonomy |
 | Financial month | `api/services/financial-month.ts#getFinancialMonthDayRange` | Month boundaries from a salary day, in Cairo business days |
 | Wallets, budgets, goals, business | `api/wallet-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/business-router.ts` | Their own records and rules |
 | People | the contact procedures in `api/profile-router.ts` (`profile.listContacts`, `profile.addContact`, `profile.updateContact`, `profile.deleteContact`, `profile.mergeContacts`) | The people behind transfers and family spending |
@@ -32,6 +33,11 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
 - An item is a row of `expenses` with a type (income, expense, transfer, investment), an amount, a category and
   subcategory, a date, a source, a status, and optional wallet, business and contact. Its original text and parsed
   metadata sit beside it in `expense_details` (`syncExpenseDetails`).
+- **Refunds.** An expense whose money came back (direction `incoming`) is stored with a negative amount in the
+  category it was bought from (`ledgerAmount` in `api/services/expense-rollups.ts`), so the rollups, the category
+  breakdown, budgets and the AI Center net it without knowing about refunds. `expense.update` takes `refund` and keeps
+  the stored sign in line with the kind; the list, calendar, search and edit dialog show the magnitude as "مرتجع"
+  (docs/decisions/0010-refunds-net-their-category.md).
 - Every write that adds, changes or removes an item runs in a transaction that applies a delta to
   `expense_daily_rollups`, one row per user, business (0 for personal) and Cairo business day
   (`expenseToRollupDelta`, `applyExpenseRollupDelta`). Only confirmed items count; items from bank messages also
@@ -50,6 +56,18 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   caches bumped when anything changed.
 - **Streak.** Saving an item updates the user's streak in the same transaction (`updateStreak`): the same Cairo day
   keeps it, the next day adds one, a gap restarts it.
+- **Money movements.** A gam3eya payment or payout, a loan given, taken or repaid, and an ATM withdrawal are
+  `transfer` items (تحويل/جمعية, تحويل/دين/سلفة, تحويل/سحب ATM), so they count as neither spending nor income. Which
+  way the money went is in `parsed_metadata.direction` (`incoming` or `outgoing`)
+  (docs/decisions/0008-money-movements-and-taxonomy.md).
+- **Taxonomy migration.** `taxonomy-migration` runs every 30 minutes on replicas with `ENABLE_CRONS=true` and moves
+  up to 500 stored items still filed in an old place (`LEGACY_TAXONOMY` in `contracts/categories.ts`: a retired
+  category, a merged subcategory, a money movement booked as spending or income) to where they live now. Each item
+  moves in its own transaction: it keeps its old category, subcategory and type in
+  `parsed_metadata.legacy_taxonomy` (also in `expense_details`), and when its type changes the rollup delta moves
+  with it. User dictionaries, correction rules and budgets that name a retired category follow. Once every row is
+  current a run changes nothing. Undoing it means restoring the three values from `legacy_taxonomy` and moving the
+  rollup delta back.
 
 ## The home screen
 - **Month and cycle.** The month comes from the address or today's month. When the profile has a fixed salary switched
@@ -61,21 +79,24 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   - totals and automated totals from the rollups, and the previous period's totals;
   - category and subcategory breakdowns from the confirmed items, with their change from the previous period, and
     likely recurring items (subscriptions, packages, instalments, internet, electricity);
-  - spending per day, week of the month and weekday, and per Cairo hour from the month's latest 200 items;
+  - spending per day, week of the month and weekday, and per Cairo hour from all of the month's items;
   - a comparison with the same week of the previous period until day 24, and with the whole previous period after;
   - money sent to and received from each family member;
   - a spending behaviour (planned, spiky, emotional or concentrated, overridden by impulsive or conservative from the
-    share of income spent);
-  - the daily average and the month's latest 200 items.
+    share of income spent), whose discretionary share counts `DISCRETIONARY_CATEGORIES` from
+    `contracts/categories.ts` (ترفيه، تسوق، أكل وشرب، عناية شخصية، اشتراكات);
+  - the daily average and the month's items (the columns the charts read, up to `MONTH_ITEMS_BOUND`, 5,000).
 - **Search** (`expense.searchTransactions`): up to 20 of the user's items whose category, subcategory, description or
   original text contains the query, newest first.
 - **Record tab list** (`expense.list`): the month's latest items, page by page, newest id first; the calendar asks the
   same procedure for one day.
 - **Business mode.** A Pro user with a business can switch the statistics and calendar to that business; the choice is
   kept in the browser.
-- **Budget alert.** After a save, [Recording spending](expense-capture.md) calls `checkUserBudgetExceeded` in
-  `api/notification-engine.ts`, which sends the `budget_exceeded` notification once a month when the month's spending
-  passes the monthly income in the profile.
+- **Budget alert.** After a save (typed, a bank message, a confirmed suggestion), `checkUserBudgetExceeded` in
+  `api/notification-engine.ts` runs. A user with budgets gets `budget_near_limit` once per cycle when a budget reaches
+  its alert threshold and `budget_category_exceeded` once when it passes its limit (`checkBudgetAlerts`; the cycles
+  already warned are kept in the budget's metadata). A user without budgets gets `budget_exceeded` once a month when
+  the month's spending passes the monthly income in the profile.
 
 ## Wallets
 `wallet.getWallets`, `wallet.createWallet` (name, provider, last four digits, balance), `wallet.updateWallet` and
@@ -87,14 +108,27 @@ change wallets through confirmed actions.
 A budget has a title, an optional category, a monthly limit, the day its cycle starts, an alert threshold (80% by
 default), an optional linked goal and a status. `budget.list` returns every budget with what was spent in its current
 cycle, counted in Cairo business days, and whether it is near or over its limit. `budget.create`, `budget.update` and
-`budget.delete` check ownership and bump the finance cache. No screen calls them: budgets come from the assistant's
-confirmed actions, including the budget it suggests after a new goal.
+`budget.delete` check ownership and bump the finance cache; a budget's category is stored through the registry
+(`storageCategoryName`), so it matches what the ledger stores. The statistics tab shows them first
+(`src/components/budgets/BudgetsPanel.tsx`): a progress bar per budget, a form to add one for a category or for all
+spending, and delete. The assistant can also create them. The standing of each budget comes from
+`api/services/budget-status.ts#listBudgetStatuses` (expense rows only, in the budget's own cycle).
+
+## ليك وعليك (who owes whom)
+`expense.getDebtBalances` reads every confirmed loan (transfer under تحويل/دين/سلفة with a direction) and nets it per
+person (`api/services/debt-ledger.ts`): money that went out (lent, or a debt repaid) raises what the person owes the
+user, money that came in lowers it. People are the loan's contact, else "من غير اسم"; settled people are left out.
+The statistics tab shows the open balances under the budgets (`src/components/debts/DebtsPanel.tsx`), with the totals
+owed to and by the user. The same procedure returns the gam3eya standing (`getGam3eyaStanding`: installments paid in,
+payouts taken, and what the gam3eya still holds for the user, from transfers under تحويل/جمعية), shown in the same
+panel; nothing renders without loans or a gam3eya.
 
 ## Goals
-- `goals.list` returns the user's goals and, for Free users, an upsell.
-- `goals.create`: a title, a description of up to 120 characters, a target amount and date. Free users may have up to
-  3 active goals.
-- `goals.analyze` (Pro): asks Gemini (`ai_model_pro`, through `mapModelName`, after `assertAiBudget`) for a plan,
+- `goals.list` returns the user's goals and, when the plan has no goal analysis, an upsell.
+- `goals.create`: a title, a description of up to 120 characters, a target amount and date. The number of active
+  goals is the plan's `goals_active_limit_<plan>` (3 on Free by default, 0 = no limit); the assistant's goal action
+  applies the same limit.
+- `goals.analyze` (the plan switch `feature_goal_analysis_<plan>`, Pro and Ultra by default): asks Gemini (`ai_model_pro`, through `mapModelName`, after `assertAiBudget`) for a plan,
   weekly actions, alerts and progress from the goal, this month's spending and the profile summary, records the
   tokens and saves the plan on the goal.
 - `goals.setStatus` (active, completed, paused) and `goals.delete`, which also unlinks the goal's budgets.
@@ -102,7 +136,7 @@ confirmed actions, including the budget it suggests after a new goal.
   with statuses is in the profile view.
 
 ## Business mode
-Pro only (`proProcedure`). A user has one active business with categories that the classification pipeline scores in
+A plan feature (`feature_business_<plan>`, Pro and Ultra by default; `businessProcedure`). A user has one active business with categories that the classification pipeline scores in
 business mode:
 - `business.suggestCategories` asks Gemini for categories with Egyptian keywords and examples from the business
   description;
@@ -124,6 +158,7 @@ business mode:
 | To change | Edit | Check with |
 | --- | --- | --- |
 | How a write updates the daily totals | `api/services/expense-rollups.ts` | `tests/expense-rollups.test.ts` |
+| Where old categories move, and how stored rows follow | `LEGACY_TAXONOMY` in `contracts/categories.ts`; the job in `api/jobs/taxonomy-migration-job.ts` | `api/jobs/taxonomy-migration-job.test.ts`, `tests/taxonomy-migration.test.ts` (`npm run test:db`) |
 | The month summary or the statistics | `expense.getMonthSummary`, `expense.getMonthlyStats` in `api/expense-router.ts` | |
 | Search and the expense list | `expense.searchTransactions`, `expense.list` in `api/expense-router.ts` | `api/expense-router.test.ts` |
 | Salary-cycle boundaries | `api/services/financial-month.ts` | |
@@ -144,34 +179,36 @@ business mode:
    `getFinancialMonthDayRange`, never server-local dates.
 
 ## Tests
-`api/expense-router.test.ts` (including the search's user filter), `tests/expense-rollups.test.ts`, whose database
-cases run with `npm run test:db` (`docs/guides/testing.md`), and `src/components/dashboard/NativeTabPanels.test.tsx`.
+`api/expense-router.test.ts` (including the search's user filter and the person a saved item names),
+`tests/expense-rollups.test.ts` and `tests/taxonomy-migration.test.ts`, whose database cases run with
+`npm run test:db` (`docs/guides/testing.md`), `api/jobs/taxonomy-migration-job.test.ts`, and
+`src/components/dashboard/NativeTabPanels.test.tsx`.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** Budgets have no screen and no alert of their own: the "budget exceeded" notification compares the calendar month's
-   spending, business included, with the monthly income in the profile, not with `user_budgets`.
-2. **Bug.** The home screen uses the salary cycle only when "fixed salary" is switched on in Settings (`hasFixedSalary`); a
+1. **Bug.** The home screen uses the salary cycle only when "fixed salary" is switched on in Settings (`hasFixedSalary`); a
    salary day given in the onboarding questions does not change it, while the AI Center and the reports use the salary
    day either way.
-3. **Bug.** The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an
+2. **Bug.** The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an
    established account sees a low daily average early in the month.
-4. **Bug.** The budget tab, the electronic-payments tab and the hour heatmap work from the month's latest 200 items and
-   under-count busy months; the budget tab assumes a 10,000 EGP budget when neither the profile nor the month has
-   income.
-5. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
+3. **Gap.** The chart's "budget" tab compares the month's spending with the user's budget for all spending
+   (`budget.list`); with none it falls back to the profile's income or the month's income, and with neither it asks
+   the user to make a budget. A user with only category budgets sees the income comparison there.
+4. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
    snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
-6. **Bug.** In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
-7. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
-   (`src/components/goals/FinancialGoalsPanel.tsx`); the upsell Free users see says "SpinSmart Pro".
-8. **Gap.** A saved item cannot be edited in the web app: nothing calls `expense.update`, so the corrections it records never
-   happen (`api/lib/AGENTS.md`, rule 5).
-9. **Bug.** The calendar's day list sends local times without a time zone, which the server reads in its own zone.
-10. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record;
+5. **Bug.** In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
+6. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
+   (`src/components/goals/FinancialGoalsPanel.tsx`).
+7. **Bug.** The calendar's day list sends local times without a time zone, which the server reads in its own zone.
+8. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record;
     `business.get` returns the user's first business even when it is inactive.
-11. **Bug.** Wallet balances are stored as whatever text the client sends.
-12. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
+9. **Bug.** Wallet balances are stored as whatever text the client sends.
+10. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
     as spending, every source except voice as manual, and dates by UTC day.
+11. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
+    (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming
+    credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative
+    spending in a month when the purchase fell in an earlier one.
 
 ## Related systems
 - [Recording spending](expense-capture.md): creates the items this system reads, and triggers the budget alert.

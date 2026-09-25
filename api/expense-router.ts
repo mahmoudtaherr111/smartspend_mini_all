@@ -30,12 +30,18 @@ import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
 import {
   applyExpenseRollupDelta,
   expenseToRollupDelta,
+  ledgerAmount,
   syncExpenseDetails,
   deleteExpenseDetails,
   toDayString,
 } from "./services/expense-rollups";
 import { businessDayRange } from "./lib/app-time";
 import { assertEntityOwnership } from "./lib/ownership-guard";
+import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
+import { normalizeCategoryName, normalizeSubCategoryName } from "./lib/category-registry";
+import { createLogger } from "./lib/log";
+
+const reviewLog = createLogger("expense-review");
 
 async function invalidateExpenseCache(userId: number | string, userType: string) {
   try {
@@ -128,11 +134,13 @@ const expenseRawText = z.string().min(1).max(ExpenseInputLimits.rawTextMax);
 const expenseCategory = z.string().min(1).max(ExpenseInputLimits.categoryMax);
 const expenseAmount = z.number().positive().max(ExpenseInputLimits.amountMax);
 
+/** The most items one month's statistics load: far above a real month, a guard against abuse. */
+const MONTH_ITEMS_BOUND = 5000;
+
 const PERSON_EXPENSE_CATEGORIES = new Set([
   "العائلة",
   "أصدقاء",
   "موظفين",
-  "خدمات سيارات",
   "أخرى",
 ]);
 
@@ -141,6 +149,9 @@ type ExpenseReferenceInput = {
   subCategory?: string;
   contactId?: number;
   classificationLogId?: number;
+  /** The person the sentence named, when the category is the purpose ("مصاريف مدرسة ابني"). */
+  personName?: string;
+  personRelationship?: string;
 };
 
 type ExpenseReferenceResult = {
@@ -152,6 +163,236 @@ type ExpenseReferenceResult = {
     totalContacts: number;
   } | null;
 };
+
+/**
+ * Marks a clarification resolved inside the transaction that saves its items, only when it
+ * was still pending. Two answers to one question used to save its items twice.
+ */
+async function claimClarification(tx: Parameters<Parameters<typeof db.transaction>[0]>[0], id: number, userId: number, userType: string): Promise<void> {
+  const [result] = await tx
+    .update(pendingClarifications)
+    .set({ status: "resolved" })
+    .where(
+      and(
+        eq(pendingClarifications.id, id),
+        eq(pendingClarifications.userId, userId),
+        eq(pendingClarifications.userType, userType),
+        eq(pendingClarifications.status, "pending"),
+      ),
+    );
+  if (Number((result as { affectedRows?: number })?.affectedRows ?? 0) !== 1) {
+    throw new TRPCError({ code: "CONFLICT", message: "السؤال ده اتجاوب قبل كده" });
+  }
+}
+
+type LedgerTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** An item a clarification saves, as the pipeline or the stored question left it. */
+type ClarifiedItem = {
+  amount: number;
+  category: string;
+  subCategory?: string | null;
+  type: string;
+  description?: string;
+  date?: string;
+  direction?: "incoming" | "outgoing";
+  businessId?: number | null;
+  person_mentioned?: string;
+  person_relationship?: string;
+};
+
+export type SavedEntry = {
+  id: number;
+  amount: number;
+  category: string;
+  subCategory: string | null;
+  type: string;
+  direction: "incoming" | "outgoing" | null;
+};
+
+/**
+ * The date an answered item is saved on: the one the sentence named ("امبارح"), else the day
+ * the question was asked, never the day it was answered.
+ */
+export function clarifiedItemDate(item: { date?: string }, askedAt: Date | null | undefined): Date {
+  const named = item.date ? new Date(item.date) : null;
+  if (named && !isNaN(named.getTime())) return named;
+  return askedAt && !isNaN(new Date(askedAt).getTime()) ? new Date(askedAt) : new Date();
+}
+
+/**
+ * Saves the items of an answered clarification the way `expense.create` saves one: its date
+ * and source, the rollup delta, the contact's count and the streak, all in the caller's
+ * transaction. Returns what was saved so the app can show it and offer undo.
+ */
+async function saveClarifiedItems(
+  tx: LedgerTx,
+  items: ClarifiedItem[],
+  options: {
+    userId: number;
+    userType: string;
+    rawText: string;
+    source: string;
+    askedAt: Date | null | undefined;
+    classificationLogId?: number;
+  },
+): Promise<SavedEntry[]> {
+  const saved: SavedEntry[] = [];
+  for (const item of items) {
+    const references = await resolveExpenseReferences(
+      { category: item.category, subCategory: item.subCategory ?? undefined, classificationLogId: options.classificationLogId },
+      options.userId,
+      options.userType,
+    );
+    const date = clarifiedItemDate(item, options.askedAt);
+    const amount = ledgerAmount(item.type, item.direction, item.amount);
+    const [insertedRow] = await tx.insert(expenses).values({
+      userId: options.userId,
+      userType: options.userType,
+      amount: amount.toString(),
+      description: item.description || options.rawText,
+      category: item.category,
+      subCategory: item.subCategory || "عام",
+      type: item.type,
+      date,
+      source: options.source,
+      rawText: options.rawText,
+      contactId: references.contactId,
+      classificationLogId: references.classificationLogId,
+      businessId: item.businessId || null,
+      parsedMetadata: item.direction ? { direction: item.direction } : null,
+    });
+    const id = Number((insertedRow as { insertId?: number })?.insertId ?? 0);
+    if (id) await syncExpenseDetails(tx, id, options.rawText);
+    await applyExpenseRollupDelta(
+      tx,
+      expenseToRollupDelta(
+        {
+          userId: options.userId,
+          userType: options.userType,
+          businessId: item.businessId || null,
+          date,
+          type: item.type,
+          amount,
+          source: options.source,
+        },
+        1,
+      ),
+    );
+    if (references.contactId) {
+      await tx
+        .update(userContacts)
+        .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
+        .where(eq(userContacts.id, references.contactId));
+    }
+    saved.push({
+      id,
+      amount: Math.abs(item.amount),
+      category: item.category,
+      subCategory: item.subCategory ?? null,
+      type: item.type,
+      direction: item.direction ?? null,
+    });
+  }
+  if (saved.length > 0) await updateStreak(tx, options.userId, options.userType);
+  return saved;
+}
+
+/** Adds the people an answered item named (with their relationship) to the user's contacts. */
+async function addMentionedContacts(
+  items: ClarifiedItem[],
+  userId: number,
+  userType: string,
+): Promise<{ isNew: boolean; name: string; totalContacts: number } | null> {
+  let added: { isNew: boolean; name: string; totalContacts: number } | null = null;
+  const { addDynamicContact } = await import("./services/user-profile-service");
+  for (const item of items) {
+    const name = item.person_mentioned?.trim();
+    const relationship = item.person_relationship?.trim();
+    if (!name || !relationship || name === "عام" || name === "شخص") continue;
+    const result = await addDynamicContact(userId, userType, name, relationship);
+    if (result?.isNew) added = result;
+  }
+  return added;
+}
+
+/**
+ * What the user changed on the review card before saving, compared with what the parser
+ * proposed. Only a sentence the parser read as ONE item teaches a rule: its whole text is
+ * the pattern, and a multi-item sentence would teach one category for all of its parts.
+ */
+export function reviewCorrection(
+  parsed: unknown,
+  saved: { category: string; subCategory?: string | null; type: string; amount: number },
+): { previousCategory: string; previousSubCategory: string | null } | null {
+  if (!Array.isArray(parsed) || parsed.length !== 1) return null;
+  const proposed = parsed[0] as { category?: string; subCategory?: string | null };
+  if (!proposed?.category || proposed.category === saved.category) return null;
+  return { previousCategory: proposed.category, previousSubCategory: proposed.subCategory ?? null };
+}
+
+/**
+ * Records a category the user changed on the review card as their correction, and marks
+ * the parse corrected, so the same sentence is filed their way next time. Never throws.
+ */
+async function learnFromReview(
+  userId: number,
+  userType: string,
+  logId: number | null | undefined,
+  saved: { category: string; subCategory?: string | null; type: string; amount: number },
+): Promise<void> {
+  if (!logId) return;
+  try {
+    const [log] = await getDb()
+      .select({ id: classificationLogs.id, originalText: classificationLogs.originalText, finalResult: classificationLogs.finalResult })
+      .from(classificationLogs)
+      .where(and(eq(classificationLogs.id, logId), eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)))
+      .limit(1);
+    const change = log ? reviewCorrection(log.finalResult, saved) : null;
+    if (!log || !change || !log.originalText) return;
+    await getDb()
+      .update(classificationLogs)
+      .set({
+        wasCorrected: true,
+        correction: {
+          ...change,
+          correctedCategory: saved.category,
+          correctedSubCategory: saved.subCategory ?? null,
+          correctedAt: new Date().toISOString(),
+          on: "review",
+        },
+      })
+      .where(eq(classificationLogs.id, log.id));
+    await recordCorrection({
+      userId,
+      userType,
+      originalText: log.originalText,
+      category: saved.category,
+      subCategory: saved.subCategory,
+      type: saved.type,
+      amount: saved.amount,
+      sourceLogId: log.id,
+    });
+  } catch (error) {
+    reviewLog.warn({ err: error, event: "review.learn_failed", userId }, "Learning from the review card failed");
+  }
+}
+
+/**
+ * The person a saved item names, to link to a contact. It is either the category
+ * ("اديت ماما 1000" → العائلة/ماما والدتك) or, when the category is the purpose, named
+ * beside it ("مصاريف مدرسة ابني" → تعليم, ابني).
+ */
+export function namedPersonOf(
+  item: Pick<ExpenseReferenceInput, "category" | "subCategory" | "personName" | "personRelationship">,
+): { name: string; relationship: string } | null {
+  if (PERSON_EXPENSE_CATEGORIES.has(item.category) && item.subCategory && item.subCategory !== "عام") {
+    return parseNameAndRelationship(item.subCategory, item.category);
+  }
+  const name = item.personName?.trim();
+  const relationship = item.personRelationship?.trim();
+  return name && relationship ? { name, relationship } : null;
+}
 
 async function resolveBatchExpenseReferences(
   items: ExpenseReferenceInput[],
@@ -244,17 +485,12 @@ async function resolveBatchExpenseReferences(
     let contactId = item.contactId || null;
     let newlyAddedContact: ExpenseReferenceResult["newlyAddedContact"] = null;
 
+    const namedPerson = namedPersonOf(item);
+
     if (contactId) {
       contactId = item.contactId!;
-    } else if (
-      PERSON_EXPENSE_CATEGORIES.has(item.category) &&
-      item.subCategory &&
-      item.subCategory !== "عام"
-    ) {
-      const { name, relationship } = parseNameAndRelationship(
-        item.subCategory,
-        item.category,
-      );
+    } else if (namedPerson) {
+      const { name, relationship } = namedPerson;
       if (name && name !== "عام" && name !== "شخص") {
         const cacheKey = `${name}:::${relationship || ""}`;
         if (dynamicContactCache.has(cacheKey)) {
@@ -469,6 +705,8 @@ export const expenseRouter = router({
         walletId: z.number().int().positive().optional(),
         clientRequestId: z.string().min(1).max(64).optional(),
         direction: z.enum(["incoming", "outgoing"]).optional(),
+        personName: z.string().max(60).optional(),
+        personRelationship: z.string().max(40).optional(),
         parsedMetadata: z.record(z.string(), z.any()).optional(),
       }),
     )
@@ -533,7 +771,7 @@ export const expenseRouter = router({
             userId,
             userType: requestUserType,
             type: input.type,
-            amount: input.amount.toString(),
+            amount: ledgerAmount(input.type, input.direction, input.amount).toString(),
             category: input.category,
             subCategory: input.subCategory || "عام",
             description: input.description || "",
@@ -561,7 +799,7 @@ export const expenseRouter = router({
               businessId: input.businessId,
               date: expenseDate,
               type: input.type,
-              amount: input.amount,
+              amount: ledgerAmount(input.type, input.direction, input.amount),
               source: input.source,
             },
             1,
@@ -606,6 +844,7 @@ export const expenseRouter = router({
       }
 
       // Phase 2: Non-critical side effects (outside transaction)
+      await learnFromReview(userId as number, requestUserType, input.classificationLogId, input);
       invalidateUserMemory(userId, requestUserType);
       invalidateUserClassificationCache(userId, requestUserType);
       await invalidateExpenseCache(userId, requestUserType);
@@ -636,6 +875,11 @@ export const expenseRouter = router({
           businessId: z.number().int().positive().optional(),
           walletId: z.number().int().positive().optional(),
           clientRequestId: z.string().min(1).max(64).optional(),
+          // Which way a transfer moved (a loan given or received, a gam3eya payment or payout).
+          direction: z.enum(["incoming", "outgoing"]).optional(),
+          // The person named beside a purpose category, linked to a contact on save.
+          personName: z.string().max(60).optional(),
+          personRelationship: z.string().max(40).optional(),
         })
       ).max(100, "حد أقصى 100 عملية في الطلب الواحد")
     )
@@ -701,7 +945,7 @@ export const expenseRouter = router({
         userId,
         userType: requestUserType,
         type: item.type,
-        amount: item.amount.toString(),
+        amount: ledgerAmount(item.type, item.direction, item.amount).toString(),
         category: item.category,
         subCategory: item.subCategory || "عام",
         description: item.description || "",
@@ -712,10 +956,13 @@ export const expenseRouter = router({
         businessId: item.businessId || null,
         walletId: item.walletId || null,
         clientRequestId: item.clientRequestId || null,
+        parsedMetadata: item.direction ? { direction: item.direction } : null,
         date: item.date ? new Date(item.date) : new Date(),
       }));
 
       // ─── ACID Transaction: batch insert + contact counts + streak ───
+      // The ids let the app offer "undo" for exactly what it just saved.
+      let insertedIds: number[] = [];
       try {
         await db.transaction(async (tx) => {
           const [insertResult] = await tx.insert(expenses).values(valuesToInsert);
@@ -723,6 +970,7 @@ export const expenseRouter = router({
           const firstInsertId = Number(rawResult?.insertId || rawResult?.[0]?.insertId || 0);
 
           if (firstInsertId) {
+            insertedIds = valuesToInsert.map((_, i) => firstInsertId + i);
             const insertedExpenses = valuesToInsert.map((v, i) => ({
               id: firstInsertId + i,
               rawText: v.rawText,
@@ -788,6 +1036,9 @@ export const expenseRouter = router({
       }
 
       // Non-critical side effects (outside transaction)
+      if (itemsToInsert.length === 1) {
+        await learnFromReview(userId as number, requestUserType, itemsToInsert[0].classificationLogId, itemsToInsert[0]);
+      }
       invalidateUserMemory(userId, requestUserType);
       invalidateUserClassificationCache(userId, requestUserType);
       await invalidateExpenseCache(userId, requestUserType);
@@ -802,6 +1053,7 @@ export const expenseRouter = router({
       return {
         success: true,
         count: valuesToInsert.length + existingClientMap.size,
+        ids: insertedIds,
         newlyAddedContact: references.find((reference) => reference.newlyAddedContact)?.newlyAddedContact || null,
       };
     }),
@@ -922,6 +1174,8 @@ export const expenseRouter = router({
         id: z.number(),
         amount: expenseAmount.optional(),
         type: transactionTypeSchema.optional(),
+        /** An expense whose money came back; stored negative (ledgerAmount). */
+        refund: z.boolean().optional(),
         category: expenseCategory.optional(),
         subCategory: z
           .string()
@@ -952,13 +1206,20 @@ export const expenseRouter = router({
         contactId: input.contactId,
       });
 
+      // An edit stores a category the taxonomy holds, as every other write does: free text
+      // and old names are resolved against the registry (a person category keeps its name).
+      const category =
+        input.category !== undefined ? normalizeCategoryName(input.category) : undefined;
+      const subCategory =
+        input.subCategory !== undefined
+          ? normalizeSubCategoryName(category ?? input.category ?? "", input.subCategory)
+          : undefined;
+
       const updateData: Record<string, any> = {};
-      if (input.amount !== undefined)
-        updateData.amount = input.amount.toString();
       if (input.type !== undefined) updateData.type = input.type;
-      if (input.category !== undefined) updateData.category = input.category;
-      if (input.subCategory !== undefined)
-        updateData.subCategory = input.subCategory;
+      if (category !== undefined) updateData.category = category;
+      if (subCategory !== undefined)
+        updateData.subCategory = subCategory;
       if (input.description !== undefined)
         updateData.description = input.description;
       if (input.rawText !== undefined) updateData.rawText = input.rawText;
@@ -986,6 +1247,19 @@ export const expenseRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
         }
         originalExpense = row;
+
+        // The stored sign follows the kind and whether the money came back: a refund is
+        // a negative expense, anything else is positive.
+        if (input.amount !== undefined || input.type !== undefined || input.refund !== undefined) {
+          const type = input.type ?? row.type;
+          const wasRefund = row.type === "expense" && Number(row.amount) < 0;
+          const refund = input.refund ?? wasRefund;
+          updateData.amount = ledgerAmount(
+            type,
+            refund ? "incoming" : null,
+            input.amount ?? Math.abs(Number(row.amount)),
+          ).toString();
+        }
 
         await tx
           .update(expenses)
@@ -1033,18 +1307,17 @@ export const expenseRouter = router({
         "العائلة",
         "أصدقاء",
         "موظفين",
-        "خدمات سيارات",
         "أخرى",
       ];
       if (
-        input.category &&
-        personCategories.includes(input.category) &&
-        input.subCategory &&
-        input.subCategory !== "عام"
+        category &&
+        personCategories.includes(category) &&
+        subCategory &&
+        subCategory !== "عام"
       ) {
         const { name, relationship } = parseNameAndRelationship(
-          input.subCategory,
-          input.category,
+          subCategory,
+          category,
         );
         if (name && name !== "عام" && name !== "شخص") {
           const { addDynamicContact } =
@@ -1062,14 +1335,14 @@ export const expenseRouter = router({
       // When user corrects a category, extract keywords from rawText
       // and auto-save them to user_dictionaries for instant future matching.
       const categoryChanged =
-        input.category &&
+        category &&
         originalExpense &&
-        originalExpense.category !== input.category;
+        originalExpense.category !== category;
       if (categoryChanged && originalExpense?.rawText) {
         try {
-          const newCategory = input.category!;
+          const newCategory = category!;
           const newSubCategory =
-            input.subCategory || originalExpense.subCategory || "عام";
+            subCategory || originalExpense.subCategory || "عام";
           const rawText = originalExpense.rawText;
 
           const [latestClassificationLog] = await db
@@ -1117,7 +1390,7 @@ export const expenseRouter = router({
             category: newCategory,
             subCategory: newSubCategory,
             type: input.type ?? originalExpense.type,
-            amount: Number(input.amount ?? originalExpense.amount) || 0,
+            amount: Math.abs(Number(input.amount ?? originalExpense.amount)) || 0,
             sourceLogId: latestClassificationLog?.id ?? null,
           });
         } catch (learnErr) {
@@ -1445,9 +1718,23 @@ export const expenseRouter = router({
           }
         }
 
-        // Capped recent items for consumer compatibility
+        // The month's items, for the hour heatmap here and the budget and electronic-payment
+        // tabs on the client. Only the columns they read are loaded, so the whole month fits:
+        // the latest 200 used to be taken, which under-counted any busy month. The bound is
+        // a safety net far above a real month.
         const items = await db
-          .select()
+          .select({
+            id: expenses.id,
+            amount: expenses.amount,
+            type: expenses.type,
+            category: expenses.category,
+            subCategory: expenses.subCategory,
+            description: expenses.description,
+            rawText: expenses.rawText,
+            source: expenses.source,
+            date: expenses.date,
+            parsedMetadata: expenses.parsedMetadata,
+          })
           .from(expenses)
           .where(
             and(
@@ -1462,7 +1749,7 @@ export const expenseRouter = router({
             ),
           )
           .orderBy(desc(expenses.date))
-          .limit(200);
+          .limit(MONTH_ITEMS_BOUND);
 
         items.forEach((item) => {
           const d = safeDate(item.date, currentPeriod.startUtc);
@@ -1776,7 +2063,7 @@ export const expenseRouter = router({
         }))
         .sort((a, b) => Math.abs(b.netBalance) - Math.abs(a.netBalance));
 
-      const flexCategories = new Set(["ترفيه", "تسوق", "أكل وشرب", "خروجات"]);
+      const flexCategories = new Set(DISCRETIONARY_CATEGORIES);
       const flexSpend = sortedCategories
         .filter((cat) => flexCategories.has(cat.name))
         .reduce((sum, cat) => sum + cat.value, 0);
@@ -2017,6 +2304,39 @@ export const expenseRouter = router({
       return items;
     }),
 
+  /** Drops a question the user does not want to answer; its entry stays unrecorded. */
+  dismissClarification: authedProcedure
+    .input(z.object({ clarificationId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const [result] = await getDb()
+        .update(pendingClarifications)
+        .set({ status: "ignored" })
+        .where(
+          and(
+            eq(pendingClarifications.id, input.clarificationId),
+            eq(pendingClarifications.userId, ctx.user!.id),
+            eq(pendingClarifications.userType, ctx.user!.type),
+            eq(pendingClarifications.status, "pending"),
+          ),
+        );
+      return { success: Number((result as { affectedRows?: number })?.affectedRows ?? 0) === 1 };
+    }),
+
+  /** "ليك وعليك": what each person owes the user and what the user owes them, from loans. */
+  getDebtBalances: authedProcedure.query(async ({ ctx }) => {
+    const { getGam3eyaStanding, listDebtBalances } = await import("./services/debt-ledger");
+    const [balances, gam3eya] = await Promise.all([
+      listDebtBalances(ctx.user!.id, ctx.user!.type),
+      getGam3eyaStanding(ctx.user!.id, ctx.user!.type),
+    ]);
+    return {
+      balances,
+      gam3eya,
+      owedToYou: balances.filter((b) => b.balance > 0).reduce((sum, b) => sum + b.balance, 0),
+      youOwe: balances.filter((b) => b.balance < 0).reduce((sum, b) => sum - b.balance, 0),
+    };
+  }),
+
   answerClarification: authedProcedure
     .input(
       z.object({
@@ -2038,6 +2358,7 @@ export const expenseRouter = router({
             eq(pendingClarifications.id, input.clarificationId),
             eq(pendingClarifications.userId, userId),
             eq(pendingClarifications.userType, userType),
+            eq(pendingClarifications.status, "pending"),
           ),
         );
 
@@ -2049,6 +2370,7 @@ export const expenseRouter = router({
       }
 
       let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;
+      let saved: SavedEntry[] = [];
       let ctxData: Record<string, any> = {};
       if (typeof clarification.contextData === "string") {
         try {
@@ -2060,6 +2382,9 @@ export const expenseRouter = router({
         ctxData = clarification.contextData as Record<string, any>;
       }
 
+      // Saved as the sentence came in (typed or spoken); questions stored before the source
+      // was kept are typed.
+      const clarifiedSource = ctxData.source === "voice" ? "voice" : "manual";
       const pendingNames: string[] = Array.isArray(ctxData.pendingNames) ? [...ctxData.pendingNames] : [];
       const resolvedAnswers: Record<string, string> = typeof ctxData.resolvedAnswers === "object" && !Array.isArray(ctxData.resolvedAnswers) ? { ...ctxData.resolvedAnswers } : {};
 
@@ -2136,6 +2461,7 @@ export const expenseRouter = router({
           return {
             success: false,
             savedCount: 0,
+            saved: [] as SavedEntry[],
             needsClarification: true,
             clarificationQuestion: nextQuestion,
             clarificationId: input.clarificationId,
@@ -2220,78 +2546,24 @@ export const expenseRouter = router({
             : Array.isArray(ctxData.items) ? ctxData.items : [];
 
           await db.transaction(async (tx) => {
-            for (const item of itemsToSave) {
-              const references = await resolveExpenseReferences(
-                {
-                  category: item.category,
-                  subCategory: item.subCategory,
-                  classificationLogId:
-                    typeof ctxData.classificationLogId === "number"
-                      ? ctxData.classificationLogId
-                      : undefined,
-                },
-                userId,
-                userType,
-              );
-              const [insertedRow] = await tx.insert(expenses).values({
-                userId: userId as number,
-                userType: userType as string,
-                amount: item.amount.toString(),
-                description: item.description || enrichedText,
-                category: item.category,
-                subCategory: item.subCategory,
-                type: item.type,
-                date: new Date(),
-                source: "manual",
-                rawText: enrichedText,
-                contactId: references.contactId,
-                classificationLogId: references.classificationLogId,
-                businessId: (item as any).businessId || null,
-              });
+            // The answer is taken once: a second tap, or a retry, finds it resolved and saves nothing.
+            await claimClarification(tx, input.clarificationId, userId as number, userType as string);
+            saved = await saveClarifiedItems(tx, itemsToSave as ClarifiedItem[], {
+              userId: userId as number,
+              userType: userType as string,
+              rawText: enrichedText,
+              source: clarifiedSource,
+              askedAt: clarification.createdAt,
+              classificationLogId:
+                typeof ctxData.classificationLogId === "number" ? ctxData.classificationLogId : undefined,
+            });
+            savedCount = saved.length;
 
-              if (insertedRow?.insertId) {
-                await syncExpenseDetails(tx, insertedRow.insertId, enrichedText);
-              }
-
-              const delta = expenseToRollupDelta(
-                {
-                  userId: userId as number,
-                  userType: userType as string,
-                  businessId: (item as any).businessId || null,
-                  date: new Date(),
-                  type: item.type,
-                  amount: item.amount,
-                  source: "manual",
-                },
-                1,
-              );
-              await applyExpenseRollupDelta(tx, delta);
-
-              if (references.contactId) {
-                await tx
-                  .update(userContacts)
-                  .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
-                  .where(eq(userContacts.id, references.contactId));
-              }
-
-              if (item.person_mentioned && item.person_relationship) {
-                const pName = item.person_mentioned.trim();
-                const pRel = item.person_relationship.trim();
-                if (pName && pName !== "عام" && pName !== "شخص") {
-                  const { addDynamicContact } = await import("./services/user-profile-service");
-                  const res = await addDynamicContact(userId as number, userType as string, pName, pRel);
-                  if (res && res.isNew) newlyAddedContact = res;
-                }
-              }
-              savedCount += 1;
-            }
-
-            await tx
-              .update(pendingClarifications)
-              .set({ status: "resolved" })
-              .where(eq(pendingClarifications.id, input.clarificationId));
           });
 
+          newlyAddedContact = (await addMentionedContacts(itemsToSave as ClarifiedItem[], userId as number, userType as string)) ?? newlyAddedContact;
+          invalidateUserMemory(userId, userType);
+          invalidateUserClassificationCache(userId, userType);
           await invalidateExpenseCache(userId as number, userType as string);
           
           const hasExpenses = itemsToSave.some((item: any) => item.type === "expense");
@@ -2313,6 +2585,7 @@ export const expenseRouter = router({
         return {
           success: true,
           savedCount,
+          saved,
           needsClarification: false,
           clarificationQuestion: undefined,
           clarificationId: undefined,
@@ -2417,6 +2690,7 @@ export const expenseRouter = router({
           return {
             success: false,
             savedCount: 0,
+            saved: [] as SavedEntry[],
             needsClarification: true,
             clarificationQuestion: pipeline.clarificationQuestion || "ممكن توضح أكتر؟",
             clarificationId: input.clarificationId,
@@ -2438,56 +2712,22 @@ export const expenseRouter = router({
 
         if (pipeline.items && pipeline.items.length > 0) {
           await db.transaction(async (tx) => {
-            for (const item of pipeline.items) {
-               const [insertedRow] = await tx.insert(expenses).values({
-                 userId: userId as number,
-                 userType: userType as string,
-                 amount: item.amount.toString(),
-                 description: item.description || enrichedText,
-                 category: item.category,
-                 subCategory: item.subCategory,
-                 type: item.type,
-                 date: new Date(),
-                 source: "manual",
-                 rawText: enrichedText,
-                 businessId: (item as any).businessId || null,
-               });
-
-               if (insertedRow?.insertId) {
-                 await syncExpenseDetails(tx, insertedRow.insertId, enrichedText);
-               }
-
-               const delta = expenseToRollupDelta(
-                 {
-                   userId: userId as number,
-                   userType: userType as string,
-                   businessId: (item as any).businessId || null,
-                   date: new Date(),
-                   type: item.type,
-                   amount: item.amount,
-                   source: "manual",
-                 },
-                 1,
-               );
-               await applyExpenseRollupDelta(tx, delta);
-               
-               if (item.person_mentioned && item.person_relationship) {
-                 const pName = item.person_mentioned.trim();
-                 const pRel = item.person_relationship.trim();
-                 if (pName && pName !== "عام" && pName !== "شخص") {
-                   const { addDynamicContact } = await import("./services/user-profile-service");
-                   const res = await addDynamicContact(
-                     userId as number,
-                     userType as string,
-                     pName,
-                     pRel
-                   );
-                   if (res && res.isNew) newlyAddedContact = res;
-                 }
-               }
-               savedCount += 1;
-            }
+            // The answer is taken once: a second tap, or a retry, finds it resolved and saves nothing.
+            await claimClarification(tx, input.clarificationId, userId as number, userType as string);
+            saved = await saveClarifiedItems(tx, pipeline.items as ClarifiedItem[], {
+              userId: userId as number,
+              userType: userType as string,
+              rawText: enrichedText,
+              source: clarifiedSource,
+              askedAt: clarification.createdAt,
+              classificationLogId:
+                typeof ctxData.classificationLogId === "number" ? ctxData.classificationLogId : undefined,
+            });
+            savedCount = saved.length;
           });
+          newlyAddedContact = (await addMentionedContacts(pipeline.items as ClarifiedItem[], userId as number, userType as string)) ?? newlyAddedContact;
+          invalidateUserMemory(userId, userType);
+          invalidateUserClassificationCache(userId, userType);
           await invalidateExpenseCache(userId as number, userType as string);
           
           const hasExpenses = pipeline.items && pipeline.items.some((item: any) => item.type === "expense");
@@ -2498,10 +2738,6 @@ export const expenseRouter = router({
           }
         }
 
-        await db
-          .update(pendingClarifications)
-          .set({ status: "resolved" })
-          .where(eq(pendingClarifications.id, input.clarificationId));
       } catch (err) {
         console.error("Failed to re-run pipeline on clarification answer:", err);
         if (err instanceof TRPCError) throw err;
@@ -2518,6 +2754,7 @@ export const expenseRouter = router({
       return {
         success: true,
         savedCount,
+        saved,
         needsClarification: false,
         clarificationQuestion: undefined,
         clarificationId: undefined,

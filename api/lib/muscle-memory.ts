@@ -18,6 +18,7 @@ import { LRUCache } from "lru-cache";
 import damerauPkg from "damerau-levenshtein";
 import { arabicToEnglishNumbers } from "./text-normalizer";
 import { parseArabicNumbers } from "./arabic-number-parser";
+import { resolveLegacyTaxonomy } from "../../contracts/categories";
 const damerauLevenshtein = (a: string, b: string): number => {
   const result = (damerauPkg as any)(a, b);
   return typeof result === "number" ? result : result.steps;
@@ -194,7 +195,19 @@ async function loadUserPatterns(
       )
         continue;
 
-      const first = finalResult[0];
+      // A log written before the current taxonomy names its old place. The pair is moved
+      // to where it lives now; a money movement that was booked as spending or income is
+      // not learned from, since its direction comes from the verb, which only the full
+      // pipeline reads (docs/decisions/0008-money-movements-and-taxonomy.md).
+      const logged = finalResult[0];
+      const legacy = resolveLegacyTaxonomy(logged?.category, logged?.subCategory, logged?.type);
+      if (legacy?.type) continue;
+      // A pattern replays category and type only. An answer that also carried which way
+      // the money moved (a refund, a loan repaid) would come back without it.
+      if ((logged as { direction?: string } | undefined)?.direction) continue;
+      const first = legacy
+        ? { ...logged, category: legacy.category, subCategory: legacy.subCategory }
+        : logged;
       const confidence = log.confidence || 0;
       const type = first.type;
 

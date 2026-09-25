@@ -19,10 +19,10 @@ import {
  * allCanonicalIds() is derived independently.
  */
 const AGGREGATE_GROUP_MAP: Record<string, string[]> = {
-  income: ["salary", "freelance", "investment_income"],
+  income: ["salary", "freelance", "investment_income", "gifts_received", "other_income"],
   saving: ["transfer"],
   bills: ["bills", "daily_commitments"],
-  transport: ["transport", "car_services"],
+  transport: ["transport"],
   entertainment: ["entertainment", "outings"],
 };
 
@@ -56,17 +56,19 @@ export function canonicalCategoryForRow(
     .map((v) => normalizeFinanceText(v))
     .join(" ");
 
-  // Step 1: Infer from extra fields FIRST (description is more reliable than stored category)
+  // Step 1: the stored category is the answer the user saw and kept (or corrected), so it
+  // is what every screen counts. The description used to be read first, and a row filed
+  // under تسوق could be totalled under another category in the chat than on Home. Only a
+  // row stored as uncategorized or متنوعات is still read from its text.
+  const direct = categoryText ? canonicalCategoryId(categoryText) : "uncategorized";
+  if (direct !== "uncategorized" && direct !== "miscellaneous") return direct;
+
+  // Step 2: infer from the text of a row that has no real category.
   if (extraHaystack) {
     const inferred = inferCategoryFromHaystack(extraHaystack);
     if (inferred && inferred !== "uncategorized") return inferred;
   }
-
-  // Step 2: Try direct category match
-  if (categoryText) {
-    const direct = canonicalCategoryId(categoryText);
-    if (direct !== "uncategorized") return direct;
-  }
+  if (direct !== "uncategorized") return direct;
 
   // Step 3: Try full haystack (category + extra)
   const fullHaystack = normalizeFinanceText(categoryText) + " " + extraHaystack;
@@ -133,6 +135,17 @@ export function financeCategoryId(category: string): string {
     categoryIds.set(category, id);
   }
   return id;
+}
+
+/** Words for income as a whole, which the registry would otherwise read as "other income". */
+const ALL_INCOME = new Set(["income", "دخل", "الدخل", "دخلي"]);
+
+/** Every id a named category covers: a group ("income", "فواتير") sweeps its members. */
+export function financeCategoryIds(category: string): string[] {
+  const raw = category.trim().toLowerCase();
+  if (AGGREGATE_GROUP_MAP[raw]) return AGGREGATE_GROUP_MAP[raw];
+  if (ALL_INCOME.has(raw)) return AGGREGATE_GROUP_MAP.income;
+  return expandAggregate(financeCategoryId(category));
 }
 
 export function displayFinanceCategory(category: unknown): string {

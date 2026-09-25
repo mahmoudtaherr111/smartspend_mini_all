@@ -23,7 +23,7 @@ public pages (landing, privacy, terms and the not-found page).
 | Lock | `src/providers/BiometricLockProvider.tsx`, `src/lib/biometricAuth.ts` | The app lock and the passkey prompt ([accounts](accounts.md)) |
 | Robot check | `src/lib/turnstile-config.ts`, `src/components/auth/TurnstileWidget.tsx` | The Cloudflare Turnstile widget on the sign-up form, built in only when `VITE_TURNSTILE_SITE_KEY` is set ([accounts](accounts.md)) |
 | Behaviour hooks | `src/hooks/useAppResume.ts`, `src/hooks/useScrollRestoration.ts`, `src/hooks/useVirtualKeyboard.ts`, `src/hooks/useSwipeNavigation.ts` | Returning to the app, scroll position, the on-screen keyboard and swipe gestures |
-| Utilities | `src/lib/transactionDisplay.ts`, `src/lib/financial-taxonomy.ts`, `src/lib/utils.ts` | How a transaction is presented, the category labels and the class-name helper |
+| Utilities | `src/lib/transactionDisplay.ts`, `src/lib/financial-taxonomy.ts`, `src/lib/utils.ts` | How a transaction is presented; the category pickers, icons and colours, read from the server's taxonomy in `contracts/categories.ts` rather than a copy; the class-name helper |
 | Public pages | `src/pages/Landing.tsx`, `src/pages/More.tsx`, `src/pages/Privacy.tsx`, `src/pages/Terms.tsx`, `src/pages/NotFound.tsx` | The landing page, the settings menu, the two legal pages and the 404 |
 
 ## Routes and who may open them
@@ -110,8 +110,9 @@ Checked against the code; each one names where it lives.
    `src/lib/back-button-manager.ts` for an importer that no longer exists.
 4. **Debt.** The list of routes that show the tab bar lives in `BOTTOM_NAV_ROUTES` next to the route table, so a new
    screen has to be added in both places or it loses its navigation.
-5. **Bug.** Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from
-   `localStorage`, so anything recorded offline and not yet sent is lost with the session.
+5. **Gap.** Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from
+   `localStorage`, since they belong to the account. The logout dialog in `src/pages/More.tsx` says how many entries
+   are still unsent first; the sidebar's and the biometric lock's logout do not.
 6. **Gap.** The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten
    seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 7. **Bug.** When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in

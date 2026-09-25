@@ -43,8 +43,11 @@ type CategoryName =
   | "عوائد استثمار"
   | "تحويل"
   | "استثمار"
-  | "خدمات رقمية"
-  | "خدمات سيارات"
+  | "عناية شخصية"
+  | "أطفال"
+  | "أقساط وفوايد"
+  | "هدايا وعيديات"
+  | "دخل آخر"
   | "العائلة"
   | "أصدقاء"
   | "موظفين"
@@ -258,13 +261,19 @@ function buildDictionary(): Record<string, CategoryName> {
       "بريدفاست",
       "breadfast",
       "كارفور",
+      // Bank messages name card merchants in Latin letters.
+      "carrefour",
       "kazyon",
       "كازيون",
       "سبينيس",
       "spinneys",
+      "seoudi",
+      "metro market",
+      "gourmet",
       "هايبر وان",
       "hyper one",
       "خير زمان",
+      "kheir zaman",
     ],
     "أكل وشرب",
   );
@@ -348,7 +357,7 @@ function buildDictionary(): Record<string, CategoryName> {
       "صيانة عربية",
       "مركز صيانة",
     ],
-    "خدمات سيارات",
+    "مواصلات",
   );
 
   // ───────────────────────────────
@@ -938,24 +947,20 @@ function buildDictionary(): Record<string, CategoryName> {
     [
       "خدمات رقمية",
       "vpn",
-      "vps",
       "cloud",
-      "aws",
-      "azure",
-      "gcp",
-      "دومين",
-      "domain",
-      "استضافة",
-      "hosting",
-      "سيرفر",
-      "server",
       "اشتراك vpn",
       "اشتراك cloud",
       "ai tools",
       "ادوات ai",
       "أدوات ai",
     ],
-    "خدمات رقمية",
+    "اشتراكات",
+  );
+
+  addMany(
+    dict,
+    ["vps", "aws", "azure", "gcp", "دومين", "domain", "استضافة", "hosting", "سيرفر", "server"],
+    "عمل",
   );
 
   // ───────────────────────────────
@@ -1116,7 +1121,6 @@ function buildDictionary(): Record<string, CategoryName> {
       "راتب",
       "قبضت",
       "القبض",
-      "استلمت",
       "المعاش",
       "بونص",
       "مكافاه",
@@ -1154,12 +1158,12 @@ function buildDictionary(): Record<string, CategoryName> {
       "فوايد",
       "كاش باك",
       "cashback",
-      "استرجاع",
-      "refund",
       "عائد",
     ],
     "عوائد استثمار",
   );
+
+  addMany(dict, ["استرجاع", "refund", "مرتجع", "استرداد"], "دخل آخر");
 
   addMany(dict, ["اديت", "ديت", "إديت", "أديت", "عطيت", "اعطيت"], "متنوعات");
 

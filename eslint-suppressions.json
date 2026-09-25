@@ -4,7 +4,7 @@
       "count": 13
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 11
+      "count": 10
     },
     "no-console": {
       "count": 7
@@ -138,7 +138,7 @@
   },
   "api/expense-router.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 21
+      "count": 17
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
@@ -209,7 +209,7 @@
       "count": 1
     },
     "prefer-const": {
-      "count": 7
+      "count": 6
     }
   },
   "api/lib/ai-usage-policy.ts": {
@@ -220,11 +220,6 @@
   "api/lib/amount-linker.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 2
-    }
-  },
-  "api/lib/anomaly-detector.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 5
     }
   },
   "api/lib/category-registry.ts": {
@@ -741,7 +736,7 @@
   },
   "api/sms-router.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 14
+      "count": 10
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
@@ -1155,7 +1150,7 @@
       "count": 4
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 5
+      "count": 4
     },
     "react-refresh/only-export-components": {
       "count": 1

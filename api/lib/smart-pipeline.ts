@@ -498,27 +498,41 @@ function applyPersonResolution(
     person_relationship: resolution.relationship || item.person_relationship,
   };
 
+  // The category says what the money was for; the person is recorded beside it
+  // (person_mentioned, which the save links to a contact). "دفعت مصاريف مدرسة ابني"
+  // is تعليم for ابني, not العائلة — filing it under the person made the education total
+  // read zero. Only money handed to someone with no purpose ("اديت ماما 1000") takes
+  // the person's category (docs/decisions/0008-money-movements-and-taxonomy.md).
+  const isLoan = item.category === "تحويل" && item.subCategory === "دين/سلفة";
+  const governedHere = resolveGovernedTaxonomy(transactionText);
+  const hasPurpose = !isLoan && hasStatedPurpose(item) && !(governedHere && governedHere.id === "debt");
+
   if (resolution.needsClarification) {
-    if (hasLoanIntent(transactionText)) {
-      // Who the money went to is still unknown, so the category stays neutral — but the
-      // verb already said which way it moved, and not knowing the person is no reason to
-      // forget that.
+    if (isLoan || hasLoanIntent(transactionText)) {
+      // Who owes whom is what a loan is for, so an unknown person is asked about — but
+      // the category stays the loan, and the verb already said which way it moved.
       return {
         item: {
           ...next,
           category: "تحويل",
           subCategory: "دين/سلفة",
+          type: "transfer",
           needsReview: true,
         },
         needsClarification: true,
         clarificationQuestion: resolution.clarificationQuestion,
       };
     }
+    if (hasPurpose) {
+      // The purpose is known; the person is extra detail that can be added later. It is
+      // no reason to stop and ask before saving.
+      return { item: next, needsClarification: false };
+    }
     return {
       item: {
         ...next,
         category: resolution.category && resolution.category !== "متنوعات" ? resolution.category : next.category,
-        subCategory: "أشخاص",
+        subCategory: next.category === "تحويل" ? "أشخاص" : next.subCategory,
         confidence: Math.min(next.confidence, 60),
         needsReview: true,
       },
@@ -528,43 +542,21 @@ function applyPersonResolution(
   }
 
   if (resolution.category && resolution.subCategory) {
-    const genericCategories = ["تحويل", "متنوعات", "أخرى", "غير محدد", "عام"];
-    const isGenericCategory = !item.category || genericCategories.includes(item.category);
-    const isWeakRuleMatch = item.confidence < 85;
-    // A name the user actually has in their contacts, next to a verb that hands money to
-    // a person, outranks a global merchant list that happens to share the name.
-    // "اديت كريم 100" was filed as مواصلات/أوبر because the merchant registry answers
-    // with 100 confidence and this only yielded to a weak match — so the user's own
-    // friend lost to a ride-hailing brand. "ركبت كريم 100" has no directed verb and
-    // still reads as the ride.
-    // ...but not over a direction-governed noun: "قبضت 5000 من مروان الجمعية" is a
-    // gam3eya payout that happened to name a brother, and التزامات وجمعيات is the more
-    // specific answer than العائلة. The debt family is the exception — there the person
-    // IS the category, which is why it is allowed through.
-    const governedHere = resolveGovernedTaxonomy(transactionText);
-    // A kinship word counts here even though it is in nobody's contact list: "حولت لأمي
-    // ألفين على فودافون كاش" is money to family, and فودافون كاش is the rail it travelled
-    // on, not what it was spent on — that sentence was filed under فواتير.
-    const paidThePersonDirectly =
-      PERSON_CATEGORIES.includes(resolution.category || "") &&
+    // A brand that shares the name of someone the user pays directly is not a purpose:
+    // "اديت كريم 100" to a friend called Karim is not a Careem ride.
+    const purposeIsTheName =
       isDirectedPersonPayment(transactionText, resolution.name) &&
+      (item.evidence?.matchKind === "merchant_registry" || item.evidence?.matchKind === "merchant_disambiguated");
+    const takesPersonCategory =
+      !isLoan &&
+      PERSON_CATEGORIES.includes(resolution.category) &&
+      (!hasPurpose || purposeIsTheName) &&
       (!governedHere || governedHere.id === "debt");
-    if (isGenericCategory || (resolution.isKnown && isWeakRuleMatch) || paidThePersonDirectly) {
+    if (takesPersonCategory) {
       next.category = resolution.category;
+      next.subCategory = resolution.subCategory;
+      if (next.type !== "income") next.type = "expense";
     }
-    next.subCategory = resolution.subCategory;
-    // This layer knows WHO, not WHICH WAY. It used to decide both for a loan, and got
-    // both wrong: "سلفت سيف تلتمية" was overwritten back to a generic تحويل — losing the
-    // person it had just resolved — and "استلفت من محمود خمسمية" was filed as مرتب, so
-    // borrowed money showed up as salary in the reports and the admin analytics. The
-    // verb governs direction upstream; the resolved person governs the category.
-    if (next.type !== "income" && PERSON_CATEGORIES.includes(next.category || "")) {
-      next.type = "expense";
-    }
-    // Resolving WHO the money went to says nothing about whether the CATEGORY is right,
-    // yet this used to lift any item with a recognised name to 96 — enough for a fuzzy
-    // typo match on a person's name to auto-save. The resolution is recorded as
-    // evidence so calibration can price it, and it no longer forces needsReview off.
     next.evidence = next.evidence
       ? { ...next.evidence, personResolved: resolution.isKnown ? "known" : "unknown" }
       : next.evidence;
@@ -575,6 +567,19 @@ function applyPersonResolution(
   }
 
   return { item: next, needsClarification: false };
+}
+
+/**
+ * Whether the item already names what the money was for, from real evidence rather than
+ * a fallback: a category that is neither a catch-all nor a person, reached by a lexicon,
+ * merchant, pattern or user-taught match.
+ */
+function hasStatedPurpose(item: ParsedTransaction): boolean {
+  const generic = ["تحويل", "متنوعات", "أخرى", "غير محدد", "عام", ""];
+  if (generic.includes(item.category || "") || PERSON_CATEGORIES.includes(item.category || "")) return false;
+  const weakKinds = ["fuzzy", "intent_only", "fallback", "embedding"];
+  const kind = item.evidence?.matchKind;
+  return !kind || !weakKinds.includes(kind);
 }
 
 /**
@@ -979,6 +984,19 @@ async function classifyAdmittedEvents(
         parsedBy: "rule_engine",
         inferenceSource: "dictionary",
         ambiguityFlags: ["muscle_memory_hit"],
+        // A pattern the user saved at least twice without correcting it: priced as a
+        // trusted source by the calibrator rather than left unpriced.
+        evidence: {
+          matchKind: "muscle_memory",
+          rawStrength: Math.min(100, memoryMatch.pattern.confidence),
+          agreement: 0,
+          disagreement: 0,
+          anchorConsumed: true,
+          categoryIsFallback: memoryMatch.pattern.category === "متنوعات",
+          personResolved: "none",
+          hasAmbiguityPenalty: false,
+          ambiguityFlagCount: 1,
+        },
       };
 
       const memKnownNames = knownPeople.map((p) => p.name).filter(Boolean);
@@ -1928,21 +1946,23 @@ async function classifyAdmittedEvents(
         maxOutputTokens: Math.min(input.maxTokens || 512, 60 + clauses.length * 40),
         temperature: 0.1,
         schema: CATEGORY_CLASSIFIER_SCHEMA as unknown as StructuredSchema,
-        // Long enough for a full narrative, short enough that a hung provider still
-        // leaves room in the 8-second budget for the next one in the chain. Settable so a
+        // A category per clause is a few dozen output tokens: a served fast model answers in
+        // one to three seconds. Eight seconds is room for a slow answer while a hung
+        // provider still leaves time for the next one in the chain. Settable so a
         // benchmark can measure a slow endpoint's ACCURACY without that endpoint's speed
-        // silently becoming the result — production keeps the 25 seconds.
-        timeoutMs: settingNumber(input.pipelineSettings || {}, "llm_timeout_ms", 25_000),
+        // silently becoming the result.
+        timeoutMs: settingNumber(input.pipelineSettings || {}, "llm_timeout_ms", 8_000),
         // A ceiling for the whole chain, not just for each provider in it.
         //
-        // Five routes at 25 seconds each bounded nothing the user experiences. Whatever
-        // the per-route timeout is, the trip ends here — and the chain will not start a
-        // route it cannot finish inside what remains, because a request the client has
-        // already abandoned still costs tokens on the way to being ignored.
+        // Five routes at 25 seconds each bounded nothing the user experiences, and a
+        // 45-second trip was still a user staring at a spinner to record a coffee. Whatever
+        // the per-route timeout is, the trip ends at 15 seconds — two routes' worth — and
+        // the chain will not start a route it cannot finish inside what remains. A trip
+        // that ends without an answer keeps the local answer and goes to review.
         deadlineMs: settingNumber(
           input.pipelineSettings || {},
           "llm_trip_deadline_ms",
-          45_000,
+          15_000,
         ),
       });
 
@@ -2216,7 +2236,7 @@ async function classifyAdmittedEvents(
           // Only convert to عيدية if the text explicitly mentions eid/eidiya context
           const textLower = input.text.toLowerCase();
           if (/(عيد|عيدي|عيديه|عيدية)/.test(textLower)) {
-            item.category = "هدايا وصدقات";
+            item.category = "هدايا وعيديات";
             item.subCategory = "عيدية";
           }
           // Otherwise keep as مرتب — small income is still income (freelance, cashback, etc.)

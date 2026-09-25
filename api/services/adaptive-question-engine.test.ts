@@ -63,3 +63,19 @@ describe("adaptive question engine", () => {
     expect(current.onboardingAnswers.income_level.skipped).toBe(false);
   });
 });
+
+describe("people named in onboarding", () => {
+  it("names each child, sibling and parent with the question's relationship", async () => {
+    const { namedPeopleOfAnswer } = await import("./adaptive-question-engine");
+    expect(namedPeopleOfAnswer("children_names", ["يوسف", "مريم", "يوسف", "م"])).toEqual([
+      { name: "يوسف", relationship: "ابن/ابنة" },
+      { name: "مريم", relationship: "ابن/ابنة" },
+    ]);
+    expect(namedPeopleOfAnswer("partner_name", "سارة")).toEqual([{ name: "سارة", relationship: "زوج/زوجة" }]);
+    expect(namedPeopleOfAnswer("regular_contacts", "احمد، كريم")).toHaveLength(2);
+  });
+  it("names nobody for a question that is not about people", async () => {
+    const { namedPeopleOfAnswer } = await import("./adaptive-question-engine");
+    expect(namedPeopleOfAnswer("smoking", "yes")).toEqual([]);
+  });
+});

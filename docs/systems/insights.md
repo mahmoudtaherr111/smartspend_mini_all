@@ -34,7 +34,7 @@ spending, and the people they deal with. Classification prompts read the same pr
    1st, calendar months otherwise. A month without rows returns a fixed "nothing recorded yet" answer that is not saved.
 4. **Server-side analysis.** From the rows it computes the behaviour snapshot, category and subcategory totals and
    their change from the previous period, a personality (balanced, impulsive, conservative or stressed, from the share
-   of flexible categories and the monthly change), alerts (one dominant category, a large rise or fall, spending close
+   of discretionary categories, `DISCRETIONARY_CATEGORIES` in `contracts/categories.ts`, and the monthly change), alerts (one dominant category, a large rise or fall, spending close
    to or far below income), bills that were paid last period but not yet this one, and a month-end forecast for the
    current month.
 5. **Model settings.** `getAiClient("report", plan)` in `api/ai-router.ts` refuses the request when
@@ -140,19 +140,22 @@ printable HTML file that the browser downloads.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Bug.** The WhatsApp report describes the month that has just started: the scheduler calls `runMonthlyReportJob` without a
-   month at 02:00 on the 1st, and the job takes the month from `new Date().toISOString()`.
-2. **Gap.** Names given in the onboarding questions (children, partner, siblings, parents, pets, regular contacts) are saved
-   in the profile but never copied into `user_contacts` once the profile is marked as migrated, which its first save
-   does; `getSmartProfile` then blanks those lists, so classification prompts and reports never see them.
+1. **Gap.** The scheduled report describes the Cairo month that ended (`reportMonthFor` in
+   `api/jobs/monthly-report-job.ts`); a report asked for from the app or the admin still names its month explicitly,
+   and nothing re-sends a month whose scheduled run failed.
+2. **Gap.** Names given in the onboarding questions (children, partner, siblings, parents, regular contacts) become
+   contacts when the answer is saved (`namedPeopleOfAnswer` in `api/services/adaptive-question-engine.ts`, called by
+   `profile.submitOnboardingAnswer`). Names answered before that, after the profile was marked as migrated, stay in the
+   profile only, and `getSmartProfile` blanks those lists; pet names are never contacts.
 3. **Bug.** `getSmartProfile` appends the latest learning events, with literal `\n` text, to the inferred spending behaviour.
    Every onboarding answer or profile edit saves that value, so it grows until the next behaviour refresh replaces
    it, and `summarizeProfileForAI` sends it to classification prompts.
 4. **Bug.** Refreshing a month that already has a report skips the waiting period, so the analysis of that month can be
    regenerated, with a paid model call, as often as the AI rate limit allows. A `report_limit_<plan>` of 0 falls back
    to 30 days.
-5. **Bug.** Only users on the `pro` plan get the WhatsApp report: Ultra users never do, and the job ignores the "send the
-   report on WhatsApp" switch in Settings (`whatsappReportsEnabled`).
+5. **Bug.** The WhatsApp report goes to the plans whose `feature_whatsapp_report_<plan>` switch is on — Pro only by
+   default, so Ultra users do not get it until an admin turns it on — and the job ignores the user's "send the report on
+   WhatsApp" switch in Settings (`whatsappReportsEnabled`).
 6. **Bug.** With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and
    family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the
    financial month only.
@@ -167,18 +170,15 @@ Checked against the code; each one names where it lives.
 11. **Bug.** Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period
     is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is
     ahead of UTC; snapshot days are grouped by UTC date.
-12. **Bug.** The printable report is branded "SpinSmart" in its default header and footer (`api/services/pro-report-engine.ts`).
-13. **Debt.** `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns
+12. **Debt.** `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns
     with `ALTER TABLE` when a read fails, outside the migrations in `db/`.
-14. **Debt.** The behaviour snapshots are written but not read: `getProactiveInsights` in
+13. **Debt.** The behaviour snapshots are written but not read: `getProactiveInsights` in
     `api/services/finance-semantic-layer/proactive-insights.ts` has no caller, and no caller asks the facts pack to
     prefer a snapshot.
 15. **Debt.** Unused code: `api/services/batch-ai-service.ts` only simulates a Gemini batch job; `buildProReportPrompt` and
     `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are
     not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called
     only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.
-16. **Bug.** The flexible-spending lists in `generateMonthlyInsights` and `buildBehaviorSnapshot` name categories that
-    `api/lib/category-registry.ts` no longer has (رفاهية, خروجات) or stores under another name (هدايا وصدقات).
 
 ## Related systems
 - [AI Center](ai-center.md): hosts the analysis tab and owns the finance layer the facts come from.

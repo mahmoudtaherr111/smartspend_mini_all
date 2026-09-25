@@ -191,6 +191,14 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
     description: "Unresolved API key errors.",
   },
   {
+    tableName: "raw_sms_events",
+    class: "E",
+    retainDays: 90,
+    dateColumn: "created_at",
+    description:
+      "Raw bank and wallet messages, with account digits and balances. What they recorded lives on in expenses; a suggestion left unanswered for 90 days goes with them.",
+  },
+  {
     tableName: "profile_learning_events",
     class: "E",
     retainDays: 180,
