@@ -99,7 +99,8 @@ A message past the plan's limit is not lost (docs/decisions/0009-bank-messages-o
 ## Setting up a phone
 **Android**
 1. `AndroidSetupFlow` downloads `/downloads/smartspend-sync.apk`.
-2. "Connect" calls `GET /api/sms/android-connect`, authenticated by the `google_session` cookie or a Bearer header
+2. "Connect" calls `GET /api/sms/android-connect` with the browser's cookies, authenticated by the `google_session`
+   cookie, a Bearer header, or the HttpOnly `smartspend_token` cookie of a phone and password account
    (`api/sms-router.ts#getUserFromSession`). It creates a token when the user has none and returns
    `smartspend://connect?token=…&url=…`, which the page opens.
 3. `DeepLinkActivity` stores the token and address and leads the user to grant notification access.
@@ -161,22 +162,20 @@ tests the ingest route or the rule templates directly.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Bug.** Connecting Android fails for phone and password accounts: `AndroidSetupFlow` sends `auth_token` from browser
-   storage, which the app never writes (login stores `local_auth_token`, and the `smartspend_token` session cookie is
-   HttpOnly), while `getUserFromSession` accepts only the `google_session` cookie or a Bearer header.
-2. **Bug.** The APK link, `/downloads/smartspend-sync.apk`, is not in the repository, so the download serves the web app
-   instead (`android-app/README.md`).
-3. **Gap.** The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY`
+1. **Gap.** The APK behind `/downloads/smartspend-sync.apk` is a debug build that `.github/workflows/build-apk.yml` commits
+   when `android-app/` changes; it is signed with the runner's throwaway debug key, so a newer build cannot install
+   over an older one until a release key is configured.
+2. **Gap.** The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY`
    directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
-4. **Gap.** Only a merchant the engine knows well changes the fixed map: a card payment to any other merchant is
+3. **Gap.** Only a merchant the engine knows well changes the fixed map: a card payment to any other merchant is
    `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not
    classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
-5. **Debt.** `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but
+4. **Debt.** `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but
    `api/jobs/data-retention-job.ts` has no policy for it: full message texts stay until the account is deleted.
-6. **Bug.** The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
-7. **Bug.** With several server processes, a one-time code created on one cannot be exchanged on another, and each process
+5. **Bug.** The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
+6. **Bug.** With several server processes, a one-time code created on one cannot be exchanged on another, and each process
    counts the rate limit on its own.
-8. **Debt.** `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
+7. **Debt.** `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 ## Related systems
 - [Money](money.md): the ledger the messages are saved into, and the wallets the digital wallet view manages.

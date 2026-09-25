@@ -170,11 +170,11 @@
     },
     "bank-messages": {
       "files": {
-        ".github/workflows/build-apk.yml": "1a55b9f4be7d",
+        ".github/workflows/build-apk.yml": "17a30280e6fc",
         "android-app/app/build.gradle": "ad0b32dc51ad",
         "android-app/app/src/main/AndroidManifest.xml": "87c8ff2d8f58",
         "android-app/app/src/main/java/com/smartspend/sync/DeepLinkActivity.kt": "d0cd83e77b4d",
-        "android-app/app/src/main/java/com/smartspend/sync/SyncService.kt": "375f3c6035f0",
+        "android-app/app/src/main/java/com/smartspend/sync/SyncService.kt": "3f742c67f26e",
         "api/lib/shortcut-generator.ts": "fbf02d8e0f5d",
         "api/lib/sms-ai-parser.ts": "f748c952734f",
         "api/lib/sms-rule-parser.ts": "e6e1e7b524d5",
@@ -187,17 +187,17 @@
         "api/profile-router.ts#profile.getWebhookToken": "8a850e31cd9d",
         "api/profile-router.ts#rest-of-file": "edf9095ff413",
         "api/services/sms-ledger.ts": "8f28adc733f5",
-        "api/sms-router.ts": "9a1a0e93ed30",
-        "src/components/bank-sync/AndroidSetupFlow.tsx": "68fd301a1dfb",
+        "api/sms-router.ts": "86e5a8c4a6ef",
+        "src/components/bank-sync/AndroidSetupFlow.tsx": "a46afb8f98d0",
         "src/components/bank-sync/DigitalBankingSuite.tsx": "b5ee9812af75",
         "src/components/bank-sync/IosSetupFlow.tsx": "e3bd2e8139d6",
         "src/components/bank-sync/SmsSuggestionsCard.tsx": "cd1997539ec1",
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-25 339aea2",
-      "arabic": "e4d69c1be4b1",
-      "arabicChecked": "2026-09-25 339aea2"
+      "checked": "2026-09-25 010e167",
+      "arabic": "a2ac2c09a91d",
+      "arabicChecked": "2026-09-25 010e167"
     },
     "billing": {
       "files": {

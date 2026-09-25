@@ -118,9 +118,22 @@ class SyncService : NotificationListenerService() {
 
         /** Helper to identify personal phone numbers and avoid importing private chats */
         fun isPersonalPhoneNumber(title: String): Boolean {
-            val clean = title.replace("\\s".toRegex(), "")
-            return clean.matches("^(\\+?20)?0?1[0125]\\d{8}$".toRegex()) || 
-      override fun onNotificationPosted(sbn: StatusBarNotification) {
+            val clean = title.replace("[\\s\\-()]".toRegex(), "")
+            // An Egyptian mobile number, local or international, or any other long run of
+            // digits: banks and wallets send under a name or a short code, never these.
+            return clean.matches("^(\\+?20)?0?1[0125]\\d{8}$".toRegex()) ||
+                clean.matches("^\\+?\\d{10,15}$".toRegex())
+        }
+    }
+
+    /** One client for every send: its connection pool and timeouts are shared. */
+    private val httpClient: OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    override fun onNotificationPosted(sbn: StatusBarNotification) {
         try {
             val pkg = (sbn.packageName ?: "").lowercase()
 
@@ -357,9 +370,15 @@ class SyncService : NotificationListenerService() {
             }
             override fun onResponse(call: Call, response: Response) {
                 val code = response.code
-                val respBody = response.body?.string()
-                Log.d(TAG, "✅ Sent to SmartSpend | HTTP $code | $respBody")
                 response.close()
+                if (code >= 500) {
+                    // The server failed, not the message: keep it for the next send.
+                    Log.w(TAG, "SmartSpend answered HTTP $code. Saving to offline queue.")
+                    saveToQueue(sender, message, timestamp)
+                    return
+                }
+                // The response body holds the amount and category: it is not logged.
+                Log.d(TAG, "Sent to SmartSpend | HTTP $code")
                 tryFlushQueue()
             }
         })

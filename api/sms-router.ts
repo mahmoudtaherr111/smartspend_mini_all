@@ -163,6 +163,14 @@ async function getUserFromSession(c: any): Promise<{
       if (activeSession) return { id: activeSession.userId, type: activeSession.userType };
     }
   }
+
+  // 3. The HttpOnly session cookie of a phone and password account, which the web app
+  // cannot read and so could never send as a Bearer header.
+  const localToken = getCookie(c, "smartspend_token") || getCookie(c, "local_session");
+  if (localToken) {
+    const activeSession = await validateActiveSessionToken(localToken.trim());
+    if (activeSession) return { id: activeSession.userId, type: activeSession.userType };
+  }
   return null;
 }
 

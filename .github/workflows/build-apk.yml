@@ -1,10 +1,14 @@
 name: Build Android APK
 
+# The companion app only changes when its own files do. Building on every push to main
+# committed a new 6 MB binary each time.
 on:
   push:
     branches:
       - main
-      - master
+    paths:
+      - "android-app/**"
+      - ".github/workflows/build-apk.yml"
   workflow_dispatch: # يسمح بتشغيل البناء يدوياً من موقع GitHub
 
 permissions:
@@ -24,23 +28,17 @@ jobs:
           distribution: "zulu"
           java-version: "17"
 
+      # A pinned Gradle: the Android plugin 8.2 does not run on Gradle 9, which a generated
+      # wrapper would pick up from the runner.
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
-
-      - name: Generate Gradle Wrapper
-        run: |
-          cd android-app
-          gradle wrapper
-
-      - name: Grant Execute Permission to Gradlew
-        run: |
-          cd android-app
-          chmod +x gradlew
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.3"
 
       - name: Build Debug APK
         run: |
           cd android-app
-          ./gradlew assembleDebug
+          gradle assembleDebug --no-daemon
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -58,5 +56,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add public/downloads/smartspend-sync.apk
-          git commit -m "chore: update compiled android apk [skip ci]" || echo "No changes to commit"
+          git commit -m "chore: update compiled android apk [skip ci]" || { echo "No changes to commit"; exit 0; }
+          # main may have moved while the app was building.
+          git pull --rebase origin main
           git push origin main

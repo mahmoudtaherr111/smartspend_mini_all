@@ -66,3 +66,9 @@ docs-site/dist/
 docs-site/.astro/
 docs-site/public/map/
 docs-site/src/content/docs/
+
+# Android companion app build output
+android-app/.gradle/
+android-app/build/
+android-app/app/build/
+android-app/local.properties

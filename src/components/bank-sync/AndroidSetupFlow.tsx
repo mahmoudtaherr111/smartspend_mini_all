@@ -49,11 +49,9 @@ export function AndroidSetupFlow({ onBack }: Props) {
     setIsConnecting(true);
     try {
       // Ask the backend for the signed deep link (token auto-created if missing)
-      const res = await fetch("/api/sms/android-connect", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("auth_token") || sessionStorage.getItem("auth_token") || ""}`,
-        },
-      });
+      // The session cookie authenticates both account kinds: Google's google_session and
+      // the HttpOnly smartspend_token of phone and password accounts.
+      const res = await fetch("/api/sms/android-connect", { credentials: "include" });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
