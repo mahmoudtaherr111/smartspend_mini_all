@@ -185,6 +185,137 @@ async function claimClarification(tx: Parameters<Parameters<typeof db.transactio
   }
 }
 
+type LedgerTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** An item a clarification saves, as the pipeline or the stored question left it. */
+type ClarifiedItem = {
+  amount: number;
+  category: string;
+  subCategory?: string | null;
+  type: string;
+  description?: string;
+  date?: string;
+  direction?: "incoming" | "outgoing";
+  businessId?: number | null;
+  person_mentioned?: string;
+  person_relationship?: string;
+};
+
+export type SavedEntry = {
+  id: number;
+  amount: number;
+  category: string;
+  subCategory: string | null;
+  type: string;
+  direction: "incoming" | "outgoing" | null;
+};
+
+/**
+ * The date an answered item is saved on: the one the sentence named ("امبارح"), else the day
+ * the question was asked, never the day it was answered.
+ */
+export function clarifiedItemDate(item: { date?: string }, askedAt: Date | null | undefined): Date {
+  const named = item.date ? new Date(item.date) : null;
+  if (named && !isNaN(named.getTime())) return named;
+  return askedAt && !isNaN(new Date(askedAt).getTime()) ? new Date(askedAt) : new Date();
+}
+
+/**
+ * Saves the items of an answered clarification the way `expense.create` saves one: its date
+ * and source, the rollup delta, the contact's count and the streak, all in the caller's
+ * transaction. Returns what was saved so the app can show it and offer undo.
+ */
+async function saveClarifiedItems(
+  tx: LedgerTx,
+  items: ClarifiedItem[],
+  options: {
+    userId: number;
+    userType: string;
+    rawText: string;
+    source: string;
+    askedAt: Date | null | undefined;
+    classificationLogId?: number;
+  },
+): Promise<SavedEntry[]> {
+  const saved: SavedEntry[] = [];
+  for (const item of items) {
+    const references = await resolveExpenseReferences(
+      { category: item.category, subCategory: item.subCategory ?? undefined, classificationLogId: options.classificationLogId },
+      options.userId,
+      options.userType,
+    );
+    const date = clarifiedItemDate(item, options.askedAt);
+    const amount = ledgerAmount(item.type, item.direction, item.amount);
+    const [insertedRow] = await tx.insert(expenses).values({
+      userId: options.userId,
+      userType: options.userType,
+      amount: amount.toString(),
+      description: item.description || options.rawText,
+      category: item.category,
+      subCategory: item.subCategory || "عام",
+      type: item.type,
+      date,
+      source: options.source,
+      rawText: options.rawText,
+      contactId: references.contactId,
+      classificationLogId: references.classificationLogId,
+      businessId: item.businessId || null,
+      parsedMetadata: item.direction ? { direction: item.direction } : null,
+    });
+    const id = Number((insertedRow as { insertId?: number })?.insertId ?? 0);
+    if (id) await syncExpenseDetails(tx, id, options.rawText);
+    await applyExpenseRollupDelta(
+      tx,
+      expenseToRollupDelta(
+        {
+          userId: options.userId,
+          userType: options.userType,
+          businessId: item.businessId || null,
+          date,
+          type: item.type,
+          amount,
+          source: options.source,
+        },
+        1,
+      ),
+    );
+    if (references.contactId) {
+      await tx
+        .update(userContacts)
+        .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
+        .where(eq(userContacts.id, references.contactId));
+    }
+    saved.push({
+      id,
+      amount: Math.abs(item.amount),
+      category: item.category,
+      subCategory: item.subCategory ?? null,
+      type: item.type,
+      direction: item.direction ?? null,
+    });
+  }
+  if (saved.length > 0) await updateStreak(tx, options.userId, options.userType);
+  return saved;
+}
+
+/** Adds the people an answered item named (with their relationship) to the user's contacts. */
+async function addMentionedContacts(
+  items: ClarifiedItem[],
+  userId: number,
+  userType: string,
+): Promise<{ isNew: boolean; name: string; totalContacts: number } | null> {
+  let added: { isNew: boolean; name: string; totalContacts: number } | null = null;
+  const { addDynamicContact } = await import("./services/user-profile-service");
+  for (const item of items) {
+    const name = item.person_mentioned?.trim();
+    const relationship = item.person_relationship?.trim();
+    if (!name || !relationship || name === "عام" || name === "شخص") continue;
+    const result = await addDynamicContact(userId, userType, name, relationship);
+    if (result?.isNew) added = result;
+  }
+  return added;
+}
+
 /**
  * What the user changed on the review card before saving, compared with what the parser
  * proposed. Only a sentence the parser read as ONE item teaches a rule: its whole text is
@@ -2224,6 +2355,7 @@ export const expenseRouter = router({
       }
 
       let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;
+      let saved: SavedEntry[] = [];
       let ctxData: Record<string, any> = {};
       if (typeof clarification.contextData === "string") {
         try {
@@ -2235,6 +2367,9 @@ export const expenseRouter = router({
         ctxData = clarification.contextData as Record<string, any>;
       }
 
+      // Saved as the sentence came in (typed or spoken); questions stored before the source
+      // was kept are typed.
+      const clarifiedSource = ctxData.source === "voice" ? "voice" : "manual";
       const pendingNames: string[] = Array.isArray(ctxData.pendingNames) ? [...ctxData.pendingNames] : [];
       const resolvedAnswers: Record<string, string> = typeof ctxData.resolvedAnswers === "object" && !Array.isArray(ctxData.resolvedAnswers) ? { ...ctxData.resolvedAnswers } : {};
 
@@ -2311,6 +2446,7 @@ export const expenseRouter = router({
           return {
             success: false,
             savedCount: 0,
+            saved: [] as SavedEntry[],
             needsClarification: true,
             clarificationQuestion: nextQuestion,
             clarificationId: input.clarificationId,
@@ -2397,81 +2533,22 @@ export const expenseRouter = router({
           await db.transaction(async (tx) => {
             // The answer is taken once: a second tap, or a retry, finds it resolved and saves nothing.
             await claimClarification(tx, input.clarificationId, userId as number, userType as string);
-            for (const item of itemsToSave) {
-              const references = await resolveExpenseReferences(
-                {
-                  category: item.category,
-                  subCategory: item.subCategory,
-                  classificationLogId:
-                    typeof ctxData.classificationLogId === "number"
-                      ? ctxData.classificationLogId
-                      : undefined,
-                },
-                userId,
-                userType,
-              );
-              const [insertedRow] = await tx.insert(expenses).values({
-                userId: userId as number,
-                userType: userType as string,
-                amount: ledgerAmount(item.type, (item as { direction?: string }).direction, item.amount).toString(),
-                description: item.description || enrichedText,
-                category: item.category,
-                subCategory: item.subCategory,
-                type: item.type,
-                date: new Date(),
-                source: "manual",
-                rawText: enrichedText,
-                contactId: references.contactId,
-                classificationLogId: references.classificationLogId,
-                businessId: (item as any).businessId || null,
-                parsedMetadata: (item as { direction?: string }).direction
-                  ? { direction: (item as { direction?: string }).direction }
-                  : null,
-              });
+            saved = await saveClarifiedItems(tx, itemsToSave as ClarifiedItem[], {
+              userId: userId as number,
+              userType: userType as string,
+              rawText: enrichedText,
+              source: clarifiedSource,
+              askedAt: clarification.createdAt,
+              classificationLogId:
+                typeof ctxData.classificationLogId === "number" ? ctxData.classificationLogId : undefined,
+            });
+            savedCount = saved.length;
 
-              if (insertedRow?.insertId) {
-                await syncExpenseDetails(tx, insertedRow.insertId, enrichedText);
-              }
-
-              const delta = expenseToRollupDelta(
-                {
-                  userId: userId as number,
-                  userType: userType as string,
-                  businessId: (item as any).businessId || null,
-                  date: new Date(),
-                  type: item.type,
-                  amount: ledgerAmount(item.type, (item as { direction?: string }).direction, item.amount),
-                  source: "manual",
-                },
-                1,
-              );
-              await applyExpenseRollupDelta(tx, delta);
-
-              if (references.contactId) {
-                await tx
-                  .update(userContacts)
-                  .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
-                  .where(eq(userContacts.id, references.contactId));
-              }
-
-              if (item.person_mentioned && item.person_relationship) {
-                const pName = item.person_mentioned.trim();
-                const pRel = item.person_relationship.trim();
-                if (pName && pName !== "عام" && pName !== "شخص") {
-                  const { addDynamicContact } = await import("./services/user-profile-service");
-                  const res = await addDynamicContact(userId as number, userType as string, pName, pRel);
-                  if (res && res.isNew) newlyAddedContact = res;
-                }
-              }
-              savedCount += 1;
-            }
-
-            await tx
-              .update(pendingClarifications)
-              .set({ status: "resolved" })
-              .where(eq(pendingClarifications.id, input.clarificationId));
           });
 
+          newlyAddedContact = (await addMentionedContacts(itemsToSave as ClarifiedItem[], userId as number, userType as string)) ?? newlyAddedContact;
+          invalidateUserMemory(userId, userType);
+          invalidateUserClassificationCache(userId, userType);
           await invalidateExpenseCache(userId as number, userType as string);
           
           const hasExpenses = itemsToSave.some((item: any) => item.type === "expense");
@@ -2493,6 +2570,7 @@ export const expenseRouter = router({
         return {
           success: true,
           savedCount,
+          saved,
           needsClarification: false,
           clarificationQuestion: undefined,
           clarificationId: undefined,
@@ -2597,6 +2675,7 @@ export const expenseRouter = router({
           return {
             success: false,
             savedCount: 0,
+            saved: [] as SavedEntry[],
             needsClarification: true,
             clarificationQuestion: pipeline.clarificationQuestion || "ممكن توضح أكتر؟",
             clarificationId: input.clarificationId,
@@ -2620,57 +2699,20 @@ export const expenseRouter = router({
           await db.transaction(async (tx) => {
             // The answer is taken once: a second tap, or a retry, finds it resolved and saves nothing.
             await claimClarification(tx, input.clarificationId, userId as number, userType as string);
-            for (const item of pipeline.items) {
-               const [insertedRow] = await tx.insert(expenses).values({
-                 userId: userId as number,
-                 userType: userType as string,
-                 amount: ledgerAmount(item.type, item.direction, item.amount).toString(),
-                 description: item.description || enrichedText,
-                 category: item.category,
-                 subCategory: item.subCategory,
-                 type: item.type,
-                 date: new Date(),
-                 source: "manual",
-                 rawText: enrichedText,
-                 businessId: (item as any).businessId || null,
-                 parsedMetadata: item.direction ? { direction: item.direction } : null,
-               });
-
-               if (insertedRow?.insertId) {
-                 await syncExpenseDetails(tx, insertedRow.insertId, enrichedText);
-               }
-
-               const delta = expenseToRollupDelta(
-                 {
-                   userId: userId as number,
-                   userType: userType as string,
-                   businessId: (item as any).businessId || null,
-                   date: new Date(),
-                   type: item.type,
-                   amount: ledgerAmount(item.type, item.direction, item.amount),
-                   source: "manual",
-                 },
-                 1,
-               );
-               await applyExpenseRollupDelta(tx, delta);
-               
-               if (item.person_mentioned && item.person_relationship) {
-                 const pName = item.person_mentioned.trim();
-                 const pRel = item.person_relationship.trim();
-                 if (pName && pName !== "عام" && pName !== "شخص") {
-                   const { addDynamicContact } = await import("./services/user-profile-service");
-                   const res = await addDynamicContact(
-                     userId as number,
-                     userType as string,
-                     pName,
-                     pRel
-                   );
-                   if (res && res.isNew) newlyAddedContact = res;
-                 }
-               }
-               savedCount += 1;
-            }
+            saved = await saveClarifiedItems(tx, pipeline.items as ClarifiedItem[], {
+              userId: userId as number,
+              userType: userType as string,
+              rawText: enrichedText,
+              source: clarifiedSource,
+              askedAt: clarification.createdAt,
+              classificationLogId:
+                typeof ctxData.classificationLogId === "number" ? ctxData.classificationLogId : undefined,
+            });
+            savedCount = saved.length;
           });
+          newlyAddedContact = (await addMentionedContacts(pipeline.items as ClarifiedItem[], userId as number, userType as string)) ?? newlyAddedContact;
+          invalidateUserMemory(userId, userType);
+          invalidateUserClassificationCache(userId, userType);
           await invalidateExpenseCache(userId as number, userType as string);
           
           const hasExpenses = pipeline.items && pipeline.items.some((item: any) => item.type === "expense");
@@ -2681,10 +2723,6 @@ export const expenseRouter = router({
           }
         }
 
-        await db
-          .update(pendingClarifications)
-          .set({ status: "resolved" })
-          .where(eq(pendingClarifications.id, input.clarificationId));
       } catch (err) {
         console.error("Failed to re-run pipeline on clarification answer:", err);
         if (err instanceof TRPCError) throw err;
@@ -2701,6 +2739,7 @@ export const expenseRouter = router({
       return {
         success: true,
         savedCount,
+        saved,
         needsClarification: false,
         clarificationQuestion: undefined,
         clarificationId: undefined,

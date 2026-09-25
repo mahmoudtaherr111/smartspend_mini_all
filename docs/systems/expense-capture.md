@@ -264,6 +264,13 @@ expense with source `image`, without a review step. The form offers the camera o
 A question is answered once: the save transaction moves it from `pending` to `resolved` only if it was still
 pending (`claimClarification`), so a second tap or a retry saves nothing and gets "اتجاوب قبل كده".
 
+Both modes save through `saveClarifiedItems`, as `expense.create` saves: each item on the date the sentence named,
+else the day the question was asked (`clarifiedItemDate`); with the source the sentence came in (`voice` for a
+spoken one, whose question stores `source`, else `manual`); with its contact, classification log, direction and
+signed amount (`ledgerAmount`); with the rollup delta and the streak in the same transaction. Afterwards muscle
+memory, the classification cache and the finance caches are cleared, and the saved items come back (`saved`): the
+entry form and the "محتاج ردك" card say what was saved and offer "تراجع", which deletes exactly those ids.
+
 `expense.getPendingClarifications` lists the open questions. The Home record tab shows them under "محتاج ردك"
 (`src/components/expenses/PendingQuestionsCard.tsx`): each can be answered there, which saves it, or dropped with
 `expense.dismissClarification` (status `ignored`). The live call reads them too and can finish one with the user's
@@ -317,9 +324,8 @@ answer ([voice calls](voice-calls.md#the-tools)).
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Bug.** Saves made from a clarification skip what `expense.create` does after writing: muscle memory and the
-   classification cache are not cleared, the streak is not updated, the rows get source `manual`, and the
-   free-answer mode links no contact and no classification log.
+1. **Gap.** A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع"
+   rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
 2. **Bug.** Receipts are saved without review. The saved amount is the first item the pipeline read from the OCR text,
    which can differ from the total the vision model returned, and a base64 image longer than the parser's cap
    is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the

@@ -50,7 +50,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-growth` | Ads and SEO UI | 2 | `web-hooks`, `web-shell` | `web-pages`, `web-shell` | — |
 | `web-shared` | Shared web components | 5 | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
 | `web-hooks` | Web hooks | 20 | `web-lib`, `web-shell` | `web-account`, `web-ai`, `web-capture`, `web-finance`, `web-growth`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor`, `firebase` |
-| `web-lib` | Web utilities | 8 | `contracts` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-hooks`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor` |
+| `web-lib` | Web utilities | 9 | `contracts` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-hooks`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor` |
 
 ## External systems
 
@@ -725,7 +725,7 @@ Home dashboard (summaries, calendar, charts, search, streaks), recent expenses a
 | `src/components/dashboard/StreakCounter.tsx` | `web-lib` | — | — | — |
 | `src/components/dashboard/UserIntelligencePanel.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/expenses/EditExpenseDialog.tsx` | `contracts`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/expenses/PendingQuestionsCard.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/expenses/PendingQuestionsCard.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/expenses/RecentExpenses.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/goals/FinancialGoalsPanel.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 
@@ -816,6 +816,7 @@ Client utilities (back-button handling, biometric auth, client rules engine, ima
 | `src/lib/biometricAuth.ts` | — | — | — | — |
 | `src/lib/financial-taxonomy.ts` | `contracts` | — | — | — |
 | `src/lib/queryPersister.ts` | — | — | — | — |
+| `src/lib/saved-toast.ts` | — | — | — | — |
 | `src/lib/transactionDisplay.ts` | — | — | — | — |
 | `src/lib/turnstile-config.ts` | — | — | — | — |
 | `src/lib/utils.ts` | `contracts` | — | — | — |

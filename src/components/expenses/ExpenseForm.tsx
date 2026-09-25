@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/providers/trpc";
 import { toast } from "sonner";
+import { announceSaved } from "@/lib/saved-toast";
 import {
   Mic,
   Plus,
@@ -348,9 +349,15 @@ export function ExpenseForm({
           removeQueuedText(pendingOfflineTextId);
           if ((data as any).newlyAddedContact) {
             showNewContactToast((data as any).newlyAddedContact);
-          } else {
-            toast.success("تم حفظ التوضيح وتسجيل العملية.");
           }
+          // Say what the answer saved, and offer to take it back.
+          announceSaved(Array.isArray(data.saved) ? data.saved : [], (ids) =>
+            Promise.all(ids.map((id) => deleteSavedMutation.mutateAsync({ id }))).finally(() => {
+              void utilsTrpc.expense.list.invalidate();
+              void utilsTrpc.expense.getMonthSummary.invalidate();
+              void utilsTrpc.expense.getMonthlyStats.invalidate();
+            }),
+          );
           if (onSuccess) onSuccess();
         }
       },

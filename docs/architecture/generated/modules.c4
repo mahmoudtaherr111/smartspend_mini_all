@@ -271,7 +271,7 @@ model {
     web-lib = module 'Web utilities' {
       description 'Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/.'
       metadata {
-        files '8'
+        files '9'
         paths 'src/lib/**, src/types/**, src/*.ts'
       }
     }

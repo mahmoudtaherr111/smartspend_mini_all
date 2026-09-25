@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { MySqlDialect } from "drizzle-orm/mysql-core";
 import type { SQL } from "drizzle-orm";
-import { expenseRouter, namedPersonOf, reviewCorrection } from "./expense-router";
+import { clarifiedItemDate, expenseRouter, namedPersonOf, reviewCorrection } from "./expense-router";
 import { db } from "./queries/connection";
 import { expenses } from "../db/schema";
 
@@ -126,5 +126,16 @@ describe("learning from the review card", () => {
     expect(reviewCorrection([{ category: "عناية شخصية" }], saved)).toBeNull();
     expect(reviewCorrection([{ category: "مواصلات" }, { category: "أكل وشرب" }], saved)).toBeNull();
     expect(reviewCorrection(null, saved)).toBeNull();
+  });
+});
+
+describe("the date an answered question saves on", () => {
+  const asked = new Date("2026-09-20T10:00:00Z");
+  it("keeps the day the sentence named", () => {
+    expect(clarifiedItemDate({ date: "2026-09-19T12:00:00Z" }, asked).toISOString()).toBe("2026-09-19T12:00:00.000Z");
+  });
+  it("falls back to the day the question was asked, not the day it was answered", () => {
+    expect(clarifiedItemDate({}, asked).toISOString()).toBe(asked.toISOString());
+    expect(clarifiedItemDate({ date: "not a date" }, asked).toISOString()).toBe(asked.toISOString());
   });
 });

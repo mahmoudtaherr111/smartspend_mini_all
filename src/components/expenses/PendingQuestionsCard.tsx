@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { HelpCircle } from "lucide-react";
 import { trpc } from "@/providers/trpc";
+import { announceSaved } from "@/lib/saved-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,9 +24,14 @@ export function PendingQuestionsCard() {
     void utils.expense.getMonthSummary.invalidate();
     void utils.expense.getMonthlyStats.invalidate();
   };
+  const remove = trpc.expense.delete.useMutation();
   const answer = trpc.expense.answerClarification.useMutation({
-    onSuccess: (result: { needsClarification?: boolean }) => {
-      toast.success(result?.needsClarification ? "تمام، فاضل سؤال كمان" : "اتسجلت");
+    onSuccess: (result) => {
+      if (result?.needsClarification) toast.success("تمام، فاضل سؤال كمان");
+      else
+        announceSaved(Array.isArray(result?.saved) ? result.saved : [], (ids) =>
+          Promise.all(ids.map((id) => remove.mutateAsync({ id }))).finally(refresh),
+        );
       refresh();
     },
     onError: (error) => {

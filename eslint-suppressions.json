@@ -138,7 +138,7 @@
   },
   "api/expense-router.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 21
+      "count": 17
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2

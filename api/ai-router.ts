@@ -2020,6 +2020,7 @@ export const aiRouter = router({
             status: "pending",
             contextData: {
               items: parseResult.items,
+              source: "voice",
               classificationLogId,
               decision: parseResult.decision,
               confidence: parseResult.overallConfidence,

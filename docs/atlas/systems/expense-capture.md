@@ -181,7 +181,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `ai.parseExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries` | `ai_summaries`, `ai_token_ledgers`, `classification_logs`, `local_users`, `pending_clarifications`, `users` | `Admin`, `Home`, `More` |
 | `ai.parseVoiceExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `voice_usage` | `ai_token_ledgers`, `classification_logs`, `local_users`, `pending_clarifications`, `users`, `voice_usage` | `Home` |
 | `ai.speechToText` | mutation | `aiProcedure` | `local_users`, `pro_subscriptions`, `users`, `voice_usage` | `ai_token_ledgers`, `local_users`, `users`, `voice_usage` | — |
-| `expense.answerClarification` | mutation | `authedProcedure` | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `expenses`, `pending_clarifications`, `user_contacts` | `Home` |
+| `expense.answerClarification` | mutation | `authedProcedure` | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `expenses`, `local_users`, `pending_clarifications`, `user_contacts`, `users` | `Home` |
 | `expense.batchCreate` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
 | `expense.create` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
 | `expense.createCategory` | mutation | `authedProcedure` | — | `expense_categories` | — |
@@ -208,14 +208,14 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `classification_logs` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `classification-log-cleanup`, `expense.batchCreate`, `expense.create` | `classification`, `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
 | `expense_categories` | A | `expense.createCategory` | `expense.getCategoryList` |
 | `expenses` | B | `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `classification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` |
-| `local_users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |
+| `local_users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |
 | `pending_clarifications` | D | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.dismissClarification` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.getPendingClarifications` |
 | `pro_subscriptions` | A | — | `ai.speechToText` |
 | `user_businesses` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` |
 | `user_contacts` | A | `expense.answerClarification`, `expense.batchCreate`, `expense.create` | `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
 | `user_correction_rules` | F | `classification` | `classification` |
 | `user_dictionaries` | F | `ai.learnWord` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `image.parseReceipt` |
-| `users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |
+| `users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |
 | `voice_usage` | E | `ai.parseVoiceExpense`, `ai.speechToText` | `ai.parseVoiceExpense`, `ai.speechToText` |
 
 ## Outside systems

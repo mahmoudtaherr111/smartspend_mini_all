@@ -793,8 +793,10 @@ model {
   smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.notifications
   smartspend.api.trpc.expense.answerClarification -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.answerClarification -[writes]-> smartspend.mysql.expenses
+  smartspend.api.trpc.expense.answerClarification -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.expense.answerClarification -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.expense.answerClarification -[writes]-> smartspend.mysql.user_contacts
+  smartspend.api.trpc.expense.answerClarification -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.expense.batchCreate -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.expense.batchCreate -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.batchCreate -[reads]-> smartspend.mysql.user_contacts

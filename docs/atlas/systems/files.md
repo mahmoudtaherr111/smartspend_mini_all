@@ -423,6 +423,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/lib/compress-image.ts` | [expense-capture](expense-capture.md) |
 | `src/lib/financial-taxonomy.ts` | [web-app](web-app.md) |
 | `src/lib/queryPersister.ts` | [web-app](web-app.md) |
+| `src/lib/saved-toast.ts` | [web-app](web-app.md) |
 | `src/lib/transactionDisplay.ts` | [web-app](web-app.md) |
 | `src/lib/turnstile-config.ts` | [web-app](web-app.md) |
 | `src/lib/utils.ts` | [web-app](web-app.md) |
