@@ -225,12 +225,12 @@
         "api/ai-router.ts#rest-of-file": "2060e3c49538",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
         "api/expense-router.ts#expense.answerClarification": "272268df19ee",
-        "api/expense-router.ts#expense.batchCreate": "db08bc69052c",
-        "api/expense-router.ts#expense.create": "8268c6465ede",
+        "api/expense-router.ts#expense.batchCreate": "3e2fb88d5777",
+        "api/expense-router.ts#expense.create": "399857c8e862",
         "api/expense-router.ts#expense.createCategory": "8b691f7a3e91",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "cc11f6c9e0ed",
+        "api/expense-router.ts#rest-of-file": "f09407c8d540",
         "api/image-router.ts": "95cb317266d6",
         "api/lib/admissibility-gate.ts": "9a24ae0cb1da",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
@@ -280,9 +280,9 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-25 e0b3fde",
-      "arabic": "3d639bf4500b",
-      "arabicChecked": "2026-09-25 e0b3fde"
+      "checked": "2026-09-25 ccd8203",
+      "arabic": "d83c1c18a61b",
+      "arabicChecked": "2026-09-25 ccd8203"
     },
     "insights": {
       "files": {
@@ -332,7 +332,7 @@
         "api/expense-router.ts#expense.list": "1540eca4d7f5",
         "api/expense-router.ts#expense.searchTransactions": "9d92514f1158",
         "api/expense-router.ts#expense.update": "1d6571db5314",
-        "api/expense-router.ts#rest-of-file": "cc11f6c9e0ed",
+        "api/expense-router.ts#rest-of-file": "f09407c8d540",
         "api/export-router.ts#export.myExpenses": "d0acca7338ba",
         "api/export-router.ts#rest-of-file": "45767b678670",
         "api/goals-router.ts": "9b542bba317d",
@@ -363,7 +363,7 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/pages/Home.tsx": "fbdc4529b1c2"
       },
-      "checked": "2026-09-25 f14681b",
+      "checked": "2026-09-25 ccd8203",
       "arabic": "b9a4b53fc888",
       "arabicChecked": "2026-09-25 f14681b"
     },

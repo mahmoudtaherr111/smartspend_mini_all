@@ -158,6 +158,68 @@ type ExpenseReferenceResult = {
 };
 
 /**
+ * What the user changed on the review card before saving, compared with what the parser
+ * proposed. Only a sentence the parser read as ONE item teaches a rule: its whole text is
+ * the pattern, and a multi-item sentence would teach one category for all of its parts.
+ */
+export function reviewCorrection(
+  parsed: unknown,
+  saved: { category: string; subCategory?: string | null; type: string; amount: number },
+): { previousCategory: string; previousSubCategory: string | null } | null {
+  if (!Array.isArray(parsed) || parsed.length !== 1) return null;
+  const proposed = parsed[0] as { category?: string; subCategory?: string | null };
+  if (!proposed?.category || proposed.category === saved.category) return null;
+  return { previousCategory: proposed.category, previousSubCategory: proposed.subCategory ?? null };
+}
+
+/**
+ * Records a category the user changed on the review card as their correction, and marks
+ * the parse corrected, so the same sentence is filed their way next time. Never throws.
+ */
+async function learnFromReview(
+  userId: number,
+  userType: string,
+  logId: number | null | undefined,
+  saved: { category: string; subCategory?: string | null; type: string; amount: number },
+): Promise<void> {
+  if (!logId) return;
+  try {
+    const [log] = await getDb()
+      .select({ id: classificationLogs.id, originalText: classificationLogs.originalText, finalResult: classificationLogs.finalResult })
+      .from(classificationLogs)
+      .where(and(eq(classificationLogs.id, logId), eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)))
+      .limit(1);
+    const change = log ? reviewCorrection(log.finalResult, saved) : null;
+    if (!log || !change || !log.originalText) return;
+    await getDb()
+      .update(classificationLogs)
+      .set({
+        wasCorrected: true,
+        correction: {
+          ...change,
+          correctedCategory: saved.category,
+          correctedSubCategory: saved.subCategory ?? null,
+          correctedAt: new Date().toISOString(),
+          on: "review",
+        },
+      })
+      .where(eq(classificationLogs.id, log.id));
+    await recordCorrection({
+      userId,
+      userType,
+      originalText: log.originalText,
+      category: saved.category,
+      subCategory: saved.subCategory,
+      type: saved.type,
+      amount: saved.amount,
+      sourceLogId: log.id,
+    });
+  } catch (error) {
+    console.warn("Learning from the review card failed (non-fatal):", error);
+  }
+}
+
+/**
  * The person a saved item names, to link to a contact. It is either the category
  * ("اديت ماما 1000" → العائلة/ماما والدتك) or, when the category is the purpose, named
  * beside it ("مصاريف مدرسة ابني" → تعليم, ابني).
@@ -623,6 +685,7 @@ export const expenseRouter = router({
       }
 
       // Phase 2: Non-critical side effects (outside transaction)
+      await learnFromReview(userId as number, requestUserType, input.classificationLogId, input);
       invalidateUserMemory(userId, requestUserType);
       invalidateUserClassificationCache(userId, requestUserType);
       await invalidateExpenseCache(userId, requestUserType);
@@ -814,6 +877,9 @@ export const expenseRouter = router({
       }
 
       // Non-critical side effects (outside transaction)
+      if (itemsToInsert.length === 1) {
+        await learnFromReview(userId as number, requestUserType, itemsToInsert[0].classificationLogId, itemsToInsert[0]);
+      }
       invalidateUserMemory(userId, requestUserType);
       invalidateUserClassificationCache(userId, requestUserType);
       await invalidateExpenseCache(userId, requestUserType);

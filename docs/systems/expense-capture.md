@@ -209,7 +209,9 @@ panel, to admins only.
   `expense.batchCreate`, with source `ai_parsed` or `voice`, the log id and, for queued offline text, a client
   request id. When saving fails, the items are shown for review. The saved toast says what was saved (amount and
   category, or the count and total) and offers "تراجع", which deletes exactly the saved ids (`expense.create`
-  returns its id, `expense.batchCreate` its `ids`).
+  returns its id, `expense.batchCreate` its `ids`). When the saved category differs from the one the parser
+  proposed for a one-item sentence (found through the log id), the save records it as the user's correction and
+  marks the log corrected, as editing a saved item does.
 - `review`: editable cards with totals per direction; the user fixes or removes rows, then saves. A card's
   category list holds the categories of its item's kind (`src/lib/financial-taxonomy.ts#getCategoryOptionsForType`),
   and a newly picked category starts at its general subcategory.
@@ -320,9 +322,8 @@ Checked against the code; each one names where it lives.
    people it resolves while parsing, before the user saves anything.
 5. **Bug.** When every event escalates and a Fireworks key is present, the whole-sentence embedding shortcut makes one item
    from the first amount; the other amounts then become a question.
-6. **Gap.** Correction learning runs only when a saved item is edited (`expense.update`, from
-   `src/components/expenses/EditExpenseDialog.tsx`); a category changed on the review cards before saving is not
-   recorded. `ai.learnWord`, `expense.createCategory` and
+6. **Gap.** A category changed on the review card teaches a rule only when the sentence was one item
+   (`api/expense-router.ts#reviewCorrection`); in a multi-item sentence it is saved but not learned. `ai.learnWord`, `expense.createCategory` and
    `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is
    not rendered anywhere.
 7. **Debt.** The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win;

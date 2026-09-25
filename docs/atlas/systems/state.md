@@ -10,12 +10,12 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (59 of
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 e0b3fde | 2026-09-25 e0b3fde | 18 | — | 5 | 2 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 ccd8203 | 2026-09-25 ccd8203 | 18 | — | 5 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-24 37a55fb | 2026-09-24 37a55fb | 3 | — | 4 | 3 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-24 45b800e | 2026-09-24 45b800e | 4 | — | 6 | 3 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 37a55fb | 2026-09-24 45b800e | 6 | — | 9 | 2 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 f14681b | 2026-09-25 f14681b | 5 | — | 7 | 5 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 ccd8203 | 2026-09-25 f14681b | 5 | — | 7 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-24 37a55fb | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-24 6739377 | 2026-09-24 6739377 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-24 37a55fb | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
@@ -131,7 +131,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 ### Gaps (32)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
-- Correction learning runs only when a saved item is edited (`expense.update`, from `src/components/expenses/EditExpenseDialog.tsx`); a category changed on the review cards before saving is not recorded. `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere.
+- A category changed on the review card teaches a rule only when the sentence was one item (`api/expense-router.ts#reviewCorrection`); in a multi-item sentence it is saved but not learned. `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere.
 - An entry whose question the user left unanswered stays unrecorded, and the app never shows it again: the form asks only while it is open, and `src/components/expenses/ExpenseForm.tsx` refreshes `expense.getPendingClarifications` without displaying it. Only the live call (`money_query` `pending`) and the admin's clarifications tab list them.
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)

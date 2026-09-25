@@ -96,9 +96,9 @@ flowchart LR
   router_expense --> sys_notifications
   router_expense --> sys_platform
   router_expense -.-> tbl_business_categories
-  router_expense -.-> tbl_classification_logs
   router_expense -.-> tbl_user_businesses
   router_expense -.-> tbl_user_dictionaries
+  router_expense ==> tbl_classification_logs
   router_expense ==> tbl_expense_categories
   router_expense ==> tbl_expenses
   router_expense ==> tbl_local_users
@@ -182,8 +182,8 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `ai.parseVoiceExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `voice_usage` | `ai_token_ledgers`, `classification_logs`, `local_users`, `pending_clarifications`, `users`, `voice_usage` | `Home` |
 | `ai.speechToText` | mutation | `aiProcedure` | `local_users`, `pro_subscriptions`, `users`, `voice_usage` | `ai_token_ledgers`, `local_users`, `users`, `voice_usage` | — |
 | `expense.answerClarification` | mutation | `authedProcedure` | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `expenses`, `pending_clarifications`, `user_contacts` | `Home` |
-| `expense.batchCreate` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
-| `expense.create` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
+| `expense.batchCreate` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
+| `expense.create` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
 | `expense.createCategory` | mutation | `authedProcedure` | — | `expense_categories` | — |
 | `expense.getCategoryList` | query | `authedProcedure` | `expense_categories` | — | — |
 | `expense.getPendingClarifications` | query | `authedProcedure` | `pending_clarifications` | — | `Home` |
@@ -204,7 +204,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_summaries` | C | `ai.parseExpense` | — |
 | `ai_token_ledgers` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText` | — |
 | `business_categories` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` |
-| `classification_logs` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `classification-log-cleanup` | `classification`, `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
+| `classification_logs` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `classification-log-cleanup`, `expense.batchCreate`, `expense.create` | `classification`, `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
 | `expense_categories` | A | `expense.createCategory` | `expense.getCategoryList` |
 | `expenses` | B | `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `classification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` |
 | `local_users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { MySqlDialect } from "drizzle-orm/mysql-core";
 import type { SQL } from "drizzle-orm";
-import { expenseRouter, namedPersonOf } from "./expense-router";
+import { expenseRouter, namedPersonOf, reviewCorrection } from "./expense-router";
 import { db } from "./queries/connection";
 import { expenses } from "../db/schema";
 
@@ -109,5 +109,22 @@ describe("the person a saved item names", () => {
   it("links nothing without a name and a relationship", () => {
     expect(namedPersonOf({ category: "تعليم", subCategory: "مدرسة", personName: "مروان" })).toBeNull();
     expect(namedPersonOf({ category: "العائلة", subCategory: "عام" })).toBeNull();
+  });
+});
+
+describe("learning from the review card", () => {
+  const saved = { category: "عناية شخصية", subCategory: "عام", type: "expense", amount: 150 };
+
+  it("reads a category changed on a one-item sentence as a correction", () => {
+    expect(reviewCorrection([{ category: "مواصلات", subCategory: "أوبر/كريم" }], saved)).toEqual({
+      previousCategory: "مواصلات",
+      previousSubCategory: "أوبر/كريم",
+    });
+  });
+
+  it("learns nothing when the category was kept or the sentence held several items", () => {
+    expect(reviewCorrection([{ category: "عناية شخصية" }], saved)).toBeNull();
+    expect(reviewCorrection([{ category: "مواصلات" }, { category: "أكل وشرب" }], saved)).toBeNull();
+    expect(reviewCorrection(null, saved)).toBeNull();
   });
 });

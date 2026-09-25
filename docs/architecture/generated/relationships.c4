@@ -802,6 +802,7 @@ model {
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.expense.batchCreate -[uses]-> smartspend.shared.contracts
+  smartspend.api.trpc.expense.batchCreate -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.expense.batchCreate -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.batchCreate -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.expense.batchCreate -[writes]-> smartspend.mysql.user_contacts
@@ -817,6 +818,7 @@ model {
   smartspend.api.trpc.expense.create -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.create -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.expense.create -[uses]-> smartspend.shared.contracts
+  smartspend.api.trpc.expense.create -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.expense.create -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.create -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.expense.create -[writes]-> smartspend.mysql.user_contacts
