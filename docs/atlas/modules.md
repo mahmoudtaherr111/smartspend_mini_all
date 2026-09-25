@@ -16,7 +16,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice` | `mysql` |
 | `contracts` | Shared contracts | 7 | — | `ai-actions`, `ai-governance`, `ai-insights`, `api-core`, `api-routers`, `billing`, `classification`, `jobs`, `platform`, `voice`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-voice-call` | — |
 | `billing` | Billing | 3 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
-| `ledger` | Ledger aggregates | 3 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `ingestion-parsers`, `jobs`, `notifications` | — |
+| `ledger` | Ledger aggregates | 4 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `ingestion-parsers`, `jobs`, `notifications` | — |
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
 | `jobs` | Scheduled job bodies | 6 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `database`, `ledger`, `platform` | `api-core`, `api-routers`, `jobs` | `firebase`, `web-push` |
@@ -44,7 +44,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-ai` | AI Center UI | 3 | `web-hooks`, `web-insights`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-voice-call` | — |
 | `web-capture` | Expense entry UI | 4 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
 | `web-insights` | Insights UI | 1 | `web-hooks`, `web-shell`, `web-ui-kit` | `web-ai` | — |
-| `web-finance` | Finance UI | 16 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-account`, `web-pages` | — |
+| `web-finance` | Finance UI | 17 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-account`, `web-pages` | — |
 | `web-bank-sync` | Bank sync UI | 5 | `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
 | `web-account` | Account UI | 9 | `web-finance`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `turnstile` |
 | `web-growth` | Ads and SEO UI | 2 | `web-hooks`, `web-shell` | `web-pages`, `web-shell` | — |
@@ -210,6 +210,7 @@ Daily expense rollups (the delta applied inside every expense write, and reconci
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/services/budget-status.ts` | `database`, `platform` | — | `expenses`, `user_budgets` | `user_budgets` |
+| `api/services/debt-ledger.ts` | `database` | — | `expenses`, `user_contacts` | — |
 | `api/services/expense-rollups.ts` | `database`, `finance-semantic-layer`, `platform` | — | `expense_daily_rollups`, `expenses` | `expense_daily_rollups`, `expense_details` |
 | `api/services/financial-month.ts` | `platform` | — | — | — |
 
@@ -725,6 +726,7 @@ Home dashboard (summaries, calendar, charts, search, streaks), recent expenses a
 | `src/components/dashboard/StatsView.tsx` | `web-lib`, `web-ui-kit` | — | — | — |
 | `src/components/dashboard/StreakCounter.tsx` | `web-lib` | — | — | — |
 | `src/components/dashboard/UserIntelligencePanel.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/debts/DebtsPanel.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/expenses/EditExpenseDialog.tsx` | `contracts`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/expenses/PendingQuestionsCard.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/expenses/RecentExpenses.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |

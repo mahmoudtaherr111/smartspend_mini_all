@@ -23,7 +23,7 @@ flowchart LR
     job_taxonomy_migration["Job · taxonomy-migration"]
     router_budget["budget API · 4 procedures"]
     router_business["business API · 10 procedures"]
-    router_expense["expense API · 8 procedures"]
+    router_expense["expense API · 9 procedures"]
     router_export["export API · 1 procedure"]
     router_goals["goals API · 5 procedures"]
     router_profile["profile API · 5 procedures"]
@@ -60,6 +60,7 @@ flowchart LR
   mod_ledger --> sys_ai_center
   mod_ledger --> sys_platform
   mod_ledger -.-> tbl_expenses
+  mod_ledger -.-> tbl_user_contacts
   mod_ledger ==> tbl_expense_daily_rollups
   mod_ledger ==> tbl_expense_details
   mod_ledger ==> tbl_user_budgets
@@ -126,8 +127,8 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges. | 3 |
-| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 16 |
+| `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges. | 4 |
+| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 17 |
 
 ## API procedures
 
@@ -149,6 +150,7 @@ flowchart LR
 | `business.updateCategory` | mutation | `businessProcedure` | `business_categories`, `user_businesses` | `business_categories` | — |
 | `expense.delete` | mutation | `authedProcedure` | `expenses` | `expenses`, `user_contacts` | `Home` |
 | `expense.getById` | query | `authedProcedure` | `expenses` | — | — |
+| `expense.getDebtBalances` | query | `authedProcedure` | — | — | `Home` |
 | `expense.getMonthSummary` | query | `authedProcedure` | `expense_daily_rollups` | — | `Home` |
 | `expense.getMonthlyStats` | query | `authedProcedure` | `expense_daily_rollups`, `expenses` | — | `Home`, `More`, `Settings` |
 | `expense.getYearlyStats` | query | `authedProcedure` | `expense_daily_rollups` | — | — |
@@ -194,7 +196,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `local_users` | A | `goals.analyze` | — |
 | `user_budgets` | C | `budget.create`, `budget.delete`, `budget.update`, `goals.delete`, `ledger` | `budget.delete`, `budget.update`, `ledger` |
 | `user_businesses` | A | `business.create`, `business.delete`, `business.update` | `business.addCategory`, `business.create`, `business.delete`, `business.get`, `business.linkContact`, `business.removeCategory`, `business.update`, `business.updateCategory` |
-| `user_contacts` | A | `business.delete`, `business.linkContact`, `expense.delete`, `profile.addContact`, `profile.deleteContact`, `profile.mergeContacts`, `profile.updateContact` | `business.get`, `business.linkContact`, `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` |
+| `user_contacts` | A | `business.delete`, `business.linkContact`, `expense.delete`, `profile.addContact`, `profile.deleteContact`, `profile.mergeContacts`, `profile.updateContact` | `business.get`, `business.linkContact`, `ledger`, `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` |
 | `user_profiles` | A | `profile.deleteContact`, `profile.mergeContacts` | `profile.deleteContact`, `profile.mergeContacts` |
 | `user_wallets` | A | `wallet.createWallet`, `wallet.deleteWallet`, `wallet.updateWallet` | `wallet.getWallets` |
 | `users` | A | `goals.analyze` | — |
@@ -217,7 +219,7 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>45 files and declarations</summary>
+<details><summary>48 files and declarations</summary>
 
 - `api/boot.ts#job:nightly-rollup-reconciliation`
 - `api/boot.ts#job:taxonomy-migration`
@@ -225,6 +227,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/business-router.ts`
 - `api/expense-router.ts#expense.delete`
 - `api/expense-router.ts#expense.getById`
+- `api/expense-router.ts#expense.getDebtBalances`
 - `api/expense-router.ts#expense.getMonthSummary`
 - `api/expense-router.ts#expense.getMonthlyStats`
 - `api/expense-router.ts#expense.getYearlyStats`
@@ -244,6 +247,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/profile-router.ts#profile.updateContact`
 - `api/profile-router.ts#rest-of-file`
 - `api/services/budget-status.ts`
+- `api/services/debt-ledger.ts`
 - `api/services/expense-rollups.ts`
 - `api/services/financial-month.ts`
 - `api/wallet-router.ts`
@@ -259,6 +263,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/dashboard/StatsView.tsx`
 - `src/components/dashboard/StreakCounter.tsx`
 - `src/components/dashboard/UserIntelligencePanel.tsx`
+- `src/components/debts/DebtsPanel.tsx`
 - `src/components/expenses/EditExpenseDialog.tsx`
 - `src/components/expenses/PendingQuestionsCard.tsx`
 - `src/components/expenses/RecentExpenses.tsx`

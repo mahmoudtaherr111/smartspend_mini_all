@@ -232,7 +232,7 @@
         "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "42607c7682f3",
+        "api/expense-router.ts#rest-of-file": "6612e66473e8",
         "api/image-router.ts": "653bd18f45c3",
         "api/lib/admissibility-gate.ts": "9a24ae0cb1da",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
@@ -282,7 +282,7 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-25 66236cf",
+      "checked": "2026-09-25 679bf30",
       "arabic": "e9b7cde637bd",
       "arabicChecked": "2026-09-25 66236cf"
     },
@@ -328,13 +328,14 @@
         "api/business-router.ts": "b6f0bc60473a",
         "api/expense-router.ts#expense.delete": "188765ac89cc",
         "api/expense-router.ts#expense.getById": "883d7c8c2233",
+        "api/expense-router.ts#expense.getDebtBalances": "a5800cbae3d9",
         "api/expense-router.ts#expense.getMonthSummary": "57385a63157f",
         "api/expense-router.ts#expense.getMonthlyStats": "52294b1f8805",
         "api/expense-router.ts#expense.getYearlyStats": "5267d3d55014",
         "api/expense-router.ts#expense.list": "1540eca4d7f5",
         "api/expense-router.ts#expense.searchTransactions": "9d92514f1158",
         "api/expense-router.ts#expense.update": "7b999e42e194",
-        "api/expense-router.ts#rest-of-file": "42607c7682f3",
+        "api/expense-router.ts#rest-of-file": "6612e66473e8",
         "api/export-router.ts#export.myExpenses": "d0acca7338ba",
         "api/export-router.ts#rest-of-file": "45767b678670",
         "api/goals-router.ts": "9b542bba317d",
@@ -347,6 +348,7 @@
         "api/profile-router.ts#profile.updateContact": "a729d41858de",
         "api/profile-router.ts#rest-of-file": "b95a7ad3787b",
         "api/services/budget-status.ts": "e6c46c341118",
+        "api/services/debt-ledger.ts": "a415b49133f1",
         "api/services/expense-rollups.ts": "08cab329ba18",
         "api/services/financial-month.ts": "50ad98190246",
         "api/wallet-router.ts": "7d5e5a1398e9",
@@ -362,15 +364,16 @@
         "src/components/dashboard/StatsView.tsx": "b2758a9baf79",
         "src/components/dashboard/StreakCounter.tsx": "86c3f654ff1d",
         "src/components/dashboard/UserIntelligencePanel.tsx": "ed213db74bae",
+        "src/components/debts/DebtsPanel.tsx": "aefea8470be3",
         "src/components/expenses/EditExpenseDialog.tsx": "09c8a91b383d",
         "src/components/expenses/PendingQuestionsCard.tsx": "b06ea8f44b3b",
         "src/components/expenses/RecentExpenses.tsx": "1ea9e2e158ec",
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
-        "src/pages/Home.tsx": "7e4da1302279"
+        "src/pages/Home.tsx": "1c9404819a8b"
       },
-      "checked": "2026-09-25 9a9c8ca",
-      "arabic": "1c2764076492",
-      "arabicChecked": "2026-09-25 9a9c8ca"
+      "checked": "2026-09-25 679bf30",
+      "arabic": "551149b0e77f",
+      "arabicChecked": "2026-09-25 679bf30"
     },
     "notifications": {
       "files": {

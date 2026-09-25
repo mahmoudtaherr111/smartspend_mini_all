@@ -183,7 +183,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-44 files in its import closure (not counting `src/components/ui/`).
+45 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -201,6 +201,7 @@ _None._
 | `expense.create` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.delete` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.dismissClarification` | useMutation | `src/components/expenses/PendingQuestionsCard.tsx` |
+| `expense.getDebtBalances` | useQuery | `src/components/debts/DebtsPanel.tsx` |
 | `expense.getMonthSummary` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/pages/Home.tsx` |
 | `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/pages/Home.tsx` |
 | `expense.getPendingClarifications` | useQuery, utils.invalidate | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |

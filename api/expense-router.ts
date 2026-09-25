@@ -2322,6 +2322,17 @@ export const expenseRouter = router({
       return { success: Number((result as { affectedRows?: number })?.affectedRows ?? 0) === 1 };
     }),
 
+  /** "ليك وعليك": what each person owes the user and what the user owes them, from loans. */
+  getDebtBalances: authedProcedure.query(async ({ ctx }) => {
+    const { listDebtBalances } = await import("./services/debt-ledger");
+    const balances = await listDebtBalances(ctx.user!.id, ctx.user!.type);
+    return {
+      balances,
+      owedToYou: balances.filter((b) => b.balance > 0).reduce((sum, b) => sum + b.balance, 0),
+      youOwe: balances.filter((b) => b.balance < 0).reduce((sum, b) => sum - b.balance, 0),
+    };
+  }),
+
   answerClarification: authedProcedure
     .input(
       z.object({

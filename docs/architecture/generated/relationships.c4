@@ -387,6 +387,7 @@ model {
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.user_budgets
+  smartspend.api.modules.ledger -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.modules.ledger -[writes]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.modules.ledger -[writes]-> smartspend.mysql.expense_details
   smartspend.api.modules.ledger -[writes]-> smartspend.mysql.user_budgets
@@ -843,6 +844,7 @@ model {
   smartspend.api.trpc.expense.dismissClarification -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.expense.getById -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.getCategoryList -[reads]-> smartspend.mysql.expense_categories
+  smartspend.api.trpc.expense.getDebtBalances -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.getMonthSummary -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.trpc.expense.getMonthSummary -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.getMonthSummary -[uses]-> smartspend.api.modules.platform
@@ -1282,6 +1284,7 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.create
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.delete
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.dismissClarification
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getDebtBalances
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getMonthSummary
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getMonthlyStats
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getPendingClarifications

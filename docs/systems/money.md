@@ -114,6 +114,13 @@ cycle, counted in Cairo business days, and whether it is near or over its limit.
 spending, and delete. The assistant can also create them. The standing of each budget comes from
 `api/services/budget-status.ts#listBudgetStatuses` (expense rows only, in the budget's own cycle).
 
+## ليك وعليك (who owes whom)
+`expense.getDebtBalances` reads every confirmed loan (transfer under تحويل/دين/سلفة with a direction) and nets it per
+person (`api/services/debt-ledger.ts`): money that went out (lent, or a debt repaid) raises what the person owes the
+user, money that came in lowers it. People are the loan's contact, else "من غير اسم"; settled people are left out.
+The statistics tab shows the open balances under the budgets (`src/components/debts/DebtsPanel.tsx`), with the totals
+owed to and by the user; nothing renders without loans.
+
 ## Goals
 - `goals.list` returns the user's goals and, when the plan has no goal analysis, an upsell.
 - `goals.create`: a title, a description of up to 120 characters, a target amount and date. The number of active

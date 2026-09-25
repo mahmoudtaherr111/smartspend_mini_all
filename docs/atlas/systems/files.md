@@ -24,7 +24,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/business-router.ts` | [money](money.md) |
 | `api/chat-router.ts` | [ai-center](ai-center.md) |
 | `api/context.ts` | [platform](platform.md) |
-| `api/expense-router.ts` | [expense-capture](expense-capture.md): `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `expense.createCategory`, `expense.dismissClarification`, `expense.getCategoryList`, `expense.getPendingClarifications` · [money](money.md): `expense.delete`, `expense.getById`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`, `expense.list`, `expense.searchTransactions`, `expense.update` · rest of the file: [expense-capture](expense-capture.md), [money](money.md) |
+| `api/expense-router.ts` | [expense-capture](expense-capture.md): `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `expense.createCategory`, `expense.dismissClarification`, `expense.getCategoryList`, `expense.getPendingClarifications` · [money](money.md): `expense.delete`, `expense.getById`, `expense.getDebtBalances`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`, `expense.list`, `expense.searchTransactions`, `expense.update` · rest of the file: [expense-capture](expense-capture.md), [money](money.md) |
 | `api/export-router.ts` | [admin](admin.md): `export.allUsers` · [insights](insights.md): `export.monthlyReportHtml` · [money](money.md): `export.myExpenses` · rest of the file: [admin](admin.md), [insights](insights.md), [money](money.md) |
 | `api/goals-router.ts` | [money](money.md) |
 | `api/image-router.ts` | [expense-capture](expense-capture.md) |
@@ -163,6 +163,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/ai-memory/vector-store.ts` | [ai-center](ai-center.md) |
 | `api/services/batch-ai-service.ts` | [insights](insights.md) |
 | `api/services/budget-status.ts` | [money](money.md) |
+| `api/services/debt-ledger.ts` | [money](money.md) |
 | `api/services/entitlements/voice.ts` | [voice-calls](voice-calls.md) |
 | `api/services/expense-rollups.ts` | [money](money.md) |
 | `api/services/finance-semantic-layer/cache.ts` | [ai-center](ai-center.md) |
@@ -311,6 +312,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/dashboard/StatsView.tsx` | [money](money.md) |
 | `src/components/dashboard/StreakCounter.tsx` | [money](money.md) |
 | `src/components/dashboard/UserIntelligencePanel.tsx` | [money](money.md) |
+| `src/components/debts/DebtsPanel.tsx` | [money](money.md) |
 | `src/components/expenses/EditExpenseDialog.tsx` | [money](money.md) |
 | `src/components/expenses/ExpenseForm.tsx` | [expense-capture](expense-capture.md) |
 | `src/components/expenses/PendingQuestionsCard.tsx` | [money](money.md) |

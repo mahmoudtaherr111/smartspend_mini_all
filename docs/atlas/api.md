@@ -36,7 +36,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `budget` | `api/budget-router.ts` | 4 | 1 | 3 | `authedProcedure` |
 | `business` | `api/business-router.ts` | 10 | 2 | 8 | `businessAiProcedure`, `businessProcedure` |
 | `chat` | `api/chat-router.ts` | 10 | 4 | 6 | `aiProcedure`, `authedProcedure` |
-| `expense` | `api/expense-router.ts` | 15 | 8 | 7 | `authedProcedure` |
+| `expense` | `api/expense-router.ts` | 16 | 9 | 7 | `authedProcedure` |
 | `export` | `api/export-router.ts` | 3 | 0 | 3 | `adminProcedure`, `authedProcedure`, `proReportProcedure` |
 | `goals` | `api/goals-router.ts` | 5 | 1 | 4 | `authedProcedure`, `goalAnalysisProcedure` |
 | `image` | `api/image-router.ts` | 1 | 0 | 1 | `receiptsProcedure` |
@@ -225,6 +225,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `expense.dismissClarification` | mutation | `authedProcedure` | yes | — | `pending_clarifications` | — | `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.getById` | query | `authedProcedure` | yes | `expenses` | — | — | — |
 | `expense.getCategoryList` | query | `authedProcedure` | no | `expense_categories` | — | — | — |
+| `expense.getDebtBalances` | query | `authedProcedure` | no | — | — | `api/services/debt-ledger.ts` | `src/components/debts/DebtsPanel.tsx` |
 | `expense.getMonthSummary` | query | `authedProcedure` | yes | `expense_daily_rollups` | — | `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/services/financial-month.ts` | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/pages/Home.tsx` |
 | `expense.getMonthlyStats` | query | `authedProcedure` | yes | `expense_daily_rollups`, `expenses` | — | `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/services/expense-rollups.ts`, `api/services/financial-month.ts`, `contracts/categories.ts` | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/settings/BusinessSettingsView.tsx`, `src/pages/Home.tsx` |
 | `expense.getPendingClarifications` | query | `authedProcedure` | no | `pending_clarifications` | — | — | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |

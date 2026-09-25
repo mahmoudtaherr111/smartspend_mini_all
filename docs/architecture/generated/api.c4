@@ -1208,7 +1208,7 @@ model {
       }
     }
     expense = router 'expense' {
-      description 'api/expense-router.ts — 15 procedures.'
+      description 'api/expense-router.ts — 16 procedures.'
       metadata {
         file 'api/expense-router.ts'
       }
@@ -1286,6 +1286,16 @@ model {
         #query #authed #uncalled
         technology 'authedProcedure'
         description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/expense-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
+      }
+      getDebtBalances = procedure 'expense.getDebtBalances' {
+        #query #authed
+        technology 'authedProcedure'
+        description 'query · authedProcedure'
         metadata {
           file 'api/expense-router.ts'
           builder 'authedProcedure'

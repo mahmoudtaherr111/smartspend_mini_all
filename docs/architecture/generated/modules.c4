@@ -132,8 +132,8 @@ model {
     ledger = module 'Ledger aggregates' {
       description 'Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges.'
       metadata {
-        files '3'
-        paths 'api/services/expense-rollups.ts, api/services/financial-month.ts, api/services/budget-status.ts'
+        files '4'
+        paths 'api/services/expense-rollups.ts, api/services/financial-month.ts, api/services/budget-status.ts, api/services/debt-ledger.ts'
       }
     }
     notifications = module 'Notifications' {
@@ -243,8 +243,8 @@ model {
     web-finance = module 'Finance UI' {
       description 'Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals.'
       metadata {
-        files '16'
-        paths 'src/components/dashboard/**, src/components/expenses/**, src/components/goals/**, src/components/budgets/**'
+        files '17'
+        paths 'src/components/dashboard/**, src/components/expenses/**, src/components/goals/**, src/components/budgets/**, src/components/debts/**'
       }
     }
     web-growth = module 'Ads and SEO UI' {
