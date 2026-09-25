@@ -26,7 +26,6 @@ import {
   FieldLabel,
   SectionHeader,
 } from "./AdminSettingsShared";
-import { RoutingRangesEditor } from "./RoutingRangesEditor";
 import { AdminVoiceCallSection } from "./AdminVoiceCallSection";
 import {
   PLAN_FEATURE_DEFAULTS,
@@ -665,21 +664,13 @@ export function AdminPlansTab({
             value={plan}
             className="space-y-8 animate-in slide-in-from-end-4"
           >
-            {/* Routing Ranges */}
+            {/* Parse model: one routing source, the providers tab */}
             <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden border-t-4 border-t-indigo-500">
               <SectionHeader
                 icon={<Route className="w-6 h-6 text-indigo-600" />}
-                title="التوجيه الديناميكي للذكاء الاصطناعي (Parse Routing)"
-                description="يتحكم في الموديل المستخدم بناءً على استهلاك التوكنز الشهري. يُطبق فقط على طلبات التصنيف (Parse) — وليس التقارير أو الصوت."
+                title="موديل التصنيف"
+                description="موديلات التصنيف لكل باقة بتتحدد من «مركز الذكاء ← المزودات والموديلات» (الغرض: classification). لو مفيش موديل شغال هناك، التطبيق بيستخدم موديل Gemini الخاص بالباقة (ai_model_free / ai_model_pro / ai_model_ultra)، وبعده أي مزود ليه مفتاح. الحد الشهري للتوكنز من خانة الحدود تحت."
               />
-              <CardContent className="p-6 bg-slate-50/30 dark:bg-slate-900/10">
-                <RoutingRangesEditor
-                  planName={plan}
-                  rawValue={formData[`${plan}_routing_ranges`] || ""}
-                  onChange={(v) => updateField(`${plan}_routing_ranges`, v)}
-                  models={models}
-                />
-              </CardContent>
             </Card>
 
             {/* Dedicated Engines */}

@@ -280,7 +280,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/admin/settings/AdminPlansTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminSettingsShared.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminVoiceCallSection.tsx` | [admin](admin.md) |
-| `src/components/admin/settings/RoutingRangesEditor.tsx` | [admin](admin.md) |
 | `src/components/ads/AdBanner.tsx` | [web-app](web-app.md) |
 | `src/components/ai/AIChatbot.tsx` | [ai-center](ai-center.md) |
 | `src/components/ai/AIMemoryManager.tsx` | [ai-center](ai-center.md) |

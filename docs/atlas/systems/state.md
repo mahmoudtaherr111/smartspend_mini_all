@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (43 of 107 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (42 of 106 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 18b18aa | 2026-09-25 18b18aa | 18 | — | 2 | 2 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 44c928b | 2026-09-25 18b18aa | 18 | — | 2 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 3 | — | 2 | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 5 | — | — | 2 | — |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 b865602 | 2026-09-25 b865602 | 4 | — | 5 | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 6 | — | 8 | 3 | 3 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 44c928b | 2026-09-25 25a20ff | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 5 | — | 6 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-25 bd3e953 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | 5 | 1 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 4 | — | 3 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 18b18aa | 2026-09-25 18b18aa | 8 | — | 2 | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 18b18aa | 2026-09-25 cdfa911 | 5 | — | 2 | — | 8 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 44c928b | 2026-09-25 44c928b | 4 | — | 3 | 5 | 2 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 44c928b | 2026-09-25 44c928b | 8 | — | 1 | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 44c928b | 2026-09-25 cdfa911 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-25 21b72a3 | 2026-09-25 21b72a3 | 7 | **1** | 1 | 3 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (43 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (107 issue(s))
+## What is waiting (106 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -48,7 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (38)
+### Bugs (37)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A receipt's amount on the review card is the first item the pipeline read from the OCR text, which can differ from the total the vision model returned, and a base64 image longer than the parser's cap is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the procedure accepts larger payloads.
@@ -100,7 +100,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The founder metrics count active users from sessions created since the server's midnight, not Cairo's (golden rule 6), and upgrades only from `upgrade_to_pro` events, so an upgrade to Ultra is not counted.
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
-- The legacy path is still the one most traffic takes: `resolveRoutingConfig` reads `free_routing_ranges` and `pro_routing_ranges` from the settings, so an Ultra user is routed by the Pro ranges, and the keys come from settings or the environment rather than from the providers the console manages.
 - `ai.getUserLimits` computes the billing cycle with server-local `Date` arithmetic instead of Cairo business time (golden rule 6), so the cycle turns over at the server's midnight.
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)

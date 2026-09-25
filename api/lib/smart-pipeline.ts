@@ -4,7 +4,6 @@ import { runRuleEngine, PERSON_CATEGORIES, SUB_CATEGORY_MAP } from "./rule-engin
 import { resolveGovernedTaxonomy } from "./direction-governed-taxonomy";
 import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
 import { normalizeTransactionTaxonomyList } from "./category-registry";
-import { CATEGORIES } from "./category-registry";
 import {
   executeLlmChain,
   LlmChainError,

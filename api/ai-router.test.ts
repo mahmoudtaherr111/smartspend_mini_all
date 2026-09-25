@@ -1,69 +1,31 @@
 import { describe, expect, it, vi } from "vitest";
 
-// These cases are about keys in the settings; a Groq key in the developer's own .env must not decide them.
+// These cases are about keys in the settings; keys in the developer's own .env must not decide them.
 vi.mock("./lib/env", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./lib/env")>();
-  return { ...actual, env: { ...actual.env, GROQ_API_KEY: undefined } };
+  return { ...actual, env: { ...actual.env, GROQ_API_KEY: undefined, FIREWORKS_API_KEY: undefined, NVIDIA_API_KEY: undefined } };
 });
 
 import { resolveRoutingConfig } from "./ai-router";
 
-describe("resolveRoutingConfig", () => {
-  it("falls back to a Gemini-safe model when a Groq range has no key", async () => {
-    const resolved = await resolveRoutingConfig("free", 0, {
-      ai_api_key: "gemini-key",
-      free_routing_ranges: JSON.stringify([
-        {
-          from: 0,
-          to: 1000,
-          provider: "groq",
-          key_slot: "groq",
-          model: "llama-3.1-8b-instant",
-        },
-      ]),
-    });
-
-    expect(resolved.provider).toBe("gemini");
-    expect(resolved.apiKey).toBe("gemini-key");
-    expect(resolved.model.startsWith("gemini-")).toBe(true);
-    expect(resolved.model).not.toContain("llama");
+describe("the parse's fallback route", () => {
+  it("is Gemini with each plan's own model, whatever the user has spent", async () => {
+    const cfg = { ai_api_key: "gemini-key", ai_model_free: "gemini-3.1-flash-lite", ai_model_pro: "gemini-3.5-flash", ai_model_ultra: "gemini-3.8-flash" };
+    for (const [plan, model] of [["free", "gemini-3.1-flash-lite"], ["pro", "gemini-3.5-flash"], ["ultra", "gemini-3.8-flash"]]) {
+      const resolved = await resolveRoutingConfig(plan, cfg);
+      expect(resolved.provider).toBe("gemini");
+      expect(resolved.apiKey).toBe("gemini-key");
+      expect(resolved.model).toBe(model);
+    }
   });
 
-  it("keeps Groq routing when the Groq key is configured", async () => {
-    const resolved = await resolveRoutingConfig("pro", 0, {
-      ai_api_key: "gemini-key",
-      groq_api_key: "groq-key",
-      pro_routing_ranges: JSON.stringify([
-        {
-          from: 0,
-          to: null,
-          provider: "groq",
-          key_slot: "groq",
-          model: "llama-3.3-70b-versatile",
-        },
-      ]),
-    });
-
-    expect(resolved.provider).toBe("groq");
-    expect(resolved.apiKey).toBe("groq-key");
-    expect(resolved.model).toBe("llama-3.3-70b-versatile");
+  it("never names a non-Gemini model for Gemini", async () => {
+    const resolved = await resolveRoutingConfig("free", { ai_api_key: "k", ai_model_free: "llama-3.1-8b-instant" });
+    expect(resolved.model.startsWith("gemini-")).toBe(true);
   });
 
-  it("coerces mismatched Gemini ranges away from Groq model names", async () => {
-    const resolved = await resolveRoutingConfig("free", 0, {
-      ai_api_key: "gemini-key",
-      free_routing_ranges: JSON.stringify([
-        {
-          from: 0,
-          to: null,
-          provider: "gemini",
-          key_slot: "key1",
-          model: "llama-3.1-8b-instant",
-        },
-      ]),
-    });
-
-    expect(resolved.provider).toBe("gemini");
-    expect(resolved.model.startsWith("gemini-")).toBe(true);
+  it("hands every built-in fallback key to the chain, not only the one a range picked", async () => {
+    const resolved = await resolveRoutingConfig("pro", { ai_api_key: "g", groq_api_key: "q", nvidia_api_key: "n" });
+    expect(resolved.keys).toMatchObject({ groq: "q", nvidia: "n", fireworks: "" });
   });
 });

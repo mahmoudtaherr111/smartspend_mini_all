@@ -33,29 +33,6 @@ export interface SettingDef {
   secret?: boolean;
 }
 
-const FREE_ROUTING_DEFAULT = JSON.stringify([
-  { from: 0, to: 20000, provider: "groq", key_slot: "groq", model: "llama-3.1-8b-instant" },
-  { from: 20000, to: 50000, provider: "gemini", key_slot: "key1", model: "gemini-2.0-flash" },
-  {
-    from: 50000,
-    to: null,
-    action: "block",
-    message:
-      "استهلكت رصيدك الشهري من الذكاء الاصطناعي 🔒\nيتجدد تلقائياً في بداية الشهر الجاي، أو رقّي لباقة Pro للحصول على حد أعلى!",
-  },
-]);
-
-const PRO_ROUTING_DEFAULT = JSON.stringify([
-  { from: 0, to: 150000, provider: "groq", key_slot: "groq", model: "llama-3.3-70b-versatile" },
-  { from: 150000, to: 500000, provider: "gemini", key_slot: "key1", model: "gemini-1.5-pro" },
-  {
-    from: 500000,
-    to: null,
-    action: "block",
-    message: "وصلت لحد باقة Pro الشهري 🔒\nيتجدد تلقائياً في بداية الشهر الجاي.",
-  },
-]);
-
 const AI_SYSTEM_PROMPT_DEFAULT =
   "[Persona] مستشار مالي مصري ذكي ومتعاطف. لغتك عامية مصرية راقية ومبسطة، وتتحدث وكأنك إنسان حقيقي.\n[Rules]\n1. لا تستخدم العناوين الآلية (مثل التطبيع أو السببية).\n2. واجه المستخدم بالأرقام الحقيقية.\n3. قدم نصائح عملية مصممة خصيصاً للمستخدم بناءً على سلوكه المالي.";
 
@@ -106,10 +83,6 @@ export const SETTINGS: SettingDef[] = [
   { key: "ai_model_pro", default: () => env.GEMINI_MODEL_PRO || "gemini-1.5-flash" },
   { key: "ai_model_ultra", default: "gemini-1.5-pro" },
   { key: "ai_model_reports", default: () => env.GEMINI_MODEL_REPORTS || "gemini-1.5-flash" },
-
-  // ── Dynamic token routing ──
-  { key: "free_routing_ranges", default: FREE_ROUTING_DEFAULT },
-  { key: "pro_routing_ranges", default: PRO_ROUTING_DEFAULT },
 
   // ── Token limits ──
   { key: "free_token_limit", default: "50000" },

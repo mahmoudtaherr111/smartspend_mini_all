@@ -59,7 +59,6 @@ import { redactSensitiveData } from "./lib/anonymizer";
 import {
   coerceModelForProvider,
   defaultGeminiModelForPlan,
-  defaultModelForProvider,
   mapModelName,
   isGroqModel,
   isFireworksModel,
@@ -236,141 +235,42 @@ export async function callGroqAPI(
 // ────────────────────────────────────────────────────────
 // Dynamic Routing Config Resolver
 // ────────────────────────────────────────────────────────
-export interface RoutingRange {
-  from: number;
-  to: number | null;
-  action?: "block";
-  message?: string;
-  provider?: AiProviderName;
-  key_slot?: "key1" | "key2" | "groq" | "fireworks" | "nvidia";
-  model?: string;
-}
-
 export interface ResolvedRouting {
   provider: AiProviderName;
   apiKey: string;
   model: string;
+  /** Keys of the built-in fallback providers, used after the admin's routes and Gemini. */
+  keys: { groq: string; fireworks: string; nvidia: string; geminiSecondary: string };
 }
 
 /**
- * Reads the dynamic routing ranges from admin settings and resolves
- * the correct API provider + key + model for the user's current token usage.
- * Throws a TRPCError with FORBIDDEN code if the user is in a "block" range.
+ * The model a plan's parse falls back to when the admin's routes (the "classification"
+ * models in the providers tab, `resolveAdminRoutes`) cannot answer: Gemini with the plan's
+ * own model (`ai_model_free`, `ai_model_pro`, `ai_model_ultra`), then the built-in providers
+ * that have a key. This used to pick a provider by how many tokens the user had spent
+ * (`*_routing_ranges`), which sent every free parse to an 8B Groq model, routed Ultra by
+ * Pro's ranges, pointed Pro at a retired Gemini model and repeated the plan's token limit
+ * as a "block" range. The monthly limit is enforced by `assertAiBudget`.
  */
 export async function resolveRoutingConfig(
   userPlan: string,
-  tokensUsed: number,
   cfg: Record<string, string>,
 ): Promise<ResolvedRouting> {
   const plan: AiPlanName =
     userPlan === "ultra" ? "ultra" : userPlan === "pro" ? "pro" : "free";
-  const rangesPlan = plan === "free" ? "free" : "pro";
-  const rangesKey = `${rangesPlan}_routing_ranges`;
-  const rawRanges = cfg[rangesKey];
-  const legacyGeminiModel =
-    plan === "ultra"
-      ? cfg.ai_model_ultra || defaultGeminiModelForPlan(plan)
-      : plan === "pro"
-        ? cfg.ai_model_pro || defaultGeminiModelForPlan(plan)
-        : cfg.ai_model_free || defaultGeminiModelForPlan(plan);
-
-  const resolveKey = (
-    provider: string,
-    keySlot?: string,
-  ) => {
-    if (provider === "groq" || keySlot === "groq") return cfg.groq_api_key || env.GROQ_API_KEY || "";
-    if (provider === "fireworks" || keySlot === "fireworks") return cfg.fireworks_api_key || env.FIREWORKS_API_KEY || "";
-    if (provider === "nvidia" || keySlot === "nvidia") return cfg.nvidia_api_key || env.NVIDIA_API_KEY || "";
-    if (keySlot === "key2") {
-      return cfg.ai_api_key_2 || cfg.ai_api_key || env.GEMINI_API_KEY || "";
-    }
-    return cfg.ai_api_key || env.GEMINI_API_KEY || cfg.ai_api_key_2 || "";
-  };
-
-  const geminiFallback = (modelSetting?: string): ResolvedRouting => ({
-    provider: "gemini",
-    apiKey: resolveKey("gemini", "key1"),
-    model: coerceModelForProvider(
-      modelSetting || legacyGeminiModel,
-      "gemini",
-      plan,
-    ),
-  });
-
-  // If no routing ranges configured, fall back to simple legacy key/model
-  if (!rawRanges) {
-    return geminiFallback();
-  }
-
-  let ranges: RoutingRange[] = [];
-  try {
-    ranges = JSON.parse(rawRanges);
-  } catch {
-    // JSON parse failed — fallback gracefully
-    return geminiFallback();
-  }
-
-  // Find the matching range for current token usage
-  const matchedRange = ranges.find((r) => {
-    const from = r.from ?? 0;
-    const to = r.to;
-    if (tokensUsed < from) return false;
-    if (to === null || to === undefined) return true; // open-ended upper bound
-    return tokensUsed < to;
-  });
-
-  if (!matchedRange) {
-    // No range matched (shouldn’t happen with a well-formed config that ends in null)
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: `استهلكت رصيدك الشهري من الذكاء الاصطناعي. يتجدد تلقائياً في بداية الشهر الجاي.`,
-    });
-  }
-
-  // Block range
-  if (matchedRange.action === "block") {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message:
-        matchedRange.message ||
-        `وصلت للحد الشهري. يتجدد تلقائياً في بداية الشهر الجاي.`,
-    });
-  }
-
-  // Resolve API key from the selected provider. Provider wins over a mismatched slot.
-  const provider: AiProviderName =
-    matchedRange.provider ??
-    (matchedRange.key_slot === "groq"
-      ? "groq"
-      : matchedRange.key_slot === "fireworks"
-        ? "fireworks"
-        : matchedRange.key_slot === "nvidia"
-          ? "nvidia"
-          : "gemini");
-  const keySlot =
-    matchedRange.key_slot ??
-    (provider === "groq"
-      ? "groq"
-      : provider === "fireworks"
-        ? "fireworks"
-        : provider === "nvidia"
-          ? "nvidia"
-          : "key1");
-  const resolvedKey = resolveKey(provider, keySlot);
-
-  if (!resolvedKey) {
-    // Key slot configured but key is empty — fall back to Gemini-safe routing.
-    return geminiFallback();
-  }
-
+  const planModel =
+    plan === "ultra" ? cfg.ai_model_ultra : plan === "pro" ? cfg.ai_model_pro : cfg.ai_model_free;
+  const primaryKey = cfg.ai_api_key || env.GEMINI_API_KEY || cfg.ai_api_key_2 || "";
   return {
-    provider,
-    apiKey: resolvedKey,
-    model: coerceModelForProvider(
-      matchedRange.model || defaultModelForProvider(provider, plan),
-      provider,
-      plan,
-    ),
+    provider: "gemini",
+    apiKey: primaryKey,
+    model: coerceModelForProvider(planModel || defaultGeminiModelForPlan(plan), "gemini", plan),
+    keys: {
+      groq: cfg.groq_api_key || env.GROQ_API_KEY || "",
+      fireworks: cfg.fireworks_api_key || env.FIREWORKS_API_KEY || "",
+      nvidia: cfg.nvidia_api_key || env.NVIDIA_API_KEY || "",
+      geminiSecondary: cfg.ai_api_key_2 || "",
+    },
   };
 }
 
@@ -717,15 +617,11 @@ export const aiRouter = router({
       const cfgFull = settings;
 
       try {
-        const routing = await resolveRoutingConfig(
-          ctx.user.plan,
-          budget.used,
-          cfgFull,
-        );
+        const routing = await resolveRoutingConfig(ctx.user.plan, cfgFull);
         resolvedProvider = routing.provider;
-        resolvedGroqKey = routing.provider === "groq" ? routing.apiKey : "";
-        resolvedFireworksKey = routing.provider === "fireworks" ? routing.apiKey : "";
-        resolvedNvidiaKey = routing.provider === "nvidia" ? routing.apiKey : "";
+        resolvedGroqKey = routing.keys.groq;
+        resolvedFireworksKey = routing.keys.fireworks;
+        resolvedNvidiaKey = routing.keys.nvidia;
         apiKey = routing.apiKey;
         modelName = routing.model;
       } catch (routingErr) {
@@ -1581,15 +1477,11 @@ export const aiRouter = router({
       let modelName = client.modelName;
 
       try {
-        const routing = await resolveRoutingConfig(
-          ctx.user.plan,
-          budget.used,
-          cfg
-        );
+        const routing = await resolveRoutingConfig(ctx.user.plan, cfg);
         resolvedProvider = routing.provider;
-        resolvedGroqKey = routing.provider === "groq" ? routing.apiKey : "";
-        resolvedFireworksKey = routing.provider === "fireworks" ? routing.apiKey : "";
-        resolvedNvidiaKey = routing.provider === "nvidia" ? routing.apiKey : "";
+        resolvedGroqKey = routing.keys.groq;
+        resolvedFireworksKey = routing.keys.fireworks;
+        resolvedNvidiaKey = routing.keys.nvidia;
         apiKey = routing.apiKey;
         modelName = routing.model;
       } catch (routingErr) {

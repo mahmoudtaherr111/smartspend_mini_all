@@ -2472,7 +2472,7 @@ export const expenseRouter = router({
             getSystemSettings(),
           ]);
 
-          const routing = await resolveRoutingConfig(ctx.user!.plan ?? "free", 0, cfg);
+          const routing = await resolveRoutingConfig(ctx.user!.plan ?? "free", cfg);
           const userDict = userDictRows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? undefined }));
           const personalContextRaw = buildPersonalContext(smartProfile);
 
@@ -2603,11 +2603,7 @@ export const expenseRouter = router({
           getSystemSettings(),
         ]);
 
-        const routing = await resolveRoutingConfig(
-          ctx.user!.plan ?? "free",
-          0,
-          cfg,
-        );
+        const routing = await resolveRoutingConfig(ctx.user!.plan ?? "free", cfg);
 
         const userDict = userDictRows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? undefined }));
         const personalContextRaw = buildPersonalContext(smartProfile);

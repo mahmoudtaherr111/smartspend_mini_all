@@ -19,7 +19,7 @@ the per-plan token budget every paid call is measured against, and the two place
 | Provider health | `api/lib/provider-health.ts` | Writes what the breaker learns into `ai_providers.healthStatus`, at most once a minute per provider |
 | Model names | `api/lib/model-mapper.ts` | Maps shorthand and retired names, tells a provider's models apart, and gives each provider a default per plan |
 | Model catalogue | `api/lib/ai-provider-registry.ts` | A hand-written list of models with tiers, purposes and prices, plus the retired-name map |
-| Legacy routing | `resolveRoutingConfig` in `api/ai-router.ts` | The older path: routing ranges and keys read from `system_settings` by how many tokens the user has spent |
+| Parse fallback | `resolveRoutingConfig` in `api/ai-router.ts` | What the typed and voice parse falls back to after the admin's routes: Gemini with the plan's model (`ai_model_free`, `ai_model_pro`, `ai_model_ultra`) and every built-in provider's key |
 | Budgets | `api/lib/ai-usage-policy.ts` | Per-plan monthly limits, per-request ceilings, the burst guard, and the token estimate |
 | Cost metrics | `api/services/ai-cost-policy.ts`, `api/services/ai-cost-analytics.ts` | A second, lighter accounting of AI work as `ai_cost_*` events, and the admin overview over them |
 | Provider clients | `api/lib/deepseek-client.ts`, `api/lib/fireworks-client.ts`, `api/lib/nvidia-client.ts`, `api/lib/groq-client.ts` | The direct calls still used by the AI Center and the report job |
@@ -34,6 +34,9 @@ the per-plan token budget every paid call is measured against, and the two place
    key, then every built-in provider that has a key (Gemini, Groq, Fireworks, NVIDIA), then DeepSeek and
    OpenRouter if they have one. A route needs both a key and a model to stay in the list, and a model that
    demonstrably belongs to another vendor is replaced by that provider's default.
+   For classification the requested provider is the admin's "classification" model for the plan; without one it is
+   Gemini with the plan's own model (`resolveRoutingConfig`). Nothing depends on how many tokens the user has spent:
+   the monthly limit is `assertAiBudget`'s, and the per-plan token-range routing (`*_routing_ranges`) is gone.
 3. `executeLlmChain` tries the routes in order under one deadline for the whole chain. Gemini goes through the
    Google SDK; everything else speaks the OpenAI-compatible shape, which is why adding a provider is a row and
    a key rather than code.
@@ -167,17 +170,14 @@ Checked against the code; each one names where it lives.
    in a comment, and nothing reads it: `isKnownModel`, `getModelEntry`, `listModels`, `resolveApiKey` and the
    per-plan defaults have no caller, and only `DEPRECATED_MODEL_MAP` is used. Model defaults live a second
    time in `api/lib/model-mapper.ts` and a third time in the fixed lists of `admin.getAvailableModels`.
-5. **Bug.** The legacy path is still the one most traffic takes: `resolveRoutingConfig` reads `free_routing_ranges` and
-   `pro_routing_ranges` from the settings, so an Ultra user is routed by the Pro ranges, and the keys come from
-   settings or the environment rather than from the providers the console manages.
-6. **Debt.** The breaker, the route cache (one minute) and the settings cache (five minutes) are per process, so during
+5. **Debt.** The breaker, the route cache (one minute) and the settings cache (five minutes) are per process, so during
    an outage each replica learns on its own and an admin's change reaches them at different times.
-7. **Bug.** `ai.getUserLimits` computes the billing cycle with server-local `Date` arithmetic instead of Cairo business
+6. **Bug.** `ai.getUserLimits` computes the billing cycle with server-local `Date` arithmetic instead of Cairo business
    time (golden rule 6), so the cycle turns over at the server's midnight.
-8. **Debt.** The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and
+7. **Debt.** The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and
    `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat,
    report, SMS and voice paths do not.
-9. **Gap.** `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card —
+8. **Gap.** `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card —
    is only ever written by the breaker during real traffic ([admin](admin.md)).
 
 ## Related systems
