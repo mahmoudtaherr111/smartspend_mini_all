@@ -478,6 +478,10 @@ smsApp.post("/ingest", async (c) => {
   });
 
   await bumpFinanceCacheGen(userId, userType);
+  if (type === "expense") {
+    const { checkUserBudgetExceeded } = await import("./notification-engine");
+    void checkUserBudgetExceeded(userId, userType);
+  }
 
   // The amount and the category are the user's finances: they are in the ledger, not in the log.
   log.info({ event: "sms.ingested", userId, userType, type, provider: parseResult.provider }, "Bank message recorded");

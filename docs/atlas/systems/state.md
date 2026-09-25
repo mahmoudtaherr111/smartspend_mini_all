@@ -4,21 +4,21 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (57 of 118 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (57 of 117 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 c129eda | 2026-09-25 c129eda | 18 | — | 4 | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-24 37a55fb | 2026-09-24 37a55fb | 3 | — | 4 | 3 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 339aea2 | 2026-09-25 339aea2 | 3 | — | 4 | 2 | 2 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 5e20684 | 2026-09-25 5e20684 | 4 | — | 5 | 3 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 37a55fb | 2026-09-24 45b800e | 6 | — | 9 | 2 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 c129eda | 2026-09-25 c129eda | 5 | — | 7 | 5 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 339aea2 | 2026-09-25 339aea2 | 5 | — | 7 | 4 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-24 37a55fb | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-24 6739377 | 2026-09-24 6739377 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-24 37a55fb | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 339aea2 | 2026-09-25 339aea2 | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-24 37a55fb | 2026-09-24 37a55fb | 4 | — | 3 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 45b800e | 2026-09-24 d9d553a | 9 | — | 4 | 1 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-24 45b800e | 2026-09-24 45b800e | 5 | — | 2 | — | 8 |
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (57 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (118 issue(s))
+## What is waiting (117 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -102,7 +102,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - The admin console always shows WhatsApp verification as off: `adminWhatsapp.getSettings` returns a fixed "temporarily disabled" answer, while `adminWhatsapp.toggleOtpVerification` still changes the `whatsapp_otp_enabled` setting that registration reads.
-- The permission prompt promises weekly follow-ups, daily voice reminders and alerts for category budgets and unusual spending; the server sends none of those. The budget alert compares the month with the profile's income, and the reminder reaches only users with a streak whose last recorded day was 12 to 36 hours ago.
+- The permission prompt promises weekly follow-ups, daily voice reminders and alerts for unusual spending; the server sends none of those, and the reminder reaches only users with a streak whose last recorded day was 12 to 36 hours ago.
 - The default Pro upsell promises a 30% discount that checkout never gives ([billing](billing.md)).
 - When `VITE_VAPID_PUBLIC_KEY` is missing, the browser subscribes with a public key written in `src/hooks/usePushNotifications.ts`, and those subscriptions receive nothing unless the server's keys match. `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are read from `process.env` instead of `api/lib/env.ts` (golden rule 8).
 - The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
@@ -126,7 +126,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, so anything recorded offline and not yet sent is lost with the session.
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (31)
+### Gaps (29)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A category changed on the review card teaches a rule only when the sentence was one item (`api/expense-router.ts#reviewCorrection`); in a multi-item sentence it is saved but not learned. `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere.
@@ -134,7 +134,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY` directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
 - Only a merchant the engine knows well changes the fixed map: a card payment to any other merchant is `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
-- Saving a message, automatically or from a suggestion, does not check budget alerts as `expense.create` does, and `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A profile question the user lets pass, neither answered nor refused, is offered again in the next call: only an answer or a refusal saved through `memory answer` takes it off the list, and the call never sets the Home card's one-day pause (`user_profiles.last_asked_at`), which it only reads (`api/services/voice/brain/profile-questions.ts#nextCallQuestion`).
@@ -149,7 +148,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - No `assertAiBudget` check runs before either report model call, and the WhatsApp job records no tokens for the user (`api/AGENTS.md`, rule 5).
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
-- Budgets have no screen and no alert of their own: the "budget exceeded" notification compares the calendar month's spending, business included, with the monthly income in the profile, not with `user_budgets`.
 - The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP (`src/components/goals/FinancialGoalsPanel.tsx`).
 - `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record; `business.get` returns the user's first business even when it is inactive.
 - `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments as spending, every source except voice as manual, and dates by UTC day.
@@ -183,13 +181,14 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (30)
+### Debt (31)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win; the code reads the `parser_*` keys first.
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but `api/jobs/data-retention-job.ts` has no policy for it: full message texts stay until the account is deleted.
+- `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - The model id skips `mapModelName` (golden rule 9): `resolveLiveModelId` only adds a prefix.

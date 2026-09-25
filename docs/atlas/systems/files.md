@@ -162,6 +162,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/ai-memory/types.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-memory/vector-store.ts` | [ai-center](ai-center.md) |
 | `api/services/batch-ai-service.ts` | [insights](insights.md) |
+| `api/services/budget-status.ts` | [money](money.md) |
 | `api/services/entitlements/voice.ts` | [voice-calls](voice-calls.md) |
 | `api/services/expense-rollups.ts` | [money](money.md) |
 | `api/services/finance-semantic-layer/cache.ts` | [ai-center](ai-center.md) |
@@ -297,6 +298,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/bank-sync/DigitalBankingSuite.tsx` | [bank-messages](bank-messages.md) |
 | `src/components/bank-sync/IosSetupFlow.tsx` | [bank-messages](bank-messages.md) |
 | `src/components/bank-sync/SmsSuggestionsCard.tsx` | [bank-messages](bank-messages.md) |
+| `src/components/budgets/BudgetsPanel.tsx` | [money](money.md) |
 | `src/components/dashboard/BehaviorInsights.tsx` | [money](money.md) |
 | `src/components/dashboard/ExpenseChart.tsx` | [money](money.md) |
 | `src/components/dashboard/GlobalSearch.tsx` | [money](money.md) |

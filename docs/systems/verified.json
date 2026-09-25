@@ -178,7 +178,7 @@
         "api/lib/shortcut-generator.ts": "fbf02d8e0f5d",
         "api/lib/sms-ai-parser.ts": "f748c952734f",
         "api/lib/sms-rule-parser.ts": "e6e1e7b524d5",
-        "api/profile-router.ts#profile.confirmSmsSuggestion": "dca65bd219b9",
+        "api/profile-router.ts#profile.confirmSmsSuggestion": "a95676092729",
         "api/profile-router.ts#profile.dismissSmsSuggestion": "2aea8fd37c7d",
         "api/profile-router.ts#profile.generateMagicCode": "7030c40bf22b",
         "api/profile-router.ts#profile.generateWebhookToken": "be8d7316579a",
@@ -187,7 +187,7 @@
         "api/profile-router.ts#profile.getWebhookToken": "8a850e31cd9d",
         "api/profile-router.ts#rest-of-file": "edf9095ff413",
         "api/services/sms-ledger.ts": "8f28adc733f5",
-        "api/sms-router.ts": "aef3f4edceb7",
+        "api/sms-router.ts": "9a1a0e93ed30",
         "src/components/bank-sync/AndroidSetupFlow.tsx": "68fd301a1dfb",
         "src/components/bank-sync/DigitalBankingSuite.tsx": "b5ee9812af75",
         "src/components/bank-sync/IosSetupFlow.tsx": "e3bd2e8139d6",
@@ -195,9 +195,9 @@
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-24 37a55fb",
-      "arabic": "4a1912f4c7af",
-      "arabicChecked": "2026-09-24 37a55fb"
+      "checked": "2026-09-25 339aea2",
+      "arabic": "e4d69c1be4b1",
+      "arabicChecked": "2026-09-25 339aea2"
     },
     "billing": {
       "files": {
@@ -323,7 +323,7 @@
       "files": {
         "api/boot.ts#job:nightly-rollup-reconciliation": "7a5700744f08",
         "api/boot.ts#job:taxonomy-migration": "5864e301b433",
-        "api/budget-router.ts": "3706473bd686",
+        "api/budget-router.ts": "106bf2ec3b6c",
         "api/business-router.ts": "b6f0bc60473a",
         "api/expense-router.ts#expense.delete": "188765ac89cc",
         "api/expense-router.ts#expense.getById": "883d7c8c2233",
@@ -345,9 +345,11 @@
         "api/profile-router.ts#profile.mergeContacts": "7ade643df213",
         "api/profile-router.ts#profile.updateContact": "a729d41858de",
         "api/profile-router.ts#rest-of-file": "edf9095ff413",
+        "api/services/budget-status.ts": "e6c46c341118",
         "api/services/expense-rollups.ts": "55147ed1287a",
         "api/services/financial-month.ts": "50ad98190246",
         "api/wallet-router.ts": "7d5e5a1398e9",
+        "src/components/budgets/BudgetsPanel.tsx": "9489aeff32d1",
         "src/components/dashboard/BehaviorInsights.tsx": "47729e6b7532",
         "src/components/dashboard/ExpenseChart.tsx": "401963f07c4c",
         "src/components/dashboard/GlobalSearch.tsx": "8654dcb76f56",
@@ -363,11 +365,11 @@
         "src/components/expenses/PendingQuestionsCard.tsx": "6716b7d289ba",
         "src/components/expenses/RecentExpenses.tsx": "955f7cf3d980",
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
-        "src/pages/Home.tsx": "4ff6e1ba0cc7"
+        "src/pages/Home.tsx": "7e4da1302279"
       },
-      "checked": "2026-09-25 c129eda",
-      "arabic": "2417db769423",
-      "arabicChecked": "2026-09-25 c129eda"
+      "checked": "2026-09-25 339aea2",
+      "arabic": "cb03eb035dac",
+      "arabicChecked": "2026-09-25 339aea2"
     },
     "notifications": {
       "files": {
@@ -375,7 +377,7 @@
         "api/boot.ts#job:scheduled-notifications": "6ea4c4d1ef31",
         "api/boot.ts#job:seed-default-templates": "d552cda74417",
         "api/boot.ts#job:smart-activity-notifications": "f8e2642a5b89",
-        "api/notification-engine.ts": "4df50e6f01fa",
+        "api/notification-engine.ts": "e4deac530e96",
         "api/profile-router.ts#profile.getInAppNotifications": "ff2aee79554d",
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
         "api/profile-router.ts#profile.savePushSubscription": "788ec5760eef",
@@ -385,9 +387,9 @@
         "api/services/otp-cache.ts": "e6343a8abd07",
         "api/services/whatsapp-service.ts": "1177804a1f23"
       },
-      "checked": "2026-09-24 37a55fb",
-      "arabic": "92a3a240b12b",
-      "arabicChecked": "2026-09-18 981a949"
+      "checked": "2026-09-25 339aea2",
+      "arabic": "23206f84bd39",
+      "arabicChecked": "2026-09-25 339aea2"
     },
     "platform": {
       "files": {

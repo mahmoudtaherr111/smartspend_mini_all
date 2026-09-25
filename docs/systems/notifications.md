@@ -33,7 +33,8 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 ## What sends notifications
 | Trigger | When | Who gets it |
 | --- | --- | --- |
-| `budget_exceeded`, from `checkUserBudgetExceeded` | after an item is saved ([Recording spending](expense-capture.md)) | a user whose spending in this Cairo calendar month passed the monthly income in the profile; once a month |
+| `budget_near_limit`, `budget_category_exceeded`, from `checkUserBudgetExceeded` | after an item is saved, typed or from a bank message | a user with budgets: once per budget cycle when a budget reaches its alert threshold, and once when it passes its limit ([Money](money.md#budgets)) |
+| `budget_exceeded`, from `checkUserBudgetExceeded` | after an item is saved ([Recording spending](expense-capture.md)) | a user without budgets whose spending in this Cairo calendar month passed the monthly income in the profile; once a month |
 | `manual_scheduled` templates, from `processScheduledNotifications` in the job `scheduled-notifications` | every minute, for active templates whose send time has passed | one user, or every user filtered by plan and a minimum number of transactions; the template is then switched off |
 | `inactivity_reminder`, from `checkAndTriggerSmartActivityNotifications` in the job `smart-activity-notifications` | daily at 20:00 | users with a streak of at least 2 whose last recorded day was 12 to 36 hours ago; once a day |
 | `pro_conversion_streak` | the same run | Free users with a streak of at least 4 who recorded in the last 36 hours; once a week |
@@ -102,9 +103,9 @@ Checked against the code; each one names where it lives.
 2. **Bug.** The admin console always shows WhatsApp verification as off: `adminWhatsapp.getSettings` returns a fixed "temporarily
    disabled" answer, while `adminWhatsapp.toggleOtpVerification` still changes the `whatsapp_otp_enabled` setting that
    registration reads.
-3. **Bug.** The permission prompt promises weekly follow-ups, daily voice reminders and alerts for category budgets and unusual
-   spending; the server sends none of those. The budget alert compares the month with the profile's income, and the
-   reminder reaches only users with a streak whose last recorded day was 12 to 36 hours ago.
+3. **Bug.** The permission prompt promises weekly follow-ups, daily voice reminders and alerts for unusual spending; the
+   server sends none of those, and the reminder reaches only users with a streak whose last recorded day was 12 to 36
+   hours ago.
 4. **Bug.** The default Pro upsell promises a 30% discount that checkout never gives ([billing](billing.md)).
 5. **Bug.** When `VITE_VAPID_PUBLIC_KEY` is missing, the browser subscribes with a public key written in
    `src/hooks/usePushNotifications.ts`, and those subscriptions receive nothing unless the server's keys match.

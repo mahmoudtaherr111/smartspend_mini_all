@@ -945,9 +945,9 @@ model {
         file 'api/budget-router.ts'
       }
       create = procedure 'budget.create' {
-        #mutation #authed #uncalled
+        #mutation #authed
         technology 'authedProcedure'
-        description 'mutation · authedProcedure · no caller in src/'
+        description 'mutation · authedProcedure'
         metadata {
           file 'api/budget-router.ts'
           builder 'authedProcedure'
@@ -955,9 +955,9 @@ model {
         }
       }
       delete = procedure 'budget.delete' {
-        #mutation #authed #uncalled
+        #mutation #authed
         technology 'authedProcedure'
-        description 'mutation · authedProcedure · no caller in src/'
+        description 'mutation · authedProcedure'
         metadata {
           file 'api/budget-router.ts'
           builder 'authedProcedure'
@@ -965,9 +965,9 @@ model {
         }
       }
       list = procedure 'budget.list' {
-        #query #authed #uncalled
+        #query #authed
         technology 'authedProcedure'
-        description 'query · authedProcedure · no caller in src/'
+        description 'query · authedProcedure'
         metadata {
           file 'api/budget-router.ts'
           builder 'authedProcedure'

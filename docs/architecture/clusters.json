@@ -101,7 +101,8 @@
       "description": "Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges.",
       "paths": [
         "api/services/expense-rollups.ts",
-        "api/services/financial-month.ts"
+        "api/services/financial-month.ts",
+        "api/services/budget-status.ts"
       ]
     },
     {
@@ -403,7 +404,8 @@
       "paths": [
         "src/components/dashboard/**",
         "src/components/expenses/**",
-        "src/components/goals/**"
+        "src/components/goals/**",
+        "src/components/budgets/**"
       ]
     },
     {

@@ -16,10 +16,10 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice` | `mysql` |
 | `contracts` | Shared contracts | 7 | — | `ai-actions`, `ai-governance`, `ai-insights`, `api-core`, `api-routers`, `billing`, `classification`, `jobs`, `platform`, `voice`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-voice-call` | — |
 | `billing` | Billing | 3 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
-| `ledger` | Ledger aggregates | 2 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `ingestion-parsers`, `jobs` | — |
+| `ledger` | Ledger aggregates | 3 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `ingestion-parsers`, `jobs`, `notifications` | — |
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
 | `jobs` | Scheduled job bodies | 6 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `whatsapp` | `api-core` | `fireworks` |
-| `notifications` | Notifications | 2 | `database`, `platform` | `api-core`, `api-routers` | `firebase`, `web-push` |
+| `notifications` | Notifications | 2 | `database`, `ledger`, `platform` | `api-core`, `api-routers` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 43 | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `arabic-nlp`, `auth`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 13 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
@@ -44,7 +44,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-ai` | AI Center UI | 3 | `web-hooks`, `web-insights`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-voice-call` | — |
 | `web-capture` | Expense entry UI | 4 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
 | `web-insights` | Insights UI | 1 | `web-hooks`, `web-shell`, `web-ui-kit` | `web-ai` | — |
-| `web-finance` | Finance UI | 15 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-account`, `web-pages` | — |
+| `web-finance` | Finance UI | 16 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-account`, `web-pages` | — |
 | `web-bank-sync` | Bank sync UI | 5 | `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
 | `web-account` | Account UI | 9 | `web-finance`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `turnstile` |
 | `web-growth` | Ads and SEO UI | 2 | `web-hooks`, `web-shell` | `web-pages`, `web-shell` | — |
@@ -101,7 +101,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/ai-router.ts` | `ai-governance`, `ai-insights`, `ai-kernel`, `ai-providers`, `api-core`, `arabic-nlp`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security`, `voice` | `gemini`, `groq` | `ai_summaries`, `business_categories`, `expenses`, `local_users`, `pending_clarifications`, `pro_subscriptions`, `user_businesses`, `user_dictionaries`, `users`, `voice_usage` | `ai_summaries`, `ai_token_ledgers`, `classification_logs`, `local_users`, `monthly_behavior_snapshots`, `pending_clarifications`, `user_dictionaries`, `users`, `voice_usage` |
 | `api/analytics-router.ts` | `api-core`, `database`, `platform` | — | `expenses`, `local_users`, `user_analytics`, `users` | `user_analytics` |
 | `api/auth-router.ts` | `api-core`, `auth`, `database`, `platform` | `google-oauth` | `users` | `users` |
-| `api/budget-router.ts` | `api-core`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `security` | — | `expenses`, `user_budgets` | `user_budgets` |
+| `api/budget-router.ts` | `api-core`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `security` | — | `user_budgets` | `user_budgets` |
 | `api/business-router.ts` | `api-core`, `classification`, `database`, `finance-semantic-layer`, `ledger`, `platform` | `gemini` | `business_categories`, `user_businesses`, `user_contacts` | `business_categories`, `expenses`, `user_businesses`, `user_contacts` |
 | `api/chat-router.ts` | `ai-actions`, `ai-governance`, `ai-kernel`, `ai-memory`, `api-core`, `classification`, `database`, `finance-semantic-layer`, `platform` | `fireworks` | `ai_memory_items`, `ai_pending_actions`, `chat_conversations`, `chat_messages` | `ai_conversation_summaries`, `ai_memory_embeddings`, `ai_memory_items`, `chat_conversations`, `chat_messages`, `local_users`, `users` |
 | `api/expense-router.ts` | `ai-insights`, `api-core`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `security` | — | `business_categories`, `classification_logs`, `expense_categories`, `expense_daily_rollups`, `expenses`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `classification_logs`, `expense_categories`, `expenses`, `local_users`, `pending_clarifications`, `user_contacts`, `users` |
@@ -110,11 +110,11 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/image-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `classification`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `receipt-parsing`, `security` | — | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` |
 | `api/local-auth-router.ts` | `accounts`, `api-core`, `auth`, `database`, `platform`, `security`, `whatsapp` | — | `expenses`, `local_users` | `local_users` |
 | `api/pro-router.ts` | `api-core`, `auth`, `billing`, `contracts`, `database`, `platform` | — | `local_users`, `pro_subscriptions`, `users` | `pro_subscriptions` |
-| `api/profile-router.ts` | `ai-insights`, `api-core`, `auth`, `classification`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `platform`, `security`, `whatsapp` | — | `expenses`, `in_app_notifications`, `local_users`, `onboarding_questions`, `push_subscriptions`, `raw_sms_events`, `user_contacts`, `user_profiles`, `webhook_tokens` | `expenses`, `in_app_notifications`, `local_users`, `monthly_behavior_snapshots`, `push_subscriptions`, `user_contacts`, `user_profiles`, `users`, `webhook_tokens` |
+| `api/profile-router.ts` | `ai-insights`, `api-core`, `auth`, `classification`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `notifications`, `platform`, `security`, `whatsapp` | — | `expenses`, `in_app_notifications`, `local_users`, `onboarding_questions`, `push_subscriptions`, `raw_sms_events`, `user_contacts`, `user_profiles`, `webhook_tokens` | `expenses`, `in_app_notifications`, `local_users`, `monthly_behavior_snapshots`, `push_subscriptions`, `user_contacts`, `user_profiles`, `users`, `webhook_tokens` |
 | `api/referral-router.ts` | `api-core`, `database`, `platform` | — | `discount_codes`, `local_users`, `referrals`, `users` | `local_users`, `referrals`, `users` |
 | `api/seo-router.ts` | `api-core`, `database` | — | `seo_pages` | `seo_pages` |
 | `api/session-router.ts` | `api-core`, `auth`, `database`, `security` | — | `sessions` | `user_analytics` |
-| `api/sms-router.ts` | `auth`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `platform` | — | `local_users`, `raw_sms_events`, `users`, `webhook_tokens` | `raw_sms_events`, `webhook_tokens` |
+| `api/sms-router.ts` | `auth`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `notifications`, `platform` | — | `local_users`, `raw_sms_events`, `users`, `webhook_tokens` | `raw_sms_events`, `webhook_tokens` |
 | `api/support-router.ts` | `api-core`, `database` | — | `local_users`, `support_tickets`, `users` | `support_tickets` |
 | `api/voice-router.ts` | `api-core`, `database`, `voice` | — | `voice_calls` | — |
 | `api/wallet-router.ts` | `api-core`, `database` | — | `expenses`, `user_wallets` | `expenses`, `user_wallets` |
@@ -209,6 +209,7 @@ Daily expense rollups (the delta applied inside every expense write, and reconci
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
+| `api/services/budget-status.ts` | `database`, `platform` | — | `expenses`, `user_budgets` | `user_budgets` |
 | `api/services/expense-rollups.ts` | `database`, `finance-semantic-layer`, `platform` | — | `expense_daily_rollups`, `expenses` | `expense_daily_rollups`, `expense_details` |
 | `api/services/financial-month.ts` | `platform` | — | — | — |
 
@@ -239,7 +240,7 @@ Web push (VAPID) and Firebase Cloud Messaging delivery, scheduled and event-trig
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/notification-engine.ts` | `database`, `platform` | `web-push` | `expense_daily_rollups`, `local_users`, `notification_logs`, `notification_templates`, `push_subscriptions`, `user_profiles`, `users` | `in_app_notifications`, `notification_logs`, `notification_templates`, `push_subscriptions` |
+| `api/notification-engine.ts` | `database`, `ledger`, `platform` | `web-push` | `expense_daily_rollups`, `local_users`, `notification_logs`, `notification_templates`, `push_subscriptions`, `user_profiles`, `users` | `in_app_notifications`, `notification_logs`, `notification_templates`, `push_subscriptions` |
 | `api/services/firebase.ts` | `platform` | `firebase` | — | — |
 
 ### `whatsapp` — WhatsApp
@@ -711,6 +712,7 @@ Home dashboard (summaries, calendar, charts, search, streaks), recent expenses a
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
+| `src/components/budgets/BudgetsPanel.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/dashboard/BehaviorInsights.tsx` | `web-ui-kit` | — | — | — |
 | `src/components/dashboard/ExpenseChart.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/dashboard/GlobalSearch.tsx` | `web-shell`, `web-ui-kit` | — | — | — |

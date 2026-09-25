@@ -27,7 +27,7 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 | GET | `/api/sms/android-connect` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `webhook_tokens` | `webhook_tokens` |
 | POST | `/api/sms/android-status` | http | `api/sms-router.ts` | — | `webhook_tokens` | — |
 | POST | `/api/sms/exchange` | http | `api/sms-router.ts` | — | — | — |
-| POST | `/api/sms/ingest` | http | `api/sms-router.ts` | `api/lib/app-time.ts`, `api/lib/settings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/sms-rule-parser.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/sms-ledger.ts` | `local_users`, `raw_sms_events`, `users`, `webhook_tokens` | `raw_sms_events` |
+| POST | `/api/sms/ingest` | http | `api/sms-router.ts` | `api/lib/app-time.ts`, `api/lib/settings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/sms-rule-parser.ts`, `api/notification-engine.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/sms-ledger.ts` | `local_users`, `raw_sms_events`, `users`, `webhook_tokens` | `raw_sms_events` |
 | GET | `/api/sms/logs` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `raw_sms_events` | — |
 | GET | `/api/sms/metrics` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `raw_sms_events` | — |
 | GET | `/api/sms/shortcut-download` | http | `api/sms-router.ts` | `api/lib/shortcut-generator.ts` | — | — |

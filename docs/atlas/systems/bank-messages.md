@@ -38,11 +38,13 @@ flowchart LR
   sys_ai_platform[["AI providers and usage limits (system)"]]
   sys_expense_capture[["Recording spending (system)"]]
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
+  sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
   http__api_sms --> mod_ingestion_parsers
   http__api_sms --> sys_accounts
   http__api_sms --> sys_ai_center
+  http__api_sms --> sys_notifications
   http__api_sms --> sys_platform
   http__api_sms -.-> tbl_local_users
   http__api_sms -.-> tbl_users
@@ -60,6 +62,7 @@ flowchart LR
   router_profile --> mod_ingestion_parsers
   router_profile --> sys_ai_center
   router_profile --> sys_expense_capture
+  router_profile --> sys_notifications
   router_profile --> sys_platform
   router_profile -.-> tbl_raw_sms_events
   router_profile ==> tbl_webhook_tokens
@@ -151,7 +154,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 

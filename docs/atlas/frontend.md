@@ -182,7 +182,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-42 files in its import closure (not counting `src/components/ui/`).
+43 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -191,6 +191,9 @@ _None._
 | `ai.parseVoiceExpense` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
+| `budget.create` | useMutation | `src/components/budgets/BudgetsPanel.tsx` |
+| `budget.delete` | useMutation | `src/components/budgets/BudgetsPanel.tsx` |
+| `budget.list` | useQuery, utils.invalidate | `src/components/budgets/BudgetsPanel.tsx` |
 | `business.get` | useQuery | `src/pages/Home.tsx` |
 | `expense.answerClarification` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.batchCreate` | useMutation | `src/components/expenses/ExpenseForm.tsx` |

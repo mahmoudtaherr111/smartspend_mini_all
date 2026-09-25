@@ -763,6 +763,8 @@ export const profileRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "الرسالة دي اتسجلت أو اتشالت قبل كده" });
       }
       await bumpFinanceCacheGen(ctx.user.id as number, ctx.user.type as "oauth" | "local");
+      const { checkUserBudgetExceeded } = await import("./notification-engine");
+      void checkUserBudgetExceeded(ctx.user.id as number, ctx.user.type);
       return { success: true, expenseId };
     }),
 

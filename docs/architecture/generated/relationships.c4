@@ -30,6 +30,7 @@ model {
   smartspend.api.http.post_sms_ingest -[reads]-> smartspend.mysql.webhook_tokens
   smartspend.api.http.post_sms_ingest -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.http.post_sms_ingest -[uses]-> smartspend.api.modules.ingestion-parsers
+  smartspend.api.http.post_sms_ingest -[uses]-> smartspend.api.modules.notifications
   smartspend.api.http.post_sms_ingest -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.post_sms_ingest -[writes]-> smartspend.mysql.raw_sms_events
   smartspend.api.http.post_sms_token_generate -[uses]-> smartspend.api.modules.auth
@@ -383,8 +384,11 @@ model {
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.expenses
+  smartspend.api.modules.ledger -[reads]-> smartspend.mysql.user_budgets
   smartspend.api.modules.ledger -[writes]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.modules.ledger -[writes]-> smartspend.mysql.expense_details
+  smartspend.api.modules.ledger -[writes]-> smartspend.mysql.user_budgets
+  smartspend.api.modules.notifications -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.notifications -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.notifications -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.modules.notifications -[reads]-> smartspend.mysql.local_users
@@ -692,6 +696,7 @@ model {
   smartspend.api.trpc.auth.googleUrl -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.auth.logout -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.auth.me -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.budget.create -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.budget.create -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.budget.create -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.budget.create -[uses]-> smartspend.shared.contracts
@@ -699,10 +704,9 @@ model {
   smartspend.api.trpc.budget.delete -[reads]-> smartspend.mysql.user_budgets
   smartspend.api.trpc.budget.delete -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.budget.delete -[writes]-> smartspend.mysql.user_budgets
-  smartspend.api.trpc.budget.list -[reads]-> smartspend.mysql.expenses
-  smartspend.api.trpc.budget.list -[reads]-> smartspend.mysql.user_budgets
-  smartspend.api.trpc.budget.list -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.budget.list -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.budget.update -[reads]-> smartspend.mysql.user_budgets
+  smartspend.api.trpc.budget.update -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.budget.update -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.budget.update -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.budget.update -[uses]-> smartspend.shared.contracts
@@ -953,6 +957,7 @@ model {
   smartspend.api.trpc.profile.confirmSmsSuggestion -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.profile.confirmSmsSuggestion -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.profile.confirmSmsSuggestion -[uses]-> smartspend.api.modules.ingestion-parsers
+  smartspend.api.trpc.profile.confirmSmsSuggestion -[uses]-> smartspend.api.modules.notifications
   smartspend.api.trpc.profile.deleteContact -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.deleteContact -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.trpc.profile.deleteContact -[uses]-> smartspend.api.modules.classification
@@ -1262,6 +1267,9 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.ai.parseVoiceExpense
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.auth.logout
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.auth.me
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.budget.create
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.budget.delete
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.budget.list
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.business.get
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.answerClarification
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.batchCreate

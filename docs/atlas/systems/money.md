@@ -62,15 +62,18 @@ flowchart LR
   mod_ledger -.-> tbl_expenses
   mod_ledger ==> tbl_expense_daily_rollups
   mod_ledger ==> tbl_expense_details
+  mod_ledger ==> tbl_user_budgets
   mod_web_finance --> sys_platform
   mod_web_finance --> sys_web_app
+  page_Home --> router_budget
   page_Home --> router_business
   page_Home --> router_expense
   page_Home --> router_goals
+  router_budget --> mod_ledger
   router_budget --> sys_accounts
   router_budget --> sys_ai_center
+  router_budget --> sys_expense_capture
   router_budget --> sys_platform
-  router_budget -.-> tbl_expenses
   router_budget ==> tbl_user_budgets
   router_business --> mod_ledger
   router_business --> sys_ai_center
@@ -123,16 +126,16 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges. | 2 |
-| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 15 |
+| `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges. | 3 |
+| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 16 |
 
 ## API procedures
 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
-| `budget.create` | mutation | `authedProcedure` | — | `user_budgets` | — |
-| `budget.delete` | mutation | `authedProcedure` | `user_budgets` | `user_budgets` | — |
-| `budget.list` | query | `authedProcedure` | `expenses`, `user_budgets` | — | — |
+| `budget.create` | mutation | `authedProcedure` | — | `user_budgets` | `Home` |
+| `budget.delete` | mutation | `authedProcedure` | `user_budgets` | `user_budgets` | `Home` |
+| `budget.list` | query | `authedProcedure` | — | — | `Home` |
 | `budget.update` | mutation | `authedProcedure` | `user_budgets` | `user_budgets` | — |
 | `business.addCategory` | mutation | `businessProcedure` | `user_businesses` | `business_categories` | `More`, `Settings` |
 | `business.create` | mutation | `businessProcedure` | `user_businesses` | `business_categories`, `user_businesses` | `More`, `Settings` |
@@ -186,10 +189,10 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `classification_logs` | E | `expense.update` | `expense.update` |
 | `expense_daily_rollups` | C | `ledger` | `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`, `ledger` |
 | `expense_details` | B | `ledger` | — |
-| `expenses` | B | `business.delete`, `expense.delete`, `expense.update`, `profile.deleteContact`, `profile.mergeContacts`, `wallet.deleteWallet` | `budget.list`, `expense.delete`, `expense.getById`, `expense.getMonthlyStats`, `expense.list`, `expense.searchTransactions`, `expense.update`, `export.myExpenses`, `goals.analyze`, `ledger`, `profile.listContacts`, `profile.mergeContacts`, `wallet.getWalletTransactions` |
+| `expenses` | B | `business.delete`, `expense.delete`, `expense.update`, `profile.deleteContact`, `profile.mergeContacts`, `wallet.deleteWallet` | `expense.delete`, `expense.getById`, `expense.getMonthlyStats`, `expense.list`, `expense.searchTransactions`, `expense.update`, `export.myExpenses`, `goals.analyze`, `ledger`, `profile.listContacts`, `profile.mergeContacts`, `wallet.getWalletTransactions` |
 | `financial_goals` | C | `goals.analyze`, `goals.create`, `goals.delete`, `goals.setStatus` | `goals.analyze`, `goals.create`, `goals.list` |
 | `local_users` | A | `goals.analyze` | — |
-| `user_budgets` | C | `budget.create`, `budget.delete`, `budget.update`, `goals.delete` | `budget.delete`, `budget.list`, `budget.update` |
+| `user_budgets` | C | `budget.create`, `budget.delete`, `budget.update`, `goals.delete`, `ledger` | `budget.delete`, `budget.update`, `ledger` |
 | `user_businesses` | A | `business.create`, `business.delete`, `business.update` | `business.addCategory`, `business.create`, `business.delete`, `business.get`, `business.linkContact`, `business.removeCategory`, `business.update`, `business.updateCategory` |
 | `user_contacts` | A | `business.delete`, `business.linkContact`, `expense.delete`, `profile.addContact`, `profile.deleteContact`, `profile.mergeContacts`, `profile.updateContact` | `business.get`, `business.linkContact`, `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` |
 | `user_profiles` | A | `profile.deleteContact`, `profile.mergeContacts` | `profile.deleteContact`, `profile.mergeContacts` |
@@ -204,7 +207,7 @@ _None._
 
 Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -214,7 +217,7 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>43 files and declarations</summary>
+<details><summary>45 files and declarations</summary>
 
 - `api/boot.ts#job:nightly-rollup-reconciliation`
 - `api/boot.ts#job:taxonomy-migration`
@@ -240,9 +243,11 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/profile-router.ts#profile.mergeContacts`
 - `api/profile-router.ts#profile.updateContact`
 - `api/profile-router.ts#rest-of-file`
+- `api/services/budget-status.ts`
 - `api/services/expense-rollups.ts`
 - `api/services/financial-month.ts`
 - `api/wallet-router.ts`
+- `src/components/budgets/BudgetsPanel.tsx`
 - `src/components/dashboard/BehaviorInsights.tsx`
 - `src/components/dashboard/ExpenseChart.tsx`
 - `src/components/dashboard/GlobalSearch.tsx`

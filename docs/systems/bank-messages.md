@@ -93,7 +93,8 @@ A message past the plan's limit is not lost (docs/decisions/0009-bank-messages-o
   (`profile.confirmSmsSuggestion`), or dismisses it (`profile.dismissSmsSuggestion`, status `dismissed`);
 - saving moves the status from `suggested` to `confirmed` in the same transaction as the expense, the day's rollup
   delta and the details, and only when it was still `suggested`, so a second tap saves nothing. The finance caches
-  are bumped. A confirmed message does not count toward the limit.
+  are bumped and budget alerts checked, as after an automatic save. A confirmed message does not count toward the
+  limit.
 
 ## Setting up a phone
 **Android**
@@ -175,8 +176,7 @@ Checked against the code; each one names where it lives.
 6. **Bug.** The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
 7. **Bug.** With several server processes, a one-time code created on one cannot be exchanged on another, and each process
    counts the rate limit on its own.
-8. **Gap.** Saving a message, automatically or from a suggestion, does not check budget alerts as `expense.create`
-   does, and `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
+8. **Debt.** `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 ## Related systems
 - [Money](money.md): the ledger the messages are saved into, and the wallets the digital wallet view manages.

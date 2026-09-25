@@ -87,9 +87,11 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   same procedure for one day.
 - **Business mode.** A Pro user with a business can switch the statistics and calendar to that business; the choice is
   kept in the browser.
-- **Budget alert.** After a save, [Recording spending](expense-capture.md) calls `checkUserBudgetExceeded` in
-  `api/notification-engine.ts`, which sends the `budget_exceeded` notification once a month when the month's spending
-  passes the monthly income in the profile.
+- **Budget alert.** After a save (typed, a bank message, a confirmed suggestion), `checkUserBudgetExceeded` in
+  `api/notification-engine.ts` runs. A user with budgets gets `budget_near_limit` once per cycle when a budget reaches
+  its alert threshold and `budget_category_exceeded` once when it passes its limit (`checkBudgetAlerts`; the cycles
+  already warned are kept in the budget's metadata). A user without budgets gets `budget_exceeded` once a month when
+  the month's spending passes the monthly income in the profile.
 
 ## Wallets
 `wallet.getWallets`, `wallet.createWallet` (name, provider, last four digits, balance), `wallet.updateWallet` and
@@ -101,8 +103,11 @@ change wallets through confirmed actions.
 A budget has a title, an optional category, a monthly limit, the day its cycle starts, an alert threshold (80% by
 default), an optional linked goal and a status. `budget.list` returns every budget with what was spent in its current
 cycle, counted in Cairo business days, and whether it is near or over its limit. `budget.create`, `budget.update` and
-`budget.delete` check ownership and bump the finance cache. No screen calls them: budgets come from the assistant's
-confirmed actions, including the budget it suggests after a new goal.
+`budget.delete` check ownership and bump the finance cache; a budget's category is stored through the registry
+(`storageCategoryName`), so it matches what the ledger stores. The statistics tab shows them first
+(`src/components/budgets/BudgetsPanel.tsx`): a progress bar per budget, a form to add one for a category or for all
+spending, and delete. The assistant can also create them. The standing of each budget comes from
+`api/services/budget-status.ts#listBudgetStatuses` (expense rows only, in the budget's own cycle).
 
 ## Goals
 - `goals.list` returns the user's goals and, when the plan has no goal analysis, an upsell.
@@ -167,28 +172,26 @@ business mode:
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** Budgets have no screen and no alert of their own: the "budget exceeded" notification compares the calendar month's
-   spending, business included, with the monthly income in the profile, not with `user_budgets`.
-2. **Bug.** The home screen uses the salary cycle only when "fixed salary" is switched on in Settings (`hasFixedSalary`); a
+1. **Bug.** The home screen uses the salary cycle only when "fixed salary" is switched on in Settings (`hasFixedSalary`); a
    salary day given in the onboarding questions does not change it, while the AI Center and the reports use the salary
    day either way.
-3. **Bug.** The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an
+2. **Bug.** The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an
    established account sees a low daily average early in the month.
-4. **Bug.** The budget tab, the electronic-payments tab and the hour heatmap work from the month's latest 200 items and
+3. **Bug.** The budget tab, the electronic-payments tab and the hour heatmap work from the month's latest 200 items and
    under-count busy months; the budget tab assumes a 10,000 EGP budget when neither the profile nor the month has
    income.
-5. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
+4. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
    snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
-6. **Bug.** In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
-7. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
+5. **Bug.** In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
+6. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
    (`src/components/goals/FinancialGoalsPanel.tsx`).
-8. **Bug.** The calendar's day list sends local times without a time zone, which the server reads in its own zone.
-9. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record;
+7. **Bug.** The calendar's day list sends local times without a time zone, which the server reads in its own zone.
+8. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record;
     `business.get` returns the user's first business even when it is inactive.
-10. **Bug.** Wallet balances are stored as whatever text the client sends.
-11. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
+9. **Bug.** Wallet balances are stored as whatever text the client sends.
+10. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
     as spending, every source except voice as manual, and dates by UTC day.
-12. **Gap.** A refund is income under دخل آخر/مرتجعات واسترداد; the category the purchase came from keeps its full amount.
+11. **Gap.** A refund is income under دخل آخر/مرتجعات واسترداد; the category the purchase came from keeps its full amount.
     Netting it waits for one definition of spending that every screen reads (docs/decisions/0008-money-movements-and-taxonomy.md).
 
 ## Related systems
