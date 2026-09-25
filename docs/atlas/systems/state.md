@@ -11,11 +11,11 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (52 of
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 bc91a31 | 2026-09-25 d5e7b7e | 18 | — | 3 | 2 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 3cd03f9 | 2026-09-25 3cd03f9 | 3 | — | 2 | 4 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 9a9c8ca | 2026-09-25 9a9c8ca | 3 | — | 2 | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 5e20684 | 2026-09-25 5e20684 | 4 | — | 5 | 3 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 614093e | 2026-09-25 614093e | 6 | — | 8 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 dd02a18 | 2026-09-25 d295dd5 | 5 | — | 6 | 5 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 9a9c8ca | 2026-09-25 9a9c8ca | 5 | — | 6 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-25 dd02a18 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | 5 | 1 | 2 |
@@ -130,7 +130,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - The APK behind `/downloads/smartspend-sync.apk` is a debug build that `.github/workflows/build-apk.yml` commits when `android-app/` changes; it is signed with the runner's throwaway debug key, so a newer build cannot install over an older one until a release key is configured.
 - The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY` directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
-- Only a merchant the engine knows well changes the fixed map: a card payment to any other merchant is `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
+- Only a merchant the engine knows well changes the fixed map (a card payment, or a refund from it, which is saved as a negative expense in that merchant's category): a card payment to any other merchant is `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
 - Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account digits and balances, is stored as received.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
@@ -151,7 +151,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP (`src/components/goals/FinancialGoalsPanel.tsx`).
 - `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record; `business.get` returns the user's first business even when it is inactive.
 - `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments as spending, every source except voice as manual, and dates by UTC day.
-- Refunds net their category only from sentences: a bank message's card refund arrives as an incoming credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative spending in a month when the purchase fell in an earlier one.
+- A bank message's refund nets its category only when the merchant is one the engine knows well (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative spending in a month when the purchase fell in an earlier one.
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - Verification is the setting `whatsapp_otp_enabled`: while it is off any number registers without proof that it belongs to the person, and the admin console shows it as off whatever its value ([notifications](notifications.md)).

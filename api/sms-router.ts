@@ -324,7 +324,7 @@ smsApp.post("/ingest", async (c) => {
   // The rules read it (no model is paid for), and the user saves it with one tap from the
   // home screen (docs/decisions/0009-bank-messages-over-the-limit.md).
   if (overLimit) {
-    const read = await buildSmsSuggestion(ruleParseResult(ruleResult), { sender, timestamp });
+    const read = await buildSmsSuggestion(ruleParseResult(ruleResult), { sender, timestamp, message });
     // Without its raw row a suggestion has nowhere to wait, so it is not claimed as kept.
     const suggestion = smsId ? read : null;
     if (smsId) {
@@ -435,7 +435,7 @@ smsApp.post("/ingest", async (c) => {
   // ── Step 4: Save as Transaction ──
   // A card payment to a merchant the classification engine knows takes that merchant's
   // category; everything else follows the fixed map (`categorizeSms`).
-  const smsCategory = await categorizeSms(parseResult);
+  const smsCategory = await categorizeSms(parseResult, message);
   const { category, subCategory, type } = smsCategory;
   const parsed = parseResult;
 
@@ -447,6 +447,7 @@ smsApp.post("/ingest", async (c) => {
       amount: parsed.amount!,
       date: smsDate(timestamp),
       category: smsCategory,
+      direction: parsed.direction,
       description: describeSms(parsed, sender),
       metadata: {
         sms_id: smsId,

@@ -14,7 +14,7 @@ import { mapSmsToExpenseCategory, type SmsParseResult } from "../lib/sms-ai-pars
 import type { RuleBasedSmsResult } from "../lib/sms-rule-parser";
 import { runRuleEngine } from "../lib/rule-engine";
 import { normalizeText } from "../lib/text-normalizer";
-import { applyExpenseRollupDelta, expenseToRollupDelta, syncExpenseDetails } from "./expense-rollups";
+import { applyExpenseRollupDelta, expenseToRollupDelta, ledgerAmount, syncExpenseDetails } from "./expense-rollups";
 
 export interface SmsCategory {
   category: string;
@@ -91,12 +91,23 @@ export async function classifySmsMerchant(
   return null;
 }
 
+/** Whether a bank message reports money returned by a merchant rather than received. */
+export function readsAsSmsRefund(message: string): boolean {
+  return /\b(?:refund(?:ed)?|reversal|reversed|chargeback)\b|استرداد|استرجاع|مرتجع|رد مبلغ|تم رد|إلغاء عملية|الغاء عملية/i.test(message);
+}
+
 /**
  * Where a parsed message is filed: the fixed map, with a card payment to a merchant the
  * engine knows filed under that merchant's category instead of تسوق.
  */
-export async function categorizeSms(result: SmsParseResult): Promise<SmsCategory> {
+export async function categorizeSms(result: SmsParseResult, message?: string): Promise<SmsCategory> {
   const mapped = mapSmsToExpenseCategory(result);
+  // A card refund from a merchant the engine knows goes back to that merchant's category
+  // as spending coming back (a negative expense, docs/decisions/0010-refunds-net-their-category.md).
+  if (result.direction === "incoming" && result.merchant && message && readsAsSmsRefund(message)) {
+    const known = await classifySmsMerchant(result.merchant);
+    if (known) return { ...known, type: "expense" };
+  }
   if (result.direction !== "incoming" && result.category === "payment" && result.merchant) {
     const known = await classifySmsMerchant(result.merchant);
     if (known) return { ...known, type: "expense" };
@@ -140,10 +151,10 @@ export function ruleParseResult(rule: RuleBasedSmsResult): SmsParseResult {
 /** The suggestion kept for a message read over the limit, or null when it holds no transaction. */
 export async function buildSmsSuggestion(
   result: SmsParseResult,
-  input: { sender?: string | null; timestamp?: string | null; now?: Date },
+  input: { sender?: string | null; timestamp?: string | null; now?: Date; message?: string },
 ): Promise<SmsSuggestion | null> {
   if (!result.transaction_detected || !result.amount || result.amount <= 0 || result.confidence < 0.5) return null;
-  const category = await categorizeSms(result);
+  const category = await categorizeSms(result, input.message);
   return {
     amount: result.amount,
     currency: result.currency || "EGP",
@@ -176,13 +187,16 @@ export async function insertSmsExpense(
     category: SmsCategory;
     description: string;
     metadata: Record<string, unknown>;
+    /** Which way the money moved; an incoming expense is a refund, stored negative. */
+    direction?: "incoming" | "outgoing" | null;
   },
 ): Promise<number | null> {
+  const amount = ledgerAmount(input.category.type, input.direction, input.amount);
   const [insertResult] = await tx.insert(expenses).values({
     userId: input.userId,
     userType: input.userType,
     type: input.category.type,
-    amount: input.amount.toString(),
+    amount: amount.toString(),
     category: input.category.category,
     subCategory: input.category.subCategory,
     description: input.description,
@@ -202,7 +216,7 @@ export async function insertSmsExpense(
         userType: input.userType,
         date: input.date,
         type: input.category.type,
-        amount: input.amount,
+        amount,
         source: "sms",
       },
       1,
@@ -260,6 +274,7 @@ export async function confirmSmsSuggestion(input: {
     if (Number((claimed as { affectedRows?: number }).affectedRows ?? 0) !== 1) return null;
 
     return await insertSmsExpense(tx, {
+      direction: suggestion.direction,
       userId: input.userId,
       userType: input.userType,
       message: row.message,

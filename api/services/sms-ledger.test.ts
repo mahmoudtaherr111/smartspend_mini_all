@@ -33,6 +33,8 @@ vi.mock("../queries/connection", () => {
 vi.mock("./expense-rollups", () => ({
   applyExpenseRollupDelta: async () => undefined,
   expenseToRollupDelta: () => ({}),
+  ledgerAmount: (type: string, direction: string | null | undefined, amount: number) =>
+    type === "expense" && direction === "incoming" ? -Math.abs(amount) : Math.abs(amount),
   syncExpenseDetails: async () => undefined,
 }));
 
@@ -149,5 +151,25 @@ describe("confirming a suggestion", () => {
   it("saves nothing for a suggestion that is not the user's or not waiting", async () => {
     state.rows = [];
     expect(await confirmSmsSuggestion({ id: 5, userId: 2, userType: "local" })).toBeNull();
+  });
+});
+
+describe("a refund in a bank message", () => {
+  it("is told apart from money received", async () => {
+    const { readsAsSmsRefund } = await import("./sms-ledger");
+    expect(readsAsSmsRefund("Refund of EGP 250.00 from UBER to your card ending 1234")).toBe(true);
+    expect(readsAsSmsRefund("تم رد مبلغ 250 جنيه من طلبات الى بطاقتك")).toBe(true);
+    expect(readsAsSmsRefund("تم إيداع 5000 جنيه في حسابك")).toBe(false);
+  });
+
+  it("goes back to a known merchant's category as spending", async () => {
+    const { categorizeSms } = await import("./sms-ledger");
+    const result = {
+      transaction_detected: true, amount: 250, currency: "EGP", direction: "incoming" as const,
+      provider: "CIB" as const, category: "payment" as const, fee: null, merchant: "UBER",
+      balance_after: null, confidence: 0.9,
+    };
+    const filed = await categorizeSms(result as never, "Refund of EGP 250.00 from UBER");
+    expect(filed).toMatchObject({ category: "مواصلات", type: "expense" });
   });
 });

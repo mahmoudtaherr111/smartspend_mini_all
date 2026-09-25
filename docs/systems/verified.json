@@ -187,8 +187,8 @@
         "api/profile-router.ts#profile.getSmsSuggestions": "e7e02adbedc1",
         "api/profile-router.ts#profile.getWebhookToken": "8a850e31cd9d",
         "api/profile-router.ts#rest-of-file": "b95a7ad3787b",
-        "api/services/sms-ledger.ts": "8f28adc733f5",
-        "api/sms-router.ts": "86e5a8c4a6ef",
+        "api/services/sms-ledger.ts": "73d84a7c9f39",
+        "api/sms-router.ts": "c7b73ec30d41",
         "src/components/bank-sync/AndroidSetupFlow.tsx": "a46afb8f98d0",
         "src/components/bank-sync/DigitalBankingSuite.tsx": "b5ee9812af75",
         "src/components/bank-sync/IosSetupFlow.tsx": "e3bd2e8139d6",
@@ -196,9 +196,9 @@
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-25 3cd03f9",
-      "arabic": "711b4aa852d7",
-      "arabicChecked": "2026-09-25 3cd03f9"
+      "checked": "2026-09-25 9a9c8ca",
+      "arabic": "7701bd8e140d",
+      "arabicChecked": "2026-09-25 9a9c8ca"
     },
     "billing": {
       "files": {
@@ -368,9 +368,9 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/pages/Home.tsx": "7e4da1302279"
       },
-      "checked": "2026-09-25 dd02a18",
-      "arabic": "1a37aad89ca3",
-      "arabicChecked": "2026-09-25 d295dd5"
+      "checked": "2026-09-25 9a9c8ca",
+      "arabic": "1c2764076492",
+      "arabicChecked": "2026-09-25 9a9c8ca"
     },
     "notifications": {
       "files": {

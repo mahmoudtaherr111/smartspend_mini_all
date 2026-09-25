@@ -196,7 +196,8 @@ Checked against the code; each one names where it lives.
 9. **Bug.** Wallet balances are stored as whatever text the client sends.
 10. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
     as spending, every source except voice as manual, and dates by UTC day.
-11. **Gap.** Refunds net their category only from sentences: a bank message's card refund arrives as an incoming
+11. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
+    (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming
     credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative
     spending in a month when the purchase fell in an earlier one.
 

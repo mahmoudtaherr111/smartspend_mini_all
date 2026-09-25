@@ -167,7 +167,8 @@ Checked against the code; each one names where it lives.
    over an older one until a release key is configured.
 2. **Gap.** The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY`
    directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
-3. **Gap.** Only a merchant the engine knows well changes the fixed map: a card payment to any other merchant is
+3. **Gap.** Only a merchant the engine knows well changes the fixed map (a card payment, or a refund from it, which is
+   saved as a negative expense in that merchant's category): a card payment to any other merchant is
    `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not
    classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
 4. **Gap.** Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in
