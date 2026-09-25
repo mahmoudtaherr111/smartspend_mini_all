@@ -44,6 +44,7 @@ test.describe("Native Mobile Transformation: Comprehensive 4-Tier UX & Physics S
       const statsTab = page.getByTestId("nav-tab-stats");
       await expect(recordTab).toBeVisible();
       await expect(statsTab).toBeVisible();
+      await expect(navBar).toHaveCSS("position", "fixed");
       const recordBox = await recordTab.boundingBox();
       const statsBox = await statsTab.boundingBox();
       expect(recordBox).not.toBeNull();
@@ -99,10 +100,7 @@ test.describe("Native Mobile Transformation: Comprehensive 4-Tier UX & Physics S
       // Verify computed CSS touch-action on the button is manipulation
       const firstBtn = buttons.first();
       await expect(firstBtn).toBeVisible();
-      const touchAction = await firstBtn.evaluate((el) => {
-        return window.getComputedStyle(el).touchAction;
-      });
-      expect(touchAction).toMatch(/manipulation|pan-y|none/);
+      await expect(firstBtn).toHaveCSS("touch-action", /manipulation|pan-y|none/);
     });
 
     test("T1.3: Viewport keeps native safe-area support without disabling accessibility zoom", async ({
@@ -288,7 +286,7 @@ test.describe("Native Mobile Transformation: Comprehensive 4-Tier UX & Physics S
       await page.waitForLoadState("domcontentloaded");
 
       const moreLink = page
-        .locator("nav")
+        .locator("[data-testid='mobile-bottom-nav']")
         .getByText("المزيد", { exact: true })
         .first();
       await moreLink.click();
@@ -327,17 +325,17 @@ test.describe("Native Mobile Transformation: Comprehensive 4-Tier UX & Physics S
         await textarea.fill("350 جنيه فواتير كهرباء");
 
         // Navigate to stats
-        const statsTab = page.locator("nav").getByText("إحصائيات").first();
+        const statsTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("إحصائيات").first();
         await statsTab.click();
         await page.waitForTimeout(100);
 
         // Navigate to AI center
-        const aiTab = page.locator("nav").getByText("مركز AI").first();
+        const aiTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("مركز AI").first();
         await aiTab.click();
         await page.waitForTimeout(100);
 
         // Navigate back to record tab
-        const recordTab = page.locator("nav").getByText("تسجيل").first();
+        const recordTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تسجيل").first();
         await recordTab.click();
         await page.waitForTimeout(100);
 
@@ -417,10 +415,7 @@ test.describe("Native Mobile Transformation: Comprehensive 4-Tier UX & Physics S
       const firstLink = navigation.getByRole("link").first();
       await expect(navigation).toHaveCSS("position", "fixed");
       await expect(firstLink).toBeVisible();
-      const touchAction = await firstLink.evaluate(
-        (link) => window.getComputedStyle(link).touchAction,
-      );
-      expect(touchAction).toMatch(/manipulation|pan-y|none/);
+      await expect(firstLink).toHaveCSS("touch-action", /manipulation|pan-y|none/);
     });
   });
 });

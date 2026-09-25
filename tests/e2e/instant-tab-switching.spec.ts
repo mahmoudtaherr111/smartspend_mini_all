@@ -31,11 +31,11 @@ test.describe("R3: Zero-Latency Instant Tab Switching & Warm View Pre-Rendering"
     const startTime = Date.now();
 
     // Switch to stats
-    const statsTab = page.locator("nav").getByText("إحصائيات").first();
+    const statsTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("إحصائيات").first();
     await statsTab.click();
 
     // Measure visibility latency
-    const statsContent = page.locator("[data-testid='warm-view-stats'], text='تحليل النفقات', text='إجمالي المصروفات', text='طعام ومشروبات'").first();
+    const statsContent = page.locator("#home-panel-stats[data-state='active']");
     await expect(statsContent).toBeVisible({ timeout: 1000 });
 
     const switchDuration = Date.now() - startTime;
@@ -44,10 +44,10 @@ test.describe("R3: Zero-Latency Instant Tab Switching & Warm View Pre-Rendering"
 
     // Switch to calendar
     const calendarStartTime = Date.now();
-    const calendarTab = page.locator("nav").getByText("تقويم").first();
+    const calendarTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تقويم").first();
     await calendarTab.click();
 
-    const calendarContent = page.locator("[data-testid='warm-view-calendar'], [class*='calendar'], text='التقويم', text='أغسطس', text='يوم'").first();
+    const calendarContent = page.locator("#home-panel-calendar[data-state='active']");
     await expect(calendarContent).toBeVisible({ timeout: 1000 });
 
     const calendarDuration = Date.now() - calendarStartTime;
@@ -72,17 +72,17 @@ test.describe("R3: Zero-Latency Instant Tab Switching & Warm View Pre-Rendering"
       }
 
       // Switch away to stats tab
-      const statsTab = page.locator("nav").getByText("إحصائيات").first();
+      const statsTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("إحصائيات").first();
       await statsTab.click();
       await page.waitForTimeout(100);
 
       // Switch away to calendar tab
-      const calendarTab = page.locator("nav").getByText("تقويم").first();
+      const calendarTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تقويم").first();
       await calendarTab.click();
       await page.waitForTimeout(100);
 
       // Switch back to record tab
-      const recordTab = page.locator("nav").getByText("تسجيل").first();
+      const recordTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تسجيل").first();
       await recordTab.click();
       await page.waitForTimeout(100);
 
@@ -106,12 +106,12 @@ test.describe("R3: Zero-Latency Instant Tab Switching & Warm View Pre-Rendering"
     const initialScrollY = await page.evaluate(() => window.scrollY);
 
     // Switch to stats
-    const statsTab = page.locator("nav").getByText("إحصائيات").first();
+    const statsTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("إحصائيات").first();
     await statsTab.click();
     await page.waitForTimeout(100);
 
     // Switch back to record
-    const recordTab = page.locator("nav").getByText("تسجيل").first();
+    const recordTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تسجيل").first();
     await recordTab.click();
     await page.waitForTimeout(100);
 
@@ -137,8 +137,8 @@ test.describe("R3: Zero-Latency Instant Tab Switching & Warm View Pre-Rendering"
     const initialCount = statsQueryCount;
 
     // Switch away to record and back to stats multiple times
-    const recordTab = page.locator("nav").getByText("تسجيل").first();
-    const statsTab = page.locator("nav").getByText("إحصائيات").first();
+    const recordTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تسجيل").first();
+    const statsTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("إحصائيات").first();
 
     await recordTab.click();
     await page.waitForTimeout(50);

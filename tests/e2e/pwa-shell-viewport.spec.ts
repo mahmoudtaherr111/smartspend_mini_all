@@ -32,7 +32,13 @@ test.describe("R1: True Edge-to-Edge Standalone PWA & Viewport Geometry", () => 
   test("Tier 1 (F1): PWA Manifest defines standalone display and dark background color", async ({
     page,
   }) => {
-    // Read manifest directly or verify manifest link tag
+    // The manifest link is injected by the production build only (devOptions.enabled is false
+    // in vite.config.ts); its content is checked by tests/capacitor-manifest-sync.test.ts.
+    await page.goto("/dashboard");
+    test.skip(
+      (await page.locator('link[rel="manifest"]').count()) === 0,
+      "the dev server serves no manifest link",
+    );
     const manifestLink = page.locator('link[rel="manifest"]');
     await expect(manifestLink).toBeAttached();
 
@@ -70,6 +76,8 @@ test.describe("R1: True Edge-to-Edge Standalone PWA & Viewport Geometry", () => 
       // Verify that the top container or header accounts for safe area insets
       const headerOrTop = page.locator("header, nav, .pt-safe, [data-testid='top-bar']").first();
       if ((await headerOrTop.count()) > 0) {
+        // The shell mounts again once the session is known; wait for the settled element.
+        await expect(headerOrTop).toBeVisible();
         const boundingBox = await headerOrTop.boundingBox();
         expect(boundingBox).not.toBeNull();
         if (boundingBox) {
