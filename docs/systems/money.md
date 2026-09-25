@@ -177,8 +177,9 @@ Checked against the code; each one names where it lives.
    day either way.
 2. **Bug.** The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an
    established account sees a low daily average early in the month.
-3. **Bug.** The chart's "budget" tab compares spending with income rather than with the user's budgets, and assumes a
-   10,000 EGP budget when neither the profile nor the month has income.
+3. **Gap.** The chart's "budget" tab compares the month's spending with the user's budget for all spending
+   (`budget.list`); with none it falls back to the profile's income or the month's income, and with neither it asks
+   the user to make a budget. A user with only category budgets sees the income comparison there.
 4. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
    snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 5. **Bug.** In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.

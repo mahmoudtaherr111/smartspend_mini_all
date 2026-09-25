@@ -193,7 +193,7 @@ _None._
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `budget.create` | useMutation | `src/components/budgets/BudgetsPanel.tsx` |
 | `budget.delete` | useMutation | `src/components/budgets/BudgetsPanel.tsx` |
-| `budget.list` | useQuery, utils.invalidate | `src/components/budgets/BudgetsPanel.tsx` |
+| `budget.list` | useQuery, utils.invalidate | `src/components/budgets/BudgetsPanel.tsx`, `src/components/dashboard/ExpenseChart.tsx` |
 | `business.get` | useQuery | `src/pages/Home.tsx` |
 | `expense.answerClarification` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.batchCreate` | useMutation | `src/components/expenses/ExpenseForm.tsx` |

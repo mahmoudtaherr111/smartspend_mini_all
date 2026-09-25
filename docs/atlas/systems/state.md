@@ -4,7 +4,7 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (55 of 116 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (54 of 116 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
@@ -15,7 +15,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (55 of
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 5e20684 | 2026-09-25 5e20684 | 4 | — | 5 | 3 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 37a55fb | 2026-09-24 45b800e | 6 | — | 9 | 2 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 46f2396 | 2026-09-25 6ec98ec | 5 | — | 7 | 4 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 5f45817 | 2026-09-25 5f45817 | 5 | — | 6 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-24 37a55fb | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 46f2396 | 2026-09-24 6739377 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 339aea2 | 2026-09-25 339aea2 | 1 | **1** | 5 | 1 | 2 |
@@ -48,7 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (50)
+### Bugs (49)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - Saves made from a clarification skip what `expense.create` does after writing: muscle memory and the classification cache are not cleared, the streak is not updated, the rows get source `manual`, and the free-answer mode links no contact and no classification log.
@@ -88,7 +88,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The home screen uses the salary cycle only when "fixed salary" is switched on in Settings (`hasFixedSalary`); a salary day given in the onboarding questions does not change it, while the AI Center and the reports use the salary day either way.
 - The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an established account sees a low daily average early in the month.
-- The chart's "budget" tab compares spending with income rather than with the user's budgets, and assumes a 10,000 EGP budget when neither the profile nor the month has income.
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 - In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
 - The calendar's day list sends local times without a time zone, which the server reads in its own zone.
@@ -124,7 +123,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, so anything recorded offline and not yet sent is lost with the session.
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (30)
+### Gaps (31)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A category changed on the review card teaches a rule only when the sentence was one item (`api/expense-router.ts#reviewCorrection`); in a multi-item sentence it is saved but not learned. `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere.
@@ -147,6 +146,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - No `assertAiBudget` check runs before either report model call, and the WhatsApp job records no tokens for the user (`api/AGENTS.md`, rule 5).
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
+- The chart's "budget" tab compares the month's spending with the user's budget for all spending (`budget.list`); with none it falls back to the profile's income or the month's income, and with neither it asks the user to make a budget. A user with only category budgets sees the income comparison there.
 - The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP (`src/components/goals/FinancialGoalsPanel.tsx`).
 - `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record; `business.get` returns the user's first business even when it is inactive.
 - `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments as spending, every source except voice as manual, and dates by UTC day.

@@ -62,6 +62,8 @@ export function ExpenseChart({
 }: ExpenseChartProps) {
   const [activeTab, setActiveTab] = useState("categories");
   const { data: profile } = trpc.profile.getSmartProfile.useQuery();
+  const { data: budgetList } = trpc.budget.list.useQuery(undefined, { staleTime: 60_000 });
+  const userBudgets = Array.isArray(budgetList?.budgets) ? budgetList.budgets : [];
   const location = useLocation();
 
   useEffect(() => {
@@ -766,7 +768,22 @@ export function ExpenseChart({
                 .filter((i) => i.type === "income")
                 .reduce((sum, item) => sum + Number(item.amount), 0);
               const profileIncome = profile?.financialInfo?.averageMonthlyIncome;
-              const budgetLimit = profileIncome || (totalInc > 0 ? totalInc : 10000);
+              // The user's own budget for all spending comes first; income is only a
+              // stand-in when there is none. Nothing is invented.
+              const overall = userBudgets.find((budget) => !budget.category);
+              const basedOnBudget = Boolean(overall);
+              const budgetLimit =
+                Number(overall?.monthlyLimit) || profileIncome || totalInc;
+              if (!budgetLimit) {
+                return (
+                  <div className="bg-white dark:bg-slate-900/40 rounded-2xl p-6 border shadow-sm space-y-3">
+                    <h3 className="font-bold text-lg">الميزانية الشهرية</h3>
+                    <p className="text-sm text-muted-foreground">
+                      مفيش ميزانية لسه. اعمل ميزانية لكل مصاريفك من «ميزانياتك» تحت، أو سجّل دخلك، وهنقارن صرفك بيها هنا.
+                    </p>
+                  </div>
+                );
+              }
               const budgetPercentage = Math.min(
                 100,
                 Math.round((totalExp / budgetLimit) * 100),
@@ -782,7 +799,7 @@ export function ExpenseChart({
                         الميزانية الشهرية
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        تتبع مصاريفك مقارنة بدخلك
+                        {basedOnBudget ? "صرفك مقارنة بميزانيتك" : "صرفك مقارنة بدخلك"}
                       </p>
                     </div>
                     <div className="text-end">
@@ -823,14 +840,6 @@ export function ExpenseChart({
                     </div>
                   </div>
 
-                  {!profileIncome && totalInc === 0 && (
-                    <div className="bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 p-3 rounded-lg text-sm flex items-center gap-2">
-                      <span>💡</span>
-                      <span>
-                        سجل ميزانيتك الشهرية في ملفك الشخصي أو أضف دخلاً ليتم حساب الميزانية بدقة (دلوقتي محسوبة على أساس 10,000 ج.م كافتراضي).
-                      </span>
-                    </div>
-                  )}
                 </div>
               );
             })()}

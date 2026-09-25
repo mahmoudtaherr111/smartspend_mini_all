@@ -351,7 +351,7 @@
         "api/wallet-router.ts": "7d5e5a1398e9",
         "src/components/budgets/BudgetsPanel.tsx": "514a88e41280",
         "src/components/dashboard/BehaviorInsights.tsx": "47729e6b7532",
-        "src/components/dashboard/ExpenseChart.tsx": "401963f07c4c",
+        "src/components/dashboard/ExpenseChart.tsx": "39b607bdbf75",
         "src/components/dashboard/GlobalSearch.tsx": "8654dcb76f56",
         "src/components/dashboard/HomeHeader.tsx": "08868be5adc7",
         "src/components/dashboard/HomeSummaryCards.tsx": "c351df86b6d7",
@@ -367,9 +367,9 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/pages/Home.tsx": "7e4da1302279"
       },
-      "checked": "2026-09-25 46f2396",
-      "arabic": "9a70cf383dd8",
-      "arabicChecked": "2026-09-25 6ec98ec"
+      "checked": "2026-09-25 5f45817",
+      "arabic": "ef93eee084e9",
+      "arabicChecked": "2026-09-25 5f45817"
     },
     "notifications": {
       "files": {

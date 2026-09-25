@@ -179,7 +179,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `budget.create` | mutation | `authedProcedure` | yes | — | `user_budgets` | `api/lib/category-registry.ts`, `api/lib/ownership-guard.ts`, `api/services/finance-semantic-layer/index.ts`, `contracts/constants.ts` | `src/components/budgets/BudgetsPanel.tsx` |
 | `budget.delete` | mutation | `authedProcedure` | yes | `user_budgets` | `user_budgets` | `api/services/finance-semantic-layer/index.ts` | `src/components/budgets/BudgetsPanel.tsx` |
-| `budget.list` | query | `authedProcedure` | no | — | — | `api/services/budget-status.ts` | `src/components/budgets/BudgetsPanel.tsx` |
+| `budget.list` | query | `authedProcedure` | no | — | — | `api/services/budget-status.ts` | `src/components/budgets/BudgetsPanel.tsx`, `src/components/dashboard/ExpenseChart.tsx` |
 | `budget.update` | mutation | `authedProcedure` | yes | `user_budgets` | `user_budgets` | `api/lib/category-registry.ts`, `api/lib/ownership-guard.ts`, `api/services/finance-semantic-layer/index.ts`, `contracts/constants.ts` | — |
 
 ### `business` — `api/business-router.ts`
