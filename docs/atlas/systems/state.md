@@ -10,7 +10,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (52 of
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 bc91a31 | 2026-09-25 d5e7b7e | 18 | — | 3 | 2 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 66236cf | 2026-09-25 66236cf | 18 | — | 3 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 9a9c8ca | 2026-09-25 9a9c8ca | 3 | — | 2 | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 5e20684 | 2026-09-25 5e20684 | 4 | — | 5 | 3 | 1 |
@@ -51,7 +51,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 ### Bugs (47)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
-- Receipts are saved without review. The saved amount is the first item the pipeline read from the OCR text, which can differ from the total the vision model returned, and a base64 image longer than the parser's cap is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the procedure accepts larger payloads.
+- A receipt's amount on the review card is the first item the pipeline read from the OCR text, which can differ from the total the vision model returned, and a base64 image longer than the parser's cap is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the procedure accepts larger payloads.
 - The voice endpoints count the month differently: `speechToText` from the subscription or sign-up day, `parseVoiceExpense` from the first of the calendar month. `parseVoiceExpense` also creates contacts for the people it resolves while parsing, before the user saves anything.
 - When every event escalates and a Fireworks key is present, the whole-sentence embedding shortcut makes one item from the first amount; the other amounts then become a question.
 

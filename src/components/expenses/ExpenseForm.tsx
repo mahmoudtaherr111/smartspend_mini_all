@@ -208,7 +208,7 @@ export function ExpenseForm({
     | "review"
     | "error"
   >("idle");
-  const [inputSource, setInputSource] = useState<"text" | "voice">("text");
+  const [inputSource, setInputSource] = useState<"text" | "voice" | "image">("text");
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("المعالجة الذكية...");
   const [localSuggestion, setLocalSuggestion] = useState<any>(null);
@@ -382,12 +382,32 @@ export function ExpenseForm({
   // The parser trace is an English diagnostic (engine, decision, tokens): admins only.
   const canSeeParserTrace = planQuery.data?.role === "admin";
 
+  // A receipt is read, not saved: its amount and category open the review card like a
+  // typed sentence, so a misread total or category is caught before it reaches the ledger.
   const parseReceiptMutation = trpc.image.parseReceipt.useMutation({
     onSuccess: (data) => {
-      toast.success(`تم حفظ ${data.amount} ج.م — ${data.category}`);
-      utilsTrpc.expense.getMonthSummary.invalidate();
-      utilsTrpc.expense.getMonthlyStats.invalidate();
-      if (onSuccess) onSuccess();
+      hapticSuccess();
+      setClassificationLogId(null);
+      setClarificationQuestion(null);
+      setClarificationId(null);
+      setInputSource("image");
+      setText(data.merchant ? `${data.description} — ${data.merchant}` : data.description);
+      setDecision("review");
+      setParsedItems([
+        {
+          amount: data.amount,
+          category: data.category,
+          subCategory: data.subCategory,
+          type: data.type,
+          description: data.description,
+          merchant: data.merchant,
+          confidence: data.confidence,
+          currency: "EGP",
+          needsReview: true,
+          parsedBy: "ai",
+        },
+      ]);
+      setFlowStage("review");
     },
     onError: (e) => {
       hapticError();
@@ -435,7 +455,7 @@ export function ExpenseForm({
       parseReceiptMutation.mutate({
         imageBase64: base64,
         mimeType: "image/jpeg",
-        saveExpense: true,
+        saveExpense: false,
       });
     } catch (err: any) {
       toast.error(err.message || "حدث خطأ أثناء معالجة وتصغير الصورة");
@@ -1115,7 +1135,7 @@ export function ExpenseForm({
           subCategory: item.subCategory,
           description: item.description,
           rawText: overrideText || text || "إدخال صوتي",
-          source: (inputSource === "voice" ? "voice" : "ai_parsed") as any,
+          source: (inputSource === "voice" ? "voice" : inputSource === "image" ? "image" : "ai_parsed") as any,
           date: item.date,
           classificationLogId: traceLogId || undefined,
           businessId,
@@ -1136,7 +1156,7 @@ export function ExpenseForm({
           subCategory: item.subCategory,
           description: item.description,
           rawText: overrideText || text || "إدخال صوتي",
-          source: inputSource === "voice" ? "voice" : "ai_parsed",
+          source: inputSource === "voice" ? "voice" : inputSource === "image" ? "image" : "ai_parsed",
           date: item.date,
           classificationLogId: traceLogId || undefined,
           businessId,
@@ -1499,7 +1519,7 @@ export function ExpenseForm({
     setLatestParserTrace(null);
     parseMutation.mutate({
       text: newText,
-      inputChannel: inputSource,
+      inputChannel: inputSource === "voice" ? "voice" : "text",
       businessMode: businessMode || false,
     });
   };

@@ -233,7 +233,7 @@
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
         "api/expense-router.ts#rest-of-file": "42607c7682f3",
-        "api/image-router.ts": "95cb317266d6",
+        "api/image-router.ts": "653bd18f45c3",
         "api/lib/admissibility-gate.ts": "9a24ae0cb1da",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
         "api/lib/amount-linker.ts": "23fb47c27442",
@@ -277,14 +277,14 @@
         "api/lib/unified-normalizer.ts": "603756615433",
         "api/lib/voice-intake-gate.ts": "6213ffc0c8da",
         "api/services/parser-trace.ts": "d02875bad059",
-        "src/components/expenses/ExpenseForm.tsx": "a5b9e525ccec",
+        "src/components/expenses/ExpenseForm.tsx": "28a20ea36e81",
         "src/components/expenses/ReceiptCapture.tsx": "5940b1b1e056",
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-25 bc91a31",
-      "arabic": "c421d267a815",
-      "arabicChecked": "2026-09-25 d5e7b7e"
+      "checked": "2026-09-25 66236cf",
+      "arabic": "e9b7cde637bd",
+      "arabicChecked": "2026-09-25 66236cf"
     },
     "insights": {
       "files": {

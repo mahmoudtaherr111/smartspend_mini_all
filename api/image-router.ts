@@ -168,12 +168,10 @@ export const imageRouter = router({
         modelName,
       );
 
-      let expenseId: number | null = null;
-      if (input.saveExpense) {
-        // The receipt parser returns the model's raw `main_category` string
-        // (receipt-image-parser.ts), so without this it is the one write path that
-        // can put a category the registry does not know into expenses.category.
-        const normalized = normalizeTransactionTaxonomy(
+      // The receipt parser returns the model's raw `main_category` string
+      // (receipt-image-parser.ts); it is resolved against the registry before it is saved
+      // or shown for review.
+      const normalized = normalizeTransactionTaxonomy(
           {
             category: parsed.category,
             subCategory: parsed.subCategory,
@@ -182,6 +180,9 @@ export const imageRouter = router({
           },
           `${parsed.ocrText || ""} ${parsed.description || ""}`,
         );
+
+      let expenseId: number | null = null;
+      if (input.saveExpense) {
         const {
           applyExpenseRollupDelta,
           expenseToRollupDelta,
@@ -242,9 +243,10 @@ export const imageRouter = router({
       return {
         amount: parsed.amount,
         description: parsed.description,
-        category: parsed.category,
-        subCategory: parsed.subCategory,
-        type: parsed.type,
+        category: normalized.category,
+        subCategory: normalized.subCategory,
+        type: normalized.type,
+        ocrText: parsed.ocrText ?? null,
         confidence: parsed.confidence,
         merchant: parsed.merchant,
         tokensUsed: parsed.tokensUsed,

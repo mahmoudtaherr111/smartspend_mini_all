@@ -250,8 +250,10 @@ at the plan's per-recording limit and at the seconds left this month.
 reserves the image budget and calls `api/lib/receipt-image-parser.ts#parseReceiptImage`: with an OCR text hint it
 reads the amount locally and runs the pipeline on a short sentence; otherwise a Gemini vision call (the
 `ai_model_pro` setting, else `GEMINI_MODEL_PRO`, whose default is `gemini-3.5-flash`, through `mapModelName`) reads
-the receipt and the pipeline runs on its OCR text. The first item is normalized against the registry and saved as one
-expense with source `image`, without a review step. The form offers the camera only when `pro.myPlan` reports the receipts feature for the plan, and only online.
+the receipt and the pipeline runs on its OCR text. The first item is normalized against the registry. The entry form
+asks with `saveExpense: false`, so nothing is saved: the item opens the review card like a typed sentence, and saving
+it there stores it with source `image` through `expense.batchCreate`. (`saveExpense: true`, the default, still saves
+at once; nothing in the app calls it that way.) The form offers the camera only when `pro.myPlan` reports the receipts feature for the plan, and only online.
 
 ## Clarifications
 `expense.answerClarification` works in one of two modes, chosen by what the clarification stored:
@@ -327,7 +329,7 @@ answer ([voice calls](voice-calls.md#the-tools)).
 Checked against the code; each one names where it lives.
 1. **Gap.** A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع"
    rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
-2. **Bug.** Receipts are saved without review. The saved amount is the first item the pipeline read from the OCR text,
+2. **Bug.** A receipt's amount on the review card is the first item the pipeline read from the OCR text,
    which can differ from the total the vision model returned, and a base64 image longer than the parser's cap
    is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the
    procedure accepts larger payloads.
