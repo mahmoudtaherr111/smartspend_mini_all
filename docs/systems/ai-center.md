@@ -29,7 +29,8 @@ facts.
 plan (`chatbot_enabled_<plan>`), and the user's messages today must be under `chatbot_daily_limit_<plan>`, counted per
 Cairo business day. The model comes from `chatbot_api_key` (else `fireworks_api_key`), `chatbot_base_url` (Fireworks by
 default) and `chatbot_model` (a DeepSeek model on Fireworks by default); the length of a model reply is capped by the
-chat cost policy of [AI providers and usage limits](ai-platform.md). The procedure then creates a conversation, or
+chat cost policy of [AI providers and usage limits](ai-platform.md), and the answer's model call is written to the
+[AI cost ledger](ai-platform.md#how-a-call-is-recorded) at that model's price. The procedure then creates a conversation, or
 checks that the given one belongs to the user (`requireOwnedConversation`), loads its latest messages
 (`chatbot_max_history`) and stores the user's message.
 

@@ -38,6 +38,8 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/admin-safe-fields.ts` | [accounts](accounts.md) |
 | `api/lib/admissibility-gate.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/ai-gateway.ts` | [ai-platform](ai-platform.md) |
+| `api/lib/ai-ledger.ts` | [ai-platform](ai-platform.md) |
+| `api/lib/ai-pricing.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/ai-provider-registry.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/ai-routing.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/ai-usage-policy.ts` | [ai-platform](ai-platform.md) |
@@ -240,6 +242,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/voice-router.ts` | [voice-calls](voice-calls.md) |
 | `api/wallet-router.ts` | [money](money.md) |
 | `api/webauthn-router.ts` | [accounts](accounts.md) |
+| `contracts/ai-models.ts` | [platform](platform.md) |
 | `contracts/categories.ts` | [platform](platform.md) |
 | `contracts/constants.ts` | [platform](platform.md) |
 | `contracts/errors.ts` | [platform](platform.md) |
@@ -268,6 +271,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/admin/ClarificationsTab.tsx` | [admin](admin.md) |
 | `src/components/admin/NotificationsTab.tsx` | [admin](admin.md) |
 | `src/components/admin/ai-center/AiCommandCenter.tsx` | [admin](admin.md) |
+| `src/components/admin/ai-center/modals/AiModelEditDialog.tsx` | [admin](admin.md) |
 | `src/components/admin/ai-center/modals/TokenAnatomyModal.tsx` | [admin](admin.md) |
 | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` | [admin](admin.md) |
 | `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx` | [admin](admin.md) |

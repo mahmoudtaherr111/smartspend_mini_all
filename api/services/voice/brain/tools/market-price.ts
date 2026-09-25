@@ -5,6 +5,7 @@
  * The caller is waiting on the line: a fast model first (`voice_price_model`), the next one after five seconds, and
  * nine seconds in all.
  */
+import { recordAiLedger } from "../../../../lib/ai-ledger";
 import { businessTimeLabel } from "../../../../lib/app-time";
 import { cacheGet, cacheSet } from "../../../../lib/redis-client";
 import type { ToolRunOutcome } from "../../gateway/call-session";
@@ -31,7 +32,10 @@ interface Quote {
 const TTL_SECONDS = 30 * 60;
 
 /** The quote, or null when no model found a believable one, and what asking cost. */
-export async function lookup(asset: Asset, now = new Date()): Promise<{ quote: Quote | null; costUsd: number }> {
+export async function lookup(
+  asset: Asset,
+  now = new Date(),
+): Promise<{ quote: Quote | null; costUsd: number; usage: { model: string; inputTokens: number; outputTokens: number } }> {
   const answer = await askTextModel({
     modelSetting: "voice_price_model",
     defaultModel: "gemini-3.5-flash-lite",
@@ -42,7 +46,11 @@ export async function lookup(asset: Asset, now = new Date()): Promise<{ quote: Q
     deadlineMs: 9_000,
   });
   const costUsd = textModelCostUsd(answer.model, answer.inputTokens, answer.outputTokens);
-  return { quote: readQuote(asset, answer.text, answer.webSource, now), costUsd };
+  return {
+    quote: readQuote(asset, answer.text, answer.webSource, now),
+    costUsd,
+    usage: { model: answer.model, inputTokens: answer.inputTokens, outputTokens: answer.outputTokens },
+  };
 }
 
 function readQuote(asset: Asset, text: string, webSource: string | undefined, now: Date): Quote | null {
@@ -83,6 +91,17 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
     const found = await lookup(asset).catch(() => null);
     quote = found?.quote ?? null;
     costUsd = found?.costUsd ?? 0;
+    if (found) {
+      void recordAiLedger({
+        userId: ctx.identity.userId,
+        userType: ctx.identity.userType,
+        channel: "voice_price",
+        providerSlug: "gemini",
+        modelId: found.usage.model,
+        promptTokens: found.usage.inputTokens,
+        completionTokens: found.usage.outputTokens,
+      });
+    }
     if (quote) await cacheSet(cacheKey, TTL_SECONDS, JSON.stringify(quote));
   }
   if (!quote) {

@@ -32,7 +32,6 @@ flowchart LR
   end
   subgraph g_tables["MySQL tables"]
     tbl_ai_summaries[("ai_summaries")]
-    tbl_ai_token_ledgers[("ai_token_ledgers")]
     tbl_expenses[("expenses")]
     tbl_local_users[("local_users")]
     tbl_monthly_behavior_snapshots[("monthly_behavior_snapshots")]
@@ -70,7 +69,6 @@ flowchart LR
   router_ai --> sys_platform
   router_ai -.-> tbl_expenses
   router_ai ==> tbl_ai_summaries
-  router_ai ==> tbl_ai_token_ledgers
   router_ai ==> tbl_local_users
   router_ai ==> tbl_monthly_behavior_snapshots
   router_ai ==> tbl_users
@@ -100,7 +98,7 @@ flowchart LR
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
 | `ai.compareMonths` | mutation | `aiProcedure` | — | — | `AICenter` |
-| `ai.generateMonthlyInsights` | mutation | `aiProcedure` | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `ai_token_ledgers`, `local_users`, `monthly_behavior_snapshots`, `users` | `AICenter` |
+| `ai.generateMonthlyInsights` | mutation | `aiProcedure` | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `local_users`, `monthly_behavior_snapshots`, `users` | `AICenter` |
 | `ai.generateYearlyInsights` | mutation | `aiProcedure` | — | — | — |
 | `ai.getCachedMonthlyInsights` | query | `authedProcedure` | `ai_summaries` | — | `AICenter` |
 | `export.monthlyReportHtml` | mutation | `proReportProcedure` | — | — | `AICenter` |
@@ -126,7 +124,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `ai_summaries` | C | `ai.generateMonthlyInsights` | `ai.generateMonthlyInsights`, `ai.getCachedMonthlyInsights` |
-| `ai_token_ledgers` | E | `ai.generateMonthlyInsights` | — |
 | `expenses` | B | — | `ai-insights`, `ai.generateMonthlyInsights`, `profile.refreshInferences` |
 | `local_users` | A | `ai.generateMonthlyInsights` | `ai-insights`, `ai.generateMonthlyInsights` |
 | `monthly_behavior_snapshots` | C | `ai.generateMonthlyInsights`, `profile.refreshInferences` | — |

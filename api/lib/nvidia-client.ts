@@ -8,7 +8,7 @@ export async function callNvidiaAPI(
   systemPrompt: string,
   userPrompt: string,
   maxTokens: number = 512,
-): Promise<{ text: string; tokensUsed: number; cachedTokens?: number }> {
+): Promise<{ text: string; tokensUsed: number; cachedTokens?: number; promptTokens?: number; completionTokens?: number }> {
   const url = "https://integrate.api.nvidia.com/v1/chat/completions";
   const targetModel = model || "meta/llama-3.2-11b-vision-instruct";
 
@@ -57,9 +57,11 @@ export async function callNvidiaAPI(
       const text = data.choices?.[0]?.message?.content || "";
       const tokensUsed = data.usage?.total_tokens || 0;
       const cachedTokens = data.usage?.prompt_tokens_details?.cached_tokens || 0;
+      const promptTokens = data.usage?.prompt_tokens || 0;
+      const completionTokens = data.usage?.completion_tokens || 0;
 
       console.log(`[NVIDIA API Usage] Model: ${targetModel}, Total Tokens: ${tokensUsed}`);
-      return { text, tokensUsed, cachedTokens };
+      return { text, tokensUsed, cachedTokens, promptTokens, completionTokens };
     } catch (err: any) {
       clearTimeout(timeoutId);
       throw err;

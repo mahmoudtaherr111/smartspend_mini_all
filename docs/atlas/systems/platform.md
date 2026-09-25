@@ -136,6 +136,7 @@ flowchart LR
   mod_api_routers --> sys_notifications
   mod_api_routers --> sys_voice_calls
   mod_api_routers -.-> tbl_ai_pending_actions
+  mod_api_routers -.-> tbl_ai_token_ledgers
   mod_api_routers -.-> tbl_expense_daily_rollups
   mod_api_routers -.-> tbl_notification_logs
   mod_api_routers -.-> tbl_onboarding_questions
@@ -149,7 +150,6 @@ flowchart LR
   mod_api_routers ==> tbl_ai_models
   mod_api_routers ==> tbl_ai_providers
   mod_api_routers ==> tbl_ai_summaries
-  mod_api_routers ==> tbl_ai_token_ledgers
   mod_api_routers ==> tbl_auth_challenges
   mod_api_routers ==> tbl_business_categories
   mod_api_routers ==> tbl_chat_conversations
@@ -236,7 +236,7 @@ flowchart LR
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
 | `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 24 |
-| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 8 |
+| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 9 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
 | `platform` — Platform services | Environment validation, Redis client and cache keys, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 10 |
@@ -272,7 +272,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_pending_actions` | D | `jobs` | `api-routers` |
 | `ai_providers` | A | `api-routers` | `api-routers` |
 | `ai_summaries` | C | `api-routers` | `api-routers` |
-| `ai_token_ledgers` | E | `api-routers`, `jobs` | `api-routers`, `jobs` |
+| `ai_token_ledgers` | E | `jobs` | `api-routers`, `jobs` |
 | `api_key_errors` | E | `jobs`, `platform` | `platform` |
 | `auth_challenges` | D | `api-core`, `api-routers`, `jobs` | `api-routers` |
 | `business_categories` | A | `api-routers` | `api-routers` |
@@ -385,7 +385,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>37 files and declarations</summary>
+<details><summary>38 files and declarations</summary>
 
 - `api/boot.ts#ALL /api/trpc/*`
 - `api/boot.ts#GET /health`
@@ -412,6 +412,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/storage/local-driver.ts`
 - `api/services/storage/s3-driver.ts`
 - `api/services/storage/types.ts`
+- `contracts/ai-models.ts`
 - `contracts/categories.ts`
 - `contracts/constants.ts`
 - `contracts/errors.ts`

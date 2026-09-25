@@ -71,7 +71,11 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
   `JWT_SECRET`, in red when no configured secret opens it — and "تغيير المفتاح" saves a new key through
   `admin.updateAiProvider` without deleting the provider or its models. The dot beside the name follows
   `ai_providers.healthStatus`: grey until the breaker has seen the provider, and red for a key nothing opens. `admin.validateApiKey` proves a key the cheapest way there is — by listing the
-  models it can reach — and works for any provider, not a fixed list.
+  models it can reach — and works for any provider, not a fixed list. Discovery lists every model the key reaches,
+  with a search box; only the ones the admin ticks are saved, with no purpose and the provider's published price when
+  one is known (`contracts/ai-models.ts`). "تعديل" on a saved model (`src/components/admin/ai-center/modals/AiModelEditDialog.tsx`)
+  sets what it serves (classification, chat, reports, embeddings), its plans, whether it is the default, whether it is
+  active, and its price per million tokens, which the [AI cost ledger](ai-platform.md#how-a-call-is-recorded) charges; a model without a price is marked so.
 - **Support.** Users open tickets from `src/pages/Support.tsx` (`support.create`, which prepends an optional
   phone or email to the message text) and see their own list (`support.listMine`); a ticket is readable and
   closable only by its owner or an admin.

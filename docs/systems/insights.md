@@ -45,7 +45,7 @@ spending, and the people they deal with. Classification prompts read the same pr
    short fixed prompt is used. A user whose `ai_tokens_used` reached the plan's limit gets the basic report.
 6. **The model call.** One call to NVIDIA, Fireworks, Groq or Gemini, with the facts block (or the server summary
    when the facts failed), the user's name, the salary day and the financial month, asking for JSON with the text,
-   alerts, personality and a data table. Tokens are recorded (`trackTokens`) and a cost metric is written.
+   alerts, personality and a data table. Tokens are recorded (`trackTokens`), a cost metric is written, and the call goes to the [AI cost ledger](ai-platform.md#how-a-call-is-recorded) with its input and output split.
 7. **Basic report.** When no model is used or its reply is not JSON, the server writes the text itself from the
    numbers above, with alerts, personalised cards and saving opportunities
    (`api/services/report-personalization-engine.ts#buildBackendPersonalizedInsights`) and the top categories.

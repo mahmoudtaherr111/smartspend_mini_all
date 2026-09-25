@@ -57,7 +57,8 @@ the rule parser and the model that read them, and the setup screens.
 - A rule result with an amount and confidence of 0.85 or more is used as it is (`parsed_by: rules`).
 - Otherwise `parseSmsFinancialData` shortens the message to its financial parts
   (`api/lib/sms-rule-parser.ts#condenseSmsNotification`), looks in a per-user cache kept in memory for 15 minutes,
-  and asks Gemini for a fixed JSON shape, with `GEMINI_API_KEY` and the model `mapModelName("flash")` resolves to. An
+  and asks Gemini for a fixed JSON shape, with `GEMINI_API_KEY` and the model `mapModelName("flash")` resolves to (its
+  cost goes to the [AI cost ledger](ai-platform.md#how-a-call-is-recorded) when the user is known). An
   answer that found a transaction with an amount at confidence 0.6 or more is used (`ai`); failing that, a rule
   result with an amount is used (`rules_fallback`).
 - When nothing was found, there is no amount or the confidence is under 0.5, the message is marked `ignored` with

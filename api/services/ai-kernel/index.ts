@@ -1194,6 +1194,7 @@ export async function runAIKernelActive(
     // work. The latter stays available in debug.estimatedInputTokens for
     // observability without inflating a user's AI quota.
     let tokensUsed = 0;
+    let llmUsage: AIResponse["llmUsage"];
     let model: string | undefined;
     let llmCalls = 0;
     let numericGuard:
@@ -1228,6 +1229,7 @@ export async function runAIKernelActive(
       // to the user as if it were a real token count.
       tokensUsed = Number.isFinite(llm.tokensUsed) ? Math.max(0, llm.tokensUsed) : 0;
       model = llm.model;
+      llmUsage = { model: llm.model, promptTokens: llm.promptTokens, completionTokens: llm.completionTokens };
       llmCalls = 1;
     }
 
@@ -1274,6 +1276,7 @@ export async function runAIKernelActive(
       recipe,
       model: model ?? "local-finance-kernel",
       tokensUsed,
+      llmUsage,
       debug: {
         mode: "active",
         plan: {

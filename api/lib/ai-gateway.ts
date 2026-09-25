@@ -11,13 +11,15 @@
 
 import { GoogleGenerativeAI, GoogleGenerativeAIAbortError } from "@google/generative-ai";
 import { db } from "../queries/connection";
-import { aiProviders, aiModels, aiTokenLedgers, users, localUsers } from "../../db/schema";
+import { aiProviders, aiModels, users, localUsers } from "../../db/schema";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { getSystemSettings } from "./settings-cache";
 import { TRPCError } from "@trpc/server";
 import { businessDateKey } from "./app-time";
 import { env } from "./env";
 import { createLogger } from "./log";
+import { aiCallCost } from "./ai-pricing";
+import { recordAiLedger } from "./ai-ledger";
 import { keyRing, needsReseal, openProviderKey, sealProviderKey, type OpenedKey } from "./provider-key-crypto";
 import { defaultGeminiModelForPlan, geminiFallbackChain, mapModelName } from "./model-mapper";
 
@@ -480,8 +482,7 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
   }
 
   // Fallback to legacy System Settings if dynamic DB tables have not been populated yet
-  const sysSettings = await getSystemSettings();
-  const exchangeRate = Number(sysSettings.usd_to_egp_rate || 48.5);
+  const sysSettings = await getSystemSettings();
 
   let providerSlug = route?.provider.slug || "gemini";
   let protocol = route?.provider.protocol || "gemini";
@@ -621,17 +622,10 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
   const totalTokens = promptTokens + completionTokens;
   const latencyMs = Date.now() - startedAt;
 
-  // 4. Real Money Cost Calculation
-  const inputPrice = route?.model.inputPricePer1M ?? 0.14;
-  const outputPrice = route?.model.outputPricePer1M ?? 0.56;
-  const cachedPrice = route?.model.cachedPricePer1M ?? 0.014;
-
-  const billableInput = Math.max(0, promptTokens - cachedTokens);
-  const costUsd =
-    (billableInput * inputPrice) / 1_000_000 +
-    (cachedTokens * cachedPrice) / 1_000_000 +
-    (completionTokens * outputPrice) / 1_000_000;
-  const costEgp = costUsd * exchangeRate;
+  // 4. What the call cost: the admin's price for this model, else the provider's published one (api/lib/ai-pricing.ts).
+  const cost = await aiCallCost(providerSlug, modelId, { promptTokens, completionTokens, cachedTokens, reasoningTokens });
+  const costUsd = cost.usd;
+  const costEgp = cost.egp;
 
   const usage: NormalizedUsage = {
     promptTokens,
@@ -644,42 +638,27 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
   };
 
   // 5. Asynchronous, Non-Blocking Ledger Recording
-  const billingPeriod = resolveBillingPeriod();
+  void recordAiLedger({
+    traceId,
+    userId: params.user.id,
+    userType: params.user.type,
+    channel: params.channel,
+    providerId: route?.provider.id || null,
+    providerSlug,
+    modelId,
+    promptTokens,
+    completionTokens,
+    cachedTokens,
+    reasoningTokens,
+    anatomy,
+    latencyMs,
+    finishReason,
+    conversationId: params.conversationId || null,
+    classificationLogId: params.classificationLogId || null,
+    metadata: { purpose: params.purpose, tier },
+  });
   void (async () => {
     try {
-      await db.insert(aiTokenLedgers).values({
-        traceId,
-        userId: params.user.id,
-        userType: params.user.type,
-        billingPeriod,
-        channel: params.channel,
-        providerId: route?.provider.id || null,
-        providerSlug,
-        modelId,
-        promptTokens,
-        completionTokens,
-        cachedTokens,
-        reasoningTokens,
-        totalTokens,
-        systemPromptTokens: anatomy.systemPromptTokens,
-        memoryRagTokens: anatomy.memoryRagTokens,
-        historyTokens: anatomy.historyTokens,
-        userInputTokens: anatomy.userInputTokens,
-        toolSchemaTokens: anatomy.toolSchemaTokens,
-        costUsd: sql`${costUsd.toFixed(8)}`,
-        costEgp: sql`${costEgp.toFixed(6)}`,
-        latencyMs,
-        httpStatus: 200,
-        finishReason,
-        conversationId: params.conversationId || null,
-        classificationLogId: params.classificationLogId || null,
-        metadata: {
-          purpose: params.purpose,
-          tier,
-          cachedTokensRatio: promptTokens > 0 ? (cachedTokens / promptTokens).toFixed(2) : "0",
-        },
-      });
-
       // Maintain backward-compatible running sum in users / localUsers
       if (params.user.type === "oauth") {
         await db

@@ -25,6 +25,7 @@ import { businessMonthRange } from "./lib/app-time";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { getSystemSettings } from "./lib/settings-cache";
 import { isPlanFeatureEnabled, planNumber } from "../contracts/plan-features";
+import { recordGeminiCall } from "./lib/ai-ledger";
 
 const FREE_DESCRIPTION_MAX = 120;
 
@@ -247,6 +248,7 @@ export const goalsRouter = router({
       const raw = result.response.text();
       const tokens = result.response.usageMetadata?.totalTokenCount || 0;
       await trackGoalTokens(ctx.user.id, ctx.user.type, tokens, modelName);
+      recordGeminiCall(ctx.user, "goal", modelName, result.response.usageMetadata);
 
       let aiPlan: Record<string, unknown> = {};
       try {

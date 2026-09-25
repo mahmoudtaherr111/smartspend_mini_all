@@ -25,6 +25,7 @@ export interface NormalizeAIResponseInput {
   recipe?: ResponseRecipe;
   model?: string;
   tokensUsed?: number;
+  llmUsage?: AIResponse["llmUsage"];
   tokenBudget?: TokenBudget;
   debug?: Record<string, unknown>;
 }
@@ -46,6 +47,7 @@ export function normalizeAIResponse(input: NormalizeAIResponseInput): AIResponse
     tokenBudget: input.tokenBudget ?? input.contextPack.tokenBudget,
     model: input.model,
     tokensUsed: input.tokensUsed,
+    llmUsage: input.llmUsage,
     debug: {
       ...(input.debug ?? {}),
       responseSchemaVersion: AI_RESPONSE_SCHEMA_VERSION,

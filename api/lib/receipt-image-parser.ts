@@ -2,6 +2,7 @@
  * Pro receipt / screenshot parsing — OCR heuristics first, Gemini vision fallback.
  */
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import type { GeminiUsageMetadata } from "./ai-ledger";
 import { mapModelName } from "./model-mapper";
 import { normalizeText } from "./text-normalizer";
 import { extractAmounts } from "./entity-extractor";
@@ -42,6 +43,8 @@ export interface ReceiptParseResult {
   tokensUsed: number;
   parsedBy: string;
   pipeline?: PipelineResult;
+  /** The vision call's usage as Gemini reported it, for the cost ledger. */
+  visionUsage?: GeminiUsageMetadata;
 }
 
 const MAX_IMAGE_BASE64_CHARS = 4_500_000;
@@ -140,6 +143,7 @@ export async function parseReceiptWithVision(
       ocrText: data.ocr_text,
       tokensUsed,
       parsedBy: "vision",
+      visionUsage: result.response.usageMetadata,
     },
     tokensUsed,
   };
@@ -248,5 +252,6 @@ export async function parseReceiptImage(input: {
     tokensUsed,
     parsedBy: `image:${pipeline.parsedBy}`,
     pipeline,
+    visionUsage: vision.parsed.visionUsage,
   };
 }

@@ -7,7 +7,8 @@ import { and, eq, inArray, lt, or, isNull } from "drizzle-orm";
 import { voiceCallIncidents, voiceCalls } from "../../../../db/schema";
 import { db } from "../../../queries/connection";
 import { createLogger } from "../../../lib/log";
-import type { UsageTotals } from "./pricing";
+import { recordAiLedger } from "../../../lib/ai-ledger";
+import { usageCostUsd, type UsageTotals } from "./pricing";
 
 const log = createLogger("voice-persistence");
 
@@ -79,6 +80,28 @@ export const mysqlCallPersistence: CallPersistence = {
       memoryStatus: final.memoryStatus,
       lastCheckpointAt: new Date(),
     }).where(eq(voiceCalls.id, callId));
+    // The live session's own cost goes to the AI cost ledger; the tools' text models write their own rows.
+    const [call] = await db
+      .select({ userId: voiceCalls.userId, userType: voiceCalls.userType, model: voiceCalls.model })
+      .from(voiceCalls)
+      .where(eq(voiceCalls.id, callId))
+      .limit(1);
+    if (call) {
+      const sum = (side: Record<string, number>) => Object.values(side).reduce((total, tokens) => total + tokens, 0);
+      await recordAiLedger({
+        userId: call.userId,
+        userType: call.userType,
+        channel: "voice_call",
+        providerSlug: "gemini",
+        modelId: call.model,
+        promptTokens: sum(final.tokens.input),
+        completionTokens: sum(final.tokens.output),
+        reasoningTokens: final.tokens.thoughts,
+        costUsd: usageCostUsd(final.tokens),
+        traceId: callId,
+        metadata: { billedSeconds: final.billedSeconds },
+      });
+    }
   },
 
   async incident(call, kind, detail) {

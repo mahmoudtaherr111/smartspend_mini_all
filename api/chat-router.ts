@@ -69,6 +69,7 @@ import {
 import type { ActionDraftResult, GoalCreatePayload, RuntimeActionName, RuntimeActionPayload } from "./services/action-runtime/types";
 import { displayFinanceCategory } from "./services/finance-semantic-layer/category-matcher";
 import { createLogger } from "./lib/log";
+import { providerSlugForBaseUrl, recordAiLedger } from "./lib/ai-ledger";
 
 const log = createLogger("chat");
 
@@ -808,6 +809,20 @@ export const chatRouter = router({
             return undefined;
           })
         : undefined;
+
+      // What the answer's one model call cost, at the provider's price (api/lib/ai-ledger.ts).
+      if (kernelPrimary?.llmUsage) {
+        void recordAiLedger({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          channel: "chat",
+          providerSlug: providerSlugForBaseUrl(config.baseUrl),
+          modelId: kernelPrimary.llmUsage.model,
+          promptTokens: kernelPrimary.llmUsage.promptTokens,
+          completionTokens: kernelPrimary.llmUsage.completionTokens,
+          conversationId: activeConversationId,
+        });
+      }
 
       if (kernelPrimary) {
         const clarificationArtifact = kernelPrimary.artifacts.find(

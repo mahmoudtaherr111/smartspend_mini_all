@@ -6,6 +6,7 @@
  * daily cost cap, not a price anyone pays us. The context is billed again on every turn, so the input counts of
  * every response add up; thinking tokens are billed as text output.
  */
+import { costAtRates, PUBLISHED_RATES } from "../../../lib/ai-pricing";
 import type { EngineUsage } from "../engine/types";
 
 const PER_MILLION_USD = {
@@ -47,18 +48,14 @@ export function usageCostUsd(totals: UsageTotals): number {
 }
 
 /**
- * Google's paid rates for the text models the call's tools use (think, market_price, the post-call summary), USD per
- * million tokens, output including thinking; checked 2026-09-25 on the same page. 3.8 Flash's rates double on
- * 2027-01-01. Search grounding is free for the first 5,000 requests a month and is not counted here. A model not
- * listed is priced as the dearest one.
+ * The text models the call's tools ask (think, market_price, the post-call summary), at the published rates of
+ * api/lib/ai-pricing.ts, synchronously so the daily cap can count them at once; a model not listed is priced as the
+ * dearest one. The ledger prices the same calls with the admin's own rates when set.
  */
-const TEXT_PER_MILLION_USD: Record<string, { input: number; output: number }> = {
-  "gemini-3.8-flash": { input: 0.75, output: 3.75 },
-  "gemini-3.5-flash-lite": { input: 0.3, output: 2.5 },
-  "gemini-3.1-flash-lite": { input: 0.25, output: 1.5 },
-};
-
 export function textModelCostUsd(model: string, inputTokens: number, outputTokens: number): number {
-  const rate = TEXT_PER_MILLION_USD[model] ?? TEXT_PER_MILLION_USD["gemini-3.8-flash"];
-  return Number(((inputTokens * rate.input + outputTokens * rate.output) / 1_000_000).toFixed(8));
+  const rate = PUBLISHED_RATES[model] ?? PUBLISHED_RATES["gemini-3.8-flash"];
+  return costAtRates({ input: rate.input, output: rate.output, cached: rate.cached ?? rate.input, source: "published" }, {
+    promptTokens: inputTokens,
+    completionTokens: outputTokens,
+  });
 }

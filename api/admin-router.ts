@@ -81,6 +81,7 @@ import webpush from "web-push";
 import { sendPush, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
 import { purgeUserData } from "./services/user-purge-service";
 import { asPlan, resolvePlanTokenLimit } from "./lib/ai-usage-policy";
+import { invalidateAiPricing } from "./lib/ai-pricing";
 
 // Setup Web Push
 // In a real app these should be in env vars, but we'll use the ones generated earlier
@@ -1960,7 +1961,8 @@ export const adminRouter = router({
             modelId: z.string().min(1),
             displayName: z.string().min(1),
             descriptionAr: z.string().optional(),
-            purposes: z.array(z.string()).min(1),
+            // A model may be saved before it has a purpose; it is not routed until it has one.
+            purposes: z.array(z.string()),
             allowedTiers: z.array(z.string()).min(1),
             isDefaultForPurpose: z.boolean().default(false),
             inputPricePer1M: z.number().min(0).default(0.14),
@@ -2008,6 +2010,7 @@ export const adminRouter = router({
         }
       });
       await refreshGatewayCache();
+      invalidateAiPricing();
       return { success: true };
     }),
 

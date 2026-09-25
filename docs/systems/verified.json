@@ -53,7 +53,7 @@
     },
     "admin": {
       "files": {
-        "api/admin-router.ts": "1255a0186af2",
+        "api/admin-router.ts": "2bb022da35d6",
         "api/ads-router.ts": "3492acf11584",
         "api/analytics-router.ts": "f4dfac1f9ab6",
         "api/export-router.ts#export.allUsers": "c142aeea8326",
@@ -70,8 +70,9 @@
         "src/components/admin/ClarificationsTab.tsx": "5d7eeb83b615",
         "src/components/admin/NotificationsTab.tsx": "fdc4e8874fd7",
         "src/components/admin/ai-center/AiCommandCenter.tsx": "aa2535884807",
+        "src/components/admin/ai-center/modals/AiModelEditDialog.tsx": "42ec0771293d",
         "src/components/admin/ai-center/modals/TokenAnatomyModal.tsx": "5d1eb48a7da5",
-        "src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx": "6d7349c52736",
+        "src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx": "3d4e8239e57c",
         "src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx": "f776695feeb5",
         "src/components/admin/ai-center/tabs/AiTelemetryTab.tsx": "c90405d7e803",
         "src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx": "10ff32f1e785",
@@ -85,13 +86,13 @@
         "src/pages/Admin.tsx": "42d9a43037ce",
         "src/pages/Support.tsx": "9175518fbc4c"
       },
-      "checked": "2026-09-25 8acb52d",
-      "arabic": "a468a2d3328b",
-      "arabicChecked": "2026-09-25 8acb52d"
+      "checked": "2026-09-25 25a20ff",
+      "arabic": "a75c91450a71",
+      "arabicChecked": "2026-09-25 25a20ff"
     },
     "ai-center": {
       "files": {
-        "api/chat-router.ts": "08a98de3c134",
+        "api/chat-router.ts": "b736b450ced2",
         "api/services/action-runtime/artifacts.ts": "5292dfe6dc80",
         "api/services/action-runtime/confirmation-phrases.ts": "ecf79bb5cfe7",
         "api/services/action-runtime/extended-actions.ts": "7efec8c4819c",
@@ -104,11 +105,11 @@
         "api/services/ai-kernel/clarification-machine.ts": "f60b0eef67f7",
         "api/services/ai-kernel/context-packer.ts": "001bd02b4cbe",
         "api/services/ai-kernel/data-need-compiler.ts": "6cef352b4fb5",
-        "api/services/ai-kernel/index.ts": "469f074e5e0c",
+        "api/services/ai-kernel/index.ts": "8eead9a8393b",
         "api/services/ai-kernel/intent-router.ts": "4e034212c0a2",
-        "api/services/ai-kernel/response-normalizer.ts": "c990a531a967",
+        "api/services/ai-kernel/response-normalizer.ts": "f377c8f16290",
         "api/services/ai-kernel/retrieval-policy.ts": "72b15ce603e0",
-        "api/services/ai-kernel/types.ts": "699cef99966e",
+        "api/services/ai-kernel/types.ts": "243c66f35463",
         "api/services/ai-memory/embedding-backfill.ts": "450063889613",
         "api/services/ai-memory/embedding-client.ts": "a3165268bce7",
         "api/services/ai-memory/embedding-settings.ts": "cbef17e87bfc",
@@ -141,34 +142,36 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "c384e6047412"
       },
-      "checked": "2026-09-25 f2b0086",
-      "arabic": "ed714b6b7bb8",
-      "arabicChecked": "2026-09-25 8acb52d"
+      "checked": "2026-09-25 25a20ff",
+      "arabic": "8e63e488f6f1",
+      "arabicChecked": "2026-09-25 25a20ff"
     },
     "ai-platform": {
       "files": {
         "api/ai-router.ts#ai.getUserLimits": "dd78ebfa2ec6",
-        "api/ai-router.ts#rest-of-file": "1f5dd6ffd8de",
-        "api/lib/ai-gateway.ts": "43792280473a",
+        "api/ai-router.ts#rest-of-file": "d1e1ff8451d3",
+        "api/lib/ai-gateway.ts": "f7811951453a",
+        "api/lib/ai-ledger.ts": "93e56a2d0714",
+        "api/lib/ai-pricing.ts": "23536d58c2c7",
         "api/lib/ai-provider-registry.ts": "da1562b6acdf",
         "api/lib/ai-routing.ts": "14a1e099f1f2",
         "api/lib/ai-usage-policy.ts": "e18edf7b3fec",
         "api/lib/deepseek-client.ts": "25b94e78c4ee",
-        "api/lib/fireworks-client.ts": "b6474c721e7e",
+        "api/lib/fireworks-client.ts": "0ff5cda683b6",
         "api/lib/fireworks-embedding-client.ts": "6e3729d6288d",
         "api/lib/groq-client.ts": "bdb495a8b189",
         "api/lib/llm-provider-chain.ts": "fb82931289a2",
         "api/lib/llm-router.ts": "ae8237823ac9",
         "api/lib/model-mapper.ts": "141f91caf7bd",
-        "api/lib/nvidia-client.ts": "564dadb63ac4",
+        "api/lib/nvidia-client.ts": "63815969f5a6",
         "api/lib/provider-health.ts": "56a6f6eb8217",
         "api/lib/provider-key-crypto.ts": "3c64d3f05284",
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "e4536dd88d77"
       },
-      "checked": "2026-09-25 8acb52d",
-      "arabic": "d4fce3272d62",
-      "arabicChecked": "2026-09-25 8acb52d"
+      "checked": "2026-09-25 25a20ff",
+      "arabic": "f9a581ab2f53",
+      "arabicChecked": "2026-09-25 25a20ff"
     },
     "bank-messages": {
       "files": {
@@ -178,7 +181,7 @@
         "android-app/app/src/main/java/com/smartspend/sync/DeepLinkActivity.kt": "d0cd83e77b4d",
         "android-app/app/src/main/java/com/smartspend/sync/SyncService.kt": "3f742c67f26e",
         "api/lib/shortcut-generator.ts": "fbf02d8e0f5d",
-        "api/lib/sms-ai-parser.ts": "f748c952734f",
+        "api/lib/sms-ai-parser.ts": "ccddcb45ab25",
         "api/lib/sms-rule-parser.ts": "e6e1e7b524d5",
         "api/profile-router.ts#profile.confirmSmsSuggestion": "a95676092729",
         "api/profile-router.ts#profile.dismissSmsSuggestion": "2aea8fd37c7d",
@@ -197,9 +200,9 @@
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-25 f2b0086",
-      "arabic": "ec3912db93e8",
-      "arabicChecked": "2026-09-25 f2b0086"
+      "checked": "2026-09-25 25a20ff",
+      "arabic": "7fc8f73eeba2",
+      "arabicChecked": "2026-09-25 25a20ff"
     },
     "billing": {
       "files": {
@@ -221,10 +224,10 @@
     "expense-capture": {
       "files": {
         "api/ai-router.ts#ai.learnWord": "ef6a568c333e",
-        "api/ai-router.ts#ai.parseExpense": "6d44ce663a92",
-        "api/ai-router.ts#ai.parseVoiceExpense": "3d169f5bb124",
-        "api/ai-router.ts#ai.speechToText": "26e0ee0346da",
-        "api/ai-router.ts#rest-of-file": "1f5dd6ffd8de",
+        "api/ai-router.ts#ai.parseExpense": "e164821f8f8a",
+        "api/ai-router.ts#ai.parseVoiceExpense": "b42b265975be",
+        "api/ai-router.ts#ai.speechToText": "116d7d02cd0b",
+        "api/ai-router.ts#rest-of-file": "d1e1ff8451d3",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
         "api/expense-router.ts#expense.answerClarification": "d4ea3c8db510",
         "api/expense-router.ts#expense.batchCreate": "d6ac0705dcca",
@@ -234,7 +237,7 @@
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
         "api/expense-router.ts#rest-of-file": "6d25294a8d34",
-        "api/image-router.ts": "32d626f56c84",
+        "api/image-router.ts": "4043abdc33c7",
         "api/lib/admissibility-gate.ts": "9a24ae0cb1da",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
         "api/lib/amount-linker.ts": "23fb47c27442",
@@ -267,7 +270,7 @@
         "api/lib/person-resolver.ts": "b334a99727c2",
         "api/lib/post-classifier-verifier.ts": "89f892b1a7c6",
         "api/lib/real-user-sim.ts": "569dd5235fe1",
-        "api/lib/receipt-image-parser.ts": "a8a4a2f77cce",
+        "api/lib/receipt-image-parser.ts": "cd75393a2c4b",
         "api/lib/relationship-normalizer.ts": "be8cc3a84254",
         "api/lib/rule-engine.ts": "e69ba5003b8d",
         "api/lib/smart-pipeline.ts": "7395fb8f3bea",
@@ -283,23 +286,23 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-25 bd3e953",
-      "arabic": "a88c9bbba673",
-      "arabicChecked": "2026-09-25 f2b0086"
+      "checked": "2026-09-25 25a20ff",
+      "arabic": "c6cd09b88924",
+      "arabicChecked": "2026-09-25 25a20ff"
     },
     "insights": {
       "files": {
         "api/ai-router.ts#ai.compareMonths": "c66fc3390521",
-        "api/ai-router.ts#ai.generateMonthlyInsights": "0c99f580d62c",
+        "api/ai-router.ts#ai.generateMonthlyInsights": "f15026457bf9",
         "api/ai-router.ts#ai.generateYearlyInsights": "935b893e6244",
         "api/ai-router.ts#ai.getCachedMonthlyInsights": "95b28ed6f694",
-        "api/ai-router.ts#rest-of-file": "1f5dd6ffd8de",
+        "api/ai-router.ts#rest-of-file": "d1e1ff8451d3",
         "api/boot.ts#job:monthly-behavior-snapshots": "1a1a7ff4d857",
         "api/boot.ts#job:monthly-report-generation": "60a67c71d204",
         "api/export-router.ts#export.monthlyReportHtml": "335e0925b0ca",
         "api/export-router.ts#rest-of-file": "45767b678670",
         "api/jobs/monthly-behavior-job.ts": "41da3de3a5f6",
-        "api/jobs/monthly-report-job.ts": "81033d38bdee",
+        "api/jobs/monthly-report-job.ts": "530135db4242",
         "api/profile-router.ts#profile.dismissOnboarding": "575744cb7639",
         "api/profile-router.ts#profile.getNextOnboardingQuestion": "45b300c9691a",
         "api/profile-router.ts#profile.getQuestions": "ec6916cf9c0c",
@@ -317,16 +320,16 @@
         "api/services/user-profile-service.ts": "70cb6f7c802a",
         "src/components/insights/AIInsights.tsx": "4b618cdf3ad2"
       },
-      "checked": "2026-09-25 8acb52d",
-      "arabic": "c37ccbf7f8a0",
-      "arabicChecked": "2026-09-25 8acb52d"
+      "checked": "2026-09-25 25a20ff",
+      "arabic": "1e9985060b32",
+      "arabicChecked": "2026-09-25 25a20ff"
     },
     "money": {
       "files": {
         "api/boot.ts#job:nightly-rollup-reconciliation": "7a5700744f08",
         "api/boot.ts#job:taxonomy-migration": "5864e301b433",
         "api/budget-router.ts": "106bf2ec3b6c",
-        "api/business-router.ts": "b6f0bc60473a",
+        "api/business-router.ts": "6c611d5c5e60",
         "api/expense-router.ts#expense.delete": "1a07ba6a54af",
         "api/expense-router.ts#expense.getById": "883d7c8c2233",
         "api/expense-router.ts#expense.getDebtBalances": "821a765233cc",
@@ -339,7 +342,7 @@
         "api/expense-router.ts#rest-of-file": "6d25294a8d34",
         "api/export-router.ts#export.myExpenses": "d0acca7338ba",
         "api/export-router.ts#rest-of-file": "45767b678670",
-        "api/goals-router.ts": "9b542bba317d",
+        "api/goals-router.ts": "7abbe5a2ba53",
         "api/jobs/rollup-reconciliation-job.ts": "07b3be75e8b0",
         "api/jobs/taxonomy-migration-job.ts": "84e501423147",
         "api/profile-router.ts#profile.addContact": "38af2a56ae72",
@@ -372,9 +375,9 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/pages/Home.tsx": "1c9404819a8b"
       },
-      "checked": "2026-09-25 bd3e953",
-      "arabic": "6a70e658be4f",
-      "arabicChecked": "2026-09-25 f2b0086"
+      "checked": "2026-09-25 25a20ff",
+      "arabic": "53aa7efd836f",
+      "arabicChecked": "2026-09-25 25a20ff"
     },
     "notifications": {
       "files": {
@@ -412,7 +415,7 @@
         "api/lib/log.ts": "65a6302d6f7d",
         "api/lib/redis-client.ts": "e5b4196e64a2",
         "api/lib/settings-cache.ts": "8bd804a02a6e",
-        "api/lib/system-settings-registry.ts": "fe17431535d8",
+        "api/lib/system-settings-registry.ts": "40a6272a4f84",
         "api/middleware.ts": "4780eee91f29",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "ed01fedd898c",
@@ -423,6 +426,7 @@
         "api/services/storage/local-driver.ts": "3f1bfd3b9a11",
         "api/services/storage/s3-driver.ts": "93478c2f095d",
         "api/services/storage/types.ts": "766de83090e8",
+        "contracts/ai-models.ts": "e103e23321f3",
         "contracts/categories.ts": "1dd7c898e484",
         "contracts/constants.ts": "f047c234a332",
         "contracts/errors.ts": "823cdb78cfc4",
@@ -436,9 +440,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "249d087e3b9c"
       },
-      "checked": "2026-09-25 f2b0086",
-      "arabic": "1c7eef961f51",
-      "arabicChecked": "2026-09-25 8acb52d"
+      "checked": "2026-09-25 25a20ff",
+      "arabic": "7eb5454a8b2a",
+      "arabicChecked": "2026-09-25 25a20ff"
     },
     "voice-calls": {
       "files": {
@@ -459,7 +463,7 @@
         "api/services/voice/brain/snapshot.ts": "980fa8e028ca",
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
         "api/services/voice/brain/tools/app-help.ts": "039eab42299b",
-        "api/services/voice/brain/tools/market-price.ts": "77711620fee1",
+        "api/services/voice/brain/tools/market-price.ts": "ee41c3759eeb",
         "api/services/voice/brain/tools/memory.ts": "650de59983e4",
         "api/services/voice/brain/tools/money-query.ts": "afadf2019df4",
         "api/services/voice/brain/tools/record.ts": "c716b33bfb81",
@@ -472,12 +476,12 @@
         "api/services/voice/engine/types.ts": "59bb80cd2293",
         "api/services/voice/gateway/call-session.ts": "bf86ded2a35a",
         "api/services/voice/gateway/index.ts": "48f503085daf",
-        "api/services/voice/gateway/persistence.ts": "9b7295c585e9",
-        "api/services/voice/gateway/pricing.ts": "c915b4e030fc",
+        "api/services/voice/gateway/persistence.ts": "0fac7b5c23a0",
+        "api/services/voice/gateway/pricing.ts": "a0a41c068414",
         "api/services/voice/gateway/socket.ts": "9aadd9f926ff",
         "api/services/voice/gateway/start-call.ts": "d4ecc10629b6",
         "api/services/voice/gateway/store.ts": "7a1dc82ce092",
-        "api/services/voice/post-call.ts": "25addc0610d2",
+        "api/services/voice/post-call.ts": "80600c7c478a",
         "api/services/voice/text-model.ts": "b848ded851d7",
         "api/voice-router.ts": "ad6a15d8a254",
         "src/components/voice/CallSmartButton.tsx": "9c46b8a2f532",
@@ -494,9 +498,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-09-25 8acb52d",
-      "arabic": "926a8d9d194c",
-      "arabicChecked": "2026-09-25 8acb52d"
+      "checked": "2026-09-25 25a20ff",
+      "arabic": "506b3c1b0c6e",
+      "arabicChecked": "2026-09-25 25a20ff"
     },
     "web-app": {
       "files": {

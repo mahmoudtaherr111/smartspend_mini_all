@@ -81,7 +81,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `Admin` — `src/pages/Admin.tsx`
 
-30 files in its import closure (not counting `src/components/ui/`).
+31 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -98,7 +98,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.getAIClassificationStats` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getAICostOverview` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getActivityLog` | useQuery | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.getAiModels` | useQuery | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.getAiModels` | useQuery, utils.invalidate | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.getAiProviders` | useQuery, utils.invalidate | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.getAiTelemetryOverview` | useQuery | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
@@ -124,7 +124,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.resolveApiKeyError` | useMutation | `src/pages/Admin.tsx` |
 | `admin.resolveClarification` | useMutation | `src/components/admin/ClarificationsTab.tsx` |
 | `admin.revokeSession` | useMutation | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.saveAiModels` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.saveAiModels` | useMutation | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.toggleNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerActivityCheck` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerBackupDemo` | useMutation | `src/components/admin/AdminSettingsTab.tsx` |
@@ -251,7 +251,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-55 files in its import closure (not counting `src/components/ui/`).
+56 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -268,7 +268,7 @@ _None._
 | `admin.getAIClassificationStats` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getAICostOverview` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getActivityLog` | useQuery | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.getAiModels` | useQuery | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.getAiModels` | useQuery, utils.invalidate | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.getAiProviders` | useQuery, utils.invalidate | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.getAiTelemetryOverview` | useQuery | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
@@ -294,7 +294,7 @@ _None._
 | `admin.resolveApiKeyError` | useMutation | `src/pages/Admin.tsx` |
 | `admin.resolveClarification` | useMutation | `src/components/admin/ClarificationsTab.tsx` |
 | `admin.revokeSession` | useMutation | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.saveAiModels` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.saveAiModels` | useMutation | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.toggleNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerActivityCheck` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerBackupDemo` | useMutation | `src/components/admin/AdminSettingsTab.tsx` |

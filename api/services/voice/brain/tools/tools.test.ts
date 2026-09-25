@@ -53,6 +53,7 @@ vi.mock("./reports", () => ({
 vi.mock("../../../../lib/ai-gateway", () => ({ executeAiGateway: vi.fn() }));
 vi.mock("../../../../lib/settings-cache", () => ({ getSystemSettings: vi.fn(async () => ({ voice_think_model: "" })) }));
 vi.mock("../../text-model", () => ({ askTextModel: vi.fn() }));
+vi.mock("../../../../lib/ai-ledger", () => ({ recordAiLedger: vi.fn(async () => undefined) }));
 vi.mock("../../../../lib/redis-client", () => ({ cacheGet: vi.fn(async () => null), cacheSet: vi.fn(async () => undefined) }));
 
 import { executeAiGateway } from "../../../../lib/ai-gateway";
@@ -230,7 +231,7 @@ describe("money_query", () => {
 describe("market_price", () => {
   it("gives the price with its source, and the time on Cairo's clock when the source names none", async () => {
     vi.mocked(askTextModel).mockResolvedValueOnce({ text: '{"value": 5150, "source": ""}', model: "gemini-3.5-flash-lite", inputTokens: 0, outputTokens: 0, webSource: "gold.example" });
-    expect(await lookup("gold_21k", new Date("2026-09-24T21:30:00Z"))).toEqual({
+    expect(await lookup("gold_21k", new Date("2026-09-24T21:30:00Z"))).toMatchObject({
       quote: { value: 5150, source: "gold.example", asOf: "2026-09-25 00:30" },
       costUsd: 0,
     });

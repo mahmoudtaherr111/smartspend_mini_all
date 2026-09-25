@@ -253,7 +253,6 @@ model {
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.ai_models
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.ai_providers
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.ai_summaries
-  smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.business_categories
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.chat_conversations
@@ -607,7 +606,6 @@ model {
   smartspend.api.trpc.ai.generateMonthlyInsights -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.ai.generateMonthlyInsights -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.ai_summaries
-  smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.monthly_behavior_snapshots
   smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.users
@@ -634,7 +632,6 @@ model {
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.platform
-  smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.pending_clarifications
@@ -650,7 +647,6 @@ model {
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.platform
-  smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.pending_clarifications
@@ -664,7 +660,6 @@ model {
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.platform
-  smartspend.api.trpc.ai.speechToText -[writes]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.ai.speechToText -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.ai.speechToText -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.ai.speechToText -[writes]-> smartspend.mysql.voice_usage
@@ -726,6 +721,7 @@ model {
   smartspend.api.trpc.business.removeCategory -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.business.removeCategory -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.business.removeCategory -[writes]-> smartspend.mysql.business_categories
+  smartspend.api.trpc.business.suggestCategories -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.business.suggestCategories -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.business.update -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.business.update -[uses]-> smartspend.api.modules.classification
@@ -761,6 +757,7 @@ model {
   smartspend.api.trpc.chat.sendMessage -[uses]-> smartspend.api.modules.ai-governance
   smartspend.api.trpc.chat.sendMessage -[uses]-> smartspend.api.modules.ai-kernel
   smartspend.api.trpc.chat.sendMessage -[uses]-> smartspend.api.modules.ai-memory
+  smartspend.api.trpc.chat.sendMessage -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.chat.sendMessage -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.chat.sendMessage -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.chat.sendMessage -[writes]-> smartspend.mysql.chat_conversations

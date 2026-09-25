@@ -15,6 +15,7 @@ import { invalidateUserClassificationCache } from "./lib/smart-pipeline";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 import { getSystemSettings } from "./lib/settings-cache";
 import { env } from "./lib/env";
+import { recordGeminiCall } from "./lib/ai-ledger";
 
 const BUSINESS_TYPES = [
   { id: "restaurant", label: "مطاعم ومأكولات", icon: "🍤" },
@@ -138,6 +139,7 @@ export const businessRouter = router({
 
       try {
         const result = await model.generateContent(userPrompt);
+        recordGeminiCall(ctx.user, "business", "gemini-3.1-flash-lite", result.response.usageMetadata);
         const text = result.response.text();
         const parsed = JSON.parse(text);
 

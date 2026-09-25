@@ -9,6 +9,7 @@ import { recordAICostMetric, resolveAICostPolicy } from "../services/ai-cost-pol
 import { callFireworksAPI } from "../lib/fireworks-client";
 import { createLogger, phoneTail } from "../lib/log";
 import { PLAN_IDS, isPlanFeatureEnabled } from "../../contracts/plan-features";
+import { providerSlugForBaseUrl, recordAiLedger } from "../lib/ai-ledger";
 
 const log = createLogger("monthly-report");
 
@@ -283,6 +284,17 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
             );
             reportContent = parseReportText(aiResult.text);
             reportSource = "monthly_report_semantic_llm";
+            void recordAiLedger({
+              userId: u.id,
+              userType,
+              channel: "report",
+              providerSlug: providerSlugForBaseUrl(aiConfig.baseUrl),
+              modelId: aiConfig.model,
+              promptTokens: aiResult.promptTokens ?? aiResult.tokensUsed,
+              completionTokens: aiResult.completionTokens ?? 0,
+              cachedTokens: aiResult.cachedTokens ?? 0,
+              metadata: { job: "monthly_report" },
+            });
 
             const estimatedInputTokens = Math.ceil((systemPrompt.length + userPrompt.length) / 3.5);
             void recordAICostMetric({

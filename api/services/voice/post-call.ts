@@ -17,6 +17,7 @@ import { invalidateMemoryUserCache } from "../ai-memory";
 import { contentHash } from "../ai-memory/text-utils";
 import { neverKeptUnasked } from "./brain/never-kept";
 import { deleteTranscript, readTranscript, TRANSCRIPT_TTL_SECONDS, type TranscriptLine } from "./gateway/store";
+import { recordAiLedger } from "../../lib/ai-ledger";
 import { textModelCostUsd } from "./gateway/pricing";
 import { askTextModel } from "./text-model";
 
@@ -235,7 +236,7 @@ const databaseDeps: PostCallDeps = {
     return rows.map((row) => ({ id: row.id, type: row.type, content: String(row.content) }));
   },
 
-  async ask(_user, prompt) {
+  async ask(user, prompt) {
     const answer = await askTextModel({
       modelSetting: "voice_memory_model",
       defaultModel: "gemini-3.8-flash",
@@ -244,6 +245,15 @@ const databaseDeps: PostCallDeps = {
       json: true,
       // Flash models think before answering, and the thinking counts against this budget.
       maxTokens: 4_096,
+    });
+    void recordAiLedger({
+      userId: user.userId,
+      userType: user.userType,
+      channel: "voice_memory",
+      providerSlug: "gemini",
+      modelId: answer.model,
+      promptTokens: answer.inputTokens,
+      completionTokens: answer.outputTokens,
     });
     return {
       text: answer.text,

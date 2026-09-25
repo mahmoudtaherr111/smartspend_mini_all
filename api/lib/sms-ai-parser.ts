@@ -12,6 +12,7 @@ import {
   normalizeSmsText,
 } from "./sms-rule-parser";
 import { createLogger } from "./log";
+import { recordGeminiCall } from "./ai-ledger";
 
 // A bank message is someone's balance and payees: log its length, never its text (golden rule 10).
 const log = createLogger("sms-ai-parser");
@@ -184,6 +185,9 @@ export async function parseSmsFinancialData(
     const result = await model.generateContent(
       `رسالة SMS:\n"${condensedMessage}"`,
     );
+    if (userContext?.userId && userContext.userType) {
+      recordGeminiCall({ id: userContext.userId, type: userContext.userType }, "sms", modelName, result.response.usageMetadata);
+    }
     const responseText = result.response.text().trim();
 
     const parsed = JSON.parse(responseText) as SmsParseResult;

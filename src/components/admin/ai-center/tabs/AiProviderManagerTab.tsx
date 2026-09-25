@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Plus, Server, Trash2, Cpu, RefreshCw, CheckCircle2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+import { PUBLISHED_RATES } from "@contracts/ai-models";
+import { AiModelEditDialog, type EditableModel } from "../modals/AiModelEditDialog";
 
 interface ProviderState {
   keyState: "sealed" | "stale" | "plaintext" | "unreadable" | "empty";
@@ -92,6 +94,10 @@ export function AiProviderManagerTab() {
   const utils = trpc.useUtils();
 
   const [discoveredModels, setDiscoveredModels] = useState<DiscoveredModelItem[]>([]);
+  // Only the models the admin ticks are saved; a provider such as OpenRouter lists hundreds.
+  const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const [modelFilter, setModelFilter] = useState("");
+  const [editing, setEditing] = useState<EditableModel | null>(null);
   const [selectedModels, setSelectedModels] = useState<Record<string, {
     purposes: string[];
     allowedTiers: string[];
@@ -145,16 +151,19 @@ export function AiProviderManagerTab() {
       setDiscoveredModels(modelsList);
       const initSelected: Record<string, any> = {};
       for (const m of modelsList) {
+        const published = PUBLISHED_RATES[m.id.replace(/^models\//, "")];
+        // No purpose until the admin gives it one, and the provider's own price when it is published (else none).
         initSelected[m.id] = {
-          purposes: ["chat", "classification"],
+          purposes: [],
           allowedTiers: ["free", "pro", "ultra"],
           isDefault: false,
-          inputPrice: 0.14,
-          outputPrice: 0.56,
-          cachedPrice: 0.014,
+          inputPrice: published?.input ?? 0,
+          outputPrice: published?.output ?? 0,
+          cachedPrice: published?.cached ?? published?.input ?? 0,
         };
       }
       setSelectedModels(initSelected);
+      setChosen(new Set());
       toast.success(`تم استكشاف ${modelsList.length} موديل بنجاح!`);
     },
     onError: (err) => toast.error(`فشل الاتصال بالمزود: ${err.message}`),
@@ -169,14 +178,14 @@ export function AiProviderManagerTab() {
   });
 
   const handleSaveDiscovered = async (providerId: number) => {
-    const modelPayload = discoveredModels.map((m) => {
+    const modelPayload = discoveredModels.filter((m) => chosen.has(m.id)).map((m) => {
       const config = selectedModels[m.id] || {
-        purposes: ["chat"],
-        allowedTiers: ["pro"],
+        purposes: [],
+        allowedTiers: ["free", "pro", "ultra"],
         isDefault: false,
-        inputPrice: 0.14,
-        outputPrice: 0.56,
-        cachedPrice: 0.014,
+        inputPrice: 0,
+        outputPrice: 0,
+        cachedPrice: 0,
       };
       return {
         modelId: m.id,
@@ -217,9 +226,9 @@ export function AiProviderManagerTab() {
       priority: 10,
     });
 
-    if (res?.id && discoveredModels.length > 0) {
+    if (res?.id && chosen.size > 0) {
       await handleSaveDiscovered(res.id);
-      toast.success(`تمت إضافة المزود وحفظ ${discoveredModels.length} موديل بنجاح!`);
+      toast.success(`اتضاف المزود و${chosen.size} موديل. حدد لكل موديل استخدامه وسعره من جدول الموديلات.`);
     } else {
       toast.success("تمت إضافة المزود بنجاح!");
     }
@@ -407,12 +416,13 @@ export function AiProviderManagerTab() {
                   <th className="pb-3 font-semibold">سعر الـ 1M إخراج</th>
                   <th className="pb-3 font-semibold">كاش 1M</th>
                   <th className="pb-3 font-semibold">افتراضي؟</th>
+                  <th className="pb-3 font-semibold"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-mono">
                 {configuredModels.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-6 text-center text-slate-500 font-sans">
+                    <td colSpan={8} className="py-6 text-center text-slate-500 font-sans">
                       لا توجد موديلات مهيأة بعد. استخدم زر "إضافة مزود" لاستكشاف الموديلات وحفظها.
                     </td>
                   </tr>
@@ -444,7 +454,12 @@ export function AiProviderManagerTab() {
                             ))}
                           </div>
                         </td>
-                        <td className="py-3 text-slate-300">${Number(m.inputPricePer1M).toFixed(4)}</td>
+                        <td className="py-3 text-slate-300">
+                          ${Number(m.inputPricePer1M).toFixed(4)}
+                          {Number(m.inputPricePer1M) === 0 && Number(m.outputPricePer1M) === 0 && (
+                            <Badge className="ms-1 text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/20 font-sans">من غير سعر</Badge>
+                          )}
+                        </td>
                         <td className="py-3 text-slate-300">${Number(m.outputPricePer1M).toFixed(4)}</td>
                         <td className="py-3 text-emerald-400">${Number(m.cachedPricePer1M).toFixed(4)}</td>
                         <td className="py-3">
@@ -455,6 +470,11 @@ export function AiProviderManagerTab() {
                           ) : (
                             <span className="text-slate-600">-</span>
                           )}
+                        </td>
+                        <td className="py-3 font-sans">
+                          <Button size="sm" variant="outline" className="h-7 text-[11px] border-slate-700" onClick={() => setEditing(m as unknown as EditableModel)}>
+                            تعديل
+                          </Button>
                         </td>
                       </tr>
                     );
@@ -556,23 +576,46 @@ export function AiProviderManagerTab() {
                   <CheckCircle2 className="w-4 h-4" />
                   تم اكتشاف {discoveredModels.length} موديل متاح
                 </span>
-                <span className="text-[10px] text-slate-500">اختر ووجه الموديلات</span>
+                <span className="text-[10px] text-slate-500">علّم الموديلات اللي هتضيفها ({chosen.size})</span>
               </div>
 
-              <div className="max-h-48 overflow-y-auto space-y-2 pr-1 font-mono text-xs">
-                {discoveredModels.slice(0, 10).map((m) => (
-                  <div key={m.id} className="flex items-center justify-between p-2 rounded bg-slate-900 border border-slate-800 text-slate-300">
-                    <span className="font-bold truncate max-w-[280px]">{m.id}</span>
-                    <Badge variant="outline" className="text-[10px] border-slate-700">
-                      {m.contextWindow ? `${Math.round(m.contextWindow / 1000)}k ctx` : "128k"}
-                    </Badge>
-                  </div>
-                ))}
+              <Input
+                value={modelFilter}
+                onChange={(e) => setModelFilter(e.target.value)}
+                placeholder="دوّر على موديل (مثلاً embedding أو flash)"
+                className="h-8 bg-slate-900 border-slate-800 text-xs"
+              />
+              <div className="max-h-64 overflow-y-auto space-y-2 pe-1 font-mono text-xs">
+                {discoveredModels
+                  .filter((m) => m.id.toLowerCase().includes(modelFilter.trim().toLowerCase()))
+                  .map((m) => (
+                    <label key={m.id} className="flex items-center justify-between gap-2 p-2 rounded bg-slate-900 border border-slate-800 text-slate-300 cursor-pointer">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={chosen.has(m.id)}
+                          onChange={() =>
+                            setChosen((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(m.id)) next.delete(m.id);
+                              else next.add(m.id);
+                              return next;
+                            })
+                          }
+                        />
+                        <span className="font-bold truncate">{m.id}</span>
+                      </span>
+                      <Badge variant="outline" className="text-[10px] border-slate-700 shrink-0">
+                        {PUBLISHED_RATES[m.id.replace(/^models\//, "")] ? "له سعر منشور" : m.contextWindow ? `${Math.round(m.contextWindow / 1000)}k ctx` : "—"}
+                      </Badge>
+                    </label>
+                  ))}
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+      {editing && <AiModelEditDialog model={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }

@@ -98,14 +98,25 @@ budget is left. The voice call's post-call summary and price lookup use the same
   provider's own numbers replace the estimate afterwards.
 
 ## How a call is recorded
-There are two accountings, and they do not cover the same calls:
-- `trackTokens` in `api/ai-router.ts` adds the tokens to `users.ai_tokens_used`, records an `ai_<channel>`
-  event, and writes a row in `ai_token_ledgers`. It runs for `ai.parseExpense`, `ai.speechToText`,
-  `ai.parseVoiceExpense` and `ai.generateMonthlyInsights`. The admin telemetry and quota screens read this
-  table ([admin](admin.md)).
-- `recordAICostMetric` writes an `ai_cost_*` event into `user_analytics` with tokens, latency, route and
-  fallback flags. The AI Center chat, the voice call service, the monthly report job and the action runtime
-  use it, and `loadAICostOverview` aggregates it for `admin.getAICostOverview`.
+- **What it cost.** `api/lib/ai-ledger.ts#recordAiLedger` is the one writer of `ai_token_ledgers`: a row per paid
+  call with its provider, model, input, output, cached and thinking tokens, the Cairo billing month, and the cost in
+  USD and in EGP at `usd_to_egp_rate` (a setting the admin updates). The price comes from
+  `api/lib/ai-pricing.ts`: the price the admin entered for that model in the console, else the provider's published
+  price (`PUBLISHED_RATES` in `contracts/ai-models.ts`, Google's page as checked on the date it names); a model
+  neither knows is written at zero with `metadata.priced` false and logged (`ai_ledger.unpriced_model`), never
+  guessed, and a model saved with both prices at zero counts as unpriced. Thinking tokens are billed as output and
+  cached input at its own rate.
+- **Who records.** Parsing writes one row per attempt of the classification chain, failovers included, each at its
+  own provider's price (`recordModelCalls`); speech-to-text, the monthly analysis (with the provider's input and
+  output split), receipts (the vision call and the classification behind it), goal analysis, business category
+  suggestions, bank messages read by the model, the chat (the kernel returns the answer's usage,
+  `AIResponse.llmUsage`), `executeAiGateway`, the WhatsApp monthly report job and the voice call (the live session
+  at its end, priced per audio and text modality; `think`, a price lookup and the post-call summary on their own
+  rows) all write through it.
+- **The plan budget.** `trackTokens` in `api/ai-router.ts` still adds the tokens to `users.ai_tokens_used` and
+  records an `ai_<channel>` event, which the monthly budget reads.
+- `recordAICostMetric` separately writes an `ai_cost_*` event into `user_analytics` with tokens, latency, route and
+  fallback flags; `loadAICostOverview` aggregates it for `admin.getAICostOverview`.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -141,12 +152,10 @@ Checked against the code; each one names where it lives.
 1. **Debt.** `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost
    calculation and ledger write — has one caller, the rebuilt voice call's `think` tool. Elsewhere only its route
    resolution is used, by `api/lib/smart-pipeline.ts`.
-2. **Bug.** Cost in `ai_token_ledgers` is not the model's price: `trackTokens` bills every call at 0.14 USD per million
-   tokens and converts at a fixed 50.5, while the settings hold an exchange rate that only the unused gateway
-   reads. The admin's cost and telemetry screens show those numbers.
-3. **Bug.** The two accountings leave gaps: the AI Center chat and voice calls never reach `ai_token_ledgers`, so the
-   telemetry tab under-reports them, and the screen that would show the `ai_cost_*` side is not mounted
-   ([admin](admin.md)).
+2. **Gap.** Two accountings remain: the `ai_cost_*` events of `recordAICostMetric` estimate tokens on their own and
+   the screen that would show them is not mounted ([admin](admin.md)); the ledger is the priced one.
+3. **Gap.** Speech-to-text reports one token count, so its row is priced at the model's text input rate although the
+   input is audio, and models the admin adds without a price are recorded as unpriced until a price is entered.
 4. **Debt.** `api/lib/ai-provider-registry.ts` carries a model catalogue with tiers, purposes and prices, "last verified"
    in a comment, and nothing reads it: `isKnownModel`, `getModelEntry`, `listModels`, `resolveApiKey` and the
    per-plan defaults have no caller, and only `DEPRECATED_MODEL_MAP` is used. Model defaults live a second

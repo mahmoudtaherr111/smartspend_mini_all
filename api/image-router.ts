@@ -17,6 +17,7 @@ import { parseReceiptImage } from "./lib/receipt-image-parser";
 import { verifyImageMagicBytes } from "./lib/image-magic-bytes";
 import { normalizeTransactionTaxonomy } from "./lib/category-registry";
 import { mapModelName } from "./lib/model-mapper";
+import { recordGeminiCall, recordModelCalls } from "./lib/ai-ledger";
 import {
   getSmartProfile,
   summarizeProfileForAI,
@@ -167,6 +168,9 @@ export const imageRouter = router({
         parsed.tokensUsed,
         modelName,
       );
+      // What the receipt cost: the vision call, and the classification calls that read its text.
+      recordGeminiCall(ctx.user, "image", modelName, parsed.visionUsage);
+      recordModelCalls(ctx.user, "image", parsed.pipeline?.log.providerRoute?.attempts, { model: null, tokens: 0 });
 
       // The receipt parser returns the model's raw `main_category` string
       // (receipt-image-parser.ts); it is resolved against the registry before it is saved

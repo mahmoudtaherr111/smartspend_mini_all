@@ -4,7 +4,7 @@ export async function callFireworksAPI(
   systemPrompt: string,
   userPrompt: string,
   maxTokens: number,
-): Promise<{ text: string; tokensUsed: number; cachedTokens?: number }> {
+): Promise<{ text: string; tokensUsed: number; cachedTokens?: number; promptTokens?: number; completionTokens?: number }> {
   try {
     const url = "https://api.fireworks.ai/inference/v1/chat/completions";
     const payload = {
@@ -48,7 +48,7 @@ export async function callFireworksAPI(
 
     console.log(`[Fireworks API Usage] Total: ${tokensUsed}, Prompt: ${promptTokens}, Completion: ${completionTokens}, Cached: ${cachedTokens}`);
 
-    return { text, tokensUsed, cachedTokens };
+    return { text, tokensUsed, cachedTokens, promptTokens, completionTokens };
   } catch (error: any) {
     throw new Error(`Fireworks API error: ${error.message || String(error)}`);
   }

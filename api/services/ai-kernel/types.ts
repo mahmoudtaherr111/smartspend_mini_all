@@ -251,6 +251,8 @@ export interface AIResponse {
   tokenBudget: TokenBudget;
   model?: string;
   tokensUsed?: number;
+  /** The one model call the answer made, as the provider reported it, for the cost ledger. */
+  llmUsage?: { model: string; promptTokens: number; completionTokens: number };
   debug?: Record<string, unknown>;
 }
 

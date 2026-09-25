@@ -152,9 +152,11 @@
     {
       "id": "ai-providers",
       "title": "AI provider access",
-      "description": "Provider clients, the provider registry, model name mapping, routing and fallback chains, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own.",
+      "description": "Provider clients, the provider registry, model name mapping, routing and fallback chains, what each call cost and its row in the AI cost ledger, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own.",
       "paths": [
         "api/lib/ai-gateway.ts",
+        "api/lib/ai-pricing.ts",
+        "api/lib/ai-ledger.ts",
         "api/lib/provider-key-crypto.ts",
         "api/lib/ai-provider-registry.ts",
         "api/lib/ai-routing.ts",

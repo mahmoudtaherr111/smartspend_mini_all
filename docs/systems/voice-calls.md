@@ -114,7 +114,9 @@ is billed again for it on every later turn.
 - **Cost.** `api/services/voice/gateway/pricing.ts` prices the provider's token counts (Google's published Live
   rates) and the text models the tools ask (`textModelCostUsd`: `think`, a price lookup, which a cached price skips;
   thinking tokens count as output). A tool returns its cost, which joins the call's total and its daily cap
-  (`toolCostUsd` in the metrics); the post-call summary's cost is kept with its tokens. The call's cost and tokens are checkpointed every 15 seconds with the billed seconds and first-audio
+  (`toolCostUsd` in the metrics); the post-call summary's cost is kept with its tokens. The [AI cost ledger](ai-platform.md#how-a-call-is-recorded) gets the live
+  session when the call ends (`channel` `voice_call`, priced by modality), and `think`, each price lookup and the
+  summary on their own rows. The call's cost and tokens are checkpointed every 15 seconds with the billed seconds and first-audio
   latency (`voice_calls.metrics`).
 
 ### After the call

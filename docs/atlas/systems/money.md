@@ -76,6 +76,7 @@ flowchart LR
   router_budget ==> tbl_user_budgets
   router_business --> mod_ledger
   router_business --> sys_ai_center
+  router_business --> sys_ai_platform
   router_business --> sys_expense_capture
   router_business --> sys_platform
   router_business ==> tbl_business_categories

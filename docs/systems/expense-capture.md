@@ -203,7 +203,8 @@ them in system settings on a 0 to 100 scale with `parser_auto_save_threshold`, `
 read. The blocker codes are `api/lib/final-acceptance.ts#BlockerReason`.
 
 ### 9. After the pipeline
-`parseExpense` records the tokens and an AI cost metric, writes the trace to `classification_logs` with
+`parseExpense` records the tokens, an AI cost metric and one [AI cost ledger](ai-platform.md#how-a-call-is-recorded) row per model call the chain made
+(failovers included, each at its own provider's price), writes the trace to `classification_logs` with
 `api/lib/smart-pipeline.ts#SMART_PIPELINE_VERSION`. For `clarify` it stores a
 `pending_clarifications` row whose context holds the items and a queue of the unknown names (`pendingNames`), and
 returns its id with the question. The response carries the items, the decision, the parser trace

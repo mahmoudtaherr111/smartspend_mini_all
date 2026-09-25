@@ -22,13 +22,11 @@ import {
   pendingClarifications,
   userBusinesses,
   businessCategories as bizCategoriesTable,
-  aiTokenLedgers,
 } from "../db/schema";
-import { resolveBillingPeriod } from "./lib/ai-gateway";
-import { randomUUID } from "node:crypto";
 import { getSystemSettings } from "./lib/settings-cache";
 import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { env } from "./lib/env";
+import { recordAiLedger, recordModelCalls } from "./lib/ai-ledger";
 import { businessDateKey } from "./lib/app-time";
 import { runSmartPipeline, SMART_PIPELINE_VERSION } from "./lib/smart-pipeline";
 import { CATEGORIES } from "./lib/category-registry";
@@ -196,7 +194,7 @@ export async function callGroqAPI(
   systemPrompt: string,
   userPrompt: string,
   maxTokens: number,
-): Promise<{ text: string; tokensUsed: number }> {
+): Promise<{ text: string; tokensUsed: number; promptTokens: number; completionTokens: number; cachedTokens: number }> {
   const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
   const response = await fetch(GROQ_ENDPOINT, {
     method: "POST",
@@ -226,7 +224,13 @@ export async function callGroqAPI(
   const data = (await response.json()) as any;
   const text = data?.choices?.[0]?.message?.content ?? "";
   const tokensUsed = data?.usage?.total_tokens ?? 0;
-  return { text, tokensUsed };
+  return {
+    text,
+    tokensUsed,
+    promptTokens: data?.usage?.prompt_tokens ?? 0,
+    completionTokens: data?.usage?.completion_tokens ?? 0,
+    cachedTokens: data?.usage?.prompt_tokens_details?.cached_tokens ?? 0,
+  };
 }
 
 // ────────────────────────────────────────────────────────
@@ -370,24 +374,16 @@ export async function resolveRoutingConfig(
   };
 }
 
+/**
+ * The user's running token count and usage event (the plan budget reads them). What the call cost goes to the
+ * ledger through recordAiLedger, at the provider's price.
+ */
 async function trackTokens(
   userId: number,
   userType: string,
   tokens: number,
   channel: AiUsageChannel = "parse",
   model?: string,
-  extra?: {
-    promptTokens?: number;
-    completionTokens?: number;
-    cachedTokens?: number;
-    reasoningTokens?: number;
-    providerSlug?: string;
-    latencyMs?: number;
-    costUsd?: number;
-    costEgp?: number;
-    conversationId?: number;
-    classificationLogId?: number;
-  },
 ) {
   if (!tokens || tokens <= 0) return;
   try {
@@ -412,58 +408,11 @@ async function trackTokens(
       model,
       tokens,
     });
-
-    // 3. NEW: Immutable ledger write (fire-and-forget, non-blocking)
-    const promptTokens = extra?.promptTokens ?? tokens;
-    const completionTokens = extra?.completionTokens ?? 0;
-    const providerSlug = extra?.providerSlug ?? "gemini";
-    const modelId = model ?? "unknown";
-    const latencyMs = extra?.latencyMs ?? 0;
-
-    // Simple cost estimation when not provided:
-    // gemini-flash-lite ~$0.14/1M input, $0.56/1M output
-    const costUsd = extra?.costUsd ?? (tokens * 0.14) / 1_000_000;
-    const costEgp = extra?.costEgp ?? costUsd * 50.5;
-
-    void (async () => {
-      try {
-        await db.insert(aiTokenLedgers).values({
-          traceId: randomUUID(),
-          userId,
-          userType: userType as "oauth" | "local",
-          billingPeriod: resolveBillingPeriod(),
-          channel: channel || "parse",
-          providerId: null,
-          providerSlug,
-          modelId,
-          promptTokens,
-          completionTokens,
-          cachedTokens: extra?.cachedTokens ?? 0,
-          reasoningTokens: extra?.reasoningTokens ?? 0,
-          totalTokens: tokens,
-          systemPromptTokens: 0,
-          memoryRagTokens: 0,
-          historyTokens: 0,
-          userInputTokens: promptTokens,
-          toolSchemaTokens: 0,
-          costUsd: sql`${costUsd.toFixed(8)}`,
-          costEgp: sql`${costEgp.toFixed(6)}`,
-          latencyMs,
-          httpStatus: 200,
-          finishReason: "stop",
-          conversationId: extra?.conversationId ?? null,
-          classificationLogId: extra?.classificationLogId ?? null,
-          metadata: { channel, model: modelId, provider: providerSlug },
-        });
-      } catch (ledgerErr) {
-        // Silently fail ledger write — never block user request
-        console.warn("[TokenLedger] Failed to write ledger entry:", ledgerErr);
-      }
-    })();
   } catch (err) {
     console.error("Failed to track tokens:", err);
   }
 }
+
 
 function isMissingTableError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? "");
@@ -923,6 +872,7 @@ export const aiRouter = router({
           result.modelUsed,
         );
       }
+      recordModelCalls(ctx.user, "parse", result.log.providerRoute?.attempts, { model: result.modelUsed, tokens: result.tokensUsed });
       void recordAICostMetric({
         userId: ctx.user.id,
         userType: ctx.user.type,
@@ -1453,6 +1403,12 @@ export const aiRouter = router({
           "speech",
         );
       }
+      // Speech is billed on the audio sent; the provider reports it as one count.
+      recordModelCalls(ctx.user, "speech", undefined, {
+        model: result.modelUsed,
+        tokens: result.tokensUsed,
+        providerSlug: isGroqModel(result.modelUsed) ? "groq" : "gemini",
+      });
 
       const remaining =
         limit > 0
@@ -1755,9 +1711,15 @@ export const aiRouter = router({
         },
       });
 
+      recordModelCalls(ctx.user, "speech", undefined, {
+        model: sttResult.modelUsed,
+        tokens: sttResult.tokensUsed,
+        providerSlug: isGroqModel(sttResult.modelUsed) ? "groq" : "gemini",
+      });
       if (parseResult.tokensUsed > 0) {
         await trackTokens(ctx.user.id, ctx.user.type, parseResult.tokensUsed, "parse", parseResult.modelUsed);
       }
+      recordModelCalls(ctx.user, "parse", parseResult.log.providerRoute?.attempts, { model: parseResult.modelUsed, tokens: parseResult.tokensUsed });
       void recordAICostMetric({
         userId: ctx.user.id,
         userType: ctx.user.type,
@@ -2645,7 +2607,11 @@ ${personalizedSummaryForAI}
 
             let raw = "";
             let tokens = 0;
+            // What the report's one model call used, split so it is priced at the provider's input and output rates.
+            let usage = { prompt: 0, completion: 0, cached: 0 };
+            let reportSlug = "gemini";
             if (reportProvider === "nvidia" || isNvidiaModel(modelName)) {
+              reportSlug = "nvidia";
               const res = await callNvidiaAPI(
                 nvidiaApiKey || reportApiKey,
                 modelName,
@@ -2659,7 +2625,9 @@ ${personalizedSummaryForAI}
               );
               raw = res.text;
               tokens = res.tokensUsed;
+              usage = { prompt: res.promptTokens ?? 0, completion: res.completionTokens ?? 0, cached: res.cachedTokens ?? 0 };
             } else if (reportProvider === "fireworks" || isFireworksModel(modelName)) {
+              reportSlug = "fireworks";
               const res = await callFireworksAPI(
                 fireworksApiKey || reportApiKey,
                 modelName,
@@ -2673,7 +2641,9 @@ ${personalizedSummaryForAI}
               );
               raw = res.text;
               tokens = res.tokensUsed;
+              usage = { prompt: res.promptTokens ?? 0, completion: res.completionTokens ?? 0, cached: res.cachedTokens ?? 0 };
             } else if (reportProvider === "groq" || isGroqModel(modelName)) {
+              reportSlug = "groq";
               const res = await callGroqAPI(
                 groqApiKey || reportApiKey,
                 modelName,
@@ -2687,6 +2657,7 @@ ${personalizedSummaryForAI}
               );
               raw = res.text;
               tokens = res.tokensUsed;
+              usage = { prompt: res.promptTokens ?? 0, completion: res.completionTokens ?? 0, cached: res.cachedTokens ?? 0 };
             } else if (aiModel) {
               const result = await aiModel.generateContent(prompt);
               raw = result.response
@@ -2695,6 +2666,12 @@ ${personalizedSummaryForAI}
                 .replace(/```/g, "")
                 .trim();
               tokens = result.response.usageMetadata?.totalTokenCount || 0;
+              const meta = result.response.usageMetadata as { promptTokenCount?: number; candidatesTokenCount?: number; thoughtsTokenCount?: number; cachedContentTokenCount?: number } | undefined;
+              usage = {
+                prompt: meta?.promptTokenCount ?? 0,
+                completion: (meta?.candidatesTokenCount ?? 0) + (meta?.thoughtsTokenCount ?? 0),
+                cached: meta?.cachedContentTokenCount ?? 0,
+              };
             }
             await trackTokens(
               ctx.user.id,
@@ -2703,6 +2680,20 @@ ${personalizedSummaryForAI}
               "report",
               modelName,
             );
+            if (usage.prompt + usage.completion > 0) {
+              void recordAiLedger({
+                userId: ctx.user.id,
+                userType: ctx.user.type,
+                channel: "report",
+                providerSlug: reportSlug,
+                modelId: modelName,
+                promptTokens: usage.prompt,
+                completionTokens: usage.completion,
+                cachedTokens: usage.cached,
+              });
+            } else {
+              recordModelCalls(ctx.user, "report", undefined, { model: modelName, tokens, providerSlug: reportSlug });
+            }
             const estimatedInputTokens = estimateTokensFromText(prompt);
             reportEstimatedInputTokens = estimatedInputTokens;
             reportTotalTokens = tokens;

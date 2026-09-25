@@ -31,7 +31,6 @@ flowchart LR
     mod_web_capture["Expense entry UI"]
   end
   subgraph g_tables["MySQL tables"]
-    tbl_ai_token_ledgers[("ai_token_ledgers")]
     tbl_business_categories[("business_categories")]
     tbl_classification_logs[("classification_logs")]
     tbl_expense_categories[("expense_categories")]
@@ -79,7 +78,6 @@ flowchart LR
   router_ai -.-> tbl_business_categories
   router_ai -.-> tbl_pro_subscriptions
   router_ai -.-> tbl_user_businesses
-  router_ai ==> tbl_ai_token_ledgers
   router_ai ==> tbl_classification_logs
   router_ai ==> tbl_local_users
   router_ai ==> tbl_pending_clarifications
@@ -176,9 +174,9 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
 | `ai.learnWord` | mutation | `authedProcedure` | — | `user_dictionaries` | — |
-| `ai.parseExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries` | `ai_token_ledgers`, `classification_logs`, `local_users`, `pending_clarifications`, `users` | `Admin`, `Home`, `More` |
-| `ai.parseVoiceExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `voice_usage` | `ai_token_ledgers`, `classification_logs`, `local_users`, `pending_clarifications`, `users`, `voice_usage` | `Home` |
-| `ai.speechToText` | mutation | `aiProcedure` | `local_users`, `pro_subscriptions`, `users`, `voice_usage` | `ai_token_ledgers`, `local_users`, `users`, `voice_usage` | — |
+| `ai.parseExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries` | `classification_logs`, `local_users`, `pending_clarifications`, `users` | `Admin`, `Home`, `More` |
+| `ai.parseVoiceExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `voice_usage` | `classification_logs`, `local_users`, `pending_clarifications`, `users`, `voice_usage` | `Home` |
+| `ai.speechToText` | mutation | `aiProcedure` | `local_users`, `pro_subscriptions`, `users`, `voice_usage` | `local_users`, `users`, `voice_usage` | — |
 | `expense.answerClarification` | mutation | `authedProcedure` | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `expenses`, `local_users`, `pending_clarifications`, `user_contacts`, `users` | `Home` |
 | `expense.batchCreate` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
 | `expense.create` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
@@ -200,7 +198,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
-| `ai_token_ledgers` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText` | — |
 | `business_categories` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` |
 | `classification_logs` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `classification-log-cleanup`, `expense.batchCreate`, `expense.create` | `classification`, `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
 | `expense_categories` | A | `expense.createCategory` | `expense.getCategoryList` |

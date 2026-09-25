@@ -206,6 +206,8 @@ export const SETTINGS: SettingDef[] = [
   { key: "promo_code_discount", default: "20" },
   { key: "pipeline_version", default: "v1" },
   { key: "whatsapp_otp_enabled", default: "true" },
+  // EGP per USD for the AI cost ledger's EGP column (api/lib/ai-pricing.ts); the admin updates it as the rate moves.
+  { key: "usd_to_egp_rate", default: "48.5" },
 
   // ── Per-plan features and limits (contracts/plan-features.ts) ──
   // The console rendered the chat switches and limits per plan, and saving them was
