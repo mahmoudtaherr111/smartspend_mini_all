@@ -194,6 +194,16 @@ export const SETTINGS: SettingDef[] = [
   { key: "chatbot_model", default: "" },
   { key: "chatbot_max_history", default: "10" },
 
+  // ── Embeddings (api/lib/embedding-provider.ts): the admin's providers for "embedding" first, then Google ──
+  // Memory search by meaning; "false" leaves it to word matching.
+  { key: "ai_memory_embedding_enabled", default: "true" },
+  // Google's embedding model when no provider of the admin's answers; empty means gemini-embedding-2.
+  { key: "ai_embedding_model", default: "" },
+  // Vector sizes per use (256, 768 or 1024); changing one starts a new family of stored vectors.
+  { key: "ai_embedding_dimensions_short", default: "256" },
+  { key: "ai_embedding_dimensions_memory", default: "768" },
+  { key: "ai_embedding_dimensions_deep", default: "1024" },
+
   // ── RAG (renderable and unsaveable before this file) ──
   { key: "enable_rag", default: "true" },
   { key: "rag_api_key", default: "", secret: true },

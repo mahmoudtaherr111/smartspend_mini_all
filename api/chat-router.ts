@@ -70,12 +70,49 @@ import type { ActionDraftResult, GoalCreatePayload, RuntimeActionName, RuntimeAc
 import { displayFinanceCategory } from "./services/finance-semantic-layer/category-matcher";
 import { createLogger } from "./lib/log";
 import { providerSlugForBaseUrl, recordAiLedger } from "./lib/ai-ledger";
+import { resolveAdminRoutes } from "./lib/ai-gateway";
+import { env } from "./lib/env";
+import { defaultGeminiModelForPlan } from "./lib/model-mapper";
 
 const log = createLogger("chat");
 
 // ─── Helpers ───
 
-async function loadChatConfig(): Promise<{
+/** Google's OpenAI-compatible endpoint, which the chat client speaks as is. */
+const GEMINI_OPENAI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai";
+
+type ChatModel = { apiKey: string; baseUrl: string; model: string };
+
+/**
+ * The chat's models, in the order to ask them: the models the admin assigned to "chat" in the console for this plan,
+ * then the older chatbot settings when they hold a key, then Google's Gemini with the app's key. The first answers;
+ * the rest take over when it fails.
+ */
+async function chatModels(plan: string, s: Record<string, string>): Promise<ChatModel[]> {
+  const tier = plan === "ultra" ? "ultra" : plan === "pro" ? "pro" : "free";
+  const routes = await resolveAdminRoutes("chat", tier).catch(() => null);
+  const models: ChatModel[] = (routes?.routes ?? [])
+    .filter((route) => route.protocol === "openai" || route.protocol === "gemini")
+    .map((route) => ({
+      apiKey: route.apiKey,
+      baseUrl: route.protocol === "gemini" ? GEMINI_OPENAI_BASE : route.baseUrl,
+      model: route.model.replace(/^models\//, ""),
+    }));
+  const chatbotKey = s.chatbot_api_key || s.fireworks_api_key || "";
+  if (chatbotKey) {
+    models.push({
+      apiKey: chatbotKey,
+      baseUrl: s.chatbot_base_url || "https://api.fireworks.ai/inference/v1",
+      model: s.chatbot_model || "accounts/fireworks/models/deepseek-v4-flash",
+    });
+  }
+  const geminiKey = s.ai_api_key || env.GEMINI_API_KEY || "";
+  if (geminiKey) models.push({ apiKey: geminiKey, baseUrl: GEMINI_OPENAI_BASE, model: defaultGeminiModelForPlan(tier) });
+  return models;
+}
+
+async function loadChatConfig(plan: string): Promise<{
+  fallbacks: ChatModel[];
   apiKey: string;
   baseUrl: string;
   model: string;
@@ -87,11 +124,13 @@ async function loadChatConfig(): Promise<{
   settings: Record<string, string>;
 }> {
   const s = await getSystemSettings();
+  const [first, ...fallbacks] = await chatModels(plan, s);
 
   return {
-    apiKey: s.chatbot_api_key || s.fireworks_api_key || "",
-    baseUrl: s.chatbot_base_url || "https://api.fireworks.ai/inference/v1",
-    model: s.chatbot_model || "accounts/fireworks/models/deepseek-v4-flash",
+    fallbacks,
+    apiKey: first?.apiKey ?? "",
+    baseUrl: first?.baseUrl ?? GEMINI_OPENAI_BASE,
+    model: first?.model ?? "",
     maxTokens: {
       free: parseInt(s.chatbot_max_tokens_free || "1000"),
       pro: parseInt(s.chatbot_max_tokens_pro || "3000"),
@@ -475,7 +514,7 @@ export const chatRouter = router({
       const startedAt = Date.now();
 
       // 1. Load config
-      const config = await loadChatConfig();
+      const config = await loadChatConfig(plan);
       const routedIntent = routeIntent(input.message);
       const chatPolicy = resolveAICostPolicy({
         channel: "chat",
@@ -803,6 +842,7 @@ export const chatRouter = router({
             apiKey: config.apiKey,
             baseUrl: config.baseUrl,
             model: config.model,
+            fallbacks: config.fallbacks,
             maxTokens: chatPolicy.maxOutputTokens,
           }).catch((error: unknown) => {
             log.warn({ err: error, event: "chat.kernel.failed" }, "The AI kernel failed; answering without it");
@@ -816,7 +856,7 @@ export const chatRouter = router({
           userId: ctx.user.id,
           userType: ctx.user.type,
           channel: "chat",
-          providerSlug: providerSlugForBaseUrl(config.baseUrl),
+          providerSlug: providerSlugForBaseUrl(kernelPrimary.llmUsage.baseUrl),
           modelId: kernelPrimary.llmUsage.model,
           promptTokens: kernelPrimary.llmUsage.promptTokens,
           completionTokens: kernelPrimary.llmUsage.completionTokens,

@@ -136,12 +136,12 @@ model {
   smartspend.api.modules.ai-kernel -[imports]-> smartspend.api.modules.site-guide
   smartspend.api.modules.ai-kernel -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.modules.ai-memory -[imports]-> smartspend.api.modules.ai-governance
+  smartspend.api.modules.ai-memory -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.ai-memory -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.ai-memory -[reads]-> smartspend.mysql.ai_action_memory
   smartspend.api.modules.ai-memory -[reads]-> smartspend.mysql.ai_conversation_summaries
   smartspend.api.modules.ai-memory -[reads]-> smartspend.mysql.ai_memory_embeddings
   smartspend.api.modules.ai-memory -[reads]-> smartspend.mysql.ai_memory_items
-  smartspend.api.modules.ai-memory -[uses]-> fireworks
   smartspend.api.modules.ai-memory -[uses]-> smartspend.qdrant
   smartspend.api.modules.ai-memory -[writes]-> smartspend.mysql.ai_conversation_summaries
   smartspend.api.modules.ai-memory -[writes]-> smartspend.mysql.ai_memory_embeddings
@@ -160,6 +160,7 @@ model {
   smartspend.api.modules.ai-providers -[writes]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.modules.ai-providers -[writes]-> smartspend.mysql.local_users
   smartspend.api.modules.ai-providers -[writes]-> smartspend.mysql.users
+  smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.ai-memory
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.api-routers
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.auth
@@ -454,6 +455,7 @@ model {
   smartspend.api.scheduler.daily-auth-cleanup -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.scheduler.daily-subscription-expiry -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.data-retention-lifecycle -[uses]-> smartspend.api.modules.jobs
+  smartspend.api.scheduler.memory-embedding-backfill -[uses]-> smartspend.api.modules.ai-memory
   smartspend.api.scheduler.monthly-behavior-snapshots -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.monthly-report-generation -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.nightly-rollup-reconciliation -[uses]-> smartspend.api.modules.jobs

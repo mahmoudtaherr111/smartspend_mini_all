@@ -120,7 +120,7 @@ vi.mock("../ai-memory", () => ({
       ],
       artifacts: [],
       errors: [],
-      cacheHits: ["embedding:query_embedded", "embedding:fireworks", "embedding:rows:23"],
+      cacheHits: ["embedding:query_embedded", "embedding:live", "embedding:rows:23"],
       handledNeeds: handled,
     };
   }),
@@ -213,7 +213,7 @@ describe("AI agent active contract", () => {
     expect(callChatCompletionAPI).not.toHaveBeenCalled();
   });
 
-  it("uses Fireworks/Qwen semantic memory only for memory questions", async () => {
+  it("uses semantic memory only for memory questions", async () => {
     const response = await ask(QUESTIONS.memoryCoffeeSleep);
 
     expect(response.intent.kind).toBe("memory_question");
@@ -223,13 +223,13 @@ describe("AI agent active contract", () => {
       embeddingCalls: 1,
       llmCalls: 0,
       retrievalPolicy: {
-        embedding: "fireworks_qwen",
+        embedding: "provider_vector",
         reason: "memory_search_semantic_retrieval",
         vectorRows: 23,
       },
     });
     expect(response.debug?.cacheHits).toEqual(
-      expect.arrayContaining(["embedding:query_embedded", "embedding:fireworks", "embedding:rows:23"]),
+      expect.arrayContaining(["embedding:query_embedded", "embedding:live", "embedding:rows:23"]),
     );
     expect(callChatCompletionAPI).not.toHaveBeenCalled();
   });
@@ -310,7 +310,7 @@ describe("AI agent active contract", () => {
       llmCalls: 1,
       numericGuard: expect.objectContaining({ applied: true }),
       retrievalPolicy: {
-        embedding: "fireworks_qwen",
+        embedding: "provider_vector",
         reason: "memory_search_semantic_retrieval",
         vectorRows: 23,
       },
@@ -319,6 +319,25 @@ describe("AI agent active contract", () => {
     expect(response.content).toContain("فاكر من كلامنا");
     expect(response.content).toContain("المصروفات");
     expect(response.content).not.toContain("منعت رقم غير مؤكد");
+  });
+
+  it("asks the next chat model when the first one fails, and says which provider answered", async () => {
+    vi.mocked(callChatCompletionAPI)
+      .mockRejectedValueOnce(new Error("Fireworks 412: account suspended"))
+      .mockResolvedValueOnce({ text: "خطة آمنة: قلل القهوة برّه.", tokensUsed: 60, promptTokens: 40, completionTokens: 20, model: "gemini-3.1-flash-lite" } as never);
+
+    const response = await runAIKernelActive(
+      { requestId: "contract_chat_failover", channel: "chat", userId: 27, userType: "local", userPlan: "free", message: QUESTIONS.adviceCoffeeSleep },
+      {
+        apiKey: "fireworks-key",
+        baseUrl: "https://api.fireworks.ai/inference/v1",
+        model: "accounts/fireworks/models/deepseek-v4-flash",
+        fallbacks: [{ apiKey: "gemini-key", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3.1-flash-lite" }],
+      },
+    );
+
+    expect(callChatCompletionAPI).toHaveBeenLastCalledWith("https://generativelanguage.googleapis.com/v1beta/openai", "gemini-key", expect.objectContaining({ model: "gemini-3.1-flash-lite" }));
+    expect(response.llmUsage).toEqual({ model: "gemini-3.1-flash-lite", promptTokens: 40, completionTokens: 20, baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai" });
   });
 
   it("replaces advice meta-reasoning with grounded user-facing content", async () => {

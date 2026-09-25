@@ -1,14 +1,13 @@
 export * from "./types";
 export {
-  FireworksEmbeddingClient,
+  FALLBACK_EMBEDDING_MODEL,
+  MemoryEmbeddingClient,
 } from "./embedding-client";
 export {
   backfillMemoryEmbeddings,
   smokeTestEmbeddingEndpoint,
 } from "./embedding-backfill";
 export {
-  DEFAULT_EMBEDDING_BASE_URL,
-  DEFAULT_EMBEDDING_MODEL,
   embeddingSettingsKeys,
   loadEmbeddingConfig,
 } from "./embedding-settings";

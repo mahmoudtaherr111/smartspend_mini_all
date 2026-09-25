@@ -74,7 +74,8 @@
       "clusters": ["ai-kernel", "ai-actions", "ai-memory", "finance-semantic-layer", "site-guide", "web-ai"],
       "routers": ["chat"],
       "pages": ["AICenter"],
-      "flows": ["flow_ai_chat"]
+      "flows": ["flow_ai_chat"],
+      "jobs": ["memory-embedding-backfill"]
     },
     {
       "id": "insights",

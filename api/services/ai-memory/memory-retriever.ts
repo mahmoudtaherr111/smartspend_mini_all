@@ -8,7 +8,7 @@ import {
 import { withCacheStatus, cacheIncr, cacheGet } from "../../lib/redis-client";
 import { db } from "../../queries/connection";
 import type { DataNeed, ResolvedFact } from "../ai-kernel/types";
-import { FireworksEmbeddingClient } from "./embedding-client";
+import { MemoryEmbeddingClient } from "./embedding-client";
 import { loadEmbeddingConfig } from "./embedding-settings";
 import { reformulateMemoryQuery } from "./retrieval-enhancements";
 import {
@@ -146,9 +146,10 @@ async function loadVectorMemories(
     return { items: [], cacheHits: ["embedding:disabled"], errors: [] };
   }
 
-  const client = new FireworksEmbeddingClient(config);
+  const client = new MemoryEmbeddingClient(config);
   const embedded = await client.embedText({
-    text: scoringQuery,
+    // A short question can reword to nothing; the user's own words are then what to search with.
+    text: scoringQuery.trim() || ctx.query,
     dimensions: config.dimensions,
     userId: ctx.userId,
     userType: ctx.userType,
@@ -174,7 +175,8 @@ async function loadVectorMemories(
         eq(aiMemoryEmbeddings.userType, ctx.userType),
         eq(aiMemoryItems.userId, ctx.userId),
         eq(aiMemoryItems.userType, ctx.userType),
-        eq(aiMemoryEmbeddings.model, config.model),
+        // Only vectors of the model that embedded the question are comparable with it.
+        eq(aiMemoryEmbeddings.model, embedded.model),
         eq(aiMemoryEmbeddings.dimensions, embedded.dimensions),
         eq(aiMemoryItems.status, "active"),
       ),
@@ -216,8 +218,7 @@ async function loadVectorMemories(
     items,
     cacheHits: [
       embedded.cacheHit ? "embedding:query_cache_hit" : "embedding:query_embedded",
-      embedded.fallback ? `embedding:fallback:${embedded.fallbackReason ?? "unknown"}` : "embedding:fireworks",
-      embedded.requestModel && embedded.requestModel !== embedded.model ? `embedding:model_alias:${embedded.requestModel}` : "",
+      embedded.fallback ? `embedding:fallback:${embedded.fallbackReason ?? "unknown"}` : "embedding:live",
       `embedding:rows:${rows.length}`,
     ].filter(Boolean),
     errors: [],

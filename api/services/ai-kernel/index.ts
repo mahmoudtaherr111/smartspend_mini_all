@@ -48,7 +48,7 @@ export function embeddingApiCallsFromCacheHits(cacheHits: string[]): number {
   if (cacheHits.some((hit) => hit.startsWith("memory_cache:hit"))) {
     return 0;
   }
-  if (cacheHits.includes("embedding:query_embedded") && cacheHits.includes("embedding:fireworks")) {
+  if (cacheHits.includes("embedding:query_embedded") && cacheHits.includes("embedding:live")) {
     return 1;
   }
   return 0;
@@ -122,6 +122,8 @@ export interface AIKernelActiveConfig {
   baseUrl: string;
   model: string;
   maxTokens?: number;
+  /** Models to ask, in order, when the one above fails (an account suspended, a key out of quota). */
+  fallbacks?: Array<{ apiKey: string; baseUrl: string; model: string }>;
 }
 
 function materialMissingNumbers(missing: string[] | undefined): string[] {
@@ -1216,20 +1218,33 @@ export async function runAIKernelActive(
         intent.kind === "advice_request"
           ? Math.min(220, config.maxTokens ?? contextPack.tokenBudget.maxOutputTokens)
           : Math.min(config.maxTokens ?? contextPack.tokenBudget.maxOutputTokens, contextPack.tokenBudget.maxOutputTokens);
-      const llm = await callChatCompletionAPI(config.baseUrl, config.apiKey, {
-        model: config.model,
-        messages: buildActiveMessages(plannedRequest, intent, resolved.facts, allArtifacts),
-        tool_choice: "none",
-        max_tokens: maxOutputTokens,
-        temperature: 0.35,
-      });
+      const messages = buildActiveMessages(plannedRequest, intent, resolved.facts, allArtifacts);
+      const candidates = [config, ...(config.fallbacks ?? [])].filter((candidate) => candidate.apiKey);
+      let llm: Awaited<ReturnType<typeof callChatCompletionAPI>> | null = null;
+      let answeredBy = config.baseUrl;
+      for (const [index, candidate] of candidates.entries()) {
+        try {
+          llm = await callChatCompletionAPI(candidate.baseUrl, candidate.apiKey, {
+            model: candidate.model,
+            messages,
+            tool_choice: "none",
+            max_tokens: maxOutputTokens,
+            temperature: 0.35,
+          });
+          answeredBy = candidate.baseUrl;
+          break;
+        } catch (error) {
+          if (index === candidates.length - 1) throw error;
+        }
+      }
+      if (!llm) throw new Error("no_chat_model_answered");
       content = llm.text?.trim() || deterministicContent || fallbackActiveContent(intent, resolved.facts);
       // Only bill actual provider usage. A provider that omits usage metadata
       // must be tracked as unknown by observability, never estimated and charged
       // to the user as if it were a real token count.
       tokensUsed = Number.isFinite(llm.tokensUsed) ? Math.max(0, llm.tokensUsed) : 0;
       model = llm.model;
-      llmUsage = { model: llm.model, promptTokens: llm.promptTokens, completionTokens: llm.completionTokens };
+      llmUsage = { model: llm.model, promptTokens: llm.promptTokens, completionTokens: llm.completionTokens, baseUrl: answeredBy };
       llmCalls = 1;
     }
 

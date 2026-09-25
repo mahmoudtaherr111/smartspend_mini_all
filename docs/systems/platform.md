@@ -20,7 +20,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 | Environment | `api/lib/env.ts` | One Zod schema parsed at import: the server refuses to start without the required values |
 | Database | `api/queries/connection.ts`, `db/schema.ts`, `db/relations.ts`, `db/table-classes.ts` | The MySQL pool with slow-query logging, the Drizzle schema, the relations that stand in for foreign keys, and every table's storage class |
 | Cache | `api/lib/redis-client.ts`, `api/lib/cache-keys.ts` | Redis with an in-process fallback, the key shapes, counters and the sliding-window rate limiter |
-| Settings | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` | `system_settings` behind one cached read, and the registry of keys, defaults and secrets |
+| Settings | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` (with the embedding keys and `usd_to_egp_rate`) | `system_settings` behind one cached read, and the registry of keys, defaults and secrets |
 | Business time | `api/lib/app-time.ts` | The day and month boundaries of the ledger, in `APP_TIMEZONE` (Cairo) rather than the server's clock |
 | Job lock | `api/services/scheduler-lock.ts` | A MySQL advisory lock so a job registered on every replica runs on one |
 | Retention | `api/jobs/data-retention-job.ts` | Rolls up and prunes telemetry, conversation and ephemeral tables |

@@ -27,8 +27,11 @@ facts.
 ### 1. Limits and the conversation
 `chat.sendMessage` reads its configuration from system settings (`loadChatConfig`). The chat must be enabled for the
 plan (`chatbot_enabled_<plan>`), and the user's messages today must be under `chatbot_daily_limit_<plan>`, counted per
-Cairo business day. The model comes from `chatbot_api_key` (else `fireworks_api_key`), `chatbot_base_url` (Fireworks by
-default) and `chatbot_model` (a DeepSeek model on Fireworks by default); the length of a model reply is capped by the
+Cairo business day. The model is asked in this order (`chatModels`): the models the admin assigned to "chat" in the
+console for the user's plan, then the older chatbot settings when they hold a key (`chatbot_api_key`, else
+`fireworks_api_key`, with `chatbot_base_url` and `chatbot_model`, Fireworks and a DeepSeek model by default), then
+Google's Gemini (the plan's default through Google's OpenAI-compatible endpoint); when one fails, the kernel asks the
+next (`AIKernelActiveConfig.fallbacks`). The length of a model reply is capped by the
 chat cost policy of [AI providers and usage limits](ai-platform.md), and the answer's model call is written to the
 [AI cost ledger](ai-platform.md#how-a-call-is-recorded) at that model's price. The procedure then creates a conversation, or
 checks that the given one belongs to the user (`requireOwnedConversation`), loads its latest messages
@@ -127,12 +130,18 @@ the finance caches are cleared.
   end of a voice call: a capsule and a running summary per conversation in `ai_conversation_summaries`; up to five
   memories per turn, picked by word rules from the user's messages (preferences such as "بحب", commitments and limits
   such as "متنفذش غير لما أأكد" or a budget cap, interest in linking a card or bank messages, and an assistant plan the
-  user agreed to) into `ai_memory_items`, deduplicated by content; and, when `ai_memory_embedding_enabled` is `true`, a
-  Fireworks embedding of each memory in `ai_memory_embeddings`, written in the background.
+  user agreed to) into `ai_memory_items`, deduplicated by content; and, unless `ai_memory_embedding_enabled` is
+  `false`, a vector of each memory in `ai_memory_embeddings`, written in the background with the model that made it.
+  Vectors come from `api/lib/embedding-provider.ts`: the providers the admin assigned to "embedding" in the console, in
+  their priority order, then Google's `gemini-embedding-2` with each Gemini key (`ai_embedding_model` may name another
+  Google model); a provider out of quota or failing rests for a minute (a quarter of an hour for a refused key) and the
+  next answers. The `memory-embedding-backfill` job (every 20 minutes, in `api/boot.ts`) gives up to 40 memories a run
+  the vector of the current model they lack, so changing the model fills in older memories without a burst.
 - **Reading** (`retrieveMemoryContext`): cached for five minutes per user and query, and invalidated by a generation
   counter. It scores recent capsules, active memories and executed actions by words, importance and recency, and adds
-  vector similarity from the stored embeddings only when embeddings are on and no strong word match was found. Query
-  embeddings are cached in Redis for two weeks, and provider errors pause embedding calls for a while.
+  vector similarity from the stored embeddings only when embeddings are on and no strong word match was found, against
+  the vectors of the model that embedded the question only. Query embeddings are cached in Redis for two weeks; with no
+  provider answering, a local stand-in vector says so in the trace (`embedding:fallback:…`) and matches nothing stored.
 - **Managing**: `chat.listMemories`, `chat.forgetMemory` and `chat.clearAllMemories`, behind the memory manager.
   Forgetting deletes the memory and its embedding; nothing is kept behind a status (migration
   `db/migrations/0024_purge_forgotten_memories.sql` removed the ones earlier versions kept as `forgotten`). The manager is
@@ -219,9 +228,9 @@ Checked against the code; each one names where it lives.
 3. **Gap.** No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the
    chat. The model id skips `mapModelName` (golden rule 9), the `chatbot_max_tokens_<plan>` settings are read but do
    not limit replies, and the retry time in the daily-limit error is counted to the server's midnight.
-4. **Gap.** Memory embeddings stay off unless `ai_memory_embedding_enabled` is set to `true`, a key
-   `api/lib/system-settings-registry.ts` does not list. The Qdrant, quantized on-disk and in-memory vector stores
-   exported by `api/services/ai-memory/index.ts` are used only by tests.
+4. **Debt.** The Qdrant, quantized on-disk and in-memory vector stores exported by `api/services/ai-memory/index.ts` are
+   used only by tests, and embedding calls do not reach the AI cost ledger (the providers report no token counts; Google's
+   free tier does not bill them).
 5. **Bug.** An expense recorded by an action does not clear the classification cache or check budget alerts, as
    `expense.create` does.
 6. **Bug.** Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in

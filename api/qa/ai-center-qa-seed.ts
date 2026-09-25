@@ -19,7 +19,7 @@ import { db } from "../queries/connection";
 import { hashPassword } from "../local-auth-utils";
 import { backfillMemoryEmbeddings, writeConversationMemory } from "../services/ai-memory";
 import { invalidateFinanceUserCache } from "../services/finance-semantic-layer";
-import { DEFAULT_EMBEDDING_BASE_URL, DEFAULT_EMBEDDING_MODEL } from "../services/ai-memory/embedding-settings";
+import { DEFAULT_EMBEDDING_MODEL } from "../lib/embedding-provider";
 import type { MemoryMessage } from "../services/ai-memory";
 
 export const AI_CENTER_QA_MARKER = "QA_SEED_AI_CENTER_V1";
@@ -92,7 +92,6 @@ async function ensureEmbeddingSettings(): Promise<void> {
   await Promise.all([
     upsertSetting("ai_memory_embedding_enabled", "true"),
     upsertSetting("ai_embedding_provider", "fireworks"),
-    upsertSetting("ai_embedding_base_url", DEFAULT_EMBEDDING_BASE_URL),
     upsertSetting("ai_embedding_model", DEFAULT_EMBEDDING_MODEL),
     upsertSetting("ai_embedding_dimensions_short", "256"),
     upsertSetting("ai_embedding_dimensions_memory", "768"),

@@ -1,10 +1,6 @@
-import { systemSettings } from "../../../db/schema";
-import { db } from "../../queries/connection";
-import { env } from "../../lib/env";
+import { embeddingRoutes } from "../../lib/embedding-provider";
+import { getSystemSettings } from "../../lib/settings-cache";
 import type { EmbeddingConfig, EmbeddingDimensions } from "./types";
-
-export const DEFAULT_EMBEDDING_MODEL = "accounts/fireworks/models/qwen3-embedding-8b";
-export const DEFAULT_EMBEDDING_BASE_URL = "https://api.fireworks.ai/inference/v1";
 
 function dimension(value: unknown, fallback: EmbeddingDimensions): EmbeddingDimensions {
   const parsed = Number(value);
@@ -15,8 +11,6 @@ function dimension(value: unknown, fallback: EmbeddingDimensions): EmbeddingDime
 export function embeddingSettingsKeys(): Record<string, string> {
   return {
     enabled: "ai_memory_embedding_enabled",
-    provider: "ai_embedding_provider",
-    baseUrl: "ai_embedding_base_url",
     model: "ai_embedding_model",
     shortDimensions: "ai_embedding_dimensions_short",
     memoryDimensions: "ai_embedding_dimensions_memory",
@@ -24,12 +18,15 @@ export function embeddingSettingsKeys(): Record<string, string> {
   };
 }
 
-import { getSystemSettings } from "../../lib/settings-cache";
-
+/**
+ * Memory search by meaning: on unless the admin turns it off (`ai_memory_embedding_enabled`), with the model of the
+ * first embedding provider that would answer (api/lib/embedding-provider.ts) — the admin's, else Google's
+ * gemini-embedding-2 — and the dimensions of the use case.
+ */
 export async function loadEmbeddingConfig(
   useCase: "short" | "memory" | "deep" = "memory",
 ): Promise<EmbeddingConfig> {
-  const settings = await getSystemSettings();
+  const [settings, routes] = await Promise.all([getSystemSettings(), embeddingRoutes()]);
   const keys = embeddingSettingsKeys();
   const dimensionKey =
     useCase === "short"
@@ -37,13 +34,12 @@ export async function loadEmbeddingConfig(
       : useCase === "deep"
         ? keys.deepDimensions
         : keys.memoryDimensions;
+  const first = routes[0];
 
   return {
-    provider: "fireworks",
-    apiKey: settings.fireworks_api_key || settings.chatbot_api_key || env.FIREWORKS_API_KEY || "",
-    baseUrl: settings[keys.baseUrl] || DEFAULT_EMBEDDING_BASE_URL,
-    model: settings[keys.model] || DEFAULT_EMBEDDING_MODEL,
+    provider: first?.slug ?? "none",
+    model: first?.model ?? "none",
     dimensions: dimension(settings[dimensionKey], useCase === "short" ? 256 : useCase === "deep" ? 1024 : 768),
-    enabled: settings[keys.enabled] === "true",
+    enabled: settings[keys.enabled] !== "false" && Boolean(first),
   };
 }

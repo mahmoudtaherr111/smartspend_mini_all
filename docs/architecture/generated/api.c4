@@ -2533,6 +2533,14 @@ model {
         file 'api/boot.ts'
       }
     }
+    memory-embedding-backfill = job 'memory-embedding-backfill' {
+      technology 'cron */20 * * * *'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule '*/20 * * * *'
+        file 'api/boot.ts'
+      }
+    }
     monthly-behavior-snapshots = job 'monthly-behavior-snapshots' {
       technology 'cron 0 1 1 * *'
       description 'Scheduled in api/boot.ts.'

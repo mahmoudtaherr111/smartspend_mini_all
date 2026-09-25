@@ -159,11 +159,11 @@ async function runKernelCase(
 
   if (options.requireMemoryEmbedding) {
     const retrievalPolicy = asObject(debug.retrievalPolicy);
-    assert(retrievalPolicy.embedding === "fireworks_qwen", `Expected fireworks_qwen retrieval, got ${String(retrievalPolicy.embedding)}`);
-    assert(cacheHits.includes("embedding:fireworks"), `Expected embedding:fireworks trace, got ${cacheHits.join(", ")}`);
+    assert(retrievalPolicy.embedding === "provider_vector", `Expected provider_vector retrieval, got ${String(retrievalPolicy.embedding)}`);
+    assert(cacheHits.includes("embedding:live"), `Expected embedding:live trace, got ${cacheHits.join(", ")}`);
     assert(embeddingRows(cacheHits) > 0, `Expected vector rows > 0, got ${embeddingRows(cacheHits)}`);
     assert(
-      debug.embeddingApiStatus === "fireworks_live_call" || debug.embeddingApiStatus === "query_cache_hit",
+      debug.embeddingApiStatus === "provider_live_call" || debug.embeddingApiStatus === "query_cache_hit",
       `Expected live/cache Fireworks embedding, got ${String(debug.embeddingApiStatus)}`,
     );
   }
@@ -201,12 +201,12 @@ async function runChatMemoryRetrievalCase(seed: AICenterQASeedResult): Promise<R
     limit: 5,
   });
   const retrievalPolicy = asObject({
-    embedding: result.cacheHits.includes("embedding:fireworks") ? "fireworks_qwen" : "fallback_or_cached",
+    embedding: result.cacheHits.includes("embedding:live") ? "provider_vector" : "fallback_or_cached",
     vectorRows: embeddingRows(result.cacheHits),
   });
 
   assert(result.facts.length > 0, "Expected memory facts for seeded chat memories");
-  assert(result.cacheHits.includes("embedding:fireworks"), `Expected embedding:fireworks trace, got ${result.cacheHits.join(", ")}`);
+  assert(result.cacheHits.includes("embedding:live"), `Expected embedding:live trace, got ${result.cacheHits.join(", ")}`);
   assert(embeddingRows(result.cacheHits) > 0, `Expected vector rows > 0, got ${embeddingRows(result.cacheHits)}`);
 
   return {

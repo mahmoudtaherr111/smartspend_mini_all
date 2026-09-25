@@ -13,15 +13,15 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (44 of
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 18 | — | 3 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 3 | — | 2 | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 5 | — | — | 2 | — |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 4 | — | 5 | 3 | 1 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 cdfa911 | 2026-09-25 cdfa911 | 4 | — | 5 | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 5 | — | 6 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-25 bd3e953 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 4 | — | 3 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 9 | — | 2 | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 5 | — | 2 | — | 8 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 cdfa911 | 2026-09-25 cdfa911 | 9 | — | 2 | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 cdfa911 | 2026-09-25 cdfa911 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-25 21b72a3 | 2026-09-25 21b72a3 | 7 | **1** | 1 | 3 | 2 |
 
 
@@ -111,7 +111,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (38)
+### Gaps (37)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -129,7 +129,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the chat. The model id skips `mapModelName` (golden rule 9), the `chatbot_max_tokens_<plan>` settings are read but do not limit replies, and the retry time in the daily-limit error is counted to the server's midnight.
-- Memory embeddings stay off unless `ai_memory_embedding_enabled` is set to `true`, a key `api/lib/system-settings-registry.ts` does not list. The Qdrant, quantized on-disk and in-memory vector stores exported by `api/services/ai-memory/index.ts` are used only by tests.
 - A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest 10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Breakdowns and category totals mark it (`partial`) and the voice call says so; the chat does not yet. Only the period's totals are exact at any size.
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
@@ -175,7 +174,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, since they belong to the account. The logout dialog in `src/pages/More.tsx` says how many entries are still unsent first; the sidebar's and the biometric lock's logout do not.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (26)
+### Debt (27)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win; the code reads the `parser_*` keys first.
@@ -184,6 +183,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
+- The Qdrant, quantized on-disk and in-memory vector stores exported by `api/services/ai-memory/index.ts` are used only by tests, and embedding calls do not reach the AI cost ledger (the providers report no token counts; Google's free tier does not bill them).
 - `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)

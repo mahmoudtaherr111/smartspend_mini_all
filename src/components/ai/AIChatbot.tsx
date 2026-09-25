@@ -1532,7 +1532,7 @@ function TraceRenderer({ structured }: { structured: StructuredResponse }) {
   )
     ? 0
     : embeddingHits.includes("embedding:query_embedded") &&
-        embeddingHits.includes("embedding:fireworks")
+        embeddingHits.includes("embedding:live")
       ? 1
       : 0;
   const embeddingCalls =
@@ -1542,12 +1542,12 @@ function TraceRenderer({ structured }: { structured: StructuredResponse }) {
     cacheHits.some((item) => item.startsWith("memory_cache:hit"))
       ? "semantic_result_cache_hit"
       : embeddingCalls > 0
-        ? "fireworks_live_call"
+        ? "provider_live_call"
         : "skipped",
   );
   const retrievalEmbedding = textValue(
     retrievalPolicy.embedding,
-    embeddingHits.length > 0 ? "fireworks_qwen" : "skipped",
+    embeddingHits.length > 0 ? "provider_vector" : "skipped",
   );
   const retrievalReason = textValue(retrievalPolicy.reason, "");
   const retrievalRows = numberValue(retrievalPolicy.vectorRows);

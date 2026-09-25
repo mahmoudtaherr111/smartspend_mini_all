@@ -21,9 +21,9 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `FIREBASE_CLIENT_EMAIL` | no | — | `api/services/firebase.ts` |
 | `FIREBASE_PRIVATE_KEY` | no | — | `api/services/firebase.ts` |
 | `FIREBASE_PROJECT_ID` | no | — | `api/services/firebase.ts` |
-| `FIREWORKS_API_KEY` | no | — | `api/ai-router.ts`, `api/boot.ts`, `api/lib/system-settings-registry.ts`, `api/services/ai-memory/embedding-settings.ts` |
+| `FIREWORKS_API_KEY` | no | — | `api/ai-router.ts`, `api/boot.ts`, `api/lib/system-settings-registry.ts` |
 | `FRONTEND_URL` | no | — | `api/lib/origin-policy.ts` |
-| `GEMINI_API_KEY` | yes | — | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/system-settings-registry.ts`, `api/services/batch-ai-service.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
+| `GEMINI_API_KEY` | yes | — | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/embedding-provider.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/system-settings-registry.ts`, `api/services/batch-ai-service.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
 | `GEMINI_MODEL_FREE` | no | `gemini-3.1-flash-lite` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_PRO` | no | `gemini-3.5-flash` | `api/ai-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_REPORTS` | no | `gemini-3.8-flash` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |

@@ -66,7 +66,7 @@ vi.mock("./services/ai-kernel", () => ({
   embeddingApiCallsFromCacheHits: vi.fn((cacheHits: string[]) =>
     cacheHits.some((hit) => hit.startsWith("memory_cache:hit"))
       ? 0
-      : cacheHits.includes("embedding:query_embedded") && cacheHits.includes("embedding:fireworks")
+      : cacheHits.includes("embedding:query_embedded") && cacheHits.includes("embedding:live")
         ? 1
         : 0,
   ),

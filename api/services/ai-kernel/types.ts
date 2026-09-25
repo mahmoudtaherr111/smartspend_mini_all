@@ -252,7 +252,7 @@ export interface AIResponse {
   model?: string;
   tokensUsed?: number;
   /** The one model call the answer made, as the provider reported it, for the cost ledger. */
-  llmUsage?: { model: string; promptTokens: number; completionTokens: number };
+  llmUsage?: { model: string; promptTokens: number; completionTokens: number; baseUrl: string };
   debug?: Record<string, unknown>;
 }
 

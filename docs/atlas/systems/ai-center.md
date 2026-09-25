@@ -17,6 +17,7 @@ flowchart LR
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
+    job_memory_embedding_backfill["Job · memory-embedding-backfill"]
     router_chat["chat API · 10 procedures"]
   end
   subgraph g_modules["Code modules"]
@@ -47,7 +48,6 @@ flowchart LR
     tbl_user_wallets[("user_wallets")]
     tbl_users[("users")]
   end
-  ext_fireworks{{"Fireworks AI"}}
   ext_qdrant{{"Qdrant vector store"}}
   sys_ai_platform[["AI providers and usage limits (system)"]]
   sys_expense_capture[["Recording spending (system)"]]
@@ -55,6 +55,7 @@ flowchart LR
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
+  job_memory_embedding_backfill --> mod_ai_memory
   mod_ai_actions --> mod_ai_memory
   mod_ai_actions --> mod_finance_semantic_layer
   mod_ai_actions --> sys_ai_platform
@@ -76,7 +77,6 @@ flowchart LR
   mod_ai_kernel --> sys_expense_capture
   mod_ai_kernel --> sys_platform
   mod_ai_kernel -.-> tbl_user_contacts
-  mod_ai_memory --> ext_fireworks
   mod_ai_memory --> ext_qdrant
   mod_ai_memory --> sys_ai_platform
   mod_ai_memory --> sys_platform
@@ -179,7 +179,9 @@ Drawn in `docs/architecture/flows/ai-chat.c4`; in the interactive map it is the 
 
 ## HTTP routes, WebSockets and scheduled jobs
 
-_None._
+| Entry point | Kind | Declared in |
+| --- | --- | --- |
+| `memory-embedding-backfill` | job, `*/20 * * * *` | `api/boot.ts` |
 
 ## Data
 
@@ -210,7 +212,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | System | Kind | Modules |
 | --- | --- | --- |
-| Fireworks AI | ai-provider | `ai-memory` |
 | Qdrant vector store | datastore | `ai-memory` |
 
 ## Other systems
@@ -223,15 +224,15 @@ Used by: [Bank and wallet messages](bank-messages.md), [Recording spending](expe
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
-| `FIREWORKS_API_KEY` | yes | `api/services/ai-memory/embedding-settings.ts` |
 | `DEV` | frontend | `src/components/ai/AIChatbot.tsx` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/ai-center.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>49 files and declarations</summary>
+<details><summary>50 files and declarations</summary>
 
+- `api/boot.ts#job:memory-embedding-backfill`
 - `api/chat-router.ts`
 - `api/services/action-runtime/artifacts.ts`
 - `api/services/action-runtime/confirmation-phrases.ts`

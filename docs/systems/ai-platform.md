@@ -52,6 +52,14 @@ nearest first, and logs `ai_gateway.model_overloaded`. A Gemini answer's thinkin
 budget is left. The voice call's post-call summary and price lookup use the same chain through
 `api/services/voice/text-model.ts`.
 
+Embeddings go through `api/lib/embedding-provider.ts#embedTexts`: the models the admin assigned to "embedding" in the
+console, over Google's native API or the OpenAI-compatible `/embeddings` shape (OpenAI, OpenRouter, Fireworks), in
+their priority order, then Google's `gemini-embedding-2` with each Gemini key (up to 100 texts a request). Each model
+gets the task the way it expects it (`taskText`: a prefix for gemini-embedding-2, a field for the older Google model,
+Qwen's instruction). A provider that is out of quota, failing or slow rests for a minute, or a quarter of an hour for a
+refused key, and the next answers. The chat also takes its model from the admin's "chat" routes first
+([AI Center](ai-center.md)).
+
 ## Provider keys
 - The admin console saves a provider's key sealed with AES-256-GCM under SHA-256 of `AI_GATEWAY_SECRET`, or of
   `JWT_SECRET` while that is unset (`api/lib/provider-key-crypto.ts`). The stored shape, `<iv>:<tag>:<data>`, is

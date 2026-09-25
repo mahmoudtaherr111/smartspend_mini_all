@@ -53,8 +53,8 @@ describe("dev-only browser QA paths", () => {
 
     expect(runner).toContain("runChatMemoryRetrievalCase");
     expect(runner).toContain("retrieveMemoryContext");
-    expect(runner).toContain('embedding:fireworks');
-    expect(runner).toContain('retrievalPolicy.embedding === "fireworks_qwen"');
+    expect(runner).toContain('embedding:live');
+    expect(runner).toContain('retrievalPolicy.embedding === "provider_vector"');
     expect(runner).toContain("docs/reports/AI_CENTER_QA_RUNNER_LAST_RESULT.md");
   });
 

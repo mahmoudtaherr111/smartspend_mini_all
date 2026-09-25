@@ -5,7 +5,7 @@ import {
   aiMemoryItems,
 } from "../../../db/schema";
 import { db } from "../../queries/connection";
-import { FireworksEmbeddingClient } from "./embedding-client";
+import { MemoryEmbeddingClient } from "./embedding-client";
 import { loadEmbeddingConfig } from "./embedding-settings";
 import { invalidateMemoryUserCache } from "./memory-retriever";
 import {
@@ -369,7 +369,6 @@ async function maybeStoreEmbedding(memoryItemId: number, input: ConversationMemo
       .where(
         and(
           eq(aiMemoryEmbeddings.memoryItemId, memoryItemId),
-          eq(aiMemoryEmbeddings.provider, "fireworks"),
           eq(aiMemoryEmbeddings.model, config.model),
           eq(aiMemoryEmbeddings.dimensions, config.dimensions),
         ),
@@ -378,9 +377,10 @@ async function maybeStoreEmbedding(memoryItemId: number, input: ConversationMemo
 
     if (existing?.id) return;
 
-    const client = new FireworksEmbeddingClient(config);
+    const client = new MemoryEmbeddingClient(config);
     const result = await client.embedText({
       text: content,
+      task: "document",
       dimensions: config.dimensions,
       userId: input.userId,
       userType: input.userType,

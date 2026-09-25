@@ -1,7 +1,7 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { aiMemoryEmbeddings, aiMemoryItems } from "../../../db/schema";
 import { db } from "../../queries/connection";
-import { FireworksEmbeddingClient } from "./embedding-client";
+import { MemoryEmbeddingClient } from "./embedding-client";
 import { loadEmbeddingConfig } from "./embedding-settings";
 import { contentHash } from "./text-utils";
 
@@ -36,7 +36,7 @@ export interface BackfillMemoryEmbeddingsResult {
 export async function smokeTestEmbeddingEndpoint(): Promise<EmbeddingSmokeResult> {
   const config = await loadEmbeddingConfig("short");
   const enabledConfig = { ...config, enabled: true };
-  const client = new FireworksEmbeddingClient(enabledConfig);
+  const client = new MemoryEmbeddingClient(enabledConfig);
   const result = await client.embedText({
     text: "اختبار ذاكرة SmartSpend",
     dimensions: enabledConfig.dimensions,
@@ -68,7 +68,7 @@ export async function backfillMemoryEmbeddings(
     dimensions: enabledConfig.dimensions,
   };
 
-  if (!enabledConfig.enabled || !enabledConfig.apiKey) {
+  if (!enabledConfig.enabled) {
     return result;
   }
 
@@ -84,11 +84,12 @@ export async function backfillMemoryEmbeddings(
       content: aiMemoryItems.content,
     })
     .from(aiMemoryItems)
-    .where(and(...filters))
+    // Only memories with no vector of the current model yet, so each run reaches older ones too.
+    .where(and(...filters, sql`NOT EXISTS (SELECT 1 FROM ai_memory_embeddings e WHERE e.memory_item_id = ${aiMemoryItems.id} AND e.model = ${enabledConfig.model} AND e.dimensions = ${enabledConfig.dimensions})`))
     .orderBy(desc(aiMemoryItems.updatedAt))
     .limit(Math.min(Math.max(input.limit ?? 200, 1), 1000));
 
-  const client = new FireworksEmbeddingClient(enabledConfig);
+  const client = new MemoryEmbeddingClient(enabledConfig);
 
   for (const row of rows) {
     result.scanned += 1;
@@ -100,7 +101,6 @@ export async function backfillMemoryEmbeddings(
         .where(
           and(
             eq(aiMemoryEmbeddings.memoryItemId, row.id),
-            eq(aiMemoryEmbeddings.provider, "fireworks"),
             eq(aiMemoryEmbeddings.model, enabledConfig.model),
             eq(aiMemoryEmbeddings.dimensions, enabledConfig.dimensions),
           ),
@@ -114,6 +114,7 @@ export async function backfillMemoryEmbeddings(
 
       const embedded = await client.embedText({
         text: row.content,
+        task: "document",
         dimensions: enabledConfig.dimensions,
         userId: row.userId,
         userType: row.userType,

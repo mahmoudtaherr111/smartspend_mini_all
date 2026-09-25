@@ -1,158 +1,65 @@
+/**
+ * Vectors for memory search by meaning, from the shared embedding provider (api/lib/embedding-provider.ts: the admin's
+ * providers for "embedding", else Google gemini-embedding-2), cached in Redis for two weeks per model, dimensions,
+ * user and text. When no provider answers, a deterministic local vector stands in and says so (`fallback`): it is
+ * never stored, and it matches no stored vector because its model is its own.
+ */
+import { embedTexts, type EmbeddingTask } from "../../lib/embedding-provider";
 import { getRedisClient } from "../../lib/redis-client";
 import { buildDeterministicFallbackEmbedding } from "../ai-cost-policy";
 import { contentHash } from "./text-utils";
 import type { EmbedTextInput, EmbedTextResult, EmbeddingConfig, EmbeddingDimensions } from "./types";
 
-let providerUnavailableUntil = 0;
-
-function isProviderUnavailable(): boolean {
-  return Date.now() < providerUnavailableUntil;
-}
-
-function markProviderUnavailable(status: number): void {
-  const cooldownMs = status === 429 ? 60_000 : [401, 402, 403].includes(status) ? 15 * 60_000 : 0;
-  if (cooldownMs) providerUnavailableUntil = Math.max(providerUnavailableUntil, Date.now() + cooldownMs);
-}
+export const FALLBACK_EMBEDDING_MODEL = "local-fallback";
+const CACHE_SECONDS = 60 * 60 * 24 * 14;
 
 function clampDimensions(value: EmbeddingDimensions | undefined, fallback: EmbeddingDimensions): EmbeddingDimensions {
   return value === 256 || value === 768 || value === 1024 ? value : fallback;
 }
 
-function endpoint(baseUrl: string): string {
-  return `${baseUrl.replace(/\/+$/, "")}/embeddings`;
-}
-
-function modelCandidates(model: string): string[] {
-  const trimmed = model.trim();
-  const candidates = [trimmed];
-  const accountPrefix = "accounts/fireworks/models/";
-  if (trimmed.startsWith(accountPrefix)) {
-    candidates.push(`fireworks/${trimmed.slice(accountPrefix.length)}`);
-  }
-  return [...new Set(candidates.filter(Boolean))];
-}
-
-function timeoutSignal(ms = 12_000): AbortSignal {
-  const controller = new AbortController();
-  setTimeout(() => controller.abort(), ms).unref?.();
-  return controller.signal;
-}
-
-function parseEmbeddingResponse(data: unknown): number[] {
-  const record = data as { data?: Array<{ embedding?: number[] }> };
-  const vector = record.data?.[0]?.embedding;
-  if (!Array.isArray(vector) || vector.some((item) => typeof item !== "number")) {
-    throw new Error("Invalid embedding response");
-  }
-  return vector;
-}
-
-function embeddingCacheIdentity(input: EmbedTextInput): string {
+function cacheIdentity(input: EmbedTextInput): string {
   if (input.userId === undefined || input.userId === null || input.userId === "") return "global";
   return `${input.userType ?? "unknown"}:${input.userId}`;
 }
 
-function fallbackResult(
-  input: EmbedTextInput,
-  config: EmbeddingConfig,
-  dimensions: EmbeddingDimensions,
-  reason: string,
-): EmbedTextResult {
+const cacheKey = (model: string, dimensions: number, input: EmbedTextInput, task: EmbeddingTask) =>
+  `ai_memory_embedding:${model}:${dimensions}:${task}:${cacheIdentity(input)}:${contentHash(input.text)}`;
+
+function fallback(input: EmbedTextInput, dimensions: EmbeddingDimensions, reason: string): EmbedTextResult {
   return {
     vector: buildDeterministicFallbackEmbedding(input.text, dimensions),
-    model: config.model,
+    model: FALLBACK_EMBEDDING_MODEL,
     dimensions,
-    provider: "fireworks",
+    provider: "local",
     cacheHit: false,
     fallback: true,
     fallbackReason: reason,
   };
 }
 
-export class FireworksEmbeddingClient {
+export class MemoryEmbeddingClient {
   constructor(private readonly config: EmbeddingConfig) {}
 
+  /** A question to search with ("query") or a memory to store ("document"). */
   async embedText(input: EmbedTextInput): Promise<EmbedTextResult> {
     const dimensions = clampDimensions(input.dimensions, this.config.dimensions);
+    const task: EmbeddingTask = input.task ?? "query";
+    if (!this.config.enabled) return fallback(input, dimensions, "embedding_disabled");
+    if (!input.text.trim()) return fallback(input, dimensions, "empty_text");
 
-    if (!this.config.enabled) {
-      return fallbackResult(input, this.config, dimensions, "embedding_client_disabled");
-    }
-    if (!this.config.apiKey) {
-      return fallbackResult(input, this.config, dimensions, "fireworks_api_key_missing");
-    }
-
-    const cacheKey = `ai_memory_embedding:${this.config.model}:${dimensions}:${embeddingCacheIdentity(input)}:${contentHash(input.text)}`;
     const redis = await getRedisClient();
-
+    const expected = cacheKey(this.config.model, dimensions, input, task);
     if (redis) {
-      const cached = await redis.get(cacheKey);
+      const cached = await redis.get(expected).catch(() => null);
       if (cached) {
-        return {
-          vector: JSON.parse(cached) as number[],
-          model: this.config.model,
-          dimensions,
-          provider: "fireworks",
-          cacheHit: true,
-        };
+        return { vector: JSON.parse(cached) as number[], model: this.config.model, dimensions, provider: this.config.provider, cacheHit: true };
       }
     }
-    if (isProviderUnavailable()) {
-      return fallbackResult(input, this.config, dimensions, "fireworks_embedding_circuit_open");
-    }
 
-    try {
-      const failures: string[] = [];
-      let vector: number[] | undefined;
-      let requestModel = this.config.model;
-
-      for (const candidate of modelCandidates(this.config.model)) {
-        requestModel = candidate;
-        const response = await fetch(endpoint(this.config.baseUrl), {
-          method: "POST",
-          signal: timeoutSignal(),
-          headers: {
-            Authorization: `Bearer ${this.config.apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: candidate,
-            input: input.text,
-            dimensions,
-          }),
-        });
-
-        if (response.ok) {
-          vector = parseEmbeddingResponse(await response.json());
-          break;
-        }
-
-        failures.push(`${candidate}:${response.status}`);
-        markProviderUnavailable(response.status);
-        if (![400, 404, 422].includes(response.status)) {
-          break;
-        }
-      }
-
-      if (!vector) {
-        return fallbackResult(input, this.config, dimensions, `fireworks_embedding_failed_${failures.join("|")}`);
-      }
-
-      if (redis) {
-        await redis.setEx(cacheKey, 60 * 60 * 24 * 14, JSON.stringify(vector));
-      }
-
-      return {
-        vector,
-        model: this.config.model,
-        requestModel,
-        dimensions,
-        provider: "fireworks",
-        cacheHit: false,
-      };
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
-      return fallbackResult(input, this.config, dimensions, `embedding_exception:${reason}`);
-    }
+    const batch = await embedTexts([input.text], { dimensions, task }).catch(() => null);
+    const vector = batch?.vectors[0];
+    if (!batch || !vector) return fallback(input, dimensions, "no_embedding_provider_answered");
+    if (redis) await redis.setEx(cacheKey(batch.model, dimensions, input, task), CACHE_SECONDS, JSON.stringify(vector)).catch(() => undefined);
+    return { vector, model: batch.model, dimensions, provider: batch.provider, cacheHit: false };
   }
 }

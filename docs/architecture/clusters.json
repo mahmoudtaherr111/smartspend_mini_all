@@ -157,6 +157,7 @@
         "api/lib/ai-gateway.ts",
         "api/lib/ai-pricing.ts",
         "api/lib/ai-ledger.ts",
+        "api/lib/embedding-provider.ts",
         "api/lib/provider-key-crypto.ts",
         "api/lib/ai-provider-registry.ts",
         "api/lib/ai-routing.ts",

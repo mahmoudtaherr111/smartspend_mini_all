@@ -1,7 +1,7 @@
 import type { DataNeed } from "./types";
 
 export type RetrievalPolicyEmbedding =
-  | "fireworks_qwen"
+  | "provider_vector"
   | "static_local"
   | "skipped"
   | "fallback";
@@ -14,10 +14,10 @@ export interface RetrievalPolicy {
 }
 
 export type EmbeddingApiStatus =
-  | "fireworks_live_call"
+  | "provider_live_call"
   | "query_embedding_cache_hit"
   | "semantic_result_cache_hit"
-  | "fireworks_fallback"
+  | "provider_fallback"
   | "embedding_disabled"
   | "static_local"
   | "skipped"
@@ -31,7 +31,7 @@ export function embeddingApiStatusFor(dataNeeds: DataNeed[], cacheHits: string[]
     return "semantic_result_cache_hit";
   }
   if (embeddingHits.some((hit) => hit.startsWith("embedding:fallback"))) {
-    return "fireworks_fallback";
+    return "provider_fallback";
   }
   if (embeddingHits.includes("embedding:disabled")) {
     return "embedding_disabled";
@@ -39,11 +39,11 @@ export function embeddingApiStatusFor(dataNeeds: DataNeed[], cacheHits: string[]
   if (embeddingHits.includes("embedding:skipped_lexical_hit")) {
     return "skipped";
   }
-  if (embeddingHits.includes("embedding:query_cache_hit") && embeddingHits.includes("embedding:fireworks")) {
+  if (embeddingHits.includes("embedding:query_cache_hit") && embeddingHits.includes("embedding:live")) {
     return "query_embedding_cache_hit";
   }
-  if (embeddingHits.includes("embedding:query_embedded") && embeddingHits.includes("embedding:fireworks")) {
-    return "fireworks_live_call";
+  if (embeddingHits.includes("embedding:query_embedded") && embeddingHits.includes("embedding:live")) {
+    return "provider_live_call";
   }
   if (cacheHits.includes("site_guide:static_256")) {
     return "static_local";
@@ -73,9 +73,9 @@ export function retrievalPolicyFor(
     };
   }
 
-  if (embeddingHits.includes("embedding:fireworks")) {
+  if (embeddingHits.includes("embedding:live")) {
     return {
-      embedding: "fireworks_qwen",
+      embedding: "provider_vector",
       reason: "memory_search_semantic_retrieval",
       vectorRows: Number.isFinite(rowCount) ? rowCount : undefined,
     };

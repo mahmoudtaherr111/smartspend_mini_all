@@ -62,9 +62,8 @@ export interface MemoryRetrievalResult {
 }
 
 export interface EmbeddingConfig {
-  provider: "fireworks";
-  apiKey: string;
-  baseUrl: string;
+  /** The provider and model of the first embedding route that would answer. */
+  provider: string;
   model: string;
   dimensions: EmbeddingDimensions;
   enabled: boolean;
@@ -75,6 +74,8 @@ export interface EmbedTextInput {
   dimensions?: EmbeddingDimensions;
   userId?: number | string;
   userType?: string;
+  /** Searching with a question, or storing a memory. */
+  task?: "query" | "document";
 }
 
 export interface EmbedTextResult {
@@ -82,7 +83,7 @@ export interface EmbedTextResult {
   model: string;
   requestModel?: string;
   dimensions: EmbeddingDimensions;
-  provider: "fireworks";
+  provider: string;
   cacheHit: boolean;
   fallback?: boolean;
   fallbackReason?: string;

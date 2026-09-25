@@ -96,7 +96,7 @@ describe("AI kernel phase 3 memory resolution", () => {
       ],
       artifacts: [],
       errors: [],
-      cacheHits: ["embedding:fireworks", "embedding:rows:21"],
+      cacheHits: ["embedding:live", "embedding:rows:21"],
       handledNeeds: [],
     });
 
@@ -124,7 +124,7 @@ describe("AI kernel phase 3 memory resolution", () => {
     expect(response.content).not.toContain("ذاكرة الخطط");
     expect(response.debug).toMatchObject({
       retrievalPolicy: {
-        embedding: "fireworks_qwen",
+        embedding: "provider_vector",
         reason: "memory_search_semantic_retrieval",
         vectorRows: 21,
       },
@@ -148,7 +148,7 @@ describe("AI kernel phase 3 memory resolution", () => {
       cacheHits: [
         "memory_cache:hit:memory",
         "embedding:query_embedded",
-        "embedding:fireworks",
+        "embedding:live",
         "embedding:rows:23",
       ],
       handledNeeds: [],
@@ -175,7 +175,7 @@ describe("AI kernel phase 3 memory resolution", () => {
       embeddingCalls: 0,
       embeddingApiStatus: "semantic_result_cache_hit",
       retrievalPolicy: {
-        embedding: "fireworks_qwen",
+        embedding: "provider_vector",
         reason: "memory_search_semantic_retrieval",
         vectorRows: 23,
       },
@@ -184,7 +184,7 @@ describe("AI kernel phase 3 memory resolution", () => {
       expect.arrayContaining([
         "memory_cache:hit:memory",
         "embedding:query_embedded",
-        "embedding:fireworks",
+        "embedding:live",
         "embedding:rows:23",
       ]),
     );
@@ -215,7 +215,7 @@ describe("AI kernel phase 3 memory resolution", () => {
       ],
       artifacts: [],
       errors: [],
-      cacheHits: ["embedding:query_embedded", "embedding:fireworks", "embedding:rows:23"],
+      cacheHits: ["embedding:query_embedded", "embedding:live", "embedding:rows:23"],
       handledNeeds: [],
     });
 
@@ -250,11 +250,11 @@ describe("AI kernel phase 3 memory resolution", () => {
       retrievalPolicyFor("advice_request", mixedNeeds, [
         "memory_cache:hit",
         "embedding:query_embedded",
-        "embedding:fireworks",
+        "embedding:live",
         "embedding:rows:22",
       ]),
     ).toMatchObject({
-      embedding: "fireworks_qwen",
+      embedding: "provider_vector",
       reason: "memory_search_semantic_retrieval",
       vectorRows: 22,
     });

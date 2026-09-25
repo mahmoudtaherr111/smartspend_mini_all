@@ -134,6 +134,13 @@ scheduleProtectedJob("*/30 * * * *", "taxonomy-migration", async () => {
 });
 
 // Live calls whose summary did not happen when they ended: tried again while their words are still in Redis.
+// Memories that have no vector for the current embedding model yet (older ones, or after the admin changes the model):
+// a few at a time, so a free-tier key's per-minute limit is never the one a user's search hits.
+scheduleProtectedJob("*/20 * * * *", "memory-embedding-backfill", async () => {
+  const { backfillMemoryEmbeddings } = await import("./services/ai-memory");
+  await backfillMemoryEmbeddings({ limit: 40 });
+});
+
 scheduleProtectedJob("*/10 * * * *", "voice-call-memory", async () => {
   const { sweepCallMemories } = await import("./services/voice/post-call");
   await sweepCallMemories();
