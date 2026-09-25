@@ -38,6 +38,9 @@ import { businessDayRange } from "./lib/app-time";
 import { assertEntityOwnership } from "./lib/ownership-guard";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
 import { normalizeCategoryName, normalizeSubCategoryName } from "./lib/category-registry";
+import { createLogger } from "./lib/log";
+
+const reviewLog = createLogger("expense-review");
 
 async function invalidateExpenseCache(userId: number | string, userType: string) {
   try {
@@ -215,7 +218,7 @@ async function learnFromReview(
       sourceLogId: log.id,
     });
   } catch (error) {
-    console.warn("Learning from the review card failed (non-fatal):", error);
+    reviewLog.warn({ err: error, event: "review.learn_failed", userId }, "Learning from the review card failed");
   }
 }
 
