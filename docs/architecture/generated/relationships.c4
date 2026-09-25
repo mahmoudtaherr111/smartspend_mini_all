@@ -506,6 +506,7 @@ model {
   smartspend.api.trpc.admin.getClassificationLogs -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.admin.getClassificationLogs -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.admin.getClassificationLogs -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.admin.getClassificationQuality -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.admin.getDashboardStats -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.trpc.admin.getDashboardStats -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.admin.getDashboardStats -[reads]-> smartspend.mysql.sessions
@@ -1202,6 +1203,7 @@ model {
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getApiKeyErrors
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getAvailableModels
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getClassificationLogs
+  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getClassificationQuality
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getDashboardStats
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getDiscountCodes
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getFounderMetrics
@@ -1328,6 +1330,7 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getApiKeyErrors
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getAvailableModels
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getClassificationLogs
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getClassificationQuality
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getDashboardStats
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getDiscountCodes
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getFounderMetrics

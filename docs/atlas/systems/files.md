@@ -280,6 +280,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx` | [admin](admin.md) |
 | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` | [admin](admin.md) |
 | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` | [admin](admin.md) |
+| `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminCodesTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminKeysTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminPlansTab.tsx` | [admin](admin.md) |

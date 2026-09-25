@@ -4,7 +4,7 @@
 model {
   extend smartspend.api.trpc {
     admin = router 'admin' {
-      description 'api/admin-router.ts — 56 procedures.'
+      description 'api/admin-router.ts — 57 procedures.'
       metadata {
         file 'api/admin-router.ts'
       }
@@ -209,6 +209,16 @@ model {
         }
       }
       getClassificationLogs = procedure 'admin.getClassificationLogs' {
+        #query #admin
+        technology 'adminProcedure'
+        description 'query · adminProcedure'
+        metadata {
+          file 'api/admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      getClassificationQuality = procedure 'admin.getClassificationQuality' {
         #query #admin
         technology 'adminProcedure'
         description 'query · adminProcedure'

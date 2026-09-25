@@ -81,7 +81,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `Admin` — `src/pages/Admin.tsx`
 
-28 files in its import closure (not counting `src/components/ui/`).
+29 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -104,6 +104,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
 | `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
+| `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
 | `admin.getDashboardStats` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getDiscountCodes` | useQuery, utils.invalidate | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |
@@ -248,7 +249,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-53 files in its import closure (not counting `src/components/ui/`).
+54 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -271,6 +272,7 @@ _None._
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
 | `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
+| `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
 | `admin.getDashboardStats` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getDiscountCodes` | useQuery, utils.invalidate | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |

@@ -27,7 +27,7 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
 | Admin queries | `src/hooks/useAdmin.ts` | The dashboard, user list, role, plan, delete and revoke calls the console shares |
 | Admin API | `api/admin-router.ts` | Users, sessions, settings, AI providers and telemetry, discount codes, learned rules, raw messages, notification templates |
 | Tab components | `src/components/admin/` | Audit, settings, rules, ads, WhatsApp, clarifications, raw SMS and notifications |
-| AI command center | `src/components/admin/ai-center/AiCommandCenter.tsx` | Telemetry, providers, one user's quota, and a sandbox |
+| AI command center | `src/components/admin/ai-center/AiCommandCenter.tsx` | Classification quality and telemetry, providers, one user's quota, and a sandbox |
 | Settings screens | `src/components/admin/settings/` | Plan limits and model routing, API keys, discount codes |
 | Support | `api/support-router.ts`, `src/pages/Support.tsx` | Tickets from users, answers from admins |
 | Ads | `api/ads-router.ts`, `src/hooks/useAds.ts`, `src/components/ads/AdBanner.tsx` | Campaigns, the banner in the app, clicks |
@@ -41,7 +41,7 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
 | Overview | Registered users, Google and phone accounts, paying users, live sessions, open tickets, and the money and today's flows from the daily rollups; below them daily and weekly active users, new and active Pro subscriptions, the token estimate and upgrade events | `admin.getDashboardStats`, `admin.getFounderMetrics` |
 | Users | Search by name, email or phone with role and plan filters; open a user's smart profile; list their sessions and revoke one; change role or plan; delete the account; export everyone; message one user | `admin.listAllUsers`, `admin.getUserSmartProfile`, `admin.getUserSessions`, `admin.revokeSession`, `admin.updateUserRole`, `admin.updateUserPlanV2`, `admin.deleteUser`, `export.allUsers`, `adminWhatsapp.sendDirectMessage` |
 | Support | Tickets newest first with the user's name and whether they are open; reply, which also marks the ticket resolved; close | `support.listAll`, `support.respond`, `support.close` |
-| AI | Recent API key errors, with resolve and clear; then the command center: consumption, cost and latency this billing period by provider and channel; providers with their keys masked, the models discovered for each and every model's purposes, plans and prices; one user's quota, measured against the limit the server enforces (the user's own override, else `<plan>_token_limit`), and latest requests; a sandbox that sends a typed sentence through `ai.parseExpense` | `admin.getApiKeyErrors`, `admin.resolveApiKeyError`, `admin.clearAllApiKeyErrors`, `admin.getAiTelemetryOverview`, `admin.getAiProviders`, `admin.getAiModels`, `admin.addAiProvider`, `admin.updateAiProvider`, `admin.deleteAiProvider`, `admin.discoverProviderModels`, `admin.saveAiModels`, `admin.getUserAiQuota` |
+| AI | Recent API key errors, with resolve and clear; then the command center: classification quality over the last 7, 30 or 90 days beside the period before (share saved on its own, the silent-mistake rate — auto-saved answers the user later changed —, review, questions, corrections, share sent to a model, average time, from `classification_logs`); consumption, cost and latency this billing period by provider and channel; providers with their keys masked, the models discovered for each and every model's purposes, plans and prices; one user's quota, measured against the limit the server enforces (the user's own override, else `<plan>_token_limit`), and latest requests; a sandbox that sends a typed sentence through `ai.parseExpense` | `admin.getApiKeyErrors`, `admin.resolveApiKeyError`, `admin.clearAllApiKeyErrors`, `admin.getClassificationQuality`, `admin.getAiTelemetryOverview`, `admin.getAiProviders`, `admin.getAiModels`, `admin.addAiProvider`, `admin.updateAiProvider`, `admin.deleteAiProvider`, `admin.discoverProviderModels`, `admin.saveAiModels`, `admin.getUserAiQuota` |
 | Subscriptions | The latest subscriptions with their status | `admin.listSubscriptionsAdmin` |
 | Clarifications | Items the classifier could not settle; mark one resolved or ignored | `admin.getPendingClarifications`, `admin.resolveClarification` |
 | WhatsApp | Connection and QR code, direct messages, broadcasts, the verification switch ([notifications](notifications.md)) | `adminWhatsapp.*` |
@@ -117,7 +117,8 @@ Checked against the code; each one names where it lives.
    (`api/lib/settings-cache.ts`).
 3. **Debt.** Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`,
    `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would
-   show the classification numbers, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted.
+   show them, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted. The classification quality itself is
+   shown by the command center's quality card (`admin.getClassificationQuality`).
 4. **Gap.** The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
    browser; nothing backs up the database.
 5. **Gap.** Answering a ticket does not notify the user, while the support page promises a reply within a day. The

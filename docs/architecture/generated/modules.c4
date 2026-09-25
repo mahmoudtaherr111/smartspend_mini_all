@@ -215,7 +215,7 @@ model {
     web-admin = module 'Admin UI' {
       description 'Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.'
       metadata {
-        files '20'
+        files '21'
         paths 'src/components/admin/**'
       }
     }

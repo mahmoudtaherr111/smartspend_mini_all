@@ -53,7 +53,7 @@
     },
     "admin": {
       "files": {
-        "api/admin-router.ts": "b734fa9568ea",
+        "api/admin-router.ts": "1255a0186af2",
         "api/ads-router.ts": "3492acf11584",
         "api/analytics-router.ts": "f4dfac1f9ab6",
         "api/export-router.ts#export.allUsers": "c142aeea8326",
@@ -69,12 +69,13 @@
         "src/components/admin/AdminWhatsAppTab.tsx": "704ade19dcb0",
         "src/components/admin/ClarificationsTab.tsx": "5d7eeb83b615",
         "src/components/admin/NotificationsTab.tsx": "fdc4e8874fd7",
-        "src/components/admin/ai-center/AiCommandCenter.tsx": "214fff2f54c0",
+        "src/components/admin/ai-center/AiCommandCenter.tsx": "aa2535884807",
         "src/components/admin/ai-center/modals/TokenAnatomyModal.tsx": "5d1eb48a7da5",
         "src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx": "6d7349c52736",
         "src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx": "f776695feeb5",
         "src/components/admin/ai-center/tabs/AiTelemetryTab.tsx": "c90405d7e803",
         "src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx": "10ff32f1e785",
+        "src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx": "88d1c8cbcd39",
         "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
         "src/components/admin/settings/AdminPlansTab.tsx": "47a3e216b406",
@@ -83,9 +84,9 @@
         "src/pages/Admin.tsx": "42d9a43037ce",
         "src/pages/Support.tsx": "9175518fbc4c"
       },
-      "checked": "2026-09-24 37a55fb",
-      "arabic": "8ff6610c42a9",
-      "arabicChecked": "2026-09-24 37a55fb"
+      "checked": "2026-09-25 4c48fe5",
+      "arabic": "a2b59bcfbc6a",
+      "arabicChecked": "2026-09-25 4c48fe5"
     },
     "ai-center": {
       "files": {

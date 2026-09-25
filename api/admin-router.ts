@@ -122,6 +122,39 @@ function searchUsersConditionLocal(search: string) {
   return or(like(localUsers.name, term), like(localUsers.phone, term));
 }
 
+/** Counts of classification logs over a period, as one grouped query returns them. */
+export interface ClassificationQualityCounts {
+  total: number;
+  autoSaved: number;
+  review: number;
+  clarify: number;
+  corrected: number;
+  autoSavedCorrected: number;
+  byModel: number;
+  avgTimeMs: number;
+}
+
+const percent = (part: number, whole: number): number =>
+  whole > 0 ? Math.round((part / whole) * 1000) / 10 : 0;
+
+/**
+ * The quality of classification as the users lived it. The share of auto-saved answers the
+ * user later changed is the silent-mistake rate: the one number that does not come from the
+ * classifier's own opinion of itself.
+ */
+export function summarizeClassificationQuality(counts: ClassificationQualityCounts) {
+  return {
+    total: counts.total,
+    autoSaveRate: percent(counts.autoSaved, counts.total),
+    reviewRate: percent(counts.review, counts.total),
+    clarifyRate: percent(counts.clarify, counts.total),
+    correctionRate: percent(counts.corrected, counts.total),
+    silentMistakeRate: percent(counts.autoSavedCorrected, counts.autoSaved),
+    modelShare: percent(counts.byModel, counts.total),
+    avgTimeMs: Math.round(counts.avgTimeMs),
+  };
+}
+
 export const adminRouter = router({
   // ─── Dashboard Stats ───
   getDashboardStats: adminProcedure.query(async () => {
@@ -853,6 +886,52 @@ export const adminRouter = router({
       totalClassifications: totalLogs[0]?.count ?? 0,
     };
   }),
+
+  // ─── Classification quality, as users lived it ───
+  // Decisions, corrections and model use over the last days, current and previous period.
+  getClassificationQuality: adminProcedure
+    .input(z.object({ days: z.number().int().min(1).max(90).default(30) }).optional())
+    .query(async ({ input }) => {
+      const days = input?.days ?? 30;
+      const now = Date.now();
+      const periodOf = async (from: Date, to: Date) => {
+        const [row] = await db
+          .select({
+            total: count(),
+            autoSaved: sql<number>`SUM(CASE WHEN ${classificationLogs.decision} = 'auto_save' THEN 1 ELSE 0 END)`,
+            review: sql<number>`SUM(CASE WHEN ${classificationLogs.decision} = 'review' THEN 1 ELSE 0 END)`,
+            clarify: sql<number>`SUM(CASE WHEN ${classificationLogs.decision} = 'clarify' THEN 1 ELSE 0 END)`,
+            corrected: sql<number>`SUM(CASE WHEN ${classificationLogs.wasCorrected} = true THEN 1 ELSE 0 END)`,
+            autoSavedCorrected: sql<number>`SUM(CASE WHEN ${classificationLogs.wasCorrected} = true AND ${classificationLogs.decision} = 'auto_save' THEN 1 ELSE 0 END)`,
+            byModel: sql<number>`SUM(CASE WHEN ${classificationLogs.parsedBy} IN ('ai', 'hybrid') THEN 1 ELSE 0 END)`,
+            avgTimeMs: sql<number>`AVG(${classificationLogs.processingTimeMs})`,
+          })
+          .from(classificationLogs)
+          .where(and(gte(classificationLogs.createdAt, from), lte(classificationLogs.createdAt, to)));
+        return summarizeClassificationQuality({
+          total: Number(row?.total ?? 0),
+          autoSaved: Number(row?.autoSaved ?? 0),
+          review: Number(row?.review ?? 0),
+          clarify: Number(row?.clarify ?? 0),
+          corrected: Number(row?.corrected ?? 0),
+          autoSavedCorrected: Number(row?.autoSavedCorrected ?? 0),
+          byModel: Number(row?.byModel ?? 0),
+          avgTimeMs: Number(row?.avgTimeMs ?? 0),
+        });
+      };
+      const span = days * 24 * 60 * 60 * 1000;
+      try {
+        return {
+          days,
+          current: await periodOf(new Date(now - span), new Date(now)),
+          previous: await periodOf(new Date(now - 2 * span), new Date(now - span)),
+        };
+      } catch (err) {
+        if (!isMissingTableError(err, "classification_logs")) throw err;
+        const empty = summarizeClassificationQuality({ total: 0, autoSaved: 0, review: 0, clarify: 0, corrected: 0, autoSavedCorrected: 0, byModel: 0, avgTimeMs: 0 });
+        return { days, current: empty, previous: empty };
+      }
+    }),
 
   // ─── Pipeline Version Comparison ───
   //

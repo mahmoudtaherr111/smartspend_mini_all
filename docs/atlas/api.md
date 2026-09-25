@@ -27,7 +27,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Router | File | Procedures | Queries | Mutations | Builders used |
 | --- | --- | --- | --- | --- | --- |
-| `admin` | `api/admin-router.ts` | 56 | 28 | 28 | `adminProcedure` |
+| `admin` | `api/admin-router.ts` | 57 | 29 | 28 | `adminProcedure` |
 | `adminWhatsapp` | `api/admin-whatsapp-router.ts` | 9 | 3 | 6 | `adminProcedure` |
 | `ads` | `api/ads-router.ts` | 7 | 2 | 5 | `adminProcedure`, `authedProcedure`, `publicProcedure` |
 | `ai` | `api/ai-router.ts` | 10 | 2 | 8 | `aiProcedure`, `authedProcedure` |
@@ -78,6 +78,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `admin.getApiKeyErrors` | query | `adminProcedure` | yes | — | — | `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
 | `admin.getAvailableModels` | query | `adminProcedure` | no | — | — | `api/lib/env.ts`, `api/lib/settings-cache.ts` | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getClassificationLogs` | query | `adminProcedure` | yes | `classification_logs`, `local_users`, `users` | — | — | `src/hooks/useAdmin.ts` |
+| `admin.getClassificationQuality` | query | `adminProcedure` | yes | `classification_logs` | — | — | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
 | `admin.getDashboardStats` | query | `adminProcedure` | no | `expense_daily_rollups`, `local_users`, `sessions`, `support_tickets`, `users` | — | `api/lib/app-time.ts` | `src/hooks/useAdmin.ts` |
 | `admin.getDiscountCodes` | query | `adminProcedure` | no | `discount_codes` | — | — | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.getFounderMetrics` | query | `adminProcedure` | no | `local_users`, `pro_subscriptions`, `sessions`, `support_tickets`, `user_analytics`, `users` | — | — | `src/pages/Admin.tsx` |

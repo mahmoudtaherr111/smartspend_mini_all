@@ -4,6 +4,7 @@ import { AiTelemetryTab } from "./tabs/AiTelemetryTab";
 import { AiProviderManagerTab } from "./tabs/AiProviderManagerTab";
 import { AiUserQuotaInspectorTab } from "./tabs/AiUserQuotaInspectorTab";
 import { AiRuleSandboxTab } from "./tabs/AiRuleSandboxTab";
+import { ClassificationQualityTab } from "./tabs/ClassificationQualityTab";
 import { TrendingUp, Server, UserCheck, FlaskConical } from "lucide-react";
 
 export function AiCommandCenter() {
@@ -49,7 +50,8 @@ export function AiCommandCenter() {
       </div>
 
       {/* Subtab Contents */}
-      <TabsContent value="telemetry" className="m-0 focus-visible:outline-none">
+      <TabsContent value="telemetry" className="m-0 space-y-6 focus-visible:outline-none">
+        <ClassificationQualityTab />
         <AiTelemetryTab />
       </TabsContent>
       <TabsContent value="providers" className="m-0 focus-visible:outline-none">
