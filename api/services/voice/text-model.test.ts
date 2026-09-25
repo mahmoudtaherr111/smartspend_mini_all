@@ -15,7 +15,7 @@ let replies: Array<() => Promise<Response>>;
 
 beforeEach(() => {
   asked.length = 0;
-  vi.stubGlobal("fetch", vi.fn(async (url: string, init: { body: string; signal: AbortSignal }) => {
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
     asked.push(String(url).match(/models\/([^:]+):/)![1]);
     const next = replies.shift();
     if (!next) throw new Error("no reply");

@@ -34,7 +34,7 @@
       "count": 26
     },
     "no-console": {
-      "count": 21
+      "count": 19
     },
     "no-empty": {
       "count": 2
@@ -83,7 +83,7 @@
       "count": 1
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 2
+      "count": 1
     },
     "no-console": {
       "count": 1
@@ -138,7 +138,7 @@
   },
   "api/expense-router.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 17
+      "count": 16
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
@@ -597,11 +597,6 @@
       "count": 1
     }
   },
-  "api/services/ai-memory/embedding-settings.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
   "api/services/ai-memory/memory-writer.invalidation.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
@@ -625,10 +620,10 @@
   },
   "api/services/expense-rollups.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 7
+      "count": 3
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 3
+      "count": 2
     },
     "no-console": {
       "count": 1
@@ -689,38 +684,6 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    }
-  },
-  "api/services/voice-call-service.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 8
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    },
-    "no-console": {
-      "count": 30
-    },
-    "no-empty": {
-      "count": 1
-    },
-    "prefer-const": {
-      "count": 1
-    }
-  },
-  "api/services/voice-context-service.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
-  "api/services/voice-kernel/voice-prefetch.test.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
-  "api/services/voice-kernel/voice-session-state.ts": {
-    "no-console": {
-      "count": 3
     }
   },
   "api/services/whatsapp-service.ts": {
@@ -1029,11 +992,6 @@
   },
   "src/components/ai/AIMemoryManager.tsx": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/components/ai/AIVoiceCall.tsx": {
-    "react-hooks/set-state-in-effect": {
       "count": 1
     }
   },
@@ -1364,20 +1322,6 @@
   "src/hooks/useVirtualKeyboard.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 5
-    }
-  },
-  "src/hooks/useVoiceCall.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 10
-    },
-    "no-empty": {
-      "count": 8
-    },
-    "react-hooks/refs": {
-      "count": 3
     }
   },
   "src/lib/biometricAuth.test.ts": {
