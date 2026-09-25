@@ -196,9 +196,9 @@
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-25 dd02a18",
-      "arabic": "a2ac2c09a91d",
-      "arabicChecked": "2026-09-25 010e167"
+      "checked": "2026-09-25 3cd03f9",
+      "arabic": "711b4aa852d7",
+      "arabicChecked": "2026-09-25 3cd03f9"
     },
     "billing": {
       "files": {
@@ -399,7 +399,7 @@
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
         "api/boot.ts#rest-of-file": "cc7fc159ff36",
         "api/context.ts": "d2add89863df",
-        "api/jobs/data-retention-job.ts": "f463a8edd4ba",
+        "api/jobs/data-retention-job.ts": "295ff3f7c233",
         "api/lib/app-time.ts": "23f0c001bb84",
         "api/lib/cache-keys.ts": "9540209b7d64",
         "api/lib/env.ts": "8577af2891d6",
@@ -431,9 +431,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "4f7b341be798"
       },
-      "checked": "2026-09-24 45b800e",
-      "arabic": "7ce9b00e4368",
-      "arabicChecked": "2026-09-24 45b800e"
+      "checked": "2026-09-25 3cd03f9",
+      "arabic": "af9f262db317",
+      "arabicChecked": "2026-09-25 3cd03f9"
     },
     "voice-calls": {
       "files": {

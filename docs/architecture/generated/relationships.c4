@@ -373,6 +373,7 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.pro_subscriptions
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.profile_learning_events
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.raw_sms_events
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_budgets
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_correction_rules

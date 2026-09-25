@@ -59,8 +59,8 @@ storage, the contracts shared with the web app, and the retention job that prune
   from A (identity and configuration) to G (conversations), and `tests/table-classes.test.ts` fails when a new
   table has none.
 - The retention job runs daily at 05:00 and walks the declared policies: user analytics after thirty days,
-  classification logs, token ledgers, notification logs, ad clicks, voice usage and live-call incidents after
-  ninety, the action audit trail and live voice calls after a year, chat messages after ninety days once the conversation has a summary, and expired
+  classification logs, token ledgers, notification logs, ad clicks, raw bank messages (`raw_sms_events`, suggestions
+  included), voice usage and live-call incidents after ninety, the action audit trail and live voice calls after a year, chat messages after ninety days once the conversation has a summary, and expired
   challenges and pending actions in between. Token ledgers and ad clicks are rolled up into `ai_cost_monthly`
   and `ad_stats_daily` before the rows go, and deletes run in chunks with a pause between them.
 

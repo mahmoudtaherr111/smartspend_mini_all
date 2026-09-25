@@ -170,8 +170,9 @@ Checked against the code; each one names where it lives.
 3. **Gap.** Only a merchant the engine knows well changes the fixed map: a card payment to any other merchant is
    `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not
    classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
-4. **Debt.** `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but
-   `api/jobs/data-retention-job.ts` has no policy for it: full message texts stay until the account is deleted.
+4. **Gap.** Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in
+   `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account
+   digits and balances, is stored as received.
 5. **Bug.** The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
 6. **Bug.** With several server processes, a one-time code created on one cannot be exchanged on another, and each process
    counts the rate limit on its own.

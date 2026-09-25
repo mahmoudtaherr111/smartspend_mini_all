@@ -227,7 +227,7 @@ Job implementations scheduled from api/boot.ts.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
+| `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `raw_sms_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
 | `api/jobs/monthly-behavior-job.ts` | `api-routers`, `database` | — | `expenses`, `user_profiles` | — |
 | `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
 | `api/jobs/rollup-reconciliation-job.ts` | `database`, `ledger`, `platform` | — | `expense_daily_rollups`, `expenses` | — |

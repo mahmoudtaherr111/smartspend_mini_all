@@ -11,7 +11,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (52 of
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 bc91a31 | 2026-09-25 d5e7b7e | 18 | — | 3 | 2 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 dd02a18 | 2026-09-25 010e167 | 3 | — | 2 | 3 | 2 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 3cd03f9 | 2026-09-25 3cd03f9 | 3 | — | 2 | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 5e20684 | 2026-09-25 5e20684 | 4 | — | 5 | 3 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 614093e | 2026-09-25 614093e | 6 | — | 8 | 3 | 3 |
@@ -21,7 +21,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (52 of
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 dd02a18 | 2026-09-25 339aea2 | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 4c48fe5 | 2026-09-25 4c48fe5 | 4 | — | 3 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 45b800e | 2026-09-24 d9d553a | 9 | — | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-24 45b800e | 2026-09-24 45b800e | 5 | — | 2 | — | 8 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 3cd03f9 | 2026-09-25 3cd03f9 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-25 14feab9 | 2026-09-24 45b800e | 7 | **1** | 2 | 2 | 2 |
 
 
@@ -121,7 +121,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, so anything recorded offline and not yet sent is lost with the session.
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (33)
+### Gaps (34)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -131,6 +131,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The APK behind `/downloads/smartspend-sync.apk` is a debug build that `.github/workflows/build-apk.yml` commits when `android-app/` changes; it is signed with the runner's throwaway debug key, so a newer build cannot install over an older one until a release key is configured.
 - The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY` directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
 - Only a merchant the engine knows well changes the fixed map: a card payment to any other merchant is `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
+- Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account digits and balances, is stored as received.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A profile question the user lets pass, neither answered nor refused, is offered again in the next call: only an answer or a refusal saved through `memory answer` takes it off the list, and the call never sets the Home card's one-day pause (`user_profiles.last_asked_at`), which it only reads (`api/services/voice/brain/profile-questions.ts#nextCallQuestion`).
@@ -180,13 +181,12 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (31)
+### Debt (30)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win; the code reads the `parser_*` keys first.
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
-- `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but `api/jobs/data-retention-job.ts` has no policy for it: full message texts stay until the account is deleted.
 - `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
