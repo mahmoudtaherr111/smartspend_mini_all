@@ -133,6 +133,9 @@ const expenseRawText = z.string().min(1).max(ExpenseInputLimits.rawTextMax);
 const expenseCategory = z.string().min(1).max(ExpenseInputLimits.categoryMax);
 const expenseAmount = z.number().positive().max(ExpenseInputLimits.amountMax);
 
+/** The most items one month's statistics load: far above a real month, a guard against abuse. */
+const MONTH_ITEMS_BOUND = 5000;
+
 const PERSON_EXPENSE_CATEGORIES = new Set([
   "العائلة",
   "أصدقاء",
@@ -1570,9 +1573,23 @@ export const expenseRouter = router({
           }
         }
 
-        // Capped recent items for consumer compatibility
+        // The month's items, for the hour heatmap here and the budget and electronic-payment
+        // tabs on the client. Only the columns they read are loaded, so the whole month fits:
+        // the latest 200 used to be taken, which under-counted any busy month. The bound is
+        // a safety net far above a real month.
         const items = await db
-          .select()
+          .select({
+            id: expenses.id,
+            amount: expenses.amount,
+            type: expenses.type,
+            category: expenses.category,
+            subCategory: expenses.subCategory,
+            description: expenses.description,
+            rawText: expenses.rawText,
+            source: expenses.source,
+            date: expenses.date,
+            parsedMetadata: expenses.parsedMetadata,
+          })
           .from(expenses)
           .where(
             and(
@@ -1587,7 +1604,7 @@ export const expenseRouter = router({
             ),
           )
           .orderBy(desc(expenses.date))
-          .limit(200);
+          .limit(MONTH_ITEMS_BOUND);
 
         items.forEach((item) => {
           const d = safeDate(item.date, currentPeriod.startUtc);

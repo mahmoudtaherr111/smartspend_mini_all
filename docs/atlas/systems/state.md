@@ -10,12 +10,12 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (57 of
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 c129eda | 2026-09-25 c129eda | 18 | — | 4 | 1 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 6ec98ec | 2026-09-25 c129eda | 18 | — | 4 | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 339aea2 | 2026-09-25 339aea2 | 3 | — | 4 | 2 | 2 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 5e20684 | 2026-09-25 5e20684 | 4 | — | 5 | 3 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 37a55fb | 2026-09-24 45b800e | 6 | — | 9 | 2 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 339aea2 | 2026-09-25 339aea2 | 5 | — | 7 | 4 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 6ec98ec | 2026-09-25 6ec98ec | 5 | — | 7 | 4 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-24 37a55fb | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-24 6739377 | 2026-09-24 6739377 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 339aea2 | 2026-09-25 339aea2 | 1 | **1** | 5 | 1 | 2 |
@@ -90,7 +90,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The home screen uses the salary cycle only when "fixed salary" is switched on in Settings (`hasFixedSalary`); a salary day given in the onboarding questions does not change it, while the AI Center and the reports use the salary day either way.
 - The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an established account sees a low daily average early in the month.
-- The budget tab, the electronic-payments tab and the hour heatmap work from the month's latest 200 items and under-count busy months; the budget tab assumes a 10,000 EGP budget when neither the profile nor the month has income.
+- The chart's "budget" tab compares spending with income rather than with the user's budgets, and assumes a 10,000 EGP budget when neither the profile nor the month has income.
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 - In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
 - The calendar's day list sends local times without a time zone, which the server reads in its own zone.

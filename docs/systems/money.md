@@ -74,13 +74,13 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   - totals and automated totals from the rollups, and the previous period's totals;
   - category and subcategory breakdowns from the confirmed items, with their change from the previous period, and
     likely recurring items (subscriptions, packages, instalments, internet, electricity);
-  - spending per day, week of the month and weekday, and per Cairo hour from the month's latest 200 items;
+  - spending per day, week of the month and weekday, and per Cairo hour from all of the month's items;
   - a comparison with the same week of the previous period until day 24, and with the whole previous period after;
   - money sent to and received from each family member;
   - a spending behaviour (planned, spiky, emotional or concentrated, overridden by impulsive or conservative from the
     share of income spent), whose discretionary share counts `DISCRETIONARY_CATEGORIES` from
     `contracts/categories.ts` (ترفيه، تسوق، أكل وشرب، عناية شخصية، اشتراكات);
-  - the daily average and the month's latest 200 items.
+  - the daily average and the month's items (the columns the charts read, up to `MONTH_ITEMS_BOUND`, 5,000).
 - **Search** (`expense.searchTransactions`): up to 20 of the user's items whose category, subcategory, description or
   original text contains the query, newest first.
 - **Record tab list** (`expense.list`): the month's latest items, page by page, newest id first; the calendar asks the
@@ -177,9 +177,8 @@ Checked against the code; each one names where it lives.
    day either way.
 2. **Bug.** The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an
    established account sees a low daily average early in the month.
-3. **Bug.** The budget tab, the electronic-payments tab and the hour heatmap work from the month's latest 200 items and
-   under-count busy months; the budget tab assumes a 10,000 EGP budget when neither the profile nor the month has
-   income.
+3. **Bug.** The chart's "budget" tab compares spending with income rather than with the user's budgets, and assumes a
+   10,000 EGP budget when neither the profile nor the month has income.
 4. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
    snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 5. **Bug.** In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
