@@ -60,7 +60,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `deepseek` | DeepSeek API | ai-provider | `ai-providers` | `api/lib/llm-provider-chain.ts` |
 | `firebase` | Firebase | push | `notifications`, `web-hooks`, `web-shell` | `api/services/firebase.ts`, `src/hooks/usePushNotifications.ts`, `src/pwa/firebase.ts` |
 | `fireworks` | Fireworks AI | ai-provider | `ai-memory`, `ai-providers`, `api-routers`, `jobs`, `web-admin` | `api/chat-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/fireworks-client.ts`, `api/lib/fireworks-embedding-client.ts`, `api/lib/llm-provider-chain.ts`, `api/services/ai-memory/embedding-settings.ts`, `src/components/admin/settings/AdminPlansTab.tsx` |
-| `gemini` | Google Gemini API | ai-provider | `ai-insights`, `ai-providers`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/goals-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/classifier-contract.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/llm-router.ts`, `api/lib/narrative-decomposer.ts`, `api/lib/receipt-image-parser.ts`, `api/lib/smart-pipeline.ts`, `api/lib/sms-ai-parser.ts`, `api/services/batch-ai-service.ts`, `api/services/voice-call-service.ts`, `api/services/voice/brain/tools/market-price.ts`, `api/services/voice/engine/gemini-live.ts`, `api/services/voice/text-model.ts` |
+| `gemini` | Google Gemini API | ai-provider | `ai-insights`, `ai-providers`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/goals-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/classifier-contract.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/llm-router.ts`, `api/lib/narrative-decomposer.ts`, `api/lib/receipt-image-parser.ts`, `api/lib/smart-pipeline.ts`, `api/lib/sms-ai-parser.ts`, `api/services/batch-ai-service.ts`, `api/services/voice-call-service.ts`, `api/services/voice/engine/gemini-live.ts`, `api/services/voice/text-model.ts` |
 | `google-oauth` | Google OAuth 2.0 | identity | `api-routers` | `api/auth-router.ts` |
 | `groq` | Groq | ai-provider | `ai-providers`, `api-routers` | `api/ai-router.ts`, `api/lib/groq-client.ts`, `api/lib/llm-provider-chain.ts` |
 | `mysql` | MySQL | datastore | `database` | `api/queries/connection.ts` |
@@ -276,12 +276,12 @@ Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech
 | `api/services/voice/brain/snapshot.ts` | `ai-insights`, `database`, `finance-semantic-layer`, `platform` | — | `ai_memory_items`, `expenses`, `local_users`, `users` | — |
 | `api/services/voice/brain/spoken.ts` | — | — | — | — |
 | `api/services/voice/brain/tools/app-help.ts` | `site-guide` | — | — | — |
-| `api/services/voice/brain/tools/market-price.ts` | `ai-providers`, `platform` | `gemini` | — | — |
+| `api/services/voice/brain/tools/market-price.ts` | `platform` | — | — | — |
 | `api/services/voice/brain/tools/memory.ts` | `ai-insights`, `ai-memory`, `database`, `platform` | — | `ai_memory_items` | `ai_memory_items` |
 | `api/services/voice/brain/tools/money-query.ts` | `classification`, `finance-semantic-layer`, `platform` | — | — | — |
 | `api/services/voice/brain/tools/record.ts` | `ai-actions` | — | — | — |
 | `api/services/voice/brain/tools/reports.ts` | `database`, `platform` | — | `ai_summaries`, `monthly_reports`, `pending_clarifications` | — |
-| `api/services/voice/brain/tools/think.ts` | `ai-providers`, `finance-semantic-layer` | — | — | — |
+| `api/services/voice/brain/tools/think.ts` | `ai-providers`, `finance-semantic-layer`, `platform` | — | — | — |
 | `api/services/voice/brain/tools/types.ts` | — | — | — | — |
 | `api/services/voice/brain/validator.ts` | `arabic-nlp` | — | — | — |
 | `api/services/voice/brain/voices.ts` | — | — | — | — |

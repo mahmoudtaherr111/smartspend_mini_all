@@ -2,12 +2,13 @@
  * market_price: today's gold or currency price in Egypt, looked up once for everyone every 30 minutes with a text
  * model and Google Search, checked against sane bounds, and handed to the call as a fact with its source and time
  * (so the spoken-number check knows where the number came from). A price is information, never investment advice.
+ * The caller is waiting on the line: a fast model first (`voice_price_model`), the next one after five seconds, and
+ * nine seconds in all.
  */
-import { env } from "../../../../lib/env";
-import { mapModelName } from "../../../../lib/model-mapper";
+import { businessTimeLabel } from "../../../../lib/app-time";
 import { cacheGet, cacheSet } from "../../../../lib/redis-client";
-import { getSystemSettings } from "../../../../lib/settings-cache";
 import type { ToolRunOutcome } from "../../gateway/call-session";
+import { askTextModel } from "../../text-model";
 import { type ToolContext, type VoiceTool } from "./types";
 
 const ASSETS = {
@@ -28,31 +29,17 @@ interface Quote {
 
 const TTL_SECONDS = 30 * 60;
 
-async function lookup(asset: Asset): Promise<Quote | null> {
-  const settings = await getSystemSettings();
-  const key = settings.ai_api_key || env.GEMINI_API_KEY || settings.ai_api_key_2;
-  if (!key) return null;
-  const model = mapModelName(settings.voice_price_model || "gemini-3.8-flash");
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-goog-api-key": key },
-    signal: AbortSignal.timeout(12_000),
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: `${ASSETS[asset].ask}. رد بسطر JSON بس: {"value": رقم, "source": "اسم الموقع", "as_of": "التاريخ والوقت"}` }] }],
-      tools: [{ googleSearch: {} }],
-      generationConfig: { temperature: 0 },
-    }),
+export async function lookup(asset: Asset, now = new Date()): Promise<Quote | null> {
+  const answer = await askTextModel({
+    modelSetting: "voice_price_model",
+    defaultModel: "gemini-3.5-flash-lite",
+    prompt: `${ASSETS[asset].ask}. رد بسطر JSON بس: {"value": رقم, "source": "اسم الموقع", "as_of": "التاريخ والوقت"}`,
+    search: true,
+    temperature: 0,
+    timeoutMs: 5_000,
+    deadlineMs: 9_000,
   });
-  if (!response.ok) return null;
-  const body = (await response.json()) as {
-    candidates?: Array<{
-      content?: { parts?: Array<{ text?: string }> };
-      groundingMetadata?: { groundingChunks?: Array<{ web?: { title?: string; uri?: string } }> };
-    }>;
-  };
-  const candidate = body.candidates?.[0];
-  const text = (candidate?.content?.parts ?? []).map((part) => part.text ?? "").join("");
-  const match = text.match(/\{[^{}]*\}/);
+  const match = answer.text.match(/\{[^{}]*\}/);
   if (!match) return null;
   let parsed: Record<string, unknown>;
   try {
@@ -63,11 +50,11 @@ async function lookup(asset: Asset): Promise<Quote | null> {
   const value = Number(parsed.value);
   const bounds = ASSETS[asset];
   if (!Number.isFinite(value) || value < bounds.min || value > bounds.max) return null;
-  const web = candidate?.groundingMetadata?.groundingChunks?.find((chunk) => chunk.web?.title)?.web;
   return {
     value,
-    source: String(parsed.source || web?.title || "بحث جوجل").slice(0, 80),
-    asOf: String(parsed.as_of || new Date().toISOString().slice(0, 16)).slice(0, 40),
+    source: String(parsed.source || answer.webSource || "بحث جوجل").slice(0, 80),
+    // Without a time from the source, the time it was looked up, on Cairo's clock (golden rule 6).
+    asOf: String(parsed.as_of || businessTimeLabel(now)).slice(0, 40),
   };
 }
 

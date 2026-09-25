@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { businessDateKey, businessDayRange, businessMonthRange } from "./app-time";
+import { businessDateKey, businessDayRange, businessMonthRange, businessTimeLabel } from "./app-time";
 
 const CAIRO = "Africa/Cairo";
 
 describe("business time boundaries", () => {
+  it("labels a moment with Cairo's date and clock, past midnight included", () => {
+    expect(businessTimeLabel(new Date("2026-01-15T21:59:00.000Z"), CAIRO)).toBe("2026-01-15 23:59");
+    expect(businessTimeLabel(new Date("2026-01-15T22:05:00.000Z"), CAIRO)).toBe("2026-01-16 00:05");
+  });
+
   it("keeps records either side of Cairo midnight in different business days", () => {
     expect(businessDateKey(new Date("2026-01-15T21:59:59.999Z"), CAIRO)).toBe("2026-01-15");
     expect(businessDateKey(new Date("2026-01-15T22:00:00.000Z"), CAIRO)).toBe("2026-01-16");

@@ -12,16 +12,16 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (64 of
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 17 | — | 5 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | — | 6 | 2 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 11 | — | 5 | 1 | 4 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 4 | — | 5 | 3 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 454bede | 2026-09-25 454bede | 11 | — | 5 | 1 | 4 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 454bede | 2026-09-25 454bede | 4 | — | 5 | 3 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 6 | — | 11 | 2 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-23 797ea88 | 2026-09-23 797ea88 | 3 | — | 7 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-23 fe4b4b3 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | **1** | 1 | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 981a949 | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-18 49da160 | 2026-09-18 49da160 | 4 | — | 4 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 9 | — | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-24 4f6c0d4 | 2026-09-24 4f6c0d4 | 5 | — | 2 | — | 8 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 454bede | 2026-09-25 454bede | 9 | — | 4 | 1 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 454bede | 2026-09-24 4f6c0d4 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-23 797ea88 | 2026-09-23 797ea88 | 7 | **1** | 2 | 2 | 2 |
 
 

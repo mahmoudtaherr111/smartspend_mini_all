@@ -119,14 +119,14 @@
         "api/services/ai-memory/text-utils.ts": "4669ecc99d2b",
         "api/services/ai-memory/types.ts": "b340bc0bb56e",
         "api/services/ai-memory/vector-store.ts": "168cd18f91ad",
-        "api/services/finance-semantic-layer/cache.ts": "01d33aab2e12",
-        "api/services/finance-semantic-layer/category-matcher.ts": "814a58d1e3ff",
+        "api/services/finance-semantic-layer/cache.ts": "20f92c708bb5",
+        "api/services/finance-semantic-layer/category-matcher.ts": "00efb17e65db",
         "api/services/finance-semantic-layer/chart-artifacts.ts": "3592cb1c5709",
         "api/services/finance-semantic-layer/index.ts": "9a3264f440ee",
         "api/services/finance-semantic-layer/monthly-report-facts.ts": "3f971c8a47ab",
         "api/services/finance-semantic-layer/period-resolver.ts": "6ebc06ee9807",
         "api/services/finance-semantic-layer/proactive-insights.ts": "4673f997eb5c",
-        "api/services/finance-semantic-layer/resolvers.ts": "594a164540ab",
+        "api/services/finance-semantic-layer/resolvers.ts": "dd73c5e03be0",
         "api/services/finance-semantic-layer/row-aggregators.ts": "31ef6b0f573d",
         "api/services/finance-semantic-layer/types.ts": "33214d20c10f",
         "api/services/site-guide/embedding.ts": "bc5457180269",
@@ -139,15 +139,15 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "c384e6047412"
       },
-      "checked": "2026-09-24 4f6c0d4",
-      "arabic": "026fccffb50d",
-      "arabicChecked": "2026-09-24 4f6c0d4"
+      "checked": "2026-09-25 454bede",
+      "arabic": "bfd8ce1ca7f8",
+      "arabicChecked": "2026-09-25 454bede"
     },
     "ai-platform": {
       "files": {
         "api/ai-router.ts#ai.getUserLimits": "e14dc68ec481",
         "api/ai-router.ts#rest-of-file": "17d48b21e072",
-        "api/lib/ai-gateway.ts": "1c787d8f6e81",
+        "api/lib/ai-gateway.ts": "b951e1965b21",
         "api/lib/ai-provider-registry.ts": "da1562b6acdf",
         "api/lib/ai-routing.ts": "14a1e099f1f2",
         "api/lib/ai-usage-policy.ts": "5b8ecba284b3",
@@ -164,9 +164,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "e4536dd88d77"
       },
-      "checked": "2026-09-24 4f6c0d4",
-      "arabic": "6ca79563abd4",
-      "arabicChecked": "2026-09-24 4f6c0d4"
+      "checked": "2026-09-25 454bede",
+      "arabic": "dbd4734e2012",
+      "arabicChecked": "2026-09-25 454bede"
     },
     "bank-messages": {
       "files": {
@@ -389,7 +389,7 @@
         "api/boot.ts#rest-of-file": "2dc5aeec04b4",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "f463a8edd4ba",
-        "api/lib/app-time.ts": "23f0c001bb84",
+        "api/lib/app-time.ts": "c096c8dc7c19",
         "api/lib/cache-keys.ts": "9540209b7d64",
         "api/lib/env.ts": "8577af2891d6",
         "api/lib/error-logger.ts": "9cb0f25fe459",
@@ -397,7 +397,7 @@
         "api/lib/log.ts": "65a6302d6f7d",
         "api/lib/redis-client.ts": "e5b4196e64a2",
         "api/lib/settings-cache.ts": "8bd804a02a6e",
-        "api/lib/system-settings-registry.ts": "640c412506b1",
+        "api/lib/system-settings-registry.ts": "ac6ef088557d",
         "api/middleware.ts": "12291c5b90f3",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "ed01fedd898c",
@@ -418,7 +418,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "4f7b341be798"
       },
-      "checked": "2026-09-24 4f6c0d4",
+      "checked": "2026-09-25 454bede",
       "arabic": "fc2752f21b71",
       "arabicChecked": "2026-09-24 4f6c0d4"
     },
@@ -454,12 +454,12 @@
         "api/services/voice/brain/snapshot.ts": "980fa8e028ca",
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
         "api/services/voice/brain/tools/app-help.ts": "039eab42299b",
-        "api/services/voice/brain/tools/market-price.ts": "fae841bbcdb4",
+        "api/services/voice/brain/tools/market-price.ts": "b81f4a52ebbb",
         "api/services/voice/brain/tools/memory.ts": "134b65f8e405",
-        "api/services/voice/brain/tools/money-query.ts": "d342d7a02d8d",
+        "api/services/voice/brain/tools/money-query.ts": "c9a9280f8b02",
         "api/services/voice/brain/tools/record.ts": "c716b33bfb81",
         "api/services/voice/brain/tools/reports.ts": "a640b281a149",
-        "api/services/voice/brain/tools/think.ts": "86739788207e",
+        "api/services/voice/brain/tools/think.ts": "af5ba04d95d2",
         "api/services/voice/brain/tools/types.ts": "e6b2b9effec6",
         "api/services/voice/brain/validator.ts": "2738ee914a24",
         "api/services/voice/brain/voices.ts": "7fa9ca3bf8ae",
@@ -473,7 +473,7 @@
         "api/services/voice/gateway/start-call.ts": "6facb7f50e74",
         "api/services/voice/gateway/store.ts": "7a1dc82ce092",
         "api/services/voice/post-call.ts": "4358ee98688b",
-        "api/services/voice/text-model.ts": "b997e0ca2c17",
+        "api/services/voice/text-model.ts": "b848ded851d7",
         "api/voice-router.ts": "ccbcdb5cdbf8",
         "src/components/ai/AIVoiceCall.tsx": "a48952518da3",
         "src/components/voice/CallSmartButton.tsx": "813a2fbb4e30",
@@ -491,9 +491,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-09-24 4f6c0d4",
-      "arabic": "9b7c76a2951a",
-      "arabicChecked": "2026-09-24 4f6c0d4"
+      "checked": "2026-09-25 454bede",
+      "arabic": "a1f192cc844e",
+      "arabicChecked": "2026-09-25 454bede"
     },
     "web-app": {
       "files": {

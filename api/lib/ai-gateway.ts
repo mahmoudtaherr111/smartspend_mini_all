@@ -9,7 +9,7 @@
  * - Auditing: Immutable ledger recording (ai_token_ledgers) + Monthly billing cycle quota checks
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, GoogleGenerativeAIAbortError } from "@google/generative-ai";
 import { db } from "../queries/connection";
 import { aiProviders, aiModels, aiTokenLedgers, users, localUsers } from "../../db/schema";
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
@@ -87,7 +87,11 @@ export interface GatewayExecutionParams {
   traceId?: string;
   conversationId?: number;
   classificationLogId?: number;
-  forceModelId?: string;     // Explicit model override if specified
+  forceModelId?: string;     // Explicit model: the admin's model by that id, else that Gemini model by name
+  /** Gemini only: how long one model may take before the next of the chain is asked. */
+  attemptTimeoutMs?: number;
+  /** Gemini only: the whole answer's time budget, across the models tried (a live call cannot wait longer). */
+  deadlineMs?: number;
 }
 
 export interface GatewayExecutionResult {
@@ -469,7 +473,9 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
   if (params.forceModelId) {
     route = _gatewayRouteCache.get(`model:${params.forceModelId}`);
   }
-  if (!route) {
+  // A model asked for by name that the admin has not configured is a Gemini model; the purpose's route would
+  // replace it with another.
+  if (!route && !params.forceModelId) {
     route = _gatewayRouteCache.get(`route:${params.purpose}:${tier}`);
   }
 
@@ -481,7 +487,7 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
   let protocol = route?.provider.protocol || "gemini";
   // Gemini ids go through the mapper (golden rule 9), so a route or setting still naming a model Google no longer
   // serves reaches one it does.
-  let modelId = route?.model.modelId || defaultGeminiModelForPlan(tier);
+  let modelId = route?.model.modelId || params.forceModelId || defaultGeminiModelForPlan(tier);
   if (protocol === "gemini") modelId = mapModelName(modelId);
   let baseUrl = route?.provider.baseUrl || "https://generativelanguage.googleapis.com";
   let apiKey = route?.provider.apiKey || sysSettings.ai_api_key || process.env.GEMINI_API_KEY || "";
@@ -511,29 +517,37 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
       .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
       .join("\n\n");
 
-    // Google answers 503 (and sometimes 429 or 500) when a model is overloaded; a lighter model then answers instead.
+    // Google answers 503 (and 429 once a model's quota is spent, or 500) when a model cannot answer; the next model of
+    // the chain answers instead. A model that runs past its time is treated the same when the caller set one.
     const candidates = geminiFallbackChain(modelId);
+    const deadline = params.deadlineMs ? startedAt + params.deadlineMs : Number.POSITIVE_INFINITY;
     let result: Awaited<ReturnType<ReturnType<GoogleGenerativeAI["getGenerativeModel"]>["generateContent"]>> | null = null;
     for (const [index, candidate] of candidates.entries()) {
+      const timeout = Math.min(params.attemptTimeoutMs ?? Number.POSITIVE_INFINITY, deadline - Date.now());
       try {
         result = await genAI
-          .getGenerativeModel({
-            model: candidate,
-            systemInstruction: params.systemPrompt,
-            generationConfig: {
-              maxOutputTokens: params.maxTokens || 2048,
-              temperature: params.temperature ?? 0.2,
-              responseMimeType: params.responseFormat?.type === "json_object" ? "application/json" : undefined,
+          .getGenerativeModel(
+            {
+              model: candidate,
+              systemInstruction: params.systemPrompt,
+              generationConfig: {
+                maxOutputTokens: params.maxTokens || 2048,
+                temperature: params.temperature ?? 0.2,
+                responseMimeType: params.responseFormat?.type === "json_object" ? "application/json" : undefined,
+              },
             },
-          })
+            Number.isFinite(timeout) ? { timeout: Math.max(timeout, 1) } : undefined,
+          )
           .generateContent(userPromptContent || params.userQuery || "تحليل البيانات");
         modelId = candidate;
         break;
       } catch (error) {
         const status = (error as { status?: number }).status;
-        const overloaded = status === 429 || status === 500 || status === 503;
-        if (!overloaded || index === candidates.length - 1) throw error;
-        log.warn({ event: "ai_gateway.model_overloaded", model: candidate, next: candidates[index + 1], status }, "Model overloaded");
+        const timedOut = error instanceof GoogleGenerativeAIAbortError;
+        const unavailable = timedOut || status === 429 || status === 500 || status === 503;
+        const outOfTime = deadline - Date.now() < 500;
+        if (!unavailable || outOfTime || index === candidates.length - 1) throw error;
+        log.warn({ event: "ai_gateway.model_overloaded", model: candidate, next: candidates[index + 1], status, timedOut }, "Model overloaded");
       }
     }
     if (!result) throw new Error("no_model_answered");

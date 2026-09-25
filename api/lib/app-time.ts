@@ -22,6 +22,13 @@ export function businessDateKey(value = new Date(), timeZone = env.APP_TIMEZONE)
   return `${byType.year}-${byType.month}-${byType.day}`;
 }
 
+/** "YYYY-MM-DD HH:mm" in the business timezone: a moment as the user's own clock shows it. */
+export function businessTimeLabel(value = new Date(), timeZone = env.APP_TIMEZONE): string {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(value);
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${businessDateKey(value, timeZone)} ${byType.hour}:${byType.minute}`;
+}
+
 /**
  * UTC instant for the start of a business day.  Iteration handles Cairo's DST
  * transitions without mutating the database/server timezone.

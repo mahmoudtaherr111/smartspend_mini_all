@@ -5,7 +5,7 @@
  */
 import type { VoiceFactCard } from "../../../../../contracts/voice-protocol";
 import { businessDateKey } from "../../../../lib/app-time";
-import { arabicDisplayName, canonicalCategoryId } from "../../../../lib/category-registry";
+import { arabicDisplayName, canonicalCategoryId, CATEGORIES } from "../../../../lib/category-registry";
 import {
   getCategoryInclusion,
   getCategoryTotal,
@@ -163,10 +163,21 @@ const CLASSIFIED_BY: Record<string, string> = {
 
 const RATING: Record<string, string> = { easy: "سهلة", moderate: "متوسطة", challenging: "صعبة" };
 
+/**
+ * A stored subcategory as the user would say it: Arabic as written, a registry id ("restaurant") by its Arabic name,
+ * and nothing for any other English key, which would otherwise be read out in English.
+ */
+function subCategoryName(category: string | null | undefined, sub: string | null | undefined): string | null {
+  if (!sub) return null;
+  if (!/^[a-z0-9_]+$/i.test(sub)) return sub;
+  const id = canonicalCategoryId(category);
+  return CATEGORIES.find((entry) => entry.id === id)?.subcategories?.find((entry) => entry.id === sub)?.name_ar ?? null;
+}
+
 /** A stored category (often an English key such as "transport") as the user would say it. */
 function categoryName(category: string | null | undefined, sub?: string | null): string {
   const main = arabicDisplayName(canonicalCategoryId(category) === "uncategorized" ? category : canonicalCategoryId(category));
-  const subName = sub && !/^[a-z0-9_]+$/i.test(sub) ? sub : null;
+  const subName = subCategoryName(category, sub);
   return subName ? `${main} / ${subName}` : main;
 }
 
@@ -470,7 +481,10 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
     return outcome({
       title: `${category}`,
       facts: [{ label: income ? `دخل ${category}` : `مصروف ${category}`, value }],
-      extra: { count: total.transactionCount, top: total.topSubCategories.slice(0, 3).map((sub) => sub.name) },
+      extra: {
+        count: total.transactionCount,
+        top: total.topSubCategories.map((sub) => subCategoryName(category, sub.name)).filter(Boolean).slice(0, 3),
+      },
       coverage: total.transactionCount ? undefined : EMPTY_NOTE,
     }, ctx, label);
   }

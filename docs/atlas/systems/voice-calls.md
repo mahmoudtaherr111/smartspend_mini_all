@@ -147,7 +147,7 @@ Used by: [AI Center](ai-center.md), [Money: expenses, wallets, budgets, goals an
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | yes | `api/services/voice-call-service.ts`, `api/services/voice/brain/tools/market-price.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
+| `GEMINI_API_KEY` | yes | `api/services/voice-call-service.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
 | `BASE_URL` | frontend | `src/lib/voice/audio-io.ts` |
 | `DEV` | frontend | `src/components/ai/AIVoiceCall.tsx` |
 | `VITE_API_URL` | frontend | `src/lib/voice/call-controller.ts` |

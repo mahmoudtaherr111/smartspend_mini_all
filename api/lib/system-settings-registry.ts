@@ -92,8 +92,11 @@ export const SETTINGS: SettingDef[] = [
   { key: "voice_v2_model_ultra", default: "" },
   // Only read by gemini-3.8-live-extended-thinking: low | medium | high.
   { key: "voice_v2_thinking_level", default: "low" },
-  // The text model with Google Search that looks up gold and currency prices for the call.
-  { key: "voice_price_model", default: "gemini-3.8-flash" },
+  // The text model with Google Search that looks up gold and currency prices for the call. A fast one: the caller
+  // is waiting on the line (the next model of the chain answers after five seconds).
+  { key: "voice_price_model", default: "gemini-3.5-flash-lite" },
+  // The text model the call's think tool asks (a plan, a what-if, can I afford it); fast for the same reason.
+  { key: "voice_think_model", default: "gemini-3.5-flash-lite" },
   // The text model that writes a call's summary and what to remember after it ends.
   { key: "voice_memory_model", default: "gemini-3.8-flash" },
   // Safety cap on provider cost per user per Cairo day, in USD.

@@ -4,7 +4,7 @@ import { classificationLogs, financialGoals, expenses, userContacts, userProfile
 import { db } from "../../queries/connection";
 import type { Artifact, DataNeed, DataNeedKind, ResolvedFact } from "../ai-kernel/types";
 import { collectFinanceCacheTrace, financeCacheKey, financeCacheTtl, withFinanceCache } from "./cache";
-import { canonicalCategoryForRow, getCategoryAliases, displayFinanceCategory } from "./category-matcher";
+import { canonicalCategoryForRow, getCategoryAliases, displayFinanceCategory, financeCategoryId } from "./category-matcher";
 import { createFinanceChartArtifact } from "./chart-artifacts";
 import {
   amountOf,
@@ -98,7 +98,8 @@ function rowMatchesCategory(row: {
   rawText?: string | null;
   placeHint?: string | null;
 }, category: string): boolean {
-  return rowCanonicalCategory(row) === category;
+  // Callers name a category as the user did ("أكل"); rows carry the registry's id ("food").
+  return rowCanonicalCategory(row) === financeCategoryId(category);
 }
 
 function rowMatchesAnyCategory(row: {
@@ -306,8 +307,9 @@ export async function getCategoryTotal(
   input: FinancePeriodInput = {},
 ): Promise<FinanceCategoryTotal> {
   const period = resolveFinancePeriod(input, ctx);
-  const aliases = getCategoryAliases(category);
-  const key = financeCacheKey(ctx.userId, ctx.userType, "category_total", period.key, category);
+  const aliases = getCategoryAliases(financeCategoryId(category));
+  // Keyed by the category's id, so "أكل" and "الأكل" share one cached answer.
+  const key = financeCacheKey(ctx.userId, ctx.userType, "category_total", period.key, financeCategoryId(category));
 
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
     const rows = (await loadRowsForPeriod(ctx, period)).filter((row) => rowMatchesCategory(row, category));

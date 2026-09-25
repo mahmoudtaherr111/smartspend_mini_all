@@ -2,9 +2,11 @@
  * think: the heavy questions ("أقدر أشتري…؟", a plan, a what-if) go to a text model with the user's real numbers,
  * outside the live call, while the live model says a short line of its own. The text model may only use numbers
  * from the data and from what the user said, or ones computed from two of them; any other number it returns is
- * dropped before the live model can say it.
+ * dropped before the live model can say it. The caller is waiting on the line, so the model is a fast one
+ * (`voice_think_model`), the next of the chain answers after five seconds, and the whole answer has nine.
  */
 import { executeAiGateway } from "../../../../lib/ai-gateway";
+import { getSystemSettings } from "../../../../lib/settings-cache";
 import {
   getFinanceBreakdown,
   getFinanceSummary,
@@ -98,12 +100,15 @@ function parseJson(text: string): Record<string, unknown> | null {
 async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolRunOutcome> {
   const question = str(args.question, 400);
   if (!question) return { response: { ok: false, error: "missing_question" } };
-  const data = await gather(ctx);
+  const [data, settings] = await Promise.all([gather(ctx), getSystemSettings()]);
   const userSaid = extractSpokenNumbers(ctx.drafts.wordsSince(ctx.now().getTime() - 5 * 60_000)).map((n) => n.value);
   const result = await executeAiGateway({
     user: { id: ctx.identity.userId, type: ctx.identity.userType, plan: ctx.identity.plan },
     purpose: "report",
     channel: "voice",
+    forceModelId: settings.voice_think_model || "gemini-3.5-flash-lite",
+    attemptTimeoutMs: 5_000,
+    deadlineMs: 9_000,
     systemPrompt: SYSTEM,
     messages: [{
       role: "user",

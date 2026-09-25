@@ -117,6 +117,24 @@ function allCanonicalIds(): string[] {
   return [...CATEGORIES.map((c) => c.id), "income", "saving", "uncategorized"];
 }
 
+const categoryIds = new Map<string, string>();
+
+/**
+ * A category as a caller names it ("أكل", "المواصلات", "food") as the id rows are compared with. A name the registry
+ * does not know stays as it is, so it matches nothing rather than every uncategorized row. Memoized: filters call it
+ * once per row.
+ */
+export function financeCategoryId(category: string): string {
+  let id = categoryIds.get(category);
+  if (id === undefined) {
+    const canonical = canonicalCategoryId(category);
+    id = canonical === "uncategorized" ? category : canonical;
+    if (categoryIds.size >= 1_000) categoryIds.clear();
+    categoryIds.set(category, id);
+  }
+  return id;
+}
+
 export function displayFinanceCategory(category: unknown): string {
   const id = String(category ?? "").trim();
   return arabicDisplayName(id);

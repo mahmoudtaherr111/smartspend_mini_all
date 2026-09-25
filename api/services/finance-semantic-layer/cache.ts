@@ -5,7 +5,8 @@ import { taxonomyVersion } from "../../lib/category-registry";
 const PREFIX = "finance_ai";
 // v4 (2026-09-24): summaries are one MySQL aggregate, and every result covers the personal ledger only (a business's
 // expenses are its own, as on Home); earlier entries carried a row-derived daily average and mixed them in.
-const CACHE_SCHEMA_VERSION = `schema_v4_${taxonomyVersion()}`;
+// v5 (2026-09-24): a category named in words ("أكل") matches its rows; v4 entries hold zeros for those.
+const CACHE_SCHEMA_VERSION = `schema_v5_${taxonomyVersion()}`;
 const financeCacheTrace = new AsyncLocalStorage<string[]>();
 
 function sanitizePart(value: unknown): string {

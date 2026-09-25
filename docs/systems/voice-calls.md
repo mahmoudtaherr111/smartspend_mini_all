@@ -164,8 +164,8 @@ seconds.
 | `confirm` / `cancel` | Executes or drops a draft through the gate below; expenses are saved with `expense.batchCreate` with `clientRequestId` `vc:<call>:<draft>:<n>`, so a retry never saves twice |
 | `memory` | Searches the AI memory, remembers what the user asks it to (never age or gender), forgets a memory by id, lists what the app knows when asked ("إنت عارف عني إيه": job, payday, income, goal, monthly debt payment, the eight latest memories, and the screen where they can be seen and deleted), and saves the answer to the call's profile question, or its refusal, through `profile.submitOnboardingAnswer` once the answer fits the question's type |
 | `app_help` | Steps from the site guide, or says the guide has nothing, with what the call can and cannot do |
-| `think` | Hard questions go to a text model through `executeAiGateway` (purpose `report`) with the user's numbers; numbers it returns survive only if they come from the data, from the user, or one step of arithmetic on them |
-| `market_price` | Gold or currency prices in Egypt from a text model with Google Search (`voice_price_model`), within sane bounds, cached 30 minutes for everyone, with source and time |
+| `think` | Hard questions go to a text model through `executeAiGateway` with the user's numbers: `voice_think_model` (default `gemini-3.5-flash-lite`, fast because the caller is waiting), then the next model of the chain after 5 seconds, and 9 seconds in all. Numbers it returns survive only if they come from the data, from the user, or one step of arithmetic on them |
+| `market_price` | Gold or currency prices in Egypt from a text model with Google Search (`voice_price_model`, default `gemini-3.5-flash-lite`, through `askTextModel` with the same 5- and 9-second limits and the chain's other models), within sane bounds, cached 30 minutes for everyone, with its source and time; when the source names no time, the time of the lookup on Cairo's clock |
 
 The tools reach the app through `api/services/voice/app-calls.ts#createVoiceAppCalls`, which calls the app's own
 tRPC procedures as the user, so a spoken expense is parsed, saved and undone exactly like a typed one.

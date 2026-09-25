@@ -51,14 +51,19 @@ vi.mock("./reports", () => ({
 }));
 
 vi.mock("../../../../lib/ai-gateway", () => ({ executeAiGateway: vi.fn() }));
+vi.mock("../../../../lib/settings-cache", () => ({ getSystemSettings: vi.fn(async () => ({ voice_think_model: "" })) }));
+vi.mock("../../text-model", () => ({ askTextModel: vi.fn() }));
+vi.mock("../../../../lib/redis-client", () => ({ cacheGet: vi.fn(async () => null), cacheSet: vi.fn(async () => undefined) }));
 
 import { executeAiGateway } from "../../../../lib/ai-gateway";
-import { getFinanceTransactions } from "../../../finance-semantic-layer/resolvers";
+import { askTextModel } from "../../text-model";
+import { getCategoryTotal, getFinanceTransactions } from "../../../finance-semantic-layer/resolvers";
 import { DraftBook } from "../drafts";
 import { FactLedger } from "../facts";
 import { honorificFor } from "../honorific";
 import { buildInstruction, openingNote } from "../instructions";
 import { appHelpTool } from "./app-help";
+import { lookup, marketPriceTool } from "./market-price";
 import { memoryTool } from "./memory";
 import { moneyQuery, periodFor } from "./money-query";
 import { derivable, thinkTool } from "./think";
@@ -152,6 +157,19 @@ describe("money_query", () => {
     expect(String((result.response.facts as Array<{ label: string }>)[1].label)).toContain("نفس الأيام");
   });
 
+  it("gives a category's total with its biggest parts in Arabic, never as English keys", async () => {
+    vi.mocked(getCategoryTotal).mockResolvedValueOnce({
+      category: "أكل", aliases: [], totalExpense: 1_141, totalIncome: 0, transactionCount: 5,
+      topSubCategories: [
+        { name: "monthly_food_baseline", amount: 470, count: 1 },
+        { name: "restaurant", amount: 120, count: 1 },
+        { name: "دليفري", amount: 90, count: 1 },
+      ],
+    } as never);
+    const result = await moneyQuery.run({ metric: "total", category: "أكل" }, ctx);
+    expect(result.response).toMatchObject({ facts: [{ label: "مصروف أكل", value: 1_141 }], count: 5, top: ["مطعم", "دليفري"] });
+  });
+
   it("breaks the spending down with each share said in words", async () => {
     const result = await moneyQuery.run({ metric: "breakdown", period: "this_month" }, ctx);
     expect(result.response).toMatchObject({
@@ -202,6 +220,19 @@ describe("money_query", () => {
   });
 });
 
+describe("market_price", () => {
+  it("gives the price with its source, and the time on Cairo's clock when the source names none", async () => {
+    vi.mocked(askTextModel).mockResolvedValueOnce({ text: '{"value": 5150, "source": ""}', model: "gemini-3.5-flash-lite", inputTokens: 0, outputTokens: 0, webSource: "gold.example" });
+    expect(await lookup("gold_21k", new Date("2026-09-24T21:30:00Z"))).toEqual({ value: 5150, source: "gold.example", asOf: "2026-09-25 00:30" });
+    expect(vi.mocked(askTextModel).mock.calls[0][0]).toMatchObject({ search: true, timeoutMs: 5_000, deadlineMs: 9_000 });
+  });
+
+  it("refuses a price outside sane bounds, and says it cannot get one instead of guessing", async () => {
+    vi.mocked(askTextModel).mockResolvedValueOnce({ text: '{"value": 51}', model: "m", inputTokens: 0, outputTokens: 0 });
+    expect((await marketPriceTool.run({ asset: "gold_21k" }, ctx)).response).toMatchObject({ ok: false, error: "price_unavailable" });
+  });
+});
+
 describe("think", () => {
   it("keeps only numbers from the data, what the user said, or one step of arithmetic on them", () => {
     const allowed = derivable([9_000, 4_500, 3]);
@@ -223,6 +254,8 @@ describe("think", () => {
       }),
     } as never);
     const result = await thinkTool.run({ question: "أقدر أشتري موبايل بخمستاشر ألف؟" }, ctx);
+    // A fast model with a time budget: the caller is waiting on the line.
+    expect(vi.mocked(executeAiGateway).mock.calls[0][0]).toMatchObject({ forceModelId: "gemini-3.5-flash-lite", attemptTimeoutMs: 5_000, deadlineMs: 9_000 });
     expect(result.response).toMatchObject({ ok: true, verdict: "رأيي تستنى للمرتب", numbers: [{ label: "الفاضل" }] });
     expect(result.response.numbers).toHaveLength(1);
     expect(result.response.reasons).toEqual(["الفاضل بعد المصروف ست آلاف وميتين بس"]);

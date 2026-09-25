@@ -146,6 +146,9 @@ the finance caches are cleared.
   business day. Chart buckets (`api/services/finance-semantic-layer/row-aggregators.ts`) and the dates of
   transactions in facts (`api/services/finance-semantic-layer/resolvers.ts`) use the same business day.
 - Categories are matched through the category registry (`api/services/finance-semantic-layer/category-matcher.ts`).
+  A category may be named as the user says it ("أكل", "المطاعم") or by its id (`food`): `financeCategoryId` turns
+  the name into the registry's id before rows are compared, and a name the registry does not know matches nothing
+  rather than the uncategorized rows.
 - A period's totals (`getFinanceSummary`) are one SQL aggregate over `expenses`, so they hold for any number of
   entries. Breakdowns, lookups and category totals read the period's entries instead: only the columns they use, and
   the newest 10,000 at most (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Both cover the

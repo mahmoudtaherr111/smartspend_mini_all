@@ -42,11 +42,14 @@ The Gemini text models this app uses are `gemini-3.8-flash`, `gemini-3.5-flash-l
 (`GEMINI_TEXT_CHAIN` in `api/lib/model-mapper.ts`, strongest first; all three answered on Google's API on 2026-09-24).
 Google does not serve `gemini-3.1-pro` (it answers 404), so that name, the older Pro names and the `pro`/`ultra`
 shorthand map to `gemini-3.8-flash`, which is also Ultra's default. `executeAiGateway`, which the voice call's `think`
-tool uses, takes the admin's route for the purpose and plan, else Gemini with the plan's default
-(`defaultGeminiModelForPlan`: `gemini-3.8-flash` for Ultra, `gemini-3.1-flash-lite` otherwise), and passes a Gemini
-id through `mapModelName`. When Google answers 429, 500 or 503 (overloaded) it tries the next model of
-`geminiFallbackChain`, lighter ones first and then the stronger ones nearest first, and logs
-`ai_gateway.model_overloaded`. The voice call's post-call summary uses the same chain.
+tool uses, takes the model named in `forceModelId` (the admin's model by that id, else that Gemini model), else the
+admin's route for the purpose and plan, else Gemini with the plan's default (`defaultGeminiModelForPlan`:
+`gemini-3.8-flash` for Ultra, `gemini-3.1-flash-lite` otherwise), and passes a Gemini id through `mapModelName`. When
+Google answers 429 (a model's quota spent), 500 or 503 (overloaded), or an attempt runs past the caller's
+`attemptTimeoutMs`, it tries the next model of `geminiFallbackChain`, lighter ones first and then the stronger ones
+nearest first, and logs `ai_gateway.model_overloaded`; with `deadlineMs` it stops once less than half a second of the
+budget is left. The voice call's post-call summary and price lookup use the same chain through
+`api/services/voice/text-model.ts`.
 
 ## Provider keys
 - The admin console saves a provider's key sealed with AES-256-GCM under SHA-256 of `AI_GATEWAY_SECRET`, or of
