@@ -964,11 +964,6 @@ export const expenseRouter = router({
 
           if (firstInsertId) {
             insertedIds = valuesToInsert.map((_, i) => firstInsertId + i);
-            const insertedExpenses = valuesToInsert.map((v, i) => ({
-              id: firstInsertId + i,
-              rawText: v.rawText,
-              parsedMetadata: (v as any).parsedMetadata,
-            }));
           }
 
           for (const val of valuesToInsert) {

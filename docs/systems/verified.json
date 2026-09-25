@@ -31,7 +31,7 @@
         "api/profile-router.ts#rest-of-file": "b95a7ad3787b",
         "api/services/phone-challenge.ts": "9c5aa7cfebc9",
         "api/services/turnstile-service.ts": "89a28fc96d49",
-        "api/services/user-purge-service.ts": "5c1e82099bf4",
+        "api/services/user-purge-service.ts": "5bd8e05bc5cd",
         "api/session-router.ts": "e255f9db4207",
         "api/webauthn-router.ts": "10e55c7473d8",
         "src/components/auth/BiometricLockOverlay.tsx": "c1ce277a617a",
@@ -47,7 +47,7 @@
         "src/pages/Login.tsx": "63a52d38688f",
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
-      "checked": "2026-09-25 f2b0086",
+      "checked": "2026-09-25 bd3e953",
       "arabic": "fb49e1dcb4e4",
       "arabicChecked": "2026-09-23 fe4b4b3"
     },
@@ -227,7 +227,7 @@
         "api/ai-router.ts#rest-of-file": "1f5dd6ffd8de",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
         "api/expense-router.ts#expense.answerClarification": "d4ea3c8db510",
-        "api/expense-router.ts#expense.batchCreate": "5676484883da",
+        "api/expense-router.ts#expense.batchCreate": "d6ac0705dcca",
         "api/expense-router.ts#expense.create": "ab7d24a211b3",
         "api/expense-router.ts#expense.createCategory": "8b691f7a3e91",
         "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
@@ -283,7 +283,7 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-25 f2b0086",
+      "checked": "2026-09-25 bd3e953",
       "arabic": "a88c9bbba673",
       "arabicChecked": "2026-09-25 f2b0086"
     },
@@ -372,7 +372,7 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/pages/Home.tsx": "1c9404819a8b"
       },
-      "checked": "2026-09-25 f2b0086",
+      "checked": "2026-09-25 bd3e953",
       "arabic": "6a70e658be4f",
       "arabicChecked": "2026-09-25 f2b0086"
     },

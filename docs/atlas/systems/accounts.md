@@ -281,7 +281,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `classification_logs` | E | `accounts` | — |
 | `expense_categories` | A | `accounts` | — |
 | `expense_daily_rollups` | C | `accounts` | — |
-| `expenses` | B | `accounts` | `accounts`, `localAuth.getStats`, `localAuth.listUsers` |
+| `expenses` | B | `accounts` | `localAuth.getStats`, `localAuth.listUsers` |
 | `financial_goals` | C | `accounts` | `security` |
 | `in_app_notifications` | D | `accounts` | — |
 | `local_users` | A | `accounts`, `auth`, `localAuth.login`, `localAuth.register`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.requestPhoneChange`, `profile.updateUserInfo`, `webauthn.generateRegistrationOptions` |

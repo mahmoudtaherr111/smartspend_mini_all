@@ -39,7 +39,6 @@ model {
   smartspend.api.http.post_webhooks_paymob -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.post_webhooks_paymob -[uses]-> smartspend.shared.contracts
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.chat_conversations
-  smartspend.api.modules.accounts -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.ad_clicks
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.ai_action_audit_logs

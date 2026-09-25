@@ -86,13 +86,6 @@ export async function purgeUserData(tx: any, userId: number, userType: PurgeUser
   await tx.delete(aiActionMemory).where(userScope(aiActionMemory, userId, userType));
   await tx.delete(pendingClarifications).where(userScope(pendingClarifications, userId, userType));
 
-  const userExpenses = await tx
-    .select({ id: expenses.id })
-    .from(expenses)
-    .where(userScope(expenses, userId, userType));
-  const expenseIds = userExpenses.map((row: { id: number }) => row.id);
-  if (expenseIds.length) {
-  }
   await tx.delete(expenses).where(userScope(expenses, userId, userType));
   await tx.delete(expenseDailyRollups).where(userScope(expenseDailyRollups, userId, userType));
   await tx.delete(aiCostMonthly).where(userScope(aiCostMonthly, userId, userType));
