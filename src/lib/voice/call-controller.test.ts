@@ -216,14 +216,8 @@ describe("VoiceCallController", () => {
     });
     await controller.start();
     expect(view.phase).toBe("failed");
-    expect(view.failure).toEqual({ message: "خلصت دقايق المكالمات بتاعة الشهر ده.", fallbackChat: true, legacy: false });
+    expect(view.failure).toEqual({ message: "خلصت دقايق المكالمات بتاعة الشهر ده.", fallbackChat: true });
     expect(sockets).toHaveLength(0);
-  });
-
-  it("hands over to the old call outside the rollout", async () => {
-    const { controller } = makeController({ outcome: { kind: "legacy" } });
-    await controller.start();
-    expect(view.failure?.legacy).toBe(true);
   });
 
   it("hanging up before the call connects leaves nothing behind", async () => {

@@ -32,12 +32,12 @@ describe("AdminVoiceCallSection", () => {
     expect(screen.getByText("spoken_number_mismatch")).toBeInTheDocument();
   });
 
-  it("switches the new call off for everyone through the settings form", () => {
+  it("stops calls for everyone, and sets a plan's daily cost cap, through the settings form", () => {
     const updateField = vi.fn();
-    render(<AdminVoiceCallSection formData={{ voice_v2_rollout_percent: "10" }} updateField={updateField} />);
+    render(<AdminVoiceCallSection formData={{ voice_daily_cost_cap_usd_pro: "0.50" }} updateField={updateField} />);
     fireEvent.click(screen.getAllByRole("switch")[0]);
     expect(updateField).toHaveBeenCalledWith("voice_v2_kill_switch", "true");
-    fireEvent.change(screen.getByDisplayValue("10"), { target: { value: "25" } });
-    expect(updateField).toHaveBeenCalledWith("voice_v2_rollout_percent", "25");
+    fireEvent.change(screen.getByDisplayValue("0.50"), { target: { value: "0.75" } });
+    expect(updateField).toHaveBeenCalledWith("voice_daily_cost_cap_usd_pro", "0.75");
   });
 });

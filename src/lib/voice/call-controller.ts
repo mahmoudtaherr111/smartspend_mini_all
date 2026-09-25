@@ -136,7 +136,6 @@ export class VoiceCallController {
     if (!outcome || outcome.kind !== "ok") {
       this.teardown(stream);
       if (!outcome) this.fail("مقدرناش نبدأ المكالمة. اتأكد من النت وجرّب تاني.", true);
-      else if (outcome.kind === "legacy") this.fail("", false, true);
       else this.fail(outcome.message, true);
       return;
     }
@@ -342,9 +341,9 @@ export class VoiceCallController {
     else this.fail("مقدرناش نوصل للمكالمة. اتأكد من النت وجرّب تاني.", true);
   }
 
-  private fail(message: string, fallbackChat: boolean, legacy = false): void {
+  private fail(message: string, fallbackChat: boolean): void {
     this.teardown(this.stream);
-    this.patch({ phase: "failed", minimized: false, notice: null, failure: { message, fallbackChat, legacy } });
+    this.patch({ phase: "failed", minimized: false, notice: null, failure: { message, fallbackChat } });
   }
 
   // ─── The user's side ──────────────────────────────────────────────

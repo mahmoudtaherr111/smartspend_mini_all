@@ -757,37 +757,10 @@ export function AdminPlansTab({
         <SectionHeader
           icon={<Mic className="w-6 h-6 text-indigo-600" />}
           title="حدود المكالمة الصوتية لكل باقة"
-          description="التشغيل والدقايق الشهرية ومدة المكالمة لكل باقة، للمكالمة القديمة والجديدة مع بعض. الموديل هنا للمكالمة القديمة بس؛ الجديدة إعداداتها في قسم «كلّم سمارت» تحت."
+          description="التشغيل والدقايق الشهرية ومدة المكالمة لكل باقة. الموديلات والتكلفة ولوحة المكالمات في قسم «كلّم سمارت» تحت."
         />
         <CardContent className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-2xl">
-            <div className="space-y-2">
-              <FieldLabel hint="نموذج توليد وتجاوب الصوت الحي المفضل للمكالمات (Gemini Multimodal Live)">
-                موديل المكالمة القديمة
-              </FieldLabel>
-              <Select
-                value={
-                  formData.voice_call_model ||
-                  "gemini-2.5-flash-native-audio-preview-12-2025"
-                }
-                onValueChange={(v) => updateField("voice_call_model", v)}
-              >
-                <SelectTrigger className="bg-slate-50 dark:bg-slate-900 font-mono text-xs">
-                  <SelectValue placeholder="اختر الموديل" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="gemini-2.5-flash-native-audio-preview-12-2025">
-                    Gemini 2.5 Flash Native Audio Dialog
-                  </SelectItem>
-                  <SelectItem value="gemini-3.1-flash-live-preview">
-                    Gemini 3.1 Flash Live
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
+          <div>
             <h3 className="text-sm font-bold mb-4 text-slate-800 dark:text-slate-200">
               حدود الاتصال والتشغيل حسب باقات الاشتراك:
             </h3>

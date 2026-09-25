@@ -17,7 +17,6 @@
  */
 import "dotenv/config";
 import { serve } from "@hono/node-server";
-import { handleVoiceCallWebSocket } from "./services/voice-call-service";
 import { createVoiceUpgradeHandler } from "./services/voice/gateway";
 import { createVoiceAppCalls } from "./services/voice/app-calls";
 import { app, isAllowedWebSocketOrigin } from "./boot";
@@ -37,15 +36,14 @@ console.log(`🚀 SmartSpend Standalone Server running on http://localhost:${por
 
 const server = serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
 
-// Live voice calls: the rebuilt call on /api/voice/v2 and, until it has replaced it, the old one on /api/voice/live.
+// Live voice calls, on /api/voice/v2.
 const handleVoiceUpgrade = createVoiceUpgradeHandler({
   isAllowedOrigin: isAllowedWebSocketOrigin,
   appCalls: createVoiceAppCalls(appRouter),
-  legacy: (ws, request) => void handleVoiceCallWebSocket(ws, request),
 });
 server.on("upgrade", (request, socket, head) => {
   const path = new URL(request.url || "", "http://localhost").pathname;
-  if (path.startsWith("/api/voice/v2") || path.startsWith("/api/voice/live")) handleVoiceUpgrade(request, socket, head);
+  if (path.startsWith("/api/voice/v2")) handleVoiceUpgrade(request, socket, head);
 });
 
 export { app, server };

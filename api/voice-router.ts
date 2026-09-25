@@ -1,5 +1,5 @@
 /**
- * The live call's procedures: whether the user gets the rebuilt call and how many minutes are left, starting a call
+ * The live call's procedures: whether the user can call and how many minutes are left, starting a call
  * (a single-use ticket for the /api/voice/v2 socket), the user's recent calls, and the admin's dashboard. The call itself runs on the
  * socket; see docs/systems/voice-calls.md.
  */
@@ -17,7 +17,8 @@ export const voiceRouter = router({
   eligibility: authedProcedure.query(async ({ ctx }) => {
     const entitlements = await getVoiceEntitlements({ id: ctx.user.id, type: ctx.user.type, plan: ctx.user.plan, role: ctx.user.role });
     return {
-      v2: entitlements.v2,
+      // The ways into the call show unless the plan has no calls or the admin stopped them for everyone.
+      available: entitlements.enabled && !entitlements.killSwitch,
       enabled: entitlements.enabled,
       blockedReason: entitlements.blockedReason,
       minutesLeft: Math.floor(entitlements.remainingSecondsThisMonth / 60),

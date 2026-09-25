@@ -30,7 +30,6 @@ import { getSystemSettings } from "./lib/settings-cache";
 import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { env } from "./lib/env";
 import { businessDateKey } from "./lib/app-time";
-import { getCacheRuntimeStatus } from "./lib/redis-client";
 import { runSmartPipeline, SMART_PIPELINE_VERSION } from "./lib/smart-pipeline";
 import { CATEGORIES } from "./lib/category-registry";
 import {
@@ -100,83 +99,11 @@ import {
   resolveAICostPolicy,
   validateNumbersAgainstFacts,
 } from "./services/ai-cost-policy";
-import {
-  embeddingApiCallsFromCacheHits,
-  embeddingApiStatusFor,
-  type DataNeed,
-  type ResolvedFact,
-} from "./services/ai-kernel";
-import {
-  clearVoiceSessionState,
-  createVoiceSessionState,
-  executeVoiceTool,
-  type VoiceToolName,
-} from "./services/voice-kernel";
 import { buildParserTrace } from "./services/parser-trace";
 import { planNumber } from "../contracts/plan-features";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
 
 const MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT = 4;
-const VOICE_QA_TOOL_NAMES = ["finance_query", "memory_search", "action_draft"] as const;
-
-function compactQaFact(fact: ResolvedFact): Record<string, unknown> {
-  return {
-    label: fact.label,
-    source: fact.source,
-    confidence: fact.confidence,
-    value:
-      typeof fact.value === "string" && fact.value.length > 120
-        ? `${fact.value.slice(0, 117)}...`
-        : fact.value,
-  };
-}
-
-function summarizeVoiceQaToolResponse(toolName: VoiceToolName, response: unknown): Record<string, unknown> {
-  const record = response && typeof response === "object" ? (response as Record<string, unknown>) : {};
-  const dataNeeds = Array.isArray(record.dataNeeds)
-    ? (record.dataNeeds.filter((need) => need && typeof need === "object") as DataNeed[])
-    : [];
-  const facts = Array.isArray(record.facts) ? (record.facts as ResolvedFact[]) : [];
-  const artifacts = Array.isArray(record.artifacts) ? record.artifacts : [];
-  const cacheHits = Array.isArray(record.cacheHits) ? record.cacheHits.map((hit) => String(hit)) : [];
-  const result = record.result && typeof record.result === "object" ? (record.result as Record<string, unknown>) : {};
-  const action = record.action && typeof record.action === "object" ? (record.action as Record<string, unknown>) : undefined;
-
-  return {
-    toolName,
-    ok: record.ok === true,
-    dataNeeds: dataNeeds.map((need) => need.kind).filter(Boolean),
-    factCount: facts.length,
-    artifactCount: artifacts.length,
-    factsPreview: facts.slice(0, 4).map(compactQaFact),
-    cacheHits,
-    embeddingCalls: embeddingApiCallsFromCacheHits(cacheHits),
-    embeddingApiStatus:
-      typeof record.embeddingApiStatus === "string"
-        ? record.embeddingApiStatus
-        : embeddingApiStatusFor(dataNeeds, cacheHits),
-    retrievalPolicy:
-      record.retrievalPolicy && typeof record.retrievalPolicy === "object"
-        ? record.retrievalPolicy
-        : undefined,
-    cacheRuntime: getCacheRuntimeStatus(),
-    action: action
-      ? {
-          id: action.id,
-          actionName: action.actionName,
-          status: action.status,
-          summary: action.summary,
-          requiresUiConfirmation: action.requiresUiConfirmation,
-        }
-      : undefined,
-    result: {
-      requiresConfirmation: result.requiresConfirmation,
-      requiresUiConfirmation: result.requiresUiConfirmation,
-      errors: Array.isArray(result.errors) ? result.errors.map(String).slice(0, 4) : [],
-    },
-    error: typeof record.error === "string" ? record.error : undefined,
-  };
-}
 
 // ────────────────────────────────────────────────────────
 // STT Helper (Speech-to-Text)
@@ -754,51 +681,6 @@ export const aiRouter = router({
   // ─── Voice Settings ───
 
   // ─── Parse Expense (New Pipeline) ───
-  runVoiceToolQa: aiProcedure
-    .input(
-      z.object({
-        toolName: z.enum(VOICE_QA_TOOL_NAMES),
-        args: z.record(z.string(), z.unknown()).optional().default({}),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (env.NODE_ENV === "production") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Voice QA is disabled in production.",
-        });
-      }
-
-      const voiceSession = await createVoiceSessionState({
-        userId: ctx.user.id,
-        userType: ctx.user.type,
-        userPlan: ctx.user.plan || "free",
-      });
-
-      try {
-        const response = await executeVoiceTool({
-          toolName: input.toolName,
-          args: input.args,
-          ctx: {
-            userId: ctx.user.id,
-            userType: ctx.user.type,
-            userPlan: ctx.user.plan || "free",
-            sessionId: voiceSession.sessionId,
-          },
-        });
-
-        return {
-          voiceSessionId: voiceSession.sessionId,
-          qa: true,
-          ...summarizeVoiceQaToolResponse(input.toolName, response),
-        };
-      } finally {
-        await clearVoiceSessionState(voiceSession.sessionId).catch((error: unknown) => {
-          console.warn("[Voice QA] failed to clear session", error instanceof Error ? error.message : String(error));
-        });
-      }
-    }),
-
   parseExpense: aiProcedure
     .input(
       z.object({

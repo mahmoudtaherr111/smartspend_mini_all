@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (51 of 115 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (46 of 108 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 18 | — | 3 | 2 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 8acb52d | 2026-09-25 8acb52d | 18 | — | 3 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 9a9c8ca | 2026-09-25 9a9c8ca | 3 | — | 2 | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 a64b3e1 | 2026-09-25 a64b3e1 | 11 | — | 5 | — | 4 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 4 | — | 5 | 3 | 1 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 6 | — | 8 | 3 | 3 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 8acb52d | 2026-09-25 8acb52d | 5 | — | — | 2 | — |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 8acb52d | 2026-09-25 8acb52d | 4 | — | 5 | 3 | 1 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 8acb52d | 2026-09-25 8acb52d | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 8626db8 | 2026-09-25 8626db8 | 5 | — | 6 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-25 dd02a18 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | 5 | 1 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 a64b3e1 | 2026-09-25 a64b3e1 | 4 | — | 3 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 a64b3e1 | 2026-09-25 a64b3e1 | 9 | — | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 a64b3e1 | 2026-09-25 a64b3e1 | 5 | — | 2 | — | 8 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 8acb52d | 2026-09-25 8acb52d | 4 | — | 3 | 5 | 2 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 8acb52d | 2026-09-25 8acb52d | 9 | — | 4 | 1 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 8acb52d | 2026-09-25 8acb52d | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-25 21b72a3 | 2026-09-25 21b72a3 | 7 | **1** | 1 | 3 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (51 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (115 issue(s))
+## What is waiting (108 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -48,7 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (46)
+### Bugs (41)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A receipt's amount on the review card is the first item the pipeline read from the OCR text, which can differ from the total the vision model returned, and a base64 image longer than the parser's cap is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the procedure accepts larger payloads.
@@ -58,13 +58,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
 - With several server processes, a one-time code created on one cannot be exchanged on another, and each process counts the rate limit on its own.
-
-**Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
-- A call can use one data or draft tool in total, because the voice policy caps tool rounds at one, while the system prompt tells the model to call a tool for every exact question: the second such question in a call gets `voice_tool_limit_exceeded`.
-- The defaults written in `handleVoiceCallWebSocket` (for example five free minutes a month and a model named `gemini-2.5-flash-native-audio-latest`) differ from the defaults in `api/lib/system-settings-registry.ts`, and the handler's apply whenever a setting was never saved.
-- The month's allowance adds up every `voice_usage` row of the month, including seconds spent dictating expenses, and the month is the server's calendar month rather than Cairo business time (golden rule 6).
-- Usage is written when the call ends; a process that stops mid-call records nothing.
-- Where `api/boot.ts` serves the web app (the website and the PWA), the old call gets no microphone audio: `src/hooks/useVoiceCall.ts` loads its AudioWorklet from a `blob:` URL, and the page's Content-Security-Policy (`api/lib/security-headers.ts`, `script-src` without `blob:`) blocks it. The rebuilt call serves its worklet as a file.
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - A reply to a clarifying question starts over: `sendMessage` stores the clarification state in the conversation's metadata, but reads it from `requireOwnedConversation`, which selects only the id, so the state is never found and the reply is planned as a new message.
@@ -120,7 +113,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (34)
+### Gaps (36)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -131,6 +124,10 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY` directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
 - Only a merchant the engine knows well changes the fixed map (a card payment, or a refund from it, which is saved as a negative expense in that merchant's category): a card payment to any other merchant is `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
 - Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account digits and balances, is stored as received.
+
+**Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
+- A call does not go on with the screen locked or the app in the background: the page keeps the microphone only in the foreground, and the call resumes if the app comes back within the hold (`src/lib/voice/call-connection.ts`). Keeping it alive needs native work in the Android and iOS shells.
+- The speech detector's thresholds (`src/lib/voice/speech-detector.ts`) are tuned on synthetic audio in tests; they have not been checked against recordings of real users on phones in noisy places.
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the chat. The model id skips `mapModelName` (golden rule 9), the `chatbot_max_tokens_<plan>` settings are read but do not limit replies, and the retry time in the daily-limit error is counted to the server's midnight.
@@ -178,19 +175,13 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, since they belong to the account. The logout dialog in `src/pages/More.tsx` says how many entries are still unsent first; the sidebar's and the biometric lock's logout do not.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (30)
+### Debt (26)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win; the code reads the `parser_*` keys first.
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
-
-**Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
-- The model id skips `mapModelName` (golden rule 9): `resolveLiveModelId` only adds a prefix.
-- The prefetched facts are stored in the session state, but nothing reads them afterwards; the prefetch only warms the finance layer's cache.
-- `api/services/voice-context-service.ts#getUserFinancialContextSummary` has no caller, and `ai.runVoiceToolQa` is used only by a development query parameter of the call screen.
-- The old call screen shows its technical "Voice trace" panel to every user (`src/components/ai/AIVoiceCall.tsx#VoiceTracePanel`); the rebuilt call shows its trace to admins only.
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
@@ -225,8 +216,8 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the history the admin screens show ends where the ninety-day pruning starts.
 - `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
 - `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library update can silently turn into zeroes.
-- The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the entry and `NODE_ENV=production`; `api/server.ts` repeats the server setup for the standalone deployment. Both route the voice sockets (`/api/voice/live`, `/api/voice/v2`) through the one `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their `upgrade` listeners pass on have to be kept in step by hand.
-- The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten: they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that print `error.message` as text print provider, socket and storage errors today, or failed reads whose values are ids and dates (`api/ai-router.ts`, `api/services/voice-call-service.ts`, `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
+- The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the entry and `NODE_ENV=production`; `api/server.ts` repeats the server setup for the standalone deployment. Both route the voice socket (`/api/voice/v2`) through the one `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their `upgrade` listeners pass on have to be kept in step by hand.
+- The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten: they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that print `error.message` as text print provider, socket and storage errors today, or failed reads whose values are ids and dates (`api/ai-router.ts`, `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - `src/components/ProductTour.tsx` is never mounted, and `src/lib/backButtonManager.ts` only re-exports `src/lib/back-button-manager.ts` for an importer that no longer exists.

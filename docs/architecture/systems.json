@@ -62,8 +62,7 @@
       "summaryAr": "مكالمة صوتية مباشرة مع المساعد عن طريق WebSocket متوصل بـGemini Live: مين يكلم وقد إيه، والأدوات اللي بتجاوب من الدفتر وبتجهّز تعديلات ماتتنفذش غير بموافقتك، ومراجعة الأرقام اللي بيقولها، وكل مكالمة استهلكت إيه وكلفت كام.",
       "clusters": ["voice", "web-voice-call"],
       "routers": ["voice"],
-      "procedures": ["ai.runVoiceToolQa"],
-      "websockets": ["/api/voice/live", "/api/voice/v2"],
+      "websockets": ["/api/voice/v2"],
       "jobs": ["voice-call-memory"]
     },
     {

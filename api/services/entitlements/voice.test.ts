@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveVoiceEntitlements, rolloutBucket, voiceMonth } from "./voice";
+import { resolveVoiceEntitlements, voiceMonth } from "./voice";
 
 const freeUser = { id: 7, type: "local" as const, plan: "free", role: "user" };
 const noUsage = { usedSecondsThisMonth: 0, spentTodayUsd: 0 };
@@ -11,7 +11,7 @@ describe("resolveVoiceEntitlements", () => {
     expect(result).toMatchObject({
       plan: "free",
       enabled: true,
-      v2: false,
+      killSwitch: false,
       minutesPerMonth: 2,
       maxCallSeconds: 60,
       allowedCallSeconds: 60,
@@ -21,18 +21,10 @@ describe("resolveVoiceEntitlements", () => {
     });
   });
 
-  it("gives staff and allowlisted users the new call before the rollout", () => {
-    expect(resolveVoiceEntitlements({ ...freeUser, role: "admin" }, {}, noUsage, "2026-09").v2).toBe(true);
-    expect(resolveVoiceEntitlements(freeUser, { voice_v2_allowlist: "oauth:7, local:7" }, noUsage, "2026-09").v2).toBe(true);
-    expect(resolveVoiceEntitlements(freeUser, { voice_v2_allowlist: "oauth:7" }, noUsage, "2026-09").v2).toBe(false);
-  });
-
-  it("rolls out by a stable bucket", () => {
-    const bucket = rolloutBucket(freeUser);
-    expect(bucket).toBe(rolloutBucket({ id: 7, type: "local" }));
-    expect(resolveVoiceEntitlements(freeUser, { voice_v2_rollout_percent: String(bucket + 1) }, noUsage, "2026-09").v2).toBe(true);
-    expect(resolveVoiceEntitlements(freeUser, { voice_v2_rollout_percent: String(bucket) }, noUsage, "2026-09").v2).toBe(false);
-    expect(resolveVoiceEntitlements(freeUser, { voice_v2_rollout_percent: "100" }, noUsage, "2026-09").v2).toBe(true);
+  it("gives every user of a plan with calls the same call, staff or not", () => {
+    const admin = resolveVoiceEntitlements({ ...freeUser, role: "admin" }, {}, noUsage, "2026-09");
+    const user = resolveVoiceEntitlements(freeUser, {}, noUsage, "2026-09");
+    expect(user).toEqual(admin);
   });
 
   it("limits the call to what the month has left", () => {
@@ -49,7 +41,7 @@ describe("resolveVoiceEntitlements", () => {
     expect(resolveVoiceEntitlements(freeUser, {}, { usedSecondsThisMonth: 0, spentTodayUsd: 0.1 }, "2026-09").blockedReason)
       .toBe("daily_cost_cap");
     const killed = resolveVoiceEntitlements({ ...freeUser, role: "admin" }, { voice_v2_kill_switch: "true" }, noUsage, "2026-09");
-    expect(killed).toMatchObject({ v2: false, blockedReason: "kill_switch" });
+    expect(killed).toMatchObject({ killSwitch: true, blockedReason: "kill_switch" });
   });
 
   it("refuses a plan the admin switched off", () => {

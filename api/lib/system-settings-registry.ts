@@ -68,8 +68,7 @@ export const SETTINGS: SettingDef[] = [
   // Previously renderable and unsaveable: the field existed, the write was discarded.
   { key: "nvidia_api_key", default: "", secret: true },
 
-  // ── AI voice call ──
-  { key: "voice_call_model", default: "gemini-2.5-flash" },
+  // ── AI voice call: whether each plan may call, minutes a month, seconds a call ──
   { key: "voice_call_enabled_free", default: "true" },
   { key: "voice_call_limit_free", default: "2" },
   { key: "voice_call_duration_free", default: "60" },
@@ -81,10 +80,7 @@ export const SETTINGS: SettingDef[] = [
   { key: "voice_call_duration_ultra", default: "1200" },
 
   // ── Live voice call v2 (api/services/voice). Minutes a month and seconds a call are the keys above. ──
-  // Share of users on the new call (0–100); admins and the allowlist ("oauth:12,local:34") always are.
-  { key: "voice_v2_rollout_percent", default: "0" },
-  { key: "voice_v2_allowlist", default: "" },
-  // "true" stops every new call at once.
+  // "true" stops every call at once; there is no other call to fall back to.
   { key: "voice_v2_kill_switch", default: "false" },
   { key: "voice_v2_model", default: "gemini-3.8-live" },
   // Per-plan model; empty means voice_v2_model.

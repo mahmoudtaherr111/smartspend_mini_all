@@ -19,21 +19,6 @@ describe("dev-only browser QA paths", () => {
     expect(router).toContain("!devQaBypassDailyLimit && todayCount >= dailyLimit");
   });
 
-  it("keeps voice QA tool execution development-only and safe-tool-only", () => {
-    const component = source("src/components/ai/AIVoiceCall.tsx");
-    const router = source("api/ai-router.ts");
-
-    expect(component).toContain("import.meta.env.DEV");
-    expect(component.indexOf("import.meta.env.DEV")).toBeLessThan(component.indexOf('params.get("voice_qa_tool")'));
-    expect(component).toContain('type VoiceQaToolName = "finance_query" | "memory_search" | "action_draft"');
-    expect(component).not.toContain('"action_confirm" | "action_cancel"');
-
-    expect(router).toContain('const VOICE_QA_TOOL_NAMES = ["finance_query", "memory_search", "action_draft"] as const');
-    expect(router).toContain('env.NODE_ENV === "production"');
-    expect(router).toContain("executeVoiceTool");
-    expect(router).toContain("clearVoiceSessionState");
-  });
-
   it("keeps expense and report QA helpers development-only while OAuth never consumes URL tokens", () => {
     const expenseForm = source("src/components/expenses/ExpenseForm.tsx");
     const insights = source("src/components/insights/AIInsights.tsx");

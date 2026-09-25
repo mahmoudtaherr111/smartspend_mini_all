@@ -44,5 +44,5 @@ model {
   androidSms -> smartspend.api.http.post_sms_ingest 'posts notification text'
   iosShortcut -> smartspend.api.http.post_sms_ingest 'posts message text'
   paymob -> smartspend.api.http.post_webhooks_paymob 'payment callback'
-  smartspend.web -> smartspend.api.ws.voice_live 'live voice call'
+  smartspend.web -> smartspend.api.ws.voice_v2 'live voice call'
 }

@@ -43,10 +43,8 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 
 | Path prefix | Handler | Handler file | Wired in |
 | --- | --- | --- | --- |
-| `/api/voice/live` | `handleVoiceCallWebSocket` | `api/services/voice-call-service.ts` | `api/boot.ts` |
-| `/api/voice/v2` | `handleVoiceCallWebSocket` | `api/services/voice-call-service.ts` | `api/boot.ts` |
-| `/api/voice/live` | `handleVoiceCallWebSocket` | `api/services/voice-call-service.ts` | `api/server.ts` |
-| `/api/voice/v2` | `handleVoiceCallWebSocket` | `api/services/voice-call-service.ts` | `api/server.ts` |
+| `/api/voice/v2` | `?` | — | `api/boot.ts` |
+| `/api/voice/v2` | `?` | — | `api/server.ts` |
 
 ## Scheduled jobs
 

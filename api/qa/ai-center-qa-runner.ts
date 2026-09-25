@@ -7,9 +7,6 @@ import { systemSettings } from "../../db/schema";
 import { db } from "../queries/connection";
 import { compileDataNeeds, routeIntent, runAIKernelActive, type AIResponse } from "../services/ai-kernel";
 import { retrieveMemoryContext } from "../services/ai-memory";
-import { executeVoiceTool } from "../services/voice-kernel/voice-tool-adapter";
-import { clearVoiceSessionState, createVoiceSessionState } from "../services/voice-kernel/voice-session-state";
-import type { VoiceToolResponse } from "../services/voice-kernel/types";
 import {
   AI_CENTER_QA_MARKER,
   AI_CENTER_QA_PLAN,
@@ -188,68 +185,6 @@ async function runKernelCase(
   return summarizeKernel(response);
 }
 
-function summarizeVoice(response: VoiceToolResponse): Record<string, unknown> {
-  const cacheHits = "cacheHits" in response && response.cacheHits ? response.cacheHits : [];
-  return {
-    ok: response.ok,
-    tool: response.tool,
-    factCount: "facts" in response && response.facts ? response.facts.length : 0,
-    artifactTypes: "artifacts" in response && response.artifacts ? response.artifacts.map((artifact) => artifact.type) : [],
-    dataNeeds: "dataNeeds" in response && response.dataNeeds ? response.dataNeeds.map((need) => need.kind) : [],
-    embeddingApiStatus: "embeddingApiStatus" in response ? response.embeddingApiStatus : undefined,
-    retrievalPolicy: "retrievalPolicy" in response ? response.retrievalPolicy : undefined,
-    cacheHits,
-    embeddingRows: embeddingRows(cacheHits),
-    actionStatus: "action" in response ? response.action?.status : undefined,
-    result: response.result,
-    error: response.ok ? undefined : response.error,
-  };
-}
-
-async function runVoiceCase(
-  seed: AICenterQASeedResult,
-  toolName: string,
-  args: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
-  const sessionId = `qa_voice_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  await createVoiceSessionState({
-    sessionId,
-    userId: seed.user.id,
-    userType: seed.user.userType,
-    userPlan: seed.user.plan,
-  });
-
-  try {
-    const response = await executeVoiceTool({
-      toolName,
-      args,
-      ctx: {
-        sessionId,
-        userId: seed.user.id,
-        userType: seed.user.userType,
-        userPlan: seed.user.plan,
-      },
-    });
-    assert(response.ok, `Voice tool ${toolName} failed: ${response.ok ? "" : response.error}`);
-    return summarizeVoice(response);
-  } finally {
-    await clearVoiceSessionState(sessionId);
-  }
-}
-
-async function runVoiceMemoryCase(seed: AICenterQASeedResult): Promise<Record<string, unknown>> {
-  const details = await runVoiceCase(seed, "memory_search", {
-    query: "coffee plan sleep plan هدف العربية",
-    limit: 5,
-  });
-  const cacheHits = Array.isArray(details.cacheHits) ? details.cacheHits.map(String) : [];
-  const retrievalPolicy = asObject(details.retrievalPolicy);
-  assert(retrievalPolicy.embedding === "fireworks_qwen", `Expected voice memory fireworks_qwen, got ${String(retrievalPolicy.embedding)}`);
-  assert(cacheHits.includes("embedding:fireworks"), `Expected voice memory embedding trace, got ${cacheHits.join(", ")}`);
-  assert(embeddingRows(cacheHits) > 0, `Expected voice memory rows > 0, got ${embeddingRows(cacheHits)}`);
-  return details;
-}
-
 async function runChatMemoryRetrievalCase(seed: AICenterQASeedResult): Promise<Record<string, unknown>> {
   const message = "remember coffee plan sleep plan";
   const intent = routeIntent(message);
@@ -285,20 +220,6 @@ async function runChatMemoryRetrievalCase(seed: AICenterQASeedResult): Promise<R
     selected: result.facts.map((fact) => fact.value).slice(0, 5),
     errors: result.errors,
   };
-}
-
-async function runVoiceActionDraftCase(seed: AICenterQASeedResult): Promise<Record<string, unknown>> {
-  const details = await runVoiceCase(seed, "action_draft", {
-    actionName: "goal.create",
-    title: "هدف عربية QA جديد",
-    targetAmount: 100000,
-    targetDate: "2027-06-16",
-    description: "مسودة هدف من QA runner فقط، لا تنفذ بدون تأكيد.",
-  });
-  const result = asObject(details.result);
-  assert(result.requiresConfirmation === true, "Expected voice action draft to require confirmation");
-  assert(details.actionStatus === "pending_confirmation", `Expected pending_confirmation, got ${String(details.actionStatus)}`);
-  return details;
 }
 
 function markdownReport(result: QARunResult): string {
@@ -393,16 +314,6 @@ export async function runAICenterQA(): Promise<QARunResult> {
       }),
     ),
   );
-  cases.push(
-    await runCase("voice finance tool uses exact hot summary", () =>
-      runVoiceCase(seed, "finance_query", {
-        kind: "summary",
-        period: "today",
-      }),
-    ),
-  );
-  cases.push(await runCase("voice memory tool uses same vector memory", () => runVoiceMemoryCase(seed)));
-  cases.push(await runCase("voice action draft requires confirmation", () => runVoiceActionDraftCase(seed)));
 
   const result: QARunResult = {
     ok: cases.every((item) => item.ok),

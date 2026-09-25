@@ -502,7 +502,7 @@ export default function VoiceCallScreen({ view, onOpenMemory }: { view: VoiceCal
       {view.phase === "intro" && <IntroPanel />}
       {inCall && <LiveCall view={view} onOpenRoute={openRoute} />}
       {view.phase === "ended" && view.ending && <EndPanel view={view} onOpenMemory={onOpenMemory} />}
-      {view.phase === "failed" && view.failure && !view.failure.legacy && <FailurePanel view={view} onChat={openChat} />}
+      {view.phase === "failed" && view.failure && <FailurePanel view={view} onChat={openChat} />}
     </motion.div>
   );
 }

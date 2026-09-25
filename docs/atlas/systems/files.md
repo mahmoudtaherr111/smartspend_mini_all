@@ -16,10 +16,10 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/admin-router.ts` | [admin](admin.md) |
 | `api/admin-whatsapp-router.ts` | [notifications](notifications.md) |
 | `api/ads-router.ts` | [admin](admin.md) |
-| `api/ai-router.ts` | [ai-platform](ai-platform.md): `ai.getUserLimits` · [expense-capture](expense-capture.md): `ai.learnWord`, `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText` · [insights](insights.md): `ai.compareMonths`, `ai.generateMonthlyInsights`, `ai.generateYearlyInsights`, `ai.getCachedMonthlyInsights` · [voice-calls](voice-calls.md): `ai.runVoiceToolQa` · rest of the file: [ai-platform](ai-platform.md), [expense-capture](expense-capture.md), [insights](insights.md), [voice-calls](voice-calls.md) |
+| `api/ai-router.ts` | [ai-platform](ai-platform.md): `ai.getUserLimits` · [expense-capture](expense-capture.md): `ai.learnWord`, `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText` · [insights](insights.md): `ai.compareMonths`, `ai.generateMonthlyInsights`, `ai.generateYearlyInsights`, `ai.getCachedMonthlyInsights` · rest of the file: [ai-platform](ai-platform.md), [expense-capture](expense-capture.md), [insights](insights.md) |
 | `api/analytics-router.ts` | [admin](admin.md) |
 | `api/auth-router.ts` | [accounts](accounts.md) |
-| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `GET /api/sse/otp`, `job:daily-auth-cleanup` · [billing](billing.md): `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications` · [platform](platform.md): `ALL /api/trpc/*`, `GET /health`, `job:data-retention-lifecycle` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/live`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
+| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `GET /api/sse/otp`, `job:daily-auth-cleanup` · [billing](billing.md): `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications` · [platform](platform.md): `ALL /api/trpc/*`, `GET /health`, `job:data-retention-lifecycle` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
 | `api/budget-router.ts` | [money](money.md) |
 | `api/business-router.ts` | [money](money.md) |
 | `api/chat-router.ts` | [ai-center](ai-center.md) |
@@ -128,7 +128,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/referral-router.ts` | [billing](billing.md) |
 | `api/router.ts` | [platform](platform.md) |
 | `api/seo-router.ts` | [admin](admin.md) |
-| `api/server.ts` | [voice-calls](voice-calls.md): `ws:/api/voice/live`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
+| `api/server.ts` | [voice-calls](voice-calls.md): `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
 | `api/services/action-runtime/artifacts.ts` | [ai-center](ai-center.md) |
 | `api/services/action-runtime/confirmation-phrases.ts` | [ai-center](ai-center.md) |
 | `api/services/action-runtime/extended-actions.ts` | [ai-center](ai-center.md) |
@@ -200,16 +200,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/turnstile-service.ts` | [accounts](accounts.md) |
 | `api/services/user-profile-service.ts` | [insights](insights.md) |
 | `api/services/user-purge-service.ts` | [accounts](accounts.md) |
-| `api/services/voice-call-service.ts` | [voice-calls](voice-calls.md) |
-| `api/services/voice-context-service.ts` | [voice-calls](voice-calls.md) |
-| `api/services/voice-kernel/hot-context.ts` | [voice-calls](voice-calls.md) |
-| `api/services/voice-kernel/index.ts` | [voice-calls](voice-calls.md) |
-| `api/services/voice-kernel/types.ts` | [voice-calls](voice-calls.md) |
-| `api/services/voice-kernel/voice-call-archive.ts` | [voice-calls](voice-calls.md) |
-| `api/services/voice-kernel/voice-prefetch.ts` | [voice-calls](voice-calls.md) |
-| `api/services/voice-kernel/voice-prompt.ts` | [voice-calls](voice-calls.md) |
-| `api/services/voice-kernel/voice-session-state.ts` | [voice-calls](voice-calls.md) |
-| `api/services/voice-kernel/voice-tool-adapter.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/admin-stats.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/app-calls.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/claims.ts` | [voice-calls](voice-calls.md) |
@@ -294,7 +284,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/ai/AIChatbot.tsx` | [ai-center](ai-center.md) |
 | `src/components/ai/AIMemoryManager.tsx` | [ai-center](ai-center.md) |
 | `src/components/ai/AIMonthlyReport.tsx` | [ai-center](ai-center.md) |
-| `src/components/ai/AIVoiceCall.tsx` | [voice-calls](voice-calls.md) |
 | `src/components/auth/BiometricLockOverlay.tsx` | [accounts](accounts.md) |
 | `src/components/auth/BiometricOnboardingModal.tsx` | [accounts](accounts.md) |
 | `src/components/auth/PasskeySettings.tsx` | [accounts](accounts.md) |
@@ -420,7 +409,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/hooks/useSheetManager.ts` | [web-app](web-app.md) |
 | `src/hooks/useSwipeNavigation.ts` | [web-app](web-app.md) |
 | `src/hooks/useVirtualKeyboard.ts` | [web-app](web-app.md) |
-| `src/hooks/useVoiceCall.ts` | [voice-calls](voice-calls.md) |
 | `src/hooks/useVoiceCallEntry.ts` | [voice-calls](voice-calls.md) |
 | `src/lib/back-button-manager.ts` | [web-app](web-app.md) |
 | `src/lib/backButtonManager.ts` | [web-app](web-app.md) |

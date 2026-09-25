@@ -179,10 +179,10 @@ model {
       }
     }
     voice = module 'Voice' {
-      description 'Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month.'
+      description 'Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway, the Gemini Live engine, the brain with its tools and the checks on what is said, Egyptian number speech, the post-call memory and the admin dashboard’s figures. api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month.'
       metadata {
-        files '44'
-        paths 'api/services/voice/**, api/services/entitlements/**, api/services/voice-kernel/**, api/services/voice-call-service.ts, api/services/voice-context-service.ts'
+        files '34'
+        paths 'api/services/voice/**, api/services/entitlements/**'
       }
     }
     whatsapp = module 'WhatsApp' {
@@ -304,10 +304,10 @@ model {
       }
     }
     web-voice-call = module 'Live voice call UI' {
-      description 'The live voice call in the app. The rebuilt call: a store any screen can start the call from (src/lib/voice/call-store.ts), which keeps it running across pages; microphone capture filtered down to 16 kHz with speech detection that sends audio only while the user speaks; the /api/voice/v2 socket client that resumes a dropped call; playback of the assistant’s voice; and the call screen with its cards, the Home button and the AI Center tab (src/components/voice). The old call screen and its hook (AIVoiceCall.tsx, useVoiceCall.ts on /api/voice/live) stay for users outside the rollout.'
+      description 'The live voice call in the app. The rebuilt call: a store any screen can start the call from (src/lib/voice/call-store.ts), which keeps it running across pages; microphone capture filtered down to 16 kHz with speech detection that sends audio only while the user speaks; the /api/voice/v2 socket client that resumes a dropped call; playback of the assistant’s voice; and the call screen with its cards, the Home button and the AI Center tab (src/components/voice).'
       metadata {
-        files '15'
-        paths 'src/components/ai/AIVoiceCall.tsx, src/hooks/useVoiceCall.ts, src/components/voice/**, src/hooks/useVoiceCallEntry.ts, src/lib/voice/**'
+        files '13'
+        paths 'src/components/voice/**, src/hooks/useVoiceCallEntry.ts, src/lib/voice/**'
       }
     }
   }

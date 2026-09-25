@@ -4,7 +4,6 @@
  * call's rollout to the old call screen.
  */
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { trpc } from "@/providers/trpc";
 import { useVoiceCallView, voiceCall } from "@/lib/voice/call-store";
 
@@ -16,7 +15,6 @@ const AIMemoryManager = lazy(() =>
 export function VoiceCallHost() {
   const view = useVoiceCallView();
   const utils = trpc.useUtils();
-  const navigate = useNavigate();
   const [memoryOpen, setMemoryOpen] = useState(false);
 
   const executed = useRef(view.executed);
@@ -31,13 +29,6 @@ export function VoiceCallHost() {
     void utils.voice.eligibility.invalidate();
     void utils.voice.listCalls.invalidate();
   }, [view.phase, utils]);
-
-  useEffect(() => {
-    if (view.phase === "failed" && view.failure?.legacy) {
-      voiceCall.close();
-      navigate("/ai?ai_tab=voice");
-    }
-  }, [view.phase, view.failure, navigate]);
 
   const openMemory = () => {
     voiceCall.close();

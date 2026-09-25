@@ -648,19 +648,16 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
   );
   const server = serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
 
-  // Live voice calls in production mode: the rebuilt call on /api/voice/v2 and, until it has replaced it, the old
-  // one on /api/voice/live.
-  const { handleVoiceCallWebSocket } = await import("./services/voice-call-service");
+  // Live voice calls in production mode, on /api/voice/v2.
   const { createVoiceUpgradeHandler } = await import("./services/voice/gateway");
   const { createVoiceAppCalls } = await import("./services/voice/app-calls");
   const handleVoiceUpgrade = createVoiceUpgradeHandler({
     isAllowedOrigin: isAllowedWebSocketOrigin,
     appCalls: createVoiceAppCalls(appRouter),
-    legacy: (ws, request) => void handleVoiceCallWebSocket(ws, request),
   });
   server.on("upgrade", (request, socket, head) => {
     const path = new URL(request.url || "", "http://localhost").pathname;
-    if (path.startsWith("/api/voice/v2") || path.startsWith("/api/voice/live")) handleVoiceUpgrade(request, socket, head);
+    if (path.startsWith("/api/voice/v2")) handleVoiceUpgrade(request, socket, head);
   });
 }
 

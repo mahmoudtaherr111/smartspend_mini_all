@@ -28,8 +28,6 @@ export interface TicketPayload {
 }
 
 export type StartCallResult =
-  /** Not in the new call's rollout: the app keeps using the old call. */
-  | { kind: "legacy" }
   | { kind: "blocked"; reason: string; message: string }
   | { kind: "ok"; callId: string; ticket: string; maxSeconds: number; remainingSeconds: number; voice: string };
 
@@ -47,8 +45,6 @@ export async function startVoiceCall(
   input: { voice?: string; client: VoiceClientPlatform },
 ): Promise<StartCallResult> {
   const entitlements = await getVoiceEntitlements(user);
-  // Outside the rollout, or with the kill switch on, the app keeps the old call while it still exists.
-  if (!entitlements.v2) return { kind: "legacy" };
   const reason = entitlements.blockedReason;
   if (reason) return { kind: "blocked", reason, message: BLOCKED_MESSAGES[reason] };
 

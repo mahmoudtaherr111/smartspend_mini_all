@@ -55,7 +55,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `AICenter` — `src/pages/AICenter.tsx`
 
-26 files in its import closure (not counting `src/components/ui/`).
+24 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |

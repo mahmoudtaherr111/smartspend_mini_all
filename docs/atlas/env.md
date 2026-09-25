@@ -23,7 +23,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `FIREBASE_PROJECT_ID` | no | — | `api/services/firebase.ts` |
 | `FIREWORKS_API_KEY` | no | — | `api/ai-router.ts`, `api/boot.ts`, `api/lib/system-settings-registry.ts`, `api/services/ai-memory/embedding-settings.ts` |
 | `FRONTEND_URL` | no | — | `api/lib/origin-policy.ts` |
-| `GEMINI_API_KEY` | yes | — | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/system-settings-registry.ts`, `api/services/batch-ai-service.ts`, `api/services/voice-call-service.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
+| `GEMINI_API_KEY` | yes | — | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/system-settings-registry.ts`, `api/services/batch-ai-service.ts`, `api/services/voice/gateway/index.ts`, `api/services/voice/text-model.ts` |
 | `GEMINI_MODEL_FREE` | no | `gemini-3.1-flash-lite` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_PRO` | no | `gemini-3.5-flash` | `api/ai-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_REPORTS` | no | `gemini-3.8-flash` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
@@ -37,7 +37,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `LOGIN_IP_MAX_FAILURES` | no | `50` | `api/lib/login-protection.ts` |
 | `LOGIN_PAIR_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOG_SLOW_QUERIES` | no | `true` | `api/queries/connection.ts` |
-| `NODE_ENV` | no | `development` | `api/ai-router.ts`, `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
+| `NODE_ENV` | no | `development` | `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
 | `NVIDIA_API_KEY` | no | — | `api/ai-router.ts` |
 | `OWNER_EMAIL` | no | — | — |
 | `PAYMOB_API_KEY` | no | — | `api/lib/paymob.ts` |
@@ -83,7 +83,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | Variable | Read by |
 | --- | --- |
 | `BASE_URL` | `src/lib/voice/audio-io.ts` |
-| `DEV` | `src/components/ai/AIChatbot.tsx`, `src/components/ai/AIVoiceCall.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/insights/AIInsights.tsx`, `src/main.tsx` |
+| `DEV` | `src/components/ai/AIChatbot.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/insights/AIInsights.tsx`, `src/main.tsx` |
 | `PROD` | `src/pwa/register-sw.ts` |
 | `VITE_API_URL` | `src/lib/voice/call-controller.ts`, `src/providers/trpc.ts` |
 | `VITE_FIREBASE_API_KEY` | `src/pwa/firebase.ts` |

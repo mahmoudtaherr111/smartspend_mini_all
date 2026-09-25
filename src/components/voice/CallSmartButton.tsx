@@ -29,13 +29,13 @@ function minutesLabel(minutes: number): string {
   return `${minutes} دقيقة فاضلة`;
 }
 
-/** Home's entry: one line, prominent, only for users the rebuilt call is open to. */
+/** Home's entry: one line, prominent, whenever the user's plan has calls and the admin has not stopped them. */
 export function CallSmartButton({ className }: { className?: string }) {
   const { data } = useVoiceEligibility();
   const start = useStartCall();
   const view = useVoiceCallView();
-  useWarmCall(Boolean(data?.v2));
-  if (!data?.v2) return null;
+  useWarmCall(Boolean(data?.available));
+  if (!data?.available) return null;
 
   const inCall = view.phase === "starting" || view.phase === "live" || view.phase === "reconnecting";
   const detail = data.blockedReason ? BLOCKED[data.blockedReason] : minutesLabel(data.minutesLeft);

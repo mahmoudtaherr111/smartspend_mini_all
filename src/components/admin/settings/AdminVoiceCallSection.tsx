@@ -1,6 +1,5 @@
 /**
- * The rebuilt call in the admin console: who gets it (kill switch, rollout percent, allowlist), which models it uses
- * per plan, the daily cost cap, and a dashboard of the calls made (counts, minutes, cost, speed, why calls ended and
+ * The voice call in the admin console: the kill switch, which models it uses per plan, the daily cost cap, and a dashboard of the calls made (counts, minutes, cost, speed, why calls ended and
  * what went wrong). Settings are saved with the rest of the settings form; the dashboard reads `voice.adminStats`,
  * which never returns what was said.
  */
@@ -86,7 +85,7 @@ function VoiceCallsDashboard() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="text-sm font-bold flex items-center gap-2">
-          <Activity className="w-4 h-4 text-indigo-600" /> المكالمات الجديدة
+          <Activity className="w-4 h-4 text-indigo-600" /> المكالمات
         </h3>
         <div className="flex gap-1">
           {([1, 7, 30] as const).map((d) => (
@@ -190,45 +189,18 @@ export function AdminVoiceCallSection({ formData, updateField }: Props) {
     <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden border-t-4 border-t-emerald-500 mt-8">
       <SectionHeader
         icon={<PhoneCall className="w-6 h-6 text-emerald-600" />}
-        title="المكالمة الجديدة «كلّم سمارت»"
-        description="مين ياخدها، بأنهي موديل، وبكام في اليوم. الدقايق ومدة المكالمة لكل باقة من القسم اللي فوق. اضغط «حفظ وتنفيذ الإعدادات» بعد أي تعديل."
+        title="المكالمة الصوتية «كلّم سمارت»"
+        description="بأنهي موديل، وبكام في اليوم، ولوحة المكالمات. الدقايق ومدة المكالمة لكل باقة من القسم اللي فوق. اضغط «حفظ وتنفيذ الإعدادات» بعد أي تعديل."
       />
       <CardContent className="p-6 space-y-8">
-        {/* Who gets it */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="space-y-2">
-            <FieldLabel hint="بيرجّع كل الناس، حتى الأدمن، للمكالمة القديمة فوراً. للطوارئ.">إيقاف المكالمة الجديدة للكل</FieldLabel>
-            <div className="flex items-center gap-3">
-              <Switch checked={killSwitch} onCheckedChange={(checked) => updateField("voice_v2_kill_switch", String(checked))} />
-              <span className={`text-xs font-bold ${killSwitch ? "text-rose-600" : "text-emerald-600"}`}>{killSwitch ? "متوقفة" : "شغالة"}</span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <FieldLabel hint="نسبة المستخدمين اللي بتظهرلهم المكالمة الجديدة. كل مستخدم له رقم ثابت، فاللي أخدها بيفضل واخدها لما النسبة تزيد. الأدمن والمشرفين بياخدوها دايماً.">
-              نسبة الطرح (%)
-            </FieldLabel>
-            <Input
-              type="number"
-              min="0"
-              max="100"
-              value={formData.voice_v2_rollout_percent ?? "0"}
-              onChange={(e) => updateField("voice_v2_rollout_percent", e.target.value)}
-              className="h-9 font-mono bg-slate-50 dark:bg-slate-900"
-              disabled={killSwitch}
-            />
-          </div>
-          <div className="space-y-2">
-            <FieldLabel hint="مستخدمين بعينهم ياخدوا المكالمة الجديدة مهما كانت النسبة، مفصولين بفاصلة: local:12, oauth:5">
-              قايمة السماح
-            </FieldLabel>
-            <Input
-              value={formData.voice_v2_allowlist ?? ""}
-              onChange={(e) => updateField("voice_v2_allowlist", e.target.value)}
-              placeholder="local:12, oauth:5"
-              dir="ltr"
-              className="h-9 font-mono text-xs bg-slate-50 dark:bg-slate-900"
-              disabled={killSwitch}
-            />
+        {/* Stop everything */}
+        <div className="space-y-2 max-w-md">
+          <FieldLabel hint="بيوقف المكالمات الصوتية لكل الناس فوراً، حتى الأدمن، والزرار بيختفي من التطبيق. للطوارئ: مفيش مكالمة تانية يرجعوا لها.">
+            إيقاف المكالمات للكل
+          </FieldLabel>
+          <div className="flex items-center gap-3">
+            <Switch checked={killSwitch} onCheckedChange={(checked) => updateField("voice_v2_kill_switch", String(checked))} />
+            <span className={`text-xs font-bold ${killSwitch ? "text-rose-600" : "text-emerald-600"}`}>{killSwitch ? "متوقفة" : "شغالة"}</span>
           </div>
         </div>
 

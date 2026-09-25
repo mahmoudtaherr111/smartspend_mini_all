@@ -363,7 +363,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `GOOGLE_REDIRECT_URI` | yes | `api/auth-router.ts` |
 | `GROQ_API_KEY` | yes | `api/ai-router.ts` |
 | `LOG_SLOW_QUERIES` | yes | `api/queries/connection.ts` |
-| `NODE_ENV` | yes | `api/ai-router.ts`, `api/boot.ts`, `api/chat-router.ts`, `api/lib/log.ts`, `api/lib/redis-client.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts` |
+| `NODE_ENV` | yes | `api/boot.ts`, `api/chat-router.ts`, `api/lib/log.ts`, `api/lib/redis-client.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts` |
 | `NVIDIA_API_KEY` | yes | `api/ai-router.ts` |
 | `PAYMOB_HMAC_SECRET` | yes | `api/boot.ts` |
 | `PORT` | yes | `api/boot.ts`, `api/server.ts` |

@@ -57,31 +57,23 @@ export function createVoiceGateway(options: VoiceGatewayOptions): (ws: WebSocket
 export type VoiceUpgradeHandler = (request: IncomingMessage, socket: Duplex, head: Buffer) => void;
 
 /**
- * Routes a voice WebSocket upgrade: the rebuilt call on exactly `/api/voice/v2`, the old one on `/api/voice/live`
- * while it still exists. Both server entry points call it from their own `upgrade` listener for those two paths.
+ * Routes a voice WebSocket upgrade to the call on exactly `/api/voice/v2` from an allowed origin; anything else is
+ * refused. Both server entry points call it from their own `upgrade` listener.
  */
 export function createVoiceUpgradeHandler(
-  options: VoiceGatewayOptions & {
-    isAllowedOrigin(origin: string | undefined): boolean;
-    /** The old call, served on /api/voice/live until the new one has fully replaced it. */
-    legacy?: (ws: WebSocket, request: IncomingMessage) => void;
-  },
+  options: VoiceGatewayOptions & { isAllowedOrigin(origin: string | undefined): boolean },
 ): VoiceUpgradeHandler {
-  const legacy = new WebSocketServer({ noServer: true });
   const current = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
   const handleVoiceV2WebSocket = createVoiceGateway(options);
 
   return (request, socket, head) => {
     const path = new URL(request.url || "", "http://localhost").pathname;
-    const isCurrent = path === VOICE_SOCKET_PATH;
-    const isLegacy = !isCurrent && path.startsWith("/api/voice/live") && Boolean(options.legacy);
     const rawOrigin = request.headers.origin;
-    if ((!isCurrent && !isLegacy) || !options.isAllowedOrigin(Array.isArray(rawOrigin) ? rawOrigin[0] : rawOrigin)) {
+    if (path !== VOICE_SOCKET_PATH || !options.isAllowedOrigin(Array.isArray(rawOrigin) ? rawOrigin[0] : rawOrigin)) {
       socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
       socket.destroy();
       return;
     }
-    if (isCurrent) current.handleUpgrade(request, socket, head, (ws) => handleVoiceV2WebSocket(ws));
-    else legacy.handleUpgrade(request, socket, head, (ws) => options.legacy!(ws, request));
+    current.handleUpgrade(request, socket, head, (ws) => handleVoiceV2WebSocket(ws));
   };
 }

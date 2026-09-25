@@ -752,7 +752,7 @@ model {
       }
     }
     ai = router 'ai' {
-      description 'api/ai-router.ts — 10 procedures.'
+      description 'api/ai-router.ts — 9 procedures.'
       metadata {
         file 'api/ai-router.ts'
       }
@@ -830,16 +830,6 @@ model {
         #mutation #ai
         technology 'aiProcedure'
         description 'mutation · aiProcedure'
-        metadata {
-          file 'api/ai-router.ts'
-          builder 'aiProcedure'
-          procedureKind 'mutation'
-        }
-      }
-      runVoiceToolQa = procedure 'ai.runVoiceToolQa' {
-        #mutation #ai #uncalled
-        technology 'aiProcedure'
-        description 'mutation · aiProcedure · no caller in src/'
         metadata {
           file 'api/ai-router.ts'
           builder 'aiProcedure'
@@ -2501,19 +2491,10 @@ model {
   }
 
   extend smartspend.api.ws {
-    voice_live = endpoint 'WS /api/voice/live' {
-      #websocket
-      description 'Upgrade handled by handleVoiceCallWebSocket.'
-      metadata {
-        handlerFile 'api/services/voice-call-service.ts'
-        wiredIn 'api/boot.ts, api/server.ts'
-      }
-    }
     voice_v2 = endpoint 'WS /api/voice/v2' {
       #websocket
-      description 'Upgrade handled by handleVoiceCallWebSocket.'
+      description 'Upgrade handled by ?.'
       metadata {
-        handlerFile 'api/services/voice-call-service.ts'
         wiredIn 'api/boot.ts, api/server.ts'
       }
     }

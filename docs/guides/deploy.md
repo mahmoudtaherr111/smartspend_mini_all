@@ -8,7 +8,7 @@ Update this page in the same change when any of them changes.
 `node dist/boot.js` with `NODE_ENV=production`: one Node process on `PORT` (default 3000) that serves
 
 - the API: tRPC, the SMS ingestion sub-app, Google OAuth, the WhatsApp OTP event stream and the Paymob webhook;
-- the live voice WebSocket at /api/voice/live, after an origin check;
+- the live voice WebSocket at /api/voice/v2, after an origin check;
 - the built web app from `dist/public`, answering any other path outside /api/ with index.html;
 - GET /health, which returns `{ status, timestamp }`.
 

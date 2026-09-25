@@ -1,13 +1,10 @@
 /**
- * The AI Center's call tab: the rebuilt call for users it is open to (`voice.eligibility`), the old call screen for
- * everyone else until the rollout is complete.
+ * The AI Center's call tab: pick a voice and start the call (`voice.eligibility` says the minutes left and whether a
+ * call can start now).
  */
-import { lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useVoiceEligibility } from "@/hooks/useVoiceCallEntry";
 import { VoiceCallLauncher } from "./CallSmartButton";
-
-const AIVoiceCall = lazy(() => import("@/components/ai/AIVoiceCall"));
 
 function TabSkeleton() {
   return (
@@ -20,20 +17,13 @@ function TabSkeleton() {
 
 export default function VoiceCallTab() {
   const { data, isLoading } = useVoiceEligibility();
-  if (isLoading) return <TabSkeleton />;
-  if (data?.v2) {
-    return (
-      <VoiceCallLauncher
-        voices={data.voices}
-        defaultVoice={data.defaultVoice}
-        minutesLeft={data.minutesLeft}
-        blockedReason={data.blockedReason ?? null}
-      />
-    );
-  }
+  if (isLoading || !data) return <TabSkeleton />;
   return (
-    <Suspense fallback={<TabSkeleton />}>
-      <AIVoiceCall />
-    </Suspense>
+    <VoiceCallLauncher
+      voices={data.voices}
+      defaultVoice={data.defaultVoice}
+      minutesLeft={data.minutesLeft}
+      blockedReason={data.blockedReason ?? null}
+    />
   );
 }

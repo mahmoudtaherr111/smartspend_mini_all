@@ -13,7 +13,7 @@ facts.
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Page | `src/pages/AICenter.tsx#AICenter` | Three tabs kept mounted once opened: chat, the [live voice call](voice-calls.md) and the monthly analysis of [insights](insights.md) (`ai_tab` in the address). The call tab (`src/components/voice/VoiceCallTab.tsx`) starts the rebuilt call for users it is open to and shows the old call screen to everyone else |
+| Page | `src/pages/AICenter.tsx#AICenter` | Three tabs kept mounted once opened: chat, the [live voice call](voice-calls.md) and the monthly analysis of [insights](insights.md) (`ai_tab` in the address). The call tab (`src/components/voice/VoiceCallTab.tsx`) picks a voice and starts the call |
 | Chat screen | `src/components/ai/AIChatbot.tsx#AIChatbot` | Conversations, quick prompts, answers with artifacts (cards, tables, charts, quick replies), confirm and cancel buttons, the memory manager |
 | Chat API | `api/chat-router.ts` (`chat.sendMessage` and the conversation, action and memory procedures) | Limits, conversation storage, the kernel call, action drafts, memory writes, cost records |
 | Kernel | `api/services/ai-kernel/` | Intent routing, the turn plan, data needs, deterministic answers, the optional model call and its guards |
@@ -236,5 +236,5 @@ Checked against the code; each one names where it lives.
 - [Reports, insights and the smart profile](insights.md): the monthly analysis tab and the profile the kernel reads.
 - [Money](money.md): the ledger, goals, budgets and wallets the facts and actions touch.
 - [Recording spending](expense-capture.md): classification traces the kernel explains, and the typed entry flow.
-- [AI providers and usage limits](ai-platform.md): the cost policy, rollout and cost metrics.
+- [AI providers and usage limits](ai-platform.md): the cost policy and cost metrics.
 - [Server platform and data](platform.md): Redis, the settings cache and the storage classes of the chat tables.

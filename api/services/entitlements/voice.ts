@@ -3,10 +3,9 @@
  *
  * Today the values come from system settings (`api/lib/system-settings-registry.ts`); the pricing rebuild will
  * swap this function's source for plan entitlements without the call changing. Usage is counted in the Cairo
- * business month from `voice_calls` (plus the old call's `voice_usage` rows while both calls run), never from
- * the seconds spent dictating expenses.
+ * business month from `voice_calls` (plus any `voice_usage` rows the retired first call wrote that month), never
+ * from the seconds spent dictating expenses. The admin's kill switch stops every call.
  */
-import { createHash } from "crypto";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { voiceCalls, voiceUsage } from "../../../db/schema";
 import { businessDateKey, startOfBusinessDay } from "../../lib/app-time";
@@ -34,8 +33,6 @@ export interface VoiceEntitlements {
   month: string;
   /** The plan may use the live call at all. */
   enabled: boolean;
-  /** This user gets the rebuilt call (rollout, allowlist or staff). */
-  v2: boolean;
   killSwitch: boolean;
   minutesPerMonth: number;
   maxCallSeconds: number;
@@ -65,20 +62,6 @@ function nonNegativeNumber(value: string | undefined, fallback: number): number 
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
-/** A stable 0–99 bucket per user, so a rollout percentage always picks the same people. */
-export function rolloutBucket(user: Pick<VoiceEntitlementUser, "id" | "type">): number {
-  const digest = createHash("sha256").update(`voice_v2:${user.type}:${user.id}`).digest();
-  return digest.readUInt32BE(0) % 100;
-}
-
-function inAllowlist(user: Pick<VoiceEntitlementUser, "id" | "type">, allowlist: string): boolean {
-  return allowlist
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .includes(`${user.type}:${user.id}`);
-}
-
 /** The pure rule: settings and usage in, entitlements out. */
 export function resolveVoiceEntitlements(
   user: VoiceEntitlementUser,
@@ -90,9 +73,6 @@ export function resolveVoiceEntitlements(
   const p = plan(user.plan);
   const enabled = merged[`voice_call_enabled_${p}`] === "true";
   const killSwitch = merged.voice_v2_kill_switch === "true";
-  const staff = user.role === "admin" || user.role === "moderator";
-  const rollout = Math.min(100, nonNegativeInt(merged.voice_v2_rollout_percent, 0));
-  const v2 = !killSwitch && (staff || inAllowlist(user, merged.voice_v2_allowlist ?? "") || rolloutBucket(user) < rollout);
 
   const minutesPerMonth = nonNegativeInt(merged[`voice_call_limit_${p}`], 0);
   const maxCallSeconds = nonNegativeInt(merged[`voice_call_duration_${p}`], 60);
@@ -112,7 +92,6 @@ export function resolveVoiceEntitlements(
     plan: p,
     month,
     enabled,
-    v2,
     killSwitch,
     minutesPerMonth,
     maxCallSeconds,

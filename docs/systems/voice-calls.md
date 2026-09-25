@@ -2,9 +2,8 @@
 
 The live voice call: the app streams the user's voice over a WebSocket, the server bridges it to the Gemini Live
 API with a short financial context and a set of tools, streams the assistant's voice back, enforces the plan's call
-minutes, and keeps what the call should remember. Two versions run side by side: the old call in the AI Center,
-described first, and the rebuilt call ([below](#the-rebuilt-call)), open to staff and the allowlist and to others by
-rollout, which will replace it.
+minutes, and keeps what the call should remember. It is open from Home and the AI Center to every user whose plan
+has calls; the first call (`/api/voice/live`) was removed on 2026-09-25.
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/voice-calls.md](../atlas/systems/voice-calls.md)
 - The same story for readers who do not read code: [docs/ar/systems/voice-calls.md](../ar/systems/voice-calls.md)
@@ -13,108 +12,20 @@ rollout, which will replace it.
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Call screen | `src/components/ai/AIVoiceCall.tsx#AIVoiceCall`, a tab of the AI Center page | Voice selection, call controls, status and the tool trace |
-| Browser audio | `src/hooks/useVoiceCall.ts#useVoiceCall` | Microphone capture resampled to 16 kHz PCM, the WebSocket, playback of the assistant's audio |
-| Socket entry | `server.on("upgrade")` for `/api/voice/live` in `api/boot.ts` and `api/server.ts` | Origin check, then hands the socket to the call handler |
-| Call handler | `api/services/voice-call-service.ts#handleVoiceCallWebSocket` | Authentication, plan limits, session, Gemini Live bridge, tools, end of call |
-| Voice kernel | `api/services/voice-kernel/` | Session state, hot context, system prompt, tools, prefetch, archive |
-| QA procedure | `ai.runVoiceToolQa` in `api/ai-router.ts` | Runs one voice tool without a call; development only |
-| Rebuilt call, app side | `src/lib/voice/`, `src/components/voice/` | One call for the whole app: capture with speech detection, playback, the socket client, the call screen and its ways in |
-| Rebuilt call, server side | `api/voice-router.ts`, `api/services/voice/`, `api/services/entitlements/voice.ts` | Who may call, the ticket, the `/api/voice/v2` socket, the Gemini Live engine, the brain and its tools |
+| App side | `src/lib/voice/`, `src/components/voice/` | One call for the whole app: capture with speech detection, playback, the socket client, the call screen and its ways in |
+| Server side | `api/voice-router.ts`, `api/services/voice/`, `api/services/entitlements/voice.ts` | Who may call, the ticket, the `/api/voice/v2` socket, the Gemini Live engine, the brain and its tools |
+| Admin | `src/components/admin/settings/AdminVoiceCallSection.tsx`, `voice.adminStats` | Kill switch, models, cost caps, the calls dashboard |
 
-## One call, step by step
-
-### 1. The browser opens the call
-`useVoiceCall.startCall(voice)` asks for the microphone with echo cancellation, noise suppression and automatic
-gain, builds an AudioContext, and loads an AudioWorklet that resamples the microphone to 16 kHz 16-bit PCM in
-chunks of 2048 samples. It opens `wss://<host>/api/voice/live?token=<token>&voice=<voice>` (the host of
-`VITE_API_URL` when set), with the token from `local_auth_token` in browser storage; Google users send an empty
-token and are authenticated by their cookie. Every chunk is sent while the call is not muted, silence included, so
-the model's voice activity detection keeps working. The screen offers three voices (Olivia, Sarah and James); the
-server accepts `Aoede`, `Charon`, `Fenrir`, `Kore` and `Puck`, and falls back to `Aoede`.
-
-### 2. The server accepts the socket
-- The upgrade handler accepts only paths starting with `/api/voice/live` and an allowed origin
-  (`api/lib/origin-policy.ts#createOriginPolicy`; a request without an Origin header is allowed for native
-  clients).
-- `authenticateUser` validates the `token` parameter, or the `google_session` cookie, as an active session and
-  loads the user row.
-- Plan checks read system settings, falling back to defaults written in the handler: `voice_call_enabled_<plan>`,
-  `voice_call_limit_<plan>` (minutes a month), `voice_call_duration_<plan>` (seconds a call), `voice_call_model`,
-  `ai_api_key` (else `GEMINI_API_KEY`) and `ai_api_key_2`. The call may last the smaller of the per-call duration
-  and the seconds left this month, counted from the `voice_usage` rows of the month. A disabled plan or an empty
-  allowance closes the socket with an Arabic message.
-
-### 3. Context before the first word
-- `api/services/voice-kernel/voice-session-state.ts#createVoiceSessionState` stores the session in Redis for an
-  hour, or in process memory only where the cache runtime allows a memory fallback. Without either, the call is
-  refused and the user is told Redis is missing.
-- `api/services/voice-kernel/hot-context.ts#buildVoiceHotContext` gathers, from SQL and the finance layer and
-  without embeddings: the profile snapshot, today's and this month's income and expense, up to five active goals,
-  and up to five recent memory hints (memory items, conversation capsules, action memory).
-- `api/services/voice-kernel/voice-prompt.ts#buildVoiceSystemPrompt` turns it into the system prompt: short Egyptian
-  Arabic replies, tools for exact numbers, never invented numbers, a draft and an explicit confirmation before any
-  action, and no voice execution for high-risk actions.
-
-### 4. Bridging to Gemini Live
-The handler opens the Gemini Live WebSocket with the model (`resolveLiveModelId` adds the `models/` prefix), audio
-responses in the chosen voice, the system prompt and `VOICE_TOOL_DECLARATIONS`, and waits up to five seconds for
-setup. When the primary key fails it logs the error to `api_key_errors` and tries `ai_api_key_2`. It then tells the
-browser `ready` (model and session id) and sends a greeting request so the assistant speaks first.
-
-During the call:
-- browser audio chunks go to Gemini as `realtimeInput` PCM; a text message `end_call` ends the call, and
-  `user_transcript` text joins the call transcript;
-- Gemini's audio comes back to the browser as binary frames (the handler reads the three shapes the API uses),
-  its text is forwarded, and its input and output transcriptions join the transcript;
-- `interrupted` makes the browser stop playing; a warning is sent ten seconds before the time limit, and
-  `limit_reached` when it arrives.
-
-The first transcript that arrives within 2.5 seconds of the start triggers
-`api/services/voice-kernel/voice-prefetch.ts#prefetchVoiceTurnContext`, which routes the intent and resolves its
-structured finance data needs ahead of time.
-
-### 5. Tools
-`api/services/voice-kernel/voice-tool-adapter.ts#executeVoiceTool` runs what the model calls:
-
-| Tool | What it does |
-| --- | --- |
-| `finance_query` | Exact finance data through the finance semantic layer (`resolveKernelDataNeeds`): summary, wallet summary, period comparison, category total, breakdown, transactions, chart data or goal progress, for a period from today to the salary cycle or custom dates |
-| `memory_search` | Searches the user's AI memory (`retrieveMemoryContext`) |
-| `action_draft` | Validates a payload for a goal, expense, budget, profile or wallet action and keeps it pending in the session for 30 minutes; stopping a goal is high risk, the rest medium |
-| `action_confirm` | For a medium-risk draft, creates the pending action in the action runtime and confirms it, which executes it. A high-risk draft is refused: it needs its confirmation words typed in the chat ([AI Center](ai-center.md)), and the result carries an Arabic reason the assistant says and the call screen shows |
-| `action_cancel` | Cancels a pending draft |
-
-`api/services/voice-call-service.ts#shouldExecuteLiveVoiceTool` enforces the call's tool budget from
-`api/services/ai-cost-policy.ts#resolveAICostPolicy` for the `voice` channel, which is capped at one round:
-`finance_query`, `memory_search` and `action_draft` count toward it, `action_confirm` and `action_cancel` never do.
-A blocked call returns `voice_tool_limit_exceeded` to the model. Every tool run is summarized to the browser for the
-trace panel (`summarizeVoiceToolResponse`) without the raw facts.
-
-### 6. The end of the call
-When the browser closes, sends `end_call`, Gemini closes, or the time is up, the handler (once):
-1. records the elapsed seconds in `voice_usage` with source `gemini_voice_call`;
-2. archives the transcript (`api/services/voice-kernel/voice-call-archive.ts#persistVoiceCallArchive`): a new chat
-   conversation named "Voice call archive <date>" holding one summary message, and the last messages written to AI
-   memory with source `voice`;
-3. ends and clears the session state;
-4. records an AI cost metric, estimating six tokens a second.
-
-## The rebuilt call
-The call is rebuilt beside the one above, on its own socket. Staff and the users in `voice_v2_allowlist` get it
-now, others as `voice_v2_rollout_percent` grows; everyone else keeps the old call, and `voice.startCall` answers
-`legacy` for them.
+## The call
 
 ### Who may call
 `api/services/entitlements/voice.ts#getVoiceEntitlements` returns one typed object: whether the plan may call
 (`voice_call_enabled_<plan>`), minutes a month (`voice_call_limit_<plan>`), seconds a call
 (`voice_call_duration_<plan>`), the model (`voice_v2_model_<plan>`, else `voice_v2_model`, default
 `gemini-3.8-live`), the thinking level for the extended-thinking model, a daily provider-cost cap in USD
-(`voice_daily_cost_cap_usd_<plan>`), and whether this user gets the new call: staff and the users in
-`voice_v2_allowlist` always, others when their stable bucket falls under `voice_v2_rollout_percent`;
-`voice_v2_kill_switch` sends everyone back to the old call. Usage is the Cairo month's
-`voice_calls.billed_seconds` plus the old call's `voice_usage` rows (source `gemini_voice_call`), never dictation
-seconds.
+(`voice_daily_cost_cap_usd_<plan>`); `voice_v2_kill_switch` stops every call and hides the ways in. Usage is the
+Cairo month's `voice_calls.billed_seconds` plus any `voice_usage` rows (source `gemini_voice_call`) the removed
+first call wrote that month, never dictation seconds.
 
 ### One call, step by step
 1. `voice.startCall` (`api/voice-router.ts`, `api/services/voice/gateway/start-call.ts#startVoiceCall`) checks the
@@ -229,10 +140,10 @@ routes. The next call's snapshot reads these memories, and the memory screen lab
 "ملخص مكالمة"; the end screen of a call opens that screen.
 
 ### In the app
-- **Ways in.** Users the rebuilt call is open to (`voice.eligibility` says `v2`) get a "كلّم سمارت" button on Home
+- **Ways in.** While the plan has calls and the admin has not stopped them (`voice.eligibility` says `available`), users get a "كلّم سمارت" button on Home
   (`src/components/voice/CallSmartButton.tsx#CallSmartButton`, with the minutes left) and, in the AI Center's call
   tab, a screen to pick one of four voices and start (`src/components/voice/VoiceCallTab.tsx`,
-  `src/components/voice/CallSmartButton.tsx#VoiceCallLauncher`). Everyone else keeps the old call tab. The first call opens with four lines
+  `src/components/voice/CallSmartButton.tsx#VoiceCallLauncher`). The first call opens with four lines
   on what the call is and what is kept.
 - **One call for the whole app.** `src/lib/voice/call-store.ts#voiceCall` holds the call;
   `src/components/voice/VoiceCallHost.tsx`, mounted in `src/App.tsx` for signed-in users, shows it on every page.
@@ -276,10 +187,9 @@ routes. The next call's snapshot reads these memories, and the memory screen lab
   `VoiceCallHost`), looked at again six seconds later because the summary is written just after the call.
 
 ### In the admin console
-The settings page's plans tab has a section for the rebuilt call
+The settings page's plans tab has a section for the call
 (`src/components/admin/settings/AdminVoiceCallSection.tsx`), saved with the rest of the settings form:
-- **Who gets it:** the kill switch (`voice_v2_kill_switch`), the rollout percent (`voice_v2_rollout_percent`) and
-  the allowlist (`voice_v2_allowlist`, entries like `local:12`).
+- **Stop:** the kill switch (`voice_v2_kill_switch`) stops every call and hides the ways in.
 - **Models:** the default Live model (`voice_v2_model`) and one per plan (`voice_v2_model_<plan>`, empty means the
   default), the thinking level for the extended-thinking model, and the text models of `think`, `market_price` and
   the post-call summary. The choices come from `contracts/voice-models.ts`, which `api/lib/model-mapper.ts` also
@@ -290,52 +200,43 @@ The settings page's plans tab has a section for the rebuilt call
   and reconnects per call, why calls ended, incidents by kind, post-call memory status, clients, each model's
   minutes and cost, and the 25 latest calls. It reads `voice_calls` and `voice_call_incidents` only: counts, times
   and costs, never what was said.
-Monthly minutes, seconds per call and whether a plan may call at all stay in the card above it, shared with the old
-call; that card's model applies to the old call only.
+Monthly minutes, seconds per call and whether a plan may call at all are in the card above it.
 
 ## Where to change what
 | To change | Edit | Check with |
 | --- | --- | --- |
-| Which plans may call, minutes a month, seconds a call, the model, the keys | the `voice_call_*` and `ai_api_key*` system settings; the fallbacks in `handleVoiceCallWebSocket` | |
-| How many tools a call may use | `api/services/ai-cost-policy.ts` (the voice caps) and the `ai_cost_voice_max_tool_rounds` settings, which can only lower it | `api/services/voice-call-service.test.ts` |
-| What the tools can do | `api/services/voice-kernel/voice-tool-adapter.ts`; the answers themselves come from the finance layer and the action runtime of the [AI Center](ai-center.md) | `api/services/voice-kernel/voice-tool-adapter.test.ts` |
-| What the assistant knows before the first question, and its instructions | `api/services/voice-kernel/hot-context.ts`, `api/services/voice-kernel/voice-prompt.ts` | `api/services/voice-kernel/hot-context.test.ts`, `api/services/voice-kernel/voice-prompt.test.ts` |
-| Where the session lives | `api/services/voice-kernel/voice-session-state.ts` | `api/services/voice-kernel/voice-session-state.test.ts` |
-| What is kept after a call | `api/services/voice-kernel/voice-call-archive.ts` | |
-| Microphone, playback and the socket in the browser | `src/hooks/useVoiceCall.ts` | |
-| The call screen | `src/components/ai/AIVoiceCall.tsx` | |
 | Which origins may open the socket | `api/lib/origin-policy.ts` | |
-| Rebuilt call: who may call, minutes, model, rollout | `api/services/entitlements/voice.ts` and the `voice_v2_*` settings, set in `src/components/admin/settings/AdminVoiceCallSection.tsx` | `api/services/entitlements/voice.test.ts`, `src/components/admin/settings/AdminVoiceCallSection.test.tsx` |
-| Rebuilt call: the admin's dashboard | `api/services/voice/admin-stats.ts`, `voice.adminStats` in `api/voice-router.ts` | `api/services/voice/admin-stats.test.ts` |
+| Who may call, minutes, model, the kill switch | `api/services/entitlements/voice.ts` and the `voice_v2_*` settings, set in `src/components/admin/settings/AdminVoiceCallSection.tsx` | `api/services/entitlements/voice.test.ts`, `src/components/admin/settings/AdminVoiceCallSection.test.tsx` |
+| the admin's dashboard | `api/services/voice/admin-stats.ts`, `voice.adminStats` in `api/voice-router.ts` | `api/services/voice/admin-stats.test.ts` |
 | Which Gemini models can be chosen | `contracts/voice-models.ts` | `api/lib/model-mapper.test.ts` |
-| Rebuilt call: the socket, resume, time and cost limits, checkpoints | `api/services/voice/gateway/` | `api/services/voice/gateway/gateway.test.ts` |
-| Rebuilt call: the connection to Gemini Live | `api/services/voice/engine/gemini-live.ts` | `api/services/voice/engine/gemini-live.test.ts` |
-| Rebuilt call: instructions, snapshot, how numbers are spoken | `api/services/voice/brain/instructions.ts`, `api/services/voice/brain/snapshot.ts`, `api/services/voice/brain/spoken.ts` | `api/services/voice/brain/spoken.test.ts` |
-| Rebuilt call: the tools | `api/services/voice/brain/tools/`, and `api/services/voice/app-calls.ts` for the procedures they call | `api/services/voice/brain/tools/*.test.ts`; `api/services/voice/brain/tools/declarations.test.ts` holds every field typed and all declarations under 6,500 characters |
-| Rebuilt call: the stored reports and waiting questions it reads | `api/services/voice/brain/tools/reports.ts` | `api/services/voice/brain/tools/reports.test.ts` |
-| Rebuilt call: which profile questions a call may ask, and how an answer is checked | `api/services/voice/brain/profile-questions.ts` | `api/services/voice/brain/profile-questions.test.ts` |
-| Rebuilt call: what the screen says while a tool runs | `waitDetail` in `api/services/voice/brain/index.ts`, `WAITING` in `src/components/voice/VoiceCallScreen.tsx` | |
-| Rebuilt call: the number check and the confirmation gate | `api/services/voice/brain/validator.ts`, `api/services/voice/brain/drafts.ts` | `api/services/voice/brain/validator.test.ts`, `api/services/voice/brain/drafts.test.ts` |
+| the socket, resume, time and cost limits, checkpoints | `api/services/voice/gateway/` | `api/services/voice/gateway/gateway.test.ts` |
+| the connection to Gemini Live | `api/services/voice/engine/gemini-live.ts` | `api/services/voice/engine/gemini-live.test.ts` |
+| instructions, snapshot, how numbers are spoken | `api/services/voice/brain/instructions.ts`, `api/services/voice/brain/snapshot.ts`, `api/services/voice/brain/spoken.ts` | `api/services/voice/brain/spoken.test.ts` |
+| the tools | `api/services/voice/brain/tools/`, and `api/services/voice/app-calls.ts` for the procedures they call | `api/services/voice/brain/tools/*.test.ts`; `api/services/voice/brain/tools/declarations.test.ts` holds every field typed and all declarations under 6,500 characters |
+| the stored reports and waiting questions it reads | `api/services/voice/brain/tools/reports.ts` | `api/services/voice/brain/tools/reports.test.ts` |
+| which profile questions a call may ask, and how an answer is checked | `api/services/voice/brain/profile-questions.ts` | `api/services/voice/brain/profile-questions.test.ts` |
+| what the screen says while a tool runs | `waitDetail` in `api/services/voice/brain/index.ts`, `WAITING` in `src/components/voice/VoiceCallScreen.tsx` | |
+| the number check and the confirmation gate | `api/services/voice/brain/validator.ts`, `api/services/voice/brain/drafts.ts` | `api/services/voice/brain/validator.test.ts`, `api/services/voice/brain/drafts.test.ts` |
 | Messages between the app and the server | `contracts/voice-protocol.ts` | `tests/voice-protocol.test.ts` |
-| Rebuilt call: what is remembered after a call, and what never is | `api/services/voice/post-call.ts`, `api/services/voice/brain/never-kept.ts`, the `voice_memory_model` setting | `api/services/voice/post-call.test.ts` |
-| Rebuilt call: saying a waiting draft is done | `api/services/voice/brain/claims.ts` | `api/services/voice/brain/claims.test.ts` |
-| Rebuilt call in the app: when the user is speaking, and what is sent | `src/lib/voice/speech-detector.ts`, `src/lib/voice/downsampler.ts` | `src/lib/voice/speech-detector.test.ts`, `src/lib/voice/downsampler.test.ts` |
-| Rebuilt call in the app: the line, resuming a dropped call | `src/lib/voice/call-connection.ts` | `src/lib/voice/call-connection.test.ts` |
-| Rebuilt call in the app: what the screen shows, playback, mute, typing | `src/lib/voice/call-controller.ts`, `src/lib/voice/pcm-player.ts`, `src/components/voice/` | `src/lib/voice/call-controller.test.ts`, `src/lib/voice/pcm-player.test.ts` |
-| Who sees the ways into the rebuilt call | `src/components/voice/CallSmartButton.tsx`, `src/components/voice/VoiceCallTab.tsx` | |
+| what is remembered after a call, and what never is | `api/services/voice/post-call.ts`, `api/services/voice/brain/never-kept.ts`, the `voice_memory_model` setting | `api/services/voice/post-call.test.ts` |
+| saying a waiting draft is done | `api/services/voice/brain/claims.ts` | `api/services/voice/brain/claims.test.ts` |
+| In the app: when the user is speaking, and what is sent | `src/lib/voice/speech-detector.ts`, `src/lib/voice/downsampler.ts` | `src/lib/voice/speech-detector.test.ts`, `src/lib/voice/downsampler.test.ts` |
+| In the app: the line, resuming a dropped call | `src/lib/voice/call-connection.ts` | `src/lib/voice/call-connection.test.ts` |
+| In the app: what the screen shows, playback, mute, typing | `src/lib/voice/call-controller.ts`, `src/lib/voice/pcm-player.ts`, `src/components/voice/` | `src/lib/voice/call-controller.test.ts`, `src/lib/voice/pcm-player.test.ts` |
+| Who sees the ways into the call | `src/components/voice/CallSmartButton.tsx`, `src/components/voice/VoiceCallTab.tsx` | |
 
 ## Rules for changes here
-1. The socket is authenticated only by the session: keep `authenticateUser` before anything that reads user data or
-   spends money.
-2. Never invent numbers in voice: exact figures come from `finance_query`, never from the model.
+1. A socket opens a call only with the single-use ticket `voice.startCall` gave the signed-in user: keep the ticket
+   check before anything that reads user data or spends money.
+2. Never invent numbers in voice: exact figures come from `money_query` or `think`, never from the model.
 3. Actions stay two-step: a draft, then an explicit confirmation. High-risk actions must not run by voice.
 4. Never log what the user or the assistant said (golden rule 10 in the root `AGENTS.md`): the handler logs the user's
-   id and plan, the type and length of a browser message, the length of the assistant's text and the names of the
-   tools it asked for — never a transcript, a reply or a tool's arguments.
+   events with the call id, tool names, times, counts and short codes — never a transcript, a reply or a tool's
+   arguments.
 5. Session state belongs in Redis; the memory fallback exists for development and single-process setups.
 
 ## Tests
-The rebuilt call: `api/services/voice/post-call.test.ts` (the rules on what is kept, a summary written and its
+`api/services/voice/post-call.test.ts` (the rules on what is kept, a summary written and its
 words deleted, a call another server took, words already gone, a call with almost nothing said, retries); `api/services/voice/gateway/gateway.test.ts` runs whole calls over a real socket against
 `tests/helpers/fake-gemini-live.ts` (a ticket, a tool call, captions, the end card, a ticket used twice, a dropped
 call resumed on its handle, a wrong resume token, a socket gone silent, the grace period, the time limit, and
@@ -349,32 +250,13 @@ the assistant's own voice, a noise that stays), playback, the line (resume with 
 line, hanging up while connecting) and a whole call through the controller with a fake socket and fake audio. The
 microphone, the speaker and the screen are checked by hand in a browser.
 
-`api/services/voice-call-service.test.ts` (tool results, the tool budget, confirmation after the budget is spent),
-`api/services/voice-kernel/hot-context.test.ts`, `api/services/voice-kernel/voice-prefetch.test.ts`,
-`api/services/voice-kernel/voice-prompt.test.ts`, `api/services/voice-kernel/voice-session-state.test.ts` and
-`api/services/voice-kernel/voice-tool-adapter.test.ts`. Nothing tests the WebSocket bridge end to end.
-
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Bug.** A call can use one data or draft tool in total, because the voice policy caps tool rounds at one, while the
-   system prompt tells the model to call a tool for every exact question: the second such question in a call gets
-   `voice_tool_limit_exceeded`.
-2. **Bug.** The defaults written in `handleVoiceCallWebSocket` (for example five free minutes a month and a model named
-   `gemini-2.5-flash-native-audio-latest`) differ from the defaults in `api/lib/system-settings-registry.ts`, and
-   the handler's apply whenever a setting was never saved.
-3. **Bug.** The month's allowance adds up every `voice_usage` row of the month, including seconds spent dictating expenses,
-   and the month is the server's calendar month rather than Cairo business time (golden rule 6).
-4. **Debt.** The model id skips `mapModelName` (golden rule 9): `resolveLiveModelId` only adds a prefix.
-5. **Bug.** Usage is written when the call ends; a process that stops mid-call records nothing.
-6. **Debt.** The prefetched facts are stored in the session state, but nothing reads them afterwards; the prefetch only warms
-   the finance layer's cache.
-7. **Debt.** `api/services/voice-context-service.ts#getUserFinancialContextSummary` has no caller, and `ai.runVoiceToolQa` is
-   used only by a development query parameter of the call screen.
-8. **Bug.** Where `api/boot.ts` serves the web app (the website and the PWA), the old call gets no microphone audio:
-   `src/hooks/useVoiceCall.ts` loads its AudioWorklet from a `blob:` URL, and the page's Content-Security-Policy
-   (`api/lib/security-headers.ts`, `script-src` without `blob:`) blocks it. The rebuilt call serves its worklet as a file.
-9. **Debt.** The old call screen shows its technical "Voice trace" panel to every user
-   (`src/components/ai/AIVoiceCall.tsx#VoiceTracePanel`); the rebuilt call shows its trace to admins only.
+1. **Gap.** A call does not go on with the screen locked or the app in the background: the page keeps the microphone
+   only in the foreground, and the call resumes if the app comes back within the hold (`src/lib/voice/call-connection.ts`).
+   Keeping it alive needs native work in the Android and iOS shells.
+2. **Gap.** The speech detector's thresholds (`src/lib/voice/speech-detector.ts`) are tuned on synthetic audio in
+   tests; they have not been checked against recordings of real users on phones in noisy places.
 
 ## Related systems
 - [AI Center](ai-center.md): the finance semantic layer, AI memory and action runtime the tools call, and the page

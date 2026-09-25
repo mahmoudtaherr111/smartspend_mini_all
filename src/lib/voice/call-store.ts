@@ -50,8 +50,6 @@ export interface CallEnding {
 export interface CallFailure {
   message: string;
   fallbackChat: boolean;
-  /** Not in the rebuilt call's rollout: the old call screen takes over. */
-  legacy?: boolean;
 }
 
 export interface CallTrace {

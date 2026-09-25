@@ -134,13 +134,13 @@ Checked against the code; each one names where it lives.
    update can silently turn into zeroes.
 9. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
    entry and `NODE_ENV=production`; `api/server.ts` repeats the server setup for the standalone deployment. Both
-   route the voice sockets (`/api/voice/live`, `/api/voice/v2`) through the one
+   route the voice socket (`/api/voice/v2`) through the one
    `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their
    `upgrade` listeners pass on have to be kept in step by hand.
 10. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
    they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that
    print `error.message` as text print provider, socket and storage errors today, or failed reads whose values
-   are ids and dates (`api/ai-router.ts`, `api/services/voice-call-service.ts`,
+   are ids and dates (`api/ai-router.ts`,
    `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
 
 ## Related systems
