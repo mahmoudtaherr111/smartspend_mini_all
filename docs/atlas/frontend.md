@@ -182,7 +182,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-40 files in its import closure (not counting `src/components/ui/`).
+41 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -195,12 +195,13 @@ _None._
 | `expense.answerClarification` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.batchCreate` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.create` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
-| `expense.delete` | useMutation | `src/components/expenses/RecentExpenses.tsx` |
-| `expense.getMonthSummary` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
-| `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
+| `expense.delete` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.getMonthSummary` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
+| `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/pages/Home.tsx` |
 | `expense.getPendingClarifications` | utils.invalidate | `src/components/expenses/ExpenseForm.tsx` |
-| `expense.list` | useQuery, utils.cancel, utils.getData, utils.invalidate, utils.setData | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.list` | useQuery, utils.cancel, utils.getData, utils.invalidate, utils.setData | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.searchTransactions` | useQuery | `src/components/dashboard/GlobalSearch.tsx` |
+| `expense.update` | useMutation | `src/components/expenses/EditExpenseDialog.tsx` |
 | `goals.analyze` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.create` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.list` | useQuery | `src/components/goals/FinancialGoalsPanel.tsx` |

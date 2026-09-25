@@ -62,6 +62,7 @@ flowchart LR
   mod_ledger -.-> tbl_expenses
   mod_ledger ==> tbl_expense_daily_rollups
   mod_ledger ==> tbl_expense_details
+  mod_web_finance --> sys_platform
   mod_web_finance --> sys_web_app
   page_Home --> router_business
   page_Home --> router_expense
@@ -123,7 +124,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges. | 2 |
-| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 13 |
+| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 14 |
 
 ## API procedures
 
@@ -150,7 +151,7 @@ flowchart LR
 | `expense.getYearlyStats` | query | `authedProcedure` | `expense_daily_rollups` | — | — |
 | `expense.list` | query | `authedProcedure` | `expenses` | — | `Home` |
 | `expense.searchTransactions` | query | `authedProcedure` | `expenses` | — | `Home` |
-| `expense.update` | mutation | `authedProcedure` | `classification_logs`, `expenses` | `classification_logs`, `expenses` | — |
+| `expense.update` | mutation | `authedProcedure` | `classification_logs`, `expenses` | `classification_logs`, `expenses` | `Home` |
 | `export.myExpenses` | mutation | `authedProcedure` | `expenses` | — | — |
 | `goals.analyze` | mutation | `goalAnalysisProcedure` | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `users` | `Home`, `More`, `Settings` |
 | `goals.create` | mutation | `authedProcedure` | `financial_goals` | `financial_goals` | `Home`, `More`, `Settings` |
@@ -213,7 +214,7 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>41 files and declarations</summary>
+<details><summary>42 files and declarations</summary>
 
 - `api/boot.ts#job:nightly-rollup-reconciliation`
 - `api/boot.ts#job:taxonomy-migration`
@@ -253,6 +254,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/dashboard/StatsView.tsx`
 - `src/components/dashboard/StreakCounter.tsx`
 - `src/components/dashboard/UserIntelligencePanel.tsx`
+- `src/components/expenses/EditExpenseDialog.tsx`
 - `src/components/expenses/RecentExpenses.tsx`
 - `src/components/goals/FinancialGoalsPanel.tsx`
 - `src/pages/Home.tsx`

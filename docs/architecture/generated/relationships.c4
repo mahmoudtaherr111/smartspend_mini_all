@@ -1102,6 +1102,7 @@ model {
   smartspend.web.modules.web-capture -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-capture -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-capture -[imports]-> smartspend.web.modules.web-ui-kit
+  smartspend.web.modules.web-finance -[imports]-> smartspend.shared.contracts
   smartspend.web.modules.web-finance -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-finance -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-finance -[imports]-> smartspend.web.modules.web-shell
@@ -1268,6 +1269,7 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getPendingClarifications
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.list
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.searchTransactions
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.update
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.goals.analyze
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.goals.create
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.goals.list

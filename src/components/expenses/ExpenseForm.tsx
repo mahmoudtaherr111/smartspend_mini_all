@@ -671,6 +671,8 @@ export function ExpenseForm({
     },
   });
 
+  const deleteSavedMutation = trpc.expense.delete.useMutation();
+
   const batchCreateMutation = trpc.expense.batchCreate.useMutation({
     onMutate: async () => {
       await utilsTrpc.expense.list.cancel();
@@ -1086,6 +1088,7 @@ export function ExpenseForm({
     }
 
     isSubmittingMutationRef.current = true;
+    let savedIds: number[] = [];
     try {
       if (normalizedItems.length > 1) {
         const payload = normalizedItems.map((item, index) => ({
@@ -1105,10 +1108,11 @@ export function ExpenseForm({
             ? `${effectiveClientRequestId}:${index}`
             : undefined,
         }));
-        await batchCreateMutation.mutateAsync(payload);
+        const saved = await batchCreateMutation.mutateAsync(payload);
+        savedIds = (saved as { ids?: number[] })?.ids ?? [];
       } else {
         const item = normalizedItems[0];
-        await createMutation.mutateAsync({
+        const saved = await createMutation.mutateAsync({
           amount: item.amount,
           type: item.type,
           category: item.category,
@@ -1123,6 +1127,8 @@ export function ExpenseForm({
           ...personOf(item),
           clientRequestId: effectiveClientRequestId || undefined,
         });
+        const savedId = (saved as { id?: number })?.id;
+        savedIds = savedId ? [savedId] : [];
       }
       setParsedItems(null);
       setDecision(null);
@@ -1134,11 +1140,31 @@ export function ExpenseForm({
       setFlowStage("idle");
       setShowSuccessAnim(true);
       setTimeout(() => setShowSuccessAnim(false), 2000);
-      toast.success(
-        isAuto
-          ? `تم الحفظ تلقائياً (${normalizedItems.length} عملية)`
-          : "تم الحفظ بنجاح.",
-      );
+      // Say what was saved, and offer to take it back.
+      const first = normalizedItems[0];
+      const summary =
+        normalizedItems.length === 1
+          ? `${first.amount.toLocaleString("ar-EG")} ج · ${first.category}${first.subCategory && first.subCategory !== "عام" ? `/${first.subCategory}` : ""}`
+          : `${normalizedItems.length} عمليات · ${normalizedItems.reduce((sum, item) => sum + item.amount, 0).toLocaleString("ar-EG")} ج`;
+      toast.success(isAuto ? `اتحفظت لوحدها: ${summary}` : `اتحفظت: ${summary}`, {
+        duration: 7000,
+        action:
+          savedIds.length > 0
+            ? {
+                label: "تراجع",
+                onClick: () => {
+                  void Promise.all(savedIds.map((id) => deleteSavedMutation.mutateAsync({ id })))
+                    .then(() => toast.success("اترجعت"))
+                    .catch(() => toast.error("ماقدرناش نرجعها، امسحها من القايمة"))
+                    .finally(() => {
+                      void utilsTrpc.expense.list.invalidate();
+                      void utilsTrpc.expense.getMonthSummary.invalidate();
+                      void utilsTrpc.expense.getMonthlyStats.invalidate();
+                    });
+                },
+              }
+            : undefined,
+      });
       removeQueuedText(pendingOfflineTextId);
       return true;
     } catch {

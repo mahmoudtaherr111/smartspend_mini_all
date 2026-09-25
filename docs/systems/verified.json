@@ -225,12 +225,12 @@
         "api/ai-router.ts#rest-of-file": "2060e3c49538",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
         "api/expense-router.ts#expense.answerClarification": "272268df19ee",
-        "api/expense-router.ts#expense.batchCreate": "09fc6809f824",
+        "api/expense-router.ts#expense.batchCreate": "db08bc69052c",
         "api/expense-router.ts#expense.create": "8268c6465ede",
         "api/expense-router.ts#expense.createCategory": "8b691f7a3e91",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "1567060752e3",
+        "api/expense-router.ts#rest-of-file": "cc11f6c9e0ed",
         "api/image-router.ts": "95cb317266d6",
         "api/lib/admissibility-gate.ts": "9a24ae0cb1da",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
@@ -275,14 +275,14 @@
         "api/lib/unified-normalizer.ts": "603756615433",
         "api/lib/voice-intake-gate.ts": "6213ffc0c8da",
         "api/services/parser-trace.ts": "d02875bad059",
-        "src/components/expenses/ExpenseForm.tsx": "ec3f35409694",
+        "src/components/expenses/ExpenseForm.tsx": "34d8d437bb61",
         "src/components/expenses/ReceiptCapture.tsx": "5940b1b1e056",
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-24 37a55fb",
-      "arabic": "d9a758b3d131",
-      "arabicChecked": "2026-09-24 45b800e"
+      "checked": "2026-09-25 f14681b",
+      "arabic": "ff0a9b7dde81",
+      "arabicChecked": "2026-09-25 f14681b"
     },
     "insights": {
       "files": {
@@ -331,8 +331,8 @@
         "api/expense-router.ts#expense.getYearlyStats": "5267d3d55014",
         "api/expense-router.ts#expense.list": "1540eca4d7f5",
         "api/expense-router.ts#expense.searchTransactions": "9d92514f1158",
-        "api/expense-router.ts#expense.update": "f80f441ed057",
-        "api/expense-router.ts#rest-of-file": "1567060752e3",
+        "api/expense-router.ts#expense.update": "1d6571db5314",
+        "api/expense-router.ts#rest-of-file": "cc11f6c9e0ed",
         "api/export-router.ts#export.myExpenses": "d0acca7338ba",
         "api/export-router.ts#rest-of-file": "45767b678670",
         "api/goals-router.ts": "9b542bba317d",
@@ -358,13 +358,14 @@
         "src/components/dashboard/StatsView.tsx": "b2758a9baf79",
         "src/components/dashboard/StreakCounter.tsx": "86c3f654ff1d",
         "src/components/dashboard/UserIntelligencePanel.tsx": "ed213db74bae",
-        "src/components/expenses/RecentExpenses.tsx": "51923612ccee",
+        "src/components/expenses/EditExpenseDialog.tsx": "343360a2579f",
+        "src/components/expenses/RecentExpenses.tsx": "955f7cf3d980",
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/pages/Home.tsx": "fbdc4529b1c2"
       },
-      "checked": "2026-09-24 37a55fb",
-      "arabic": "5c9afd7ca720",
-      "arabicChecked": "2026-09-24 37a55fb"
+      "checked": "2026-09-25 f14681b",
+      "arabic": "b9a4b53fc888",
+      "arabicChecked": "2026-09-25 f14681b"
     },
     "notifications": {
       "files": {
@@ -618,7 +619,7 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-09-24 45b800e",
+      "checked": "2026-09-25 f14681b",
       "arabic": "c831f848ac25",
       "arabicChecked": "2026-09-24 45b800e"
     }

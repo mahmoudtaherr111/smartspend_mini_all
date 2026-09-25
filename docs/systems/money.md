@@ -13,7 +13,7 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 | --- | --- | --- |
 | Home screen | `src/pages/Home.tsx#Home` | Three tabs (record, statistics, calendar) for one month, the summary cards, business mode, the onboarding card, and, for users the rebuilt [voice call](voice-calls.md) is open to, a button that starts it (`src/components/voice/CallSmartButton.tsx#CallSmartButton`) |
 | Header and summary | `src/components/dashboard/HomeHeader.tsx`, `src/components/dashboard/HomeSummaryCards.tsx` | Month switcher, tabs, business toggle, streak, the month's spending as a share of income, income and spending totals |
-| Record tab | `src/components/expenses/RecentExpenses.tsx`, `src/components/goals/FinancialGoalsPanel.tsx#FinancialGoalsPanel` | Beside the entry form: the bank messages waiting for the user's confirmation when there are any ([bank messages](bank-messages.md#5-over-the-monthly-limit)), the month's latest items with delete, each category badge in the colour the taxonomy gives it, and the goal creation card |
+| Record tab | `src/components/expenses/RecentExpenses.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/goals/FinancialGoalsPanel.tsx#FinancialGoalsPanel` | Beside the entry form: the bank messages waiting for the user's confirmation when there are any ([bank messages](bank-messages.md#5-over-the-monthly-limit)), the month's latest items, each with details, an edit dialog (amount, kind, category, date, description; `expense.update` stores the category through the registry and records a changed one as the user's correction) and delete, each category badge in the colour the taxonomy gives it, and the goal creation card |
 | Statistics tab | `src/components/dashboard/StatsView.tsx#StatsView`, `src/components/dashboard/ExpenseChart.tsx#ExpenseChart`, `src/components/dashboard/BehaviorInsights.tsx`, `src/components/dashboard/GlobalSearch.tsx#GlobalSearch` | Daily average, change, top category and personality; charts by category, family, electronic payments, budget and timing; search; bank-message totals; top categories |
 | Calendar tab | `src/components/dashboard/MonthlyCalendar.tsx` | Spending per day of the calendar month, and the items of a chosen day |
 | Ledger API | `api/expense-router.ts` (`expense.list`, `expense.searchTransactions`, `expense.getById`, `expense.update`, `expense.delete`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`) | Reads, edits and deletes items and computes the month and year figures |
@@ -182,15 +182,13 @@ Checked against the code; each one names where it lives.
 6. **Bug.** In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
 7. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
    (`src/components/goals/FinancialGoalsPanel.tsx`).
-8. **Gap.** A saved item cannot be edited in the web app: nothing calls `expense.update`, so the corrections it records never
-   happen (`api/lib/AGENTS.md`, rule 5).
-9. **Bug.** The calendar's day list sends local times without a time zone, which the server reads in its own zone.
-10. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record;
+8. **Bug.** The calendar's day list sends local times without a time zone, which the server reads in its own zone.
+9. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record;
     `business.get` returns the user's first business even when it is inactive.
-11. **Bug.** Wallet balances are stored as whatever text the client sends.
-12. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
+10. **Bug.** Wallet balances are stored as whatever text the client sends.
+11. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
     as spending, every source except voice as manual, and dates by UTC day.
-13. **Gap.** A refund is income under دخل آخر/مرتجعات واسترداد; the category the purchase came from keeps its full amount.
+12. **Gap.** A refund is income under دخل آخر/مرتجعات واسترداد; the category the purchase came from keeps its full amount.
     Netting it waits for one definition of spending that every screen reads (docs/decisions/0008-money-movements-and-taxonomy.md).
 
 ## Related systems

@@ -27,6 +27,7 @@ import {
   ChevronDown,
   ChevronUp,
   Wallet,
+  Pencil,
 } from "lucide-react";
 import {
   motion,
@@ -37,6 +38,7 @@ import {
 } from "framer-motion";
 import { useHaptics } from "@/hooks/useHaptics";
 import { getCategoryAppearance } from "@/lib/financial-taxonomy";
+import { EditExpenseDialog } from "./EditExpenseDialog";
 
 interface RecentExpensesProps {
   onRefresh?: () => void;
@@ -477,6 +479,8 @@ function ExpenseItem({
 
   const controls = useAnimation();
   const { lightTap, heavyTap } = useHaptics();
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const isRTL =
     typeof document !== "undefined" && document.documentElement.dir === "rtl";
   const dragConstraints = isRTL
@@ -606,7 +610,7 @@ function ExpenseItem({
               </span>
             )}
           </div>
-          <AdaptiveDialog snapPoints={[0.6, 0.95]}>
+          <AdaptiveDialog snapPoints={[0.6, 0.95]} open={detailsOpen} onOpenChange={setDetailsOpen}>
             <AdaptiveDialogTrigger
               aria-label="تفاصيل العملية"
               className="inline-flex h-11 w-11 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground border shadow-sm bg-white dark:bg-slate-800"
@@ -730,8 +734,33 @@ function ExpenseItem({
                   <span>{date.toLocaleString("ar-EG")}</span>
                 </div>
               </div>
+              <AdaptiveDialogFooter className="flex-row gap-2 sm:gap-0">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl text-destructive"
+                  disabled={isDeleting}
+                  onClick={() => {
+                    setDetailsOpen(false);
+                    onRequestDelete(expense.id);
+                  }}
+                >
+                  <Trash2 className="me-1 h-4 w-4" />
+                  امسح
+                </Button>
+                <Button
+                  className="flex-1 rounded-xl"
+                  onClick={() => {
+                    setDetailsOpen(false);
+                    setEditOpen(true);
+                  }}
+                >
+                  <Pencil className="me-1 h-4 w-4" />
+                  تعديل
+                </Button>
+              </AdaptiveDialogFooter>
             </AdaptiveDialogContent>
           </AdaptiveDialog>
+          {editOpen && <EditExpenseDialog expense={expense} open onOpenChange={setEditOpen} />}
         </div>
       </motion.div>
     </div>

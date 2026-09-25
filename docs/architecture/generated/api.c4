@@ -1333,9 +1333,9 @@ model {
         }
       }
       update = procedure 'expense.update' {
-        #mutation #authed #uncalled
+        #mutation #authed
         technology 'authedProcedure'
-        description 'mutation · authedProcedure · no caller in src/'
+        description 'mutation · authedProcedure'
         metadata {
           file 'api/expense-router.ts'
           builder 'authedProcedure'

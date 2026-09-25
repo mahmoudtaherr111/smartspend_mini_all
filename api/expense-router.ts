@@ -37,6 +37,7 @@ import {
 import { businessDayRange } from "./lib/app-time";
 import { assertEntityOwnership } from "./lib/ownership-guard";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
+import { normalizeCategoryName, normalizeSubCategoryName } from "./lib/category-registry";
 
 async function invalidateExpenseCache(userId: number | string, userType: string) {
   try {
@@ -738,6 +739,8 @@ export const expenseRouter = router({
       }));
 
       // ─── ACID Transaction: batch insert + contact counts + streak ───
+      // The ids let the app offer "undo" for exactly what it just saved.
+      let insertedIds: number[] = [];
       try {
         await db.transaction(async (tx) => {
           const [insertResult] = await tx.insert(expenses).values(valuesToInsert);
@@ -745,6 +748,7 @@ export const expenseRouter = router({
           const firstInsertId = Number(rawResult?.insertId || rawResult?.[0]?.insertId || 0);
 
           if (firstInsertId) {
+            insertedIds = valuesToInsert.map((_, i) => firstInsertId + i);
             const insertedExpenses = valuesToInsert.map((v, i) => ({
               id: firstInsertId + i,
               rawText: v.rawText,
@@ -824,6 +828,7 @@ export const expenseRouter = router({
       return {
         success: true,
         count: valuesToInsert.length + existingClientMap.size,
+        ids: insertedIds,
         newlyAddedContact: references.find((reference) => reference.newlyAddedContact)?.newlyAddedContact || null,
       };
     }),
@@ -974,13 +979,22 @@ export const expenseRouter = router({
         contactId: input.contactId,
       });
 
+      // An edit stores a category the taxonomy holds, as every other write does: free text
+      // and old names are resolved against the registry (a person category keeps its name).
+      const category =
+        input.category !== undefined ? normalizeCategoryName(input.category) : undefined;
+      const subCategory =
+        input.subCategory !== undefined
+          ? normalizeSubCategoryName(category ?? input.category ?? "", input.subCategory)
+          : undefined;
+
       const updateData: Record<string, any> = {};
       if (input.amount !== undefined)
         updateData.amount = input.amount.toString();
       if (input.type !== undefined) updateData.type = input.type;
-      if (input.category !== undefined) updateData.category = input.category;
-      if (input.subCategory !== undefined)
-        updateData.subCategory = input.subCategory;
+      if (category !== undefined) updateData.category = category;
+      if (subCategory !== undefined)
+        updateData.subCategory = subCategory;
       if (input.description !== undefined)
         updateData.description = input.description;
       if (input.rawText !== undefined) updateData.rawText = input.rawText;
@@ -1058,14 +1072,14 @@ export const expenseRouter = router({
         "أخرى",
       ];
       if (
-        input.category &&
-        personCategories.includes(input.category) &&
-        input.subCategory &&
-        input.subCategory !== "عام"
+        category &&
+        personCategories.includes(category) &&
+        subCategory &&
+        subCategory !== "عام"
       ) {
         const { name, relationship } = parseNameAndRelationship(
-          input.subCategory,
-          input.category,
+          subCategory,
+          category,
         );
         if (name && name !== "عام" && name !== "شخص") {
           const { addDynamicContact } =
@@ -1083,14 +1097,14 @@ export const expenseRouter = router({
       // When user corrects a category, extract keywords from rawText
       // and auto-save them to user_dictionaries for instant future matching.
       const categoryChanged =
-        input.category &&
+        category &&
         originalExpense &&
-        originalExpense.category !== input.category;
+        originalExpense.category !== category;
       if (categoryChanged && originalExpense?.rawText) {
         try {
-          const newCategory = input.category!;
+          const newCategory = category!;
           const newSubCategory =
-            input.subCategory || originalExpense.subCategory || "عام";
+            subCategory || originalExpense.subCategory || "عام";
           const rawText = originalExpense.rawText;
 
           const [latestClassificationLog] = await db

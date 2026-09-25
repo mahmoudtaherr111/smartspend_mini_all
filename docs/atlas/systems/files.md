@@ -308,6 +308,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/dashboard/StatsView.tsx` | [money](money.md) |
 | `src/components/dashboard/StreakCounter.tsx` | [money](money.md) |
 | `src/components/dashboard/UserIntelligencePanel.tsx` | [money](money.md) |
+| `src/components/expenses/EditExpenseDialog.tsx` | [money](money.md) |
 | `src/components/expenses/ExpenseForm.tsx` | [expense-capture](expense-capture.md) |
 | `src/components/expenses/ReceiptCapture.tsx` | [expense-capture](expense-capture.md) |
 | `src/components/expenses/RecentExpenses.tsx` | [money](money.md) |

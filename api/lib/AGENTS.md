@@ -31,7 +31,7 @@ Read `smart-pipeline.ts` before changing any stage.
    misfire (`كنت ه` also matches `كنت هناك`). Match tokens with `arabic-token-match.ts`.
 4. A behaviour change must keep the classification benchmark green: `npm run bench:classify`, and
    `npm run bench:classify:compare` against the frozen baseline.
-5. Correction learning is not wired to the product today: `recordCorrection` runs only from
-   `expense.update`, which the web app does not call. Do not assume a user's correction reaches the
-   pipeline.
+5. Correction learning runs from `expense.update`, which the web app calls from the edit dialog of a saved
+   item (`src/components/expenses/EditExpenseDialog.tsx`). Edits made on the review cards before saving are
+   not recorded yet.
 6. Model ids through `model-mapper.ts`; admin-configured providers and keys through `ai-gateway.ts`.
