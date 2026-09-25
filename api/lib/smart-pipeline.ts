@@ -65,7 +65,6 @@ import {
 } from "./final-acceptance";
 import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction, compactArabic } from "./person-resolver";
 import { muscleMemoryLookup } from "./muscle-memory";
-import { matchSegment } from "./embedding-engine";
 import { db } from "../queries/connection";
 import { expenses } from "../../db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -223,7 +222,6 @@ export interface PipelineLog {
   normalizedText?: string;
   entitiesFound?: Record<string, unknown>;
   ruleEngineResult?: Record<string, unknown>;
-  embeddingResult?: Record<string, unknown>;
   aiResult?: Record<string, unknown>;
   routing?: Record<string, unknown>;
   finalConfidence?: number;
@@ -765,7 +763,6 @@ async function classifyAdmittedEvents(
   let modelReplyProblems: string[] = [];
   const provider = input.provider || "gemini";
   const modelUsed = mapModelName(input.modelName);
-  const fireworksKey = input.fireworksApiKey || "";
   const knownPeople: KnownPersonContext[] = Array.isArray(
     input.userProfileContext?.knownPeople,
   )
@@ -1401,8 +1398,6 @@ async function classifyAdmittedEvents(
         segmentNormalized,
         input.userDict,
         input.userProfileContext,
-        undefined,
-        fireworksKey,
       );
       segmentRule.items = segmentRule.items.map((item) => ({ ...item,
         sourceEventId: segment.segmentIndex,
@@ -1564,7 +1559,7 @@ async function classifyAdmittedEvents(
   
   // Only trust Rule Engine for short phrases (<= 30 words) with max 5 amounts
   if (!ruleSucceeded && failedSegments.length === 0 && numAmounts <= 5 && numWords <= 30) {
-    ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext, undefined, fireworksKey);
+    ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext,);
     
     if (ruleResult.items.length > 0) {
       const segmentResolvedItems: ParsedTransaction[] = [];
@@ -1716,54 +1711,6 @@ async function classifyAdmittedEvents(
     }
   }
 
-  const allKnownNames = knownPeople.map((p) => p.name).filter(Boolean);
-  const personCandidates = pickAllPersonCandidates(null, input.text, allKnownNames);
-  const hasPersonContext = personCandidates.length > 0 || isDirectedPersonPayment(input.text);
-
-  // 3. Fireworks Embedding Layer (92% accuracy, 1 API call, cached)
-  // Runs when rule engine failed or returned low confidence, before falling back to AI.
-  // Skip if text contains person-related context (needs person resolution, not embedding)
-  if (!ruleSucceeded && finalItems.length === 0 && fireworksKey && numAmounts <= 3 && !hasPersonContext) {
-    try {
-      const cleanText = normalized.forRules
-        .replace(/\d+(\.\d+)?/g, "")
-        .replace(/(جنيه|ج\.م|ج|الف|ألف|قسط|دفعت|حولت|صرفت|شحنت)/g, "")
-        .trim();
-
-      if (cleanText.length >= 3) {
-        const embMatch = await matchSegment(cleanText, undefined, fireworksKey);
-        if (embMatch && embMatch.score >= 70) {
-          const amounts = extractAmounts(normalizedText);
-          if (amounts.length > 0) {
-            const embItem: ParsedTransaction = {
-              amount: amounts[0].amount,
-              category: embMatch.category,
-              subCategory: embMatch.subCategory,
-              description: input.text.slice(0, 60),
-              type: (CATEGORIES.find(c => c.name_ar === embMatch.category)?.type || "expense") as any,
-              confidence: embMatch.score,
-              currency: "EGP",
-              needsReview: embMatch.score < 85,
-              parsedBy: "rule_engine",
-              inferenceSource: "ai",
-              ambiguityFlags: ["fireworks_embedding"],
-            };
-            finalItems.push(...registerAccepted([embItem]));
-            ruleSucceeded = true;
-            // Deliberately leaves `decision` unknown so the embedding answer meets the
-            // same reconciliation and per-item eligibility as every other path. It used
-            // to grant itself `auto_save` on `embMatch.score >= 85` — a raw cosine
-            // similarity compared against a threshold meant for calibrated
-            // probabilities, on an item that reached the end carrying no evidence at all.
-            overallConfidence = embMatch.score;
-          }
-        }
-      }
-    } catch (e) {
-      // Fireworks API might fail — don't block, fall through to AI
-      console.warn("[Smart Pipeline] Fireworks embedding layer failed:", e);
-    }
-  }
 
   // 4. Single-Pass Semantic Extraction (AI — fallback of last resort)
   //
@@ -1791,8 +1738,6 @@ async function classifyAdmittedEvents(
       normalized.forAI,
       input.userDict,
       input.userProfileContext,
-      undefined,
-      fireworksKey,
     );
     if (lastPass.items.length > 0) {
       finalItems.push(...registerAccepted(lastPass.items));
@@ -2042,7 +1987,7 @@ async function classifyAdmittedEvents(
          // "ماشتريتش جزمة 500 ودفعت 200 بنزين" came back with the petrol recorded twice.
          if (finalItems.length === 0 && numAmounts <= 3 && numWords <= 15) {
               if (!ruleResult) {
-                 ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext, undefined, fireworksKey);
+                 ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext,);
               }
               if (ruleResult.items.length > 0) {
                  finalItems.push(...registerAccepted(ruleResult.items));
@@ -2112,8 +2057,6 @@ async function classifyAdmittedEvents(
           textToClassify,
           input.userDict,
           input.userProfileContext,
-          undefined,
-          fireworksKey,
         );
         if (fallbackRuleResult.items.length > 0) {
           finalItems.push(...fallbackRuleResult.items);
@@ -2149,8 +2092,6 @@ async function classifyAdmittedEvents(
           normalizedText,
           input.userDict,
           input.userProfileContext,
-          undefined,
-          fireworksKey,
         );
       }
 
@@ -2427,11 +2368,6 @@ async function classifyAdmittedEvents(
       attempted: true,
       succeeded: !requiresAI,
       reason: "smart_pipeline_step_3",
-    },
-    embeddingResult: {
-      attempted: false,
-      succeeded: false,
-      reason: "bypassed",
     },
     aiResult: {
       attempted: requiresAI,

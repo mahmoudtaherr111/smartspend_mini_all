@@ -452,6 +452,11 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     subCategory: "مكافأة/بونص",
     confidence: 98,
   },
+  "اوفر تايم": { category: "مرتب", subCategory: "أوفر تايم", confidence: 96 },
+  "أوفر تايم": { category: "مرتب", subCategory: "أوفر تايم", confidence: 96 },
+  "اوفرتايم": { category: "مرتب", subCategory: "أوفر تايم", confidence: 96 },
+  "شغل جانبي": { category: "عمل حر", subCategory: "سبوبة", confidence: 94 },
+  "شغل اضافي": { category: "عمل حر", subCategory: "سبوبة", confidence: 90 },
   "سبوبة فريلانس": { category: "عمل حر", subCategory: "سبوبة", confidence: 98 },
   "مشروع فريلانس": { category: "عمل حر", subCategory: "مشروع", confidence: 98 },
   "أرباح البنك": {

@@ -121,7 +121,6 @@ The layers `runRuleEngine` tries for the text around one amount, with the eviden
 | Category dictionary phrases, then subcategory phrases, of three and two words | `dict_trigram`, `dict_bigram`, `subcat_trigram`, `subcat_bigram` |
 | A single word in the subcategory map, then in the category dictionary | `subcat_unigram`, `dict_unigram` |
 | Typo match, with an edit budget scaled to the word's length | `fuzzy` |
-| Semantic match on a local character n-gram index, and Fireworks embeddings when the request carries a Fireworks key (`api/lib/embedding-engine.ts#matchSegment`) | `embedding` |
 | Direction only: income becomes `دخل آخر`, an expense `متنوعات` at low confidence | `intent_only` |
 
 A kinship word from the synonym graph (أمي، ابني) and a payment rail from the merchant registry (a card, a wallet, a
@@ -163,9 +162,8 @@ When events escalated, the pipeline:
   category for a clause with no extracted amount becomes a question;
 - when every provider fails, keeps the local items and marks them for review.
 
-One shortcut comes before the model: when no event was accepted locally, the sentence has at most three amounts,
-no person is involved and a Fireworks key is present, a whole-sentence embedding match scoring 70 or more is used
-instead of the model (see known issues).
+There is no semantic (embedding) layer: a sentence the rules cannot place goes to the model
+(docs/decisions/0012-classification-without-embeddings.md).
 
 ### 7. Checks before the decision
 - **Amounts**: `api/lib/amount-ledger.ts#reconcileAmounts` checks, in integer cents, that every amount the user
@@ -338,13 +336,11 @@ Checked against the code; each one names where it lives.
 3. **Bug.** The voice endpoints count the month differently: `speechToText` from the subscription or sign-up day,
    `parseVoiceExpense` from the first of the calendar month. `parseVoiceExpense` also creates contacts for the
    people it resolves while parsing, before the user saves anything.
-4. **Bug.** When every event escalates and a Fireworks key is present, the whole-sentence embedding shortcut makes one item
-   from the first amount; the other amounts then become a question.
-5. **Gap.** A category changed on the review card teaches a rule only when the sentence was one item
+4. **Gap.** A category changed on the review card teaches a rule only when the sentence was one item
    (`api/expense-router.ts#reviewCorrection`); in a multi-item sentence it is saved but not learned. `ai.learnWord`, `expense.createCategory` and
    `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is
    not rendered anywhere.
-6. **Debt.** The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win;
+5. **Debt.** The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win;
    the code reads the `parser_*` keys first.
 
 ## Related systems

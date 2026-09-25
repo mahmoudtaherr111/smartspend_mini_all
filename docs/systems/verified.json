@@ -155,12 +155,10 @@
         "api/lib/ai-ledger.ts": "93e56a2d0714",
         "api/lib/ai-pricing.ts": "23536d58c2c7",
         "api/lib/ai-provider-registry.ts": "da1562b6acdf",
-        "api/lib/ai-routing.ts": "14a1e099f1f2",
         "api/lib/ai-usage-policy.ts": "e18edf7b3fec",
         "api/lib/deepseek-client.ts": "25b94e78c4ee",
         "api/lib/embedding-provider.ts": "72fa42725bca",
         "api/lib/fireworks-client.ts": "0ff5cda683b6",
-        "api/lib/fireworks-embedding-client.ts": "6e3729d6288d",
         "api/lib/groq-client.ts": "bdb495a8b189",
         "api/lib/llm-provider-chain.ts": "fb82931289a2",
         "api/lib/llm-router.ts": "ae8237823ac9",
@@ -171,9 +169,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "e4536dd88d77"
       },
-      "checked": "2026-09-25 cdfa911",
-      "arabic": "7881f45b3417",
-      "arabicChecked": "2026-09-25 cdfa911"
+      "checked": "2026-09-25 18b18aa",
+      "arabic": "cb905ba46def",
+      "arabicChecked": "2026-09-25 18b18aa"
     },
     "bank-messages": {
       "files": {
@@ -258,12 +256,10 @@
         "api/lib/direction-governed-taxonomy.ts": "d0aaf7c28792",
         "api/lib/egyptian-dictionary.ts": "12dda0ce51a7",
         "api/lib/egyptian-names-dictionary.ts": "ce14f79a3952",
-        "api/lib/embedding-engine.ts": "39de1eb4636a",
         "api/lib/entity-extractor.ts": "6e9e6a0ba9be",
         "api/lib/final-acceptance.ts": "5a0fb202e2d2",
         "api/lib/financial-event-plan.ts": "027211185234",
         "api/lib/fuzzy-match.ts": "d122bbfd9740",
-        "api/lib/generate-embeddings-cache.ts": "17c337920dae",
         "api/lib/intent-detector.ts": "812bcc1cca29",
         "api/lib/muscle-memory.ts": "b3bdebcdc95b",
         "api/lib/narrative-decomposer.ts": "fb133a36add7",
@@ -274,23 +270,23 @@
         "api/lib/real-user-sim.ts": "569dd5235fe1",
         "api/lib/receipt-image-parser.ts": "cd75393a2c4b",
         "api/lib/relationship-normalizer.ts": "be8cc3a84254",
-        "api/lib/rule-engine.ts": "e69ba5003b8d",
-        "api/lib/smart-pipeline.ts": "7395fb8f3bea",
+        "api/lib/rule-engine.ts": "d77568e4c997",
+        "api/lib/smart-pipeline.ts": "7f84751a2527",
         "api/lib/stt-corrections.ts": "2becb68a8fbe",
-        "api/lib/taxonomy-adapter.ts": "21acb8d916a7",
+        "api/lib/taxonomy-adapter.ts": "d144eef8a9ec",
         "api/lib/taxonomy-ssot.ts": "fb99f8118120",
         "api/lib/text-normalizer.ts": "59e66af10cd5",
         "api/lib/unified-normalizer.ts": "603756615433",
         "api/lib/voice-intake-gate.ts": "6213ffc0c8da",
-        "api/services/parser-trace.ts": "d02875bad059",
+        "api/services/parser-trace.ts": "aa8b5bad3877",
         "src/components/expenses/ExpenseForm.tsx": "b49a3f3a3a89",
         "src/components/expenses/ReceiptCapture.tsx": "5940b1b1e056",
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-25 25a20ff",
-      "arabic": "c6cd09b88924",
-      "arabicChecked": "2026-09-25 25a20ff"
+      "checked": "2026-09-25 18b18aa",
+      "arabic": "ebb5b1600508",
+      "arabicChecked": "2026-09-25 18b18aa"
     },
     "insights": {
       "files": {
@@ -406,7 +402,7 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "88c6c2ecc718",
+        "api/boot.ts#rest-of-file": "e494d697241f",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "295ff3f7c233",
         "api/lib/app-time.ts": "c096c8dc7c19",
@@ -442,7 +438,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "249d087e3b9c"
       },
-      "checked": "2026-09-25 cdfa911",
+      "checked": "2026-09-25 18b18aa",
       "arabic": "3836af929882",
       "arabicChecked": "2026-09-25 cdfa911"
     },

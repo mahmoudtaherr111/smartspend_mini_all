@@ -1,7 +1,7 @@
 # 0011. Gemini embeddings serve memory search, not expense classification
 
-- Status: accepted, implemented in `api/lib/embedding-provider.ts` and `api/services/ai-memory/`; classification is
-  unchanged (`api/lib/embedding-engine.ts`).
+- Status: accepted, implemented in `api/lib/embedding-provider.ts` and `api/services/ai-memory/`. The classification
+  layer it left off was removed by [0012](0012-classification-without-embeddings.md).
 - Decided and recorded: 2026-09-26.
 
 ## Context

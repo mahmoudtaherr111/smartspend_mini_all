@@ -112,7 +112,6 @@ flowchart LR
   mod_api_core --> sys_ai_center
   mod_api_core --> sys_ai_platform
   mod_api_core --> sys_billing
-  mod_api_core --> sys_expense_capture
   mod_api_core --> sys_notifications
   mod_api_core --> sys_voice_calls
   mod_api_core -.-> tbl_local_users
@@ -351,7 +350,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `DATABASE_URL` | yes | `api/queries/connection.ts` |
 | `ENABLE_CRONS` | yes | `api/boot.ts` |
 | `ENABLE_WHATSAPP` | yes | `api/boot.ts` |
-| `FIREWORKS_API_KEY` | yes | `api/ai-router.ts`, `api/boot.ts`, `api/lib/system-settings-registry.ts` |
+| `FIREWORKS_API_KEY` | yes | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_API_KEY` | yes | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_FREE` | yes | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_PRO` | yes | `api/ai-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |

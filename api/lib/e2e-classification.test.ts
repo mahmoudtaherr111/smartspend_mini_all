@@ -20,7 +20,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { runSmartPipeline, type PipelineInput, type PipelineResult } from "./smart-pipeline";
 import { runRuleEngine } from "./rule-engine";
-import { matchSegment } from "./embedding-engine";
 import { normalizeArabicString } from "./smart-pipeline";
 import { LRUCache } from "lru-cache";
 
@@ -237,27 +236,6 @@ describe("GROUP 6: Edge Cases", () => {
 // GROUP 7: Embedding Layer (Fireworks + Local)
 // ═══════════════════════════════════════════════════════════════
 
-describe("GROUP 7: Embedding Layer", () => {
-  it("25. matchSegment local (no API key) → returns result", async () => {
-    const result = await matchSegment("بنزين", undefined, undefined);
-    expect(result).not.toBeNull();
-    expect(result!.category).toBe("مواصلات");
-  });
-
-  it("26. matchSegment exact match → score 100", async () => {
-    const result = await matchSegment("بنزين", undefined, undefined);
-    expect(result!.score).toBe(100);
-  });
-
-  it("27. matchSegment with Fireworks fallback → should improve for ambiguous", async () => {
-    // "هدوم" was misclassified by local engine but Fireworks might get it right
-    const localResult = await matchSegment("هدوم", undefined, undefined);
-    const fwResult = await matchSegment("هدوم", undefined, FIREWORKS_KEY);
-    // At least one should be تسوق
-    const best = fwResult?.score > (localResult?.score || 0) ? fwResult : localResult;
-    expect(best).not.toBeNull();
-  }, 30000); // 30s timeout for API call
-});
 
 // ═══════════════════════════════════════════════════════════════
 // GROUP 8: Classification Cache

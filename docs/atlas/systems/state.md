@@ -4,13 +4,13 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (44 of 108 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (43 of 107 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 18 | — | 3 | 2 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 18b18aa | 2026-09-25 18b18aa | 18 | — | 2 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 3 | — | 2 | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 5 | — | — | 2 | — |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 b865602 | 2026-09-25 b865602 | 4 | — | 5 | 2 | 2 |
@@ -20,8 +20,8 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (44 of
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 4 | — | 3 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 cdfa911 | 2026-09-25 cdfa911 | 9 | — | 2 | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 cdfa911 | 2026-09-25 cdfa911 | 5 | — | 2 | — | 8 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 18b18aa | 2026-09-25 18b18aa | 8 | — | 2 | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 18b18aa | 2026-09-25 cdfa911 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-25 21b72a3 | 2026-09-25 21b72a3 | 7 | **1** | 1 | 3 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (44 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (108 issue(s))
+## What is waiting (107 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -48,12 +48,11 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (39)
+### Bugs (38)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A receipt's amount on the review card is the first item the pipeline read from the OCR text, which can differ from the total the vision model returned, and a base64 image longer than the parser's cap is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the procedure accepts larger payloads.
 - The voice endpoints count the month differently: `speechToText` from the subscription or sign-up day, `parseVoiceExpense` from the first of the calendar month. `parseVoiceExpense` also creates contacts for the people it resolves while parsing, before the user saves anything.
-- When every event escalates and a Fireworks key is present, the whole-sentence embedding shortcut makes one item from the first amount; the other amounts then become a question.
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.

@@ -75,7 +75,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `ai-governance` — AI usage and cost governance | Per-plan token limits and per-request caps, burst counting, AI cost metrics and the admin cost overview, and the check of model-written numbers against facts. | 3 |
-| `ai-providers` — AI provider access | Provider clients, the provider registry, model name mapping, routing and fallback chains, what each call cost and its row in the AI cost ledger, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own. | 16 |
+| `ai-providers` — AI provider access | Provider clients, the provider registry, model name mapping, routing and fallback chains, what each call cost and its row in the AI cost ledger, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own. | 14 |
 
 ## API procedures
 
@@ -134,7 +134,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/ai-platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>21 files and declarations</summary>
+<details><summary>19 files and declarations</summary>
 
 - `api/ai-router.ts#ai.getUserLimits`
 - `api/ai-router.ts#rest-of-file`
@@ -142,12 +142,10 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/ai-ledger.ts`
 - `api/lib/ai-pricing.ts`
 - `api/lib/ai-provider-registry.ts`
-- `api/lib/ai-routing.ts`
 - `api/lib/ai-usage-policy.ts`
 - `api/lib/deepseek-client.ts`
 - `api/lib/embedding-provider.ts`
 - `api/lib/fireworks-client.ts`
-- `api/lib/fireworks-embedding-client.ts`
 - `api/lib/groq-client.ts`
 - `api/lib/llm-provider-chain.ts`
 - `api/lib/llm-router.ts`

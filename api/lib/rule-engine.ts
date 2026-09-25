@@ -13,7 +13,6 @@ import { findTaxonomyMatch } from "./taxonomy-adapter";
 import { resolveGovernedTaxonomy } from "./direction-governed-taxonomy";
 import { detectNegation } from "./negation-detector";
 import type { Evidence, MatchKind } from "./classification-evidence";
-import { matchSegment } from "./embedding-engine";
 import { isKareemPersonContext } from "./egyptian-names-dictionary";
 
 export interface RuleEngineResult {
@@ -1031,8 +1030,6 @@ export async function runRuleEngine(
     subCategory?: string;
   }> = [],
   profileContext?: ClassificationProfileContext,
-  apiKey?: string,
-  fireworksApiKey?: string,
 ): Promise<RuleEngineResult> {
   const amounts = extractAmounts(normalizedText);
 
@@ -1594,26 +1591,6 @@ export async function runRuleEngine(
       }
     }
 
-    // 7. Semantic Hybrid Fallback (local n-gram + Fireworks embedding)
-    if ((!found || confidence < 80)) {
-      try {
-        const semanticMatch = await matchSegment(allContextNorm, apiKey, fireworksApiKey);
-        if (semanticMatch && semanticMatch.score >= 80 && semanticMatch.score > confidence) {
-          category = semanticMatch.category;
-          subCategory = semanticMatch.subCategory;
-          confidence = setMatch(semanticMatch.score, "embedding");
-          inferenceSource = "ai";
-          ambiguityFlags = ["semantic_embedding_match"];
-          found = true;
-          
-          if (intentResult.intent !== "income" && ["العائلة", "أصدقاء", "موظفين"].includes(category)) {
-            intentResult.intent = "expense";
-          }
-        }
-      } catch (err) {
-        console.warn("[Rule Engine] Semantic fallback failed:", err);
-      }
-    }
 
     // Income with no specific category: other income, never a salary nobody named.
     if (intentResult.intent === "income" && !found) {

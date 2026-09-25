@@ -164,7 +164,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | Module | What it does | Files |
 | --- | --- | --- |
 | `arabic-nlp` — Arabic and Egyptian text processing | Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matching and speech-to-text corrections. | 10 |
-| `classification` — Expense classification pipeline | smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance. | 30 |
+| `classification` — Expense classification pipeline | smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance. | 28 |
 | `classification-qa` — Classification benchmark helpers | Helpers used only by the classification benchmark and QA scripts: taxonomy assertions and simulated users. | 2 |
 | `receipt-parsing` — Receipt parsing | Receipt parsing with a vision model. | 1 |
 | `web-capture` — Expense entry UI | The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded. | 4 |
@@ -228,14 +228,13 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | yes | `api/lib/generate-embeddings-cache.ts` |
 | `DEV` | frontend | `src/components/expenses/ExpenseForm.tsx` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/expense-capture.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>62 files and declarations</summary>
+<details><summary>60 files and declarations</summary>
 
 - `api/ai-router.ts#ai.learnWord`
 - `api/ai-router.ts#ai.parseExpense`
@@ -270,12 +269,10 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/direction-governed-taxonomy.ts`
 - `api/lib/egyptian-dictionary.ts`
 - `api/lib/egyptian-names-dictionary.ts`
-- `api/lib/embedding-engine.ts`
 - `api/lib/entity-extractor.ts`
 - `api/lib/final-acceptance.ts`
 - `api/lib/financial-event-plan.ts`
 - `api/lib/fuzzy-match.ts`
-- `api/lib/generate-embeddings-cache.ts`
 - `api/lib/intent-detector.ts`
 - `api/lib/muscle-memory.ts`
 - `api/lib/narrative-decomposer.ts`

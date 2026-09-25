@@ -43,7 +43,6 @@ import {
   seedDefaultTemplates,
   checkAndTriggerSmartActivityNotifications,
 } from "./notification-engine";
-import { warmupEmbeddingEngine } from "./lib/embedding-engine";
 import { withScheduledJobLock } from "./services/scheduler-lock";
 import { runMonthlyReportJob } from "./jobs/monthly-report-job";
 import { runMonthlyBehaviorJob } from "./jobs/monthly-behavior-job";
@@ -115,9 +114,6 @@ scheduleProtectedJob("0 3 * * 0", "classification-log-cleanup", async () => {
   );
 });
 
-// Warmup embedding engine (local index + Fireworks descriptor index)
-// Non-blocking — runs in background. Prevents 10-30s delay on first classification.
-warmupEmbeddingEngine(undefined, process.env.FIREWORKS_API_KEY || "");
 
 // Cron job for processing scheduled and event-based notifications
 scheduleProtectedJob(

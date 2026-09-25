@@ -260,17 +260,6 @@
       "count": 3
     }
   },
-  "api/lib/embedding-engine.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 6
-    },
-    "no-console": {
-      "count": 10
-    }
-  },
   "api/lib/entity-extractor.ts": {
     "prefer-const": {
       "count": 6
@@ -292,31 +281,12 @@
       "count": 1
     }
   },
-  "api/lib/fireworks-embedding-client.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    },
-    "no-console": {
-      "count": 9
-    }
-  },
   "api/lib/fuzzy-match.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     },
     "no-useless-escape": {
       "count": 1
-    }
-  },
-  "api/lib/generate-embeddings-cache.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 21
     }
   },
   "api/lib/groq-client.ts": {
@@ -418,20 +388,17 @@
   "api/lib/rule-engine.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 2
-    },
-    "no-console": {
-      "count": 1
     }
   },
   "api/lib/smart-pipeline.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 11
+      "count": 10
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 13
     },
     "no-console": {
-      "count": 13
+      "count": 12
     },
     "prefer-const": {
       "count": 1

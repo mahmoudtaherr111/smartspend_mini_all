@@ -22,7 +22,7 @@ the per-plan token budget every paid call is measured against, and the two place
 | Legacy routing | `resolveRoutingConfig` in `api/ai-router.ts` | The older path: routing ranges and keys read from `system_settings` by how many tokens the user has spent |
 | Budgets | `api/lib/ai-usage-policy.ts` | Per-plan monthly limits, per-request ceilings, the burst guard, and the token estimate |
 | Cost metrics | `api/services/ai-cost-policy.ts`, `api/services/ai-cost-analytics.ts` | A second, lighter accounting of AI work as `ai_cost_*` events, and the admin overview over them |
-| Provider clients | `api/lib/deepseek-client.ts`, `api/lib/fireworks-client.ts`, `api/lib/nvidia-client.ts`, `api/lib/groq-client.ts`, `api/lib/fireworks-embedding-client.ts` | The direct calls still used by the AI Center, the report job and the embedding engine |
+| Provider clients | `api/lib/deepseek-client.ts`, `api/lib/fireworks-client.ts`, `api/lib/nvidia-client.ts`, `api/lib/groq-client.ts` | The direct calls still used by the AI Center and the report job |
 | Limits for the app | `ai.getUserLimits` in `api/ai-router.ts` | What the user has left this cycle: AI tokens, voice seconds and offline items (`offline_limit_<plan>`) |
 
 ## Choosing a provider
@@ -134,7 +134,6 @@ refused key, and the next answers. The chat also takes its model from the admin'
 | Retries, the breaker, timeouts, failure classes | `api/lib/llm-router.ts` | `api/lib/llm-router.test.ts` |
 | A model name, shorthand or per-plan default | `api/lib/model-mapper.ts` | `api/lib/model-mapper.test.ts` |
 | Plan limits and per-request ceilings | the settings, then `api/lib/ai-usage-policy.ts` for the hard ceilings | |
-| Which route classification takes per plan | `api/lib/ai-routing.ts` | `api/lib/ai-routing.test.ts` |
 | How provider keys are sealed, and which secrets open them | `api/lib/provider-key-crypto.ts`, `AI_GATEWAY_SECRET` in `api/lib/env.ts` | `api/lib/provider-key-crypto.test.ts`, `api/lib/provider-key-reseal.test.ts` |
 
 ## Rules for changes here
@@ -151,7 +150,7 @@ refused key, and the next answers. The chat also takes its model from the admin'
 
 ## Tests
 `api/lib/llm-router.test.ts`, `api/lib/provider-route-acceptance.test.ts`, `api/lib/admin-model-switch.test.ts`,
-`api/lib/ai-routing.test.ts`, `api/lib/model-mapper.test.ts`, `api/services/ai-cost-policy.test.ts` and
+`api/lib/model-mapper.test.ts`, `api/services/ai-cost-policy.test.ts` and
 `api/services/ai-cost-analytics.test.ts`; the provider keys in `api/lib/provider-key-crypto.test.ts` and
 `api/lib/provider-key-reseal.test.ts`.
 

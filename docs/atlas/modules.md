@@ -8,7 +8,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 
 | Cluster | Title | Files | Depends on | Used by | External systems referenced |
 | --- | --- | --- | --- | --- | --- |
-| `api-core` | API server core | 5 | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | — |
+| `api-core` | API server core | 5 | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | — |
 | `api-routers` | tRPC routers and HTTP sub-apps | 24 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq`, `web-push` |
 | `auth` | Authentication and sessions | 5 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `whatsapp` | — |
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
@@ -22,13 +22,13 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `notifications` | Notifications | 2 | `database`, `ledger`, `platform` | `api-core`, `api-routers`, `jobs` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 34 | `ai-actions`, `ai-insights`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
-| `ai-providers` | AI provider access | 16 | `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
+| `ai-providers` | AI provider access | 14 | `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | — |
 | `ingestion-parsers` | Ingestion parsers | 4 | `ai-providers`, `arabic-nlp`, `classification`, `database`, `ledger`, `platform` | `api-routers` | `gemini` |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
-| `classification` | Expense classification pipeline | 30 | `ai-providers`, `arabic-nlp`, `contracts`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-core`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
+| `classification` | Expense classification pipeline | 28 | `ai-providers`, `arabic-nlp`, `contracts`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers` | — |
 | `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | `api-routers`, `voice` | — |
 | `ai-memory` | AI memory | 12 | `ai-governance`, `ai-providers`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-core`, `api-routers`, `voice` | `qdrant` |
@@ -59,8 +59,8 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `capacitor` | Capacitor native shell | native-runtime | `web-hooks`, `web-lib`, `web-shell`, `web-voice-call` | `src/hooks/useHaptics.ts`, `src/hooks/useNativeThemeSync.ts`, `src/hooks/useVirtualKeyboard.ts`, `src/lib/back-button-manager.ts`, `src/lib/voice/call-controller.ts`, `src/pwa/register-sw.ts` |
 | `deepseek` | DeepSeek API | ai-provider | `ai-providers` | `api/lib/llm-provider-chain.ts` |
 | `firebase` | Firebase | push | `notifications`, `web-hooks`, `web-shell` | `api/services/firebase.ts`, `src/hooks/usePushNotifications.ts`, `src/pwa/firebase.ts` |
-| `fireworks` | Fireworks AI | ai-provider | `ai-providers`, `api-routers`, `jobs`, `web-admin` | `api/chat-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/fireworks-client.ts`, `api/lib/fireworks-embedding-client.ts`, `api/lib/llm-provider-chain.ts`, `src/components/admin/settings/AdminPlansTab.tsx` |
-| `gemini` | Google Gemini API | ai-provider | `ai-insights`, `ai-providers`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/goals-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/classifier-contract.ts`, `api/lib/embedding-provider.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/llm-router.ts`, `api/lib/narrative-decomposer.ts`, `api/lib/receipt-image-parser.ts`, `api/lib/smart-pipeline.ts`, `api/lib/sms-ai-parser.ts`, `api/services/batch-ai-service.ts`, `api/services/voice/engine/gemini-live.ts`, `api/services/voice/text-model.ts` |
+| `fireworks` | Fireworks AI | ai-provider | `ai-providers`, `api-routers`, `jobs`, `web-admin` | `api/chat-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/fireworks-client.ts`, `api/lib/llm-provider-chain.ts`, `src/components/admin/settings/AdminPlansTab.tsx` |
+| `gemini` | Google Gemini API | ai-provider | `ai-insights`, `ai-providers`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/goals-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/classifier-contract.ts`, `api/lib/embedding-provider.ts`, `api/lib/llm-router.ts`, `api/lib/narrative-decomposer.ts`, `api/lib/receipt-image-parser.ts`, `api/lib/smart-pipeline.ts`, `api/lib/sms-ai-parser.ts`, `api/services/batch-ai-service.ts`, `api/services/voice/engine/gemini-live.ts`, `api/services/voice/text-model.ts` |
 | `google-oauth` | Google OAuth 2.0 | identity | `api-routers` | `api/auth-router.ts` |
 | `groq` | Groq | ai-provider | `ai-providers`, `api-routers` | `api/ai-router.ts`, `api/lib/groq-client.ts`, `api/lib/llm-provider-chain.ts` |
 | `mysql` | MySQL | datastore | `database` | `api/queries/connection.ts` |
@@ -83,7 +83,7 @@ Hono app and server entry points, request context, tRPC procedure builders and t
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/boot.ts` | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | — | — | `auth_challenges`, `classification_logs` |
+| `api/boot.ts` | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | — | — | `auth_challenges`, `classification_logs` |
 | `api/context.ts` | `auth`, `database`, `security` | — | `local_users`, `users` | — |
 | `api/middleware.ts` | `contracts`, `platform`, `security` | — | — | — |
 | `api/router.ts` | `api-routers` | — | — | — |
@@ -306,11 +306,9 @@ Provider clients, the provider registry, model name mapping, routing and fallbac
 | `api/lib/ai-ledger.ts` | `database`, `platform` | — | — | `ai_token_ledgers` |
 | `api/lib/ai-pricing.ts` | `contracts`, `database`, `platform` | — | `ai_models`, `ai_providers` | — |
 | `api/lib/ai-provider-registry.ts` | — | — | — | — |
-| `api/lib/ai-routing.ts` | — | — | — | — |
 | `api/lib/deepseek-client.ts` | — | — | — | — |
 | `api/lib/embedding-provider.ts` | `platform` | `gemini` | — | — |
 | `api/lib/fireworks-client.ts` | — | `fireworks` | — | — |
-| `api/lib/fireworks-embedding-client.ts` | — | `fireworks` | — | — |
 | `api/lib/groq-client.ts` | — | `groq` | — | — |
 | `api/lib/llm-provider-chain.ts` | — | `deepseek`, `fireworks`, `groq`, `nvidia`, `openrouter` | — | — |
 | `api/lib/llm-router.ts` | — | `gemini` | — | — |
@@ -393,11 +391,9 @@ smart-pipeline.ts and the modules it composes: financial events, admissibility, 
 | `api/lib/confidence-calibrator.ts` | — | — | — | — |
 | `api/lib/correction-rules.ts` | `arabic-nlp`, `database` | — | `user_correction_rules` | `user_correction_rules` |
 | `api/lib/direction-governed-taxonomy.ts` | `arabic-nlp` | — | — | — |
-| `api/lib/embedding-engine.ts` | `ai-providers`, `arabic-nlp` | — | — | — |
 | `api/lib/entity-extractor.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/final-acceptance.ts` | — | — | — | — |
 | `api/lib/financial-event-plan.ts` | `arabic-nlp` | — | — | — |
-| `api/lib/generate-embeddings-cache.ts` | — | `gemini` | — | — |
 | `api/lib/intent-detector.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/muscle-memory.ts` | `arabic-nlp`, `contracts`, `database` | — | `classification_logs` | — |
 | `api/lib/narrative-decomposer.ts` | `ai-providers`, `arabic-nlp` | `gemini` | — | — |

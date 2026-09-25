@@ -165,7 +165,6 @@ model {
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.api-routers
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.billing
-  smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.jobs
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.notifications
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.platform

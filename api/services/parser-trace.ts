@@ -31,7 +31,9 @@ function parseRisk(
 
 export function buildParserTrace(input: ParserTraceInput) {
   const llmCalls = input.result.log.aiResult?.attempted ? 1 : 0;
-  const embeddingCalls = input.result.log.embeddingResult?.attempted ? 1 : 0;
+  // Classification has no semantic layer (decision 0012); the field stays for the shared
+  // cost telemetry, where memory search does count embedding calls.
+  const embeddingCalls = 0;
   const classifierTool = input.result.parsedBy === "rule_engine" ? "rule_engine" : "classifier.ai";
   const dataNeeds = [
     input.financeContextSource,
@@ -49,7 +51,7 @@ export function buildParserTrace(input: ParserTraceInput) {
     dataNeeds,
     costPolicy: {
       llm: llmCalls > 0 ? "conditional_classifier_fallback" : "skipped",
-      embedding: embeddingCalls > 0 ? "candidate_category_lookup" : "skipped",
+      embedding: "skipped",
       sendsRawHistoryToLLM: false,
       usesFinanceSummaryOnly: input.financeContextSource === "finance.summary",
     },

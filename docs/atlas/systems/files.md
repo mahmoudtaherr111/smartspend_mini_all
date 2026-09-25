@@ -41,7 +41,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/ai-ledger.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/ai-pricing.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/ai-provider-registry.ts` | [ai-platform](ai-platform.md) |
-| `api/lib/ai-routing.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/ai-usage-policy.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/amount-ledger.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/amount-linker.ts` | [expense-capture](expense-capture.md) |
@@ -64,7 +63,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/direction-governed-taxonomy.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/egyptian-dictionary.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/egyptian-names-dictionary.ts` | [expense-capture](expense-capture.md) |
-| `api/lib/embedding-engine.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/embedding-provider.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/entity-extractor.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/env.ts` | [platform](platform.md) |
@@ -73,9 +71,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/final-acceptance.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/financial-event-plan.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/fireworks-client.ts` | [ai-platform](ai-platform.md) |
-| `api/lib/fireworks-embedding-client.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/fuzzy-match.ts` | [expense-capture](expense-capture.md) |
-| `api/lib/generate-embeddings-cache.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/get-client-ip.ts` | [accounts](accounts.md) |
 | `api/lib/groq-client.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/http-origin-security.ts` | [accounts](accounts.md) |

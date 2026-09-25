@@ -48,8 +48,8 @@ model {
     ai-providers = module 'AI provider access' {
       description 'Provider clients, the provider registry, model name mapping, routing and fallback chains, what each call cost and its row in the AI cost ledger, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own.'
       metadata {
-        files '16'
-        paths 'api/lib/ai-gateway.ts, api/lib/ai-pricing.ts, api/lib/ai-ledger.ts, api/lib/embedding-provider.ts, api/lib/provider-key-crypto.ts, api/lib/ai-provider-registry.ts, api/lib/ai-routing.ts, api/lib/llm-provider-chain.ts, api/lib/llm-router.ts, api/lib/groq-client.ts, api/lib/fireworks-client.ts, api/lib/fireworks-embedding-client.ts, api/lib/nvidia-client.ts, api/lib/deepseek-client.ts, api/lib/model-mapper.ts, api/lib/provider-health.ts'
+        files '14'
+        paths 'api/lib/ai-gateway.ts, api/lib/ai-pricing.ts, api/lib/ai-ledger.ts, api/lib/embedding-provider.ts, api/lib/provider-key-crypto.ts, api/lib/ai-provider-registry.ts, api/lib/llm-provider-chain.ts, api/lib/llm-router.ts, api/lib/groq-client.ts, api/lib/fireworks-client.ts, api/lib/nvidia-client.ts, api/lib/deepseek-client.ts, api/lib/model-mapper.ts, api/lib/provider-health.ts'
       }
     }
     api-core = module 'API server core' {
@@ -90,8 +90,8 @@ model {
     classification = module 'Expense classification pipeline' {
       description 'smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.'
       metadata {
-        files '30'
-        paths 'api/lib/smart-pipeline.ts, api/lib/rule-engine.ts, api/lib/muscle-memory.ts, api/lib/embedding-engine.ts, api/lib/generate-embeddings-cache.ts, api/lib/post-classifier-verifier.ts, api/lib/admissibility-gate.ts, api/lib/final-acceptance.ts, api/lib/classification-*.ts, api/lib/classifier-contract.ts, api/lib/confidence-*.ts, api/lib/correction-rules.ts, api/lib/category-registry.ts, api/lib/taxonomy-*.ts, api/lib/direction-governed-taxonomy.ts, api/lib/entity-extractor.ts, api/lib/narrative-decomposer.ts, api/lib/intent-detector.ts, api/lib/person-resolver.ts, api/lib/relationship-normalizer.ts, api/lib/amount-ledger.ts, api/lib/amount-linker.ts, api/lib/financial-event-plan.ts, api/lib/voice-intake-gate.ts, api/services/parser-trace.ts'
+        files '28'
+        paths 'api/lib/smart-pipeline.ts, api/lib/rule-engine.ts, api/lib/muscle-memory.ts, api/lib/post-classifier-verifier.ts, api/lib/admissibility-gate.ts, api/lib/final-acceptance.ts, api/lib/classification-*.ts, api/lib/classifier-contract.ts, api/lib/confidence-*.ts, api/lib/correction-rules.ts, api/lib/category-registry.ts, api/lib/taxonomy-*.ts, api/lib/direction-governed-taxonomy.ts, api/lib/entity-extractor.ts, api/lib/narrative-decomposer.ts, api/lib/intent-detector.ts, api/lib/person-resolver.ts, api/lib/relationship-normalizer.ts, api/lib/amount-ledger.ts, api/lib/amount-linker.ts, api/lib/financial-event-plan.ts, api/lib/voice-intake-gate.ts, api/services/parser-trace.ts'
       }
     }
     classification-qa = module 'Classification benchmark helpers' {
