@@ -154,7 +154,8 @@ When events escalated, the pipeline:
   `CLASSIFICATION_SYSTEM_PROMPT`);
 - asks the provider chain for **categories only** (`api/lib/ai-gateway.ts#resolveAdminRoutes` for routes the
   admin configured, `api/lib/llm-provider-chain.ts#buildProviderChain`, `api/lib/llm-router.ts#executeLlmChain`),
-  with a timeout per route (setting `llm_timeout_ms`) and one deadline for the whole trip (`llm_trip_deadline_ms`);
+  with a timeout per route (setting `llm_timeout_ms`, 8 seconds by default) and one deadline for the whole trip
+  (`llm_trip_deadline_ms`, 15 seconds; a trip that ends unanswered keeps the local answer and goes to review);
 - validates the reply (`api/lib/classifier-contract.ts#validateClassifierReply`) and merges the categories onto
   the local items (`api/lib/classification-merge.ts#mergeCategoryDecisions`). Amounts, direction and people never
   come from the model. A missing or invalid answer adds a blocker to the item instead of dropping it, and a

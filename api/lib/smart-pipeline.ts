@@ -1946,21 +1946,23 @@ async function classifyAdmittedEvents(
         maxOutputTokens: Math.min(input.maxTokens || 512, 60 + clauses.length * 40),
         temperature: 0.1,
         schema: CATEGORY_CLASSIFIER_SCHEMA as unknown as StructuredSchema,
-        // Long enough for a full narrative, short enough that a hung provider still
-        // leaves room in the 8-second budget for the next one in the chain. Settable so a
+        // A category per clause is a few dozen output tokens: a served fast model answers in
+        // one to three seconds. Eight seconds is room for a slow answer while a hung
+        // provider still leaves time for the next one in the chain. Settable so a
         // benchmark can measure a slow endpoint's ACCURACY without that endpoint's speed
-        // silently becoming the result — production keeps the 25 seconds.
-        timeoutMs: settingNumber(input.pipelineSettings || {}, "llm_timeout_ms", 25_000),
+        // silently becoming the result.
+        timeoutMs: settingNumber(input.pipelineSettings || {}, "llm_timeout_ms", 8_000),
         // A ceiling for the whole chain, not just for each provider in it.
         //
-        // Five routes at 25 seconds each bounded nothing the user experiences. Whatever
-        // the per-route timeout is, the trip ends here — and the chain will not start a
-        // route it cannot finish inside what remains, because a request the client has
-        // already abandoned still costs tokens on the way to being ignored.
+        // Five routes at 25 seconds each bounded nothing the user experiences, and a
+        // 45-second trip was still a user staring at a spinner to record a coffee. Whatever
+        // the per-route timeout is, the trip ends at 15 seconds — two routes' worth — and
+        // the chain will not start a route it cannot finish inside what remains. A trip
+        // that ends without an answer keeps the local answer and goes to review.
         deadlineMs: settingNumber(
           input.pipelineSettings || {},
           "llm_trip_deadline_ms",
-          45_000,
+          15_000,
         ),
       });
 
