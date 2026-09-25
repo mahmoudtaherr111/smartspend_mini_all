@@ -20,3 +20,14 @@ describe("ليك وعليك", () => {
     expect(debtBalances([row(300, "outgoing", "محمد"), row(300, "incoming", "محمد"), row(50, "", "سارة")])).toEqual([]);
   });
 });
+
+describe("the gam3eya", () => {
+  it("counts installments paid in and payouts taken out", async () => {
+    const { gam3eyaStanding } = await import("./debt-ledger");
+    expect(gam3eyaStanding([
+      { amount: 1000, direction: "outgoing" },
+      { amount: 1000, direction: "outgoing" },
+      { amount: 10000, direction: "incoming" },
+    ])).toEqual({ paid: 2000, received: 10000, held: -8000, installments: 2 });
+  });
+});

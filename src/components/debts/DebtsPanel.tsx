@@ -12,7 +12,9 @@ type Balance = { contactId: number | null; name: string; balance: number; count:
 export function DebtsPanel() {
   const debts = trpc.expense.getDebtBalances.useQuery(undefined, { staleTime: 60_000 });
   const balances: Balance[] = Array.isArray(debts.data?.balances) ? debts.data.balances : [];
-  if (balances.length === 0) return null;
+  const gam3eya = debts.data?.gam3eya;
+  const hasGam3eya = Boolean(gam3eya && (gam3eya.paid > 0 || gam3eya.received > 0));
+  if (balances.length === 0 && !hasGam3eya) return null;
   const owedToYou = Number(debts.data?.owedToYou) || 0;
   const youOwe = Number(debts.data?.youOwe) || 0;
 
@@ -41,6 +43,20 @@ export function DebtsPanel() {
             </span>
           </div>
         ))}
+        {hasGam3eya && gam3eya && (
+          <div className="rounded-lg border border-sky-200 px-3 py-2 text-sm dark:border-sky-900/50">
+            <p className="font-medium">الجمعية</p>
+            <p className="text-xs text-muted-foreground">
+              دفعت {gam3eya.paid.toLocaleString("ar-EG")} ج ({gam3eya.installments} قسط) · قبضت{" "}
+              {gam3eya.received.toLocaleString("ar-EG")} ج
+            </p>
+            <p className={cn("text-xs font-bold", gam3eya.held >= 0 ? "text-emerald-600" : "text-rose-600")}>
+              {gam3eya.held >= 0
+                ? `ليك فيها ${gam3eya.held.toLocaleString("ar-EG")} ج`
+                : `قبضت قبل ما تدفع ${Math.abs(gam3eya.held).toLocaleString("ar-EG")} ج، فاضل عليك تدفعهم`}
+            </p>
+          </div>
+        )}
         <p className="text-[11px] text-muted-foreground">
           محسوبة من السلف اللي سجلتها. سجّل «احمد رجعلي 200» أو «رجعت لخالي 500» والرقم يتظبط.
         </p>

@@ -119,7 +119,9 @@ spending, and delete. The assistant can also create them. The standing of each b
 person (`api/services/debt-ledger.ts`): money that went out (lent, or a debt repaid) raises what the person owes the
 user, money that came in lowers it. People are the loan's contact, else "من غير اسم"; settled people are left out.
 The statistics tab shows the open balances under the budgets (`src/components/debts/DebtsPanel.tsx`), with the totals
-owed to and by the user; nothing renders without loans.
+owed to and by the user. The same procedure returns the gam3eya standing (`getGam3eyaStanding`: installments paid in,
+payouts taken, and what the gam3eya still holds for the user, from transfers under تحويل/جمعية), shown in the same
+panel; nothing renders without loans or a gam3eya.
 
 ## Goals
 - `goals.list` returns the user's goals and, when the plan has no goal analysis, an upsell.
