@@ -611,6 +611,8 @@ function categoryFacts(need: DataNeed, category: FinanceCategoryTotal): Resolved
     makeFact(need.id, need.kind, "category_total_expense", category.totalExpense),
     makeFact(need.id, need.kind, "category_total_income", category.totalIncome),
     makeFact(need.id, need.kind, "transaction_count", category.transactionCount),
+    // The period held more entries than one read takes: the answer says the figure is partial.
+    ...(category.partial ? [makeFact(need.id, need.kind, "partial_read", true)] : []),
   ];
 }
 
@@ -640,6 +642,7 @@ function breakdownFacts(need: DataNeed, breakdown: FinanceBreakdown): ResolvedFa
         [{ id: item.name, label: item.name, value: item.count }],
       ),
     ),
+    ...(breakdown.partial ? [makeFact(need.id, need.kind, "partial_read", true)] : []),
   ];
 }
 

@@ -239,7 +239,8 @@ Checked against the code; each one names where it lives.
 8. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
 9. **Gap.** A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest
    10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Breakdowns and category totals mark
-   it (`partial`) and the voice call says so; the chat does not yet. Only the period's totals are exact at any size.
+   it (`partial`, a `partial_read` fact for the chat), and the call and the chat say so; lookups and the other readers
+   of those rows do not. Only the period's totals are exact at any size.
 
 ## Related systems
 - [Live voice assistant](voice-calls.md): uses the finance layer, memory and action runtime from a call.

@@ -106,7 +106,7 @@
         "api/services/ai-kernel/clarification-machine.ts": "f60b0eef67f7",
         "api/services/ai-kernel/context-packer.ts": "001bd02b4cbe",
         "api/services/ai-kernel/data-need-compiler.ts": "6cef352b4fb5",
-        "api/services/ai-kernel/index.ts": "451bfccd9194",
+        "api/services/ai-kernel/index.ts": "b43d6cc1cb3b",
         "api/services/ai-kernel/intent-router.ts": "4e034212c0a2",
         "api/services/ai-kernel/response-normalizer.ts": "f377c8f16290",
         "api/services/ai-kernel/retrieval-policy.ts": "a62a9621df27",
@@ -130,7 +130,7 @@
         "api/services/finance-semantic-layer/monthly-report-facts.ts": "3f971c8a47ab",
         "api/services/finance-semantic-layer/period-resolver.ts": "6ebc06ee9807",
         "api/services/finance-semantic-layer/proactive-insights.ts": "4673f997eb5c",
-        "api/services/finance-semantic-layer/resolvers.ts": "4f50e3ece1ca",
+        "api/services/finance-semantic-layer/resolvers.ts": "a6e1b0ffa595",
         "api/services/finance-semantic-layer/row-aggregators.ts": "46f6753eac39",
         "api/services/finance-semantic-layer/types.ts": "28a844acd976",
         "api/services/site-guide/embedding.ts": "bc5457180269",
@@ -143,9 +143,9 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "c384e6047412"
       },
-      "checked": "2026-09-25 cdfa911",
-      "arabic": "6da4a872875c",
-      "arabicChecked": "2026-09-25 cdfa911"
+      "checked": "2026-09-25 b865602",
+      "arabic": "07039810c966",
+      "arabicChecked": "2026-09-25 b865602"
     },
     "ai-platform": {
       "files": {

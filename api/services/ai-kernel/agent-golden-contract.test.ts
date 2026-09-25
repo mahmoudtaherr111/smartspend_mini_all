@@ -64,6 +64,7 @@ function makeFactsForNeed(need: DataNeed, extra: string): ResolvedFact[] {
 
   if (need.kind === "finance.category_total") {
     return [
+      ...(partialRead.on ? [{ id: `${need.id}:partial_read`, dataNeedId: need.id, label: "partial_read", value: true, source: "finance.category_total" as const, confidence: 1 }] : []),
       { id: `${need.id}:category`, dataNeedId: need.id, label: "category", value: "food", source: "finance.category_total", confidence: 1 },
       { id: `${need.id}:period`, dataNeedId: need.id, label: "period", value: "يونيو 2026", source: "finance.category_total", confidence: 1 },
       { id: `${need.id}:category_total_expense`, dataNeedId: need.id, label: "category_total_expense", value: 5200, source: "finance.category_total", confidence: 1 },
@@ -155,6 +156,8 @@ function makeFactsForNeed(need: DataNeed, extra: string): ResolvedFact[] {
 
   return [];
 }
+
+const partialRead = vi.hoisted(() => ({ on: false }));
 
 vi.mock("../finance-semantic-layer", () => ({
   resolveKernelDataNeeds: vi.fn(async (_ctx: unknown, dataNeeds: DataNeed[]) => {
@@ -323,6 +326,16 @@ describe("AI Agent Golden Contract", () => {
     expect(categoryFact).toBeDefined();
     expect(response.debug).toMatchObject({ llmCalls: 0 });
     expect(callChatCompletionAPI).not.toHaveBeenCalled();
+  });
+
+  it("G4b: a category total counted from part of a busy period says so", async () => {
+    partialRead.on = true;
+    try {
+      const response = await ask("صرفت كام أكل الشهر ده؟");
+      expect(response.content).toContain("أحدث عشر آلاف عملية");
+    } finally {
+      partialRead.on = false;
+    }
   });
 
   // ── G5: Goal feasibility with confirmation requirement ──

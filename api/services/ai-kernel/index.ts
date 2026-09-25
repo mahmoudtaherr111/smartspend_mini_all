@@ -126,6 +126,13 @@ export interface AIKernelActiveConfig {
   fallbacks?: Array<{ apiKey: string; baseUrl: string; model: string }>;
 }
 
+/** Said when a figure was counted from part of a period too busy to read in full (the finance layer's row limit). */
+function partialReadNote(facts: ResolvedFact[], source: ResolvedFact["source"]): string {
+  return facts.some((fact) => fact.source === source && fact.label === "partial_read" && fact.value === true)
+    ? "ملاحظة: الفترة دي فيها عمليات كتير أوي، فالرقم ده محسوب من أحدث عشر آلاف عملية بس. إجمالي الفترة كلها من غير تصنيف بيبقى مظبوط."
+    : "";
+}
+
 function materialMissingNumbers(missing: string[] | undefined): string[] {
   return (missing ?? []).filter((item) => {
     const parsed = Math.abs(Number(item));
@@ -898,6 +905,7 @@ function buildDeterministicContent(
       const evidenceLines = transactionEvidenceLines(facts);
       return [
         `في ${period}، إجمالي صرفك على ${category} هو ${money(categoryTotal)}${countText(count)}.`,
+        partialReadNote(facts, "finance.category_total"),
         evidenceLines.length ? `العمليات اللي دخلت في الرقم:\n${evidenceLines.join("\n")}` : "",
       ]
         .filter(Boolean)
@@ -961,7 +969,12 @@ function buildDeterministicContent(
     if (breakdownItems.length > 0) {
       const period = textFact(facts, "period", "finance.breakdown") ?? "الفترة المطلوبة";
       const total = numericFact(facts, "total_expense", "finance.breakdown") ?? 0;
-      return `في ${period}، إجمالي المصروفات ${money(total)}. أعلى البنود:\n${breakdownItems.join("\n")}`;
+      return [
+        `في ${period}، إجمالي المصروفات ${money(total)}. أعلى البنود:\n${breakdownItems.join("\n")}`,
+        partialReadNote(facts, "finance.breakdown"),
+      ]
+        .filter(Boolean)
+        .join("\n");
     }
   }
 

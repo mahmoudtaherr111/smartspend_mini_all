@@ -13,7 +13,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (44 of
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 18 | — | 3 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 3 | — | 2 | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 5 | — | — | 2 | — |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 cdfa911 | 2026-09-25 cdfa911 | 4 | — | 5 | 2 | 2 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 b865602 | 2026-09-25 b865602 | 4 | — | 5 | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 5 | — | 6 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-25 bd3e953 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
@@ -129,7 +129,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the chat. The model id skips `mapModelName` (golden rule 9), the `chatbot_max_tokens_<plan>` settings are read but do not limit replies, and the retry time in the daily-limit error is counted to the server's midnight.
-- A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest 10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Breakdowns and category totals mark it (`partial`) and the voice call says so; the chat does not yet. Only the period's totals are exact at any size.
+- A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest 10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Breakdowns and category totals mark it (`partial`, a `partial_read` fact for the chat), and the call and the chat say so; lookups and the other readers of those rows do not. Only the period's totals are exact at any size.
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - The scheduled report describes the Cairo month that ended (`reportMonthFor` in `api/jobs/monthly-report-job.ts`); a report asked for from the app or the admin still names its month explicitly, and nothing re-sends a month whose scheduled run failed.
