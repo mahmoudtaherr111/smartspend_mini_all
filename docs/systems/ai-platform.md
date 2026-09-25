@@ -47,7 +47,8 @@ admin's route for the purpose and plan, else Gemini with the plan's default (`de
 `gemini-3.8-flash` for Ultra, `gemini-3.1-flash-lite` otherwise), and passes a Gemini id through `mapModelName`. When
 Google answers 429 (a model's quota spent), 500 or 503 (overloaded), or an attempt runs past the caller's
 `attemptTimeoutMs`, it tries the next model of `geminiFallbackChain`, lighter ones first and then the stronger ones
-nearest first, and logs `ai_gateway.model_overloaded`; with `deadlineMs` it stops once less than half a second of the
+nearest first, and logs `ai_gateway.model_overloaded`. A Gemini answer's thinking tokens are counted as
+`reasoningTokens`. With `deadlineMs` it stops once less than half a second of the
 budget is left. The voice call's post-call summary and price lookup use the same chain through
 `api/services/voice/text-model.ts`.
 

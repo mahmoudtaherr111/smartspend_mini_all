@@ -129,7 +129,8 @@ seconds.
    (`api/services/voice/brain/index.ts#createCallBrain`): the snapshot (`api/services/voice/brain/snapshot.ts`: the Cairo day, name and a
    title from the profession (`api/services/voice/brain/honorific.ts`), today's and the salary cycle's spending, days to payday, the last
    recorded day, one observation, up to five remembered things, and the next profile question the app has no answer
-   to, from `api/services/voice/brain/profile-questions.ts`), the instructions
+   to, from `api/services/voice/brain/profile-questions.ts`, unless the app asked one in the last day; offering one
+   starts that day's pause, `user_profiles.last_asked_at`, which the Home card shares), the instructions
    (`api/services/voice/brain/instructions.ts`, kept short because they are billed every turn) and nine tools. It connects the engine
    (`api/services/voice/engine/gemini-live.ts#GeminiLiveEngine`): input and output transcription on, session
    resumption, a context window of 16k tokens trimmed to 8k, tools NON_BLOCKING, the key in a header, and the second
@@ -158,11 +159,11 @@ seconds.
 ### The tools
 | Tool | What it does |
 | --- | --- |
-| `money_query` | Any figure from the finance semantic layer, one call per question: totals (by category, person or merchant), where the money went, a comparison with the same number of days of the previous period and which categories drove it, the latest transactions, why one transaction got its category (found by a word from it, a category or its amount), what a category counts, a month's report already written (below), whether an amount is affordable (the month so far, the wallet total and the active goals, for `think` to judge), wallet balances (said to be as recorded, not a live statement), budgets (`budget.list`), goals, and the entries still waiting for the user's answer (below). Looking up a transaction searches the last 90 days unless a period is named. Categories are said in Arabic. Each result carries the facts with their spoken form, a note on missing data, and a card |
+| `money_query` | Any figure from the finance semantic layer, one call per question: totals (by category, person or merchant), where the money went, a comparison with the same number of days of the previous period and which categories drove it, the latest transactions, why one transaction got its category (found by a word from it, a category or its amount), what a category counts, a month's report already written (below), whether an amount is affordable (the month so far, the wallet total and the active goals, for `think` to judge), wallet balances (said to be as recorded, not a live statement), budgets (`budget.list`, cached a minute and dropped by any budget or expense write), goals, and the entries still waiting for the user's answer (below). Looking up a transaction searches the last 90 days unless a period is named. Categories are said in Arabic. A period too busy to read in full (more than 10,000 entries) is said to be counted in part. Each result carries the facts with their spoken form, a note on missing data, and a card |
 | `record_draft` | Parses what the user says they spent or received through `ai.parseExpense`, checks the amounts against what the model understood and against the numbers heard from the user, and drafts; a disagreement asks about that number alone ("خمستاشر ولا خمسين؟"). With a `clarification_id` it finishes an entry left waiting: the words the user first typed, read from the database, with their answer in brackets, joined as `expense.answerClarification` joins them; the numbers of those first words count as heard from the user, and the entry is closed only when that draft is confirmed |
 | `change_draft` | Drafts a goal, budget, wallet, profile detail (never age or gender) or recategorization through the action runtime, or undoing what this call recorded |
 | `confirm` / `cancel` | Executes or drops a draft through the gate below; expenses are saved with `expense.batchCreate` with `clientRequestId` `vc:<call>:<draft>:<n>`, so a retry never saves twice |
-| `memory` | Searches the AI memory, remembers what the user asks it to (never age or gender), forgets a memory by id, lists what the app knows when asked ("إنت عارف عني إيه": job, payday, income, goal, monthly debt payment, the eight latest memories, and the screen where they can be seen and deleted), and saves the answer to the call's profile question, or its refusal, through `profile.submitOnboardingAnswer` once the answer fits the question's type |
+| `memory` | Searches the AI memory, remembers what the user asks it to (never age or gender), deletes a memory by id when asked to forget it, lists what the app knows when asked ("إنت عارف عني إيه": job, payday, income, goal, monthly debt payment, the eight latest memories, and the screen where they can be seen and deleted), and saves the answer to the call's profile question, or its refusal, through `profile.submitOnboardingAnswer` once the answer fits the question's type |
 | `app_help` | Steps from the site guide, or says the guide has nothing, with what the call can and cannot do |
 | `think` | Hard questions go to a text model through `executeAiGateway` with the user's numbers: `voice_think_model` (default `gemini-3.5-flash-lite`, fast because the caller is waiting), then the next model of the chain after 5 seconds, and 9 seconds in all. Numbers it returns survive only if they come from the data, from the user, or one step of arithmetic on them |
 | `market_price` | Gold or currency prices in Egypt from a text model with Google Search (`voice_price_model`, default `gemini-3.5-flash-lite`, through `askTextModel` with the same 5- and 9-second limits and the chain's other models), within sane bounds, cached 30 minutes for everyone, with its source and time; when the source names no time, the time of the lookup on Cairo's clock |
@@ -176,8 +177,8 @@ month's figures and three largest categories from the finance layer, plus the re
 period `monthly`), else the month-end job's `monthly_reports` row, and hands the call its first three points (140
 characters each, without markdown) with the Cairo date it was written; numbers the report states may be said back.
 A month without one says so. The same file reads the entries waiting for the user's answer in `pending_clarifications`
-(the question and the words first typed, newest first). Nothing else in the app lists them once the form that asked
-is closed, so the call can offer to finish one through `record_draft`.
+(the question and the words first typed, newest first), the same ones the Home card
+`src/components/expenses/PendingQuestionsCard.tsx` shows, so the call can offer to finish one through `record_draft`.
 Finance answers come from the finance layer's per-user Redis cache when it holds them (see the
 [AI Center](ai-center.md#the-finance-semantic-layer)); every result is kept to a few facts because the live model
 is billed again for it on every later turn.
@@ -200,7 +201,9 @@ is billed again for it on every later turn.
   model say it is still waiting and ask; the `done_claim_before_confirm` incident records only that it happened.
   An undo draft is left out, because it speaks of what was recorded before.
 - **Cost.** `api/services/voice/gateway/pricing.ts` prices the provider's token counts (Google's published Live
-  rates); the call's cost and tokens are checkpointed every 15 seconds with the billed seconds and first-audio
+  rates) and the text models the tools ask (`textModelCostUsd`: `think`, a price lookup, which a cached price skips;
+  thinking tokens count as output). A tool returns its cost, which joins the call's total and its daily cap
+  (`toolCostUsd` in the metrics); the post-call summary's cost is kept with its tokens. The call's cost and tokens are checkpointed every 15 seconds with the billed seconds and first-audio
   latency (`voice_calls.metrics`).
 
 ### After the call
@@ -352,10 +355,6 @@ Checked against the code; each one names where it lives.
    (`api/lib/security-headers.ts`, `script-src` without `blob:`) blocks it. The rebuilt call serves its worklet as a file.
 9. **Debt.** The old call screen shows its technical "Voice trace" panel to every user
    (`src/components/ai/AIVoiceCall.tsx#VoiceTracePanel`); the rebuilt call shows its trace to admins only.
-10. **Gap.** A profile question the user lets pass, neither answered nor refused, is offered again in the next call:
-    only an answer or a refusal saved through `memory answer` takes it off the list, and the call never sets the
-    Home card's one-day pause (`user_profiles.last_asked_at`), which it only reads
-    (`api/services/voice/brain/profile-questions.ts#nextCallQuestion`).
 
 ## Related systems
 - [AI Center](ai-center.md): the finance semantic layer, AI memory and action runtime the tools call, and the page

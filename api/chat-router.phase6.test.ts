@@ -96,20 +96,20 @@ describe("chat router phase 6 memory controls & privacy", () => {
     expect(dbMock.select).toHaveBeenCalled();
   });
 
-  it("forgetMemory marks the memory item as forgotten and deletes corresponding embeddings", async () => {
+  it("forgetMemory deletes the memory item and its embeddings, keeping nothing behind a status", async () => {
     const result = await caller.forgetMemory({ memoryId: 101 });
 
     expect(result).toEqual({ success: true });
-    expect(updateQueries).toContainEqual({ status: "forgotten" });
-    expect(deleteQueries.length).toBeGreaterThanOrEqual(1);
+    expect(updateQueries).toEqual([]);
+    expect(deleteQueries.length).toBe(2);
   });
 
-  it("clearAllMemories marks all active user memories as forgotten and clears user embeddings", async () => {
+  it("clearAllMemories deletes the user's memories and embeddings", async () => {
     const result = await caller.clearAllMemories();
 
     expect(result.success).toBe(true);
-    expect(updateQueries).toContainEqual({ status: "forgotten" });
-    expect(deleteQueries.length).toBeGreaterThanOrEqual(1);
+    expect(updateQueries).toEqual([]);
+    expect(deleteQueries.length).toBe(2);
   });
 
   it("clearConversation deletes conversation, messages, and summaries but preserves active memories", async () => {

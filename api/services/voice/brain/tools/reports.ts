@@ -82,8 +82,8 @@ export interface WaitingEntry {
 const oneLine = (text: unknown, max: number) => String(text ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 
 /**
- * Entries the classifier could not record without an answer, newest first. Nothing else in the app lists them once
- * the form that asked is closed, so the call offers to finish them. `count` stops at 20.
+ * Entries the classifier could not record without an answer, newest first: the ones the Home card lists, which the
+ * call can offer to finish. `count` stops at 20.
  */
 export async function readPendingQuestions(identity: CallIdentity, limit = 3): Promise<{ count: number; items: WaitingEntry[] }> {
   const rows = await db

@@ -7,6 +7,7 @@
  */
 import { executeAiGateway } from "../../../../lib/ai-gateway";
 import { getSystemSettings } from "../../../../lib/settings-cache";
+import { textModelCostUsd } from "../../gateway/pricing";
 import {
   getFinanceBreakdown,
   getFinanceSummary,
@@ -118,8 +119,9 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
     maxTokens: 700,
     temperature: 0.2,
   });
+  const costUsd = textModelCostUsd(result.model, result.usage.promptTokens, result.usage.completionTokens + result.usage.reasoningTokens);
   const answer = parseJson(result.text);
-  if (!answer) return { response: { ok: false, error: "no_answer", say: "قول إنك محتاج تبص عليها تاني، واسأل سؤال يوضح المطلوب." } };
+  if (!answer) return { costUsd, response: { ok: false, error: "no_answer", say: "قول إنك محتاج تبص عليها تاني، واسأل سؤال يوضح المطلوب." } };
 
   const allowed = derivable([...data.map((p) => p.value), ...userSaid]);
   ctx.ledger.nextBatch();
@@ -139,6 +141,7 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
     .map((reason) => reason.replace(/\d+(?:\.\d+)?/g, (digits) => spellAmount(Number(digits)).text));
 
   return {
+    costUsd,
     response: {
       ok: true,
       verdict: typeof answer.verdict === "string" ? answer.verdict : null,

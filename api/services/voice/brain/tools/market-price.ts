@@ -8,6 +8,7 @@
 import { businessTimeLabel } from "../../../../lib/app-time";
 import { cacheGet, cacheSet } from "../../../../lib/redis-client";
 import type { ToolRunOutcome } from "../../gateway/call-session";
+import { textModelCostUsd } from "../../gateway/pricing";
 import { askTextModel } from "../../text-model";
 import { type ToolContext, type VoiceTool } from "./types";
 
@@ -29,7 +30,8 @@ interface Quote {
 
 const TTL_SECONDS = 30 * 60;
 
-export async function lookup(asset: Asset, now = new Date()): Promise<Quote | null> {
+/** The quote, or null when no model found a believable one, and what asking cost. */
+export async function lookup(asset: Asset, now = new Date()): Promise<{ quote: Quote | null; costUsd: number }> {
   const answer = await askTextModel({
     modelSetting: "voice_price_model",
     defaultModel: "gemini-3.5-flash-lite",
@@ -39,7 +41,12 @@ export async function lookup(asset: Asset, now = new Date()): Promise<Quote | nu
     timeoutMs: 5_000,
     deadlineMs: 9_000,
   });
-  const match = answer.text.match(/\{[^{}]*\}/);
+  const costUsd = textModelCostUsd(answer.model, answer.inputTokens, answer.outputTokens);
+  return { quote: readQuote(asset, answer.text, answer.webSource, now), costUsd };
+}
+
+function readQuote(asset: Asset, text: string, webSource: string | undefined, now: Date): Quote | null {
+  const match = text.match(/\{[^{}]*\}/);
   if (!match) return null;
   let parsed: Record<string, unknown>;
   try {
@@ -52,7 +59,7 @@ export async function lookup(asset: Asset, now = new Date()): Promise<Quote | nu
   if (!Number.isFinite(value) || value < bounds.min || value > bounds.max) return null;
   return {
     value,
-    source: String(parsed.source || answer.webSource || "بحث جوجل").slice(0, 80),
+    source: String(parsed.source || webSource || "بحث جوجل").slice(0, 80),
     // Without a time from the source, the time it was looked up, on Cairo's clock (golden rule 6).
     asOf: String(parsed.as_of || businessTimeLabel(now)).slice(0, 40),
   };
@@ -70,17 +77,22 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
       quote = null;
     }
   }
+  // A cached price costs nothing; a lookup's cost counts toward this call.
+  let costUsd = 0;
   if (!quote) {
-    quote = await lookup(asset).catch(() => null);
+    const found = await lookup(asset).catch(() => null);
+    quote = found?.quote ?? null;
+    costUsd = found?.costUsd ?? 0;
     if (quote) await cacheSet(cacheKey, TTL_SECONDS, JSON.stringify(quote));
   }
   if (!quote) {
-    return { response: { ok: false, error: "price_unavailable", say: "قول إنك مش قادر توصل للسعر دلوقتي، ومتخمنش رقم." } };
+    return { costUsd, response: { ok: false, error: "price_unavailable", say: "قول إنك مش قادر توصل للسعر دلوقتي، ومتخمنش رقم." } };
   }
   const info = ASSETS[asset];
   ctx.ledger.nextBatch();
   const fact = ctx.ledger.add({ id: `price_${asset}`, label: `سعر ${info.title}`, value: quote.value, source: "price" });
   return {
+    costUsd,
     response: {
       ok: true,
       asset: info.title,

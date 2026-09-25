@@ -451,11 +451,13 @@ model {
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.voice_calls
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.voice_usage
   smartspend.api.modules.voice -[uses]-> gemini
+  smartspend.api.modules.voice -[writes]-> smartspend.mysql.ai_memory_embeddings
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.ai_memory_items
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.api_key_errors
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.chat_messages
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.pending_clarifications
+  smartspend.api.modules.voice -[writes]-> smartspend.mysql.user_profiles
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.voice_call_incidents
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.voice_calls
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.voice_usage
@@ -646,7 +648,6 @@ model {
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.platform
-  smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.ai_summaries
   smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.local_users

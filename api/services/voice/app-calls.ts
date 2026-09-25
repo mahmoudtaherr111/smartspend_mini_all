@@ -12,6 +12,7 @@ import { db } from "../../queries/connection";
 import type { AppRouter } from "../../router";
 import type { CallIdentity } from "./gateway/call-session";
 import type { BudgetStatus, ParseOutcome, VoiceAppCalls } from "./brain/tools/types";
+import { financeCacheKey, withFinanceCache } from "../finance-semantic-layer/cache";
 
 type Caller = ReturnType<AppRouter["createCaller"]>;
 
@@ -82,18 +83,22 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
     },
 
     async listBudgets(identity): Promise<BudgetStatus[]> {
-      const caller = await callerFor(identity);
-      const { budgets } = await caller.budget.list();
-      return budgets
-        .filter((budget) => budget.status === "active")
-        .map((budget) => ({
-          title: budget.title,
-          category: budget.category,
-          limit: Number(budget.monthlyLimit),
-          spent: Number(budget.currentSpent),
-          percent: Number(budget.percentage),
-          exceeded: Boolean(budget.isExceeded),
-        }));
+      // Cached like the finance layer's answers: any budget or expense write bumps the user's generation and drops it.
+      const key = financeCacheKey(identity.userId, identity.userType, "voice_budgets", "now");
+      return withFinanceCache(key, 60, async () => {
+        const caller = await callerFor(identity);
+        const { budgets } = await caller.budget.list();
+        return budgets
+          .filter((budget) => budget.status === "active")
+          .map((budget) => ({
+            title: budget.title,
+            category: budget.category,
+            limit: Number(budget.monthlyLimit),
+            spent: Number(budget.currentSpent),
+            percent: Number(budget.percentage),
+            exceeded: Boolean(budget.isExceeded),
+          }));
+      });
     },
 
     async answerProfileQuestion(identity, key, value, skipped) {

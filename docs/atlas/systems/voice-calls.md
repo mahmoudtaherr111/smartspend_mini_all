@@ -29,12 +29,14 @@ flowchart LR
     mod_web_voice_call["Live voice call UI"]
   end
   subgraph g_tables["MySQL tables"]
+    tbl_ai_memory_embeddings[("ai_memory_embeddings")]
     tbl_ai_memory_items[("ai_memory_items")]
     tbl_api_key_errors[("api_key_errors")]
     tbl_chat_conversations[("chat_conversations")]
     tbl_chat_messages[("chat_messages")]
-    tbl_more[("10 tables it only reads, listed under Data")]
+    tbl_more[("9 tables it only reads, listed under Data")]
     tbl_pending_clarifications[("pending_clarifications")]
+    tbl_user_profiles[("user_profiles")]
     tbl_voice_call_incidents[("voice_call_incidents")]
     tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
@@ -57,11 +59,13 @@ flowchart LR
   mod_voice --> sys_insights
   mod_voice --> sys_platform
   mod_voice -.-> tbl_more
+  mod_voice ==> tbl_ai_memory_embeddings
   mod_voice ==> tbl_ai_memory_items
   mod_voice ==> tbl_api_key_errors
   mod_voice ==> tbl_chat_conversations
   mod_voice ==> tbl_chat_messages
   mod_voice ==> tbl_pending_clarifications
+  mod_voice ==> tbl_user_profiles
   mod_voice ==> tbl_voice_call_incidents
   mod_voice ==> tbl_voice_calls
   mod_voice ==> tbl_voice_usage
@@ -113,6 +117,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- | --- |
 | `ai_action_memory` | F | — | `voice` |
 | `ai_conversation_summaries` | F | — | `voice` |
+| `ai_memory_embeddings` | F | `voice` | — |
 | `ai_memory_items` | F | `voice` | `voice` |
 | `ai_summaries` | C | — | `voice` |
 | `api_key_errors` | E | `voice` | — |
@@ -123,7 +128,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `local_users` | A | — | `voice` |
 | `monthly_reports` | C | — | `voice` |
 | `pending_clarifications` | D | `voice` | `voice` |
-| `user_profiles` | A | — | `voice` |
+| `user_profiles` | A | `voice` | `voice` |
 | `user_wallets` | A | — | `voice` |
 | `users` | A | — | `voice` |
 | `voice_call_incidents` | E | `voice` | — |

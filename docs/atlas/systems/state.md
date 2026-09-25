@@ -4,23 +4,23 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (51 of 116 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (51 of 115 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 21b72a3 | 2026-09-25 21b72a3 | 18 | — | 3 | 2 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 18 | — | 3 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 9a9c8ca | 2026-09-25 9a9c8ca | 3 | — | 2 | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 454bede | 2026-09-25 454bede | 11 | — | 5 | 1 | 4 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 5638494 | 2026-09-25 5638494 | 4 | — | 5 | 3 | 1 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 614093e | 2026-09-25 614093e | 6 | — | 8 | 3 | 3 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 11 | — | 5 | — | 4 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 4 | — | 5 | 3 | 1 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 8626db8 | 2026-09-25 8626db8 | 5 | — | 6 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-25 dd02a18 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 4c48fe5 | 2026-09-25 4c48fe5 | 4 | — | 3 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 454bede | 2026-09-25 5638494 | 9 | — | 4 | 1 | 4 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 9 | — | 4 | 1 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 5638494 | 2026-09-25 3cd03f9 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-25 21b72a3 | 2026-09-25 21b72a3 | 7 | **1** | 1 | 3 | 2 |
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (51 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (116 issue(s))
+## What is waiting (115 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -120,7 +120,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (35)
+### Gaps (34)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -132,13 +132,10 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Only a merchant the engine knows well changes the fixed map (a card payment, or a refund from it, which is saved as a negative expense in that merchant's category): a card payment to any other merchant is `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
 - Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account digits and balances, is stored as received.
 
-**Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
-- A profile question the user lets pass, neither answered nor refused, is offered again in the next call: only an answer or a refusal saved through `memory answer` takes it off the list, and the call never sets the Home card's one-day pause (`user_profiles.last_asked_at`), which it only reads (`api/services/voice/brain/profile-questions.ts#nextCallQuestion`).
-
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the chat. The model id skips `mapModelName` (golden rule 9), the `chatbot_max_tokens_<plan>` settings are read but do not limit replies, and the retry time in the daily-limit error is counted to the server's midnight.
 - Memory embeddings stay off unless `ai_memory_embedding_enabled` is set to `true`, a key `api/lib/system-settings-registry.ts` does not list. The Qdrant, quantized on-disk and in-memory vector stores exported by `api/services/ai-memory/index.ts` are used only by tests.
-- A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest 10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`) and says nothing about the rest; only the period's totals are exact at any size.
+- A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest 10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Breakdowns and category totals mark it (`partial`) and the voice call says so; the chat does not yet. Only the period's totals are exact at any size.
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - The scheduled report describes the Cairo month that ended (`reportMonthFor` in `api/jobs/monthly-report-job.ts`); a report asked for from the app or the admin still names its month explicitly, and nothing re-sends a month whose scheduled run failed.

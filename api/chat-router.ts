@@ -1275,9 +1275,9 @@ export const chatRouter = router({
         });
       }
 
+      // Forgetting deletes: the text is not kept behind a status.
       await db
-        .update(aiMemoryItems)
-        .set({ status: "forgotten" })
+        .delete(aiMemoryItems)
         .where(
           and(
             eq(aiMemoryItems.id, input.memoryId),
@@ -1319,8 +1319,7 @@ export const chatRouter = router({
 
     if (items.length > 0) {
       await db
-        .update(aiMemoryItems)
-        .set({ status: "forgotten" })
+        .delete(aiMemoryItems)
         .where(
           and(
             eq(aiMemoryItems.userId, ctx.user.id),

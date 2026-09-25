@@ -554,6 +554,8 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
     text = result.response.text();
     promptTokens = result.response.usageMetadata?.promptTokenCount || anatomy.systemPromptTokens + anatomy.userInputTokens;
     completionTokens = result.response.usageMetadata?.candidatesTokenCount || estimateTokens(text);
+    // Thinking is billed as output and reported apart from the answer.
+    reasoningTokens = (result.response.usageMetadata as { thoughtsTokenCount?: number } | undefined)?.thoughtsTokenCount || 0;
     cachedTokens = (result.response.usageMetadata as any)?.cachedContentTokenCount || 0;
   } else {
     // OpenAI Compatible standard (OpenRouter, DeepSeek, Groq, Fireworks, NVIDIA, Together, Ollama)

@@ -17,6 +17,7 @@ import { invalidateMemoryUserCache } from "../ai-memory";
 import { contentHash } from "../ai-memory/text-utils";
 import { neverKeptUnasked } from "./brain/never-kept";
 import { deleteTranscript, readTranscript, TRANSCRIPT_TTL_SECONDS, type TranscriptLine } from "./gateway/store";
+import { textModelCostUsd } from "./gateway/pricing";
 import { askTextModel } from "./text-model";
 
 const log = createLogger("voice-memory");
@@ -114,6 +115,8 @@ export interface MemoryUsage {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  /** At Google's text-model rates (api/services/voice/gateway/pricing.ts). */
+  costUsd?: number;
 }
 
 interface CallRow {
@@ -242,7 +245,15 @@ const databaseDeps: PostCallDeps = {
       // Flash models think before answering, and the thinking counts against this budget.
       maxTokens: 4_096,
     });
-    return { text: answer.text, usage: { model: answer.model, inputTokens: answer.inputTokens, outputTokens: answer.outputTokens } };
+    return {
+      text: answer.text,
+      usage: {
+        model: answer.model,
+        inputTokens: answer.inputTokens,
+        outputTokens: answer.outputTokens,
+        costUsd: textModelCostUsd(answer.model, answer.inputTokens, answer.outputTokens),
+      },
+    };
   },
 
   async write(user, callId, memory) {

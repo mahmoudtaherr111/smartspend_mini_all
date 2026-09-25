@@ -314,7 +314,9 @@ export async function getCategoryTotal(
   const key = financeCacheKey(ctx.userId, ctx.userType, "category_total", period.key, financeCategoryIds(category).join("+"));
 
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
-    const rows = (await loadRowsForPeriod(ctx, period)).filter((row) => rowMatchesCategory(row, category));
+    const loaded = await loadRowsForPeriod(ctx, period);
+    const partial = loaded.length >= ROW_LIMIT;
+    const rows = loaded.filter((row) => rowMatchesCategory(row, category));
     const subCategories = new Map<string, { amount: number; count: number }>();
     let totalExpense = 0;
     let totalIncome = 0;
@@ -344,6 +346,7 @@ export async function getCategoryTotal(
         .map(([name, item]) => ({ name, amount: item.amount, count: item.count }))
         .sort((a, b) => b.amount - a.amount)
         .slice(0, 5),
+      ...(partial ? { partial } : {}),
     };
   });
 }
@@ -416,10 +419,11 @@ export async function getFinanceBreakdown(
 
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
     let rows = await loadRowsForPeriod(ctx, period);
+    const partial = rows.length >= ROW_LIMIT;
     if (input.category) {
       rows = rows.filter((row) => rowMatchesCategory(row, input.category!));
     }
-    return buildBreakdown(rows, period, granularity, limit);
+    return { ...buildBreakdown(rows, period, granularity, limit), ...(partial ? { partial } : {}) };
   });
 }
 

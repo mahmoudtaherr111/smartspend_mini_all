@@ -47,6 +47,17 @@ export async function lastAskedAt(userId: number, userType: string): Promise<Dat
   return row?.at ?? null;
 }
 
+/**
+ * The call was offered a question: the same one-day pause the Home card sets when it asks starts now, so neither the
+ * next call nor the card asks again within a day, whether or not this call got to it.
+ */
+export async function markAsked(userId: number, userType: string, now = new Date()): Promise<void> {
+  await db
+    .update(userProfiles)
+    .set({ lastAskedAt: now })
+    .where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
+}
+
 /** How the question reads in the call's facts: the words to ask, and what an answer may be. */
 export function questionLine(question: AdaptiveQuestion): string {
   const answers =

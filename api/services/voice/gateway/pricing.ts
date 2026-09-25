@@ -45,3 +45,20 @@ export function usageCostUsd(totals: UsageTotals): number {
   usd += (totals.thoughts * PER_MILLION_USD.output.text) / 1_000_000;
   return Number(usd.toFixed(8));
 }
+
+/**
+ * Google's paid rates for the text models the call's tools use (think, market_price, the post-call summary), USD per
+ * million tokens, output including thinking; checked 2026-09-25 on the same page. 3.8 Flash's rates double on
+ * 2027-01-01. Search grounding is free for the first 5,000 requests a month and is not counted here. A model not
+ * listed is priced as the dearest one.
+ */
+const TEXT_PER_MILLION_USD: Record<string, { input: number; output: number }> = {
+  "gemini-3.8-flash": { input: 0.75, output: 3.75 },
+  "gemini-3.5-flash-lite": { input: 0.3, output: 2.5 },
+  "gemini-3.1-flash-lite": { input: 0.25, output: 1.5 },
+};
+
+export function textModelCostUsd(model: string, inputTokens: number, outputTokens: number): number {
+  const rate = TEXT_PER_MILLION_USD[model] ?? TEXT_PER_MILLION_USD["gemini-3.8-flash"];
+  return Number(((inputTokens * rate.input + outputTokens * rate.output) / 1_000_000).toFixed(8));
+}

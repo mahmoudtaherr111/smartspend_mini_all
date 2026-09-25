@@ -60,7 +60,8 @@ printable HTML file that the browser downloads.
 
 ## Comparing months and the yearly summary
 - `ai.compareMonths` checks `<plan>_ai_analysis`, takes both months from the finance layer and writes the comparison
-  (spending, income, net flow, transaction counts and the difference) without a model.
+  (spending, income, net flow, transaction counts and the difference) without a model. Each period is labelled with
+  its Cairo business days (`businessDateKey`), so a month reads 1st to last, not from the UTC eve of its first day.
 - `ai.generateYearlyInsights` does the same for a calendar year: totals, daily average, the peak month, active months,
   the month distribution and the top categories. No screen calls it.
 

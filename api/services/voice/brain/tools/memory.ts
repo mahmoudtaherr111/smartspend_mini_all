@@ -4,7 +4,7 @@
  * refuses to keep age or gender (the owner's decision), however the user phrases it.
  */
 import { and, desc, eq } from "drizzle-orm";
-import { aiMemoryItems } from "../../../../../db/schema";
+import { aiMemoryEmbeddings, aiMemoryItems } from "../../../../../db/schema";
 import { businessDateKey } from "../../../../lib/app-time";
 import { db } from "../../../../queries/connection";
 import { invalidateMemoryUserCache, retrieveMemoryContext } from "../../../ai-memory";
@@ -62,7 +62,13 @@ async function forget(memoryId: number, ctx: ToolContext): Promise<ToolRunOutcom
   );
   const [item] = await db.select({ id: aiMemoryItems.id }).from(aiMemoryItems).where(scope).limit(1);
   if (!item) return { response: { ok: false, error: "not_found", say: "مالقيتش الحاجة دي. دوّر بـ search الأول." } };
-  await db.update(aiMemoryItems).set({ status: "forgotten" }).where(scope);
+  // Forgetting deletes the memory and its search vector; nothing of it is kept behind a status.
+  await db.delete(aiMemoryItems).where(scope);
+  await db.delete(aiMemoryEmbeddings).where(and(
+    eq(aiMemoryEmbeddings.memoryItemId, memoryId),
+    eq(aiMemoryEmbeddings.userId, ctx.identity.userId),
+    eq(aiMemoryEmbeddings.userType, ctx.identity.userType),
+  ));
   await invalidateMemoryUserCache(ctx.identity.userId, ctx.identity.userType).catch(() => undefined);
   return { response: { ok: true, say: "قول إنك نسيتها." } };
 }

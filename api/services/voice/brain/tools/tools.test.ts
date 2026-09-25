@@ -170,6 +170,13 @@ describe("money_query", () => {
     expect(result.response).toMatchObject({ facts: [{ label: "مصروف أكل", value: 1_141 }], count: 5, top: ["مطعم", "دليفري"] });
   });
 
+  it("says when a busy period was only partly read", async () => {
+    vi.mocked(getCategoryTotal).mockResolvedValueOnce({
+      category: "أكل", aliases: [], totalExpense: 90_000, totalIncome: 0, transactionCount: 9_000, topSubCategories: [], partial: true,
+    } as never);
+    expect(String((await moneyQuery.run({ metric: "total", category: "أكل" }, ctx)).response.coverage)).toContain("أحدث عشر آلاف");
+  });
+
   it("breaks the spending down with each share said in words", async () => {
     const result = await moneyQuery.run({ metric: "breakdown", period: "this_month" }, ctx);
     expect(result.response).toMatchObject({
@@ -223,13 +230,19 @@ describe("money_query", () => {
 describe("market_price", () => {
   it("gives the price with its source, and the time on Cairo's clock when the source names none", async () => {
     vi.mocked(askTextModel).mockResolvedValueOnce({ text: '{"value": 5150, "source": ""}', model: "gemini-3.5-flash-lite", inputTokens: 0, outputTokens: 0, webSource: "gold.example" });
-    expect(await lookup("gold_21k", new Date("2026-09-24T21:30:00Z"))).toEqual({ value: 5150, source: "gold.example", asOf: "2026-09-25 00:30" });
+    expect(await lookup("gold_21k", new Date("2026-09-24T21:30:00Z"))).toEqual({
+      quote: { value: 5150, source: "gold.example", asOf: "2026-09-25 00:30" },
+      costUsd: 0,
+    });
     expect(vi.mocked(askTextModel).mock.calls[0][0]).toMatchObject({ search: true, timeoutMs: 5_000, deadlineMs: 9_000 });
   });
 
   it("refuses a price outside sane bounds, and says it cannot get one instead of guessing", async () => {
-    vi.mocked(askTextModel).mockResolvedValueOnce({ text: '{"value": 51}', model: "m", inputTokens: 0, outputTokens: 0 });
-    expect((await marketPriceTool.run({ asset: "gold_21k" }, ctx)).response).toMatchObject({ ok: false, error: "price_unavailable" });
+    vi.mocked(askTextModel).mockResolvedValueOnce({ text: '{"value": 51}', model: "gemini-3.5-flash-lite", inputTokens: 1_000_000, outputTokens: 0 });
+    const result = await marketPriceTool.run({ asset: "gold_21k" }, ctx);
+    expect(result.response).toMatchObject({ ok: false, error: "price_unavailable" });
+    // The lookup was paid for even though its answer was refused.
+    expect(result.costUsd).toBeCloseTo(0.3);
   });
 });
 
@@ -252,6 +265,8 @@ describe("think", () => {
         alternative: "موديل أرخص",
         missing: null,
       }),
+      model: "gemini-3.5-flash-lite",
+      usage: { promptTokens: 1_000, completionTokens: 200, reasoningTokens: 100 },
     } as never);
     const result = await thinkTool.run({ question: "أقدر أشتري موبايل بخمستاشر ألف؟" }, ctx);
     // A fast model with a time budget: the caller is waiting on the line.
@@ -260,6 +275,8 @@ describe("think", () => {
     expect(result.response.numbers).toHaveLength(1);
     expect(result.response.reasons).toEqual(["الفاضل بعد المصروف ست آلاف وميتين بس"]);
     expect(ctx.ledger.allows(6_200, false)).toBe(true);
+    // 1,000 in and 300 out (thinking included) at 3.5 Flash Lite's rates.
+    expect(result.costUsd).toBeCloseTo((1_000 * 0.3 + 300 * 2.5) / 1_000_000, 10);
   });
 });
 

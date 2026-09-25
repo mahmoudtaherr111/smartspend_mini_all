@@ -127,6 +127,8 @@ function outcome(built: Built, ctx: ToolContext, periodLabel: string): ToolRunOu
   };
 }
 
+/** A read that stopped at the finance layer's row limit (ROW_LIMIT): the period's total is still exact. */
+const PARTIAL_NOTE = "الفترة دي فيها عمليات كتير أوي، فالرقم ده من أحدث عشر آلاف عملية بس؛ الإجمالي الكامل للفترة مظبوط لو اتسأل عنه من غير تصنيف.";
 const EMPTY_NOTE = "مفيش حاجة متسجلة في الفترة دي. ده مش معناه إن مفيش صرف، يمكن ماتسجلش.";
 
 const MONTH_NAMES = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
@@ -428,7 +430,7 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
         ...items.map((item) => ({ label: item.name, value: item.amount })),
       ],
       extra: { shares: items.map((item) => ({ name: item.name, share: spellPercent(item.percent) })) },
-      coverage: breakdown.items.length ? undefined : EMPTY_NOTE,
+      coverage: breakdown.partial ? PARTIAL_NOTE : breakdown.items.length ? undefined : EMPTY_NOTE,
     }, ctx, label);
   }
 
@@ -485,7 +487,7 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
         count: total.transactionCount,
         top: total.topSubCategories.map((sub) => subCategoryName(category, sub.name)).filter(Boolean).slice(0, 3),
       },
-      coverage: total.transactionCount ? undefined : EMPTY_NOTE,
+      coverage: total.partial ? PARTIAL_NOTE : total.transactionCount ? undefined : EMPTY_NOTE,
     }, ctx, label);
   }
   const summary = await getFinanceSummary(finance, input);

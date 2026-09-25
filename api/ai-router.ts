@@ -29,6 +29,7 @@ import { randomUUID } from "node:crypto";
 import { getSystemSettings } from "./lib/settings-cache";
 import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { env } from "./lib/env";
+import { businessDateKey } from "./lib/app-time";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
 import { runSmartPipeline, SMART_PIPELINE_VERSION } from "./lib/smart-pipeline";
 import { CATEGORIES } from "./lib/category-registry";
@@ -1118,19 +1119,6 @@ export const aiRouter = router({
       } catch {
         // A trace-storage outage must not block a user from reviewing a parse.
       }
-
-      // Cache usage
-      await db
-        .insert(aiSummaries)
-        .values({
-          userId: ctx.user.id,
-          userType: ctx.user.type,
-          period: "daily",
-          periodValue: new Date().toISOString().split("T")[0],
-          model: result.modelUsed,
-          content: JSON.stringify(result.items || []),
-        })
-        .catch(() => {});
 
       let clarificationId: number | undefined;
       if (result.decision === "clarify") {
@@ -3123,11 +3111,12 @@ ${personalizedSummaryForAI}
           ? "غير محسوبة"
           : `${roundMoney(value)}%`;
       const periodDateLabel = (value: Date | string | number) => {
-        if (value instanceof Date) return value.toISOString().slice(0, 10);
+        // The business day the boundary falls on (golden rule 6), not the UTC date before Cairo's midnight.
+        if (value instanceof Date) return businessDateKey(value);
         const parsed = new Date(value);
         return Number.isNaN(parsed.getTime())
           ? String(value).slice(0, 10)
-          : parsed.toISOString().slice(0, 10);
+          : businessDateKey(parsed);
       };
       const periodLabel = (summary: FinanceSummary) =>
         `${periodDateLabel(summary.period.startDate as Date | string | number)}..${periodDateLabel(summary.period.endDate as Date | string | number)}`;

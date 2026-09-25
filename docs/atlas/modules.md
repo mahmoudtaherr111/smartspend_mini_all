@@ -270,7 +270,7 @@ Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech
 | `api/services/voice-kernel/voice-prompt.ts` | — | — | — | — |
 | `api/services/voice-kernel/voice-session-state.ts` | `platform` | — | — | — |
 | `api/services/voice-kernel/voice-tool-adapter.ts` | `ai-actions`, `ai-kernel`, `ai-memory`, `finance-semantic-layer` | — | — | — |
-| `api/services/voice/app-calls.ts` | `database` | — | `expenses`, `local_users`, `pending_clarifications`, `users` | `pending_clarifications` |
+| `api/services/voice/app-calls.ts` | `database`, `finance-semantic-layer` | — | `expenses`, `local_users`, `pending_clarifications`, `users` | `pending_clarifications` |
 | `api/services/voice/brain/claims.ts` | — | — | — | — |
 | `api/services/voice/brain/drafts.ts` | — | — | — | — |
 | `api/services/voice/brain/facts.ts` | — | — | — | — |
@@ -278,12 +278,12 @@ Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech
 | `api/services/voice/brain/index.ts` | `finance-semantic-layer` | — | — | — |
 | `api/services/voice/brain/instructions.ts` | — | — | — | — |
 | `api/services/voice/brain/never-kept.ts` | — | — | — | — |
-| `api/services/voice/brain/profile-questions.ts` | `ai-insights`, `arabic-nlp`, `database` | — | `user_profiles` | — |
+| `api/services/voice/brain/profile-questions.ts` | `ai-insights`, `arabic-nlp`, `database` | — | `user_profiles` | `user_profiles` |
 | `api/services/voice/brain/snapshot.ts` | `ai-insights`, `database`, `finance-semantic-layer`, `platform` | — | `ai_memory_items`, `expenses`, `local_users`, `users` | — |
 | `api/services/voice/brain/spoken.ts` | — | — | — | — |
 | `api/services/voice/brain/tools/app-help.ts` | `site-guide` | — | — | — |
 | `api/services/voice/brain/tools/market-price.ts` | `platform` | — | — | — |
-| `api/services/voice/brain/tools/memory.ts` | `ai-insights`, `ai-memory`, `database`, `platform` | — | `ai_memory_items` | `ai_memory_items` |
+| `api/services/voice/brain/tools/memory.ts` | `ai-insights`, `ai-memory`, `database`, `platform` | — | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` |
 | `api/services/voice/brain/tools/money-query.ts` | `classification`, `finance-semantic-layer`, `platform` | — | — | — |
 | `api/services/voice/brain/tools/record.ts` | `ai-actions` | — | — | — |
 | `api/services/voice/brain/tools/reports.ts` | `database`, `platform` | — | `ai_summaries`, `monthly_reports`, `pending_clarifications` | — |

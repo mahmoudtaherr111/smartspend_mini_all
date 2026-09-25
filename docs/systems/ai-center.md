@@ -132,12 +132,14 @@ the finance caches are cleared.
   counter. It scores recent capsules, active memories and executed actions by words, importance and recency, and adds
   vector similarity from the stored embeddings only when embeddings are on and no strong word match was found. Query
   embeddings are cached in Redis for two weeks, and provider errors pause embedding calls for a while.
-- **Managing**: `chat.listMemories`, `chat.forgetMemory` and `chat.clearAllMemories`, behind the memory manager
-  (`src/components/ai/AIMemoryManager.tsx`). `chat.listMemories` also says whether a memory came from a live call
+- **Managing**: `chat.listMemories`, `chat.forgetMemory` and `chat.clearAllMemories`, behind the memory manager.
+  Forgetting deletes the memory and its embedding; nothing is kept behind a status (migration
+  `db/migrations/0024_purge_forgotten_memories.sql` removed the ones earlier versions kept as `forgotten`). The manager is
+  `src/components/ai/AIMemoryManager.tsx`. `chat.listMemories` also says whether a memory came from a live call
   (`fromCall`, from its metadata, which does not leave the server otherwise); the manager labels a call's summary, a plan
   and an agreement. The [voice call](voice-calls.md) opens the same manager from its end screen.
   `chat.clearConversation` deletes a conversation's messages and summary; the memories taken from it stay until they
-  are forgotten.
+  are deleted.
 
 ## The finance semantic layer
 - Periods (`api/services/finance-semantic-layer/period-resolver.ts#resolveFinancePeriod`): today, yesterday, this
@@ -226,8 +228,8 @@ Checked against the code; each one names where it lives.
 7. **Bug.** When the kernel throws, the user sees the same message as when an operator turned the assistant off.
 8. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
 9. **Gap.** A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest
-   10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`) and says nothing about the rest; only
-   the period's totals are exact at any size.
+   10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Breakdowns and category totals mark
+   it (`partial`) and the voice call says so; the chat does not yet. Only the period's totals are exact at any size.
 
 ## Related systems
 - [Live voice assistant](voice-calls.md): uses the finance layer, memory and action runtime from a call.

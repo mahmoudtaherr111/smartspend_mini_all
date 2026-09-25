@@ -70,6 +70,8 @@ export interface ToolRunOutcome {
   response: Record<string, unknown>;
   card?: VoiceCard;
   scheduling?: ToolScheduling;
+  /** What a text model the tool asked cost at the provider, added to the call's cost and its daily cap. */
+  costUsd?: number;
 }
 
 export interface SpeechCheck {
@@ -140,6 +142,8 @@ export interface StoredCall {
   incidents: number;
   reconnects: number;
   usage: UsageTotals;
+  /** The tools' text-model cost so far; absent in calls stored before it was counted. */
+  toolCostUsd?: number;
   firstAudioMs: number[];
   transcript: TranscriptLine[];
   warned: boolean;
@@ -174,6 +178,7 @@ export class CallSession {
   private incidents = 0;
   private reconnects = 0;
   private usage: UsageTotals = emptyUsage();
+  private toolCostUsd = 0;
   private firstAudioMs: number[] = [];
   private speechEndedAt: number | null = null;
   private transcript: TranscriptLine[] = [];
@@ -208,6 +213,7 @@ export class CallSession {
     session.incidents = stored.incidents;
     session.reconnects = stored.reconnects;
     session.usage = stored.usage;
+    session.toolCostUsd = stored.toolCostUsd ?? 0;
     session.firstAudioMs = stored.firstAudioMs;
     session.transcript = stored.transcript;
     session.warned = stored.warned;
@@ -508,6 +514,10 @@ export class CallSession {
           new Promise<never>((_, reject) => abort.signal.addEventListener("abort", () => reject(new Error("tool_timeout")))),
         ]);
         if (outcome.card) this.send({ type: "card", card: outcome.card });
+        if (outcome.costUsd) {
+          this.toolCostUsd += outcome.costUsd;
+          this.checkCostBudget();
+        }
         // The tool, how long it took and whether it answered; never its arguments or its answer (golden rule 10).
         // A tool's refusal is a short code ("missing_search"), which the logger keeps; on success there is none.
         const code = typeof outcome.response.error === "string" ? { code: outcome.response.error } : {};
@@ -594,7 +604,7 @@ export class CallSession {
   private checkCostBudget(): void {
     const budget = this.options.costBudgetUsd;
     if (budget === null || this.status !== "live") return;
-    const cost = usageCostUsd(this.usage);
+    const cost = this.costUsd();
     if (!this.warned && cost >= budget * 0.85) this.warnEnding(60);
     if (cost >= budget && !this.deps.brain.awaitingConfirmation?.()) void this.end("daily_cost_cap");
   }
@@ -625,8 +635,14 @@ export class CallSession {
     void this.deps.persistence.incident(this.identity, kind, detail);
   }
 
+  /** The live model's tokens at Google's rates, plus what the tools' text models cost. */
+  private costUsd(): number {
+    return Number((usageCostUsd(this.usage) + this.toolCostUsd).toFixed(8));
+  }
+
   private metrics(): Record<string, unknown> {
     return {
+      toolCostUsd: this.toolCostUsd,
       firstAudioMs: {
         count: this.firstAudioMs.length,
         p50: percentile(this.firstAudioMs, 0.5),
@@ -643,7 +659,7 @@ export class CallSession {
       incidents: this.incidents,
       reconnects: this.reconnects,
       tokens: this.usage,
-      costUsd: usageCostUsd(this.usage),
+      costUsd: this.costUsd(),
       metrics: this.metrics(),
     };
   }
@@ -671,6 +687,7 @@ export class CallSession {
       incidents: this.incidents,
       reconnects: this.reconnects,
       usage: this.usage,
+      toolCostUsd: this.toolCostUsd,
       firstAudioMs: this.firstAudioMs.slice(-50),
       transcript: this.transcript,
       warned: this.warned,

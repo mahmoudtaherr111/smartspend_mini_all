@@ -1,4 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// These cases are about keys in the settings; a Groq key in the developer's own .env must not decide them.
+vi.mock("./lib/env", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./lib/env")>();
+  return { ...actual, env: { ...actual.env, GROQ_API_KEY: undefined } };
+});
+
 import { resolveRoutingConfig } from "./ai-router";
 
 describe("resolveRoutingConfig", () => {

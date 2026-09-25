@@ -204,7 +204,7 @@ read. The blocker codes are `api/lib/final-acceptance.ts#BlockerReason`.
 
 ### 9. After the pipeline
 `parseExpense` records the tokens and an AI cost metric, writes the trace to `classification_logs` with
-`api/lib/smart-pipeline.ts#SMART_PIPELINE_VERSION`, and writes an `ai_summaries` row. For `clarify` it stores a
+`api/lib/smart-pipeline.ts#SMART_PIPELINE_VERSION`. For `clarify` it stores a
 `pending_clarifications` row whose context holds the items and a queue of the unknown names (`pendingNames`), and
 returns its id with the question. The response carries the items, the decision, the parser trace
 (`api/services/parser-trace.ts#buildParserTrace`) and the log id. The form shows the trace, an English diagnostic

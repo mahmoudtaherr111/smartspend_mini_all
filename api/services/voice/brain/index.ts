@@ -10,6 +10,7 @@ import { DONE_CLAIM_NOTE, DoneClaimCheck } from "./claims";
 import { DraftBook } from "./drafts";
 import { FactLedger } from "./facts";
 import { buildInstruction, openingNote } from "./instructions";
+import { markAsked } from "./profile-questions";
 import { loadCallSnapshot } from "./snapshot";
 import { appHelpTool } from "./tools/app-help";
 import { marketPriceTool } from "./tools/market-price";
@@ -76,6 +77,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
   return {
     async prepare(identity, callOptions) {
       const snapshot = await loadCallSnapshot(identity, ledger, now());
+      if (snapshot.question) await markAsked(identity.userId, identity.userType, now()).catch(() => undefined);
       const voiceGender = VOICE_CHOICES[callOptions.voiceName]?.gender ?? "female";
       return {
         instruction: buildInstruction({ snapshot, voiceGender }),

@@ -73,6 +73,8 @@ export interface FinanceCategoryTotal {
     amount: number;
     count: number;
   }>;
+  /** The period held more entries than one read takes (ROW_LIMIT): only the newest were counted. */
+  partial?: boolean;
 }
 
 export interface FinancePersonTotal {
@@ -105,6 +107,8 @@ export interface FinanceBreakdown {
   granularity: FinanceGranularity;
   totalExpense: number;
   items: FinanceBreakdownItem[];
+  /** The period held more entries than one read takes (ROW_LIMIT): only the newest were counted. */
+  partial?: boolean;
 }
 
 export interface FinanceTransactionFact {
