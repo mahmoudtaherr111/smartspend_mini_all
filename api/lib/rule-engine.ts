@@ -801,6 +801,15 @@ export function isSimpleText(text: string): boolean {
  */
 export const PERSON_CATEGORIES = ["العائلة", "أصدقاء", "موظفين"];
 
+/**
+ * Merchant names that are also a person's name or an everyday word ("كريم" the ride or a
+ * face cream, "سيف" the pharmacy or a friend, "شيل" the fuel station or "carry"). A hit
+ * on one is never trusted to save on its own.
+ */
+const AMBIGUOUS_MERCHANTS = new Set([
+  "كريم", "سيف", "شيل", "بيم", "موبيل", "وطنية", "رشدي", "نون", "شاهد", "فوري", "ماك", "توتال", "المحطه",
+]);
+
 /** The subcategories that name how money moved (a card, a wallet, a bank), not what for. */
 const PAYMENT_RAIL_SUBCATEGORIES = new Set(["تحويل بنكي", "انستاباي", "فودافون كاش", "تحويل كاش"]);
 
@@ -1270,6 +1279,8 @@ export async function runRuleEngine(
           confidence = setMatch(100, "merchant_registry");
           inferenceSource = "dictionary";
           ambiguityFlags = ["merchant_registry_hit"];
+          // A brand spelled like a name or a common word is not proof on its own.
+          if (AMBIGUOUS_MERCHANTS.has(merchant)) ambiguityFlags.push("ambiguous_merchant");
           // Context-aware disambiguation for merchant names that are also person names
           const disambiguated = disambiguateContext(merchant, allContext, category, subCategory);
           if (disambiguated) {

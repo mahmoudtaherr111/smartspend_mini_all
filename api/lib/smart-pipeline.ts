@@ -984,6 +984,19 @@ async function classifyAdmittedEvents(
         parsedBy: "rule_engine",
         inferenceSource: "dictionary",
         ambiguityFlags: ["muscle_memory_hit"],
+        // A pattern the user saved at least twice without correcting it: priced as a
+        // trusted source by the calibrator rather than left unpriced.
+        evidence: {
+          matchKind: "muscle_memory",
+          rawStrength: Math.min(100, memoryMatch.pattern.confidence),
+          agreement: 0,
+          disagreement: 0,
+          anchorConsumed: true,
+          categoryIsFallback: memoryMatch.pattern.category === "متنوعات",
+          personResolved: "none",
+          hasAmbiguityPenalty: false,
+          ambiguityFlagCount: 1,
+        },
       };
 
       const memKnownNames = knownPeople.map((p) => p.name).filter(Boolean);

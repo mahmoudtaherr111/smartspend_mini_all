@@ -33,6 +33,34 @@ export interface CalibrationOutcome {
 /** Human-readable trace marker; the signature below controls estimate reuse. */
 const CALIBRATED_FLAG = "calibrated";
 
+/**
+ * Answers whose source is trusted by construction rather than measured by the corpus,
+ * which holds no examples of them: what the user taught (a correction, their own
+ * dictionary), a pattern the user saved several times without correcting, and a brand
+ * whose name means nothing else. They used to be "unpriced" and so always went to
+ * review — the most certain answers were the ones never saved on their own, while a
+ * single dictionary word that rounded to 90 was.
+ *
+ * The probability is a stated prior, not a measurement; the flag in the trace says so.
+ * Any doubt on the item (an ambiguous word, disagreeing resolvers, an unknown person,
+ * a brand that shares a common word's spelling) withdraws the trust.
+ */
+const TRUSTED_SOURCES: Partial<Record<string, number>> = {
+  user_correction: 0.97,
+  user_dictionary: 0.97,
+  muscle_memory: 0.95,
+  merchant_registry: 0.95,
+};
+
+function trustedProbability(item: ParsedTransaction, evidence: Evidence): number | null {
+  const prior = TRUSTED_SOURCES[evidence.matchKind];
+  if (prior === undefined) return null;
+  if (evidence.hasAmbiguityPenalty || evidence.disagreement > 0) return null;
+  if (evidence.personResolved === "unknown") return null;
+  if ((item.ambiguityFlags || []).includes("ambiguous_merchant")) return null;
+  return prior;
+}
+
 export function applyCalibration(items: ParsedTransaction[]): CalibrationOutcome {
   let calibrated = 0;
   let uncalibrated = 0;
@@ -56,10 +84,10 @@ export function applyCalibration(items: ParsedTransaction[]): CalibrationOutcome
       return item;
     }
 
-    const result = calibrate(
-      { ...evidence, categoryIsFallback: item.category === "متنوعات" },
-      CONFIDENCE_CALIBRATION,
-    );
+    const trusted = trustedProbability(item, evidence);
+    const result = trusted !== null
+      ? { probability: trusted, bucket: `trusted:${evidence.matchKind}`, support: 1, fellBackToPrior: false }
+      : calibrate({ ...evidence, categoryIsFallback: item.category === "متنوعات" }, CONFIDENCE_CALIBRATION);
     calibrated++;
     if (result.support === 0) unpriced++;
     // Only the resolver's raw-score uncertainty is replaced by calibration. Semantic

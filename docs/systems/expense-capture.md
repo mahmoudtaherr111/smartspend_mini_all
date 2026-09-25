@@ -97,7 +97,11 @@ For each admitted event:
    preposition, so the person is "امي".
 3. The user's stored corrections replace the answer (`api/lib/correction-rules.ts#applyCorrectionRules`).
 4. Calibration turns each item's evidence into a probability (`api/lib/confidence-calibrator.ts#applyCalibration`,
-   measured table `api/lib/confidence-calibration.generated.ts#CONFIDENCE_CALIBRATION`).
+   measured table `api/lib/confidence-calibration.generated.ts#CONFIDENCE_CALIBRATION`). Sources the corpus has no
+   examples of but that are trusted by construction get a stated prior instead of staying unpriced: a user
+   correction or dictionary word (0.97), a muscle-memory pattern (0.95) and a merchant-registry brand (0.95). Any
+   doubt withdraws it: an ambiguous word, disagreeing resolvers, an unknown person, or a brand spelled like a name or
+   a common word (`ambiguous_merchant`: كريم، سيف، شيل، بيم، نون، شاهد، فوري...).
 5. `api/lib/classification-decision.ts#shouldEscalate` decides whether the event goes to the model. An
    unresolved category (`متنوعات`), an unattached amount, ambiguous wording or disagreeing resolvers escalate; a
    user-taught answer (a correction, the user dictionary, muscle memory) never does; otherwise a probability

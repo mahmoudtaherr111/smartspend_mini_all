@@ -356,11 +356,12 @@ describe("A1.4 — confidence follows the answer it is about", () => {
   });
 
   it("keeps an unpriced item unpriced however many times calibration runs", () => {
-    // `exact:single` has no observations in the shipped table, so its probability is the
+    // A user-taught answer made doubtful by an ambiguous word is not trusted, and its
+    // `exact:ambiguous` bucket has no observations in the shipped table, so its probability is the
     // corpus prior. Running calibration twice used to report unpriced 1 then 0, which
     // turned an unmeasured path into an auto-saveable one on the second pass.
     const unpriced = item({
-      evidence: { ...emptyEvidence("user_dictionary", 95), anchorConsumed: true },
+      evidence: { ...emptyEvidence("user_dictionary", 95), anchorConsumed: true, hasAmbiguityPenalty: true },
     });
 
     const first = applyCalibration([unpriced]);
@@ -375,7 +376,7 @@ describe("A1.4 — confidence follows the answer it is about", () => {
 
   it("refuses auto-save for an item whose probability was never measured", () => {
     const unpriced = applyCalibration([
-      item({ evidence: { ...emptyEvidence("user_dictionary", 95), anchorConsumed: true } }),
+      item({ evidence: { ...emptyEvidence("user_dictionary", 95), anchorConsumed: true, hasAmbiguityPenalty: true } }),
     ]);
 
     const outcome = decidePerItem(unpriced.items, {
@@ -391,7 +392,7 @@ describe("A1.4 — confidence follows the answer it is about", () => {
         item({
           amount: 200,
           confidence: 100,
-          evidence: { ...emptyEvidence("user_dictionary", 100), anchorConsumed: true },
+          evidence: { ...emptyEvidence("user_dictionary", 100), anchorConsumed: true, hasAmbiguityPenalty: true },
         }),
       ],
       text: "دفعت 200 أكل",
@@ -399,6 +400,24 @@ describe("A1.4 — confidence follows the answer it is about", () => {
 
     expect(gate.admitted).toBe(true);
     expect(gate.decision).not.toBe("auto_save");
+  });
+
+  it("prices what the user taught as trusted, so it may save on its own", () => {
+    const taught = applyCalibration([
+      item({ confidence: 95, evidence: { ...emptyEvidence("user_dictionary", 95), anchorConsumed: true } }),
+    ]);
+    expect(taught.unpriced).toBe(0);
+    expect(decidePerItem(taught.items, { amountsFullyConsumed: true, needsAnswer: false }).decision).toBe("auto_save");
+  });
+
+  it("does not trust a brand that shares its name with a word or a person", () => {
+    const careem = applyCalibration([
+      item({
+        ambiguityFlags: ["merchant_registry_hit", "ambiguous_merchant"],
+        evidence: { ...emptyEvidence("merchant_registry", 100), anchorConsumed: true },
+      }),
+    ]);
+    expect(careem.items[0].calibration?.probability).toBeLessThan(0.95);
   });
 });
 
