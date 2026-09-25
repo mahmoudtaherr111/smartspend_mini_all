@@ -39,7 +39,7 @@ the per-plan token budget every paid call is measured against, and the two place
    a key rather than code.
 
 The Gemini text models this app uses are `gemini-3.8-flash`, `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite`
-(`GEMINI_TEXT_CHAIN` in `api/lib/model-mapper.ts`, strongest first; all three answered on Google's API on 2026-09-24).
+(`GEMINI_TEXT_CHAIN` in `api/lib/model-mapper.ts`, built from `contracts/voice-models.ts` so the admin console offers the same list, strongest first; all three answered on Google's API on 2026-09-24).
 Google does not serve `gemini-3.1-pro` (it answers 404), so that name, the older Pro names and the `pro`/`ultra`
 shorthand map to `gemini-3.8-flash`, which is also Ultra's default. `executeAiGateway`, which the voice call's `think`
 tool uses, takes the model named in `forceModelId` (the admin's model by that id, else that Gemini model), else the

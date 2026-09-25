@@ -12,16 +12,16 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (51 of
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 18 | — | 3 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 9a9c8ca | 2026-09-25 9a9c8ca | 3 | — | 2 | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 11 | — | 5 | — | 4 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 a64b3e1 | 2026-09-25 a64b3e1 | 11 | — | 5 | — | 4 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 4 | — | 5 | 3 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 8626db8 | 2026-09-25 8626db8 | 5 | — | 6 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-25 dd02a18 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | 5 | 1 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 4c48fe5 | 2026-09-25 4c48fe5 | 4 | — | 3 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 a1f0b1e | 2026-09-25 a1f0b1e | 9 | — | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 5638494 | 2026-09-25 3cd03f9 | 5 | — | 2 | — | 8 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 a64b3e1 | 2026-09-25 a64b3e1 | 4 | — | 3 | 5 | 2 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 a64b3e1 | 2026-09-25 a64b3e1 | 9 | — | 4 | 1 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 a64b3e1 | 2026-09-25 a64b3e1 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-25 21b72a3 | 2026-09-25 21b72a3 | 7 | **1** | 1 | 3 | 2 |
 
 

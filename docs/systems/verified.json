@@ -78,15 +78,16 @@
         "src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx": "88d1c8cbcd39",
         "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
-        "src/components/admin/settings/AdminPlansTab.tsx": "47a3e216b406",
+        "src/components/admin/settings/AdminPlansTab.tsx": "353b6961298c",
         "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
+        "src/components/admin/settings/AdminVoiceCallSection.tsx": "ddf29cd62a40",
         "src/components/admin/settings/RoutingRangesEditor.tsx": "b6e5b3e17c88",
         "src/pages/Admin.tsx": "42d9a43037ce",
         "src/pages/Support.tsx": "9175518fbc4c"
       },
-      "checked": "2026-09-25 4c48fe5",
-      "arabic": "a2b59bcfbc6a",
-      "arabicChecked": "2026-09-25 4c48fe5"
+      "checked": "2026-09-25 a64b3e1",
+      "arabic": "2ebf219738b5",
+      "arabicChecked": "2026-09-25 a64b3e1"
     },
     "ai-center": {
       "files": {
@@ -158,16 +159,16 @@
         "api/lib/groq-client.ts": "bdb495a8b189",
         "api/lib/llm-provider-chain.ts": "fb82931289a2",
         "api/lib/llm-router.ts": "ae8237823ac9",
-        "api/lib/model-mapper.ts": "0cd7266d063f",
+        "api/lib/model-mapper.ts": "141f91caf7bd",
         "api/lib/nvidia-client.ts": "564dadb63ac4",
         "api/lib/provider-health.ts": "56a6f6eb8217",
         "api/lib/provider-key-crypto.ts": "3c64d3f05284",
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "e4536dd88d77"
       },
-      "checked": "2026-09-25 a1f0b1e",
-      "arabic": "ce16d7f6561f",
-      "arabicChecked": "2026-09-25 a1f0b1e"
+      "checked": "2026-09-25 a64b3e1",
+      "arabic": "d4fce3272d62",
+      "arabicChecked": "2026-09-25 a64b3e1"
     },
     "bank-messages": {
       "files": {
@@ -428,15 +429,16 @@
         "contracts/plan-features.ts": "3d832876be38",
         "contracts/plans.ts": "371c028a6907",
         "contracts/types.ts": "191164b8f041",
+        "contracts/voice-models.ts": "7344fabca2a2",
         "contracts/voice-protocol.ts": "bf0ad56c14c8",
         "db/relations.ts": "3b914b951354",
         "db/schema.ts": "06e192a18dcd",
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "4f7b341be798"
       },
-      "checked": "2026-09-25 5638494",
-      "arabic": "af9f262db317",
-      "arabicChecked": "2026-09-25 3cd03f9"
+      "checked": "2026-09-25 a64b3e1",
+      "arabic": "d4471cc8a48e",
+      "arabicChecked": "2026-09-25 a64b3e1"
     },
     "voice-calls": {
       "files": {
@@ -458,6 +460,7 @@
         "api/services/voice-kernel/voice-prompt.ts": "3731e551ff69",
         "api/services/voice-kernel/voice-session-state.ts": "93e8931ff5b3",
         "api/services/voice-kernel/voice-tool-adapter.ts": "64868819e685",
+        "api/services/voice/admin-stats.ts": "ec7f27875803",
         "api/services/voice/app-calls.ts": "20826653d4ed",
         "api/services/voice/brain/claims.ts": "436e35881bbd",
         "api/services/voice/brain/drafts.ts": "b786a61ab58c",
@@ -490,7 +493,7 @@
         "api/services/voice/gateway/store.ts": "7a1dc82ce092",
         "api/services/voice/post-call.ts": "25addc0610d2",
         "api/services/voice/text-model.ts": "b848ded851d7",
-        "api/voice-router.ts": "ccbcdb5cdbf8",
+        "api/voice-router.ts": "e0fd596b2edc",
         "src/components/ai/AIVoiceCall.tsx": "a48952518da3",
         "src/components/voice/CallSmartButton.tsx": "813a2fbb4e30",
         "src/components/voice/VoiceCallCards.tsx": "db71021d3e90",
@@ -507,9 +510,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-09-25 a1f0b1e",
-      "arabic": "f64fe1d0692e",
-      "arabicChecked": "2026-09-25 a1f0b1e"
+      "checked": "2026-09-25 a64b3e1",
+      "arabic": "87e213cf42ca",
+      "arabicChecked": "2026-09-25 a64b3e1"
     },
     "web-app": {
       "files": {

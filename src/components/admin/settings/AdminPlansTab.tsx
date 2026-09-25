@@ -27,6 +27,7 @@ import {
   SectionHeader,
 } from "./AdminSettingsShared";
 import { RoutingRangesEditor } from "./RoutingRangesEditor";
+import { AdminVoiceCallSection } from "./AdminVoiceCallSection";
 import {
   PLAN_FEATURE_DEFAULTS,
   PLAN_FEATURE_LABELS,
@@ -755,14 +756,14 @@ export function AdminPlansTab({
       <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden border-t-4 border-t-indigo-500 mt-8">
         <SectionHeader
           icon={<Mic className="w-6 h-6 text-indigo-600" />}
-          title="إعدادات المكالمة الصوتية بالذكاء الاصطناعي (Voice Call Configuration)"
-          description="تحكم في باقات المكالمات الصوتية للذكاء الاصطناعي، نموذج التوليد الصوتي، والحدود الزمنية لكل باقة."
+          title="حدود المكالمة الصوتية لكل باقة"
+          description="التشغيل والدقايق الشهرية ومدة المكالمة لكل باقة، للمكالمة القديمة والجديدة مع بعض. الموديل هنا للمكالمة القديمة بس؛ الجديدة إعداداتها في قسم «كلّم سمارت» تحت."
         />
         <CardContent className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-2xl">
             <div className="space-y-2">
               <FieldLabel hint="نموذج توليد وتجاوب الصوت الحي المفضل للمكالمات (Gemini Multimodal Live)">
-                نموذج الصوت الحي (Voice Model)
+                موديل المكالمة القديمة
               </FieldLabel>
               <Select
                 value={
@@ -853,6 +854,9 @@ export function AdminPlansTab({
           </div>
         </CardContent>
       </Card>
+
+      {/* The rebuilt voice call: rollout, models, cost caps and its dashboard */}
+      <AdminVoiceCallSection formData={formData} updateField={updateField} />
 
       {/* AI Chatbot Settings */}
       <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden border-t-4 border-t-indigo-500">

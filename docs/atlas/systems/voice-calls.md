@@ -13,6 +13,7 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 ```mermaid
 flowchart LR
   subgraph g_screens["Screens"]
+    screens_admin["Screens of Admin console, support and growth tools"]
     screens_ai_center["Screens of AI Center"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
@@ -20,7 +21,7 @@ flowchart LR
   subgraph g_api["API, routes and jobs"]
     job_voice_call_memory["Job · voice-call-memory"]
     router_ai["ai API · 1 procedure"]
-    router_voice["voice API · 3 procedures"]
+    router_voice["voice API · 4 procedures"]
     ws__api_voice_live["WebSocket /api/voice/live"]
     ws__api_voice_v2["WebSocket /api/voice/v2"]
   end
@@ -78,6 +79,7 @@ flowchart LR
   router_ai --> sys_platform
   router_voice --> mod_voice
   router_voice -.-> tbl_voice_calls
+  screens_admin --> router_voice
   screens_ai_center --> router_voice
   screens_money --> router_voice
   screens_web_app --> router_voice
@@ -89,7 +91,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `voice` — Voice | Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 43 |
+| `voice` — Voice | Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 44 |
 | `web-voice-call` — Live voice call UI | The live voice call in the app. The rebuilt call: a store any screen can start the call from (src/lib/voice/call-store.ts), which keeps it running across pages; microphone capture filtered down to 16 kHz with speech detection that sends audio only while the user speaks; the /api/voice/v2 socket client that resumes a dropped call; playback of the assistant's voice; and the call screen with its cards, the Home button and the AI Center tab (src/components/voice). The old call screen and its hook (AIVoiceCall.tsx, useVoiceCall.ts on /api/voice/live) stay for users outside the rollout. | 15 |
 
 ## API procedures
@@ -97,6 +99,7 @@ flowchart LR
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
 | `ai.runVoiceToolQa` | mutation | `aiProcedure` | — | — | — |
+| `voice.adminStats` | query | `adminProcedure` | — | — | `Admin`, `More` |
 | `voice.eligibility` | query | `authedProcedure` | — | — | `AICenter`, `App shell`, `Home` |
 | `voice.listCalls` | query | `authedProcedure` | `voice_calls` | — | `App shell` |
 | `voice.startCall` | mutation | `authedProcedure` | — | — | — |
@@ -131,7 +134,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_profiles` | A | `voice` | `voice` |
 | `user_wallets` | A | — | `voice` |
 | `users` | A | — | `voice` |
-| `voice_call_incidents` | E | `voice` | — |
+| `voice_call_incidents` | E | `voice` | `voice` |
 | `voice_calls` | E | `voice` | `voice`, `voice.listCalls` |
 | `voice_usage` | E | `voice` | `voice` |
 
@@ -146,7 +149,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
-Used by: [AI Center](ai-center.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -161,7 +164,7 @@ Used by: [AI Center](ai-center.md), [Money: expenses, wallets, budgets, goals an
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/voice-calls.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>66 files and declarations</summary>
+<details><summary>67 files and declarations</summary>
 
 - `api/ai-router.ts#ai.runVoiceToolQa`
 - `api/ai-router.ts#rest-of-file`
@@ -181,6 +184,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/voice-kernel/voice-prompt.ts`
 - `api/services/voice-kernel/voice-session-state.ts`
 - `api/services/voice-kernel/voice-tool-adapter.ts`
+- `api/services/voice/admin-stats.ts`
 - `api/services/voice/app-calls.ts`
 - `api/services/voice/brain/claims.ts`
 - `api/services/voice/brain/drafts.ts`

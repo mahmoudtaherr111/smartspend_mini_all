@@ -81,7 +81,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `Admin` — `src/pages/Admin.tsx`
 
-29 files in its import closure (not counting `src/components/ui/`).
+30 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -157,6 +157,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `support.close` | useMutation | `src/pages/Admin.tsx` |
 | `support.listAll` | useQuery | `src/pages/Admin.tsx` |
 | `support.respond` | useMutation | `src/pages/Admin.tsx` |
+| `voice.adminStats` | useQuery | `src/components/admin/settings/AdminVoiceCallSection.tsx` |
 
 ### `AuthCallback` — `src/pages/AuthCallback.tsx`
 
@@ -250,7 +251,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-54 files in its import closure (not counting `src/components/ui/`).
+55 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -361,6 +362,7 @@ _None._
 | `support.listAll` | useQuery | `src/pages/Admin.tsx` |
 | `support.listMine` | useQuery | `src/pages/Support.tsx` |
 | `support.respond` | useMutation | `src/pages/Admin.tsx` |
+| `voice.adminStats` | useQuery | `src/components/admin/settings/AdminVoiceCallSection.tsx` |
 | `wallet.createWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
 | `wallet.deleteWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
 | `wallet.getWalletTransactions` | useQuery | `src/components/bank-sync/DigitalBankingSuite.tsx` |

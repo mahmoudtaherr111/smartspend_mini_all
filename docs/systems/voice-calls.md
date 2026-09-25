@@ -275,6 +275,24 @@ routes. The next call's snapshot reads these memories, and the memory screen lab
 - **After the call** the end screen opens the memory screen (`src/components/ai/AIMemoryManager.tsx`, from
   `VoiceCallHost`), looked at again six seconds later because the summary is written just after the call.
 
+### In the admin console
+The settings page's plans tab has a section for the rebuilt call
+(`src/components/admin/settings/AdminVoiceCallSection.tsx`), saved with the rest of the settings form:
+- **Who gets it:** the kill switch (`voice_v2_kill_switch`), the rollout percent (`voice_v2_rollout_percent`) and
+  the allowlist (`voice_v2_allowlist`, entries like `local:12`).
+- **Models:** the default Live model (`voice_v2_model`) and one per plan (`voice_v2_model_<plan>`, empty means the
+  default), the thinking level for the extended-thinking model, and the text models of `think`, `market_price` and
+  the post-call summary. The choices come from `contracts/voice-models.ts`, which `api/lib/model-mapper.ts` also
+  builds its fallback chain from.
+- **Cost:** the daily provider-cost cap per plan (`voice_daily_cost_cap_usd_<plan>`).
+- **Dashboard:** `voice.adminStats` (admin only, `api/services/voice/admin-stats.ts`) over the last day, 7 or 30
+  days: calls, callers, minutes, cost at Google and per minute (tools included), first-audio median and p95, tools
+  and reconnects per call, why calls ended, incidents by kind, post-call memory status, clients, each model's
+  minutes and cost, and the 25 latest calls. It reads `voice_calls` and `voice_call_incidents` only: counts, times
+  and costs, never what was said.
+Monthly minutes, seconds per call and whether a plan may call at all stay in the card above it, shared with the old
+call; that card's model applies to the old call only.
+
 ## Where to change what
 | To change | Edit | Check with |
 | --- | --- | --- |
@@ -287,7 +305,9 @@ routes. The next call's snapshot reads these memories, and the memory screen lab
 | Microphone, playback and the socket in the browser | `src/hooks/useVoiceCall.ts` | |
 | The call screen | `src/components/ai/AIVoiceCall.tsx` | |
 | Which origins may open the socket | `api/lib/origin-policy.ts` | |
-| Rebuilt call: who may call, minutes, model, rollout | `api/services/entitlements/voice.ts` and the `voice_v2_*` settings | `api/services/entitlements/voice.test.ts` |
+| Rebuilt call: who may call, minutes, model, rollout | `api/services/entitlements/voice.ts` and the `voice_v2_*` settings, set in `src/components/admin/settings/AdminVoiceCallSection.tsx` | `api/services/entitlements/voice.test.ts`, `src/components/admin/settings/AdminVoiceCallSection.test.tsx` |
+| Rebuilt call: the admin's dashboard | `api/services/voice/admin-stats.ts`, `voice.adminStats` in `api/voice-router.ts` | `api/services/voice/admin-stats.test.ts` |
+| Which Gemini models can be chosen | `contracts/voice-models.ts` | `api/lib/model-mapper.test.ts` |
 | Rebuilt call: the socket, resume, time and cost limits, checkpoints | `api/services/voice/gateway/` | `api/services/voice/gateway/gateway.test.ts` |
 | Rebuilt call: the connection to Gemini Live | `api/services/voice/engine/gemini-live.ts` | `api/services/voice/engine/gemini-live.test.ts` |
 | Rebuilt call: instructions, snapshot, how numbers are spoken | `api/services/voice/brain/instructions.ts`, `api/services/voice/brain/snapshot.ts`, `api/services/voice/brain/spoken.ts` | `api/services/voice/brain/spoken.test.ts` |

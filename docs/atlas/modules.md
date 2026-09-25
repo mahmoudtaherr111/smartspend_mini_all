@@ -14,15 +14,15 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
 | `platform` | Platform services | 10 | `contracts`, `database` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice` | `mysql` |
-| `contracts` | Shared contracts | 7 | — | `ai-actions`, `ai-governance`, `ai-insights`, `api-core`, `api-routers`, `billing`, `classification`, `jobs`, `platform`, `voice`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-voice-call` | — |
+| `contracts` | Shared contracts | 8 | — | `ai-actions`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `api-routers`, `billing`, `classification`, `jobs`, `platform`, `voice`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-voice-call` | — |
 | `billing` | Billing | 3 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
 | `ledger` | Ledger aggregates | 4 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `ingestion-parsers`, `jobs`, `notifications` | — |
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
 | `jobs` | Scheduled job bodies | 6 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `database`, `ledger`, `platform` | `api-core`, `api-routers`, `jobs` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
-| `voice` | Voice | 43 | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `arabic-nlp`, `auth`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
-| `ai-providers` | AI provider access | 13 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
+| `voice` | Voice | 44 | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `arabic-nlp`, `auth`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
+| `ai-providers` | AI provider access | 13 | `contracts`, `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs`, `voice` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | — |
 | `ingestion-parsers` | Ingestion parsers | 4 | `ai-providers`, `arabic-nlp`, `classification`, `database`, `ledger`, `platform` | `api-routers` | `gemini` |
@@ -39,7 +39,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-shell` | Web app shell | 18 | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit`, `web-voice-call` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-insights`, `web-pages`, `web-shared`, `web-voice-call` | `capacitor`, `firebase` |
 | `web-pages` | Web pages | 15 | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `web-shell` | — |
 | `web-ui-kit` | UI primitives | 55 | `web-hooks`, `web-lib` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-voice-call` | — |
-| `web-admin` | Admin UI | 21 | `contracts`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | `fireworks`, `openrouter` |
+| `web-admin` | Admin UI | 22 | `contracts`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | `fireworks`, `openrouter` |
 | `web-voice-call` | Live voice call UI | 15 | `contracts`, `web-ai`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `capacitor` |
 | `web-ai` | AI Center UI | 3 | `web-hooks`, `web-insights`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-voice-call` | — |
 | `web-capture` | Expense entry UI | 4 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
@@ -191,6 +191,7 @@ Types, limits and billing plans shared by the web app and the API.
 | `contracts/plan-features.ts` | — | — | — | — |
 | `contracts/plans.ts` | — | — | — | — |
 | `contracts/types.ts` | — | — | — | — |
+| `contracts/voice-models.ts` | — | — | — | — |
 | `contracts/voice-protocol.ts` | — | — | — | — |
 
 ### `billing` — Billing
@@ -270,6 +271,7 @@ Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech
 | `api/services/voice-kernel/voice-prompt.ts` | — | — | — | — |
 | `api/services/voice-kernel/voice-session-state.ts` | `platform` | — | — | — |
 | `api/services/voice-kernel/voice-tool-adapter.ts` | `ai-actions`, `ai-kernel`, `ai-memory`, `finance-semantic-layer` | — | — | — |
+| `api/services/voice/admin-stats.ts` | `database` | — | `voice_call_incidents`, `voice_calls` | — |
 | `api/services/voice/app-calls.ts` | `database`, `finance-semantic-layer` | — | `expenses`, `local_users`, `pending_clarifications`, `users` | `pending_clarifications` |
 | `api/services/voice/brain/claims.ts` | — | — | — | — |
 | `api/services/voice/brain/drafts.ts` | — | — | — | — |
@@ -318,7 +320,7 @@ Provider clients, the provider registry, model name mapping, routing and fallbac
 | `api/lib/groq-client.ts` | — | `groq` | — | — |
 | `api/lib/llm-provider-chain.ts` | — | `deepseek`, `fireworks`, `groq`, `nvidia`, `openrouter` | — | — |
 | `api/lib/llm-router.ts` | — | `gemini` | — | — |
-| `api/lib/model-mapper.ts` | — | — | — | — |
+| `api/lib/model-mapper.ts` | `contracts` | — | — | — |
 | `api/lib/nvidia-client.ts` | — | `nvidia` | — | — |
 | `api/lib/provider-health.ts` | `database` | — | — | `ai_providers` |
 | `api/lib/provider-key-crypto.ts` | `platform` | — | — | — |
@@ -655,6 +657,7 @@ Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, 
 | `src/components/admin/settings/AdminKeysTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/settings/AdminPlansTab.tsx` | `contracts`, `web-ui-kit` | `fireworks` | — | — |
 | `src/components/admin/settings/AdminSettingsShared.tsx` | `web-ui-kit` | — | — | — |
+| `src/components/admin/settings/AdminVoiceCallSection.tsx` | `contracts`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/settings/RoutingRangesEditor.tsx` | `web-ui-kit` | — | — | — |
 
 ### `web-voice-call` — Live voice call UI

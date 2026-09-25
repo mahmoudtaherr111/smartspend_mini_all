@@ -2194,9 +2194,19 @@ model {
       }
     }
     voice = router 'voice' {
-      description 'api/voice-router.ts — 3 procedures.'
+      description 'api/voice-router.ts — 4 procedures.'
       metadata {
         file 'api/voice-router.ts'
+      }
+      adminStats = procedure 'voice.adminStats' {
+        #query #admin
+        technology 'adminProcedure'
+        description 'query · adminProcedure'
+        metadata {
+          file 'api/voice-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
       }
       eligibility = procedure 'voice.eligibility' {
         #query #authed

@@ -115,7 +115,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `web-admin` — Admin UI | Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration. | 21 |
+| `web-admin` — Admin UI | Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration. | 22 |
 
 ## API procedures
 
@@ -248,7 +248,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
 Used by: [Accounts, sign-in and security](accounts.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Web and mobile app shell](web-app.md).
 
@@ -260,7 +260,7 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/admin.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>30 files and declarations</summary>
+<details><summary>31 files and declarations</summary>
 
 - `api/admin-router.ts`
 - `api/ads-router.ts`
@@ -289,6 +289,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/admin/settings/AdminKeysTab.tsx`
 - `src/components/admin/settings/AdminPlansTab.tsx`
 - `src/components/admin/settings/AdminSettingsShared.tsx`
+- `src/components/admin/settings/AdminVoiceCallSection.tsx`
 - `src/components/admin/settings/RoutingRangesEditor.tsx`
 - `src/pages/Admin.tsx`
 - `src/pages/Support.tsx`

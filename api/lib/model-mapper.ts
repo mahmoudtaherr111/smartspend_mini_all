@@ -1,3 +1,4 @@
+import { GEMINI_TEXT_MODELS } from "../../contracts/voice-models";
 import { DEPRECATED_MODEL_MAP } from "./ai-provider-registry";
 
 /**
@@ -10,7 +11,7 @@ import { DEPRECATED_MODEL_MAP } from "./ai-provider-registry";
  * Google's text models, strongest first, as the key serves them (its model list, 2026-09-24). When the one asked for
  * is overloaded, the next answers; `gemini-3.1-pro` is not served at all and maps to the first.
  */
-export const GEMINI_TEXT_CHAIN = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"] as const;
+export const GEMINI_TEXT_CHAIN: readonly string[] = GEMINI_TEXT_MODELS.map((model) => model.id);
 
 /**
  * The model asked for, then the lighter models of the chain (they answer fastest), then the stronger ones nearest
@@ -18,7 +19,7 @@ export const GEMINI_TEXT_CHAIN = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "
  */
 export function geminiFallbackChain(modelName: string): string[] {
   const first = mapModelName(modelName);
-  const at = GEMINI_TEXT_CHAIN.indexOf(first as (typeof GEMINI_TEXT_CHAIN)[number]);
+  const at = GEMINI_TEXT_CHAIN.indexOf(first);
   const lighter = at >= 0 ? GEMINI_TEXT_CHAIN.slice(at + 1) : GEMINI_TEXT_CHAIN.slice(1);
   const stronger = at >= 0 ? GEMINI_TEXT_CHAIN.slice(0, at).reverse() : GEMINI_TEXT_CHAIN.slice(0, 1);
   return [first, ...lighter, ...stronger].filter((model, index, all) => all.indexOf(model) === index);

@@ -149,6 +149,7 @@ model {
   smartspend.api.modules.ai-memory -[writes]-> smartspend.mysql.ai_memory_embeddings
   smartspend.api.modules.ai-memory -[writes]-> smartspend.mysql.ai_memory_items
   smartspend.api.modules.ai-providers -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.ai-providers -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ai-providers -[reads]-> smartspend.mysql.ai_models
   smartspend.api.modules.ai-providers -[reads]-> smartspend.mysql.ai_providers
   smartspend.api.modules.ai-providers -[uses]-> deepseek
@@ -448,6 +449,7 @@ model {
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.users
+  smartspend.api.modules.voice -[reads]-> smartspend.mysql.voice_call_incidents
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.voice_calls
   smartspend.api.modules.voice -[reads]-> smartspend.mysql.voice_usage
   smartspend.api.modules.voice -[uses]-> gemini
@@ -1060,6 +1062,7 @@ model {
   smartspend.api.trpc.support.listMine -[reads]-> smartspend.mysql.support_tickets
   smartspend.api.trpc.support.respond -[reads]-> smartspend.mysql.support_tickets
   smartspend.api.trpc.support.respond -[writes]-> smartspend.mysql.support_tickets
+  smartspend.api.trpc.voice.adminStats -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.voice.eligibility -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.voice.listCalls -[reads]-> smartspend.mysql.voice_calls
   smartspend.api.trpc.voice.startCall -[uses]-> smartspend.api.modules.voice
@@ -1261,6 +1264,7 @@ model {
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.support.close
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.support.listAll
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.support.respond
+  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.voice.adminStats
   smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.profile.generateWebhookToken
   smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.profile.getSmartProfile
   smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.profile.getSmsLogs
@@ -1424,6 +1428,7 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.listAll
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.listMine
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.respond
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.voice.adminStats
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.createWallet
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.deleteWallet
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.getWalletTransactions

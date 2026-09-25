@@ -210,6 +210,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice-kernel/voice-prompt.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice-kernel/voice-session-state.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice-kernel/voice-tool-adapter.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/admin-stats.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/app-calls.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/claims.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/drafts.ts` | [voice-calls](voice-calls.md) |
@@ -255,6 +256,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `contracts/plan-features.ts` | [platform](platform.md) |
 | `contracts/plans.ts` | [platform](platform.md) |
 | `contracts/types.ts` | [platform](platform.md) |
+| `contracts/voice-models.ts` | [platform](platform.md) |
 | `contracts/voice-protocol.ts` | [platform](platform.md) |
 | `db/relations.ts` | [platform](platform.md) |
 | `db/schema.ts` | [platform](platform.md) |
@@ -286,6 +288,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/admin/settings/AdminKeysTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminPlansTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminSettingsShared.tsx` | [admin](admin.md) |
+| `src/components/admin/settings/AdminVoiceCallSection.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/RoutingRangesEditor.tsx` | [admin](admin.md) |
 | `src/components/ads/AdBanner.tsx` | [web-app](web-app.md) |
 | `src/components/ai/AIChatbot.tsx` | [ai-center](ai-center.md) |

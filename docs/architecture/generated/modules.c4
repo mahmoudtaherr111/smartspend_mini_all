@@ -181,7 +181,7 @@ model {
     voice = module 'Voice' {
       description 'Live voice calls. The rebuilt call in api/services/voice (Egyptian number speech and, as it lands, the gateway, the Gemini Live engine, the tools and the checks on what is said) is replacing the old WebSocket bridge (voice-call-service, voice-kernel). api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month.'
       metadata {
-        files '43'
+        files '44'
         paths 'api/services/voice/**, api/services/entitlements/**, api/services/voice-kernel/**, api/services/voice-call-service.ts, api/services/voice-context-service.ts'
       }
     }
@@ -198,7 +198,7 @@ model {
     contracts = module 'Shared contracts' {
       description 'Types, limits and billing plans shared by the web app and the API.'
       metadata {
-        files '7'
+        files '8'
         paths 'contracts/**'
       }
     }
@@ -215,7 +215,7 @@ model {
     web-admin = module 'Admin UI' {
       description 'Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.'
       metadata {
-        files '21'
+        files '22'
         paths 'src/components/admin/**'
       }
     }

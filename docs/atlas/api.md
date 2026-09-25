@@ -47,7 +47,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `seo` | `api/seo-router.ts` | 5 | 3 | 2 | `adminProcedure`, `publicProcedure` |
 | `session` | `api/session-router.ts` | 5 | 3 | 2 | `adminProcedure`, `authedProcedure` |
 | `support` | `api/support-router.ts` | 7 | 3 | 4 | `adminProcedure`, `authedProcedure` |
-| `voice` | `api/voice-router.ts` | 3 | 2 | 1 | `authedProcedure` |
+| `voice` | `api/voice-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `wallet` | `api/wallet-router.ts` | 5 | 2 | 3 | `authedProcedure` |
 | `webauthn` | `api/webauthn-router.ts` | 5 | 1 | 4 | `authedProcedure`, `strictPublicProcedure` |
 
@@ -364,6 +364,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| `voice.adminStats` | query | `adminProcedure` | yes | — | — | `api/services/voice/admin-stats.ts` | `src/components/admin/settings/AdminVoiceCallSection.tsx` |
 | `voice.eligibility` | query | `authedProcedure` | no | — | — | `api/services/entitlements/voice.ts`, `api/services/voice/brain/voices.ts` | `src/components/voice/VoiceCallHost.tsx`, `src/hooks/useVoiceCallEntry.ts` |
 | `voice.listCalls` | query | `authedProcedure` | no | `voice_calls` | — | — | `src/components/voice/VoiceCallHost.tsx` |
 | `voice.startCall` | mutation | `authedProcedure` | yes | — | — | `api/services/voice/gateway/start-call.ts` | — |
