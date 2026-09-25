@@ -11,6 +11,7 @@ import {
   buildBreakdown,
   buildChartData,
   buildMultiCategoryChartData,
+  isSpendingRow,
 } from "./row-aggregators";
 import { resolveFinancePeriod } from "./period-resolver";
 import { businessDateKey } from "../../lib/app-time";
@@ -808,7 +809,7 @@ export async function getBusinessCashflow(
     const cat = canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint);
     if (row.type === "income") {
       incomeByCategory.set(cat, (incomeByCategory.get(cat) ?? 0) + amount);
-    } else {
+    } else if (isSpendingRow(row)) {
       expenseByCategory.set(cat, (expenseByCategory.get(cat) ?? 0) + amount);
     }
   }

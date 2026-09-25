@@ -4,7 +4,7 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (58 of 119 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (57 of 118 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
@@ -13,7 +13,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (58 of
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 c129eda | 2026-09-25 c129eda | 18 | — | 4 | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-24 37a55fb | 2026-09-24 37a55fb | 3 | — | 4 | 3 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-24 45b800e | 2026-09-24 d9d553a | 11 | — | 5 | 1 | 4 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-24 45b800e | 2026-09-24 45b800e | 4 | — | 6 | 3 | 1 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 5e20684 | 2026-09-25 5e20684 | 4 | — | 5 | 3 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-24 37a55fb | 2026-09-24 45b800e | 6 | — | 9 | 2 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-25 c129eda | 2026-09-25 c129eda | 5 | — | 7 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-24 37a55fb | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (58 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (119 issue(s))
+## What is waiting (118 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -48,7 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (53)
+### Bugs (52)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - Saves made from a clarification skip what `expense.create` does after writing: muscle memory and the classification cache are not cleared, the streak is not updated, the rows get source `manual`, and the free-answer mode links no contact and no classification log.
@@ -75,7 +75,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - An expense recorded by an action does not clear the classification cache or check budget alerts, as `expense.create` does.
 - Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in `api/services/action-runtime/extended-actions.ts` leaves them out, so the undo code for them is never reached.
 - When the kernel throws, the user sees the same message as when an operator turned the assistant off.
-- Breakdowns, charts, comparison drivers and the business cash flow count every row that is not income as spending (`buildBreakdown`, `buildChartData` and `buildMultiCategoryChartData` in `api/services/finance-semantic-layer/row-aggregators.ts`, `getBusinessCashflow`), so transfers (a gam3eya payment, a loan, an ATM withdrawal) and investments are listed among spending while the period's totals count expenses only, as Home does. A row's category is also read from its description before its stored category (`canonicalCategoryForRow`), so the chat can total a row under a category the user never saw.
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - The WhatsApp report describes the month that has just started: the scheduler calls `runMonthlyReportJob` without a month at 02:00 on the 1st, and the job takes the month from `new Date().toISOString()`.

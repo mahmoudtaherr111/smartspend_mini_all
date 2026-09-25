@@ -147,7 +147,12 @@ the finance caches are cleared.
   business day. Chart buckets (`api/services/finance-semantic-layer/row-aggregators.ts`) and the dates of
   transactions in facts (`api/services/finance-semantic-layer/resolvers.ts`) use the same business day.
 - Categories are matched through the category registry (`api/services/finance-semantic-layer/category-matcher.ts`).
-  A question about income sweeps every income category (مرتب، عمل حر، عوائد استثمار، هدايا وعيديات، دخل آخر).
+  A question about income sweeps every income category (مرتب، عمل حر، عوائد استثمار، هدايا وعيديات، دخل آخر). A
+  row counts under its stored category; its text is read only when it is stored as uncategorized or متنوعات
+  (`canonicalCategoryForRow`).
+- Spending is an expense row, as on Home (`isSpendingRow` in `api/services/finance-semantic-layer/row-aggregators.ts`):
+  breakdowns, charts, comparison drivers and the business cash flow leave transfers (a gam3eya payment, a loan, an
+  ATM withdrawal) and investments out.
 - A period's totals (`getFinanceSummary`) are one SQL aggregate over `expenses`, so they hold for any number of
   entries. Breakdowns, lookups and category totals read the period's entries instead: only the columns they use, and
   the newest 10,000 at most (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Both cover the
@@ -220,12 +225,6 @@ Checked against the code; each one names where it lives.
 9. **Gap.** A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest
    10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`) and says nothing about the rest; only
    the period's totals are exact at any size.
-10. **Bug.** Breakdowns, charts, comparison drivers and the business cash flow count every row that is not income as
-    spending (`buildBreakdown`, `buildChartData` and `buildMultiCategoryChartData` in
-    `api/services/finance-semantic-layer/row-aggregators.ts`, `getBusinessCashflow`), so transfers (a gam3eya
-    payment, a loan, an ATM withdrawal) and investments are listed among spending while the period's totals count
-    expenses only, as Home does. A row's category is also read from its description before its stored category
-    (`canonicalCategoryForRow`), so the chat can total a row under a category the user never saw.
 
 ## Related systems
 - [Live voice assistant](voice-calls.md): uses the finance layer, memory and action runtime from a call.

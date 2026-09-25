@@ -56,17 +56,19 @@ export function canonicalCategoryForRow(
     .map((v) => normalizeFinanceText(v))
     .join(" ");
 
-  // Step 1: Infer from extra fields FIRST (description is more reliable than stored category)
+  // Step 1: the stored category is the answer the user saw and kept (or corrected), so it
+  // is what every screen counts. The description used to be read first, and a row filed
+  // under تسوق could be totalled under another category in the chat than on Home. Only a
+  // row stored as uncategorized or متنوعات is still read from its text.
+  const direct = categoryText ? canonicalCategoryId(categoryText) : "uncategorized";
+  if (direct !== "uncategorized" && direct !== "miscellaneous") return direct;
+
+  // Step 2: infer from the text of a row that has no real category.
   if (extraHaystack) {
     const inferred = inferCategoryFromHaystack(extraHaystack);
     if (inferred && inferred !== "uncategorized") return inferred;
   }
-
-  // Step 2: Try direct category match
-  if (categoryText) {
-    const direct = canonicalCategoryId(categoryText);
-    if (direct !== "uncategorized") return direct;
-  }
+  if (direct !== "uncategorized") return direct;
 
   // Step 3: Try full haystack (category + extra)
   const fullHaystack = normalizeFinanceText(categoryText) + " " + extraHaystack;
