@@ -1,0 +1,6 @@
+{
+  "source": "https://ai.google.dev/gemini-api/docs/pricing",
+  "checkedAt": "2026-09-22",
+  "inputPerMillion": { "text": 0.75, "audio": 3, "video": 1, "image": 1 },
+  "outputPerMillion": { "text": 4.5, "audio": 12 }
+}

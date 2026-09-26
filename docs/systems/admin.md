@@ -109,6 +109,10 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
 `api/admin-access.test.ts`, `api/admin-router.security.test.ts`, `api/admin-authentication.security.test.ts`
 and `api/lib/admin-model-switch.test.ts`.
 
+The [voice quality lab](../guides/voice-quality-lab.md) produces local provider measurement reports for cost
+investigation. Those reports are separate from the console's production telemetry: synthetic tool results and
+partial token costs do not establish real user task success or a commercial per-minute price.
+
 ## Known issues
 Checked against the code; each one names where it lives.
 1. **Gap.** Nothing records what admins do. The audit tab lists recent sessions, and changing a role or plan, editing

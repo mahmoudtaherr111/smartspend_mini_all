@@ -12,14 +12,14 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (63 of
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-16 b51229f | 2026-09-16 0610413 | 17 | — | 5 | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | — | 6 | 2 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-22 f79ee5a | 2026-09-22 f79ee5a | 6 | — | 4 | — | 3 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-22 fe4b4b3 | 2026-09-22 fe4b4b3 | 8 | — | 4 | — | 3 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-22 f79ee5a | 2026-09-22 f79ee5a | 4 | — | 6 | 2 | 1 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 6 | — | 11 | 2 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 3 | — | 7 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-18 981a949 | 2026-09-18 981a949 | 14 | **2** | 2 | 4 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | **1** | 1 | 3 | 2 |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-22 fe4b4b3 | 2026-09-22 fe4b4b3 | 1 | **1** | 1 | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 981a949 | 2026-09-18 981a949 | 1 | **1** | 5 | 1 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-18 49da160 | 2026-09-18 49da160 | 4 | — | 4 | 5 | 2 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-22 fe4b4b3 | 2026-09-22 fe4b4b3 | 4 | — | 4 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-18 49da160 | 2026-09-18 49da160 | 9 | — | 4 | 1 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-18 981a949 | 2026-09-18 981a949 | 5 | — | 1 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-18 981a949 | 2026-09-18 981a949 | 7 | **1** | 2 | 2 | 2 |

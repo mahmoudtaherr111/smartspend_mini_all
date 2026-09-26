@@ -83,9 +83,9 @@
         "src/pages/Admin.tsx": "42d9a43037ce",
         "src/pages/Support.tsx": "9175518fbc4c"
       },
-      "checked": "2026-09-18 49da160",
-      "arabic": "4c1b0c0c4a43",
-      "arabicChecked": "2026-09-18 49da160"
+      "checked": "2026-09-22 fe4b4b3",
+      "arabic": "649ddbb5f1aa",
+      "arabicChecked": "2026-09-22 fe4b4b3"
     },
     "ai-center": {
       "files": {
@@ -206,9 +206,9 @@
         "src/pages/Pro.tsx": "eb2f5e9dba55",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "checked": "2026-09-18 b0c2f3b",
-      "arabic": "12a24379e3b8",
-      "arabicChecked": "2026-09-18 b0c2f3b"
+      "checked": "2026-09-22 fe4b4b3",
+      "arabic": "705e7c2544c0",
+      "arabicChecked": "2026-09-22 fe4b4b3"
     },
     "expense-capture": {
       "files": {
@@ -440,9 +440,9 @@
         "src/components/ai/AIVoiceCall.tsx": "a48952518da3",
         "src/hooks/useVoiceCall.ts": "06ef098aa2b4"
       },
-      "checked": "2026-09-22 f79ee5a",
-      "arabic": "5d796fc2f7cb",
-      "arabicChecked": "2026-09-22 f79ee5a"
+      "checked": "2026-09-22 fe4b4b3",
+      "arabic": "0a12eec24a3c",
+      "arabicChecked": "2026-09-22 fe4b4b3"
     },
     "web-app": {
       "files": {

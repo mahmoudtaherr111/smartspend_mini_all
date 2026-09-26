@@ -120,6 +120,12 @@ When the browser closes, sends `end_call`, Gemini closes, or the time is up, the
 5. Session state belongs in Redis; the memory fallback exists for development and single-process setups.
 
 ## Tests
+The [voice quality lab](../guides/voice-quality-lab.md) provides synthetic Egyptian scenarios and direct Gemini
+measurements through `npm run qa:voice:prepare`, `npm run qa:voice:live` and `npm run qa:voice:compare`.
+It does not call the application bridge or execute ledger writes. Its release-evidence checker rejects missing
+human audio, unresolved costs and provider-only results. Regression tests are `tests/voice-lab.test.ts` and
+`tests/voice-lab-session.test.ts`.
+
 `api/services/voice-call-service.test.ts` (tool results, the tool budget, confirmation after the budget is spent),
 `api/services/voice-kernel/hot-context.test.ts`, `api/services/voice-kernel/voice-prefetch.test.ts`,
 `api/services/voice-kernel/voice-prompt.test.ts`, `api/services/voice-kernel/voice-session-state.test.ts` and

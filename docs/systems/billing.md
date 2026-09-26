@@ -89,6 +89,10 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
 ## Tests
 `api/lib/billing-plans.test.ts` covers the plan contract.
 
+Voice provider costs can be investigated with the [voice quality lab](../guides/voice-quality-lab.md).
+Its dated provider rates are explicit measurement inputs, separate from subscription prices. Missing or
+ambiguous token accounting produces no total cost estimate and must not be used to set plan allowances.
+
 ## Known issues
 Checked against the code; each one names where it lives.
 1. **Gap.** Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that `src/App.tsx` guards only with a
