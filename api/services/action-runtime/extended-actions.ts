@@ -12,8 +12,12 @@ import { invalidateUserMemory } from "../../lib/muscle-memory";
 import {
   arabicDisplayName,
   normalizeCategoryFromUserText,
+  normalizeSubCategoryName,
   storageCategoryName,
 } from "../../lib/category-registry";
+import { recordCorrection } from "../../lib/correction-rules";
+import { invalidateUserClassificationCache } from "../../lib/smart-pipeline";
+import { classifyText } from "../../lib/classify-text";
 import { bumpFinanceCacheGen, invalidateFinanceUserCache } from "../finance-semantic-layer";
 import { getSmartProfile, saveSmartProfile } from "../user-profile-service";
 import type {
@@ -66,6 +70,8 @@ const goalStopPayloadSchema = z.object({
 const expenseCreatePayloadSchema = z.object({
   amount: z.number().positive(),
   type: z.enum(["income", "expense", "transfer", "investment"]).default("expense"),
+  /** Which way the money moved: a transfer's, or "incoming" for a refund (ledgerAmount). */
+  direction: z.enum(["incoming", "outgoing"]).optional(),
   category: z.string().min(1).max(100),
   subCategory: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
@@ -435,6 +441,20 @@ export async function validateRuntimeAction(
   if (actionName === "goal.stop") return goalStopPayloadSchema.parse(payload);
   if (actionName === "expense.create") {
     const parsed = expenseCreatePayloadSchema.parse(payload);
+    // The sentence is filed by the same engine as the entry form. Its confident answer wins
+    // over the payload's guess (keywords, or a model's tool call); a weak one only fills a
+    // payload that has no category.
+    const engine = await classifyText(parsed.rawText, { amount: parsed.amount });
+    const payloadHasCategory = parsed.category !== "uncategorized";
+    if (engine && (engine.confidence >= 80 || !payloadHasCategory)) {
+      return {
+        ...parsed,
+        type: engine.type,
+        direction: engine.direction,
+        category: engine.category,
+        subCategory: engine.subCategory,
+      };
+    }
     return { ...parsed, category: storageCategoryName(parsed.category) };
   }
   if (actionName === "expense.recategorize") {
@@ -462,6 +482,7 @@ async function executeExpenseCreate(
   const {
     applyExpenseRollupDelta,
     expenseToRollupDelta,
+    ledgerAmount,
   } = await import("../expense-rollups");
 
   let insertedId = 0;
@@ -470,7 +491,8 @@ async function executeExpenseCreate(
       userId: ctx.userId,
       userType: ctx.userType,
       type: expense.type ?? "expense",
-      amount: expense.amount.toString(),
+      amount: ledgerAmount(expense.type ?? "expense", expense.direction, expense.amount).toString(),
+      parsedMetadata: expense.direction ? { direction: expense.direction } : null,
       category: expense.category,
       subCategory: expense.subCategory || "عام",
       description: expense.description || "",
@@ -489,7 +511,7 @@ async function executeExpenseCreate(
         userType: ctx.userType,
         date: finalDate,
         type: expense.type ?? "expense",
-        amount: expense.amount,
+        amount: ledgerAmount(expense.type ?? "expense", expense.direction, expense.amount),
         source: "ai_parsed",
       },
       1,
@@ -498,7 +520,13 @@ async function executeExpenseCreate(
   });
 
   invalidateUserMemory(ctx.userId, ctx.userType);
+  invalidateUserClassificationCache(ctx.userId, ctx.userType);
   await bumpFinanceCacheGen(ctx.userId, ctx.userType);
+  // Like a save from the entry form: a budget this spending reaches warns once.
+  if ((expense.type ?? "expense") === "expense") {
+    const { checkUserBudgetExceeded } = await import("../../notification-engine");
+    void checkUserBudgetExceeded(ctx.userId, ctx.userType).catch(() => undefined);
+  }
 
   return {
     expenseId: insertedId,
@@ -636,11 +664,17 @@ async function executeExpenseRecategorize(
     subCategory: existing.subCategory,
     parsedMetadata: existing.parsedMetadata,
   };
+  // The old subcategory belongs to the old category: it is kept only when the new category
+  // has it, otherwise the item becomes عام there instead of carrying a stray subcategory.
+  const subCategory = normalizeSubCategoryName(
+    recategorize.category,
+    recategorize.subCategory || existing.subCategory,
+  );
   await db
     .update(expenses)
     .set({
       category: recategorize.category,
-      subCategory: recategorize.subCategory || existing.subCategory || "عام",
+      subCategory,
       parsedMetadata: {
         ...(existing.parsedMetadata && typeof existing.parsedMetadata === "object"
           ? (existing.parsedMetadata as Record<string, unknown>)
@@ -659,13 +693,27 @@ async function executeExpenseRecategorize(
       ),
     );
   invalidateUserMemory(ctx.userId, ctx.userType);
+  invalidateUserClassificationCache(ctx.userId, ctx.userType);
   await bumpFinanceCacheGen(ctx.userId, ctx.userType);
+  // A category changed from the chat teaches the parser like one changed in the edit dialog.
+  if (existing.rawText && existing.category !== recategorize.category) {
+    await recordCorrection({
+      userId: ctx.userId,
+      userType: ctx.userType,
+      originalText: existing.rawText,
+      category: recategorize.category,
+      subCategory,
+      type: existing.type,
+      amount: Math.abs(Number(existing.amount)) || 0,
+      sourceLogId: existing.classificationLogId ?? null,
+    });
+  }
 
   return {
     expenseId: recategorize.expenseId,
     previous,
     category: recategorize.category,
-    subCategory: recategorize.subCategory || existing.subCategory || "عام",
+    subCategory,
   };
 }
 

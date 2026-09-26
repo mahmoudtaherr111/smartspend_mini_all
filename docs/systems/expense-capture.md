@@ -71,8 +71,9 @@ amount. When no event is admitted, the pipeline answers `clarify` with a questio
    (a refund, a loan repaid), since a pattern replays only category and type. A match scoring 90 or more answers, after
    the named people are resolved.
 4. **Business scoring**, in business mode only: keywords of the business's categories are weighed against
-   personal keywords; a dominant match on a sentence with exactly one amount becomes `مشروع` with the business
-   category as subcategory, its direction taken from the verb.
+   personal keywords; a dominant match on a sentence with exactly one amount becomes عمل (spending) or عمل حر
+   (income) with the business category as subcategory, its direction taken from the verb; the registry keeps an
+   unknown subcategory of those two (`normalizeSubCategoryName`), since the user defines them.
 
 A shortcut never grants itself `auto_save`. Its items pass `api/lib/final-acceptance.ts#gateShortcutResult`
 (admissible, every amount owned, decided per item), and a shortcut that does not account for every amount stands

@@ -103,7 +103,11 @@ The capabilities the planner recognises, with their required details and action 
 Actions are `goal.create`, `goal.update`, `goal.stop`, `expense.create`, `expense.recategorize`, `budget.create`,
 `profile.update`, `wallet.create`, `wallet.update` and `action.undo`. A draft is validated
 (`api/services/action-runtime/extended-actions.ts#validateRuntimeAction`), stored in `ai_pending_actions` with a
-summary and an expiry, and shown as a confirmation card. A new goal respects the plan's active-goal limit
+summary and an expiry, and shown as a confirmation card. An `expense.create` draft is filed by the entry form's engine
+(`api/lib/classify-text.ts#classifyText`): its confident answer, with the type and a refund's direction, replaces the
+keyword guess or the model's category; a weak one only fills a draft that has none. Saving it clears the classification
+cache and checks budget alerts as the entry form does. `expense.recategorize` keeps the old subcategory only if the new
+category has it, and records the change as the user's correction (`recordCorrection`), as the edit dialog does. A new goal respects the plan's active-goal limit
 (`goals_active_limit_<plan>`, the same setting `goals.create` reads).
 
 `api/services/action-runtime/index.ts#confirmAction` (the card's button, `chat.confirmAction`, or a typed
@@ -231,13 +235,11 @@ Checked against the code; each one names where it lives.
 4. **Debt.** The Qdrant, quantized on-disk and in-memory vector stores exported by `api/services/ai-memory/index.ts` are
    used only by tests, and embedding calls do not reach the AI cost ledger (the providers report no token counts; Google's
    free tier does not bill them).
-5. **Bug.** An expense recorded by an action does not clear the classification cache or check budget alerts, as
-   `expense.create` does.
-6. **Bug.** Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in
+5. **Bug.** Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in
    `api/services/action-runtime/extended-actions.ts` leaves them out, so the undo code for them is never reached.
-7. **Bug.** When the kernel throws, the user sees the same message as when an operator turned the assistant off.
-8. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
-9. **Gap.** A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest
+6. **Bug.** When the kernel throws, the user sees the same message as when an operator turned the assistant off.
+7. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
+8. **Gap.** A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest
    10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Breakdowns and category totals mark
    it (`partial`, a `partial_read` fact for the chat), and the call and the chat say so; lookups and the other readers
    of those rows do not. Only the period's totals are exact at any size.

@@ -51,6 +51,8 @@ export interface GoalStopPayload {
 export interface ExpenseCreatePayload {
   amount: number;
   type?: "income" | "expense" | "transfer" | "investment";
+  /** Which way the money moved: a transfer's, or "incoming" for a refund. */
+  direction?: "incoming" | "outgoing";
   category: string;
   subCategory?: string;
   description?: string;

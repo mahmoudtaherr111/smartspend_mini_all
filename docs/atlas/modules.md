@@ -19,7 +19,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `ledger` | Ledger aggregates | 4 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `ingestion-parsers`, `jobs`, `notifications` | — |
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
 | `jobs` | Scheduled job bodies | 6 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `api-core` | `fireworks` |
-| `notifications` | Notifications | 2 | `database`, `ledger`, `platform` | `api-core`, `api-routers`, `jobs` | `firebase`, `web-push` |
+| `notifications` | Notifications | 2 | `database`, `ledger`, `platform` | `ai-actions`, `api-core`, `api-routers`, `jobs` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 34 | `ai-actions`, `ai-insights`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 14 | `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
@@ -28,9 +28,9 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `ingestion-parsers` | Ingestion parsers | 4 | `ai-providers`, `arabic-nlp`, `classification`, `database`, `ledger`, `platform` | `api-routers` | `gemini` |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
-| `classification` | Expense classification pipeline | 28 | `ai-providers`, `arabic-nlp`, `contracts`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
+| `classification` | Expense classification pipeline | 29 | `ai-providers`, `arabic-nlp`, `contracts`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers` | — |
-| `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | `api-routers`, `voice` | — |
+| `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform` | `api-routers`, `voice` | — |
 | `ai-memory` | AI memory | 12 | `ai-governance`, `ai-providers`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-core`, `api-routers`, `voice` | `qdrant` |
 | `finance-semantic-layer` | Finance semantic layer | 10 | `classification`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-routers`, `jobs`, `ledger`, `voice` | — |
 | `site-guide` | Site guide | 5 | — | `ai-kernel`, `voice` | — |
@@ -387,6 +387,7 @@ smart-pipeline.ts and the modules it composes: financial events, admissibility, 
 | `api/lib/classification-merge.ts` | — | — | — | — |
 | `api/lib/classification-prompt.ts` | — | — | — | — |
 | `api/lib/classifier-contract.ts` | — | `gemini` | — | — |
+| `api/lib/classify-text.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/confidence-calibration.generated.ts` | — | — | — | — |
 | `api/lib/confidence-calibrator.ts` | — | — | — | — |
 | `api/lib/correction-rules.ts` | `arabic-nlp`, `database` | — | `user_correction_rules` | `user_correction_rules` |
@@ -433,7 +434,7 @@ Actions the assistant proposes, such as recording an expense, updating a wallet 
 | --- | --- | --- | --- | --- |
 | `api/services/action-runtime/artifacts.ts` | `finance-semantic-layer` | — | — | — |
 | `api/services/action-runtime/confirmation-phrases.ts` | — | — | — | — |
-| `api/services/action-runtime/extended-actions.ts` | `ai-insights`, `classification`, `database`, `finance-semantic-layer`, `ledger` | — | `ai_action_memory`, `expenses`, `financial_goals`, `user_wallets` | `expenses`, `financial_goals`, `user_budgets`, `user_wallets` |
+| `api/services/action-runtime/extended-actions.ts` | `ai-insights`, `classification`, `database`, `finance-semantic-layer`, `ledger`, `notifications` | — | `ai_action_memory`, `expenses`, `financial_goals`, `user_wallets` | `expenses`, `financial_goals`, `user_budgets`, `user_wallets` |
 | `api/services/action-runtime/goal-create.ts` | `contracts`, `database`, `finance-semantic-layer`, `platform` | — | `financial_goals` | `financial_goals` |
 | `api/services/action-runtime/index.ts` | `ai-governance`, `ai-memory`, `database` | — | `ai_pending_actions` | `ai_action_audit_logs`, `ai_action_memory`, `ai_pending_actions` |
 | `api/services/action-runtime/types.ts` | — | — | — | — |

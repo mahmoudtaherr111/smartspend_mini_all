@@ -95,10 +95,10 @@
         "api/chat-router.ts": "a67bd5602f38",
         "api/services/action-runtime/artifacts.ts": "5292dfe6dc80",
         "api/services/action-runtime/confirmation-phrases.ts": "ecf79bb5cfe7",
-        "api/services/action-runtime/extended-actions.ts": "7efec8c4819c",
+        "api/services/action-runtime/extended-actions.ts": "4f96c0f1ac23",
         "api/services/action-runtime/goal-create.ts": "f3335e61e751",
         "api/services/action-runtime/index.ts": "67c36d3f009e",
-        "api/services/action-runtime/types.ts": "2a4e9b66ec6e",
+        "api/services/action-runtime/types.ts": "4eccc872608b",
         "api/services/ai-kernel/agent-planner.ts": "fcbc24f55547",
         "api/services/ai-kernel/ai-trace-logger.ts": "d728cbc63143",
         "api/services/ai-kernel/capability-registry.ts": "7ce95f9aa2bc",
@@ -142,9 +142,9 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "c384e6047412"
       },
-      "checked": "2026-09-25 b865602",
-      "arabic": "07039810c966",
-      "arabicChecked": "2026-09-25 b865602"
+      "checked": "2026-09-26 09bc286",
+      "arabic": "13612a618911",
+      "arabicChecked": "2026-09-26 09bc286"
     },
     "ai-platform": {
       "files": {
@@ -243,12 +243,13 @@
         "api/lib/arabic-number-parser.ts": "aee810d3907b",
         "api/lib/arabic-token-match.ts": "aee089e11d1e",
         "api/lib/benchmark-taxonomy-assert.ts": "ed889341849d",
-        "api/lib/category-registry.ts": "dc12faf2e12f",
+        "api/lib/category-registry.ts": "e82d41720b07",
         "api/lib/classification-decision.ts": "faee77a7ff50",
         "api/lib/classification-evidence.ts": "92d709222893",
         "api/lib/classification-merge.ts": "d5c6e33cc406",
         "api/lib/classification-prompt.ts": "26bfe0fd3958",
         "api/lib/classifier-contract.ts": "a95889de61d2",
+        "api/lib/classify-text.ts": "a8c5ef962442",
         "api/lib/confidence-calibration.generated.ts": "15ac6b75c46f",
         "api/lib/confidence-calibrator.ts": "bd296248584d",
         "api/lib/correction-rules.ts": "93becb12cb67",
@@ -270,7 +271,7 @@
         "api/lib/receipt-image-parser.ts": "cd75393a2c4b",
         "api/lib/relationship-normalizer.ts": "be8cc3a84254",
         "api/lib/rule-engine.ts": "d77568e4c997",
-        "api/lib/smart-pipeline.ts": "4943688e16ea",
+        "api/lib/smart-pipeline.ts": "b4a028dfcc66",
         "api/lib/stt-corrections.ts": "2becb68a8fbe",
         "api/lib/taxonomy-adapter.ts": "d144eef8a9ec",
         "api/lib/taxonomy-ssot.ts": "fb99f8118120",
@@ -283,9 +284,9 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-26 61f46d4",
-      "arabic": "4e48d80a9f7a",
-      "arabicChecked": "2026-09-26 61f46d4"
+      "checked": "2026-09-26 09bc286",
+      "arabic": "6062c0346efb",
+      "arabicChecked": "2026-09-26 09bc286"
     },
     "insights": {
       "files": {

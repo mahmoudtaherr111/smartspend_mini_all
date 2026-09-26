@@ -513,6 +513,9 @@ export function normalizeCategoryName(
   return fallback;
 }
 
+/** The categories whose subcategory is a business category the user defines. */
+const BUSINESS_CATEGORY_NAMES = new Set(["عمل", "عمل حر"]);
+
 export function normalizeSubCategoryName(
   categoryName: string,
   rawSubCategory?: string | null,
@@ -527,6 +530,9 @@ export function normalizeSubCategoryName(
   }
   const exact = raw ? findSubCategoryByAnyName(category, raw) : undefined;
   if (exact) return exact.name_ar;
+  // A business's own categories ("خامات", "شحن") are the subcategories of work spending and
+  // work income; the registry cannot list them, so a name it does not know is kept.
+  if (raw && BUSINESS_CATEGORY_NAMES.has(category.name_ar)) return raw;
 
   const inferred = inferSubCategory(category.name_ar, `${raw} ${evidence}`);
   if (inferred) {

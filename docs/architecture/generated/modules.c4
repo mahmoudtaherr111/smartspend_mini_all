@@ -90,8 +90,8 @@ model {
     classification = module 'Expense classification pipeline' {
       description 'smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.'
       metadata {
-        files '28'
-        paths 'api/lib/smart-pipeline.ts, api/lib/rule-engine.ts, api/lib/muscle-memory.ts, api/lib/post-classifier-verifier.ts, api/lib/admissibility-gate.ts, api/lib/final-acceptance.ts, api/lib/classification-*.ts, api/lib/classifier-contract.ts, api/lib/confidence-*.ts, api/lib/correction-rules.ts, api/lib/category-registry.ts, api/lib/taxonomy-*.ts, api/lib/direction-governed-taxonomy.ts, api/lib/entity-extractor.ts, api/lib/narrative-decomposer.ts, api/lib/intent-detector.ts, api/lib/person-resolver.ts, api/lib/relationship-normalizer.ts, api/lib/amount-ledger.ts, api/lib/amount-linker.ts, api/lib/financial-event-plan.ts, api/lib/voice-intake-gate.ts, api/services/parser-trace.ts'
+        files '29'
+        paths 'api/lib/smart-pipeline.ts, api/lib/rule-engine.ts, api/lib/classify-text.ts, api/lib/muscle-memory.ts, api/lib/post-classifier-verifier.ts, api/lib/admissibility-gate.ts, api/lib/final-acceptance.ts, api/lib/classification-*.ts, api/lib/classifier-contract.ts, api/lib/confidence-*.ts, api/lib/correction-rules.ts, api/lib/category-registry.ts, api/lib/taxonomy-*.ts, api/lib/direction-governed-taxonomy.ts, api/lib/entity-extractor.ts, api/lib/narrative-decomposer.ts, api/lib/intent-detector.ts, api/lib/person-resolver.ts, api/lib/relationship-normalizer.ts, api/lib/amount-ledger.ts, api/lib/amount-linker.ts, api/lib/financial-event-plan.ts, api/lib/voice-intake-gate.ts, api/services/parser-trace.ts'
       }
     }
     classification-qa = module 'Classification benchmark helpers' {

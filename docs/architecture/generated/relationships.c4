@@ -92,6 +92,7 @@ model {
   smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.ledger
+  smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.notifications
   smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.ai-actions -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ai-actions -[reads]-> smartspend.mysql.ai_action_memory

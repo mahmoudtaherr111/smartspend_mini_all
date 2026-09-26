@@ -53,6 +53,7 @@ flowchart LR
   sys_expense_capture[["Recording spending (system)"]]
   sys_insights[["Reports, insights and the smart profile (system)"]]
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
+  sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
   job_memory_embedding_backfill --> mod_ai_memory
@@ -62,6 +63,7 @@ flowchart LR
   mod_ai_actions --> sys_expense_capture
   mod_ai_actions --> sys_insights
   mod_ai_actions --> sys_money
+  mod_ai_actions --> sys_notifications
   mod_ai_actions --> sys_platform
   mod_ai_actions ==> tbl_ai_action_audit_logs
   mod_ai_actions ==> tbl_ai_action_memory
@@ -216,7 +218,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
 Used by: [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 

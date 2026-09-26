@@ -1213,9 +1213,11 @@ async function classifyAdmittedEvents(
           }
         }
 
+        // Business spending is عمل and business income عمل حر; the business's own category
+        // is the subcategory. "مشروع" was stored here, which is not a category at all.
         const bizItem: ParsedTransaction = {
           amount: bizAmount,
-          category: "مشروع",
+          category: bizType === "income" ? "عمل حر" : "عمل",
           subCategory: businessMatchResult.nameAr,
           description: input.text.slice(0, 60),
           type: bizType as any,

@@ -139,7 +139,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 Depends on: [Accounts, sign-in and security](accounts.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md).
 
-Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 

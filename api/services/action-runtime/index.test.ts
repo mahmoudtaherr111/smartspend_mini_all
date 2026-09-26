@@ -57,6 +57,8 @@ vi.mock("../../queries/connection", () => ({
 vi.mock("../expense-rollups", () => ({
   applyExpenseRollupDelta: vi.fn(async () => undefined),
   expenseToRollupDelta: vi.fn(() => ({})),
+  ledgerAmount: (type: string, direction: string | undefined, amount: number) =>
+    type === "expense" && direction === "incoming" ? -Math.abs(amount) : Math.abs(amount),
 }));
 
 vi.mock("../finance-semantic-layer", () => ({

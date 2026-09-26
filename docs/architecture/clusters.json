@@ -232,6 +232,7 @@
       "paths": [
         "api/lib/smart-pipeline.ts",
         "api/lib/rule-engine.ts",
+        "api/lib/classify-text.ts",
         "api/lib/muscle-memory.ts",
         "api/lib/post-classifier-verifier.ts",
         "api/lib/admissibility-gate.ts",
