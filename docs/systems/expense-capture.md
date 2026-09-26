@@ -155,10 +155,17 @@ When events escalated, the pipeline:
 - asks the provider chain for **categories only** (`api/lib/ai-gateway.ts#resolveAdminRoutes` for routes the
   admin configured, `api/lib/llm-provider-chain.ts#buildProviderChain`, `api/lib/llm-router.ts#executeLlmChain`),
   with a timeout per route (setting `llm_timeout_ms`, 8 seconds by default) and one deadline for the whole trip
-  (`llm_trip_deadline_ms`, 15 seconds; a trip that ends unanswered keeps the local answer and goes to review);
+  (`llm_trip_deadline_ms`, 15 seconds; a trip that ends unanswered keeps the local answer and goes to review),
+  asking a Gemini 3 model for low thinking (asked again without it if the model refuses);
+- sends a static prompt (`api/lib/classification-prompt.ts`): the category is the purpose and a person goes in
+  `person` (a person category only when nothing names a purpose), a payment rail is not a category, the boundaries of
+  categories that get confused, the local candidates as "تخميناتنا", and `direction_doubt` when the settled direction
+  looks wrong;
 - validates the reply (`api/lib/classifier-contract.ts#validateClassifierReply`) and merges the categories onto
   the local items (`api/lib/classification-merge.ts#mergeCategoryDecisions`). Amounts, direction and people never
-  come from the model. A missing or invalid answer adds a blocker to the item instead of dropping it, and a
+  come from the model. The model's purpose replaces a local person category; a person category from the model is
+  kept only when the local pass found no purpose either; `direction_doubt` adds the review reason
+  `model_doubts_direction`; a business subcategory the user owns stays the subcategory of عمل. A missing or invalid answer adds a blocker to the item instead of dropping it, and a
   category for a clause with no extracted amount becomes a question;
 - when every provider fails, keeps the local items and marks them for review.
 

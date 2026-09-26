@@ -319,3 +319,31 @@ describe("provider chain", () => {
       .toHaveLength(0);
   });
 });
+
+describe("low thinking for a short Gemini reply", () => {
+  it("asks a Gemini 3 model for low thinking, and retries without it when refused", async () => {
+    const seen: unknown[] = [];
+    vi.resetModules();
+    vi.doMock("@google/generative-ai", () => ({
+      GoogleGenerativeAI: class {
+        getGenerativeModel(opts: { generationConfig: Record<string, unknown> }) {
+          seen.push(opts.generationConfig.thinkingConfig ?? null);
+          return {
+            generateContent: async () => {
+              if (opts.generationConfig.thinkingConfig) throw new Error("400 thinking_level is not supported");
+              return { response: { text: () => '{"items":[]}', usageMetadata: {}, candidates: [{ finishReason: "STOP" }] } };
+            },
+          };
+        }
+      },
+    }));
+    const { executeLlmChain } = await import("./llm-router");
+    const result = await executeLlmChain(
+      [{ slug: "gemini", protocol: "gemini", baseUrl: "", apiKey: "k", model: "gemini-3.1-flash-lite", priority: 0 }],
+      { systemPrompt: "s", userPrompt: "u", maxOutputTokens: 100, lowThinking: true },
+    );
+    expect(result.text).toBe('{"items":[]}');
+    expect(seen).toEqual([{ thinkingLevel: "LOW" }, null]);
+    vi.doUnmock("@google/generative-ai");
+  });
+});

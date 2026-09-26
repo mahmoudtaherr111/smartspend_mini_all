@@ -1888,6 +1888,9 @@ async function classifyAdmittedEvents(
         // needed for reasoning, decomposed_sentences, amounts and self-assessed
         // confidence — none of which we keep.
         maxOutputTokens: Math.min(input.maxTokens || 512, 60 + clauses.length * 40),
+        // Thinking tokens come out of that cap on Gemini 3, so a small reply stops at
+        // MAX_TOKENS and the chain fails over. One category needs no deliberation.
+        lowThinking: true,
         temperature: 0.1,
         schema: CATEGORY_CLASSIFIER_SCHEMA as unknown as StructuredSchema,
         // A category per clause is a few dozen output tokens: a served fast model answers in
@@ -1941,7 +1944,9 @@ async function classifyAdmittedEvents(
       // Merge the ONE thing the model was asked for back onto the items the local pass
       // built. The amount, direction and person never left this process, so a wrong or
       // missing answer costs a category, not a transaction.
-      const merged = mergeCategoryDecisions(escalationClauses, reply.items);
+      const merged = mergeCategoryDecisions(escalationClauses, reply.items, {
+        businessSubcategories: (input.businessCategories || []).map((c) => c.nameAr),
+      });
       classItems = merged.items;
 
       // A reply that arrived is not a reply that answered.

@@ -10,7 +10,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (42 of
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-25 93f01cd | 2026-09-25 18b18aa | 18 | — | 2 | 2 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-26 61f46d4 | 2026-09-26 61f46d4 | 18 | — | 2 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 3 | — | 2 | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 5 | — | — | 2 | — |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-25 b865602 | 2026-09-25 b865602 | 4 | — | 5 | 2 | 2 |
@@ -20,7 +20,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (42 of
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-25 e6b668b | 2026-09-25 e6b668b | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 44c928b | 2026-09-25 44c928b | 4 | — | 3 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-25 93f01cd | 2026-09-25 44c928b | 8 | — | 1 | 3 | 4 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-26 61f46d4 | 2026-09-26 61f46d4 | 8 | — | 1 | 3 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-25 44c928b | 2026-09-25 cdfa911 | 5 | — | 2 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-25 21b72a3 | 2026-09-25 21b72a3 | 7 | **1** | 1 | 3 | 2 |
 

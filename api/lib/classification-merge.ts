@@ -38,6 +38,7 @@ const PERSON_CATEGORIES = new Set(["العائلة", "أصدقاء", "موظفي
 export function mergeCategoryDecisions(
   clauses: EscalationClause[],
   decisions: CategoryDecision[],
+  options: { businessSubcategories?: readonly string[] } = {},
 ): MergeOutcome {
   const byIndex = new Map(decisions.map((d) => [d.i, d]));
   const items: ParsedTransaction[] = [];
@@ -66,15 +67,30 @@ export function mergeCategoryDecisions(
       const carried = { ...item, sourceEventId: item.sourceEventId ?? clauseId };
 
       // An empty/rejected clause stays empty; category answers cannot invent identities.
-      if (!decision || !category || PERSON_CATEGORIES.has(item.category) || PERSON_CATEGORIES.has(category)) {
+      if (!decision || !category) {
         items.push(withBlocker(carried, BlockerReason.CATEGORY_REPLY_UNRESOLVED));
         continue;
       }
+      // The purpose is the category (docs/decisions/0008-money-movements-and-taxonomy.md).
+      // A person category is the answer only when nothing names a purpose: the model may
+      // give it when the local pass found no purpose either, and may replace a local person
+      // category with the purpose it found. It may not turn a purpose into a person.
+      const localHasPurpose = !PERSON_CATEGORIES.has(item.category) && item.category !== "متنوعات";
+      if (PERSON_CATEGORIES.has(category) && localHasPurpose) {
+        items.push(withBlocker(carried, BlockerReason.CATEGORY_REPLY_UNRESOLVED));
+        continue;
+      }
+      const subCategory = PERSON_CATEGORIES.has(category)
+        ? (PERSON_CATEGORIES.has(item.category) ? item.subCategory : "عام") || "عام"
+        : resolveSubcategory(decision.category, decision.sub, options.businessSubcategories);
+      const reviewReasons = decision.directionDoubt
+        ? [...(item.reviewReasons || []), "model_doubts_direction"]
+        : item.reviewReasons;
 
       items.push({
         ...carried,
         category,
-        subCategory: resolveSubcategory(decision.category, decision.sub),
+        subCategory,
         inferenceSource: "ai" as const,
         parsedBy: "ai" as const,
         // The category changed, so the calibration that priced the OLD category is no
@@ -94,7 +110,7 @@ export function mergeCategoryDecisions(
           categoryIsFallback: decision.category === "miscellaneous",
         },
         needsReview: true,
-        reviewReasons: item.reviewReasons,
+        reviewReasons,
       });
     }
   });

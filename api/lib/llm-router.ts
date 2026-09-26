@@ -66,6 +66,13 @@ export interface LlmRequest {
   systemPrompt: string;
   userPrompt: string;
   maxOutputTokens: number;
+  /**
+   * Ask a Gemini 3 model for the least thinking it allows. For a reply of a few dozen tokens
+   * (classification), thinking only adds latency and cost, and its tokens come out of
+   * `maxOutputTokens`, so a small cap ends in MAX_TOKENS. A model that refuses the setting is
+   * asked once more without it.
+   */
+  lowThinking?: boolean;
   temperature?: number;
   /** Asked for, never assumed: `degradedSchema` reports whether it survived. */
   schema?: StructuredSchema;
@@ -585,32 +592,41 @@ async function callGemini(
   withSchema: boolean,
 ): Promise<AdapterResult> {
   const genAI = new GoogleGenerativeAI(route.apiKey);
-  const model = genAI.getGenerativeModel({
-    model: route.model,
-    systemInstruction: req.systemPrompt,
-    generationConfig: {
-      temperature: req.temperature ?? 0.1,
-      // The budget used to be advisory here and enforced everywhere else: this path set
-      // no output cap at all, so the "384 tokens for free plan" ceiling was fiction on
-      // the default provider.
-      maxOutputTokens: req.maxOutputTokens,
-      responseMimeType: "application/json",
-      ...(withSchema && req.schema ? { responseSchema: req.schema as never } : {}),
-    },
-  });
+  const modelFor = (lowThinking: boolean) =>
+    genAI.getGenerativeModel({
+      model: route.model,
+      systemInstruction: req.systemPrompt,
+      generationConfig: {
+        temperature: req.temperature ?? 0.1,
+        // The budget used to be advisory here and enforced everywhere else: this path set
+        // no output cap at all, so the "384 tokens for free plan" ceiling was fiction on
+        // the default provider.
+        maxOutputTokens: req.maxOutputTokens,
+        responseMimeType: "application/json",
+        ...(withSchema && req.schema ? { responseSchema: req.schema as never } : {}),
+        ...(lowThinking ? ({ thinkingConfig: { thinkingLevel: "LOW" } } as Record<string, unknown>) : {}),
+      },
+    });
+  const wantsLowThinking = Boolean(req.lowThinking) && /^gemini-3/.test(route.model);
+  // `req.timeoutMs` first: the chain narrows it to whatever is left of the trip budget,
+  // and a per-route ceiling that outlives the trip is not a ceiling.
+  const timeout = Math.min(route.timeoutMs ?? Infinity, req.timeoutMs ?? 30_000);
 
-  let result: Awaited<ReturnType<typeof model.generateContent>>;
+  let result: Awaited<ReturnType<ReturnType<typeof modelFor>["generateContent"]>>;
   try {
-    result = await withTimeout(
-      model.generateContent(req.userPrompt),
-      // `req.timeoutMs` first: the chain narrows it to whatever is left of the trip
-      // budget, and a per-route ceiling that outlives the trip is not a ceiling.
-      Math.min(route.timeoutMs ?? Infinity, req.timeoutMs ?? 30_000),
-      route.slug,
-    );
+    result = await withTimeout(modelFor(wantsLowThinking).generateContent(req.userPrompt), timeout, route.slug);
   } catch (err) {
-    const { kind, message } = classifyThrownError(err);
-    throw new ProviderError(kind, message);
+    const refusedThinking = wantsLowThinking && /thinking/i.test((err as Error)?.message || "");
+    if (!refusedThinking) {
+      const { kind, message } = classifyThrownError(err);
+      throw new ProviderError(kind, message);
+    }
+    try {
+      result = await withTimeout(modelFor(false).generateContent(req.userPrompt), timeout, route.slug);
+    } catch (retryErr) {
+      const { kind, message } = classifyThrownError(retryErr);
+      throw new ProviderError(kind, message);
+    }
   }
 
   const meta = result.response.usageMetadata;

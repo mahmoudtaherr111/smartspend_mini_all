@@ -31,13 +31,16 @@ the per-plan token budget every paid call is measured against, and the two place
    `ai_providers.priority`. A route whose key no configured secret opens is left out instead of being tried,
    and says so (see Provider keys).
 2. `buildProviderChain` puts the requested provider first, then the admin's other rows, then a second Gemini
-   key, then every built-in provider that has a key (Gemini, Groq, Fireworks, NVIDIA), then DeepSeek and
+   key, then every built-in provider that has a key (Gemini, Groq — `llama-3.3-70b-versatile` on every plan, not a
+   reasoning model —, Fireworks, NVIDIA), then DeepSeek and
    OpenRouter if they have one. A route needs both a key and a model to stay in the list, and a model that
    demonstrably belongs to another vendor is replaced by that provider's default.
    For classification the requested provider is the admin's "classification" model for the plan; without one it is
    Gemini with the plan's own model (`resolveRoutingConfig`). Nothing depends on how many tokens the user has spent:
    the monthly limit is `assertAiBudget`'s, and the per-plan token-range routing (`*_routing_ranges`) is gone.
-3. `executeLlmChain` tries the routes in order under one deadline for the whole chain. Gemini goes through the
+3. `executeLlmChain` tries the routes in order under one deadline for the whole chain. A request with `lowThinking`
+   (classification) asks a Gemini 3 model for `thinkingLevel: LOW`, since thinking tokens come out of a small output
+   cap, and asks once more without it if the model refuses the setting. Gemini goes through the
    Google SDK; everything else speaks the OpenAI-compatible shape, which is why adding a provider is a row and
    a key rather than code.
 

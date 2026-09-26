@@ -39,6 +39,8 @@ export interface CategoryDecision {
   sub?: string;
   /** Only when the clause names a person we did not recognise. */
   person?: string | null;
+  /** The model thinks the settled direction is wrong; it may not change it, only say so. */
+  directionDoubt?: boolean;
 }
 
 export interface ClassifierReply {
@@ -69,6 +71,7 @@ export const CATEGORY_CLASSIFIER_SCHEMA = {
           },
           sub: { type: SchemaType.STRING },
           person: { type: SchemaType.STRING, nullable: true },
+          direction_doubt: { type: SchemaType.BOOLEAN, nullable: true },
         },
         required: ["i", "category"],
       },
@@ -88,6 +91,7 @@ const categoryReplyRow = z.object({
   category: z.string().trim().min(1).max(100),
   sub: z.string().trim().max(120).optional(),
   person: z.string().trim().max(120).nullable().optional(),
+  direction_doubt: z.boolean().nullable().optional(),
 });
 
 /**
@@ -166,6 +170,7 @@ export function validateClassifierReply(
       sub: typeof row.sub === "string" && row.sub.trim() ? row.sub.trim() : undefined,
       person:
         typeof row.person === "string" && row.person.trim() ? row.person.trim() : null,
+      directionDoubt: row.direction_doubt === true ? true : undefined,
     });
   }
 
@@ -197,7 +202,12 @@ export function buildFullTaxonomy(): string {
 }
 
 /** Resolves the model's free-text `sub` against the category it chose. */
-export function resolveSubcategory(categoryId: string, sub: string | undefined): string {
+export function resolveSubcategory(
+  categoryId: string,
+  sub: string | undefined,
+  /** The user's own business categories, valid subcategories of `work`. */
+  businessSubcategories: readonly string[] = [],
+): string {
   const category = CATEGORIES.find((c) => c.id === categoryId);
   if (!category) return "عام";
   if (["العائلة", "أصدقاء", "موظفين"].includes(category.name_ar)) {
@@ -205,6 +215,7 @@ export function resolveSubcategory(categoryId: string, sub: string | undefined):
     return sub || "عام";
   }
   if (!sub) return "عام";
+  if (category.id === "work" && businessSubcategories.includes(sub)) return sub;
 
   const options = getSubcategoriesFor(category.name_ar);
   const exact = options.find((s) => s.name_ar === sub);

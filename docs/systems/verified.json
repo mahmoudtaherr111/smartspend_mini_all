@@ -160,17 +160,17 @@
         "api/lib/fireworks-client.ts": "0ff5cda683b6",
         "api/lib/groq-client.ts": "bdb495a8b189",
         "api/lib/llm-provider-chain.ts": "fb82931289a2",
-        "api/lib/llm-router.ts": "ae8237823ac9",
-        "api/lib/model-mapper.ts": "141f91caf7bd",
+        "api/lib/llm-router.ts": "0d4233873583",
+        "api/lib/model-mapper.ts": "bd0773702045",
         "api/lib/nvidia-client.ts": "63815969f5a6",
         "api/lib/provider-health.ts": "56a6f6eb8217",
         "api/lib/provider-key-crypto.ts": "3c64d3f05284",
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "e4536dd88d77"
       },
-      "checked": "2026-09-25 93f01cd",
-      "arabic": "51f4da50f94e",
-      "arabicChecked": "2026-09-25 44c928b"
+      "checked": "2026-09-26 61f46d4",
+      "arabic": "0e588f4b5e0e",
+      "arabicChecked": "2026-09-26 61f46d4"
     },
     "bank-messages": {
       "files": {
@@ -246,9 +246,9 @@
         "api/lib/category-registry.ts": "dc12faf2e12f",
         "api/lib/classification-decision.ts": "faee77a7ff50",
         "api/lib/classification-evidence.ts": "92d709222893",
-        "api/lib/classification-merge.ts": "6625bf5c75ff",
-        "api/lib/classification-prompt.ts": "063d224ecf40",
-        "api/lib/classifier-contract.ts": "2f25a0820f22",
+        "api/lib/classification-merge.ts": "d5c6e33cc406",
+        "api/lib/classification-prompt.ts": "26bfe0fd3958",
+        "api/lib/classifier-contract.ts": "a95889de61d2",
         "api/lib/confidence-calibration.generated.ts": "15ac6b75c46f",
         "api/lib/confidence-calibrator.ts": "bd296248584d",
         "api/lib/correction-rules.ts": "93becb12cb67",
@@ -270,7 +270,7 @@
         "api/lib/receipt-image-parser.ts": "cd75393a2c4b",
         "api/lib/relationship-normalizer.ts": "be8cc3a84254",
         "api/lib/rule-engine.ts": "d77568e4c997",
-        "api/lib/smart-pipeline.ts": "315e3f4c1614",
+        "api/lib/smart-pipeline.ts": "4943688e16ea",
         "api/lib/stt-corrections.ts": "2becb68a8fbe",
         "api/lib/taxonomy-adapter.ts": "d144eef8a9ec",
         "api/lib/taxonomy-ssot.ts": "fb99f8118120",
@@ -283,9 +283,9 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-25 93f01cd",
-      "arabic": "ebb5b1600508",
-      "arabicChecked": "2026-09-25 18b18aa"
+      "checked": "2026-09-26 61f46d4",
+      "arabic": "4e48d80a9f7a",
+      "arabicChecked": "2026-09-26 61f46d4"
     },
     "insights": {
       "files": {

@@ -109,8 +109,12 @@ export function defaultGeminiModelForPlan(plan: AiPlanName): string {
   return "gemini-3.1-flash-lite";
 }
 
+/**
+ * Every plan gets Groq's fast non-reasoning model. Free used to default to a DeepSeek R1
+ * distill, a reasoning model: slower, and its thinking spent the small classification budget.
+ */
 export function defaultGroqModelForPlan(plan: AiPlanName): string {
-  if (plan === "free") return "deepseek-r1-distill-llama-70b";
+  void plan;
   return "llama-3.3-70b-versatile";
 }
 

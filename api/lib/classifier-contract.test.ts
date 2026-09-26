@@ -207,3 +207,20 @@ describe("the prompt itself", () => {
     expect(user.length * 0.5).toBeLessThan(200);
   });
 });
+
+describe("purpose before person, and a doubted direction", () => {
+  it("accepts direction_doubt and keeps it on the decision", () => {
+    const reply = validateClassifierReply({ items: [{ i: 1, category: "food", sub: "مطعم", direction_doubt: true }] }, 1);
+    expect(reply.items[0]?.directionDoubt).toBe(true);
+  });
+
+  it("tells the model the category is the purpose, and a payment rail is not one", () => {
+    expect(CLASSIFICATION_SYSTEM_PROMPT).toMatch(/الفئة هي \*\*الغرض\*\*/);
+    expect(CLASSIFICATION_SYSTEM_PROMPT).toMatch(/طريقة الدفع مش فئة/);
+  });
+
+  it("keeps a business category the user owns as a subcategory of work", () => {
+    expect(resolveSubcategory("work", "خامات", ["خامات", "شحن"])).toBe("خامات");
+    expect(resolveSubcategory("work", "خامات")).toBe("عام");
+  });
+});
