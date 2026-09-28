@@ -256,6 +256,7 @@
         "api/lib/direction-governed-taxonomy.ts": "d0aaf7c28792",
         "api/lib/egyptian-names-dictionary.ts": "ce14f79a3952",
         "api/lib/entity-extractor.ts": "6e9e6a0ba9be",
+        "api/lib/evidence-weighing.ts": "757a49e15c8f",
         "api/lib/final-acceptance.ts": "5a0fb202e2d2",
         "api/lib/financial-event-plan.ts": "cc5c9ab6f7f5",
         "api/lib/fuzzy-match.ts": "d122bbfd9740",
@@ -275,8 +276,8 @@
         "api/lib/real-user-sim.ts": "569dd5235fe1",
         "api/lib/receipt-image-parser.ts": "cd75393a2c4b",
         "api/lib/relationship-normalizer.ts": "be8cc3a84254",
-        "api/lib/rule-engine.ts": "9be34003ae96",
-        "api/lib/smart-pipeline.ts": "7ff59bb906f2",
+        "api/lib/rule-engine.ts": "d9504fc35853",
+        "api/lib/smart-pipeline.ts": "bceaa8ad526e",
         "api/lib/stt-corrections.ts": "2becb68a8fbe",
         "api/lib/taxonomy-adapter.ts": "fd63a36d2f25",
         "api/lib/taxonomy-ssot.ts": "fb99f8118120",
@@ -289,9 +290,9 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-28 e2259ab",
-      "arabic": "e0bb2dd18757",
-      "arabicChecked": "2026-09-28 e2259ab"
+      "checked": "2026-09-28 4010629",
+      "arabic": "a233a1a4ba56",
+      "arabicChecked": "2026-09-28 4010629"
     },
     "insights": {
       "files": {

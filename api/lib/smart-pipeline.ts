@@ -1822,6 +1822,7 @@ async function classifyAdmittedEvents(
           "expense") as ClauseForModel["direction"],
         localGuess:
           local && local.category !== "متنوعات" ? local.category : undefined,
+        candidates: local?.candidates?.filter((category) => category !== "متنوعات"),
       };
     });
 

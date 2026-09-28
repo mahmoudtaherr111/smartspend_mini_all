@@ -126,6 +126,14 @@ The layers `runRuleEngine` tries for the text around one amount, with the eviden
 | Typo match, with an edit budget scaled to the word's length; a known word or a person's name (لخالد is not خالص) is never corrected | `fuzzy` |
 | Direction only: income becomes `دخل آخر`, an expense `متنوعات` at low confidence | `intent_only` |
 
+After the first layer answers, `api/lib/evidence-weighing.ts#weighClues` weighs what every word of the clause says
+(`collectClues`: category names, purpose words from the lexicon, stores). A category the sentence names outright
+("رايح الشغل دفعت 30 مواصلات") overrules a lone dictionary word, and a purpose word overrules the store it was bought
+at ("اشتريت هدوم من سبينيس" is تسوق, "جبت دوا من كارفور" is صحة); either records `context_rule`. A rival reading that
+outweighs the chosen one sets `disagreement`, which escalates, and the readings travel to the model as `candidates`.
+What the user taught is never overruled. Kinship, payment rails and the catch-alls do not vote, and a category name
+that is also an everyday word (عمل) does not count as named.
+
 A kinship word from the synonym graph (أمي، ابني) and a payment rail from the merchant registry (a card, a wallet, a
 bank: بالفيزا، بفودافون كاش، بانستاباي) say to whom and how the money moved, not what for. Their answers are held
 while the later layers look for a purpose and are used only when none is found: "دفعت بالفيزا 300 في المطعم" is أكل

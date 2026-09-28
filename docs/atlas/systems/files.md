@@ -68,6 +68,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/env.ts` | [platform](platform.md) |
 | `api/lib/error-logger.ts` | [platform](platform.md) |
 | `api/lib/error-reporting.ts` | [platform](platform.md) |
+| `api/lib/evidence-weighing.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/final-acceptance.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/financial-event-plan.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/fireworks-client.ts` | [ai-platform](ai-platform.md) |

@@ -10,7 +10,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (41 of
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-28 e2259ab | 2026-09-28 e2259ab | 18 | — | 2 | 2 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-28 4010629 | 2026-09-28 4010629 | 18 | — | 2 | 2 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 3 | — | 2 | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-25 25a20ff | 2026-09-25 25a20ff | 5 | — | — | 2 | — |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-26 09bc286 | 2026-09-26 09bc286 | 4 | — | 4 | 2 | 2 |

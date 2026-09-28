@@ -20,6 +20,7 @@ import { extractAmounts, type ExtractedAmount } from "./entity-extractor";
 import { normalizeText } from "./text-normalizer";
 import { CATEGORIES } from "./category-registry";
 import { findTaxonomyMatch } from "./taxonomy-adapter";
+import { collectClues, weighClues } from "./evidence-weighing";
 import { resolveGovernedTaxonomy } from "./direction-governed-taxonomy";
 import { detectNegation } from "./negation-detector";
 import type { Evidence, MatchKind } from "./classification-evidence";
@@ -74,6 +75,8 @@ export interface ParsedTransaction {
     support: number;
     probability: number;
   };
+  /** Readings of the clause the clues support, strongest first; shown to the model when it is asked. */
+  candidates?: string[];
 }
 
 export interface ClassificationProfileContext {
@@ -1059,6 +1062,20 @@ export async function runRuleEngine(
       description = intentResult.intent === "income" ? "دخل" : category;
     }
 
+    // Weigh every clue in the clause against the answer the first layer gave
+    // (api/lib/evidence-weighing.ts): a named category or a purpose word overrules a store
+    // or a lone dictionary word, and an equally strong rival reading is a doubt to confirm.
+    const weighing = weighClues(collectClues(allContext), { category, subCategory, matchKind });
+    if (weighing.override) {
+      category = weighing.override.category;
+      subCategory = weighing.override.subCategory;
+      // The answer now rests on a purpose word read in context, not on the store or lone
+      // word that matched first, and is priced as such.
+      matchKind = "context_rule";
+      ambiguityFlags = [...(ambiguityFlags || []), weighing.override.reason];
+    }
+    if (weighing.disputed) ambiguityFlags = [...(ambiguityFlags || []), "clues_disagree"];
+
     // Strategy 5: Hierarchical Subcategory Cascade — refine generic subcategories
     const refinedSubCategory = refineSubCategory(
       category,
@@ -1248,6 +1265,7 @@ export async function runRuleEngine(
           needsReview: finalConfidence < 85,
           reviewReasons: finalConfidence < 85 ? ["raw_category_confidence"] : undefined,
           parsedBy: "rule_engine",
+          candidates: weighing.candidates,
           inferenceSource,
           ambiguityFlags,
           confidenceBreakdown: {
@@ -1267,7 +1285,7 @@ export async function runRuleEngine(
             // Agreement is filled in by the pipeline, which is the only layer that sees
             // more than one resolver's opinion of the same segment.
             agreement: 0,
-            disagreement: 0,
+            disagreement: weighing.disputed ? 1 : 0,
             anchorConsumed: true,
             categoryIsFallback: finalCategory === "متنوعات",
             personResolved: "none",
