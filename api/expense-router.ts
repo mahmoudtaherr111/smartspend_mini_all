@@ -2734,7 +2734,7 @@ export const expenseRouter = router({
           if (err instanceof TRPCError) throw err;
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: err instanceof Error ? err.message : "تعذر حفظ العمليات بعد التوضيح.",
+            message: err instanceof Error ? err.message : "ماقدرناش نحفظ العمليات بعد ردّك. جرّب تاني.",
             cause: err,
           });
         }
@@ -2899,7 +2899,7 @@ export const expenseRouter = router({
           message:
             err instanceof Error
               ? err.message
-              : "تعذر حفظ التوضيح. جرّب توضيح العلاقة بشكل أبسط.",
+              : "ماقدرناش نحفظ ردّك. جرّب تكتب القرابة بكلمة واحدة (أخويا، صاحبي...).",
           cause: err,
         });
       }

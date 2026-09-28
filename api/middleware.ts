@@ -21,7 +21,7 @@ const t = initTRPC.context<Context>().create({
       },
       message:
         isProduction && shape.data.code === "INTERNAL_SERVER_ERROR"
-          ? "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
+          ? "حصلت مشكلة عندنا. جرّب تاني."
           : shape.message,
     };
   },
@@ -78,7 +78,7 @@ export const aiProcedure = authedProcedure.use(async ({ ctx, next }) => {
 // Moderator: can view everything except delete users/remove admin
 export const moderatorProcedure = authedProcedure.use(async ({ ctx, next }) => {
   if (ctx.user.role !== "admin" && ctx.user.role !== "moderator") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية الوصول" });
+    throw new TRPCError({ code: "FORBIDDEN", message: "مش مسموحلك تدخل هنا" });
   }
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
@@ -86,7 +86,7 @@ export const moderatorProcedure = authedProcedure.use(async ({ ctx, next }) => {
 // Admin: full access
 export const adminProcedure = authedProcedure.use(async ({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية الأدمن" });
+    throw new TRPCError({ code: "FORBIDDEN", message: "الصفحة دي للأدمن بس" });
   }
   return next({ ctx: { ...ctx, user: ctx.user } });
 });

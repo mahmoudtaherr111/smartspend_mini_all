@@ -89,12 +89,12 @@ function listValue(value: unknown): string[] {
 }
 
 function friendlyProfileError(message?: string) {
-  if (!message) return "تعذر تحديث البروفايل الذكي. حاول مرة أخرى.";
+  if (!message) return "ماقدرناش نحدّث البروفايل الذكي. جرّب تاني.";
   if (message.includes("Failed query") || message.includes("Unknown column")) {
     return "قاعدة البيانات تحتاج تحديثات البروفايل الذكي. تم تفعيل وضع التوافق، أعد المحاولة.";
   }
   if (message.toLowerCase().includes("fetch") || message.includes("الخادم")) {
-    return "تعذر الاتصال بالخادم. تأكد أن التطبيق يعمل ثم حاول مرة أخرى.";
+    return "مش قادرين نوصل للسيرفر. اتأكد من النت وجرّب تاني.";
   }
   if (message.includes("UNAUTHORIZED") || message.includes("تسجيل الدخول")) {
     return "انتهت الجلسة. سجل الدخول مرة أخرى.";
@@ -394,7 +394,7 @@ export function SmartProfileSettings({ onCancel }: { onCancel?: () => void }) {
             <AlertCircle className="w-5 h-5 text-rose-600 mt-0.5" />
             <div>
               <p className="font-semibold text-rose-700 dark:text-rose-300">
-                تعذر تحميل البروفايل الذكي
+                ماقدرناش نحمّل البروفايل الذكي
               </p>
               <p className="text-sm text-muted-foreground">
                 {friendlyProfileError(error?.message)}
@@ -634,7 +634,7 @@ export function SmartProfileSettings({ onCancel }: { onCancel?: () => void }) {
             <div className="bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-900/50">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5 text-end">
-                  <Label className="font-bold text-sm text-slate-800 dark:text-slate-200">هل لديك ديون، جمعيات، أو أقساط؟</Label>
+                  <Label className="font-bold text-sm text-slate-800 dark:text-slate-200">عندك ديون أو جمعيات أو أقساط؟</Label>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">سنقوم بحجز هذا المبلغ من ميزانيتك الشهرية الصافية</p>
                 </div>
                 <Switch checked={hasDebt} onCheckedChange={setHasDebt} />
@@ -726,7 +726,7 @@ export function SmartProfileSettings({ onCancel }: { onCancel?: () => void }) {
               
               <div className="grid sm:grid-cols-3 gap-3">
                 <div className="flex items-center justify-between rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 p-3">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">لديك أطفال</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">عندك أطفال</span>
                   <Switch checked={hasChildren} onCheckedChange={setHasChildren} />
                 </div>
                 

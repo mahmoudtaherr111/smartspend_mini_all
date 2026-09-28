@@ -90,7 +90,7 @@ export function IosSetupFlow({ onBack }: Props) {
         window.location.href = SHORTCUT_ICLOUD_LINK;
       }, 800);
     } catch {
-      toast.error("يرجى إعطاء صلاحية النسخ للمتصفح");
+      toast.error("اسمح للمتصفح بالنسخ وجرّب تاني");
     } finally {
       setIsConnecting(false);
     }

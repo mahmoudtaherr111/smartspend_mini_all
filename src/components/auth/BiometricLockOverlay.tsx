@@ -228,7 +228,7 @@ export function BiometricLockOverlay() {
               {user?.name || "مستخدم SmartSpend"}
             </h2>
             <p className="text-xs text-slate-400 mt-0.5 font-medium">
-              يرجى التحقق للمتابعة واستخدام التطبيق
+              اتأكد من هويتك عشان تكمّل
             </p>
           </div>
         </div>

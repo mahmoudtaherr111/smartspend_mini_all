@@ -172,7 +172,7 @@ function formatAiErrorMessage(error: any): {
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     return {
       message:
-        "انقطع الاتصال بالإنترنت. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
+        "النت فاصل. اتأكد من الاتصال وجرّب تاني.",
       isRateLimit: false,
       isTimeout: false,
       isAborted: false,
@@ -183,11 +183,11 @@ function formatAiErrorMessage(error: any): {
   if (
     errStr.includes("network failure") ||
     errStr.includes("Failed to fetch") ||
-    errStr.includes("تعذر الاتصال بالخادم")
+    errStr.includes("مش قادرين نوصل للسيرفر")
   ) {
     return {
       message:
-        "تعذر الاتصال بالخادم. يرجى التأكد من اتصال الإنترنت ثم المحاولة ثانية.",
+        "مش قادرين نوصل للسيرفر. اتأكد من النت وجرّب تاني.",
       isRateLimit: false,
       isTimeout: false,
       isAborted: false,
@@ -1003,7 +1003,7 @@ export default function AIChatbot() {
       setMessages((prev) => [...prev, aiMsg]);
     } catch (error: any) {
       setActionStatuses((prev) => ({ ...prev, [String(actionId)]: "failed" }));
-      toast.error(error?.message || "تعذر تنفيذ العملية");
+      toast.error(error?.message || "ماقدرناش ننفذ العملية، جرّب تاني");
     }
   };
 
@@ -1024,7 +1024,7 @@ export default function AIChatbot() {
       toast.success(result.message);
     } catch (error: any) {
       setActionStatuses((prev) => ({ ...prev, [String(actionId)]: "failed" }));
-      toast.error(error?.message || "تعذر إلغاء العملية");
+      toast.error(error?.message || "ماقدرناش نلغي العملية، جرّب تاني");
     }
   };
 
@@ -1332,8 +1332,8 @@ export default function AIChatbot() {
           >
             <Clock className="w-4 h-4 animate-spin shrink-0" />
             <span>
-              تم الوصول لحد الطلبات المؤقت. يرجى الانتظار {rateLimitCooldown}{" "}
-              ثانية قبل المحاولة...
+              بعت رسايل كتير ورا بعض. استنى {rateLimitCooldown}{" "}
+              ثانية وجرّب تاني...
             </span>
           </motion.div>
         )}
@@ -1343,7 +1343,7 @@ export default function AIChatbot() {
           <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-lg border border-border/40 mb-2">
             <div className="flex items-center gap-1.5 truncate">
               <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span className="truncate">تعذر إرسال الرسالة السابقة</span>
+              <span className="truncate">الرسالة اللي فاتت ماتبعتتش</span>
             </div>
             <Button
               type="button"

@@ -91,6 +91,9 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
    right ones.
 3. After a mutation, invalidate the queries it changes through `trpc.useUtils()`.
 4. A guard that takes access away waits for `isVerified`; the snapshot may only add, never remove.
+5. Text users read follows `docs/guides/writing-app-messages.md` (polite Egyptian Arabic, no blame, no English
+   jargon); `tests/knowledge/user-copy.test.ts` rejects يرجى، تعذر، لقد، لديك، عفواً outside the admin console and in
+   the server's error messages.
 5. Limits and plan features shown to users come from `contracts/constants.ts` and `contracts/plans.ts`.
 
 ## Tests

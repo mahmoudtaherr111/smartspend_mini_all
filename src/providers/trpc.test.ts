@@ -147,7 +147,7 @@ describe("tRPC Client Headers & Tunnel Bypass Removal", () => {
     });
 
     it("maps 403 forbidden to unauthorized access message", () => {
-      expect(friendlyHttpError(403)).toContain("صلاحية");
+      expect(friendlyHttpError(403)).toContain("مش مسموحلك");
     });
 
     it("maps 404 not found to missing endpoint message", () => {
@@ -164,7 +164,7 @@ describe("tRPC Client Headers & Tunnel Bypass Removal", () => {
     });
 
     it("provides fallback message for unclassified status codes", () => {
-      expect(friendlyHttpError(418)).toContain("تعذر إكمال الطلب");
+      expect(friendlyHttpError(418)).toContain("ماقدرناش نكمّل الطلب");
     });
   });
 

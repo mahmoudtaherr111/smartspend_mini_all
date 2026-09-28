@@ -158,7 +158,7 @@ export function PwaOfflineSyncDialog({ isOnline }: PwaOfflineSyncDialogProps) {
         >
           <Database className="w-4 h-4 animate-pulse" />
           <span>
-            لديك {totalPending} عمليات مسجلة أوفلاين لم تتم مزامنتها بعد.
+            عندك {totalPending} عمليات متسجلة أوفلاين لسه ماتبعتتش.
           </span>
           <button
             onClick={() => setShowSyncDialog(true)}

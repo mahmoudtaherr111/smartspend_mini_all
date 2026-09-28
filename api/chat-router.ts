@@ -588,7 +588,7 @@ export const chatRouter = router({
         if (!Number.isInteger(conversationId) || conversationId <= 0) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: "تعذر إنشاء المحادثة. جرّب تاني.",
+            message: "ماقدرناش نفتح محادثة جديدة. جرّب تاني.",
           });
         }
         activeConv = { id: conversationId, metadata: null };

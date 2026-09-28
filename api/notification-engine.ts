@@ -627,9 +627,9 @@ export async function seedDefaultTemplates() {
     {
       name: "تنبيه تجاوز الميزانية",
       eventType: "budget_exceeded",
-      titleTemplate: "تنبيه: لقد تجاوزت ميزانيتك المخططة! ⚠️",
+      titleTemplate: "تنبيه: عدّيت الميزانية اللي حاططها ⚠️",
       bodyTemplate: "إجمالي نفقاتك هذا الشهر {{totalSpent}} تخطى الحد المسموح به {{budgetLimit}} في ملفك الشخصي. اضغط لمراجعة إحصائياتك.",
-      titleTemplateAr: "تنبيه: لقد تجاوزت ميزانيتك المخططة! ⚠️",
+      titleTemplateAr: "تنبيه: عدّيت الميزانية اللي حاططها ⚠️",
       bodyTemplateAr: "إجمالي نفقاتك هذا الشهر {{totalSpent}} تخطى الحد المسموح به {{budgetLimit}} في ملفك الشخصي. اضغط لمراجعة إحصائياتك.",
       titleTemplateEn: "Warning: Budget Exceeded! ⚠️",
       bodyTemplateEn: "Your total expenses this month {{totalSpent}} exceeded your planned budget of {{budgetLimit}}. Click to review your statistics."
@@ -638,9 +638,9 @@ export async function seedDefaultTemplates() {
       name: "تذكير عدم النشاط اليومي",
       eventType: "inactivity_reminder",
       titleTemplate: "أين اختفيت؟ 🎯",
-      bodyTemplate: "لقد مرت فترة منذ آخر مرة سجلت فيها مصاريفك. حافظ على انضباطك المالي وسجل نفقاتك الآن!",
+      bodyTemplate: "بقالك فترة ماسجلتش مصاريفك. سجّل اللي صرفته عشان أرقامك تفضل مظبوطة.",
       titleTemplateAr: "أين اختفيت؟ 🎯",
-      bodyTemplateAr: "لقد مرت فترة منذ آخر مرة سجلت فيها مصاريفك. حافظ على انضباطك المالي وسجل نفقاتك الآن!",
+      bodyTemplateAr: "بقالك فترة ماسجلتش مصاريفك. سجّل اللي صرفته عشان أرقامك تفضل مظبوطة.",
       titleTemplateEn: "Where have you been? 🎯",
       bodyTemplateEn: "It's been a while since you last logged your expenses. Keep up your financial discipline and log them now!"
     },
@@ -648,9 +648,9 @@ export async function seedDefaultTemplates() {
       name: "تنبيه حماس الاستمرار (ترقية برو)",
       eventType: "pro_conversion_streak",
       titleTemplate: "أنت على مسار رائع! 🌟",
-      bodyTemplate: "لقد سجلت مصاريفك لـ {{currentStreak}} أيام متتالية. اشترك في برو الآن للحصول على تقارير وتحليلات غير محدودة بخصم 30%!",
+      bodyTemplate: "سجّلت مصاريفك {{currentStreak}} أيام متتالية. اشترك في برو الآن للحصول على تقارير وتحليلات غير محدودة بخصم 30%!",
       titleTemplateAr: "أنت على مسار رائع! 🌟",
-      bodyTemplateAr: "لقد سجلت مصاريفك لـ {{currentStreak}} أيام متتالية. اشترك في برو الآن للحصول على تقارير وتحليلات غير محدودة بخصم 30%!",
+      bodyTemplateAr: "سجّلت مصاريفك {{currentStreak}} أيام متتالية. اشترك في برو الآن للحصول على تقارير وتحليلات غير محدودة بخصم 30%!",
       titleTemplateEn: "You are on a roll! 🌟",
       bodyTemplateEn: "You have recorded your expenses for {{currentStreak}} consecutive days. Subscribe to Pro now for unlimited reports with 30% discount!"
     },
@@ -658,9 +658,9 @@ export async function seedDefaultTemplates() {
       name: "تذكير المستخدم الغائب",
       eventType: "dormant_reactivation",
       titleTemplate: "افتقدناك في SmartSpend! 💙",
-      bodyTemplate: "لقد مر أسبوع منذ آخر تسجيل لمصاريفك. العودة للتتبع ستساعدك على تحقيق أهدافك المالية وضبط ميزانيتك!",
+      bodyTemplate: "بقالك أسبوع ماسجلتش مصاريفك. العودة للتتبع ستساعدك على تحقيق أهدافك المالية وضبط ميزانيتك!",
       titleTemplateAr: "افتقدناك في SmartSpend! 💙",
-      bodyTemplateAr: "لقد مر أسبوع منذ آخر تسجيل لمصاريفك. العودة للتتبع ستساعدك على تحقيق أهدافك المالية وضبط ميزانيتك!",
+      bodyTemplateAr: "بقالك أسبوع ماسجلتش مصاريفك. العودة للتتبع ستساعدك على تحقيق أهدافك المالية وضبط ميزانيتك!",
       titleTemplateEn: "We miss you at SmartSpend! 💙",
       bodyTemplateEn: "It's been a week since you last recorded your expenses. Getting back to tracking will help you reach your goals!"
     }

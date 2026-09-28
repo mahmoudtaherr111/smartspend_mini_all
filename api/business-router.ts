@@ -197,7 +197,7 @@ export const businessRouter = router({
         .limit(1);
 
       if (existing.length > 0) {
-        throw new TRPCError({ code: "CONFLICT", message: "لديك مشروع نشط بالفعل" });
+        throw new TRPCError({ code: "CONFLICT", message: "عندك مشروع شغال بالفعل" });
       }
 
       const [business] = await db

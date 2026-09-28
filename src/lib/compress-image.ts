@@ -16,7 +16,7 @@ export async function compressImageFile(
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("تعذر معالجة الصورة");
+  if (!ctx) throw new Error("ماقدرناش نجهّز الصورة");
   ctx.drawImage(bitmap, 0, 0, w, h);
   bitmap.close();
 

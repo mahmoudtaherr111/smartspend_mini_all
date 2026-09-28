@@ -164,7 +164,7 @@ export function OnboardingCard() {
       // Only invalidate the profile (for progress count), NOT the question query
       utils.profile.getSmartProfile.invalidate();
     },
-    onError: (err) => toast.error(err.message || "تعذر حفظ الإجابة. جرب تاني."),
+    onError: (err) => toast.error(err.message || "ماقدرناش نحفظ الإجابة. جرّب تاني."),
   });
 
   // Initialize accumulated answers from server profile on first load

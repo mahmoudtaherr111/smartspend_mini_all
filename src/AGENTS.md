@@ -24,5 +24,6 @@ is `docs/systems/web-app.md`. Find the system of a file in `docs/atlas/systems/f
 4. Do not add new reads of the session token from `localStorage`; the API also accepts the HttpOnly
    `smartspend_token` cookie. (unenforced)
 5. Limits and plan features shown to users come from `contracts/constants.ts` and `contracts/plans.ts`.
-6. Component tests use Vitest and Testing Library; `tests/setup/jest-dom.ts` registers the DOM matchers, such
+6. Text users read follows `docs/guides/writing-app-messages.md`. (`tests/knowledge/user-copy.test.ts`)
+7. Component tests use Vitest and Testing Library; `tests/setup/jest-dom.ts` registers the DOM matchers, such
    as `toBeInTheDocument`, for every test.

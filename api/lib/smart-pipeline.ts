@@ -1682,7 +1682,7 @@ async function classifyAdmittedEvents(
               }
          } else if (finalItems.length === 0) {
               decision = "clarify";
-              clarificationQuestion = "عذراً، الجملة طويلة ومفصلة ولم أتمكن من استخراج العمليات. يرجى تقسيمها أو إعادة المحاولة.";
+              clarificationQuestion = "الجملة طويلة ومافهمناش كل العمليات اللي فيها. قسّمها لجمل أقصر وجرّب تاني.";
          }
       } else {
         // The merge already produced finished transactions: the local pass supplied the
@@ -1752,7 +1752,7 @@ async function classifyAdmittedEvents(
       } else {
         decision = "clarify";
         clarificationQuestion =
-          "عذراً، حدث خطأ في السيرفر أثناء معالجة الجملة الطويلة. يرجى تقسيمها أو المحاولة لاحقاً.";
+          "حصلت مشكلة عندنا وإحنا بنقرا الجملة الطويلة. قسّمها لجمل أقصر أو جرّب كمان شوية.";
       }
     }
   }

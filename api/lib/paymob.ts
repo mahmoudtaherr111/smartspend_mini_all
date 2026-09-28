@@ -127,7 +127,7 @@ export async function createPaymobHostedCheckoutUrl(params: {
   if (!paymentKey.token) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: "تعذر إنشاء جلسة الدفع",
+      message: "ماقدرناش نبدأ الدفع، جرّب تاني",
     });
   }
 

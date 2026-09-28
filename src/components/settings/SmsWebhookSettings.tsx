@@ -119,7 +119,7 @@ export function SmsWebhookSettings() {
         window.location.href = SHORTCUT_ICLOUD_LINK;
       }, 800);
     } catch (err: any) {
-      toast.error("يرجى إعطاء صلاحية النسخ (Clipboard) للمتصفح");
+      toast.error("اسمح للمتصفح بالنسخ وجرّب تاني");
     } finally {
       setIsConnecting(false);
     }

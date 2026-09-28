@@ -46,7 +46,7 @@ describe("PwaOfflineSyncDialog — Unique Entity ID Deletion & Synchronization",
     render(<PwaOfflineSyncDialog isOnline={true} />);
 
     // Check banner presence
-    expect(screen.getByText(/لديك 3 عمليات مسجلة أوفلاين/)).toBeTruthy();
+    expect(screen.getByText(/عندك 3 عمليات متسجلة أوفلاين/)).toBeTruthy();
 
     // Verify localStorage has been updated with unique IDs
     const storedTexts = JSON.parse(localStorage.getItem("smartspend_offline_texts") || "[]");

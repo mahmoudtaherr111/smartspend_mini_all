@@ -242,7 +242,7 @@ function checkIntentTaxonomyConflicts(
         flags.push({
           type: "intent_conflict",
           severity: "info",
-          message: `دخل غير مصنف في "متنوعات" — يرجى مراجعة تصنيف هذا الدخل`,
+          message: `دخل غير مصنف في "متنوعات" — راجع فئة الدخل ده`,
           affectedItems: [idx],
         });
       } else {

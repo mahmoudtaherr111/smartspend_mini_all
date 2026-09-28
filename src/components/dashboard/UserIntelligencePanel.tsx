@@ -38,7 +38,7 @@ export function UserIntelligencePanel({ month }: { month: string }) {
       utils.profile.getSmartProfile.invalidate();
       utils.expense.getMonthlyStats.invalidate({ month });
     },
-    onError: (err) => toast.error(err.message || "تعذر تحديث الاستنتاجات"),
+    onError: (err) => toast.error(err.message || "ماقدرناش نحدّث الاستنتاجات"),
   });
 
   const inferred = profile?.aiInferredAttributes || {};

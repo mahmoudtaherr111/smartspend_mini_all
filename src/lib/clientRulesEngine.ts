@@ -21,7 +21,7 @@ export function validateOfflineInput(text: string): { isValid: boolean; errorRea
   if (trimmed.length < 5) {
     return {
       isValid: false,
-      errorReason: "النص قصير جداً. يرجى كتابة تفاصيل أكثر لتوضيح المعاملة.",
+      errorReason: "الجملة قصيرة. اكتب صرفت في إيه وبكام.",
     };
   }
 
@@ -31,7 +31,7 @@ export function validateOfflineInput(text: string): { isValid: boolean; errorRea
   if (spamRegex.test(trimmed)) {
     return {
       isValid: false,
-      errorReason: "تم اكتشاف حروف متكررة عشوائية. يرجى إدخال نص صحيح.",
+      errorReason: "مش فاهمين الجملة دي. اكتب صرفت في إيه وبكام.",
     };
   }
 
@@ -55,7 +55,7 @@ export function validateOfflineInput(text: string): { isValid: boolean; errorRea
   if (!hasDigits && !hasCurrencyWord && !hasNumberWord) {
     return {
       isValid: false,
-      errorReason: "يرجى تحديد مبلغ مالي أو استخدام كلمات تدل على القيمة (مثل: ٥٠ جنيه، خمسين مواصلات).",
+      errorReason: "مش لاقيين مبلغ في الجملة. اكتبه بالأرقام أو بالكلام (مثلاً: 50 جنيه، خمسين مواصلات).",
     };
   }
 

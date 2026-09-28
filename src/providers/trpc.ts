@@ -6,12 +6,12 @@ export const trpc = createTRPCReact<AppRouter>();
 
 export function friendlyHttpError(status: number) {
   if (status === 401) return "انتهت الجلسة. سجل الدخول مرة أخرى.";
-  if (status === 403) return "ليس لديك صلاحية لتنفيذ هذه العملية.";
+  if (status === 403) return "مش مسموحلك تعمل العملية دي.";
   if (status === 404) return "المسار المطلوب غير موجود في الخادم.";
   if (status === 429)
     return "طلبات كثيرة خلال وقت قصير. انتظر لحظة وحاول مرة أخرى.";
   if (status >= 500) return "حدث خطأ في الخادم. حاول مرة أخرى بعد قليل.";
-  return "تعذر إكمال الطلب. راجع البيانات وحاول مرة أخرى.";
+  return "ماقدرناش نكمّل الطلب. راجع البيانات وجرّب تاني.";
 }
 
 // =========================================================================
@@ -232,7 +232,7 @@ export function handleUnauthenticatedSession(
       import("sonner")
         .then(({ toast }) => {
           toast.error(
-            options?.message || "انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.",
+            options?.message || "الجلسة خلصت. سجّل دخولك تاني.",
             {
               id: "session-expired",
               description:
@@ -293,7 +293,7 @@ export const trpcClient = trpc.createClient({
         } catch (error) {
           console.error("tRPC fetch: network failure", error);
           throw new Error(
-            "تعذر الاتصال بالخادم. تأكد أن التطبيق يعمل ثم حاول مرة أخرى.",
+            "مش قادرين نوصل للسيرفر. اتأكد من النت وجرّب تاني.",
           );
         }
 

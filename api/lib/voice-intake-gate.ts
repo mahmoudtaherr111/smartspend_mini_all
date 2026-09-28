@@ -149,7 +149,7 @@ export function checkVoiceIntake(input: VoiceIntakeInput): VoiceIntakeVerdict {
   if (payload.length > MAX_AUDIO_BASE64_LENGTH) {
     return reject(
       "payload_too_large",
-      "حجم الملف الصوتي كبير جداً. يرجى إرسال تسجيل أصغر من 10 ميجابايت.",
+      "التسجيل كبير أوي. سجّل رسالة أقصر (أقل من 10 ميجا).",
     );
   }
 
@@ -175,7 +175,7 @@ export function checkVoiceIntake(input: VoiceIntakeInput): VoiceIntakeVerdict {
   if (!unlimited && input.usedSeconds >= input.limits.monthly) {
     return reject(
       "monthly_limit_reached",
-      `وقت التسجيل الصوتي المتاح ليك خلص (${input.limits.monthly} ثانية/شهر). يرجى الترقية لـ Pro للحصول على المزيد!`,
+      `وقت التسجيل الصوتي المتاح ليك خلص (${input.limits.monthly} ثانية/شهر). تقدر تكتب، أو ترقّي لـ Pro عشان دقايق أكتر.`,
     );
   }
 

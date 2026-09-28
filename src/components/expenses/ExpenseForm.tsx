@@ -335,7 +335,7 @@ export function ExpenseForm({
           }
           setFlowStage("clarify");
           setDecision("clarify" as any);
-          toast.info("تم حفظ التوضيح، يرجى إدخال التوضيح التالي.");
+          toast.info("اتحفظ. جاوب على اللي بعده.");
         } else {
           utilsTrpc.expense.list.invalidate();
           utilsTrpc.expense.getMonthlyStats.invalidate();
@@ -367,7 +367,7 @@ export function ExpenseForm({
       onError: (err) => {
         setIsSkipping(false);
         hapticError();
-        toast.error(err.message || "تعذر حفظ التوضيح.");
+        toast.error(err.message || "ماقدرناش نحفظ الرد، جرّب تاني.");
         setFlowStage("clarify");
       },
     });
@@ -684,7 +684,7 @@ export function ExpenseForm({
         );
       }
       toast.error(
-        err.message || "تعذر حفظ العملية. راجع البيانات وحاول مرة أخرى.",
+        err.message || "ماقدرناش نحفظ العملية. راجعها وجرّب تاني.",
       );
     },
     onSettled: () => {
@@ -721,7 +721,7 @@ export function ExpenseForm({
         );
       }
       toast.error(
-        err.message || "تعذر حفظ العمليات. راجع البيانات وحاول مرة أخرى.",
+        err.message || "ماقدرناش نحفظ العمليات. راجعها وجرّب تاني.",
       );
     },
     onSettled: () => {
@@ -789,7 +789,7 @@ export function ExpenseForm({
       return;
     }
     if (userLimits && userLimits.voice.remaining === 0) {
-      toast.error("لقد استنفدت رصيد التسجيل الصوتي المتاح لك.");
+      toast.error("دقايق الصوت بتاعة الشهر ده خلصت. تقدر تكتب، أو ترقّي لـ Pro.");
       return;
     }
 
@@ -982,7 +982,7 @@ export function ExpenseForm({
         msg.toLowerCase().includes("not allowed")
       ) {
         toast.error(
-          "تم رفض إذن الميكروفون. يرجى تفعيل الصلاحية من إعدادات المتصفح للتسجيل الصوتي.",
+          "الميكروفون مقفول. فعّله من إعدادات المتصفح عشان تسجّل بصوتك.",
           { duration: 6000 },
         );
       } else if (
@@ -1209,7 +1209,7 @@ export function ExpenseForm({
       return true;
     } catch {
       setFlowStage("review");
-      toast.error("تعذر حفظ العملية. راجعها ثم أعد المحاولة.");
+      toast.error("ماقدرناش نحفظ العملية. راجعها وجرّب تاني.");
       return false;
     } finally {
       isSubmittingMutationRef.current = false;
@@ -1265,11 +1265,7 @@ export function ExpenseForm({
       const currentLimit = userLimits?.offline?.limit || 3;
       if (offline.length >= currentLimit) {
         toast.warning(
-          `عفواً، لقد وصلت للحد الأقصى للمصاريف المحفوظة أوفلاين (${currentLimit} عمليات) لباقة ${
-            planQuery.data?.plan === "pro" || planQuery.data?.plan === "ultra"
-              ? "PRO"
-              : "FREE"
-          } الحالية.`,
+          `قايمة الأوفلاين مليانة (${currentLimit} عمليات في باقتك). وصّل النت عشان تتبعت، وبعدين سجّل تاني.`,
         );
         return;
       }
@@ -1696,7 +1692,7 @@ export function ExpenseForm({
                     if (!text.trim() || parseMutation.isPending) return;
                     if (!isOnline) {
                       toast.info(
-                        "احفظها من زر الإضافة العادي عشان تدخل في Queue الأوفلاين بأمان.",
+                        "احفظها من زرار الإضافة العادي عشان تدخل قايمة الأوفلاين.",
                       );
                       return;
                     }
@@ -2296,7 +2292,7 @@ export function ExpenseForm({
           <div className="space-y-4 py-3 text-sm leading-relaxed text-end text-slate-600 dark:text-slate-300">
             <p className="font-medium text-slate-800 dark:text-slate-100">
               للحصول على تصنيف دقيق وقراءة صحيحة للفاتورة بالذكاء الاصطناعي،
-              يرجى اتباع الآتي:
+              اعمل كده:
             </p>
             <ul className="list-disc list-inside space-y-2 pe-2 text-xs">
               <li>التقط الصورة في مكان **إضاءته جيدة** وواضحة.</li>
@@ -2309,7 +2305,7 @@ export function ExpenseForm({
                 التاجر.
               </li>
               <li>
-                في حال تصوير سكرين شوت (البنك أو انستاباي)، يرجى التأكد من أن
+                لو بتصوّر سكرين شوت (البنك أو انستاباي)، اتأكد إن
                 **تفاصيل العملية كاملة ومقروءة**.
               </li>
             </ul>
@@ -2432,7 +2428,7 @@ function ManualForm({
 
     const trimmedAmount = amount.trim();
     if (!trimmedAmount) {
-      toast.error("يرجى إدخال المبلغ.");
+      toast.error("اكتب المبلغ.");
       return;
     }
 
@@ -2451,7 +2447,7 @@ function ManualForm({
 
     const effectiveCategory = type === "transfer" && !category ? "تحويل" : category;
     if (!effectiveCategory || !effectiveCategory.trim()) {
-      toast.error("يرجى اختيار الفئة الرئيسية.");
+      toast.error("اختار الفئة.");
       return;
     }
 
@@ -2507,9 +2503,7 @@ function ManualForm({
       const currentLimit = userLimits?.offline?.limit || 3;
       if (offlineManual.length >= currentLimit) {
         toast.warning(
-          `عفواً، لقد وصلت للحد الأقصى للمصاريف المحفوظة أوفلاين (${currentLimit} عمليات) لباقة ${
-            plan === "pro" || plan === "ultra" ? "PRO" : "FREE"
-          } الحالية.`,
+          `قايمة الأوفلاين مليانة (${currentLimit} عمليات في باقتك). وصّل النت عشان تتبعت، وبعدين سجّل تاني.`,
         );
         isSubmittingManualRef.current = false;
         return;

@@ -47,6 +47,7 @@ Never quote a count from memory or from an old document; read it from `docs/atla
 | How agents work here and what the hooks do | `docs/guides/agent-workflow.md` |
 | Which tests exist, what they need, where CI runs them | `docs/guides/testing.md` |
 | Deployment, Docker, production environment | `docs/guides/deploy.md` |
+| How messages to users are worded | `docs/guides/writing-app-messages.md` |
 
 The generated files are large: search them for a name instead of reading them whole.
 

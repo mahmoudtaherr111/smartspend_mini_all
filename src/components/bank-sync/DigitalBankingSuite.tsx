@@ -181,11 +181,11 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
   const handleAddWallet = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) {
-      toast.error("يرجى إدخال اسم المحفظة/الكارت");
+      toast.error("اكتب اسم المحفظة أو الكارت");
       return;
     }
     if (newLastDigits && newLastDigits.length !== 4) {
-      toast.error("يرجى إدخال 4 أرقام بالضبط");
+      toast.error("اكتب آخر 4 أرقام بالظبط");
       return;
     }
 
