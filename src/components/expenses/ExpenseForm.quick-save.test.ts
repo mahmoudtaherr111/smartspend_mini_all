@@ -93,4 +93,9 @@ describe("ExpenseForm quick save flow", () => {
     );
     expect(submitClarificationAnswer).toContain("setLatestParserTrace(null)");
   });
+
+  it("shows the server engine's own answer on the quick-save chip, not a phone-side guess", () => {
+    expect(source).toContain("trpc.expense.previewCategory.useQuery");
+    expect(source).not.toContain("suggestExpenseItems");
+  });
 });

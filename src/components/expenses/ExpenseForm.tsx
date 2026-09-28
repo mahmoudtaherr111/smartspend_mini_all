@@ -23,10 +23,7 @@ import {
   X,
   Lock,
 } from "lucide-react";
-import {
-  suggestExpenseItems,
-  validateOfflineInput,
-} from "@/lib/clientRulesEngine";
+import { validateOfflineInput } from "@/lib/clientRulesEngine";
 import { ExpenseInputLimits } from "@contracts/constants";
 import { cn } from "@/lib/utils";
 import {
@@ -1467,14 +1464,24 @@ export function ExpenseForm({
     };
   }, [isOnline]);
 
+  // The quick-save chip shows what the server's engine will file, not a separate phone-side
+  // rulebook that used to disagree with it. Asked after a short pause in typing, only online
+  // and only for text with a number; it never calls a model.
+  const [previewText, setPreviewText] = useState("");
   useEffect(() => {
-    if (text && text.trim().length > 0) {
-      const suggestion = suggestExpenseItems(text);
-      setLocalSuggestion(suggestion);
-    } else {
-      setLocalSuggestion(null);
-    }
+    const trimmed = text.trim();
+    const timer = window.setTimeout(() => setPreviewText(/[0-9٠-٩]/.test(trimmed) ? trimmed : ""), 500);
+    return () => window.clearTimeout(timer);
   }, [text]);
+  const categoryPreview = trpc.expense.previewCategory.useQuery(
+    { text: previewText },
+    { enabled: isOnline && previewText.length > 0, staleTime: 60_000, retry: false },
+  );
+  useEffect(() => {
+    setLocalSuggestion(previewText && previewText === text.trim() ? categoryPreview.data ?? null : null);
+    // text is read, not tracked: the chip follows the debounced text and its answer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewText, categoryPreview.data]);
 
   useEffect(() => {
     if (!import.meta.env.DEV || typeof window === "undefined") return;
@@ -1670,6 +1677,9 @@ export function ExpenseForm({
                     <strong className="text-slate-900 dark:text-white font-bold">
                       {localSuggestion.category}
                     </strong>
+                    {localSuggestion.itemCount > 1 && (
+                      <span className="text-muted-foreground"> + {localSuggestion.itemCount - 1} كمان</span>
+                    )}
                   </span>
                 </div>
                 <Button
@@ -1677,7 +1687,7 @@ export function ExpenseForm({
                   size="sm"
                   onClick={() => {
                     mediumTap();
-                    if (!text.trim()) return;
+                    if (!text.trim() || parseMutation.isPending) return;
                     if (!isOnline) {
                       toast.info(
                         "احفظها من زر الإضافة العادي عشان تدخل في Queue الأوفلاين بأمان.",
@@ -1696,6 +1706,7 @@ export function ExpenseForm({
                       businessMode: businessMode || false,
                     });
                   }}
+                  disabled={parseMutation.isPending}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3.5 h-8 rounded-xl shrink-0"
                 >
                   حفظ سريع

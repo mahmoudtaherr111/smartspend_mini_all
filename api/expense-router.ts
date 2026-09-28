@@ -36,6 +36,8 @@ import {
 } from "./services/expense-rollups";
 import { businessDayRange } from "./lib/app-time";
 import { installmentProgress } from "./services/installments";
+import { runRuleEngine } from "./lib/rule-engine";
+import { normalizeV2 } from "./lib/normalizer-v2";
 import { SEASON_IDS, SEASON_LABELS, latestSeasonRange, seasonRange, type SeasonRange } from "./lib/seasons";
 import { assertEntityOwnership } from "./lib/ownership-guard";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
@@ -1440,6 +1442,32 @@ export const expenseRouter = router({
       invalidateUserClassificationCache(userId, userType);
       await invalidateExpenseCache(userId, userType);
       return { success: true };
+    }),
+
+  /**
+   * The quick-save chip's preview: the server's own local engine on the typed sentence,
+   * with the user's dictionary, so the chip says what saving will file. It never calls a
+   * model and counts against no quota.
+   */
+  previewCategory: authedProcedure
+    .input(z.object({ text: z.string().trim().min(1).max(ExpenseInputLimits.rawTextMax) }))
+    .query(async ({ ctx, input }) => {
+      const userDict = await getDb()
+        .select({ word: userDictionaries.word, category: userDictionaries.category, subCategory: userDictionaries.subCategory })
+        .from(userDictionaries)
+        .where(and(eq(userDictionaries.userId, ctx.user!.id), eq(userDictionaries.userType, ctx.user!.type)));
+      const result = await runRuleEngine(
+        normalizeV2(input.text).forRules,
+        userDict.map((entry) => ({ ...entry, subCategory: entry.subCategory ?? undefined })),
+      );
+      const [first] = result.items;
+      if (!first || first.category === "متنوعات") return null;
+      return {
+        amount: first.amount,
+        category: first.category,
+        subCategory: first.subCategory || "عام",
+        itemCount: result.items.length,
+      };
     }),
 
   /** Installment plans with «فاضل كام قسط» for each. */

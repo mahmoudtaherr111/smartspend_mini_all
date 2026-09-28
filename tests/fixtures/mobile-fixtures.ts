@@ -208,6 +208,7 @@ export const test = base.extend<MobileTestFixtures>({
           if (procedure === "expense.getDebtBalances") return { balances: [], owedToYou: 0, youOwe: 0 };
           if (procedure === "expense.getSeasonSpending") return { season: "ramadan", label: "رمضان", startDay: "2026-02-18", endDay: "2026-03-19", total: 0, count: 0, byCategory: [], previous: null };
           if (procedure === "expense.listInstallmentPlans") return [];
+          if (procedure === "expense.previewCategory") return null;
           if (procedure === "chat.getQuickActions") return [];
           if (procedure === "chat.getConversations") return [];
           if (procedure === "ads.list") return [];

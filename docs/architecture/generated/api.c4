@@ -1198,7 +1198,7 @@ model {
       }
     }
     expense = router 'expense' {
-      description 'api/expense-router.ts — 20 procedures.'
+      description 'api/expense-router.ts — 21 procedures.'
       metadata {
         file 'api/expense-router.ts'
       }
@@ -1373,6 +1373,16 @@ model {
         }
       }
       listInstallmentPlans = procedure 'expense.listInstallmentPlans' {
+        #query #authed
+        technology 'authedProcedure'
+        description 'query · authedProcedure'
+        metadata {
+          file 'api/expense-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
+      }
+      previewCategory = procedure 'expense.previewCategory' {
         #query #authed
         technology 'authedProcedure'
         description 'query · authedProcedure'

@@ -23,7 +23,7 @@ flowchart LR
     job_taxonomy_migration["Job · taxonomy-migration"]
     router_budget["budget API · 4 procedures"]
     router_business["business API · 10 procedures"]
-    router_expense["expense API · 13 procedures"]
+    router_expense["expense API · 14 procedures"]
     router_export["export API · 1 procedure"]
     router_goals["goals API · 5 procedures"]
     router_profile["profile API · 5 procedures"]
@@ -44,6 +44,7 @@ flowchart LR
     tbl_user_budgets[("user_budgets")]
     tbl_user_businesses[("user_businesses")]
     tbl_user_contacts[("user_contacts")]
+    tbl_user_dictionaries[("user_dictionaries")]
     tbl_user_profiles[("user_profiles")]
     tbl_user_wallets[("user_wallets")]
     tbl_users[("users")]
@@ -91,6 +92,7 @@ flowchart LR
   router_expense --> sys_insights
   router_expense --> sys_platform
   router_expense -.-> tbl_expense_daily_rollups
+  router_expense -.-> tbl_user_dictionaries
   router_expense ==> tbl_classification_logs
   router_expense ==> tbl_expenses
   router_expense ==> tbl_installment_plans
@@ -160,6 +162,7 @@ flowchart LR
 | `expense.getYearlyStats` | query | `authedProcedure` | `expense_daily_rollups` | — | — |
 | `expense.list` | query | `authedProcedure` | `expenses` | — | `Home` |
 | `expense.listInstallmentPlans` | query | `authedProcedure` | `expenses`, `installment_plans` | — | `Home` |
+| `expense.previewCategory` | query | `authedProcedure` | `user_dictionaries` | — | `Home` |
 | `expense.searchTransactions` | query | `authedProcedure` | `expenses` | — | `Home` |
 | `expense.update` | mutation | `authedProcedure` | `classification_logs`, `expenses` | `classification_logs`, `expenses` | `Home` |
 | `export.myExpenses` | mutation | `authedProcedure` | `expenses` | — | — |
@@ -202,6 +205,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_budgets` | C | `budget.create`, `budget.delete`, `budget.update`, `goals.delete`, `ledger` | `budget.delete`, `budget.update`, `ledger` |
 | `user_businesses` | A | `business.create`, `business.delete`, `business.update` | `business.addCategory`, `business.create`, `business.delete`, `business.get`, `business.linkContact`, `business.removeCategory`, `business.update`, `business.updateCategory` |
 | `user_contacts` | A | `business.delete`, `business.linkContact`, `expense.delete`, `profile.addContact`, `profile.deleteContact`, `profile.mergeContacts`, `profile.updateContact` | `business.get`, `business.linkContact`, `ledger`, `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` |
+| `user_dictionaries` | F | — | `expense.previewCategory` |
 | `user_profiles` | A | `profile.deleteContact`, `profile.mergeContacts` | `profile.deleteContact`, `profile.mergeContacts` |
 | `user_wallets` | A | `wallet.createWallet`, `wallet.deleteWallet`, `wallet.updateWallet` | `wallet.getWallets` |
 | `users` | A | `goals.analyze` | — |
@@ -226,7 +230,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>56 files and declarations</summary>
+<details><summary>57 files and declarations</summary>
 
 - `api/boot.ts#job:nightly-rollup-reconciliation`
 - `api/boot.ts#job:taxonomy-migration`
@@ -243,6 +247,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/expense-router.ts#expense.getYearlyStats`
 - `api/expense-router.ts#expense.list`
 - `api/expense-router.ts#expense.listInstallmentPlans`
+- `api/expense-router.ts#expense.previewCategory`
 - `api/expense-router.ts#expense.searchTransactions`
 - `api/expense-router.ts#expense.update`
 - `api/expense-router.ts#rest-of-file`

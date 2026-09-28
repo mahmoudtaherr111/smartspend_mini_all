@@ -350,6 +350,14 @@ answer ([voice calls](voice-calls.md#the-tools)).
   `api/lib/__baselines__/classification-benchmark.baseline.json` and fails when a gate is crossed
   (`api/qa/classification-baseline.ts`). `npm run bench:classify:live` calls real providers.
 
+## The quick-save chip
+While the user types a sentence with a number, the form asks `expense.previewCategory` after a half-second pause (online
+only): the same local engine (`runRuleEngine` on `normalizeV2` text) with the user's dictionary, no model and no quota.
+The chip shows its first item's amount and category, and how many more items the sentence has; "حفظ سريع" then sends
+the sentence through `ai.parseExpense` like the normal button, and cannot start a second parse while one runs. The
+phone-side keyword guess that used to fill the chip, and disagreed with the saved result, is gone; offline text is only
+checked (`src/lib/clientRulesEngine.ts#validateOfflineInput`) and classified by the server when it syncs.
+
 ## Known issues
 Checked against the code; each one names where it lives.
 1. **Gap.** A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع"

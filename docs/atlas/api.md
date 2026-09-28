@@ -36,7 +36,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `budget` | `api/budget-router.ts` | 4 | 1 | 3 | `authedProcedure` |
 | `business` | `api/business-router.ts` | 10 | 2 | 8 | `businessAiProcedure`, `businessProcedure` |
 | `chat` | `api/chat-router.ts` | 10 | 4 | 6 | `aiProcedure`, `authedProcedure` |
-| `expense` | `api/expense-router.ts` | 20 | 11 | 9 | `authedProcedure` |
+| `expense` | `api/expense-router.ts` | 21 | 12 | 9 | `authedProcedure` |
 | `export` | `api/export-router.ts` | 3 | 0 | 3 | `adminProcedure`, `authedProcedure`, `proReportProcedure` |
 | `goals` | `api/goals-router.ts` | 5 | 1 | 4 | `authedProcedure`, `goalAnalysisProcedure` |
 | `image` | `api/image-router.ts` | 1 | 0 | 1 | `receiptsProcedure` |
@@ -234,6 +234,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `expense.getYearlyStats` | query | `authedProcedure` | yes | `expense_daily_rollups` | — | `api/lib/cache-keys.ts`, `api/lib/redis-client.ts` | — |
 | `expense.list` | query | `authedProcedure` | yes | `expenses` | — | `contracts/constants.ts` | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.listInstallmentPlans` | query | `authedProcedure` | no | `expenses`, `installment_plans` | — | `api/services/installments.ts` | `src/components/installments/InstallmentsPanel.tsx` |
+| `expense.previewCategory` | query | `authedProcedure` | yes | `user_dictionaries` | — | `api/lib/normalizer-v2.ts`, `api/lib/rule-engine.ts`, `contracts/constants.ts` | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.searchTransactions` | query | `authedProcedure` | yes | `expenses` | — | — | `src/components/dashboard/GlobalSearch.tsx` |
 | `expense.update` | mutation | `authedProcedure` | yes | `classification_logs`, `expenses` | `classification_logs`, `expenses` | `api/lib/cache-keys.ts`, `api/lib/category-registry.ts`, `api/lib/correction-rules.ts`, `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts`, `api/lib/redis-client.ts`, `api/lib/relationship-normalizer.ts`, `api/lib/smart-pipeline.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts` | `src/components/expenses/EditExpenseDialog.tsx` |
 

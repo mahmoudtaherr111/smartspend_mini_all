@@ -851,6 +851,10 @@ model {
   smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.installment_plans
   smartspend.api.trpc.expense.listInstallmentPlans -[uses]-> smartspend.api.modules.ledger
+  smartspend.api.trpc.expense.previewCategory -[reads]-> smartspend.mysql.user_dictionaries
+  smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.api.modules.arabic-nlp
+  smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.api.modules.classification
+  smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.expense.searchTransactions -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.update -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.expense.update -[reads]-> smartspend.mysql.expenses
@@ -1286,6 +1290,7 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getSeasonSpending
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.list
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.listInstallmentPlans
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.previewCategory
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.searchTransactions
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.update
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.goals.analyze

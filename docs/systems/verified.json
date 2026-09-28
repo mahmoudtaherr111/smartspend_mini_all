@@ -235,7 +235,7 @@
         "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "6705d6e7f0f2",
+        "api/expense-router.ts#rest-of-file": "3ef0bb7abbc1",
         "api/image-router.ts": "4043abdc33c7",
         "api/lib/admissibility-gate.ts": "3b5889850057",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
@@ -286,14 +286,14 @@
         "api/lib/unified-normalizer.ts": "603756615433",
         "api/lib/voice-intake-gate.ts": "6213ffc0c8da",
         "api/services/parser-trace.ts": "aa8b5bad3877",
-        "src/components/expenses/ExpenseForm.tsx": "b49a3f3a3a89",
+        "src/components/expenses/ExpenseForm.tsx": "27f571e7da7c",
         "src/components/expenses/ReceiptCapture.tsx": "5940b1b1e056",
-        "src/lib/clientRulesEngine.ts": "be221ab0c77b",
+        "src/lib/clientRulesEngine.ts": "92d34e8db8ce",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-28 8629ba0",
-      "arabic": "7df5942def44",
-      "arabicChecked": "2026-09-28 413ac44"
+      "checked": "2026-09-28 a8fec01",
+      "arabic": "c6f122ff40ad",
+      "arabicChecked": "2026-09-28 a8fec01"
     },
     "insights": {
       "files": {
@@ -346,9 +346,10 @@
         "api/expense-router.ts#expense.getYearlyStats": "5267d3d55014",
         "api/expense-router.ts#expense.list": "1540eca4d7f5",
         "api/expense-router.ts#expense.listInstallmentPlans": "6d0c5845e123",
+        "api/expense-router.ts#expense.previewCategory": "dab97f94d0c8",
         "api/expense-router.ts#expense.searchTransactions": "9d92514f1158",
         "api/expense-router.ts#expense.update": "e6e087556b24",
-        "api/expense-router.ts#rest-of-file": "6705d6e7f0f2",
+        "api/expense-router.ts#rest-of-file": "3ef0bb7abbc1",
         "api/export-router.ts#export.myExpenses": "d0acca7338ba",
         "api/export-router.ts#rest-of-file": "45767b678670",
         "api/goals-router.ts": "7abbe5a2ba53",
@@ -388,7 +389,7 @@
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
         "src/pages/Home.tsx": "c12e54cbde73"
       },
-      "checked": "2026-09-28 8629ba0",
+      "checked": "2026-09-28 a8fec01",
       "arabic": "13786dfd5a7d",
       "arabicChecked": "2026-09-28 8629ba0"
     },

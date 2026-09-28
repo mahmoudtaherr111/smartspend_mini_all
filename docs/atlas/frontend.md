@@ -211,6 +211,7 @@ _None._
 | `expense.getSeasonSpending` | useQuery | `src/components/seasons/SeasonsPanel.tsx` |
 | `expense.list` | useQuery, utils.cancel, utils.getData, utils.invalidate, utils.setData | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.listInstallmentPlans` | useQuery, utils.invalidate | `src/components/installments/InstallmentsPanel.tsx` |
+| `expense.previewCategory` | useQuery | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.searchTransactions` | useQuery | `src/components/dashboard/GlobalSearch.tsx` |
 | `expense.update` | useMutation | `src/components/expenses/EditExpenseDialog.tsx` |
 | `goals.analyze` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |

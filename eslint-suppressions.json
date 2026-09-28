@@ -1293,11 +1293,6 @@
       "count": 16
     }
   },
-  "src/lib/clientRulesEngine.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "src/lib/transactionDisplay.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
