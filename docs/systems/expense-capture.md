@@ -122,6 +122,7 @@ The layers `runRuleEngine` tries for the text around one amount, with the eviden
 | Synonym graph, `api/lib/taxonomy-adapter.ts#findTaxonomyMatch`, matched on whole words (`api/lib/arabic-token-match.ts`), so "واخيرا" does not match "اخي" | `synonym_graph` |
 | Category dictionary phrases, then subcategory phrases, of three and two words | `dict_trigram`, `dict_bigram`, `subcat_trigram`, `subcat_bigram` |
 | A single word in the subcategory map, then in the category dictionary | `subcat_unigram`, `dict_unigram` |
+| Store catalog (`api/lib/lexicon/merchant-catalog.ts`, about 480 Egyptian stores and apps), read only when no purpose word answered; not trusted by construction, so it goes to confirmation until corrections price it | `merchant_catalog` |
 | Typo match, with an edit budget scaled to the word's length; a known word or a person's name (لخالد is not خالص) is never corrected | `fuzzy` |
 | Direction only: income becomes `دخل آخر`, an expense `متنوعات` at low confidence | `intent_only` |
 

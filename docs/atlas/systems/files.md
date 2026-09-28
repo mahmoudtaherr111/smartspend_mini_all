@@ -79,6 +79,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/intent-detector.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/lexicon/dictionary.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/lexicon/index.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/lexicon/merchant-catalog.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/lexicon/merchants.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/lexicon/phrases.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/lexicon/subcategory-words.ts` | [expense-capture](expense-capture.md) |

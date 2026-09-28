@@ -4,6 +4,7 @@
  */
 
 import { CATEGORY_DICTIONARY, isKnownLexeme, isWawWhitelisted } from "./lexicon/dictionary";
+import { findCatalogMerchant } from "./lexicon/index";
 import { SUB_CATEGORY_MAP } from "./lexicon/subcategory-words";
 import {
   AMBIGUOUS_MERCHANTS,
@@ -944,6 +945,20 @@ export async function runRuleEngine(
           found = true;
           break;
         }
+      }
+    }
+
+    // 5.5 Store catalog: a named store when no purpose word answered ("اشتريت هدوم من
+    // سبينيس" stays clothes; "سبينيس 500" is groceries).
+    if (!found) {
+      const store = findCatalogMerchant(allContext);
+      if (store) {
+        category = store.category;
+        subCategory = store.subCategory;
+        confidence = setMatch(80, "merchant_catalog");
+        inferenceSource = "dictionary";
+        ambiguityFlags = [...(ambiguityFlags || []), "catalog_store"];
+        found = true;
       }
     }
 

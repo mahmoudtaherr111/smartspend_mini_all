@@ -28,6 +28,7 @@ export type MatchKind =
   | "known_person"
   | "merchant_registry"
   | "merchant_disambiguated"
+  | "merchant_catalog"
   | "governed_noun"
   | "verb_noun_regex"
   | "synonym_graph"
@@ -54,6 +55,7 @@ export type MatchFamily =
   | "exact"
   | "strong_rule"
   | "weak_rule"
+  | "catalog"
   | "semantic"
   | "model"
   | "weak";
@@ -67,6 +69,8 @@ const FAMILY_OF: Record<MatchKind, MatchFamily> = {
   governed_noun: "exact",
 
   merchant_disambiguated: "strong_rule",
+  // Its own family: until corrections price it, a catalog store is a guess to confirm.
+  merchant_catalog: "catalog",
   verb_noun_regex: "strong_rule",
   synonym_graph: "strong_rule",
   subcat_trigram: "strong_rule",

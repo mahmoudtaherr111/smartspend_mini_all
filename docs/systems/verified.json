@@ -245,7 +245,7 @@
         "api/lib/benchmark-taxonomy-assert.ts": "ed889341849d",
         "api/lib/category-registry.ts": "0dcac34f44a1",
         "api/lib/classification-decision.ts": "edaa6fd51c1c",
-        "api/lib/classification-evidence.ts": "3cd661580f42",
+        "api/lib/classification-evidence.ts": "6d6b48863bd1",
         "api/lib/classification-merge.ts": "d5c6e33cc406",
         "api/lib/classification-prompt.ts": "26bfe0fd3958",
         "api/lib/classifier-contract.ts": "a95889de61d2",
@@ -261,7 +261,8 @@
         "api/lib/fuzzy-match.ts": "d122bbfd9740",
         "api/lib/intent-detector.ts": "812bcc1cca29",
         "api/lib/lexicon/dictionary.ts": "9bc2001a4fc7",
-        "api/lib/lexicon/index.ts": "43ead95989ed",
+        "api/lib/lexicon/index.ts": "709371dc23ea",
+        "api/lib/lexicon/merchant-catalog.ts": "53a047c8ce7c",
         "api/lib/lexicon/merchants.ts": "07362cf2a787",
         "api/lib/lexicon/phrases.ts": "f1780894c874",
         "api/lib/lexicon/subcategory-words.ts": "7fe610a27403",
@@ -274,7 +275,7 @@
         "api/lib/real-user-sim.ts": "569dd5235fe1",
         "api/lib/receipt-image-parser.ts": "cd75393a2c4b",
         "api/lib/relationship-normalizer.ts": "be8cc3a84254",
-        "api/lib/rule-engine.ts": "67925f095500",
+        "api/lib/rule-engine.ts": "9be34003ae96",
         "api/lib/smart-pipeline.ts": "7ff59bb906f2",
         "api/lib/stt-corrections.ts": "2becb68a8fbe",
         "api/lib/taxonomy-adapter.ts": "fd63a36d2f25",
@@ -288,9 +289,9 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-28 a6ffad8",
-      "arabic": "c865e4f48235",
-      "arabicChecked": "2026-09-28 a6ffad8"
+      "checked": "2026-09-28 e2259ab",
+      "arabic": "e0bb2dd18757",
+      "arabicChecked": "2026-09-28 e2259ab"
     },
     "insights": {
       "files": {
