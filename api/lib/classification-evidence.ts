@@ -25,6 +25,7 @@ export type MatchKind =
   | "user_correction"
   | "muscle_memory"
   | "user_dictionary"
+  | "known_person"
   | "merchant_registry"
   | "merchant_disambiguated"
   | "governed_noun"
@@ -61,6 +62,7 @@ const FAMILY_OF: Record<MatchKind, MatchFamily> = {
   user_correction: "exact",
   muscle_memory: "exact",
   user_dictionary: "exact",
+  known_person: "exact",
   merchant_registry: "exact",
   governed_noun: "exact",
 

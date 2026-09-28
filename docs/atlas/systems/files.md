@@ -62,7 +62,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/correction-rules.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/deepseek-client.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/direction-governed-taxonomy.ts` | [expense-capture](expense-capture.md) |
-| `api/lib/egyptian-dictionary.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/egyptian-names-dictionary.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/embedding-provider.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/entity-extractor.ts` | [expense-capture](expense-capture.md) |
@@ -78,6 +77,11 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/http-origin-security.ts` | [accounts](accounts.md) |
 | `api/lib/image-magic-bytes.ts` | [accounts](accounts.md) |
 | `api/lib/intent-detector.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/lexicon/dictionary.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/lexicon/index.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/lexicon/merchants.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/lexicon/phrases.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/lexicon/subcategory-words.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/llm-provider-chain.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/llm-router.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/log.ts` | [platform](platform.md) |

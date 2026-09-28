@@ -36,7 +36,7 @@ import {
   EXPENSE_KEYWORDS,
   STRONG_INCOME,
   STRONG_EXPENSE,
-} from "./lib/egyptian-dictionary";
+} from "./lib/lexicon/dictionary";
 import { fuzzyFindCategory } from "./lib/fuzzy-match";
 import {
   getSmartProfile,

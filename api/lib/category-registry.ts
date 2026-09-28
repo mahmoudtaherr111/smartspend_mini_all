@@ -515,6 +515,8 @@ export function normalizeCategoryName(
 
 /** The categories whose subcategory is a business category the user defines. */
 const BUSINESS_CATEGORY_NAMES = new Set(["عمل", "عمل حر"]);
+/** Placeholders that name no subcategory, so they never count as a business's own. */
+const GENERIC_SUBCATEGORY_NAMES = new Set(["عام", "أخرى", "اخرى", "other"]);
 
 export function normalizeSubCategoryName(
   categoryName: string,
@@ -532,7 +534,7 @@ export function normalizeSubCategoryName(
   if (exact) return exact.name_ar;
   // A business's own categories ("خامات", "شحن") are the subcategories of work spending and
   // work income; the registry cannot list them, so a name it does not know is kept.
-  if (raw && BUSINESS_CATEGORY_NAMES.has(category.name_ar)) return raw;
+  if (raw && BUSINESS_CATEGORY_NAMES.has(category.name_ar) && !GENERIC_SUBCATEGORY_NAMES.has(raw)) return raw;
 
   const inferred = inferSubCategory(category.name_ar, `${raw} ${evidence}`);
   if (inferred) {

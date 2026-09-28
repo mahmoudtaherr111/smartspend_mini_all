@@ -58,7 +58,7 @@ export interface EscalationDecision {
 }
 
 /** Resolvers whose answer came from the user, so a model has nothing to add. */
-const USER_TAUGHT = new Set(["user_correction", "user_dictionary", "muscle_memory"]);
+const USER_TAUGHT = new Set(["user_correction", "user_dictionary", "muscle_memory", "known_person"]);
 
 /**
  * Should this segment go to the model?

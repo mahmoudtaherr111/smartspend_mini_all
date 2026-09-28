@@ -18,10 +18,10 @@
 
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { isLikelyPersonName } from "./egyptian-names-dictionary";
-import { isWawWhitelisted } from "./egyptian-dictionary";
+import { isWawWhitelisted } from "./lexicon/dictionary";
 import { extractAmounts, isFinancialContext } from "./entity-extractor";
 import { SUB_CATEGORY_MAP } from "./rule-engine";
-import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
+import { CATEGORY_DICTIONARY } from "./lexicon/dictionary";
 import { mapModelName } from "./model-mapper";
 
 // ─── Types ────────────────────────────────────────────────────────

@@ -18,7 +18,7 @@ import { extractAmounts } from "./entity-extractor";
 import { detectNegation } from "./negation-detector";
 import { ALL_FINANCIAL_VERBS } from "./narrative-decomposer";
 import { SUB_CATEGORY_MAP } from "./rule-engine";
-import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
+import { CATEGORY_DICTIONARY } from "./lexicon/dictionary";
 import { buildTokenSet, findMatchingWord } from "./arabic-token-match";
 
 export type AdmissibilityVerdict =

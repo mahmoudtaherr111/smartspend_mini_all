@@ -36,8 +36,8 @@ const CALIBRATED_FLAG = "calibrated";
 /**
  * Answers whose source is trusted by construction rather than measured by the corpus,
  * which holds no examples of them: what the user taught (a correction, their own
- * dictionary), a pattern the user saved several times without correcting, and a brand
- * whose name means nothing else. They used to be "unpriced" and so always went to
+ * dictionary, who a named person is to them), a pattern the user saved several times
+ * without correcting, and a brand whose name means nothing else. They used to be "unpriced" and so always went to
  * review — the most certain answers were the ones never saved on their own, while a
  * single dictionary word that rounded to 90 was.
  *
@@ -49,6 +49,7 @@ const TRUSTED_SOURCES: Partial<Record<string, number>> = {
   user_correction: 0.97,
   user_dictionary: 0.97,
   muscle_memory: 0.95,
+  known_person: 0.95,
   merchant_registry: 0.95,
 };
 

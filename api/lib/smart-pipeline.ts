@@ -2,7 +2,7 @@ import { SchemaType } from "@google/generative-ai";
 import { normalizeV2 } from "./normalizer-v2";
 import { runRuleEngine, PERSON_CATEGORIES, SUB_CATEGORY_MAP } from "./rule-engine";
 import { resolveGovernedTaxonomy } from "./direction-governed-taxonomy";
-import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
+import { CATEGORY_DICTIONARY } from "./lexicon/dictionary";
 import { normalizeTransactionTaxonomyList } from "./category-registry";
 import {
   executeLlmChain,
@@ -554,8 +554,17 @@ function applyPersonResolution(
       next.subCategory = resolution.subCategory;
       if (next.type !== "income") next.type = "expense";
     }
+    // Money handed to someone the user already told us about, with no other purpose, is
+    // filed by what the user taught: that record is the evidence, not whatever word the
+    // lexicon happened to match. The giving verb used to carry a category of its own
+    // (اديت → متنوعات), and that accident was what kept a known friend from the model.
+    const categoryFromKnownPerson = takesPersonCategory && resolution.isKnown;
     next.evidence = next.evidence
-      ? { ...next.evidence, personResolved: resolution.isKnown ? "known" : "unknown" }
+      ? {
+          ...next.evidence,
+          ...(categoryFromKnownPerson ? { matchKind: "known_person" as const, categoryIsFallback: false } : {}),
+          personResolved: resolution.isKnown ? "known" : "unknown",
+        }
       : next.evidence;
     next.ambiguityFlags = [
       ...(next.ambiguityFlags || []),

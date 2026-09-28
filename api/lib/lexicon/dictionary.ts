@@ -1,8 +1,8 @@
-import { normalizeArabic } from "./fuzzy-match";
+import { normalizeArabic } from "../fuzzy-match";
 import {
   STRONG_EXPENSE as STRONG_EXPENSE_VERBS,
   STRONG_INCOME as STRONG_INCOME_VERBS,
-} from "./intent-detector";
+} from "../intent-detector";
 
 export interface CategoryInfo {
   category: string;
@@ -65,6 +65,21 @@ function isArabicLike(input: string): boolean {
   return /^[\u0600-\u06FF]/.test(String(input || "").trim());
 }
 
+/**
+ * Keys written twice with two different categories. The first category used to win in
+ * silence, so a word filed under a section it did not belong to shadowed its right one
+ * (مخالفة read as transport, never as government paperwork). Building the dictionary
+ * records every such key here, and `lexicon.integrity.test.ts` requires the list empty.
+ */
+const conflicts: string[] = [];
+
+function setKey(out: Record<string, CategoryName>, key: string, category: CategoryName): void {
+  if (!key) return;
+  const existing = out[key];
+  if (existing === undefined) out[key] = category;
+  else if (existing !== category) conflicts.push(`${key}: ${existing} / ${category}`);
+}
+
 function addKey(
   out: Record<string, CategoryName>,
   key: string,
@@ -73,29 +88,24 @@ function addKey(
   const raw = String(key || "").trim();
   if (!raw) return;
 
-  const normalized = normKey(raw);
   // Keep both raw and normalized keys to maximize hit-rate in different layers.
-  if (!(raw in out)) out[raw] = category;
-  if (normalized && !(normalized in out)) out[normalized] = category;
+  setKey(out, raw, category);
+  setKey(out, normKey(raw), category);
 
   // Latin case variants (e.g. "WE" vs "we")
-  const lower = raw.toLowerCase();
-  const upper = raw.toUpperCase();
-  if (lower !== raw && !(lower in out)) out[lower] = category;
-  if (upper !== raw && !(upper in out)) out[upper] = category;
+  setKey(out, raw.toLowerCase(), category);
+  setKey(out, raw.toUpperCase(), category);
 
   // Arabic "ال" variants for single-word tokens only (avoid turning phrases into noise).
   if (isArabicLike(raw) && !raw.includes(" ")) {
     if (raw.startsWith("ال") && raw.length > 3) {
       const noAl = raw.slice(2);
-      if (!(noAl in out)) out[noAl] = category;
-      const noAlNorm = normKey(noAl);
-      if (noAlNorm && !(noAlNorm in out)) out[noAlNorm] = category;
+      setKey(out, noAl, category);
+      setKey(out, normKey(noAl), category);
     } else if (!raw.startsWith("ال") && raw.length > 2) {
       const withAl = "ال" + raw;
-      if (!(withAl in out)) out[withAl] = category;
-      const withAlNorm = normKey(withAl);
-      if (withAlNorm && !(withAlNorm in out)) out[withAlNorm] = category;
+      setKey(out, withAl, category);
+      setKey(out, normKey(withAl), category);
     }
   }
 }
@@ -314,8 +324,6 @@ function buildDictionary(): Record<string, CategoryName> {
       "تذكرة",
       "تيكت",
       "طيران",
-      "رحله",
-      "رحلة",
       "ركنه",
       "ركنة",
       "سايس",
@@ -335,10 +343,6 @@ function buildDictionary(): Record<string, CategoryName> {
       "كارتة",
       "كوبري",
       "كوبرى",
-      "مخالفة",
-      "رخصه",
-      "رخصة",
-      "ترخيص",
       "تغيير زيت",
       "غيار زيت",
       "زيت موتور",
@@ -361,7 +365,7 @@ function buildDictionary(): Record<string, CategoryName> {
   );
 
   // ───────────────────────────────
-  // Bills & Commitments (Utilities, Telecom, Installments, Insurance, Taxes)
+  // Bills (utilities, telecom, insurance, bill-payment networks)
   // ───────────────────────────────
   addMany(
     dict,
@@ -415,8 +419,7 @@ function buildDictionary(): Record<string, CategoryName> {
       "شحن رصيد",
       "كارت شحن",
       "كارت فكة",
-      "فكه",
-      "فكة",
+      "كارت فكه",
       "رصيد",
       "باقة نت",
       "باقه نت",
@@ -453,33 +456,14 @@ function buildDictionary(): Record<string, CategoryName> {
       "وي",
       "we",
       "شحنت كارت",
-      "شحنت",
       "كارت شحن",
       "باقة",
       "شحن",
 
-      // Installments / consumer finance
-      "قسط",
-      "اقساط",
-      "أقساط",
-      "قرض",
-      "سداد",
-      "سددت",
-      "مديونية",
-      "مديونيه",
-      "فاليو",
-      "valu",
-      "سهوله",
-      "سهولة",
-      "souhoola",
-      "كونتكت",
-      "contact",
 
-      // Insurance / taxes / fees
+      // Insurance / fees
       "تامين",
       "تأمين",
-      "ضرايب",
-      "ضرائب",
       "رسوم",
 
       // Bill payment networks (often used to pay bills/recharge)
@@ -620,22 +604,6 @@ function buildDictionary(): Record<string, CategoryName> {
       "كابل",
       "وصله",
       "وصلة",
-      "ميكب",
-      "makeup",
-      "عناية",
-      "عنايه",
-      "حلاق",
-      "كوافير",
-      "صالون",
-      "شامبو",
-      "عطر",
-      "برفان",
-      // Creams: use specific bigrams to avoid confusion with "كريم" (Careem)
-      "كريم شعر",
-      "كريم جسم",
-      "كريم بشره",
-      "كريم بشرة",
-      "كريم مرطب",
       "سنيكرز",
       "احذية",
       "أحذية",
@@ -661,6 +629,55 @@ function buildDictionary(): Record<string, CategoryName> {
       "raya",
     ],
     "تسوق",
+  );
+
+  // ───────────────────────────────
+  // Personal care
+  // ───────────────────────────────
+  addMany(
+    dict,
+    [
+      "عناية",
+      "عنايه",
+      "حلاق",
+      "كوافير",
+      "صالون",
+      "ميكب",
+      "makeup",
+      "شامبو",
+      "عطر",
+      "برفان",
+      // Creams: specific bigrams, so "كريم" alone stays the ride app it usually is
+      "كريم شعر",
+      "كريم جسم",
+      "كريم بشره",
+      "كريم بشرة",
+      "كريم مرطب",
+    ],
+    "عناية شخصية",
+  );
+
+  // ───────────────────────────────
+  // Installments and loan interest
+  // ───────────────────────────────
+  addMany(
+    dict,
+    [
+      "قسط",
+      "اقساط",
+      "أقساط",
+      "قرض",
+      "مديونية",
+      "مديونيه",
+      "فاليو",
+      "valu",
+      "سهوله",
+      "سهولة",
+      "souhoola",
+      "كونتكت",
+      "contact",
+    ],
+    "أقساط وفوايد",
   );
 
   // ───────────────────────────────
@@ -772,13 +789,8 @@ function buildDictionary(): Record<string, CategoryName> {
       "فسحه",
       "فسحة",
       "كورنيش",
-      "طيرت",
-      "بعزقت",
-      "فرتكت",
-      "عزمت",
       "عزومه",
       "عزومة",
-      "رميت",
     ],
     "ترفيه",
   );
@@ -946,8 +958,6 @@ function buildDictionary(): Record<string, CategoryName> {
     dict,
     [
       "خدمات رقمية",
-      "vpn",
-      "cloud",
       "اشتراك vpn",
       "اشتراك cloud",
       "ai tools",
@@ -976,7 +986,6 @@ function buildDictionary(): Record<string, CategoryName> {
       "بطاقة",
       "كارت",
       "كارت فيزا",
-      "حولت",
       "تحويل",
       "تحويل بنكي",
       "حواله",
@@ -985,10 +994,6 @@ function buildDictionary(): Record<string, CategoryName> {
       "telda",
       "كليفر",
       "klippa",
-      "بعت",
-      "بعتت",
-      "ارسلت",
-      "رسلت",
       "انستاباي",
       "instapay",
       "فودافون كاش",
@@ -1017,7 +1022,6 @@ function buildDictionary(): Record<string, CategoryName> {
       "تحويش",
       "تحت البلاطه",
       "تحت البلاطة",
-      "شلت",
       "حصاله",
       "حصالة",
       "في الدرج",
@@ -1028,7 +1032,6 @@ function buildDictionary(): Record<string, CategoryName> {
       "سلفة",
       "سلف",
       "دين",
-      "فكيت",
       "فك",
       "فكه",
       "فكة",
@@ -1119,7 +1122,6 @@ function buildDictionary(): Record<string, CategoryName> {
     [
       "مرتب",
       "راتب",
-      "قبضت",
       "القبض",
       "المعاش",
       "بونص",
@@ -1165,8 +1167,6 @@ function buildDictionary(): Record<string, CategoryName> {
 
   addMany(dict, ["استرجاع", "refund", "مرتجع", "استرداد"], "دخل آخر");
 
-  addMany(dict, ["اديت", "ديت", "إديت", "أديت", "عطيت", "اعطيت"], "متنوعات");
-
   // ───────────────────────────────
   // Government Services
   // ───────────────────────────────
@@ -1175,7 +1175,7 @@ function buildDictionary(): Record<string, CategoryName> {
     [
       "رخصة", "رخصه", "جواز", "جواز سفر", "رقم قومي", "بطاقة رقم قومي",
       "مخالفة", "مخالفه", "مخالفة مرور", "توثيق", "توثيق عقد",
-      "تجديد رخصة", "تجديد رخصه", "مرور", "traffic",
+      "تجديد رخصة", "تجديد رخصه", "ترخيص", "مرور", "traffic", "ضرايب", "ضرائب",
       // Egyptian paperwork fees people actually name out loud
       "دمغة", "دمغه", "دمغات", "شهر عقاري", "الشهر العقاري", "تصديق", "شهادة ميلاد",
       "شهاده ميلاد", "صحيفة جنائية", "صحيفه جنائيه", "فيش وتشبيه",
@@ -1188,6 +1188,9 @@ function buildDictionary(): Record<string, CategoryName> {
 
 export const CATEGORY_DICTIONARY: Record<string, string> = buildDictionary();
 
+/** Keys the dictionary was given twice with different categories; must stay empty. */
+export const DICTIONARY_CONFLICTS: readonly string[] = [...new Set(conflicts)];
+
 // Keep intent keyword lists single-sourced in intent-detector, but re-export here
 // to avoid breaking legacy imports.
 export {
@@ -1195,7 +1198,7 @@ export {
   EXPENSE_KEYWORDS,
   STRONG_INCOME,
   STRONG_EXPENSE,
-} from "./intent-detector";
+} from "../intent-detector";
 
 /**
  * Stop words and common financial terms that should NEVER be added to custom user dictionaries.

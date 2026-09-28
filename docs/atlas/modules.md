@@ -24,11 +24,11 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `voice` | Voice | 34 | `ai-actions`, `ai-insights`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 14 | `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs` | — |
-| `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | — |
+| `arabic-nlp` | Arabic and Egyptian text processing | 9 | `classification` | `ai-kernel`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | — |
 | `ingestion-parsers` | Ingestion parsers | 4 | `ai-providers`, `arabic-nlp`, `classification`, `database`, `ledger`, `platform` | `api-routers` | `gemini` |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
-| `classification` | Expense classification pipeline | 29 | `ai-providers`, `arabic-nlp`, `contracts`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
+| `classification` | Expense classification pipeline | 34 | `ai-providers`, `arabic-nlp`, `contracts`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers` | — |
 | `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform` | `api-routers`, `voice` | — |
 | `ai-memory` | AI memory | 12 | `ai-governance`, `ai-providers`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-core`, `api-routers`, `voice` | `qdrant` |
@@ -335,7 +335,6 @@ Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matc
 | --- | --- | --- | --- | --- |
 | `api/lib/arabic-number-parser.ts` | — | — | — | — |
 | `api/lib/arabic-token-match.ts` | — | — | — | — |
-| `api/lib/egyptian-dictionary.ts` | `classification` | — | — | — |
 | `api/lib/egyptian-names-dictionary.ts` | `classification` | — | — | — |
 | `api/lib/fuzzy-match.ts` | — | — | — | — |
 | `api/lib/negation-detector.ts` | — | — | — | — |
@@ -396,6 +395,11 @@ smart-pipeline.ts and the modules it composes: financial events, admissibility, 
 | `api/lib/final-acceptance.ts` | — | — | — | — |
 | `api/lib/financial-event-plan.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/intent-detector.ts` | `arabic-nlp` | — | — | — |
+| `api/lib/lexicon/dictionary.ts` | `arabic-nlp` | — | — | — |
+| `api/lib/lexicon/index.ts` | — | — | — | — |
+| `api/lib/lexicon/merchants.ts` | — | — | — | — |
+| `api/lib/lexicon/phrases.ts` | — | — | — | — |
+| `api/lib/lexicon/subcategory-words.ts` | — | — | — | — |
 | `api/lib/muscle-memory.ts` | `arabic-nlp`, `contracts`, `database` | — | `classification_logs` | — |
 | `api/lib/narrative-decomposer.ts` | `ai-providers`, `arabic-nlp` | `gemini` | — | — |
 | `api/lib/person-resolver.ts` | `arabic-nlp` | — | — | — |

@@ -15,7 +15,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { runRuleEngine } from "./rule-engine";
-import { isKnownLexeme, CATEGORY_DICTIONARY } from "./egyptian-dictionary";
+import { isKnownLexeme, CATEGORY_DICTIONARY } from "./lexicon/dictionary";
 import { fuzzyFindCategory, normalizeArabic } from "./fuzzy-match";
 
 async function classify(text: string) {

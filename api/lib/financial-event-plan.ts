@@ -9,7 +9,7 @@ import { extractAmounts } from "./entity-extractor";
 import { detectNegation, stripNegationCircumfix } from "./negation-detector";
 import { ALL_FINANCIAL_VERBS, decomposeHeuristic, type DecomposedSegment } from "./narrative-decomposer";
 import { SUB_CATEGORY_MAP } from "./rule-engine";
-import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
+import { CATEGORY_DICTIONARY } from "./lexicon/dictionary";
 
 export interface FinancialEvent extends DecomposedSegment {
   status: "admitted" | "rejected" | "incomplete";

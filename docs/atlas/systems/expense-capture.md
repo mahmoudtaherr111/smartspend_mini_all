@@ -163,8 +163,8 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `arabic-nlp` — Arabic and Egyptian text processing | Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matching and speech-to-text corrections. | 10 |
-| `classification` — Expense classification pipeline | smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance. | 29 |
+| `arabic-nlp` — Arabic and Egyptian text processing | Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matching and speech-to-text corrections. | 9 |
+| `classification` — Expense classification pipeline | smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance. | 34 |
 | `classification-qa` — Classification benchmark helpers | Helpers used only by the classification benchmark and QA scripts: taxonomy assertions and simulated users. | 2 |
 | `receipt-parsing` — Receipt parsing | Receipt parsing with a vision model. | 1 |
 | `web-capture` — Expense entry UI | The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded. | 4 |
@@ -234,7 +234,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/expense-capture.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>61 files and declarations</summary>
+<details><summary>65 files and declarations</summary>
 
 - `api/ai-router.ts#ai.learnWord`
 - `api/ai-router.ts#ai.parseExpense`
@@ -268,13 +268,17 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/confidence-calibrator.ts`
 - `api/lib/correction-rules.ts`
 - `api/lib/direction-governed-taxonomy.ts`
-- `api/lib/egyptian-dictionary.ts`
 - `api/lib/egyptian-names-dictionary.ts`
 - `api/lib/entity-extractor.ts`
 - `api/lib/final-acceptance.ts`
 - `api/lib/financial-event-plan.ts`
 - `api/lib/fuzzy-match.ts`
 - `api/lib/intent-detector.ts`
+- `api/lib/lexicon/dictionary.ts`
+- `api/lib/lexicon/index.ts`
+- `api/lib/lexicon/merchants.ts`
+- `api/lib/lexicon/phrases.ts`
+- `api/lib/lexicon/subcategory-words.ts`
 - `api/lib/muscle-memory.ts`
 - `api/lib/narrative-decomposer.ts`
 - `api/lib/negation-detector.ts`

@@ -1,4 +1,4 @@
-import { CATEGORY_DICTIONARY } from "../lib/egyptian-dictionary";
+import { CATEGORY_DICTIONARY } from "../lib/lexicon/dictionary";
 import { normalizeArabic } from "../lib/fuzzy-match";
 
 const SUB_CATEGORY_MAP: Record<string, { category: string; subCategory: string }> = {

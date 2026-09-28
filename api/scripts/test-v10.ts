@@ -1,5 +1,5 @@
 import { fuzzyFindCategory } from "../lib/fuzzy-match";
-import { CATEGORY_DICTIONARY } from "../lib/egyptian-dictionary";
+import { CATEGORY_DICTIONARY } from "../lib/lexicon/dictionary";
 
 const words = ["فرتكت", "500", "جنيه", "على", "كلام", "فاضي", "و", "ضيعت", "200"];
 for (const word of words) {

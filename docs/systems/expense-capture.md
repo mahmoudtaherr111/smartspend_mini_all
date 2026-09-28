@@ -103,12 +103,13 @@ For each admitted event:
 4. Calibration turns each item's evidence into a probability (`api/lib/confidence-calibrator.ts#applyCalibration`,
    measured table `api/lib/confidence-calibration.generated.ts#CONFIDENCE_CALIBRATION`). Sources the corpus has no
    examples of but that are trusted by construction get a stated prior instead of staying unpriced: a user
-   correction or dictionary word (0.97), a muscle-memory pattern (0.95) and a merchant-registry brand (0.95). Any
+   correction or dictionary word (0.97), a muscle-memory pattern (0.95), a person the user already named with no other
+   purpose in the sentence (`known_person`, 0.95) and a merchant-registry brand (0.95). Any
    doubt withdraws it: an ambiguous word, disagreeing resolvers, an unknown person, or a brand spelled like a name or
    a common word (`ambiguous_merchant`: كريم، سيف، شيل، بيم، نون، شاهد، فوري...).
 5. `api/lib/classification-decision.ts#shouldEscalate` decides whether the event goes to the model. An
    unresolved category (`متنوعات`), an unattached amount, ambiguous wording or disagreeing resolvers escalate; a
-   user-taught answer (a correction, the user dictionary, muscle memory) never does; otherwise a probability
+   user-taught answer (a correction, the user dictionary, muscle memory, a known person) never does; otherwise a probability
    under the escalate threshold escalates.
 
 The layers `runRuleEngine` tries for the text around one amount, with the evidence kind each one records:
@@ -121,13 +122,20 @@ The layers `runRuleEngine` tries for the text around one amount, with the eviden
 | Synonym graph, `api/lib/taxonomy-adapter.ts#findTaxonomyMatch`, matched on whole words (`api/lib/arabic-token-match.ts`), so "واخيرا" does not match "اخي" | `synonym_graph` |
 | Category dictionary phrases, then subcategory phrases, of three and two words | `dict_trigram`, `dict_bigram`, `subcat_trigram`, `subcat_bigram` |
 | A single word in the subcategory map, then in the category dictionary | `subcat_unigram`, `dict_unigram` |
-| Typo match, with an edit budget scaled to the word's length | `fuzzy` |
+| Typo match, with an edit budget scaled to the word's length; a known word or a person's name (لخالد is not خالص) is never corrected | `fuzzy` |
 | Direction only: income becomes `دخل آخر`, an expense `متنوعات` at low confidence | `intent_only` |
 
 A kinship word from the synonym graph (أمي، ابني) and a payment rail from the merchant registry (a card, a wallet, a
 bank: بالفيزا، بفودافون كاش، بانستاباي) say to whom and how the money moved, not what for. Their answers are held
 while the later layers look for a purpose and are used only when none is found: "دفعت بالفيزا 300 في المطعم" is أكل
 وشرب, "دفعت مصاريف مدرسة ابني" is تعليم, and "حولت 1000 بانستاباي" stays تحويل/انستاباي.
+
+Every word, phrase and brand these layers read lives in one folder, `api/lib/lexicon/`: `api/lib/lexicon/dictionary.ts` (category
+words), `api/lib/lexicon/subcategory-words.ts`, `api/lib/lexicon/phrases.ts` (the synonym graph) and `api/lib/lexicon/merchants.ts` (brands, ambiguous names, payment
+rails and context rules), with `api/lib/lexicon/index.ts#lexiconEntries` as one flat view. `api/lib/lexicon/lexicon.integrity.test.ts` fails
+when an entry names a category or subcategory the registry does not have, when one word is filed under two
+categories (inside the dictionary, `DICTIONARY_CONFLICTS`, or across sources), or when a direction verb (اديت،
+قبضت، حولت، شحنت...) carries a category: a verb says which way money moved, never what it was for.
 
 Direction comes from `api/lib/intent-detector.ts#detectIntent`. Gift words (هدية، عيدية، نقطة) are spending on their
 own and income only beside a receiving verb (خدت، جالي، وصلني). Money back from a returned purchase ("رجعت الجزمة
@@ -292,7 +300,7 @@ answer ([voice calls](voice-calls.md#the-tools)).
 | --- | --- | --- |
 | How a sentence splits into events, or what counts as planned, negated or a question | `api/lib/financial-event-plan.ts`, `api/lib/negation-detector.ts`, `api/lib/narrative-decomposer.ts` | the benchmark below |
 | How a spoken or written amount becomes a number | `api/lib/arabic-number-parser.ts` | `api/lib/arabic-number-parser.test.ts`, the benchmark |
-| Words, merchants and phrases that map to categories | `api/lib/rule-engine.ts` (merchant registry, subcategory map), `api/lib/egyptian-dictionary.ts`, `api/lib/taxonomy-adapter.ts` | the benchmark |
+| Words, merchants and phrases that map to categories | `api/lib/lexicon/` (one file per source), `api/lib/rule-engine.ts` (the layers that read it) | `api/lib/lexicon/lexicon.integrity.test.ts`, the benchmark |
 | The categories and their subcategories | `contracts/categories.ts#CATEGORIES`, shared with the web app; moving or renaming a pair needs a `LEGACY_TAXONOMY` rule there, which stored rows then follow through the `taxonomy-migration` job ([Money](money.md)) | `api/lib/category-registry.integrity.test.ts`, `src/lib/financial-taxonomy.contract.test.ts`, the benchmark |
 | Category aliases and the evidence that refines a category | `api/lib/category-registry.ts` | `api/lib/category-registry.integrity.test.ts`, the benchmark |
 | When the model is asked; save, review or ask | `api/lib/classification-decision.ts`, `api/lib/final-acceptance.ts`, the threshold settings | `npm run bench:classify:compare` |

@@ -187,7 +187,7 @@
       "paths": [
         "api/lib/arabic-number-parser.ts",
         "api/lib/arabic-token-match.ts",
-        "api/lib/egyptian-dictionary.ts",
+        
         "api/lib/egyptian-names-dictionary.ts",
         "api/lib/normalizer-v2.ts",
         "api/lib/text-normalizer.ts",
@@ -233,6 +233,7 @@
         "api/lib/smart-pipeline.ts",
         "api/lib/rule-engine.ts",
         "api/lib/classify-text.ts",
+        "api/lib/lexicon/**",
         "api/lib/muscle-memory.ts",
         "api/lib/post-classifier-verifier.ts",
         "api/lib/admissibility-gate.ts",
