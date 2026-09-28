@@ -213,12 +213,12 @@
         "api/lib/subscription-service.ts": "f3666e029e61",
         "api/pro-router.ts": "ae4da5c10100",
         "api/referral-router.ts": "b298497fadda",
-        "src/pages/Pro.tsx": "6ef8aa74b071",
+        "src/pages/Pro.tsx": "6d86839c80c7",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "checked": "2026-09-25 e6b668b",
-      "arabic": "c6de10e5ded2",
-      "arabicChecked": "2026-09-25 e6b668b"
+      "checked": "2026-09-28 6019f83",
+      "arabic": "e197d4dd2067",
+      "arabicChecked": "2026-09-28 6019f83"
     },
     "expense-capture": {
       "files": {

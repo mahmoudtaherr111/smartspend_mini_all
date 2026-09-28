@@ -1126,6 +1126,7 @@ model {
   smartspend.web.modules.web-insights -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.modules.web-lib -[imports]-> smartspend.shared.contracts
   smartspend.web.modules.web-lib -[uses]-> capacitor
+  smartspend.web.modules.web-pages -[imports]-> smartspend.shared.contracts
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-account
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-admin
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-ai

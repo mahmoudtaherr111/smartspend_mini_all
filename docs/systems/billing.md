@@ -111,7 +111,9 @@ Checked against the code; each one names where it lives.
    `referral.myCode` returns no discount (`REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT` in `api/referral-router.ts`) and the
    plans screen promises none; the discount codes admins create in `discount_codes` are never applied.
 3. **Gap.** Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days
-   and one day before the end and pays again. `pro.cancel` only changes the status the plans screen shows, and there is no
+   and one day before the end and pays again; in the last week the subscription card on the plans screen
+   (`src/pages/Pro.tsx`) offers the same plan in one tap (`pro.createCheckoutSession` with the current plan), and the
+   paid period starts where the current one ends. Charging a stored card needs Paymob's recurring flow. `pro.cancel` only changes the status the plans screen shows, and there is no
    refund path.
 4. **Security.** Outside production without `PAYMOB_HMAC_SECRET`, the webhook accepts unsigned callbacks and grants plans
    from them.

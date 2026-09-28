@@ -59,6 +59,7 @@ flowchart LR
   mod_web_pages --> sys_bank_messages
   mod_web_pages --> sys_expense_capture
   mod_web_pages --> sys_money
+  mod_web_pages --> sys_platform
   mod_web_pages --> sys_voice_calls
   mod_web_shared --> mod_web_hooks
   mod_web_shared --> mod_web_lib

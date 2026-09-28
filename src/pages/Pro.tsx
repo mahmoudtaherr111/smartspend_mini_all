@@ -18,6 +18,13 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { BILLING_PLAN_IDS, type BillingPlan } from "@contracts/plans";
+
+/** Days left before a subscription ends, from its end date. */
+function daysUntil(end: string | Date | null | undefined): number | null {
+  if (!end) return null;
+  return Math.ceil((new Date(end).getTime() - Date.now()) / 86_400_000);
+}
 
 export default function Pro() {
   const { myPlan, upgrade, cancel, checkout } = usePro();
@@ -54,9 +61,9 @@ export default function Pro() {
     }
   };
 
-  const startCheckout = () => {
+  const startCheckout = (planId: BillingPlan = "pro_monthly") => {
     checkout.mutate(
-      { plan: "pro_monthly" },
+      { plan: planId },
       {
         onSuccess: (d) => {
           if (d.mode === "redirect" && d.redirectUrl) {
@@ -71,7 +78,7 @@ export default function Pro() {
           }
           upgrade.mutate(
             {
-              plan: "pro_monthly",
+              plan: planId,
               paymentMethod: "simulate",
               transactionId: "demo_" + Date.now(),
             },
@@ -91,6 +98,14 @@ export default function Pro() {
   };
 
   const sub = plan?.subscription;
+  // Payments are one-off (Paymob, no stored card), so a subscription ends unless it is paid
+  // again. In its last week the card offers the same plan in one tap; the server starts
+  // the new period where the current one ends.
+  const daysLeft = daysUntil(sub?.endDate as string | Date | undefined);
+  const renewPlan: BillingPlan = (BILLING_PLAN_IDS as readonly string[]).includes(String(sub?.plan))
+    ? (sub!.plan as BillingPlan)
+    : "pro_monthly";
+  const renewalDue = isPaid && daysLeft !== null && daysLeft <= 7;
   const subEnd = sub?.endDate
     ? new Date(sub.endDate as string | Date).toLocaleDateString("ar-EG")
     : null;
@@ -122,9 +137,16 @@ export default function Pro() {
                     : "مفعلة على حسابك وتشمل مزايا الخطة الأساسية"}
                 </p>
               </div>
-              <Badge className="w-fit bg-emerald-600">
-                {isUltraTier ? "ULTRA" : "PRO"}
-              </Badge>
+              <div className="flex flex-col items-end gap-2">
+                <Badge className="w-fit bg-emerald-600">
+                  {isUltraTier ? "ULTRA" : "PRO"}
+                </Badge>
+                {renewalDue && (
+                  <Button size="sm" onClick={() => startCheckout(renewPlan)} disabled={checkout.isPending}>
+                    {daysLeft !== null && daysLeft <= 0 ? "جدّد دلوقتي" : `جدّد بضغطة (فاضل ${daysLeft} يوم)`}
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
@@ -203,7 +225,7 @@ export default function Pro() {
                 <Button
                   className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black hover:from-yellow-400 hover:to-orange-400"
                   disabled={checkout.isPending || upgrade.isPending}
-                  onClick={startCheckout}
+                  onClick={() => startCheckout()}
                 >
                   <Crown className="w-4 h-4 ms-2" />{" "}
                   {checkout.isPending || upgrade.isPending
