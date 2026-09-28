@@ -27,7 +27,8 @@ import { getSystemSettings } from "./lib/settings-cache";
 import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { env } from "./lib/env";
 import { recordAiLedger, recordModelCalls } from "./lib/ai-ledger";
-import { businessDateKey } from "./lib/app-time";
+import { businessDateKey, businessMonthRange } from "./lib/app-time";
+import { voiceMonth } from "./services/entitlements/voice";
 import { runSmartPipeline, SMART_PIPELINE_VERSION } from "./lib/smart-pipeline";
 import { CATEGORIES } from "./lib/category-registry";
 import {
@@ -324,11 +325,8 @@ function isMissingTableError(err: unknown): boolean {
   );
 }
 
-async function getVoiceSecondsSince(
-  userId: number,
-  userType: string,
-  cycleStart: Date,
-): Promise<number> {
+/** Seconds of voice transcription used in the current Cairo calendar month. */
+async function getVoiceSecondsThisMonth(userId: number, userType: string): Promise<number> {
   try {
     const usageResult = await db
       .select({ total: sql`COALESCE(SUM(duration_seconds), 0)` })
@@ -337,7 +335,7 @@ async function getVoiceSecondsSince(
         and(
           eq(voiceUsage.userId, userId),
           eq(voiceUsage.userType, userType),
-          eq(voiceUsage.month, new Date().toISOString().slice(0, 7)),
+          eq(voiceUsage.month, voiceMonth()),
         ),
       );
     return Number(usageResult[0]?.total || 0);
@@ -971,66 +969,10 @@ export const aiRouter = router({
       ultra: parseInt(cfg.voice_per_req_ultra || "300"),
     };
 
-    // Calculate cycle start and end dates
-    const now = new Date();
-    let cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    // Attempt to get subscription for pro users
-    if (ctx.user.plan !== "free") {
-      const sub = await db.query.proSubscriptions.findFirst({
-        where: (table, { and, eq }) =>
-          and(
-            eq(table.userId, ctx.user.id),
-            eq(table.userType, ctx.user.type),
-            eq(table.status, "active"),
-          ),
-      });
-      if (sub) {
-        cycleStart = sub.startDate;
-        // Adjust cycleStart to current month/year relative to startDate day
-        const day = cycleStart.getDate();
-        const currentMonthCycle = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          day,
-        );
-        if (now < currentMonthCycle) {
-          cycleStart = new Date(now.getFullYear(), now.getMonth() - 1, day);
-        } else {
-          cycleStart = currentMonthCycle;
-        }
-      }
-    } else {
-      // Free user: use account creation date
-      const userRec =
-        ctx.user.type === "oauth"
-          ? await db.query.users.findFirst({
-              where: (table, { eq }) => eq(table.id, ctx.user.id),
-            })
-          : await db.query.localUsers.findFirst({
-              where: (table, { eq }) => eq(table.id, ctx.user.id),
-            });
-
-      if (userRec && userRec.createdAt) {
-        const day = userRec.createdAt.getDate();
-        const currentMonthCycle = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          day,
-        );
-        if (now < currentMonthCycle) {
-          cycleStart = new Date(now.getFullYear(), now.getMonth() - 1, day);
-        } else {
-          cycleStart = currentMonthCycle;
-        }
-      }
-    }
-
-    const usedVoiceSeconds = await getVoiceSecondsSince(
-      ctx.user.id,
-      ctx.user.type,
-      cycleStart,
-    );
+    // One voice month for every path: the Cairo calendar month the usage rows are keyed by
+    // (api/services/entitlements/voice.ts#voiceMonth). The subscription-day cycle that used to be
+    // computed here was never what the count read.
+    const usedVoiceSeconds = await getVoiceSecondsThisMonth(ctx.user.id, ctx.user.type);
     const voiceLimit = planValue(voiceLimits, ctx.user.plan, 300);
     const aiBudget = await getAiBudget(ctx.user, "parse", cfg);
     // offline_limit_<plan>; Ultra used to read Pro's value because it had no key.
@@ -1048,11 +990,7 @@ export const aiRouter = router({
         used: usedVoiceSeconds,
         remaining:
           voiceLimit > 0 ? Math.max(0, voiceLimit - usedVoiceSeconds) : -1,
-        resetDate: new Date(
-          cycleStart.getFullYear(),
-          cycleStart.getMonth() + 1,
-          cycleStart.getDate(),
-        ).toISOString(),
+        resetDate: businessMonthRange().endExclusive.toISOString(),
         maxPerRequest: planValue(voicePerReq, ctx.user.plan, 60),
       },
       offline: {
@@ -1076,60 +1014,9 @@ export const aiRouter = router({
       // still done — the point of moving it is that `parseVoiceExpense` now does the
       // same things, in the same order, from the same source.
 
-      // Get cycle start
-      const now = new Date();
-      let cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-      if (ctx.user.plan !== "free") {
-        const sub = await db.query.proSubscriptions.findFirst({
-          where: (table, { and, eq }) =>
-            and(
-              eq(table.userId, ctx.user.id),
-              eq(table.userType, ctx.user.type),
-              eq(table.status, "active"),
-            ),
-        });
-        if (sub) {
-          const day = sub.startDate.getDate();
-          const currentMonthCycle = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            day,
-          );
-          cycleStart =
-            now < currentMonthCycle
-              ? new Date(now.getFullYear(), now.getMonth() - 1, day)
-              : currentMonthCycle;
-        }
-      } else {
-        const userRec =
-          ctx.user.type === "oauth"
-            ? await db.query.users.findFirst({
-                where: (table, { eq }) => eq(table.id, ctx.user.id),
-              })
-            : await db.query.localUsers.findFirst({
-                where: (table, { eq }) => eq(table.id, ctx.user.id),
-              });
-        if (userRec && userRec.createdAt) {
-          const day = userRec.createdAt.getDate();
-          const currentMonthCycle = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            day,
-          );
-          cycleStart =
-            now < currentMonthCycle
-              ? new Date(now.getFullYear(), now.getMonth() - 1, day)
-              : currentMonthCycle;
-        }
-      }
-
-      // Check voice limits
-      const usedSeconds = await getVoiceSecondsSince(
-        ctx.user.id,
-        ctx.user.type,
-        cycleStart,
-      );
+      // Voice usage is counted per Cairo calendar month, the same month parseVoiceExpense and
+      // getUserLimits count (voiceMonth).
+      const usedSeconds = await getVoiceSecondsThisMonth(ctx.user.id, ctx.user.type);
 
       // Get voice limits from settings
       const cfg = await getSystemSettings();
@@ -1274,7 +1161,7 @@ export const aiRouter = router({
         });
       }
 
-      const currentMonthStr = new Date().toISOString().slice(0, 7);
+      const currentMonthStr = voiceMonth();
       // Track voice usage
       try {
         await db.insert(voiceUsage).values({
@@ -1346,9 +1233,7 @@ export const aiRouter = router({
       //
       // `speechToText` did all four correctly. There is now one policy instead of two
       // — see api/lib/voice-intake-gate.ts.
-      const now = new Date();
-      const cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const usedSeconds = await getVoiceSecondsSince(ctx.user.id, ctx.user.type, cycleStart);
+      const usedSeconds = await getVoiceSecondsThisMonth(ctx.user.id, ctx.user.type);
 
       const cfg = await getSystemSettings();
       const voiceVerdict = checkVoiceIntake({
@@ -1426,7 +1311,7 @@ export const aiRouter = router({
           // the quota on one number and consuming it with another is how a client
           // sending 0 transcribed for free indefinitely.
           durationSeconds: voiceVerdict.billableSeconds,
-          month: new Date().toISOString().slice(0, 7),
+          month: voiceMonth(),
           source: "gemini_stt",
         });
       } catch (e) {}

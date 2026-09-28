@@ -23,7 +23,7 @@ the per-plan token budget every paid call is measured against, and the two place
 | Budgets | `api/lib/ai-usage-policy.ts` | Per-plan monthly limits, per-request ceilings, the burst guard, and the token estimate |
 | Cost metrics | `api/services/ai-cost-policy.ts`, `api/services/ai-cost-analytics.ts` | A second, lighter accounting of AI work as `ai_cost_*` events, and the admin overview over them |
 | Provider clients | `api/lib/deepseek-client.ts`, `api/lib/fireworks-client.ts`, `api/lib/nvidia-client.ts`, `api/lib/groq-client.ts` | The direct calls still used by the AI Center and the report job |
-| Limits for the app | `ai.getUserLimits` in `api/ai-router.ts` | What the user has left this cycle: AI tokens, voice seconds and offline items (`offline_limit_<plan>`) |
+| Limits for the app | `ai.getUserLimits` in `api/ai-router.ts` | What the user has left this cycle: AI tokens, voice seconds for the Cairo calendar month (reset at its end) and offline items (`offline_limit_<plan>`) |
 
 ## Choosing a provider
 1. The caller asks for a purpose and a tier. `resolveAdminRoutes` returns the model the admin marked as the

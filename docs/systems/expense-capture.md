@@ -366,9 +366,10 @@ Checked against the code; each one names where it lives.
    which can differ from the total the vision model returned, and a base64 image longer than the parser's cap
    is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the
    procedure accepts larger payloads.
-3. **Bug.** The voice endpoints count the month differently: `speechToText` from the subscription or sign-up day,
-   `parseVoiceExpense` from the first of the calendar month. `parseVoiceExpense` also creates contacts for the
-   people it resolves while parsing, before the user saves anything.
+3. **Gap.** `parseVoiceExpense` creates contacts for the people it resolves while parsing, before the user saves
+   anything. (Voice seconds are counted and written per Cairo calendar month, `voiceMonth` in
+   `api/services/entitlements/voice.ts`, by both voice endpoints and `ai.getUserLimits`; the microphone shows what is
+   left.)
 4. **Gap.** A category changed on the review card teaches a rule only when the sentence was one item
    (`api/expense-router.ts#reviewCorrection`); in a multi-item sentence it is saved but not learned. `ai.learnWord`, `expense.createCategory` and
    `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is

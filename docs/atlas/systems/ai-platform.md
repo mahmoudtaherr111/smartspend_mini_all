@@ -30,7 +30,6 @@ flowchart LR
     tbl_ai_token_ledgers[("ai_token_ledgers")]
     tbl_classification_logs[("classification_logs")]
     tbl_local_users[("local_users")]
-    tbl_pro_subscriptions[("pro_subscriptions")]
     tbl_user_analytics[("user_analytics")]
     tbl_users[("users")]
     tbl_voice_usage[("voice_usage")]
@@ -42,6 +41,7 @@ flowchart LR
   ext_nvidia{{"NVIDIA NIM"}}
   ext_openrouter{{"OpenRouter"}}
   sys_platform[["Server platform and data (system)"]]
+  sys_voice_calls[["Live voice assistant (system)"]]
   mod_ai_governance --> sys_platform
   mod_ai_governance -.-> tbl_classification_logs
   mod_ai_governance -.-> tbl_local_users
@@ -61,9 +61,7 @@ flowchart LR
   mod_ai_providers ==> tbl_users
   router_ai --> mod_ai_governance
   router_ai --> sys_platform
-  router_ai -.-> tbl_local_users
-  router_ai -.-> tbl_pro_subscriptions
-  router_ai -.-> tbl_users
+  router_ai --> sys_voice_calls
   router_ai -.-> tbl_voice_usage
   screens_accounts --> router_ai
   screens_money --> router_ai
@@ -81,7 +79,7 @@ flowchart LR
 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
-| `ai.getUserLimits` | query | `authedProcedure` | `local_users`, `pro_subscriptions`, `users`, `voice_usage` | — | `Home`, `More`, `Settings` |
+| `ai.getUserLimits` | query | `authedProcedure` | `voice_usage` | — | `Home`, `More`, `Settings` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -97,10 +95,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_providers` | A | `ai-providers` | `ai-providers` |
 | `ai_token_ledgers` | E | `ai-providers` | — |
 | `classification_logs` | E | — | `ai-governance` |
-| `local_users` | A | `ai-providers` | `ai-governance`, `ai.getUserLimits` |
-| `pro_subscriptions` | A | — | `ai.getUserLimits` |
+| `local_users` | A | `ai-providers` | `ai-governance` |
 | `user_analytics` | E | `ai-governance` | `ai-governance` |
-| `users` | A | `ai-providers` | `ai-governance`, `ai.getUserLimits` |
+| `users` | A | `ai-providers` | `ai-governance` |
 | `voice_usage` | E | — | `ai.getUserLimits` |
 
 ## Outside systems
@@ -116,7 +113,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Server platform and data](platform.md).
+Depends on: [Server platform and data](platform.md), [Live voice assistant](voice-calls.md).
 
 Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 

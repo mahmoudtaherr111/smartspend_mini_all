@@ -169,6 +169,12 @@ function ParserTracePanel({ trace }: { trace: ParserTraceRecord | null }) {
   );
 }
 
+/** Voice seconds left this month, short enough for the badge on the microphone. */
+function voiceBalanceLabel(seconds: number): string {
+  if (seconds >= 60) return `${Math.floor(seconds / 60).toLocaleString("ar-EG")}د`;
+  return `${Math.max(0, Math.floor(seconds)).toLocaleString("ar-EG")}ث`;
+}
+
 export function ExpenseForm({
   onSuccess,
   initialText,
@@ -1742,7 +1748,11 @@ export function ExpenseForm({
                   onClick={isRecording ? stopRecording : startRecording}
                   variant="outline"
                   aria-label={
-                    isRecording ? "إيقاف التسجيل الصوتي" : "بدء التسجيل الصوتي"
+                    isRecording
+                      ? "إيقاف التسجيل الصوتي"
+                      : userLimits && userLimits.voice.remaining >= 0
+                        ? `بدء التسجيل الصوتي، فاضلك ${voiceBalanceLabel(userLimits.voice.remaining)} الشهر ده`
+                        : "بدء التسجيل الصوتي"
                   }
                   className={cn(
                     "relative z-10 h-12 w-12 sm:h-14 sm:w-14 rounded-xl transition-all duration-300 flex items-center justify-center border-2 focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95",
@@ -1754,6 +1764,14 @@ export function ExpenseForm({
                   )}
                   disabled={showSuccessAnim || !isOnline}
                 >
+                  {!isRecording && isOnline && userLimits && userLimits.voice.remaining >= 0 && (
+                    <span
+                      className="absolute -top-2 -end-2 rounded-full bg-slate-900 px-1.5 text-[10px] font-bold leading-4 text-white dark:bg-white dark:text-slate-900"
+                      aria-hidden="true"
+                    >
+                      {voiceBalanceLabel(userLimits.voice.remaining)}
+                    </span>
+                  )}
                   {isRecording ? (
                     <Square
                       className="w-4 h-4 text-rose-600 dark:text-rose-400 fill-rose-600 dark:fill-rose-400"

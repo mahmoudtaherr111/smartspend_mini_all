@@ -37,7 +37,6 @@ flowchart LR
     tbl_expenses[("expenses")]
     tbl_local_users[("local_users")]
     tbl_pending_clarifications[("pending_clarifications")]
-    tbl_pro_subscriptions[("pro_subscriptions")]
     tbl_user_businesses[("user_businesses")]
     tbl_user_contacts[("user_contacts")]
     tbl_user_correction_rules[("user_correction_rules")]
@@ -53,6 +52,7 @@ flowchart LR
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_platform[["Server platform and data (system)"]]
+  sys_voice_calls[["Live voice assistant (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
   job_classification_log_cleanup ==> tbl_classification_logs
   mod_arabic_nlp --> mod_classification
@@ -75,8 +75,8 @@ flowchart LR
   router_ai --> sys_ai_platform
   router_ai --> sys_insights
   router_ai --> sys_platform
+  router_ai --> sys_voice_calls
   router_ai -.-> tbl_business_categories
-  router_ai -.-> tbl_pro_subscriptions
   router_ai -.-> tbl_user_businesses
   router_ai ==> tbl_classification_logs
   router_ai ==> tbl_local_users
@@ -176,7 +176,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `ai.learnWord` | mutation | `authedProcedure` | — | `user_dictionaries` | — |
 | `ai.parseExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries` | `classification_logs`, `local_users`, `pending_clarifications`, `users` | `Admin`, `Home`, `More` |
 | `ai.parseVoiceExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `voice_usage` | `classification_logs`, `local_users`, `pending_clarifications`, `users`, `voice_usage` | `Home` |
-| `ai.speechToText` | mutation | `aiProcedure` | `local_users`, `pro_subscriptions`, `users`, `voice_usage` | `local_users`, `users`, `voice_usage` | — |
+| `ai.speechToText` | mutation | `aiProcedure` | `voice_usage` | `local_users`, `users`, `voice_usage` | — |
 | `expense.answerClarification` | mutation | `authedProcedure` | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `expenses`, `local_users`, `pending_clarifications`, `user_contacts`, `users` | `Home` |
 | `expense.batchCreate` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
 | `expense.create` | mutation | `authedProcedure` | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `Home` |
@@ -202,14 +202,13 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `classification_logs` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `classification-log-cleanup`, `expense.batchCreate`, `expense.create` | `classification`, `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
 | `expense_categories` | A | `expense.createCategory` | `expense.getCategoryList` |
 | `expenses` | B | `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `classification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` |
-| `local_users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |
+| `local_users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | — |
 | `pending_clarifications` | D | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.dismissClarification` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.getPendingClarifications` |
-| `pro_subscriptions` | A | — | `ai.speechToText` |
 | `user_businesses` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` |
 | `user_contacts` | A | `expense.answerClarification`, `expense.batchCreate`, `expense.create` | `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
 | `user_correction_rules` | F | `classification` | `classification` |
 | `user_dictionaries` | F | `ai.learnWord` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `image.parseReceipt` |
-| `users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | `ai.speechToText` |
+| `users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `image.parseReceipt` | — |
 | `voice_usage` | E | `ai.parseVoiceExpense`, `ai.speechToText` | `ai.parseVoiceExpense`, `ai.speechToText` |
 
 ## Outside systems
@@ -220,7 +219,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
 Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 

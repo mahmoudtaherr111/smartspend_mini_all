@@ -619,12 +619,10 @@ model {
   smartspend.api.trpc.ai.generateYearlyInsights -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.ai.generateYearlyInsights -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.ai.getCachedMonthlyInsights -[reads]-> smartspend.mysql.ai_summaries
-  smartspend.api.trpc.ai.getUserLimits -[reads]-> smartspend.mysql.local_users
-  smartspend.api.trpc.ai.getUserLimits -[reads]-> smartspend.mysql.pro_subscriptions
-  smartspend.api.trpc.ai.getUserLimits -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.ai.getUserLimits -[reads]-> smartspend.mysql.voice_usage
   smartspend.api.trpc.ai.getUserLimits -[uses]-> smartspend.api.modules.ai-governance
   smartspend.api.trpc.ai.getUserLimits -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.ai.getUserLimits -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.ai.getUserLimits -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.ai.learnWord -[writes]-> smartspend.mysql.user_dictionaries
   smartspend.api.trpc.ai.parseExpense -[reads]-> smartspend.mysql.business_categories
@@ -652,19 +650,18 @@ model {
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.voice_usage
-  smartspend.api.trpc.ai.speechToText -[reads]-> smartspend.mysql.local_users
-  smartspend.api.trpc.ai.speechToText -[reads]-> smartspend.mysql.pro_subscriptions
-  smartspend.api.trpc.ai.speechToText -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.ai.speechToText -[reads]-> smartspend.mysql.voice_usage
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.ai-governance
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.ai.speechToText -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.ai.speechToText -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.ai.speechToText -[writes]-> smartspend.mysql.voice_usage
