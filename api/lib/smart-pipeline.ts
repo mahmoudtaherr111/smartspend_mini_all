@@ -1,7 +1,5 @@
-import { SchemaType } from "@google/generative-ai";
 import { normalizeV2 } from "./normalizer-v2";
-import { runRuleEngine, PERSON_CATEGORIES, SUB_CATEGORY_MAP } from "./rule-engine";
-import { resolveGovernedTaxonomy } from "./direction-governed-taxonomy";
+import { runRuleEngine, SUB_CATEGORY_MAP } from "./rule-engine";
 import { CATEGORY_DICTIONARY } from "./lexicon/dictionary";
 import { normalizeTransactionTaxonomyList } from "./category-registry";
 import {
@@ -38,6 +36,10 @@ import {
 import type { AiPlanName } from "./ai-provider-registry";
 import { mapModelName } from "./model-mapper";
 import type { ParsedTransaction } from "./rule-engine";
+import { applyPersonResolution, type KnownPersonContext } from "./pipeline-person";
+import { normalizeArabicCompact as normalizeArabicString } from "./unified-normalizer";
+
+export { normalizeArabicString };
 import { matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
 import { extractPeople, extractAmounts } from "./entity-extractor";
 import {
@@ -62,7 +64,7 @@ import {
   gateShortcutResult,
   withBlocker,
 } from "./final-acceptance";
-import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction, compactArabic } from "./person-resolver";
+import { pickPersonCandidate, pickAllPersonCandidates, compactArabic } from "./person-resolver";
 import { muscleMemoryLookup } from "./muscle-memory";
 import { db } from "../queries/connection";
 import { expenses } from "../../db/schema";
@@ -267,99 +269,6 @@ export interface PipelineResult {
   logs?: PipelineLog[];
 }
 
-type KnownPersonContext = {
-  name: string;
-  relationship?: string;
-  category?: string;
-  subCategory?: string;
-};
-
-const SMART_CLASSIFIER_SCHEMA = {
-  type: SchemaType.OBJECT,
-  properties: {
-    reasoning: {
-      type: SchemaType.ARRAY,
-      items: { type: SchemaType.STRING },
-    },
-    decomposed_sentences: {
-      type: SchemaType.ARRAY,
-      items: { type: SchemaType.STRING },
-    },
-    items: {
-      type: SchemaType.ARRAY,
-      items: {
-        type: SchemaType.OBJECT,
-        properties: {
-          type: { type: SchemaType.STRING },
-          amount: { type: SchemaType.NUMBER },
-          main_category: { type: SchemaType.STRING },
-          sub_category: { type: SchemaType.STRING },
-          item_name: { type: SchemaType.STRING },
-          confidence: { type: SchemaType.NUMBER },
-          alertMessage: { type: SchemaType.STRING },
-          needsClarification: { type: SchemaType.BOOLEAN },
-          clarificationQuestion: { type: SchemaType.STRING, nullable: true },
-          person_mentioned: { type: SchemaType.STRING, nullable: true },
-          person_relationship: { type: SchemaType.STRING, nullable: true },
-          is_valid_transaction: { type: SchemaType.BOOLEAN },
-        },
-        required: [
-          "type",
-          "amount",
-          "main_category",
-          "sub_category",
-          "item_name",
-          "confidence",
-          "alertMessage",
-          "needsClarification"
-        ],
-      },
-    },
-  },
-  required: ["items"],
-} as any;
-
-const SIMPLE_CLASSIFIER_SCHEMA = {
-  type: SchemaType.OBJECT,
-  properties: {
-    items: {
-      type: SchemaType.ARRAY,
-      items: {
-        type: SchemaType.OBJECT,
-        properties: {
-          type: { type: SchemaType.STRING },
-          amount: { type: SchemaType.NUMBER },
-          main_category: { type: SchemaType.STRING },
-          sub_category: { type: SchemaType.STRING },
-          item_name: { type: SchemaType.STRING },
-          confidence: { type: SchemaType.NUMBER },
-          alertMessage: { type: SchemaType.STRING },
-          needsClarification: { type: SchemaType.BOOLEAN },
-          clarificationQuestion: { type: SchemaType.STRING, nullable: true },
-          person_mentioned: { type: SchemaType.STRING, nullable: true },
-          person_relationship: { type: SchemaType.STRING, nullable: true },
-          is_valid_transaction: { type: SchemaType.BOOLEAN },
-        },
-        required: [
-          "type",
-          "amount",
-          "main_category",
-          "sub_category",
-          "item_name",
-          "confidence",
-          "alertMessage",
-          "needsClarification"
-        ],
-      },
-    },
-  },
-  required: ["items"],
-} as any;
-
-import { normalizeArabicCompact as normalizeArabicString } from "./unified-normalizer";
-
-// Re-export for backward compatibility (other files import from smart-pipeline)
-export { normalizeArabicString };
 
 /**
  * Narrative order, by event identity rather than array position.
@@ -377,20 +286,6 @@ function orderByEvent(items: ParsedTransaction[]): ParsedTransaction[] {
       return aId === bId ? a.index - b.index : aId - bId;
     })
     .map((entry) => entry.item);
-}
-
-function safeExtractItems(data: any): any[] {
-  if (!data) return [];
-  if (Array.isArray(data)) return data;
-  if (typeof data === "object") {
-    if (data.items && Array.isArray(data.items)) return data.items;
-    if (data.transactions && Array.isArray(data.transactions)) return data.transactions;
-    for (const key of Object.keys(data)) {
-      if (Array.isArray(data[key])) return data[key];
-    }
-    if (data.amount !== undefined && data.main_category !== undefined) return [data];
-  }
-  return [];
 }
 
 function robustJsonParse(text: string): any {
@@ -424,230 +319,7 @@ function robustJsonParse(text: string): any {
   }
 }
 
-function hasLoanIntent(text: string): boolean {
-  return /(?:سلف|سلفة|سلفه|دين|ديون|قرض|استلف|استلفت)/.test(text);
-}
 
-function isDirectedPersonPayment(text: string, candidateName?: string | null): boolean {
-  const compactText = normalizeArabicString(text);
-  const compactName = candidateName ? normalizeArabicString(candidateName) : "";
-  const hasDirectedVerb = /[وف]?(?:اديت|أديت|إديت|عطيت|أعطيت|اعطيت|حولت|بعت|سلفت|أرسلت|ارسلت|رسلت|دفعت|خدت|اخدت|أخدت|أخذت|اخذت|استلمت|قبضت|استلفت|جالي|جاني|رجعلي|رجعولي|إداني|اداني|بعتلي|وصلني)/.test(
-    compactText,
-  );
-  const hasLamName =
-    compactName.length >= 2 &&
-    (compactText.includes(`ل${compactName}`) ||
-      compactText.includes(`لل${compactName}`) ||
-      compactText.includes(`من${compactName}`) ||
-      compactText.includes(`مع${compactName}`));
-
-  return hasDirectedVerb || hasLamName;
-}
-
-function shouldResolvePerson(
-  transactionText: string,
-  candidateName: string | null | undefined,
-  category?: string | null,
-  knownPeople?: KnownPersonContext[],
-): boolean {
-  if (!candidateName) return false;
-  if (PERSON_CATEGORIES.includes(String(category || ""))) {
-    return true;
-  }
-  
-  if (knownPeople && knownPeople.some(p => p.name && (p.name === candidateName || matchArabicPhrase(candidateName, p.name) || matchArabicPhrase(p.name, candidateName)))) {
-    return true;
-  }
-
-  return isDirectedPersonPayment(transactionText, candidateName);
-}
-
-function applyPersonResolution(
-  item: ParsedTransaction,
-  candidateName: string | null | undefined,
-  transactionText: string,
-  originalText: string,
-  knownPeople: KnownPersonContext[],
-): {
-  item: ParsedTransaction;
-  needsClarification: boolean;
-  clarificationQuestion?: string;
-} {
-  if (!shouldResolvePerson(transactionText, candidateName, item.category, knownPeople)) {
-    return { item, needsClarification: false };
-  }
-
-  const resolution = resolvePersonForTransaction({
-    candidateName,
-    transactionText,
-    originalText,
-    knownPeople,
-    aiRelationship: item.person_relationship,
-  });
-
-  if (!resolution.name) {
-    return { item, needsClarification: false };
-  }
-
-  const next: ParsedTransaction = {
-    ...item,
-    person_mentioned: resolution.name,
-    person_relationship: resolution.relationship || item.person_relationship,
-  };
-
-  // The category says what the money was for; the person is recorded beside it
-  // (person_mentioned, which the save links to a contact). "دفعت مصاريف مدرسة ابني"
-  // is تعليم for ابني, not العائلة — filing it under the person made the education total
-  // read zero. Only money handed to someone with no purpose ("اديت ماما 1000") takes
-  // the person's category (docs/decisions/0008-money-movements-and-taxonomy.md).
-  const isLoan = item.category === "تحويل" && item.subCategory === "دين/سلفة";
-  const governedHere = resolveGovernedTaxonomy(transactionText);
-  const hasPurpose = !isLoan && hasStatedPurpose(item) && !(governedHere && governedHere.id === "debt");
-
-  if (resolution.needsClarification) {
-    if (isLoan || hasLoanIntent(transactionText)) {
-      // Who owes whom is what a loan is for, so an unknown person is asked about — but
-      // the category stays the loan, and the verb already said which way it moved.
-      return {
-        item: {
-          ...next,
-          category: "تحويل",
-          subCategory: "دين/سلفة",
-          type: "transfer",
-          needsReview: true,
-        },
-        needsClarification: true,
-        clarificationQuestion: resolution.clarificationQuestion,
-      };
-    }
-    if (hasPurpose) {
-      // The purpose is known; the person is extra detail that can be added later. It is
-      // no reason to stop and ask before saving.
-      return { item: next, needsClarification: false };
-    }
-    return {
-      item: {
-        ...next,
-        category: resolution.category && resolution.category !== "متنوعات" ? resolution.category : next.category,
-        subCategory: next.category === "تحويل" ? "أشخاص" : next.subCategory,
-        confidence: Math.min(next.confidence, 60),
-        needsReview: true,
-      },
-      needsClarification: true,
-      clarificationQuestion: resolution.clarificationQuestion,
-    };
-  }
-
-  if (resolution.category && resolution.subCategory) {
-    // A brand that shares the name of someone the user pays directly is not a purpose:
-    // "اديت كريم 100" to a friend called Karim is not a Careem ride.
-    const purposeIsTheName =
-      isDirectedPersonPayment(transactionText, resolution.name) &&
-      (item.evidence?.matchKind === "merchant_registry" || item.evidence?.matchKind === "merchant_disambiguated");
-    const takesPersonCategory =
-      !isLoan &&
-      PERSON_CATEGORIES.includes(resolution.category) &&
-      (!hasPurpose || purposeIsTheName) &&
-      (!governedHere || governedHere.id === "debt");
-    if (takesPersonCategory) {
-      next.category = resolution.category;
-      next.subCategory = resolution.subCategory;
-      if (next.type !== "income") next.type = "expense";
-    }
-    // Money handed to someone the user already told us about, with no other purpose, is
-    // filed by what the user taught: that record is the evidence, not whatever word the
-    // lexicon happened to match. The giving verb used to carry a category of its own
-    // (اديت → متنوعات), and that accident was what kept a known friend from the model.
-    const categoryFromKnownPerson = takesPersonCategory && resolution.isKnown;
-    next.evidence = next.evidence
-      ? {
-          ...next.evidence,
-          ...(categoryFromKnownPerson ? { matchKind: "known_person" as const, categoryIsFallback: false } : {}),
-          personResolved: resolution.isKnown ? "known" : "unknown",
-        }
-      : next.evidence;
-    next.ambiguityFlags = [
-      ...(next.ambiguityFlags || []),
-      resolution.isKnown ? "person_resolved_known" : "person_resolved_unknown",
-    ];
-  }
-
-  return { item: next, needsClarification: false };
-}
-
-/**
- * Whether the item already names what the money was for, from real evidence rather than
- * a fallback: a category that is neither a catch-all nor a person, reached by a lexicon,
- * merchant, pattern or user-taught match.
- */
-function hasStatedPurpose(item: ParsedTransaction): boolean {
-  const generic = ["تحويل", "متنوعات", "أخرى", "غير محدد", "عام", ""];
-  if (generic.includes(item.category || "") || PERSON_CATEGORIES.includes(item.category || "")) return false;
-  const weakKinds = ["fuzzy", "intent_only", "fallback", "embedding"];
-  const kind = item.evidence?.matchKind;
-  return !kind || !weakKinds.includes(kind);
-}
-
-/**
- * The model classifies WITHIN our segmentation. It does not get to redo it.
- *
- * The live benchmark is unambiguous about why. On the same monologue cases the local
- * decomposer segments 100% exactly in 84ms; escalating to the model drops that to 0%
- * and takes 3931ms. On compound sentences, 100% -> 83.3% and 22ms -> 8234ms. The model
- * is slower, costs money, and is WORSE at structure — on precisely the long narratives
- * this product exists for.
- *
- * The old prompt invited it. Failed segments were glued back into one run-on string with
- * " و ", our segmentation was appended afterwards as a "hint" (مساعدة سياقية), and the
- * instruction asked for "at least one operation per part" — a floor, not a count. The
- * model duly split further: 6.2% over-splitting and 4.9% hallucination live.
- *
- * So the segmentation IS the text now, each part carries the amount already extracted for
- * it, and the count is an exact requirement. What the model is asked for is the one thing
- * it is genuinely better at: naming the category of a clause the rule engine could not
- * resolve.
- */
-function buildGlobalVerifierPrompt(
-  originalText: string,
-  decomposition: DecompositionResult | undefined,
-): string {
-  const deterministicAmounts = extractAmounts(originalText).map((a) => a.amount);
-  const segments = decomposition?.segments || [];
-
-  if (segments.length > 1) {
-    const lines = segments
-      .map((seg, i) => {
-        const segAmounts = extractAmounts(seg.text).map((a) => a.amount);
-        const hint = segAmounts.length > 0 ? ` [المبلغ: ${segAmounts.join(" + ")}]` : "";
-        return `${i + 1}. ${seg.text}${hint}`;
-      })
-      .join("\n");
-
-    return [
-      `العمليات دي مقسّمة بالفعل وعددها ${segments.length}. صنّف كل واحدة زي ما هي:`,
-      lines,
-      "",
-      "🚨 قواعد إلزامية:",
-      `- أخرِج بالضبط ${segments.length} عملية — واحدة لكل رقم، بنفس الترتيب.`,
-      "- ممنوع تدمج عمليتين، وممنوع تقسم عملية لأكتر من واحدة.",
-      "- استخدم المبلغ المكتوب جنب كل عملية زي ما هو، وما تخترعش مبالغ.",
-      "- شغلتك هي الفئة والاتجاه بس؛ التقسيم والمبالغ محسومة.",
-    ].join("\n");
-  }
-
-  const basePrompt = `النص:\n${originalText}`;
-  if (deterministicAmounts.length === 0) {
-    return basePrompt;
-  }
-
-  return [
-    basePrompt,
-    "",
-    "🚨 أمان البيانات:",
-    `المبالغ المرصودة في النص: [${deterministicAmounts.join(", ")}].`,
-    "لازم مخرجاتك تحتوي على المبالغ دي بالظبط، وما تخترعش مبالغ من عندك.",
-  ].join("\n");
-}
 
 function settingBoolean(
   settings: Record<string, string>,

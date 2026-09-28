@@ -89,7 +89,7 @@ For each admitted event:
    the word before it is a container or a bill ("ازازة مية 10") or the word after it is "معدنية"; "تمن" before a
    noun is a price ("دفعت تمن الأكل 50"); and `api/lib/entity-extractor.ts#extractAmounts` reads 80/90/92/95 right
    after "بنزين" as the grade when another number gives the price.
-2. Named people are resolved (`api/lib/smart-pipeline.ts#applyPersonResolution`,
+2. Named people are resolved (`api/lib/pipeline-person.ts#applyPersonResolution`,
    `api/lib/person-resolver.ts#resolvePersonForTransaction`). One amount with several named people is split
    between them unless they are joined by "أو". The category stays what the money was for and the person is kept
    beside it (`person_mentioned`): "دفعت مصاريف مدرسة ابني" is تعليم for ابني. Only money handed to someone with no

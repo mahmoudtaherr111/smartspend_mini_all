@@ -98,6 +98,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/ownership-guard.ts` | [accounts](accounts.md) |
 | `api/lib/paymob.ts` | [billing](billing.md) |
 | `api/lib/person-resolver.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/pipeline-person.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/plan-catalog.ts` | [billing](billing.md) |
 | `api/lib/post-classifier-verifier.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/provider-health.ts` | [ai-platform](ai-platform.md) |

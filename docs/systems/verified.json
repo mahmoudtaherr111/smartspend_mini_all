@@ -272,12 +272,13 @@
         "api/lib/negation-detector.ts": "b736bb4b71a4",
         "api/lib/normalizer-v2.ts": "365f3c855c5c",
         "api/lib/person-resolver.ts": "b334a99727c2",
+        "api/lib/pipeline-person.ts": "d9e03eacface",
         "api/lib/post-classifier-verifier.ts": "89f892b1a7c6",
         "api/lib/real-user-sim.ts": "569dd5235fe1",
         "api/lib/receipt-image-parser.ts": "cd75393a2c4b",
         "api/lib/relationship-normalizer.ts": "be8cc3a84254",
         "api/lib/rule-engine.ts": "d9504fc35853",
-        "api/lib/smart-pipeline.ts": "bceaa8ad526e",
+        "api/lib/smart-pipeline.ts": "ca47e571670b",
         "api/lib/stt-corrections.ts": "2becb68a8fbe",
         "api/lib/taxonomy-adapter.ts": "fd63a36d2f25",
         "api/lib/taxonomy-ssot.ts": "fb99f8118120",
@@ -290,7 +291,7 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "checked": "2026-09-28 4010629",
+      "checked": "2026-09-28 6c94234",
       "arabic": "a233a1a4ba56",
       "arabicChecked": "2026-09-28 4010629"
     },

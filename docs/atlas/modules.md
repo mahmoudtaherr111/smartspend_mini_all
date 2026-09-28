@@ -28,7 +28,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `ingestion-parsers` | Ingestion parsers | 4 | `ai-providers`, `arabic-nlp`, `classification`, `database`, `ledger`, `platform` | `api-routers` | `gemini` |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
-| `classification` | Expense classification pipeline | 36 | `ai-providers`, `arabic-nlp`, `contracts`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
+| `classification` | Expense classification pipeline | 37 | `ai-providers`, `arabic-nlp`, `contracts`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers` | — |
 | `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform` | `api-routers`, `voice` | — |
 | `ai-memory` | AI memory | 12 | `ai-governance`, `ai-providers`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-core`, `api-routers`, `voice` | `qdrant` |
@@ -60,7 +60,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `deepseek` | DeepSeek API | ai-provider | `ai-providers` | `api/lib/llm-provider-chain.ts` |
 | `firebase` | Firebase | push | `notifications`, `web-hooks`, `web-shell` | `api/services/firebase.ts`, `src/hooks/usePushNotifications.ts`, `src/pwa/firebase.ts` |
 | `fireworks` | Fireworks AI | ai-provider | `ai-providers`, `api-routers`, `jobs`, `web-admin` | `api/chat-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/fireworks-client.ts`, `api/lib/llm-provider-chain.ts`, `src/components/admin/settings/AdminPlansTab.tsx` |
-| `gemini` | Google Gemini API | ai-provider | `ai-insights`, `ai-providers`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/goals-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/classifier-contract.ts`, `api/lib/embedding-provider.ts`, `api/lib/llm-router.ts`, `api/lib/narrative-decomposer.ts`, `api/lib/receipt-image-parser.ts`, `api/lib/smart-pipeline.ts`, `api/lib/sms-ai-parser.ts`, `api/services/batch-ai-service.ts`, `api/services/voice/engine/gemini-live.ts`, `api/services/voice/text-model.ts` |
+| `gemini` | Google Gemini API | ai-provider | `ai-insights`, `ai-providers`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/goals-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/classifier-contract.ts`, `api/lib/embedding-provider.ts`, `api/lib/llm-router.ts`, `api/lib/narrative-decomposer.ts`, `api/lib/receipt-image-parser.ts`, `api/lib/sms-ai-parser.ts`, `api/services/batch-ai-service.ts`, `api/services/voice/engine/gemini-live.ts`, `api/services/voice/text-model.ts` |
 | `google-oauth` | Google OAuth 2.0 | identity | `api-routers` | `api/auth-router.ts` |
 | `groq` | Groq | ai-provider | `ai-providers`, `api-routers` | `api/ai-router.ts`, `api/lib/groq-client.ts`, `api/lib/llm-provider-chain.ts` |
 | `mysql` | MySQL | datastore | `database` | `api/queries/connection.ts` |
@@ -405,10 +405,11 @@ smart-pipeline.ts and the modules it composes: financial events, admissibility, 
 | `api/lib/muscle-memory.ts` | `arabic-nlp`, `contracts`, `database` | — | `classification_logs` | — |
 | `api/lib/narrative-decomposer.ts` | `ai-providers`, `arabic-nlp` | `gemini` | — | — |
 | `api/lib/person-resolver.ts` | `arabic-nlp` | — | — | — |
+| `api/lib/pipeline-person.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/post-classifier-verifier.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/relationship-normalizer.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/rule-engine.ts` | `arabic-nlp` | — | — | — |
-| `api/lib/smart-pipeline.ts` | `ai-providers`, `arabic-nlp`, `database` | `gemini` | `expenses` | — |
+| `api/lib/smart-pipeline.ts` | `ai-providers`, `arabic-nlp`, `database` | — | `expenses` | — |
 | `api/lib/taxonomy-adapter.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/taxonomy-ssot.ts` | — | — | — | — |
 | `api/lib/voice-intake-gate.ts` | — | — | — | — |
