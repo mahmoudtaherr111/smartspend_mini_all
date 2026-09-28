@@ -52,6 +52,7 @@ flowchart LR
     tbl_expenses[("expenses")]
     tbl_financial_goals[("financial_goals")]
     tbl_in_app_notifications[("in_app_notifications")]
+    tbl_installment_plans[("installment_plans")]
     tbl_local_users[("local_users")]
     tbl_monthly_behavior_snapshots[("monthly_behavior_snapshots")]
     tbl_monthly_reports[("monthly_reports")]
@@ -160,6 +161,7 @@ flowchart LR
   mod_api_routers ==> tbl_expenses
   mod_api_routers ==> tbl_financial_goals
   mod_api_routers ==> tbl_in_app_notifications
+  mod_api_routers ==> tbl_installment_plans
   mod_api_routers ==> tbl_local_users
   mod_api_routers ==> tbl_monthly_behavior_snapshots
   mod_api_routers ==> tbl_notification_templates
@@ -285,6 +287,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `expenses` | B | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `financial_goals` | C | `api-routers` | `api-routers` |
 | `in_app_notifications` | D | `api-routers` | `api-routers` |
+| `installment_plans` | C | `api-routers` | `api-routers` |
 | `local_users` | A | `api-routers` | `api-core`, `api-routers`, `jobs` |
 | `monthly_behavior_snapshots` | C | `api-routers` | — |
 | `monthly_reports` | C | `jobs` | `jobs` |

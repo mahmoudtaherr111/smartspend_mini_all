@@ -125,6 +125,22 @@ owed to and by the user. The same procedure returns the gam3eya standing (`getGa
 payouts taken, and what the gam3eya still holds for the user, from transfers under تحويل/جمعية), shown in the same
 panel; nothing renders without loans or a gam3eya.
 
+## Installments (فاضل كام قسط)
+An installment plan (`installment_plans`: title, the keyword the user writes when paying, monthly amount, number of
+installments, installments paid before the plan was added) is added from the panel under the budgets
+(`src/components/installments/InstallmentsPanel.tsx`, `expense.createInstallmentPlan`). `expense.listInstallmentPlans`
+counts the user's expenses under أقساط وفوايد since the plan was added whose description or subcategory contains the
+keyword, adds the ones paid before, and returns paid, remaining and the remaining amount
+(`api/services/installments.ts#installmentProgress`, capped at the plan's count). `expense.deleteInstallmentPlan`
+archives a plan.
+
+## Seasons (رمضان كلفني كام)
+A season is a date range, not a category (`api/lib/seasons.ts`): Ramadan and the two Eids come from the Hijri calendar
+(Umm al-Qura, from the runtime's ICU), the school start (1 September to 15 October) and summer (June to August) are
+fixed, and days are Cairo business days. `expense.getSeasonSpending` sums the user's personal expenses between the
+dates by category (refunds net, being stored negative), for the given year or the latest season that has started, with
+the same season a year earlier; `src/components/seasons/SeasonsPanel.tsx` shows it with a tab per season.
+
 ## Goals
 - `goals.list` returns the user's goals and, when the plan has no goal analysis, an upsell.
 - `goals.create`: a title, a description of up to 120 characters, a target amount and date. The number of active

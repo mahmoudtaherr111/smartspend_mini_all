@@ -31,6 +31,8 @@ import { HomeSummaryCards } from "@/components/dashboard/HomeSummaryCards";
 import { StatsView } from "@/components/dashboard/StatsView";
 import { BudgetsPanel } from "@/components/budgets/BudgetsPanel";
 import { DebtsPanel } from "@/components/debts/DebtsPanel";
+import { SeasonsPanel } from "@/components/seasons/SeasonsPanel";
+import { InstallmentsPanel } from "@/components/installments/InstallmentsPanel";
 import { PushNotificationPrompt } from "@/components/notifications/PushNotificationPrompt";
 import { CallSmartButton } from "@/components/voice/CallSmartButton";
 import { toast } from "sonner";
@@ -328,6 +330,8 @@ export default function Home() {
               <div className="space-y-5">
                 <BudgetsPanel />
                 <DebtsPanel />
+                <InstallmentsPanel />
+                <SeasonsPanel />
                 {statsError ? (
                   <Card className="border-destructive/30">
                     <CardContent className="py-8 text-center space-y-3">

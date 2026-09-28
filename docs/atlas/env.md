@@ -12,7 +12,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `AI_GATEWAY_SECRET` | no | — | `api/lib/provider-key-crypto.ts` |
 | `AI_GATEWAY_SECRET_PREVIOUS` | no | — | `api/lib/provider-key-crypto.ts` |
 | `ALLOWED_ORIGINS` | no | — | `api/lib/origin-policy.ts` |
-| `APP_TIMEZONE` | no | `Africa/Cairo` | `api/lib/app-time.ts` |
+| `APP_TIMEZONE` | no | `Africa/Cairo` | `api/lib/app-time.ts`, `api/lib/seasons.ts` |
 | `APP_URL` | no | `http://localhost:5173` | `api/lib/origin-policy.ts`, `api/notification-engine.ts`, `api/webauthn-router.ts` |
 | `BILLING_SIMULATE` | no | — | `api/pro-router.ts` |
 | `DATABASE_URL` | yes | — | `api/queries/connection.ts` |

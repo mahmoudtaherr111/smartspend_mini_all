@@ -24,7 +24,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/business-router.ts` | [money](money.md) |
 | `api/chat-router.ts` | [ai-center](ai-center.md) |
 | `api/context.ts` | [platform](platform.md) |
-| `api/expense-router.ts` | [expense-capture](expense-capture.md): `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `expense.createCategory`, `expense.dismissClarification`, `expense.getCategoryList`, `expense.getPendingClarifications` · [money](money.md): `expense.delete`, `expense.getById`, `expense.getDebtBalances`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`, `expense.list`, `expense.searchTransactions`, `expense.update` · rest of the file: [expense-capture](expense-capture.md), [money](money.md) |
+| `api/expense-router.ts` | [expense-capture](expense-capture.md): `expense.answerClarification`, `expense.batchCreate`, `expense.create`, `expense.createCategory`, `expense.dismissClarification`, `expense.getCategoryList`, `expense.getPendingClarifications` · [money](money.md): `expense.createInstallmentPlan`, `expense.delete`, `expense.deleteInstallmentPlan`, `expense.getById`, `expense.getDebtBalances`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getSeasonSpending`, `expense.getYearlyStats`, `expense.list`, `expense.listInstallmentPlans`, `expense.searchTransactions`, `expense.update` · rest of the file: [expense-capture](expense-capture.md), [money](money.md) |
 | `api/export-router.ts` | [admin](admin.md): `export.allUsers` · [insights](insights.md): `export.monthlyReportHtml` · [money](money.md): `export.myExpenses` · rest of the file: [admin](admin.md), [insights](insights.md), [money](money.md) |
 | `api/goals-router.ts` | [money](money.md) |
 | `api/image-router.ts` | [expense-capture](expense-capture.md) |
@@ -109,6 +109,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/redis-client.ts` | [platform](platform.md) |
 | `api/lib/relationship-normalizer.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/rule-engine.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/seasons.ts` | [money](money.md) |
 | `api/lib/security-headers.ts` | [accounts](accounts.md) |
 | `api/lib/security-logger.ts` | [accounts](accounts.md) |
 | `api/lib/session-validation.ts` | [accounts](accounts.md) |
@@ -185,6 +186,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/finance-semantic-layer/types.ts` | [ai-center](ai-center.md) |
 | `api/services/financial-month.ts` | [money](money.md) |
 | `api/services/firebase.ts` | [notifications](notifications.md) |
+| `api/services/installments.ts` | [money](money.md) |
 | `api/services/lifestyle-inference-engine.ts` | [insights](insights.md) |
 | `api/services/otp-cache.ts` | [notifications](notifications.md) |
 | `api/services/parser-trace.ts` | [expense-capture](expense-capture.md) |
@@ -320,6 +322,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/expenses/RecentExpenses.tsx` | [money](money.md) |
 | `src/components/goals/FinancialGoalsPanel.tsx` | [money](money.md) |
 | `src/components/insights/AIInsights.tsx` | [insights](insights.md) |
+| `src/components/installments/InstallmentsPanel.tsx` | [money](money.md) |
 | `src/components/layout/MobileBottomNav.tsx` | [web-app](web-app.md) |
 | `src/components/layout/PageTransition.tsx` | [web-app](web-app.md) |
 | `src/components/layout/PlanUsageStrip.tsx` | [web-app](web-app.md) |
@@ -333,6 +336,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/pwa/PwaInstallPrompt.tsx` | [web-app](web-app.md) |
 | `src/components/pwa/PwaOfflineSyncDialog.tsx` | [web-app](web-app.md) |
 | `src/components/routing/PlanGates.tsx` | [web-app](web-app.md) |
+| `src/components/seasons/SeasonsPanel.tsx` | [money](money.md) |
 | `src/components/seo/SEOMeta.tsx` | [web-app](web-app.md) |
 | `src/components/settings/BusinessSettingsView.tsx` | [accounts](accounts.md) |
 | `src/components/settings/PeopleSettingsView.tsx` | [accounts](accounts.md) |

@@ -91,6 +91,7 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   ai_summaries: "C",
   financial_goals: "C",
   user_budgets: "C",
+  installment_plans: "C",
   ai_cost_monthly: "C",
   ad_stats_daily: "C",
 

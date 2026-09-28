@@ -60,6 +60,7 @@ model {
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.expenses
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.financial_goals
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.in_app_notifications
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.installment_plans
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.local_users
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.monthly_behavior_snapshots
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.monthly_reports
@@ -216,6 +217,7 @@ model {
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.financial_goals
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.in_app_notifications
+  smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.installment_plans
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.notification_logs
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.notification_templates
@@ -264,6 +266,7 @@ model {
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.expenses
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.financial_goals
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.in_app_notifications
+  smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.installment_plans
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.local_users
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.monthly_behavior_snapshots
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.notification_templates
@@ -817,6 +820,7 @@ model {
   smartspend.api.trpc.expense.create -[writes]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.expense.create -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.expense.createCategory -[writes]-> smartspend.mysql.expense_categories
+  smartspend.api.trpc.expense.createInstallmentPlan -[writes]-> smartspend.mysql.installment_plans
   smartspend.api.trpc.expense.delete -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.delete -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.expense.delete -[uses]-> smartspend.api.modules.finance-semantic-layer
@@ -824,6 +828,7 @@ model {
   smartspend.api.trpc.expense.delete -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.delete -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.delete -[writes]-> smartspend.mysql.user_contacts
+  smartspend.api.trpc.expense.deleteInstallmentPlan -[writes]-> smartspend.mysql.installment_plans
   smartspend.api.trpc.expense.dismissClarification -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.expense.getById -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.getCategoryList -[reads]-> smartspend.mysql.expense_categories
@@ -837,10 +842,15 @@ model {
   smartspend.api.trpc.expense.getMonthlyStats -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.getMonthlyStats -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.expense.getPendingClarifications -[reads]-> smartspend.mysql.pending_clarifications
+  smartspend.api.trpc.expense.getSeasonSpending -[reads]-> smartspend.mysql.expenses
+  smartspend.api.trpc.expense.getSeasonSpending -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.getYearlyStats -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.trpc.expense.getYearlyStats -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.list -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.list -[uses]-> smartspend.shared.contracts
+  smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.expenses
+  smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.installment_plans
+  smartspend.api.trpc.expense.listInstallmentPlans -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.searchTransactions -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.update -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.expense.update -[reads]-> smartspend.mysql.expenses
@@ -1265,13 +1275,17 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.answerClarification
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.batchCreate
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.create
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.createInstallmentPlan
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.delete
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.deleteInstallmentPlan
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.dismissClarification
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getDebtBalances
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getMonthSummary
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getMonthlyStats
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getPendingClarifications
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.getSeasonSpending
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.list
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.listInstallmentPlans
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.searchTransactions
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.update
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.goals.analyze

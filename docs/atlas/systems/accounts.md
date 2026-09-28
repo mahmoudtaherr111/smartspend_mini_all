@@ -58,6 +58,7 @@ flowchart LR
     tbl_expenses[("expenses")]
     tbl_financial_goals[("financial_goals")]
     tbl_in_app_notifications[("in_app_notifications")]
+    tbl_installment_plans[("installment_plans")]
     tbl_local_users[("local_users")]
     tbl_monthly_behavior_snapshots[("monthly_behavior_snapshots")]
     tbl_monthly_reports[("monthly_reports")]
@@ -117,6 +118,7 @@ flowchart LR
   mod_accounts ==> tbl_expenses
   mod_accounts ==> tbl_financial_goals
   mod_accounts ==> tbl_in_app_notifications
+  mod_accounts ==> tbl_installment_plans
   mod_accounts ==> tbl_local_users
   mod_accounts ==> tbl_monthly_behavior_snapshots
   mod_accounts ==> tbl_monthly_reports
@@ -284,6 +286,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `expenses` | B | `accounts` | `localAuth.getStats`, `localAuth.listUsers` |
 | `financial_goals` | C | `accounts` | `security` |
 | `in_app_notifications` | D | `accounts` | — |
+| `installment_plans` | C | `accounts` | — |
 | `local_users` | A | `accounts`, `auth`, `localAuth.login`, `localAuth.register`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.requestPhoneChange`, `profile.updateUserInfo`, `webauthn.generateRegistrationOptions` |
 | `monthly_behavior_snapshots` | C | `accounts` | — |
 | `monthly_reports` | C | `accounts` | — |

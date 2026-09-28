@@ -35,6 +35,7 @@ import {
   supportTickets,
   userAnalytics,
   userBudgets,
+  installmentPlans,
   userBusinesses,
   userContacts,
   userCorrectionRules,
@@ -93,6 +94,7 @@ export async function purgeUserData(tx: any, userId: number, userType: PurgeUser
   await tx.delete(userCorrectionRules).where(userScope(userCorrectionRules, userId, userType));
   await tx.delete(expenseCategories).where(userScope(expenseCategories, userId, userType));
   await tx.delete(userBudgets).where(userScope(userBudgets, userId, userType));
+  await tx.delete(installmentPlans).where(userScope(installmentPlans, userId, userType));
   await tx.delete(financialGoals).where(userScope(financialGoals, userId, userType));
   await tx.delete(monthlyReports).where(userScope(monthlyReports, userId, userType));
   await tx.delete(userWallets).where(userScope(userWallets, userId, userType));

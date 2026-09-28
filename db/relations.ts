@@ -31,6 +31,7 @@ import {
   voiceCallIncidents,
   webhookTokens,
   userBudgets,
+  installmentPlans,
   rawSmsEvents,
   apiKeyErrors,
   pushSubscriptions,
@@ -66,6 +67,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   userProfiles: many(userProfiles),
   proSubscriptions: many(proSubscriptions),
   userBudgets: many(userBudgets),
+  installmentPlans: many(installmentPlans),
   userCredentials: many(userCredentials),
   pushSubscriptions: many(pushSubscriptions),
   webhookTokens: many(webhookTokens),
@@ -108,6 +110,7 @@ export const localUsersRelations = relations(localUsers, ({ many }) => ({
   userProfiles: many(userProfiles),
   proSubscriptions: many(proSubscriptions),
   userBudgets: many(userBudgets),
+  installmentPlans: many(installmentPlans),
   userCredentials: many(userCredentials),
   pushSubscriptions: many(pushSubscriptions),
   webhookTokens: many(webhookTokens),
@@ -346,6 +349,11 @@ export const userBudgetsRelations = relations(userBudgets, ({ one }) => ({
   localUser: one(localUsers, { fields: [userBudgets.userId], references: [localUsers.id] }),
   oauthUser: one(users, { fields: [userBudgets.userId], references: [users.id] }),
   linkedGoal: one(financialGoals, { fields: [userBudgets.linkedGoalId], references: [financialGoals.id] }),
+}));
+
+export const installmentPlansRelations = relations(installmentPlans, ({ one }) => ({
+  localUser: one(localUsers, { fields: [installmentPlans.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [installmentPlans.userId], references: [users.id] }),
 }));
 
 export const rawSmsEventsRelations = relations(rawSmsEvents, ({ one }) => ({

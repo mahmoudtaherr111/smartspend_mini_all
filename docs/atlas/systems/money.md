@@ -23,7 +23,7 @@ flowchart LR
     job_taxonomy_migration["Job · taxonomy-migration"]
     router_budget["budget API · 4 procedures"]
     router_business["business API · 10 procedures"]
-    router_expense["expense API · 9 procedures"]
+    router_expense["expense API · 13 procedures"]
     router_export["export API · 1 procedure"]
     router_goals["goals API · 5 procedures"]
     router_profile["profile API · 5 procedures"]
@@ -39,6 +39,7 @@ flowchart LR
     tbl_expense_daily_rollups[("expense_daily_rollups")]
     tbl_expenses[("expenses")]
     tbl_financial_goals[("financial_goals")]
+    tbl_installment_plans[("installment_plans")]
     tbl_local_users[("local_users")]
     tbl_user_budgets[("user_budgets")]
     tbl_user_businesses[("user_businesses")]
@@ -92,6 +93,7 @@ flowchart LR
   router_expense -.-> tbl_expense_daily_rollups
   router_expense ==> tbl_classification_logs
   router_expense ==> tbl_expenses
+  router_expense ==> tbl_installment_plans
   router_expense ==> tbl_user_contacts
   router_export -.-> tbl_expenses
   router_goals --> sys_ai_center
@@ -126,8 +128,8 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger) and salary-cycle month ranges. | 4 |
-| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 17 |
+| `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer). | 6 |
+| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 19 |
 
 ## API procedures
 
@@ -147,13 +149,17 @@ flowchart LR
 | `business.types` | query | `businessProcedure` | — | — | — |
 | `business.update` | mutation | `businessProcedure` | `user_businesses` | `user_businesses` | `More`, `Settings` |
 | `business.updateCategory` | mutation | `businessProcedure` | `business_categories`, `user_businesses` | `business_categories` | — |
+| `expense.createInstallmentPlan` | mutation | `authedProcedure` | — | `installment_plans` | `Home` |
 | `expense.delete` | mutation | `authedProcedure` | `expenses` | `expenses`, `user_contacts` | `Home` |
+| `expense.deleteInstallmentPlan` | mutation | `authedProcedure` | — | `installment_plans` | `Home` |
 | `expense.getById` | query | `authedProcedure` | `expenses` | — | — |
 | `expense.getDebtBalances` | query | `authedProcedure` | — | — | `Home` |
 | `expense.getMonthSummary` | query | `authedProcedure` | `expense_daily_rollups` | — | `Home` |
 | `expense.getMonthlyStats` | query | `authedProcedure` | `expense_daily_rollups`, `expenses` | — | `Home`, `More`, `Settings` |
+| `expense.getSeasonSpending` | query | `authedProcedure` | `expenses` | — | `Home` |
 | `expense.getYearlyStats` | query | `authedProcedure` | `expense_daily_rollups` | — | — |
 | `expense.list` | query | `authedProcedure` | `expenses` | — | `Home` |
+| `expense.listInstallmentPlans` | query | `authedProcedure` | `expenses`, `installment_plans` | — | `Home` |
 | `expense.searchTransactions` | query | `authedProcedure` | `expenses` | — | `Home` |
 | `expense.update` | mutation | `authedProcedure` | `classification_logs`, `expenses` | `classification_logs`, `expenses` | `Home` |
 | `export.myExpenses` | mutation | `authedProcedure` | `expenses` | — | — |
@@ -189,8 +195,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `business_categories` | A | `business.addCategory`, `business.create`, `business.delete`, `business.removeCategory`, `business.updateCategory` | `business.get`, `business.removeCategory`, `business.updateCategory` |
 | `classification_logs` | E | `expense.update` | `expense.update` |
 | `expense_daily_rollups` | C | `ledger` | `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`, `ledger` |
-| `expenses` | B | `business.delete`, `expense.delete`, `expense.update`, `profile.deleteContact`, `profile.mergeContacts`, `wallet.deleteWallet` | `expense.delete`, `expense.getById`, `expense.getMonthlyStats`, `expense.list`, `expense.searchTransactions`, `expense.update`, `export.myExpenses`, `goals.analyze`, `ledger`, `profile.listContacts`, `profile.mergeContacts`, `wallet.getWalletTransactions` |
+| `expenses` | B | `business.delete`, `expense.delete`, `expense.update`, `profile.deleteContact`, `profile.mergeContacts`, `wallet.deleteWallet` | `expense.delete`, `expense.getById`, `expense.getMonthlyStats`, `expense.getSeasonSpending`, `expense.list`, `expense.listInstallmentPlans`, `expense.searchTransactions`, `expense.update`, `export.myExpenses`, `goals.analyze`, `ledger`, `profile.listContacts`, `profile.mergeContacts`, `wallet.getWalletTransactions` |
 | `financial_goals` | C | `goals.analyze`, `goals.create`, `goals.delete`, `goals.setStatus` | `goals.analyze`, `goals.create`, `goals.list` |
+| `installment_plans` | C | `expense.createInstallmentPlan`, `expense.deleteInstallmentPlan` | `expense.listInstallmentPlans` |
 | `local_users` | A | `goals.analyze` | — |
 | `user_budgets` | C | `budget.create`, `budget.delete`, `budget.update`, `goals.delete`, `ledger` | `budget.delete`, `budget.update`, `ledger` |
 | `user_businesses` | A | `business.create`, `business.delete`, `business.update` | `business.addCategory`, `business.create`, `business.delete`, `business.get`, `business.linkContact`, `business.removeCategory`, `business.update`, `business.updateCategory` |
@@ -211,25 +218,31 @@ Used by: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md
 
 ## Environment variables
 
-_None._
+| Variable | Validated in api/lib/env.ts | Read by |
+| --- | --- | --- |
+| `APP_TIMEZONE` | yes | `api/lib/seasons.ts` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>48 files and declarations</summary>
+<details><summary>56 files and declarations</summary>
 
 - `api/boot.ts#job:nightly-rollup-reconciliation`
 - `api/boot.ts#job:taxonomy-migration`
 - `api/budget-router.ts`
 - `api/business-router.ts`
+- `api/expense-router.ts#expense.createInstallmentPlan`
 - `api/expense-router.ts#expense.delete`
+- `api/expense-router.ts#expense.deleteInstallmentPlan`
 - `api/expense-router.ts#expense.getById`
 - `api/expense-router.ts#expense.getDebtBalances`
 - `api/expense-router.ts#expense.getMonthSummary`
 - `api/expense-router.ts#expense.getMonthlyStats`
+- `api/expense-router.ts#expense.getSeasonSpending`
 - `api/expense-router.ts#expense.getYearlyStats`
 - `api/expense-router.ts#expense.list`
+- `api/expense-router.ts#expense.listInstallmentPlans`
 - `api/expense-router.ts#expense.searchTransactions`
 - `api/expense-router.ts#expense.update`
 - `api/expense-router.ts#rest-of-file`
@@ -238,6 +251,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/goals-router.ts`
 - `api/jobs/rollup-reconciliation-job.ts`
 - `api/jobs/taxonomy-migration-job.ts`
+- `api/lib/seasons.ts`
 - `api/profile-router.ts#profile.addContact`
 - `api/profile-router.ts#profile.deleteContact`
 - `api/profile-router.ts#profile.listContacts`
@@ -248,6 +262,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/debt-ledger.ts`
 - `api/services/expense-rollups.ts`
 - `api/services/financial-month.ts`
+- `api/services/installments.ts`
 - `api/wallet-router.ts`
 - `src/components/budgets/BudgetsPanel.tsx`
 - `src/components/dashboard/BehaviorInsights.tsx`
@@ -266,6 +281,8 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/expenses/PendingQuestionsCard.tsx`
 - `src/components/expenses/RecentExpenses.tsx`
 - `src/components/goals/FinancialGoalsPanel.tsx`
+- `src/components/installments/InstallmentsPanel.tsx`
+- `src/components/seasons/SeasonsPanel.tsx`
 - `src/pages/Home.tsx`
 
 </details>

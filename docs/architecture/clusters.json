@@ -98,12 +98,14 @@
     {
       "id": "ledger",
       "title": "Ledger aggregates",
-      "description": "Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger) and salary-cycle month ranges.",
+      "description": "Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer).",
       "paths": [
         "api/services/expense-rollups.ts",
         "api/services/financial-month.ts",
         "api/services/budget-status.ts",
-        "api/services/debt-ledger.ts"
+        "api/services/debt-ledger.ts",
+        "api/services/installments.ts",
+        "api/lib/seasons.ts"
       ]
     },
     {
@@ -405,7 +407,9 @@
         "src/components/expenses/**",
         "src/components/goals/**",
         "src/components/budgets/**",
-        "src/components/debts/**"
+        "src/components/debts/**",
+        "src/components/installments/**",
+        "src/components/seasons/**"
       ]
     },
     {

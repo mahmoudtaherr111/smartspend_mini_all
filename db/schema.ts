@@ -721,6 +721,30 @@ export const financialGoals = mysqlTable(
   ],
 );
 
+/**
+ * An installment plan the user follows ("قسط الموبايل فاليو 800 × 12"). The plan holds the
+ * terms; payments are the user's own expenses in أقساط وفوايد whose text names the plan,
+ * counted after it was added, plus the ones already paid before that.
+ */
+export const installmentPlans = mysqlTable(
+  "installment_plans",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    title: varchar("title", { length: 120 }).notNull(),
+    /** Word matched in a payment's description or subcategory: فاليو, الموبايل, العربية. */
+    keyword: varchar("keyword", { length: 60 }).notNull(),
+    monthlyAmount: decimal("monthly_amount", { precision: 12, scale: 2 }).notNull(),
+    totalInstallments: int("total_installments").notNull(),
+    paidBefore: int("paid_before").notNull().default(0),
+    status: varchar("status", { length: 30 }).notNull().default("active"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [index("installment_plans_user_idx").on(t.userId, t.userType, t.status)],
+);
+
 export const userBudgets = mysqlTable(
   "user_budgets",
   {

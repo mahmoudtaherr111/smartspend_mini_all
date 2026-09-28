@@ -211,6 +211,14 @@ model {
         storageClass 'D'
       }
     }
+    installment_plans = table 'installment_plans' {
+      #classC #dualOwner
+      description '11 columns, 1 indexes, storage class C.'
+      metadata {
+        export 'installmentPlans'
+        storageClass 'C'
+      }
+    }
     local_users = table 'local_users' {
       #classA
       description '18 columns, 3 indexes, storage class A.'

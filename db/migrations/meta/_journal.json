@@ -183,6 +183,13 @@
       "when": 1790348183824,
       "tag": "0025_drop_expense_details",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1790636877056,
+      "tag": "0026_installment_plans",
+      "breakpoints": true
     }
   ]
 }

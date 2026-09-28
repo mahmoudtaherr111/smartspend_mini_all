@@ -4,6 +4,7 @@ import { router, authedProcedure } from "./middleware";
 import { db, getDb } from "./queries/connection";
 import {
   expenses,
+  installmentPlans,
   expenseCategories,
   userDictionaries,
   users,
@@ -17,7 +18,7 @@ import {
 } from "../db/schema";
 import { getSystemSettings } from "./lib/settings-cache";
 import { parseNameAndRelationship } from "./lib/relationship-normalizer";
-import { eq, and, or, like, gte, lte, desc, sql, lt, inArray } from "drizzle-orm";
+import { eq, and, or, like, gte, lte, desc, sql, lt, inArray, isNull } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { invalidateUserMemory } from "./lib/muscle-memory";
@@ -34,9 +35,11 @@ import {
   toDayString,
 } from "./services/expense-rollups";
 import { businessDayRange } from "./lib/app-time";
+import { installmentProgress } from "./services/installments";
+import { SEASON_IDS, SEASON_LABELS, latestSeasonRange, seasonRange, type SeasonRange } from "./lib/seasons";
 import { assertEntityOwnership } from "./lib/ownership-guard";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
-import { normalizeCategoryName, normalizeSubCategoryName } from "./lib/category-registry";
+import { CATEGORIES, normalizeCategoryName, normalizeSubCategoryName } from "./lib/category-registry";
 import { createLogger } from "./lib/log";
 
 const reviewLog = createLogger("expense-review");
@@ -675,6 +678,9 @@ function normalizeStatsCategory(value: unknown): string {
   if (!raw) return "غير مصنف";
   return statsCategoryDisplayNames[raw.toLowerCase()] ?? raw;
 }
+
+/** The category installment payments are filed under, read from the registry. */
+const INSTALLMENTS_CATEGORY = CATEGORIES.find((category) => category.id === "installments")!.name_ar;
 
 export const expenseRouter = router({
   create: authedProcedure
@@ -1434,6 +1440,147 @@ export const expenseRouter = router({
       invalidateUserClassificationCache(userId, userType);
       await invalidateExpenseCache(userId, userType);
       return { success: true };
+    }),
+
+  /** Installment plans with «فاضل كام قسط» for each. */
+  listInstallmentPlans: authedProcedure.query(async ({ ctx }) => {
+    const db = getDb();
+    const userId = ctx.user!.id;
+    const userType = ctx.user!.type;
+    const plans = await db
+      .select()
+      .from(installmentPlans)
+      .where(and(eq(installmentPlans.userId, userId), eq(installmentPlans.userType, userType), eq(installmentPlans.status, "active")))
+      .orderBy(desc(installmentPlans.createdAt));
+    const counts = await Promise.all(
+      plans.map(async (plan) => {
+        const pattern = `%${plan.keyword.replace(/[%_]/g, "")}%`;
+        const [row] = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(expenses)
+          .where(
+            and(
+              eq(expenses.userId, userId),
+              eq(expenses.userType, userType),
+              eq(expenses.type, "expense"),
+              eq(expenses.category, INSTALLMENTS_CATEGORY),
+              gte(expenses.date, plan.createdAt),
+              or(like(expenses.description, pattern), like(expenses.subCategory, pattern)),
+            ),
+          );
+        return Number(row?.count || 0);
+      }),
+    );
+    return plans.map((plan, index) => {
+      const monthlyAmount = Number(plan.monthlyAmount);
+      return {
+        id: plan.id,
+        title: plan.title,
+        keyword: plan.keyword,
+        monthlyAmount,
+        totalInstallments: plan.totalInstallments,
+        ...installmentProgress({ monthlyAmount, totalInstallments: plan.totalInstallments, paidBefore: plan.paidBefore }, counts[index]),
+      };
+    });
+  }),
+
+  createInstallmentPlan: authedProcedure
+    .input(
+      z.object({
+        title: z.string().trim().min(2).max(120),
+        keyword: z.string().trim().min(2).max(60),
+        monthlyAmount: z.number().positive().max(10_000_000),
+        totalInstallments: z.number().int().min(1).max(600),
+        paidBefore: z.number().int().min(0).max(600).default(0),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.paidBefore > input.totalInstallments) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "الأقساط المدفوعة أكتر من عدد الأقساط كله" });
+      }
+      await getDb().insert(installmentPlans).values({
+        userId: ctx.user!.id,
+        userType: ctx.user!.type,
+        title: input.title,
+        keyword: input.keyword,
+        monthlyAmount: String(input.monthlyAmount),
+        totalInstallments: input.totalInstallments,
+        paidBefore: input.paidBefore,
+      });
+      return { success: true };
+    }),
+
+  deleteInstallmentPlan: authedProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      await getDb()
+        .update(installmentPlans)
+        .set({ status: "archived" })
+        .where(
+          and(
+            eq(installmentPlans.id, input.id),
+            eq(installmentPlans.userId, ctx.user!.id),
+            eq(installmentPlans.userType, ctx.user!.type),
+          ),
+        );
+      return { success: true };
+    }),
+
+  /**
+   * "رمضان كلفني كام": personal spending between a season's dates, by category, with the
+   * same season a year earlier. Refunds are stored negative, so they net here too.
+   */
+  getSeasonSpending: authedProcedure
+    .input(z.object({ season: z.enum(SEASON_IDS), year: z.number().int().min(2000).max(2100).optional() }))
+    .query(async ({ ctx, input }) => {
+      const db = getDb();
+      const userId = ctx.user!.id;
+      const userType = ctx.user!.type;
+      const range = input.year ? seasonRange(input.season, input.year) : latestSeasonRange(input.season);
+      if (!range) {
+        throw new TRPCError({ code: "NOT_FOUND", message: `مش لاقيين ${SEASON_LABELS[input.season]} في السنة دي` });
+      }
+      const spentIn = async (window: SeasonRange) =>
+        db
+          .select({
+            category: expenses.category,
+            amount: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
+            count: sql<number>`COUNT(*)`,
+          })
+          .from(expenses)
+          .where(
+            and(
+              eq(expenses.userId, userId),
+              eq(expenses.userType, userType),
+              eq(expenses.type, "expense"),
+              isNull(expenses.businessId),
+              gte(expenses.date, window.start),
+              lt(expenses.date, window.endExclusive),
+            ),
+          )
+          .groupBy(expenses.category);
+
+      const previousRange = seasonRange(input.season, Number(range.startDay.slice(0, 4)) - 1);
+      const [rows, previousRows] = await Promise.all([
+        spentIn(range),
+        previousRange ? spentIn(previousRange) : Promise.resolve([]),
+      ]);
+      const byCategory = rows
+        .map((row) => ({ category: row.category, amount: Number(row.amount), count: Number(row.count) }))
+        .filter((row) => row.amount > 0)
+        .sort((a, b) => b.amount - a.amount);
+      const total = byCategory.reduce((sum, row) => sum + row.amount, 0);
+      const previousTotal = previousRows.reduce((sum, row) => sum + Number(row.amount), 0);
+      return {
+        season: range.season,
+        label: range.label,
+        startDay: range.startDay,
+        endDay: range.endDay,
+        total,
+        count: byCategory.reduce((sum, row) => sum + row.count, 0),
+        byCategory,
+        previous: previousRange ? { startDay: previousRange.startDay, endDay: previousRange.endDay, total: previousTotal } : null,
+      };
     }),
 
   getMonthSummary: authedProcedure
