@@ -111,6 +111,8 @@ export interface ToolContext {
    * write of the call's own (a bank message, another device), every figure read before is out of date.
    */
   records?: { seen: number | null };
+  /** The coach call: its plan and commitment reads and drafts are available (api/services/voice/brain/tools/coach.ts). */
+  coach?: boolean;
 }
 
 export interface VoiceTool {

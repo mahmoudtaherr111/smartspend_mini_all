@@ -110,6 +110,14 @@
       ]
     },
     {
+      "id": "coaching",
+      "title": "Commitments and coaching plans",
+      "description": "Scheduled commitments and expected income with their due dates (the 31st on a short month's last day), the payments linked to each due date without counting one twice, what is free until the next payday from the recorded wallets, the coaching plan the user accepted with its steps, and in-app reminders delivered once per step revision.",
+      "paths": [
+        "api/services/coach/**"
+      ]
+    },
+    {
       "id": "accounts",
       "title": "Account lifecycle",
       "description": "Account deletion: purgeUserData removes every row a user owns, inside the caller's transaction.",

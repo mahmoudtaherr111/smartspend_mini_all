@@ -108,6 +108,7 @@ describe("Milestone 1 Adversarial Stress Test: Route Matching Logic in src/App.t
       "/support",
       "/pro",
       "/bank-sync",
+      "/plan",
       "/more",
     ]);
   });

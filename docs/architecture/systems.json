@@ -105,13 +105,13 @@
       "id": "money",
       "title": "Money: expenses, wallets, budgets, goals and businesses",
       "titleAr": "الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة",
-      "summary": "The ledger once an item is saved: the dashboard, expense lists and statistics, wallets, budgets, savings goals, business mode, the people the user deals with, daily rollups and exports.",
+      "summary": "The ledger once an item is saved: the dashboard, expense lists and statistics, wallets, budgets, savings goals, commitments and coaching plans, business mode, the people the user deals with, daily rollups and exports.",
       "summaryAr": "الدفتر بعد ما البند يتسجل: الشاشة الرئيسية وقوايم المصاريف والإحصائيات والمحافظ والميزانيات وأهداف الادخار ووضع البيزنس والناس اللي بتتعامل معاهم والتجميع اليومي والتصدير.",
-      "clusters": ["ledger", "web-finance"],
-      "routers": ["expense", "wallet", "budget", "goals", "business"],
+      "clusters": ["ledger", "coaching", "web-finance"],
+      "routers": ["expense", "wallet", "budget", "goals", "business", "coach"],
       "procedures": ["export.myExpenses", "profile.listContacts", "profile.addContact", "profile.updateContact", "profile.deleteContact", "profile.mergeContacts"],
-      "pages": ["Home"],
-      "jobs": ["nightly-rollup-reconciliation", "taxonomy-migration"]
+      "pages": ["Home", "PlanPage"],
+      "jobs": ["nightly-rollup-reconciliation", "taxonomy-migration", "coaching-reminders"]
     },
     {
       "id": "accounts",

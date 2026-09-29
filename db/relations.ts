@@ -32,6 +32,10 @@ import {
   webhookTokens,
   userBudgets,
   installmentPlans,
+  scheduledCashflows,
+  cashflowSettlements,
+  coachingPlans,
+  coachingSteps,
   rawSmsEvents,
   apiKeyErrors,
   pushSubscriptions,
@@ -68,6 +72,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   proSubscriptions: many(proSubscriptions),
   userBudgets: many(userBudgets),
   installmentPlans: many(installmentPlans),
+  scheduledCashflows: many(scheduledCashflows),
+  coachingPlans: many(coachingPlans),
   userCredentials: many(userCredentials),
   pushSubscriptions: many(pushSubscriptions),
   webhookTokens: many(webhookTokens),
@@ -111,6 +117,8 @@ export const localUsersRelations = relations(localUsers, ({ many }) => ({
   proSubscriptions: many(proSubscriptions),
   userBudgets: many(userBudgets),
   installmentPlans: many(installmentPlans),
+  scheduledCashflows: many(scheduledCashflows),
+  coachingPlans: many(coachingPlans),
   userCredentials: many(userCredentials),
   pushSubscriptions: many(pushSubscriptions),
   webhookTokens: many(webhookTokens),
@@ -354,6 +362,33 @@ export const userBudgetsRelations = relations(userBudgets, ({ one }) => ({
 export const installmentPlansRelations = relations(installmentPlans, ({ one }) => ({
   localUser: one(localUsers, { fields: [installmentPlans.userId], references: [localUsers.id] }),
   oauthUser: one(users, { fields: [installmentPlans.userId], references: [users.id] }),
+}));
+
+export const scheduledCashflowsRelations = relations(scheduledCashflows, ({ one, many }) => ({
+  localUser: one(localUsers, { fields: [scheduledCashflows.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [scheduledCashflows.userId], references: [users.id] }),
+  installmentPlan: one(installmentPlans, { fields: [scheduledCashflows.installmentPlanId], references: [installmentPlans.id] }),
+  contact: one(userContacts, { fields: [scheduledCashflows.contactId], references: [userContacts.id] }),
+  settlements: many(cashflowSettlements),
+}));
+
+export const cashflowSettlementsRelations = relations(cashflowSettlements, ({ one }) => ({
+  localUser: one(localUsers, { fields: [cashflowSettlements.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [cashflowSettlements.userId], references: [users.id] }),
+  cashflow: one(scheduledCashflows, { fields: [cashflowSettlements.cashflowId], references: [scheduledCashflows.id] }),
+  expense: one(expenses, { fields: [cashflowSettlements.expenseId], references: [expenses.id] }),
+}));
+
+export const coachingPlansRelations = relations(coachingPlans, ({ one, many }) => ({
+  localUser: one(localUsers, { fields: [coachingPlans.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [coachingPlans.userId], references: [users.id] }),
+  steps: many(coachingSteps),
+}));
+
+export const coachingStepsRelations = relations(coachingSteps, ({ one }) => ({
+  localUser: one(localUsers, { fields: [coachingSteps.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [coachingSteps.userId], references: [users.id] }),
+  plan: one(coachingPlans, { fields: [coachingSteps.planId], references: [coachingPlans.id] }),
 }));
 
 export const rawSmsEventsRelations = relations(rawSmsEvents, ({ one }) => ({

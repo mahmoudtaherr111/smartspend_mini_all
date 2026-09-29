@@ -149,6 +149,10 @@ export interface FinanceWalletSummary {
     provider: string;
     balance: number;
     lastFourDigits?: string | null;
+    /** The Cairo day the balance was last given; null when it was saved before this was kept (unknown age). */
+    observedDay: string | null;
+    /** user | assistant | null (unknown) */
+    source: string | null;
   }>;
 }
 

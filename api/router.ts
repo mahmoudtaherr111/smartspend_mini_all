@@ -22,6 +22,7 @@ import { chatRouter } from "./chat-router";
 import { businessRouter } from "./business-router";
 import { budgetRouter } from "./budget-router";
 import { voiceRouter } from "./voice-router";
+import { coachRouter } from "./coach-router";
 
 export const appRouter = router({
   auth: authRouter,
@@ -47,6 +48,7 @@ export const appRouter = router({
   chat: chatRouter,
   business: businessRouter,
   voice: voiceRouter,
+  coach: coachRouter,
 });
 
 export type AppRouter = typeof appRouter;

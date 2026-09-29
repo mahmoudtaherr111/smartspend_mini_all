@@ -18,8 +18,8 @@ import { appHelpTool } from "./tools/app-help";
 import { calculateTool } from "./tools/calculate";
 import { marketPriceTool } from "./tools/market-price";
 import { memoryTool } from "./tools/memory";
-import { moneyQuery } from "./tools/money-query";
-import { cancelTool, changeDraftTool, confirmTool, dropRuntimeAction, executeDraft, RECORDS_CHANGED_SAY, recordDraftTool } from "./tools/record";
+import { moneyQuery, moneyQueryCoach } from "./tools/money-query";
+import { cancelTool, changeDraftCoachTool, changeDraftTool, confirmTool, dropRuntimeAction, executeDraft, RECORDS_CHANGED_SAY, recordDraftTool } from "./tools/record";
 import { thinkTool } from "./tools/think";
 import type { ToolContext, VoiceAppCalls, VoiceTool } from "./tools/types";
 import { correctionNote, SpokenNumberValidator, type Mismatch } from "./validator";
@@ -43,10 +43,10 @@ export const VOICE_TOOLS: VoiceTool[] = [
  * The coach call's tools: no text model judges for it; the live model reasons and every sum is `calculate`.
  */
 export const COACH_TOOLS: VoiceTool[] = [
-  moneyQuery,
+  moneyQueryCoach,
   calculateTool,
   recordDraftTool,
-  changeDraftTool,
+  changeDraftCoachTool,
   confirmTool,
   cancelTool,
   memoryTool,
@@ -74,6 +74,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
   const records: { seen: number | null } = { seen: null };
   /** The call's own mark on the app's notes, unknown to the user (never sent to the app, never spoken). */
   let noteTag = `#${randomBytes(3).toString("hex")}`;
+  let coach = false;
 
   const context = (identity: CallIdentity, signal: AbortSignal): ToolContext => ({
     identity,
@@ -84,6 +85,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     now,
     openClarifications,
     records,
+    coach,
     salaryDay: () => (salaryDay ??= getProfileSnapshot({ userId: identity.userId, userType: identity.userType })
       .then((profile) => profile.salaryDay)
       .catch(() => undefined)),
@@ -101,7 +103,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
 
   return {
     async prepare(identity, callOptions) {
-      const coach = callOptions.coach === true;
+      coach = callOptions.coach === true;
       tools = toolMap(options.tools ?? (coach ? COACH_TOOLS : VOICE_TOOLS));
       const snapshot = await loadCallSnapshot(identity, ledger, now(), { refs: coach });
       if (snapshot.question) await markAsked(identity.userId, identity.userType, now()).catch(() => undefined);

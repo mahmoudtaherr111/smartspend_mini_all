@@ -92,6 +92,10 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   financial_goals: "C",
   user_budgets: "C",
   installment_plans: "C",
+  scheduled_cashflows: "C",
+  cashflow_settlements: "C",
+  coaching_plans: "C",
+  coaching_steps: "C",
   ai_cost_monthly: "C",
   ad_stats_daily: "C",
 

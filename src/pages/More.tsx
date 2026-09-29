@@ -8,6 +8,7 @@ import {
   CreditCard,
   Gauge,
   LogOut,
+  ListChecks,
   Palette,
   ShieldCheck,
   Smartphone,
@@ -86,6 +87,12 @@ const sections = [
         icon: CreditCard,
       },
       {
+        href: "/plan",
+        label: "خطتك والتزاماتك",
+        description: "اللي عليك لحد القبض، والخطة اللي اتفقت عليها مع سمارت",
+        icon: ListChecks,
+      },
+      {
         href: "/bank-sync",
         label: "الربط البنكي",
         description: "استيراد العمليات بأمان من هاتفك",
@@ -104,6 +111,7 @@ const sections = [
 function preloadDestination(href: string) {
   if (href === "/admin") return import("@/pages/Admin");
   if (href === "/bank-sync") return import("@/pages/BankSyncPage");
+  if (href === "/plan") return import("@/pages/PlanPage");
   if (href === "/pro") return import("@/pages/Pro");
   if (href === "/support") return import("@/pages/Support");
   if (href.startsWith("/settings")) return import("@/pages/Settings");

@@ -86,7 +86,7 @@ flowchart LR
 | `web-growth` — Ads and SEO UI | The ad banner and SEO meta tags. | 2 |
 | `web-hooks` — Web hooks | React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics. | 20 |
 | `web-lib` — Web utilities | Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/. | 10 |
-| `web-pages` — Web pages | Route-level page components lazy-loaded by src/App.tsx. | 15 |
+| `web-pages` — Web pages | Route-level page components lazy-loaded by src/App.tsx. | 16 |
 | `web-shared` — Shared web components | Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton. | 5 |
 | `web-shell` — Web app shell | Entry point, providers, layout, route guards and PWA or native integration. | 18 |
 | `web-ui-kit` — UI primitives | shadcn and Radix UI primitives in src/components/ui/. | 55 |

@@ -122,6 +122,13 @@ scheduleProtectedJob(
   processScheduledNotifications,
 );
 
+// Coaching reminders the user asked for: each delivered once as an in-app notification, in the transaction that marks
+// it sent (api/services/coach/plans.ts#deliverDueReminders), so a restart or a second replica sends nothing twice.
+scheduleProtectedJob("*/5 * * * *", "coaching-reminders", async () => {
+  const { deliverDueReminders } = await import("./services/coach/plans");
+  await deliverDueReminders();
+});
+
 // Stored rows move to the current category taxonomy in bounded batches; once every row is
 // current a run finds nothing (docs/decisions/0008-money-movements-and-taxonomy.md).
 scheduleProtectedJob("*/30 * * * *", "taxonomy-migration", async () => {

@@ -19,6 +19,7 @@ import { recordCorrection } from "../../lib/correction-rules";
 import { classifyText } from "../../lib/classify-text";
 import { bumpFinanceCacheGen, invalidateFinanceUserCache } from "../finance-semantic-layer";
 import { getSmartProfile, saveSmartProfile } from "../user-profile-service";
+import { releaseSettlementsOf } from "../coach/cashflows";
 import type {
   ActionRuntimeContext,
   BudgetCreatePayload,
@@ -755,6 +756,7 @@ async function executeWalletCreate(
     provider: payload.provider,
     lastFourDigits: payload.lastFourDigits || null,
     balance: payload.balance || "0.00",
+    ...(payload.balance !== undefined ? { balanceObservedAt: new Date(), balanceSource: "assistant" } : {}),
   });
   await invalidateFinanceUserCache(ctx.userId, ctx.userType);
 
@@ -787,7 +789,11 @@ async function executeWalletUpdate(
   if (wallet.name !== undefined) update.name = wallet.name;
   if (wallet.provider !== undefined) update.provider = wallet.provider;
   if (wallet.lastFourDigits !== undefined) update.lastFourDigits = wallet.lastFourDigits || null;
-  if (wallet.balance !== undefined) update.balance = wallet.balance;
+  if (wallet.balance !== undefined) {
+    update.balance = wallet.balance;
+    update.balanceObservedAt = new Date();
+    update.balanceSource = "assistant";
+  }
 
   await db
     .update(userWallets)
@@ -1055,6 +1061,7 @@ async function executeUndo(
             eq(expenses.userType, ctx.userType),
           ),
         );
+      await releaseSettlementsOf(tx, { userId: ctx.userId, userType: ctx.userType }, [expenseId]);
     });
     invalidateUserMemory(ctx.userId, ctx.userType);
     await bumpFinanceCacheGen(ctx.userId, ctx.userType);

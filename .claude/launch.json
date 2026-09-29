@@ -38,6 +38,14 @@
         "4321"
       ],
       "port": 4321
+    },
+    {
+      "name": "smartspend-dev-eval",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/voice-eval/dev-server.mjs"
+      ],
+      "port": 3007
     }
   ]
 }

@@ -47,6 +47,11 @@ views {
     include *
   }
 
+  view router_coach of smartspend.api.trpc.coach {
+    title 'tRPC router · coach'
+    include *
+  }
+
   view router_expense of smartspend.api.trpc.expense {
     title 'tRPC router · expense'
     include *
@@ -184,6 +189,11 @@ views {
 
   view module_classification_qa of smartspend.api.modules.classification-qa {
     title 'Module · Classification benchmark helpers'
+    include *
+  }
+
+  view module_coaching of smartspend.api.modules.coaching {
+    title 'Module · Commitments and coaching plans'
     include *
   }
 

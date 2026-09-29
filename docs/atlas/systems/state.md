@@ -4,32 +4,32 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (30 of 95 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (30 of 97 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-29 68f5765 | 2026-09-29 68f5765 | 18 | — | — | 2 | — |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-29 55b9153 | 2026-09-29 68f5765 | 18 | — | — | 2 | — |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-29 7886d8d | 2026-09-29 7886d8d | 9 | — | 1 | 5 | 1 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-29 68f5765 | 2026-09-29 68f5765 | 4 | — | 4 | 2 | 2 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-29 55b9153 | 2026-09-29 55b9153 | 9 | — | 1 | 5 | 1 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-29 55b9153 | 2026-09-29 55b9153 | 4 | — | 4 | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-29 6e973a3 | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-29 6e973a3 | 2026-09-29 6e973a3 | 5 | — | 3 | 5 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-29 6e973a3 | 2026-09-29 dfd750a | 14 | **2** | 1 | 4 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-29 55b9153 | 2026-09-29 55b9153 | 6 | — | 3 | 7 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-29 55b9153 | 2026-09-29 dfd750a | 14 | **2** | 1 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-28 af819ef | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-29 1a6f756 | 2026-09-29 1a6f756 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-29 1a6f756 | 2026-09-29 1a6f756 | 5 | — | — | — | 7 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-29 6e973a3 | 2026-09-29 6e973a3 | 7 | **1** | 1 | 3 | 2 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-29 55b9153 | 2026-09-29 1a6f756 | 5 | — | — | — | 7 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-29 55b9153 | 2026-09-29 55b9153 | 7 | **1** | 1 | 3 | 2 |
 
 
 ## Where the risk is
 
 Every system's explanation names at least one test.
 
-## What is waiting (95 issue(s))
+## What is waiting (97 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -91,7 +91,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (40)
+### Gaps (42)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -125,6 +125,8 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger); `business.get` returns the user's first business even when it is inactive.
 - `expense.getYearlyStats` has no screen.
 - A bank message's refund nets its category only when the merchant is one the engine knows well (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative spending in a month when the purchase fell in an earlier one.
+- Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).
+- Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - Verification is the setting `whatsapp_otp_enabled`: while it is off any number registers without proof that it belongs to the person, and the admin console shows it as off whatever its value ([notifications](notifications.md)).

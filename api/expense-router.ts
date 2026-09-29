@@ -35,6 +35,7 @@ import {
 } from "./services/expense-rollups";
 import { businessDateKey, businessDayRange, parseBusinessInstant } from "./lib/app-time";
 import { installmentProgress } from "./services/installments";
+import { reconcileSettlementsOf, releaseSettlementsOf } from "./services/coach/cashflows";
 import { runRuleEngine } from "./lib/rule-engine";
 import { normalizeV2 } from "./lib/normalizer-v2";
 import { SEASON_IDS, SEASON_LABELS, latestSeasonRange, seasonRange, type SeasonRange } from "./lib/seasons";
@@ -1300,6 +1301,10 @@ export const expenseRouter = router({
             ),
           );
 
+        if (updateData.amount !== undefined) {
+          await reconcileSettlementsOf(tx, { userId, userType }, input.id, updateData.amount);
+        }
+
         const oldDelta = expenseToRollupDelta(originalExpense, -1);
         await applyExpenseRollupDelta(tx, oldDelta);
 
@@ -1455,6 +1460,8 @@ export const expenseRouter = router({
         await tx
           .delete(expenses)
           .where(eq(expenses.id, expense.id));
+        // What it paid toward a commitment is unpaid again (api/services/coach/cashflows.ts).
+        await releaseSettlementsOf(tx, { userId, userType }, [expense.id]);
 
         const delta = expenseToRollupDelta(expense, -1);
         await applyExpenseRollupDelta(tx, delta);

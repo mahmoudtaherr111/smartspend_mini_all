@@ -19,7 +19,7 @@ export type DraftStatus = VoiceDraftCard["status"];
 
 export interface Draft<Payload = unknown> {
   id: string;
-  kind: "expenses" | "action" | "undo";
+  kind: "expenses" | "action" | "undo" | "coach";
   title: string;
   lines: Array<{ label: string; amount?: number; detail?: string }>;
   total?: number;
@@ -93,7 +93,7 @@ const MAX_OTHER_WORDS = 3;
 export function readReply(
   text: string,
   draftNumbers: number[] = [],
-  kind: "expenses" | "action" | "undo" = "expenses",
+  kind: Draft["kind"] = "expenses",
 ): "yes" | "no_or_change" | "unclear" {
   const reply = text
     .replace(/(مش|مفيش|ما فيش|مافيش)\s+مشكل[ةه]/g, " موافق ")

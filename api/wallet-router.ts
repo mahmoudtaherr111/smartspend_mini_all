@@ -74,6 +74,8 @@ export const walletRouter = router({
         provider: input.provider,
         lastFourDigits: input.lastFourDigits || null,
         balance: input.balance || "0.00",
+        // When the balance was given and by whom, so an old figure is never taken for today's.
+        ...(input.balance !== undefined ? { balanceObservedAt: new Date(), balanceSource: "user" } : {}),
       });
       return { success: true, insertId: insertResult.insertId };
     }),
@@ -92,7 +94,11 @@ export const walletRouter = router({
       if (input.name !== undefined) updateData.name = input.name;
       if (input.lastFourDigits !== undefined)
         updateData.lastFourDigits = input.lastFourDigits || null;
-      if (input.balance !== undefined) updateData.balance = input.balance;
+      if (input.balance !== undefined) {
+        updateData.balance = input.balance;
+        updateData.balanceObservedAt = new Date();
+        updateData.balanceSource = "user";
+      }
 
       await db
         .update(userWallets)

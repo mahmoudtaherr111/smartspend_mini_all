@@ -50,9 +50,12 @@ flowchart LR
     tbl_ai_token_ledgers[("ai_token_ledgers")]
     tbl_auth_challenges[("auth_challenges")]
     tbl_business_categories[("business_categories")]
+    tbl_cashflow_settlements[("cashflow_settlements")]
     tbl_chat_conversations[("chat_conversations")]
     tbl_chat_messages[("chat_messages")]
     tbl_classification_logs[("classification_logs")]
+    tbl_coaching_plans[("coaching_plans")]
+    tbl_coaching_steps[("coaching_steps")]
     tbl_expense_categories[("expense_categories")]
     tbl_expense_daily_rollups[("expense_daily_rollups")]
     tbl_expenses[("expenses")]
@@ -69,6 +72,7 @@ flowchart LR
     tbl_push_subscriptions[("push_subscriptions")]
     tbl_raw_sms_events[("raw_sms_events")]
     tbl_referrals[("referrals")]
+    tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_sessions[("sessions")]
     tbl_support_tickets[("support_tickets")]
     tbl_user_analytics[("user_analytics")]
@@ -110,9 +114,12 @@ flowchart LR
   mod_accounts ==> tbl_ai_token_ledgers
   mod_accounts ==> tbl_auth_challenges
   mod_accounts ==> tbl_business_categories
+  mod_accounts ==> tbl_cashflow_settlements
   mod_accounts ==> tbl_chat_conversations
   mod_accounts ==> tbl_chat_messages
   mod_accounts ==> tbl_classification_logs
+  mod_accounts ==> tbl_coaching_plans
+  mod_accounts ==> tbl_coaching_steps
   mod_accounts ==> tbl_expense_categories
   mod_accounts ==> tbl_expense_daily_rollups
   mod_accounts ==> tbl_expenses
@@ -129,6 +136,7 @@ flowchart LR
   mod_accounts ==> tbl_push_subscriptions
   mod_accounts ==> tbl_raw_sms_events
   mod_accounts ==> tbl_referrals
+  mod_accounts ==> tbl_scheduled_cashflows
   mod_accounts ==> tbl_sessions
   mod_accounts ==> tbl_support_tickets
   mod_accounts ==> tbl_user_analytics
@@ -278,9 +286,12 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_token_ledgers` | E | `accounts` | — |
 | `auth_challenges` | D | `accounts`, `daily-auth-cleanup`, `webauthn.generateAuthenticationOptions`, `webauthn.generateRegistrationOptions`, `webauthn.verifyAuthentication`, `webauthn.verifyRegistration` | `webauthn.verifyAuthentication`, `webauthn.verifyRegistration` |
 | `business_categories` | A | `accounts` | — |
+| `cashflow_settlements` | C | `accounts` | — |
 | `chat_conversations` | G | `accounts` | `accounts` |
 | `chat_messages` | G | `accounts` | — |
 | `classification_logs` | E | `accounts` | — |
+| `coaching_plans` | C | `accounts` | — |
+| `coaching_steps` | C | `accounts` | — |
 | `expense_categories` | A | `accounts` | — |
 | `expense_daily_rollups` | C | `accounts` | — |
 | `expenses` | B | `accounts` | `localAuth.getStats`, `localAuth.listUsers` |
@@ -297,6 +308,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `push_subscriptions` | A | `accounts` | — |
 | `raw_sms_events` | E | `accounts` | — |
 | `referrals` | A | `accounts` | — |
+| `scheduled_cashflows` | C | `accounts` | — |
 | `sessions` | D | `accounts`, `auth` | `auth`, `session.listAll`, `session.listMine`, `session.stats` |
 | `support_tickets` | A | `accounts` | — |
 | `user_analytics` | E | `accounts`, `session.trackEvent` | — |

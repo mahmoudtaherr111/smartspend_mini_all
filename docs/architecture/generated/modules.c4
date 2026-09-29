@@ -62,7 +62,7 @@ model {
     api-routers = module 'tRPC routers and HTTP sub-apps' {
       description 'One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts.'
       metadata {
-        files '24'
+        files '25'
         paths 'api/*-router.ts'
       }
     }
@@ -99,6 +99,13 @@ model {
       metadata {
         files '2'
         paths 'api/lib/benchmark-taxonomy-assert.ts, api/lib/real-user-sim.ts'
+      }
+    }
+    coaching = module 'Commitments and coaching plans' {
+      description 'Scheduled commitments and expected income with their due dates (the 31st on a short month’s last day), the payments linked to each due date without counting one twice, what is free until the next payday from the recorded wallets, the coaching plan the user accepted with its steps, and in-app reminders delivered once per step revision.'
+      metadata {
+        files '3'
+        paths 'api/services/coach/**'
       }
     }
     database = module 'Database schema and access' {
@@ -181,7 +188,7 @@ model {
     voice = module 'Voice' {
       description 'Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway, the Gemini Live engine, the brain with its tools and the checks on what is said, Egyptian number speech, the post-call memory and the admin dashboard’s figures. api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month.'
       metadata {
-        files '36'
+        files '37'
         paths 'api/services/voice/**, api/services/entitlements/**'
       }
     }
@@ -278,7 +285,7 @@ model {
     web-pages = module 'Web pages' {
       description 'Route-level page components lazy-loaded by src/App.tsx.'
       metadata {
-        files '15'
+        files '16'
         paths 'src/pages/**'
       }
     }

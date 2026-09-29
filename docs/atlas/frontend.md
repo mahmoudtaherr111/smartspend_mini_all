@@ -17,6 +17,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `/dashboard` | signed-in | `Home` | `src/pages/Home.tsx` | — |
 | `/login` | signed-out only | `Login` | `src/pages/Login.tsx` | — |
 | `/more` | signed-in | `More` | `src/pages/More.tsx` | — |
+| `/plan` | signed-in | `PlanPage` | `src/pages/PlanPage.tsx` | — |
 | `/privacy` | public | `Privacy` | `src/pages/Privacy.tsx` | — |
 | `/pro` | signed-in | `Pro` | `src/pages/Pro.tsx` | — |
 | `/settings` | public | — | — | `/more` |
@@ -256,7 +257,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-56 files in its import closure (not counting `src/components/ui/`).
+57 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -333,6 +334,14 @@ _None._
 | `business.removeCategory` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.suggestCategories` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.update` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
+| `coach.addCashflow` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.cancelReminder` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.endPlan` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.overview` | useQuery, utils.invalidate | `src/pages/PlanPage.tsx` |
+| `coach.paymentSuggestions` | useQuery | `src/pages/PlanPage.tsx` |
+| `coach.setReminder` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.setStepStatus` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.settle` | useMutation | `src/pages/PlanPage.tsx` |
 | `expense.getMonthlyStats` | useQuery | `src/components/settings/BusinessSettingsView.tsx` |
 | `export.allUsers` | useMutation | `src/pages/Admin.tsx` |
 | `export.myExpenses` | useMutation | `src/components/expenses/ExportExpensesCard.tsx` |
@@ -382,6 +391,22 @@ _None._
 1 files in its import closure (not counting `src/components/ui/`).
 
 _None._
+
+### `PlanPage` — `src/pages/PlanPage.tsx`
+
+3 files in its import closure (not counting `src/components/ui/`).
+
+| Procedure | Calls | Files |
+| --- | --- | --- |
+| `coach.addCashflow` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.cancelReminder` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.endPlan` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.overview` | useQuery, utils.invalidate | `src/pages/PlanPage.tsx` |
+| `coach.paymentSuggestions` | useQuery | `src/pages/PlanPage.tsx` |
+| `coach.setReminder` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.setStepStatus` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.settle` | useMutation | `src/pages/PlanPage.tsx` |
+| `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 
 ### `Privacy` — `src/pages/Privacy.tsx`
 

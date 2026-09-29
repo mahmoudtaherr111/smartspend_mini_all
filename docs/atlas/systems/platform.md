@@ -113,6 +113,7 @@ flowchart LR
   mod_api_core --> sys_ai_center
   mod_api_core --> sys_ai_platform
   mod_api_core --> sys_billing
+  mod_api_core --> sys_money
   mod_api_core --> sys_notifications
   mod_api_core --> sys_voice_calls
   mod_api_core -.-> tbl_local_users
@@ -237,7 +238,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
-| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 24 |
+| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 25 |
 | `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 10 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |

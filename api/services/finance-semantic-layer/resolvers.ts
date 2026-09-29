@@ -278,7 +278,7 @@ export async function getFinancePeriodComparison(
 }
 
 export async function getWalletSummary(ctx: FinanceContext): Promise<FinanceWalletSummary> {
-  const key = financeCacheKey(ctx.userId, ctx.userType, "wallet_summary");
+  const key = financeCacheKey(ctx.userId, ctx.userType, "wallet_summary_v2");
 
   return withFinanceCache(key, 60, async () => {
     const wallets = (await db
@@ -293,6 +293,8 @@ export async function getWalletSummary(ctx: FinanceContext): Promise<FinanceWall
       provider: wallet.provider,
       balance: numeric(wallet.balance),
       lastFourDigits: wallet.lastFourDigits,
+      observedDay: wallet.balanceObservedAt ? businessDateKey(new Date(wallet.balanceObservedAt)) : null,
+      source: wallet.balanceSource ?? null,
     }));
 
     return {

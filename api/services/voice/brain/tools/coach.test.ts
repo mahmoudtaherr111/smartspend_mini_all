@@ -1,0 +1,136 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const calls = vi.hoisted(() => ({ accepted: [] as unknown[], reminders: [] as unknown[], settled: [] as unknown[], cashflows: [] as unknown[] }));
+vi.mock("../../../coach/cashflows", () => ({
+  CASHFLOW_KINDS: ["rent", "bill", "subscription", "school", "installment", "debt", "gam3eya", "salary", "freelance", "other"],
+  position: vi.fn(async () => ({
+    today: "2026-09-15", until: "2026-09-25", untilIsPayday: true, days: 10,
+    wallets: { total: 8_300, count: 2, oldestObservedDay: "2026-09-01", unknownAge: 1 },
+    duesKnown: 350, duesUnknownAmount: [{ title: "مدرسة" }], duesUnconfirmed: [{ title: "إيجار", dueDay: "2026-09-01" }],
+    undated: [{ title: "كهربا", amount: 400, direction: "out" }],
+    incomeConfirmed: 1_500, incomeEstimated: 3_000, freeBeforeIncome: 7_950, freeWithConfirmedIncome: 9_450,
+    occurrences: [{ cashflowId: 2, title: "نت", dueDay: "2026-09-20", remaining: 350, status: "due" }],
+  })),
+  createCashflow: vi.fn(async (_user, input) => { calls.cashflows.push(input); return { id: 5 }; }),
+  settle: vi.fn(async (_user, input) => { calls.settled.push(input); return { id: 1, amount: 350 }; }),
+}));
+vi.mock("../../../coach/plans", () => ({
+  STEP_KINDS: ["spending_limit", "save", "pay", "record", "review", "other"],
+  activePlan: vi.fn(async () => ({
+    id: 3, title: "لحد القبض", goal: "من غير سلف", status: "active", revision: 1, reviewDay: "2026-09-22",
+    acceptedAt: "2026-09-10T09:00:00.000Z", evidence: [],
+    steps: [{ id: 31, title: "الأكل برّه ميتين في اليوم", kind: "spending_limit", target: { amountPerDay: 200, category: "أكل وشرب" }, status: "pending", dueDay: null, doneAt: null, doneEvidence: null, remindAt: null, reminderStatus: "none" }],
+  })),
+  acceptPlan: vi.fn(async (_user, input) => { calls.accepted.push(input); return { id: 4, replaced: 3 }; }),
+  setStepStatus: vi.fn(async () => undefined),
+  setReminder: vi.fn(async (_user, stepId, at) => { calls.reminders.push({ stepId, at }); return { revision: 1 }; }),
+  cancelReminder: vi.fn(async () => undefined),
+}));
+vi.mock("../../../finance-semantic-layer/resolvers", () => ({
+  getCategoryTotal: vi.fn(async () => ({ totalExpense: 1_500, totalIncome: 0, transactionCount: 6 })),
+  // Six days of the plan's six have records: the rest are days with nothing recorded.
+  getFinanceBreakdown: vi.fn(async () => ({ items: [{ name: "2026-09-10", amount: 300, count: 2 }, { name: "2026-09-12", amount: 200, count: 1 }, { name: "2026-09-14", amount: 90, count: 1 }] })),
+}));
+vi.mock("../../../finance-semantic-layer/cache", () => ({ getFinanceCacheGen: vi.fn(async () => 1) }));
+
+import { DraftBook } from "../drafts";
+import { FactLedger } from "../facts";
+import { moneyQueryCoach, moneyQuery } from "./money-query";
+import { changeDraftCoachTool, changeDraftTool, confirmTool } from "./record";
+import type { ToolContext, VoiceAppCalls } from "./types";
+
+let ctx: ToolContext;
+const clock = { now: new Date("2026-09-15T10:00:00Z").getTime() };
+
+beforeEach(() => {
+  calls.accepted = [];
+  calls.reminders = [];
+  calls.settled = [];
+  calls.cashflows = [];
+  clock.now = new Date("2026-09-15T10:00:00Z").getTime();
+  ctx = {
+    identity: { callId: "vc_coachtool0000", userId: 7, userType: "local", plan: "pro", role: "user" },
+    ledger: new FactLedger(),
+    drafts: new DraftBook(() => clock.now),
+    app: {} as VoiceAppCalls,
+    signal: new AbortController().signal,
+    now: () => new Date(clock.now),
+    salaryDay: async () => 25,
+    openClarifications: [],
+    coach: true,
+  };
+});
+
+describe("the coach's follow-up reads", () => {
+  it("gives what is free until payday with every unknown said, and income that may come kept apart", async () => {
+    const result = await moneyQueryCoach.run({ metric: "commitments" }, ctx);
+    expect(result.response).toMatchObject({ ok: true, until: "2026-09-25" });
+    const labels = (result.response.facts as Array<{ label: string; value: number }>).map((fact) => [fact.label, fact.value]);
+    expect(labels).toContainEqual(["الفاضل بعد الالتزامات لحد القبض (من غير أي دخل جاي)", 7_950]);
+    expect(labels).toContainEqual(["دخل متوقع مش مؤكد", 3_000]);
+    const coverage = String(result.response.coverage);
+    for (const said of ["مدرسة", "إيجار (2026-09-01)", "كهربا", "مش معروف اتسجل امتى", "من يوم 2026-09-01", "«لو وصل»"]) expect(coverage).toContain(said);
+  });
+
+  it("measures a spending step from the day it was agreed, and says days with nothing recorded are not proof", async () => {
+    const result = await moneyQueryCoach.run({ metric: "plan" }, ctx);
+    const facts = result.response.facts as Array<{ label: string; value: number }>;
+    // 1,500 over the six days since 10 September.
+    expect(facts.map((fact) => fact.value)).toEqual([200, 250]);
+    expect(result.response).toMatchObject({ days_without_records: 3 });
+    expect(String(result.response.coverage)).toContain("ممكن ماتسجلش");
+  });
+
+  it("is refused in the standard call", async () => {
+    expect((await moneyQuery.run({ metric: "plan" }, { ...ctx, coach: false })).response).toMatchObject({ ok: false, error: "not_available" });
+    expect((await changeDraftTool.run({ action: "plan_save", fields: {} }, { ...ctx, coach: false })).response).toMatchObject({ error: "not_by_voice" });
+  });
+});
+
+describe("the coach's drafts", () => {
+  it("saves an agreed plan only with amounts the call computed or heard, after the user's yes", async () => {
+    const refused = await changeDraftCoachTool.run({ action: "plan_save", fields: { title: "لحد القبض", steps: [{ title: "الأكل", kind: "spending_limit", amount_per_day: 180 }] } }, ctx);
+    expect(refused.response).toMatchObject({ ok: false, say: expect.stringContaining("مش من الحسبة") });
+
+    ctx.ledger.nextBatch();
+    const daily = ctx.ledger.add({ id: "calc_daily", label: "المتاح في اليوم", value: 180, source: "computed", unit: "EGP/day" });
+    const drafted = await changeDraftCoachTool.run({
+      action: "plan_save",
+      fields: { title: "لحد القبض", goal: "من غير سلف", steps: [{ title: "الأكل برّه", kind: "spending_limit", amount_per_day: 180, category: "أكل وشرب" }], evidence_refs: [daily.ref] },
+    }, ctx);
+    expect(drafted.card).toMatchObject({ kind: "draft", title: "خطة: لحد القبض", items: [{ label: "الأكل برّه", amount: 180 }] });
+    expect(calls.accepted).toEqual([]);
+
+    ctx.drafts.heardAssistant();
+    clock.now += 1_000;
+    ctx.drafts.heardUser("آه احفظها");
+    const done = await confirmTool.run({ draft_id: drafted.response.draft_id }, ctx);
+    expect(done.response).toMatchObject({ ok: true, done: "اتحفظت الخطة الجديدة مكان القديمة" });
+    expect(calls.accepted[0]).toMatchObject({ source: "voice", evidence: [{ label: "المتاح في اليوم", value: 180 }], steps: [{ target: { amountPerDay: 180, category: "أكل وشرب" } }] });
+  });
+
+  it("sets a reminder only in the future, at Cairo's hour, and only once confirmed", async () => {
+    expect((await changeDraftCoachTool.run({ action: "reminder_set", fields: { step_id: 31, at: "2026-09-14T09:00" } }, ctx)).response)
+      .toMatchObject({ ok: false });
+    const drafted = await changeDraftCoachTool.run({ action: "reminder_set", fields: { step_id: 31, at: "2026-09-16T09:00", title: "الأكل" } }, ctx);
+    ctx.drafts.heardAssistant();
+    clock.now += 1_000;
+    ctx.drafts.heardUser("تمام");
+    await confirmTool.run({ draft_id: drafted.response.draft_id }, ctx);
+    // 09:00 in Cairo (UTC+3 in September) is 06:00 UTC.
+    expect(calls.reminders).toEqual([{ stepId: 31, at: new Date("2026-09-16T06:00:00.000Z") }]);
+  });
+
+  it("adds a commitment with the amount the user said and no invented date", async () => {
+    ctx.ledger.noteUserValue(2_500);
+    const drafted = await changeDraftCoachTool.run({
+      action: "commitment_add", fields: { kind: "school", direction: "out", title: "مصاريف المدرسة", amount: 2_500, recurrence: "once" },
+    }, ctx);
+    expect(drafted.card).toMatchObject({ items: [{ amount: 2_500, detail: "الميعاد مش معروف" }] });
+    ctx.drafts.heardAssistant();
+    clock.now += 1_000;
+    ctx.drafts.heardUser("آه");
+    await confirmTool.run({ draft_id: drafted.response.draft_id }, ctx);
+    expect(calls.cashflows[0]).toMatchObject({ amount: 2_500, startDay: null, source: "voice" });
+  });
+});

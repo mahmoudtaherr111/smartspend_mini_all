@@ -21,6 +21,7 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 | Taxonomy migration | `api/jobs/taxonomy-migration-job.ts#runTaxonomyMigrationJob` | Moves stored rows still filed under an old category to the current taxonomy |
 | Financial month | `api/services/financial-month.ts#getFinancialMonthDayRange` | Month boundaries from a salary day, in Cairo business days |
 | Wallets, budgets, goals, business | `api/wallet-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/business-router.ts` | Their own records and rules |
+| Commitments and plans | `api/coach-router.ts`, `api/services/coach/`, the page `src/pages/PlanPage.tsx#PlanPage` at `/plan` | Scheduled commitments and expected income, which payment paid which due date, what is free until payday, the coaching plan the user accepted, and its reminders ([below](#commitments-and-plans)) |
 | People | the contact procedures in `api/profile-router.ts` (`profile.listContacts`, `profile.addContact`, `profile.updateContact`, `profile.deleteContact`, `profile.mergeContacts`) | The people behind transfers and family spending |
 | Export | `export.myExpenses` in `api/export-router.ts`, the "نزّل مصاريفك" card of the More page (`src/components/expenses/ExportExpensesCard.tsx`) | The user's items, up to 10,000 newest first, as Excel or CSV (JSON too through the API), protected against spreadsheet formulas: each row dated by Cairo's day, named by its kind (دخل، مصروف، تحويل، استثمار، مرتجع for a refund, with its signed amount), with its subcategory and its source (`exportRow`) |
 
@@ -110,7 +111,10 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
 thousands separators read, anything else refused by `walletBalanceSchema`), `wallet.updateWallet` and
 `wallet.deleteWallet`, which detaches the wallet from the user's items in the same transaction.
 `wallet.getWalletTransactions` pages through the items of one wallet. The [AI Center](ai-center.md) can also create and
-change wallets through confirmed actions.
+change wallets through confirmed actions. A balance is what the user entered, not a running total (no write moves it):
+each one given is stamped with when and by what (`balance_observed_at`, `balance_source`: `user` from these
+procedures, `assistant` from a confirmed action); balances saved before this was kept have an unknown age and are said
+so, never taken for today's.
 
 ## Budgets
 A budget has a title, an optional category, a monthly limit, the day its cycle starts, an alert threshold (80% by
@@ -146,6 +150,49 @@ A season is a date range, not a category (`api/lib/seasons.ts`): Ramadan and the
 fixed, and days are Cairo business days. `expense.getSeasonSpending` sums the user's personal expenses between the
 dates by category (refunds net, being stored negative), for the given year or the latest season that has started, with
 the same season a year earlier; `src/components/seasons/SeasonsPanel.tsx` shows it with a tab per season.
+
+## Commitments and plans
+What the user expects to pay or receive on a schedule lives in `scheduled_cashflows` (`api/services/coach/cashflows.ts`):
+rent, bills, subscriptions, school fees, an installment, a debt repayment, a gam3eya turn, a salary or freelance
+income, with a direction, an amount or none (unknown), a recurrence (once, weekly, monthly, yearly), a first due day or
+none (unknown), and a certainty (`confirmed`, or `estimated` for income that varies). An installment plan has at most
+one schedule (`scheduled_cashflows_plan_unique`), so the same installment is never a second commitment. It is a
+promise about the future, never a ledger row.
+- **Due dates** (`api/services/coach/schedule.ts#dueDays`, pure, Cairo day keys): a monthly 31st falls on a short
+  month's last day and comes back to the 31st; a yearly 29 February is the 28th in other years; no start day means no
+  dated occurrence.
+- **Paid or not** (`occurrences`): `cashflow_settlements` links a payment to one due date, `linked` to a ledger row or
+  `declared` when the user says it was paid off the records. `settle` checks, in one transaction with row locks, that
+  the schedule and the expense are the user's (same id and type), that the day is one of the schedule's due dates,
+  that the expense is money going the right way (a refund or income never pays a rent), and that neither the due date
+  nor the expense is allocated beyond its amount; a partial payment leaves the rest owed. A due date is `paid`,
+  `partial`, `due`, `overdue`, or `unconfirmed`: the last due date before the schedule was added (within 45 days) is
+  asked about, never owed or overdue, and earlier ones are not tracked. Deleting a paying expense, or editing it below
+  what it paid, releases its settlements inside the same transaction (`releaseSettlementsOf`,
+  `reconcileSettlementsOf`, called from `expense.delete`, `expense.update` and the action runtime's undo).
+- **Free until payday** (`cashPosition`): the wallets as last entered, minus what is due and unpaid before the next
+  payday (the profile's salary day, else the first of next month), with confirmed income added apart and estimated
+  income apart again; unknown amounts, unconfirmed dates and undated commitments are listed, never subtracted. Decimal
+  throughout.
+- **Suggestions** (`suggestPayments`): recorded payments within a week of a due date whose amount is what is owed or
+  whose words share one with the title, offered to the user; nothing is linked without their tap or consent.
+
+A coaching plan (`coaching_plans`, `coaching_steps`, `api/services/coach/plans.ts`) is what the user accepted with the
+coach: a title, a goal in their words, the figures it rests on (`evidence`), up to eight steps (a spending limit a day
+for a category, a saving, a payment, recording, a review), and a review day. `acceptPlan` saves it as the one active
+plan in a transaction; a plan it replaces ends as `replaced` and its reminders stop. A step is done by the user's word
+or the records, never inferred from a balance. A reminder is its own consent: `setReminder` (a future time, the day and
+hour read on Cairo's clock) raises the step's reminder revision; the `coaching-reminders` job (every five minutes,
+`scheduleProtectedJob` in `api/boot.ts`) delivers each due one as an in-app notification in the same transaction that
+moves it from `scheduled` to `sent` for that revision (`deliverDueReminders`), so a restart, a retry or a second
+replica sends nothing twice and a moved or cancelled reminder never fires the old one. The notification says a step is
+due, never an amount.
+
+The page «خطتك والتزاماتك» (`/plan`, linked from the More page and from the reminder) shows what is free until payday
+with every unknown named, the active plan with its steps (done, skipped, back), a reminder per step (set on Cairo's
+clock, cancel), the due dates of 45 days either side with a payment to confirm from the suggestions or "paid off the
+records", and a form to add a commitment or expected income. The [voice call](voice-calls.md)'s coach reads the same
+figures and saves plans, steps, reminders and commitments through the same services after the user's consent.
 
 ## Goals
 - `goals.list` returns the user's goals and, when the plan has no goal analysis, an upsell.
@@ -196,6 +243,8 @@ A plan without the feature is told on the first screen of Settings → business 
 | Goal limits and the goal analysis | `api/goals-router.ts` | |
 | Business categories | `api/business-router.ts` | |
 | People | the contact procedures in `api/profile-router.ts`; the screen `src/components/settings/PeopleSettingsView.tsx` | |
+| Due dates, payments, what is free until payday | `api/services/coach/schedule.ts`, `api/services/coach/cashflows.ts` | `api/services/coach/schedule.test.ts`, `tests/coach-follow-up.test.ts` (`npm run test:db`) |
+| Plans, steps and reminders | `api/services/coach/plans.ts`, the job in `api/boot.ts`, the page `src/pages/PlanPage.tsx` | `tests/coach-follow-up.test.ts` |
 
 ## Rules for changes here
 1. Every write to `expenses` runs in a transaction with its rollup delta (`api/AGENTS.md`, rule 4) and bumps the
@@ -209,7 +258,10 @@ A plan without the feature is told on the first screen of Settings → business 
 
 ## Tests
 `api/expense-router.test.ts` (including the search's user filter and the person a saved item names),
-`tests/expense-rollups.test.ts` and `tests/taxonomy-migration.test.ts`, whose database cases run with
+`tests/expense-rollups.test.ts`, `tests/taxonomy-migration.test.ts` and `tests/coach-follow-up.test.ts` (partial and
+over-allocated payments, release on delete and edit, another account's ids, one schedule per installment plan, one
+active plan, a reminder delivered once under two concurrent runs and never after it moved or was cancelled), whose
+database cases run with
 `npm run test:db` (`docs/guides/testing.md`), `api/jobs/taxonomy-migration-job.test.ts`, and
 `src/components/dashboard/NativeTabPanels.test.tsx`.
 
@@ -234,6 +286,9 @@ Checked against the code; each one names where it lives.
     (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming
     credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative
     spending in a month when the purchase fell in an earlier one.
+9. **Gap.** Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on
+    `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).
+10. **Gap.** Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
 
 ## Related systems
 - [Recording spending](expense-capture.md): creates the items this system reads, and triggers the budget alert.

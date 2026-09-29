@@ -70,6 +70,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const AICenter = lazy(() => import("@/pages/AICenter"));
 const More = lazy(() => import("@/pages/More"));
 const UltraLounge = lazy(() => import("@/pages/UltraLounge"));
+const PlanPage = lazy(() => import("@/pages/PlanPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -144,6 +145,7 @@ export const BOTTOM_NAV_ROUTES = [
   "/support",
   "/pro",
   "/bank-sync",
+  "/plan",
   "/more",
 ];
 
@@ -448,6 +450,16 @@ function AnimatedRoutes() {
           <ProtectedRoute>
             <PageTransition>
               <More />
+            </PageTransition>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/plan"
+        element={
+          <ProtectedRoute>
+            <PageTransition>
+              <PlanPage />
             </PageTransition>
           </ProtectedRoute>
         }

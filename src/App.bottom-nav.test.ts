@@ -2,15 +2,16 @@ import { describe, it, expect } from "vitest";
 import { BOTTOM_NAV_ROUTES, getAppContentMode, hasBottomNav } from "./App";
 
 describe("App Bottom Navigation Routing", () => {
-  it("includes all 7 expected bottom nav routes in BOTTOM_NAV_ROUTES", () => {
+  it("includes all 8 expected bottom nav routes in BOTTOM_NAV_ROUTES", () => {
     expect(BOTTOM_NAV_ROUTES).toContain("/dashboard");
     expect(BOTTOM_NAV_ROUTES).toContain("/ai");
     expect(BOTTOM_NAV_ROUTES).toContain("/settings");
     expect(BOTTOM_NAV_ROUTES).toContain("/support");
     expect(BOTTOM_NAV_ROUTES).toContain("/pro");
     expect(BOTTOM_NAV_ROUTES).toContain("/bank-sync");
+    expect(BOTTOM_NAV_ROUTES).toContain("/plan");
     expect(BOTTOM_NAV_ROUTES).toContain("/more");
-    expect(BOTTOM_NAV_ROUTES.length).toBe(7);
+    expect(BOTTOM_NAV_ROUTES.length).toBe(8);
   });
 
   it("gives AI routes a fixed workspace while regular pages keep shell scrolling", () => {

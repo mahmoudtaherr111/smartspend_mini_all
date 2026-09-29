@@ -31,7 +31,7 @@
         "api/profile-router.ts#rest-of-file": "e8c900e5cb0d",
         "api/services/phone-challenge.ts": "9c5aa7cfebc9",
         "api/services/turnstile-service.ts": "89a28fc96d49",
-        "api/services/user-purge-service.ts": "ca03f518f93d",
+        "api/services/user-purge-service.ts": "ffb85bb7f165",
         "api/session-router.ts": "e255f9db4207",
         "api/webauthn-router.ts": "10e55c7473d8",
         "src/components/auth/BiometricLockOverlay.tsx": "221e0a53b323",
@@ -47,7 +47,7 @@
         "src/pages/Login.tsx": "c3f3cb05781e",
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
-      "checked": "2026-09-29 6e973a3",
+      "checked": "2026-09-29 55b9153",
       "arabic": "9cb2ff4b4176",
       "arabicChecked": "2026-09-29 dfd750a"
     },
@@ -95,7 +95,7 @@
         "api/chat-router.ts": "5373e8cd418b",
         "api/services/action-runtime/artifacts.ts": "5292dfe6dc80",
         "api/services/action-runtime/confirmation-phrases.ts": "ecf79bb5cfe7",
-        "api/services/action-runtime/extended-actions.ts": "10d8873289b8",
+        "api/services/action-runtime/extended-actions.ts": "b5986abafd8c",
         "api/services/action-runtime/goal-create.ts": "f3335e61e751",
         "api/services/action-runtime/index.ts": "cfa80bf0d105",
         "api/services/action-runtime/types.ts": "4eccc872608b",
@@ -129,9 +129,9 @@
         "api/services/finance-semantic-layer/monthly-report-facts.ts": "3f971c8a47ab",
         "api/services/finance-semantic-layer/period-resolver.ts": "6ebc06ee9807",
         "api/services/finance-semantic-layer/proactive-insights.ts": "4673f997eb5c",
-        "api/services/finance-semantic-layer/resolvers.ts": "7270d6c6e9e0",
+        "api/services/finance-semantic-layer/resolvers.ts": "fc98c834c10f",
         "api/services/finance-semantic-layer/row-aggregators.ts": "46f6753eac39",
-        "api/services/finance-semantic-layer/types.ts": "7590b85e1ddd",
+        "api/services/finance-semantic-layer/types.ts": "af6ba15f813a",
         "api/services/site-guide/embedding.ts": "bc5457180269",
         "api/services/site-guide/index.ts": "d2416784dee1",
         "api/services/site-guide/knowledge-base.ts": "e0e642a9d045",
@@ -142,9 +142,9 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "c384e6047412"
       },
-      "checked": "2026-09-29 68f5765",
-      "arabic": "b5fad2afeaaf",
-      "arabicChecked": "2026-09-29 68f5765"
+      "checked": "2026-09-29 55b9153",
+      "arabic": "e7218e01c3ce",
+      "arabicChecked": "2026-09-29 55b9153"
     },
     "ai-platform": {
       "files": {
@@ -235,7 +235,7 @@
         "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "bd60575b3ae1",
+        "api/expense-router.ts#rest-of-file": "c0c34abfcea3",
         "api/image-router.ts": "062a7162dcfb",
         "api/lib/admissibility-gate.ts": "3b5889850057",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
@@ -295,7 +295,7 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-09-29 68f5765",
+      "checked": "2026-09-29 55b9153",
       "arabic": "433d644412cf",
       "arabicChecked": "2026-09-29 68f5765"
     },
@@ -335,12 +335,14 @@
     },
     "money": {
       "files": {
+        "api/boot.ts#job:coaching-reminders": "6f1e38e7465a",
         "api/boot.ts#job:nightly-rollup-reconciliation": "7a5700744f08",
         "api/boot.ts#job:taxonomy-migration": "5864e301b433",
         "api/budget-router.ts": "106bf2ec3b6c",
         "api/business-router.ts": "73613d1ac2ee",
+        "api/coach-router.ts": "a2e52699f3e7",
         "api/expense-router.ts#expense.createInstallmentPlan": "d0e4ac52ce8b",
-        "api/expense-router.ts#expense.delete": "a5f5385c9910",
+        "api/expense-router.ts#expense.delete": "a9b79ea42752",
         "api/expense-router.ts#expense.deleteInstallmentPlan": "fc7d83b8ccfe",
         "api/expense-router.ts#expense.getById": "883d7c8c2233",
         "api/expense-router.ts#expense.getDebtBalances": "821a765233cc",
@@ -352,8 +354,8 @@
         "api/expense-router.ts#expense.listInstallmentPlans": "6d0c5845e123",
         "api/expense-router.ts#expense.previewCategory": "dab97f94d0c8",
         "api/expense-router.ts#expense.searchTransactions": "9d92514f1158",
-        "api/expense-router.ts#expense.update": "622cb07085c4",
-        "api/expense-router.ts#rest-of-file": "bd60575b3ae1",
+        "api/expense-router.ts#expense.update": "8b2307fe817c",
+        "api/expense-router.ts#rest-of-file": "c0c34abfcea3",
         "api/export-router.ts#export.myExpenses": "ebbfe5c845ec",
         "api/export-router.ts#rest-of-file": "264f56b1884e",
         "api/goals-router.ts": "7abbe5a2ba53",
@@ -367,11 +369,14 @@
         "api/profile-router.ts#profile.updateContact": "f2c5c45b1581",
         "api/profile-router.ts#rest-of-file": "e8c900e5cb0d",
         "api/services/budget-status.ts": "e6c46c341118",
+        "api/services/coach/cashflows.ts": "09c7353ec4f3",
+        "api/services/coach/plans.ts": "bdc0cc4f8be4",
+        "api/services/coach/schedule.ts": "3e5732f5abf4",
         "api/services/debt-ledger.ts": "06bd076c0c6d",
         "api/services/expense-rollups.ts": "cb4bb8b6e996",
         "api/services/financial-month.ts": "50ad98190246",
         "api/services/installments.ts": "5ec65d67a30e",
-        "api/wallet-router.ts": "d0bf1b5b0762",
+        "api/wallet-router.ts": "b650c9bb74c6",
         "src/components/budgets/BudgetsPanel.tsx": "514a88e41280",
         "src/components/dashboard/BehaviorInsights.tsx": "47729e6b7532",
         "src/components/dashboard/ExpenseChart.tsx": "59163d319548",
@@ -392,11 +397,12 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/components/installments/InstallmentsPanel.tsx": "2d6c331165ea",
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
-        "src/pages/Home.tsx": "fe674b3c4b88"
+        "src/pages/Home.tsx": "fe674b3c4b88",
+        "src/pages/PlanPage.tsx": "c867d3e9bf86"
       },
-      "checked": "2026-09-29 6e973a3",
-      "arabic": "0d765d31abed",
-      "arabicChecked": "2026-09-29 6e973a3"
+      "checked": "2026-09-29 55b9153",
+      "arabic": "63e189568fd6",
+      "arabicChecked": "2026-09-29 55b9153"
     },
     "notifications": {
       "files": {
@@ -423,7 +429,7 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "90f1eb3573d2",
+        "api/boot.ts#rest-of-file": "31fbff8c2dbc",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "d43acf75679a",
         "api/lib/app-time.ts": "f53d4623a239",
@@ -438,7 +444,7 @@
         "api/lib/system-settings-registry.ts": "a701938d6cb1",
         "api/middleware.ts": "d2e8e2966fe6",
         "api/queries/connection.ts": "49fd2ab76893",
-        "api/router.ts": "ed01fedd898c",
+        "api/router.ts": "a064070cc6e0",
         "api/server.ts#rest-of-file": "e728f2d81677",
         "api/services/scheduler-lock.ts": "861ab6f129a3",
         "api/services/storage/avatar-service.ts": "d0562e7ea889",
@@ -456,12 +462,12 @@
         "contracts/types.ts": "191164b8f041",
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "5be9bcc8b419",
-        "db/relations.ts": "7d78c4da2bcc",
-        "db/schema.ts": "faaad291f617",
+        "db/relations.ts": "5e31c3a3a1fa",
+        "db/schema.ts": "e109c049d2de",
         "db/seed.ts": "811d2a0df636",
-        "db/table-classes.ts": "6cbb85b13f30"
+        "db/table-classes.ts": "e05665bec173"
       },
-      "checked": "2026-09-29 1a6f756",
+      "checked": "2026-09-29 55b9153",
       "arabic": "e39326797663",
       "arabicChecked": "2026-09-29 1a6f756"
     },
@@ -474,11 +480,11 @@
         "api/services/voice/admin-stats.ts": "0c03b1f56b39",
         "api/services/voice/app-calls.ts": "f6576c997736",
         "api/services/voice/brain/claims.ts": "933568166b00",
-        "api/services/voice/brain/coach-instructions.ts": "a09c0e53d132",
-        "api/services/voice/brain/drafts.ts": "3121777f0ff3",
+        "api/services/voice/brain/coach-instructions.ts": "3f8aa64523f1",
+        "api/services/voice/brain/drafts.ts": "52b5d450662e",
         "api/services/voice/brain/facts.ts": "f6947c52bdb4",
         "api/services/voice/brain/honorific.ts": "451551920217",
-        "api/services/voice/brain/index.ts": "a12c5461915e",
+        "api/services/voice/brain/index.ts": "53c67af070bf",
         "api/services/voice/brain/instructions.ts": "b598e50e60a3",
         "api/services/voice/brain/never-kept.ts": "977be210350d",
         "api/services/voice/brain/profile-questions.ts": "14673f9bb35c",
@@ -486,13 +492,14 @@
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
         "api/services/voice/brain/tools/app-help.ts": "039eab42299b",
         "api/services/voice/brain/tools/calculate.ts": "cf080147087a",
+        "api/services/voice/brain/tools/coach.ts": "7179e3e51c16",
         "api/services/voice/brain/tools/market-price.ts": "ee41c3759eeb",
         "api/services/voice/brain/tools/memory.ts": "cf71f5e7891e",
-        "api/services/voice/brain/tools/money-query.ts": "3049fe6fb631",
-        "api/services/voice/brain/tools/record.ts": "08a1e33e39dd",
+        "api/services/voice/brain/tools/money-query.ts": "faff572a8b7b",
+        "api/services/voice/brain/tools/record.ts": "8e7193afa9e0",
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
         "api/services/voice/brain/tools/think.ts": "bbc093d02f9a",
-        "api/services/voice/brain/tools/types.ts": "d960013b314f",
+        "api/services/voice/brain/tools/types.ts": "881ec5822696",
         "api/services/voice/brain/validator.ts": "1b1ba3ade3ed",
         "api/services/voice/brain/voices.ts": "7fa9ca3bf8ae",
         "api/services/voice/engine/gemini-live.ts": "0c17f7ce5c39",
@@ -522,13 +529,13 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-09-29 7886d8d",
-      "arabic": "22b5d75f3f11",
-      "arabicChecked": "2026-09-29 7886d8d"
+      "checked": "2026-09-29 55b9153",
+      "arabic": "07b3da27e3ed",
+      "arabicChecked": "2026-09-29 55b9153"
     },
     "web-app": {
       "files": {
-        "src/App.tsx": "84a2feea0710",
+        "src/App.tsx": "bd002a52ea71",
         "src/components/NotificationBell.tsx": "72b3b942601d",
         "src/components/OnboardingCard.tsx": "25693e197629",
         "src/components/PageLoadingSkeleton.tsx": "fa0fe3239b38",
@@ -633,7 +640,7 @@
         "src/lib/utils.ts": "fe02cb01defc",
         "src/main.tsx": "edecd8a6865f",
         "src/pages/Landing.tsx": "c618847f38a4",
-        "src/pages/More.tsx": "43812b0f8556",
+        "src/pages/More.tsx": "6a5495b15ee6",
         "src/pages/NotFound.tsx": "8c62f9d22119",
         "src/pages/Privacy.tsx": "d888313990ad",
         "src/pages/Terms.tsx": "4ff361a45f01",
@@ -644,9 +651,9 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-09-29 6e973a3",
-      "arabic": "b9b2b10f7ebb",
-      "arabicChecked": "2026-09-29 6e973a3"
+      "checked": "2026-09-29 55b9153",
+      "arabic": "2ff498d8db22",
+      "arabicChecked": "2026-09-29 55b9153"
     }
   }
 }

@@ -139,6 +139,14 @@ model {
         storageClass 'A'
       }
     }
+    cashflow_settlements = table 'cashflow_settlements' {
+      #classC #dualOwner
+      description '9 columns, 3 indexes, storage class C.'
+      metadata {
+        export 'cashflowSettlements'
+        storageClass 'C'
+      }
+    }
     chat_conversations = table 'chat_conversations' {
       #classG #dualOwner
       description '9 columns, 2 indexes, storage class G.'
@@ -161,6 +169,22 @@ model {
       metadata {
         export 'classificationLogs'
         storageClass 'E'
+      }
+    }
+    coaching_plans = table 'coaching_plans' {
+      #classC #dualOwner
+      description '16 columns, 1 indexes, storage class C.'
+      metadata {
+        export 'coachingPlans'
+        storageClass 'C'
+      }
+    }
+    coaching_steps = table 'coaching_steps' {
+      #classC #dualOwner
+      description '17 columns, 3 indexes, storage class C.'
+      metadata {
+        export 'coachingSteps'
+        storageClass 'C'
       }
     }
     discount_codes = table 'discount_codes' {
@@ -315,6 +339,14 @@ model {
         storageClass 'A'
       }
     }
+    scheduled_cashflows = table 'scheduled_cashflows' {
+      #classC #dualOwner
+      description '18 columns, 2 indexes, storage class C.'
+      metadata {
+        export 'scheduledCashflows'
+        storageClass 'C'
+      }
+    }
     seo_pages = table 'seo_pages' {
       #classA
       description '8 columns, 0 indexes, storage class A.'
@@ -413,7 +445,7 @@ model {
     }
     user_wallets = table 'user_wallets' {
       #classA #dualOwner
-      description '8 columns, 1 indexes, storage class A.'
+      description '10 columns, 1 indexes, storage class A.'
       metadata {
         export 'userWallets'
         storageClass 'A'

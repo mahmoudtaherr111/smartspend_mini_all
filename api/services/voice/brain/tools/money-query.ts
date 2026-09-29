@@ -28,6 +28,7 @@ import type { FactUnit } from "../facts";
 import { spellPercent } from "../spoken";
 import { extractSpokenNumbers } from "../validator";
 import { readPendingQuestions, readStoredReport } from "./reports";
+import { commitmentsAnswer, planAnswer } from "./coach";
 import { num, str, type ToolContext, type VoiceTool } from "./types";
 
 const METRICS = [
@@ -35,6 +36,8 @@ const METRICS = [
   "balance", "budgets", "goals", "pending", "debts", "installments", "season",
 ] as const;
 const SEASONS = ["ramadan", "eid_fitr", "eid_adha", "school", "summer"] as const;
+/** The coach call's follow-up reads (api/services/voice/brain/tools/coach.ts). */
+const COACH_METRICS = ["commitments", "plan"] as const;
 const PERIODS = [
   "today", "yesterday", "this_week", "this_month", "last_month", "salary_cycle",
   "last_90_days", "this_year", "last_year", "custom",
@@ -256,6 +259,11 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
 }
 
 async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolRunOutcome> {
+  if ((COACH_METRICS as readonly string[]).includes(String(args.metric))) {
+    if (!ctx.coach) return { response: { ok: false, error: "not_available", say: "ده مش متاح في المكالمة دي." } };
+    const reply = (built: Built, periodLabel: string) => outcome(built, ctx, periodLabel);
+    return args.metric === "plan" ? planAnswer(ctx, reply) : commitmentsAnswer(ctx, reply);
+  }
   const metric = (METRICS as readonly string[]).includes(String(args.metric)) ? String(args.metric) : "total";
   // Looking for one transaction or what a category holds reaches back three months unless a period is named;
   // totals and comparisons default to this month (the salary cycle when there is one).
@@ -273,15 +281,24 @@ async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<
 
   if (metric === "balance") {
     const wallets = await getWalletSummary(finance);
+    // Each balance is what the user entered on a day; an entry older than a few days is said as old.
+    const today = businessDateKey(ctx.now());
+    const ages = wallets.wallets.slice(0, limit).map((wallet) => ({
+      wallet: wallet.name,
+      entered: wallet.observedDay ?? "مش معروف امتى",
+      ...(wallet.observedDay && wallet.observedDay < shiftKey(today, -3) ? { old: true } : {}),
+    }));
     return outcome({
       title: "أرصدة المحافظ",
       facts: [
-        { label: "إجمالي الأرصدة", value: wallets.totalBalance },
+        { label: "إجمالي الأرصدة المسجلة", value: wallets.totalBalance },
         ...wallets.wallets.slice(0, limit).map((wallet) => ({ label: wallet.name, value: wallet.balance })),
       ],
+      extra: wallets.walletCount ? { entered: ages } : {},
       coverage: wallets.walletCount === 0
         ? "مفيش محافظ متسجلة."
-        : "دي الأرصدة زي ما اتسجلت في التطبيق، مش كشف حساب لحظي من البنك.",
+        : "دي الأرصدة زي ما المستخدم دخّلها آخر مرة (entered)، مش كشف حساب من البنك؛ المصاريف بعدها مش متخصومة منها. " +
+          "لو التاريخ قديم أو مش معروف قول كده واسأل عن الرصيد دلوقتي.",
     }, ctx, "دلوقتي");
   }
 
@@ -620,6 +637,42 @@ async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<
     coverage: summary.transactionCount ? undefined : EMPTY_NOTE,
   }, ctx, label);
 }
+
+/**
+ * The coach call's money_query: the same tool, with what is due and free until payday (commitments) and the agreed
+ * plan's progress (plan).
+ */
+export const moneyQueryCoach: VoiceTool = {
+  declaration: {
+    name: "money_query",
+    description:
+      "The user's own records, one question per call: total, breakdown, compare (same days before), drivers, transactions, " +
+      "why (how one was classified), includes, report (a month's written report), feasibility, balance (with when each was " +
+      "entered), budgets, goals, pending, debts, installments, season, commitments (what is due and free until payday, " +
+      "expected income apart), plan (the agreed plan and how it is going). Facts carry a ref for calculate.",
+    parameters: {
+      type: "object",
+      properties: {
+        metric: { type: "string", enum: [...METRICS, ...COACH_METRICS] },
+        period: { type: "string", enum: [...PERIODS], description: "Default this_month (the salary cycle when there is a salary day)." },
+        from: { type: "string", description: "YYYY-MM-DD, with period custom" },
+        to: { type: "string", description: "YYYY-MM-DD, with period custom" },
+        category: { type: "string", description: "Category in the user's words, e.g. أكل, مواصلات" },
+        person: { type: "string", description: "A person's name" },
+        search: { type: "string", description: "Merchant or word, e.g. طلبات" },
+        type: { type: "string", enum: ["expense", "income"] },
+        group_by: { type: "string", enum: ["category", "day", "week", "month", "merchant"] },
+        limit: { type: "integer" },
+        month: { type: "string", description: "YYYY-MM, for report" },
+        season: { type: "string", enum: [...SEASONS] },
+        year: { type: "integer" },
+        amount: { type: "number", description: "EGP: for feasibility, or to find a transaction by its amount" },
+      },
+      required: ["metric"],
+    },
+  },
+  run,
+};
 
 export const moneyQuery: VoiceTool = {
   declaration: {

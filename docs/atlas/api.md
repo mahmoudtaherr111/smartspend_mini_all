@@ -36,6 +36,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `budget` | `api/budget-router.ts` | 4 | 1 | 3 | `authedProcedure` |
 | `business` | `api/business-router.ts` | 10 | 2 | 8 | `businessAiProcedure`, `businessProcedure` |
 | `chat` | `api/chat-router.ts` | 10 | 4 | 6 | `aiProcedure`, `authedProcedure` |
+| `coach` | `api/coach-router.ts` | 10 | 2 | 8 | `authedProcedure` |
 | `expense` | `api/expense-router.ts` | 21 | 12 | 9 | `authedProcedure` |
 | `export` | `api/export-router.ts` | 3 | 0 | 3 | `adminProcedure`, `authedProcedure`, `proReportProcedure` |
 | `goals` | `api/goals-router.ts` | 5 | 1 | 4 | `authedProcedure`, `goalAnalysisProcedure` |
@@ -212,6 +213,21 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `chat.listMemories` | query | `authedProcedure` | no | `ai_memory_items` | — | — | `src/components/ai/AIMemoryManager.tsx`, `src/components/voice/VoiceCallHost.tsx` |
 | `chat.sendMessage` | mutation | `aiProcedure` | yes | `ai_pending_actions`, `chat_conversations`, `chat_messages` | `chat_conversations`, `chat_messages`, `local_users`, `users` | `api/lib/ai-gateway.ts`, `api/lib/ai-ledger.ts`, `api/lib/app-time.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/settings-cache.ts`, `api/services/action-runtime/confirmation-phrases.ts`, `api/services/action-runtime/index.ts`, `api/services/ai-cost-policy.ts`, `api/services/ai-kernel/capability-registry.ts`, `api/services/ai-kernel/clarification-machine.ts`, `api/services/ai-kernel/index.ts`, `api/services/ai-kernel/intent-router.ts`, `api/services/ai-memory/index.ts`, `api/services/finance-semantic-layer/category-matcher.ts` | `src/components/ai/AIChatbot.tsx` |
 
+### `coach` — `api/coach-router.ts`
+
+| Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `coach.addCashflow` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/cashflows.ts` | `src/pages/PlanPage.tsx` |
+| `coach.cancelReminder` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/plans.ts` | `src/pages/PlanPage.tsx` |
+| `coach.endPlan` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/plans.ts` | `src/pages/PlanPage.tsx` |
+| `coach.overview` | query | `authedProcedure` | no | — | — | `api/lib/app-time.ts`, `api/services/coach/cashflows.ts`, `api/services/coach/plans.ts`, `api/services/coach/schedule.ts` | `src/pages/PlanPage.tsx` |
+| `coach.paymentSuggestions` | query | `authedProcedure` | yes | — | — | `api/services/coach/cashflows.ts` | `src/pages/PlanPage.tsx` |
+| `coach.setReminder` | mutation | `authedProcedure` | yes | — | — | `api/lib/app-time.ts`, `api/services/coach/plans.ts` | `src/pages/PlanPage.tsx` |
+| `coach.setStepStatus` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/plans.ts` | `src/pages/PlanPage.tsx` |
+| `coach.settle` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/cashflows.ts` | `src/pages/PlanPage.tsx` |
+| `coach.unsettle` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/cashflows.ts` | — |
+| `coach.updateCashflow` | mutation | `authedProcedure` | yes | — | — | `api/services/coach/cashflows.ts` | — |
+
 ### `expense` — `api/expense-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
@@ -221,7 +237,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `expense.create` | mutation | `authedProcedure` | yes | `classification_logs`, `expenses`, `user_contacts` | `classification_logs`, `expenses`, `local_users`, `user_contacts`, `users` | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/correction-rules.ts`, `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts`, `api/lib/redis-client.ts`, `api/lib/relationship-normalizer.ts`, `api/notification-engine.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts` | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.createCategory` | mutation | `authedProcedure` | yes | — | `expense_categories` | — | — |
 | `expense.createInstallmentPlan` | mutation | `authedProcedure` | yes | — | `installment_plans` | — | `src/components/installments/InstallmentsPanel.tsx` |
-| `expense.delete` | mutation | `authedProcedure` | yes | `expenses` | `expenses`, `user_contacts` | `api/lib/cache-keys.ts`, `api/lib/muscle-memory.ts`, `api/lib/redis-client.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.delete` | mutation | `authedProcedure` | yes | `expenses` | `expenses`, `user_contacts` | `api/lib/cache-keys.ts`, `api/lib/muscle-memory.ts`, `api/lib/redis-client.ts`, `api/services/coach/cashflows.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.deleteInstallmentPlan` | mutation | `authedProcedure` | yes | — | `installment_plans` | — | `src/components/installments/InstallmentsPanel.tsx` |
 | `expense.dismissClarification` | mutation | `authedProcedure` | yes | — | `pending_clarifications` | — | `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.getById` | query | `authedProcedure` | yes | `expenses` | — | — | — |
@@ -236,7 +252,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `expense.listInstallmentPlans` | query | `authedProcedure` | no | `expenses`, `installment_plans` | — | `api/services/installments.ts` | `src/components/installments/InstallmentsPanel.tsx` |
 | `expense.previewCategory` | query | `authedProcedure` | yes | `user_dictionaries` | — | `api/lib/normalizer-v2.ts`, `api/lib/rule-engine.ts`, `contracts/constants.ts` | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.searchTransactions` | query | `authedProcedure` | yes | `expenses` | — | — | `src/components/dashboard/GlobalSearch.tsx` |
-| `expense.update` | mutation | `authedProcedure` | yes | `classification_logs`, `expenses` | `classification_logs`, `expenses` | `api/lib/cache-keys.ts`, `api/lib/category-registry.ts`, `api/lib/correction-rules.ts`, `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts`, `api/lib/redis-client.ts`, `api/lib/relationship-normalizer.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts` | `src/components/expenses/EditExpenseDialog.tsx` |
+| `expense.update` | mutation | `authedProcedure` | yes | `classification_logs`, `expenses` | `classification_logs`, `expenses` | `api/lib/cache-keys.ts`, `api/lib/category-registry.ts`, `api/lib/correction-rules.ts`, `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts`, `api/lib/redis-client.ts`, `api/lib/relationship-normalizer.ts`, `api/services/coach/cashflows.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts` | `src/components/expenses/EditExpenseDialog.tsx` |
 
 ### `export` — `api/export-router.ts`
 
@@ -397,4 +413,4 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 These are not referenced by the web app. Some may be called by other clients (Android app, iOS shortcuts) or server-side through `createCaller`; the rest are candidates for removal.
 
-`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.generateMagicCode`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`
+`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `coach.unsettle`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.generateMagicCode`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`

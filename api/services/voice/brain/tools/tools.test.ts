@@ -219,10 +219,12 @@ describe("money_query", () => {
     expect(result.response).toMatchObject({ facts: [{ label: "هدف عربية", value: 150_000 }], months: [50] });
   });
 
-  it("says wallet balances are what the app recorded, not a live statement", async () => {
+  it("says wallet balances are what the user entered, and when, not a live statement", async () => {
     const result = await moneyQuery.run({ metric: "balance" }, ctx);
     expect(result.response).toMatchObject({
-      facts: [{ label: "إجمالي الأرصدة", value: 9_000, say: "تسع آلاف" }, { label: "الكاش", value: 9_000 }],
+      facts: [{ label: "إجمالي الأرصدة المسجلة", value: 9_000, say: "تسع آلاف" }, { label: "الكاش", value: 9_000 }],
+      // A balance saved before its day was kept has an unknown age: said as unknown, never as today's.
+      entered: [{ wallet: "الكاش", entered: "مش معروف امتى" }],
       coverage: expect.stringContaining("مش كشف حساب"),
     });
   });

@@ -75,6 +75,13 @@ model {
         routes '*'
       }
     }
+    PlanPage = page 'PlanPage' {
+      description 'src/pages/PlanPage.tsx'
+      metadata {
+        file 'src/pages/PlanPage.tsx'
+        routes '/plan'
+      }
+    }
     Privacy = page 'Privacy' {
       description 'src/pages/Privacy.tsx'
       metadata {

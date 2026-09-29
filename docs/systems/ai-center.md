@@ -126,7 +126,9 @@ confirmation):
 5. on failure marks it `failed`. `cancelAction` marks it `cancelled`.
 
 `action.undo` looks at the most recent executed actions and reverses the newest one that can be undone: creating,
-changing or stopping a goal, recategorizing an expense, creating or changing a wallet, or a profile change.
+changing or stopping a goal, recategorizing an expense, creating or changing a wallet, or a profile change. Undoing an
+AI-recorded expense also frees any due date it paid ([commitments](money.md#commitments-and-plans)). A wallet balance
+an action sets is stamped as the assistant's, with its time.
 
 An AI-recorded expense is inserted in a transaction with its details and daily rollup delta, then muscle memory and
 the finance caches are cleared.
@@ -178,6 +180,8 @@ the finance caches are cleared.
   entries. Breakdowns, lookups and category totals read the period's entries instead: only the columns they use, and
   the newest 10,000 at most (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Both cover the
   personal ledger only, as Home does: an expense with a `business_id` belongs to that business.
+- Wallet balances (`getWalletSummary`) carry the day each was entered and by what (`observedDay`, `source`), null for
+  balances saved before that was kept.
 - Every filter applies to the whole period before a list is cut: `getFinanceTransactions` filters by type, category,
   an amount (within half a pound, a refund by its size) and a text (its description, words, shop and category)
   before `limit`, and says `partial` when the period held more than `ROW_LIMIT` entries. `getTextSpendingTotal` sums

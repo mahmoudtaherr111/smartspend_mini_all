@@ -28,6 +28,7 @@ import { extractSpokenNumbers } from "../validator";
 import { isRefund } from "../../../../../contracts/expense-save";
 import { getFinanceCacheGen } from "../../../finance-semantic-layer/cache";
 import { num, str, type ParsedExpenseItem, type ToolContext, type VoiceTool } from "./types";
+import { COACH_ACTIONS, coachDraft, executeCoachDraft } from "./coach";
 
 interface ExpenseDraftPayload {
   items: ParsedExpenseItem[];
@@ -253,6 +254,19 @@ async function changeDraft(args: Record<string, unknown>, ctx: ToolContext): Pro
     };
   }
 
+  if ((COACH_ACTIONS as readonly string[]).includes(action)) {
+    if (!ctx.coach) return { response: { ok: false, error: "not_by_voice", say: "دي مش بتتعمل من المكالمة. قوله يعملها من الشاشة بتاعتها." } };
+    const fields = args.fields && typeof args.fields === "object" && !Array.isArray(args.fields) ? (args.fields as Record<string, unknown>) : {};
+    const built = coachDraft(action, fields, ctx);
+    if (!built || "refuse" in built) return { response: { ok: false, error: "missing_fields", say: built?.refuse ?? "محتاج تفاصيل أكتر." } };
+    ctx.signal.throwIfAborted();
+    const draft = ctx.drafts.add({ kind: "coach", title: built.title, lines: built.lines, payload: built.payload });
+    return {
+      response: { ok: true, draft_id: draft.id, summary: built.title, say: "لسه ماتحفظش. اقرا الملخص بجملة واسأل سؤال واحد. متقولش إنه اتحفظ قبل ما confirm يرجع ok." },
+      card: ctx.drafts.card(draft),
+    };
+  }
+
   const actionName = ACTIONS[action];
   if (!actionName) {
     return { response: { ok: false, error: "not_by_voice", say: "دي مش بتتعمل من المكالمة. قوله يعملها من الشاشة بتاعتها." } };
@@ -323,6 +337,11 @@ async function execute(draft: Draft, ctx: ToolContext): Promise<{ ok: boolean; m
     if (undone && deleted === ids.length) ctx.drafts.settle(undone.id, "cancelled", { message: `${undone.message ?? undone.title} (اتلغى)` });
     ctx.drafts.settle(draft.id, "executed", { message });
     await recordsChanged(ctx);
+    return { ok: true, message };
+  }
+  if (draft.kind === "coach") {
+    const message = await executeCoachDraft(draft, ctx);
+    ctx.drafts.settle(draft.id, "executed", { message });
     return { ok: true, message };
   }
   const { actionId } = draft.payload as ActionDraftPayload;
@@ -438,6 +457,32 @@ export const changeDraftTool: VoiceTool = {
         action: {
           type: "string",
           enum: ["goal_create", "goal_update", "budget_create", "wallet_create", "wallet_update", "profile_update", "recategorize", "undo_last"],
+        },
+        words: { type: "string", description: "What the user asked for, in their words" },
+        fields: { type: "object", description: "Exact fields when already known" },
+      },
+      required: ["action"],
+    },
+  },
+  run: changeDraft,
+};
+
+/** The coach call's change_draft: the same actions, and saving a plan, its steps and reminders, and commitments. */
+export const changeDraftCoachTool: VoiceTool = {
+  declaration: {
+    name: "change_draft",
+    description:
+      "Prepare a change to confirm: a goal, a budget, a wallet, a profile detail, a recategorized expense, undoing what " +
+      "this call recorded; plan_save (fields: title, goal, steps [{title, kind, amount_per_day, category, amount, " +
+      "due_day}], review_day, evidence_refs), step_done / reminder_set (at YYYY-MM-DDTHH:mm Cairo) / reminder_cancel " +
+      "(step_id), commitment_add (kind, direction in|out, title, amount, recurrence, start_day, certainty), " +
+      "commitment_paid (cashflow_id, due_day, expense_id or amount). Amounts only from tool facts or the user.",
+    parameters: {
+      type: "object",
+      properties: {
+        action: {
+          type: "string",
+          enum: ["goal_create", "goal_update", "budget_create", "wallet_create", "wallet_update", "profile_update", "recategorize", "undo_last", ...COACH_ACTIONS],
         },
         words: { type: "string", description: "What the user asked for, in their words" },
         fields: { type: "object", description: "Exact fields when already known" },

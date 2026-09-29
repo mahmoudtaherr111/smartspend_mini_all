@@ -273,6 +273,12 @@ export const userWallets = mysqlTable(
     provider: varchar("provider", { length: 50 }).notNull(), // Visa | VodafoneCash | InstaPay | BankTransfer
     lastFourDigits: varchar("last_four_digits", { length: 4 }), // For visual realism
     balance: decimal("balance", { precision: 12, scale: 2 }).default("0.00"),
+    /**
+     * When the balance was last given, and by what: "user" (typed on the wallet screen), "assistant" (a confirmed
+     * chat or call action). Null for balances saved before this was kept: their age is unknown, never assumed.
+     */
+    balanceObservedAt: datetime("balance_observed_at"),
+    balanceSource: varchar("balance_source", { length: 30 }),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [index("wallets_user_idx").on(t.userId, t.userType)],
@@ -768,6 +774,145 @@ export const userBudgets = mysqlTable(
     index("user_budgets_user_idx").on(t.userId, t.userType, t.status),
     index("user_budgets_category_idx").on(t.category),
     index("user_budgets_goal_idx").on(t.linkedGoalId),
+  ],
+);
+
+/**
+ * Money the user expects to pay or receive on a schedule: rent, a subscription, school fees, an installment, a debt
+ * repayment, a gam3eya turn, a salary or freelance income. It is a promise about the future, never a ledger row:
+ * what was actually paid stays in `expenses`, linked to a due date through `cashflow_settlements`, so nothing is
+ * counted twice. An unknown amount or date stays null ("مش معروف"), never guessed.
+ */
+export const scheduledCashflows = mysqlTable(
+  "scheduled_cashflows",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    /** Null: the personal ledger. A business's own commitments carry its id. */
+    businessId: int("business_id"),
+    /** rent | bill | subscription | school | installment | debt | gam3eya | salary | freelance | other */
+    kind: varchar("kind", { length: 30 }).notNull(),
+    /** out: the user pays; in: the user receives. */
+    direction: varchar("direction", { length: 10 }).notNull(),
+    title: varchar("title", { length: 120 }).notNull(),
+    amount: decimal("amount", { precision: 12, scale: 2 }),
+    /** once | weekly | monthly | yearly */
+    recurrence: varchar("recurrence", { length: 10 }).notNull(),
+    /** Cairo day key of the first (or only) due date; null when the user does not know it. */
+    startDay: date("start_day", { mode: "string" }),
+    endDay: date("end_day", { mode: "string" }),
+    /** confirmed: the user stated it; estimated: a guess or an income that varies. */
+    certainty: varchar("certainty", { length: 12 }).notNull().default("confirmed"),
+    /** user | voice | chat */
+    source: varchar("source", { length: 20 }).notNull().default("user"),
+    /** The installment plan this schedule belongs to, so a plan is never a second, separate commitment. */
+    installmentPlanId: int("installment_plan_id"),
+    contactId: int("contact_id"),
+    /** active | paused | ended */
+    status: varchar("status", { length: 20 }).notNull().default("active"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("scheduled_cashflows_user_idx").on(t.userId, t.userType, t.status),
+    uniqueIndex("scheduled_cashflows_plan_unique").on(t.userId, t.userType, t.installmentPlanId),
+  ],
+);
+
+/**
+ * One payment toward one due date of a scheduled cashflow. `expenseId` is the ledger row that paid it (part of
+ * it, for a partial payment); null when the user says it was paid without recording it. The allocations of one
+ * expense never add up to more than the expense, and one expense pays one due date once.
+ */
+export const cashflowSettlements = mysqlTable(
+  "cashflow_settlements",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    cashflowId: int("cashflow_id").notNull(),
+    /** The Cairo day key of the due date this pays. */
+    dueDay: date("due_day", { mode: "string" }).notNull(),
+    expenseId: int("expense_id"),
+    amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+    /** linked: to a ledger row; declared: the user said it was paid, nothing recorded. */
+    source: varchar("source", { length: 20 }).notNull(),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("cashflow_settlements_user_idx").on(t.userId, t.userType, t.cashflowId, t.dueDay),
+    index("cashflow_settlements_expense_idx").on(t.expenseId),
+    uniqueIndex("cashflow_settlements_once").on(t.cashflowId, t.dueDay, t.expenseId),
+  ],
+);
+
+/**
+ * A plan the user agreed to with the coach (in a call, the chat or the app): its goal in the user's words, its
+ * steps, and when to look at it again. `proposed` until the user accepts it; only then `active`.
+ */
+export const coachingPlans = mysqlTable(
+  "coaching_plans",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    businessId: int("business_id"),
+    title: varchar("title", { length: 160 }).notNull(),
+    goal: varchar("goal", { length: 300 }),
+    /** proposed | active | completed | cancelled | replaced (a newer accepted plan took its place) */
+    status: varchar("status", { length: 20 }).notNull().default("proposed"),
+    /** Raised by every change the user accepts, so an old confirmation never applies to a newer version. */
+    revision: int("revision").notNull().default(1),
+    /** Cairo day key of the next review. */
+    reviewDay: date("review_day", { mode: "string" }),
+    /** voice | chat | app */
+    source: varchar("source", { length: 20 }).notNull(),
+    callId: varchar("call_id", { length: 40 }),
+    /** The figures the plan was agreed on (label, value, period), so a later review can say what changed. */
+    evidence: json("evidence"),
+    acceptedAt: datetime("accepted_at"),
+    endedAt: datetime("ended_at"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [index("coaching_plans_user_idx").on(t.userId, t.userType, t.status)],
+);
+
+/**
+ * One step of a coaching plan, with an optional in-app reminder the user asked for separately. A reminder fires once
+ * per (step, reminder revision): moving or cancelling it raises the revision, so an old one never fires.
+ */
+export const coachingSteps = mysqlTable(
+  "coaching_steps",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    planId: int("plan_id").notNull(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    position: int("position").notNull().default(0),
+    title: varchar("title", { length: 200 }).notNull(),
+    /** spending_limit | save | pay | record | review | other */
+    kind: varchar("kind", { length: 30 }).notNull().default("other"),
+    /** What the step measures, e.g. { "amountPerDay": 200, "category": "أكل وشرب" }. */
+    target: json("target"),
+    /** pending | done | skipped */
+    status: varchar("status", { length: 20 }).notNull().default("pending"),
+    dueDay: date("due_day", { mode: "string" }),
+    doneAt: datetime("done_at"),
+    /** user: the user said it is done; ledger: the records show it. */
+    doneEvidence: varchar("done_evidence", { length: 20 }),
+    remindAt: datetime("remind_at"),
+    /** none | scheduled | sent | cancelled */
+    reminderStatus: varchar("reminder_status", { length: 20 }).notNull().default("none"),
+    reminderRevision: int("reminder_revision").notNull().default(0),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("coaching_steps_plan_idx").on(t.planId),
+    index("coaching_steps_user_idx").on(t.userId, t.userType, t.status),
+    index("coaching_steps_reminder_idx").on(t.reminderStatus, t.remindAt),
   ],
 );
 
