@@ -133,4 +133,24 @@ describe("the coach's drafts", () => {
     await confirmTool.run({ draft_id: drafted.response.draft_id }, ctx);
     expect(calls.cashflows[0]).toMatchObject({ amount: 2_500, startDay: null, source: "voice" });
   });
+
+  it("confirms a waiting bank message as it is, once, and says so when it was already handled", async () => {
+    const confirmed: number[] = [];
+    ctx.app = {
+      ...ctx.app,
+      bankSuggestions: async () => [{ id: 81, amount: 450, type: "expense", direction: "outgoing", category: "أكل وشرب", what: "طلبات", day: "2026-09-14" }],
+      confirmBankSuggestion: async (_identity: unknown, id: number) => { confirmed.push(id); return confirmed.length === 1; },
+      dismissBankSuggestion: async () => true,
+    } as never;
+    const pending = await moneyQueryCoach.run({ metric: "pending" }, ctx);
+    expect(pending.response).toMatchObject({ bank_count: 1, bank_waiting: [{ bank_id: 81, what: "طلبات", say: "ربعمية وخمسين" }] });
+    expect(String(pending.response.say)).toContain("متسجلهاش تاني بـrecord_draft");
+    const drafted = await changeDraftCoachTool.run({ action: "bank_confirm", fields: { bank_id: 81, title: "طلبات", amount: 450 } }, ctx);
+    expect(drafted.card).toMatchObject({ title: "تسجيل رسالة البنك", items: [{ amount: 450 }] });
+    ctx.drafts.heardAssistant();
+    clock.now += 1_000;
+    ctx.drafts.heardUser("آه سجلها");
+    expect((await confirmTool.run({ draft_id: drafted.response.draft_id }, ctx)).response).toMatchObject({ ok: true, done: "اتسجلت رسالة البنك" });
+    expect(confirmed).toEqual([81]);
+  });
 });

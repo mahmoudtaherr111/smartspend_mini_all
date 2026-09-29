@@ -97,7 +97,9 @@ export async function planAnswer(ctx: ToolContext, answer: Answer): Promise<Tool
 
 // ─── Drafts ─────────────────────────────────────────────────────────
 
-export const COACH_ACTIONS = ["plan_save", "step_done", "reminder_set", "reminder_cancel", "commitment_add", "commitment_paid"] as const;
+export const COACH_ACTIONS = [
+  "plan_save", "step_done", "reminder_set", "reminder_cancel", "commitment_add", "commitment_paid", "bank_confirm", "bank_dismiss",
+] as const;
 export type CoachAction = (typeof COACH_ACTIONS)[number];
 
 export type CoachDraftPayload =
@@ -106,7 +108,8 @@ export type CoachDraftPayload =
   | { op: "reminder_set"; stepId: number; at: string }
   | { op: "reminder_cancel"; stepId: number }
   | { op: "commitment_add"; cashflow: Parameters<typeof createCashflow>[1] }
-  | { op: "commitment_paid"; cashflowId: number; dueDay: string; expenseId: number | null; amount: number | null };
+  | { op: "commitment_paid"; cashflowId: number; dueDay: string; expenseId: number | null; amount: number | null }
+  | { op: "bank_confirm" | "bank_dismiss"; suggestionId: number };
 
 const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -200,6 +203,17 @@ export function coachDraft(action: string, fields: Record<string, unknown>, ctx:
       if (Number.isNaN(instant.getTime()) || instant.getTime() <= ctx.now().getTime()) return { refuse: "ميعاد التذكير لازم يكون بعد دلوقتي." };
       return { payload: { op: "reminder_set", stepId, at: instant.toISOString() }, title: "تذكير جوه التطبيق", lines: [{ label: str(fields.title, 200) ?? "الخطوة", detail: at.replace("T", " الساعة ") }] };
     }
+    case "bank_confirm":
+    case "bank_dismiss": {
+      const suggestionId = num(fields.bank_id);
+      if (!suggestionId) return { refuse: "أنهي رسالة بنك؟ هاتها من money_query pending (bank_id)." };
+      const amount = knownAmount(ctx, fields.amount);
+      return {
+        payload: { op: action, suggestionId },
+        title: action === "bank_confirm" ? "تسجيل رسالة البنك" : "تجاهل رسالة البنك",
+        lines: [{ label: str(fields.title, 120) ?? "رسالة البنك", ...(typeof amount === "number" ? { amount } : {}) }],
+      };
+    }
     case "commitment_paid": {
       const cashflowId = num(fields.cashflow_id);
       const dueDay = day(fields.due_day);
@@ -238,6 +252,14 @@ export async function executeCoachDraft(draft: Draft, ctx: ToolContext): Promise
     case "commitment_add":
       await createCashflow(user, payload.cashflow);
       return `اتسجل ${payload.cashflow.direction === "in" ? "الدخل الجاي" : "الالتزام"}: ${payload.cashflow.title}`;
+    case "bank_confirm":
+      return (await ctx.app.confirmBankSuggestion(ctx.identity, payload.suggestionId))
+        ? "اتسجلت رسالة البنك"
+        : "الرسالة دي اتسجلت أو اتشالت قبل كده";
+    case "bank_dismiss":
+      return (await ctx.app.dismissBankSuggestion(ctx.identity, payload.suggestionId))
+        ? "اتشالت رسالة البنك من غير تسجيل"
+        : "الرسالة دي اتسجلت أو اتشالت قبل كده";
     case "commitment_paid": {
       const done = await settle(user, { cashflowId: payload.cashflowId, dueDay: payload.dueDay, expenseId: payload.expenseId, amount: payload.amount });
       return `اتسجل إن ${spellAmount(done.amount, { exact: true }).text} اتدفعوا للميعاد ده`;

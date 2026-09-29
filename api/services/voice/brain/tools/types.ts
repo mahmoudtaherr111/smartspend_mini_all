@@ -31,6 +31,17 @@ export interface SaveExpenseItem extends ParsedExpenseItem {
   clientRequestId: string;
 }
 
+/** A bank message kept for the user's review (over the plan's monthly limit), as the Home card lists it. */
+export interface BankSuggestion {
+  id: number;
+  amount: number;
+  type: string;
+  direction: "incoming" | "outgoing" | null;
+  category: string;
+  what: string;
+  day: string;
+}
+
 /** "ليك وعليك", as the debts screen shows it (`expense.getDebtBalances`). */
 export interface DebtStanding {
   people: Array<{ name: string; balance: number; lent: number; received: number; count: number; lastDate: string }>;
@@ -83,6 +94,11 @@ export interface VoiceAppCalls {
   /** Deletes the call's own records; answers how many were deleted, so a partial undo is said as one. */
   deleteExpenses(identity: CallIdentity, ids: number[]): Promise<{ deleted: number }>;
   listBudgets(identity: CallIdentity): Promise<BudgetStatus[]>;
+  /** Bank messages waiting for the user's review (`profile.getSmsSuggestions`), newest first. */
+  bankSuggestions(identity: CallIdentity): Promise<BankSuggestion[]>;
+  /** Records a waiting bank message as the Home card's confirm does; false when it was already recorded or dropped. */
+  confirmBankSuggestion(identity: CallIdentity, id: number): Promise<boolean>;
+  dismissBankSuggestion(identity: CallIdentity, id: number): Promise<boolean>;
   /** Debts and the gam3eya, from the loans and gam3eya transfers recorded (the debts screen's procedure). */
   debts(identity: CallIdentity): Promise<DebtStanding>;
   /** Active installment plans (the installments screen's procedure). */

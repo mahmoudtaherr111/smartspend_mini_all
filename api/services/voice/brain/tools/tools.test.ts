@@ -292,6 +292,15 @@ describe("market_price", () => {
     expect(vi.mocked(askTextModel).mock.calls[0][0]).toMatchObject({ search: true, timeoutMs: 5_000, deadlineMs: 9_000 });
   });
 
+  it("has no price when Google Search grounded nothing, whatever source and time the model wrote", async () => {
+    vi.mocked(askTextModel).mockResolvedValueOnce({ text: '{"value": 5150, "source": "البنك الأهلي", "as_of": "النهارده 9 الصبح"}', model: "gemini-3.5-flash-lite", inputTokens: 0, outputTokens: 0 });
+    expect((await lookup("gold_21k")).quote).toBeNull();
+    vi.mocked(askTextModel).mockResolvedValueOnce({ text: '{"value": 5150, "source": "البنك الأهلي", "as_of": "النهارده 9 الصبح"}', model: "gemini-3.5-flash-lite", inputTokens: 0, outputTokens: 0, webSource: "gold.example", webUrl: "https://gold.example/today" });
+    expect((await lookup("gold_21k", new Date("2026-09-24T21:30:00Z"))).quote).toEqual({
+      value: 5150, source: "gold.example", url: "https://gold.example/today", asOf: "2026-09-25 00:30",
+    });
+  });
+
   it("refuses a price outside sane bounds, and says it cannot get one instead of guessing", async () => {
     vi.mocked(askTextModel).mockResolvedValueOnce({ text: '{"value": 51}', model: "gemini-3.5-flash-lite", inputTokens: 1_000_000, outputTokens: 0 });
     const result = await marketPriceTool.run({ asset: "gold_21k" }, ctx);

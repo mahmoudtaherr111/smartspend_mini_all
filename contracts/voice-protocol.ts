@@ -98,6 +98,8 @@ export interface VoicePriceCard {
   value: number;
   unit: string;
   source: string;
+  /** The page the price was read from, when Google Search gave its address. */
+  url?: string;
   asOf: string;
 }
 

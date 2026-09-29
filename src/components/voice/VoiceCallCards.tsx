@@ -188,7 +188,13 @@ function PriceCard({ card }: { card: VoicePriceCard }) {
         <Amount value={card.value} unit={card.unit} />
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        المصدر: {card.source} · {card.asOf}
+        المصدر:{" "}
+        {card.url && /^https:\/\//.test(card.url) ? (
+          <a href={card.url} target="_blank" rel="noopener noreferrer" className="underline">{card.source}</a>
+        ) : (
+          card.source
+        )}{" "}
+        · اتجاب {card.asOf}
       </p>
     </div>
   );

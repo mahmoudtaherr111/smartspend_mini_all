@@ -12,7 +12,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (30 of
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-29 7e640a0 | 2026-09-29 68f5765 | 18 | — | — | 2 | — |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-29 fa056d1 | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-29 7e640a0 | 2026-09-29 7e640a0 | 9 | — | 1 | 4 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-29 0a302cb | 2026-09-29 0a302cb | 9 | — | 1 | 4 | 1 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-29 fa056d1 | 2026-09-29 fa056d1 | 4 | — | 4 | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-29 6e973a3 | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-29 7e640a0 | 2026-09-29 7e640a0 | 6 | — | 3 | 7 | — |
@@ -21,7 +21,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (30 of
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-29 1a6f756 | 2026-09-29 1a6f756 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-29 55b9153 | 2026-09-29 1a6f756 | 5 | — | — | — | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-29 0a302cb | 2026-09-29 1a6f756 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-29 7e640a0 | 2026-09-29 7e640a0 | 7 | **1** | 1 | 3 | 2 |
 
 

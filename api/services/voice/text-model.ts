@@ -15,7 +15,9 @@ export interface TextModelAnswer {
   inputTokens: number;
   outputTokens: number;
   /** The first web page a grounded answer came from. */
+  /** The first web page Google Search grounded the answer on: its title, and its address when given. */
   webSource?: string;
+  webUrl?: string;
 }
 
 export interface TextModelRequest {
@@ -90,7 +92,7 @@ async function askModel(model: string, keys: string[], request: TextModelRequest
     const body = (await response.json()) as {
       candidates?: Array<{
         content?: { parts?: Array<{ text?: string; thought?: boolean }> };
-        groundingMetadata?: { groundingChunks?: Array<{ web?: { title?: string } }> };
+        groundingMetadata?: { groundingChunks?: Array<{ web?: { title?: string; uri?: string } }> };
       }>;
       usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; thoughtsTokenCount?: number };
     };
@@ -105,6 +107,7 @@ async function askModel(model: string, keys: string[], request: TextModelRequest
       inputTokens: body.usageMetadata?.promptTokenCount ?? 0,
       outputTokens: (body.usageMetadata?.candidatesTokenCount ?? 0) + (body.usageMetadata?.thoughtsTokenCount ?? 0),
       webSource: candidate?.groundingMetadata?.groundingChunks?.find((chunk) => chunk.web?.title)?.web?.title,
+      webUrl: candidate?.groundingMetadata?.groundingChunks?.find((chunk) => chunk.web?.uri)?.web?.uri,
     };
   }
   throw failure;

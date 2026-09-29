@@ -25,7 +25,10 @@ type Asset = keyof typeof ASSETS;
 
 interface Quote {
   value: number;
+  /** The page Google Search grounded the answer on; never a name the model wrote. */
   source: string;
+  url?: string;
+  /** When the price was looked up, on Cairo's clock: what the call can vouch for. */
   asOf: string;
 }
 
@@ -47,13 +50,18 @@ export async function lookup(
   });
   const costUsd = textModelCostUsd(answer.model, answer.inputTokens, answer.outputTokens);
   return {
-    quote: readQuote(asset, answer.text, answer.webSource, now),
+    quote: readQuote(asset, answer.text, answer.webSource, now, answer.webUrl),
     costUsd,
     usage: { model: answer.model, inputTokens: answer.inputTokens, outputTokens: answer.outputTokens },
   };
 }
 
-function readQuote(asset: Asset, text: string, webSource: string | undefined, now: Date): Quote | null {
+/**
+ * The price the model read, only when Google Search grounded it on a page: without one, a number the model wrote is
+ * not a price anyone published, and the call says it has none. The source is that page, not what the model named.
+ */
+function readQuote(asset: Asset, text: string, webSource: string | undefined, now: Date, webUrl?: string): Quote | null {
+  if (!webSource) return null;
   const match = text.match(/\{[^{}]*\}/);
   if (!match) return null;
   let parsed: Record<string, unknown>;
@@ -67,9 +75,10 @@ function readQuote(asset: Asset, text: string, webSource: string | undefined, no
   if (!Number.isFinite(value) || value < bounds.min || value > bounds.max) return null;
   return {
     value,
-    source: String(parsed.source || webSource || "بحث جوجل").slice(0, 80),
-    // Without a time from the source, the time it was looked up, on Cairo's clock (golden rule 6).
-    asOf: String(parsed.as_of || businessTimeLabel(now)).slice(0, 40),
+    source: webSource.slice(0, 80),
+    ...(webUrl ? { url: webUrl.slice(0, 300) } : {}),
+    // The lookup's time on Cairo's clock (golden rule 6); a time the model wrote cannot be checked.
+    asOf: businessTimeLabel(now),
   };
 }
 
@@ -121,7 +130,7 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
       as_of: quote.asOf,
       say: "قول السعر والمصدر والوقت. ده سعر للمعلومة، متقولش يشتري ولا يبيع.",
     },
-    card: { kind: "price", title: info.title, value: quote.value, unit: info.unit, source: quote.source, asOf: quote.asOf },
+    card: { kind: "price", title: info.title, value: quote.value, unit: info.unit, source: quote.source, ...(quote.url ? { url: quote.url } : {}), asOf: quote.asOf },
   };
 }
 

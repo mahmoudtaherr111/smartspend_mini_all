@@ -11,7 +11,7 @@ import type { Context, UnifiedUser } from "../../context";
 import { db } from "../../queries/connection";
 import type { AppRouter } from "../../router";
 import type { CallIdentity } from "./gateway/call-session";
-import type { BudgetStatus, DebtStanding, InstallmentStanding, ParseOutcome, SeasonSpending, VoiceAppCalls } from "./brain/tools/types";
+import type { BankSuggestion, BudgetStatus, DebtStanding, InstallmentStanding, ParseOutcome, SeasonSpending, VoiceAppCalls } from "./brain/tools/types";
 import { SEASON_IDS, type SeasonId } from "../../lib/seasons";
 import { financeCacheKey, withFinanceCache } from "../finance-semantic-layer/cache";
 import { directionToSave, personToSave } from "../../../contracts/expense-save";
@@ -113,6 +113,36 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
             exceeded: Boolean(budget.isExceeded),
           }));
       });
+    },
+
+    async bankSuggestions(identity): Promise<BankSuggestion[]> {
+      const caller = await callerFor(identity);
+      const rows = await caller.profile.getSmsSuggestions();
+      return rows.map((row) => ({
+        id: row.id,
+        amount: Number(row.amount),
+        type: String(row.type),
+        direction: row.direction ?? null,
+        category: row.category,
+        what: String(row.merchant || row.description || row.provider || "").slice(0, 60),
+        day: String(row.date ?? "").slice(0, 10),
+      }));
+    },
+
+    async confirmBankSuggestion(identity, id) {
+      const caller = await callerFor(identity);
+      try {
+        await caller.profile.confirmSmsSuggestion({ id });
+        return true;
+      } catch (error) {
+        if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") return false;
+        throw error;
+      }
+    },
+
+    async dismissBankSuggestion(identity, id) {
+      const caller = await callerFor(identity);
+      return (await caller.profile.dismissSmsSuggestion({ id })).success;
     },
 
     async debts(identity): Promise<DebtStanding> {

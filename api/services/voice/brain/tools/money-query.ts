@@ -506,16 +506,37 @@ async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<
   }
 
   if (metric === "pending") {
-    const pending = await readPendingQuestions(ctx.identity);
+    // Two kinds wait, and are said apart: words the classifier needs an answer about, and bank messages already read
+    // that wait for a yes. A bank message is never recorded again from words: it is confirmed as it is.
+    const [pending, bank] = await Promise.all([
+      readPendingQuestions(ctx.identity),
+      // A reader that fails, or throws before it starts, is said as unreadable, never as "none waiting".
+      (async () => ctx.app.bankSuggestions(ctx.identity))().catch(() => null),
+    ]);
+    ctx.ledger.nextBatch();
+    const bankItems = (bank ?? []).slice(0, 3).map((item) => {
+      const fact = ctx.ledger.add({ id: `bank_${item.id}`, label: item.what || item.category, value: item.amount, source: "ledger", exact: true });
+      return { bank_id: item.id, what: item.what || item.category, say: fact.say, category: item.category, day: item.day, incoming: item.direction === "incoming" };
+    });
     return {
       response: {
         ok: true,
         count: pending.count,
         waiting: pending.items,
-        say: pending.count
-          ? "قول إن فيه عمليات ماتسجلتش لسه عشان ناقصها تفصيلة. لو الوقت مناسب اسأل سؤال أول واحدة بكلامك؛ ولما يرد، " +
-            "نادي record_draft بردّه هو في words ومعاه clarification_id بتاعها، واعرض المسودة زي أي تسجيل."
-          : "مفيش حاجة مستنية توضيح.",
+        bank_count: bank ? bank.length : null,
+        bank_waiting: bankItems,
+        say: [
+          pending.count
+            ? "فيه عمليات ماتسجلتش لسه عشان ناقصها تفصيلة: لو الوقت مناسب اسأل سؤال أول واحدة، ولما يرد نادي record_draft بردّه في words ومعاه clarification_id."
+            : "مفيش حاجة مستنية توضيح.",
+          bank === null
+            ? "مش قادر أقرا رسايل البنك المستنية دلوقتي؛ قول كده لو اتسأل."
+            : bank.length
+              ? (ctx.coach
+                ? "وفيه رسايل بنك اتقرت ومستنية موافقته: دي بتتأكد زي ما هي (change_draft bank_confirm أو bank_dismiss بالـbank_id)، متسجلهاش تاني بـrecord_draft عشان ماتتسجلش مرتين."
+                : "وفيه رسايل بنك اتقرت ومستنية موافقته: بتتأكد من الكارت في الرئيسية أو صفحة الربط البنكي، متسجلهاش تاني بـrecord_draft عشان ماتتسجلش مرتين.")
+              : "",
+        ].filter(Boolean).join(" "),
       },
     };
   }
