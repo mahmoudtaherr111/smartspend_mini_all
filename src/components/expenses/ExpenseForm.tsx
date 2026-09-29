@@ -2387,7 +2387,6 @@ function ManualForm({
   createMutation,
   isOnline,
   userLimits,
-  plan,
   businessId,
 }: any) {
   const [amount, setAmount] = useState("");
