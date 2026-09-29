@@ -356,6 +356,14 @@ describe("app_help", () => {
     expect(result.card).toMatchObject({ kind: "guide", route: "/bank-sync" });
   });
 
+  it("says what the call can do by its profile: only the coach keeps reminders, and none leave the app", async () => {
+    const standard = await appHelpTool.run({ question: "ازاي أعمل صاروخ؟" }, ctx);
+    expect(standard.response.cannot).toContain("تذكير أو منبّه في ميعاد");
+    const coach = await appHelpTool.run({ question: "ازاي أعمل صاروخ؟" }, { ...ctx, coach: true });
+    expect(coach.response.can).toContain("يظبط تذكير جوه التطبيق بموافقتك");
+    expect(coach.response.cannot).toContain("رسايل أو تذكير برّه التطبيق (واتساب أو SMS)");
+  });
+
   it("says when the guide has nothing, instead of inventing steps", async () => {
     const result = await appHelpTool.run({ question: "zzqx ممكن تعملي بيتزا" }, ctx);
     expect(result.response).toMatchObject({ ok: true, found: false });

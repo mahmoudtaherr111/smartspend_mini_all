@@ -72,6 +72,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
   let tools = toolMap(options.tools ?? VOICE_TOOLS);
   let salaryDay: Promise<number | undefined> | null = null;
   const records: { seen: number | null } = { seen: null };
+  const forgotten: string[] = [];
   /** The call's own mark on the app's notes, unknown to the user (never sent to the app, never spoken). */
   let noteTag = `#${randomBytes(3).toString("hex")}`;
   let coach = false;
@@ -86,6 +87,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     openClarifications,
     records,
     coach,
+    forgotten,
     salaryDay: () => (salaryDay ??= getProfileSnapshot({ userId: identity.userId, userType: identity.userType })
       .then((profile) => profile.salaryDay)
       .catch(() => undefined)),
@@ -218,6 +220,8 @@ export function createCallBrain(options: BrainOptions): CallBrain {
 
     summary: () => drafts.summary(),
 
+    forgotten: () => [...forgotten],
+
     snapshot: () => ({
       ledger: ledger.snapshot(),
       drafts: drafts.snapshot(),
@@ -225,6 +229,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       noteTag,
       recordsSeen: records.seen,
       failureRetries: failures.snapshot(),
+      forgotten: [...forgotten],
     }),
 
     restore(state) {
@@ -235,6 +240,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
         noteTag?: string;
         recordsSeen?: number | null;
         failureRetries?: { retries?: number };
+        forgotten?: string[];
       };
       ledger.restore(saved.ledger);
       drafts.restore(saved.drafts);
@@ -242,6 +248,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       if (saved.noteTag) noteTag = saved.noteTag;
       records.seen = saved.recordsSeen ?? null;
       failures.restore(saved.failureRetries);
+      forgotten.splice(0, forgotten.length, ...(saved.forgotten ?? []));
     },
   };
 }

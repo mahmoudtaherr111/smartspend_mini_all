@@ -203,10 +203,10 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `chat.cancelAction` | mutation | `aiProcedure` | yes | — | — | `api/services/action-runtime/index.ts` | `src/components/ai/AIChatbot.tsx` |
-| `chat.clearAllMemories` | mutation | `authedProcedure` | no | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` | `api/lib/muscle-memory.ts`, `api/services/ai-memory/index.ts` | `src/components/ai/AIMemoryManager.tsx` |
+| `chat.clearAllMemories` | mutation | `authedProcedure` | no | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` | `api/lib/muscle-memory.ts`, `api/services/ai-memory/index.ts`, `api/services/voice/post-call.ts` | `src/components/ai/AIMemoryManager.tsx` |
 | `chat.clearConversation` | mutation | `authedProcedure` | yes | `chat_conversations` | `ai_conversation_summaries`, `chat_conversations`, `chat_messages` | — | `src/components/ai/AIChatbot.tsx` |
 | `chat.confirmAction` | mutation | `aiProcedure` | yes | — | — | `api/services/action-runtime/index.ts` | `src/components/ai/AIChatbot.tsx` |
-| `chat.forgetMemory` | mutation | `authedProcedure` | yes | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` | `api/lib/muscle-memory.ts`, `api/services/ai-memory/index.ts` | `src/components/ai/AIMemoryManager.tsx` |
+| `chat.forgetMemory` | mutation | `authedProcedure` | yes | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` | `api/lib/muscle-memory.ts`, `api/services/ai-memory/index.ts`, `api/services/voice/post-call.ts` | `src/components/ai/AIMemoryManager.tsx` |
 | `chat.getConversation` | query | `authedProcedure` | yes | `chat_conversations`, `chat_messages` | — | — | `src/components/ai/AIChatbot.tsx` |
 | `chat.getConversations` | query | `authedProcedure` | no | `chat_conversations` | — | — | `src/components/ai/AIChatbot.tsx` |
 | `chat.getQuickActions` | query | `authedProcedure` | no | — | — | — | `src/components/ai/AIChatbot.tsx` |
@@ -325,7 +325,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `profile.getSmartProfile` | query | `authedProcedure` | no | — | — | `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/components/profile/SmartProfileView.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/pages/Home.tsx`, `src/pages/Settings.tsx` |
 | `profile.getSmsLogs` | query | `authedProcedure` | no | `raw_sms_events` | — | — | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getSmsSuggestions` | query | `authedProcedure` | no | `raw_sms_events` | — | — | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
-| `profile.getWebhookToken` | query | `authedProcedure` | no | `webhook_tokens` | — | — | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
+| `profile.getWebhookToken` | query | `authedProcedure` | no | `raw_sms_events`, `webhook_tokens` | — | — | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
 | `profile.listContacts` | query | `authedProcedure` | yes | `expenses`, `user_contacts` | — | — | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.markInAppNotificationRead` | mutation | `authedProcedure` | yes | — | `in_app_notifications` | — | `src/components/NotificationBell.tsx` |
 | `profile.mergeContacts` | mutation | `authedProcedure` | yes | `expenses`, `user_contacts`, `user_profiles` | `expenses`, `user_contacts`, `user_profiles` | `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/settings/PeopleSettingsView.tsx` |

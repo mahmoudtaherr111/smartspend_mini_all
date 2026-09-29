@@ -175,7 +175,7 @@ _None._
 | `profile.generateWebhookToken` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getSmartProfile` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
+| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
 | `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 | `wallet.createWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
@@ -362,7 +362,7 @@ _None._
 | `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/SmartProfileSettings.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/components/profile/SmartProfileView.tsx`, `src/pages/Settings.tsx` |
 | `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
+| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
 | `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.mergeContacts` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |

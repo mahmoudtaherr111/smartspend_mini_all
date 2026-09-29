@@ -1312,7 +1312,7 @@ export const chatRouter = router({
     .input(z.object({ memoryId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const [item] = await db
-        .select({ id: aiMemoryItems.id })
+        .select({ id: aiMemoryItems.id, content: aiMemoryItems.content })
         .from(aiMemoryItems)
         .where(
           and(
@@ -1353,6 +1353,9 @@ export const chatRouter = router({
 
       invalidateUserMemory(ctx.user.id, ctx.user.type);
       await invalidateMemoryUserCache(ctx.user.id, ctx.user.type).catch(() => {});
+      // A call whose summary is still to be written holds the words it came from: it is told to leave it out.
+      const { forgetInPendingCalls } = await import("./services/voice/post-call");
+      await forgetInPendingCalls({ userId: ctx.user.id, userType: ctx.user.type }, String(item.content ?? "")).catch(() => {});
 
       return { success: true };
     }),
@@ -1361,6 +1364,9 @@ export const chatRouter = router({
    * Clear/forget all active user memories.
    */
   clearAllMemories: authedProcedure.mutation(async ({ ctx }) => {
+    // Calls whose summary is still to be written would bring memories back: their words go first.
+    const { forgetInPendingCalls } = await import("./services/voice/post-call");
+    await forgetInPendingCalls({ userId: ctx.user.id, userType: ctx.user.type }, null).catch(() => {});
     const items = await db
       .select({ id: aiMemoryItems.id })
       .from(aiMemoryItems)

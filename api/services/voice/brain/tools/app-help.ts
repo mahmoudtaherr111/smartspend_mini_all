@@ -3,14 +3,17 @@
  * the answer says so instead of letting the model invent steps.
  */
 import { searchSiteGuide } from "../../../site-guide";
-import { str, type VoiceTool } from "./types";
+import { str, type ToolContext, type VoiceTool } from "./types";
 
 /** The screen a guide topic lives on, where that is certain. */
-const ROUTES: Partial<Record<string, string>> = { sms: "/bank-sync", card: "/bank-sync", expenses: "/" };
+const ROUTES: Partial<Record<string, string>> = { sms: "/bank-sync", card: "/bank-sync", wallet: "/bank-sync", expenses: "/dashboard", plans: "/plan" };
 
 /** What the assistant can and cannot do in a call, so it never promises a missing feature. */
 const CAN = ["يجاوب بأرقام من الدفتر", "يسجل مصروف أو دخل بعد موافقتك", "يعمل هدف أو ميزانية أو محفظة", "يفتكر ويدوّر في كلامكم القديم", "يشرح استخدام التطبيق"];
 const CANNOT = ["تحويل فلوس أو دفع", "تذكير أو منبّه في ميعاد", "ربط البنك بنفسه", "مسح عمليات قديمة (بتتمسح من شاشة المصاريف)"];
+/** The coach call also keeps plans, reminders inside the app and commitments (api/services/voice/brain/tools/coach.ts). */
+const COACH_CAN = [...CAN, "يحفظ خطة اتفقتوا عليها بموافقتك", "يظبط تذكير جوه التطبيق بموافقتك", "يسجل التزاماتك ودخلك الجاي بمواعيدها"];
+const COACH_CANNOT = ["تحويل فلوس أو دفع", "رسايل أو تذكير برّه التطبيق (واتساب أو SMS)", "ربط البنك بنفسه", "مسح عمليات قديمة (بتتمسح من شاشة المصاريف)"];
 
 export const appHelpTool: VoiceTool = {
   declaration: {
@@ -18,7 +21,9 @@ export const appHelpTool: VoiceTool = {
     description: "How to use the app (linking bank messages, wallets, goals, reports...). Describe only the steps it returns.",
     parameters: { type: "object", properties: { question: { type: "string" } }, required: ["question"] },
   },
-  async run(args) {
+  async run(args, ctx: ToolContext) {
+    const can = ctx.coach ? COACH_CAN : CAN;
+    const cannot = ctx.coach ? COACH_CANNOT : CANNOT;
     const question = str(args.question, 200) ?? "";
     const result = searchSiteGuide(question, 2);
     const best = result.chunks[0];
@@ -28,14 +33,14 @@ export const appHelpTool: VoiceTool = {
         response: {
           ok: true,
           found: false,
-          can: CAN,
-          cannot: CANNOT,
+          can,
+          cannot,
           say: "الدليل مافيهوش ده. قول كده بصراحة، ولو ينفع قول أقرب حاجة تقدر تعملها.",
         },
       };
     }
     return {
-      response: { ok: true, found: true, topic: best.title, steps: best.steps.slice(0, 5), cannot: CANNOT },
+      response: { ok: true, found: true, topic: best.title, steps: best.steps.slice(0, 5), cannot },
       card: { kind: "guide", title: best.title, steps: best.steps.slice(0, 6), route: ROUTES[best.area] },
     };
   },

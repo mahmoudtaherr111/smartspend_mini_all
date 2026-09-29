@@ -117,7 +117,7 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 | `profile.generateWebhookToken` | mutation | `authedProcedure` | — | `webhook_tokens` | `BankSyncPage`, `More` |
 | `profile.getSmsLogs` | query | `authedProcedure` | `raw_sms_events` | — | `BankSyncPage`, `More` |
 | `profile.getSmsSuggestions` | query | `authedProcedure` | `raw_sms_events` | — | `Home` |
-| `profile.getWebhookToken` | query | `authedProcedure` | `webhook_tokens` | — | `BankSyncPage`, `More` |
+| `profile.getWebhookToken` | query | `authedProcedure` | `raw_sms_events`, `webhook_tokens` | — | `BankSyncPage`, `More` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -142,7 +142,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- | --- |
 | `expenses` | B | `ingestion-parsers` | — |
 | `local_users` | A | — | `POST /api/sms/ingest` |
-| `raw_sms_events` | E | `POST /api/sms/ingest`, `ingestion-parsers` | `GET /api/sms/logs`, `GET /api/sms/metrics`, `GET /api/sms/unparsed`, `POST /api/sms/ingest`, `ingestion-parsers`, `profile.getSmsLogs`, `profile.getSmsSuggestions` |
+| `raw_sms_events` | E | `POST /api/sms/ingest`, `ingestion-parsers` | `GET /api/sms/logs`, `GET /api/sms/metrics`, `GET /api/sms/unparsed`, `POST /api/sms/ingest`, `ingestion-parsers`, `profile.getSmsLogs`, `profile.getSmsSuggestions`, `profile.getWebhookToken` |
 | `users` | A | — | `POST /api/sms/ingest` |
 | `webhook_tokens` | D | `GET /api/sms/android-connect`, `POST /api/sms/token/generate`, `profile.generateWebhookToken` | `GET /api/sms/android-connect`, `GET /api/sms/shortcut-download`, `GET /api/sms/token`, `POST /api/sms/android-status`, `POST /api/sms/exchange`, `POST /api/sms/ingest`, `profile.generateMagicCode`, `profile.getWebhookToken` |
 

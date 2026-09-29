@@ -265,6 +265,15 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
   };
 
   const { totalIn, totalOut } = getCardTotals();
+  // The link's state from what arrived, not from a token existing: a phone set up once may have stopped forwarding.
+  const link = trpc.profile.getWebhookToken.useQuery();
+  const lastReceived = link.data?.lastReceivedAt ? new Date(link.data.lastReceivedAt) : null;
+  const daysSince = lastReceived ? Math.floor((Date.now() - lastReceived.getTime()) / 86_400_000) : null;
+  const linkState = !lastReceived
+    ? { fresh: false, text: "الربط اتعمل، ولسه مفيش رسايل بنك وصلت" }
+    : daysSince! <= 3
+      ? { fresh: true, text: `آخر رسالة بنك وصلت ${daysSince === 0 ? "النهارده" : daysSince === 1 ? "امبارح" : `من ${daysSince} أيام`}` }
+      : { fresh: false, text: `آخر رسالة بنك وصلت من ${daysSince} يوم؛ اتأكد إن الربط لسه شغال على موبايلك` };
   const selectedWallet = wallets.find((w: any) => w.id === selectedWalletId);
 
   return (
@@ -276,17 +285,22 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 bg-emerald-500/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-emerald-300 text-xs font-bold border border-emerald-500/30">
+            <div
+              className={
+                linkState.fresh
+                  ? "inline-flex items-center gap-2 bg-emerald-500/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-emerald-300 text-xs font-bold border border-emerald-500/30"
+                  : "inline-flex items-center gap-2 bg-amber-500/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-amber-200 text-xs font-bold border border-amber-500/30"
+              }
+            >
               <CheckCircle className="w-3.5 h-3.5" />
-              الربط البنكي التلقائي نشط ومكتمل
+              {linkState.text}
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               محفظتك الرقمية الذكية 💳
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl">
-              تظهر هنا جميع الكروت والمحافظ التي تم تفعيلها. أي إشعار بنكي أو
-              رسالة سحب/إيداع سيتم ربطها تلقائياً بالبطاقة المناسبة لتحديث
-              الرصيد فورياً.
+              هنا كروتك ومحافظك. كل رسالة بنك بتوصل بتتسجل عملية، أما رصيد
+              المحفظة فهو اللي انت كاتبه، فحدّثه من هنا لما يتغير.
             </p>
           </div>
 

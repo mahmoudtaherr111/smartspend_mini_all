@@ -39,4 +39,9 @@ describe("site guide retrieval phase 6", () => {
     expect(result.facts[0].value).toContain("آخر أربعة أرقام");
     expect(result.facts[1].value).toContain("SMS");
   });
+
+  it("gives the iPhone's Shortcuts steps to an iPhone question, and the companion app's to an Android one", () => {
+    expect(searchSiteGuide("ازاي اربط رسايل البنك على الآيفون؟", 1).chunks[0]).toMatchObject({ id: "sms:iphone" });
+    expect(searchSiteGuide("ازاي اربط اشعارات البنك على الاندرويد", 1).chunks[0]).toMatchObject({ id: "sms:android" });
+  });
 });

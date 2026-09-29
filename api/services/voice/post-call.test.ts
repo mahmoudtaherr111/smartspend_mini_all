@@ -119,3 +119,34 @@ describe("summarizeCall", () => {
     expect(state.transcript).toBeNull();
   });
 });
+
+describe("what the user forgot", () => {
+  const forgot: TranscriptLine[] = [...words, { role: "forgotten", text: "مرتبه بينزل يوم 25" }];
+
+  it("is named to the model apart from the words, and never kept whatever the model answers", async () => {
+    const { deps, state } = fakeDeps({ readTranscript: async () => forgot });
+    expect(await summarizeCall("vc_1", deps)).toBe("saved");
+    const prompt = String(vi.mocked(deps.ask).mock.calls[0][1]);
+    expect(prompt).toContain("FORGOTTEN:\n- مرتبه بينزل يوم 25");
+    expect(prompt.split("CALL:")[1]).not.toContain("forgotten");
+    // The model kept it anyway: the answer is held to the rule.
+    expect(state.written!.facts.map((fact) => fact.content)).toEqual(["بيحوش لعربية السنة الجاية"]);
+  });
+
+  it("is honoured when it is forgotten while the model answers, and nothing is kept once everything was", async () => {
+    const reads = [words, forgot];
+    const late = fakeDeps({ readTranscript: async () => reads.shift() ?? forgot });
+    await summarizeCall("vc_1", late.deps);
+    expect(late.state.written!.facts.map((fact) => fact.content)).toEqual(["بيحوش لعربية السنة الجاية"]);
+
+    const cleared = [words, null];
+    const all = fakeDeps({ readTranscript: async () => (cleared.length ? cleared.shift()! : null) });
+    expect(await summarizeCall("vc_1", all.deps)).toBe("empty");
+    expect(all.state.written).toBeNull();
+  });
+
+  it("drops a summary that says it again", () => {
+    const memory = readCallMemory(JSON.stringify({ summary: "مرتبه بينزل يوم 25 وبيحوش", facts: [] }), existing, ["مرتبه بينزل يوم 25"]);
+    expect(memory!.summary).toBe("");
+  });
+});

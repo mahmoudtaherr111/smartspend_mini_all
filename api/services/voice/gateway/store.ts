@@ -71,7 +71,11 @@ export async function deleteCallState(callId: string): Promise<void> {
 }
 
 export interface TranscriptLine {
-  role: "user" | "assistant";
+  /**
+   * `forgotten`: something the user asked to forget during the call (or from the memory screen while its summary was
+   * pending). It travels with the words, lives as long as they do, and tells the summary what to leave out.
+   */
+  role: "user" | "assistant" | "forgotten";
   text: string;
 }
 
@@ -94,4 +98,13 @@ export async function readTranscript(callId: string): Promise<TranscriptLine[] |
 
 export async function deleteTranscript(callId: string): Promise<void> {
   await cacheDel(transcriptKey(callId));
+}
+
+/** Adds a forgotten item to words still waiting for their summary; nothing when they are gone. */
+export async function appendForgotten(callId: string, text: string): Promise<boolean> {
+  const lines = await readTranscript(callId);
+  if (!lines) return false;
+  lines.push({ role: "forgotten", text });
+  await saveTranscript(callId, lines);
+  return true;
 }

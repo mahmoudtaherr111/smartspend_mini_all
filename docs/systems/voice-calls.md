@@ -115,8 +115,8 @@ refuses both reads and drafts (`ToolContext#coach`).
 | `record_draft` | Parses what the user says they spent or received through `ai.parseExpense`, checks the amounts against what the model understood and against the numbers heard from the user, and drafts; a disagreement asks about that number alone ("خمستاشر ولا خمسين؟"). Each item keeps what the parser found beyond its category, through the same helpers as the expense form (`contracts/expense-save.ts`): a refund's direction (saved negative in its category, and shown as "مرتجع"), a loan's or gam3eya's way, the person beside a purpose. A draft mixing kinds (spending and a refund) has no single total. With a `clarification_id` it finishes an entry left waiting: the words the user first typed, read from the database, with their answer in brackets, joined as `expense.answerClarification` joins them; the numbers of those first words count as heard from the user, and the entry is closed only when that draft is confirmed |
 | `change_draft` | Drafts a goal, budget, wallet, profile detail (never age or gender) or recategorization through the action runtime, or undoing what this call recorded. The runtime's pending action is created with the draft, so every confirmation runs that one id; cancelling the draft cancels it |
 | `confirm` / `cancel` | Executes or drops a draft through the gate below; an executed write marks every figure read before it out of date and tells the model so (`records_changed`); expenses are saved with `expense.batchCreate` with `clientRequestId` `vc:<call>:<draft>:<n>`, so a retry never saves twice; an action runs through `confirmAction` with `suggestFollowUp: false`, so no budget draft is left that the call cannot show |
-| `memory` | Searches the AI memory, remembers what the user asks it to (never age or gender), deletes a memory by id when asked to forget it, lists what the app knows when asked ("إنت عارف عني إيه": job, payday, income, goal, monthly debt payment, the eight latest memories, and the screen where they can be seen and deleted), and saves the answer to the call's profile question, or its refusal, through `profile.submitOnboardingAnswer` once the answer fits the question's type |
-| `app_help` | Steps from the site guide, or says the guide has nothing, with what the call can and cannot do |
+| `memory` | Searches the AI memory, remembers what the user asks it to (never age or gender), deletes a memory by id when asked to forget it (and hands its text to the post-call summary to leave out, see [after the call](#after-the-call)), lists what the app knows when asked ("إنت عارف عني إيه": job, payday, income, goal, monthly debt payment, the eight latest memories, and the screen where they can be seen and deleted), and saves the answer to the call's profile question, or its refusal, through `profile.submitOnboardingAnswer` once the answer fits the question's type |
+| `app_help` | Steps from the site guide, or says the guide has nothing, with what the call can and cannot do: the coach can keep plans, in-app reminders and commitments, the standard call cannot, and neither sends anything outside the app |
 | `calculate` | The coach call's arithmetic (`api/services/voice/brain/tools/calculate.ts`): steps of add, sub, mul, div, sum, min, max, pct and round over fact refs, earlier steps, counts ("12 months", "30 days"), percents, and amounts only when the user said them. Decimal arithmetic with units: pounds with pounds, pounds times days or months or a count, pounds over days is pounds a day, pounds times pounds refused. Each result becomes a fact the call may say, with how it was made; one built on a figure that went out of date is out of date too. Nothing is written when a step fails |
 | `think` | The standard call only. Hard questions go to a text model through `executeAiGateway` with the user's numbers: `voice_think_model` (default `gemini-3.5-flash-lite`, fast because the caller is waiting), then the next model of the chain after 5 seconds, and 9 seconds in all. Numbers it returns survive only if they come from the data, from the user, or one step of arithmetic on them (a product only with a count on one side); a verdict, alternative or missing fact carrying any other amount is dropped whole. This is a plausibility screen, not a check of meaning |
 | `market_price` | Gold or currency prices in Egypt from a text model with Google Search (`voice_price_model`, default `gemini-3.5-flash-lite`, through `askTextModel` with the same 5- and 9-second limits and the chain's other models), within sane bounds, cached 30 minutes for everyone, with its source and time; when the source names no time, the time of the lookup on Cairo's clock |
@@ -182,7 +182,12 @@ is billed again for it on every later turn.
 `pending` to `writing`, so two servers never both do it), reads the words from Redis, and, when the user said more
 than a few words, asks a text model once for a summary of at most two sentences and at most five things to remember
 (plans, agreements, preferences, stable facts), with the user's 30 latest memories so it does not repeat them and can
-name one a new fact replaces. `readCallMemory` holds the answer to the rules whatever the model wrote: at most five
+name one a new fact replaces. What the user forgot during the call, or from the memory screen while the summary was
+pending, travels with the words as `forgotten` lines (`api/services/voice/gateway/store.ts#appendForgotten`, the
+same Redis hour as the words, never MySQL): the model reads it as FORGOTTEN, the words it came from stay in the call
+text, and `repeatsForgotten` drops any fact or summary sharing most of its words; the forgotten items are read again
+just before writing, and words gone by then (the user forgot everything) mean nothing is written.
+`readCallMemory` holds the answer to the rules whatever the model wrote: at most five
 facts, only known ids replaced, and nothing about age, gender, health, religion or a judgment of the person
 (`api/services/voice/brain/never-kept.ts`). The summary is written to `ai_memory_items` as a `summary` ("مكالمة 23/9:
 …"), the facts under their own types, both with `metadata.source` `voice_call` and the call id; a replaced memory
@@ -346,9 +351,7 @@ Checked against the code; each one names where it lives.
    it visible and asks for a retry.
 5. **Gap.** The opening context (CALL FACTS) cannot be changed during a session: after the records change the model is
    told, and a stale figure said is recorded, but not stopped (`api/services/voice/brain/validator.ts`).
-6. **Gap.** Forgetting a memory during a call deletes it, but the words of the call still hold it, and the post-call
-   summary (`api/services/voice/post-call.ts#summarizeCall`) is not told to leave it out.
-7. **Debt.** An action draft that expires, or that a newer draft replaces, leaves its runtime action pending until the
+6. **Debt.** An action draft that expires, or that a newer draft replaces, leaves its runtime action pending until the
    runtime's own expiry (`api/services/voice/brain/tools/record.ts#dropRuntimeAction` runs on cancel only); nothing
    can confirm it from the call.
 

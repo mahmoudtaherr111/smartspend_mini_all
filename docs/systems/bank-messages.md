@@ -118,7 +118,11 @@ A message past the plan's limit is not lost (docs/decisions/0009-bank-messages-o
 4. Recent messages come from `profile.getSmsLogs`, refreshed every ten seconds.
 
 With a token in place, `BankSyncPage` shows `src/components/bank-sync/DigitalBankingSuite.tsx#DigitalBankingSuite`,
-which manages cards and wallets through the wallet procedures of [Money](money.md).
+which manages cards and wallets through the wallet procedures of [Money](money.md). Its badge says what arrived, not
+that a token exists: `profile.getWebhookToken` also returns `lastReceivedAt`, the latest stored message
+(`raw_sms_events`), and the badge reads "no message yet", the day of the last one (green within three days), or how
+many days ago it was with a prompt to check the phone (amber). A wallet's balance is what the user entered; messages
+are saved as transactions and do not move it.
 
 Also available, with no caller in the web app today: one-time six-character codes (`profile.generateMagicCode`,
 kept five minutes as shared state by `api/sms-router.ts#storeMagicCode`, so any server process can exchange one; a new

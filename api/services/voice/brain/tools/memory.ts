@@ -62,7 +62,7 @@ async function forget(memoryId: number, ctx: ToolContext): Promise<ToolRunOutcom
     eq(aiMemoryItems.userId, ctx.identity.userId),
     eq(aiMemoryItems.userType, ctx.identity.userType),
   );
-  const [item] = await db.select({ id: aiMemoryItems.id }).from(aiMemoryItems).where(scope).limit(1);
+  const [item] = await db.select({ id: aiMemoryItems.id, content: aiMemoryItems.content }).from(aiMemoryItems).where(scope).limit(1);
   if (!item) return { response: { ok: false, error: "not_found", say: "مالقيتش الحاجة دي. دوّر بـ search الأول." } };
   ctx.signal.throwIfAborted();
   // Forgetting deletes the memory and its search vector; nothing of it is kept behind a status.
@@ -73,7 +73,9 @@ async function forget(memoryId: number, ctx: ToolContext): Promise<ToolRunOutcom
     eq(aiMemoryEmbeddings.userType, ctx.identity.userType),
   ));
   await invalidateMemoryUserCache(ctx.identity.userId, ctx.identity.userType).catch(() => undefined);
-  return { response: { ok: true, say: "قول إنك نسيتها." } };
+  // The words of this call may hold it too: the summary after the call is told to leave it out.
+  ctx.forgotten?.push(String(item.content ?? ""));
+  return { response: { ok: true, say: "قول إنك نسيتها، ومتستخدمهاش تاني في المكالمة دي." } };
 }
 
 /** The user answered (or declined) the profile question from the call's facts. */

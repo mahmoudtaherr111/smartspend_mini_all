@@ -55,6 +55,7 @@ flowchart LR
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_platform[["Server platform and data (system)"]]
+  sys_voice_calls[["Live voice assistant (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
   job_memory_embedding_backfill --> mod_ai_memory
   mod_ai_actions --> mod_ai_memory
@@ -105,6 +106,7 @@ flowchart LR
   router_chat --> sys_ai_platform
   router_chat --> sys_expense_capture
   router_chat --> sys_platform
+  router_chat --> sys_voice_calls
   router_chat -.-> tbl_ai_pending_actions
   router_chat ==> tbl_ai_conversation_summaries
   router_chat ==> tbl_ai_memory_embeddings

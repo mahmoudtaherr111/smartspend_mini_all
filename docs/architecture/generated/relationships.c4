@@ -761,6 +761,7 @@ model {
   smartspend.api.trpc.chat.clearAllMemories -[reads]-> smartspend.mysql.ai_memory_items
   smartspend.api.trpc.chat.clearAllMemories -[uses]-> smartspend.api.modules.ai-memory
   smartspend.api.trpc.chat.clearAllMemories -[uses]-> smartspend.api.modules.classification
+  smartspend.api.trpc.chat.clearAllMemories -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.chat.clearAllMemories -[writes]-> smartspend.mysql.ai_memory_embeddings
   smartspend.api.trpc.chat.clearAllMemories -[writes]-> smartspend.mysql.ai_memory_items
   smartspend.api.trpc.chat.clearConversation -[reads]-> smartspend.mysql.chat_conversations
@@ -771,6 +772,7 @@ model {
   smartspend.api.trpc.chat.forgetMemory -[reads]-> smartspend.mysql.ai_memory_items
   smartspend.api.trpc.chat.forgetMemory -[uses]-> smartspend.api.modules.ai-memory
   smartspend.api.trpc.chat.forgetMemory -[uses]-> smartspend.api.modules.classification
+  smartspend.api.trpc.chat.forgetMemory -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.chat.forgetMemory -[writes]-> smartspend.mysql.ai_memory_embeddings
   smartspend.api.trpc.chat.forgetMemory -[writes]-> smartspend.mysql.ai_memory_items
   smartspend.api.trpc.chat.getConversation -[reads]-> smartspend.mysql.chat_conversations
@@ -1021,6 +1023,7 @@ model {
   smartspend.api.trpc.profile.getSmartProfile -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.profile.getSmsLogs -[reads]-> smartspend.mysql.raw_sms_events
   smartspend.api.trpc.profile.getSmsSuggestions -[reads]-> smartspend.mysql.raw_sms_events
+  smartspend.api.trpc.profile.getWebhookToken -[reads]-> smartspend.mysql.raw_sms_events
   smartspend.api.trpc.profile.getWebhookToken -[reads]-> smartspend.mysql.webhook_tokens
   smartspend.api.trpc.profile.listContacts -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.profile.listContacts -[reads]-> smartspend.mysql.user_contacts

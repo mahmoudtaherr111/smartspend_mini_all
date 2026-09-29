@@ -113,6 +113,8 @@ export interface ToolContext {
   records?: { seen: number | null };
   /** The coach call: its plan and commitment reads and drafts are available (api/services/voice/brain/tools/coach.ts). */
   coach?: boolean;
+  /** What the user asked to forget during the call, handed to the post-call summary with the words (never stored). */
+  forgotten?: string[];
 }
 
 export interface VoiceTool {

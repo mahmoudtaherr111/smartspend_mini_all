@@ -221,7 +221,9 @@ export function SmartProfileView({ onEdit, onBack }: { onEdit: () => void; onBac
     financial?.fixedCommitmentsTotal ||
       rent + debtMonthly + commitments + carCost,
   );
-  const savingsRate =
+  // The share of the income left once the fixed commitments are paid, from the profile's own answers. It is not
+  // what the user saves: spending is not in it (the ledger's figures are in the statistics tab).
+  const leftAfterFixed =
     income > 0
       ? Math.max(0, Math.round(((income - fixedTotal) / income) * 100))
       : null;
@@ -328,12 +330,13 @@ export function SmartProfileView({ onEdit, onBack }: { onEdit: () => void; onBac
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800 dark:text-slate-200">
-                    قوة البروفايل الذكي
+                    اكتمال الملف
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {/* Five answers filled in say nothing about how right the numbers are: the text claims only what it counts. */}
                     {completionScore === 100
-                      ? "ممتاز! تقارير الذكاء الاصطناعي الآن بأعلى دقة."
-                      : "أكمل بياناتك للحصول على تقارير مالية مخصصة وعميقة."}
+                      ? "ملفك كامل. التقارير بتستخدمه مع مصاريفك المسجلة، فكل ما تسجل أكتر تبقى أقرب لحقيقتك."
+                      : "كمّل بياناتك عشان التقارير تبقى على مقاسك."}
                   </p>
                 </div>
               </div>
@@ -370,8 +373,8 @@ export function SmartProfileView({ onEdit, onBack }: { onEdit: () => void; onBac
             />
             <PremiumStatCard
               delay={300}
-              label="معدل الادخار"
-              value={savingsRate !== null ? `${savingsRate}%` : "—"}
+              label="يفضل بعد الالتزامات الثابتة"
+              value={leftAfterFixed !== null ? `${leftAfterFixed}%` : "—"}
               icon={<PiggyBank className="w-5 h-5" />}
             />
             <PremiumStatCard

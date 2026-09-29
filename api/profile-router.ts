@@ -629,10 +629,18 @@ export const profileRouter = router({
         ),
       )
       .limit(1);
+    // A token proves the phone was set up once, not that it still forwards: the last message that arrived does.
+    const [latest] = record
+      ? await db
+          .select({ at: sql<Date | null>`MAX(${rawSmsEvents.createdAt})` })
+          .from(rawSmsEvents)
+          .where(and(eq(rawSmsEvents.userId, ctx.user.id as number), eq(rawSmsEvents.userType, ctx.user.type)))
+      : [];
     return {
       token: record?.token || null,
       hasToken: !!record,
       createdAt: record?.createdAt || null,
+      lastReceivedAt: latest?.at ? new Date(latest.at).toISOString() : null,
     };
   }),
 

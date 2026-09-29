@@ -116,6 +116,8 @@ export interface CallBrain {
   awaitingConfirmation?(): boolean;
   /** What the end card lists. */
   summary?(): { done: string[]; notDone: string[] };
+  /** What the user asked to forget during the call, saved with the words for the post-call summary to leave out. */
+  forgotten?(): string[];
   /** Serializable brain state to carry across servers with the call. */
   snapshot?(): unknown;
   restore?(state: unknown): void;
@@ -866,7 +868,10 @@ export class CallSession {
     } catch (error) {
       log.error({ event: "voice.finalize_failed", callId: this.callId, err: error }, "Final call row not written");
     }
-    if (hasWords) await this.deps.saveTranscript(this.callId, this.transcript).catch(() => undefined);
+    if (hasWords) {
+      const forgotten = (this.deps.brain.forgotten?.() ?? []).filter(Boolean).map((text) => ({ role: "forgotten" as const, text }));
+      await this.deps.saveTranscript(this.callId, [...this.transcript, ...forgotten]).catch(() => undefined);
+    }
     await this.deps.deleteState(this.callId).catch(() => undefined);
 
     const summary = this.deps.brain.summary?.() ?? { done: [], notDone: [] };

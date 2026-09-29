@@ -28,6 +28,7 @@ function brainFor(tools: ToolPlan, cardNote = "(ملاحظة من التطبيق
     },
     openingNote: () => "[greet]",
     writes: (name) => name === "confirm",
+    forgotten: () => ["مرتبه بينزل يوم 25"],
     async runTool(call) {
       const plan = tools[call.name];
       await delay(plan.ms);
@@ -54,6 +55,7 @@ describe("a call's turns", () => {
   let url: string;
   let tools: ToolPlan = {};
   const tickets = new Map<string, TicketPayload>();
+  const saved = new Map<string, Array<{ role: string; text: string }>>();
   const states = new Map<string, StoredCall>();
 
   beforeEach(async () => {
@@ -66,7 +68,7 @@ describe("a call's turns", () => {
       saveState: async (callId, state) => { states.set(callId, JSON.parse(JSON.stringify(state))); },
       loadState: async (callId) => states.get(callId) ?? null,
       deleteState: async (callId) => { states.delete(callId); },
-      saveTranscript: async () => undefined,
+      saveTranscript: async (callId, lines) => { saved.set(callId, lines); },
       replyWaitMs: 150,
       toolTimeoutMs: 250,
     });
@@ -109,6 +111,18 @@ describe("a call's turns", () => {
     live.received.flatMap((m) => m.toolResponse?.functionResponses.map((r) => r.id) ?? []);
   const notesSent = (live: FakeLiveConnection) =>
     live.received.flatMap((m) => m.clientContent?.turns?.flatMap((t) => t.parts.map((p) => p.text)) ?? []);
+
+  it("saves what the user forgot with the words, for the summary to leave out", async () => {
+    tools = {};
+    const { app, live } = await startCall();
+    app.send({ type: "text", text: "انسى موضوع المرتب" });
+    live.sendAudio(Buffer.from([1]));
+    live.sendTurnComplete();
+    app.send({ type: "end" });
+    await app.waitFor("ended");
+    const lines = [...saved.values()].at(-1)!;
+    expect(lines.at(-1)).toEqual({ role: "forgotten", text: "مرتبه بينزل يوم 25" });
+  });
 
   it("sends a quick answer at once instead of holding it behind a slow one", async () => {
     tools = {

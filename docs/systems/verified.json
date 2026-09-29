@@ -40,16 +40,16 @@
         "src/components/auth/TurnstileWidget.tsx": "9a0df28a6e7b",
         "src/components/notifications/PushNotificationPrompt.tsx": "b7d1e5b30b68",
         "src/components/profile/SmartProfileSettings.tsx": "9010f214a2bb",
-        "src/components/profile/SmartProfileView.tsx": "1d6745467c8e",
+        "src/components/profile/SmartProfileView.tsx": "795f5b20d342",
         "src/components/settings/BusinessSettingsView.tsx": "ced2674cdee4",
         "src/components/settings/PeopleSettingsView.tsx": "d14db778fc4a",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
         "src/pages/Login.tsx": "c3f3cb05781e",
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
-      "checked": "2026-09-29 55b9153",
-      "arabic": "9cb2ff4b4176",
-      "arabicChecked": "2026-09-29 dfd750a"
+      "checked": "2026-09-29 fa056d1",
+      "arabic": "8fc0dfa9c259",
+      "arabicChecked": "2026-09-29 fa056d1"
     },
     "admin": {
       "files": {
@@ -92,7 +92,7 @@
     "ai-center": {
       "files": {
         "api/boot.ts#job:memory-embedding-backfill": "85d55cd9dc11",
-        "api/chat-router.ts": "5373e8cd418b",
+        "api/chat-router.ts": "47f5e656c284",
         "api/services/action-runtime/artifacts.ts": "5292dfe6dc80",
         "api/services/action-runtime/confirmation-phrases.ts": "ecf79bb5cfe7",
         "api/services/action-runtime/extended-actions.ts": "b5986abafd8c",
@@ -134,7 +134,7 @@
         "api/services/finance-semantic-layer/types.ts": "af6ba15f813a",
         "api/services/site-guide/embedding.ts": "bc5457180269",
         "api/services/site-guide/index.ts": "d2416784dee1",
-        "api/services/site-guide/knowledge-base.ts": "e0e642a9d045",
+        "api/services/site-guide/knowledge-base.ts": "0c0483368ef3",
         "api/services/site-guide/retriever.ts": "e276a63d4ba1",
         "api/services/site-guide/types.ts": "18e510c0b423",
         "src/components/ai/AIChatbot.tsx": "cbd3900dcd37",
@@ -142,9 +142,9 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "c384e6047412"
       },
-      "checked": "2026-09-29 55b9153",
-      "arabic": "e7218e01c3ce",
-      "arabicChecked": "2026-09-29 55b9153"
+      "checked": "2026-09-29 fa056d1",
+      "arabic": "79fe8fda4d67",
+      "arabicChecked": "2026-09-29 fa056d1"
     },
     "ai-platform": {
       "files": {
@@ -188,20 +188,20 @@
         "api/profile-router.ts#profile.generateWebhookToken": "be8d7316579a",
         "api/profile-router.ts#profile.getSmsLogs": "c25c54979dfd",
         "api/profile-router.ts#profile.getSmsSuggestions": "e7e02adbedc1",
-        "api/profile-router.ts#profile.getWebhookToken": "8a850e31cd9d",
+        "api/profile-router.ts#profile.getWebhookToken": "383d68616d9f",
         "api/profile-router.ts#rest-of-file": "e8c900e5cb0d",
         "api/services/sms-ledger.ts": "079eab469b7d",
         "api/sms-router.ts": "e0b8578ae4b4",
         "src/components/bank-sync/AndroidSetupFlow.tsx": "a46afb8f98d0",
-        "src/components/bank-sync/DigitalBankingSuite.tsx": "f6d03642834d",
+        "src/components/bank-sync/DigitalBankingSuite.tsx": "0fa4b6d4f7e6",
         "src/components/bank-sync/IosSetupFlow.tsx": "d9df23b4367c",
         "src/components/bank-sync/SmsSuggestionsCard.tsx": "23336674d769",
         "src/components/settings/SmsWebhookSettings.tsx": "c540d4df52db",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-29 dfd750a",
-      "arabic": "c69608892a3b",
-      "arabicChecked": "2026-09-29 dfd750a"
+      "checked": "2026-09-29 fa056d1",
+      "arabic": "e95177442fa9",
+      "arabicChecked": "2026-09-29 fa056d1"
     },
     "billing": {
       "files": {
@@ -484,34 +484,34 @@
         "api/services/voice/brain/drafts.ts": "52b5d450662e",
         "api/services/voice/brain/facts.ts": "f6947c52bdb4",
         "api/services/voice/brain/honorific.ts": "451551920217",
-        "api/services/voice/brain/index.ts": "53c67af070bf",
+        "api/services/voice/brain/index.ts": "7ea526a5f9b9",
         "api/services/voice/brain/instructions.ts": "b598e50e60a3",
         "api/services/voice/brain/never-kept.ts": "977be210350d",
         "api/services/voice/brain/profile-questions.ts": "14673f9bb35c",
         "api/services/voice/brain/snapshot.ts": "ec381ecc1fd1",
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
-        "api/services/voice/brain/tools/app-help.ts": "039eab42299b",
+        "api/services/voice/brain/tools/app-help.ts": "429dac755057",
         "api/services/voice/brain/tools/calculate.ts": "cf080147087a",
         "api/services/voice/brain/tools/coach.ts": "7179e3e51c16",
         "api/services/voice/brain/tools/market-price.ts": "ee41c3759eeb",
-        "api/services/voice/brain/tools/memory.ts": "cf71f5e7891e",
+        "api/services/voice/brain/tools/memory.ts": "14feca9c3311",
         "api/services/voice/brain/tools/money-query.ts": "faff572a8b7b",
         "api/services/voice/brain/tools/record.ts": "8e7193afa9e0",
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
         "api/services/voice/brain/tools/think.ts": "bbc093d02f9a",
-        "api/services/voice/brain/tools/types.ts": "881ec5822696",
+        "api/services/voice/brain/tools/types.ts": "3e426a2ec96a",
         "api/services/voice/brain/validator.ts": "1b1ba3ade3ed",
         "api/services/voice/brain/voices.ts": "7fa9ca3bf8ae",
         "api/services/voice/engine/gemini-live.ts": "0c17f7ce5c39",
         "api/services/voice/engine/types.ts": "37d1c660ddae",
-        "api/services/voice/gateway/call-session.ts": "327ac13cb2f7",
+        "api/services/voice/gateway/call-session.ts": "6d323f3f832e",
         "api/services/voice/gateway/index.ts": "48f503085daf",
         "api/services/voice/gateway/persistence.ts": "0fac7b5c23a0",
         "api/services/voice/gateway/pricing.ts": "a0a41c068414",
         "api/services/voice/gateway/socket.ts": "fa8610d655e3",
         "api/services/voice/gateway/start-call.ts": "d61917608151",
-        "api/services/voice/gateway/store.ts": "7a1dc82ce092",
-        "api/services/voice/post-call.ts": "80600c7c478a",
+        "api/services/voice/gateway/store.ts": "b63ee8f8356d",
+        "api/services/voice/post-call.ts": "67b3213fa3a7",
         "api/services/voice/text-model.ts": "b848ded851d7",
         "api/voice-router.ts": "ad6a15d8a254",
         "scripts/vite-voice.ts": "661d231ec37f",
@@ -529,9 +529,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-09-29 55b9153",
-      "arabic": "07b3da27e3ed",
-      "arabicChecked": "2026-09-29 55b9153"
+      "checked": "2026-09-29 fa056d1",
+      "arabic": "fca6669a2539",
+      "arabicChecked": "2026-09-29 fa056d1"
     },
     "web-app": {
       "files": {

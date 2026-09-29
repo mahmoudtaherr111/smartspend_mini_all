@@ -16,7 +16,7 @@ import { db } from "../../queries/connection";
 import { invalidateMemoryUserCache } from "../ai-memory";
 import { contentHash } from "../ai-memory/text-utils";
 import { neverKeptUnasked } from "./brain/never-kept";
-import { deleteTranscript, readTranscript, TRANSCRIPT_TTL_SECONDS, type TranscriptLine } from "./gateway/store";
+import { appendForgotten, deleteTranscript, readTranscript, TRANSCRIPT_TTL_SECONDS, type TranscriptLine } from "./gateway/store";
 import { recordAiLedger } from "../../lib/ai-ledger";
 import { textModelCostUsd } from "./gateway/pricing";
 import { askTextModel } from "./text-model";
@@ -59,17 +59,50 @@ assistant should remember for the next call. Answer with JSON only:
   state of mind; a single expense that was recorded (the ledger has it); suggestions the user did not take up.
 - EXISTING lists what is already remembered, with ids. Do not repeat it. When a fact updates one of them, put that id
   in "replaces".
+- FORGOTTEN lists what the user asked to forget. Keep nothing about it, in the facts or the summary, however it was
+  said in the call.
 - Nothing worth keeping: an empty facts list.`;
 
 /** The words of the call and what is already remembered, as the model reads them. */
 export function memoryPrompt(lines: TranscriptLine[], existing: ExistingMemory[]): string {
   const words = lines
+    .filter((line) => line.role !== "forgotten")
     .map((line) => `${line.role === "user" ? "المستخدم" : "المساعد"}: ${line.text.replace(/\s+/g, " ").trim()}`)
     .join("\n");
   const known = existing.length
     ? existing.map((item) => `- [${item.id}] (${item.type}) ${item.content.replace(/\s+/g, " ").slice(0, 160)}`).join("\n")
     : "- (nothing yet)";
-  return `EXISTING:\n${known}\n\nCALL:\n${words}`;
+  const forgotten = forgottenOf(lines);
+  return `EXISTING:\n${known}\n\n${forgotten.length ? `FORGOTTEN:\n${forgotten.map((item) => `- ${item}`).join("\n")}\n\n` : ""}CALL:\n${words}`;
+}
+
+export function forgottenOf(lines: TranscriptLine[]): string[] {
+  return lines.filter((line) => line.role === "forgotten").map((line) => line.text.replace(/\s+/g, " ").trim().slice(0, 200));
+}
+
+/** The words of a text, folded, for comparing a new fact with something forgotten. */
+function wordsOf(text: string): Set<string> {
+  return new Set(text
+    .replace(/[\u064B-\u0652]/g, "")
+    .replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((word) => word.length > 1));
+}
+
+/**
+ * Whether a fact says again what the user asked to forget: most of the forgotten item's words, or of the fact's, are
+ * shared. The prompt already asks for nothing about it; this holds the answer to it whatever the model wrote.
+ */
+export function repeatsForgotten(text: string, forgotten: string[]): boolean {
+  const words = wordsOf(text);
+  if (!words.size) return false;
+  return forgotten.some((item) => {
+    const other = wordsOf(item);
+    if (!other.size) return false;
+    const shared = [...other].filter((word) => words.has(word)).length;
+    return shared / Math.min(other.size, words.size) >= 0.6;
+  });
 }
 
 function parseJsonObject(text: string): Record<string, unknown> | null {
@@ -88,7 +121,7 @@ const oneLine = (value: unknown, max: number): string =>
   typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, max) : "";
 
 /** What the model answered, held to the rules: at most five facts, nothing never kept, only known ids replaced. */
-export function readCallMemory(text: string, existing: ExistingMemory[]): CallMemory | null {
+export function readCallMemory(text: string, existing: ExistingMemory[], forgotten: string[] = []): CallMemory | null {
   const answer = parseJsonObject(text);
   if (!answer) return null;
   const summary = oneLine(answer.summary, 280);
@@ -99,14 +132,14 @@ export function readCallMemory(text: string, existing: ExistingMemory[]): CallMe
     if (facts.length >= 5) break;
     const item = (raw ?? {}) as Record<string, unknown>;
     const content = oneLine(item.content, 200);
-    if (content.length < 6 || neverKeptUnasked(content) || seen.has(content)) continue;
+    if (content.length < 6 || neverKeptUnasked(content) || seen.has(content) || repeatsForgotten(content, forgotten)) continue;
     seen.add(content);
     const type = FACT_TYPES.includes(item.type as FactType) ? (item.type as FactType) : "fact";
     const importance = Math.min(90, Math.max(30, Math.round(Number(item.importance) || 60)));
     const replaces = Number.isInteger(item.replaces) && knownIds.has(item.replaces as number) ? (item.replaces as number) : null;
     facts.push({ type, content, importance, replaces });
   }
-  return { summary: neverKeptUnasked(summary) ? "" : summary, facts };
+  return { summary: neverKeptUnasked(summary) || repeatsForgotten(summary, forgotten) ? "" : summary, facts };
 }
 
 export type MemoryOutcome = "saved" | "empty" | "expired" | "failed" | "retry" | "skipped";
@@ -162,7 +195,14 @@ export async function summarizeCall(callId: string, deps: PostCallDeps = databas
   try {
     const existing = await deps.existing(call);
     const answer = await deps.ask(call, memoryPrompt(lines, existing));
-    const memory = readCallMemory(answer.text, existing);
+    // Read the forgotten items again just before writing: the user may have deleted a memory while the model answered,
+    // or cleared everything (the words are gone: nothing of this call is kept).
+    const latest = await deps.readTranscript(callId).catch(() => lines);
+    if (latest === null) {
+      await deps.setStatus(callId, "empty", answer.usage);
+      return "empty";
+    }
+    const memory = readCallMemory(answer.text, existing, forgottenOf(latest));
     if (!memory) throw new Error("unreadable_answer");
     if (memory.summary || memory.facts.length) await deps.write(call, callId, memory);
     await deps.deleteTranscript(callId);
@@ -176,6 +216,28 @@ export async function summarizeCall(callId: string, deps: PostCallDeps = databas
     if (giveUp) await deps.deleteTranscript(callId);
     await deps.setStatus(callId, giveUp ? "failed" : "pending");
     return giveUp ? "failed" : "retry";
+  }
+}
+
+/**
+ * The user forgot a memory (`content`), or all of them (`null`), from the memory screen. A call of theirs whose summary
+ * has not been written yet still holds the words it came from: the item joins those words as forgotten, so the summary
+ * leaves it out; after "forget everything" the words are dropped and nothing of those calls is kept. The forgotten text
+ * lives only as long as the words (Redis, an hour).
+ */
+export async function forgetInPendingCalls(user: { userId: number; userType: string }, content: string | null): Promise<void> {
+  const calls = await db.select({ id: voiceCalls.id }).from(voiceCalls).where(and(
+    eq(voiceCalls.userId, user.userId),
+    eq(voiceCalls.userType, user.userType),
+    inArray(voiceCalls.memoryStatus, ["pending", "writing"]),
+  ));
+  for (const call of calls) {
+    if (content === null) {
+      await deleteTranscript(call.id);
+      await db.update(voiceCalls).set({ memoryStatus: "empty" }).where(and(eq(voiceCalls.id, call.id), eq(voiceCalls.memoryStatus, "pending")));
+    } else {
+      await appendForgotten(call.id, content);
+    }
   }
 }
 

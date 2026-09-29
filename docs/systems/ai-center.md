@@ -151,7 +151,10 @@ the finance caches are cleared.
   the vectors of the model that embedded the question only. Query embeddings are cached in Redis for two weeks; with no
   provider answering, a local stand-in vector says so in the trace (`embedding:fallback:…`) and matches nothing stored.
 - **Managing**: `chat.listMemories`, `chat.forgetMemory` and `chat.clearAllMemories`, behind the memory manager.
-  Forgetting deletes the memory and its embedding; nothing is kept behind a status (migration
+  Forgetting deletes the memory and its embedding; nothing is kept behind a status. A live call whose summary is not
+  written yet still holds the words it came from: forgetting one memory adds it to those words as forgotten, so the
+  summary leaves it out, and forgetting everything drops those words
+  (`api/services/voice/post-call.ts#forgetInPendingCalls`) (migration
   `db/migrations/0024_purge_forgotten_memories.sql` removed the ones earlier versions kept as `forgotten`). The manager is
   `src/components/ai/AIMemoryManager.tsx`. `chat.listMemories` also says whether a memory came from a live call
   (`fromCall`, from its metadata, which does not leave the server otherwise); the manager labels a call's summary, a plan
@@ -211,7 +214,7 @@ the finance caches are cleared.
 | Which typed words confirm or cancel a draft | `actionReplyKind` in `api/chat-router.ts` | the chat router tests |
 | The model, its key, limits and plans | the `chatbot_*` and `ai_kernel_enabled` system settings; the reply cap in [AI providers and usage limits](ai-platform.md) | |
 | What is remembered and how it is found | `api/services/ai-memory/memory-writer.ts`, `api/services/ai-memory/memory-retriever.ts` | `api/services/ai-memory/` tests |
-| How-to answers | `api/services/site-guide/knowledge-base.ts` | `api/services/site-guide/retriever.test.ts` |
+| How-to answers (written from the screens they describe: the Android companion app, the iPhone Shortcut, wallets inside the bank-link page, recording on Home, the monthly analysis, the plan page) | `api/services/site-guide/knowledge-base.ts` | `api/services/site-guide/retriever.test.ts` |
 | What an action does, and what undo can reverse | `api/services/action-runtime/extended-actions.ts`, `api/services/action-runtime/goal-create.ts` | `api/services/action-runtime/` tests |
 | The chat screen | `src/components/ai/AIChatbot.tsx` | `tests/ai-chatbot-resilience.test.ts` |
 

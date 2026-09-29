@@ -63,6 +63,10 @@ vi.mock("./queries/connection", () => ({
   db: dbMock,
 }));
 
+// A call whose summary is still pending is told what was forgotten (api/services/voice/post-call.ts).
+const forgetInPendingCalls = vi.hoisted(() => vi.fn(async () => undefined));
+vi.mock("./services/voice/post-call", () => ({ forgetInPendingCalls }));
+
 describe("chat router phase 6 memory controls & privacy", () => {
   beforeEach(() => {
     selectQueries.length = 0;
@@ -102,14 +106,16 @@ describe("chat router phase 6 memory controls & privacy", () => {
     expect(result).toEqual({ success: true });
     expect(updateQueries).toEqual([]);
     expect(deleteQueries.length).toBe(2);
+    expect(forgetInPendingCalls).toHaveBeenCalledWith({ userId: 42, userType: "oauth" }, expect.any(String));
   });
 
-  it("clearAllMemories deletes the user's memories and embeddings", async () => {
+  it("clearAllMemories deletes the user's memories and embeddings, and the words of calls not yet summarized", async () => {
     const result = await caller.clearAllMemories();
 
     expect(result.success).toBe(true);
     expect(updateQueries).toEqual([]);
     expect(deleteQueries.length).toBe(2);
+    expect(forgetInPendingCalls).toHaveBeenCalledWith({ userId: 42, userType: "oauth" }, null);
   });
 
   it("clearConversation deletes conversation, messages, and summaries but preserves active memories", async () => {
