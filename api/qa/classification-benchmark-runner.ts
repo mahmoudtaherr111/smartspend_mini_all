@@ -21,6 +21,10 @@
  *
  * Usage:
  *   npm run bench:classify:live -- --confirm-spend --plan=free --max-cases=96
+ *   npm run bench:classify:live -- --confirm-spend --split=frozen --model=gemini-3.1-flash-lite --rpm=15
+ *
+ * `--split=frozen` runs only the held-out cases, the ones no rule was tuned on. `--rpm` spaces the cases so a free
+ * key's per-minute quota is never hit: a 429 would score as a wrong answer and measure the quota, not the model.
  */
 import "dotenv/config";
 import { runSmartPipeline, SMART_PIPELINE_VERSION } from "../lib/smart-pipeline";
@@ -96,6 +100,10 @@ interface Options {
   model?: string;
   /** Per-request deadline override, for measuring a slow endpoint's accuracy. */
   timeoutMs: number;
+  /** Only the cases of this split: `frozen` (held out, the honest number) or `dev`. */
+  split?: "dev" | "frozen";
+  /** Requests per minute the key allows; the cases are spaced so the run stays under it. 0 means no spacing. */
+  rpm: number;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -117,6 +125,8 @@ function parseArgs(argv: string[]): Options {
     // out and scores zero. Raising this measures what the MODEL knows; the latency it
     // needed is reported separately, and production keeps its own 25-second deadline.
     timeoutMs: Number(get("timeout-ms") || 0),
+    split: get("split") as Options["split"],
+    rpm: Number(get("rpm") || 0),
   };
 }
 
@@ -204,9 +214,10 @@ async function main(): Promise<void> {
           : defaultGeminiModelForPlan(opts.plan));
 
   assertFixtureIntegrity();
-  const all = opts.bucket
+  const all = (opts.bucket
     ? getBenchmarkCases({ buckets: [opts.bucket as never] })
-    : [...ALL_BENCHMARK_CASES];
+    : [...ALL_BENCHMARK_CASES]
+  ).filter((c) => !opts.split || (c.split ?? "dev") === opts.split);
   const cases = all.slice(0, Math.max(0, opts.maxCases));
 
   // Estimate BEFORE the gate check, so a blocked run still tells the operator what it
@@ -255,8 +266,18 @@ async function main(): Promise<void> {
   let spentTokens = 0;
   let aborted: { reason: string; atCase: string } | undefined;
 
+  // One case can make one model call or none (the local engine answers most); spacing cases at the quota's pace
+  // keeps a sentence that escalates from meeting a 429.
+  const paceMs = opts.rpm > 0 ? Math.ceil(60_000 / opts.rpm) + 250 : 0;
+  let lastCaseAt = 0;
+
   for (let i = 0; i < cases.length; i++) {
     const c = cases[i];
+    if (paceMs > 0) {
+      const wait = lastCaseAt + paceMs - Date.now();
+      if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+      lastCaseAt = Date.now();
+    }
 
     // Checked BEFORE the call, not after: a ceiling that stops once it is already
     // exceeded has not limited anything.
