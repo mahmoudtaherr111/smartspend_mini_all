@@ -35,7 +35,7 @@ public pages (landing, privacy, terms and the not-found page).
 | `/dashboard` | signed in | Home: recording, statistics and the calendar ([money](money.md)) |
 | `/ai` | signed in | The AI Center ([AI Center](ai-center.md)) |
 | `/bank-sync` | signed in | Bank and wallet messages ([bank messages](bank-messages.md)) |
-| `/plan` | signed in | Commitments until payday and the coaching plan ([money](money.md#commitments-and-plans)); linked from the More page and from a plan's reminder |
+| `/plan` | signed in | Commitments until payday and the coaching plan ([money](money.md#commitments-and-plans)); linked from the More page and from a plan's reminder; it shows the tab bar |
 | `/pro` | signed in | Plans and checkout ([billing](billing.md)) |
 | `/support` | signed in | Support tickets ([admin](admin.md)) |
 | `/more`, `/settings/*` | signed in | The settings menu and its sections; `/settings` redirects to `/more` |

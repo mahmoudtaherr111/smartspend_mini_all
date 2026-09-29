@@ -144,6 +144,7 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
         paid: plan.paid,
         remaining: plan.remaining,
         remainingAmount: plan.remainingAmount,
+        countedBy: plan.countedBy,
       }));
     },
 

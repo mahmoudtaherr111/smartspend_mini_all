@@ -219,6 +219,7 @@ model {
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.auth_challenges
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.business_categories
+  smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.cashflow_settlements
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.chat_messages
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.classification_logs
@@ -238,6 +239,7 @@ model {
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.push_subscriptions
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.raw_sms_events
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.referrals
+  smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.seo_pages
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.sessions
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.support_tickets
@@ -886,8 +888,10 @@ model {
   smartspend.api.trpc.expense.list -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.list -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.list -[uses]-> smartspend.shared.contracts
+  smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.cashflow_settlements
   smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.installment_plans
+  smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.trpc.expense.listInstallmentPlans -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.previewCategory -[reads]-> smartspend.mysql.user_dictionaries
   smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.api.modules.arabic-nlp

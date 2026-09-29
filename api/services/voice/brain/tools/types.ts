@@ -48,6 +48,8 @@ export interface InstallmentStanding {
   paid: number;
   remaining: number;
   remainingAmount: number;
+  /** linked: from payments tied to its due dates; keyword: from payments whose words name it. */
+  countedBy: "linked" | "keyword";
 }
 
 /** A season's personal spending and the same season a year before (`expense.getSeasonSpending`). */

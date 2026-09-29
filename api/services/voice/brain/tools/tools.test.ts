@@ -257,7 +257,7 @@ describe("money_query", () => {
     const found = await moneyQuery.run({ metric: "total", search: "طلبات" }, ctx);
     expect(found.response).toMatchObject({ facts: [{ label: "المصروف على طلبات", value: 640 }], count: 3 });
     const missing = await moneyQuery.run({ metric: "total", search: "كارفور" }, ctx);
-    expect(missing.response).toMatchObject({ facts: [], coverage: "مالقيتش صرف باسم «كارفور» في الشهر ده." });
+    expect(missing.response).toMatchObject({ facts: [], coverage: "مالقيتش صرف باسم «كارفور» في الدورة دي (من يوم القبض)." });
   });
 
   it("says a month that spends more than it earns has a shortfall, never a surplus of zero", async () => {
@@ -267,6 +267,11 @@ describe("money_query", () => {
     } as never);
     const result = await moneyQuery.run({ metric: "feasibility", amount: 15_000 }, ctx);
     expect((result.response.facts as unknown[])[1]).toMatchObject({ label: "العجز في الشهر (المصروف أكتر من الدخل المسجل)", value: 1_500 });
+  });
+
+  it("names this month as the salary cycle when there is a payday, and as the month when there is none", async () => {
+    expect((await moneyQuery.run({ metric: "total" }, ctx)).response).toMatchObject({ period: "الدورة دي (من يوم القبض)" });
+    expect((await moneyQuery.run({ metric: "total" }, { ...ctx, salaryDay: async () => undefined })).response).toMatchObject({ period: "الشهر ده" });
   });
 
   it("maps the model's periods to Cairo calendar ranges", () => {

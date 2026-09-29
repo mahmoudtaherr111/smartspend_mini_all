@@ -591,7 +591,7 @@ function AuthScopedApplication() {
               </Suspense>
             </Layout>
             <BiometricAppEnhancements />
-            {user && <VoiceCallHost />}
+            {user && <VoiceCallHost key={`${user.type}:${user.id}`} />}
             <Toaster position="top-center" richColors className="pt-safe" />
           </BiometricLockProvider>
         </BrowserRouter>

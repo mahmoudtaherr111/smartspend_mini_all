@@ -43,6 +43,7 @@ flowchart LR
     tbl_api_key_errors[("api_key_errors")]
     tbl_auth_challenges[("auth_challenges")]
     tbl_business_categories[("business_categories")]
+    tbl_cashflow_settlements[("cashflow_settlements")]
     tbl_chat_conversations[("chat_conversations")]
     tbl_chat_messages[("chat_messages")]
     tbl_classification_logs[("classification_logs")]
@@ -65,6 +66,7 @@ flowchart LR
     tbl_push_subscriptions[("push_subscriptions")]
     tbl_raw_sms_events[("raw_sms_events")]
     tbl_referrals[("referrals")]
+    tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_seo_pages[("seo_pages")]
     tbl_sessions[("sessions")]
     tbl_support_tickets[("support_tickets")]
@@ -139,9 +141,11 @@ flowchart LR
   mod_api_routers --> sys_voice_calls
   mod_api_routers -.-> tbl_ai_pending_actions
   mod_api_routers -.-> tbl_ai_token_ledgers
+  mod_api_routers -.-> tbl_cashflow_settlements
   mod_api_routers -.-> tbl_expense_daily_rollups
   mod_api_routers -.-> tbl_notification_logs
   mod_api_routers -.-> tbl_onboarding_questions
+  mod_api_routers -.-> tbl_scheduled_cashflows
   mod_api_routers -.-> tbl_sessions
   mod_api_routers -.-> tbl_voice_calls
   mod_api_routers ==> tbl_ad_clicks
@@ -279,6 +283,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `api_key_errors` | E | `jobs`, `platform` | `platform` |
 | `auth_challenges` | D | `api-core`, `api-routers`, `jobs` | `api-routers` |
 | `business_categories` | A | `api-routers` | `api-routers` |
+| `cashflow_settlements` | C | — | `api-routers` |
 | `chat_conversations` | G | `api-routers` | `api-routers` |
 | `chat_messages` | G | `api-routers`, `jobs` | `api-routers` |
 | `classification_logs` | E | `api-core`, `api-routers`, `jobs` | `api-routers` |
@@ -301,6 +306,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `push_subscriptions` | A | `api-routers` | `api-routers` |
 | `raw_sms_events` | E | `api-routers`, `jobs` | `api-routers` |
 | `referrals` | A | `api-routers` | `api-routers` |
+| `scheduled_cashflows` | C | — | `api-routers` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
 | `sessions` | D | — | `api-routers` |
 | `support_tickets` | A | `api-routers` | `api-routers` |

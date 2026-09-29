@@ -232,6 +232,21 @@ export const voiceCall = {
     else publish(idleView());
   },
 
+  /**
+   * The signed-in account went away (sign-out, or another account signed in): the call ends now, the microphone and
+   * the line close, and nothing of it stays on screen for whoever uses the device next.
+   */
+  signOut(): void {
+    pending = null;
+    lastRequest = null;
+    if (controller) {
+      controller.end();
+      controller.dispose();
+      controller = null;
+    }
+    publish(idleView());
+  },
+
   /** Closes the explanation, the end screen or a failure. */
   close(): void {
     if (active()) return;

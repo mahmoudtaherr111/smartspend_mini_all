@@ -30,6 +30,9 @@ export function VoiceCallHost() {
     void utils.voice.listCalls.invalidate();
   }, [view.phase, utils]);
 
+  // Mounted for one signed-in account (keyed by it in App.tsx): leaving means that account signed out or changed.
+  useEffect(() => () => voiceCall.signOut(), []);
+
   const openMemory = () => {
     voiceCall.close();
     setMemoryOpen(true);

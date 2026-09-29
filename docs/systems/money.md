@@ -141,7 +141,10 @@ installments, installments paid before the plan was added) is added from the pan
 (`src/components/installments/InstallmentsPanel.tsx`, `expense.createInstallmentPlan`). `expense.listInstallmentPlans`
 counts the user's expenses under أقساط وفوايد since the plan was added whose description or subcategory contains the
 keyword, adds the ones paid before, and returns paid, remaining and the remaining amount
-(`api/services/installments.ts#installmentProgress`, capped at the plan's count). `expense.deleteInstallmentPlan`
+(`api/services/installments.ts#installmentProgress`, capped at the plan's count). A plan that has a schedule of due
+dates ([commitments](#commitments-and-plans)) is counted from the payments linked to them instead
+(`installmentProgressFromLinked`): a partial payment counts for what it paid, an installment is paid once its whole
+amount is in, and a payment whose words also name another plan is not counted twice. `countedBy` says which. `expense.deleteInstallmentPlan`
 archives a plan.
 
 ## Seasons (رمضان كلفني كام)

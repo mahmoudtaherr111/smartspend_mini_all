@@ -154,3 +154,34 @@ describe("coaching plans and reminders", () => {
     await db.delete(inAppNotifications).where(inArray(inAppNotifications.id, ids));
   });
 });
+
+describe("installment progress from linked payments", () => {
+  beforeEach(clean);
+  afterAll(clean);
+
+  itWithDatabase("counts a partial payment by its amount, and keeps two plans with the same word apart", async () => {
+    const plan = async (title: string) => {
+      const [row] = await db.insert(installmentPlans).values({
+        userId: user.userId, userType: user.userType, title, keyword: "فاليو", monthlyAmount: "800.00", totalInstallments: 12, paidBefore: 3,
+      });
+      return Number(row.insertId);
+    };
+    const phone = await plan("الموبايل");
+    const fridge = await plan("التلاجة");
+    const { id } = await createCashflow(user, {
+      kind: "installment", direction: "out", title: "قسط الموبايل", amount: 800, recurrence: "monthly",
+      startDay: "2026-09-05", certainty: "confirmed", source: "user", installmentPlanId: phone,
+    });
+    // One payment whose words name both plans: by keyword it counts for each.
+    const partial = await spend(user, 500, "2026-09-05");
+    await db.update(expenses).set({ category: "أقساط وفوايد", description: "قسط فاليو" }).where(eq(expenses.id, partial));
+    await settle(user, { cashflowId: id, dueDay: "2026-09-05", expenseId: partial });
+
+    const plans = await caller.listInstallmentPlans();
+    const byId = new Map(plans.map((p) => [p.id, p]));
+    // Linked: 500 of 800 paid, so no whole installment more, and exactly 9 × 800 − 500 left.
+    expect(byId.get(phone)).toMatchObject({ paid: 3, remaining: 9, remainingAmount: 6_700, countedBy: "linked" });
+    // The other plan still counts by its word, and so still takes the same payment: the reason to link.
+    expect(byId.get(fridge)).toMatchObject({ countedBy: "keyword" });
+  });
+});

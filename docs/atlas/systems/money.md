@@ -116,7 +116,9 @@ flowchart LR
   router_expense --> sys_expense_capture
   router_expense --> sys_insights
   router_expense --> sys_platform
+  router_expense -.-> tbl_cashflow_settlements
   router_expense -.-> tbl_expense_daily_rollups
+  router_expense -.-> tbl_scheduled_cashflows
   router_expense -.-> tbl_user_dictionaries
   router_expense ==> tbl_classification_logs
   router_expense ==> tbl_expenses
@@ -202,7 +204,7 @@ flowchart LR
 | `expense.getSeasonSpending` | query | `authedProcedure` | `expenses` | — | `Home` |
 | `expense.getYearlyStats` | query | `authedProcedure` | `expense_daily_rollups` | — | — |
 | `expense.list` | query | `authedProcedure` | `expenses` | — | `Home` |
-| `expense.listInstallmentPlans` | query | `authedProcedure` | `expenses`, `installment_plans` | — | `Home` |
+| `expense.listInstallmentPlans` | query | `authedProcedure` | `cashflow_settlements`, `expenses`, `installment_plans`, `scheduled_cashflows` | — | `Home` |
 | `expense.previewCategory` | query | `authedProcedure` | `user_dictionaries` | — | `Home` |
 | `expense.searchTransactions` | query | `authedProcedure` | `expenses` | — | `Home` |
 | `expense.update` | mutation | `authedProcedure` | `classification_logs`, `expenses` | `classification_logs`, `expenses` | `Home` |
@@ -238,7 +240,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `business_categories` | A | `business.addCategory`, `business.create`, `business.delete`, `business.removeCategory`, `business.updateCategory` | `business.get`, `business.removeCategory`, `business.updateCategory` |
-| `cashflow_settlements` | C | `coaching` | `coaching` |
+| `cashflow_settlements` | C | `coaching` | `coaching`, `expense.listInstallmentPlans` |
 | `classification_logs` | E | `expense.update` | `expense.update` |
 | `coaching_plans` | C | `coaching` | `coaching` |
 | `coaching_steps` | C | `coaching` | `coaching` |
@@ -248,7 +250,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `in_app_notifications` | D | `coaching` | — |
 | `installment_plans` | C | `expense.createInstallmentPlan`, `expense.deleteInstallmentPlan` | `coaching`, `expense.listInstallmentPlans` |
 | `local_users` | A | `goals.analyze` | — |
-| `scheduled_cashflows` | C | `coaching` | `coaching` |
+| `scheduled_cashflows` | C | `coaching` | `coaching`, `expense.listInstallmentPlans` |
 | `user_budgets` | C | `budget.create`, `budget.delete`, `budget.update`, `goals.delete`, `ledger` | `budget.delete`, `budget.update`, `ledger` |
 | `user_businesses` | A | `business.create`, `business.delete`, `business.update` | `business.addCategory`, `business.create`, `business.delete`, `business.get`, `business.linkContact`, `business.removeCategory`, `business.update`, `business.updateCategory` |
 | `user_contacts` | A | `business.delete`, `business.linkContact`, `expense.delete`, `profile.addContact`, `profile.deleteContact`, `profile.mergeContacts`, `profile.updateContact` | `business.get`, `business.linkContact`, `coaching`, `ledger`, `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` |

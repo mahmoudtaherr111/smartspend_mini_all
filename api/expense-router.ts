@@ -15,6 +15,8 @@ import {
   userBusinesses,
   businessCategories as bizCategoriesTable,
   expenseDailyRollups,
+  scheduledCashflows,
+  cashflowSettlements,
 } from "../db/schema";
 import { getSystemSettings } from "./lib/settings-cache";
 import { parseNameAndRelationship } from "./lib/relationship-normalizer";
@@ -34,7 +36,7 @@ import {
   toDayString,
 } from "./services/expense-rollups";
 import { businessDateKey, businessDayRange, parseBusinessInstant } from "./lib/app-time";
-import { installmentProgress } from "./services/installments";
+import { installmentProgress, installmentProgressFromLinked } from "./services/installments";
 import { reconcileSettlementsOf, releaseSettlementsOf } from "./services/coach/cashflows";
 import { runRuleEngine } from "./lib/rule-engine";
 import { normalizeV2 } from "./lib/normalizer-v2";
@@ -1518,8 +1520,27 @@ export const expenseRouter = router({
       .from(installmentPlans)
       .where(and(eq(installmentPlans.userId, userId), eq(installmentPlans.userType, userType), eq(installmentPlans.status, "active")))
       .orderBy(desc(installmentPlans.createdAt));
+    // A plan with a schedule of due dates is counted from the payments linked to them (api/services/coach).
+    const schedules = plans.length
+      ? await db
+          .select({ planId: scheduledCashflows.installmentPlanId, linked: sql<string>`COALESCE(SUM(${cashflowSettlements.amount}), 0)` })
+          .from(scheduledCashflows)
+          .leftJoin(cashflowSettlements, and(
+            eq(cashflowSettlements.cashflowId, scheduledCashflows.id),
+            eq(cashflowSettlements.userId, userId),
+            eq(cashflowSettlements.userType, userType),
+          ))
+          .where(and(
+            eq(scheduledCashflows.userId, userId),
+            eq(scheduledCashflows.userType, userType),
+            inArray(scheduledCashflows.installmentPlanId, plans.map((plan) => plan.id)),
+          ))
+          .groupBy(scheduledCashflows.installmentPlanId)
+      : [];
+    const linkedByPlan = new Map(schedules.map((row) => [Number(row.planId), row.linked]));
     const counts = await Promise.all(
       plans.map(async (plan) => {
+        if (linkedByPlan.has(plan.id)) return 0;
         const pattern = `%${plan.keyword.replace(/[%_]/g, "")}%`;
         const [row] = await db
           .select({ count: sql<number>`COUNT(*)` })
@@ -1545,7 +1566,9 @@ export const expenseRouter = router({
         keyword: plan.keyword,
         monthlyAmount,
         totalInstallments: plan.totalInstallments,
-        ...installmentProgress({ monthlyAmount, totalInstallments: plan.totalInstallments, paidBefore: plan.paidBefore }, counts[index]),
+        ...(linkedByPlan.has(plan.id)
+          ? installmentProgressFromLinked({ monthlyAmount, totalInstallments: plan.totalInstallments, paidBefore: plan.paidBefore }, linkedByPlan.get(plan.id)!)
+          : installmentProgress({ monthlyAmount, totalInstallments: plan.totalInstallments, paidBefore: plan.paidBefore }, counts[index])),
       };
     });
   }),

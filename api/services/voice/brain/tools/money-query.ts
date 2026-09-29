@@ -272,7 +272,10 @@ async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<
     ? (String(args.period) as Period)
     : lookup ? "last_90_days" : "this_month";
   const finance: FinanceContext = { userId: ctx.identity.userId, userType: ctx.identity.userType, salaryDay: await ctx.salaryDay() };
-  const { input, label } = periodFor(periodName, args, ctx.now());
+  const named = periodFor(periodName, args, ctx.now());
+  const input = named.input;
+  // "This month" follows the salary day when there is one (the finance layer's current_month): said as the cycle it is.
+  const label = periodName === "this_month" && (finance.salaryDay ?? 1) > 1 ? "الدورة دي (من يوم القبض)" : named.label;
   const income = args.type === "income";
   const category = str(args.category, 60);
   const person = str(args.person, 60);
@@ -472,11 +475,13 @@ async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<
         { label: `أقساط ${plan.title} الفاضلة`, value: plan.remaining, unit: "count" as const },
         { label: `الفاضل من ${plan.title}`, value: plan.remainingAmount },
       ]),
-      extra: { plans: plans.map((plan) => ({ title: plan.title, paid: plan.paid, of: plan.totalInstallments })) },
-      coverage: plans.length
-        ? "الأقساط المدفوعة متعدودة من المصاريف المتسجلة في «أقساط وفوايد» اللي فيها كلمة القسط، من ساعة ما الخطة اتضافت، " +
-          "مع اللي قال إنه دفعه قبلها. دفعة جزئية أو قسط متسجل من غير الكلمة دي مش بيتعد صح، ومفيش مواعيد استحقاق متسجلة."
-        : "مفيش خطط أقساط متسجلة في التطبيق.",
+      extra: { plans: plans.map((plan) => ({ title: plan.title, paid: plan.paid, of: plan.totalInstallments, counted: plan.countedBy })) },
+      coverage: !plans.length
+        ? "مفيش خطط أقساط متسجلة في التطبيق."
+        : plans.every((plan) => plan.countedBy === "linked")
+          ? "محسوبة من الدفعات اللي المستخدم ربطها بمواعيد القسط، والدفعة الجزئية محسوبة بمبلغها."
+          : "القسط اللي مالوش مواعيد متسجلة، دفعاته متعدودة من المصاريف اللي فيها كلمة القسط في «أقساط وفوايد»: دفعة جزئية " +
+            "أو قسطين بنفس الكلمة ممكن يتعدوا غلط. لو عايز حساب مظبوط يضيف مواعيد القسط في «خطتك والتزاماتك» ويربط الدفعات.",
     }, ctx, "لحد النهارده");
   }
 
