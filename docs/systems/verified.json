@@ -287,12 +287,12 @@
         "api/lib/unified-normalizer.ts": "603756615433",
         "api/lib/voice-intake-gate.ts": "0a8bf7293a27",
         "api/services/parser-trace.ts": "aa8b5bad3877",
-        "src/components/expenses/ExpenseForm.tsx": "666b8e3a86b5",
+        "src/components/expenses/ExpenseForm.tsx": "5b2a42a51c2c",
         "src/components/expenses/ReceiptCapture.tsx": "5940b1b1e056",
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-09-29 a380e03",
+      "checked": "2026-09-29 86999b8",
       "arabic": "8a6ada80d0f5",
       "arabicChecked": "2026-09-29 a380e03"
     },
