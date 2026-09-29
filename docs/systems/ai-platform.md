@@ -11,7 +11,7 @@ the per-plan token budget every paid call is measured against, and the two place
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Admin routes | `api/lib/ai-gateway.ts` | Reads `ai_providers` and `ai_models` into a per-process cache, opens the keys (moving any on an older secret to the current one), and answers "which provider and model did the admin pick for this purpose and plan" |
+| Admin routes | `api/lib/ai-gateway.ts` | Reads `ai_providers` and `ai_models` into a per-process cache that reloads when the shared generation `aiconfiggen` moves, opens the keys (moving any on an older secret to the current one), and answers "which provider and model did the admin pick for this purpose and plan" |
 | Provider keys | `sealProviderKey` and `openProviderKey` in `api/lib/provider-key-crypto.ts` | AES-256-GCM over the keys stored in `ai_providers`, sealed with `AI_GATEWAY_SECRET` (or `JWT_SECRET` while it is unset) and opened with any secret the server still holds |
 | Model discovery | `discoverRemoteModels` in `api/lib/ai-gateway.ts` | Asks a provider for the models a key can reach ([admin](admin.md)) |
 | Provider chain | `api/lib/llm-provider-chain.ts` | Builds the ordered list of routes: the admin's rows first, then every built-in provider whose key is present |
@@ -74,7 +74,9 @@ refused key, and the next answers. The chat also takes its model from the admin'
   tag makes a wrong secret fail rather than return noise. A value with three colon-separated parts is treated as
   sealed, so a damaged one is never sent to a provider as its key; anything else predates sealing and is read as
   it is.
-- Loading the providers — at boot, then whenever the route cache is older than a minute or an admin saves one —
+- Loading the providers — at boot, then whenever the route cache is older than a minute, and on every process within
+  ten seconds of an admin saving a provider or a model (`invalidateAiConfig` bumps the Redis generation `aiconfiggen`,
+  which the routes and the admin prices of `api/lib/ai-pricing.ts` both watch) —
   reseals every key, active or not, that opened with an older secret or was stored as plain text, with a write
   that lands only if the stored value is unchanged. Setting `AI_GATEWAY_SECRET` and deploying therefore moves
   every key to it. A rotation is: the old value into `AI_GATEWAY_SECRET_PREVIOUS`, the new one into
@@ -149,8 +151,9 @@ refused key, and the next answers. The chat also takes its model from the admin'
    (`api/AGENTS.md`, rule 5).
 3. Adding a provider should stay a row plus a key: keep new provider behaviour behind `baseUrl` and the
    OpenAI-compatible shape instead of a new client file.
-4. The route cache and the breaker are per process (`api/AGENTS.md`, rule 6): never assume one replica's view
-   of a provider is another's.
+4. The breaker is per process (`api/AGENTS.md`, rule 6): never assume one replica's view of a provider's health is
+   another's. The route and price caches are per process too, but reload on the shared generation; a write to
+   `ai_providers` or `ai_models` calls `invalidateAiConfig`.
 5. Store a provider key only through `sealProviderKey` and read it only through `openProviderKey`; never log a
    key, and never change the stored shape without a way for the previous version to read it.
 
@@ -173,14 +176,11 @@ Checked against the code; each one names where it lives.
    in a comment, and nothing reads it: `isKnownModel`, `getModelEntry`, `listModels`, `resolveApiKey` and the
    per-plan defaults have no caller, and only `DEPRECATED_MODEL_MAP` is used. Model defaults live a second
    time in `api/lib/model-mapper.ts` and a third time in the fixed lists of `admin.getAvailableModels`.
-5. **Debt.** The breaker, the route cache (one minute) and the settings cache (five minutes) are per process, so during
-   an outage each replica learns on its own and an admin's change reaches them at different times.
-6. **Bug.** `ai.getUserLimits` computes the billing cycle with server-local `Date` arithmetic instead of Cairo business
-   time (golden rule 6), so the cycle turns over at the server's midnight.
-7. **Debt.** The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and
+5. **Debt.** The breaker is per process, so during an outage each replica learns on its own that a provider is down.
+6. **Debt.** The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and
    `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat,
    report, SMS and voice paths do not.
-8. **Gap.** `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card —
+7. **Gap.** `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card —
    is only ever written by the breaker during real traffic ([admin](admin.md)).
 
 ## Related systems

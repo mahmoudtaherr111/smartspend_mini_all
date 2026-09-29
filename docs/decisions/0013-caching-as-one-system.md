@@ -59,12 +59,13 @@ they served wrong answers in ways no single one of them showed:
 | Classification results | process | inputs + knowledge hash | 7 days, LRU 5,000 | its key (1) |
 | Muscle memory patterns | process | user | 30 min | `memgen` generation (4) |
 | System settings | process | global | 5 min | `settingsgen`, checked every 10 s (5) |
-| AI routes and prices | process | global | 1 min | admin writes refresh their own process; others within a minute |
+| AI routes and prices | process | global | 1 min | `aiconfiggen` generation, bumped by `invalidateAiConfig` on every admin write, checked every 10 s |
 | Provider circuit breakers | process | provider | minutes | state, not data: each process learns failures itself |
 | SMS parse | process | user + message | 15 min, 500 | copies; an identical message is a duplicate anyway |
 | Ledger figures | Redis | user generation + period | 5 min open, 24 h closed | `cachegen` bump on every write (6) |
 | AI Center finance answers | Redis | user generation + period + taxonomy version | 1-5 min open, 1 h closed | `finance_cachegen` bump (6) |
 | Session principal | Redis | token | 15 min | `authver` bump on logout, role and plan change |
+| One-time codes (phone change, Shortcut pairing) and the SMS rate limit | Redis, else the process | code / token | 5-15 min, one use | shared state (`stateSet`, `stateTake`), not cache: kept in memory without Redis, even in production |
 | AI memory retrieval | Redis | `ai_memgen` generation | per call | its generation |
 | Market prices (voice) | Redis | item | 30 min | time only: prices, not user data |
 | App queries | browser | query | React Query | `refreshLedgerViews` after writes (7) |
@@ -80,5 +81,8 @@ they served wrong answers in ways no single one of them showed:
   one server process requires Redis.
 - A generation counter evicted from Redis restarts at zero; entries written under the old zero expire within their
   lifetime (five minutes for anything open).
+- A bump that a configured Redis misses (down, or refusing the command) is kept in the process and replayed when Redis
+  answers again (added 2026-09-29), so entries cached before a write made during an outage are not served after it.
+  A process that restarts during the outage loses its pending bumps; the lifetimes above are the bound then.
 - Adding an input to the pipeline means adding it to the classification cache key; the invalidation tests
   (`api/lib/classification-cache-invalidation.test.ts`) show the pattern.

@@ -126,8 +126,10 @@ Then, per procedure:
 
 ## Account changes and deletion
 - `profile.updateUserInfo` changes the name and avatar. A new phone number needs a code: `profile.requestPhoneChange`
-  sends one over WhatsApp when verification is on and keeps it in the process's memory (`api/services/otp-cache.ts`),
-  and `profile.confirmPhoneChange` checks it, saves the number and bumps the auth version.
+  sends one over WhatsApp when verification is on and keeps it for ten minutes as shared state (`stateSet` in
+  `api/lib/redis-client.ts`: Redis, or the process's memory where there is no Redis), so the confirmation may reach any
+  replica; `profile.confirmPhoneChange` checks it, saves the number, bumps the auth version and returns a one-time
+  grant that `profile.updateUserInfo` also accepts for fifteen minutes.
 - `purgeUserData` deletes, inside the caller's transaction, every user-owned row (conversations and memory, the ledger,
   goals, contacts, sessions, passkeys, the profile, logs, voice usage and live calls with their incidents, and referrals)
   and then the identity row. `admin.deleteUser`
@@ -177,17 +179,15 @@ Checked against the code; each one names where it lives.
 2. **Gap.** In production, verification needs both Turnstile keys: `TURNSTILE_SECRET_KEY` on the server and
    `VITE_TURNSTILE_SITE_KEY` in the web build. With verification on and either missing, nobody can sign up with a phone
    number.
-3. **Bug.** A phone-number change keeps its code in one process's memory (`api/services/otp-cache.ts`), so confirming it fails
-   when the request reaches another replica (`api/AGENTS.md`, rule 6).
-4. **Bug.** Saving the profile in Settings never changes the name or avatar, and says nothing: `SmartProfileSettings` always
+3. **Bug.** Saving the profile in Settings never changes the name or avatar, and says nothing: `SmartProfileSettings` always
    sends the phone field, which `profile.updateUserInfo` rejects without a code (and rejects when empty, for Google
    users). Changing a phone number has no screen, and with verification off its code is never sent.
-5. **Gap.** A passkey cannot be removed; users cannot see or end their sessions (`session.listMine` and `session.revokeMine`
+4. **Gap.** A passkey cannot be removed; users cannot see or end their sessions (`session.listMine` and `session.revokeMine`
    have no screen) or delete their own account.
-6. **Security.** The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read
+5. **Security.** The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read
    it, while the content security policy allows inline scripts (`src/AGENTS.md`, rule 4).
-7. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
-8. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
+6. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
+7. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
    same storage.
 
 ## Related systems

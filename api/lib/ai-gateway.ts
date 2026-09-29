@@ -18,7 +18,9 @@ import { TRPCError } from "@trpc/server";
 import { businessDateKey } from "./app-time";
 import { env } from "./env";
 import { createLogger } from "./log";
-import { aiCallCost } from "./ai-pricing";
+import { aiCallCost, invalidateAiPricing } from "./ai-pricing";
+import { AI_CONFIG_GENERATION } from "./cache-keys";
+import { watchGeneration } from "./shared-generation";
 import { recordAiLedger } from "./ai-ledger";
 import { keyRing, needsReseal, openProviderKey, sealProviderKey, type OpenedKey } from "./provider-key-crypto";
 import { defaultGeminiModelForPlan, geminiFallbackChain, mapModelName } from "./model-mapper";
@@ -254,8 +256,27 @@ interface CachedModelRoute {
 let _gatewayRouteCache: Map<string, CachedModelRoute> = new Map();
 let _lastCacheUpdate = 0;
 const CACHE_TTL_MS = 60_000; // 1 minute TTL
+/** Moved by `invalidateAiConfig` on any process, so every process reloads within ten seconds of an admin change. */
+const routesGeneration = watchGeneration(AI_CONFIG_GENERATION);
+
+async function ensureFreshRoutes(): Promise<void> {
+  if (Date.now() - _lastCacheUpdate > CACHE_TTL_MS || !_gatewayRouteCache.size || (await routesGeneration.moved())) {
+    await refreshGatewayCache();
+  }
+}
+
+/**
+ * After an admin writes `ai_providers` or `ai_models`: this process reloads the routes and prices now, and every other
+ * process when it next sees the generation move (at most ten seconds).
+ */
+export async function invalidateAiConfig(): Promise<void> {
+  await routesGeneration.bump();
+  invalidateAiPricing();
+  await refreshGatewayCache();
+}
 
 export async function refreshGatewayCache(): Promise<void> {
+  const generation = await routesGeneration.current();
   try {
     // Every provider, not only the active ones: a key switched off today is still moved to the current
     // secret, so it opens when it is switched back on after a rotation.
@@ -268,6 +289,7 @@ export async function refreshGatewayCache(): Promise<void> {
     if (!activeProviders.length) {
       _gatewayRouteCache.clear();
       _lastCacheUpdate = Date.now();
+      routesGeneration.loaded(generation);
       return;
     }
 
@@ -322,6 +344,7 @@ export async function refreshGatewayCache(): Promise<void> {
 
     _gatewayRouteCache = newMap;
     _lastCacheUpdate = Date.now();
+    routesGeneration.loaded(generation);
   } catch (err) {
     log.error({ err, event: "ai_gateway.refresh_failed" }, "Could not refresh the provider routes");
   }
@@ -338,8 +361,8 @@ export async function refreshGatewayCache(): Promise<void> {
  *
  * The routes come back ordered by provider priority, and `preferred` is the model the
  * admin marked as the default for that purpose and tier — so choosing a model in the
- * dashboard chooses the model that actually answers, and the cache TTL (or an admin
- * write, which calls `refreshGatewayCache`) is the only delay.
+ * dashboard chooses the model that actually answers, within ten seconds on every process
+ * (`invalidateAiConfig`), or the one-minute cache lifetime without Redis.
  */
 export interface AdminRouteSet {
   preferred: AdminRoute | null;
@@ -362,9 +385,7 @@ export async function resolveAdminRoutes(
   purpose: AiPurpose,
   tier: AiTier,
 ): Promise<AdminRouteSet> {
-  if (Date.now() - _lastCacheUpdate > CACHE_TTL_MS || !_gatewayRouteCache.size) {
-    await refreshGatewayCache();
-  }
+  await ensureFreshRoutes();
 
   const toRoute = (entry: CachedModelRoute, priority: number): AdminRoute => ({
     slug: entry.provider.slug,
@@ -466,9 +487,7 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
   const tier: AiTier = (params.user.plan === "ultra" ? "ultra" : params.user.plan === "pro" ? "pro" : "free");
 
   // Ensure route cache is loaded
-  if (Date.now() - _lastCacheUpdate > CACHE_TTL_MS || !_gatewayRouteCache.size) {
-    await refreshGatewayCache();
-  }
+  await ensureFreshRoutes();
 
   // 1. Resolve Provider & Model Route
   let route: CachedModelRoute | undefined;
@@ -482,7 +501,8 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
   }
 
   // Fallback to legacy System Settings if dynamic DB tables have not been populated yet
-  const sysSettings = await getSystemSettings();
+  const sysSettings = await getSystemSettings();
+
 
   let providerSlug = route?.provider.slug || "gemini";
   let protocol = route?.provider.protocol || "gemini";

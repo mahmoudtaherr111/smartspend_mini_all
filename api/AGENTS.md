@@ -32,10 +32,12 @@ system of the file you are about to change in `docs/atlas/systems/files.md` and 
    `services/expense-rollups.ts`, and invalidate the user's expense cache after commit.
 5. Before paying for a model call, check the budget (`assertAiBudget` in `lib/ai-usage-policy.ts`); record
    the tokens afterwards. Route models through `resolveRoutingConfig` and `lib/model-mapper.ts`.
-6. In-process caches (classification results, muscle memory, settings, OTP state) are per process.
-   Anything that must hold across replicas belongs in Redis or MySQL; a per-process cache of shared data
-   reloads when a Redis generation moves (muscle memory, settings). Every write to `expenses` bumps the
-   user's ledger generation (`bumpFinanceCacheGen`). See `docs/decisions/0013-caching-as-one-system.md`.
+6. In-process caches (classification results, muscle memory, settings, AI routes and prices) are per process.
+   Anything that must hold across replicas belongs in Redis or MySQL: one-time codes and counters go through
+   `stateSet`/`stateTake` or `executeSlidingWindowRateLimit` in `lib/redis-client.ts`, never a module-level `Map`; a
+   per-process cache of shared data reloads when a Redis generation moves (`lib/shared-generation.ts`). Every write to
+   `expenses` bumps the user's ledger generation (`bumpFinanceCacheGen`). See
+   `docs/decisions/0013-caching-as-one-system.md`.
 7. Throw `TRPCError` with a meaningful code; messages shown to users are Egyptian Arabic.
 8. Settings, business time, environment variables, logging and jobs follow the golden rules in the root
    `AGENTS.md`.

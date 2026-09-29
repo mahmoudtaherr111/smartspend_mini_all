@@ -16,7 +16,7 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 | Push subscriptions | `profile.savePushSubscription` in `api/profile-router.ts`, `src/hooks/usePushNotifications.ts`, `src/components/notifications/PushNotificationPrompt.tsx` | Asking for permission and saving the device's token or Web Push subscription |
 | Bell | `src/components/NotificationBell.tsx`, `profile.getInAppNotifications`, `profile.markInAppNotificationRead` | The latest in-app notifications, and marking one read |
 | WhatsApp service | `api/services/whatsapp-service.ts#whatsappService` | A WhatsApp Web client (Baileys) with its session on disk; sends messages and reads verification codes |
-| Verification state | `api/services/otp-cache.ts` | Codes, request limits and the blocklist of senders, in process memory |
+| Verification state | `api/services/otp-cache.ts` | The blocklist of senders who sent codes that were not theirs, in the WhatsApp service's process |
 | WhatsApp admin | `api/admin-whatsapp-router.ts`, `src/components/admin/AdminWhatsAppTab.tsx` | Status and QR code, start and stop, direct messages, broadcasts, the verification switch |
 | Templates admin | the notification procedures of `api/admin-router.ts`, `src/components/admin/NotificationsTab.tsx` | Creating, scheduling and switching templates, running the activity check at once, logs and device statistics; see [admin](admin.md) |
 

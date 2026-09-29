@@ -374,7 +374,7 @@
   },
   "api/lib/redis-client.ts": {
     "no-console": {
-      "count": 12
+      "count": 11
     }
   },
   "api/lib/relationship-normalizer.ts": {

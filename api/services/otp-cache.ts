@@ -1,25 +1,14 @@
 /**
- * What is left in process memory of the phone codes.
+ * The WhatsApp service's sender blocklist. The service runs in one process by design, so memory is the right place
+ * for it: three codes that do not belong to the sender block that sender for fifteen minutes.
  *
- * - `otpCache` holds the codes of a phone-number change (`profile.requestPhoneChange`), which the bot sends to
- *   the new number and the user types back. Sign-up and WhatsApp sign-in no longer use it: their challenges live
- *   in `whatsapp_otp_codes`, shared by every replica (`api/services/phone-challenge.ts`).
- * - The sender blocklist belongs to the WhatsApp service, which runs in one process by design, so memory is the
- *   right place for it: three codes that do not belong to the sender block that sender for fifteen minutes.
+ * The phone codes that used to live here are shared state now: sign-up and WhatsApp sign-in challenges are rows of
+ * `whatsapp_otp_codes` (`api/services/phone-challenge.ts`), and the codes of a phone-number change are kept with
+ * `stateSet` in `api/lib/redis-client.ts` by `profile.requestPhoneChange`, so the confirmation may reach any replica.
  */
 import { createLogger, phoneTail } from "../lib/log";
 
 const log = createLogger("otp-cache");
-
-interface OtpSession {
-  code: string;
-  phone: string;
-  expiresAt: number;
-  verified: boolean;
-}
-
-/** Phone-change codes, keyed by `phone-change:<userId>:<phone>` and `phone-grant:...`. */
-export const otpCache = new Map<string, OtpSession>();
 
 const BLOCK_AFTER = 3;
 const BLOCK_MS = 15 * 60 * 1000;

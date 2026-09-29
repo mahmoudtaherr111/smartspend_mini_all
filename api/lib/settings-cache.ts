@@ -5,31 +5,21 @@
  * Settings are held in-process for up to 5 minutes. An admin write calls
  * `invalidateSettingsCache()`, which clears this process and bumps a generation counter in
  * Redis (`settingsgen`); every other process compares that counter at most every 10
- * seconds and reloads when it moved. Before the counter, a setting changed on one server
- * process (a plan limit, a threshold, a model) took up to five minutes to reach the others,
- * and the classification cache, keyed by the settings, answered by the old ones meanwhile.
- * Without Redis the counter is per process and the 5-minute TTL is the bound.
+ * seconds and reloads when it moved (`watchGeneration` in `./shared-generation`). Before the
+ * counter, a setting changed on one server process (a plan limit, a threshold, a model) took
+ * up to five minutes to reach the others, and the classification cache, keyed by the
+ * settings, answered by the old ones meanwhile. Without Redis the counter is per process and
+ * the 5-minute TTL is the bound.
  */
 
 import { db } from "../queries/connection";
 import { systemSettings } from "../../db/schema";
-import { cacheGet, cacheIncr } from "./redis-client";
+import { watchGeneration } from "./shared-generation";
 
 let cachedSettings: Record<string, string> | null = null;
 let cacheExpiresAt = 0;
-let cachedGeneration = "0";
-let generationCheckedAt = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-const GENERATION_CHECK_MS = 10 * 1000;
-const GENERATION_KEY = "settingsgen";
-
-async function readGeneration(): Promise<string> {
-  try {
-    return (await cacheGet(GENERATION_KEY)) ?? "0";
-  } catch {
-    return cachedGeneration;
-  }
-}
+const generation = watchGeneration("settingsgen");
 
 /**
  * Returns system settings from in-memory cache, or fetches from MySQL if cache is stale.
@@ -37,14 +27,9 @@ async function readGeneration(): Promise<string> {
  */
 export async function getSystemSettings(): Promise<Record<string, string>> {
   const now = Date.now();
-  if (cachedSettings && cacheExpiresAt > now) {
-    if (now - generationCheckedAt < GENERATION_CHECK_MS) return cachedSettings;
-    generationCheckedAt = now;
-    const generation = await readGeneration();
-    if (generation === cachedGeneration) return cachedSettings;
-  }
+  if (cachedSettings && cacheExpiresAt > now && !(await generation.moved(now))) return cachedSettings;
 
-  const generation = await readGeneration();
+  const loadedUnder = await generation.current();
   const rows = await db.select().from(systemSettings);
   const settings: Record<string, string> = {};
   for (const row of rows) {
@@ -55,8 +40,7 @@ export async function getSystemSettings(): Promise<Record<string, string>> {
 
   cachedSettings = settings;
   cacheExpiresAt = now + CACHE_TTL_MS;
-  cachedGeneration = generation;
-  generationCheckedAt = now;
+  generation.loaded(loadedUnder, now);
   return settings;
 }
 
@@ -67,5 +51,5 @@ export async function getSystemSettings(): Promise<Record<string, string>> {
 export function invalidateSettingsCache(): void {
   cachedSettings = null;
   cacheExpiresAt = 0;
-  void cacheIncr(GENERATION_KEY).catch(() => undefined);
+  void generation.bump();
 }

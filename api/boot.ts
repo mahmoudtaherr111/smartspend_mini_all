@@ -265,15 +265,21 @@ app.onError((err, c) => {
   return c.json({ error: message }, 500);
 });
 
+// The built index.html does not change while the process runs (a deploy starts a new one), so it is read once.
+let indexHtml: Promise<string> | null = null;
+
 app.notFound(async (c) => {
   if (env.NODE_ENV === "production" && !c.req.path.startsWith("/api/")) {
     try {
-      const fs = await import("fs");
-      const path = await import("path");
-      const html = fs.readFileSync(
-        path.resolve("./dist/public/index.html"),
-        "utf-8",
-      );
+      if (!indexHtml) {
+        const fs = await import("fs");
+        const path = await import("path");
+        indexHtml = fs.promises.readFile(path.resolve("./dist/public/index.html"), "utf-8");
+        indexHtml.catch(() => {
+          indexHtml = null;
+        });
+      }
+      const html = await indexHtml;
       c.header("Cache-Control", "public, max-age=0, must-revalidate");
       return c.html(html);
     } catch (e) {

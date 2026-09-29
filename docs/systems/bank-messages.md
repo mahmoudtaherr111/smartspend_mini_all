@@ -38,7 +38,8 @@ the rule parser and the model that read them, and the setup screens.
 ### 2. The ingest route accepts or refuses
 `POST /api/sms/ingest`:
 - reads the token from `Authorization: Bearer` or the `token` query parameter; an unknown token gets 403;
-- allows 30 messages an hour per token, counted in process memory (`api/sms-router.ts#checkRateLimit`);
+- allows 30 messages an hour per token, counted in Redis so every server process shares the count
+  (`api/sms-router.ts#withinRateLimit`, a sliding window keyed by a hash of the token);
 - needs a `message` of at least five characters;
 - refuses with 409 the same message text from the same user within 24 hours;
 - counts the messages saved automatically (`processed`) since the first of the Cairo month against the plan's limit,
@@ -47,7 +48,8 @@ the rule parser and the model that read them, and the setup screens.
 - stores the message in `raw_sms_events` with status `pending`.
 
 ### 3. Rules first, the model second
-- `parseSmsByRules` normalizes digits and letters, recognises the provider (wallets such as Vodafone Cash, InstaPay,
+- `parseSmsByRules` normalizes digits and letters, recognises the provider from the sender the app posted, or else from the
+  text (wallets such as Vodafone Cash, InstaPay,
   Etisalat Cash, Orange Money, WE Pay; banks such as CIB, NBE, Banque Misr, QNB, AAIB, Alex Bank, Faisal Bank,
   Crédit Agricole, HSBC; Apple Pay, valU, Fawry, Meeza), filters OTPs and promotions, reads direction and category
   from provider templates (`api/lib/sms-rule-parser.ts#parseDirection`: wallet, InstaPay, and English and Arabic
@@ -119,7 +121,9 @@ With a token in place, `BankSyncPage` shows `src/components/bank-sync/DigitalBan
 which manages cards and wallets through the wallet procedures of [Money](money.md).
 
 Also available, with no caller in the web app today: one-time six-character codes (`profile.generateMagicCode`,
-kept five minutes in process memory by `api/sms-router.ts#storeMagicCode`) exchanged at `POST /api/sms/exchange` or
+kept five minutes as shared state by `api/sms-router.ts#storeMagicCode`, so any server process can exchange one; a new
+code retires the user's previous one, and the code names the user, not the token, so the token handed out is the
+user's current one) exchanged at `POST /api/sms/exchange` or
 at `GET /api/sms/shortcut-download`, which returns a generated Shortcut file
 (`api/lib/shortcut-generator.ts#generateShortcutFile`) that posts with an Authorization header; and
 `GET /api/sms/token`, `POST /api/sms/token/generate`, `GET /api/sms/logs`, `GET /api/sms/metrics` (parser
@@ -153,13 +157,17 @@ statistics per provider) and `GET /api/sms/unparsed`.
 4. Never log message text (golden rule 10 in the root `AGENTS.md`): the route and the parser log an event with the
    user, the type, the provider or the message's length (`sms.ingested`, `sms.parse.cache_hit`), never the text,
    the amount or the category.
-5. The rate limit, the one-time codes and the AI cache live in one server process's memory.
+5. The rate limit and the one-time codes are shared by every server process: Redis, through
+   `executeSlidingWindowRateLimit` and `stateSet` in `api/lib/redis-client.ts` (`api/AGENTS.md`, rule 6). The AI
+   parse cache stays in one process's memory, which is harmless: an identical message is refused as a duplicate.
 
 ## Tests
 `tests/adversarial-challenger-2.test.ts` checks that condensing messages from several banks keeps their amounts,
 cards, dates and balances. `api/lib/sms-ai-parser.test.ts` checks the category mapping, and
-`api/services/sms-ledger.test.ts` the merchant categories, the suggestions and a confirmation saved once. Nothing
-tests the ingest route or the rule templates directly.
+`api/services/sms-ledger.test.ts` the merchant categories, the suggestions and a confirmation saved once.
+`api/sms-router.pairing.test.ts` exchanges pairing codes once and retires an older code, and
+`api/lib/sms-rule-parser.sender.test.ts` reads the provider from the sender. Nothing tests the ingest route itself or
+the rule templates one by one.
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -175,10 +183,7 @@ Checked against the code; each one names where it lives.
 4. **Gap.** Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in
    `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account
    digits and balances, is stored as received.
-5. **Bug.** The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
-6. **Bug.** With several server processes, a one-time code created on one cannot be exchanged on another, and each process
-   counts the rate limit on its own.
-7. **Debt.** `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
+5. **Debt.** `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 ## Related systems
 - [Money](money.md): the ledger the messages are saved into, and the wallets the digital wallet view manages.

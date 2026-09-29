@@ -241,7 +241,7 @@ flowchart LR
 | `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 9 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
-| `platform` — Platform services | Environment validation, Redis client and cache keys, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 10 |
+| `platform` — Platform services | Environment validation, Redis client (cache, shared state for one-time codes, generation counters with replay of bumps Redis missed) and cache keys, the generation watcher that tells a per-process copy of shared data to reload, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 11 |
 | `storage` — File storage | File storage behind one driver interface (local disk or S3-compatible storage such as R2), plus the avatar service. | 5 |
 
 ## API procedures
@@ -388,7 +388,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>38 files and declarations</summary>
+<details><summary>39 files and declarations</summary>
 
 - `api/boot.ts#ALL /api/trpc/*`
 - `api/boot.ts#GET /health`
@@ -404,6 +404,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/log.ts`
 - `api/lib/redis-client.ts`
 - `api/lib/settings-cache.ts`
+- `api/lib/shared-generation.ts`
 - `api/lib/system-settings-registry.ts`
 - `api/middleware.ts`
 - `api/queries/connection.ts`

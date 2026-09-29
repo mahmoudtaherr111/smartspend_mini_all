@@ -32,68 +32,34 @@ import {
   smsDate,
 } from "./services/sms-ledger";
 import { businessMonthRange } from "./lib/app-time";
-import { randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { env } from "./lib/env";
 import { validateActiveSessionToken } from "./lib/session-validation";
 import { getCookie } from "hono/cookie";
 import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
 import { createLogger } from "./lib/log";
+import { CacheKeys } from "./lib/cache-keys";
+import { executeSlidingWindowRateLimit, stateDel, stateSet, stateTake } from "./lib/redis-client";
 
 // A bank message is someone's balance and payees: it is stored, never logged (golden rule 10).
 const log = createLogger("sms-ingest");
 
 export const smsApp = new Hono();
 
-// ─── Rate limit: simple in-memory per-token tracker ───
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 30; // max 30 SMS per hour per token
+// ─── Rate limit: 30 messages an hour per webhook token, counted in Redis so every replica shares it ───
+const RATE_LIMIT = 30;
+const RATE_WINDOW_MS = 60 * 60 * 1000;
 
-// Auto-cleanup expired rate limiter entries every 5 minutes to prevent memory leak
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [token, entry] of rateLimitMap) {
-      if (entry.resetAt < now) {
-        rateLimitMap.delete(token);
-      }
-    }
-  },
-  5 * 60 * 1000,
-);
-
-function checkRateLimit(token: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(token);
-  if (!entry || entry.resetAt < now) {
-    rateLimitMap.set(token, { count: 1, resetAt: now + 60 * 60 * 1000 });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT) return false;
-  entry.count++;
-  return true;
+async function withinRateLimit(token: string): Promise<boolean> {
+  const tokenId = createHash("sha256").update(token).digest("hex").slice(0, 32);
+  const { allowed } = await executeSlidingWindowRateLimit(CacheKeys.rateLimit("sms-ingest", tokenId), RATE_LIMIT, RATE_WINDOW_MS);
+  return allowed;
 }
 
-// ─── Magic Code Store (for zero-config iOS Shortcut setup) ───
-const magicCodes = new Map<
-  string,
-  {
-    webhookToken: string;
-    userId: number;
-    userType: string;
-    expiresAt: number;
-  }
->();
-
-// Auto-cleanup expired codes every 2 minutes
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [code, entry] of magicCodes) {
-      if (entry.expiresAt < now) magicCodes.delete(code);
-    }
-  },
-  2 * 60 * 1000,
-);
+// ─── Pairing codes for the iOS Shortcut: five minutes, one use, shared state so any replica can exchange one ───
+const PAIRING_TTL_SECONDS = 5 * 60;
+const pairingKey = (code: string) => `sms-pair:code:${code}`;
+const pairingOwnerKey = (userType: string, userId: number) => `sms-pair:user:${userType}:${userId}`;
 
 /** Generate a short, human-friendly 6-char code (no confusing chars like 0/O, 1/I/L) */
 function generateShortCode(): string {
@@ -106,40 +72,36 @@ function generateShortCode(): string {
   return code;
 }
 
-/** Store a magic code tied to a user's webhook token. Returns the 6-char code. */
-export function storeMagicCode(
-  webhookToken: string,
-  userId: number,
-  userType: string,
-): string {
-  // Revoke any existing codes for this user first
-  for (const [code, entry] of magicCodes) {
-    if (entry.userId === userId && entry.userType === userType) {
-      magicCodes.delete(code);
-    }
-  }
+/**
+ * A pairing code for the user's webhook, replacing the one they had. The code names the user, not the token: the
+ * secret stays in `webhook_tokens`, and a token regenerated meanwhile is the one handed out.
+ */
+export async function storeMagicCode(userId: number, userType: string): Promise<string> {
+  const previous = await stateTake(pairingOwnerKey(userType, userId));
+  if (previous) await stateDel(pairingKey(previous));
   const code = generateShortCode();
-  magicCodes.set(code, {
-    webhookToken,
-    userId,
-    userType,
-    expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
-  });
+  await stateSet(pairingKey(code), PAIRING_TTL_SECONDS, JSON.stringify({ userId, userType }));
+  await stateSet(pairingOwnerKey(userType, userId), PAIRING_TTL_SECONDS, code);
   return code;
 }
 
-/** Exchange a magic code for the real webhook token. One-time use. */
-function exchangeMagicCode(code: string): { token: string } | null {
-  const normalized = code.toUpperCase().trim();
-  const entry = magicCodes.get(normalized);
-  if (!entry) return null;
-  if (entry.expiresAt < Date.now()) {
-    magicCodes.delete(normalized);
+/** Exchange a pairing code for the user's current webhook token. One use. */
+async function exchangeMagicCode(code: string): Promise<{ token: string } | null> {
+  const owner = await stateTake(pairingKey(code.toUpperCase().trim()));
+  if (!owner) return null;
+  let parsed: { userId?: unknown; userType?: unknown };
+  try {
+    parsed = JSON.parse(owner);
+  } catch {
     return null;
   }
-  // One-time use: delete after successful exchange
-  magicCodes.delete(normalized);
-  return { token: entry.webhookToken };
+  if (typeof parsed.userId !== "number" || typeof parsed.userType !== "string") return null;
+  const [record] = await getDb()
+    .select({ token: webhookTokens.token })
+    .from(webhookTokens)
+    .where(and(eq(webhookTokens.userId, parsed.userId), eq(webhookTokens.userType, parsed.userType)))
+    .limit(1);
+  return record ? { token: record.token } : null;
 }
 
 // ─── Helper: resolve user from session JWT (for protected endpoints) ───
@@ -206,7 +168,7 @@ smsApp.post("/ingest", async (c) => {
   }
 
   // Rate limit check
-  if (!checkRateLimit(token)) {
+  if (!(await withinRateLimit(token))) {
     return c.json({ error: "Rate limit exceeded. Max 30 SMS per hour." }, 429);
   }
 
@@ -310,7 +272,7 @@ smsApp.post("/ingest", async (c) => {
   }
 
   // ── Step 2: Run Rule-Based Parser (Fast Path) ──
-  const ruleResult = parseSmsByRules(message);
+  const ruleResult = parseSmsByRules(message, sender?.trim() || undefined);
   const ruleSummary = {
     transaction_detected: ruleResult.transaction_detected,
     amount: ruleResult.amount,
@@ -600,7 +562,7 @@ smsApp.post("/exchange", async (c) => {
     return c.json({ error: "Missing 'code' field" }, 400);
   }
 
-  const result = exchangeMagicCode(code);
+  const result = await exchangeMagicCode(code);
   if (!result) {
     return c.json(
       {
@@ -630,7 +592,7 @@ smsApp.get("/shortcut-download", async (c) => {
     return c.json({ error: "Missing 'code' parameter" }, 400);
   }
 
-  const result = exchangeMagicCode(code);
+  const result = await exchangeMagicCode(code);
   if (!result) {
     return c.json(
       {

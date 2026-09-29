@@ -66,7 +66,8 @@ storage, the contracts shared with the web app, and the retention job that prune
   API, and integrity lives in application code. Every table has a storage class in `db/table-classes.ts`,
   from A (identity and configuration) to G (conversations), and `tests/table-classes.test.ts` fails when a new
   table has none.
-- The retention job runs daily at 05:00 and walks the declared policies: user analytics after thirty days,
+- The retention job runs daily at 05:00 and walks the declared policies: user analytics after thirty days (the
+  `ai_cost_*` events after ninety, like the token ledger beside them),
   classification logs, token ledgers, notification logs, ad clicks, raw bank messages (`raw_sms_events`, suggestions
   included), voice usage and live-call incidents after ninety, the action audit trail and live voice calls after a year, chat messages after ninety days once the conversation has a summary, and expired
   challenges and pending actions in between. Token ledgers and ad clicks are rolled up into `ai_cost_monthly`
@@ -78,6 +79,15 @@ storage, the contracts shared with the web app, and the retention job that prune
   `AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION` is set, because one replica's memory is not a shared cache.
 - Keys are versioned: `sess:<hash>` for a resolved session, `authver:<type>:<id>` to invalidate them all at
   once, `cachegen:<type>:<id>` to invalidate a user's derived statistics, and `rl:` for the rate limiter.
+- A generation bump (`cacheIncr`) that a configured Redis misses, because it was down or refused the command, is
+  kept and replayed as soon as Redis answers again, so the entries cached before a write made during an outage are
+  not served once Redis is back.
+- Shared state is not cache: `stateSet`, `stateGet`, `stateTake` (read and delete in one step) and `stateDel` keep
+  what every replica must see and nobody can recompute — the phone-change codes of [accounts](accounts.md), the
+  Shortcut pairing codes of [bank messages](bank-messages.md). Redis holds it; without Redis it stays in the process's
+  memory even in production, because one process without Redis is a supported deployment.
+- A per-process copy of shared data reloads on a Redis generation through `api/lib/shared-generation.ts#watchGeneration`: the settings
+  (`settingsgen`) and the admin's AI providers, models and prices (`aiconfiggen`), checked at most every ten seconds.
 - `system_settings` is read through `getSystemSettings()`, cached in the process for five minutes and cleared
   by `invalidateSettingsCache()` (golden rule 5), which also bumps the Redis generation `settingsgen`; every other
   process compares it at most every ten seconds and reloads. Every cache in the system, with its key, lifetime and
@@ -125,23 +135,19 @@ Checked against the code; each one names where it lives.
 1. **Debt.** Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8):
    `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and
    public URL; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
-2. **Debt.** In production every 404 that is not an API path reads `dist/public/index.html` from disk again, with no
-   cache.
-3. **Debt.** Sentry, when configured, is initialised with full tracing and profiling (`tracesSampleRate: 1.0`), which
+2. **Debt.** Sentry, when configured, is initialised with full tracing and profiling (`tracesSampleRate: 1.0`), which
    samples every request in production.
-4. **Debt.** `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the
+3. **Debt.** `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the
    history the admin screens show ends where the ninety-day pruning starts.
-5. **Bug.** `user_analytics` is pruned after thirty days, which also drops the upgrade events the founder metrics count
-   and the AI cost events the cost overview reads ([admin](admin.md)).
-6. **Debt.** `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
-7. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
+4. **Debt.** `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
+5. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
    update can silently turn into zeroes.
-8. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
+6. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
    entry and `NODE_ENV=production`; `api/server.ts` repeats the server setup for the standalone deployment. Both
    route the voice socket (`/api/voice/v2`) through the one
    `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their
    `upgrade` listeners pass on have to be kept in step by hand.
-9. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
+7. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
    they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that
    print `error.message` as text print provider, socket and storage errors today, or failed reads whose values
    are ids and dates (`api/ai-router.ts`,

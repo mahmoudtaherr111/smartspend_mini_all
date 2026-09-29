@@ -83,4 +83,23 @@ describeRedisIntegration("redis-client real Redis integration", () => {
       }
     }
   });
+
+  it("shares a one-time value between two processes and hands it out once", async () => {
+    const closeClient = async (module: RedisClientModule) => {
+      const client = await module.getRedisClient();
+      if (client && "destroy" in client && typeof client.destroy === "function") client.destroy();
+    };
+    const key = `smartspend:test:state:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const writer = await loadRedisClientForIntegration();
+    await writer.stateSet(key, 30, "owner");
+    // A second module instance stands in for another replica: nothing is shared but Redis.
+    const reader = await loadRedisClientForIntegration();
+    try {
+      expect(await reader.stateTake(key)).toBe("owner");
+      expect(await writer.stateTake(key)).toBeNull();
+    } finally {
+      await closeClient(writer);
+      await closeClient(reader);
+    }
+  });
 });

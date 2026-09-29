@@ -43,11 +43,17 @@ import {
 import { normalizeTransactionTaxonomy } from "./lib/category-registry";
 import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
 import { cleanPhoneNumber, validatePhone } from "./local-auth-utils";
-import { otpCache } from "./services/otp-cache";
+import { stateDel, stateGet, stateSet, stateTake } from "./lib/redis-client";
 import { whatsappService } from "./services/whatsapp-service";
 import { getSystemSettings } from "./lib/settings-cache";
 import { invalidatePrincipal } from "./lib/access-control";
 import { validateBusinessOwnership } from "./lib/ownership-guard";
+
+/** A phone-number change: the code sent to the new number, then a one-time grant once it is confirmed. */
+const PHONE_CHANGE_TTL_SECONDS = 10 * 60;
+const PHONE_GRANT_TTL_SECONDS = 15 * 60;
+const phoneChangeKey = (userId: number, phone: string) => `phone-change:local:${userId}:${phone}`;
+const phoneGrantKey = (userId: number, phone: string, token: string) => `phone-grant:local:${userId}:${phone}:${token}`;
 
 // ─── Strict Profile Validation Schemas (Eliminating z.any() wildcards) ───
 
@@ -468,13 +474,8 @@ export const profileRouter = router({
       }
 
       const code = "SS-" + randomInt(100000, 1000000).toString();
-      const cacheKey = `phone-change:${ctx.user.id}:${clean}`;
-      otpCache.set(cacheKey, {
-        phone: clean,
-        code,
-        expiresAt: Date.now() + 10 * 60 * 1000,
-        verified: false,
-      });
+      // Shared state, so the confirmation may reach any replica (api/AGENTS.md, rule 6).
+      await stateSet(phoneChangeKey(ctx.user.id, clean), PHONE_CHANGE_TTL_SECONDS, code);
 
       const settings = await getSystemSettings();
       if (settings["whatsapp_otp_enabled"] === "true") {
@@ -506,21 +507,17 @@ export const profileRouter = router({
       }
 
       const clean = cleanPhoneNumber(input.newPhone);
-      const cacheKey = `phone-change:${ctx.user.id}:${clean}`;
-      const record = otpCache.get(cacheKey);
+      const cacheKey = phoneChangeKey(ctx.user.id, clean);
+      const expected = await stateGet(cacheKey);
 
-      if (
-        !record ||
-        record.expiresAt < Date.now() ||
-        record.code !== input.code.trim()
-      ) {
+      if (!expected || expected !== input.code.trim()) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "رمز التأكيد غير صحيح أو منتهي الصلاحية",
         });
       }
 
-      otpCache.delete(cacheKey);
+      await stateDel(cacheKey);
 
       // Check conflict again before persisting
       const existing = await db.query.localUsers.findFirst({
@@ -535,12 +532,7 @@ export const profileRouter = router({
 
       // Generate verified OTP grant token (usable if client also calls updateUserInfo)
       const otpToken = `otp_grant_${randomBytes(16).toString("hex")}`;
-      otpCache.set(`phone-grant:${ctx.user.id}:${clean}:${otpToken}`, {
-        phone: clean,
-        code: otpToken,
-        expiresAt: Date.now() + 15 * 60 * 1000,
-        verified: true,
-      });
+      await stateSet(phoneGrantKey(ctx.user.id, clean, otpToken), PHONE_GRANT_TTL_SECONDS, "1");
 
       // Update phone in DB
       await db
@@ -570,16 +562,12 @@ export const profileRouter = router({
         }
 
         const clean = cleanPhoneNumber(input.phone);
-        const grantKey = `phone-grant:${ctx.user.id}:${clean}:${input.otpToken}`;
-        const directKey = `phone-change:${ctx.user.id}:${clean}`;
-        const grant = otpCache.get(grantKey);
-        const directRecord = otpCache.get(directKey);
-
-        const isDirectCodeMatch =
-          directRecord &&
-          directRecord.code === input.otpToken?.trim() &&
-          directRecord.expiresAt >= Date.now();
-        const isGrantMatch = grant && grant.expiresAt >= Date.now();
+        const directKey = phoneChangeKey(ctx.user.id, clean);
+        const offered = input.otpToken?.trim() ?? "";
+        // A grant from confirmPhoneChange is used once; the code itself is accepted too.
+        const isGrantMatch = offered.length > 0 && (await stateTake(phoneGrantKey(ctx.user.id, clean, offered))) !== null;
+        const directCode = isGrantMatch ? null : await stateGet(directKey);
+        const isDirectCodeMatch = directCode !== null && offered.length > 0 && directCode === offered;
 
         if (!isDirectCodeMatch && !isGrantMatch) {
           throw new TRPCError({
@@ -588,8 +576,7 @@ export const profileRouter = router({
           });
         }
 
-        otpCache.delete(grantKey);
-        otpCache.delete(directKey);
+        await stateDel(directKey);
 
         const existing = await db.query.localUsers.findFirst({
           where: eq(localUsers.phone, clean),
@@ -690,11 +677,7 @@ export const profileRouter = router({
     }
 
     const { storeMagicCode } = await import("./sms-router");
-    const code = storeMagicCode(
-      record.token,
-      ctx.user.id as number,
-      ctx.user.type,
-    );
+    const code = await storeMagicCode(ctx.user.id as number, ctx.user.type);
     return { code, expiresInSeconds: 300 };
   }),
 

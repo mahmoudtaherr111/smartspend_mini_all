@@ -38,7 +38,7 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
 ## The tabs
 | Tab | What it shows and does | Procedures |
 | --- | --- | --- |
-| Overview | Registered users, Google and phone accounts, paying users, live sessions, open tickets, and the money and today's flows from the daily rollups; below them daily and weekly active users, new and active Pro subscriptions, the token estimate and upgrade events | `admin.getDashboardStats`, `admin.getFounderMetrics` |
+| Overview | Registered users, Google and phone accounts, paying users, live sessions, open tickets, and the money and today's flows from the daily rollups; below them daily and weekly active users (sessions opened since Cairo's midnight, and in the last seven days), new and active Pro subscriptions, the token estimate and the paid subscriptions ever bought, Pro and Ultra, counted from `pro_subscriptions` | `admin.getDashboardStats`, `admin.getFounderMetrics` |
 | Users | Search by name, email or phone with role and plan filters; open a user's smart profile; list their sessions and revoke one; change role or plan; delete the account; export everyone; message one user | `admin.listAllUsers`, `admin.getUserSmartProfile`, `admin.getUserSessions`, `admin.revokeSession`, `admin.updateUserRole`, `admin.updateUserPlanV2`, `admin.deleteUser`, `export.allUsers`, `adminWhatsapp.sendDirectMessage` |
 | Support | Tickets newest first with the user's name and whether they are open; reply, which also marks the ticket resolved; close | `support.listAll`, `support.respond`, `support.close` |
 | AI | Recent API key errors, with resolve and clear; then the command center: classification quality over the last 7, 30 or 90 days beside the period before (share saved on its own, the silent-mistake rate — auto-saved answers the user later changed —, review, questions, corrections, share sent to a model, average time, from `classification_logs`); consumption, cost and latency this billing period by provider and channel; providers with their keys masked, the models discovered for each and every model's purposes, plans and prices; one user's quota, measured against the limit the server enforces (the user's own override, else `<plan>_token_limit`), and latest requests; a sandbox that sends a typed sentence through `ai.parseExpense` | `admin.getApiKeyErrors`, `admin.resolveApiKeyError`, `admin.clearAllApiKeyErrors`, `admin.getClassificationQuality`, `admin.getAiTelemetryOverview`, `admin.getAiProviders`, `admin.getAiModels`, `admin.addAiProvider`, `admin.updateAiProvider`, `admin.deleteAiProvider`, `admin.discoverProviderModels`, `admin.saveAiModels`, `admin.getUserAiQuota` |
@@ -88,7 +88,8 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
   XML sitemap of fixed routes and saved pages.
 - `analytics.trackEvent` stores an event with metadata in `user_analytics`; `src/hooks/useSessionTracker.ts`
   calls it from the app shell. The same table carries the AI usage events of `api/lib/ai-usage-policy.ts` and
-  the upgrade events of `api/lib/subscription-service.ts`.
+  the upgrade events of `api/lib/subscription-service.ts`; the founder metrics count upgrades from `pro_subscriptions`
+  instead, since these events are pruned after thirty days and a signed-in client can add its own.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -117,31 +118,27 @@ and `api/lib/admin-model-switch.test.ts`.
 Checked against the code; each one names where it lives.
 1. **Gap.** Nothing records what admins do. The audit tab lists recent sessions, and changing a role or plan, editing
    settings, deleting an account or sending a message leaves no trail.
-2. **Debt.** A settings change reaches the other replicas only when their five-minute cache expires
-   (`api/lib/settings-cache.ts`).
-3. **Debt.** Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`,
+2. **Debt.** Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`,
    `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would
    show them, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted. The classification quality itself is
    shown by the command center's quality card (`admin.getClassificationQuality`).
-4. **Gap.** The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
+3. **Gap.** The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
    browser; nothing backs up the database.
-5. **Gap.** Answering a ticket does not notify the user, while the support page promises a reply within a day. The
+4. **Gap.** Answering a ticket does not notify the user, while the support page promises a reply within a day. The
    reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses
    them, and `support.assign` has no screen.
-6. **Gap.** Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it
+5. **Gap.** Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it
    would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either
    (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
-7. **Bug.** Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero;
+6. **Bug.** Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero;
    `ads.list` trusts the plan the client sends, and `analytics.trackEvent` stores any event name and metadata a
    signed-in caller sends.
-8. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
+7. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
    `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`,
    `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one),
    `support.getById`, `support.assign` and every statistic of `analytics`.
-9. **Bug.** Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp
-    tab always shows verification as off ([notifications](notifications.md)).
-10. **Bug.** The founder metrics count active users from sessions created since the server's midnight, not Cairo's
-    (golden rule 6), and upgrades only from `upgrade_to_pro` events, so an upgrade to Ultra is not counted.
+8. **Bug.** Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp
+   tab always shows verification as off ([notifications](notifications.md)).
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): roles, sessions and account deletion.

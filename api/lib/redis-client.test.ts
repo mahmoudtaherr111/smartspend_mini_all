@@ -171,3 +171,96 @@ describe("redis-client cache runtime", () => {
     });
   });
 });
+
+describe("shared state", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.resetModules();
+    vi.doUnmock("./env");
+  });
+
+  it("keeps a one-time code in production without Redis, where the cache would keep nothing", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { stateGet, stateSet, stateTake } = await loadRedisClient({ NODE_ENV: "production", REDIS_URL: undefined });
+
+    await stateSet("sms-pair:code:ABC123", 300, "owner");
+    expect(await stateGet("sms-pair:code:ABC123")).toBe("owner");
+    expect(await stateTake("sms-pair:code:ABC123")).toBe("owner");
+    // One use.
+    expect(await stateTake("sms-pair:code:ABC123")).toBeNull();
+  });
+
+  it("forgets a value when its time is up", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-29T10:00:00Z"));
+    const { stateGet, stateSet } = await loadRedisClient({ NODE_ENV: "production", REDIS_URL: undefined });
+
+    await stateSet("phone-change:local:1:01000000000", 600, "SS-123456");
+    vi.setSystemTime(new Date("2026-09-29T10:09:59Z"));
+    expect(await stateGet("phone-change:local:1:01000000000")).toBe("SS-123456");
+    vi.setSystemTime(new Date("2026-09-29T10:10:01Z"));
+    expect(await stateGet("phone-change:local:1:01000000000")).toBeNull();
+  });
+});
+
+describe("generation bumps", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.resetModules();
+    vi.doUnmock("./env");
+    vi.doUnmock("redis");
+  });
+
+  it("replays a bump Redis missed as soon as it is reachable again", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-29T10:00:00Z"));
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.resetModules();
+    vi.doMock("./env", () => ({
+      env: { NODE_ENV: "production", REDIS_URL: "redis://127.0.0.1:6380", AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION: undefined },
+    }));
+    let reachable = false;
+    const incrBy = vi.fn(async () => 1);
+    const createClient = vi.fn(() => ({
+      isOpen: true,
+      isReady: true,
+      on: vi.fn(),
+      destroy: vi.fn(),
+      connect: vi.fn(async () => {
+        if (!reachable) throw new Error("ECONNREFUSED");
+      }),
+      incr: vi.fn(async () => 1),
+      incrBy,
+    }));
+    vi.doMock("redis", () => ({ createClient }));
+    const { cacheIncr, getRedisClient, pendingGenerationBumps } = await import("./redis-client");
+
+    // Redis is down: the write's bump cannot land, and is remembered.
+    await cacheIncr("cachegen:local:7");
+    await cacheIncr("cachegen:local:7");
+    expect(pendingGenerationBumps()).toBe(2);
+
+    // Redis is back after the reconnect backoff: the first connection replays both bumps.
+    reachable = true;
+    vi.setSystemTime(new Date("2026-09-29T10:01:00Z"));
+    expect(await getRedisClient()).not.toBeNull();
+    await vi.waitFor(() => expect(incrBy).toHaveBeenCalledWith("cachegen:local:7", 2));
+    expect(pendingGenerationBumps()).toBe(0);
+  });
+
+  it("tells a process-local copy to reload when the generation moves", async () => {
+    await loadRedisClient({ NODE_ENV: "development", REDIS_URL: undefined });
+    const { watchGeneration } = await import("./shared-generation");
+    const settings = watchGeneration("settingsgen:test", 10_000);
+    const t0 = Date.now();
+    settings.loaded(await settings.current(), t0);
+
+    await settings.bump();
+    // Checked at most every ten seconds.
+    expect(await settings.moved(t0 + 1_000)).toBe(false);
+    expect(await settings.moved(t0 + 10_001)).toBe(true);
+  });
+});

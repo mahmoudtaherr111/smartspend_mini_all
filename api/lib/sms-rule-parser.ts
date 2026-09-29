@@ -162,7 +162,8 @@ function detectProvider(text: string, sender?: string): string {
       return "EtisalatCash";
     if (/orange.*(?:money|cash)|أورانج.*(?:موني|كاش)|orange/i.test(s))
       return "OrangeMoney";
-    if (/we\s*pay|وي\s*باي|we/i.test(s)) return "WEPay";
+    // Whole words: a bare "we" inside another sender's name ("Western", "Answer") is not WE Pay.
+    if (/(?:^|[^a-z])we(?:\s*pay)?(?![a-z])|وي\s*باي/i.test(s)) return "WEPay";
 
     if (/\bcib\b|commercial international/i.test(s)) return "CIB";
     if (/\bnbe\b|national bank|البنك.*الاهلي|ahly/i.test(s)) return "NBE";

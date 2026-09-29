@@ -115,6 +115,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/security-logger.ts` | [accounts](accounts.md) |
 | `api/lib/session-validation.ts` | [accounts](accounts.md) |
 | `api/lib/settings-cache.ts` | [platform](platform.md) |
+| `api/lib/shared-generation.ts` | [platform](platform.md) |
 | `api/lib/shortcut-generator.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/smart-pipeline.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/sms-ai-parser.ts` | [bank-messages](bank-messages.md) |

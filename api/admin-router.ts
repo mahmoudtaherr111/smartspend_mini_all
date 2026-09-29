@@ -4,7 +4,7 @@ import { router, adminProcedure } from "./middleware";
 import { db, getPoolMetrics } from "./queries/connection";
 import { getSystemSettings, invalidateSettingsCache } from "./lib/settings-cache";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
-import { businessDateKey } from "./lib/app-time";
+import { businessDateKey, startOfBusinessDay } from "./lib/app-time";
 import { invalidatePrincipal, revokeSession, setPlan, setRole } from "./lib/access-control";
 import {
   users,
@@ -13,7 +13,6 @@ import {
   expenseDailyRollups,
   sessions,
   supportTickets,
-  userAnalytics,
   systemSettings,
   classificationLogs,
   voiceUsage,
@@ -42,7 +41,7 @@ import {
 } from "../db/schema";
 import {
   discoverRemoteModels,
-  refreshGatewayCache,
+  invalidateAiConfig,
   resolveBillingPeriod,
 } from "./lib/ai-gateway";
 import { openProviderKey, sealProviderKey } from "./lib/provider-key-crypto";
@@ -81,7 +80,6 @@ import webpush from "web-push";
 import { sendPush, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
 import { purgeUserData } from "./services/user-purge-service";
 import { asPlan, resolvePlanTokenLimit } from "./lib/ai-usage-policy";
-import { invalidateAiPricing } from "./lib/ai-pricing";
 
 // Setup Web Push
 // In a real app these should be in env vars, but we'll use the ones generated earlier
@@ -1171,10 +1169,9 @@ export const adminRouter = router({
 
   /** Founder / ops: DAU, Pro subs, token burn estimate */
   getFounderMetrics: adminProcedure.query(async () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
+    // Cairo's midnight, not the server's (golden rule 6).
+    const today = startOfBusinessDay();
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const safeCount = async (
       run: () => Promise<{ count?: number | null }[]>,
@@ -1242,11 +1239,10 @@ export const adminRouter = router({
       console.warn("getFounderMetrics token sum failed:", err);
     }
 
+    // Paid subscriptions, Pro and Ultra, from the rows checkout writes: the upgrade events in user_analytics are
+    // pruned after thirty days, counted only Pro, and a client could add its own through session.trackEvent.
     const upgradeEvents = await safeCount(() =>
-      db
-        .select({ count: count() })
-        .from(userAnalytics)
-        .where(eq(userAnalytics.event, "upgrade_to_pro")),
+      db.select({ count: count() }).from(proSubscriptions),
     );
 
     const openTickets = await safeCount(() =>
@@ -1887,7 +1883,7 @@ export const adminRouter = router({
         priority: input.priority,
         isActive: true,
       });
-      await refreshGatewayCache();
+      await invalidateAiConfig();
       return { success: true, id: newRow.insertId };
     }),
 
@@ -1917,7 +1913,7 @@ export const adminRouter = router({
       }
 
       await db.update(aiProviders).set(updateData).where(eq(aiProviders.id, input.id));
-      await refreshGatewayCache();
+      await invalidateAiConfig();
       return { success: true };
     }),
 
@@ -1928,7 +1924,7 @@ export const adminRouter = router({
         await tx.delete(aiModels).where(eq(aiModels.providerId, input.id));
         await tx.delete(aiProviders).where(eq(aiProviders.id, input.id));
       });
-      await refreshGatewayCache();
+      await invalidateAiConfig();
       return { success: true };
     }),
 
@@ -2009,8 +2005,7 @@ export const adminRouter = router({
           }
         }
       });
-      await refreshGatewayCache();
-      invalidateAiPricing();
+      await invalidateAiConfig();
       return { success: true };
     }),
 

@@ -151,7 +151,16 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
     class: "E",
     retainDays: 30,
     dateColumn: "created_at",
+    whereClause: "event NOT LIKE 'ai_cost_%'",
     description: "Pure product telemetry events.",
+  },
+  {
+    tableName: "user_analytics",
+    class: "E",
+    retainDays: 90,
+    dateColumn: "created_at",
+    whereClause: "event LIKE 'ai_cost_%'",
+    description: "AI cost events (recordAICostMetric), kept as long as the token ledger they sit beside.",
   },
   {
     tableName: "notification_logs",

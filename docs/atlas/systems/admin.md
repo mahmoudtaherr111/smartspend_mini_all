@@ -77,7 +77,6 @@ flowchart LR
   router_admin -.-> tbl_ads
   router_admin -.-> tbl_more
   router_admin -.-> tbl_support_tickets
-  router_admin -.-> tbl_user_analytics
   router_admin ==> tbl_ai_models
   router_admin ==> tbl_ai_providers
   router_admin ==> tbl_discount_codes
@@ -145,7 +144,7 @@ flowchart LR
 | `admin.getClassificationQuality` | query | `adminProcedure` | `classification_logs` | — | `Admin`, `More` |
 | `admin.getDashboardStats` | query | `adminProcedure` | `expense_daily_rollups`, `local_users`, `sessions`, `support_tickets`, `users` | — | `Admin`, `More` |
 | `admin.getDiscountCodes` | query | `adminProcedure` | `discount_codes` | — | `Admin`, `More` |
-| `admin.getFounderMetrics` | query | `adminProcedure` | `local_users`, `pro_subscriptions`, `sessions`, `support_tickets`, `user_analytics`, `users` | — | `Admin`, `More` |
+| `admin.getFounderMetrics` | query | `adminProcedure` | `local_users`, `pro_subscriptions`, `sessions`, `support_tickets`, `users` | — | `Admin`, `More` |
 | `admin.getLearnedRules` | query | `adminProcedure` | `local_users`, `user_dictionaries`, `users` | — | `Admin`, `More` |
 | `admin.getNotificationLogs` | query | `adminProcedure` | `notification_logs` | — | `Admin`, `More` |
 | `admin.getNotificationStats` | query | `adminProcedure` | `push_subscriptions` | — | `Admin`, `More` |
@@ -234,7 +233,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `sessions` | D | — | `admin.getActivityLog`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getUserSessions` |
 | `support_tickets` | A | `support.assign`, `support.close`, `support.create`, `support.respond` | `admin.getDashboardStats`, `admin.getFounderMetrics`, `support.assign`, `support.close`, `support.getById`, `support.listAll`, `support.listMine`, `support.respond` |
 | `system_settings` | A | `admin.setUserTokenLimit`, `admin.updateSettings` | `admin.setUserTokenLimit` |
-| `user_analytics` | E | `analytics.trackEvent` | `admin.getFounderMetrics`, `analytics.getMyAnalytics` |
+| `user_analytics` | E | `analytics.trackEvent` | `analytics.getMyAnalytics` |
 | `user_dictionaries` | F | `admin.deleteLearnedRule` | `admin.getLearnedRules` |
 | `users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getRawSmsLogs`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendPushNotification`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
 | `voice_usage` | E | — | `admin.getVoiceUsageStats` |

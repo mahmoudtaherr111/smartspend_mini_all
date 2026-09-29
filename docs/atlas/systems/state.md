@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (38 of 103 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (32 of 95 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-29 49f3cb9 | 2026-09-29 49f3cb9 | 18 | — | 1 | 3 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-29 a380e03 | 2026-09-29 a380e03 | 3 | — | 2 | 4 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 5 | — | — | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-29 8771898 | 2026-09-29 8771898 | 6 | — | — | 2 | — |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-29 a380e03 | 2026-09-29 a380e03 | 4 | — | 4 | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-29 a380e03 | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-29 a380e03 | 2026-09-29 a380e03 | 5 | — | 5 | 5 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-29 a380e03 | 2026-09-23 fe4b4b3 | 14 | **2** | 2 | 4 | — |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-29 dfd750a | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-29 dfd750a | 2026-09-29 a380e03 | 5 | — | 5 | 5 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 14 | **2** | 1 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-28 af819ef | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-29 a380e03 | 2026-09-25 e6b668b | 1 | **1** | 5 | 1 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 44c928b | 2026-09-25 44c928b | 4 | — | 3 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-29 8c98c99 | 2026-09-28 b0ba1ec | 8 | — | 1 | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-29 674a6bc | 2026-09-29 674a6bc | 5 | — | 1 | — | 8 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 1 | **1** | 5 | 1 | 2 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 4 | — | 2 | 5 | 1 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 8 | — | — | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-29 a380e03 | 2026-09-29 a380e03 | 7 | **1** | 1 | 3 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (38 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (103 issue(s))
+## What is waiting (95 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -48,14 +48,10 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (33)
+### Bugs (27)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A receipt's amount on the review card is the first item the pipeline read from the OCR text, which can differ from the total the vision model returned, and a base64 image longer than the parser's cap is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the procedure accepts larger payloads.
-
-**Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
-- The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
-- With several server processes, a one-time code created on one cannot be exchanged on another, and each process counts the rate limit on its own.
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - A reply to a clarifying question starts over: `sendMessage` stores the clarification state in the conversation's metadata, but reads it from `requireOwnedConversation`, which selects only the id, so the state is never found and the reply is planned as a new message.
@@ -81,7 +77,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Wallet balances are stored as whatever text the client sends.
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
-- A phone-number change keeps its code in one process's memory (`api/services/otp-cache.ts`), so confirming it fails when the request reaches another replica (`api/AGENTS.md`, rule 6).
 - Saving the profile in Settings never changes the name or avatar, and says nothing: `SmartProfileSettings` always sends the phone field, which `profile.updateUserInfo` rejects without a code (and rejects when empty, for Google users). Changing a phone number has no screen, and with verification off its code is never sent.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
@@ -94,13 +89,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero; `ads.list` trusts the plan the client sends, and `analytics.trackEvent` stores any event name and metadata a signed-in caller sends.
 - Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp tab always shows verification as off ([notifications](notifications.md)).
-- The founder metrics count active users from sessions created since the server's midnight, not Cairo's (golden rule 6), and upgrades only from `upgrade_to_pro` events, so an upgrade to Ultra is not counted.
-
-**AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
-- `ai.getUserLimits` computes the billing cycle with server-local `Date` arithmetic instead of Cairo business time (golden rule 6), so the cycle turns over at the server's midnight.
-
-**Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
-- `user_analytics` is pruned after thirty days, which also drops the upgrade events the founder metrics count and the AI cost events the cost overview reads ([admin](admin.md)).
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
@@ -169,7 +157,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, since they belong to the account. The logout dialog in `src/pages/More.tsx` says how many entries are still unsent first; the sidebar's and the biometric lock's logout do not.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (27)
+### Debt (25)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win; the code reads the `parser_*` keys first.
@@ -195,18 +183,16 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
-- A settings change reaches the other replicas only when their five-minute cache expires (`api/lib/settings-cache.ts`).
 - Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would show them, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted. The classification quality itself is shown by the command center's quality card (`admin.getClassificationQuality`).
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
 - `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost calculation and ledger write — has one caller, the rebuilt voice call's `think` tool. Elsewhere only its route resolution is used, by `api/lib/smart-pipeline.ts`.
 - `api/lib/ai-provider-registry.ts` carries a model catalogue with tiers, purposes and prices, "last verified" in a comment, and nothing reads it: `isKnownModel`, `getModelEntry`, `listModels`, `resolveApiKey` and the per-plan defaults have no caller, and only `DEPRECATED_MODEL_MAP` is used. Model defaults live a second time in `api/lib/model-mapper.ts` and a third time in the fixed lists of `admin.getAvailableModels`.
-- The breaker, the route cache (one minute) and the settings cache (five minutes) are per process, so during an outage each replica learns on its own and an admin's change reaches them at different times.
+- The breaker is per process, so during an outage each replica learns on its own that a provider is down.
 - The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat, report, SMS and voice paths do not.
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
 - Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
-- In production every 404 that is not an API path reads `dist/public/index.html` from disk again, with no cache.
 - Sentry, when configured, is initialised with full tracing and profiling (`tracesSampleRate: 1.0`), which samples every request in production.
 - `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the history the admin screens show ends where the ninety-day pruning starts.
 - `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.

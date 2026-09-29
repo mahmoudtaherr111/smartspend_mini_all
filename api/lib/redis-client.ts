@@ -1,5 +1,8 @@
 import { createClient, type RedisClientType } from "redis";
 import { env } from "./env";
+import { createLogger } from "./log";
+
+const log = createLogger("redis");
 
 let redisClient: RedisClientType | null = null;
 let isConnecting = false;
@@ -26,6 +29,19 @@ const memoryCounters = new Map<string, number>();
 
 // In-process sliding-window timestamps for rate-limit fallback
 const memoryRateWindows = new Map<string, number[]>();
+
+/**
+ * Generation bumps that did not reach a configured Redis (it was down or refused the command), by key, with how many
+ * were lost. They are replayed as soon as Redis answers again: otherwise a write made during the outage would leave
+ * the entries cached before it under a generation that never moved, and they would be served again once Redis was
+ * back, for as long as their lifetime (a day for a closed month).
+ */
+const lostBumps = new Map<string, number>();
+const LOST_BUMPS_MAX_KEYS = 50_000;
+
+/** Shared state kept in this process when Redis is missing or failing: see `stateSet`. */
+const memoryState = new Map<string, { value: string; expiresAt: number }>();
+const MEMORY_STATE_MAX_ENTRIES = 10_000;
 
 // Observability metrics (P8)
 let cacheHits = 0;
@@ -231,6 +247,7 @@ export async function getRedisClient(): Promise<RedisClientType | null> {
     redisClient = client;
     redisConnectFailureCount = 0;
     nextRedisConnectAttemptAt = 0;
+    if (lostBumps.size) void replayLostBumps(client);
     return redisClient;
   } catch (error) {
     console.error("❌ Failed to connect to Redis", error);
@@ -314,16 +331,134 @@ export async function cacheDel(key: string): Promise<number> {
   }
 }
 
+function recordLostBump(key: string): void {
+  if (!env.REDIS_URL) return;
+  if (!lostBumps.has(key) && lostBumps.size >= LOST_BUMPS_MAX_KEYS) return;
+  lostBumps.set(key, (lostBumps.get(key) ?? 0) + 1);
+}
+
+async function replayLostBumps(client: RedisClientType): Promise<void> {
+  for (const [key, count] of [...lostBumps]) {
+    try {
+      await client.incrBy(key, count);
+      if (lostBumps.get(key) === count) lostBumps.delete(key);
+      else lostBumps.set(key, (lostBumps.get(key) ?? count) - count);
+    } catch {
+      return;
+    }
+  }
+}
+
+/** Bumps a generation counter. A bump Redis misses is replayed when it answers again (`lostBumps`). */
 export async function cacheIncr(key: string): Promise<number> {
   const memVal = memoryIncr(key);
   const client = await getRedisClient();
-  if (!client) return memVal;
+  if (!client) {
+    recordLostBump(key);
+    return memVal;
+  }
 
   try {
-    return await client.incr(key);
+    const value = await client.incr(key);
+    if (lostBumps.size) void replayLostBumps(client);
+    return value;
   } catch (err) {
-    console.warn(`[Redis] cacheIncr error for ${key}:`, err);
+    log.warn({ event: "redis.incr_failed", err }, "A generation bump did not reach Redis; it is replayed on reconnect");
+    recordLostBump(key);
     return memVal;
+  }
+}
+
+/** How many generation bumps are waiting for Redis to come back; for tests and the runtime status. */
+export function pendingGenerationBumps(): number {
+  let total = 0;
+  for (const count of lostBumps.values()) total += count;
+  return total;
+}
+
+// ─── Shared state (not a cache) ───
+//
+// A value every replica must see and nobody can recompute: a one-time code a user is about to type, a pairing
+// code, a counter. Redis holds it when it is configured. Unlike the cache helpers above, it falls back to this
+// process's memory in production too, because one process without Redis is a supported deployment and a code kept
+// nowhere could never be used; running more than one process requires Redis (decision 0013).
+
+function memoryStateGet(key: string, now = nowMs()): string | null {
+  const entry = memoryState.get(key);
+  if (!entry) return null;
+  if (entry.expiresAt <= now) {
+    memoryState.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
+function memoryStateSet(key: string, ttlSeconds: number, value: string): void {
+  const now = nowMs();
+  if (memoryState.size >= MEMORY_STATE_MAX_ENTRIES) {
+    for (const [stale, entry] of memoryState) if (entry.expiresAt <= now) memoryState.delete(stale);
+    if (memoryState.size >= MEMORY_STATE_MAX_ENTRIES) {
+      const oldest = memoryState.keys().next().value;
+      if (oldest !== undefined) memoryState.delete(oldest);
+    }
+  }
+  memoryState.set(key, { value, expiresAt: now + ttlSeconds * 1000 });
+}
+
+/** Stores shared state for `ttlSeconds`: in Redis, or in this process when Redis is missing or failing. */
+export async function stateSet(key: string, ttlSeconds: number, value: string): Promise<void> {
+  const client = await getRedisClient();
+  if (client) {
+    try {
+      await client.setEx(key, ttlSeconds, value);
+      memoryState.delete(key);
+      return;
+    } catch (err) {
+      log.warn({ event: "redis.stateSet_failed", err }, "Redis refused a shared-state command");
+    }
+  }
+  memoryStateSet(key, ttlSeconds, value);
+}
+
+/** Reads shared state; a value kept in this process during a Redis outage is still found. */
+export async function stateGet(key: string): Promise<string | null> {
+  const client = await getRedisClient();
+  if (client) {
+    try {
+      const value = await client.get(key);
+      if (value !== null) return value;
+    } catch (err) {
+      log.warn({ event: "redis.stateGet_failed", err }, "Redis refused a shared-state command");
+    }
+  }
+  return memoryStateGet(key);
+}
+
+/** Reads and removes shared state in one step, so a one-time value is used once even by two racing replicas. */
+export async function stateTake(key: string): Promise<string | null> {
+  const client = await getRedisClient();
+  if (client) {
+    try {
+      const value = await client.getDel(key);
+      if (value !== null) return value;
+    } catch (err) {
+      log.warn({ event: "redis.stateTake_failed", err }, "Redis refused a shared-state command");
+    }
+  }
+  const value = memoryStateGet(key);
+  memoryState.delete(key);
+  return value;
+}
+
+/** Removes shared state everywhere it may be kept. */
+export async function stateDel(key: string): Promise<void> {
+  memoryState.delete(key);
+  const client = await getRedisClient();
+  if (!client) return;
+  try {
+    await client.del(key);
+  } catch (err) {
+    log.warn({ event: "redis.stateDel_failed", err }, "Redis refused a shared-state command");
   }
 }
 

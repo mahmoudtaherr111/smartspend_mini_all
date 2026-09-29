@@ -631,7 +631,7 @@ export default function Admin() {
                   />
                   <StatCard
                     icon={<BarChart3 className="w-5 h-5" />}
-                    label="ترقيات Pro"
+                    label="اشتراكات مدفوعة (Pro وUltra)"
                     value={founderQuery.data.upgradeEvents}
                     color="indigo"
                   />

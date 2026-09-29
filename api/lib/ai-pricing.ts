@@ -11,6 +11,8 @@ import { db } from "../queries/connection";
 import { mapModelName } from "./model-mapper";
 import { getSystemSettings } from "./settings-cache";
 import { createLogger } from "./log";
+import { AI_CONFIG_GENERATION } from "./cache-keys";
+import { watchGeneration } from "./shared-generation";
 
 const log = createLogger("ai-pricing");
 
@@ -28,9 +30,12 @@ export { PUBLISHED_RATES };
 
 const CACHE_MS = 60_000;
 let adminRates: { at: number; byKey: Map<string, ModelRates> } | null = null;
+/** Moved by `invalidateAiConfig` in `api/lib/ai-gateway.ts` when an admin edits a provider or a model. */
+const pricesGeneration = watchGeneration(AI_CONFIG_GENERATION);
 
 async function loadAdminRates(): Promise<Map<string, ModelRates>> {
-  if (adminRates && Date.now() - adminRates.at < CACHE_MS) return adminRates.byKey;
+  if (adminRates && Date.now() - adminRates.at < CACHE_MS && !(await pricesGeneration.moved())) return adminRates.byKey;
+  const generation = await pricesGeneration.current();
   const byKey = new Map<string, ModelRates>();
   try {
     const rows = await db
@@ -56,6 +61,7 @@ async function loadAdminRates(): Promise<Map<string, ModelRates>> {
     log.warn({ event: "ai_pricing.admin_rates_unreadable", err: error }, "Admin model prices could not be read");
   }
   adminRates = { at: Date.now(), byKey };
+  pricesGeneration.loaded(generation);
   return byKey;
 }
 

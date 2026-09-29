@@ -15,7 +15,9 @@ model {
   smartspend.api.http.get_sms_logs -[uses]-> smartspend.api.modules.auth
   smartspend.api.http.get_sms_metrics -[reads]-> smartspend.mysql.raw_sms_events
   smartspend.api.http.get_sms_metrics -[uses]-> smartspend.api.modules.auth
+  smartspend.api.http.get_sms_shortcut-download -[reads]-> smartspend.mysql.webhook_tokens
   smartspend.api.http.get_sms_shortcut-download -[uses]-> smartspend.api.modules.ingestion-parsers
+  smartspend.api.http.get_sms_shortcut-download -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_sms_token -[reads]-> smartspend.mysql.webhook_tokens
   smartspend.api.http.get_sms_token -[uses]-> smartspend.api.modules.auth
   smartspend.api.http.get_sms_unparsed -[reads]-> smartspend.mysql.raw_sms_events
@@ -24,6 +26,8 @@ model {
   smartspend.api.http.get_sse_otp -[uses]-> smartspend.api.modules.security
   smartspend.api.http.get_sse_otp -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.http.post_sms_android-status -[reads]-> smartspend.mysql.webhook_tokens
+  smartspend.api.http.post_sms_exchange -[reads]-> smartspend.mysql.webhook_tokens
+  smartspend.api.http.post_sms_exchange -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.post_sms_ingest -[reads]-> smartspend.mysql.local_users
   smartspend.api.http.post_sms_ingest -[reads]-> smartspend.mysql.raw_sms_events
   smartspend.api.http.post_sms_ingest -[reads]-> smartspend.mysql.users
@@ -514,8 +518,8 @@ model {
   smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.pro_subscriptions
   smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.sessions
   smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.support_tickets
-  smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.user_analytics
   smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.admin.getFounderMetrics -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.admin.getLearnedRules -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.admin.getLearnedRules -[reads]-> smartspend.mysql.user_dictionaries
   smartspend.api.trpc.admin.getLearnedRules -[reads]-> smartspend.mysql.users
@@ -949,7 +953,7 @@ model {
   smartspend.api.trpc.profile.addContact -[writes]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.confirmPhoneChange -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.profile.confirmPhoneChange -[uses]-> smartspend.api.modules.auth
-  smartspend.api.trpc.profile.confirmPhoneChange -[uses]-> smartspend.api.modules.whatsapp
+  smartspend.api.trpc.profile.confirmPhoneChange -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.profile.confirmPhoneChange -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.profile.confirmSmsSuggestion -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.profile.confirmSmsSuggestion -[uses]-> smartspend.api.modules.finance-semantic-layer
@@ -1008,7 +1012,7 @@ model {
   smartspend.api.trpc.profile.updateSmartProfile -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.profile.updateUserInfo -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.profile.updateUserInfo -[uses]-> smartspend.api.modules.auth
-  smartspend.api.trpc.profile.updateUserInfo -[uses]-> smartspend.api.modules.whatsapp
+  smartspend.api.trpc.profile.updateUserInfo -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.profile.updateUserInfo -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.profile.updateUserInfo -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.referral.applyCode -[reads]-> smartspend.mysql.local_users
