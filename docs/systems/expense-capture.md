@@ -154,6 +154,12 @@ when an entry names a category or subcategory the registry does not have, when o
 categories (inside the dictionary, `DICTIONARY_CONFLICTS`, or across sources), or when a direction verb (اديت،
 قبضت، حولت، شحنت...) carries a category: a verb says which way money moved, never what it was for.
 
+The rules text keeps a name the lexicon knows in Latin letters as it was written
+(`api/lib/lexicon/index.ts#latinLexiconNames`, used by `convertFrancoArab` in `api/lib/text-normalizer.ts`): "vercel
+400" is عمل/استضافة and "costa coffee 90" is قهوة وكافيه, where the letter-by-letter Franco spelling ("فيركيل") matched
+nothing. Only whole names are kept, so a bare "coffee" is still spelled out. A name with a word the Franco dictionary
+spells in Arabic ("uber", "vodafone cash") takes that Arabic, which the merchant registry and the payment rails read.
+
 Direction comes from `api/lib/intent-detector.ts#detectIntent`. Gift words (هدية، عيدية، نقطة) are spending on their
 own and income only beside a receiving verb (خدت، جالي، وصلني). Money back from a returned purchase ("رجعت الجزمة
 واخدت فلوسي") and the price of something sold ("بعت الموبايل ب 4000", but not an errand: "بعت الواد يجيب عيش") read

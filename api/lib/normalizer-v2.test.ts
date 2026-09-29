@@ -35,6 +35,32 @@ describe("Latin brand names", () => {
   });
 });
 
+describe("Latin names in the rules text", () => {
+  const forRules = (t: string) => normalizeV2(t).forRules;
+
+  it("keeps a name the lexicon knows in Latin letters as written", () => {
+    // Spelled by sound these became "فيركيل", "كارريفوور" and "نيتفليك", which no entry
+    // matches, so the engine filed them under متنوعات.
+    expect(forRules("vercel 400")).toContain("vercel");
+    expect(forRules("صرفت 850 في Carrefour")).toContain("carrefour");
+    expect(forRules("netflix 150")).toContain("netflix");
+  });
+
+  it("keeps a whole multi-word name, but not one of its words alone", () => {
+    expect(forRules("costa coffee 90")).toContain("costa coffee");
+    expect(forRules("شاهد VIP 100")).toContain("vip");
+    expect(forRules("coffee 45")).not.toContain("coffee");
+  });
+
+  it("still gives a Franco spelling its Arabic, which the rail and merchant layers read", () => {
+    expect(forRules("instapay 300")).toContain("انستاباي");
+    expect(forRules("vodafone cash 200")).toContain("فودافون كاش");
+    expect(forRules("Uber Trip 80")).toContain("اوبر");
+    expect(forRules("dafa3t 50 uber")).toContain("اوبر");
+    expect(forRules("7awalt 500 l Ahmed")).toContain("حولت");
+  });
+});
+
 describe("Franco-Arabic", () => {
   it("still converts real Franco, which is what the converter is for", () => {
     // The digit-letters are the signal: 3 for ع, 7 for ح, 5 for خ.

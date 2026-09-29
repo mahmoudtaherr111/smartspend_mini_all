@@ -102,3 +102,26 @@ export function findCatalogMerchant(text: string): CatalogHit | null {
   }
   return null;
 }
+
+let latinNames: RegExp | null = null;
+
+/**
+ * The lexicon's names written with Latin letters ("vercel", "Costa Coffee", "شاهد VIP"), as
+ * one pattern that finds them in a sentence, longest first, on whole words. The rules
+ * normalizer keeps what this finds as written instead of spelling it in Arabic letters by
+ * sound, which turned every English brand into a string no entry matches ("vercel" became
+ * "فيركيل", "Carrefour" "كارريفوور").
+ */
+export function latinLexiconNames(): RegExp {
+  if (latinNames) return latinNames;
+  const phrases = new Set<string>();
+  for (const entry of lexiconEntries()) {
+    const phrase = entry.phrase.trim().toLowerCase();
+    if (/[a-z]/.test(phrase)) phrases.add(phrase);
+  }
+  const alternatives = [...phrases]
+    .sort((a, b) => b.length - a.length)
+    .map((phrase) => phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+"));
+  latinNames = new RegExp(`(?<![\\p{L}\\p{N}])(?:${alternatives.join("|")})(?![\\p{L}\\p{N}])`, "giu");
+  return latinNames;
+}

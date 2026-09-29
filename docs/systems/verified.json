@@ -263,7 +263,7 @@
         "api/lib/fuzzy-match.ts": "d122bbfd9740",
         "api/lib/intent-detector.ts": "812bcc1cca29",
         "api/lib/lexicon/dictionary.ts": "9bc2001a4fc7",
-        "api/lib/lexicon/index.ts": "709371dc23ea",
+        "api/lib/lexicon/index.ts": "8613c41d8315",
         "api/lib/lexicon/merchant-catalog.ts": "53a047c8ce7c",
         "api/lib/lexicon/merchants.ts": "07362cf2a787",
         "api/lib/lexicon/phrases.ts": "f1780894c874",
@@ -283,7 +283,7 @@
         "api/lib/stt-corrections.ts": "2becb68a8fbe",
         "api/lib/taxonomy-adapter.ts": "fd63a36d2f25",
         "api/lib/taxonomy-ssot.ts": "fb99f8118120",
-        "api/lib/text-normalizer.ts": "59e66af10cd5",
+        "api/lib/text-normalizer.ts": "05ac2af6ca6a",
         "api/lib/unified-normalizer.ts": "603756615433",
         "api/lib/voice-intake-gate.ts": "0a8bf7293a27",
         "api/services/parser-trace.ts": "aa8b5bad3877",
@@ -292,9 +292,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-09-29 86999b8",
-      "arabic": "8a6ada80d0f5",
-      "arabicChecked": "2026-09-29 a380e03"
+      "checked": "2026-09-29 49f3cb9",
+      "arabic": "359b47ee7e9e",
+      "arabicChecked": "2026-09-29 49f3cb9"
     },
     "insights": {
       "files": {

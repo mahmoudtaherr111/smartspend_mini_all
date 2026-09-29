@@ -211,6 +211,25 @@ describe("GROUP 5: Ambiguous Words", () => {
   });
 });
 
+describe("GROUP 5b: Names written in Latin letters", () => {
+  // The rules normalizer used to spell every Latin word in Arabic letters by sound, so a
+  // brand typed as people type it ("vercel", "Carrefour") matched no entry.
+  it("vercel 400 → عمل/استضافة", async () => {
+    const item = (await run("vercel 400")).items.find((i) => i.amount === 400);
+    expect([item?.category, item?.subCategory]).toEqual(["عمل", "استضافة"]);
+  });
+
+  it("costa coffee 90 → أكل وشرب/قهوة وكافيه", async () => {
+    const item = (await run("costa coffee 90")).items.find((i) => i.amount === 90);
+    expect([item?.category, item?.subCategory]).toEqual(["أكل وشرب", "قهوة وكافيه"]);
+  });
+
+  it("vodafone cash 200 → تحويل/فودافون كاش", async () => {
+    const item = (await run("vodafone cash 200")).items.find((i) => i.amount === 200);
+    expect([item?.category, item?.subCategory]).toEqual(["تحويل", "فودافون كاش"]);
+  });
+});
+
 // ═══════════════════════════════════════════════════════════════
 // GROUP 6: Edge Cases
 // ═══════════════════════════════════════════════════════════════

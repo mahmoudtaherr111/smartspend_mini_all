@@ -6,6 +6,7 @@
 
 import { applySttCorrections } from "./stt-corrections";
 import { parseArabicNumbers } from "./arabic-number-parser";
+import { latinLexiconNames } from "./lexicon/index";
 
 /**
  * Franco-Arab (Arabizi) Converter
@@ -83,6 +84,8 @@ export const FRANCO_ARAB_DICT: Readonly<Record<string, string>> = {
   "uber": "اوبر", "careem": "كريم", "swvl": "سويفل", "didi": "ديدي",
   "indrive": "اندرايف", "talabat": "طلبات", "breadfast": "بريدفاست",
   "halan": "هالان", "rabbit": "رابت",
+  // "vodafone cash" came out "فودافون كاسه", which no wallet or rail entry reads.
+  "cash": "كاش",
 };
 
 /**
@@ -94,10 +97,29 @@ export const FRANCO_PARTICLES: Readonly<Record<string, string>> = {
   l: "ل", w: "و", b: "بـ",
 };
 
+/**
+ * Where the text names something the lexicon knows in Latin letters: whole names only, so
+ * "costa coffee" is kept while a bare "coffee" is not. A name with a word that has a Franco
+ * spelling ("uber", "Uber Trip", "vodafone cash") is left to `FRANCO_ARAB_DICT`: the
+ * merchant registry and the payment rails read its Arabic, and know more from it ("اوبر" is
+ * أوبر/كريم, the Latin "uber" only مواصلات).
+ */
+function latinNameSpans(text: string): Array<[number, number]> {
+  const spans: Array<[number, number]> = [];
+  for (const match of text.matchAll(latinLexiconNames())) {
+    const name = match[0];
+    if (name.toLowerCase().split(/\s+/).some((word) => FRANCO_ARAB_DICT[word])) continue;
+    spans.push([match.index, match.index + name.length]);
+  }
+  return spans;
+}
+
 function convertFrancoArab(text: string): string {
+  const names = /[a-zA-Z]/.test(text) ? latinNameSpans(text) : [];
   // Match: (1) words with digits (7awalte), (2) known Franco words without digits (el, kahraba)
-  const converted = text.replace(/[a-zA-Z][a-zA-Z0-9']*[0-9][a-zA-Z0-9']*|[0-9][a-zA-Z0-9']*[a-zA-Z][a-zA-Z0-9']*|[a-zA-Z]{2,}/g, (word) => {
+  const converted = text.replace(/[a-zA-Z][a-zA-Z0-9']*[0-9][a-zA-Z0-9']*|[0-9][a-zA-Z0-9']*[a-zA-Z][a-zA-Z0-9']*|[a-zA-Z]{2,}/g, (word, offset: number) => {
     const lower = word.toLowerCase();
+    if (names.some(([start, end]) => offset >= start && offset < end)) return lower;
     if (FRANCO_ARAB_DICT[lower]) return FRANCO_ARAB_DICT[lower];
     let result = "";
     for (const char of lower) {

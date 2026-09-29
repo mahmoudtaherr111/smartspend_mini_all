@@ -342,7 +342,7 @@ Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matc
 | `api/lib/negation-detector.ts` | — | — | — | — |
 | `api/lib/normalizer-v2.ts` | — | — | — | — |
 | `api/lib/stt-corrections.ts` | — | — | — | — |
-| `api/lib/text-normalizer.ts` | — | — | — | — |
+| `api/lib/text-normalizer.ts` | `classification` | — | — | — |
 | `api/lib/unified-normalizer.ts` | — | — | — | — |
 
 ### `ingestion-parsers` — Ingestion parsers
