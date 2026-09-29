@@ -104,6 +104,10 @@ interface Options {
   split?: "dev" | "frozen";
   /** Requests per minute the key allows; the cases are spaced so the run stays under it. 0 means no spacing. */
   rpm: number;
+  /** Only these case ids (comma-separated), e.g. the ones the local engine failed. */
+  ids?: string[];
+  /** Also write every case's score as JSON here, so two runs in parallel keep their own results. */
+  out?: string;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -127,6 +131,8 @@ function parseArgs(argv: string[]): Options {
     timeoutMs: Number(get("timeout-ms") || 0),
     split: get("split") as Options["split"],
     rpm: Number(get("rpm") || 0),
+    ids: get("ids")?.split(",").map((id) => id.trim()).filter(Boolean),
+    out: get("out"),
   };
 }
 
@@ -217,7 +223,9 @@ async function main(): Promise<void> {
   const all = (opts.bucket
     ? getBenchmarkCases({ buckets: [opts.bucket as never] })
     : [...ALL_BENCHMARK_CASES]
-  ).filter((c) => !opts.split || (c.split ?? "dev") === opts.split);
+  )
+    .filter((c) => !opts.split || (c.split ?? "dev") === opts.split)
+    .filter((c) => !opts.ids || opts.ids.includes(c.id));
   const cases = all.slice(0, Math.max(0, opts.maxCases));
 
   // Estimate BEFORE the gate check, so a blocked run still tells the operator what it
@@ -359,6 +367,11 @@ async function main(): Promise<void> {
     console.log(`\n${describeTable(table)}`);
   } else if (opts.calibrate && aborted) {
     console.warn("[calibrate] skipped — the run aborted, so the corpus is partial.");
+  }
+
+  if (opts.out) {
+    const { writeFileSync } = await import("node:fs");
+    writeFileSync(opts.out, JSON.stringify({ model, overall, cases: scores }, null, 2));
   }
 
   await writeBenchmarkReport({
