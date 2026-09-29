@@ -97,6 +97,7 @@ flowchart LR
   router_expense ==> tbl_expenses
   router_expense ==> tbl_installment_plans
   router_expense ==> tbl_user_contacts
+  router_export --> sys_platform
   router_export -.-> tbl_expenses
   router_goals --> sys_ai_center
   router_goals --> sys_ai_platform
@@ -123,6 +124,7 @@ flowchart LR
   screens_bank_messages --> router_wallet
   screens_web_app --> router_business
   screens_web_app --> router_expense
+  screens_web_app --> router_export
   screens_web_app --> router_goals
   screens_web_app --> router_profile
   screens_web_app --> router_wallet
@@ -133,7 +135,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer). | 6 |
-| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 19 |
+| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 20 |
 
 ## API procedures
 
@@ -167,7 +169,7 @@ flowchart LR
 | `expense.previewCategory` | query | `authedProcedure` | `user_dictionaries` | — | `Home` |
 | `expense.searchTransactions` | query | `authedProcedure` | `expenses` | — | `Home` |
 | `expense.update` | mutation | `authedProcedure` | `classification_logs`, `expenses` | `classification_logs`, `expenses` | `Home` |
-| `export.myExpenses` | mutation | `authedProcedure` | `expenses` | — | — |
+| `export.myExpenses` | mutation | `authedProcedure` | `expenses` | — | `More` |
 | `goals.analyze` | mutation | `goalAnalysisProcedure` | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `users` | `Home`, `More`, `Settings` |
 | `goals.create` | mutation | `authedProcedure` | `financial_goals` | `financial_goals` | `Home`, `More`, `Settings` |
 | `goals.delete` | mutation | `authedProcedure` | — | `financial_goals`, `user_budgets` | — |
@@ -232,7 +234,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>57 files and declarations</summary>
+<details><summary>58 files and declarations</summary>
 
 - `api/boot.ts#job:nightly-rollup-reconciliation`
 - `api/boot.ts#job:taxonomy-migration`
@@ -285,6 +287,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/dashboard/UserIntelligencePanel.tsx`
 - `src/components/debts/DebtsPanel.tsx`
 - `src/components/expenses/EditExpenseDialog.tsx`
+- `src/components/expenses/ExportExpensesCard.tsx`
 - `src/components/expenses/PendingQuestionsCard.tsx`
 - `src/components/expenses/RecentExpenses.tsx`
 - `src/components/goals/FinancialGoalsPanel.tsx`

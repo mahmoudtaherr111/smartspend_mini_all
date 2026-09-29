@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { businessDateKey, businessDayRange, businessMonthRange, businessTimeLabel } from "./app-time";
+import { businessDateKey, businessDayRange, businessMonthRange, businessTimeLabel, parseBusinessInstant } from "./app-time";
 
 const CAIRO = "Africa/Cairo";
 
@@ -26,5 +26,19 @@ describe("business time boundaries", () => {
 
     expect(range.start.toISOString()).toBe("2025-12-31T22:00:00.000Z");
     expect(range.endExclusive.toISOString()).toBe("2026-01-31T22:00:00.000Z");
+  });
+});
+
+describe("a date the client wrote without a time zone", () => {
+  it("is Cairo wall-clock time, not the server's", () => {
+    // Cairo is UTC+3 in September (summer time) and UTC+2 in January.
+    expect(parseBusinessInstant("2026-09-20T00:00:00.000", "Africa/Cairo").toISOString()).toBe("2026-09-19T21:00:00.000Z");
+    expect(parseBusinessInstant("2026-09-20T23:59:59.999", "Africa/Cairo").toISOString()).toBe("2026-09-20T20:59:59.999Z");
+    expect(parseBusinessInstant("2026-01-10", "Africa/Cairo").toISOString()).toBe("2026-01-09T22:00:00.000Z");
+  });
+
+  it("keeps a string that names its instant", () => {
+    expect(parseBusinessInstant("2026-09-20T10:00:00Z", "Africa/Cairo").toISOString()).toBe("2026-09-20T10:00:00.000Z");
+    expect(parseBusinessInstant("2026-09-20T10:00:00+02:00", "Africa/Cairo").toISOString()).toBe("2026-09-20T08:00:00.000Z");
   });
 });

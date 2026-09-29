@@ -844,6 +844,7 @@ model {
   smartspend.api.trpc.expense.getYearlyStats -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.trpc.expense.getYearlyStats -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.list -[reads]-> smartspend.mysql.expenses
+  smartspend.api.trpc.expense.list -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.list -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.installment_plans
@@ -868,6 +869,7 @@ model {
   smartspend.api.trpc.export.allUsers -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.export.monthlyReportHtml -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.export.myExpenses -[reads]-> smartspend.mysql.expenses
+  smartspend.api.trpc.export.myExpenses -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.goals.analyze -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.goals.analyze -[reads]-> smartspend.mysql.financial_goals
   smartspend.api.trpc.goals.analyze -[uses]-> smartspend.api.modules.ai-governance
@@ -1394,6 +1396,7 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.business.update
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.expense.getMonthlyStats
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.export.allUsers
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.export.myExpenses
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.goals.analyze
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.goals.create
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.goals.list

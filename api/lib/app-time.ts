@@ -77,3 +77,36 @@ export function businessMonthRange(value = new Date(), timeZone = env.APP_TIMEZO
   const nextStart = startOfBusinessDay(new Date(Date.UTC(year, month, 1, 12)), timeZone);
   return { start, endExclusive: nextStart };
 }
+
+const WALL_CLOCK = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
+
+/**
+ * An instant from a date the client wrote without a time zone ("2026-09-20" or "2026-09-20T23:59:59.999"), read as
+ * that wall-clock time in the business timezone. `new Date(...)` reads such a string in the server's own zone, so on
+ * a UTC server the calendar's day "2026-09-20" began at 02:00 or 03:00 Cairo time and lost the entries before it.
+ * A string with `Z` or an offset names its instant already and is read as it is.
+ */
+export function parseBusinessInstant(value: string, timeZone = env.APP_TIMEZONE): Date {
+  const match = WALL_CLOCK.exec(value.trim());
+  if (!match) return new Date(value);
+  const [, y, mo, d, h = "0", mi = "0", s = "0", ms = "0"] = match;
+  const target = Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s), Number(ms.padEnd(3, "0")));
+  const wallClockOf = (instant: number) => {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(new Date(instant));
+    const byType = Object.fromEntries(parts.map((part) => [part.type, Number(part.value)]));
+    return Date.UTC(byType.year, byType.month - 1, byType.day, byType.hour, byType.minute, byType.second) + (instant % 1000 + 1000) % 1000;
+  };
+  // The zone's offset at the guess, applied twice so an offset change near the time is settled.
+  let guess = target;
+  for (let step = 0; step < 2; step += 1) guess -= wallClockOf(guess) - target;
+  return new Date(guess);
+}

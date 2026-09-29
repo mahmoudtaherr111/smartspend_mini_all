@@ -22,7 +22,7 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 | Financial month | `api/services/financial-month.ts#getFinancialMonthDayRange` | Month boundaries from a salary day, in Cairo business days |
 | Wallets, budgets, goals, business | `api/wallet-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/business-router.ts` | Their own records and rules |
 | People | the contact procedures in `api/profile-router.ts` (`profile.listContacts`, `profile.addContact`, `profile.updateContact`, `profile.deleteContact`, `profile.mergeContacts`) | The people behind transfers and family spending |
-| Export | `export.myExpenses` in `api/export-router.ts` | The user's items as JSON, CSV or Excel, protected against spreadsheet formulas |
+| Export | `export.myExpenses` in `api/export-router.ts`, the "نزّل مصاريفك" card of the More page (`src/components/expenses/ExportExpensesCard.tsx`) | The user's items, up to 10,000 newest first, as Excel or CSV (JSON too through the API), protected against spreadsheet formulas: each row dated by Cairo's day, named by its kind (دخل، مصروف، تحويل، استثمار، مرتجع for a refund, with its signed amount), with its subcategory and its source (`exportRow`) |
 
 Screens of other systems use these APIs: wallets in `src/components/bank-sync/DigitalBankingSuite.tsx`
 ([bank messages](bank-messages.md)), people in `src/components/settings/PeopleSettingsView.tsx`, the business in
@@ -95,7 +95,8 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
 - **Search** (`expense.searchTransactions`): up to 20 of the user's items whose category, subcategory, description or
   original text contains the query, newest first.
 - **Record tab list** (`expense.list`): the month's latest items, page by page, newest id first; the calendar asks the
-  same procedure for one day.
+  same procedure for one day, whose bounds it writes without a time zone and the server reads as Cairo's day
+  (`api/lib/app-time.ts#parseBusinessInstant`).
 - **Business mode.** A Pro user with a business can switch the statistics and calendar to that business; the choice is
   kept in the browser.
 - **Budget alert.** After a save (typed, a bank message, a confirmed suggestion), `checkUserBudgetExceeded` in
@@ -105,7 +106,8 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   the month's spending passes the monthly income in the profile.
 
 ## Wallets
-`wallet.getWallets`, `wallet.createWallet` (name, provider, last four digits, balance), `wallet.updateWallet` and
+`wallet.getWallets`, `wallet.createWallet` (name, provider, last four digits, balance: an amount, Arabic digits and
+thousands separators read, anything else refused by `walletBalanceSchema`), `wallet.updateWallet` and
 `wallet.deleteWallet`, which detaches the wallet from the user's items in the same transaction.
 `wallet.getWalletTransactions` pages through the items of one wallet. The [AI Center](ai-center.md) can also create and
 change wallets through confirmed actions.
@@ -225,13 +227,10 @@ Checked against the code; each one names where it lives.
    snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 5. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
    (`src/components/goals/FinancialGoalsPanel.tsx`).
-6. **Bug.** The calendar's day list sends local times without a time zone, which the server reads in its own zone.
-7. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger);
+6. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger);
     `business.get` returns the user's first business even when it is inactive.
-8. **Bug.** Wallet balances are stored as whatever text the client sends.
-9. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
-    as spending, every source except voice as manual, and dates by UTC day.
-10. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
+7. **Gap.** `expense.getYearlyStats` has no screen.
+8. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
     (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming
     credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative
     spending in a month when the purchase fell in an earlier one.

@@ -33,7 +33,7 @@ import {
   ledgerAmount,
   toDayString,
 } from "./services/expense-rollups";
-import { businessDateKey, businessDayRange } from "./lib/app-time";
+import { businessDateKey, businessDayRange, parseBusinessInstant } from "./lib/app-time";
 import { installmentProgress } from "./services/installments";
 import { runRuleEngine } from "./lib/rule-engine";
 import { normalizeV2 } from "./lib/normalizer-v2";
@@ -1110,10 +1110,11 @@ export const expenseRouter = router({
           eq(expenses.userType, userType),
         ];
 
+        // The calendar sends a day's bounds without a time zone; they are Cairo's day (golden rule 6).
         if (input?.startDate)
-          conditions.push(gte(expenses.date, new Date(input.startDate)));
+          conditions.push(gte(expenses.date, parseBusinessInstant(input.startDate)));
         if (input?.endDate)
-          conditions.push(lte(expenses.date, new Date(input.endDate)));
+          conditions.push(lte(expenses.date, parseBusinessInstant(input.endDate)));
         if (input?.category)
           conditions.push(eq(expenses.category, input.category));
         if (input?.type) conditions.push(eq(expenses.type, input.type));

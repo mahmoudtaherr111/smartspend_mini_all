@@ -320,6 +320,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/debts/DebtsPanel.tsx` | [money](money.md) |
 | `src/components/expenses/EditExpenseDialog.tsx` | [money](money.md) |
 | `src/components/expenses/ExpenseForm.tsx` | [expense-capture](expense-capture.md) |
+| `src/components/expenses/ExportExpensesCard.tsx` | [money](money.md) |
 | `src/components/expenses/PendingQuestionsCard.tsx` | [money](money.md) |
 | `src/components/expenses/ReceiptCapture.tsx` | [expense-capture](expense-capture.md) |
 | `src/components/expenses/RecentExpenses.tsx` | [money](money.md) |

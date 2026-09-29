@@ -256,7 +256,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-55 files in its import closure (not counting `src/components/ui/`).
+56 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -335,6 +335,7 @@ _None._
 | `business.update` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `expense.getMonthlyStats` | useQuery | `src/components/settings/BusinessSettingsView.tsx` |
 | `export.allUsers` | useMutation | `src/pages/Admin.tsx` |
+| `export.myExpenses` | useMutation | `src/components/expenses/ExportExpensesCard.tsx` |
 | `goals.analyze` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.create` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.list` | useQuery | `src/components/goals/FinancialGoalsPanel.tsx`, `src/components/profile/SmartProfileView.tsx` |

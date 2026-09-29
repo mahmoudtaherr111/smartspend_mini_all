@@ -8,7 +8,8 @@ import {
 import { wrapReportAsPrintableHtml } from "./services/pro-report-engine";
 import { db } from "./queries/connection";
 import { expenses, users, localUsers } from "../db/schema";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and, desc, gte, lte } from "drizzle-orm";
+import { businessDateKey, parseBusinessInstant } from "./lib/app-time";
 import ExcelJS from "exceljs";
 
 export const FORMULA_TRIGGERS = ["=", "+", "-", "@", "\t", "\r"];
@@ -97,6 +98,47 @@ export async function generateExcelBuffer(
   return Buffer.from(buffer).toString("base64");
 }
 
+const TYPE_LABELS: Record<string, string> = {
+  income: "دخل",
+  expense: "مصروف",
+  transfer: "تحويل",
+  investment: "استثمار",
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  manual: "يدوي",
+  ai_parsed: "مكتوب",
+  voice: "صوت",
+  image: "إيصال",
+  sms: "رسالة بنك",
+};
+
+/**
+ * One exported row. The day is Cairo's (golden rule 6), a transfer or an investment is named as such rather than as
+ * spending, a refund (an expense saved negative, decision 0010) is named مرتجع with its signed amount so a column sum
+ * is still the net, and every source keeps its own name.
+ */
+export function exportRow(e: {
+  date: Date;
+  type: string;
+  amount: string | number;
+  category: string;
+  subCategory?: string | null;
+  description?: string | null;
+  source?: string | null;
+}): Record<string, string | number> {
+  const amount = Number(e.amount);
+  return {
+    التاريخ: businessDateKey(e.date),
+    النوع: e.type === "expense" && amount < 0 ? "مرتجع" : (TYPE_LABELS[e.type] ?? e.type),
+    المبلغ: amount,
+    الفئة: e.category,
+    "الفئة الفرعية": e.subCategory || "",
+    الوصف: e.description || "",
+    المصدر: SOURCE_LABELS[e.source ?? "manual"] ?? e.source ?? "",
+  };
+}
+
 export const exportRouter = router({
   // ─── Export My Expenses ───
   myExpenses: authedProcedure
@@ -115,24 +157,18 @@ export const exportRouter = router({
       ];
 
       if (input.startDate)
-        conditions.push(gte(expenses.date, new Date(input.startDate)));
+        conditions.push(gte(expenses.date, parseBusinessInstant(input.startDate)));
       if (input.endDate)
-        conditions.push(lte(expenses.date, new Date(input.endDate)));
+        conditions.push(lte(expenses.date, parseBusinessInstant(input.endDate)));
       if (input.type !== "all") conditions.push(eq(expenses.type, input.type));
 
       const data = await db
         .select()
         .from(expenses)
         .where(and(...conditions))
+        .orderBy(desc(expenses.date))
         .limit(10000);
-      const formatted = data.map((e) => ({
-        التاريخ: e.date.toISOString().split("T")[0],
-        النوع: e.type === "income" ? "دخل" : "مصروف",
-        المبلغ: e.amount,
-        الفئة: e.category,
-        الوصف: e.description,
-        المصدر: e.source === "voice" ? "صوت" : "يدوي",
-      }));
+      const formatted = data.map(exportRow);
 
       if (input.format === "json") {
         return {

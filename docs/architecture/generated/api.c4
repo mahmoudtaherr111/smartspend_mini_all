@@ -1439,9 +1439,9 @@ model {
         }
       }
       myExpenses = procedure 'export.myExpenses' {
-        #mutation #authed #uncalled
+        #mutation #authed
         technology 'authedProcedure'
-        description 'mutation · authedProcedure · no caller in src/'
+        description 'mutation · authedProcedure'
         metadata {
           file 'api/export-router.ts'
           builder 'authedProcedure'

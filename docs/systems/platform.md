@@ -21,7 +21,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 | Database | `api/queries/connection.ts`, `db/schema.ts`, `db/relations.ts`, `db/table-classes.ts` | The MySQL pool with slow-query logging, the Drizzle schema, the relations that stand in for foreign keys, and every table's storage class |
 | Cache | `api/lib/redis-client.ts`, `api/lib/cache-keys.ts` | Redis with an in-process fallback, the key shapes, counters and the sliding-window rate limiter |
 | Settings | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` (with the embedding keys and `usd_to_egp_rate`) | `system_settings` behind one cached read, and the registry of keys, defaults and secrets |
-| Business time | `api/lib/app-time.ts` | The day and month boundaries of the ledger, in `APP_TIMEZONE` (Cairo) rather than the server's clock |
+| Business time | `api/lib/app-time.ts` | The day and month boundaries of the ledger, in `APP_TIMEZONE` (Cairo) rather than the server's clock, and `parseBusinessInstant`, which reads a date the client wrote without a time zone as Cairo wall-clock time |
 | Job lock | `api/services/scheduler-lock.ts` | A MySQL advisory lock so a job registered on every replica runs on one |
 | Retention | `api/jobs/data-retention-job.ts` | Rolls up and prunes telemetry, conversation and ephemeral tables |
 | File storage | `api/services/storage/` | One driver interface over local disk or S3-compatible storage, plus the avatar service |
@@ -111,7 +111,7 @@ rollup reconciliation (04:00), data retention (05:00), subscription expiry (06:0
 | A scheduled job | `api/boot.ts` with `scheduleProtectedJob` | `tests/knowledge/architecture.test.ts` |
 | How long telemetry is kept | `RETENTION_POLICIES` in `api/jobs/data-retention-job.ts` | `tests/data-retention-job.test.ts` |
 | Where files are stored | `api/services/storage/` | `tests/storage-driver.test.ts` |
-| Day and month boundaries | `api/lib/app-time.ts` (golden rule 6) | |
+| Day and month boundaries | `api/lib/app-time.ts` (golden rule 6) | `api/lib/app-time.test.ts` |
 | What may reach the log or Sentry | `api/lib/log.ts`, `api/lib/error-reporting.ts` (golden rule 10) | `tests/security/logging-redaction.test.ts` |
 
 ## Rules for changes here

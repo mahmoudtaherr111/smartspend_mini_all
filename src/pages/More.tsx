@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { ExportExpensesCard } from "@/components/expenses/ExportExpensesCard";
 import {
   AdaptiveDialog,
   AdaptiveDialogClose,
@@ -204,6 +205,8 @@ export default function More() {
             </div>
           </section>
         ))}
+
+        <ExportExpensesCard />
 
         <section aria-labelledby="security-system-title" className="space-y-2">
           <h2

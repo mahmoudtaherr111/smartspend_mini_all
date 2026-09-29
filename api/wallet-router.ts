@@ -5,6 +5,18 @@ import { db } from "./queries/connection";
 import { userWallets, expenses } from "../db/schema";
 import { eq, and, desc, or, like, sql } from "drizzle-orm";
 
+/**
+ * A balance as the client typed it, stored in a decimal(12,2) column. Arabic digits and thousands separators are
+ * read; anything that is not an amount is refused with a message, where it used to reach MySQL as it was.
+ */
+export const walletBalanceSchema = z
+  .string()
+  .trim()
+  .transform((value) =>
+    value.replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit))).replace(/[,،\s]/g, "").replace("٫", "."),
+  )
+  .pipe(z.string().regex(/^-?\d{1,10}(?:\.\d{1,2})?$/, "الرصيد لازم يكون رقم، زي 1500 أو 1500.50"));
+
 export const walletRouter = router({
   getWallets: authedProcedure.query(async ({ ctx }) => {
     return await db
@@ -51,7 +63,7 @@ export const walletRouter = router({
         name: z.string().min(1).max(100),
         provider: z.string().min(1).max(50),
         lastFourDigits: z.string().max(4).optional(),
-        balance: z.string().optional(),
+        balance: walletBalanceSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -72,7 +84,7 @@ export const walletRouter = router({
         id: z.number(),
         name: z.string().min(1).max(100).optional(),
         lastFourDigits: z.string().max(4).optional(),
-        balance: z.string().optional(),
+        balance: walletBalanceSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
