@@ -16,6 +16,7 @@
  * a known financial verb once the circumfix and any object pronoun are peeled off.
  */
 import { normalizeArabic } from "./unified-normalizer";
+import { saysMoneyCameBack } from "./refund-context";
 
 export type NegationKind =
   | "negated_verb"
@@ -120,7 +121,11 @@ export function detectNegation(text: string): NegationResult {
   // "استرجعت فلوس الكورس" is money back from a purchase, a refund to record; only an
   // order taken back with no money named ("استرجعت الاوردر") is a cancellation.
   const moneyBack = /(?:^|\s)(?:فلوس|فلوسي|فلوسه|فلوسها|الفلوس|تمن|تمنه|تمنها|حقي|حقه|حقها)(?=\s|$)/.test(norm);
+  // A cancellation whose money came back ("كنسلت الحجز واستردت 600") is a refund that happened,
+  // not a purchase that did not (`refund-context.ts`).
+  const refunded = saysMoneyCameBack(norm);
   for (const marker of CANCELLED) {
+    if (refunded) break;
     if (marker === CANCELLED_REFUND_VERB && moneyBack) continue;
     if (norm.includes(marker)) return { negated: true, kind: "cancelled", marker };
   }

@@ -10,6 +10,7 @@ import { detectNegation, stripNegationCircumfix } from "./negation-detector";
 import { ALL_FINANCIAL_VERBS, decomposeHeuristic, type DecomposedSegment } from "./narrative-decomposer";
 import { SUB_CATEGORY_MAP } from "./rule-engine";
 import { CATEGORY_DICTIONARY } from "./lexicon/dictionary";
+import { resolveAmountRoles, stripListMarkers } from "./amount-roles";
 
 export interface FinancialEvent extends DecomposedSegment {
   status: "admitted" | "rejected" | "incomplete";
@@ -85,12 +86,65 @@ function explicitClauses(text: string): string[] {
   }).filter(Boolean);
 }
 
+/** A clause that is only a verb and an amount ("دفعت 100") says nothing of what the money was for. */
+function bareClause(clause: string): boolean {
+  return clause.split(/\s+/).every((word) =>
+    !word || /\d/.test(word) || action(word) || /^(?:جنيه|ج|ج\.م|الف|ألف|و|بس|انا|أنا)$/.test(word));
+}
+
+/**
+ * "دفعت 100 و 150 مواصلات", "صرفت 40 و 60 على القهوة": two amounts joined by و and followed by one purpose are two
+ * payments for that purpose. The bare clause takes the words after the next clause's amount; a clause that says its
+ * own purpose, or a next clause that starts with its own verb ("دفعت 100 وجبت عيش بـ 20"), shares nothing.
+ */
+function shareCoordinatedPurpose(clauses: string[]): string[] {
+  const out = [...clauses];
+  for (let i = out.length - 2; i >= 0; i--) {
+    const next = out[i + 1];
+    if (!bareClause(out[i]) || !/^\d/.test(next) || extractAmounts(out[i]).length !== 1) continue;
+    const purpose = next.replace(/^\d+(?:\.\d+)?\s*(?:جنيه|ج\.م|ج)?\s*/, "").trim();
+    if (purpose && !bareClause(purpose)) out[i] = `${out[i]} ${purpose}`;
+  }
+  return out;
+}
+
+/** "بداله", "زيه", "واحد تاني": the thing is the one the clause before named. */
+const REPLACEMENT = /(?:^|\s)(?:بداله|بدالها|بدلها|بدله|زيه|زيها|غيره|غيرها|واحد\s+تاني|واحده\s+تانيه)(?=\s|$)/;
+
+/** The first word of a clause that names a thing bought, without its attached و/ف/ال. */
+function namedThing(clause: string): string | null {
+  for (const word of clause.split(/\s+/)) {
+    const bare = word.replace(/^[وف](?=\S{2,})/, "");
+    if (!/\d/.test(bare) && !action(bare) && financialNoun(bare)) return bare;
+  }
+  return null;
+}
+
+/**
+ * "رجعت التيشيرت واسترجعت 250 وجبت بداله واحد بـ 300": the replacement is another of the thing returned. A clause
+ * that points back and names nothing of its own takes the previous clause's thing.
+ */
+function resolveReplacements(clauses: string[]): string[] {
+  return clauses.map((clause, i) => {
+    if (i === 0 || !REPLACEMENT.test(normalizeArabic(clause)) || namedThing(clause)) return clause;
+    const thing = namedThing(clauses[i - 1]);
+    return thing ? `${clause} ${thing}` : clause;
+  });
+}
+
 export function planFinancialEvents(rawText: string, knownNames: string[] = []): FinancialEventPlan {
   // Keep waw boundaries that the spoken-number composer would otherwise consume.
-  const light = normalizeV2(rawText.replace(/و(?=[0-9٠-٩۰-۹])/g, " و ")).forAI;
+  const listed = stripListMarkers(rawText);
+  const light = normalizeV2(listed.text.replace(/و(?=[0-9٠-٩۰-۹])/g, " و ")).forAI;
+  // Give every number its role (a corrected price, a shared bill, a count, a label, a time) so only money that
+  // moved reaches the clauses below; instructions addressed to the app are not narration.
+  const roles = resolveAmountRoles(light, listed.found);
+  // A share the engine divided out itself is shown for a tap; a share or a correction the speaker said is not.
+  // Words telling the app how to file something are dropped, and what remains is confirmed, never saved alone.
+  const roleReasons = roles.notes.filter((note) => note === "split_share_computed" || note === "instruction_ignored");
   // Only an adjacent explicit replacement is locally resolvable. More complex repairs
   // retain a blocker; never keep both the superseded and the corrected amount.
-  let text = light.replace(/(\d+(?:\.\d+)?)\s+(?:لا\s+)?(?:قصدي|اقصد|أقصد)\s+(\d+(?:\.\d+)?)/g, "$2");
+  let text = roles.text.replace(/(\d+(?:\.\d+)?)\s+(?:لا\s+)?(?:قصدي|اقصد|أقصد)\s+(\d+(?:\.\d+)?)/g, "$2");
   const totals: number[] = [];
   text = text.replace(/(?:و?الإجمالي|و?الاجمالي|و?المجموع|و?إجمالي|و?اجمالي)\s*:?\s*(\d+(?:\.\d+)?)(?:\s*جنيه)?/g,
     (match, amount: string, offset: number) => {
@@ -99,8 +153,13 @@ export function planFinancialEvents(rawText: string, knownNames: string[] = []):
       totals.push(Number(amount));
       return "";
     });
+  const clauses = resolveReplacements(shareCoordinatedPurpose(explicitClauses(text)));
   const events: FinancialEvent[] = [];
-  for (let clause of explicitClauses(text)) {
+  for (const dropped of roles.dropped) {
+    events.push({ text: dropped.text, amount: null, direction: "unknown", linkedVerb: null, personMentioned: null,
+      segmentIndex: events.length, status: "rejected", reviewReasons: [], reason: "instruction" });
+  }
+  for (let clause of clauses) {
     const correction = /(?:لا\s+)?(?:قصدي|اقصد|أقصد)\s+(\d+(?:\.\d+)?)/.exec(clause);
     if (correction) {
       const before = clause.slice(0, correction.index);
@@ -123,7 +182,7 @@ export function planFinancialEvents(rawText: string, knownNames: string[] = []):
       : decomposeHeuristic(clause, knownNames).segments;
     for (const piece of pieces) {
       const amounts = extractAmounts(piece.text);
-      const reasons: string[] = [];
+      const reasons: string[] = [...roleReasons];
       if (approximate.test(normalizeArabic(piece.text))) reasons.push("approximate_or_alternative");
       if (foreignCurrency.test(piece.text)) reasons.push("currency_requires_confirmation");
       if (dateHint.test(piece.text)) reasons.push("date_requires_confirmation");

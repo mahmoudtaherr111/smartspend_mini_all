@@ -11,6 +11,7 @@ import { CORE_CASES } from "./classification-cases.core";
 import { MONOLOGUE_CASES } from "./classification-cases.monologues";
 import { NOISE_CASES } from "./classification-cases.noise";
 import { FROZEN_CASES } from "./classification-cases.frozen";
+import { GENERALIZATION_CASES } from "./classification-cases.generalization";
 import { checkTaxonomyPair, isKnownCategory } from "../../lib/benchmark-taxonomy-assert";
 import { normalizeArabicCompact } from "../../lib/unified-normalizer";
 
@@ -31,6 +32,7 @@ export const ALL_BENCHMARK_CASES: readonly BenchmarkCase[] = Object.freeze([
   ...NOISE_CASES,
   ...MONOLOGUE_CASES,
   ...FROZEN_CASES,
+  ...GENERALIZATION_CASES,
 ]);
 
 /** The pool a case belongs to; everything written before the split existed is dev. */

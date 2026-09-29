@@ -4,6 +4,7 @@
  * category only when the sentence names no other purpose
  * (docs/decisions/0008-money-movements-and-taxonomy.md).
  */
+import { getCategoryType } from "./category-registry";
 import { resolveGovernedTaxonomy } from "./direction-governed-taxonomy";
 import { matchArabicPhrase } from "./fuzzy-match";
 import { resolvePersonForTransaction } from "./person-resolver";
@@ -121,8 +122,12 @@ export function applyPersonResolution(
     return {
       item: {
         ...next,
-        category: resolution.category && resolution.category !== "متنوعات" ? resolution.category : next.category,
-        subCategory: next.category === "تحويل" ? "أشخاص" : next.subCategory,
+        ...(next.type === "income" && resolution.category && PERSON_CATEGORIES.includes(resolution.category)
+          ? incomeFromPerson(resolution.category, next)
+          : {
+              category: resolution.category && resolution.category !== "متنوعات" ? resolution.category : next.category,
+              subCategory: next.category === "تحويل" ? "أشخاص" : next.subCategory,
+            }),
         confidence: Math.min(next.confidence, 60),
         needsReview: true,
       },
@@ -142,10 +147,16 @@ export function applyPersonResolution(
       PERSON_CATEGORIES.includes(resolution.category) &&
       (!hasPurpose || purposeIsTheName) &&
       (!governedHere || governedHere.id === "debt");
-    if (takesPersonCategory) {
+    if (takesPersonCategory && next.type === "income") {
+      // Money that came in from someone is income: "خدت من أبويا 1000" is a gift of money from family,
+      // not the family spending category; anyone else's stays with the person.
+      const incomeCategory = incomeFromPerson(resolution.category, next, resolution.subCategory);
+      next.category = incomeCategory.category;
+      next.subCategory = incomeCategory.subCategory;
+    } else if (takesPersonCategory) {
       next.category = resolution.category;
       next.subCategory = resolution.subCategory;
-      if (next.type !== "income") next.type = "expense";
+      next.type = "expense";
     }
     // Money handed to someone the user already told us about, with no other purpose, is
     // filed by what the user taught: that record is the evidence, not whatever word the
@@ -179,4 +190,20 @@ export function hasStatedPurpose(item: ParsedTransaction): boolean {
   const weakKinds = ["fuzzy", "intent_only", "fallback", "embedding"];
   const kind = item.evidence?.matchKind;
   return !kind || !weakKinds.includes(kind);
+}
+
+/**
+ * The category for money that came in from a person: an income category the clause already named stays, family
+ * money is a gift of money, and anyone else's stays with the person (money with people).
+ */
+function incomeFromPerson(
+  personCategory: string,
+  item: ParsedTransaction,
+  personSubCategory = "عام",
+): { category: string; subCategory: string } {
+  if (getCategoryType(item.category) === "income" && item.category !== "دخل آخر") {
+    return { category: item.category, subCategory: item.subCategory };
+  }
+  if (personCategory === "العائلة") return { category: "هدايا وعيديات", subCategory: "هدية فلوس" };
+  return { category: personCategory, subCategory: personSubCategory };
 }

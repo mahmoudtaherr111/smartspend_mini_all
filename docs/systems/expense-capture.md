@@ -49,12 +49,26 @@ built-in limits; the local pipeline still runs.
 - **incomplete**: no amount, such as "دفعت الكهربا";
 - **rejected**: a question, a plan or future tense ("هدفع بكرة"), or a negation ("ماشتريتش"), detected by
   `api/lib/negation-detector.ts#detectNegation`. "غدا" is not a plan marker: in Egyptian it is lunch ("جبت غدا ب
-  150"), and a real "tomorrow" comes with a future verb. "استرجعت" cancels only when no money is named
-  ("استرجعت الاوردر"); "استرجعت فلوس الكورس" is a refund.
+  150"), and a real "tomorrow" comes with a future verb. A cancellation whose money came back is a refund, not a
+  negation: "كنسلت الحجز واستردت 600" and "الأوردر اتلغى ورجعولي 180" are recorded
+  (`api/lib/refund-context.ts`, read by the negation detector, the loan rule and the intent detector alike), while
+  "استرجعت الاوردر" with no money named stays cancelled.
 
-It also keeps a stated total ("والإجمالي 500") as a check, applies a "قصدي 300" correction to the amount beside
-it, and adds review reasons for approximate wording, foreign currencies, dates and clauses with more than one
-amount. When no event is admitted, the pipeline answers `clarify` with a question and spends nothing.
+Before any clause is cut, `api/lib/amount-roles.ts#resolveAmountRoles` gives every number its role, so only money
+that moved reaches the rest of the pipeline. A later number that corrects an earlier one replaces it ("بـ 20 لأ بـ
+25", "400 لا لا 450", "200 ولا أقولك 250", "50 مش 60"); a shared bill becomes the speaker's share, stated ("وكل واحد
+دفع 300", "ودفعت نصيبي 2000") or divided out by the headcount ("قسمناه على 3", which adds the review reason
+`split_share_computed`); a small count before a priced thing ("3 قهوة بـ 90"), a model or route number ("ايفون 15",
+"أتوبيس 52") and a time ("الساعة 5") are dropped when another number prices the clause; piastres become pounds; list
+markers ("1. قهوة 40") are line numbers. Words that tell the app how to file something ("وصنف العملية دي على إنها
+دخل") are not narration: they are dropped as a rejected event with reason `instruction`, and what remains carries the
+review reason `instruction_ignored`.
+
+It also keeps a stated total ("والإجمالي 500") as a check and adds review reasons for approximate wording, foreign
+currencies, dates and clauses with more than one amount. A clause that is only a verb and an amount takes the purpose
+of the clause after it ("دفعت 100 و 150 مواصلات"), and a clause that points back ("وجبت بداله واحد بـ 300") takes
+the thing the clause before it named. When no event is admitted, the pipeline answers `clarify` with a question and
+spends nothing.
 
 ### 4. Cheap answers first
 `classifyAdmittedEvents` in `api/lib/smart-pipeline.ts` tries, in order:
@@ -131,7 +145,7 @@ The layers `runRuleEngine` tries for the text around one amount, with the eviden
 | Category dictionary phrases, then subcategory phrases, of three and two words | `dict_trigram`, `dict_bigram`, `subcat_trigram`, `subcat_bigram` |
 | A single word in the subcategory map, then in the category dictionary | `subcat_unigram`, `dict_unigram` |
 | Store catalog (`api/lib/lexicon/merchant-catalog.ts`, about 480 Egyptian stores and apps), read only when no purpose word answered; not trusted by construction, so it goes to confirmation until corrections price it | `merchant_catalog` |
-| Typo match, with an edit budget scaled to the word's length; a known word or a person's name (لخالد is not خالص) is never corrected | `fuzzy` |
+| Typo match, with an edit budget scaled to the length of the word's stem (the article and attached letters are not letters a typo changes, so "الورث" is not one edit from الورد); a known word or a person's name (لخالد is not خالص) is never corrected | `fuzzy` |
 | Direction only: income becomes `دخل آخر`, an expense `متنوعات` at low confidence | `intent_only` |
 
 After the first layer answers, `api/lib/evidence-weighing.ts#weighClues` weighs what every word of the clause says
@@ -141,6 +155,20 @@ at ("اشتريت هدوم من سبينيس" is تسوق, "جبت دوا من �
 outweighs the chosen one sets `disagreement`, which escalates, and the readings travel to the model as `candidates`.
 What the user taught is never overruled. Kinship, payment rails and the catch-alls do not vote, and a category name
 that is also an everyday word (عمل) does not count as named.
+
+The clues are read with the role each word plays in the clause (`api/lib/clause-roles.ts#readClauseRoles`). A place
+passed through before a purchase ("وأنا راجع من الشغل جبت فاكهة"), a companion ("مع صحابي") and a source after an
+acquiring verb ("خدت من البيت تاكسي") do not vote: an answer that only such a word gave yields to the purchase
+(`purpose_over_scene`). A thing bought for someone's occasion ("شوكولاتة لعيد ميلاد مراتي", "بوكيه ورد لخطوبة
+صاحبي") is a gift under هدايا وصدقات with the occasion's subcategory (`occasion_gift`); the kind of shop ("في محل
+الموبايلات") is a purpose clue; and a typo or verb-only guess that no word supports yields to a clear purpose word
+(`purpose_over_guess`). Each records `context_rule`.
+
+The direction an acquiring verb gives depends on what it took (`refineDirectionByObject`): "خدت ميكروباص من الموقف"
+and "خدت من البيت تاكسي" paid for a ride, while "خدت من أبويا 1000" and "جالي تحويل 2000 من خالي" took money. Money
+that came in from family is `هدايا وعيديات/هدية فلوس`; from anyone else it stays with the person; a person read from
+a typo is no person and the source is `دخل آخر`. A refund nets the category it was bought from only when a word of
+the clause named that category; a refund of something unnamed is `دخل آخر/مرتجعات واسترداد`.
 
 A kinship word from the synonym graph (أمي، ابني) and a payment rail from the merchant registry (a card, a wallet, a
 bank: بالفيزا، بفودافون كاش، بانستاباي) say to whom and how the money moved, not what for. Their answers are held

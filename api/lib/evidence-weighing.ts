@@ -16,13 +16,14 @@
  * money moved, not what for, and the engine holds them separately.
  */
 import { CATEGORIES } from "./category-registry";
+import { readClauseRoles } from "./clause-roles";
 import { normalizeArabic, stripArabicPrefix } from "./fuzzy-match";
 import { CATEGORY_DICTIONARY } from "./lexicon/dictionary";
 import { findCatalogMerchant } from "./lexicon/index";
 import { AMBIGUOUS_MERCHANTS, MERCHANT_REGISTRY } from "./lexicon/merchants";
 import { SUB_CATEGORY_MAP } from "./lexicon/subcategory-words";
 
-export type ClueKind = "category_name" | "purpose" | "store";
+export type ClueKind = "category_name" | "purpose" | "store" | "occasion" | "scene";
 
 export interface Clue {
   word: string;
@@ -32,7 +33,8 @@ export interface Clue {
   weight: number;
 }
 
-const WEIGHT: Record<ClueKind, number> = { category_name: 3, purpose: 1, store: 0.6 };
+/** A scene word (a place passed through, a companion) is recorded with no weight: it says where, not what for. */
+const WEIGHT: Record<ClueKind, number> = { category_name: 3, occasion: 2, purpose: 1, store: 0.6, scene: 0 };
 
 /** Say who or how, not what for. */
 const NON_PURPOSE = new Set(["تحويل", "متنوعات", "العائلة", "أصدقاء", "موظفين", "دخل آخر"]);
@@ -51,8 +53,13 @@ function variants(word: string): string[] {
   return [...new Set([normalized, once, stripArabicPrefix(once)])];
 }
 
-/** Every category clue the words of the clause give, one per word, strongest reading. */
+/**
+ * Every category clue the words of the clause give, one per word, strongest reading. A word in a scene role (the
+ * place passed through, who was there, where from: `clause-roles.ts`) is kept as a weightless scene clue; the
+ * occasion a purchase was for and the kind of shop it was bought in are clues of their own.
+ */
 export function collectClues(text: string): Clue[] {
+  const roles = readClauseRoles(text);
   const words = String(text || "")
     .split(/\s+/)
     .map((word) => word.replace(/^[^؀-ۿa-zA-Z]+|[^؀-ۿa-zA-Z]+$/g, ""))
@@ -62,9 +69,17 @@ export function collectClues(text: string): Clue[] {
     if (NON_PURPOSE.has(clue.category)) return;
     clues.push({ ...clue, weight: WEIGHT[clue.kind] });
   };
+  if (roles.occasion) push({ word: roles.occasion, category: "هدايا وصدقات", subCategory: roles.occasion, kind: "occasion" });
+  if (roles.venue) push({ word: roles.venue.word, category: roles.venue.category, subCategory: roles.venue.subCategory, kind: "purpose" });
 
   for (let i = 0; i < words.length; i++) {
     const forms = variants(words[i]);
+    if (forms.some((form) => roles.silent.has(form))) {
+      const scene = forms.map((form) => CATEGORY_DICTIONARY[form] || SUB_CATEGORY_MAP[form]?.category).find(Boolean);
+      if (scene) push({ word: words[i], category: scene, subCategory: "عام", kind: "scene" });
+      continue;
+    }
+    if (roles.venue && forms.includes(roles.venue.word)) continue;
     const pair = i + 1 < words.length ? normalizeArabic(`${words[i]} ${words[i + 1]}`).toLowerCase() : "";
 
     const name = forms.map((form) => CATEGORY_NAMES.get(form)).find(Boolean);
@@ -93,7 +108,11 @@ export function collectClues(text: string): Clue[] {
 
 export interface Weighing {
   /** The category the clues settle on, when it differs from the engine's first answer. */
-  override?: { category: string; subCategory: string; reason: "category_named" | "purpose_over_store" };
+  override?: {
+    category: string;
+    subCategory: string;
+    reason: "category_named" | "purpose_over_store" | "occasion_gift" | "purpose_over_scene" | "purpose_over_guess";
+  };
   /** Readings of the clause, strongest first: what the model is shown when it is asked. */
   candidates: string[];
   /** Another reading weighs as much as the chosen one. */
@@ -104,6 +123,10 @@ export interface Weighing {
 const OVERRULABLE = new Set([
   "merchant_registry", "merchant_catalog", "dict_unigram", "dict_bigram", "subcat_unigram", "fuzzy", "intent_only", "fallback",
 ]);
+/** Kinds of first answer that are guesses rather than a word read in the clause. */
+const GUESSES = new Set(["fuzzy", "intent_only", "fallback"]);
+/** Categories a thing bought for an occasion leaves for the gift category. */
+const GIFTABLE = new Set(["أكل وشرب", "متنوعات", "العائلة", "أصدقاء", "موظفين", "هدايا وصدقات"]);
 /** Kinds already settled by the user or by an explicit pattern: recorded, never disputed. */
 const SETTLED = new Set(["user_correction", "user_dictionary", "muscle_memory", "known_person", "governed_noun"]);
 
@@ -119,6 +142,7 @@ export function weighClues(
   const purposeScore = new Map<string, number>();
   const bestSub = new Map<string, { sub: string; weight: number }>();
   for (const clue of clues) {
+    if (clue.kind === "scene") continue;
     score.set(clue.category, (score.get(clue.category) ?? 0) + clue.weight);
     if (clue.kind !== "store") purposeScore.set(clue.category, (purposeScore.get(clue.category) ?? 0) + clue.weight);
     const held = bestSub.get(clue.category);
@@ -141,6 +165,23 @@ export function weighClues(
     if (namedCategories.size === 1 && !namedCategories.has(current.category)) {
       const category = named[0].category;
       return { override: { category, subCategory: subFor(category), reason: "category_named" }, candidates: first(category, candidates), disputed: false };
+    }
+    // A thing bought for someone's occasion is a gift: "شوكولاتة لعيد ميلاد مراتي", "بوكيه ورد لخطوبة صاحبي".
+    const occasion = clues.find((clue) => clue.kind === "occasion");
+    if (occasion && GIFTABLE.has(current.category) && !(current.category === "هدايا وصدقات" && current.subCategory !== "عام")) {
+      return { override: { category: occasion.category, subCategory: occasion.subCategory, reason: "occasion_gift" }, candidates: first(occasion.category, candidates), disputed: false };
+    }
+    const purposes = [...purposeScore.entries()].filter(([category]) => category !== current.category).sort((a, b) => b[1] - a[1]);
+    const clearPurpose = purposes.length > 0 && (purposes.length === 1 || purposes[0][1] > purposes[1][1]) ? purposes[0][0] : null;
+    // The answer came from a place passed through or a companion, and the clause names what was bought:
+    // "وأنا راجع من الشغل جبت فاكهة" is fruit, not work.
+    const fromScene = clues.some((clue) => clue.kind === "scene" && clue.category === current.category);
+    if (fromScene && !score.has(current.category) && clearPurpose) {
+      return { override: { category: clearPurpose, subCategory: subFor(clearPurpose), reason: "purpose_over_scene" }, candidates: first(clearPurpose, candidates), disputed: false };
+    }
+    // A guess (a near spelling, a verb alone) that no word of the clause supports, against a clear purpose word.
+    if (GUESSES.has(current.matchKind) && !score.has(current.category) && clearPurpose) {
+      return { override: { category: clearPurpose, subCategory: subFor(clearPurpose), reason: "purpose_over_guess" }, candidates: first(clearPurpose, candidates), disputed: false };
     }
     // A store answered, but the sentence also says what was bought there.
     const storeAnswered = current.matchKind === "merchant_registry" || current.matchKind === "merchant_catalog";

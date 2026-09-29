@@ -16,6 +16,8 @@ import {
 export { SUB_CATEGORY_MAP };
 import { fuzzyFindCategory, normalizeArabic, matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
 import { detectIntent, GIFT_NOUN, readsAsRefund, readsAsSale, type TransactionIntent } from "./intent-detector";
+import { refineDirectionByObject } from "./clause-roles";
+import { saysMoneyCameBack } from "./refund-context";
 import { extractAmounts, type ExtractedAmount } from "./entity-extractor";
 import { normalizeText } from "./text-normalizer";
 import { CATEGORIES } from "./category-registry";
@@ -346,8 +348,10 @@ export function detectPolarityAndNegation(text: string): {
     return { isNegated: true, polarityMultiplier: 0.0, reason: "invitation_or_zero_payment" };
   }
 
-  // Cancelled or aborted transactions (e.g. "كنت هطلب بس لغيت", "كنت هركب بس مالحقتش")
+  // Cancelled or aborted transactions (e.g. "كنت هطلب بس لغيت", "كنت هركب بس مالحقتش"), unless
+  // the money came back ("كنسلت الحجز واستردت 600" is a refund to record: refund-context.ts).
   if (
+    !saysMoneyCameBack(norm) &&
     /(?:كنت\s*ه|كنت\s*عايز|كنت\s*ناوي|فكرت\s*اشتري|بس\s*لغيت|بس\s*ملحقتش|بس\s*مالحقتش|لغيت\s*الاوردر|كنسلت|مركبتش|ماشتريتش|ماجبتش)/.test(
       norm,
     )
@@ -507,9 +511,20 @@ export async function runRuleEngine(
       const parts = splitEgyptianConjunctions(afterAmount);
       afterAmount = parts.length > 0 ? parts[0].trim() : "";
     }
+    // "دفعت 100 و 150 مواصلات", "صرفت 40 و 60 على القهوة": amounts joined by nothing but و share the words
+    // after the last of them; each used to be read with an empty context and filed as متنوعات.
+    let last = i;
+    while (last < amounts.length - 1 && /^\s*(?:و|او|أو)?\s*$/.test(
+      normalizedText.slice(amounts[last].index + amounts[last].length, amounts[last + 1].index))) last++;
+    if (last > i) {
+      const end = last < amounts.length - 1 ? amounts[last + 1].index : normalizedText.length;
+      const shared = normalizedText.slice(amounts[last].index + amounts[last].length, end).trim();
+      afterAmount = ((last < amounts.length - 1 ? splitEgyptianConjunctions(shared)[0] : shared) || "").trim();
+    }
     const allContext = (beforeAmount + " " + afterAmount).trim();
     const allContextNorm = normalizeArabic(allContext).toLowerCase();
-    const intentResult = detectIntent(allContext);
+    // What an acquiring verb took decides the direction: "خدت ميكروباص" paid for a ride (clause-roles.ts).
+    const intentResult = refineDirectionByObject(detectIntent(allContext), allContext);
     
     // Multi-Category Ambiguity Pre-Check
     const rawWordsForCheck = allContext.split(/\s+/).filter((w) => w.length >= 2);
@@ -981,14 +996,16 @@ export async function runRuleEngine(
         // bill-payment network خالص, and "لسارة" is not "ستارة".
         const bare = stripArabicPrefix(stripArabicPrefix(word));
         if (isLikelyPersonName(word) || isLikelyPersonName(bare)) continue;
-        if (word.length >= 3) {
+        if (bare.length >= 3) {
           // Damerau handles transpositions (e.g. "كهارب" ↔ "كهربا" = distance 2, not 3)
           // The budget has to scale with the word: two edits on a four-letter word means
           // half its letters changed, which is a different word, not a typo. That is how
           // `دبحت` was "corrected" into سكن and `خروف` into تعليم — categories invented
-          // for words the dictionary simply does not contain.
-          const limit = word.length <= 3 ? 0 : word.length <= 5 ? 1 : 2;
-          const fuzzyResult = fuzzyFindCategory(word, CATEGORY_DICTIONARY, limit);
+          // for words the dictionary simply does not contain. The word is its stem: the
+          // article and attached letters are not letters a typo changes, and counting them
+          // gave "الورث" (inheritance) the budget of a five-letter word, one edit from الورد.
+          const limit = bare.length <= 3 ? 0 : bare.length <= 5 ? 1 : 2;
+          const fuzzyResult = fuzzyFindCategory(bare, CATEGORY_DICTIONARY, limit);
           if (fuzzyResult && typeof fuzzyResult === "string") {
             category = fuzzyResult;
             subCategory = "عام";
@@ -1188,7 +1205,9 @@ export async function runRuleEngine(
       matchKind = "intent_only";
       registeredType = "income";
     } else if (!governed && effectiveIntent === "income" && registeredType === "expense") {
-      if (category === "هدايا وصدقات" || GIFT_NOUN.test(allContextNorm)) {
+      // A category read from a near spelling ("الورث" → الورد) names nothing that came in.
+      const guessed = (matchKind as MatchKind) === "fuzzy";
+      if ((category === "هدايا وصدقات" && !guessed) || GIFT_NOUN.test(allContextNorm)) {
         // "خدت عيدية 500": a gift the user received.
         finalCategory = "هدايا وعيديات";
         finalSubCategory = /عيدي/.test(allContextNorm)
@@ -1196,7 +1215,10 @@ export async function runRuleEngine(
           : /نقط|نقوط/.test(allContextNorm)
             ? "نقطة"
             : "هدية فلوس";
-      } else if (readsAsRefund(allContextNorm) && !PERSON_CATEGORIES.includes(category)) {
+      } else if (readsAsRefund(allContextNorm) && !PERSON_CATEGORIES.includes(category) &&
+        !["fuzzy", "fallback", "intent_only"].includes(matchKind)) {
+        // Only a category read from a word of the clause gets its money back; a guessed one
+        // ("الأوردر اتلغى ورجعولي 180" matched nothing) is a refund of something unnamed, below.
         // "رجعت الجزمة واخدت فلوسي 300": the shoes' category gets its money back.
         isRefund = true;
         finalCategory = category;
@@ -1209,9 +1231,20 @@ export async function runRuleEngine(
         finalCategory = "دخل آخر";
         finalSubCategory = "مرتجعات واسترداد";
       } else if (PERSON_CATEGORIES.includes(category)) {
-        // Preserve person subcategory — e.g., "استلمت من أحمد" stays as أصدقاء/عام.
-        finalCategory = category;
-        finalSubCategory = refinedSubCategory;
+        // Money that came in from someone. Family money ("خدت من أبويا 1000") is a gift of money;
+        // anyone else's stays with the person ("جالي 250 من عمر": money with people), and a person
+        // read from a near spelling ("من الورث") is no person at all: the source is unnamed.
+        if (guessed) {
+          finalCategory = "دخل آخر";
+          finalSubCategory = "عام";
+        } else if (category === "العائلة") {
+          finalCategory = "هدايا وعيديات";
+          finalSubCategory = "هدية فلوس";
+        } else {
+          finalCategory = category;
+          finalSubCategory = refinedSubCategory;
+        }
+        finalConfidence = Math.min(finalConfidence, 80);
       } else if (/(?:^|\s)[وف]?(?:بعت|بيعت|بايع|بيع)(?=\s|$)/.test(allContextNorm)) {
         // "بعت الموبايل القديم ب 4000": the noun is what was sold.
         finalCategory = "دخل آخر";

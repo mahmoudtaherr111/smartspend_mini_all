@@ -24,11 +24,11 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `voice` | Voice | 34 | `ai-actions`, `ai-insights`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 14 | `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs` | — |
-| `arabic-nlp` | Arabic and Egyptian text processing | 9 | `classification` | `ai-kernel`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | — |
+| `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | — |
 | `ingestion-parsers` | Ingestion parsers | 4 | `ai-providers`, `arabic-nlp`, `classification`, `database`, `ledger`, `platform` | `api-routers` | `gemini` |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
-| `classification` | Expense classification pipeline | 38 | `ai-providers`, `arabic-nlp`, `contracts`, `database`, `platform` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
+| `classification` | Expense classification pipeline | 40 | `ai-providers`, `arabic-nlp`, `contracts`, `database`, `platform` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers` | — |
 | `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform` | `api-routers`, `voice` | — |
 | `ai-memory` | AI memory | 12 | `ai-governance`, `ai-providers`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-core`, `api-routers`, `voice` | `qdrant` |
@@ -332,7 +332,7 @@ Per-plan token limits and per-request caps, burst counting, AI cost metrics and 
 
 ### `arabic-nlp` — Arabic and Egyptian text processing
 
-Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matching and speech-to-text corrections.
+Normalizers, dictionaries, Arabic number parsing, negation detection, the words of a refund after a cancellation, fuzzy matching and speech-to-text corrections.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -342,6 +342,7 @@ Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matc
 | `api/lib/fuzzy-match.ts` | — | — | — | — |
 | `api/lib/negation-detector.ts` | — | — | — | — |
 | `api/lib/normalizer-v2.ts` | — | — | — | — |
+| `api/lib/refund-context.ts` | — | — | — | — |
 | `api/lib/stt-corrections.ts` | — | — | — | — |
 | `api/lib/text-normalizer.ts` | `classification` | — | — | — |
 | `api/lib/unified-normalizer.ts` | — | — | — | — |
@@ -376,13 +377,14 @@ Helpers used only by the classification benchmark and QA scripts: taxonomy asser
 
 ### `classification` — Expense classification pipeline
 
-smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.
+smart-pipeline.ts and the modules it composes: financial events, the role of each number and of each word in a clause, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/lib/admissibility-gate.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/amount-ledger.ts` | — | — | — | — |
 | `api/lib/amount-linker.ts` | — | — | — | — |
+| `api/lib/amount-roles.ts` | — | — | — | — |
 | `api/lib/category-registry.ts` | `arabic-nlp`, `contracts` | — | — | — |
 | `api/lib/classification-cache.ts` | — | — | — | — |
 | `api/lib/classification-decision.ts` | — | — | — | — |
@@ -391,6 +393,7 @@ smart-pipeline.ts and the modules it composes: financial events, admissibility, 
 | `api/lib/classification-prompt.ts` | — | — | — | — |
 | `api/lib/classifier-contract.ts` | — | `gemini` | — | — |
 | `api/lib/classify-text.ts` | `arabic-nlp` | — | — | — |
+| `api/lib/clause-roles.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/confidence-calibration.generated.ts` | — | — | — | — |
 | `api/lib/confidence-calibrator.ts` | — | — | — | — |
 | `api/lib/correction-rules.ts` | `arabic-nlp`, `database` | — | `user_correction_rules` | `user_correction_rules` |

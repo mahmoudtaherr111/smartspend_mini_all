@@ -15,6 +15,7 @@
  * line and a transfer three lines later.
  */
 import type { TransactionIntent } from "./intent-detector";
+import { readsAsReversalRefund } from "./refund-context";
 import { buildTokenSet, findMatchingWord } from "./arabic-token-match";
 
 export type GovernedDirection = "in" | "out";
@@ -120,9 +121,11 @@ export function resolveGovernedTaxonomy(text: string): GovernedResolution | null
     const excluded = entry.standaloneExclusions
       ? findMatchingWord(text, entry.standaloneExclusions, tokens) !== undefined
       : false;
+    // "الأوردر اتلغى ورجعولي 180": money back from an undone purchase is a refund, not a loan paid back.
+    const refund = readsAsReversalRefund(text);
     const matchedNoun =
       findMatchingWord(text, entry.nouns, tokens) ??
-      (entry.standaloneVerbs && !excluded ? findMatchingWord(text, entry.standaloneVerbs, tokens) : undefined);
+      (entry.standaloneVerbs && !excluded && !refund ? findMatchingWord(text, entry.standaloneVerbs, tokens) : undefined);
     if (!matchedNoun) continue;
 
     const strongIn = findMatchingWord(text, STRONG_IN_OVERRIDE, tokens) ?? null;

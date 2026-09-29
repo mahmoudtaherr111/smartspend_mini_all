@@ -44,6 +44,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/ai-usage-policy.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/amount-ledger.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/amount-linker.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/amount-roles.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/anonymizer.ts` | [accounts](accounts.md) |
 | `api/lib/app-time.ts` | [platform](platform.md) |
 | `api/lib/arabic-number-parser.ts` | [expense-capture](expense-capture.md) |
@@ -58,6 +59,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/classification-prompt.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/classifier-contract.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/classify-text.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/clause-roles.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/confidence-calibration.generated.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/confidence-calibrator.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/correction-rules.ts` | [expense-capture](expense-capture.md) |
@@ -108,6 +110,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/real-user-sim.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/receipt-image-parser.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/redis-client.ts` | [platform](platform.md) |
+| `api/lib/refund-context.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/relationship-normalizer.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/rule-engine.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/seasons.ts` | [money](money.md) |

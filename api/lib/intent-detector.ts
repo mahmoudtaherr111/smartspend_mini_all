@@ -239,6 +239,7 @@ const INVESTMENT_KEYWORDS = [
 ];
 
 import { normalizeArabic } from "./unified-normalizer";
+import { readsAsReversalRefund } from "./refund-context";
 
 const NORM_STRONG_INCOME = STRONG_INCOME.map((k) =>
   normalizeArabic(k).toLowerCase(),
@@ -321,7 +322,7 @@ const ERRAND = /(?:^|\s)(?:يجيب|تجيب|يجيبلي|تجيبلي|يجيب�
 
 /** Whether normalized text reads as money back from something bought ("رجعت الجزمة واخدت فلوسي"). */
 export function readsAsRefund(normContext: string): boolean {
-  return REFUND_TAKEN.test(normContext) || REFUND_WORD.test(normContext);
+  return REFUND_TAKEN.test(normContext) || REFUND_WORD.test(normContext) || readsAsReversalRefund(normContext);
 }
 
 /** Whether normalized text reads as selling something for a price. */
@@ -422,7 +423,7 @@ export function detectIntent(context: string): IntentResult {
     incomeScore -= 50;
   }
   // Money back from a return, and the price of something sold, come in.
-  if (REFUND_TAKEN.test(normContext) || REFUND_WORD.test(normContext)) {
+  if (readsAsRefund(normContext)) {
     incomeScore += 100;
     transferScore -= 40;
   }

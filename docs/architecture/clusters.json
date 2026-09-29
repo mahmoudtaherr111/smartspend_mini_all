@@ -186,7 +186,7 @@
     {
       "id": "arabic-nlp",
       "title": "Arabic and Egyptian text processing",
-      "description": "Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matching and speech-to-text corrections.",
+      "description": "Normalizers, dictionaries, Arabic number parsing, negation detection, the words of a refund after a cancellation, fuzzy matching and speech-to-text corrections.",
       "paths": [
         "api/lib/arabic-number-parser.ts",
         "api/lib/arabic-token-match.ts",
@@ -196,6 +196,7 @@
         "api/lib/text-normalizer.ts",
         "api/lib/unified-normalizer.ts",
         "api/lib/negation-detector.ts",
+        "api/lib/refund-context.ts",
         "api/lib/fuzzy-match.ts",
         "api/lib/stt-corrections.ts"
       ]
@@ -231,13 +232,15 @@
     {
       "id": "classification",
       "title": "Expense classification pipeline",
-      "description": "smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.",
+      "description": "smart-pipeline.ts and the modules it composes: financial events, the role of each number and of each word in a clause, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.",
       "paths": [
         "api/lib/smart-pipeline.ts",
         "api/lib/rule-engine.ts",
         "api/lib/classify-text.ts",
         "api/lib/lexicon/**",
         "api/lib/evidence-weighing.ts",
+        "api/lib/clause-roles.ts",
+        "api/lib/amount-roles.ts",
         "api/lib/pipeline-person.ts",
         "api/lib/classification-cache.ts",
         "api/lib/muscle-memory.ts",
