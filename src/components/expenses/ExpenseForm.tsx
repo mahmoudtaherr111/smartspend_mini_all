@@ -923,6 +923,7 @@ export function ExpenseForm({
               audioBase64: base64Audio,
               mimeType: actualMimeType,
               durationSeconds: Math.max(1, durationRef.current),
+              businessMode: businessMode || false,
             });
           } catch (readErr) {
             console.error("Audio FileReader error:", readErr);

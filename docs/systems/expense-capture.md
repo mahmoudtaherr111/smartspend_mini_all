@@ -265,7 +265,7 @@ payload size, the audio type, that the claimed duration is positive, the per-rec
 seconds, from the per-plan settings `voice_limit_<plan>` and `voice_per_req_<plan>`
 (`api/lib/voice-intake-gate.ts#resolveVoiceLimits`). It reserves the speech budget, transcribes with
 `api/ai-router.ts#runSTTPipeline` (the plan's speech model, then `gemini-2.0-flash`), records the billable seconds
-in `voice_usage`, and runs the same pipeline on the transcript with business mode off. The form stops a recording
+in `voice_usage`, and runs the same pipeline on the transcript, in business mode when the form's switch is on and the user has a business. The form stops a recording
 at the plan's per-recording limit and at the seconds left this month.
 
 `ai.speechToText` transcribes without parsing; no screen calls it.

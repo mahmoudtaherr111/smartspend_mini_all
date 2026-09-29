@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { trpc } from "../../providers/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,8 +67,11 @@ export function BusinessSettingsView({ onBack }: { onBack: () => void }) {
   const business = businessQuery.data?.business;
   const [showSetup, setShowSetup] = useState(false);
 
-  if (!business && !showSetup) {
-    return <BusinessWelcome onBack={onBack} onStart={() => setShowSetup(true)} />;
+  // Business mode is a plan feature, and business.get says so before anything is filled in:
+  // a plan without it sees the lock here, not after the three setup steps.
+  const locked = businessQuery.error?.data?.code === "FORBIDDEN";
+  if (!business && (!showSetup || locked)) {
+    return <BusinessWelcome onBack={onBack} onStart={() => setShowSetup(true)} locked={locked} />;
   }
   if (!business && showSetup) {
     return (
@@ -84,7 +88,7 @@ export function BusinessSettingsView({ onBack }: { onBack: () => void }) {
 }
 
 // ─── Welcome ───
-function BusinessWelcome({ onBack, onStart }: { onBack: () => void; onStart: () => void }) {
+function BusinessWelcome({ onBack, onStart, locked }: { onBack: () => void; onStart: () => void; locked: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -110,14 +114,14 @@ function BusinessWelcome({ onBack, onStart }: { onBack: () => void; onStart: () 
         </motion.div>
         <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">عندك مشروع أو عمل خاص؟</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-          فعّل نمط المشروع وسي-tag النظام مصاريف مشروعك تلقائياً بفئات مخصصة،
-          مع إحصائيات منفصلة كاملة ومرتبات للموظفين
+          فعّل وضع المشروع، والتطبيق يصنّف مصاريف مشروعك بفئات مشروعك إنت،
+          مع أرقام منفصلة عن مصاريفك الشخصية ومرتبات الموظفين
         </p>
 
         <div className="mt-8 space-y-2 max-w-sm mx-auto text-right">
           {[
-            { icon: "⚡", title: "تصنيف فوري", desc: "مصاريف المشروع بتتصنف بـ 0 tokens" },
-            { icon: "📊", title: "Dashboard كامل", desc: "إيرادات ومصاريف وأرباح ورسوم بيانية" },
+            { icon: "⚡", title: "تصنيف فوري", desc: "مصاريف المشروع بتتصنف بفئات مشروعك على طول" },
+            { icon: "📊", title: "لوحة كاملة", desc: "إيرادات ومصاريف وأرباح ورسوم بيانية" },
             { icon: "👷", title: "مرتبات الموظفين", desc: "اكتب \"دفعت مرتب فلان\" ويتسجل تلقائياً" },
             { icon: "👥", title: "موردين وعملاء", desc: "اربط الأشخاص بالمشروع وكل معاملة" },
             { icon: "🔀", title: "تبديل سهل", desc: "زرار واحد يبدل بين الشخصي والمشروع" },
@@ -138,10 +142,24 @@ function BusinessWelcome({ onBack, onStart }: { onBack: () => void; onStart: () 
           ))}
         </div>
 
-        <Button onClick={onStart} className="mt-8 rounded-xl gap-2 px-8" size="lg">
-          <Store className="w-5 h-5" />
-          فلنبدأ الإعداد
-        </Button>
+        {locked ? (
+          <div className="mt-8 space-y-3">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              وضع المشروع مش في باقتك الحالية.
+            </p>
+            <Button asChild className="rounded-xl gap-2 px-8" size="lg">
+              <Link to="/pro">
+                <Store className="w-5 h-5" />
+                شوف الباقات
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <Button onClick={onStart} className="mt-8 rounded-xl gap-2 px-8" size="lg">
+            <Store className="w-5 h-5" />
+            يلا نبدأ
+          </Button>
+        )}
       </div>
     </motion.div>
   );

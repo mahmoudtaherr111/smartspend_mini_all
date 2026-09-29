@@ -163,6 +163,9 @@ business mode:
 - `business.delete` removes the categories, turns linked contacts back into personal ones, moves the business rollups
   and items to personal, and deletes the business in one transaction.
 
+A plan without the feature is told on the first screen of Settings → business (`business.get` answers FORBIDDEN, and
+`src/components/settings/BusinessSettingsView.tsx` shows the lock and a link to the plans instead of the setup steps).
+
 ## People
 - `profile.listContacts` counts each person's items from `expenses` and filters personal, business or silenced people.
 - `profile.addContact` refuses a duplicate name; `profile.updateContact` changes the name, relation, type, business

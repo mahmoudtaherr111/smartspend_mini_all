@@ -1218,6 +1218,8 @@ export const aiRouter = router({
         mimeType: z.string().default("audio/webm"),
         durationSeconds: z.number().default(0),
         model: z.enum(["flash", "pro", "ultra", "gemma"]).default("flash"),
+        /** The same switch the typed entry sends: file this recording under the user's business. */
+        businessMode: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -1450,7 +1452,8 @@ export const aiRouter = router({
           },
         businessCategories: voiceBizCats,
         businessId: biz.length > 0 ? biz[0].id : null,
-        businessMode: false,
+        // A recording made with business mode on is business spending, as typed text is.
+        businessMode: Boolean(input.businessMode && biz.length > 0),
       });
 
       let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;

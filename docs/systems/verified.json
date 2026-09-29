@@ -41,13 +41,13 @@
         "src/components/notifications/PushNotificationPrompt.tsx": "b7d1e5b30b68",
         "src/components/profile/SmartProfileSettings.tsx": "9010f214a2bb",
         "src/components/profile/SmartProfileView.tsx": "1d6745467c8e",
-        "src/components/settings/BusinessSettingsView.tsx": "3704739ee6bf",
+        "src/components/settings/BusinessSettingsView.tsx": "ced2674cdee4",
         "src/components/settings/PeopleSettingsView.tsx": "d14db778fc4a",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
         "src/pages/Login.tsx": "c3f3cb05781e",
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
-      "checked": "2026-09-28 af819ef",
+      "checked": "2026-09-29 07af0b8",
       "arabic": "fb49e1dcb4e4",
       "arabicChecked": "2026-09-23 fe4b4b3"
     },
@@ -224,7 +224,7 @@
       "files": {
         "api/ai-router.ts#ai.learnWord": "ef6a568c333e",
         "api/ai-router.ts#ai.parseExpense": "0467767bba93",
-        "api/ai-router.ts#ai.parseVoiceExpense": "1264f3adee28",
+        "api/ai-router.ts#ai.parseVoiceExpense": "ae746de43d99",
         "api/ai-router.ts#ai.speechToText": "b2afa75738a4",
         "api/ai-router.ts#rest-of-file": "cf866c97edc6",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
@@ -286,14 +286,14 @@
         "api/lib/unified-normalizer.ts": "603756615433",
         "api/lib/voice-intake-gate.ts": "0a8bf7293a27",
         "api/services/parser-trace.ts": "aa8b5bad3877",
-        "src/components/expenses/ExpenseForm.tsx": "4cf95ef527e8",
+        "src/components/expenses/ExpenseForm.tsx": "4a1fb6c97f39",
         "src/components/expenses/ReceiptCapture.tsx": "5940b1b1e056",
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-09-28 af819ef",
-      "arabic": "eef77943542e",
-      "arabicChecked": "2026-09-28 b0ba1ec"
+      "checked": "2026-09-29 07af0b8",
+      "arabic": "3006ba668a71",
+      "arabicChecked": "2026-09-29 07af0b8"
     },
     "insights": {
       "files": {
@@ -389,9 +389,9 @@
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
         "src/pages/Home.tsx": "c12e54cbde73"
       },
-      "checked": "2026-09-28 af819ef",
-      "arabic": "13786dfd5a7d",
-      "arabicChecked": "2026-09-28 8629ba0"
+      "checked": "2026-09-29 07af0b8",
+      "arabic": "eceb4096c937",
+      "arabicChecked": "2026-09-29 07af0b8"
     },
     "notifications": {
       "files": {
