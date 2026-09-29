@@ -31,10 +31,12 @@ again so its review card is the one on screen.
 ### 2. The entry point checks and gathers context
 `parseExpense`:
 - refuses when the plan's parse feature is switched off (setting `<plan>_ai_parse`) or the daily request limit
-  is reached, and checks the AI token budget (`api/lib/ai-usage-policy.ts#assertAiBudget`);
+  is reached (saying when it resets and, below Ultra, which plan gives more), and checks the AI token budget (`api/lib/ai-usage-policy.ts#assertAiBudget`);
 - resolves the provider and model for the plan and its usage (`api/ai-router.ts#resolveRoutingConfig`);
 - loads the user dictionary (`user_dictionaries`), the smart profile, this month's income and expense
-  (`api/services/finance-semantic-layer/resolvers.ts#getFinanceSummary`) and the active business's categories;
+  (`api/services/finance-semantic-layer/resolvers.ts#getFinanceSummary`) and the active business's categories
+  (`api/ai-router.ts#loadActiveBusinessForParse`); the settings, dictionary, profile and business reads start before the
+  limit checks and are awaited after them, so they run while the limits are checked;
 - adds the people from the profile to the dictionary, except transfers, so a known name resolves to its
   category.
 

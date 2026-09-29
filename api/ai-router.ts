@@ -524,6 +524,40 @@ async function getAiClient(
 
 // Legacy parse functions have been removed.
 
+/**
+ * The user's active business and its categories, for scoring a parse in business mode. A
+ * failure loads nothing rather than blocking the parse.
+ */
+async function loadActiveBusinessForParse(userId: number, userType: string): Promise<{
+  biz: { id: number }[];
+  categories:
+    | Array<{ id: number; name: string; nameAr: string; type: string; keywords: string[]; matchExamples: string[] }>
+    | undefined;
+}> {
+  try {
+    const biz = await db
+      .select({ id: userBusinesses.id })
+      .from(userBusinesses)
+      .where(and(eq(userBusinesses.userId, userId), eq(userBusinesses.userType, userType), eq(userBusinesses.isActive, true)))
+      .limit(1);
+    if (biz.length === 0) return { biz, categories: undefined };
+    const cats = await db
+      .select()
+      .from(bizCategoriesTable)
+      .where(and(eq(bizCategoriesTable.businessId, biz[0].id), eq(bizCategoriesTable.isActive, true)));
+    return {
+      biz,
+      categories: cats.map((c) => ({
+        id: c.id, name: c.name, nameAr: c.nameAr, type: c.type,
+        keywords: Array.isArray(c.keywords) ? (c.keywords as string[]) : [],
+        matchExamples: Array.isArray(c.matchExamples) ? (c.matchExamples as string[]) : [],
+      })),
+    };
+  } catch {
+    return { biz: [], categories: undefined };
+  }
+}
+
 export const aiRouter = router({
   // ─── Voice Settings ───
 
@@ -552,6 +586,19 @@ export const aiRouter = router({
       let modelName = env.GEMINI_MODEL_FREE;
       let maxPerRequest = 512;
 
+      // Reads the parse needs whatever the gate decides: started now, awaited after the gate,
+      // so the database works while the limits are checked instead of after them. The no-op
+      // catches only keep a refused request from leaving an unhandled rejection behind.
+      const readsStarted = Promise.all([
+        getSystemSettings(),
+        db.select().from(userDictionaries)
+          .where(and(eq(userDictionaries.userId, ctx.user.id), eq(userDictionaries.userType, ctx.user.type))),
+        getSmartProfile(ctx.user.id, ctx.user.type),
+      ]);
+      readsStarted.catch(() => undefined);
+      const businessStarted = loadActiveBusinessForParse(ctx.user.id as number, ctx.user.type);
+      businessStarted.catch(() => undefined);
+
       try {
         const client = await getAiClient("parse", ctx.user.plan);
         if (!client.canUseParse) {
@@ -573,10 +620,11 @@ export const aiRouter = router({
 
       const todayUsage = await countDailyAiRequests(ctx.user, "parse");
       if (todayUsage >= dailyLimit) {
-        const upgradeTo = ctx.user.plan === "free" ? "برو" : "ألترا";
+        const upgrade =
+          ctx.user.plan === "free" ? " تقدر ترقّي لـ Pro عشان تسجّل أكتر." : ctx.user.plan === "pro" ? " تقدر ترقّي لـ Ultra عشان تسجّل أكتر." : "";
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: `وصلت للحد اليومي (${dailyLimit} طلب). حدث لـ${upgradeTo}!`,
+          message: `وصلت لحد التسجيلات الذكية بتاعة النهارده (${dailyLimit}). الحد بيتجدد بكرة.${upgrade}`,
         });
       }
 
@@ -600,17 +648,7 @@ export const aiRouter = router({
       let resolvedNvidiaKey = "";
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-      // ── Run independent queries in parallel to speed up ──
-      const [
-        settings,
-        userDictRows,
-        smartProfile
-      ] = await Promise.all([
-        getSystemSettings(),
-        db.select().from(userDictionaries)
-          .where(and(eq(userDictionaries.userId, ctx.user.id), eq(userDictionaries.userType, ctx.user.type))),
-        getSmartProfile(ctx.user.id, ctx.user.type)
-      ]);
+      const [settings, userDictRows, smartProfile] = await readsStarted;
 
       const cfgFull = settings;
 
@@ -661,44 +699,8 @@ export const aiRouter = router({
         }
       }
 
-      // --- LOAD BUSINESS CATEGORIES (if user has an active business) ---
-      let bizCategoriesForPipeline: Array<{
-        id: number; name: string; nameAr: string; type: string;
-        keywords: string[]; matchExamples: string[];
-      }> | undefined;
-      // Lift `biz` outside the try block so its length/id can be referenced
-      // when constructing the pipeline input below. Previously `biz` was
-      // declared with `const` inside the try, leaking the reference and
-      // producing TS2304 "Cannot find name 'biz'" at the call site.
-      let biz: { id: number }[] = [];
-      try {
-        biz = await db
-          .select({ id: userBusinesses.id })
-          .from(userBusinesses)
-          .where(and(
-            eq(userBusinesses.userId, ctx.user.id as number),
-            eq(userBusinesses.userType, ctx.user.type),
-            eq(userBusinesses.isActive, true),
-          ))
-          .limit(1);
-
-        if (biz.length > 0) {
-          const cats = await db
-            .select()
-            .from(bizCategoriesTable)
-            .where(and(
-              eq(bizCategoriesTable.businessId, biz[0].id),
-              eq(bizCategoriesTable.isActive, true),
-            ));
-          bizCategoriesForPipeline = cats.map((c) => ({
-            id: c.id, name: c.name, nameAr: c.nameAr, type: c.type,
-            keywords: Array.isArray(c.keywords) ? c.keywords as string[] : [],
-            matchExamples: Array.isArray(c.matchExamples) ? c.matchExamples as string[] : [],
-          }));
-        }
-      } catch (e) {
-        // Business categories load failed — don't block pipeline
-      }
+      // --- BUSINESS CATEGORIES (started with the other reads above) ---
+      const { biz, categories: bizCategoriesForPipeline } = await businessStarted;
 
       const result = await runSmartPipeline({
         text: input.text,

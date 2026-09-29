@@ -149,7 +149,7 @@
     "ai-platform": {
       "files": {
         "api/ai-router.ts#ai.getUserLimits": "85e198fa737d",
-        "api/ai-router.ts#rest-of-file": "cf866c97edc6",
+        "api/ai-router.ts#rest-of-file": "6289570aef0c",
         "api/lib/ai-gateway.ts": "f7811951453a",
         "api/lib/ai-ledger.ts": "93e56a2d0714",
         "api/lib/ai-pricing.ts": "23536d58c2c7",
@@ -168,7 +168,7 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "e4536dd88d77"
       },
-      "checked": "2026-09-28 b0ba1ec",
+      "checked": "2026-09-29 8c98c99",
       "arabic": "46d67696d455",
       "arabicChecked": "2026-09-28 b0ba1ec"
     },
@@ -223,10 +223,10 @@
     "expense-capture": {
       "files": {
         "api/ai-router.ts#ai.learnWord": "ef6a568c333e",
-        "api/ai-router.ts#ai.parseExpense": "0467767bba93",
+        "api/ai-router.ts#ai.parseExpense": "c8f5ae781196",
         "api/ai-router.ts#ai.parseVoiceExpense": "ae746de43d99",
         "api/ai-router.ts#ai.speechToText": "b2afa75738a4",
-        "api/ai-router.ts#rest-of-file": "cf866c97edc6",
+        "api/ai-router.ts#rest-of-file": "6289570aef0c",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
         "api/expense-router.ts#expense.answerClarification": "e0acbee5313e",
         "api/expense-router.ts#expense.batchCreate": "d6ac0705dcca",
@@ -291,9 +291,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-09-29 07af0b8",
-      "arabic": "3006ba668a71",
-      "arabicChecked": "2026-09-29 07af0b8"
+      "checked": "2026-09-29 8c98c99",
+      "arabic": "41e56769fe56",
+      "arabicChecked": "2026-09-29 8c98c99"
     },
     "insights": {
       "files": {
@@ -301,7 +301,7 @@
         "api/ai-router.ts#ai.generateMonthlyInsights": "f15026457bf9",
         "api/ai-router.ts#ai.generateYearlyInsights": "935b893e6244",
         "api/ai-router.ts#ai.getCachedMonthlyInsights": "95b28ed6f694",
-        "api/ai-router.ts#rest-of-file": "cf866c97edc6",
+        "api/ai-router.ts#rest-of-file": "6289570aef0c",
         "api/boot.ts#job:monthly-behavior-snapshots": "1a1a7ff4d857",
         "api/boot.ts#job:monthly-report-generation": "60a67c71d204",
         "api/export-router.ts#export.monthlyReportHtml": "335e0925b0ca",
@@ -325,7 +325,7 @@
         "api/services/user-profile-service.ts": "70cb6f7c802a",
         "src/components/insights/AIInsights.tsx": "4b618cdf3ad2"
       },
-      "checked": "2026-09-28 b0ba1ec",
+      "checked": "2026-09-29 8c98c99",
       "arabic": "1e9985060b32",
       "arabicChecked": "2026-09-25 25a20ff"
     },
