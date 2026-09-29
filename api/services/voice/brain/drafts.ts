@@ -29,6 +29,8 @@ export interface Draft<Payload = unknown> {
   status: DraftStatus;
   /** When the assistant first spoke after the draft was made: a spoken yes counts only after it. */
   presentedAt?: number;
+  /** When it was executed, cancelled, expired or failed. */
+  settledAt?: number;
   /** Written ids once executed, for "undo the last thing". */
   resultIds?: number[];
   message?: string;
@@ -220,8 +222,27 @@ export class DraftBook {
     const draft = this.get(id);
     if (!draft) return undefined;
     draft.status = status;
+    draft.settledAt = this.now();
     Object.assign(draft, patch);
     return draft;
+  }
+
+  /**
+   * Right after an expense write, before the user speaks again: the amounts it wrote, and the amounts of this call's
+   * drafts it replaced (a corrected "15" that became "50"), which the assistant must not say as written.
+   */
+  justWritten(withinMs = 30_000): { written: number[]; replaced: number[] } | null {
+    const last = this.latestExecuted("expenses");
+    const at = last?.settledAt;
+    if (!last || at === undefined || this.now() - at > withinMs) return null;
+    if (this.userWords.some((entry) => entry.at > at)) return null;
+    const amounts = (draft: Draft) => [...draft.lines.map((line) => line.amount ?? 0), draft.total ?? 0].filter((n) => n > 0);
+    const written = amounts(last);
+    const replaced = this.drafts
+      .filter((draft) => draft.kind === "expenses" && draft !== last && (draft.status === "cancelled" || draft.status === "expired"))
+      .flatMap(amounts)
+      .filter((amount) => !written.some((value) => Math.abs(value - amount) < 0.5));
+    return { written, replaced };
   }
 
   awaiting(): boolean {

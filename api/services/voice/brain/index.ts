@@ -7,7 +7,7 @@ import { randomBytes } from "crypto";
 import { getProfileSnapshot } from "../../finance-semantic-layer";
 import type { VoiceWaitDetail } from "../../../../contracts/voice-protocol";
 import type { CallBrain, CallIdentity, SpeechCheck } from "../gateway/call-session";
-import { DONE_CLAIM_NOTE, DoneClaimCheck, FAILURE_CLAIM_NOTE, FailureClaimCheck } from "./claims";
+import { DONE_CLAIM_NOTE, DoneClaimCheck, FAILURE_CLAIM_NOTE, FailureClaimCheck, WrittenAmountCheck } from "./claims";
 import { DraftBook } from "./drafts";
 import { FactLedger } from "./facts";
 import { buildCoachInstruction } from "./coach-instructions";
@@ -22,7 +22,8 @@ import { moneyQuery, moneyQueryCoach } from "./tools/money-query";
 import { cancelTool, changeDraftCoachTool, changeDraftTool, confirmTool, dropRuntimeAction, executeDraft, RECORDS_CHANGED_SAY, recordDraftTool } from "./tools/record";
 import { thinkTool } from "./tools/think";
 import type { ToolContext, VoiceAppCalls, VoiceTool } from "./tools/types";
-import { correctionNote, SpokenNumberValidator, type Mismatch } from "./validator";
+import { correctionNote, extractSpokenNumbers, SpokenNumberValidator, type Mismatch } from "./validator";
+import { spellAmount } from "./spoken";
 import { VOICE_CHOICES } from "./voices";
 
 export type { VoiceAppCalls } from "./tools/types";
@@ -67,6 +68,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
   const validator = new SpokenNumberValidator(ledger);
   const claims = new DoneClaimCheck();
   const failures = new FailureClaimCheck();
+  const writtenAmounts = new WrittenAmountCheck();
   const openClarifications: number[] = [];
   const toolMap = (list: VoiceTool[]) => new Map(list.map((tool) => [tool.declaration.name, tool]));
   let tools = toolMap(options.tools ?? VOICE_TOOLS);
@@ -170,8 +172,17 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       const waiting = drafts.latestPending();
       const claimed = claims.add(text, Boolean(waiting) && waiting!.kind !== "undo");
       const failure = failures.add(text);
+      const misstated = writtenAmounts.add(text, drafts.justWritten(), (words) =>
+        extractSpokenNumbers(words).filter((number) => number.money || number.value >= 10).map((number) => number.value));
       const numbers = check(validator.addAssistantWords(text));
       if (claimed) return { kind: "done_claim_before_confirm", note: DONE_CLAIM_NOTE, incident: { waitingDraft: true } };
+      if (misstated) {
+        return {
+          kind: "wrong_amount_after_write",
+          note: `(ملاحظة من التطبيق: اللي اتسجل ${spellAmount(misstated.written, { exact: true }).text} مش ${spellAmount(misstated.spoken, { exact: true }).text}. صحح بجملة قصيرة.)`,
+          incident: { spoken: misstated.spoken, written: misstated.written },
+        };
+      }
       if (failure) {
         return {
           kind: "failure_claim_without_tool",
@@ -185,6 +196,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     onTurnEnd() {
       claims.endTurn();
       failures.endTurn();
+      writtenAmounts.endTurn();
       return check(validator.endTurn());
     },
 

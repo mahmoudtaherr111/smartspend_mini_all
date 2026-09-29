@@ -269,6 +269,15 @@ describe("money_query", () => {
     expect((result.response.facts as unknown[])[1]).toMatchObject({ label: "العجز في الشهر (المصروف أكتر من الدخل المسجل)", value: 1_500 });
   });
 
+  it("breaks a named category down by its subcategories, not into itself", async () => {
+    const { getFinanceBreakdown } = await import("../../../finance-semantic-layer/resolvers");
+    vi.mocked(getFinanceBreakdown).mockClear();
+    await moneyQuery.run({ metric: "breakdown", category: "أكل" }, ctx);
+    expect(vi.mocked(getFinanceBreakdown).mock.calls[0][1]).toMatchObject({ category: "أكل", granularity: "sub_category" });
+    await moneyQuery.run({ metric: "breakdown" }, ctx);
+    expect(vi.mocked(getFinanceBreakdown).mock.calls[1][1]).toMatchObject({ granularity: "category" });
+  });
+
   it("names this month as the salary cycle when there is a payday, and as the month when there is none", async () => {
     expect((await moneyQuery.run({ metric: "total" }, ctx)).response).toMatchObject({ period: "الدورة دي (من يوم القبض)" });
     expect((await moneyQuery.run({ metric: "total" }, { ...ctx, salaryDay: async () => undefined })).response).toMatchObject({ period: "الشهر ده" });

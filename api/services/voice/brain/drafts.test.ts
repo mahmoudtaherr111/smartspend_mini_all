@@ -127,4 +127,19 @@ describe("DraftBook.gate", () => {
     expect(drafts.gate(draft.id, true)).toEqual({ ok: false, reason: "not_pending" });
     expect(drafts.summary()).toEqual({ done: ["اتسجل"], notDone: [] });
   });
+
+  it("knows, right after a write, what was written and which corrected amounts were replaced", () => {
+    const { drafts, advance } = book();
+    const fifteen = drafts.add({ ...expenseDraft, lines: [{ label: "عيش", amount: 15 }], total: 15 });
+    const fifty = drafts.add({ ...expenseDraft, lines: [{ label: "عيش", amount: 50 }], total: 50 });
+    expect(drafts.get(fifteen.id)?.status).toBe("cancelled");
+    drafts.gate(fifty.id, true);
+    drafts.settle(fifty.id, "executed", { resultIds: [1] });
+    expect(drafts.justWritten()).toEqual({ written: [50, 50], replaced: [15, 15] });
+    advance(1_000);
+    drafts.heardUser("طب تمام");
+    // The user spoke: the moment of saying what was written has passed.
+    expect(drafts.justWritten()).toBeNull();
+  });
 });
+

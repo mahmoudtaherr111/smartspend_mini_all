@@ -34,6 +34,32 @@ export class DoneClaimCheck {
   }
 }
 
+/**
+ * Catches the assistant saying a replaced amount as the one just written: the user corrected "خمستاشر" to "خمسين",
+ * fifty was saved, and the confirmation says "اتسجلت خمستاشر". The number check cannot, because the user did say
+ * fifteen; this knows which draft was written. Once a reply.
+ */
+export class WrittenAmountCheck {
+  private turnText = "";
+  private flagged = false;
+
+  add(chunk: string, recent: { written: number[]; replaced: number[] } | null, amountsIn: (text: string) => number[]): { spoken: number; written: number } | null {
+    this.turnText += chunk;
+    if (this.flagged || !recent || !recent.replaced.length) return null;
+    const spoken = amountsIn(this.turnText);
+    const wrong = spoken.find((value) => recent.replaced.some((amount) => Math.abs(amount - value) < 0.5)
+      && !recent.written.some((amount) => Math.abs(amount - value) < 0.5));
+    if (wrong === undefined) return null;
+    this.flagged = true;
+    return { spoken: wrong, written: recent.written[0] };
+  }
+
+  endTurn(): void {
+    this.turnText = "";
+    this.flagged = false;
+  }
+}
+
 /** "حصل عطل", "مشكلة في النظام", "مش قادر أوصل": the assistant saying something broke, without diacritics. */
 const FAILURE_CLAIM =
   /عطل|خطا في النظام|خطأ في النظام|مشكله في النظام|مشكلة في النظام|مشكله في السيستم|مشكلة في السيستم|مشكله تقنيه|مشكلة تقنية|مشكله فنيه|مشكلة فنية|خطا تقني|خطأ تقني|السيستم واقع|مش قادر اوصل|مش قادر أوصل|مش قادره اوصل|مش قادرة أوصل|مش قادرين نوصل/;

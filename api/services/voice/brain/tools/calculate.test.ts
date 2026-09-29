@@ -63,6 +63,13 @@ describe("calculate", () => {
       .toMatchObject({ ok: false, error: "unknown_fact" });
   });
 
+  it("takes a known fact typed as a number as that fact, and still refuses one nobody read", () => {
+    const { ctx } = context();
+    const { results } = runCalculation([{ name: "left", op: "sub", of: ["14000 EGP", "2800"] }], ctx);
+    expect(results[0]).toMatchObject({ value: 11_200, how: expect.stringContaining("دخل الدورة") });
+    expect(() => runCalculation([{ name: "x", op: "sub", of: ["14001 EGP", "2800"] }], ctx)).toThrow("unknown_amount");
+  });
+
   it("counts, months and percents: 20% of a month's income, and months to a goal", () => {
     const { ctx, refs, ledger } = context();
     ledger.noteUserValue(30_000);

@@ -130,14 +130,15 @@ function operand(raw: unknown, steps: Map<string, Operand>, ctx: ToolContext): O
   const unit: FactUnit = given ?? (value.abs().lte(31) && value.isInteger() ? "count" : "EGP");
   if (!LITERAL_UNITS.includes(unit)) throw new CalcError("bad_operand", `وحدة غير معروفة: ${literal[2]}.`);
   if (unit === "EGP") {
-    // An amount of money enters a sum only from the records (a fact) or from the user's own words.
-    if (!ctx.ledger.heardFromUser(value.toNumber())) {
-      throw new CalcError(
-        "unknown_amount",
-        `مبلغ ${value.toString()} مش من كلام المستخدم ولا من بياناته. هاته بـ money_query، أو اسأل المستخدم عنه.`,
-      );
-    }
-    return { value, unit, from: "من كلام المستخدم", stale: false };
+    // An amount of money enters a sum only from the records (a fact the call read or computed, typed as a number) or
+    // from the user's own words; any other amount is refused.
+    if (ctx.ledger.heardFromUser(value.toNumber())) return { value, unit, from: "من كلام المستخدم", stale: false };
+    const fact = ctx.ledger.all().find((known) => known.unit === "EGP" && Math.abs(known.value - value.toNumber()) < 0.005);
+    if (fact) return { value, unit, from: `${fact.label} (${fact.ref})`, stale: Boolean(fact.stale) };
+    throw new CalcError(
+      "unknown_amount",
+      `مبلغ ${value.toString()} مش من كلام المستخدم ولا من أي رقم قريته. استخدم ref الحقيقة (زي f12) من نتيجة الأداة، أو اسأل المستخدم عنه.`,
+    );
   }
   const limit = LITERAL_LIMITS[unit];
   if (limit !== undefined && value.abs().gt(limit)) throw new CalcError("bad_operand", `${value.toString()} ${unit} رقم كبير أوي.`);

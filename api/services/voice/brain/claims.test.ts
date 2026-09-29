@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { DoneClaimCheck, FailureClaimCheck } from "./claims";
+import { DoneClaimCheck, FailureClaimCheck, WrittenAmountCheck } from "./claims";
+import { extractSpokenNumbers } from "./validator";
 
 describe("DoneClaimCheck", () => {
   it("catches a waiting draft called recorded, once a reply", () => {
@@ -57,3 +58,17 @@ describe("DoneClaimCheck: what it leaves alone", () => {
     expect(check.add("آخر حاجة سجلتها كانت أكل", false)).toBe(false);
   });
 });
+
+describe("WrittenAmountCheck", () => {
+  const amounts = (text: string) => extractSpokenNumbers(text).map((number) => number.value);
+  it("catches a replaced amount said as the written one, and leaves the right one alone", () => {
+    const check = new WrittenAmountCheck();
+    const recent = { written: [50], replaced: [15] };
+    expect(check.add("تمام، اتسجلت ", recent, amounts)).toBeNull();
+    expect(check.add("خمستاشر جنيه عيش.", recent, amounts)).toEqual({ spoken: 15, written: 50 });
+    check.endTurn();
+    expect(check.add("تمام، اتسجلت خمسين جنيه عيش.", recent, amounts)).toBeNull();
+    expect(check.add("اتسجلت خمستاشر", null, amounts)).toBeNull();
+  });
+});
+

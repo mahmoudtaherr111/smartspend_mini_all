@@ -566,11 +566,22 @@ async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<
   }
 
   if (metric === "breakdown") {
-    const granularity = (["category", "day", "week", "month", "merchant"].includes(String(args.group_by))
-      ? String(args.group_by) : "category") as FinanceGranularity;
+    // Inside one category, "where did it go" is its subcategories: grouped by category it is one line of itself.
+    const asked = String(args.group_by);
+    const granularity = (["category", "sub_category", "day", "week", "month", "merchant"].includes(asked)
+      ? (asked === "category" && category ? "sub_category" : asked)
+      : category ? "sub_category" : "category") as FinanceGranularity;
     const breakdown = await getFinanceBreakdown(finance, { ...input, category, granularity, limit });
-    // Entries without a shop come back as "unknown", which the call would read out in English.
-    const items = breakdown.items.slice(0, limit).map((item) => ({ ...item, name: item.name === "unknown" ? "من غير اسم محل" : item.name }));
+    // Entries without a shop come back as "unknown", which the call would read out in English; a subcategory stored as a
+    // registry id is said by its Arabic name.
+    const items = breakdown.items.slice(0, limit).map((item) => ({
+      ...item,
+      name: item.name === "unknown"
+        ? "من غير اسم محل"
+        : granularity === "sub_category"
+          ? (item.name === "general" ? "عام" : subCategoryName(category, item.name) ?? item.name)
+          : item.name,
+    }));
     return outcome({
       title: "المصروف موزّع إزاي",
       facts: [
@@ -687,7 +698,7 @@ export const moneyQueryCoach: VoiceTool = {
         person: { type: "string", description: "A person's name" },
         search: { type: "string", description: "Merchant or word, e.g. طلبات" },
         type: { type: "string", enum: ["expense", "income"] },
-        group_by: { type: "string", enum: ["category", "day", "week", "month", "merchant"] },
+        group_by: { type: "string", enum: ["category", "sub_category", "day", "week", "month", "merchant"], description: "With a category, default sub_category" },
         limit: { type: "integer" },
         month: { type: "string", description: "YYYY-MM, for report" },
         season: { type: "string", enum: [...SEASONS] },
