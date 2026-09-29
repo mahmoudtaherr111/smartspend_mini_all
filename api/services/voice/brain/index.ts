@@ -7,7 +7,7 @@ import { randomBytes } from "crypto";
 import { getProfileSnapshot } from "../../finance-semantic-layer";
 import type { VoiceWaitDetail } from "../../../../contracts/voice-protocol";
 import type { CallBrain, CallIdentity, SpeechCheck } from "../gateway/call-session";
-import { DONE_CLAIM_NOTE, DoneClaimCheck } from "./claims";
+import { DONE_CLAIM_NOTE, DoneClaimCheck, FAILURE_CLAIM_NOTE, FailureClaimCheck } from "./claims";
 import { DraftBook } from "./drafts";
 import { FactLedger } from "./facts";
 import { buildCoachInstruction } from "./coach-instructions";
@@ -66,6 +66,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
   const drafts = new DraftBook(() => now().getTime());
   const validator = new SpokenNumberValidator(ledger);
   const claims = new DoneClaimCheck();
+  const failures = new FailureClaimCheck();
   const openClarifications: number[] = [];
   const toolMap = (list: VoiceTool[]) => new Map(list.map((tool) => [tool.declaration.name, tool]));
   let tools = toolMap(options.tools ?? VOICE_TOOLS);
@@ -135,11 +136,24 @@ export function createCallBrain(options: BrainOptions): CallBrain {
 
     async runTool(call, runContext) {
       const tool = tools.get(call.name);
-      if (!tool) return { response: { ok: false, error: "unknown_tool" } };
-      return tool.run(call.args, context(runContext.identity, runContext.signal));
+      if (!tool) {
+        failures.toolAnswered(false);
+        return { response: { ok: false, error: "unknown_tool" } };
+      }
+      // A tool the call stopped (its time ran out) failed as far as the user's request goes.
+      runContext.signal.addEventListener("abort", () => failures.toolAnswered(false), { once: true });
+      try {
+        const outcome = await tool.run(call.args, context(runContext.identity, runContext.signal));
+        if (!runContext.signal.aborted) failures.toolAnswered(outcome.response.ok !== false || !/^tool_|unavailable|failed/.test(String(outcome.response.error ?? "")));
+        return outcome;
+      } catch (error) {
+        failures.toolAnswered(false);
+        throw error;
+      }
     },
 
     onUserWords(text) {
+      failures.newRequest();
       drafts.heardUser(text);
       validator.noteUserWords(text);
     },
@@ -151,13 +165,22 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       // An undo draft talks about what was recorded before, so only new records and actions are checked.
       const waiting = drafts.latestPending();
       const claimed = claims.add(text, Boolean(waiting) && waiting!.kind !== "undo");
+      const failure = failures.add(text);
       const numbers = check(validator.addAssistantWords(text));
       if (claimed) return { kind: "done_claim_before_confirm", note: DONE_CLAIM_NOTE, incident: { waitingDraft: true } };
+      if (failure) {
+        return {
+          kind: "failure_claim_without_tool",
+          note: failure.retry ? FAILURE_CLAIM_NOTE : null,
+          incident: { toolsCalled: failure.toolsCalled, retried: failure.retry },
+        };
+      }
       return numbers;
     },
 
     onTurnEnd() {
       claims.endTurn();
+      failures.endTurn();
       return check(validator.endTurn());
     },
 
@@ -199,6 +222,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       openClarifications: [...openClarifications],
       noteTag,
       recordsSeen: records.seen,
+      failureRetries: failures.snapshot(),
     }),
 
     restore(state) {
@@ -208,12 +232,14 @@ export function createCallBrain(options: BrainOptions): CallBrain {
         openClarifications?: number[];
         noteTag?: string;
         recordsSeen?: number | null;
+        failureRetries?: { retries?: number };
       };
       ledger.restore(saved.ledger);
       drafts.restore(saved.drafts);
       openClarifications.splice(0, openClarifications.length, ...(saved.openClarifications ?? []));
       if (saved.noteTag) noteTag = saved.noteTag;
       records.seen = saved.recordsSeen ?? null;
+      failures.restore(saved.failureRetries);
     },
   };
 }

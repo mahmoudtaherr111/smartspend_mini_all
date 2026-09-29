@@ -473,12 +473,12 @@
         "api/services/entitlements/voice.ts": "bc6d6eaf4ad3",
         "api/services/voice/admin-stats.ts": "0c03b1f56b39",
         "api/services/voice/app-calls.ts": "f6576c997736",
-        "api/services/voice/brain/claims.ts": "436e35881bbd",
+        "api/services/voice/brain/claims.ts": "933568166b00",
         "api/services/voice/brain/coach-instructions.ts": "a09c0e53d132",
         "api/services/voice/brain/drafts.ts": "3121777f0ff3",
         "api/services/voice/brain/facts.ts": "f6947c52bdb4",
         "api/services/voice/brain/honorific.ts": "451551920217",
-        "api/services/voice/brain/index.ts": "a1beeab1777b",
+        "api/services/voice/brain/index.ts": "a12c5461915e",
         "api/services/voice/brain/instructions.ts": "b598e50e60a3",
         "api/services/voice/brain/never-kept.ts": "977be210350d",
         "api/services/voice/brain/profile-questions.ts": "14673f9bb35c",
@@ -522,9 +522,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-09-29 1a6f756",
-      "arabic": "c8d01fa268ca",
-      "arabicChecked": "2026-09-29 1a6f756"
+      "checked": "2026-09-29 7886d8d",
+      "arabic": "22b5d75f3f11",
+      "arabicChecked": "2026-09-29 7886d8d"
     },
     "web-app": {
       "files": {

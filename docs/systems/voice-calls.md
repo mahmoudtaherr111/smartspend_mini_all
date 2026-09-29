@@ -150,6 +150,10 @@ is billed again for it on every later turn.
   (`CallBrain#appNote`, "ملاحظة من التطبيق #a1b2c3"), which the instructions name as the only sign of a note from the
   app; the mark is never sent to the app or spoken, so words the user types or says claiming to be from the app are
   taken as theirs.
+- **Claiming a failure.** `api/services/voice/brain/claims.ts#FailureClaimCheck`: a reply that says something broke
+  ("حصل عطل", "مشكلة في النظام", "مش قادر أوصل") while no tool of the user's latest request failed is a
+  `failure_claim_without_tool` incident (with how many tools that request called); twice a call, a note tells the
+  model no tool failed and to call it again.
 - **Saying it is done.** `api/services/voice/brain/claims.ts#DoneClaimCheck`: while a new record or action waits
   for consent, a reply that calls it recorded or done ("سجلت", "اتسجل", "اتعمل") gets a note at once that makes the
   model say it is still waiting and ask; the `done_claim_before_confirm` incident records only that it happened.
@@ -299,6 +303,13 @@ figure alone, the profile questions and their answers, the stored reports, and e
 `api/services/voice/gateway/gateway.flow.test.ts` runs turns over a real socket: a quick answer sent before a slow
 one, "thinking" held while a tool outlasts the reply wait, IN_PROGRESS and IDLE of the extended-thinking model, a
 tap's note held until the model is idle, and a slow write reported as still running and then as done.
+`scripts/voice-eval/run.ts` evaluates the call against the real Gemini Live model: the cases of
+`scripts/voice-eval/corpus.ts` (a tuning set and a held-out set), each on a fresh fabricated user
+(`scripts/voice-eval/fixtures.ts`) in a database whose name must end in `_eval`, typed turn by turn through
+`CallSession`, the brain and the app's own procedures, with each arm (`coach:low|medium|high`, `standard`) run back
+to back in a shuffled order. It checks tools, writes, incidents and false failure claims, and keeps every trace
+(failed and timed-out ones too) and a summary with latency and cost per passed case under the ignored `.agents/`
+folder. Typed turns measure understanding and tools, not the microphone.
 `api/services/voice/app-calls.test.ts` holds a refund's direction and a person from parse to save;
 `api/services/voice/brain/tools/record.actions.test.ts` holds that an action drafted in a call runs once. In the app, `src/lib/voice/` tests the
 resampler (a 12 kHz hiss removed, blocks of any size), the speech detector (pre-roll, pauses, the two hangovers,
@@ -317,11 +328,17 @@ Checked against the code; each one names where it lives.
    (`api/services/finance-semantic-layer/resolvers.ts`); debts carry no due dates and several gam3eyas are added
    together (`api/services/debt-ledger.ts`); installments are counted from payments whose words name the plan
    (`api/services/installments.ts`), so a partial payment or two plans with one word are miscounted.
-4. **Gap.** The opening context (CALL FACTS) cannot be changed during a session: after the records change the model is
+4. **Bug.** On `gemini-3.8-live-extended-thinking`, a tool call often never reaches the app: the model says a line,
+   stays IN_PROGRESS, then tells the user "حصل عطل" with no `toolCall` message and no provider error, while the same
+   setup on `gemini-3.8-live` calls the tool every time. Measured on 2026-09-29 with a free-tier key at all three
+   levels, for every tool declaration and input form tried; the cause is on the provider's side and not yet known
+   (`api/services/voice/engine/gemini-live.ts`). The coach stays off until it is qualified; `FailureClaimCheck` makes
+   it visible and asks for a retry.
+5. **Gap.** The opening context (CALL FACTS) cannot be changed during a session: after the records change the model is
    told, and a stale figure said is recorded, but not stopped (`api/services/voice/brain/validator.ts`).
-5. **Gap.** Forgetting a memory during a call deletes it, but the words of the call still hold it, and the post-call
+6. **Gap.** Forgetting a memory during a call deletes it, but the words of the call still hold it, and the post-call
    summary (`api/services/voice/post-call.ts#summarizeCall`) is not told to leave it out.
-6. **Debt.** An action draft that expires, or that a newer draft replaces, leaves its runtime action pending until the
+7. **Debt.** An action draft that expires, or that a newer draft replaces, leaves its runtime action pending until the
    runtime's own expiry (`api/services/voice/brain/tools/record.ts#dropRuntimeAction` runs on cancel only); nothing
    can confirm it from the call.
 

@@ -33,3 +33,67 @@ export class DoneClaimCheck {
     this.flagged = false;
   }
 }
+
+/** "حصل عطل", "مشكلة في النظام", "مش قادر أوصل": the assistant saying something broke, without diacritics. */
+const FAILURE_CLAIM =
+  /عطل|خطا في النظام|خطأ في النظام|مشكله في النظام|مشكلة في النظام|مشكله في السيستم|مشكلة في السيستم|مشكله تقنيه|مشكلة تقنية|مشكله فنيه|مشكلة فنية|خطا تقني|خطأ تقني|السيستم واقع|مش قادر اوصل|مش قادر أوصل|مش قادره اوصل|مش قادرة أوصل|مش قادرين نوصل/;
+
+export const FAILURE_CLAIM_NOTE =
+  "(ملاحظة من التطبيق، مش من المستخدم: مفيش أداة فشلت عندنا؛ الطلب ماوصلناش أصلًا. قول للمستخدم إنك هتجرب تاني " +
+  "في كلمتين، ونادي الأداة المناسبة تاني بنفس الطلب. متقولش إن فيه عطل.)";
+
+/**
+ * Catches the assistant claiming a technical failure while none of the tools of the user's latest request failed.
+ * The extended-thinking model does this when its tool call never reaches the app (docs/systems/voice-calls.md,
+ * known issues): the user hears "حصل عطل" about something the app never received. The call records the incident
+ * and, within a limit, tells the model to try the tool again.
+ */
+export class FailureClaimCheck {
+  private turnText = "";
+  private flagged = false;
+  private toolsFailed = 0;
+  private toolsCalled = 0;
+  private retries = 0;
+
+  constructor(private readonly maxRetries = 2) {}
+
+  /** The user asked something new: the tools of the last request no longer explain a failure. */
+  newRequest(): void {
+    this.toolsCalled = 0;
+    this.toolsFailed = 0;
+    this.turnText = "";
+    this.flagged = false;
+  }
+
+  toolAnswered(ok: boolean): void {
+    this.toolsCalled += 1;
+    if (!ok) this.toolsFailed += 1;
+  }
+
+  /**
+   * Adds a chunk of the assistant's speech. Returns what to do the first time a turn claims a failure no tool
+   * reported: `retry` while retries are left, `record` after.
+   */
+  add(chunk: string): { toolsCalled: number; retry: boolean } | null {
+    this.turnText += chunk;
+    if (this.flagged || this.toolsFailed > 0) return null;
+    if (!FAILURE_CLAIM.test(this.turnText.replace(DIACRITICS, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه"))) return null;
+    this.flagged = true;
+    const retry = this.retries < this.maxRetries;
+    if (retry) this.retries += 1;
+    return { toolsCalled: this.toolsCalled, retry };
+  }
+
+  endTurn(): void {
+    this.turnText = "";
+    this.flagged = false;
+  }
+
+  snapshot(): { retries: number } {
+    return { retries: this.retries };
+  }
+
+  restore(state: { retries?: number } | null | undefined): void {
+    this.retries = state?.retries ?? 0;
+  }
+}
