@@ -7,6 +7,7 @@ import { defineConfig, loadEnv } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { compression, defineAlgorithm } from "vite-plugin-compression2";
 import { createOriginPolicy } from "./api/lib/origin-policy";
+import { voiceDevServer } from "./scripts/vite-voice";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -20,7 +21,10 @@ export default defineConfig(({ mode }) => {
     plugins: [
       // Only mount the Hono dev-server in monorepo (full-stack) mode
       ...(!isFrontendOnly
-        ? [devServer({ entry: "api/boot.ts", exclude: [/^\/(?!api\/).*/] })]
+        ? [
+            devServer({ entry: "api/boot.ts", exclude: [/^\/(?!api\/).*/] }),
+            voiceDevServer(originPolicy.isAllowedWebSocketOrigin),
+          ]
         : []),
       react(),
       compression({

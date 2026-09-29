@@ -147,7 +147,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/voice-calls.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>51 files and declarations</summary>
+<details><summary>52 files and declarations</summary>
 
 - `api/boot.ts#job:voice-call-memory`
 - `api/boot.ts#ws:/api/voice/v2`
@@ -187,6 +187,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/voice/post-call.ts`
 - `api/services/voice/text-model.ts`
 - `api/voice-router.ts`
+- `scripts/vite-voice.ts`
 - `src/components/voice/CallSmartButton.tsx`
 - `src/components/voice/VoiceCallCards.tsx`
 - `src/components/voice/VoiceCallHost.tsx`

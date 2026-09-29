@@ -499,6 +499,7 @@
         "api/services/voice/post-call.ts": "80600c7c478a",
         "api/services/voice/text-model.ts": "b848ded851d7",
         "api/voice-router.ts": "ad6a15d8a254",
+        "scripts/vite-voice.ts": "661d231ec37f",
         "src/components/voice/CallSmartButton.tsx": "9c46b8a2f532",
         "src/components/voice/VoiceCallCards.tsx": "db71021d3e90",
         "src/components/voice/VoiceCallHost.tsx": "cf3cb04e9da2",
@@ -513,9 +514,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-09-25 25a20ff",
-      "arabic": "506b3c1b0c6e",
-      "arabicChecked": "2026-09-25 25a20ff"
+      "checked": "2026-09-29 8771898",
+      "arabic": "e1eafe316d4e",
+      "arabicChecked": "2026-09-29 8771898"
     },
     "web-app": {
       "files": {

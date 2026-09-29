@@ -263,6 +263,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `db/schema.ts` | [platform](platform.md) |
 | `db/seed.ts` | [platform](platform.md) |
 | `db/table-classes.ts` | [platform](platform.md) |
+| `scripts/vite-voice.ts` | [voice-calls](voice-calls.md) |
 | `src/App.tsx` | [web-app](web-app.md) |
 | `src/components/NotificationBell.tsx` | [web-app](web-app.md) |
 | `src/components/OnboardingCard.tsx` | [web-app](web-app.md) |

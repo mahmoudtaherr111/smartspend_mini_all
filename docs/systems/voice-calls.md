@@ -36,6 +36,11 @@ first call wrote that month, never dictation seconds.
 2. The app opens `/api/voice/v2` (`createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, called from
    the `upgrade` listeners of `api/boot.ts` and `api/server.ts`; allowed origins only, 64 KB frames) and sends
    `hello` with the ticket (`contracts/voice-protocol.ts`). The session token never travels in the URL.
+   In full-stack development, `vite.config.ts` installs `scripts/vite-voice.ts#voiceDevServer` on Vite's HTTP
+   server: Hono's development plugin handles HTTP requests only. The voice plugin loads the gateway, app-call
+   adapter and router through Vite's SSR module graph, sharing the ticket store with `voice.startCall`. It keeps
+   the same origin and exact-path checks, leaves Vite's HMR socket alone, and returns HTTP 503 if the modules
+   cannot load. Frontend-only mode uses the existing WebSocket proxy to the standalone API instead.
 3. `api/services/voice/gateway/call-session.ts#CallSession` builds the call's brain
    (`api/services/voice/brain/index.ts#createCallBrain`): the snapshot (`api/services/voice/brain/snapshot.ts`: the Cairo day, name and a
    title from the profession (`api/services/voice/brain/honorific.ts`), today's and the salary cycle's spending, days to payday, the last
@@ -238,6 +243,9 @@ Monthly minutes, seconds per call and whether a plan may call at all are in the 
 5. Session state belongs in Redis; the memory fallback exists for development and single-process setups.
 
 ## Tests
+`tests/vite-voice.test.ts` starts a real Vite server and checks voice upgrades on its port, SSR routing, origin and
+path rejection, coexistence with HMR, and an HTTP failure when the gateway cannot load.
+
 `api/services/voice/post-call.test.ts` (the rules on what is kept, a summary written and its
 words deleted, a call another server took, words already gone, a call with almost nothing said, retries); `api/services/voice/gateway/gateway.test.ts` runs whole calls over a real socket against
 `tests/helpers/fake-gemini-live.ts` (a ticket, a tool call, captions, the end card, a ticket used twice, a dropped
