@@ -27,6 +27,16 @@ CREATE UNIQUE INDEX `sessions_token_hash_idx` ON `sessions` (`token_hash`);
 --> statement-breakpoint
 
 -- 2. Alter expenses: Add covering rollup composite index (§3.3)
+--    No earlier migration adds expenses.business_id (databases made with drizzle-kit push have it), so a
+--    database built from the migrations stopped here. Added only where it is missing.
+SET @ss_0021 = IF((SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'expenses' AND column_name = 'business_id') = 0, 'ALTER TABLE `expenses` ADD `business_id` int', 'SELECT 1');
+--> statement-breakpoint
+PREPARE ss_0021 FROM @ss_0021;
+--> statement-breakpoint
+EXECUTE ss_0021;
+--> statement-breakpoint
+DEALLOCATE PREPARE ss_0021;
+--> statement-breakpoint
 CREATE INDEX `expenses_covering_rollup_idx` ON `expenses` (
   `user_id`,
   `user_type`,

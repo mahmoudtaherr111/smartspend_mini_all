@@ -87,7 +87,7 @@ conflicting, and pre-push refuses a push while a rule is broken. Claude Code and
 | Files, exports and dependencies nothing reaches | `npm run knip` (`knip:all` for exports and types too) |
 | The pages as a searchable site for people who do not read code | `npm --prefix docs-site run build` |
 | Architecture map / validation | `npm run arch` / `npm run arch:validate` |
-| Schema change | `npm run db:generate`, review, `npm run db:migrate` (`db:push` only on a throwaway local database) |
+| Schema change | `npm run db:generate`, review, `npm run db:migrate` (`db:push` only on a throwaway local database); `npm run db:doctor` compares a database with the schema |
 | Production build and start (the Docker image runs `dist/boot.js`) | `npm run build`, `npm start` |
 
 Lint errors that predate the lint rules are frozen in `eslint-suppressions.json`: a new violation fails

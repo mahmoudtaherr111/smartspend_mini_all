@@ -168,6 +168,14 @@ jobs:
         run: npx drizzle-kit push --force
       - run: npm run test:db
       - run: npm run test:redis
+      # The migrations must build what db/schema.ts declares, or `npm run db:migrate` leaves production short of it.
+      - name: Build a second database from the migrations and compare it with the schema
+        env:
+          DATABASE_URL: "mysql://root:test@127.0.0.1:3306/smartspend_migrations"
+        run: |
+          node -e "require('mysql2/promise').createConnection('mysql://root:test@127.0.0.1:3306').then(async (c) => { await c.query('CREATE DATABASE smartspend_migrations'); await c.end(); })"
+          npx drizzle-kit migrate
+          npm run db:doctor -- --strict
 
   build:
     name: Production build and build-output checks

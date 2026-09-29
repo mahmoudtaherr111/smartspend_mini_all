@@ -54,6 +54,14 @@ storage, the contracts shared with the web app, and the retention job that prune
   `hideQueryValuesFromConsole()`, so `console.*` prints such an error without them, as the logger does. The
   error object itself is untouched — code that recognises a duplicate by its message still does — so text built
   from `error.message` keeps the values.
+- The migrations in `db/migrations` build what `db/schema.ts` declares. They did not until
+  `0027_reconcile_schema.sql`: a database built from them stopped at 0021 and lacked the business tables, several
+  columns and unique indexes, and the session columns the sign-in code writes. 0027 checks `information_schema`
+  before each change, so it changes nothing on a database that already matches (one made with `drizzle-kit push`).
+  `scripts/db-doctor.ts` (`npm run db:doctor`) compares a live database with the schema (tables, column types and
+  NULL, indexes) and with the migration journal, and says what to run; `-- --baseline` records every migration as
+  applied on a database that matches the schema but has no journal. CI builds a second database from the
+  migrations and fails when the doctor finds any difference.
 - There are no foreign keys (golden rule 4). `db/relations.ts` describes the relations for Drizzle's query
   API, and integrity lives in application code. Every table has a storage class in `db/table-classes.ts`,
   from A (identity and configuration) to G (conversations), and `tests/table-classes.test.ts` fails when a new
@@ -89,7 +97,7 @@ rollup reconciliation (04:00), data retention (05:00), subscription expiry (06:0
 | A configuration value | `api/lib/env.ts` (golden rule 8) | `tests/knowledge/architecture.test.ts` |
 | Who may call a procedure, or its rate limit | `api/middleware.ts` | `tests/knowledge/architecture.test.ts` |
 | A new router | the file plus `api/router.ts` | `tests/knowledge/architecture.test.ts` |
-| A table | `db/schema.ts`, `db/relations.ts`, `db/table-classes.ts`, then `npm run db:generate` | `tests/table-classes.test.ts` |
+| A table | `db/schema.ts`, `db/relations.ts`, `db/table-classes.ts`, then `npm run db:generate` | `tests/table-classes.test.ts`, `npm run db:doctor` on a database built with `npm run db:migrate` |
 | A scheduled job | `api/boot.ts` with `scheduleProtectedJob` | `tests/knowledge/architecture.test.ts` |
 | How long telemetry is kept | `RETENTION_POLICIES` in `api/jobs/data-retention-job.ts` | `tests/data-retention-job.test.ts` |
 | Where files are stored | `api/services/storage/` | `tests/storage-driver.test.ts` |
@@ -126,20 +134,14 @@ Checked against the code; each one names where it lives.
 5. **Bug.** `user_analytics` is pruned after thirty days, which also drops the upgrade events the founder metrics count
    and the AI cost events the cost overview reads ([admin](admin.md)).
 6. **Debt.** `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
-7. **Bug.** Migrations do not create everything `db/schema.ts` declares. `0021_storage_lifecycle_overhaul.sql` was
-   written by hand without a snapshot; `db/migrations/meta/0022_snapshot.json` records 0021's tables but not what no
-   migration applies: the unique index `pro_sub_transaction_unique_idx` on `pro_subscriptions.transaction_id` and
-   the `sessions` changes (`token` nullable without `sessions_token_idx`, `token_hash` as `varchar(64)`, where 0021
-   made it `binary(32)`). The next `npm run db:generate` emits them; until a migration does, a database built from
-   migrations has no unique index on the Paymob transaction id.
-8. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
+7. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
    update can silently turn into zeroes.
-9. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
+8. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
    entry and `NODE_ENV=production`; `api/server.ts` repeats the server setup for the standalone deployment. Both
    route the voice socket (`/api/voice/v2`) through the one
    `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their
    `upgrade` listeners pass on have to be kept in step by hand.
-10. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
+9. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
    they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that
    print `error.message` as text print provider, socket and storage errors today, or failed reads whose values
    are ids and dates (`api/ai-router.ts`,

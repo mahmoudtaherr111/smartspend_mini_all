@@ -9,6 +9,7 @@ and `.github/workflows/ci.yml`.
 | Unit and component tests | `npm run test` | nothing: `vitest.config.ts` injects dummy environment values | `unit-tests` |
 | Database integration | `npm run test:db` | a MySQL database with the current schema in `DATABASE_URL` | `integration-tests` |
 | Redis integration | `npm run test:redis` | a Redis server in `REDIS_URL` | `integration-tests` |
+| The migrations build the schema | `npx drizzle-kit migrate` on an empty database, then `npm run db:doctor -- --strict` | an empty MySQL database in `DATABASE_URL` | `integration-tests` |
 | Build output, and both server bundles start and answer /health | `npm run test:build` | `npm run build` and `npm run backend:build` first | `build` |
 | Knowledge rules | `npx vitest run tests/knowledge` | nothing | `knowledge` |
 | End to end | `npm run test:e2e` | Playwright, configured in `playwright.config.ts` | `e2e-tests` |
@@ -37,4 +38,6 @@ npx drizzle-kit push --force
 npm run test:db
 ```
 
-CI creates the schema the same way, against the MySQL and Redis services of the `integration-tests` job.
+CI creates the schema the same way, against the MySQL and Redis services of the `integration-tests` job. It then
+builds a second database, `smartspend_migrations`, from `db/migrations` and runs `npm run db:doctor -- --strict`,
+which fails when that database differs from `db/schema.ts` in a table, a column's type or NULL, or an index.

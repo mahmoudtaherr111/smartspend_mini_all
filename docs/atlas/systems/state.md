@@ -4,7 +4,7 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (39 of 104 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (38 of 103 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
@@ -21,7 +21,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (39 of
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-29 a380e03 | 2026-09-25 e6b668b | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-25 44c928b | 2026-09-25 44c928b | 4 | — | 3 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-29 8c98c99 | 2026-09-28 b0ba1ec | 8 | — | 1 | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-29 a380e03 | 2026-09-29 a380e03 | 5 | — | 2 | — | 8 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-29 674a6bc | 2026-09-29 674a6bc | 5 | — | 1 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-29 a380e03 | 2026-09-29 a380e03 | 7 | **1** | 1 | 3 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (39 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (104 issue(s))
+## What is waiting (103 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -48,7 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (34)
+### Bugs (33)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A receipt's amount on the review card is the first item the pipeline read from the OCR text, which can differ from the total the vision model returned, and a base64 image longer than the parser's cap is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the procedure accepts larger payloads.
@@ -101,7 +101,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
 - `user_analytics` is pruned after thirty days, which also drops the upgrade events the founder metrics count and the AI cost events the cost overview reads ([admin](admin.md)).
-- Migrations do not create everything `db/schema.ts` declares. `0021_storage_lifecycle_overhaul.sql` was written by hand without a snapshot; `db/migrations/meta/0022_snapshot.json` records 0021's tables but not what no migration applies: the unique index `pro_sub_transaction_unique_idx` on `pro_subscriptions.transaction_id` and the `sessions` changes (`token` nullable without `sessions_token_idx`, `token_hash` as `varchar(64)`, where 0021 made it `binary(32)`). The next `npm run db:generate` emits them; until a migration does, a database built from migrations has no unique index on the Paymob transaction id.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).

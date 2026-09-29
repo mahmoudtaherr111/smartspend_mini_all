@@ -19,6 +19,9 @@ the pool and data retention.
 4. If it holds user data, delete its rows in `api/services/user-purge-service.ts`. (checked by
    `tests/knowledge/architecture.test.ts` for tables with `user_id` and `user_type`)
 5. Run `npm run db:generate`, read the generated SQL, run `npm run db:migrate`, then `npm run atlas`.
+   A migration written by hand checks `information_schema` before each change, as `0027_reconcile_schema.sql` does,
+   and keeps the snapshot equal to the schema. `npm run db:doctor` shows what a database lacks; CI builds one
+   from the migrations and fails on any difference from `schema.ts`.
 
 ## Values
 - Money is `decimal`. Never store an amount as a float.

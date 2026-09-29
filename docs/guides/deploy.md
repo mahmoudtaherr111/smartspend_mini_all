@@ -40,6 +40,17 @@ The schema is `db/schema.ts`. `npm run db:generate` writes SQL migrations to `db
 `drizzle.config.ts`); review them, then `npm run db:migrate` applies them to `DATABASE_URL`. Run migrations from a checkout
 or a CI job before starting a new version. `npm run db:push` is only for a throwaway local database.
 
+`npm run db:doctor` reads the database in `DATABASE_URL` and prints how it differs from `db/schema.ts` and which
+migrations it has recorded; it changes nothing. Run it before the first `npm run db:migrate` on an existing database:
+
+- Migrations pending: `npm run db:migrate` applies them.
+- No journal (the database was made with `drizzle-kit push` or by hand): `npm run db:migrate` would start from the
+  first migration and fail on a table that exists. When the schema matches, `npm run db:doctor -- --baseline` records
+  every migration as applied; after that, `npm run db:migrate` works as usual. When it does not match, the doctor
+  lists the differences; bring them in line first.
+- `0027_reconcile_schema.sql` fails only if `pro_subscriptions.transaction_id` or `users.email` holds duplicate
+  values, which its unique indexes refuse.
+
 ## Environment
 The server validates its environment at boot in `api/lib/env.ts` and exits when a required variable is missing. The
 current list, with defaults and the files that read each variable, is in [env](../atlas/env.md); `.env.example` is the

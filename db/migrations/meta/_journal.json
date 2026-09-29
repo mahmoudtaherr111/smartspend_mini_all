@@ -190,6 +190,13 @@
       "when": 1790636877056,
       "tag": "0026_installment_plans",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1790653900000,
+      "tag": "0027_reconcile_schema",
+      "breakpoints": true
     }
   ]
 }

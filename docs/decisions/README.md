@@ -21,3 +21,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0011](0011-embeddings-memory-not-classification.md) | Gemini embeddings serve memory search, not expense classification |
 | [0012](0012-classification-without-embeddings.md) | Expense classification has no semantic (embedding) layer |
 | [0013](0013-caching-as-one-system.md) | A cache is correct by its key, not by being cleared; one inventory of every cache |
+| [0014](0014-migrations-build-the-schema.md) | The migrations build the schema: a guarded reconcile migration, `db:doctor`, and a CI check |

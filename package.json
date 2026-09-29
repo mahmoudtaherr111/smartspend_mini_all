@@ -47,6 +47,7 @@
     "qa:ai-center:full": "npm run qa:ai-center",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:doctor": "tsx scripts/db-doctor.ts",
     "db:push": "drizzle-kit push",
     "db:report": "tsx scripts/db-report.ts",
     "backend:dev": "tsx watch api/server.ts",
