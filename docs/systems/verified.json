@@ -474,7 +474,7 @@
         "api/services/voice/admin-stats.ts": "ec7f27875803",
         "api/services/voice/app-calls.ts": "a1a02571c8ca",
         "api/services/voice/brain/claims.ts": "436e35881bbd",
-        "api/services/voice/brain/drafts.ts": "3de24a330e11",
+        "api/services/voice/brain/drafts.ts": "3121777f0ff3",
         "api/services/voice/brain/facts.ts": "2210c496a231",
         "api/services/voice/brain/honorific.ts": "451551920217",
         "api/services/voice/brain/index.ts": "91570889da1d",
@@ -520,9 +520,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-09-29 68f5765",
+      "checked": "2026-09-29 c3a7c6f",
       "arabic": "3f6b13ba764d",
-      "arabicChecked": "2026-09-29 68f5765"
+      "arabicChecked": "2026-09-29 c3a7c6f"
     },
     "web-app": {
       "files": {
