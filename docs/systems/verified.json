@@ -340,7 +340,7 @@
         "api/expense-router.ts#expense.deleteInstallmentPlan": "fc7d83b8ccfe",
         "api/expense-router.ts#expense.getById": "883d7c8c2233",
         "api/expense-router.ts#expense.getDebtBalances": "821a765233cc",
-        "api/expense-router.ts#expense.getMonthSummary": "57385a63157f",
+        "api/expense-router.ts#expense.getMonthSummary": "c551ab93ba40",
         "api/expense-router.ts#expense.getMonthlyStats": "52294b1f8805",
         "api/expense-router.ts#expense.getSeasonSpending": "987735f845cc",
         "api/expense-router.ts#expense.getYearlyStats": "5267d3d55014",
@@ -387,11 +387,11 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/components/installments/InstallmentsPanel.tsx": "2d6c331165ea",
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
-        "src/pages/Home.tsx": "c12e54cbde73"
+        "src/pages/Home.tsx": "fe674b3c4b88"
       },
-      "checked": "2026-09-29 07af0b8",
-      "arabic": "eceb4096c937",
-      "arabicChecked": "2026-09-29 07af0b8"
+      "checked": "2026-09-29 eba02e1",
+      "arabic": "b1a6874101f9",
+      "arabicChecked": "2026-09-29 eba02e1"
     },
     "notifications": {
       "files": {
@@ -633,7 +633,7 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-09-28 af819ef",
+      "checked": "2026-09-29 eba02e1",
       "arabic": "a52cdf8592bc",
       "arabicChecked": "2026-09-28 af819ef"
     }

@@ -76,7 +76,7 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   on with a salary day, the summary and statistics use the salary cycle from `getFinancialMonthDayRange`; the calendar
   always uses the calendar month.
 - **Summary cards** (`expense.getMonthSummary`): income, spending, transfers, investments, net flow and count of the
-  personal rollups in the period, cached for a day per cache generation.
+  period's rollups, personal or, in business mode, the active business's, cached for a day per cache generation.
 - **Statistics** (`expense.getMonthlyStats`, cached the same way, for personal items or the active business):
   - totals and automated totals from the rollups, and the previous period's totals;
   - category and subcategory breakdowns from the confirmed items, with their change from the previous period, and
@@ -217,16 +217,15 @@ Checked against the code; each one names where it lives.
    the user to make a budget. A user with only category budgets sees the income comparison there.
 4. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
    snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
-5. **Bug.** In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
-6. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
+5. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
    (`src/components/goals/FinancialGoalsPanel.tsx`).
-7. **Bug.** The calendar's day list sends local times without a time zone, which the server reads in its own zone.
-8. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger);
+6. **Bug.** The calendar's day list sends local times without a time zone, which the server reads in its own zone.
+7. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger);
     `business.get` returns the user's first business even when it is inactive.
-9. **Bug.** Wallet balances are stored as whatever text the client sends.
-10. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
+8. **Bug.** Wallet balances are stored as whatever text the client sends.
+9. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
     as spending, every source except voice as manual, and dates by UTC day.
-11. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
+10. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
     (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming
     credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative
     spending in a month when the purchase fell in an earlier one.

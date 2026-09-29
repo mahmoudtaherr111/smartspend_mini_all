@@ -154,8 +154,8 @@ export default function Home() {
     const prevMonth = getPreviousMonthString(month);
     const nextMonth = getNextMonthString(month);
 
-    utils.expense.getMonthSummary.prefetch({ month: prevMonth, salaryDay });
-    utils.expense.getMonthSummary.prefetch({ month: nextMonth, salaryDay });
+    utils.expense.getMonthSummary.prefetch({ month: prevMonth, salaryDay, businessId: activeBusinessId ?? null });
+    utils.expense.getMonthSummary.prefetch({ month: nextMonth, salaryDay, businessId: activeBusinessId ?? null });
 
     if (activeTab === "stats") {
       utils.expense.getMonthlyStats.prefetch({ month: prevMonth, salaryDay });
@@ -170,13 +170,13 @@ export default function Home() {
         salaryDay: null,
       });
     }
-  }, [month, salaryDay, activeTab, utils]);
+  }, [month, salaryDay, activeTab, utils, activeBusinessId]);
 
   const isPastMonth = month < currentMonthValue();
   const statsStaleTime = isPastMonth ? 60 * 60 * 1000 : 60_000;
 
   const { data: summary } = trpc.expense.getMonthSummary.useQuery(
-    { month, salaryDay } as any,
+    { month, salaryDay, businessId: activeBusinessId ?? null } as any,
     { staleTime: statsStaleTime },
   );
 

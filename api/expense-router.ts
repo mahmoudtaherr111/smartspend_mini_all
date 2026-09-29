@@ -1616,16 +1616,20 @@ export const expenseRouter = router({
       z.object({
         month: z.string().regex(/^\d{4}-\d{2}$/),
         salaryDay: z.number().min(1).max(31).optional().nullable(),
+        /** The business in business mode; personal totals (rollup business 0) without it. */
+        businessId: z.number().int().positive().nullable().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
-      
+      // Rollups are read for this user only, so another user's business id finds nothing.
+      const rollupBusiness = input.businessId ?? 0;
+
       const genRaw = await cacheGet(CacheKeys.cacheGen(userType, userId));
       const gen = genRaw ? parseInt(genRaw, 10) : 0;
-      const cacheKey = `v2:summary:g${gen}:${userId}:${userType}:${input.month}:${input.salaryDay || 0}`;
+      const cacheKey = `v2:summary:g${gen}:${userId}:${userType}:${input.month}:${input.salaryDay || 0}:b${rollupBusiness}`;
 
       return withCache(cacheKey, 60 * 60 * 24, async () => {
         const { getFinancialMonthDayRange } =
@@ -1648,7 +1652,7 @@ export const expenseRouter = router({
             and(
               eq(expenseDailyRollups.userId, userId),
               eq(expenseDailyRollups.userType, userType),
-              eq(expenseDailyRollups.businessId, 0),
+              eq(expenseDailyRollups.businessId, rollupBusiness),
               gte(expenseDailyRollups.day, period.startDay),
               lte(expenseDailyRollups.day, period.endDay),
             ),
