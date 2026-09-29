@@ -102,6 +102,7 @@ export function createVoiceSocketHandler(deps: VoiceSocketDeps) {
         model: payload.model,
         voiceName: payload.voiceName,
         thinkingLevel: payload.thinkingLevel,
+        coach: payload.coach === true,
         maxSeconds: payload.maxSeconds,
         costBudgetUsd: payload.costBudgetUsd,
         client: payload.client,

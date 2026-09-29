@@ -22,6 +22,8 @@ export interface TicketPayload {
   model: string;
   voiceName: string;
   thinkingLevel: VoiceEntitlements["thinkingLevel"];
+  /** The coach call's instructions and tools (api/services/voice/brain). */
+  coach: boolean;
   maxSeconds: number;
   costBudgetUsd: number | null;
   client: VoiceClientPlatform;
@@ -80,6 +82,7 @@ export async function startVoiceCall(
     model,
     voiceName,
     thinkingLevel: entitlements.thinkingLevel,
+    coach: entitlements.coach,
     maxSeconds: entitlements.allowedCallSeconds,
     costBudgetUsd: entitlements.dailyCostCapUsd > 0
       ? Math.max(0, entitlements.dailyCostCapUsd - entitlements.spentTodayUsd)

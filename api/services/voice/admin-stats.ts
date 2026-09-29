@@ -79,6 +79,16 @@ function firstAudio(metrics: unknown): { p50: number | null; p95: number | null 
   return { p50: num(value?.p50), p95: num(value?.p95) };
 }
 
+function profileOf(metrics: unknown): string | null {
+  const value = (metrics as { profile?: unknown } | null)?.profile;
+  return value === "coach" ? "coach" : null;
+}
+
+function levelOf(metrics: unknown): string | null {
+  const value = (metrics as { thinkingLevel?: unknown } | null)?.thinkingLevel;
+  return typeof value === "string" && value ? value : null;
+}
+
 function toolCost(metrics: unknown): number {
   const value = (metrics as { toolCostUsd?: unknown } | null)?.toolCostUsd;
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
@@ -92,11 +102,13 @@ export function summarizeVoiceCalls(days: number, rows: VoiceCallStatRow[], inci
   const audio = rows.map((row) => firstAudio(row.metrics));
   const models = new Map<string, { count: number; seconds: number; cost: number }>();
   for (const row of rows) {
-    const entry = models.get(row.model) ?? { count: 0, seconds: 0, cost: 0 };
+    // The coach and the standard call on one model are different calls; so are two thinking levels.
+    const key = [row.model, profileOf(row.metrics), levelOf(row.metrics)].filter(Boolean).join(" · ");
+    const entry = models.get(key) ?? { count: 0, seconds: 0, cost: 0 };
     entry.count += 1;
     entry.seconds += row.billedSeconds;
     entry.cost += Number(row.costUsd || 0);
-    models.set(row.model, entry);
+    models.set(key, entry);
   }
   const minutes = seconds / 60;
   return {

@@ -47,6 +47,8 @@ export interface CallOptions {
   model: string;
   voiceName: string;
   thinkingLevel: ThinkingLevel;
+  /** The coach call; absent in calls stored before it existed, which are standard calls. */
+  coach?: boolean;
   maxSeconds: number;
   /** Provider cost this call may still spend under the user's daily cap; null means no cap. */
   costBudgetUsd: number | null;
@@ -86,6 +88,11 @@ export interface CallBrain {
   prepare(identity: CallIdentity, options: CallOptions): Promise<{ instruction: string; tools: ToolDeclaration[] }>;
   /** A note that makes the model open the call, or continue it after a reconnect without greeting again. */
   openingNote(resumed: boolean, recent: TranscriptLine[]): string;
+  /**
+   * Marks a note as the app's own, with the call's tag, so words the user types or says claiming to be from the app
+   * are not taken for it.
+   */
+  appNote?(text: string): string;
   runTool(call: ToolCallRequest, context: ToolRunContext): Promise<ToolRunOutcome>;
   /**
    * True for a tool whose run may write (a confirmation). Its time limit does not report a failure: the write may
@@ -299,7 +306,7 @@ export class CallSession {
     });
     this.setState("listening");
     this.modelBusy = true;
-    this.engine?.sendText(this.deps.brain.openingNote(resumed, this.transcript.slice(-6)));
+    this.engine?.sendText(this.tagged(this.deps.brain.openingNote(resumed, this.transcript.slice(-6))));
     this.startTicker();
     await this.persistState();
     // The app may have gone while the engine was connecting: then the call waits for it like any dropped call.
@@ -542,14 +549,19 @@ export class CallSession {
    * ordinary note (a tap on a card, the time warning, a write's late outcome) waits until the model is idle; only a
    * note that must stop what is being said (a wrong number, "done" before consent) goes at once.
    */
-  private sendNote(text: string, interrupt = false): void {
+  private sendNote(note: string, interrupt = false): void {
     if (!this.engine) return;
+    const text = this.tagged(note);
     if (interrupt || !this.modelBusy) {
       this.modelBusy = true;
       this.engine.sendText(text);
       return;
     }
     this.notes.push(text);
+  }
+
+  private tagged(note: string): string {
+    return this.deps.brain.appNote ? this.deps.brain.appNote(note) : note;
   }
 
   /** Sends the notes held while the model was busy, as one turn. True when there were any. */
@@ -758,6 +770,8 @@ export class CallSession {
 
   private metrics(): Record<string, unknown> {
     return {
+      profile: this.options.coach ? "coach" : "standard",
+      thinkingLevel: this.thinkingModel ? this.options.thinkingLevel : null,
       toolCostUsd: this.toolCostUsd,
       firstAudioMs: {
         count: this.firstAudioMs.length,

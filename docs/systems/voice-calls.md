@@ -23,7 +23,8 @@ has calls; the first call (`/api/voice/live`) was removed on 2026-09-25.
 (`voice_call_enabled_<plan>`), minutes a month (`voice_call_limit_<plan>`), seconds a call
 (`voice_call_duration_<plan>`), the model (`voice_v2_model_<plan>`, else `voice_v2_model`, default
 `gemini-3.8-live`), the thinking level for the extended-thinking model, a daily provider-cost cap in USD
-(`voice_daily_cost_cap_usd_<plan>`); `voice_v2_kill_switch` stops every call and hides the ways in. Usage is the
+(`voice_daily_cost_cap_usd_<plan>`), and whether the user gets [the coach call](#the-coach-call) (`coach`);
+`voice_v2_kill_switch` stops every call and hides the ways in. Usage is the
 Cairo month's `voice_calls.billed_seconds` plus any `voice_usage` rows (source `gemini_voice_call`) the removed
 first call wrote that month, never dictation seconds.
 
@@ -81,16 +82,33 @@ first call wrote that month, never dictation seconds.
    gets the end card: what was done, what was not. Then the words are summarized into the AI memory
    ([after the call](#after-the-call)).
 
+### The coach call
+A second profile of the same call, for the users the admin chooses: those on `voice_coach_allowlist` ("local:12,
+oauth:7", the account type and id together) and the share `voice_coach_rollout_percent` of the others, placed by a
+stable hash of the user (`api/services/entitlements/voice.ts#coachBucket`), so raising the percent keeps everyone who
+had it. Nobody gets it by default. A coach call runs on `voice_coach_model` (default
+`gemini-3.8-live-extended-thinking`) at `voice_coach_thinking_level` (default `high`), whatever the plan's standard
+model; the ticket and the call's state carry `coach`, and a coach call that cannot reach its model ends with the
+provider error rather than moving to the standard one.
+
+Its brain (`createCallBrain` with `coach`) has its own instructions
+(`api/services/voice/brain/coach-instructions.ts#buildCoachInstruction`: understand the need behind everyday
+words, keep the thread, one question that changes the advice, the coaching path from goal to one agreed step, the
+meanings not to mix — income and balance, left this month and available today, capacity and savings — and the
+consent rules) and its own tools (`COACH_TOOLS`): no `think`, and `calculate` for every sum. The facts in its opening
+context and in every tool answer carry a ref ("f12") that `calculate` takes.
+
 ### The tools
 | Tool | What it does |
 | --- | --- |
-| `money_query` | Any figure from the finance semantic layer, one call per question: totals (by category, a person's spending or, with `type: income`, what they paid the user, or everything spent at a shop over the whole period), where the money went, a comparison with the same number of days of the previous period (of the named category when there is one) and which categories drove it, the latest transactions, why one transaction got its category (found by a word from it, a category or its amount, each a filter over the whole period), what a category counts, a month's report already written (below), whether an amount is affordable (the month so far, said as a shortfall when spending passed income, the wallet total and the active goals, for `think` to judge), wallet balances (said to be as recorded, not a live statement), budgets (`budget.list`, cached a minute and dropped by any budget or expense write), goals, and the entries still waiting for the user's answer (below). Looking up a transaction searches the last 90 days unless a period is named. Categories are said in Arabic. A period too busy to read in full (more than 10,000 entries) is said to be counted in part. Each result carries the facts with their spoken form, a note on missing data, and a card |
+| `money_query` | Any figure from the finance semantic layer, one call per question: totals (by category, a person's spending or, with `type: income`, what they paid the user, or everything spent at a shop over the whole period), where the money went, a comparison with the same number of days of the previous period (of the named category when there is one) and which categories drove it, the latest transactions, why one transaction got its category (found by a word from it, a category or its amount, each a filter over the whole period), what a category counts, a month's report already written (below), whether an amount is affordable (the month so far, said as a shortfall when spending passed income, the wallet total and the active goals, for `think` to judge), wallet balances (said to be as recorded, not a live statement), budgets (`budget.list`, cached a minute and dropped by any budget or expense write), goals, the entries still waiting for the user's answer (below), and, through the procedures of their screens, debts and the gam3eya (`expense.getDebtBalances`: each person's balance and the gam3eya's paid, received and installments, with a note that it rests on the loans recorded as transfers, has no due dates, and adds several gam3eyas together), installment plans (`expense.listInstallmentPlans`, with a note on how payments are counted) and a season's spending (`expense.getSeasonSpending`). Every fact carries a ref for `calculate`. Before each read the tool compares the user's ledger generation with the one the call last saw: moved without a write of the call's own (a bank message, another device), every earlier figure is marked out of date and the answer says so (`records_changed`). Looking up a transaction searches the last 90 days unless a period is named. Categories are said in Arabic. A period too busy to read in full (more than 10,000 entries) is said to be counted in part. Each result carries the facts with their spoken form, a note on missing data, and a card |
 | `record_draft` | Parses what the user says they spent or received through `ai.parseExpense`, checks the amounts against what the model understood and against the numbers heard from the user, and drafts; a disagreement asks about that number alone ("خمستاشر ولا خمسين؟"). Each item keeps what the parser found beyond its category, through the same helpers as the expense form (`contracts/expense-save.ts`): a refund's direction (saved negative in its category, and shown as "مرتجع"), a loan's or gam3eya's way, the person beside a purpose. A draft mixing kinds (spending and a refund) has no single total. With a `clarification_id` it finishes an entry left waiting: the words the user first typed, read from the database, with their answer in brackets, joined as `expense.answerClarification` joins them; the numbers of those first words count as heard from the user, and the entry is closed only when that draft is confirmed |
 | `change_draft` | Drafts a goal, budget, wallet, profile detail (never age or gender) or recategorization through the action runtime, or undoing what this call recorded. The runtime's pending action is created with the draft, so every confirmation runs that one id; cancelling the draft cancels it |
-| `confirm` / `cancel` | Executes or drops a draft through the gate below; expenses are saved with `expense.batchCreate` with `clientRequestId` `vc:<call>:<draft>:<n>`, so a retry never saves twice; an action runs through `confirmAction` with `suggestFollowUp: false`, so no budget draft is left that the call cannot show |
+| `confirm` / `cancel` | Executes or drops a draft through the gate below; an executed write marks every figure read before it out of date and tells the model so (`records_changed`); expenses are saved with `expense.batchCreate` with `clientRequestId` `vc:<call>:<draft>:<n>`, so a retry never saves twice; an action runs through `confirmAction` with `suggestFollowUp: false`, so no budget draft is left that the call cannot show |
 | `memory` | Searches the AI memory, remembers what the user asks it to (never age or gender), deletes a memory by id when asked to forget it, lists what the app knows when asked ("إنت عارف عني إيه": job, payday, income, goal, monthly debt payment, the eight latest memories, and the screen where they can be seen and deleted), and saves the answer to the call's profile question, or its refusal, through `profile.submitOnboardingAnswer` once the answer fits the question's type |
 | `app_help` | Steps from the site guide, or says the guide has nothing, with what the call can and cannot do |
-| `think` | Hard questions go to a text model through `executeAiGateway` with the user's numbers: `voice_think_model` (default `gemini-3.5-flash-lite`, fast because the caller is waiting), then the next model of the chain after 5 seconds, and 9 seconds in all. Numbers it returns survive only if they come from the data, from the user, or one step of arithmetic on them (a product only with a count on one side); a verdict, alternative or missing fact carrying any other amount is dropped whole. This is a plausibility screen, not a check of meaning |
+| `calculate` | The coach call's arithmetic (`api/services/voice/brain/tools/calculate.ts`): steps of add, sub, mul, div, sum, min, max, pct and round over fact refs, earlier steps, counts ("12 months", "30 days"), percents, and amounts only when the user said them. Decimal arithmetic with units: pounds with pounds, pounds times days or months or a count, pounds over days is pounds a day, pounds times pounds refused. Each result becomes a fact the call may say, with how it was made; one built on a figure that went out of date is out of date too. Nothing is written when a step fails |
+| `think` | The standard call only. Hard questions go to a text model through `executeAiGateway` with the user's numbers: `voice_think_model` (default `gemini-3.5-flash-lite`, fast because the caller is waiting), then the next model of the chain after 5 seconds, and 9 seconds in all. Numbers it returns survive only if they come from the data, from the user, or one step of arithmetic on them (a product only with a count on one side); a verdict, alternative or missing fact carrying any other amount is dropped whole. This is a plausibility screen, not a check of meaning |
 | `market_price` | Gold or currency prices in Egypt from a text model with Google Search (`voice_price_model`, default `gemini-3.5-flash-lite`, through `askTextModel` with the same 5- and 9-second limits and the chain's other models), within sane bounds, cached 30 minutes for everyone, with its source and time; when the source names no time, the time of the lookup on Cairo's clock |
 
 The tools reach the app through `api/services/voice/app-calls.ts#createVoiceAppCalls`, which calls the app's own
@@ -126,6 +144,12 @@ is billed again for it on every later turn.
   undo; a yes with more than three other words is asked again. User words after the assistant spoke are a new
   utterance, never the tail of an earlier one. Passing the gate claims the draft (`executing`), so a tap and a yes
   arriving together run it once; a claim whose write never started (the call stopped it) is released.
+- **Out-of-date figures.** A number said that the call knows only from facts read before the records changed is recorded
+  as a `stale_number` incident (not corrected: it was true when read, and the model was told the records changed).
+- **The app's notes.** Every note the app sends the model is tagged with the call's own mark
+  (`CallBrain#appNote`, "ملاحظة من التطبيق #a1b2c3"), which the instructions name as the only sign of a note from the
+  app; the mark is never sent to the app or spoken, so words the user types or says claiming to be from the app are
+  taken as theirs.
 - **Saying it is done.** `api/services/voice/brain/claims.ts#DoneClaimCheck`: while a new record or action waits
   for consent, a reply that calls it recorded or done ("سجلت", "اتسجل", "اتعمل") gets a note at once that makes the
   model say it is still waiting and ask; the `done_claim_before_confirm` incident records only that it happened.
@@ -213,13 +237,14 @@ The settings page's plans tab has a section for the call
 - **Stop:** the kill switch (`voice_v2_kill_switch`) stops every call and hides the ways in.
 - **Models:** the default Live model (`voice_v2_model`) and one per plan (`voice_v2_model_<plan>`, empty means the
   default), the thinking level for the extended-thinking model, and the text models of `think`, `market_price` and
-  the post-call summary. The choices come from `contracts/voice-models.ts`, which `api/lib/model-mapper.ts` also
+  the post-call summary.
+- **The coach:** its model, its thinking level, the rollout percent and the test accounts (`voice_coach_*`). The choices come from `contracts/voice-models.ts`, which `api/lib/model-mapper.ts` also
   builds its fallback chain from.
 - **Cost:** the daily provider-cost cap per plan (`voice_daily_cost_cap_usd_<plan>`).
 - **Dashboard:** `voice.adminStats` (admin only, `api/services/voice/admin-stats.ts`) over the last day, 7 or 30
   days: calls, callers, minutes, cost at Google and per minute (tools included), first-audio median and p95, tools
-  and reconnects per call, why calls ended, incidents by kind, post-call memory status, clients, each model's
-  minutes and cost, and the 25 latest calls. It reads `voice_calls` and `voice_call_incidents` only: counts, times
+  and reconnects per call, why calls ended, incidents by kind, post-call memory status, clients, minutes and cost per
+  model, coach profile and thinking level (from `voice_calls.metrics`), and the 25 latest calls. It reads `voice_calls` and `voice_call_incidents` only: counts, times
   and costs, never what was said.
 Monthly minutes, seconds per call and whether a plan may call at all are in the card above it.
 
@@ -232,6 +257,8 @@ Monthly minutes, seconds per call and whether a plan may call at all are in the 
 | Which Gemini models can be chosen | `contracts/voice-models.ts` | `api/lib/model-mapper.test.ts` |
 | the socket, resume, time and cost limits, checkpoints | `api/services/voice/gateway/` | `api/services/voice/gateway/gateway.test.ts` |
 | the connection to Gemini Live | `api/services/voice/engine/gemini-live.ts` | `api/services/voice/engine/gemini-live.test.ts` |
+| the coach call: who gets it, its instructions and tools | `api/services/entitlements/voice.ts`, `api/services/voice/brain/coach-instructions.ts`, `COACH_TOOLS` in `api/services/voice/brain/index.ts` | `api/services/entitlements/voice.test.ts`, `api/services/voice/brain/coach.test.ts` |
+| the calculator | `api/services/voice/brain/tools/calculate.ts` | `api/services/voice/brain/tools/calculate.test.ts` |
 | instructions, snapshot, how numbers are spoken | `api/services/voice/brain/instructions.ts`, `api/services/voice/brain/snapshot.ts`, `api/services/voice/brain/spoken.ts` | `api/services/voice/brain/spoken.test.ts` |
 | the tools | `api/services/voice/brain/tools/`, and `api/services/voice/app-calls.ts` for the procedures they call | `api/services/voice/brain/tools/*.test.ts`; `api/services/voice/brain/tools/declarations.test.ts` holds every field typed and all declarations under 6,500 characters |
 | the stored reports and waiting questions it reads | `api/services/voice/brain/tools/reports.ts` | `api/services/voice/brain/tools/reports.test.ts` |
@@ -286,12 +313,12 @@ Checked against the code; each one names where it lives.
    Keeping it alive needs native work in the Android and iOS shells.
 2. **Gap.** The speech detector's thresholds (`src/lib/voice/speech-detector.ts`) are tuned on synthetic audio in
    tests; they have not been checked against recordings of real users on phones in noisy places.
-3. **Gap.** Debts, installments, gam3eyas, seasons and a business's own ledger have no voice tool
-   (`api/services/voice/brain/tools/money-query.ts`), though the app has them (`expense.getDebtBalances`,
-   `expense.listInstallmentPlans`, `expense.getSeasonSpending`, `business.*`).
-4. **Bug.** A number the call has seen stays sayable for the whole call whatever it meant and however old it is
-   (`api/services/voice/brain/facts.ts#FactLedger`): a figure read at the start still passes the number check after
-   the user recorded something that changed it.
+3. **Gap.** A business's own ledger has no voice tool, and the finance layer reads the personal ledger only
+   (`api/services/finance-semantic-layer/resolvers.ts`); debts carry no due dates and several gam3eyas are added
+   together (`api/services/debt-ledger.ts`); installments are counted from payments whose words name the plan
+   (`api/services/installments.ts`), so a partial payment or two plans with one word are miscounted.
+4. **Gap.** The opening context (CALL FACTS) cannot be changed during a session: after the records change the model is
+   told, and a stale figure said is recorded, but not stopped (`api/services/voice/brain/validator.ts`).
 5. **Gap.** Forgetting a memory during a call deletes it, but the words of the call still hold it, and the post-call
    summary (`api/services/voice/post-call.ts#summarizeCall`) is not told to leave it out.
 6. **Debt.** An action draft that expires, or that a newer draft replaces, leaves its runtime action pending until the

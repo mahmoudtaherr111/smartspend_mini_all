@@ -66,6 +66,13 @@ export const SETTINGS: SettingDef[] = [
   { key: "voice_v2_model_ultra", default: "" },
   // Only read by gemini-3.8-live-extended-thinking: low | medium | high.
   { key: "voice_v2_thinking_level", default: "low" },
+  // The coach call (api/services/voice/brain/coach-instructions.ts): its own model and thinking level, given to the
+  // users on the allowlist ("local:12,oauth:7") and to this percent of the others, by a stable hash of the user.
+  // 0 and an empty list mean nobody: the standard call is unchanged for everyone.
+  { key: "voice_coach_model", default: "gemini-3.8-live-extended-thinking" },
+  { key: "voice_coach_thinking_level", default: "high" },
+  { key: "voice_coach_rollout_percent", default: "0" },
+  { key: "voice_coach_allowlist", default: "" },
   // The text model with Google Search that looks up gold and currency prices for the call. A fast one: the caller
   // is waiting on the line (the next model of the chain answers after five seconds).
   { key: "voice_price_model", default: "gemini-3.5-flash-lite" },

@@ -11,7 +11,8 @@ import type { Context, UnifiedUser } from "../../context";
 import { db } from "../../queries/connection";
 import type { AppRouter } from "../../router";
 import type { CallIdentity } from "./gateway/call-session";
-import type { BudgetStatus, ParseOutcome, VoiceAppCalls } from "./brain/tools/types";
+import type { BudgetStatus, DebtStanding, InstallmentStanding, ParseOutcome, SeasonSpending, VoiceAppCalls } from "./brain/tools/types";
+import { SEASON_IDS, type SeasonId } from "../../lib/seasons";
 import { financeCacheKey, withFinanceCache } from "../finance-semantic-layer/cache";
 import { directionToSave, personToSave } from "../../../contracts/expense-save";
 
@@ -112,6 +113,59 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
             exceeded: Boolean(budget.isExceeded),
           }));
       });
+    },
+
+    async debts(identity): Promise<DebtStanding> {
+      const caller = await callerFor(identity);
+      const result = await caller.expense.getDebtBalances();
+      return {
+        people: result.balances.map((entry) => ({
+          name: entry.name,
+          balance: entry.balance,
+          lent: entry.lent,
+          received: entry.received,
+          count: entry.count,
+          lastDate: new Date(entry.lastDate).toISOString().slice(0, 10),
+        })),
+        owedToYou: result.owedToYou,
+        youOwe: result.youOwe,
+        gam3eya: result.gam3eya,
+      };
+    },
+
+    async installments(identity): Promise<InstallmentStanding[]> {
+      const caller = await callerFor(identity);
+      const plans = await caller.expense.listInstallmentPlans();
+      return plans.map((plan) => ({
+        title: plan.title,
+        keyword: plan.keyword,
+        monthlyAmount: plan.monthlyAmount,
+        totalInstallments: plan.totalInstallments,
+        paid: plan.paid,
+        remaining: plan.remaining,
+        remainingAmount: plan.remainingAmount,
+      }));
+    },
+
+    async season(identity, season, year): Promise<SeasonSpending | null> {
+      if (!(SEASON_IDS as readonly string[]).includes(season)) return null;
+      const caller = await callerFor(identity);
+      try {
+        const result = await caller.expense.getSeasonSpending({ season: season as SeasonId, ...(year ? { year } : {}) });
+        return {
+          label: result.label,
+          startDay: result.startDay,
+          endDay: result.endDay,
+          total: result.total,
+          count: result.count,
+          byCategory: result.byCategory.map((row) => ({ category: row.category, amount: row.amount })),
+          previous: result.previous,
+        };
+      } catch (error) {
+        // The procedure says NOT_FOUND for a season it has no dates for; anything else is a failure to say as one.
+        if (error instanceof Error && "code" in error && (error as { code?: string }).code === "NOT_FOUND") return null;
+        throw error;
+      }
     },
 
     async answerProfileQuestion(identity, key, value, skipped) {

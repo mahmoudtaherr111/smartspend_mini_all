@@ -434,6 +434,7 @@ model {
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.finance-semantic-layer
+  smartspend.api.modules.voice -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.voice -[imports]-> smartspend.api.modules.site-guide
   smartspend.api.modules.voice -[imports]-> smartspend.shared.contracts

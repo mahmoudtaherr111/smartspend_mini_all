@@ -22,6 +22,19 @@ describe("summarizeVoiceCalls", () => {
     expect(stats.models[0]).toMatchObject({ key: "gemini-3.8-live", count: 2, minutes: 3 });
   });
 
+  it("counts the coach call and each thinking level apart from the standard call", () => {
+    const stats = summarizeVoiceCalls(7, [
+      row({}),
+      row({ id: "vc_4", model: "gemini-3.8-live-extended-thinking", metrics: { profile: "coach", thinkingLevel: "high" } }),
+      row({ id: "vc_5", model: "gemini-3.8-live-extended-thinking", metrics: { profile: "coach", thinkingLevel: "medium" } }),
+    ], []);
+    expect(stats.models.map((model) => model.key).sort()).toEqual([
+      "gemini-3.8-live",
+      "gemini-3.8-live-extended-thinking · coach · high",
+      "gemini-3.8-live-extended-thinking · coach · medium",
+    ]);
+  });
+
   it("stays readable with no calls", () => {
     expect(summarizeVoiceCalls(1, [], [])).toMatchObject({ calls: 0, costPerMinuteUsd: null, firstAudioMs: { p50: null, p95: null } });
   });

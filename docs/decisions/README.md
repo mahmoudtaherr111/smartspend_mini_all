@@ -22,3 +22,5 @@ A record explains why the code looks the way it does. What the code does today i
 | [0012](0012-classification-without-embeddings.md) | Expense classification has no semantic (embedding) layer |
 | [0013](0013-caching-as-one-system.md) | A cache is correct by its key, not by being cleared; one inventory of every cache |
 | [0014](0014-migrations-build-the-schema.md) | The migrations build the schema: a guarded reconcile migration, `db:doctor`, and a CI check |
+| [0015](0015-roles-before-categories.md) | Every number and every word gets its role before anything is classified |
+| [0016](0016-voice-coach-profile.md) | The coach call: the live model reasons, the app computes and writes, behind a rollout |

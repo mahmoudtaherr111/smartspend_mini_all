@@ -217,6 +217,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice/admin-stats.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/app-calls.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/claims.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/coach-instructions.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/drafts.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/facts.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/honorific.ts` | [voice-calls](voice-calls.md) |
@@ -227,6 +228,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice/brain/snapshot.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/spoken.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/tools/app-help.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/brain/tools/calculate.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/tools/market-price.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/tools/memory.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/brain/tools/money-query.ts` | [voice-calls](voice-calls.md) |

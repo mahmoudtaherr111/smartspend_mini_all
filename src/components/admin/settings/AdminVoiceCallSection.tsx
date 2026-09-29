@@ -178,6 +178,67 @@ function VoiceCallsDashboard() {
   );
 }
 
+/**
+ * The coach call: its model and thinking level, and who gets it. Nobody until users are listed or a percent is set;
+ * raising the percent keeps everyone who already had it (a stable hash of the user, api/services/entitlements/voice.ts).
+ */
+function CoachSettings({ formData, updateField }: Props) {
+  const percent = formData.voice_coach_rollout_percent ?? "0";
+  return (
+    <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-4">
+      <div>
+        <div className="font-bold text-sm">سمارت المدرب</div>
+        <p className="text-xs text-slate-500 mt-1">
+          مكالمة بتعليمات وأدوات المدرب: بيقرا الديون والأقساط والمواسم، وكل حسبة بتتعمل في الكود مش في الموديل. مابتتفعّلش
+          لحد غير اللي في القايمة أو النسبة. ابدأ بحسابات تجربة، وبعدين ٥٪ ثم ٢٥٪ ثم ١٠٠٪ بعد ما النتايج تعدّي.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <FieldLabel hint="الموديل المستهدف للمدرب. مابيتبدلش لوحده لو فشل: المكالمة بتقول إن المحرك مش متاح.">موديل المدرب</FieldLabel>
+          <Select value={formData.voice_coach_model || "gemini-3.8-live-extended-thinking"} onValueChange={(v) => updateField("voice_coach_model", v)}>
+            <SelectTrigger className="h-8 bg-slate-50 dark:bg-slate-900 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {VOICE_LIVE_MODELS.map((model) => <SelectItem key={model.id} value={model.id}>{model.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <FieldLabel hint="high هو المستهدف. low وmedium للمقارنة بس، مش لتوفير التكلفة من غير قرار.">مستوى تفكير المدرب</FieldLabel>
+          <Select value={formData.voice_coach_thinking_level || "high"} onValueChange={(v) => updateField("voice_coach_thinking_level", v)}>
+            <SelectTrigger className="h-8 bg-slate-50 dark:bg-slate-900 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {VOICE_THINKING_LEVELS.map((level) => <SelectItem key={level} value={level}>{level}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <FieldLabel hint="نسبة المستخدمين اللي بياخدوا المدرب (٠–١٠٠). نفس المستخدم بيفضل جوه لما النسبة تزيد.">نسبة الطرح (٪)</FieldLabel>
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            value={percent}
+            onChange={(e) => updateField("voice_coach_rollout_percent", e.target.value)}
+            className="h-8 font-mono bg-slate-50 dark:bg-slate-900"
+          />
+        </div>
+        <div className="space-y-1">
+          <FieldLabel hint="حسابات بتاخد المدرب دايماً، مفصولة بفاصلة: local:12,oauth:7 (نوع الحساب ورقمه).">حسابات التجربة</FieldLabel>
+          <Input
+            dir="ltr"
+            value={formData.voice_coach_allowlist ?? ""}
+            onChange={(e) => updateField("voice_coach_allowlist", e.target.value)}
+            placeholder="local:12,oauth:7"
+            className="h-8 font-mono bg-slate-50 dark:bg-slate-900"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AdminVoiceCallSection({ formData, updateField }: Props) {
   const killSwitch = formData.voice_v2_kill_switch === "true";
   const defaultModel = formData.voice_v2_model || VOICE_LIVE_MODELS[0].id;
@@ -207,7 +268,7 @@ export function AdminVoiceCallSection({ formData, updateField }: Props) {
         {/* Models and cost caps */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-2">
-            <FieldLabel hint="الموديل اللي بيسمع ويتكلم. الافتراضي أسرع في الرد وأرخص؛ Extended Thinking أبطأ (١٠–٣٥ ثانية للدور في التجربة) وحوالي ٢.٧ ضعف التكلفة.">
+            <FieldLabel hint="الموديل اللي بيسمع ويتكلم في المكالمة العادية. Extended Thinking بيفكر في الخلفية وبياخد وقت أطول؛ تكلفته الحقيقية بتبان في لوحة المكالمات من التوكنز الفعلية.">
               موديل الصوت الافتراضي
             </FieldLabel>
             <Select value={defaultModel} onValueChange={(v) => updateField("voice_v2_model", v)}>
@@ -266,6 +327,8 @@ export function AdminVoiceCallSection({ formData, updateField }: Props) {
             );
           })}
         </div>
+
+        <CoachSettings formData={formData} updateField={updateField} />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {TEXT_MODEL_SETTINGS.map((setting) => (

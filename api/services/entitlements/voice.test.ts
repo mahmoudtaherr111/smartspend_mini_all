@@ -49,6 +49,35 @@ describe("resolveVoiceEntitlements", () => {
       .toBe("disabled");
   });
 
+  it("gives the coach call to nobody until the admin lists users or sets a percent", () => {
+    expect(resolveVoiceEntitlements(freeUser, {}, noUsage, "2026-09")).toMatchObject({ coach: false, model: "gemini-3.8-live" });
+    const listed = resolveVoiceEntitlements(freeUser, { voice_coach_allowlist: "oauth:7, local:7" }, noUsage, "2026-09");
+    expect(listed).toMatchObject({ coach: true, model: "gemini-3.8-live-extended-thinking", thinkingLevel: "high" });
+    // The same numeric id as a Google user is another person.
+    expect(resolveVoiceEntitlements(freeUser, { voice_coach_allowlist: "oauth:7" }, noUsage, "2026-09").coach).toBe(false);
+  });
+
+  it("puts each user in or out of the coach rollout by a stable hash, never by chance", () => {
+    const users = Array.from({ length: 400 }, (_, index) => ({ ...freeUser, id: index + 1 }));
+    const inAt = (percent: string) =>
+      users.filter((user) => resolveVoiceEntitlements(user, { voice_coach_rollout_percent: percent }, noUsage, "2026-09").coach);
+    expect(inAt("0")).toHaveLength(0);
+    expect(inAt("100")).toHaveLength(400);
+    const five = inAt("5");
+    expect(five.length).toBeGreaterThan(5);
+    expect(five.length).toBeLessThan(45);
+    // Raising the percent keeps everyone who was in: 5% is inside 25%.
+    const quarter = new Set(inAt("25").map((user) => user.id));
+    expect(five.every((user) => quarter.has(user.id))).toBe(true);
+    expect(inAt("5").map((user) => user.id)).toEqual(five.map((user) => user.id));
+  });
+
+  it("keeps the coach's own model and level; a coach user is never moved to the standard model", () => {
+    const settings = { voice_coach_allowlist: "local:7", voice_coach_thinking_level: "medium", voice_v2_model: "gemini-3.8-live" };
+    expect(resolveVoiceEntitlements(freeUser, settings, noUsage, "2026-09"))
+      .toMatchObject({ coach: true, model: "gemini-3.8-live-extended-thinking", thinkingLevel: "medium" });
+  });
+
   it("uses a per-plan model when the admin set one", () => {
     const ultra = { ...freeUser, plan: "ultra" };
     const settings = { voice_v2_model_ultra: "gemini-3.8-live-extended-thinking", voice_v2_thinking_level: "medium" };

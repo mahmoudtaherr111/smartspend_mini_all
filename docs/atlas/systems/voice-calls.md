@@ -47,6 +47,7 @@ flowchart LR
   sys_ai_platform[["AI providers and usage limits (system)"]]
   sys_expense_capture[["Recording spending (system)"]]
   sys_insights[["Reports, insights and the smart profile (system)"]]
+  sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
   job_voice_call_memory --> mod_voice
@@ -55,6 +56,7 @@ flowchart LR
   mod_voice --> sys_ai_platform
   mod_voice --> sys_expense_capture
   mod_voice --> sys_insights
+  mod_voice --> sys_money
   mod_voice --> sys_platform
   mod_voice -.-> tbl_ai_summaries
   mod_voice -.-> tbl_expenses
@@ -84,7 +86,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `voice` — Voice | Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway, the Gemini Live engine, the brain with its tools and the checks on what is said, Egyptian number speech, the post-call memory and the admin dashboard's figures. api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 34 |
+| `voice` — Voice | Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway, the Gemini Live engine, the brain with its tools and the checks on what is said, Egyptian number speech, the post-call memory and the admin dashboard's figures. api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 36 |
 | `web-voice-call` — Live voice call UI | The live voice call in the app. The rebuilt call: a store any screen can start the call from (src/lib/voice/call-store.ts), which keeps it running across pages; microphone capture filtered down to 16 kHz with speech detection that sends audio only while the user speaks; the /api/voice/v2 socket client that resumes a dropped call; playback of the assistant's voice; and the call screen with its cards, the Home button and the AI Center tab (src/components/voice). | 13 |
 
 ## API procedures
@@ -131,7 +133,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Depends on: [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
@@ -147,7 +149,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/voice-calls.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>52 files and declarations</summary>
+<details><summary>54 files and declarations</summary>
 
 - `api/boot.ts#job:voice-call-memory`
 - `api/boot.ts#ws:/api/voice/v2`
@@ -156,6 +158,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/voice/admin-stats.ts`
 - `api/services/voice/app-calls.ts`
 - `api/services/voice/brain/claims.ts`
+- `api/services/voice/brain/coach-instructions.ts`
 - `api/services/voice/brain/drafts.ts`
 - `api/services/voice/brain/facts.ts`
 - `api/services/voice/brain/honorific.ts`
@@ -166,6 +169,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/voice/brain/snapshot.ts`
 - `api/services/voice/brain/spoken.ts`
 - `api/services/voice/brain/tools/app-help.ts`
+- `api/services/voice/brain/tools/calculate.ts`
 - `api/services/voice/brain/tools/market-price.ts`
 - `api/services/voice/brain/tools/memory.ts`
 - `api/services/voice/brain/tools/money-query.ts`

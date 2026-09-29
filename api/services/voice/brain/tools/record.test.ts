@@ -232,6 +232,21 @@ describe("confirm", () => {
     expect(app.saveExpenses).toHaveBeenCalledTimes(1);
   });
 
+  it("tells the model its earlier figures are out of date once a write lands", async () => {
+    const { ctx, clock } = context(twoItems);
+    ctx.ledger.nextBatch();
+    const before = ctx.ledger.add({ id: "mq_0", label: "مصروف النهارده", value: 320, source: "ledger" });
+    const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
+    ctx.drafts.heardAssistant();
+    clock.now += 1_000;
+    ctx.drafts.heardUser("آه");
+    const done = await confirmTool.run({ draft_id: draft.response.draft_id }, ctx);
+    expect(done.response).toMatchObject({ ok: true, records_changed: expect.any(String) });
+    // 320 was today's total before the write; said now, it is recorded as a stale figure.
+    expect(ctx.ledger.byRef(before.ref)?.stale).toBe(true);
+    expect(ctx.ledger.onlyStale(320, false)).toBe(true);
+  });
+
   it("offers no undo when nothing was recorded in this call", async () => {
     const { ctx } = context(twoItems);
     expect((await changeDraftTool.run({ action: "undo_last" }, ctx)).response).toMatchObject({ ok: false, error: "nothing_to_undo" });

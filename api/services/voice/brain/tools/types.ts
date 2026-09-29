@@ -31,6 +31,36 @@ export interface SaveExpenseItem extends ParsedExpenseItem {
   clientRequestId: string;
 }
 
+/** "ليك وعليك", as the debts screen shows it (`expense.getDebtBalances`). */
+export interface DebtStanding {
+  people: Array<{ name: string; balance: number; lent: number; received: number; count: number; lastDate: string }>;
+  owedToYou: number;
+  youOwe: number;
+  gam3eya: { paid: number; received: number; held: number; installments: number };
+}
+
+/** An installment plan with what is left, as the installments screen shows it (`expense.listInstallmentPlans`). */
+export interface InstallmentStanding {
+  title: string;
+  keyword: string;
+  monthlyAmount: number;
+  totalInstallments: number;
+  paid: number;
+  remaining: number;
+  remainingAmount: number;
+}
+
+/** A season's personal spending and the same season a year before (`expense.getSeasonSpending`). */
+export interface SeasonSpending {
+  label: string;
+  startDay: string;
+  endDay: string;
+  total: number;
+  count: number;
+  byCategory: Array<{ category: string; amount: number }>;
+  previous: { startDay: string; endDay: string; total: number } | null;
+}
+
 export interface BudgetStatus {
   title: string;
   category: string | null;
@@ -51,6 +81,12 @@ export interface VoiceAppCalls {
   /** Deletes the call's own records; answers how many were deleted, so a partial undo is said as one. */
   deleteExpenses(identity: CallIdentity, ids: number[]): Promise<{ deleted: number }>;
   listBudgets(identity: CallIdentity): Promise<BudgetStatus[]>;
+  /** Debts and the gam3eya, from the loans and gam3eya transfers recorded (the debts screen's procedure). */
+  debts(identity: CallIdentity): Promise<DebtStanding>;
+  /** Active installment plans (the installments screen's procedure). */
+  installments(identity: CallIdentity): Promise<InstallmentStanding[]>;
+  /** A season's spending; null when the season is not known for that year. */
+  season(identity: CallIdentity, season: string, year?: number): Promise<SeasonSpending | null>;
   /** A question the parser opened for the home screen that the call has answered itself. */
   dismissClarification(identity: CallIdentity, clarificationId: number): Promise<void>;
   /** The words of an entry still waiting for the user's answer, when it is theirs and still waiting. */
@@ -70,6 +106,11 @@ export interface ToolContext {
   salaryDay: () => Promise<number | undefined>;
   /** Questions the parser opened on the home screen during this call, closed once the call records the expense. */
   openClarifications: number[];
+  /**
+   * The user's ledger generation (`getFinanceCacheGen`) the call last saw. When a read finds it moved without a
+   * write of the call's own (a bank message, another device), every figure read before is out of date.
+   */
+  records?: { seen: number | null };
 }
 
 export interface VoiceTool {

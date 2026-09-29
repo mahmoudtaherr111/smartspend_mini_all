@@ -6,6 +6,7 @@
  * business month from `voice_calls` (plus any `voice_usage` rows the retired first call wrote that month), never
  * from the seconds spent dictating expenses. The admin's kill switch stops every call.
  */
+import { createHash } from "crypto";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { voiceCalls, voiceUsage } from "../../../db/schema";
 import { businessDateKey, startOfBusinessDay } from "../../lib/app-time";
@@ -42,6 +43,11 @@ export interface VoiceEntitlements {
   allowedCallSeconds: number;
   model: string;
   thinkingLevel: ThinkingLevel;
+  /**
+   * The user gets the coach call: its instructions and tools, on the coach's model and thinking level
+   * (`voice_coach_*`). Decided by the allowlist, then by a stable hash against the rollout percent.
+   */
+  coach: boolean;
   dailyCostCapUsd: number;
   spentTodayUsd: number;
   /** Why the user cannot start a call now, or null when they can. */
@@ -62,6 +68,26 @@ function nonNegativeNumber(value: string | undefined, fallback: number): number 
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
+function level(value: string | undefined, fallback: ThinkingLevel): ThinkingLevel {
+  return value === "low" || value === "medium" || value === "high" ? value : fallback;
+}
+
+/** A user's place in the rollout, 0-99, the same on every server and every call. */
+export function coachBucket(user: Pick<VoiceEntitlementUser, "id" | "type">): number {
+  return createHash("sha256").update(`voice_coach:${user.type}:${user.id}`).digest().readUInt32BE(0) % 100;
+}
+
+/** On the allowlist, or inside the rollout percent. */
+export function inCoachRollout(user: Pick<VoiceEntitlementUser, "id" | "type">, settings: Record<string, string>): boolean {
+  const allowlist = String(settings.voice_coach_allowlist ?? "")
+    .split(/[,\s]+/)
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+  if (allowlist.includes(`${user.type}:${user.id}`)) return true;
+  const percent = Math.min(100, Math.max(0, Number.parseInt(String(settings.voice_coach_rollout_percent ?? "0"), 10) || 0));
+  return percent > 0 && coachBucket(user) < percent;
+}
+
 /** The pure rule: settings and usage in, entitlements out. */
 export function resolveVoiceEntitlements(
   user: VoiceEntitlementUser,
@@ -79,8 +105,14 @@ export function resolveVoiceEntitlements(
   const used = Math.max(0, Math.round(usage.usedSecondsThisMonth));
   const remaining = Math.max(0, minutesPerMonth * 60 - used);
   const dailyCostCapUsd = nonNegativeNumber(merged[`voice_daily_cost_cap_usd_${p}`], 0);
-  const level = merged.voice_v2_thinking_level;
-  const thinkingLevel: ThinkingLevel = level === "medium" || level === "high" ? level : "low";
+  const coach = inCoachRollout(user, merged);
+  // The coach's model and level are its own: a coach user is never moved to the standard model to save cost.
+  const thinkingLevel: ThinkingLevel = coach
+    ? level(merged.voice_coach_thinking_level, "high")
+    : level(merged.voice_v2_thinking_level, "low");
+  const model = coach
+    ? (merged.voice_coach_model || "gemini-3.8-live-extended-thinking").trim()
+    : (merged[`voice_v2_model_${p}`] || merged.voice_v2_model || "gemini-3.8-live").trim();
 
   let blockedReason: VoiceEntitlements["blockedReason"] = null;
   if (!enabled) blockedReason = "disabled";
@@ -98,8 +130,9 @@ export function resolveVoiceEntitlements(
     usedSecondsThisMonth: used,
     remainingSecondsThisMonth: remaining,
     allowedCallSeconds: Math.min(maxCallSeconds, remaining),
-    model: (merged[`voice_v2_model_${p}`] || merged.voice_v2_model || "gemini-3.8-live").trim(),
+    model,
     thinkingLevel,
+    coach,
     dailyCostCapUsd,
     spentTodayUsd: usage.spentTodayUsd,
     blockedReason,

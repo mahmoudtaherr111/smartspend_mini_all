@@ -51,6 +51,8 @@ export interface Mismatch {
   spoken: number;
   /** The fact it was most likely meant to be, when there is one. */
   intended: CallFact | null;
+  /** The number is one the call read, but only before the records changed: said as if it were still true. */
+  stale?: boolean;
 }
 
 export class SpokenNumberValidator {
@@ -96,7 +98,12 @@ export class SpokenNumberValidator {
       if (number.index < this.checkedInTurn) continue;
       if (!final && !number.settled) break;
       this.checkedInTurn = number.index + 1;
-      if (!number.money || this.ledger.allows(number.value, number.approximate)) continue;
+      if (!number.money) continue;
+      if (this.ledger.allows(number.value, number.approximate)) {
+        // Recorded, not corrected: the figure was right when read, and the model was told the records changed.
+        if (this.ledger.onlyStale(number.value, number.approximate)) found ??= { spoken: number.value, intended: null, stale: true };
+        continue;
+      }
       found ??= { spoken: number.value, intended: this.intendedFact(number.value) };
     }
     return found;
@@ -111,7 +118,7 @@ export class SpokenNumberValidator {
     let best: CallFact | null = null;
     let bestRatio = Infinity;
     for (const fact of this.ledger.latestBatch()) {
-      if (fact.value <= 0) continue;
+      if (fact.value <= 0 || fact.unit !== "EGP") continue;
       const ratio = Math.max(spoken, fact.value) / Math.min(spoken, fact.value);
       const sameSize = Math.floor(Math.log10(spoken)) === Math.floor(Math.log10(fact.value));
       if (((sameSize && ratio <= 2) || teenTensTwins(spoken, fact.value)) && ratio < bestRatio) {

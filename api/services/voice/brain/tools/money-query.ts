@@ -21,8 +21,10 @@ import {
   getWalletSummary,
 } from "../../../finance-semantic-layer/resolvers";
 import { resolveFinancePeriod } from "../../../finance-semantic-layer/period-resolver";
+import { getFinanceCacheGen } from "../../../finance-semantic-layer/cache";
 import type { FinanceContext, FinanceGranularity, FinancePeriodInput } from "../../../finance-semantic-layer/types";
 import type { ToolRunOutcome } from "../../gateway/call-session";
+import type { FactUnit } from "../facts";
 import { spellPercent } from "../spoken";
 import { extractSpokenNumbers } from "../validator";
 import { readPendingQuestions, readStoredReport } from "./reports";
@@ -30,8 +32,9 @@ import { num, str, type ToolContext, type VoiceTool } from "./types";
 
 const METRICS = [
   "total", "breakdown", "compare", "drivers", "transactions", "why", "includes", "report", "feasibility",
-  "balance", "budgets", "goals", "pending",
+  "balance", "budgets", "goals", "pending", "debts", "installments", "season",
 ] as const;
+const SEASONS = ["ramadan", "eid_fitr", "eid_adha", "school", "summer"] as const;
 const PERIODS = [
   "today", "yesterday", "this_week", "this_month", "last_month", "salary_cycle",
   "last_90_days", "this_year", "last_year", "custom",
@@ -102,7 +105,7 @@ function comparableBefore(input: FinancePeriodInput, ctx: FinanceContext): { inp
 }
 
 interface Built {
-  facts: Array<{ label: string; value: number; exact?: boolean }>;
+  facts: Array<{ label: string; value: number; exact?: boolean; unit?: FactUnit }>;
   extra?: Record<string, unknown>;
   coverage?: string;
   title: string;
@@ -111,15 +114,19 @@ interface Built {
 function outcome(built: Built, ctx: ToolContext, periodLabel: string): ToolRunOutcome {
   ctx.ledger.nextBatch();
   const facts = built.facts.map((fact, index) => {
-    const entry = ctx.ledger.add({ id: `mq_${index}`, label: fact.label, value: fact.value, source: "ledger", exact: fact.exact });
-    return { label: fact.label, value: fact.value, say: entry.say };
+    const entry = ctx.ledger.add({
+      id: `mq_${index}`, label: fact.label, value: fact.value, source: "ledger", exact: fact.exact, unit: fact.unit,
+      ...(fact.unit && fact.unit !== "EGP" ? { say: String(fact.value) } : {}),
+    });
+    // The ref lets calculate use this figure without retyping it.
+    return { ref: entry.ref, label: fact.label, value: fact.value, say: entry.say, ...(entry.unit !== "EGP" ? { unit: entry.unit } : {}) };
   });
   const card: VoiceFactCard = {
     kind: "fact",
     id: `mq_${Date.now()}`,
     title: built.title,
     period: periodLabel,
-    items: built.facts.slice(0, 8).map((fact) => ({ label: fact.label, value: fact.value, unit: "EGP" })),
+    items: built.facts.filter((fact) => !fact.unit || fact.unit === "EGP").slice(0, 8).map((fact) => ({ label: fact.label, value: fact.value, unit: "EGP" })),
     coverage: built.coverage,
   };
   return {
@@ -223,7 +230,32 @@ async function findTransaction(
   return categoryId ? getTransactionLookup(finance, "", categoryId, types, input) : null;
 }
 
+/**
+ * Every read first checks whether the user's records moved since the call last looked without a write of its own
+ * (a bank message arrived, another device recorded something): then every figure said before is out of date, and
+ * the answer says so.
+ */
 async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolRunOutcome> {
+  let changed = false;
+  if (ctx.records) {
+    const generation = await getFinanceCacheGen(ctx.identity.userId, ctx.identity.userType).catch(() => null);
+    if (generation !== null) {
+      changed = ctx.records.seen !== null && generation !== ctx.records.seen && ctx.ledger.markRecordsChanged() > 0;
+      ctx.records.seen = generation;
+    }
+  }
+  const result = await answer(args, ctx);
+  if (!changed) return result;
+  return {
+    ...result,
+    response: {
+      ...result.response,
+      records_changed: "اتسجلت عمليات جديدة من ساعة ما بدأت المكالمة (رسالة بنك أو جهاز تاني): الأرقام اللي اتقالت قبل كده ممكن تكون اتغيرت، والأرقام دي هي الأحدث.",
+    },
+  };
+}
+
+async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolRunOutcome> {
   const metric = (METRICS as readonly string[]).includes(String(args.metric)) ? String(args.metric) : "total";
   // Looking for one transaction or what a category holds reaches back three months unless a period is named;
   // totals and comparisons default to this month (the salary cycle when there is one).
@@ -385,6 +417,72 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
     }, ctx, "الشهر ده");
   }
 
+  if (metric === "debts") {
+    const standing = await ctx.app.debts(ctx.identity);
+    const people = standing.people.slice(0, limit);
+    const gam3eya = standing.gam3eya.installments > 0 || standing.gam3eya.received > 0;
+    return outcome({
+      title: "ليك وعليك",
+      facts: [
+        ...(standing.owedToYou ? [{ label: "إجمالي اللي ليك عند الناس", value: standing.owedToYou }] : []),
+        ...(standing.youOwe ? [{ label: "إجمالي اللي عليك للناس", value: standing.youOwe }] : []),
+        ...people.map((person) => ({
+          label: person.balance > 0 ? `${person.name} عليه ليك` : `إنت عليك لـ${person.name}`,
+          value: Math.abs(person.balance),
+        })),
+        ...(gam3eya
+          ? [
+              { label: "دفعت في الجمعية", value: standing.gam3eya.paid },
+              { label: "قبضت من الجمعية", value: standing.gam3eya.received },
+              { label: "عدد أقساط الجمعية المدفوعة", value: standing.gam3eya.installments, unit: "count" as const },
+            ]
+          : []),
+      ],
+      extra: { people: people.map((person) => ({ name: person.name, since: person.lastDate, moves: person.count })) },
+      // What the numbers rest on: loans and gam3eya transfers recorded with their direction; nothing else.
+      coverage:
+        "محسوب من السلف والجمعيات المتسجلة كتحويل بس، كل شخص مجموع في رقم واحد: مفيش مواعيد استحقاق متسجلة، " +
+        "ولو فيه أكتر من جمعية فهي متجمعة مع بعض. اللي ماتسجلش مش محسوب.",
+    }, ctx, "لحد النهارده");
+  }
+
+  if (metric === "installments") {
+    const plans = (await ctx.app.installments(ctx.identity)).slice(0, limit);
+    return outcome({
+      title: "الأقساط",
+      facts: plans.flatMap((plan) => [
+        { label: `قسط ${plan.title} الشهري`, value: plan.monthlyAmount },
+        { label: `أقساط ${plan.title} الفاضلة`, value: plan.remaining, unit: "count" as const },
+        { label: `الفاضل من ${plan.title}`, value: plan.remainingAmount },
+      ]),
+      extra: { plans: plans.map((plan) => ({ title: plan.title, paid: plan.paid, of: plan.totalInstallments })) },
+      coverage: plans.length
+        ? "الأقساط المدفوعة متعدودة من المصاريف المتسجلة في «أقساط وفوايد» اللي فيها كلمة القسط، من ساعة ما الخطة اتضافت، " +
+          "مع اللي قال إنه دفعه قبلها. دفعة جزئية أو قسط متسجل من غير الكلمة دي مش بيتعد صح، ومفيش مواعيد استحقاق متسجلة."
+        : "مفيش خطط أقساط متسجلة في التطبيق.",
+    }, ctx, "لحد النهارده");
+  }
+
+  if (metric === "season") {
+    const season = String(args.season ?? "");
+    if (!(SEASONS as readonly string[]).includes(season)) {
+      return { response: { ok: false, error: "missing_season", say: "اسأل عن أنهي موسم: رمضان، العيد، المدارس، الصيف." } };
+    }
+    const year = num(args.year);
+    const spending = await ctx.app.season(ctx.identity, season, year && year > 2000 ? Math.floor(year) : undefined);
+    if (!spending) return { response: { ok: false, error: "unknown_season", say: "مش لاقي مواعيد الموسم ده في السنة دي. قول كده." } };
+    return outcome({
+      title: `${spending.label}`,
+      facts: [
+        { label: `صرف ${spending.label}`, value: spending.total },
+        ...(spending.previous ? [{ label: `نفس الموسم السنة اللي قبلها`, value: spending.previous.total }] : []),
+        ...spending.byCategory.slice(0, 3).map((row) => ({ label: categoryName(row.category), value: row.amount })),
+      ],
+      extra: { from: spending.startDay, to: spending.endDay },
+      coverage: spending.count ? undefined : EMPTY_NOTE,
+    }, ctx, `${spending.label} (${spending.startDay} لـ ${spending.endDay})`);
+  }
+
   if (metric === "pending") {
     const pending = await readPendingQuestions(ctx.identity);
     return {
@@ -530,7 +628,8 @@ export const moneyQuery: VoiceTool = {
       "The user's own records, one question per call: total, breakdown, compare (same days before), drivers (what " +
       "changed), transactions, why (how a transaction was classified; needs search), includes (what a category " +
       "counts), report (a month's written report; month), feasibility (can they afford amount), balance, budgets, " +
-      "goals, pending (entries waiting for their answer). Say numbers as the 'say' forms.",
+      "goals, pending (entries waiting for their answer), debts (who owes whom, the gam3eya), installments, season " +
+      "(Ramadan, the Eids, school, summer). Facts carry a ref for calculate. Say numbers as the 'say' forms.",
     parameters: {
       type: "object",
       properties: {
@@ -545,6 +644,8 @@ export const moneyQuery: VoiceTool = {
         group_by: { type: "string", enum: ["category", "day", "week", "month", "merchant"] },
         limit: { type: "integer" },
         month: { type: "string", description: "YYYY-MM, for report; default last month" },
+        season: { type: "string", enum: [...SEASONS], description: "For season" },
+        year: { type: "integer", description: "For season; default the latest one" },
         amount: { type: "number", description: "EGP: for feasibility, or to find a transaction by its amount (why, transactions)" },
       },
       required: ["metric"],

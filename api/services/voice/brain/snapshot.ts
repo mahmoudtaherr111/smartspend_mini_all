@@ -73,7 +73,14 @@ async function lastRecordedDay(identity: CallIdentity): Promise<string | null> {
   return row?.date ? businessDateKey(new Date(row.date)) : null;
 }
 
-export async function loadCallSnapshot(identity: CallIdentity, ledger: FactLedger, now = new Date()): Promise<CallSnapshot> {
+export async function loadCallSnapshot(
+  identity: CallIdentity,
+  ledger: FactLedger,
+  now = new Date(),
+  options: { refs?: boolean } = {},
+): Promise<CallSnapshot> {
+  // The coach call computes from facts by ref ("[f2]"); the standard call has no calculator and must not read refs aloud.
+  const tag = (fact: { ref: string }) => (options.refs ? ` [${fact.ref}]` : "");
   const base = { userId: identity.userId, userType: identity.userType };
   const profileSnapshot = await capture(() => getProfileSnapshot(base));
   const ctx = { ...base, salaryDay: profileSnapshot?.salaryDay };
@@ -97,19 +104,23 @@ export async function loadCallSnapshot(identity: CallIdentity, ledger: FactLedge
   ledger.nextBatch();
   if (today) {
     const fact = ledger.add({ id: "snapshot_today", label: "مصروف النهارده", value: today.totalExpense, source: "snapshot" });
-    lines.push(`مصروف النهارده المسجّل: ${fact.say} (${today.expenseCount} عملية).`);
+    lines.push(`مصروف النهارده المسجّل: ${fact.say}${tag(fact)} (${today.expenseCount} عملية).`);
   }
   if (cycle) {
     const fact = ledger.add({ id: "snapshot_cycle", label: "مصروف الدورة", value: cycle.totalExpense, source: "snapshot" });
     const daysLeft = Math.max(0, cycle.period.daysTotal - cycle.period.daysElapsed);
+    const left = ledger.add({
+      id: "snapshot_days_left", label: cycle.period.isSalaryCycle ? "أيام فاضلة على المرتب" : "أيام فاضلة على آخر الشهر",
+      value: daysLeft, unit: "days", source: "snapshot", say: spellDays(daysLeft),
+    });
     lines.push(
       cycle.period.isSalaryCycle
-        ? `المصروف من يوم المرتب (${cycle.period.salaryDay}): ${fact.say}، وفاضل ${spellDays(daysLeft)} على المرتب الجاي.`
-        : `مصروف الشهر ده: ${fact.say}، وفاضل ${spellDays(daysLeft)} على آخر الشهر.`,
+        ? `المصروف من يوم المرتب (${cycle.period.salaryDay}): ${fact.say}${tag(fact)}، وفاضل ${spellDays(daysLeft)}${tag(left)} على المرتب الجاي.`
+        : `مصروف الشهر ده: ${fact.say}${tag(fact)}، وفاضل ${spellDays(daysLeft)}${tag(left)} على آخر الشهر.`,
     );
     if (cycle.totalIncome > 0) {
       const income = ledger.add({ id: "snapshot_cycle_income", label: "دخل الدورة", value: cycle.totalIncome, source: "snapshot" });
-      lines.push(`الدخل المسجّل في نفس الفترة: ${income.say}.`);
+      lines.push(`الدخل المسجّل في نفس الفترة: ${income.say}${tag(income)}.`);
     }
   }
   if (lastDay && lastDay !== todayKey) {

@@ -181,7 +181,7 @@ model {
     voice = module 'Voice' {
       description 'Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway, the Gemini Live engine, the brain with its tools and the checks on what is said, Egyptian number speech, the post-call memory and the admin dashboard’s figures. api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month.'
       metadata {
-        files '34'
+        files '36'
         paths 'api/services/voice/**, api/services/entitlements/**'
       }
     }

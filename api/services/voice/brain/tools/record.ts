@@ -26,6 +26,7 @@ import type { Draft, GateRefusal } from "../drafts";
 import { spellAmount, spellCount } from "../spoken";
 import { extractSpokenNumbers } from "../validator";
 import { isRefund } from "../../../../../contracts/expense-save";
+import { getFinanceCacheGen } from "../../../finance-semantic-layer/cache";
 import { num, str, type ParsedExpenseItem, type ToolContext, type VoiceTool } from "./types";
 
 interface ExpenseDraftPayload {
@@ -307,8 +308,11 @@ async function execute(draft: Draft, ctx: ToolContext): Promise<{ ok: boolean; m
     if (ids.length === 0) throw new Error("save_incomplete");
     const message = payload.items.length === 1
       ? `اتسجل ${lineFor(payload.items[0]).label} بـ ${spellAmount(payload.items[0].amount, { exact: true }).text}`
-      : `اتسجلت ${operations(payload.items.length)} بإجمالي ${spellAmount(draft.total ?? 0, { exact: true }).text}`;
+      : draft.total === undefined
+        ? `اتسجلت ${operations(payload.items.length)}`
+        : `اتسجلت ${operations(payload.items.length)} بإجمالي ${spellAmount(draft.total, { exact: true }).text}`;
     ctx.drafts.settle(draft.id, "executed", { resultIds: ids, message });
+    await recordsChanged(ctx);
     return { ok: true, message };
   }
   if (draft.kind === "undo") {
@@ -318,6 +322,7 @@ async function execute(draft: Draft, ctx: ToolContext): Promise<{ ok: boolean; m
     const message = deleted === ids.length ? "اتلغى آخر تسجيل" : `اتلغى ${deleted} من ${ids.length} بس`;
     if (undone && deleted === ids.length) ctx.drafts.settle(undone.id, "cancelled", { message: `${undone.message ?? undone.title} (اتلغى)` });
     ctx.drafts.settle(draft.id, "executed", { message });
+    await recordsChanged(ctx);
     return { ok: true, message };
   }
   const { actionId } = draft.payload as ActionDraftPayload;
@@ -325,7 +330,21 @@ async function execute(draft: Draft, ctx: ToolContext): Promise<{ ok: boolean; m
   const result = await confirmAction(runtime, actionId, {}, { suggestFollowUp: false });
   const message = result.message || draft.title;
   ctx.drafts.settle(draft.id, "executed", { message });
+  await recordsChanged(ctx);
   return { ok: true, message };
+}
+
+/** Said with every executed write: the call's earlier figures are out of date until read again. */
+export const RECORDS_CHANGED_SAY = "السجل اتغير: أي رقم اتقال قبل كده في المكالمة ممكن يكون اتغير؛ لو محتاج رقم هاته تاني بـ money_query.";
+
+/**
+ * The call's own write changed the records: every figure read before is marked out of date, and the ledger
+ * generation it moved to is taken as seen, so the next read does not report it as someone else's change.
+ */
+async function recordsChanged(ctx: ToolContext): Promise<void> {
+  ctx.ledger.markRecordsChanged();
+  if (!ctx.records) return;
+  ctx.records.seen = await getFinanceCacheGen(ctx.identity.userId, ctx.identity.userType).catch(() => ctx.records!.seen);
 }
 
 /** Runs a draft that passed the gate, turning any failure into a settled, honest outcome. */
@@ -359,7 +378,7 @@ async function confirm(args: Record<string, unknown>, ctx: ToolContext): Promise
   const draft = ctx.drafts.get(id)!;
   return {
     response: result.ok
-      ? { ok: true, done: result.message, say: "قول إن ده اتعمل بجملة قصيرة." }
+      ? { ok: true, done: result.message, records_changed: RECORDS_CHANGED_SAY, say: "قول إن ده اتعمل بجملة قصيرة." }
       : { ok: false, error: "write_failed", say: "قول بوضوح إنه ماتسجلش، واعرض تحاول تاني." },
     card: ctx.drafts.card(draft),
   };

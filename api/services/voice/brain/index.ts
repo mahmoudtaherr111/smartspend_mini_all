@@ -3,20 +3,23 @@
  * assistant actually said. A new brain is built for every call; its state travels with the call if the call moves
  * to another server.
  */
+import { randomBytes } from "crypto";
 import { getProfileSnapshot } from "../../finance-semantic-layer";
 import type { VoiceWaitDetail } from "../../../../contracts/voice-protocol";
 import type { CallBrain, CallIdentity, SpeechCheck } from "../gateway/call-session";
 import { DONE_CLAIM_NOTE, DoneClaimCheck } from "./claims";
 import { DraftBook } from "./drafts";
 import { FactLedger } from "./facts";
+import { buildCoachInstruction } from "./coach-instructions";
 import { buildInstruction, openingNote } from "./instructions";
 import { markAsked } from "./profile-questions";
 import { loadCallSnapshot } from "./snapshot";
 import { appHelpTool } from "./tools/app-help";
+import { calculateTool } from "./tools/calculate";
 import { marketPriceTool } from "./tools/market-price";
 import { memoryTool } from "./tools/memory";
 import { moneyQuery } from "./tools/money-query";
-import { cancelTool, changeDraftTool, confirmTool, dropRuntimeAction, executeDraft, recordDraftTool } from "./tools/record";
+import { cancelTool, changeDraftTool, confirmTool, dropRuntimeAction, executeDraft, RECORDS_CHANGED_SAY, recordDraftTool } from "./tools/record";
 import { thinkTool } from "./tools/think";
 import type { ToolContext, VoiceAppCalls, VoiceTool } from "./tools/types";
 import { correctionNote, SpokenNumberValidator, type Mismatch } from "./validator";
@@ -36,6 +39,21 @@ export const VOICE_TOOLS: VoiceTool[] = [
   marketPriceTool,
 ];
 
+/**
+ * The coach call's tools: no text model judges for it; the live model reasons and every sum is `calculate`.
+ */
+export const COACH_TOOLS: VoiceTool[] = [
+  moneyQuery,
+  calculateTool,
+  recordDraftTool,
+  changeDraftTool,
+  confirmTool,
+  cancelTool,
+  memoryTool,
+  appHelpTool,
+  marketPriceTool,
+];
+
 export interface BrainOptions {
   app: VoiceAppCalls;
   now?: () => Date;
@@ -49,8 +67,12 @@ export function createCallBrain(options: BrainOptions): CallBrain {
   const validator = new SpokenNumberValidator(ledger);
   const claims = new DoneClaimCheck();
   const openClarifications: number[] = [];
-  const tools = new Map((options.tools ?? VOICE_TOOLS).map((tool) => [tool.declaration.name, tool]));
+  const toolMap = (list: VoiceTool[]) => new Map(list.map((tool) => [tool.declaration.name, tool]));
+  let tools = toolMap(options.tools ?? VOICE_TOOLS);
   let salaryDay: Promise<number | undefined> | null = null;
+  const records: { seen: number | null } = { seen: null };
+  /** The call's own mark on the app's notes, unknown to the user (never sent to the app, never spoken). */
+  let noteTag = `#${randomBytes(3).toString("hex")}`;
 
   const context = (identity: CallIdentity, signal: AbortSignal): ToolContext => ({
     identity,
@@ -60,6 +82,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     signal,
     now,
     openClarifications,
+    records,
     salaryDay: () => (salaryDay ??= getProfileSnapshot({ userId: identity.userId, userType: identity.userType })
       .then((profile) => profile.salaryDay)
       .catch(() => undefined)),
@@ -67,6 +90,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
 
   const check = (mismatch: Mismatch | null): SpeechCheck | null => {
     if (!mismatch) return null;
+    if (mismatch.stale) return { kind: "stale_number", note: null, incident: { spoken: mismatch.spoken } };
     return {
       note: validator.shouldCorrect(mismatch) ? correctionNote(mismatch) : null,
       // Numbers only: which figure was said and which it should have been, never the sentence.
@@ -76,16 +100,25 @@ export function createCallBrain(options: BrainOptions): CallBrain {
 
   return {
     async prepare(identity, callOptions) {
-      const snapshot = await loadCallSnapshot(identity, ledger, now());
+      const coach = callOptions.coach === true;
+      tools = toolMap(options.tools ?? (coach ? COACH_TOOLS : VOICE_TOOLS));
+      const snapshot = await loadCallSnapshot(identity, ledger, now(), { refs: coach });
       if (snapshot.question) await markAsked(identity.userId, identity.userType, now()).catch(() => undefined);
       const voiceGender = VOICE_CHOICES[callOptions.voiceName]?.gender ?? "female";
       return {
-        instruction: buildInstruction({ snapshot, voiceGender }),
+        instruction: coach
+          ? buildCoachInstruction({ snapshot, voiceGender, noteTag })
+          : buildInstruction({ snapshot, voiceGender, noteTag }),
         tools: [...tools.values()].map((tool) => tool.declaration),
       };
     },
 
     openingNote,
+
+    appNote(text) {
+      const inner = text.replace(/^\(ملاحظة من التطبيق[^:]*:\s*/, "").replace(/\)\s*$/, "");
+      return `(ملاحظة من التطبيق ${noteTag}: ${inner})`;
+    },
 
     waitDetail(calls) {
       const call = calls[0];
@@ -151,7 +184,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       return {
         card: drafts.card(drafts.get(draftId)!),
         note: result.ok
-          ? `(ملاحظة من التطبيق: المستخدم أكد من الشاشة واتعمل: ${result.message}. قول ده في جملة قصيرة.)`
+          ? `(ملاحظة من التطبيق: المستخدم أكد من الشاشة واتعمل: ${result.message}. قول ده في جملة قصيرة. ${RECORDS_CHANGED_SAY})`
           : "(ملاحظة من التطبيق: المستخدم أكد من الشاشة بس العملية ماتمتش. قول كده بوضوح واعرض تحاول تاني.)",
       };
     },
@@ -160,17 +193,27 @@ export function createCallBrain(options: BrainOptions): CallBrain {
 
     summary: () => drafts.summary(),
 
-    snapshot: () => ({ ledger: ledger.snapshot(), drafts: drafts.snapshot(), openClarifications: [...openClarifications] }),
+    snapshot: () => ({
+      ledger: ledger.snapshot(),
+      drafts: drafts.snapshot(),
+      openClarifications: [...openClarifications],
+      noteTag,
+      recordsSeen: records.seen,
+    }),
 
     restore(state) {
       const saved = (state ?? {}) as {
         ledger?: Parameters<FactLedger["restore"]>[0];
         drafts?: Parameters<DraftBook["restore"]>[0];
         openClarifications?: number[];
+        noteTag?: string;
+        recordsSeen?: number | null;
       };
       ledger.restore(saved.ledger);
       drafts.restore(saved.drafts);
       openClarifications.splice(0, openClarifications.length, ...(saved.openClarifications ?? []));
+      if (saved.noteTag) noteTag = saved.noteTag;
+      records.seen = saved.recordsSeen ?? null;
     },
   };
 }

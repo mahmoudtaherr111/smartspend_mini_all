@@ -3,10 +3,14 @@
  * console's voice section. Checked against Google's API on 2026-09-24/25; see docs/decisions/0006-gemini-model-chain.md.
  */
 
-/** Live models for the call itself. The plain one is the default; the other is an option an admin can try per plan. */
+/**
+ * Live models for the call itself. The plain one is the default; the extended-thinking one reasons in the background
+ * and is the coach call's model. Both have the same per-token prices; what a call costs is measured from its tokens
+ * (thinking included), never a fixed factor from an earlier test.
+ */
 export const VOICE_LIVE_MODELS = [
-  { id: "gemini-3.8-live", label: "Gemini 3.8 Live (الافتراضي، أسرع وأرخص)" },
-  { id: "gemini-3.8-live-extended-thinking", label: "Gemini 3.8 Live Extended Thinking (أبطأ وحوالي ٢.٧ ضعف التكلفة)" },
+  { id: "gemini-3.8-live", label: "Gemini 3.8 Live (الافتراضي)" },
+  { id: "gemini-3.8-live-extended-thinking", label: "Gemini 3.8 Live Extended Thinking (بيفكر في الخلفية)" },
 ] as const;
 
 /** Google's text models, strongest first: the chain a busy model falls back along. */
