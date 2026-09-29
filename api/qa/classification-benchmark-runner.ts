@@ -28,6 +28,7 @@
  */
 import "dotenv/config";
 import { runSmartPipeline, SMART_PIPELINE_VERSION } from "../lib/smart-pipeline";
+import { resetCircuitBreakers, type LlmAttempt } from "../lib/llm-router";
 import type { PipelineInput } from "../lib/smart-pipeline";
 import {
   ALL_BENCHMARK_CASES,
@@ -174,6 +175,16 @@ function checkGates(opts: Options, apiKey: string): string[] {
 
 // ─── Run ────────────────────────────────────────────────────────────────────
 
+/** Whether the model was asked and no attempt got past a 5xx (overloaded, unavailable). */
+function providerWasOverloaded(result: { log?: unknown }): boolean {
+  const attempts = (result.log as { providerRoute?: { attempts?: LlmAttempt[] } })?.providerRoute?.attempts ?? [];
+  return (
+    attempts.length > 0 &&
+    !attempts.some((attempt) => attempt.ok) &&
+    attempts.some((attempt) => (attempt.status ?? 0) >= 500 || /unavailable|overloaded|high demand/i.test(attempt.message ?? ""))
+  );
+}
+
 const BENCH_USER_BASE = 940_000;
 
 function inputFor(
@@ -302,6 +313,14 @@ async function main(): Promise<void> {
     let crashed = false;
     try {
       result = await runSmartPipeline(inputFor(c, i, opts, apiKey, model));
+      // The model was asked and every attempt met an overloaded or unavailable provider (5xx): the case would
+      // score the provider's load, not the model. Wait, close nothing, and ask again, up to three times.
+      for (let retry = 1; retry <= 3 && providerWasOverloaded(result); retry++) {
+        console.warn(`\n  ${c.id}: provider overloaded, retry ${retry} in ${retry * 15}s`);
+        await new Promise((resolve) => setTimeout(resolve, retry * 15_000));
+        resetCircuitBreakers();
+        result = await runSmartPipeline(inputFor(c, i, opts, apiKey, model));
+      }
     } catch (err) {
       crashed = true;
       result = {
