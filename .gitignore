@@ -72,3 +72,6 @@ android-app/.gradle/
 android-app/build/
 android-app/app/build/
 android-app/local.properties
+
+# Local Redis snapshot (redis-server writes it to its working directory)
+dump.rdb
