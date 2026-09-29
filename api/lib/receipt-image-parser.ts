@@ -47,17 +47,21 @@ export interface ReceiptParseResult {
   visionUsage?: GeminiUsageMetadata;
 }
 
-const MAX_IMAGE_BASE64_CHARS = 4_500_000;
+/** The largest image, as base64 without its data-URI prefix, that is read. `image.parseReceipt` refuses larger ones. */
+export const MAX_IMAGE_BASE64_CHARS = 4_500_000;
 
 export function stripDataUri(base64: string): string {
   return base64.includes(",") ? base64.split(",")[1]! : base64;
 }
 
-/** Downscale payload by truncating oversized base64 (client should compress; this is a safety net). */
+/**
+ * The image without its data-URI prefix. A payload over the cap is refused: cutting base64 short, which this used to
+ * do, sends the model a broken image that it may still read a wrong amount from.
+ */
 export function guardImagePayloadSize(base64: string): string {
   const pure = stripDataUri(base64);
-  if (pure.length <= MAX_IMAGE_BASE64_CHARS) return pure;
-  return pure.slice(0, MAX_IMAGE_BASE64_CHARS);
+  if (pure.length > MAX_IMAGE_BASE64_CHARS) throw new RangeError("receipt_image_too_large");
+  return pure;
 }
 
 /** Regex OCR for Egyptian bank SMS / receipt screenshots */
@@ -241,7 +245,9 @@ export async function parseReceiptImage(input: {
   };
 
   return {
-    amount: item.amount,
+    // The total the vision model read off the receipt. The pipeline classifies the OCR text, and its first item is
+    // often one line of the receipt, not the total.
+    amount: vision.parsed.amount,
     description: item.description,
     category: item.category,
     subCategory: item.subCategory,

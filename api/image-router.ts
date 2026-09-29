@@ -13,7 +13,7 @@ import {
   recordAiUsageEvent,
   asPlan,
 } from "./lib/ai-usage-policy";
-import { parseReceiptImage } from "./lib/receipt-image-parser";
+import { MAX_IMAGE_BASE64_CHARS, parseReceiptImage, stripDataUri } from "./lib/receipt-image-parser";
 import { verifyImageMagicBytes } from "./lib/image-magic-bytes";
 import { normalizeTransactionTaxonomy } from "./lib/category-registry";
 import { mapModelName } from "./lib/model-mapper";
@@ -64,11 +64,12 @@ export const imageRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (input.imageBase64.length > 5_500_000) {
+      // The same cap the parser reads up to, so an image is refused here rather than cut short there.
+      if (stripDataUri(input.imageBase64).length > MAX_IMAGE_BASE64_CHARS) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            "حجم الصورة كبير جداً. استخدم ضغط الصورة من الكاميرا وحاول مرة أخرى.",
+            "الصورة كبيرة أوي. صوّرها تاني بجودة أقل وجرّب.",
         });
       }
 

@@ -325,11 +325,25 @@ async function addMentionedContacts(
 export function reviewCorrection(
   parsed: unknown,
   saved: { category: string; subCategory?: string | null; type: string; amount: number },
-): { previousCategory: string; previousSubCategory: string | null } | null {
-  if (!Array.isArray(parsed) || parsed.length !== 1) return null;
-  const proposed = parsed[0] as { category?: string; subCategory?: string | null };
+): { previousCategory: string; previousSubCategory: string | null; clause?: string } | null {
+  if (!Array.isArray(parsed) || parsed.length === 0) return null;
+  type Proposed = { category?: string; subCategory?: string | null; amount?: unknown; clause?: unknown };
+  let proposed: Proposed | undefined;
+  if (parsed.length === 1) {
+    proposed = parsed[0] as Proposed;
+  } else {
+    // Several items: the saved row is the one parsed item with its amount, and it teaches from its own clause. An
+    // amount two items share, or an item without its clause, teaches nothing rather than guess.
+    const sameAmount = (parsed as Proposed[]).filter((item) => Number(item?.amount) === saved.amount);
+    if (sameAmount.length !== 1 || typeof sameAmount[0].clause !== "string" || !sameAmount[0].clause.trim()) return null;
+    proposed = sameAmount[0];
+  }
   if (!proposed?.category || proposed.category === saved.category) return null;
-  return { previousCategory: proposed.category, previousSubCategory: proposed.subCategory ?? null };
+  return {
+    previousCategory: proposed.category,
+    previousSubCategory: proposed.subCategory ?? null,
+    ...(parsed.length > 1 ? { clause: String(proposed.clause) } : {}),
+  };
 }
 
 /**
@@ -350,7 +364,8 @@ async function learnFromReview(
       .where(and(eq(classificationLogs.id, logId), eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)))
       .limit(1);
     const change = log ? reviewCorrection(log.finalResult, saved) : null;
-    if (!log || !change || !log.originalText) return;
+    const learnedFrom = change?.clause ?? log?.originalText;
+    if (!log || !change || !learnedFrom) return;
     await getDb()
       .update(classificationLogs)
       .set({
@@ -367,7 +382,7 @@ async function learnFromReview(
     await recordCorrection({
       userId,
       userType,
-      originalText: log.originalText,
+      originalText: learnedFrom,
       category: saved.category,
       subCategory: saved.subCategory,
       type: saved.type,
@@ -1048,8 +1063,9 @@ export const expenseRouter = router({
       }
 
       // Non-critical side effects (outside transaction)
-      if (itemsToInsert.length === 1) {
-        await learnFromReview(userId as number, requestUserType, itemsToInsert[0].classificationLogId, itemsToInsert[0]);
+      // Each item teaches from its own clause of the sentence (reviewCorrection).
+      for (const item of itemsToInsert) {
+        await learnFromReview(userId as number, requestUserType, item.classificationLogId, item);
       }
       invalidateUserMemory(userId, requestUserType);
       await invalidateExpenseCache(userId, requestUserType);

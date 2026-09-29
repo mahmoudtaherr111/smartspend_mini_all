@@ -253,9 +253,11 @@ panel, to admins only.
   `expense.batchCreate`, with source `ai_parsed` or `voice`, the log id and, for queued offline text, a client
   request id. When saving fails, the items are shown for review. The saved toast says what was saved (amount and
   category, or the count and total) and offers "تراجع", which deletes exactly the saved ids (`expense.create`
-  returns its id, `expense.batchCreate` its `ids`). When the saved category differs from the one the parser
-  proposed for a one-item sentence (found through the log id), the save records it as the user's correction and
-  marks the log corrected, as editing a saved item does.
+  returns its id, `expense.batchCreate` its `ids`). When a saved item's category differs from the one the parser
+  proposed for it (found through the log id), the save records it as the user's correction and marks the log
+  corrected, as editing a saved item does. In a several-item sentence each item carries the clause it was read from
+  (`clause`), and the rule is learned from that clause, matched to the saved row by its amount; an amount two items
+  share teaches nothing (`api/expense-router.ts#reviewCorrection`).
 - `review`: editable cards with totals per direction; the user fixes or removes rows, then saves. A card's
   category list holds the categories of its item's kind (`src/lib/financial-taxonomy.ts#getCategoryOptionsForType`),
   and a newly picked category starts at its general subcategory.
@@ -289,7 +291,10 @@ at the plan's per-recording limit and at the seconds left this month.
 reserves the image budget and calls `api/lib/receipt-image-parser.ts#parseReceiptImage`: with an OCR text hint it
 reads the amount locally and runs the pipeline on a short sentence; otherwise a Gemini vision call (the
 `ai_model_pro` setting, else `GEMINI_MODEL_PRO`, whose default is `gemini-3.5-flash`, through `mapModelName`) reads
-the receipt and the pipeline runs on its OCR text. The first item is normalized against the registry. The entry form
+the receipt and the pipeline runs on its OCR text: the category comes from the pipeline's first item, the amount is
+the total the vision model read (the first item of the OCR text is often one line of the receipt). An image over the
+parser's cap (`MAX_IMAGE_BASE64_CHARS`) is refused by the procedure, never cut short. The category is normalized
+against the registry. The entry form
 asks with `saveExpense: false`, so nothing is saved: the item opens the review card like a typed sentence, and saving
 it there stores it with source `image` through `expense.batchCreate`. (`saveExpense: true`, the default, still saves
 at once; nothing in the app calls it that way.) The form offers the camera only when `pro.myPlan` reports the receipts feature for the plan, and only online.
@@ -378,20 +383,10 @@ checked (`src/lib/clientRulesEngine.ts#validateOfflineInput`) and classified by 
 Checked against the code; each one names where it lives.
 1. **Gap.** A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع"
    rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
-2. **Bug.** A receipt's amount on the review card is the first item the pipeline read from the OCR text,
-   which can differ from the total the vision model returned, and a base64 image longer than the parser's cap
-   is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the
-   procedure accepts larger payloads.
-3. **Gap.** `parseVoiceExpense` creates contacts for the people it resolves while parsing, before the user saves
-   anything. (Voice seconds are counted and written per Cairo calendar month, `voiceMonth` in
-   `api/services/entitlements/voice.ts`, by both voice endpoints and `ai.getUserLimits`; the microphone shows what is
-   left.)
-4. **Gap.** A category changed on the review card teaches a rule only when the sentence was one item
-   (`api/expense-router.ts#reviewCorrection`); in a multi-item sentence it is saved but not learned. `ai.learnWord`, `expense.createCategory` and
-   `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is
-   not rendered anywhere.
-5. **Debt.** The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win;
-   the code reads the `parser_*` keys first.
+2. **Gap.** `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and
+   `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere. (People a recording names become contacts
+   when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in
+   `api/services/entitlements/voice.ts`.)
 
 ## Related systems
 - [Money](money.md): lists, statistics, wallets, budgets, and the rollups these saves feed.

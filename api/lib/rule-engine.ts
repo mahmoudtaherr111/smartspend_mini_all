@@ -77,6 +77,11 @@ export interface ParsedTransaction {
   };
   /** Readings of the clause the clues support, strongest first; shown to the model when it is asked. */
   candidates?: string[];
+  /**
+   * The clause of a several-item sentence this item was read from ("بنزين 300" out of "بنزين 300 وقهوة 50"), so a
+   * category the user changes on one item teaches a rule for that clause, not for the whole sentence.
+   */
+  clause?: string;
 }
 
 export interface ClassificationProfileContext {

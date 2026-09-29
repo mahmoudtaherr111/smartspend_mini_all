@@ -1458,24 +1458,8 @@ export const aiRouter = router({
         businessMode: Boolean(input.businessMode && biz.length > 0),
       });
 
-      let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;
-      for (const item of parseResult.items) {
-        if (item.person_mentioned && item.person_relationship) {
-          const pName = item.person_mentioned.trim();
-          const pRel = item.person_relationship.trim();
-          if (pName && pName !== "عام" && pName !== "شخص") {
-            const { addDynamicContact } =
-              await import("./services/user-profile-service");
-            const res = await addDynamicContact(
-              ctx.user.id,
-              ctx.user.type,
-              pName,
-              pRel,
-            );
-            if (res && res.isNew) newlyAddedContact = res;
-          }
-        }
-      }
+      // People the recording names become contacts when the entry is saved (expense.create and
+      // expense.createBatch link `personName`), as for typed text, not while it is only being read.
 
       const financeContextSource = currentMonthSummary ? "finance.summary" : "fallback_zero";
       const parseTrace = buildParserTrace({

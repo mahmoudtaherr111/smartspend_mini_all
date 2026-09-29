@@ -32,8 +32,9 @@ Read `smart-pipeline.ts` before changing any stage.
 4. A behaviour change must keep the classification benchmark green: `npm run bench:classify`, and
    `npm run bench:classify:compare` against the frozen baseline.
 5. Correction learning (`recordCorrection`) runs from `expense.update`, called by the edit dialog of a saved
-   item, and from a save whose category differs from the one-item parse it came from (`learnFromReview` in
-   `api/expense-router.ts`). A multi-item sentence teaches no rule.
+   item, and from a save whose category differs from the parse it came from (`learnFromReview` in
+   `api/expense-router.ts`). In a several-item sentence an item teaches from its own `clause`, never from the
+   whole sentence.
 6. Model ids through `model-mapper.ts`; admin-configured providers and keys through `ai-gateway.ts`.
 7. A cache follows `docs/decisions/0013-caching-as-one-system.md`: its key holds what the answer depends on,
    it stores and returns copies, and it never keeps a degraded answer. Adding an input to the pipeline means

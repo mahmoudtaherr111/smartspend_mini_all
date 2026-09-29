@@ -429,8 +429,8 @@ async function classifyAdmittedEvents(
   // sentence had been segmented. The admin's explicit value was honoured by both, which
   // is exactly why the split went unnoticed: it only misbehaved at the default.
   //
-  // The legacy `confidence_*` keys still win when set, because installs configured
-  // through the older settings screen wrote those and their operators meant them.
+  // The `parser_*` key wins when set; the legacy `confidence_*` key, which the older
+  // settings screen wrote, is read only when it is absent.
   const resolveThreshold = (
     key: string,
     legacyKey: string,
@@ -1134,7 +1134,9 @@ async function classifyAdmittedEvents(
       );
       corrected.appliedRuleIds.forEach(noteRuleApplied);
 
-      const calibratedSegment = applyCalibration(corrected.items);
+      const calibratedSegment = applyCalibration(
+        corrected.items.map((item) => ({ ...item, clause: segmentTextWithVerb })),
+      );
       const segmentItems = calibratedSegment.items;
       const amountsFullyConsumed = reconcileAmounts(
         buildAnchors(extractAmounts(segmentNormalized).map((amount) => amount.amount)), segmentItems,

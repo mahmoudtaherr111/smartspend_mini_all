@@ -224,19 +224,19 @@
       "files": {
         "api/ai-router.ts#ai.learnWord": "ef6a568c333e",
         "api/ai-router.ts#ai.parseExpense": "c8f5ae781196",
-        "api/ai-router.ts#ai.parseVoiceExpense": "ae746de43d99",
+        "api/ai-router.ts#ai.parseVoiceExpense": "a2da9c226247",
         "api/ai-router.ts#ai.speechToText": "b2afa75738a4",
         "api/ai-router.ts#rest-of-file": "6289570aef0c",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
         "api/expense-router.ts#expense.answerClarification": "b62008d0b1a6",
-        "api/expense-router.ts#expense.batchCreate": "b9110133d9ad",
+        "api/expense-router.ts#expense.batchCreate": "5402c88e8f4c",
         "api/expense-router.ts#expense.create": "9a71d9c6dc1a",
         "api/expense-router.ts#expense.createCategory": "8b691f7a3e91",
         "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "d7baf7fda4bb",
-        "api/image-router.ts": "4043abdc33c7",
+        "api/expense-router.ts#rest-of-file": "522a2fb77ff7",
+        "api/image-router.ts": "062a7162dcfb",
         "api/lib/admissibility-gate.ts": "3b5889850057",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
         "api/lib/amount-linker.ts": "23fb47c27442",
@@ -276,10 +276,10 @@
         "api/lib/pipeline-person.ts": "d9e03eacface",
         "api/lib/post-classifier-verifier.ts": "64e8bebff98d",
         "api/lib/real-user-sim.ts": "569dd5235fe1",
-        "api/lib/receipt-image-parser.ts": "cd75393a2c4b",
+        "api/lib/receipt-image-parser.ts": "213e1bb1a63f",
         "api/lib/relationship-normalizer.ts": "be8cc3a84254",
-        "api/lib/rule-engine.ts": "d9504fc35853",
-        "api/lib/smart-pipeline.ts": "8446ac3c9f5c",
+        "api/lib/rule-engine.ts": "bea371a5b96e",
+        "api/lib/smart-pipeline.ts": "5ad133da07d6",
         "api/lib/stt-corrections.ts": "2becb68a8fbe",
         "api/lib/taxonomy-adapter.ts": "fd63a36d2f25",
         "api/lib/taxonomy-ssot.ts": "fb99f8118120",
@@ -292,9 +292,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-09-29 49f3cb9",
-      "arabic": "359b47ee7e9e",
-      "arabicChecked": "2026-09-29 49f3cb9"
+      "checked": "2026-09-29 9dcfd2a",
+      "arabic": "2ee66f9415db",
+      "arabicChecked": "2026-09-29 9dcfd2a"
     },
     "insights": {
       "files": {
@@ -350,7 +350,7 @@
         "api/expense-router.ts#expense.previewCategory": "dab97f94d0c8",
         "api/expense-router.ts#expense.searchTransactions": "9d92514f1158",
         "api/expense-router.ts#expense.update": "622cb07085c4",
-        "api/expense-router.ts#rest-of-file": "d7baf7fda4bb",
+        "api/expense-router.ts#rest-of-file": "522a2fb77ff7",
         "api/export-router.ts#export.myExpenses": "d0acca7338ba",
         "api/export-router.ts#rest-of-file": "45767b678670",
         "api/goals-router.ts": "7abbe5a2ba53",
@@ -390,7 +390,7 @@
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
         "src/pages/Home.tsx": "fe674b3c4b88"
       },
-      "checked": "2026-09-29 dfd750a",
+      "checked": "2026-09-29 9dcfd2a",
       "arabic": "3d14c1b80d38",
       "arabicChecked": "2026-09-29 a380e03"
     },

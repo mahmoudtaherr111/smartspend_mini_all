@@ -4,18 +4,18 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (32 of 95 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (31 of 92 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-29 49f3cb9 | 2026-09-29 49f3cb9 | 18 | — | 1 | 3 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-29 9dcfd2a | 2026-09-29 9dcfd2a | 18 | — | — | 2 | — |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 5 | — | — | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-29 8771898 | 2026-09-29 8771898 | 6 | — | — | 2 | — |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-29 a380e03 | 2026-09-29 a380e03 | 4 | — | 4 | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-29 dfd750a | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-29 dfd750a | 2026-09-29 a380e03 | 5 | — | 5 | 5 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-29 9dcfd2a | 2026-09-29 a380e03 | 5 | — | 5 | 5 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 14 | **2** | 1 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-28 af819ef | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 1 | **1** | 5 | 1 | 2 |
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (32 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (95 issue(s))
+## What is waiting (92 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -48,10 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (27)
-
-**Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
-- A receipt's amount on the review card is the first item the pipeline read from the OCR text, which can differ from the total the vision model returned, and a base64 image longer than the parser's cap is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the procedure accepts larger payloads.
+### Bugs (26)
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - A reply to a clarifying question starts over: `sendMessage` stores the clarification state in the conversation's metadata, but reads it from `requireOwnedConversation`, which selects only the id, so the state is never found and the reply is planned as a new message.
@@ -93,12 +90,11 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (38)
+### Gaps (37)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
-- `parseVoiceExpense` creates contacts for the people it resolves while parsing, before the user saves anything. (Voice seconds are counted and written per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`, by both voice endpoints and `ai.getUserLimits`; the microphone shows what is left.)
-- A category changed on the review card teaches a rule only when the sentence was one item (`api/expense-router.ts#reviewCorrection`); in a multi-item sentence it is saved but not learned. `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere.
+- `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - The APK behind `/downloads/smartspend-sync.apk` is a debug build that `.github/workflows/build-apk.yml` commits when `android-app/` changes; it is signed with the runner's throwaway debug key, so a newer build cannot install over an older one until a release key is configured.
@@ -157,10 +153,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, since they belong to the account. The logout dialog in `src/pages/More.tsx` says how many entries are still unsent first; the sidebar's and the biometric lock's logout do not.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (25)
-
-**Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
-- The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win; the code reads the `parser_*` keys first.
+### Debt (24)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.

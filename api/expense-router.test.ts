@@ -122,10 +122,32 @@ describe("learning from the review card", () => {
     });
   });
 
-  it("learns nothing when the category was kept or the sentence held several items", () => {
+  it("learns nothing when the category was kept", () => {
     expect(reviewCorrection([{ category: "عناية شخصية" }], saved)).toBeNull();
-    expect(reviewCorrection([{ category: "مواصلات" }, { category: "أكل وشرب" }], saved)).toBeNull();
     expect(reviewCorrection(null, saved)).toBeNull();
+  });
+
+  it("in a several-item sentence, learns from the changed item's own clause", () => {
+    const parsed = [
+      { category: "مواصلات", subCategory: "أوبر/كريم", amount: 150, clause: "اشتريت كريم للوش 150" },
+      { category: "أكل وشرب", subCategory: "قهوة وكافيه", amount: 60, clause: "وقهوة 60" },
+    ];
+    expect(reviewCorrection(parsed, saved)).toEqual({
+      previousCategory: "مواصلات",
+      previousSubCategory: "أوبر/كريم",
+      clause: "اشتريت كريم للوش 150",
+    });
+    // The item kept as it was teaches nothing.
+    expect(reviewCorrection(parsed, { ...saved, category: "أكل وشرب", amount: 60 })).toBeNull();
+  });
+
+  it("does not guess which item was changed when two share the amount or the clause is unknown", () => {
+    const twins = [
+      { category: "مواصلات", amount: 150, clause: "كريم 150" },
+      { category: "أكل وشرب", amount: 150, clause: "غدا 150" },
+    ];
+    expect(reviewCorrection(twins, saved)).toBeNull();
+    expect(reviewCorrection([{ category: "مواصلات", amount: 150 }, { category: "أكل وشرب", amount: 60 }], saved)).toBeNull();
   });
 });
 
