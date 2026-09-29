@@ -16,7 +16,6 @@ import {
   storageCategoryName,
 } from "../../lib/category-registry";
 import { recordCorrection } from "../../lib/correction-rules";
-import { invalidateUserClassificationCache } from "../../lib/smart-pipeline";
 import { classifyText } from "../../lib/classify-text";
 import { bumpFinanceCacheGen, invalidateFinanceUserCache } from "../finance-semantic-layer";
 import { getSmartProfile, saveSmartProfile } from "../user-profile-service";
@@ -520,7 +519,6 @@ async function executeExpenseCreate(
   });
 
   invalidateUserMemory(ctx.userId, ctx.userType);
-  invalidateUserClassificationCache(ctx.userId, ctx.userType);
   await bumpFinanceCacheGen(ctx.userId, ctx.userType);
   // Like a save from the entry form: a budget this spending reaches warns once.
   if ((expense.type ?? "expense") === "expense") {
@@ -693,7 +691,6 @@ async function executeExpenseRecategorize(
       ),
     );
   invalidateUserMemory(ctx.userId, ctx.userType);
-  invalidateUserClassificationCache(ctx.userId, ctx.userType);
   await bumpFinanceCacheGen(ctx.userId, ctx.userType);
   // A category changed from the chat teaches the parser like one changed in the edit dialog.
   if (existing.rawText && existing.category !== recategorize.category) {

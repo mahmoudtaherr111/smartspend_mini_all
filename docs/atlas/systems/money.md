@@ -108,10 +108,12 @@ flowchart LR
   router_goals ==> tbl_user_budgets
   router_goals ==> tbl_users
   router_profile --> sys_accounts
+  router_profile --> sys_ai_center
   router_profile --> sys_expense_capture
   router_profile ==> tbl_expenses
   router_profile ==> tbl_user_contacts
   router_profile ==> tbl_user_profiles
+  router_wallet --> sys_ai_center
   router_wallet ==> tbl_expenses
   router_wallet ==> tbl_user_wallets
   screens_accounts --> router_business

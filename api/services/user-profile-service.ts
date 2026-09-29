@@ -8,7 +8,6 @@ import {
 } from "../../db/schema";
 import { normalizeRelationship, parseNameAndRelationship, isRelationshipTerm } from "../lib/relationship-normalizer";
 import { extractExplicitPeopleContext, cleanPersonName } from "../lib/person-resolver";
-import { invalidateUserClassificationCache } from "../lib/smart-pipeline";
 import { invalidateUserMemory } from "../lib/muscle-memory";
 import { createLogger } from "../lib/log";
 
@@ -1001,7 +1000,6 @@ export async function addDynamicContact(
           .set({ relation: normalized })
           .where(eq(userContacts.id, row.id));
       }
-      invalidateUserClassificationCache(userId);
       invalidateUserMemory(userId, userType);
       return { isNew: false, name: cleanName, totalContacts: 0, contactId: row.id };
     } else {
@@ -1017,7 +1015,6 @@ export async function addDynamicContact(
         .select({ id: userContacts.id })
         .from(userContacts)
         .where(and(eq(userContacts.userId, userId), eq(userContacts.userType, userType)));
-      invalidateUserClassificationCache(userId);
       invalidateUserMemory(userId, userType);
       log.info({ event: "contact.saved", userId }, "Saved a new contact");
       const [created] = await db
@@ -1088,7 +1085,6 @@ export async function silenceContact(
       });
     }
 
-    invalidateUserClassificationCache(userId);
     invalidateUserMemory(userId, userType);
     log.info({ event: "contact.silenced", userId }, "Silenced a contact");
   } catch (err) {

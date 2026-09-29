@@ -65,9 +65,9 @@ vi.mock("../queries/connection", () => ({
   pool: { query: async () => [[], []], end: async () => {} },
 }));
 
+import { clearClassificationCache } from "./classification-cache";
 import {
   runSmartPipeline,
-  invalidateUserClassificationCache,
   SMART_PIPELINE_VERSION,
   type PipelineInput,
 } from "./smart-pipeline";
@@ -172,9 +172,7 @@ describe("Egyptian dialect classification benchmark (offline, local pass)", () =
 
   afterAll(async () => {
     if (scores.length === 0) return;
-    for (let i = 0; i < ALL_BENCHMARK_CASES.length; i++) {
-      invalidateUserClassificationCache(BENCH_USER_BASE + i, "local");
-    }
+    clearClassificationCache();
 
     // The headline aggregate — and therefore the frozen baseline the ratchet compares
     // against — is the DEV pool. The held-out pool is reported beside it, never mixed in:

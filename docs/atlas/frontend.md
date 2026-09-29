@@ -55,7 +55,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `AICenter` — `src/pages/AICenter.tsx`
 
-24 files in its import closure (not counting `src/components/ui/`).
+25 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -184,7 +184,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-47 files in its import closure (not counting `src/components/ui/`).
+48 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -205,11 +205,11 @@ _None._
 | `expense.deleteInstallmentPlan` | useMutation | `src/components/installments/InstallmentsPanel.tsx` |
 | `expense.dismissClarification` | useMutation | `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.getDebtBalances` | useQuery | `src/components/debts/DebtsPanel.tsx` |
-| `expense.getMonthSummary` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/pages/Home.tsx` |
-| `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/pages/Home.tsx` |
+| `expense.getMonthSummary` | useQuery, utils.invalidate, utils.prefetch | `src/pages/Home.tsx` |
+| `expense.getMonthlyStats` | useQuery, utils.invalidate, utils.prefetch | `src/pages/Home.tsx` |
 | `expense.getPendingClarifications` | useQuery, utils.invalidate | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.getSeasonSpending` | useQuery | `src/components/seasons/SeasonsPanel.tsx` |
-| `expense.list` | useQuery, utils.cancel, utils.getData, utils.invalidate, utils.setData | `src/components/bank-sync/SmsSuggestionsCard.tsx`, `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/EditExpenseDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.list` | useQuery, utils.cancel, utils.getData, utils.setData | `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.listInstallmentPlans` | useQuery, utils.invalidate | `src/components/installments/InstallmentsPanel.tsx` |
 | `expense.previewCategory` | useQuery | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.searchTransactions` | useQuery | `src/components/dashboard/GlobalSearch.tsx` |

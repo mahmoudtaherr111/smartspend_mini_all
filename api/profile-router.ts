@@ -26,7 +26,6 @@ import {
   getUserContacts,
   addDynamicContact,
 } from "./services/user-profile-service";
-import { invalidateUserClassificationCache } from "./lib/smart-pipeline";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 import {
   ADAPTIVE_ONBOARDING_QUESTIONS,
@@ -1009,7 +1008,6 @@ export const profileRouter = router({
         isSilenced: false,
       });
 
-      invalidateUserClassificationCache(ctx.user.id as number);
       invalidateUserMemory(ctx.user.id as number, ctx.user.type);
       return { id: result.insertId, success: true };
     }),
@@ -1071,7 +1069,6 @@ export const profileRouter = router({
           ));
       }
 
-      invalidateUserClassificationCache(ctx.user.id as number);
       invalidateUserMemory(ctx.user.id as number, ctx.user.type);
       return { success: true };
     }),
@@ -1159,8 +1156,10 @@ export const profileRouter = router({
           ));
       });
 
-      invalidateUserClassificationCache(ctx.user.id as number);
       invalidateUserMemory(ctx.user.id as number, ctx.user.type);
+      // The person's rows changed hands: the loan balances and the AI Center's per-person
+      // answers are cached, and read them.
+      await bumpFinanceCacheGen(ctx.user.id as number, ctx.user.type as "oauth" | "local");
       return { success: true };
     }),
 
@@ -1282,8 +1281,8 @@ export const profileRouter = router({
           ));
       });
 
-      invalidateUserClassificationCache(ctx.user.id as number);
       invalidateUserMemory(ctx.user.id as number, ctx.user.type);
+      await bumpFinanceCacheGen(ctx.user.id as number, ctx.user.type as "oauth" | "local");
       return { success: true, mergedInto: primary.name };
     }),
 });

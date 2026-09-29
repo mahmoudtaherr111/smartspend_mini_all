@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { refreshLedgerViews } from "@/lib/ledger-refresh";
 import {
   AlertCircle,
   BarChart3,
@@ -988,6 +989,8 @@ export default function AIChatbot() {
         [String(actionId)]: result.status,
       }));
       toast.success(result.message);
+      // A confirmed action can save, edit or recategorise expenses, or set a budget.
+      refreshLedgerViews(utils);
 
       const aiMsg: Message = {
         id: `ai-action-${Date.now()}`,

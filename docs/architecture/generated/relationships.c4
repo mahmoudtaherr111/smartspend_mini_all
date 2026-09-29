@@ -307,6 +307,7 @@ model {
   smartspend.api.modules.billing -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.arabic-nlp
+  smartspend.api.modules.classification -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.classification -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.classification -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.modules.classification -[reads]-> smartspend.mysql.expenses
@@ -697,7 +698,6 @@ model {
   smartspend.api.trpc.budget.update -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.budget.update -[writes]-> smartspend.mysql.user_budgets
   smartspend.api.trpc.business.addCategory -[reads]-> smartspend.mysql.user_businesses
-  smartspend.api.trpc.business.addCategory -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.business.addCategory -[writes]-> smartspend.mysql.business_categories
   smartspend.api.trpc.business.create -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.business.create -[uses]-> smartspend.api.modules.classification
@@ -717,20 +717,16 @@ model {
   smartspend.api.trpc.business.get -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.business.linkContact -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.business.linkContact -[reads]-> smartspend.mysql.user_contacts
-  smartspend.api.trpc.business.linkContact -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.business.linkContact -[writes]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.business.removeCategory -[reads]-> smartspend.mysql.business_categories
   smartspend.api.trpc.business.removeCategory -[reads]-> smartspend.mysql.user_businesses
-  smartspend.api.trpc.business.removeCategory -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.business.removeCategory -[writes]-> smartspend.mysql.business_categories
   smartspend.api.trpc.business.suggestCategories -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.business.suggestCategories -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.business.update -[reads]-> smartspend.mysql.user_businesses
-  smartspend.api.trpc.business.update -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.business.update -[writes]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.business.updateCategory -[reads]-> smartspend.mysql.business_categories
   smartspend.api.trpc.business.updateCategory -[reads]-> smartspend.mysql.user_businesses
-  smartspend.api.trpc.business.updateCategory -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.business.updateCategory -[writes]-> smartspend.mysql.business_categories
   smartspend.api.trpc.chat.cancelAction -[uses]-> smartspend.api.modules.ai-actions
   smartspend.api.trpc.chat.clearAllMemories -[reads]-> smartspend.mysql.ai_memory_items
@@ -962,6 +958,7 @@ model {
   smartspend.api.trpc.profile.deleteContact -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.deleteContact -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.trpc.profile.deleteContact -[uses]-> smartspend.api.modules.classification
+  smartspend.api.trpc.profile.deleteContact -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.user_profiles
@@ -987,6 +984,7 @@ model {
   smartspend.api.trpc.profile.mergeContacts -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.mergeContacts -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.trpc.profile.mergeContacts -[uses]-> smartspend.api.modules.classification
+  smartspend.api.trpc.profile.mergeContacts -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.profile.mergeContacts -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.profile.mergeContacts -[writes]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.mergeContacts -[writes]-> smartspend.mysql.user_profiles
@@ -1058,6 +1056,7 @@ model {
   smartspend.api.trpc.voice.listCalls -[reads]-> smartspend.mysql.voice_calls
   smartspend.api.trpc.voice.startCall -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.wallet.createWallet -[writes]-> smartspend.mysql.user_wallets
+  smartspend.api.trpc.wallet.deleteWallet -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.wallet.deleteWallet -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.wallet.deleteWallet -[writes]-> smartspend.mysql.user_wallets
   smartspend.api.trpc.wallet.getWalletTransactions -[reads]-> smartspend.mysql.expenses

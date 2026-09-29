@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { refreshLedgerViews } from "@/lib/ledger-refresh";
 import { toast } from "sonner";
 import { Check, MessageSquareText, X } from "lucide-react";
 import { trpc } from "@/providers/trpc";
@@ -24,9 +25,7 @@ export function SmsSuggestionsCard() {
 
   const refreshLedger = () => {
     void utils.profile.getSmsSuggestions.invalidate();
-    void utils.expense.list.invalidate();
-    void utils.expense.getMonthSummary.invalidate();
-    void utils.expense.getMonthlyStats.invalidate();
+    refreshLedgerViews(utils);
   };
 
   const confirm = trpc.profile.confirmSmsSuggestion.useMutation({

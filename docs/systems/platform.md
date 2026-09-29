@@ -71,7 +71,9 @@ storage, the contracts shared with the web app, and the retention job that prune
 - Keys are versioned: `sess:<hash>` for a resolved session, `authver:<type>:<id>` to invalidate them all at
   once, `cachegen:<type>:<id>` to invalidate a user's derived statistics, and `rl:` for the rate limiter.
 - `system_settings` is read through `getSystemSettings()`, cached in the process for five minutes and cleared
-  by `invalidateSettingsCache()` (golden rule 5).
+  by `invalidateSettingsCache()` (golden rule 5), which also bumps the Redis generation `settingsgen`; every other
+  process compares it at most every ten seconds and reloads. Every cache in the system, with its key, lifetime and
+  what keeps it current: `docs/decisions/0013-caching-as-one-system.md`.
 
 ## Jobs
 Registered in `api/boot.ts` and only where `ENABLE_CRONS=true`; each takes a MySQL advisory lock named after

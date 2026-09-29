@@ -238,6 +238,7 @@
         "api/lib/lexicon/**",
         "api/lib/evidence-weighing.ts",
         "api/lib/pipeline-person.ts",
+        "api/lib/classification-cache.ts",
         "api/lib/muscle-memory.ts",
         "api/lib/post-classifier-verifier.ts",
         "api/lib/admissibility-gate.ts",

@@ -15,7 +15,7 @@ vi.mock("../queries/connection", () => {
     limit: async () => [], then: (resolve: (rows: unknown[]) => unknown) => Promise.resolve([]).then(resolve) });
   return { db: { select: self, insert: self, update: self, query: {} }, pool: {} };
 });
-vi.mock("./muscle-memory", () => ({ muscleMemoryLookup: async () => null }));
+vi.mock("./muscle-memory", () => ({ muscleMemoryLookup: async () => null, userMemoryFingerprint: async () => "test" }));
 vi.mock("./ai-gateway", () => ({ resolveAdminRoutes: async () => ({ preferred: null, routes: [] }) }));
 vi.mock("./llm-router", async (original) => ({ ...await original<object>(),
   executeLlmChain: async () => { throw new Error("offline quality gate: no provider"); } }));

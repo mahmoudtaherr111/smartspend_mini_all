@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { refreshLedgerViews } from "@/lib/ledger-refresh";
 import { toast } from "sonner";
 import { HelpCircle } from "lucide-react";
 import { trpc } from "@/providers/trpc";
@@ -20,9 +21,7 @@ export function PendingQuestionsCard() {
 
   const refresh = () => {
     void utils.expense.getPendingClarifications.invalidate();
-    void utils.expense.list.invalidate();
-    void utils.expense.getMonthSummary.invalidate();
-    void utils.expense.getMonthlyStats.invalidate();
+    refreshLedgerViews(utils);
   };
   const remove = trpc.expense.delete.useMutation();
   const answer = trpc.expense.answerClarification.useMutation({

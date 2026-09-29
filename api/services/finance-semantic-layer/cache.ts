@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "async_hooks";
 import { withCacheStatus, cacheGet, cacheIncr } from "../../lib/redis-client";
 import { taxonomyVersion } from "../../lib/category-registry";
+import { businessDateKey } from "../../lib/app-time";
 
 const PREFIX = "finance_ai";
 // v4 (2026-09-24): summaries are one MySQL aggregate, and every result covers the personal ledger only (a business's
@@ -40,9 +41,17 @@ export function financeCacheKey(
   ].join(":");
 }
 
+/**
+ * Every ledger write bumps the user's generation, so a hit is normally current; the TTL
+ * bounds the damage of a bump that was lost. A period that still holds today can change
+ * any minute and is kept five minutes at most; a closed one an hour. Keys are
+ * `<kind>:<start>:<end>:salary_<n>` with Cairo day keys (period-resolver.ts).
+ */
 export function financeCacheTtl(periodKey: string): number {
   if (periodKey.startsWith("today:")) return 60;
   if (periodKey.startsWith("yesterday:")) return 10 * 60;
+  const end = periodKey.split(":")[2];
+  if (!end || !/^\d{4}-\d{2}-\d{2}$/.test(end) || end >= businessDateKey()) return 5 * 60;
   return 60 * 60;
 }
 

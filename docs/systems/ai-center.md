@@ -105,8 +105,9 @@ Actions are `goal.create`, `goal.update`, `goal.stop`, `expense.create`, `expens
 (`api/services/action-runtime/extended-actions.ts#validateRuntimeAction`), stored in `ai_pending_actions` with a
 summary and an expiry, and shown as a confirmation card. An `expense.create` draft is filed by the entry form's engine
 (`api/lib/classify-text.ts#classifyText`): its confident answer, with the type and a refund's direction, replaces the
-keyword guess or the model's category; a weak one only fills a draft that has none. Saving it clears the classification
-cache and checks budget alerts as the entry form does. `expense.recategorize` keeps the old subcategory only if the new
+keyword guess or the model's category; a weak one only fills a draft that has none. Saving it marks muscle memory stale,
+bumps the ledger generation and checks budget alerts as the entry form does; the chat refreshes every ledger view
+after a confirmed action (`src/lib/ledger-refresh.ts#refreshLedgerViews`). `expense.recategorize` keeps the old subcategory only if the new
 category has it, and records the change as the user's correction (`recordCorrection`), as the edit dialog does. A new goal respects the plan's active-goal limit
 (`goals_active_limit_<plan>`, the same setting `goals.create` reads).
 
@@ -177,7 +178,8 @@ the finance caches are cleared.
   the newest 10,000 at most (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Both cover the
   personal ledger only, as Home does: an expense with a `business_id` belongs to that business.
 - Results are cached per user (`api/services/finance-semantic-layer/cache.ts#withFinanceCache`): a minute for today,
-  ten minutes for yesterday, an hour otherwise, a minute for wallet balances and five minutes for goals and the
+  ten minutes for yesterday, five minutes for any other period that still holds today, an hour for a closed one
+  (`financeCacheTtl`), a minute for wallet balances and five minutes for goals and the
   profile snapshot. After writing, the expense, receipt and bank-message routers, the budget, goal and business
   routers and the action runtime bump the user's generation (`invalidateFinanceUserCache`, also exported as
   `bumpFinanceCacheGen`), which drops these results and the expense caches. The keys also carry a schema version

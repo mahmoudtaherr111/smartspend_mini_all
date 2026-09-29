@@ -11,8 +11,8 @@ here to its system.
 Read `smart-pipeline.ts` before changing any stage.
 1. `financial-event-plan.ts` splits the text into events and rejects questions, plans and negations
    (`negation-detector.ts`).
-2. In-process result cache, admissibility gate (`admissibility-gate.ts`), muscle memory
-   (`muscle-memory.ts`), business scoring (business mode only).
+2. Admissibility gate (`admissibility-gate.ts`), the result cache (`classification-cache.ts`, keyed by
+   everything the answer depends on), muscle memory (`muscle-memory.ts`), business scoring (business mode only).
 3. Per segment: `rule-engine.ts` (user dictionary, merchant registry, synonym graph, dictionaries, fuzzy
    match, embeddings), then user correction rules (`correction-rules.ts`), calibration
    (`confidence-calibrator.ts`) and the escalation decision (`classification-decision.ts`).
@@ -35,3 +35,6 @@ Read `smart-pipeline.ts` before changing any stage.
    item, and from a save whose category differs from the one-item parse it came from (`learnFromReview` in
    `api/expense-router.ts`). A multi-item sentence teaches no rule.
 6. Model ids through `model-mapper.ts`; admin-configured providers and keys through `ai-gateway.ts`.
+7. A cache follows `docs/decisions/0013-caching-as-one-system.md`: its key holds what the answer depends on,
+   it stores and returns copies, and it never keeps a degraded answer. Adding an input to the pipeline means
+   adding it to the result cache key. (`api/lib/classification-cache-invalidation.test.ts`)

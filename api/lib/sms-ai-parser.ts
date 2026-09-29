@@ -72,7 +72,7 @@ function setCacheEntry(
     }
   }
   aiParseCache.set(key, {
-    result,
+    result: structuredClone(result),
     expiresAt: Date.now() + CACHE_TTL,
   });
 }
@@ -166,7 +166,8 @@ export async function parseSmsFinancialData(
   const cached = aiParseCache.get(rawKey) || aiParseCache.get(condensedKey);
   if (cached && cached.expiresAt > now) {
     log.info({ event: "sms.parse.cache_hit", length: condensedMessage.length }, "Bank message parse served from cache");
-    return cached.result;
+    // A copy: the caller files and adjusts what it gets, and must not change the entry.
+    return structuredClone(cached.result);
   }
 
   try {

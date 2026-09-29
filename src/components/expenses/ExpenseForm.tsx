@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { refreshLedgerViews } from "@/lib/ledger-refresh";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { HapticButton } from "@/components/ui/haptic-button";
@@ -337,9 +338,7 @@ export function ExpenseForm({
           setDecision("clarify" as any);
           toast.info("اتحفظ. جاوب على اللي بعده.");
         } else {
-          utilsTrpc.expense.list.invalidate();
-          utilsTrpc.expense.getMonthlyStats.invalidate();
-          utilsTrpc.expense.getMonthSummary.invalidate();
+          refreshLedgerViews(utilsTrpc);
           setParsedItems(null);
           setDecision(null);
           setClarificationQuestion(null);
@@ -356,9 +355,7 @@ export function ExpenseForm({
           // Say what the answer saved, and offer to take it back.
           announceSaved(Array.isArray(data.saved) ? data.saved : [], (ids) =>
             Promise.all(ids.map((id) => deleteSavedMutation.mutateAsync({ id }))).finally(() => {
-              void utilsTrpc.expense.list.invalidate();
-              void utilsTrpc.expense.getMonthSummary.invalidate();
-              void utilsTrpc.expense.getMonthlyStats.invalidate();
+              refreshLedgerViews(utilsTrpc);
             }),
           );
           if (onSuccess) onSuccess();
@@ -688,9 +685,7 @@ export function ExpenseForm({
       );
     },
     onSettled: () => {
-      utilsTrpc.expense.list.invalidate();
-      utilsTrpc.expense.getMonthlyStats.invalidate();
-      utilsTrpc.expense.getMonthSummary.invalidate();
+      refreshLedgerViews(utilsTrpc);
     },
     onSuccess: (data: any) => {
       hapticSuccess();
@@ -725,9 +720,7 @@ export function ExpenseForm({
       );
     },
     onSettled: () => {
-      utilsTrpc.expense.list.invalidate();
-      utilsTrpc.expense.getMonthlyStats.invalidate();
-      utilsTrpc.expense.getMonthSummary.invalidate();
+      refreshLedgerViews(utilsTrpc);
     },
     onSuccess: (data: any) => {
       hapticSuccess();
@@ -1198,9 +1191,7 @@ export function ExpenseForm({
                     .then(() => toast.success("اترجعت"))
                     .catch(() => toast.error("ماقدرناش نرجعها، امسحها من القايمة"))
                     .finally(() => {
-                      void utilsTrpc.expense.list.invalidate();
-                      void utilsTrpc.expense.getMonthSummary.invalidate();
-                      void utilsTrpc.expense.getMonthlyStats.invalidate();
+                      refreshLedgerViews(utilsTrpc);
                     });
                 },
               }
@@ -1447,9 +1438,7 @@ export function ExpenseForm({
       }
 
       // Invalidate queries to refresh lists
-      utilsTrpc.expense.list.invalidate();
-      utilsTrpc.expense.getMonthlyStats.invalidate();
-      utilsTrpc.expense.getMonthSummary.invalidate();
+      refreshLedgerViews(utilsTrpc);
     };
 
     const handleOnline = () => {

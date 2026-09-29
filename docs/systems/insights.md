@@ -105,7 +105,8 @@ printable HTML file that the browser downloads.
   upserts `monthly_behavior_snapshots` and records a learning event.
 - **Contacts.** `addDynamicContact` cleans a name and relationship taken from a message and adds or updates the
   person in `user_contacts`; `silenceContact` marks a person the user declined to explain so they are not asked
-  again. Both clear the classification cache and muscle memory. [Recording spending](expense-capture.md) calls them.
+  again. Both mark muscle memory stale; the classification cache key carries the known people, so the next parse
+  sees the change. [Recording spending](expense-capture.md) calls them.
 - **Prompts.** `api/services/personal-context-builder.ts#buildPersonalContextPrompt` tells the classification model
   who the user's known people are and which categories to use for them, the subscriptions, the car, smoking and the
   salary day; `summarizeProfileForAI` adds a short profile summary to the parsing, receipt and goal prompts.

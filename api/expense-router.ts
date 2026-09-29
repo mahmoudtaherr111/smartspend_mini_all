@@ -22,7 +22,6 @@ import { eq, and, or, like, gte, lte, desc, sql, lt, inArray, isNull } from "dri
 import Decimal from "decimal.js";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { invalidateUserMemory } from "./lib/muscle-memory";
-import { invalidateUserClassificationCache } from "./lib/smart-pipeline";
 import { recordCorrection } from "./lib/correction-rules";
 import { cacheIncr, cacheGet, withCache } from "./lib/redis-client";
 import { CacheKeys } from "./lib/cache-keys";
@@ -34,7 +33,7 @@ import {
   ledgerAmount,
   toDayString,
 } from "./services/expense-rollups";
-import { businessDayRange } from "./lib/app-time";
+import { businessDateKey, businessDayRange } from "./lib/app-time";
 import { installmentProgress } from "./services/installments";
 import { runRuleEngine } from "./lib/rule-engine";
 import { normalizeV2 } from "./lib/normalizer-v2";
@@ -681,6 +680,25 @@ function normalizeStatsCategory(value: unknown): string {
   return statsCategoryDisplayNames[raw.toLowerCase()] ?? raw;
 }
 
+/**
+ * How long a month's or a year's figures may be served from Redis. Every write bumps the
+ * user's generation, so a hit is normally current; but a bump lost to a Redis error would
+ * leave the figures wrong for the whole TTL. A period that can still change (it holds
+ * today, or the salary cycle that spills into it) is kept five minutes; a closed one a day.
+ */
+function ledgerCacheTtl(period: { month?: string; year?: string }): number {
+  const today = businessDateKey();
+  const thisMonth = today.slice(0, 7);
+  const [y, m] = thisMonth.split("-").map(Number);
+  const lastMonth = `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, "0")}`;
+  const open = period.month
+    ? period.month >= lastMonth
+    : period.year
+      ? period.year >= today.slice(0, 4)
+      : true;
+  return open ? 5 * 60 : 60 * 60 * 24;
+}
+
 /** The category installment payments are filed under, read from the registry. */
 const INSTALLMENTS_CATEGORY = CATEGORIES.find((category) => category.id === "installments")!.name_ar;
 
@@ -847,7 +865,6 @@ export const expenseRouter = router({
       // Phase 2: Non-critical side effects (outside transaction)
       await learnFromReview(userId as number, requestUserType, input.classificationLogId, input);
       invalidateUserMemory(userId, requestUserType);
-      invalidateUserClassificationCache(userId, requestUserType);
       await invalidateExpenseCache(userId, requestUserType);
       
       if (input.type === "expense") {
@@ -1035,7 +1052,6 @@ export const expenseRouter = router({
         await learnFromReview(userId as number, requestUserType, itemsToInsert[0].classificationLogId, itemsToInsert[0]);
       }
       invalidateUserMemory(userId, requestUserType);
-      invalidateUserClassificationCache(userId, requestUserType);
       await invalidateExpenseCache(userId, requestUserType);
       
       const hasExpenses = input.some(item => item.type === "expense");
@@ -1291,7 +1307,6 @@ export const expenseRouter = router({
       // the mechanical cause of. Correcting a classification has to invalidate every
       // layer that can replay it, not the one that learns from it.
       invalidateUserMemory(userId, userType);
-      invalidateUserClassificationCache(userId, userType);
 
       let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;
       // Phase 2.5: Auto-learn dynamic contacts from manually edited expenses
@@ -1439,7 +1454,6 @@ export const expenseRouter = router({
       // row the user removed kept shaping future classifications from muscle memory and
       // kept being replayed from the classification cache.
       invalidateUserMemory(userId, userType);
-      invalidateUserClassificationCache(userId, userType);
       await invalidateExpenseCache(userId, userType);
       return { success: true };
     }),
@@ -1631,7 +1645,7 @@ export const expenseRouter = router({
       const gen = genRaw ? parseInt(genRaw, 10) : 0;
       const cacheKey = `v2:summary:g${gen}:${userId}:${userType}:${input.month}:${input.salaryDay || 0}:b${rollupBusiness}`;
 
-      return withCache(cacheKey, 60 * 60 * 24, async () => {
+      return withCache(cacheKey, ledgerCacheTtl({ month: input.month }), async () => {
         const { getFinancialMonthDayRange } =
           await import("./services/financial-month");
         const period = getFinancialMonthDayRange(
@@ -1697,7 +1711,7 @@ export const expenseRouter = router({
         bizFilter ?? "all",
       );
       
-      return withCache(cacheKey, 60 * 60 * 24, async () => {
+      return withCache(cacheKey, ledgerCacheTtl({ month: input.month }), async () => {
         const { getFinancialMonthDayRange } =
           await import("./services/financial-month");
         const currentPeriod = getFinancialMonthDayRange(
@@ -2333,7 +2347,7 @@ export const expenseRouter = router({
       const gen = genRaw ? parseInt(genRaw, 10) : 0;
       const cacheKey = `v2:yearly:g${gen}:${userType}:${userId}:${input.year}`;
 
-      return withCache(cacheKey, 60 * 60 * 24, async () => {
+      return withCache(cacheKey, ledgerCacheTtl({ year: input.year }), async () => {
         const startDay = `${input.year}-01-01`;
         const endDay = `${input.year}-12-31`;
 
@@ -2724,7 +2738,6 @@ export const expenseRouter = router({
 
           newlyAddedContact = (await addMentionedContacts(itemsToSave as ClarifiedItem[], userId as number, userType as string)) ?? newlyAddedContact;
           invalidateUserMemory(userId, userType);
-          invalidateUserClassificationCache(userId, userType);
           await invalidateExpenseCache(userId as number, userType as string);
           
           const hasExpenses = itemsToSave.some((item: any) => item.type === "expense");
@@ -2884,7 +2897,6 @@ export const expenseRouter = router({
           });
           newlyAddedContact = (await addMentionedContacts(pipeline.items as ClarifiedItem[], userId as number, userType as string)) ?? newlyAddedContact;
           invalidateUserMemory(userId, userType);
-          invalidateUserClassificationCache(userId, userType);
           await invalidateExpenseCache(userId as number, userType as string);
           
           const hasExpenses = pipeline.items && pipeline.items.some((item: any) => item.type === "expense");

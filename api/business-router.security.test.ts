@@ -98,7 +98,6 @@ vi.mock("./queries/connection", () => ({
 }));
 
 vi.mock("./lib/smart-pipeline", () => ({
-  invalidateUserClassificationCache: vi.fn(),
 }));
 
 vi.mock("./lib/muscle-memory", () => ({

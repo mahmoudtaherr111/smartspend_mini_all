@@ -1,28 +1,38 @@
 /**
- * "I corrected it and it made the same mistake again."
+ * The classification cache is correct by its key, not by being cleared
+ * (docs/decisions/0013-caching-as-one-system.md).
  *
- * The mechanical cause: correcting an expense invalidated muscle memory — the layer
- * that LEARNS — and not the classification cache, which holds results for seven days
- * keyed on the normalized text. So the next time the user said the same sentence, the
- * corrected answer never got a chance to run: the old one was served from cache.
- *
- * These lock the invariant that every layer able to replay an answer is cleared
- * whenever the user tells us that answer was wrong.
+ * It used to be keyed on the text and a few settings and kept correct by clearing it on
+ * every save, from every write path that remembered to. That wiped every user's repeats on
+ * each coffee, still served old answers on any other server process, and missed whatever a
+ * write path forgot. These lock the replacement: what the answer depends on is in the key,
+ * so a change misses by itself, and nothing a caller does to a result reaches the next one.
  */
-import { describe, it, expect, vi } from "vitest";
-import { invalidateUserClassificationCache, runSmartPipeline } from "./smart-pipeline";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const rules: Array<Record<string, unknown>> = [];
 
 vi.mock("../queries/connection", () => ({
   db: {
     select: () => ({
       from: () => ({ where: () => ({ orderBy: () => ({ limit: async () => [] }) }) }),
     }),
+    // A correction rule that applies records its hit.
+    update: () => ({ set: () => ({ where: async () => [] }) }),
     query: {},
   },
   pool: {},
 }));
 
-const input = (userId: number) => ({
+vi.mock("./correction-rules", async (original) => ({
+  ...(await original<object>()),
+  loadCorrectionRules: async () => rules.map((rule) => ({ ...rule })),
+}));
+
+import { runSmartPipeline } from "./smart-pipeline";
+import { clearClassificationCache } from "./classification-cache";
+
+const input = (userId: number, extra: Record<string, unknown> = {}) => ({
   userId,
   userType: "local",
   userPlan: "free",
@@ -32,54 +42,74 @@ const input = (userId: number) => ({
   maxTokens: 128,
   pipelineSettings: {},
   text: "دفعت 120 على القهوة",
+  ...extra,
 });
 
 const routeOf = (r: { log: { routing?: Record<string, unknown> } }) =>
   (r.log.routing as { route?: string } | undefined)?.route;
+const HIT = "classification_cache_hit";
 
-describe("classification cache invalidation", () => {
-  it("serves a repeated sentence from cache, until the user corrects it", async () => {
-    const first = await runSmartPipeline(input(960_001) as never);
-    expect(routeOf(first)).not.toBe("classification_cache_hit");
+beforeEach(() => {
+  rules.length = 0;
+  clearClassificationCache();
+});
 
-    // Same user, same sentence: this is the behaviour that makes a stale correction
-    // invisible, and it is also the behaviour that keeps the system cheap.
-    const second = await runSmartPipeline(input(960_001) as never);
-    expect(routeOf(second)).toBe("classification_cache_hit");
-
-    // What `expense.update` now calls. Before this, only muscle memory was cleared.
-    invalidateUserClassificationCache(960_001, "local");
-
-    const third = await runSmartPipeline(input(960_001) as never);
-    expect(routeOf(third)).not.toBe("classification_cache_hit");
+describe("the classification cache", () => {
+  it("serves a repeated sentence while nothing it depends on changed", async () => {
+    expect(routeOf(await runSmartPipeline(input(960_001) as never))).not.toBe(HIT);
+    expect(routeOf(await runSmartPipeline(input(960_001) as never))).toBe(HIT);
   });
 
-  it("clears only the correcting user's entries", async () => {
+  it("misses by itself after a correction, with no one clearing it", async () => {
     await runSmartPipeline(input(960_002) as never);
-    await runSmartPipeline(input(960_003) as never);
-
-    invalidateUserClassificationCache(960_002, "local");
-
-    // The other user's cache is untouched — one person's correction must not cost
-    // everyone else their cache hits.
-    const other = await runSmartPipeline(input(960_003) as never);
-    expect(routeOf(other)).toBe("classification_cache_hit");
-
-    const corrected = await runSmartPipeline(input(960_002) as never);
-    expect(routeOf(corrected)).not.toBe("classification_cache_hit");
+    rules.push({
+      id: 1,
+      pattern: "قهوه",
+      category: "ترفيه",
+      subCategory: "خروجة",
+      type: "expense",
+      amountMin: null,
+      amountMax: null,
+    });
+    expect(routeOf(await runSmartPipeline(input(960_002) as never))).not.toBe(HIT);
   });
 
-  it("clears a user's entries across every sentence they cached, not just one", async () => {
-    const a = { ...input(960_004), text: "دفعت 120 على القهوة" };
-    const b = { ...input(960_004), text: "اتغديت بـ 90" };
-    await runSmartPipeline(a as never);
-    await runSmartPipeline(b as never);
-    expect(routeOf(await runSmartPipeline(b as never))).toBe("classification_cache_hit");
+  it("misses when the user's dictionary or known people change", async () => {
+    await runSmartPipeline(input(960_003) as never);
+    const taught = input(960_003, { userDict: [{ word: "القهوة", category: "ترفيه", subCategory: "خروجة" }] });
+    expect(routeOf(await runSmartPipeline(taught as never))).not.toBe(HIT);
+    const withPeople = input(960_003, { userProfileContext: { knownPeople: [{ name: "مروان", category: "أصدقاء" }] } });
+    expect(routeOf(await runSmartPipeline(withPeople as never))).not.toBe(HIT);
+  });
 
-    invalidateUserClassificationCache(960_004, "local");
+  it("keeps one user's answers away from another's", async () => {
+    await runSmartPipeline(input(960_004) as never);
+    expect(routeOf(await runSmartPipeline(input(960_005) as never))).not.toBe(HIT);
+  });
 
-    // A correction usually implies a misunderstanding of a pattern, not of one string.
-    expect(routeOf(await runSmartPipeline(a as never))).not.toBe("classification_cache_hit");
-    expect(routeOf(await runSmartPipeline(b as never))).not.toBe("classification_cache_hit");
+  it("does not let a caller's change to a result reach the next request", async () => {
+    const first = await runSmartPipeline(input(960_006) as never);
+    const category = first.items[0]?.category;
+    await runSmartPipeline(input(960_006) as never);
+    const handed = await runSmartPipeline(input(960_006) as never);
+    handed.items[0].category = "تغيير من المتصل";
+    const next = await runSmartPipeline(input(960_006) as never);
+    expect(routeOf(next)).toBe(HIT);
+    expect(next.items[0]?.category).toBe(category);
+  });
+
+  it("reports no model attempts on a hit, so nothing is billed twice", async () => {
+    await runSmartPipeline(input(960_007) as never);
+    const hit = await runSmartPipeline(input(960_007) as never);
+    expect(routeOf(hit)).toBe(HIT);
+    expect(hit.tokensUsed).toBe(0);
+    expect(hit.log.providerRoute).toBeUndefined();
+  });
+
+  it("keeps month totals out of the way unless they move the 'higher than usual' check", async () => {
+    const at = (totalExpense: number) => input(960_008, { monthlyContext: { totalIncome: 10_000, totalExpense } });
+    await runSmartPipeline(at(4_000) as never);
+    expect(routeOf(await runSmartPipeline(at(4_050) as never))).toBe(HIT);
+    expect(routeOf(await runSmartPipeline(at(9_000) as never))).not.toBe(HIT);
   });
 });

@@ -11,7 +11,6 @@ import {
 } from "../db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { invalidateUserClassificationCache } from "./lib/smart-pipeline";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 import { getSystemSettings } from "./lib/settings-cache";
 import { env } from "./lib/env";
@@ -230,7 +229,6 @@ export const businessRouter = router({
         );
       }
 
-      invalidateUserClassificationCache(ctx.user.id);
       invalidateUserMemory(ctx.user.id, ctx.user.type);
 
       return { id: business.insertId, success: true };
@@ -270,7 +268,6 @@ export const businessRouter = router({
           .where(eq(userBusinesses.id, existing[0].id));
       }
 
-      invalidateUserClassificationCache(ctx.user.id);
       return { success: true };
     }),
 
@@ -308,7 +305,6 @@ export const businessRouter = router({
           .where(and(eq(userBusinesses.id, businessId), eq(userBusinesses.userId, ctx.user.id), eq(userBusinesses.userType, ctx.user.type)));
       });
 
-      invalidateUserClassificationCache(ctx.user.id);
       invalidateUserMemory(ctx.user.id, ctx.user.type);
       try {
         const { cacheIncr } = await import("./lib/redis-client");
@@ -360,7 +356,6 @@ export const businessRouter = router({
         isActive: true,
       });
 
-      invalidateUserClassificationCache(ctx.user.id);
       return { id: cat.insertId, success: true };
     }),
 
@@ -419,7 +414,6 @@ export const businessRouter = router({
           ));
       }
 
-      invalidateUserClassificationCache(ctx.user.id);
       return { success: true };
     }),
 
@@ -461,7 +455,6 @@ export const businessRouter = router({
           eq(businessCategories.businessId, business[0].id),
         ));
 
-      invalidateUserClassificationCache(ctx.user.id);
       return { success: true };
     }),
 
@@ -508,7 +501,6 @@ export const businessRouter = router({
           eq(userContacts.userType, ctx.user.type),
         ));
 
-      invalidateUserClassificationCache(ctx.user.id);
       return { success: true };
     }),
 });

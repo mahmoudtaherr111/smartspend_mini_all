@@ -12,7 +12,7 @@ vi.mock("../queries/connection", () => {
   });
   return { db: { select: self, insert: self, update: self, query: {} }, pool: {} };
 });
-vi.mock("./muscle-memory", () => ({ muscleMemoryLookup: io.memory }));
+vi.mock("./muscle-memory", () => ({ muscleMemoryLookup: io.memory, userMemoryFingerprint: async () => "test" }));
 vi.mock("./ai-gateway", () => ({ resolveAdminRoutes: async () => ({ preferred: null, routes: [] }) }));
 vi.mock("./llm-router", async (original) => ({ ...await original<object>(), executeLlmChain: io.llm }));
 

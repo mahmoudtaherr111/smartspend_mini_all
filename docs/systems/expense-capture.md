@@ -58,17 +58,23 @@ amount. When no event is admitted, the pipeline answers `clarify` with a questio
 
 ### 4. Cheap answers first
 `classifyAdmittedEvents` in `api/lib/smart-pipeline.ts` tries, in order:
-1. **Result cache**: an in-process LRU keyed by `api/lib/smart-pipeline.ts#makeCacheKey`, which holds everything
-   the answer depends on (pipeline and calibration versions, user, plan, business scope, model, thresholds,
-   normalized text). Results decided `auto_save` or `review` are kept for a week. Saving, editing or deleting an
-   expense clears the user's entries (`invalidateUserClassificationCache`), and so do changes to businesses and
-   contacts.
-2. **Admissibility gate**: `api/lib/admissibility-gate.ts#checkAdmissibility` answers chatter, questions about
+1. **Admissibility gate**: `api/lib/admissibility-gate.ts#checkAdmissibility` answers chatter, questions about
    spending and negated single-amount statements with a reply before anything costs money.
+2. **Result cache** (`api/lib/classification-cache.ts`, decision 0013): an in-process LRU whose key
+   (`classificationCacheKey`) holds everything the answer depends on: pipeline and calibration versions, user, plan,
+   business scope, model, thresholds, normalized text, and a hash of the user's dictionary and known people, profile
+   hints, business categories, settings, correction rules (loaded here, with the key, and reused below), a
+   fingerprint of muscle memory (`userMemoryFingerprint`), the clarification switch and the month's totals in 10%
+   steps. A change to any of them misses by itself, so nothing clears it. Only `auto_save` or `review` answers are
+   kept, and an answer the model was needed for is kept only if the model answered every clause. Values are copied
+   in and out, and a hit carries no model attempts, so nothing is billed twice.
 3. **Muscle memory**, for single-event sentences: `api/lib/muscle-memory.ts#muscleMemoryLookup` compares the
    sentence's template (its amount replaced by a placeholder) with patterns learned from the user's own
    classification logs of the last 90 days: single-item, auto-saved, uncorrected results that repeated with the
-   same outcome. A result logged under an old category is learned in its current place (`LEGACY_TAXONOMY`), and an
+   same outcome and that the user kept, each log having become exactly one saved row with the same category and type
+   (a parse abandoned, undone or saved differently teaches nothing). The patterns are held per process and reloaded
+   when the Redis generation `memgen:<type>:<id>` moves, which every save, edit, delete and correction bumps
+   (`invalidateUserMemory`). A result logged under an old category is learned in its current place (`LEGACY_TAXONOMY`), and an
    old money movement booked as spending or income is not learned at all, nor is an answer that carried a direction
    (a refund, a loan repaid), since a pattern replays only category and type. A match scoring 90 or more answers, after
    the named people are resolved.
@@ -329,12 +335,14 @@ answer ([voice calls](voice-calls.md#the-tools)).
    never return `auto_save` from a branch of its own.
 3. The model names categories and nothing else. Do not ask it for amounts, direction, people or segmentation, and
    do not trust a confidence it reports about itself.
-4. Everything an answer depends on belongs in `makeCacheKey`. An input that changes the result without being in
-   the key serves stale answers for up to a week.
+4. Everything an answer depends on belongs in the result cache's key (`knowledge` in `classifyAdmittedEvents`). An
+   input that changes the result without being in the key serves stale answers for up to a week; no write path
+   clears the cache instead.
 5. Every amount the user said ends in an item, a rejected clause or a question. Never save part of a sentence
    silently.
-6. The result cache, muscle memory and the settings cache live in each process. A change that must reach every
-   server belongs in Redis or MySQL.
+6. The result cache, muscle memory and the settings cache live in each process. Muscle memory and the settings
+   reload when their Redis generation moves; the result cache needs nothing because its key holds its inputs. A new
+   cache follows `docs/decisions/0013-caching-as-one-system.md`.
 
 ## Tests and benchmarks
 - Pipeline behaviour: `api/lib/smart-pipeline.test.ts`, `api/lib/smart-pipeline-failover.test.ts`,

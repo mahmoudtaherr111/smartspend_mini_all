@@ -89,7 +89,8 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
    rule 1).
 2. The interface is Arabic and right-to-left: use logical utilities (`ms-`, `me-`, `ps-`, `pe-`), not left and
    right ones.
-3. After a mutation, invalidate the queries it changes through `trpc.useUtils()`.
+3. After a mutation, invalidate the queries it changes through `trpc.useUtils()`; after any write to the ledger, call
+   `src/lib/ledger-refresh.ts#refreshLedgerViews`, which refreshes every view computed from it.
 4. A guard that takes access away waits for `isVerified`; the snapshot may only add, never remove.
 5. Text users read follows `docs/guides/writing-app-messages.md` (polite Egyptian Arabic, no blame, no English
    jargon); `tests/knowledge/user-copy.test.ts` rejects يرجى، تعذر، لقد، لديك، عفواً outside the admin console and in

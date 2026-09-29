@@ -11,10 +11,12 @@
  *  - Lower threshold: 85% instead of 98% (allows "دفعت كهربا 200" to match "دفعت الكهربا 300")
  */
 
+import { createHash } from "node:crypto";
 import { db } from "../queries/connection";
-import { classificationLogs, userDictionaries } from "../../db/schema";
-import { eq, and, gte, desc } from "drizzle-orm";
+import { classificationLogs, expenses } from "../../db/schema";
+import { eq, and, gte, desc, inArray } from "drizzle-orm";
 import { LRUCache } from "lru-cache";
+import { cacheGet, cacheIncr } from "./redis-client";
 import damerauPkg from "damerau-levenshtein";
 import { arabicToEnglishNumbers } from "./text-normalizer";
 import { parseArabicNumbers } from "./arabic-number-parser";
@@ -42,9 +44,23 @@ export interface MemoryMatch {
   matchScore: number;
 }
 
-// ─── Per-User LRU Cache (production-grade) ───
+// ─── Per-user patterns, versioned across processes ───
+//
+// The patterns are held in this process, but whether they are current is decided by a
+// generation counter in Redis (`memgen:<type>:<id>`), bumped by every write that can change
+// them. A process that did not see the write still sees the new generation on its next
+// lookup and reloads, instead of replaying what the user has since saved differently for
+// up to half an hour. Without Redis the counter is per process and the TTL is the bound.
 
-const userMemoryCache = new LRUCache<string, MemoryPattern[]>({
+interface LoadedMemory {
+  patterns: MemoryPattern[];
+  /** Hash of the patterns: part of the classification cache key, so a result can never
+   * outlive the memory it was computed from. */
+  fingerprint: string;
+  generation: string;
+}
+
+const userMemoryCache = new LRUCache<string, LoadedMemory>({
   max: 500,
   ttl: 30 * 60 * 1000,
 });
@@ -53,8 +69,50 @@ function userKey(userId: number, userType: string): string {
   return `${userId}:${userType}`;
 }
 
+function generationKey(userId: number, userType: string): string {
+  return `memgen:${userType}:${userId}`;
+}
+
+/**
+ * Marks the user's patterns stale here and in every other process. Called by every write
+ * that can change what the memory learns: a save, an edit, a delete, a correction.
+ */
 export function invalidateUserMemory(userId: number, userType: string): void {
   userMemoryCache.delete(userKey(userId, userType));
+  void cacheIncr(generationKey(userId, userType)).catch(() => undefined);
+}
+
+function fingerprintOf(patterns: MemoryPattern[]): string {
+  const stable = patterns
+    .map((p) => `${p.template}|${p.category}|${p.subCategory}|${p.type}|${p.usageCount}|${p.confidence}`)
+    .sort()
+    .join("\n");
+  return createHash("sha1").update(stable).digest("hex").slice(0, 16);
+}
+
+async function currentGeneration(userId: number, userType: string): Promise<string> {
+  try {
+    return (await cacheGet(generationKey(userId, userType))) ?? "0";
+  } catch {
+    return "0";
+  }
+}
+
+/** The user's patterns, reloaded when another process or request changed them. */
+async function loadedMemory(userId: number, userType: string): Promise<LoadedMemory> {
+  const key = userKey(userId, userType);
+  const generation = await currentGeneration(userId, userType);
+  const held = userMemoryCache.get(key);
+  if (held && held.generation === generation) return held;
+  const patterns = await loadUserPatterns(userId, userType);
+  const loaded = { patterns, fingerprint: fingerprintOf(patterns), generation };
+  userMemoryCache.set(key, loaded);
+  return loaded;
+}
+
+/** Hash of what the memory would answer from right now (for the classification cache key). */
+export async function userMemoryFingerprint(userId: number, userType: string): Promise<string> {
+  return (await loadedMemory(userId, userType)).fingerprint;
 }
 
 // ─── Template Extraction ───
@@ -166,6 +224,36 @@ async function loadUserPatterns(
       .orderBy(desc(classificationLogs.createdAt))
       .limit(500);
 
+    // A parse is not a decision. Only what the user kept teaches: the log must have become
+    // exactly one saved row with the same category and type. A sentence parsed and then
+    // abandoned, undone, or saved differently used to count as a confirmed answer, and a
+    // wrong answer served twice (a repeat, or a cache hit) became a trusted pattern.
+    const logIds = logs.map((log) => log.id);
+    const savedRows = logIds.length
+      ? await db
+          .select({
+            classificationLogId: expenses.classificationLogId,
+            category: expenses.category,
+            subCategory: expenses.subCategory,
+            type: expenses.type,
+          })
+          .from(expenses)
+          .where(
+            and(
+              eq(expenses.userId, userId),
+              eq(expenses.userType, userType),
+              inArray(expenses.classificationLogId, logIds),
+            ),
+          )
+      : [];
+    const savedByLog = new Map<number, typeof savedRows>();
+    for (const row of savedRows) {
+      if (row.classificationLogId == null) continue;
+      const list = savedByLog.get(row.classificationLogId) ?? [];
+      list.push(row);
+      savedByLog.set(row.classificationLogId, list);
+    }
+
     const templateMap = new Map<
       string,
       {
@@ -216,6 +304,13 @@ async function loadUserPatterns(
       if (log.decision !== "auto_save") continue;
       if (log.parsedBy !== "ai" && log.parsedBy !== "rule_engine" && log.parsedBy !== "hybrid") continue;
       if (!first.category || !["income", "expense", "transfer", "investment"].includes(type)) continue;
+      const saved = savedByLog.get(log.id) ?? [];
+      if (
+        saved.length !== 1 ||
+        saved[0].category !== first.category ||
+        (saved[0].subCategory || "عام") !== (first.subCategory || "عام") ||
+        saved[0].type !== type
+      ) continue;
 
       const existing = templateMap.get(template);
       if (existing) {
@@ -275,12 +370,7 @@ export async function muscleMemoryLookup(
   userId: number,
   userType: string,
 ): Promise<MemoryMatch | null> {
-  const key = userKey(userId, userType);
-  let patterns = userMemoryCache.get(key);
-  if (!patterns) {
-    patterns = await loadUserPatterns(userId, userType);
-    userMemoryCache.set(key, patterns);
-  }
+  const { patterns } = await loadedMemory(userId, userType);
 
   if (patterns.length === 0) return null;
 

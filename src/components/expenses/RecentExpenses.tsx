@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { refreshLedgerViews } from "@/lib/ledger-refresh";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { trpc } from "@/providers/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -295,7 +296,9 @@ export function RecentExpenses({
       toast.error("مش قادرين نكمل الحذف — جرّب تاني ❌");
     },
     onSettled: () => {
-      utilsTrpc.expense.list.invalidate();
+      // The list was updated in place above; the totals, charts and panels read the same
+      // rows and are refreshed with it.
+      refreshLedgerViews(utilsTrpc);
     },
   });
 

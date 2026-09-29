@@ -65,21 +65,17 @@ import {
   withBlocker,
 } from "./final-acceptance";
 import { pickPersonCandidate, pickAllPersonCandidates, compactArabic } from "./person-resolver";
-import { muscleMemoryLookup } from "./muscle-memory";
+import { muscleMemoryLookup, userMemoryFingerprint } from "./muscle-memory";
 import { db } from "../queries/connection";
 import { expenses } from "../../db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { LRUCache } from "lru-cache";
 import { planFinancialEvents, type FinancialEventPlan } from "./financial-event-plan";
-
-// ─── Classification Result Cache ───────────────────────────────────
-// Caches full pipeline results for repeated queries. 40-60% hit rate
-// expected — users frequently type the same phrases ("بنزين 200", "قهوة 35").
-// Key = hash of normalized text + user plan (different plans → different thresholds).
-const classificationCache = new LRUCache<string, PipelineResult>({
-  max: 5000,
-  ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
-});
+import {
+  classificationCacheKey,
+  readCachedClassification,
+  storeClassification,
+  totalsBucket,
+} from "./classification-cache";
 
 /** Persisted alongside classification logs so observability reflects the active pipeline. */
 export const SMART_PIPELINE_VERSION = "v3.0";
@@ -94,39 +90,6 @@ export const SMART_PIPELINE_VERSION = "v3.0";
  */
 function tenantScope(userType: string, userId: number): string {
   return `u:${userType}:${userId}`;
-}
-
-/**
- * Everything the answer depends on, or the key is wrong.
- *
- * The key used to be text + user + plan + businessMode, which left out the model, the
- * thresholds, the calibration version and the business the entry belongs to. So an admin
- * raising the auto-save threshold, switching the classification model, or a rebuilt
- * calibration table changed nothing for any phrase already in the cache — for seven days.
- * The setting was saved, the dashboard showed it, and the pipeline went on answering
- * from a result computed under the old one.
- *
- * `businessId` matters for the same reason `businessMode` does: the same sentence in two
- * different businesses is two different transactions.
- */
-function makeCacheKey(input: {
-  text: string;
-  userPlan: string;
-  userId: number;
-  userType: string;
-  businessMode?: boolean;
-  businessId?: number | null;
-  model: string;
-  thresholds: DecisionThresholds;
-}): string {
-  // Treat harmless Arabic orthographic variants and spacing consistently; a
-  // cache miss here previously made equivalent Egyptian input pay the full
-  // pipeline cost again.
-  const normalized = normalizeArabicString(input.text);
-  const scope = `${input.businessMode ? "biz" : "std"}${input.businessId ?? ""}`;
-  const decision = `${input.thresholds.autoSave}/${input.thresholds.review}/${input.thresholds.escalate}`;
-  const version = `${SMART_PIPELINE_VERSION}+${CONFIDENCE_CALIBRATION.version}`;
-  return `cls:${version}:${tenantScope(input.userType, input.userId)}:${input.userPlan}:${scope}:${input.model}:${decision}:${normalized}`;
 }
 
 const PERSONAL_KEYWORDS = [
@@ -166,25 +129,6 @@ function isStructuralOrConjunction(text: string, candidates: string[] = []): boo
   }
 
   return false;
-}
-
-/**
- * Invalidate all cached classifications for a user (e.g., when their
- * dictionary changes or they correct a transaction).
- */
-export function invalidateUserClassificationCache(userId: number, userType?: string): void {
-  // lru-cache doesn't support prefix-based deletion natively,
-  // but we can iterate and purge entries matching the user.
-  // For production scale, consider Redis with pattern-based deletion.
-  for (const key of classificationCache.keys()) {
-    if (
-      userType
-        ? key.includes(`:${tenantScope(userType, userId)}:`)
-        : key.includes(`:${userId}:`)
-    ) {
-      classificationCache.delete(key);
-    }
-  }
 }
 
 export interface PipelineInput {
@@ -513,46 +457,6 @@ async function classifyAdmittedEvents(
         DEFAULT_THRESHOLDS.escalate * 100,
       ) / 100,
   };
-  // 0. Check the classification cache (40-60% hit rate for repeated phrases).
-  //
-  // Deliberately AFTER the thresholds are resolved, because they are part of the key
-  // now. This costs a settings read on a hit and buys the property that a configuration
-  // change takes effect on the next request rather than in seven days.
-  const cacheKey = makeCacheKey({
-    text: eventPlan.text,
-    userPlan: input.userPlan,
-    userId: input.userId,
-    userType: input.userType,
-    businessMode: input.businessMode,
-    businessId: input.businessId,
-    model: modelUsed,
-    thresholds: decisionThresholds,
-  });
-  const cachedResult = classificationCache.get(cacheKey);
-  if (cachedResult) {
-    return {
-      ...cachedResult,
-      // A cache hit spends nothing.
-      //
-      // The stored result carried the token count of the call that first produced it,
-      // and the caller billed it again on every hit — so a phrase answered once from a
-      // 120-token model call was charged 120 tokens every time it recurred, against a
-      // request that made no call at all. The counts move to `cachedTokens`, which is
-      // what "served without new spend" is called everywhere else in this file.
-      tokensUsed: 0,
-      cachedTokens: cachedResult.tokensUsed || cachedResult.cachedTokens || 0,
-      processingTimeMs: Date.now() - startTime,
-      log: {
-        ...cachedResult.log,
-        cachedTokens: cachedResult.tokensUsed || cachedResult.cachedTokens || 0,
-        routing: {
-          ...(cachedResult.log.routing || {}),
-          route: "classification_cache_hit",
-        },
-      },
-    };
-  }
-
   // Counting amounts is the amount extractor's job, not a private list.
   //
   // This used to be a fourth copy of the spoken-number vocabulary, and it double-counted
@@ -640,6 +544,59 @@ async function classifyAdmittedEvents(
       finalDecision: gate.decision,
     },
   });
+
+  // 0. The classification cache (api/lib/classification-cache.ts).
+  //
+  // Checked here, after the admissibility gate, so text that will never be classified
+  // costs no query. The key carries everything the answer depends on, including what is
+  // loaded from the database — the correction rules and a fingerprint of muscle memory —
+  // so both are read now, together; the rules are reused below.
+  const [loadedRules, memoryFingerprint] = await Promise.all([
+    loadCorrectionRules(input.userId, input.userType),
+    userMemoryFingerprint(input.userId, input.userType).catch(() => "unavailable"),
+  ]);
+  correctionRules = loadedRules;
+  const cacheKey = classificationCacheKey({
+    version: `${SMART_PIPELINE_VERSION}+${CONFIDENCE_CALIBRATION.version}`,
+    tenant: tenantScope(input.userType, input.userId),
+    plan: input.userPlan,
+    scope: `${input.businessMode ? "biz" : "std"}${input.businessId ?? ""}`,
+    model: modelUsed,
+    thresholds: `${decisionThresholds.autoSave}/${decisionThresholds.review}/${decisionThresholds.escalate}`,
+    // Treat harmless Arabic orthographic variants and spacing consistently.
+    text: normalizeArabicString(eventPlan.text),
+    knowledge: {
+      dictionary: input.userDict,
+      profile: input.userProfileContext ?? null,
+      businessCategories: input.businessCategories ?? null,
+      settings: pipelineSettings,
+      corrections: correctionRules,
+      memory: memoryFingerprint,
+      skipClarification: Boolean(input.skipClarification),
+      totals: totalsBucket(input.monthlyContext),
+    },
+  });
+  const cachedResult = readCachedClassification(cacheKey);
+  if (cachedResult) {
+    return {
+      ...cachedResult,
+      // A cache hit spends nothing: the tokens of the call that first produced the answer
+      // move to `cachedTokens`, and the stored copy carries no model attempts to bill.
+      tokensUsed: 0,
+      cachedTokens: cachedResult.tokensUsed || cachedResult.cachedTokens || 0,
+      processingTimeMs: Date.now() - startTime,
+      log: {
+        ...cachedResult.log,
+        originalText: input.text,
+        normalizedText,
+        cachedTokens: cachedResult.tokensUsed || cachedResult.cachedTokens || 0,
+        routing: {
+          ...(cachedResult.log.routing || {}),
+          route: "classification_cache_hit",
+        },
+      },
+    };
+  }
 
   // 0.5. Muscle Memory — instant match for recurring user patterns (0 tokens, 0 API)
   // Person transactions are now allowed: after a hit, we run person resolution
@@ -738,7 +695,7 @@ async function classifyAdmittedEvents(
             reason: "pattern_match_with_person",
             matchScore: memoryMatch.matchScore,
           });
-          classificationCache.set(cacheKey, memResult);
+          storeClassification(cacheKey, memResult, true);
           return memResult;
         }
       } else {
@@ -753,7 +710,7 @@ async function classifyAdmittedEvents(
             reason: "pattern_match",
             matchScore: memoryMatch.matchScore,
           });
-          classificationCache.set(cacheKey, memResult);
+          storeClassification(cacheKey, memResult, true);
           return memResult;
         }
       }
@@ -935,7 +892,7 @@ async function classifyAdmittedEvents(
             spokenDirection,
             categoryType,
           });
-          classificationCache.set(cacheKey, bizResult);
+          storeClassification(cacheKey, bizResult, true);
           return bizResult;
         }
         // Not admissible — negated, hypothetical, or a question. Fall through to the
@@ -950,9 +907,7 @@ async function classifyAdmittedEvents(
 
   const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
 
-  // Load what this user has corrected before, after the admissibility gate and the
-  // cheap caches so nothing is queried for text that will never be classified.
-  correctionRules = await loadCorrectionRules(input.userId, input.userType);
+  // The user's correction rules were loaded with the cache key above.
 
   // 2. Try Rule Engine for simple cases (1 amount, short sentence)
   let ruleResult: Awaited<ReturnType<typeof runRuleEngine>> | null = null;
@@ -2112,11 +2067,11 @@ async function classifyAdmittedEvents(
     log,
   };
 
-  // Cache successful classifications (auto_save and review only — don't cache clarify
-  // because the user hasn't answered yet)
-  if (decision === "auto_save" || decision === "review") {
-    classificationCache.set(cacheKey, result);
-  }
+  // Kept only when complete: a question waits for the user, and an answer the model was
+  // needed for but did not give (a timeout, an outage, a partial reply) is served now and
+  // asked again next time rather than frozen for a week.
+  const modelAnsweredEverything = !requiresAI || (llmAttempts.some((a) => a.ok) && modelReplyProblems.length === 0);
+  storeClassification(cacheKey, result, modelAnsweredEverything);
 
   return result;
 }

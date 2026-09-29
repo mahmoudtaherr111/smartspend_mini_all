@@ -45,13 +45,15 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   (`expenseToRollupDelta`, `applyExpenseRollupDelta`). Only confirmed items count; items from bank messages also
   count as automated income or spending. A day that goes negative is logged.
 - `expense.update` backs out the old row's delta and applies the new one, stores new text in the details, checks that
-  a referenced wallet, business or contact belongs to the user, clears muscle memory and the classification cache,
+  a referenced wallet, business or contact belongs to the user, marks muscle memory stale (its Redis generation),
   adds a contact for a person category, and when the category changed marks the classification log as corrected and
   records a correction rule.
 - `expense.delete` locks the row, deletes it and its details, backs out its delta, lowers the contact's count and
-  clears the same caches.
+  marks muscle memory stale.
 - After a write, the user's cache generation is bumped (`invalidateExpenseCache`), which drops the month summaries and
-  statistics cached in Redis and the finance facts of the [AI Center](ai-center.md).
+  statistics cached in Redis and the finance facts of the [AI Center](ai-center.md). So do deleting a wallet and
+  deleting or merging a person, which change expense rows too. The classification cache needs no clearing: its key
+  holds what the answer depends on (docs/decisions/0013-caching-as-one-system.md).
 - **Nightly repair.** `nightly-rollup-reconciliation` runs at 04:00 on replicas with `ENABLE_CRONS=true` and, for every
   user with items or rollups in the last 60 days, recomputes each day from the confirmed items
   (`reconcileRollupsForRange`): missing days are inserted, wrong days rewritten, days without items deleted, and the
@@ -76,7 +78,9 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   on with a salary day, the summary and statistics use the salary cycle from `getFinancialMonthDayRange`; the calendar
   always uses the calendar month.
 - **Summary cards** (`expense.getMonthSummary`): income, spending, transfers, investments, net flow and count of the
-  period's rollups, personal or, in business mode, the active business's, cached for a day per cache generation.
+  period's rollups, personal or, in business mode, the active business's, cached per cache generation for five
+  minutes while the month (or the salary cycle spilling into it) is open and a day once it is closed
+  (`ledgerCacheTtl`); the year's figures likewise.
 - **Statistics** (`expense.getMonthlyStats`, cached the same way, for personal items or the active business):
   - totals and automated totals from the rollups, and the previous period's totals;
   - category and subcategory breakdowns from the confirmed items, with their change from the previous period, and
@@ -159,7 +163,8 @@ business mode:
 - `business.suggestCategories` asks Gemini for categories with Egyptian keywords and examples from the business
   description;
 - `business.create`, `business.update`, `business.addCategory`, `business.updateCategory`, `business.removeCategory`
-  (a soft delete) and `business.linkContact` clear the classification cache;
+  (a soft delete) and `business.linkContact` change the categories the classification cache key carries, so the
+  next parse sees them;
 - `business.delete` removes the categories, turns linked contacts back into personal ones, moves the business rollups
   and items to personal, and deletes the business in one transaction.
 
@@ -173,7 +178,8 @@ A plan without the feature is told on the first screen of Settings → business 
 - `profile.deleteContact` removes the name from the profile's older people lists, detaches the person's items and
   deletes the contact; `profile.mergeContacts` moves the second person's items to the first and keeps the richer
   relation, type and business.
-- All of them clear the classification cache and muscle memory, since classification prompts name these people.
+- All of them mark muscle memory stale; the classification cache key carries the known people, so the next parse
+  sees the change. Deleting and merging also bump the ledger generation, since they change expense rows.
 
 ## Where to change what
 | To change | Edit | Check with |

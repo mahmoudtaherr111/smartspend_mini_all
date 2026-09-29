@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
 import { router, authedProcedure } from "./middleware";
 import { db } from "./queries/connection";
 import { userWallets, expenses } from "../db/schema";
@@ -120,6 +121,8 @@ export const walletRouter = router({
             ),
           );
       });
+      // The wallet's rows lost their wallet: per-wallet figures are cached, and read them.
+      await bumpFinanceCacheGen(ctx.user.id as number, ctx.user.type as "oauth" | "local");
       return { success: true };
     }),
 });

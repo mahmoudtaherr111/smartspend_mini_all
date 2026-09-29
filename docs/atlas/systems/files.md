@@ -51,6 +51,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/benchmark-taxonomy-assert.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/cache-keys.ts` | [platform](platform.md) |
 | `api/lib/category-registry.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/classification-cache.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/classification-decision.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/classification-evidence.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/classification-merge.ts` | [expense-capture](expense-capture.md) |
@@ -428,6 +429,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/lib/clientRulesEngine.ts` | [expense-capture](expense-capture.md) |
 | `src/lib/compress-image.ts` | [expense-capture](expense-capture.md) |
 | `src/lib/financial-taxonomy.ts` | [web-app](web-app.md) |
+| `src/lib/ledger-refresh.ts` | [web-app](web-app.md) |
 | `src/lib/queryPersister.ts` | [web-app](web-app.md) |
 | `src/lib/saved-toast.ts` | [web-app](web-app.md) |
 | `src/lib/transactionDisplay.ts` | [web-app](web-app.md) |

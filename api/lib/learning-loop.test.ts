@@ -32,7 +32,8 @@ vi.mock("../queries/connection", () => {
   return { db, getDb: () => db, pool: { query: async () => [[], []], end: async () => {} } };
 });
 
-import { runSmartPipeline, invalidateUserClassificationCache } from "./smart-pipeline";
+import { runSmartPipeline } from "./smart-pipeline";
+import { clearClassificationCache } from "./classification-cache";
 import { correctionPattern } from "./correction-rules";
 
 const USER = 981_001;
@@ -70,13 +71,13 @@ function rememberCorrection(text: string, category: string, subCategory: string)
     amountMax: null,
     isActive: true,
   });
-  // A correction the cache can overrule is not a correction.
-  invalidateUserClassificationCache(USER, "local");
+  // Nothing clears the cache here on purpose: the rules are part of its key, so a new
+  // correction misses by itself (docs/decisions/0013-caching-as-one-system.md).
 }
 
 beforeEach(() => {
   storedRules.length = 0;
-  invalidateUserClassificationCache(USER, "local");
+  clearClassificationCache();
 });
 
 describe("a correction changes the next answer", () => {

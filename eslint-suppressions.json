@@ -316,9 +316,6 @@
     "@typescript-eslint/no-explicit-any": {
       "count": 2
     },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "no-console": {
       "count": 1
     },
