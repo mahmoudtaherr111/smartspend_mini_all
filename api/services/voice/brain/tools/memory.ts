@@ -40,6 +40,8 @@ async function remember(fact: string, ctx: ToolContext): Promise<ToolRunOutcome>
     return { response: { ok: false, error: "not_kept", say: "السن والنوع مش بنحفظهم. قول كده بلطف في جملة." } };
   }
   const content = fact.replace(/\s+/g, " ").trim().slice(0, 300);
+  // A request the user dropped (the model cancelled the call, or it ran out of time) writes nothing.
+  ctx.signal.throwIfAborted();
   await db.insert(aiMemoryItems).values({
     userId: ctx.identity.userId,
     userType: ctx.identity.userType,
@@ -62,6 +64,7 @@ async function forget(memoryId: number, ctx: ToolContext): Promise<ToolRunOutcom
   );
   const [item] = await db.select({ id: aiMemoryItems.id }).from(aiMemoryItems).where(scope).limit(1);
   if (!item) return { response: { ok: false, error: "not_found", say: "مالقيتش الحاجة دي. دوّر بـ search الأول." } };
+  ctx.signal.throwIfAborted();
   // Forgetting deletes the memory and its search vector; nothing of it is kept behind a status.
   await db.delete(aiMemoryItems).where(scope);
   await db.delete(aiMemoryEmbeddings).where(and(
@@ -78,6 +81,7 @@ async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<
   const key = str(args.key, 80) ?? "";
   const question = callQuestion(key);
   if (!question) return { response: { ok: false, error: "unknown_question", say: "اسأل بس السؤال اللي في CALL FACTS." } };
+  ctx.signal.throwIfAborted();
   if (args.skip === true) {
     await ctx.app.answerProfileQuestion(ctx.identity, key, undefined, true);
     return { response: { ok: true, say: "قول مفيش مشكلة في كلمتين، ومتسألش تاني." } };

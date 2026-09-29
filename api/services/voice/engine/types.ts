@@ -62,6 +62,11 @@ export type EngineEvent =
   | { type: "interrupted" }
   /** The model finished speaking a turn (it may still be working, see `idle`). */
   | { type: "turn_complete" }
+  /**
+   * The provider is still working on the task (reasoning, or waiting for a tool's answer): the extended-thinking
+   * model's `interactionStatus: IN_PROGRESS`, sent once when it starts.
+   */
+  | { type: "working" }
   /** Nothing is in progress any more: the user may speak. */
   | { type: "idle" }
   | { type: "usage"; usage: EngineUsage }
@@ -79,7 +84,11 @@ export interface VoiceEngine {
   sendAudio(pcm: Buffer): void;
   /** The user stopped speaking (the app's voice detection): answer now rather than wait for silence. */
   endOfSpeech(): void;
-  /** A user turn in text: typed input, or a note from the app to the model, which interrupts it. */
+  /**
+   * A complete user turn in text: typed input, or a note from the app. The provider interrupts whatever the model is
+   * generating (`turn_complete=true`), so the call sends the app's own notes only when the model is idle, unless the
+   * note must stop what is being said (see CallSession#sendNote).
+   */
   sendText(text: string): void;
   sendToolResults(results: ToolCallResult[]): void;
   close(): void;

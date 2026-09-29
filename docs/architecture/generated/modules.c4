@@ -198,7 +198,7 @@ model {
     contracts = module 'Shared contracts' {
       description 'Types, limits and billing plans shared by the web app and the API.'
       metadata {
-        files '9'
+        files '10'
         paths 'contracts/**'
       }
     }

@@ -37,6 +37,7 @@ export {
   getFinanceTransactions,
   getGoalFeasibility,
   getPersonTotal,
+  getTextSpendingTotal,
   getGoalProgress,
   getProfileSnapshot,
   getTransactionLookup,

@@ -72,7 +72,11 @@ export interface VoiceDraftCard {
   title: string;
   items: Array<{ label: string; amount?: number; detail?: string }>;
   total?: number;
-  status: "pending" | "executed" | "cancelled" | "expired" | "failed";
+  /**
+   * `executing`: confirmed and the write has started, its outcome not known yet (an older app shows no buttons and
+   * no label for it, which is what it should do).
+   */
+  status: "pending" | "executing" | "executed" | "cancelled" | "expired" | "failed";
   /** Cannot be confirmed by voice: only a tap on the card executes it. */
   requiresTap?: boolean;
   expiresAt: string;

@@ -13,6 +13,7 @@ import type { AppRouter } from "../../router";
 import type { CallIdentity } from "./gateway/call-session";
 import type { BudgetStatus, ParseOutcome, VoiceAppCalls } from "./brain/tools/types";
 import { financeCacheKey, withFinanceCache } from "../finance-semantic-layer/cache";
+import { directionToSave, personToSave } from "../../../contracts/expense-save";
 
 type Caller = ReturnType<AppRouter["createCaller"]>;
 
@@ -40,6 +41,8 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
       const result = await caller.ai.parseExpense({ text, inputChannel: "voice" });
       return {
         decision: result.decision,
+        // The same fields the expense form saves (contracts/expense-save.ts): a refund keeps its direction, a
+        // loan or gam3eya its way, a purpose its person.
         items: result.items.map((item) => ({
           amount: Number(item.amount),
           type: String(item.type ?? "expense"),
@@ -47,6 +50,8 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
           subCategory: item.subCategory,
           description: item.description,
           date: item.date,
+          direction: directionToSave(item),
+          ...personToSave(item),
         })),
         clarificationQuestion: result.clarificationQuestion,
         clarificationId: result.clarificationId,
@@ -67,6 +72,9 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
         date: item.date,
         classificationLogId: item.classificationLogId,
         clientRequestId: item.clientRequestId,
+        direction: item.direction,
+        personName: item.personName,
+        personRelationship: item.personRelationship,
       })));
       // The procedure answers with a count; the ids are what "undo" needs, found by the request ids it stored.
       const rows = await db.select({ id: expenses.id }).from(expenses).where(and(
@@ -79,7 +87,12 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
 
     async deleteExpenses(identity, ids) {
       const caller = await callerFor(identity);
-      for (const id of ids) await caller.expense.delete({ id });
+      let deleted = 0;
+      for (const id of ids) {
+        await caller.expense.delete({ id });
+        deleted += 1;
+      }
+      return { deleted };
     },
 
     async listBudgets(identity): Promise<BudgetStatus[]> {

@@ -29,6 +29,7 @@ import type {
   FinanceProfileSnapshot,
   FinanceResolverResult,
   FinanceSummary,
+  FinanceTextTotal,
   FinanceComparisonDriver,
   FinanceBusinessCashflow,
   FinanceCategoryInclusion,
@@ -380,18 +381,21 @@ export async function getPersonTotal(
     .sort((left, right) => right.normalizedName.length - left.normalizedName.length)[0];
   if (!contact) return null;
 
-  const key = financeCacheKey(ctx.userId, ctx.userType, "person_total", period.key, contact.id);
+  const key = financeCacheKey(ctx.userId, ctx.userType, "person_total_v2", period.key, contact.id);
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
-    const rows = (await loadRowsForPeriod(ctx, period)).filter(
-      (row) => row.contactId === contact.id && row.type === "expense",
-    );
+    const rows = (await loadRowsForPeriod(ctx, period)).filter((row) => row.contactId === contact.id);
+    const spent = rows.filter((row) => row.type === "expense");
+    const received = rows.filter((row) => row.type === "income");
     return {
       period,
       contactId: contact.id,
       name: contact.name,
       relation: contact.relation,
-      totalExpense: rows.reduce((sum, row) => sum + amountOf(row), 0),
-      transactionCount: rows.length,
+      totalExpense: spent.reduce((sum, row) => sum + amountOf(row), 0),
+      totalIncome: received.reduce((sum, row) => sum + amountOf(row), 0),
+      expenseCount: spent.length,
+      incomeCount: received.length,
+      transactionCount: spent.length + received.length,
     };
   });
 }
@@ -427,12 +431,25 @@ export async function getFinanceBreakdown(
   });
 }
 
+/** The words a row is found by: what the user typed, its description, shop and category. */
+function rowText(row: Pick<ExpenseRow, "description" | "rawText" | "placeHint" | "category" | "subCategory">): string {
+  return normalizeLookupText([row.description, row.rawText, row.placeHint, row.category, row.subCategory].filter(Boolean).join(" "))
+    .replace(/\s+/g, "");
+}
+
+/**
+ * Transactions of a period, newest first. Every filter — type, category, an amount ("the forty pounds", within half a
+ * pound, refunds by their size) and a text ("أوبر") — applies to all the period's rows before `limit` cuts the list,
+ * so "not found" means not in the period, not "not among the latest few".
+ */
 export async function getFinanceTransactions(
   ctx: FinanceContext,
   input: FinancePeriodInput & {
     category?: string;
     categories?: string[];
     transactionTypes?: string[];
+    amount?: number;
+    text?: string;
     limit?: number;
   } = {},
 ): Promise<FinanceTransactionsResult> {
@@ -441,6 +458,8 @@ export async function getFinanceTransactions(
   const transactionTypes = uniqueList(input.transactionTypes ?? ["expense"]);
   const categories = uniqueList([...(input.categories ?? []), input.category]);
   const categoryKey = categories.length > 0 ? [...categories].sort().join("+") : "all";
+  const amount = typeof input.amount === "number" && Number.isFinite(input.amount) ? Math.abs(input.amount) : undefined;
+  const text = input.text ? normalizeLookupText(input.text).replace(/\s+/g, "") : "";
   const key = financeCacheKey(
     ctx.userId,
     ctx.userType,
@@ -449,15 +468,24 @@ export async function getFinanceTransactions(
     categoryKey,
     transactionTypes.join("+"),
     limit,
+    amount ?? "any",
+    text || "any",
   );
 
   return withFinanceCache(key, Math.min(financeCacheTtl(period.key), 5 * 60), async () => {
     let rows = await loadRowsForPeriod(ctx, period);
+    const partial = rows.length >= ROW_LIMIT;
     if (transactionTypes.length > 0) {
       rows = rows.filter((row) => transactionTypes.includes(row.type));
     }
     if (categories.length > 0) {
       rows = rows.filter((row) => rowMatchesAnyCategory(row, categories));
+    }
+    if (amount !== undefined) {
+      rows = rows.filter((row) => Math.abs(Math.abs(amountOf(row)) - amount) < 0.5);
+    }
+    if (text) {
+      rows = rows.filter((row) => rowText(row).includes(text));
     }
 
     const transactions: FinanceTransactionFact[] = rows.slice(0, limit).map((row) => ({
@@ -477,6 +505,45 @@ export async function getFinanceTransactions(
       totalMatched: rows.length,
       returned: transactions.length,
       transactions,
+      ...(partial ? { partial } : {}),
+    };
+  });
+}
+
+/**
+ * All the spending of a period whose shop, description or words hold `text` ("طلبات", "أوبر"), summed over every
+ * row of the period, with the places it matched. A merchant breakdown cut at its top entries would miss a small
+ * shop and answer "nothing" for it.
+ */
+export async function getTextSpendingTotal(
+  ctx: FinanceContext,
+  text: string,
+  input: FinancePeriodInput = {},
+): Promise<FinanceTextTotal> {
+  const period = resolveFinancePeriod(input, ctx);
+  const needle = normalizeLookupText(text).replace(/\s+/g, "");
+  const key = financeCacheKey(ctx.userId, ctx.userType, "text_total", period.key, needle || "none");
+  return withFinanceCache(key, financeCacheTtl(period.key), async () => {
+    const loaded = await loadRowsForPeriod(ctx, period);
+    const rows = needle ? loaded.filter((row) => isSpendingRow(row) && rowText(row).includes(needle)) : [];
+    const places = new Map<string, { amount: number; count: number }>();
+    for (const row of rows) {
+      const name = row.placeHint || row.description || text;
+      const entry = places.get(name) ?? { amount: 0, count: 0 };
+      entry.amount += amountOf(row);
+      entry.count += 1;
+      places.set(name, entry);
+    }
+    return {
+      period,
+      text,
+      totalExpense: rows.reduce((sum, row) => sum + amountOf(row), 0),
+      transactionCount: rows.length,
+      places: [...places.entries()]
+        .map(([name, entry]) => ({ name, ...entry }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 5),
+      ...(loaded.length >= ROW_LIMIT ? { partial: true as const } : {}),
     };
   });
 }

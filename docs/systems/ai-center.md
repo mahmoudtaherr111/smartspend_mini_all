@@ -121,7 +121,8 @@ confirmation):
    running the action; the phrase typed in the chat confirms it. The server checks them whatever the channel;
 3. moves it to `confirmed` in one conditional update, so a second confirmation fails instead of running twice;
 4. executes it (`executeGoalCreate` or `executeRuntimeAction`), records the result, writes `ai_action_memory` and
-   an audit row, and after a new goal drafts a matching budget;
+   an audit row, and after a new goal drafts a matching budget, unless the caller passes `suggestFollowUp: false`
+   (the voice call, which has no card to show that draft on);
 5. on failure marks it `failed`. `cancelAction` marks it `cancelled`.
 
 `action.undo` looks at the most recent executed actions and reverses the newest one that can be undone: creating,
@@ -177,6 +178,11 @@ the finance caches are cleared.
   entries. Breakdowns, lookups and category totals read the period's entries instead: only the columns they use, and
   the newest 10,000 at most (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Both cover the
   personal ledger only, as Home does: an expense with a `business_id` belongs to that business.
+- Every filter applies to the whole period before a list is cut: `getFinanceTransactions` filters by type, category,
+  an amount (within half a pound, a refund by its size) and a text (its description, words, shop and category)
+  before `limit`, and says `partial` when the period held more than `ROW_LIMIT` entries. `getTextSpendingTotal` sums
+  the spending whose text holds a shop's name over every entry of the period, with the places it matched.
+  `getPersonTotal` gives a contact's spending and income apart (`totalExpense`, `totalIncome`).
 - Results are cached per user (`api/services/finance-semantic-layer/cache.ts#withFinanceCache`): a minute for today,
   ten minutes for yesterday, five minutes for any other period that still holds today, an hour for a closed one
   (`financeCacheTtl`), a minute for wallet balances and five minutes for goals and the
@@ -184,7 +190,9 @@ the finance caches are cleared.
   routers and the action runtime bump the user's generation (`invalidateFinanceUserCache`, also exported as
   `bumpFinanceCacheGen`), which drops these results and the expense caches. The keys also carry a schema version
   (`CACHE_SCHEMA_VERSION` in `api/services/finance-semantic-layer/cache.ts`, with the category taxonomy's version),
-  raised whenever a result's shape or meaning changes, so a deploy never serves an older kind of result.
+  raised whenever a result's shape or meaning changes, so a deploy never serves an older kind of result. A key part
+  that is not plain ASCII (an Arabic category or shop name) keeps a readable stub and a hash of its exact value
+  (`api/services/finance-semantic-layer/cache.ts#sanitizePart`), so two names of the same length never share a key.
 - The same layer serves the voice call's tools and prefetch, and the monthly report, month comparison and yearly
   summary of [insights](insights.md), including its WhatsApp monthly report job.
 

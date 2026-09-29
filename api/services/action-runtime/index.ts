@@ -273,11 +273,14 @@ async function loadPendingAction(
 /**
  * Runs a drafted action. `proof.phrase` is what the user typed: a high-risk action runs only when it matches the
  * phrase the draft showed, whatever channel asks — the risk used to be stored with the draft and never read.
+ * `options.suggestFollowUp: false` skips drafting the budget a new goal suggests, for a channel that cannot show it
+ * (the live call), so no pending action is left behind that nobody will ever see.
  */
 export async function confirmAction(
   ctx: ActionRuntimeContext,
   actionId: number,
   proof: { phrase?: string } = {},
+  options: { suggestFollowUp?: boolean } = {},
 ): Promise<ActionExecutionResult> {
   const action = await loadPendingAction(ctx, actionId);
   const phrase = confirmationPhraseFor(action.actionName, action.risk);
@@ -358,7 +361,7 @@ export async function confirmAction(
     });
     await audit(ctx, actionId, action.actionName, "executed", "executed", output);
     let suggestedBudgetAction: ActionDraftResult | null = null;
-    if (action.actionName === "goal.create") {
+    if (action.actionName === "goal.create" && options.suggestFollowUp !== false) {
       const suggestion = createBudgetSuggestionFromGoal(action.payload as GoalCreatePayload, Number(output.goalId));
       if (suggestion) {
         suggestedBudgetAction = await createPendingRuntimeAction(ctx, "budget.create", suggestion).catch(() => null);

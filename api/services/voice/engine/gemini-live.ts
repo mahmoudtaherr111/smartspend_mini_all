@@ -125,6 +125,8 @@ export class GeminiLiveEngine implements VoiceEngine {
   private readonly pendingTools = new Set<string>();
   private goAwayDeadline: ReturnType<typeof setTimeout> | null = null;
   private reconnectWhenToolsSettle = false;
+  /** The extended-thinking model's last `interactionStatus`, so `working` is reported once per stretch of work. */
+  private interaction: "IN_PROGRESS" | "IDLE" | null = null;
 
   constructor(private readonly options: GeminiLiveOptions) {}
 
@@ -301,9 +303,13 @@ export class GeminiLiveEngine implements VoiceEngine {
       // The standard model is idle at the end of its turn; the thinking one says so separately.
       if (!thinking) this.emit({ type: "idle" });
     }
+    // The extended-thinking model says when the whole task is done (IDLE) apart from when it stops speaking
+    // (turnComplete): it may speak a line, then keep reasoning or wait for a tool (IN_PROGRESS).
     const status = field(message, "interactionStatus", "interaction_status")
       ?? field(content, "interactionStatus", "interaction_status");
+    if (thinking && status === "IN_PROGRESS" && this.interaction !== "IN_PROGRESS") this.emit({ type: "working" });
     if (thinking && status === "IDLE") this.emit({ type: "idle" });
+    if (status === "IN_PROGRESS" || status === "IDLE") this.interaction = status;
 
     const calls = field(object(field(message, "toolCall", "tool_call")), "functionCalls", "function_calls");
     if (Array.isArray(calls) && calls.length > 0) {

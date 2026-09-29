@@ -88,8 +88,14 @@ export class FakeLiveConnection {
     this.send({ toolCall: { functionCalls: calls.map((call) => ({ args: {}, ...call })) } });
   }
 
-  sendTurnComplete(): void {
-    this.send({ serverContent: { turnComplete: true } });
+  /** `status`: the extended-thinking model's `interactionStatus` sent with it. */
+  sendTurnComplete(status?: "IN_PROGRESS" | "IDLE"): void {
+    this.send({ serverContent: { turnComplete: true }, ...(status ? { interactionStatus: status } : {}) });
+  }
+
+  /** The extended-thinking model's task state on its own. */
+  sendInteractionStatus(status: "IN_PROGRESS" | "IDLE"): void {
+    this.send({ interactionStatus: status });
   }
 
   sendInterrupted(): void {

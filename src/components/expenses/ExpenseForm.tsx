@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { validateOfflineInput } from "@/lib/clientRulesEngine";
 import { ExpenseInputLimits } from "@contracts/constants";
+import { directionToSave, personToSave } from "@contracts/expense-save";
 import { cn } from "@/lib/utils";
 import {
   CATEGORY_OPTIONS,
@@ -1064,31 +1065,6 @@ export function ExpenseForm({
       : "expense";
   };
 
-  /**
-   * The direction saved with an item: a transfer's (a loan, a gam3eya) when the parser
-   * found one, and "incoming" for an expense whose money came back (a refund).
-   */
-  const directionToSave = (item: { type?: unknown; direction?: unknown }): "incoming" | "outgoing" | undefined =>
-    item.type === "transfer"
-      ? transferDirectionOf(item)
-      : item.type === "expense" && item.direction === "incoming"
-        ? "incoming"
-        : undefined;
-  /** The direction the parser found for a transfer (a loan, a gam3eya), if it found one. */
-  const transferDirectionOf = (item: { direction?: unknown }): "incoming" | "outgoing" | undefined =>
-    item.direction === "incoming" || item.direction === "outgoing" ? item.direction : undefined;
-
-  /**
-   * The person the parser found beside the purpose ("مصاريف مدرسة ابني" is تعليم for ابني),
-   * which the save links to a contact.
-   */
-  const personOf = (item: { person_mentioned?: unknown; person_relationship?: unknown }) => {
-    const name = typeof item.person_mentioned === "string" ? item.person_mentioned.trim().slice(0, 60) : "";
-    const relationship =
-      typeof item.person_relationship === "string" ? item.person_relationship.trim().slice(0, 40) : "";
-    return name && relationship ? { personName: name, personRelationship: relationship } : {};
-  };
-
   const saveItems = async (
     items: any[],
     isAuto: boolean = false,
@@ -1137,7 +1113,7 @@ export function ExpenseForm({
           classificationLogId: traceLogId || undefined,
           businessId,
           direction: directionToSave(item),
-          ...personOf(item),
+          ...personToSave(item),
           clientRequestId: effectiveClientRequestId
             ? `${effectiveClientRequestId}:${index}`
             : undefined,
@@ -1158,7 +1134,7 @@ export function ExpenseForm({
           classificationLogId: traceLogId || undefined,
           businessId,
           direction: directionToSave(item),
-          ...personOf(item),
+          ...personToSave(item),
           clientRequestId: effectiveClientRequestId || undefined,
         });
         const savedId = (saved as { id?: number })?.id;

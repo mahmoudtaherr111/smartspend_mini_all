@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from "async_hooks";
+import { createHash } from "crypto";
 import { withCacheStatus, cacheGet, cacheIncr } from "../../lib/redis-client";
 import { taxonomyVersion } from "../../lib/category-registry";
 import { businessDateKey } from "../../lib/app-time";
@@ -7,14 +8,21 @@ const PREFIX = "finance_ai";
 // v4 (2026-09-24): summaries are one MySQL aggregate, and every result covers the personal ledger only (a business's
 // expenses are its own, as on Home); earlier entries carried a row-derived daily average and mixed them in.
 // v5 (2026-09-24): a category named in words ("أكل") matches its rows; v4 entries hold zeros for those.
-const CACHE_SCHEMA_VERSION = `schema_v5_${taxonomyVersion()}`;
+// v6 (2026-09-29): a key part with letters outside ASCII carries a hash of itself; before, every Arabic letter became
+// "_", so "فواتير" and "اشتراك" (six letters each) shared one cached answer.
+const CACHE_SCHEMA_VERSION = `schema_v6_${taxonomyVersion()}`;
 const financeCacheTrace = new AsyncLocalStorage<string[]>();
 
-function sanitizePart(value: unknown): string {
-  return String(value ?? "none")
-    .replace(/\s+/g, "_")
-    .replace(/[^a-zA-Z0-9_.:-]/g, "_")
-    .slice(0, 80);
+/**
+ * One part of a key: readable ASCII as written; anything else (an Arabic name, a long filter) keeps a readable
+ * stub and gains a hash of the exact value, so two different values never share a key.
+ */
+export function sanitizePart(value: unknown): string {
+  const raw = String(value ?? "none");
+  const spaced = raw.replace(/\s+/g, "_");
+  const safe = spaced.replace(/[^a-zA-Z0-9_.:-]/g, "_");
+  if (safe === spaced && safe.length <= 80) return safe;
+  return `${safe.slice(0, 40)}~${createHash("sha256").update(raw).digest("base64url").slice(0, 16)}`;
 }
 
 export async function getFinanceCacheGen(

@@ -14,7 +14,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
 | `platform` | Platform services | 11 | `contracts`, `database` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice` | `mysql` |
-| `contracts` | Shared contracts | 9 | — | `ai-actions`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `api-routers`, `billing`, `classification`, `jobs`, `platform`, `voice`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-pages`, `web-voice-call` | — |
+| `contracts` | Shared contracts | 10 | — | `ai-actions`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `api-routers`, `billing`, `classification`, `jobs`, `platform`, `voice`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-pages`, `web-voice-call` | — |
 | `billing` | Billing | 3 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
 | `ledger` | Ledger aggregates | 6 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `ingestion-parsers`, `jobs`, `notifications` | — |
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
@@ -190,6 +190,7 @@ Types, limits and billing plans shared by the web app and the API.
 | `contracts/categories.ts` | — | — | — | — |
 | `contracts/constants.ts` | — | — | — | — |
 | `contracts/errors.ts` | — | — | — | — |
+| `contracts/expense-save.ts` | — | — | — | — |
 | `contracts/plan-features.ts` | — | — | — | — |
 | `contracts/plans.ts` | — | — | — | — |
 | `contracts/types.ts` | — | — | — | — |
@@ -266,7 +267,7 @@ Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway
 | --- | --- | --- | --- | --- |
 | `api/services/entitlements/voice.ts` | `database`, `platform` | — | `voice_calls`, `voice_usage` | — |
 | `api/services/voice/admin-stats.ts` | `database` | — | `voice_call_incidents`, `voice_calls` | — |
-| `api/services/voice/app-calls.ts` | `database`, `finance-semantic-layer` | — | `expenses`, `local_users`, `pending_clarifications`, `users` | `pending_clarifications` |
+| `api/services/voice/app-calls.ts` | `contracts`, `database`, `finance-semantic-layer` | — | `expenses`, `local_users`, `pending_clarifications`, `users` | `pending_clarifications` |
 | `api/services/voice/brain/claims.ts` | — | — | — | — |
 | `api/services/voice/brain/drafts.ts` | — | — | — | — |
 | `api/services/voice/brain/facts.ts` | — | — | — | — |
@@ -281,7 +282,7 @@ Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway
 | `api/services/voice/brain/tools/market-price.ts` | `ai-providers`, `platform` | — | — | — |
 | `api/services/voice/brain/tools/memory.ts` | `ai-insights`, `ai-memory`, `database`, `platform` | — | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` |
 | `api/services/voice/brain/tools/money-query.ts` | `classification`, `finance-semantic-layer`, `platform` | — | — | — |
-| `api/services/voice/brain/tools/record.ts` | `ai-actions` | — | — | — |
+| `api/services/voice/brain/tools/record.ts` | `ai-actions`, `contracts` | — | — | — |
 | `api/services/voice/brain/tools/reports.ts` | `database`, `platform` | — | `ai_summaries`, `monthly_reports`, `pending_clarifications` | — |
 | `api/services/voice/brain/tools/think.ts` | `ai-providers`, `finance-semantic-layer`, `platform` | — | — | — |
 | `api/services/voice/brain/tools/types.ts` | — | — | — | — |

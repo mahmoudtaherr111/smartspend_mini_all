@@ -10,6 +10,11 @@ export interface ParsedExpenseItem {
   subCategory?: string;
   description?: string;
   date?: string;
+  /** A refund ("incoming" expense), or which way a loan or gam3eya transfer moved (contracts/expense-save.ts). */
+  direction?: "incoming" | "outgoing";
+  /** The person beside the purpose, linked to a contact on save; both or neither. */
+  personName?: string;
+  personRelationship?: string;
 }
 
 export interface ParseOutcome {
@@ -43,7 +48,8 @@ export interface BudgetStatus {
 export interface VoiceAppCalls {
   parseExpense(identity: CallIdentity, text: string): Promise<ParseOutcome>;
   saveExpenses(identity: CallIdentity, items: SaveExpenseItem[]): Promise<{ ids: number[] }>;
-  deleteExpenses(identity: CallIdentity, ids: number[]): Promise<void>;
+  /** Deletes the call's own records; answers how many were deleted, so a partial undo is said as one. */
+  deleteExpenses(identity: CallIdentity, ids: number[]): Promise<{ deleted: number }>;
   listBudgets(identity: CallIdentity): Promise<BudgetStatus[]>;
   /** A question the parser opened for the home screen that the call has answered itself. */
   dismissClarification(identity: CallIdentity, clarificationId: number): Promise<void>;

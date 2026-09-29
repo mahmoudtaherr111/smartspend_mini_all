@@ -238,7 +238,7 @@ flowchart LR
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
 | `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 24 |
-| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 9 |
+| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 10 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
 | `platform` — Platform services | Environment validation, Redis client (cache, shared state for one-time codes, generation counters with replay of bumps Redis missed) and cache keys, the generation watcher that tells a per-process copy of shared data to reload, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 11 |
@@ -388,7 +388,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>39 files and declarations</summary>
+<details><summary>40 files and declarations</summary>
 
 - `api/boot.ts#ALL /api/trpc/*`
 - `api/boot.ts#GET /health`
@@ -420,6 +420,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `contracts/categories.ts`
 - `contracts/constants.ts`
 - `contracts/errors.ts`
+- `contracts/expense-save.ts`
 - `contracts/plan-features.ts`
 - `contracts/plans.ts`
 - `contracts/types.ts`

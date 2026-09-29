@@ -16,6 +16,7 @@ import {
   getGoalFeasibility,
   getGoalProgress,
   getPersonTotal,
+  getTextSpendingTotal,
   getTransactionLookup,
   getWalletSummary,
 } from "../../../finance-semantic-layer/resolvers";
@@ -207,14 +208,14 @@ async function findTransaction(
   const idOf = (word: string | undefined) => (word && canonicalCategoryId(word) !== "uncategorized" ? canonicalCategoryId(word) : undefined);
   const namedCategory = idOf(category);
   // The words as written first ("أوبر" is a merchant before it is the ride-hailing category), then as a category.
+  // The amount is a filter over the whole period, applied before the list is cut (it used to filter the latest 30).
   if (amount !== undefined) {
-    const list = await getFinanceTransactions(finance, { ...input, category: namedCategory, limit: 50, transactionTypes: types });
-    const byAmount = list.transactions.filter((tx) => Math.abs(tx.amount - amount) < 0.5);
-    const needle = (search ?? "").replace(/\s+/g, "");
+    const byText = await getFinanceTransactions(finance, { ...input, category: namedCategory, amount, text: search, limit: 1, transactionTypes: types });
+    if (byText.transactions[0]) return byText.transactions[0];
     const searchCategory = idOf(search);
-    return byAmount.find((tx) => !needle || String(tx.description ?? "").replace(/\s+/g, "").includes(needle))
-      ?? (searchCategory ? byAmount.find((tx) => canonicalCategoryId(tx.category) === searchCategory) : undefined)
-      ?? null;
+    if (!search || !searchCategory) return null;
+    const byCategory = await getFinanceTransactions(finance, { ...input, category: searchCategory, amount, limit: 1, transactionTypes: types });
+    return byCategory.transactions[0] ?? null;
   }
   const byText = search ? await getTransactionLookup(finance, search, namedCategory, types, input) : null;
   if (byText) return byText;
@@ -357,6 +358,7 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
   if (metric === "feasibility") {
     const amount = num(args.amount);
     if (!amount || amount <= 0) return { response: { ok: false, error: "missing_amount", say: "اسأل عن المبلغ." } };
+    // A month that spends more than it earns has no surplus: its shortfall is said as one, never as zero.
     // The month's surplus, what is in the wallets as recorded, and the goals it would compete with.
     const [feasibility, wallets, progress] = await Promise.all([
       getGoalFeasibility(finance, { period: "current_month", targetAmount: amount }),
@@ -368,7 +370,9 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
       title: "تقدر عليها؟",
       facts: [
         { label: "المبلغ", value: amount, exact: true },
-        { label: "اللي بيفضل في الشهر", value: Math.max(0, Math.round(feasibility.monthlyCapacity)) },
+        feasibility.monthlyCapacity >= 0
+          ? { label: "اللي بيفضل في الشهر", value: Math.round(feasibility.monthlyCapacity) }
+          : { label: "العجز في الشهر (المصروف أكتر من الدخل المسجل)", value: Math.round(-feasibility.monthlyCapacity) },
         ...(wallets.walletCount ? [{ label: "الأرصدة المسجلة", value: wallets.totalBalance }] : []),
       ],
       extra: {
@@ -398,12 +402,15 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
 
   if (metric === "compare") {
     const before = comparableBefore(input, finance);
-    const [now, then] = await Promise.all([getFinanceSummary(finance, input), getFinanceSummary(finance, before.input)]);
+    // A category compares that category ("الأكل الشهر ده والشهر اللي فات"), never the whole ledger under its name.
+    const [now, then] = category
+      ? await Promise.all([getCategoryTotal(finance, category, input), getCategoryTotal(finance, category, before.input)])
+      : await Promise.all([getFinanceSummary(finance, input), getFinanceSummary(finance, before.input)]);
     const currentValue = income ? now.totalIncome : now.totalExpense;
     const previousValue = income ? then.totalIncome : then.totalExpense;
     const change = previousValue > 0 ? Math.round(((currentValue - previousValue) / previousValue) * 100) : null;
     return outcome({
-      title: income ? "مقارنة الدخل" : "مقارنة المصروف",
+      title: category ? `مقارنة ${category}` : income ? "مقارنة الدخل" : "مقارنة المصروف",
       facts: [
         { label: label, value: currentValue },
         { label: before.label, value: previousValue },
@@ -460,21 +467,33 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
   // total
   if (person) {
     const total = await getPersonTotal(finance, person, input);
+    // Money from a person ("دخل من أحمد") is their income rows, never what was paid to them.
+    const facts = !total
+      ? []
+      : income
+        ? [{ label: `اللي جالك من ${total.name}`, value: total.totalIncome }]
+        : [{ label: `اللي اتدفع لـ${total.name}`, value: total.totalExpense }];
+    const count = total ? (income ? total.incomeCount : total.expenseCount) : 0;
     return outcome({
       title: `فلوس ${person}`,
-      facts: total ? [{ label: `اللي اتدفع لـ${total.name}`, value: total.totalExpense }] : [],
-      coverage: total ? undefined : `مفيش حد متسجل باسم «${person}».`,
+      facts,
+      extra: total ? { count } : {},
+      coverage: !total
+        ? `مفيش حد متسجل باسم «${person}».`
+        : count === 0
+          ? `مفيش ${income ? "دخل" : "مصروف"} متسجل مربوط بـ${total.name} في ${label}.`
+          : undefined,
     }, ctx, label);
   }
   if (search) {
-    const breakdown = await getFinanceBreakdown(finance, { ...input, granularity: "merchant", limit: 50 });
-    const needle = search.replace(/\s+/g, "");
-    const matches = breakdown.items.filter((item) => item.name.replace(/\s+/g, "").includes(needle));
-    const value = matches.reduce((sum, item) => sum + item.amount, 0);
+    const total = await getTextSpendingTotal(finance, search, input);
     return outcome({
       title: `المصروف على ${search}`,
-      facts: matches.length ? [{ label: `المصروف على ${search}`, value }] : [],
-      coverage: matches.length ? undefined : `مالقيتش صرف باسم «${search}» في الفترة دي.`,
+      facts: total.transactionCount ? [{ label: `المصروف على ${search}`, value: total.totalExpense }] : [],
+      extra: total.transactionCount ? { count: total.transactionCount, places: total.places.map((place) => place.name) } : {},
+      coverage: total.partial
+        ? PARTIAL_NOTE
+        : total.transactionCount ? undefined : `مالقيتش صرف باسم «${search}» في ${label}.`,
     }, ctx, label);
   }
   if (category) {

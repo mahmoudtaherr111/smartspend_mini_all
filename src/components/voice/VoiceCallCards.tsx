@@ -3,7 +3,7 @@
  * for the user's tap or yes, steps from the app's guide, and a gold or currency price with its source and time.
  */
 import { useEffect, useState } from "react";
-import { Check, ExternalLink, Info, X } from "lucide-react";
+import { Check, ExternalLink, Info, Loader2, X } from "lucide-react";
 import type {
   VoiceCard,
   VoiceDraftCard,
@@ -55,6 +55,7 @@ function FactCard({ card }: { card: VoiceFactCard }) {
 }
 
 const DRAFT_STATUS: Record<Exclude<VoiceDraftCard["status"], "pending">, { label: string; className: string }> = {
+  executing: { label: "بيتنفذ…", className: "text-amber-700 dark:text-amber-400" },
   executed: { label: "اتنفذ", className: "text-emerald-600 dark:text-emerald-400" },
   cancelled: { label: "اتلغى", className: "text-muted-foreground" },
   expired: { label: "انتهت صلاحيته", className: "text-muted-foreground" },
@@ -92,7 +93,13 @@ function DraftCard({
         <p className="text-sm font-semibold">{card.title}</p>
         {status && (
           <span className={cn("flex shrink-0 items-center gap-1 text-xs font-medium", status.className)}>
-            {card.status === "executed" ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+            {card.status === "executed" ? (
+              <Check className="h-3.5 w-3.5" />
+            ) : card.status === "executing" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <X className="h-3.5 w-3.5" />
+            )}
             {status.label}
           </span>
         )}

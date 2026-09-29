@@ -87,6 +87,11 @@ export interface CallBrain {
   /** A note that makes the model open the call, or continue it after a reconnect without greeting again. */
   openingNote(resumed: boolean, recent: TranscriptLine[]): string;
   runTool(call: ToolCallRequest, context: ToolRunContext): Promise<ToolRunOutcome>;
+  /**
+   * True for a tool whose run may write (a confirmation). Its time limit does not report a failure: the write may
+   * still land, so the model hears that it is still running and the outcome follows as a note once known.
+   */
+  writes?(toolName: string): boolean;
   /** What the screen should say the assistant is doing while these tools run. */
   waitDetail?(calls: ToolCallRequest[]): VoiceWaitDetail | undefined;
   /** Called with the user's words as transcribed. */
@@ -124,7 +129,10 @@ export interface CallSessionDeps {
   graceMs?: number;
   inactiveMs?: number;
   toolTimeoutMs?: number;
-  /** How long the screen shows "thinking" after a tool answer before assuming the model will not speak. */
+  /**
+   * How long the screen shows "thinking" after the last tool answer before assuming the model will not speak (the
+   * standard model; the extended-thinking one says IDLE itself, and waits twice this before the screen gives up).
+   */
   replyWaitMs?: number;
 }
 
@@ -188,9 +196,16 @@ export class CallSession {
   private ticker: ReturnType<typeof setInterval> | null = null;
   private lastCheckpoint = 0;
   private graceTimer: ReturnType<typeof setTimeout> | null = null;
-  /** A tool was called and the model's spoken answer to it has not started yet. */
+  /** Every tool answer is in and the model's spoken answer to them has not started yet. */
   private replyOwed = false;
   private replyTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Tool calls still running. */
+  private runningTools = 0;
+  /** The model is generating or working; the app's own notes wait for it to be idle. */
+  private modelBusy = false;
+  /** App notes held until the model is idle, so they never cut off what it is saying. */
+  private notes: string[] = [];
+  private lastClientAudioAt = 0;
   private readonly cancelledTools = new Set<string>();
   private readonly toolAborts = new Map<string, AbortController>();
   private attachChain: Promise<void> = Promise.resolve();
@@ -283,6 +298,7 @@ export class CallSession {
       resumed,
     });
     this.setState("listening");
+    this.modelBusy = true;
     this.engine?.sendText(this.deps.brain.openingNote(resumed, this.transcript.slice(-6)));
     this.startTicker();
     await this.persistState();
@@ -365,6 +381,7 @@ export class CallSession {
   onClientAudio(pcm: Buffer): void {
     if (this.status !== "live" || !this.engine) return;
     this.lastActivity = Date.now();
+    this.lastClientAudioAt = Date.now();
     if (this.state !== "listening" && this.state !== "awaiting_confirmation") this.setState("listening");
     this.engine.sendAudio(pcm);
   }
@@ -374,6 +391,7 @@ export class CallSession {
       case "speech_end":
         if (this.status !== "live" || !this.engine) return;
         this.speechEndedAt = Date.now();
+        this.modelBusy = true;
         this.engine.endOfSpeech();
         this.setState("thinking");
         return;
@@ -383,6 +401,8 @@ export class CallSession {
         this.speechEndedAt = Date.now();
         this.addTranscript("user", message.text);
         this.deps.brain.onUserWords?.(message.text);
+        // Typed words are the user's own turn: they may cut the model off, as speaking over it does.
+        this.modelBusy = true;
         this.engine.sendText(message.text);
         this.setState("thinking");
         return;
@@ -391,7 +411,7 @@ export class CallSession {
         const outcome = await this.deps.brain.onCardAction?.(message.type, message.draftId, this.identity);
         if (!outcome) return;
         this.send({ type: "card", card: outcome.card });
-        this.engine?.sendText(outcome.note);
+        this.sendNote(outcome.note);
         return;
       }
       case "end":
@@ -412,6 +432,7 @@ export class CallSession {
     switch (event.type) {
       case "audio":
         this.replyStarted();
+        this.modelBusy = true;
         if (this.speechEndedAt !== null) {
           this.firstAudioMs.push(Date.now() - this.speechEndedAt);
           this.speechEndedAt = null;
@@ -433,9 +454,18 @@ export class CallSession {
         return;
       }
       case "tool_calls":
-        this.expectReply();
+        this.modelBusy = true;
+        this.replyStarted();
         this.setState("thinking", this.deps.brain.waitDetail?.(event.calls));
         void this.runTools(event.calls);
+        return;
+      case "working":
+        this.modelBusy = true;
+        // Still working after it stopped speaking, or on what the user just said: not listening. While the user is
+        // talking the screen stays on them.
+        if ((this.state === "listening" || this.state === "awaiting_confirmation") && Date.now() - this.lastClientAudioAt > 700) {
+          this.setState("thinking", this.stateDetail);
+        }
         return;
       case "tool_cancel":
         for (const id of event.ids) {
@@ -450,10 +480,17 @@ export class CallSession {
       case "turn_complete":
         this.turns += 1;
         this.applySpeechCheck(this.deps.brain.onTurnEnd?.() ?? null);
+        // The extended-thinking model may stop speaking and keep working: until it says IDLE it is thinking.
+        if (this.thinkingModel && this.state === "speaking") this.setState("thinking", this.stateDetail);
         return;
       case "idle":
-        // The model's turn ends with a tool call; the call is not listening while the answer is being prepared.
-        if (this.replyOwed) return;
+        // A tool is still running, or (the standard model, whose turn ends with the call) its answer is still owed:
+        // the call is not listening while the answer is being prepared.
+        if (this.runningTools > 0) return;
+        if (this.replyOwed && !this.thinkingModel) return;
+        this.replyStarted();
+        this.modelBusy = false;
+        if (this.flushNotes()) return;
         this.setState(this.deps.brain.awaitingConfirmation?.() ? "awaiting_confirmation" : "listening");
         return;
       case "usage":
@@ -476,16 +513,53 @@ export class CallSession {
     }
   }
 
+  private get thinkingModel(): boolean {
+    return this.options.model.includes("extended-thinking");
+  }
+
+  /**
+   * Every tool answer is in: the model owes its spoken answer. The wait starts now, not when the tools were called,
+   * so a slow tool never sends the screen back to "listening" while it works. A model that then says nothing must
+   * not leave the screen on "thinking" for ever; that silence is recorded.
+   */
   private expectReply(): void {
     this.replyOwed = true;
     if (this.replyTimer) clearTimeout(this.replyTimer);
-    // A model that says nothing after a tool answer must not leave the screen on "thinking".
+    const waitMs = (this.deps.replyWaitMs ?? 8_000) * (this.thinkingModel ? 2 : 1);
     this.replyTimer = setTimeout(() => {
       this.replyTimer = null;
-      if (!this.replyOwed || this.status !== "live") return;
+      if (!this.replyOwed || this.status !== "live" || this.runningTools > 0) return;
       this.replyOwed = false;
+      this.modelBusy = false;
+      this.recordIncident("no_reply_after_tool", { waitedMs: waitMs });
+      if (this.flushNotes()) return;
       this.setState(this.deps.brain.awaitingConfirmation?.() ? "awaiting_confirmation" : "listening");
-    }, this.deps.replyWaitMs ?? 8_000);
+    }, waitMs);
+  }
+
+  /**
+   * A note from the app to the model. It is a complete user turn, which stops whatever the model is saying, so an
+   * ordinary note (a tap on a card, the time warning, a write's late outcome) waits until the model is idle; only a
+   * note that must stop what is being said (a wrong number, "done" before consent) goes at once.
+   */
+  private sendNote(text: string, interrupt = false): void {
+    if (!this.engine) return;
+    if (interrupt || !this.modelBusy) {
+      this.modelBusy = true;
+      this.engine.sendText(text);
+      return;
+    }
+    this.notes.push(text);
+  }
+
+  /** Sends the notes held while the model was busy, as one turn. True when there were any. */
+  private flushNotes(): boolean {
+    if (!this.notes.length || !this.engine) return false;
+    const text = this.notes.splice(0).join("\n");
+    this.modelBusy = true;
+    this.engine.sendText(text);
+    this.setState("thinking");
+    return true;
   }
 
   private replyStarted(): void {
@@ -497,52 +571,94 @@ export class CallSession {
   private applySpeechCheck(check: SpeechCheck | null): void {
     if (!check) return;
     this.recordIncident(check.kind ?? "spoken_number_mismatch", check.incident);
-    if (check.note) this.engine?.sendText(check.note);
+    // A correction must stop the wrong sentence: it is the one note that interrupts.
+    if (check.note) this.sendNote(check.note, true);
   }
 
+  /**
+   * Runs the tools of one call from the model. Each answer goes back the moment it is ready: a quick read is not
+   * held behind a slow one, and the model can speak about it while the other still works (Live tools are
+   * NON_BLOCKING). The model only calls a tool with what it already has, so answers of one batch never depend on
+   * each other.
+   */
   private async runTools(calls: ToolCallRequest[]): Promise<void> {
     const engine = this.engine;
-    const results = await Promise.all(calls.map(async (call): Promise<ToolCallResult | null> => {
-      this.toolCalls += 1;
-      const abort = new AbortController();
-      const startedAt = Date.now();
-      this.toolAborts.set(call.id, abort);
-      const timeout = setTimeout(() => abort.abort(), this.deps.toolTimeoutMs ?? 12_000);
-      try {
-        const outcome = await Promise.race([
-          this.deps.brain.runTool(call, { identity: this.identity, signal: abort.signal }),
-          new Promise<never>((_, reject) => abort.signal.addEventListener("abort", () => reject(new Error("tool_timeout")))),
-        ]);
-        if (outcome.card) this.send({ type: "card", card: outcome.card });
-        if (outcome.costUsd) {
-          this.toolCostUsd += outcome.costUsd;
-          this.checkCostBudget();
-        }
-        // The tool, how long it took and whether it answered; never its arguments or its answer (golden rule 10).
-        // A tool's refusal is a short code ("missing_search"), which the logger keeps; on success there is none.
-        const code = typeof outcome.response.error === "string" ? { code: outcome.response.error } : {};
-        log.info(
-          { event: "voice.tool", callId: this.callId, tool: call.name, ms: Date.now() - startedAt, ok: outcome.response.ok !== false, ...code },
-          "Tool answered",
-        );
-        return { id: call.id, name: call.name, response: outcome.response, scheduling: outcome.scheduling };
-      } catch (error) {
-        const reason = error instanceof Error && /^[a-z_]+$/.test(error.message) ? error.message : "tool_failed";
-        this.recordIncident("tool_error", { tool: call.name, reason });
-        log.warn({ event: "voice.tool_failed", callId: this.callId, tool: call.name, ms: Date.now() - startedAt, reason, err: error }, "Tool failed");
+    this.runningTools += calls.length;
+    await Promise.all(calls.map(async (call) => {
+      const result = await this.runTool(call);
+      this.runningTools = Math.max(0, this.runningTools - 1);
+      if (!result || !engine || engine !== this.engine || this.status !== "live" || this.cancelledTools.has(call.id)) return;
+      engine.sendToolResults([result]);
+      if (this.runningTools === 0) this.expectReply();
+    }));
+  }
+
+  private async runTool(call: ToolCallRequest): Promise<ToolCallResult | null> {
+    this.toolCalls += 1;
+    const abort = new AbortController();
+    const startedAt = Date.now();
+    const writes = this.deps.brain.writes?.(call.name) ?? false;
+    this.toolAborts.set(call.id, abort);
+    const running = this.deps.brain.runTool(call, { identity: this.identity, signal: abort.signal });
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const timedOut = new Promise<"timeout">((resolve) => {
+      timer = setTimeout(() => resolve("timeout"), this.deps.toolTimeoutMs ?? 12_000);
+    });
+    const aborted = new Promise<"aborted">((resolve) => abort.signal.addEventListener("abort", () => resolve("aborted")));
+    try {
+      const first = await Promise.race([running, timedOut, aborted]);
+      if (first === "timeout" && writes) {
+        // A write that started may still land: never "failed", never "done" until it answers.
+        this.recordIncident("tool_slow_write", { tool: call.name });
+        void running.then((outcome) => this.lateWriteOutcome(outcome), () => this.lateWriteOutcome(null));
         return {
           id: call.id,
           name: call.name,
-          response: { ok: false, error: reason, say: "مش قادر أجيب ده دلوقتي. قول للمستخدم كده بوضوح ومتخمنش." },
+          response: { ok: false, error: "still_running", say: "العملية لسه بتتنفذ. قول إنك بتتأكد منها، ومتقولش إنها اتعملت ولا إنها فشلت لحد ما التطبيق يقولك." },
         };
-      } finally {
-        clearTimeout(timeout);
-        this.toolAborts.delete(call.id);
       }
-    }));
-    if (!engine || engine !== this.engine || this.status !== "live") return;
-    const answered = results.filter((result): result is ToolCallResult => Boolean(result) && !this.cancelledTools.has(result!.id));
-    if (answered.length) engine.sendToolResults(answered);
+      if (first === "timeout" || first === "aborted") {
+        abort.abort();
+        throw new Error(first === "timeout" ? "tool_timeout" : "tool_cancelled");
+      }
+      const outcome = first;
+      if (outcome.card) this.send({ type: "card", card: outcome.card });
+      if (outcome.costUsd) {
+        this.toolCostUsd += outcome.costUsd;
+        this.checkCostBudget();
+      }
+      // The tool, how long it took and whether it answered; never its arguments or its answer (golden rule 10).
+      // A tool's refusal is a short code ("missing_search"), which the logger keeps; on success there is none.
+      const code = typeof outcome.response.error === "string" ? { code: outcome.response.error } : {};
+      log.info(
+        { event: "voice.tool", callId: this.callId, tool: call.name, ms: Date.now() - startedAt, ok: outcome.response.ok !== false, ...code },
+        "Tool answered",
+      );
+      return { id: call.id, name: call.name, response: outcome.response, scheduling: outcome.scheduling };
+    } catch (error) {
+      const reason = error instanceof Error && /^[a-z_]+$/.test(error.message) ? error.message : "tool_failed";
+      if (reason !== "tool_cancelled") this.recordIncident("tool_error", { tool: call.name, reason });
+      log.warn({ event: "voice.tool_failed", callId: this.callId, tool: call.name, ms: Date.now() - startedAt, reason, err: error }, "Tool failed");
+      return {
+        id: call.id,
+        name: call.name,
+        response: { ok: false, error: reason, say: "مش قادر أجيب ده دلوقتي. قول للمستخدم كده بوضوح ومتخمنش." },
+      };
+    } finally {
+      if (timer) clearTimeout(timer);
+      this.toolAborts.delete(call.id);
+    }
+  }
+
+  /** A write that outran its time limit has answered: the card shows it, and the model hears it when it is idle. */
+  private lateWriteOutcome(outcome: ToolRunOutcome | null): void {
+    if (this.status === "ended") return;
+    if (outcome?.card) this.send({ type: "card", card: outcome.card });
+    const done = outcome?.response.ok === true;
+    const what = typeof outcome?.response.done === "string" ? `: ${outcome.response.done}` : "";
+    this.sendNote(done
+      ? `(ملاحظة من التطبيق: العملية اللي كانت لسه بتتنفذ اتعملت${what}. قول ده في جملة قصيرة.)`
+      : "(ملاحظة من التطبيق: العملية اللي كانت لسه بتتنفذ ماتمتش. قول كده بوضوح واعرض تحاول تاني.)");
   }
 
   // ─── Meter, limits and state ──────────────────────────────────────
@@ -595,7 +711,7 @@ export class CallSession {
   private warnEnding(secondsLeft: number): void {
     this.warned = true;
     this.send({ type: "notice", kind: "time_warning", secondsLeft, message: "فاضل حوالي دقيقة على نهاية المكالمة." });
-    this.engine?.sendText(
+    this.sendNote(
       "(ملاحظة من التطبيق، مش من المستخدم: فاضل حوالي دقيقة على نهاية المكالمة. لو فيه حاجة مهمة مفتوحة خلّصها، " +
         "وقول للمستخدم بجملة قصيرة إن الوقت قرب يخلص. متبدأش موضوع جديد.)",
     );
@@ -706,6 +822,9 @@ export class CallSession {
 
   private closeEngine(): void {
     this.replyStarted();
+    this.notes = [];
+    this.runningTools = 0;
+    this.modelBusy = false;
     for (const abort of this.toolAborts.values()) abort.abort();
     this.engine?.close();
     this.engine = null;

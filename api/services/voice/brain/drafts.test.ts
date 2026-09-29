@@ -19,6 +19,30 @@ describe("readReply", () => {
     expect(readReply("")).toBe("unclear");
   });
 
+  it("never takes a yes that comes with a no, a reservation, a condition or someone else's words", () => {
+    // Each of these read as a yes before: a "no" wrapped around the verb, "but", "if", only understanding.
+    expect(readReply("تمام بس ماتسجلش")).toBe("no_or_change");
+    expect(readReply("تمام أنا بفهم بس")).toBe("unclear");
+    expect(readReply("لو وافقت سجلها")).toBe("unclear");
+    expect(readReply("أيوه متسجلهاش دلوقتي")).toBe("no_or_change");
+    expect(readReply("هو قال آه سجلها")).toBe("unclear");
+    expect(readReply("تمام، طب وإيه كمان؟")).toBe("unclear");
+    expect(readReply("ماشي بعدين")).toBe("unclear");
+    expect(readReply("آه خليها سبعين")).toBe("no_or_change");
+  });
+
+  it("reads 'drop it' by what the draft does: a no to a new record, a yes to an undo", () => {
+    expect(readReply("الغيها", [], "expenses")).toBe("no_or_change");
+    expect(readReply("آه امسحها", [], "action")).toBe("no_or_change");
+    expect(readReply("آه الغيها", [], "undo")).toBe("yes");
+  });
+
+  it("folds spellings and takes a yes with a few words beside it, not a sentence about something else", () => {
+    expect(readReply("أيوة يا سمارت سجلها لو سمحت")).toBe("yes");
+    expect(readReply("آه سجل الأكل والمواصلات")).toBe("yes");
+    expect(readReply("تمام الحمد لله النهارده كان يوم طويل في الشغل")).toBe("unclear");
+  });
+
   it("takes a yes that repeats the draft's own amount, and \"مش مشكلة\" as a yes", () => {
     expect(readReply("آه الستين دي سجلها", [60])).toBe("yes");
     expect(readReply("آه الستين دي سجلها", [50])).toBe("no_or_change");
@@ -27,25 +51,33 @@ describe("readReply", () => {
 });
 
 describe("DraftBook.gate", () => {
-  it("lets a yes said after the draft execute it", () => {
+  it("lets a yes said after the draft was read out execute it", () => {
     const { drafts, advance } = book();
     const draft = drafts.add(expenseDraft);
+    advance(500);
+    drafts.heardAssistant();
     advance(2_000);
     drafts.heardUser("آه سجل");
     expect(drafts.gate(draft.id, false)).toMatchObject({ ok: true });
   });
 
-  it("does not take a yes said before the draft existed", () => {
+  it("does not take a yes said before the draft existed, or before it was read out", () => {
     const { drafts, advance } = book();
     drafts.heardUser("تمام");
     advance(3_000);
     const draft = drafts.add(expenseDraft);
+    advance(2_000);
+    drafts.heardUser("آه");
+    // The assistant has not presented it yet: the "آه" answered something else.
+    expect(drafts.gate(draft.id, false)).toEqual({ ok: false, reason: "not_presented" });
+    drafts.heardAssistant();
     expect(drafts.gate(draft.id, false)).toEqual({ ok: false, reason: "no_yes" });
   });
 
   it("refuses a reply that changes a number or says no", () => {
     const { drafts, advance } = book();
     const draft = drafts.add(expenseDraft);
+    drafts.heardAssistant();
     advance(2_000);
     drafts.heardUser("آه بس خليها سبعين");
     expect(drafts.gate(draft.id, false)).toEqual({ ok: false, reason: "changed" });
@@ -55,12 +87,36 @@ describe("DraftBook.gate", () => {
     const { drafts, advance } = book();
     const first = drafts.add(expenseDraft);
     const second = drafts.add(expenseDraft);
+    drafts.heardAssistant();
     advance(1_000);
     drafts.heardUser("آه");
     expect(drafts.gate(first.id, false)).toEqual({ ok: false, reason: "not_pending" });
     expect(drafts.gate(second.id, false)).toMatchObject({ ok: true });
+    const third = drafts.add(expenseDraft);
     advance(3 * 60_000);
-    expect(drafts.gate(second.id, false)).toEqual({ ok: false, reason: "expired" });
+    expect(drafts.gate(third.id, true)).toEqual({ ok: false, reason: "expired" });
+  });
+
+  it("runs a draft once when a tap and a spoken yes arrive together", () => {
+    const { drafts, advance } = book();
+    const draft = drafts.add(expenseDraft);
+    drafts.heardAssistant();
+    advance(1_000);
+    drafts.heardUser("آه سجلها");
+    // Both pass the checks; the first claims the draft before any write is awaited.
+    expect(drafts.gate(draft.id, true)).toMatchObject({ ok: true });
+    expect(drafts.gate(draft.id, false)).toEqual({ ok: false, reason: "not_pending" });
+    expect(drafts.get(draft.id)?.status).toBe("executing");
+    expect(drafts.summary().notDone).toEqual(["مصروفين (لسه بنتأكد إنه اتنفذ)"]);
+  });
+
+  it("gives a claimed draft back when its write never started", () => {
+    const { drafts } = book();
+    const draft = drafts.add(expenseDraft);
+    expect(drafts.gate(draft.id, true)).toMatchObject({ ok: true });
+    drafts.release(draft.id);
+    expect(drafts.get(draft.id)?.status).toBe("pending");
+    expect(drafts.gate(draft.id, true)).toMatchObject({ ok: true });
   });
 
   it("takes a tap on the card without words, but never twice", () => {

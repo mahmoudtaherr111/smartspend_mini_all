@@ -14,7 +14,7 @@ function context(parse: ParseOutcome, clock = { now: 1_000_000 }) {
       saved.push(items);
       return { ids: items.map((_, index) => 500 + index) };
     }),
-    deleteExpenses: vi.fn(async (_identity, ids: number[]) => { deleted.push(ids); }),
+    deleteExpenses: vi.fn(async (_identity, ids: number[]) => { deleted.push(ids); return { deleted: ids.length }; }),
     listBudgets: vi.fn(async () => []),
     dismissClarification: vi.fn(async (_identity, id: number) => { dismissed.push(id); }),
     waitingEntry: vi.fn(async (_identity, id: number) => (id === 44 ? { words: "150 يوم الخميس" } : null)),
@@ -94,6 +94,7 @@ describe("confirm", () => {
     const { ctx, saved, clock } = context(twoItems);
     const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
     const draftId = String(draft.response.draft_id);
+    ctx.drafts.heardAssistant();
 
     vi.useFakeTimers();
     const refused = confirmTool.run({ draft_id: draftId }, ctx);
@@ -125,6 +126,7 @@ describe("confirm", () => {
     expect(dismissed).toEqual([]);
 
     // The yes comes after the draft is read back, not within the same utterance.
+    ctx.drafts.heardAssistant();
     clock.now += 4_000;
     ctx.drafts.heardUser("آه");
     expect((await confirmTool.run({ draft_id: draft.response.draft_id }, ctx)).response).toMatchObject({ ok: true });
@@ -142,6 +144,7 @@ describe("confirm", () => {
   it("refuses a yes that changes an amount", async () => {
     const { ctx, clock } = context(twoItems);
     const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
+    ctx.drafts.heardAssistant();
     clock.now += 1_000;
     ctx.drafts.heardUser("آه بس المواصلات خمسين");
     expect((await confirmTool.run({ draft_id: draft.response.draft_id }, ctx)).response).toMatchObject({ ok: false, reason: "changed" });
@@ -150,17 +153,83 @@ describe("confirm", () => {
   it("undoes what this call recorded, after its own confirmation", async () => {
     const { ctx, deleted, clock } = context(twoItems);
     const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
+    ctx.drafts.heardAssistant();
     clock.now += 1_000;
     ctx.drafts.heardUser("تمام");
     await confirmTool.run({ draft_id: draft.response.draft_id }, ctx);
 
     const undo = await changeDraftTool.run({ action: "undo_last" }, ctx);
     expect(undo.response).toMatchObject({ ok: true });
+    ctx.drafts.heardAssistant();
     clock.now += 1_000;
     ctx.drafts.heardUser("أيوه الغيها");
     const done = await confirmTool.run({ draft_id: undo.response.draft_id }, ctx);
     expect(done.response).toMatchObject({ ok: true, done: "اتلغى آخر تسجيل" });
     expect(deleted).toEqual([[500, 501]]);
+  });
+
+  it("saves a refund as money back into its category, with its person, as the expense form does", async () => {
+    const refund: ParseOutcome = {
+      decision: "review",
+      items: [{ amount: 300, type: "expense", category: "تسوق", direction: "incoming", personName: "أحمد", personRelationship: "صديق" }],
+    };
+    const { ctx, saved, clock } = context(refund);
+    ctx.drafts.heardUser("رجعت القميص وأخدت تلتمية");
+    const draft = await recordDraftTool.run({ words: "رجعت القميص وأخدت تلتمية" }, ctx);
+    expect(draft.card).toMatchObject({ title: "تسجيل مرتجع", items: [{ label: "مرتجع: تسوق (أحمد)", amount: 300 }] });
+    expect(draft.response).toHaveProperty("refund");
+    ctx.drafts.heardAssistant();
+    clock.now += 1_000;
+    ctx.drafts.heardUser("آه");
+    await confirmTool.run({ draft_id: draft.response.draft_id }, ctx);
+    // Without the direction the ledger stores +300 of new spending instead of -300 (api/services/expense-rollups.ts#ledgerAmount).
+    expect(saved[0][0]).toMatchObject({ direction: "incoming", personName: "أحمد", personRelationship: "صديق" });
+  });
+
+  it("gives no single total for spending and a refund together", async () => {
+    const mixed: ParseOutcome = {
+      decision: "review",
+      items: [
+        { amount: 200, type: "expense", category: "أكل وشرب" },
+        { amount: 50, type: "expense", category: "تسوق", direction: "incoming" },
+      ],
+    };
+    const { ctx } = context(mixed);
+    ctx.drafts.heardUser("صرفت ميتين أكل ورجعلي خمسين من المحل");
+    const draft = await recordDraftTool.run({ words: "صرفت ميتين أكل ورجعلي خمسين من المحل" }, ctx);
+    expect(draft.card).toMatchObject({ kind: "draft" });
+    expect((draft.card as { total?: number }).total).toBeUndefined();
+    expect(draft.response.total_say).toBeUndefined();
+  });
+
+  it("writes nothing when the call stopped the confirmation, and keeps the draft for an answer", async () => {
+    const { ctx, saved, clock } = context(twoItems);
+    const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
+    ctx.drafts.heardAssistant();
+    clock.now += 1_000;
+    ctx.drafts.heardUser("آه");
+    const abort = new AbortController();
+    abort.abort();
+    const stopped = await confirmTool.run({ draft_id: draft.response.draft_id }, { ...ctx, signal: abort.signal });
+    expect(stopped.response).toMatchObject({ ok: false, error: "stopped" });
+    expect(saved).toEqual([]);
+    expect(ctx.drafts.latestPending()?.id).toBe(draft.response.draft_id);
+  });
+
+  it("writes once when the card is tapped while the spoken yes is being confirmed", async () => {
+    const { ctx, app, clock } = context(twoItems);
+    const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
+    const draftId = String(draft.response.draft_id);
+    ctx.drafts.heardAssistant();
+    clock.now += 1_000;
+    ctx.drafts.heardUser("آه سجلهم");
+    const [spoken, tapped] = await Promise.all([
+      confirmTool.run({ draft_id: draftId }, ctx),
+      Promise.resolve().then(() => ctx.drafts.gate(draftId, true)),
+    ]);
+    expect(spoken.response).toMatchObject({ ok: true });
+    expect(tapped).toEqual({ ok: false, reason: "not_pending" });
+    expect(app.saveExpenses).toHaveBeenCalledTimes(1);
   });
 
   it("offers no undo when nothing was recorded in this call", async () => {

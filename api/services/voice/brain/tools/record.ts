@@ -9,6 +9,7 @@
 import type { ToolRunOutcome } from "../../gateway/call-session";
 import {
   actionSummary,
+  cancelAction,
   confirmAction,
   createGoalPayloadFromMessage,
   createPendingGoalAction,
@@ -24,6 +25,7 @@ import {
 import type { Draft, GateRefusal } from "../drafts";
 import { spellAmount, spellCount } from "../spoken";
 import { extractSpokenNumbers } from "../validator";
+import { isRefund } from "../../../../../contracts/expense-save";
 import { num, str, type ParsedExpenseItem, type ToolContext, type VoiceTool } from "./types";
 
 interface ExpenseDraftPayload {
@@ -37,6 +39,11 @@ interface ExpenseDraftPayload {
 interface ActionDraftPayload {
   actionName: RuntimeActionName;
   payload: RuntimeActionPayload;
+  /**
+   * The action runtime's pending action, created with the draft: every confirmation (a tap, a yes, a retry after a
+   * reconnect) runs this one id, whose pending → confirmed step is atomic, so it runs once.
+   */
+  actionId: number;
 }
 
 interface UndoDraftPayload {
@@ -68,11 +75,24 @@ const operations = (count: number) => spellCount(count, { one: "عملية وا�
 
 function lineFor(item: ParsedExpenseItem): { label: string; amount: number; detail?: string } {
   const what = item.subCategory && item.subCategory !== "عام" ? item.subCategory : item.category;
+  // A refund is money back into a category, never new spending in it; the card and the read-back say so.
+  const kind = isRefund(item)
+    ? "مرتجع"
+    : item.type === "transfer" && item.direction
+      ? (item.direction === "incoming" ? "تحويل ليك" : "تحويل منك")
+      : TYPE_LABEL[item.type];
+  const person = item.personName ? ` (${item.personName})` : "";
   return {
-    label: TYPE_LABEL[item.type] ? `${TYPE_LABEL[item.type]}: ${what}` : what,
+    label: kind ? `${kind}: ${what}${person}` : `${what}${person}`,
     amount: item.amount,
     detail: item.description || undefined,
   };
+}
+
+/** A total is only said for items of one kind: spending plus a refund, or income plus spending, has no single sum. */
+function draftTotal(items: ParsedExpenseItem[]): number | undefined {
+  const kinds = new Set(items.map((item) => `${item.type}:${item.direction ?? ""}`));
+  return kinds.size === 1 ? items.reduce((sum, item) => sum + item.amount, 0) : undefined;
 }
 
 function refusalAdvice(reason: GateRefusal): string {
@@ -81,6 +101,8 @@ function refusalAdvice(reason: GateRefusal): string {
     case "changed": return "المستخدم غيّر حاجة أو قال لأ. اعمل مسودة جديدة بالتعديل واعرضها تاني.";
     case "expired": return "المسودة خلصت صلاحيتها. اعرضها تاني لو لسه عايزها.";
     case "not_latest": return "دي مش آخر مسودة. اشتغل على آخر مسودة بس.";
+    case "not_presented": return "لسه ماعرضتش المسودة على المستخدم. اقراها له واسأله الأول.";
+    case "not_pending": return "المسودة دي اتنفذت أو اتلغت أو بتتنفذ دلوقتي؛ متنفذهاش تاني.";
     default: return "المسودة دي مش متاحة. اعمل مسودة جديدة لو لسه مطلوب.";
   }
 }
@@ -142,11 +164,15 @@ async function recordDraft(args: Record<string, unknown>, ctx: ToolContext): Pro
     };
   }
 
+  // A topic the user dropped while the parse ran leaves no draft behind.
+  ctx.signal.throwIfAborted();
   const draft = ctx.drafts.add<ExpenseDraftPayload>({
     kind: "expenses",
-    title: parsed.items.length === 1 ? "تسجيل مصروف" : `تسجيل ${operations(parsed.items.length)}`,
+    title: parsed.items.length === 1
+      ? (isRefund(parsed.items[0]) ? "تسجيل مرتجع" : "تسجيل مصروف")
+      : `تسجيل ${operations(parsed.items.length)}`,
     lines: parsed.items.map(lineFor),
-    total: parsed.items.reduce((sum, item) => sum + item.amount, 0),
+    total: draftTotal(parsed.items),
     payload: {
       items: parsed.items,
       rawText: text,
@@ -160,7 +186,9 @@ async function recordDraft(args: Record<string, unknown>, ctx: ToolContext): Pro
     const fact = ctx.ledger.add({ id: `${draft.id}_${index}`, label: lineFor(item).label, value: item.amount, source: "draft", exact: true });
     return { what: fact.label, say: fact.say, date: item.date ?? null };
   });
-  const total = ctx.ledger.add({ id: `${draft.id}_total`, label: "الإجمالي", value: draft.total ?? 0, source: "draft", exact: true });
+  const total = draft.total === undefined
+    ? null
+    : ctx.ledger.add({ id: `${draft.id}_total`, label: "الإجمالي", value: draft.total, source: "draft", exact: true });
   const doubleCheck = parsed.items
     .filter((item) => confusableWith(item.amount) !== null)
     .map((item) => spellAmount(item.amount, { exact: true }).text);
@@ -170,7 +198,8 @@ async function recordDraft(args: Record<string, unknown>, ctx: ToolContext): Pro
       ok: true,
       draft_id: draft.id,
       items,
-      total_say: parsed.items.length > 1 ? total.say : undefined,
+      total_say: parsed.items.length > 1 && total ? total.say : undefined,
+      ...(parsed.items.some(isRefund) ? { refund: "فيه مرتجع: فلوس رجعتلك وبتتخصم من مصروف الفئة، مش مصروف جديد." } : {}),
       ...(doubleCheck.length ? { double_check: doubleCheck } : {}),
       say:
         "لسه ماتسجلش حاجة. اقرا البنود في جملة واسأل سؤال واحد: «أسجلها؟» لبند واحد، «أسجلهم؟» لأكتر من بند. " +
@@ -247,11 +276,16 @@ async function changeDraft(args: Record<string, unknown>, ctx: ToolContext): Pro
   if (!payload) return { response: { ok: false, error: "missing_fields", say: "محتاج تفاصيل أكتر. اسأل عن الناقص بس بسؤال واحد." } };
 
   const summary = actionName === "goal.create" ? goalSummary(payload as GoalCreatePayload) : actionSummary(actionName, payload);
+  ctx.signal.throwIfAborted();
+  // The durable action is made now, once; confirming runs this id, however many times confirmation arrives.
+  const pending = actionName === "goal.create"
+    ? await createPendingGoalAction(runtime, payload as GoalCreatePayload)
+    : await createPendingRuntimeAction(runtime, actionName, payload);
   const draft = ctx.drafts.add<ActionDraftPayload>({
     kind: "action",
     title: summary,
     lines: [{ label: summary }],
-    payload: { actionName, payload },
+    payload: { actionName, payload, actionId: Number(pending.action.id) },
   });
   return { response: { ok: true, draft_id: draft.id, summary, say: "لسه ماتعملش. اعرض الملخص ده بجملة واسأل سؤال واحد زي «أعملها؟». متقولش إنها اتعملت قبل ما confirm يرجع ok." }, card: ctx.drafts.card(draft) };
 }
@@ -269,7 +303,8 @@ async function execute(draft: Draft, ctx: ToolContext): Promise<{ ok: boolean; m
     })));
     const closes = [...ctx.openClarifications.splice(0), ...(payload.answers !== undefined ? [payload.answers] : [])];
     for (const id of closes) await ctx.app.dismissClarification(ctx.identity, id).catch(() => undefined);
-    if (ids.length !== payload.items.length) throw new Error("save_incomplete");
+    // The batch is one transaction: all of it or none. No row found means it was not written.
+    if (ids.length === 0) throw new Error("save_incomplete");
     const message = payload.items.length === 1
       ? `اتسجل ${lineFor(payload.items[0]).label} بـ ${spellAmount(payload.items[0].amount, { exact: true }).text}`
       : `اتسجلت ${operations(payload.items.length)} بإجمالي ${spellAmount(draft.total ?? 0, { exact: true }).text}`;
@@ -277,18 +312,17 @@ async function execute(draft: Draft, ctx: ToolContext): Promise<{ ok: boolean; m
     return { ok: true, message };
   }
   if (draft.kind === "undo") {
-    await ctx.app.deleteExpenses(ctx.identity, (draft.payload as UndoDraftPayload).ids);
+    const ids = (draft.payload as UndoDraftPayload).ids;
+    const { deleted } = await ctx.app.deleteExpenses(ctx.identity, ids);
     const undone = ctx.drafts.latestExecuted("expenses");
-    if (undone) ctx.drafts.settle(undone.id, "cancelled", { message: `${undone.message ?? undone.title} (اتلغى)` });
-    ctx.drafts.settle(draft.id, "executed", { message: "اتلغى آخر تسجيل" });
-    return { ok: true, message: "اتلغى آخر تسجيل" };
+    const message = deleted === ids.length ? "اتلغى آخر تسجيل" : `اتلغى ${deleted} من ${ids.length} بس`;
+    if (undone && deleted === ids.length) ctx.drafts.settle(undone.id, "cancelled", { message: `${undone.message ?? undone.title} (اتلغى)` });
+    ctx.drafts.settle(draft.id, "executed", { message });
+    return { ok: true, message };
   }
-  const { actionName, payload } = draft.payload as ActionDraftPayload;
+  const { actionId } = draft.payload as ActionDraftPayload;
   const runtime = { userId: ctx.identity.userId, userType: ctx.identity.userType, userPlan: ctx.identity.plan };
-  const pending = actionName === "goal.create"
-    ? await createPendingGoalAction(runtime, payload as GoalCreatePayload)
-    : await createPendingRuntimeAction(runtime, actionName, payload);
-  const result = await confirmAction(runtime, Number(pending.action.id));
+  const result = await confirmAction(runtime, actionId, {}, { suggestFollowUp: false });
   const message = result.message || draft.title;
   ctx.drafts.settle(draft.id, "executed", { message });
   return { ok: true, message };
@@ -315,6 +349,12 @@ async function confirm(args: Record<string, unknown>, ctx: ToolContext): Promise
   if (!gate.ok) {
     return { response: { ok: false, reason: gate.reason, say: refusalAdvice(gate.reason) } };
   }
+  // The gate claimed the draft. Stopped before the write starts, it is released untouched; after this line the write
+  // has started and only its own result says what happened.
+  if (ctx.signal.aborted) {
+    ctx.drafts.release(gate.draft.id);
+    return { response: { ok: false, error: "stopped", say: "ماتنفذش حاجة. اسأل المستخدم لو لسه عايزها." } };
+  }
   const result = await executeDraft(gate.draft, ctx);
   const draft = ctx.drafts.get(id)!;
   return {
@@ -330,7 +370,17 @@ async function cancel(args: Record<string, unknown>, ctx: ToolContext): Promise<
   const draft = ctx.drafts.get(id);
   if (!draft || draft.status !== "pending") return { response: { ok: false, error: "no_pending_draft" } };
   ctx.drafts.settle(id, "cancelled");
+  await dropRuntimeAction(draft, ctx);
   return { response: { ok: true, say: "قول إنك لغيتها." }, card: ctx.drafts.card(draft) };
+}
+
+/** A dropped action draft also drops its pending action in the runtime, so it cannot be confirmed from elsewhere. */
+export async function dropRuntimeAction(draft: Draft, ctx: Pick<ToolContext, "identity">): Promise<void> {
+  if (draft.kind !== "action") return;
+  const { actionId } = draft.payload as ActionDraftPayload;
+  if (!actionId) return;
+  const runtime = { userId: ctx.identity.userId, userType: ctx.identity.userType, userPlan: ctx.identity.plan };
+  await cancelAction(runtime, actionId).catch(() => undefined);
 }
 
 // ─── Declarations ──────────────────────────────────────────────────

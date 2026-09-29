@@ -55,12 +55,21 @@ first call wrote that month, never dictation seconds.
 4. The app sends 16 kHz PCM only while the user speaks and `speech_end` when they stop, which the engine turns into
    `audioStreamEnd` so the model answers without waiting for silence. The model's 24 kHz audio, live captions,
    the state (listening, thinking, speaking, awaiting confirmation) and cards come back. Captions are shown, never
-   stored. From a tool call until the model starts speaking its answer the state stays "thinking" (for 8 seconds at
-   most), instead of showing "listening" while the answer is prepared. The state carries what the call is waiting on
+   stored. The state follows the work, not a timer: from a tool call it stays "thinking" while any tool of the call
+   runs, and once the last answer is in the model has 8 seconds to start speaking (16 for the extended-thinking model)
+   before the screen gives up and a `no_reply_after_tool` incident is recorded. The extended-thinking model reports its
+   task apart from its speech (`interactionStatus`): the engine turns IN_PROGRESS into `working` and IDLE into `idle`,
+   so a spoken filler line ends in "thinking", and only IDLE returns to "listening". Each tool answer goes back to the
+   model the moment it is ready (`CallSession#runTools`), never held behind a slower one. The state carries what the call is waiting on
    (`VoiceWaitDetail`: records, a report, memory, a calculation, a price, the guide, a draft), named by
    `waitDetail` in the brain from the tools called, so the screen can say "بيراجع حساباتك…" or "بيجيب السعر…".
    Each tool call is logged with its name, how long it took, whether it answered and a refusal's short code
-   (`voice.tool`), never its arguments or its answer.
+   (`voice.tool`), never its arguments or its answer. A tool that outlasts 12 seconds is stopped and answers an error,
+   except a write (`confirm`, `CallBrain#writes`): its write may still land, so the model hears `still_running` and
+   the outcome follows as a note once known (`tool_slow_write` incident).
+   Notes from the app to the model (a tap on a card, the time warning, a write's late outcome) are complete user
+   turns, which the provider treats as an interruption, so `CallSession#sendNote` holds them until the model is idle;
+   only a correction of what is being said (a wrong number, "done" before consent) interrupts at once.
 5. A dropped app does not end the call: the engine is closed with its resumption handle kept, the state goes to
    Redis, and for 45 seconds a `hello` with the resume token continues the call on any server, which reconnects the
    engine on the handle (or a fresh session with the last turns in its note). A server that lost a call to another
@@ -75,13 +84,13 @@ first call wrote that month, never dictation seconds.
 ### The tools
 | Tool | What it does |
 | --- | --- |
-| `money_query` | Any figure from the finance semantic layer, one call per question: totals (by category, person or merchant), where the money went, a comparison with the same number of days of the previous period and which categories drove it, the latest transactions, why one transaction got its category (found by a word from it, a category or its amount), what a category counts, a month's report already written (below), whether an amount is affordable (the month so far, the wallet total and the active goals, for `think` to judge), wallet balances (said to be as recorded, not a live statement), budgets (`budget.list`, cached a minute and dropped by any budget or expense write), goals, and the entries still waiting for the user's answer (below). Looking up a transaction searches the last 90 days unless a period is named. Categories are said in Arabic. A period too busy to read in full (more than 10,000 entries) is said to be counted in part. Each result carries the facts with their spoken form, a note on missing data, and a card |
-| `record_draft` | Parses what the user says they spent or received through `ai.parseExpense`, checks the amounts against what the model understood and against the numbers heard from the user, and drafts; a disagreement asks about that number alone ("خمستاشر ولا خمسين؟"). With a `clarification_id` it finishes an entry left waiting: the words the user first typed, read from the database, with their answer in brackets, joined as `expense.answerClarification` joins them; the numbers of those first words count as heard from the user, and the entry is closed only when that draft is confirmed |
-| `change_draft` | Drafts a goal, budget, wallet, profile detail (never age or gender) or recategorization through the action runtime, or undoing what this call recorded |
-| `confirm` / `cancel` | Executes or drops a draft through the gate below; expenses are saved with `expense.batchCreate` with `clientRequestId` `vc:<call>:<draft>:<n>`, so a retry never saves twice |
+| `money_query` | Any figure from the finance semantic layer, one call per question: totals (by category, a person's spending or, with `type: income`, what they paid the user, or everything spent at a shop over the whole period), where the money went, a comparison with the same number of days of the previous period (of the named category when there is one) and which categories drove it, the latest transactions, why one transaction got its category (found by a word from it, a category or its amount, each a filter over the whole period), what a category counts, a month's report already written (below), whether an amount is affordable (the month so far, said as a shortfall when spending passed income, the wallet total and the active goals, for `think` to judge), wallet balances (said to be as recorded, not a live statement), budgets (`budget.list`, cached a minute and dropped by any budget or expense write), goals, and the entries still waiting for the user's answer (below). Looking up a transaction searches the last 90 days unless a period is named. Categories are said in Arabic. A period too busy to read in full (more than 10,000 entries) is said to be counted in part. Each result carries the facts with their spoken form, a note on missing data, and a card |
+| `record_draft` | Parses what the user says they spent or received through `ai.parseExpense`, checks the amounts against what the model understood and against the numbers heard from the user, and drafts; a disagreement asks about that number alone ("خمستاشر ولا خمسين؟"). Each item keeps what the parser found beyond its category, through the same helpers as the expense form (`contracts/expense-save.ts`): a refund's direction (saved negative in its category, and shown as "مرتجع"), a loan's or gam3eya's way, the person beside a purpose. A draft mixing kinds (spending and a refund) has no single total. With a `clarification_id` it finishes an entry left waiting: the words the user first typed, read from the database, with their answer in brackets, joined as `expense.answerClarification` joins them; the numbers of those first words count as heard from the user, and the entry is closed only when that draft is confirmed |
+| `change_draft` | Drafts a goal, budget, wallet, profile detail (never age or gender) or recategorization through the action runtime, or undoing what this call recorded. The runtime's pending action is created with the draft, so every confirmation runs that one id; cancelling the draft cancels it |
+| `confirm` / `cancel` | Executes or drops a draft through the gate below; expenses are saved with `expense.batchCreate` with `clientRequestId` `vc:<call>:<draft>:<n>`, so a retry never saves twice; an action runs through `confirmAction` with `suggestFollowUp: false`, so no budget draft is left that the call cannot show |
 | `memory` | Searches the AI memory, remembers what the user asks it to (never age or gender), deletes a memory by id when asked to forget it, lists what the app knows when asked ("إنت عارف عني إيه": job, payday, income, goal, monthly debt payment, the eight latest memories, and the screen where they can be seen and deleted), and saves the answer to the call's profile question, or its refusal, through `profile.submitOnboardingAnswer` once the answer fits the question's type |
 | `app_help` | Steps from the site guide, or says the guide has nothing, with what the call can and cannot do |
-| `think` | Hard questions go to a text model through `executeAiGateway` with the user's numbers: `voice_think_model` (default `gemini-3.5-flash-lite`, fast because the caller is waiting), then the next model of the chain after 5 seconds, and 9 seconds in all. Numbers it returns survive only if they come from the data, from the user, or one step of arithmetic on them |
+| `think` | Hard questions go to a text model through `executeAiGateway` with the user's numbers: `voice_think_model` (default `gemini-3.5-flash-lite`, fast because the caller is waiting), then the next model of the chain after 5 seconds, and 9 seconds in all. Numbers it returns survive only if they come from the data, from the user, or one step of arithmetic on them (a product only with a count on one side); a verdict, alternative or missing fact carrying any other amount is dropped whole. This is a plausibility screen, not a check of meaning |
 | `market_price` | Gold or currency prices in Egypt from a text model with Google Search (`voice_price_model`, default `gemini-3.5-flash-lite`, through `askTextModel` with the same 5- and 9-second limits and the chain's other models), within sane bounds, cached 30 minutes for everyone, with its source and time; when the source names no time, the time of the lookup on Cairo's clock |
 
 The tools reach the app through `api/services/voice/app-calls.ts#createVoiceAppCalls`, which calls the app's own
@@ -110,8 +119,13 @@ is billed again for it on every later turn.
   with, and the income and debt payment `memory list` reads, count as the user's own. Amounts are spoken as `api/services/voice/brain/spoken.ts` writes them
   ("تمن آلاف وربعمية", "حوالي خمستاشر ألف").
 - **Writes.** `api/services/voice/brain/drafts.ts#DraftBook`: only the latest pending draft, within two minutes, and
-  only after a tap on its card or the user's own yes said after it was presented, with no new number and no "لأ";
-  "تمام" said before the draft is not consent.
+  only after a tap on its card or the user's own yes said after the assistant presented it (its first words after the
+  draft was made). `readReply` reads the reply with a "no" first: a negation (also wrapped around the verb,
+  "ماتسجلش"), a change, a new number, a condition ("لو"), a reservation ("بس"), only understanding ("بفهم"),
+  someone else's words ("قال"), a question or "later" wins over any yes it comes with; "الغيها" is a yes only to an
+  undo; a yes with more than three other words is asked again. User words after the assistant spoke are a new
+  utterance, never the tail of an earlier one. Passing the gate claims the draft (`executing`), so a tap and a yes
+  arriving together run it once; a claim whose write never started (the call stopped it) is released.
 - **Saying it is done.** `api/services/voice/brain/claims.ts#DoneClaimCheck`: while a new record or action waits
   for consent, a reply that calls it recorded or done ("سجلت", "اتسجل", "اتعمل") gets a note at once that makes the
   model say it is still waiting and ask; the `done_claim_before_confirm` incident records only that it happened.
@@ -254,7 +268,12 @@ call resumed on its handle, a wrong resume token, a socket gone silent, the grac
 `api/services/voice/engine/gemini-live.test.ts` (setup, key fallback, GoAway, reconnects); the tests in
 `api/services/voice/brain/` and `api/services/voice/brain/tools/` (among them the number check leaving an unrelated
 figure alone, the profile questions and their answers, the stored reports, and every kind of `money_query`);
-`api/services/entitlements/voice.test.ts` and `tests/voice-protocol.test.ts`. In the app, `src/lib/voice/` tests the
+`api/services/entitlements/voice.test.ts` and `tests/voice-protocol.test.ts`.
+`api/services/voice/gateway/gateway.flow.test.ts` runs turns over a real socket: a quick answer sent before a slow
+one, "thinking" held while a tool outlasts the reply wait, IN_PROGRESS and IDLE of the extended-thinking model, a
+tap's note held until the model is idle, and a slow write reported as still running and then as done.
+`api/services/voice/app-calls.test.ts` holds a refund's direction and a person from parse to save;
+`api/services/voice/brain/tools/record.actions.test.ts` holds that an action drafted in a call runs once. In the app, `src/lib/voice/` tests the
 resampler (a 12 kHz hiss removed, blocks of any size), the speech detector (pre-roll, pauses, the two hangovers,
 the assistant's own voice, a noise that stays), playback, the line (resume with the latest token, giving up, a silent
 line, hanging up while connecting) and a whole call through the controller with a fake socket and fake audio. The
@@ -267,6 +286,17 @@ Checked against the code; each one names where it lives.
    Keeping it alive needs native work in the Android and iOS shells.
 2. **Gap.** The speech detector's thresholds (`src/lib/voice/speech-detector.ts`) are tuned on synthetic audio in
    tests; they have not been checked against recordings of real users on phones in noisy places.
+3. **Gap.** Debts, installments, gam3eyas, seasons and a business's own ledger have no voice tool
+   (`api/services/voice/brain/tools/money-query.ts`), though the app has them (`expense.getDebtBalances`,
+   `expense.listInstallmentPlans`, `expense.getSeasonSpending`, `business.*`).
+4. **Bug.** A number the call has seen stays sayable for the whole call whatever it meant and however old it is
+   (`api/services/voice/brain/facts.ts#FactLedger`): a figure read at the start still passes the number check after
+   the user recorded something that changed it.
+5. **Gap.** Forgetting a memory during a call deletes it, but the words of the call still hold it, and the post-call
+   summary (`api/services/voice/post-call.ts#summarizeCall`) is not told to leave it out.
+6. **Debt.** An action draft that expires, or that a newer draft replaces, leaves its runtime action pending until the
+   runtime's own expiry (`api/services/voice/brain/tools/record.ts#dropRuntimeAction` runs on cancel only); nothing
+   can confirm it from the call.
 
 ## Related systems
 - [AI Center](ai-center.md): the finance semantic layer, AI memory and action runtime the tools call, and the page

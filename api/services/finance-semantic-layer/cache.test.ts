@@ -4,6 +4,20 @@ vi.mock("../../lib/env", () => ({
   },
 }));
 
+describe("financeCacheKey", () => {
+  it("gives different Arabic names different keys, and the same name the same key", async () => {
+    const { financeCacheKey } = await import("./cache");
+    // Six letters each: both folded to "______" before, so one category answered for the other.
+    const bills = financeCacheKey(7, "local", "category_total", "p", "فواتير");
+    const subscriptions = financeCacheKey(7, "local", "category_total", "p", "اشتراك");
+    expect(bills).not.toBe(subscriptions);
+    expect(financeCacheKey(7, "local", "category_total", "p", "فواتير")).toBe(bills);
+    // Readable ASCII parts stay as written, and a user's key never carries another user's id.
+    expect(financeCacheKey(7, "local", "summary", "today:2026-09-29")).toMatch(/:7:local:summary:today:2026-09-29$/);
+    expect(financeCacheKey(7, "oauth", "summary", "x")).not.toBe(financeCacheKey(7, "local", "summary", "x"));
+  });
+});
+
 describe("finance semantic cache tracing", () => {
   it("records hit and miss events without exposing user identifiers", async () => {
     const { collectFinanceCacheTrace, financeCacheKey, withFinanceCache } = await import("./cache");

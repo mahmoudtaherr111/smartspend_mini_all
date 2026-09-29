@@ -36,7 +36,12 @@ If a number the answer depends on is unknown (for a purchase: how much money the
 payday), put it in "missing" and keep the verdict conditional. Never invent a balance, a price or an income.
 No disclaimers, no investment advice about markets; opinions only about the user's own spending choices.`;
 
-/** Every number the text model is allowed to state: the data, what the user said, and one step of arithmetic on them. */
+/**
+ * Every number the text model is allowed to state: the data, what the user said, and one step of arithmetic on them.
+ * A product needs one side to be a count (days, months, a multiple): pounds times pounds means nothing, and letting
+ * it through let any large number pass. This is a plausibility screen, not proof of meaning; the coach call
+ * computes with `calculate` instead (api/services/voice/brain/tools/calculate.ts).
+ */
 export function derivable(values: number[]): (candidate: number) => boolean {
   const known = [...new Set(values.filter((v) => Number.isFinite(v) && v !== 0).map((v) => Math.abs(v)))].slice(0, 60);
   const results = new Set<number>(known.map((v) => Math.round(v)));
@@ -44,7 +49,7 @@ export function derivable(values: number[]): (candidate: number) => boolean {
     for (const b of known) {
       results.add(Math.round(a + b));
       results.add(Math.round(Math.abs(a - b)));
-      results.add(Math.round(a * b));
+      if (Math.min(a, b) <= 120) results.add(Math.round(a * b));
       if (b !== 0) results.add(Math.round(a / b));
     }
   }
@@ -124,6 +129,10 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
   if (!answer) return { costUsd, response: { ok: false, error: "no_answer", say: "قول إنك محتاج تبص عليها تاني، واسأل سؤال يوضح المطلوب." } };
 
   const allowed = derivable([...data.map((p) => p.value), ...userSaid]);
+  // Every field the live model may say is held to the same numbers: a verdict or an alternative with an amount the
+  // data cannot give is dropped whole, as a reason is.
+  const checked = (value: unknown): string | null =>
+    typeof value === "string" && extractSpokenNumbers(value).every((n) => !n.money || allowed(n.value)) ? value : null;
   ctx.ledger.nextBatch();
   const numbers = (Array.isArray(answer.numbers) ? answer.numbers : [])
     .map((entry) => entry as { label?: unknown; value?: unknown })
@@ -144,11 +153,11 @@ async function run(args: Record<string, unknown>, ctx: ToolContext): Promise<Too
     costUsd,
     response: {
       ok: true,
-      verdict: typeof answer.verdict === "string" ? answer.verdict : null,
+      verdict: checked(answer.verdict),
       reasons,
       numbers,
-      alternative: typeof answer.alternative === "string" ? answer.alternative : null,
-      missing: typeof answer.missing === "string" ? answer.missing : null,
+      alternative: checked(answer.alternative),
+      missing: checked(answer.missing),
       say: "لو فيه missing اسأل عنه الأول. غير كده قول رأيك بكلامك: الحكم وسبب واحد والبديل، من غير تحفظات في الآخر.",
     },
   };

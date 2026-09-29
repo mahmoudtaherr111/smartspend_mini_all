@@ -279,7 +279,10 @@ panel, to admins only.
 ### 10. The form reacts and the items are saved
 - `auto_save`: the form saves at once, one item through `expense.create` and several through
   `expense.batchCreate`, with source `ai_parsed` or `voice`, the log id and, for queued offline text, a client
-  request id. When saving fails, the items are shown for review. The saved toast says what was saved (amount and
+  request id. What each item carries beyond its category comes from `contracts/expense-save.ts`
+  (`directionToSave`: a refund's `incoming`, a loan's or gam3eya's way; `personToSave`: the person beside a
+  purpose), the same helpers the live call's saves use, so a refund recorded by voice nets its category too. When
+  saving fails, the items are shown for review. The saved toast says what was saved (amount and
   category, or the count and total) and offers "تراجع", which deletes exactly the saved ids (`expense.create`
   returns its id, `expense.batchCreate` its `ids`). When a saved item's category differs from the one the parser
   proposed for it (found through the log id), the save records it as the user's correction and marks the log

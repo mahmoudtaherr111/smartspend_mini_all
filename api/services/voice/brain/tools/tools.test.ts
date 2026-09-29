@@ -19,7 +19,14 @@ vi.mock("../../../finance-semantic-layer/resolvers", () => {
     })),
     getFinanceTransactions: vi.fn(async () => ({ period: period("p"), totalMatched: 0, returned: 0, transactions: [] })),
     getGoalProgress: vi.fn(async () => ({ goals: [{ id: 1, title: "عربية", status: "active", targetAmount: 150_000, estimatedMonthlyCapacity: 3_000, estimatedMonthsNeeded: 50 }] })),
-    getPersonTotal: vi.fn(async () => null),
+    getPersonTotal: vi.fn(async (_ctx, person: string) =>
+      person === "أحمد"
+        ? { period: period("p"), contactId: 3, name: "أحمد", totalExpense: 400, totalIncome: 2_500, expenseCount: 2, incomeCount: 1, transactionCount: 3 }
+        : null),
+    getTextSpendingTotal: vi.fn(async (_ctx, text: string) => ({
+      period: period("p"), text, totalExpense: text === "طلبات" ? 640 : 0, transactionCount: text === "طلبات" ? 3 : 0,
+      places: text === "طلبات" ? [{ name: "طلبات", amount: 640, count: 3 }] : [],
+    })),
     getTransactionLookup: vi.fn(async (_ctx, query: string) =>
       query === "أوبر" ? { id: 9, type: "expense", amount: 85, category: "مواصلات", subCategory: "تاكسي", description: "أوبر", date: "2026-09-20" } : null),
     getWalletSummary: vi.fn(async () => ({ totalBalance: 9_000, walletCount: 1, wallets: [{ id: 1, name: "الكاش", provider: "cash", balance: 9_000 }] })),
@@ -58,7 +65,7 @@ vi.mock("../../../../lib/redis-client", () => ({ cacheGet: vi.fn(async () => nul
 
 import { executeAiGateway } from "../../../../lib/ai-gateway";
 import { askTextModel } from "../../text-model";
-import { getCategoryTotal, getFinanceTransactions } from "../../../finance-semantic-layer/resolvers";
+import { getCategoryTotal, getFinanceSummary, getFinanceTransactions } from "../../../finance-semantic-layer/resolvers";
 import { DraftBook } from "../drafts";
 import { FactLedger } from "../facts";
 import { honorificFor } from "../honorific";
@@ -220,6 +227,46 @@ describe("money_query", () => {
     });
   });
 
+  it("compares a named category with itself, not the whole ledger", async () => {
+    vi.mocked(getCategoryTotal).mockClear();
+    vi.mocked(getFinanceSummary).mockClear();
+    const result = await moneyQuery.run({ metric: "compare", category: "أكل" }, ctx);
+    expect(getCategoryTotal).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(getCategoryTotal).mock.calls.map((call) => call[1])).toEqual(["أكل", "أكل"]);
+    expect(getFinanceSummary).not.toHaveBeenCalled();
+    expect(result.response).toMatchObject({ ok: true, facts: [{ value: 1_250 }, { value: 1_250 }, { value: 0 }] });
+  });
+
+  it("answers money from a person with their income, and money to them with spending", async () => {
+    const received = await moneyQuery.run({ metric: "total", person: "أحمد", type: "income" }, ctx);
+    expect(received.response).toMatchObject({ facts: [{ label: "اللي جالك من أحمد", value: 2_500 }] });
+    const paid = await moneyQuery.run({ metric: "total", person: "أحمد" }, ctx);
+    expect(paid.response).toMatchObject({ facts: [{ label: "اللي اتدفع لـأحمد", value: 400 }] });
+  });
+
+  it("finds a transaction by its amount over the whole period, not among the latest few", async () => {
+    vi.mocked(getFinanceTransactions).mockClear();
+    await moneyQuery.run({ metric: "transactions", amount: 40, search: "أوبر" }, ctx);
+    // The amount and the words are filters the finance layer applies before it cuts the list.
+    expect(vi.mocked(getFinanceTransactions).mock.calls[0][1]).toMatchObject({ amount: 40, text: "أوبر", limit: 1 });
+  });
+
+  it("totals spending at a shop over every row of the period", async () => {
+    const found = await moneyQuery.run({ metric: "total", search: "طلبات" }, ctx);
+    expect(found.response).toMatchObject({ facts: [{ label: "المصروف على طلبات", value: 640 }], count: 3 });
+    const missing = await moneyQuery.run({ metric: "total", search: "كارفور" }, ctx);
+    expect(missing.response).toMatchObject({ facts: [], coverage: "مالقيتش صرف باسم «كارفور» في الشهر ده." });
+  });
+
+  it("says a month that spends more than it earns has a shortfall, never a surplus of zero", async () => {
+    const { getGoalFeasibility } = await import("../../../finance-semantic-layer/resolvers");
+    vi.mocked(getGoalFeasibility).mockResolvedValueOnce({
+      monthlyCapacity: -1_500, targetAmount: 15_000, estimatedMonths: null, feasibilityRating: "challenging", topExpenseLevers: [],
+    } as never);
+    const result = await moneyQuery.run({ metric: "feasibility", amount: 15_000 }, ctx);
+    expect((result.response.facts as unknown[])[1]).toMatchObject({ label: "العجز في الشهر (المصروف أكتر من الدخل المسجل)", value: 1_500 });
+  });
+
   it("maps the model's periods to Cairo calendar ranges", () => {
     const now = new Date("2026-09-22T10:00:00Z");
     expect(periodFor("last_year", {}, now).input).toEqual({ period: "custom", startDate: "2025-01-01", endDate: "2025-12-31" });
@@ -254,6 +301,25 @@ describe("think", () => {
     expect(allowed(13_500)).toBe(true);
     expect(allowed(1_500)).toBe(true);
     expect(allowed(7_777)).toBe(false);
+    // Pounds times pounds is no amount anyone has: 9,000 × 4,500 passed before.
+    expect(allowed(40_500_000)).toBe(false);
+    expect(allowed(27_000)).toBe(true);
+  });
+
+  it("holds the verdict and the alternative to the same numbers as the reasons", async () => {
+    vi.mocked(executeAiGateway).mockResolvedValueOnce({
+      text: JSON.stringify({
+        verdict: "تقدر تشتريه لو حطيت 3333 كل شهر",
+        reasons: [],
+        numbers: [],
+        alternative: "استنى لما يبقى معاك 8888",
+        missing: "الفلوس اللي معاك دلوقتي",
+      }),
+      model: "gemini-3.5-flash-lite",
+      usage: { promptTokens: 10, completionTokens: 10, reasoningTokens: 0 },
+    } as never);
+    const result = await thinkTool.run({ question: "أقدر أشتري موبايل؟" }, ctx);
+    expect(result.response).toMatchObject({ verdict: null, alternative: null, missing: "الفلوس اللي معاك دلوقتي" });
   });
 
   it("drops an invented number and the reason that carries it", async () => {

@@ -82,8 +82,25 @@ export interface FinancePersonTotal {
   contactId: number;
   name: string;
   relation?: string | null;
+  /** Spending linked to the person (refunds from them net it). */
+  totalExpense: number;
+  /** Income linked to the person: what they paid the user. */
+  totalIncome: number;
+  expenseCount: number;
+  incomeCount: number;
+  transactionCount: number;
+}
+
+/** Spending whose shop, description or words hold a text ("طلبات"), over the whole period. */
+export interface FinanceTextTotal {
+  period: ResolvedFinancePeriod;
+  text: string;
   totalExpense: number;
   transactionCount: number;
+  /** The places it matched, largest first. */
+  places: Array<{ name: string; amount: number; count: number }>;
+  /** The period held more rows than one read takes (ROW_LIMIT): the newest were counted. */
+  partial?: true;
 }
 
 export interface FinanceClassificationTrace {
@@ -137,9 +154,12 @@ export interface FinanceWalletSummary {
 
 export interface FinanceTransactionsResult {
   period: ResolvedFinancePeriod;
+  /** Every row of the period that passes all the filters, counted before `limit` cuts the list. */
   totalMatched: number;
   returned: number;
   transactions: FinanceTransactionFact[];
+  /** The period held more rows than one read takes (ROW_LIMIT): older matches may be missing. */
+  partial?: true;
 }
 
 export interface FinanceGoalProgress {

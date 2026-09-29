@@ -16,7 +16,7 @@ import { appHelpTool } from "./tools/app-help";
 import { marketPriceTool } from "./tools/market-price";
 import { memoryTool } from "./tools/memory";
 import { moneyQuery } from "./tools/money-query";
-import { cancelTool, changeDraftTool, confirmTool, executeDraft, recordDraftTool } from "./tools/record";
+import { cancelTool, changeDraftTool, confirmTool, dropRuntimeAction, executeDraft, recordDraftTool } from "./tools/record";
 import { thinkTool } from "./tools/think";
 import type { ToolContext, VoiceAppCalls, VoiceTool } from "./tools/types";
 import { correctionNote, SpokenNumberValidator, type Mismatch } from "./validator";
@@ -98,6 +98,8 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       return byTool[call.name];
     },
 
+    writes: (name) => name === "confirm",
+
     async runTool(call, runContext) {
       const tool = tools.get(call.name);
       if (!tool) return { response: { ok: false, error: "unknown_tool" } };
@@ -110,6 +112,8 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     },
 
     onAssistantWords(text) {
+      // The assistant speaking after a draft was made is it being read out: a spoken yes counts from here.
+      drafts.heardAssistant();
       // Saying a waiting draft is done is the worse mistake, so it is corrected first.
       // An undo draft talks about what was recorded before, so only new records and actions are checked.
       const waiting = drafts.latestPending();
@@ -130,6 +134,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       if (action === "cancel") {
         if (draft.status !== "pending") return null;
         drafts.settle(draftId, "cancelled");
+        await dropRuntimeAction(draft, { identity });
         return {
           card: drafts.card(draft),
           note: "(ملاحظة من التطبيق: المستخدم لغى المسودة من الشاشة. قول إنها اتلغت في كلمتين.)",
