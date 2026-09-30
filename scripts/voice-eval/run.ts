@@ -146,6 +146,9 @@ async function main(): Promise<void> {
     const identity = { callId: `vc_eval${Math.random().toString(36).slice(2, 14)}`, userId: user.id, userType: "local" as const, plan: "ultra", role: "user" };
     const events: Array<{ at: number; message: Record<string, unknown> }> = [];
     const audioAt: number[] = [];
+    /** Each chunk of the assistant's voice: when it arrived and how long it plays (24 kHz, 16-bit: 48 bytes a ms). */
+    const audioChunks: Array<{ at: number; ms: number }> = [];
+    const toolEnds: number[] = [];
     const incidents: string[] = [];
     let final: { costUsd?: number; tokens?: unknown } = {};
     let toolLog: ToolTrace[] = [];
@@ -157,9 +160,11 @@ async function main(): Promise<void> {
         try {
           const outcome = await inner.runTool(call, context);
           toolLog.push({ name: call.name, args: call.args, ok: outcome.response.ok !== false, error: typeof outcome.response.error === "string" ? outcome.response.error : undefined, ms: Date.now() - startedAt });
+          toolEnds.push(Date.now());
           return outcome;
         } catch (error) {
           toolLog.push({ name: call.name, args: call.args, ok: false, error: error instanceof Error ? error.message.slice(0, 60) : "thrown", ms: Date.now() - startedAt });
+          toolEnds.push(Date.now());
           throw error;
         }
       },
@@ -169,7 +174,7 @@ async function main(): Promise<void> {
     const channel = {
       get open() { return open; },
       sendJson: (message: Record<string, unknown>) => { events.push({ at: Date.now(), message }); },
-      sendAudio: () => { audioAt.push(Date.now()); },
+      sendAudio: (pcm: Buffer) => { audioAt.push(Date.now()); audioChunks.push({ at: Date.now(), ms: pcm.length / 48 }); },
       close: () => { open = false; },
     };
     const session = new sessionModule.CallSession(identity, {
@@ -229,13 +234,26 @@ async function main(): Promise<void> {
       await session.onClientMessage({ type: "text", text });
       const { timedOut, doneAt } = await settled(since, turnTimeoutMs);
       const after = events.filter((event) => event.at >= since);
+      const lastToolEnd = toolEnds.filter((at) => at >= since).at(-1) ?? null;
+      const turnChunks = audioChunks.filter((chunk) => chunk.at >= since);
+      // Played back to back from arrival: a chunk starts when it arrives or when the one before it ends.
+      const playbackEnd = turnChunks.reduce<number | null>((end, chunk) => Math.max(end ?? 0, chunk.at) + chunk.ms, null);
+      const assistantWords = after.filter((e) => e.message.type === "caption" && e.message.role === "assistant").map((e) => String(e.message.text)).join("");
       turns.push({
         user: text,
-        assistant: after.filter((e) => e.message.type === "caption" && e.message.role === "assistant").map((e) => String(e.message.text)).join(""),
+        assistant: assistantWords,
+        heard: assistantWords,
         tools: toolLog,
         cards: after.filter((e) => e.message.type === "card").map((e) => e.message.card as Record<string, unknown>),
         firstAudioMs: (() => { const first = audioAt.find((at) => at >= since); return first ? first - since : null; })(),
+        toolsDoneMs: lastToolEnd === null ? null : lastToolEnd - since,
+        answerAudioMs: (() => {
+          if (lastToolEnd === null) return null;
+          const first = audioAt.find((at) => at >= lastToolEnd);
+          return first ? first - since : null;
+        })(),
         doneMs: doneAt ? doneAt - since : null,
+        playbackEndMs: playbackEnd === null ? null : Math.round(playbackEnd - since),
         timedOut,
       });
       if (events.some((event) => event.message.type === "ended")) break;
@@ -285,27 +303,40 @@ async function main(): Promise<void> {
   // ─── Summary ───
   const byArm = arms.map((arm) => {
     const runs = results.filter((result) => result.arm.id === arm.id);
+    // Every attempt counts: a provider failure is a failed call for the user. The rate without them is shown apart.
     const valid = runs.filter((run) => run.trace.providerErrors.length === 0);
-    const passed = valid.filter((run) => run.pass);
-    const turns = valid.flatMap((run) => run.trace.turns);
+    const passed = runs.filter((run) => run.pass);
+    const turns = runs.flatMap((run) => run.trace.turns);
     const domains = [...new Set(runs.map((run) => run.scenario.domain))].map((domain) => {
-      const inDomain = valid.filter((run) => run.scenario.domain === domain);
+      const inDomain = runs.filter((run) => run.scenario.domain === domain);
       return { domain, runs: inDomain.length, passed: inDomain.filter((run) => run.pass).length };
     });
-    const cost = valid.reduce((sum, run) => sum + run.trace.costUsd, 0);
+    const cost = runs.reduce((sum, run) => sum + run.trace.costUsd, 0);
+    const spread = (pick: (turn: TurnTrace) => number | null | undefined) => {
+      const values = turns.flatMap((turn) => { const v = pick(turn); return typeof v === "number" ? [v] : []; });
+      return { n: values.length, p50: percentile(values, 0.5), p95: percentile(values, 0.95) };
+    };
+    const [low, high] = wilson(passed.length, runs.length);
     return {
       arm: arm.id,
       runs: runs.length,
       providerFailures: runs.length - valid.length,
       passed: passed.length,
-      passRate: valid.length ? passed.length / valid.length : null,
+      passRate: runs.length ? passed.length / runs.length : null,
+      passRateCi95: [low, high],
+      passRateWithoutProviderFailures: valid.length ? valid.filter((run) => run.pass).length / valid.length : null,
       domains,
       timedOutTurns: turns.filter((turn) => turn.timedOut).length,
-      firstAudioMs: { p50: percentile(turns.flatMap((t) => (t.firstAudioMs === null ? [] : [t.firstAudioMs])), 0.5), p95: percentile(turns.flatMap((t) => (t.firstAudioMs === null ? [] : [t.firstAudioMs])), 0.95) },
-      doneMs: { p50: percentile(turns.flatMap((t) => (t.doneMs === null ? [] : [t.doneMs])), 0.5), p95: percentile(turns.flatMap((t) => (t.doneMs === null ? [] : [t.doneMs])), 0.95) },
+      firstAudioMs: spread((t) => t.firstAudioMs),
+      toolsDoneMs: spread((t) => t.toolsDoneMs),
+      answerAudioMs: spread((t) => t.answerAudioMs),
+      doneMs: spread((t) => t.doneMs),
+      playbackEndMs: spread((t) => t.playbackEndMs),
       costUsd: cost,
       costPerPassUsd: passed.length ? cost / passed.length : null,
-      failedChecks: Object.entries(valid.flatMap((run) => run.checks.filter((c) => !c.pass).map((c) => c.id.split(":")[0]))
+      failedChecks: Object.entries(runs.flatMap((run) => run.checks.filter((c) => !c.pass).map((c) => c.id.split(":")[0]))
+        .reduce<Record<string, number>>((acc, id) => ({ ...acc, [id]: (acc[id] ?? 0) + 1 }), {})),
+      incidents: Object.entries(runs.flatMap((run) => run.trace.incidents)
         .reduce<Record<string, number>>((acc, id) => ({ ...acc, [id]: (acc[id] ?? 0) + 1 }), {})),
     };
   });
@@ -313,11 +344,12 @@ async function main(): Promise<void> {
   const lines = [`# Coach evaluation ${runId}`, "", `Seed ${seed}, split ${split}, ${reps} repetition(s). Typed turns: understanding and tools only.`, ""];
   for (const arm of byArm) {
     lines.push(`## ${arm.arm}`, "",
-      `- Passed ${arm.passed}/${arm.runs - arm.providerFailures} (${arm.passRate === null ? "—" : `${Math.round(arm.passRate * 100)}%`}); provider failures ${arm.providerFailures}; timed-out turns ${arm.timedOutTurns}`,
-      `- First audio p50/p95: ${arm.firstAudioMs.p50 ?? "—"} / ${arm.firstAudioMs.p95 ?? "—"} ms; turn done p50/p95: ${arm.doneMs.p50 ?? "—"} / ${arm.doneMs.p95 ?? "—"} ms`,
-      `- Cost $${arm.costUsd.toFixed(4)}; per passed case ${arm.costPerPassUsd === null ? "—" : `$${arm.costPerPassUsd.toFixed(4)}`}`,
+      `- Passed ${arm.passed}/${arm.runs} of all attempts (${arm.passRate === null ? "—" : `${Math.round(arm.passRate * 100)}%`}, 95% CI ${Math.round(arm.passRateCi95[0] * 100)}–${Math.round(arm.passRateCi95[1] * 100)}%); without the ${arm.providerFailures} provider failure(s): ${arm.passRateWithoutProviderFailures === null ? "—" : `${Math.round(arm.passRateWithoutProviderFailures * 100)}%`}; timed-out turns ${arm.timedOutTurns}`,
+      `- Per turn p50/p95 ms — first audio ${arm.firstAudioMs.p50 ?? "—"}/${arm.firstAudioMs.p95 ?? "—"}; tools done ${arm.toolsDoneMs.p50 ?? "—"}/${arm.toolsDoneMs.p95 ?? "—"}; answer audio ${arm.answerAudioMs.p50 ?? "—"}/${arm.answerAudioMs.p95 ?? "—"}; listening again ${arm.doneMs.p50 ?? "—"}/${arm.doneMs.p95 ?? "—"}; heard to the end ${arm.playbackEndMs.p50 ?? "—"}/${arm.playbackEndMs.p95 ?? "—"}`,
+      `- Paid-rate estimate (not a bill) $${arm.costUsd.toFixed(4)}; per passed case ${arm.costPerPassUsd === null ? "—" : `$${arm.costPerPassUsd.toFixed(4)}`}`,
       `- By domain: ${arm.domains.map((d) => `${d.domain} ${d.passed}/${d.runs}`).join(", ")}`,
-      `- Failed checks: ${arm.failedChecks.map(([id, n]) => `${id}×${n}`).join(", ") || "none"}`, "");
+      `- Failed checks: ${arm.failedChecks.map(([id, n]) => `${id}×${n}`).join(", ") || "none"}`,
+      `- Incidents: ${arm.incidents.map(([id, n]) => `${id}×${n}`).join(", ") || "none"}`, "");
   }
   writeFileSync(join(dir, "summary.md"), lines.join("\n"));
   console.log(`\n${lines.join("\n")}\nTraces: ${dir}`);
@@ -343,6 +375,17 @@ function shape(message: Record<string, unknown>, started: number): Record<string
     ...(message.toolCallCancellation ? { cancelled: message.toolCallCancellation } : {}),
     ...(parts.some((part) => part.thought) ? { thought: true } : {}),
   };
+}
+
+/** Wilson 95% interval of a pass rate. */
+function wilson(k: number, n: number): [number, number] {
+  if (!n) return [0, 0];
+  const z = 1.96;
+  const p = k / n;
+  const d = 1 + (z * z) / n;
+  const c = p + (z * z) / (2 * n);
+  const m = z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n));
+  return [Math.max(0, (c - m) / d), Math.min(1, (c + m) / d)];
 }
 
 function safe(test: () => boolean): boolean {

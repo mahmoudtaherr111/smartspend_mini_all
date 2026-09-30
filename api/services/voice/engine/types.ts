@@ -60,8 +60,13 @@ export type EngineEvent =
   | { type: "tool_calls"; calls: ToolCallRequest[] }
   | { type: "tool_cancel"; ids: string[] }
   | { type: "interrupted" }
-  /** The model finished speaking a turn (it may still be working, see `idle`). */
-  | { type: "turn_complete" }
+  /** The model generated all of an utterance; the app may still be playing it. */
+  | { type: "generation_complete" }
+  /**
+   * The model finished speaking an utterance. `working`: the extended-thinking model said in the same message that it
+   * is still IN_PROGRESS (a filler before a tool or more reasoning), so the task is not done.
+   */
+  | { type: "turn_complete"; working?: boolean }
   /**
    * The provider is still working on the task (reasoning, or waiting for a tool's answer): the extended-thinking
    * model's `interactionStatus: IN_PROGRESS`, sent once when it starts.
@@ -74,7 +79,10 @@ export type EngineEvent =
   /** The provider connection dropped and the engine is reconnecting on its own. */
   | { type: "reconnecting" }
   | { type: "reconnected" }
-  /** The engine stopped for good; `resumable` says whether a new engine can continue with the last handle. */
+  /**
+   * The engine stopped for good; `resumable` says whether a new engine can continue with the last handle. The reason
+   * `provider_quota` is an explicit quota refusal from the provider.
+   */
   | { type: "closed"; reason: string; resumable: boolean };
 
 export interface VoiceEngine {

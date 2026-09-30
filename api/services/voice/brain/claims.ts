@@ -64,9 +64,24 @@ export class WrittenAmountCheck {
 const FAILURE_CLAIM =
   /عطل|خطا في النظام|خطأ في النظام|مشكله في النظام|مشكلة في النظام|مشكله في السيستم|مشكلة في السيستم|مشكله تقنيه|مشكلة تقنية|مشكله فنيه|مشكلة فنية|خطا تقني|خطأ تقني|السيستم واقع|مش قادر اوصل|مش قادر أوصل|مش قادره اوصل|مش قادرة أوصل|مش قادرين نوصل/;
 
+/** Whether the words claim a technical failure ("حصل عطل", "مشكلة في السيستم"), however they are spelled. */
+export function claimsFailure(text: string): boolean {
+  return FAILURE_CLAIM.test(text.replace(DIACRITICS, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه"));
+}
+
 export const FAILURE_CLAIM_NOTE =
   "(ملاحظة من التطبيق، مش من المستخدم: مفيش أداة فشلت عندنا؛ الطلب ماوصلناش أصلًا. قول للمستخدم إنك هتجرب تاني " +
   "في كلمتين، ونادي الأداة المناسبة تاني بنفس الطلب. متقولش إن فيه عطل.)";
+
+/** After the call held back the extended model's apology for a tool call that never reached the app. */
+export const LOST_CALL_RETRY_NOTE =
+  "(ملاحظة من التطبيق، مش من المستخدم: طلب الأداة بتاعك ماوصلش للتطبيق، ومفيش أي عطل عندنا. متعتذرش ومتقولش إن " +
+  "فيه مشكلة؛ نادي الأداة المناسبة تاني دلوقتي بنفس الطلب.)";
+
+/** The same, when the tool call was lost again and again within one request. */
+export const LOST_CALL_GIVE_UP_NOTE =
+  "(ملاحظة من التطبيق، مش من المستخدم: طلب الأداة ماوصلش للتطبيق أكتر من مرة. قول للمستخدم بصراحة في جملة إنك مش " +
+  "قادر توصل للمعلومة دي في المكالمة دلوقتي، واقترح يسأل تاني بعد شوية أو يشوفها في شاشة التطبيق. متقولش إن السيستم واقع.)";
 
 /**
  * Catches the assistant claiming a technical failure while none of the tools of the user's latest request failed.
@@ -103,7 +118,7 @@ export class FailureClaimCheck {
   add(chunk: string): { toolsCalled: number; retry: boolean } | null {
     this.turnText += chunk;
     if (this.flagged || this.toolsFailed > 0) return null;
-    if (!FAILURE_CLAIM.test(this.turnText.replace(DIACRITICS, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه"))) return null;
+    if (!claimsFailure(this.turnText)) return null;
     this.flagged = true;
     const retry = this.retries < this.maxRetries;
     if (retry) this.retries += 1;

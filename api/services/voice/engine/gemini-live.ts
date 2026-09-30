@@ -93,6 +93,14 @@ export function readLiveUsage(message: Json): EngineUsage | null {
   };
 }
 
+/**
+ * An explicit quota or rate refusal from the provider (a close reason or an error frame): "You exceeded your current
+ * quota", RESOURCE_EXHAUSTED, a 429. Anything else is not called quota, so an outage is never reported as one.
+ */
+export function isQuotaRefusal(text: string): boolean {
+  return /quota|resource[_ ]?exhausted|rate[ -]?limit|\b429\b/i.test(text);
+}
+
 /** "10s", "1.5s" or a number of seconds, in milliseconds. */
 function durationMs(value: unknown): number {
   if (typeof value === "number") return value * 1000;
@@ -211,6 +219,9 @@ export class GeminiLiveEngine implements VoiceEngine {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         this.options.onKeyFailure?.(index, lastError.message);
+        // Limits are per Google project: another key is either the same project (no help) or another project, and
+        // spreading one workload over projects to get around a quota is not ours to do. A quota refusal stops here.
+        if (lastError.message === "provider_quota") throw lastError;
       }
     }
     throw lastError;
@@ -237,7 +248,11 @@ export class GeminiLiveEngine implements VoiceEngine {
       };
       ws.on("open", () => ws.send(JSON.stringify(buildLiveSetup(setup, this.handle))));
       ws.on("error", () => fail("transport_error"));
-      ws.on("close", (code) => fail(`closed_before_setup_${code}`));
+      ws.on("unexpected-response", (_request, response) => {
+        response.resume();
+        fail(response.statusCode === 429 ? "provider_quota" : `http_${response.statusCode ?? 0}`);
+      });
+      ws.on("close", (code, reason) => fail(isQuotaRefusal(String(reason)) ? "provider_quota" : `closed_before_setup_${code}`));
       ws.on("message", (raw) => {
         let message: Json;
         try {
@@ -246,7 +261,7 @@ export class GeminiLiveEngine implements VoiceEngine {
           return;
         }
         if (!settled) {
-          if (message.error) return fail("provider_error");
+          if (message.error) return fail(isQuotaRefusal(JSON.stringify(message.error)) ? "provider_quota" : "provider_error");
           if (!field(message, "setupComplete", "setup_complete")) return;
           settled = true;
           clearTimeout(timer);
@@ -269,8 +284,13 @@ export class GeminiLiveEngine implements VoiceEngine {
       this.handleMessage(message);
     });
     ws.on("error", () => undefined);
-    ws.on("close", () => {
+    ws.on("close", (_code, reason) => {
       if (this.ws !== ws || this.closedByUs) return;
+      // A quota refusal mid-call is not a dropped line: reconnecting would be refused the same way.
+      if (isQuotaRefusal(String(reason))) {
+        this.emit({ type: "closed", reason: "provider_quota", resumable: false });
+        return;
+      }
       void this.reconnect("connection_closed");
     });
   }
@@ -296,17 +316,19 @@ export class GeminiLiveEngine implements VoiceEngine {
     if (typeof outputText === "string" && outputText) this.emit({ type: "output_transcript", text: outputText });
 
     if (content.interrupted === true) this.emit({ type: "interrupted" });
+    // The model has produced everything for this utterance (audio may still be playing at the app).
+    if (field(content, "generationComplete", "generation_complete") === true) this.emit({ type: "generation_complete" });
 
     const thinking = isThinkingModel(this.setup?.model ?? "");
-    if (field(content, "turnComplete", "turn_complete") === true) {
-      this.emit({ type: "turn_complete" });
-      // The standard model is idle at the end of its turn; the thinking one says so separately.
-      if (!thinking) this.emit({ type: "idle" });
-    }
     // The extended-thinking model says when the whole task is done (IDLE) apart from when it stops speaking
     // (turnComplete): it may speak a line, then keep reasoning or wait for a tool (IN_PROGRESS).
     const status = field(message, "interactionStatus", "interaction_status")
       ?? field(content, "interactionStatus", "interaction_status");
+    if (field(content, "turnComplete", "turn_complete") === true) {
+      this.emit({ type: "turn_complete", working: thinking && status === "IN_PROGRESS" });
+      // The standard model is idle at the end of its turn; the thinking one says so separately.
+      if (!thinking) this.emit({ type: "idle" });
+    }
     if (thinking && status === "IN_PROGRESS" && this.interaction !== "IN_PROGRESS") this.emit({ type: "working" });
     if (thinking && status === "IDLE") this.emit({ type: "idle" });
     if (status === "IN_PROGRESS" || status === "IDLE") this.interaction = status;

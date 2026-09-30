@@ -136,7 +136,7 @@ export class FakeGeminiLive {
 
   private constructor(
     private readonly server: WebSocketServer,
-    private readonly options: { rejectKeys: string[]; completeSetup: boolean },
+    private readonly options: { rejectKeys: string[]; quotaKeys: string[]; completeSetup: boolean },
   ) {
     server.on("connection", (socket, request) => {
       const apiKey = String(request.headers["x-goog-api-key"] ?? "");
@@ -147,6 +147,10 @@ export class FakeGeminiLive {
           socket.close(1008, "API key not valid");
           return;
         }
+        if (this.options.quotaKeys.includes(apiKey)) {
+          socket.close(1011, "You exceeded your current quota, please check your plan and billing details.");
+          return;
+        }
         if (this.options.completeSetup) connection.send({ setupComplete: {} });
         const waiters = this.waiters;
         this.waiters = [];
@@ -155,10 +159,10 @@ export class FakeGeminiLive {
     });
   }
 
-  static async start(options: Partial<{ rejectKeys: string[]; completeSetup: boolean }> = {}): Promise<FakeGeminiLive> {
+  static async start(options: Partial<{ rejectKeys: string[]; quotaKeys: string[]; completeSetup: boolean }> = {}): Promise<FakeGeminiLive> {
     const server = new WebSocketServer({ port: 0, host: "127.0.0.1" });
     await new Promise<void>((resolve) => server.once("listening", () => resolve()));
-    return new FakeGeminiLive(server, { rejectKeys: options.rejectKeys ?? [], completeSetup: options.completeSetup ?? true });
+    return new FakeGeminiLive(server, { rejectKeys: options.rejectKeys ?? [], quotaKeys: options.quotaKeys ?? [], completeSetup: options.completeSetup ?? true });
   }
 
   get url(): string {

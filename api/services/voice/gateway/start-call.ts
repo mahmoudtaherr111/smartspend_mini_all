@@ -10,6 +10,8 @@ import { mapModelName } from "../../../lib/model-mapper";
 import { db } from "../../../queries/connection";
 import { getVoiceEntitlements, type VoiceEntitlements, type VoiceEntitlementUser } from "../../entitlements/voice";
 import { resolveVoice } from "../brain/voices";
+import { getSystemSettings } from "../../../lib/settings-cache";
+import { admissionLimits, admitCall, releaseCall } from "./admission";
 import { closeAbandonedCalls } from "./persistence";
 import { callStateAvailable, putTicket } from "./store";
 
@@ -40,6 +42,9 @@ const BLOCKED_MESSAGES: Record<string, string> = {
   daily_cost_cap: "وصلت لحد المكالمات النهارده. تقدر تكمل بالكتابة في الشات، أو تكلمني بكرة.",
   rate_limited: "بدأت مكالمات كتير ورا بعض. استنى دقيقة وجرب تاني.",
   unavailable: "المكالمة مش متاحة دلوقتي. جرب بعد شوية.",
+  pool_full: "كل الخطوط مشغولة دلوقتي. جرب كمان دقيقة، أو كمل بالكتابة في الشات.",
+  user_busy: "عندك مكالمة مفتوحة بالفعل على جهاز تاني. اقفلها الأول، أو استنى دقيقة لو كانت قفلت لوحدها.",
+  provider_quota: "المكالمات وصلت لحد الاستخدام المسموح دلوقتي. جرب بعد شوية، أو كمل بالكتابة في الشات.",
 };
 
 export async function startVoiceCall(
@@ -59,18 +64,28 @@ export async function startVoiceCall(
   const callId = `vc_${randomUUID().replace(/-/g, "")}`;
   const voiceName = resolveVoice(input.voice);
   const model = mapModelName(entitlements.model);
-  await db.insert(voiceCalls).values({
-    id: callId,
-    userId: user.id,
-    userType: user.type,
-    status: "starting",
-    engine: "gemini_live",
-    model,
-    voice: voiceName,
-    client: input.client,
-    month: entitlements.month,
-    maxSeconds: entitlements.allowedCallSeconds,
-  });
+  // A seat in the model's shared pool before anything is written: a full pool or a quota pause is said now, not after
+  // the app has connected. The call renews the seat while it lives and gives it back when it ends.
+  const seat = { pool: model, callId, user: { id: user.id, type: user.type } };
+  const admitted = await admitCall(seat, admissionLimits(await getSystemSettings(), model));
+  if (!admitted.ok) return { kind: "blocked", reason: admitted.reason, message: BLOCKED_MESSAGES[admitted.reason] };
+  try {
+    await db.insert(voiceCalls).values({
+      id: callId,
+      userId: user.id,
+      userType: user.type,
+      status: "starting",
+      engine: "gemini_live",
+      model,
+      voice: voiceName,
+      client: input.client,
+      month: entitlements.month,
+      maxSeconds: entitlements.allowedCallSeconds,
+    });
+  } catch (error) {
+    await releaseCall(seat);
+    throw error;
+  }
 
   const ticket = `tk_${randomBytes(24).toString("base64url")}`;
   const payload: TicketPayload = {

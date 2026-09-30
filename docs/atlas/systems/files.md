@@ -245,8 +245,10 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice/brain/voices.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/engine/gemini-live.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/engine/types.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/gateway/admission.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/gateway/call-session.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/gateway/index.ts` | [voice-calls](voice-calls.md) |
+| `api/services/voice/gateway/lost-call-guard.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/gateway/persistence.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/gateway/pricing.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/gateway/socket.ts` | [voice-calls](voice-calls.md) |

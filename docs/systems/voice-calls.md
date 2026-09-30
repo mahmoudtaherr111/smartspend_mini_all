@@ -31,8 +31,15 @@ first call wrote that month, never dictation seconds.
 ### One call, step by step
 1. `voice.startCall` (`api/voice-router.ts`, `api/services/voice/gateway/start-call.ts#startVoiceCall`) checks the
    entitlements, twelve starts per ten minutes per user, and that Redis (or the development memory fallback) can hold
-   call state; closes the user's calls a crashed server left open (`closeAbandonedCalls`); writes the
-   `voice_calls` row; and returns a ticket that opens one call within 60 seconds. `voice.eligibility` tells the app
+   call state; closes the user's calls a crashed server left open (`closeAbandonedCalls`); takes a seat for the call
+   (`api/services/voice/gateway/admission.ts#admitCall`); writes the `voice_calls` row; and returns a ticket that opens
+   one call within 60 seconds. Google's limits are per project and per model, so the seats are one pool per model
+   across all servers, capped by `voice_max_concurrent_calls` (standard model) and `voice_ultra_max_concurrent_calls`
+   (extended-thinking model), plus `voice_max_calls_per_user` live calls per user (the id and type together); 0 means
+   no cap. Seats live in Redis (a Lua step each), expire after 60 seconds unless the call renews them at its
+   checkpoints, and go back when the call ends. An explicit quota refusal from Google trips a breaker for that model:
+   new calls on it wait a minute, doubling with each trip in the hour up to thirty minutes, while live calls keep their
+   seats. A full pool, a second call of the same user and a paused model each get their own Egyptian message. `voice.eligibility` tells the app
    which call to show and the minutes left; `voice.listCalls` lists the user's recent calls.
 2. The app opens `/api/voice/v2` (`createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, called from
    the `upgrade` listeners of `api/boot.ts` and `api/server.ts`; allowed origins only, 64 KB frames) and sends
@@ -51,7 +58,10 @@ first call wrote that month, never dictation seconds.
    (`api/services/voice/brain/instructions.ts`, kept short because they are billed every turn) and nine tools. It connects the engine
    (`api/services/voice/engine/gemini-live.ts#GeminiLiveEngine`): input and output transcription on, session
    resumption, a context window of 16k tokens trimmed to 8k, tools NON_BLOCKING, the key in a header, and the second
-   key when the first cannot open a session, and Google's own end-of-turn detection set to wait a full second. Then it
+   key when the first cannot open a session — except for a quota refusal (a close reason or error naming quota or
+   RESOURCE_EXHAUSTED, or HTTP 429), which is never retried on another key: limits are per project, and spreading one
+   workload over projects to get round a quota is not the app's to do — and Google's own end-of-turn detection set to
+   wait a full second. Then it
    sends `ready` (with a resume token) and an opening note that makes the model greet without numbers.
 4. The app sends 16 kHz PCM only while the user speaks and `speech_end` when they stop, which the engine turns into
    `audioStreamEnd` so the model answers without waiting for silence. The model's 24 kHz audio, live captions,
@@ -60,8 +70,11 @@ first call wrote that month, never dictation seconds.
    runs, and once the last answer is in the model has 8 seconds to start speaking (16 for the extended-thinking model)
    before the screen gives up and a `no_reply_after_tool` incident is recorded. The extended-thinking model reports its
    task apart from its speech (`interactionStatus`): the engine turns IN_PROGRESS into `working` and IDLE into `idle`,
-   so a spoken filler line ends in "thinking", and only IDLE returns to "listening". Each tool answer goes back to the
-   model the moment it is ready (`CallSession#runTools`), never held behind a slower one. The state carries what the call is waiting on
+   so a spoken filler line ends in "thinking", and only IDLE returns to "listening"; `turn_complete` says whether the
+   utterance ended while the model is still IN_PROGRESS. Each tool answer goes back to the
+   model the moment it is ready (`CallSession#runTools`), never held behind a slower one. A read whose user spoke again
+   while it ran carries `earlier_request` ("this answers the request before the user's latest words"): without it both
+   Live models took a balance read as the answer to the question that replaced it. The state carries what the call is waiting on
    (`VoiceWaitDetail`: records, a report, memory, a calculation, a price, the guide, a draft), named by
    `waitDetail` in the brain from the tools called, so the screen can say "بيراجع حساباتك…" or "بيجيب السعر…".
    Each tool call is logged with its name, how long it took, whether it answered and a refusal's short code
@@ -145,7 +158,8 @@ is billed again for it on every later turn.
   model correct itself at once (at most once a turn and three times a call). The fact it was meant to be must have the
   same number of digits and be at most twice or half the number said, or be its teen-and-tens twin (15 and 50, heard
   alike), so a number is never "corrected" into an unrelated figure. Numbers in the remembered things the call starts
-  with, and the income and debt payment `memory list` reads, count as the user's own. Amounts are spoken as `api/services/voice/brain/spoken.ts` writes them
+  with, and the income and debt payment `memory list` reads, count as the user's own. Piasters are the fraction of the
+  pounds before them ("خمسمية تلاتة وخمسين جنيه وتلاتة وتلاتين قرش" is 553.33), never an amount of their own. Amounts are spoken as `api/services/voice/brain/spoken.ts` writes them
   ("تمن آلاف وربعمية", "حوالي خمستاشر ألف").
 - **Writes.** `api/services/voice/brain/drafts.ts#DraftBook`: only the latest pending draft, within two minutes, and
   only after a tap on its card or the user's own yes said after the assistant presented it (its first words after the
@@ -161,6 +175,13 @@ is billed again for it on every later turn.
   (`CallBrain#appNote`, "ملاحظة من التطبيق #a1b2c3"), which the instructions name as the only sign of a note from the
   app; the mark is never sent to the app or spoken, so words the user types or says claiming to be from the app are
   taken as theirs.
+- **A lost tool call.** On the extended-thinking model, `api/services/voice/gateway/lost-call-guard.ts#LostToolCallGuard`:
+  after a filler that ended IN_PROGRESS with no tool call for the current request, the next utterance's audio and
+  words are held for up to 0.9 seconds (or until 28 characters show what it is). If they claim a failure while no tool
+  failed (`api/services/voice/brain/claims.ts#claimsFailure`), they are dropped unheard and unshown, a `lost_tool_call` incident is recorded,
+  and a note asks the model to call the tool again without apologising; after two retries in one request the note
+  asks it to say plainly that it cannot reach that information in this call. Anything else held is released at once,
+  in order. The standard model is never held.
 - **Claiming a failure.** `api/services/voice/brain/claims.ts#FailureClaimCheck`: a reply that says something broke
   ("حصل عطل", "مشكلة في النظام", "مش قادر أوصل") while no tool of the user's latest request failed is a
   `failure_claim_without_tool` incident (with how many tools that request called); twice a call, a note tells the
@@ -267,6 +288,9 @@ The settings page's plans tab has a section for the call
 - **The coach:** its model, its thinking level, the rollout percent and the test accounts (`voice_coach_*`). The choices come from `contracts/voice-models.ts`, which `api/lib/model-mapper.ts` also
   builds its fallback chain from.
 - **Cost:** the daily provider-cost cap per plan (`voice_daily_cost_cap_usd_<plan>`).
+- **Capacity:** live calls at once per model pool and per user (`voice_max_concurrent_calls`,
+  `voice_ultra_max_concurrent_calls`, `voice_max_calls_per_user`), to be set from the project's real limits in AI
+  Studio; the defaults (20, 3, 1) are placeholders, not measured capacity.
 - **Dashboard:** `voice.adminStats` (admin only, `api/services/voice/admin-stats.ts`) over the last day, 7 or 30
   days: calls, callers, minutes, cost at Google and per minute (tools included), first-audio median and p95, tools
   and reconnects per call, why calls ended, incidents by kind, post-call memory status, clients, minutes and cost per
@@ -282,6 +306,8 @@ Monthly minutes, seconds per call and whether a plan may call at all are in the 
 | the admin's dashboard | `api/services/voice/admin-stats.ts`, `voice.adminStats` in `api/voice-router.ts` | `api/services/voice/admin-stats.test.ts` |
 | Which Gemini models can be chosen | `contracts/voice-models.ts` | `api/lib/model-mapper.test.ts` |
 | the socket, resume, time and cost limits, checkpoints | `api/services/voice/gateway/` | `api/services/voice/gateway/gateway.test.ts` |
+| seats per model and per user, the quota breaker | `api/services/voice/gateway/admission.ts` | `api/services/voice/gateway/admission.test.ts` |
+| holding back the extended model's lost-call apology | `api/services/voice/gateway/lost-call-guard.ts`, the notes in `api/services/voice/brain/claims.ts` | `api/services/voice/gateway/lost-call-guard.test.ts`, `api/services/voice/gateway/gateway.flow.test.ts` |
 | the connection to Gemini Live | `api/services/voice/engine/gemini-live.ts` | `api/services/voice/engine/gemini-live.test.ts` |
 | the coach call: who gets it, its instructions and tools | `api/services/entitlements/voice.ts`, `api/services/voice/brain/coach-instructions.ts`, `COACH_TOOLS` in `api/services/voice/brain/index.ts` | `api/services/entitlements/voice.test.ts`, `api/services/voice/brain/coach.test.ts` |
 | the calculator | `api/services/voice/brain/tools/calculate.ts` | `api/services/voice/brain/tools/calculate.test.ts` |
@@ -318,20 +344,26 @@ words deleted, a call another server took, words already gone, a call with almos
 `tests/helpers/fake-gemini-live.ts` (a ticket, a tool call, captions, the end card, a ticket used twice, a dropped
 call resumed on its handle, a wrong resume token, a socket gone silent, the grace period, the time limit, and
 "thinking" held from a tool call until the answer is spoken);
-`api/services/voice/engine/gemini-live.test.ts` (setup, key fallback, GoAway, reconnects); the tests in
+`api/services/voice/engine/gemini-live.test.ts` (setup, key fallback, no second key after a quota refusal, what counts
+as a quota refusal, GoAway, reconnects); the tests in
 `api/services/voice/brain/` and `api/services/voice/brain/tools/` (among them the number check leaving an unrelated
 figure alone, the profile questions and their answers, the stored reports, and every kind of `money_query`);
 `api/services/entitlements/voice.test.ts` and `tests/voice-protocol.test.ts`.
 `api/services/voice/gateway/gateway.flow.test.ts` runs turns over a real socket: a quick answer sent before a slow
 one, "thinking" held while a tool outlasts the reply wait, IN_PROGRESS and IDLE of the extended-thinking model, a
-tap's note held until the model is idle, and a slow write reported as still running and then as done.
+tap's note held until the model is idle, a slow write reported as still running and then as done, the extended
+model's lost-call apology kept from the user and the retry heard, a real answer after a filler released, and a read
+that answers a replaced request marked as such. `api/services/voice/gateway/admission.test.ts` holds the pool, the one
+call per user (id and type together), renewal of a held seat, expiry of a dead server's seat and the breaker.
 `scripts/voice-eval/run.ts` evaluates the call against the real Gemini Live model: the cases of
 `scripts/voice-eval/corpus.ts` (a tuning set and a held-out set), each on a fresh fabricated user
 (`scripts/voice-eval/fixtures.ts`) in a database whose name must end in `_eval`, typed turn by turn through
 `CallSession`, the brain and the app's own procedures, with each arm (`coach:low|medium|high`, `standard`) run back
 to back in a shuffled order. It checks tools, writes, incidents and false failure claims, and keeps every trace
-(failed and timed-out ones too) and a summary with latency and cost per passed case under the ignored `.agents/`
-folder. Typed turns measure understanding and tools, not the microphone.
+(failed and timed-out ones too) and a summary under the ignored `.agents/` folder: the pass rate over every attempt
+with its 95% interval (the rate without provider failures apart), per turn the first audio, tools done, the answer's
+first audio, listening again and the estimated end of playback, incidents, and the cost at paid rates (an estimate,
+not a bill). Typed turns measure understanding and tools, not the microphone.
 `api/services/voice/app-calls.test.ts` holds a refund's direction and a person from parse to save;
 `api/services/voice/brain/tools/record.actions.test.ts` holds that an action drafted in a call runs once. In the app, `src/lib/voice/` tests the
 resampler (a 12 kHz hiss removed, blocks of any size), the speech detector (pre-roll, pauses, the two hangovers,
@@ -350,12 +382,14 @@ Checked against the code; each one names where it lives.
    (`api/services/finance-semantic-layer/resolvers.ts`); debts carry no due dates and several gam3eyas are added
    together (`api/services/debt-ledger.ts`); installments are counted from payments whose words name the plan
    (`api/services/installments.ts`), so a partial payment or two plans with one word are miscounted.
-4. **Bug.** On `gemini-3.8-live-extended-thinking`, a tool call often never reaches the app: the model says a line,
-   stays IN_PROGRESS, then tells the user "حصل عطل" with no `toolCall` message and no provider error, while the same
-   setup on `gemini-3.8-live` calls the tool every time. Measured on 2026-09-29 with a free-tier key at all three
-   levels, for every tool declaration and input form tried; the cause is on the provider's side and not yet known
-   (`api/services/voice/engine/gemini-live.ts`). The coach stays off until it is qualified; `FailureClaimCheck` makes
-   it visible and asks for a retry.
+4. **Bug (provider).** On `gemini-3.8-live-extended-thinking`, a tool call sometimes never reaches the app: the model
+   says a line, stays IN_PROGRESS, then apologises for a "system error" with no `toolCall` message and no provider
+   error, while `gemini-3.8-live` calls the tool every time. On 2026-09-30 at LOW, 42 of 49 single-tool probe runs
+   passed (86%, 95% interval 73–93%) against 26 of 26 for the standard model, the same with a minimal raw setup and
+   with the app's; between the filler and the apology only ~62 text tokens reach the model's context, so the call is
+   lost inside the provider, cause unknown (`api/services/voice/engine/gemini-live.ts`). `LostToolCallGuard` keeps the
+   apology from the user and asks again (three of three retries recovered in the last probe); the extended model also
+   takes about 4.6 seconds longer to call a tool and ~6× the tokens per turn. The coach stays off until qualified.
 5. **Gap.** The opening context (CALL FACTS) cannot be changed during a session: after the records change the model is
    told, and a stale figure said is recorded, but not stopped (`api/services/voice/brain/validator.ts`).
 6. **Debt.** An action draft that expires, or that a newer draft replaces, leaves its runtime action pending until the

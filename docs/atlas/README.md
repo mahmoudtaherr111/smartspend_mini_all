@@ -37,7 +37,7 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 | Scheduled jobs | 14 |
 | Browser routes | 17 |
 | Lazy-loaded pages | 16 |
-| Runtime source files | 465 |
+| Runtime source files | 467 |
 | Clusters | 44 |
 | External systems in use | 18 |
 | Validated server env vars | 45 |

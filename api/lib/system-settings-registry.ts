@@ -73,6 +73,11 @@ export const SETTINGS: SettingDef[] = [
   { key: "voice_coach_thinking_level", default: "high" },
   { key: "voice_coach_rollout_percent", default: "0" },
   { key: "voice_coach_allowlist", default: "" },
+  // Capacity (api/services/voice/gateway/admission.ts): live calls at once across all servers, per model pool, set
+  // from the Google project's real limits (AI Studio → Rate limits); 0 means no cap. One live call per user.
+  { key: "voice_max_concurrent_calls", default: "20" },
+  { key: "voice_ultra_max_concurrent_calls", default: "3" },
+  { key: "voice_max_calls_per_user", default: "1" },
   // The text model with Google Search that looks up gold and currency prices for the call. A fast one: the caller
   // is waiting on the line (the next model of the chain answers after five seconds).
   { key: "voice_price_model", default: "gemini-3.5-flash-lite" },

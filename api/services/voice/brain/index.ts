@@ -7,7 +7,16 @@ import { randomBytes } from "crypto";
 import { getProfileSnapshot } from "../../finance-semantic-layer";
 import type { VoiceWaitDetail } from "../../../../contracts/voice-protocol";
 import type { CallBrain, CallIdentity, SpeechCheck } from "../gateway/call-session";
-import { DONE_CLAIM_NOTE, DoneClaimCheck, FAILURE_CLAIM_NOTE, FailureClaimCheck, WrittenAmountCheck } from "./claims";
+import {
+  claimsFailure,
+  DONE_CLAIM_NOTE,
+  DoneClaimCheck,
+  FAILURE_CLAIM_NOTE,
+  FailureClaimCheck,
+  LOST_CALL_GIVE_UP_NOTE,
+  LOST_CALL_RETRY_NOTE,
+  WrittenAmountCheck,
+} from "./claims";
 import { DraftBook } from "./drafts";
 import { FactLedger } from "./facts";
 import { buildCoachInstruction } from "./coach-instructions";
@@ -192,6 +201,10 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       }
       return numbers;
     },
+
+    claimsFailure,
+
+    lostToolCallNote: (retry) => (retry ? LOST_CALL_RETRY_NOTE : LOST_CALL_GIVE_UP_NOTE),
 
     onTurnEnd() {
       claims.endTurn();

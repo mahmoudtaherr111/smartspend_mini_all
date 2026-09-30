@@ -7,6 +7,7 @@
  * What these checks cannot judge — naturalness, warmth, whether the advice helps — is left to a human reading the
  * traces, blind to the thinking level.
  */
+import { claimsFailure } from "../../api/services/voice/brain/claims";
 import type { FixtureName } from "./fixtures";
 
 export interface ToolTrace {
@@ -22,10 +23,18 @@ export interface TurnTrace {
   assistant: string;
   tools: ToolTrace[];
   cards: Array<Record<string, unknown>>;
+  /** What the user would have heard: the assistant's words minus audio the call withheld. Absent in old traces. */
+  heard?: string;
   /** From the user's words to the first audio chunk of the answer, ms. */
   firstAudioMs: number | null;
+  /** From the user's words to the last tool answer of the turn, ms; null without tools. */
+  toolsDoneMs?: number | null;
+  /** From the user's words to the first audio after the last tool answer (the answer itself), ms. */
+  answerAudioMs?: number | null;
   /** From the user's words until the call was listening again, ms. */
   doneMs: number | null;
+  /** When the user would have heard the last of the reply, playing chunks back to back from their arrival, ms. */
+  playbackEndMs?: number | null;
   timedOut: boolean;
 }
 
@@ -277,12 +286,11 @@ export function universalChecks(scenario: Scenario): Check[] {
     },
     {
       id: "no_false_failure",
-      means: "never claims a technical failure that no tool reported",
-      test: (trace) => {
-        const failed = trace.turns.some((turn) => turn.tools.some((tool) => !tool.ok && /tool_|failed|timeout|unavailable/.test(tool.error ?? "")));
-        const claimed = trace.turns.some((turn) => /عطل|مشكلة فنية|مشكلة تقنية|السيستم واقع|حصل خطأ|خطأ فني/.test(turn.assistant));
-        return failed || !claimed;
-      },
+      means: "never claims a technical failure that no tool of that turn reported (the words the user heard, and the call's own incident)",
+      test: (trace) => trace.turns.every((turn) => {
+        const failed = turn.tools.some((tool) => !tool.ok && /tool_|failed|timeout|unavailable/.test(tool.error ?? ""));
+        return failed || !claimsFailure(turn.heard ?? turn.assistant);
+      }) && !trace.incidents.includes("failure_claim_heard"),
     },
     {
       id: "no_wrong_number",

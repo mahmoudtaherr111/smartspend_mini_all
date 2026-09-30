@@ -15,6 +15,7 @@ import { GeminiLiveEngine } from "../engine/gemini-live";
 import { summarizeCall } from "../post-call";
 import type { CallIdentity } from "./call-session";
 import { mysqlCallPersistence } from "./persistence";
+import { admissionLimits, admitCall, releaseCall, tripBreaker } from "./admission";
 import { createVoiceSocketHandler } from "./socket";
 import { deleteCallState, loadCallState, saveCallState, saveTranscript, takeTicket } from "./store";
 import type { TicketPayload } from "./start-call";
@@ -42,6 +43,14 @@ export function createVoiceGateway(options: VoiceGatewayOptions): (ws: WebSocket
         });
       },
       brain: createCallBrain({ app: options.appCalls }),
+      seat: {
+        async hold(model) {
+          const seat = { pool: model, callId: identity.callId, user: { id: identity.userId, type: identity.userType } };
+          return (await admitCall(seat, admissionLimits(await getSystemSettings(), model), Date.now(), { live: true })).ok;
+        },
+        release: (model) => releaseCall({ pool: model, callId: identity.callId, user: { id: identity.userId, type: identity.userType } }),
+        quota: async (model) => void (await tripBreaker(model)),
+      },
       persistence: mysqlCallPersistence,
       saveState: saveCallState,
       loadState: loadCallState,

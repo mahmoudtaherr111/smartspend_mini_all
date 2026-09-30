@@ -22,7 +22,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `jobs` | Scheduled job bodies | 6 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `database`, `ledger`, `platform` | `ai-actions`, `api-core`, `api-routers`, `jobs` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
-| `voice` | Voice | 37 | `ai-actions`, `ai-insights`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
+| `voice` | Voice | 39 | `ai-actions`, `ai-insights`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 14 | `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | — |
@@ -305,8 +305,10 @@ Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway
 | `api/services/voice/brain/voices.ts` | — | — | — | — |
 | `api/services/voice/engine/gemini-live.ts` | — | `gemini` | — | — |
 | `api/services/voice/engine/types.ts` | — | — | — | — |
+| `api/services/voice/gateway/admission.ts` | `platform` | — | — | — |
 | `api/services/voice/gateway/call-session.ts` | `contracts`, `platform` | — | — | — |
 | `api/services/voice/gateway/index.ts` | `contracts`, `platform` | — | — | — |
+| `api/services/voice/gateway/lost-call-guard.ts` | — | — | — | — |
 | `api/services/voice/gateway/persistence.ts` | `ai-providers`, `database`, `platform` | — | `voice_calls` | `voice_call_incidents`, `voice_calls` |
 | `api/services/voice/gateway/pricing.ts` | `ai-providers` | — | — | — |
 | `api/services/voice/gateway/socket.ts` | `contracts`, `platform` | — | — | — |

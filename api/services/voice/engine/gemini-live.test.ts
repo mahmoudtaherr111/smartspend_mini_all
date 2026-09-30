@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { FakeGeminiLive, type LiveClientMessage } from "../../../../tests/helpers/fake-gemini-live";
-import { GeminiLiveEngine, buildLiveSetup, readLiveUsage } from "./gemini-live";
+import { GeminiLiveEngine, buildLiveSetup, isQuotaRefusal, readLiveUsage } from "./gemini-live";
 import type { EngineEvent, EngineSetup } from "./types";
 
 const setup: EngineSetup = {
@@ -110,6 +110,23 @@ describe("GeminiLiveEngine against a fake Live API", () => {
     await engine.connect(setup);
     expect((await session).apiKey).toBe("good-key");
     expect(failures).toEqual([0]);
+  });
+
+  it("never tries another key after a quota refusal: limits are per project", async () => {
+    const quota = await FakeGeminiLive.start({ quotaKeys: ["quota-key"] });
+    const failures: number[] = [];
+    engine = new GeminiLiveEngine({ apiKeys: ["quota-key", "good-key"], url: quota.url, onKeyFailure: (index) => failures.push(index) });
+    await expect(engine.connect(setup)).rejects.toThrow("provider_quota");
+    expect(failures).toEqual([0]);
+    expect(quota.connections.map((connection) => connection.apiKey)).toEqual(["quota-key"]);
+    await quota.stop();
+  });
+
+  it("calls only an explicit quota or rate refusal quota", () => {
+    expect(isQuotaRefusal("You exceeded your current quota, please check your plan and billing details.")).toBe(true);
+    expect(isQuotaRefusal('{"code":429,"status":"RESOURCE_EXHAUSTED"}')).toBe(true);
+    expect(isQuotaRefusal("Internal error encountered.")).toBe(false);
+    expect(isQuotaRefusal("")).toBe(false);
   });
 
   it("answers tool calls with a scheduling hint", async () => {

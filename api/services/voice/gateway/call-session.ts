@@ -27,6 +27,7 @@ import type {
   VoiceEngine,
 } from "../engine/types";
 import type { CallPersistence } from "./persistence";
+import { LostToolCallGuard } from "./lost-call-guard";
 import { addUsage, emptyUsage, usageCostUsd, type UsageTotals } from "./pricing";
 import { hashSecret, type TranscriptLine } from "./store";
 
@@ -110,6 +111,10 @@ export interface CallBrain {
   onAssistantWords?(text: string): SpeechCheck | null;
   /** The model finished a turn; what it said last is checked in full. */
   onTurnEnd?(): SpeechCheck | null;
+  /** Whether words claim a technical failure; lets the call hold back the extended model's lost-call apology. */
+  claimsFailure?(text: string): boolean;
+  /** The note after a lost tool call was held back: ask for the tool again, or (no retries left) say it plainly. */
+  lostToolCallNote?(retry: boolean): string;
   /** A tap on a draft card. */
   onCardAction?(action: "confirm" | "cancel", draftId: string, identity: CallIdentity): Promise<{ card: VoiceCard; note: string } | null>;
   /** True while a draft waits for the user's answer: the call is not cut off in the middle of it. */
@@ -134,6 +139,15 @@ export interface CallSessionDeps {
   onEnded?(callId: string, reason: VoiceEndReason): void;
   /** The call moved to another server; drop it from this one's registry. */
   onReleased?(callId: string): void;
+  /**
+   * The call's seat in its model's shared pool (gateway/admission.ts): taken or renewed on connecting and at every
+   * checkpoint, given back when the call ends. `quota` tells the pool the provider refused this model for quota.
+   */
+  seat?: {
+    hold(model: string): Promise<boolean>;
+    release(model: string): Promise<void>;
+    quota(model: string): Promise<void>;
+  };
   checkpointMs?: number;
   graceMs?: number;
   inactiveMs?: number;
@@ -155,6 +169,8 @@ export interface StoredCall {
   epoch: number;
   billedMs: number;
   turns: number;
+  /** Absent in calls stored before utterances were counted apart from the user's turns. */
+  utterances?: number;
   toolCalls: number;
   incidents: number;
   reconnects: number;
@@ -168,6 +184,11 @@ export interface StoredCall {
 }
 
 const WARNING_BEFORE_MS = 60_000;
+/**
+ * Added to a read's answer when the user spoke again while it ran: both Live models otherwise take an answer to the
+ * old request as the answer to the new one ("مفيش التزامات" from a balance read; .agents evidence F4).
+ */
+export const EARLIER_REQUEST_NOTE = "النتيجة دي لطلب قبل كلام المستخدم الأخير. استخدمها بس لو لسه بترد على اللي طلبه دلوقتي.";
 const CONFIRMATION_GRACE_MS = 30_000;
 const TRANSCRIPT_MAX_CHARS = 24_000;
 const COMPRESSION = { triggerTokens: 16_000, targetTokens: 8_000 };
@@ -190,7 +211,10 @@ export class CallSession {
   private epoch = 0;
   private billedMs = 0;
   private connectedSince: number | null = null;
+  /** The user's requests: each time they stop speaking or send typed words. Tool answers are tied to one of them. */
   private turns = 0;
+  /** The model's spoken utterances (each `turn_complete`); a thinking model says several per request. */
+  private utterances = 0;
   private toolCalls = 0;
   private incidents = 0;
   private reconnects = 0;
@@ -216,6 +240,10 @@ export class CallSession {
   private notes: string[] = [];
   private lastClientAudioAt = 0;
   private readonly cancelledTools = new Set<string>();
+  /** The extended-thinking model's lost-call apology held back (lost-call-guard.ts); null on other models. */
+  private guard: LostToolCallGuard | null = null;
+  private guardTimer: ReturnType<typeof setTimeout> | null = null;
+  private lostToolCalls = 0;
   private readonly toolAborts = new Map<string, AbortController>();
   private attachChain: Promise<void> = Promise.resolve();
 
@@ -223,7 +251,10 @@ export class CallSession {
     readonly identity: CallIdentity,
     readonly options: CallOptions,
     private readonly deps: CallSessionDeps,
-  ) {}
+  ) {
+    const claimsFailure = deps.brain.claimsFailure?.bind(deps.brain);
+    if (claimsFailure && options.model.includes("extended-thinking")) this.guard = new LostToolCallGuard({ claimsFailure });
+  }
 
   /** A call that another server (or this one, before a restart) was running. */
   static restore(stored: StoredCall, deps: CallSessionDeps): CallSession {
@@ -233,6 +264,7 @@ export class CallSession {
     session.epoch = stored.epoch;
     session.billedMs = stored.billedMs;
     session.turns = stored.turns;
+    session.utterances = stored.utterances ?? 0;
     session.toolCalls = stored.toolCalls;
     session.incidents = stored.incidents;
     session.reconnects = stored.reconnects;
@@ -279,12 +311,19 @@ export class CallSession {
     await this.persistState();
     this.send({ type: "state", state: resumed ? "reconnecting" : "connecting" });
 
+    if (this.deps.seat && !(await this.deps.seat.hold(this.options.model).catch(() => true))) {
+      this.send({ type: "error", code: "provider_unavailable", message: "كل الخطوط مشغولة دلوقتي. جرب كمان دقيقة، أو كمل بالكتابة في الشات.", fallback: "chat" });
+      await this.end("provider", { failed: !resumed });
+      return;
+    }
     const connected = await this.connectEngine(resumed);
-    if (!connected) {
+    if (connected !== "ok") {
       this.send({
         type: "error",
         code: "provider_unavailable",
-        message: "محرك الصوت مش متاح دلوقتي. تقدر تكمل بالكتابة في الشات.",
+        message: connected === "quota"
+          ? "المكالمات وصلت لحد الاستخدام المسموح دلوقتي. جرب بعد شوية، أو كمل بالكتابة في الشات."
+          : "محرك الصوت مش متاح دلوقتي. تقدر تكمل بالكتابة في الشات.",
         fallback: "chat",
       });
       await this.end("provider", { failed: !resumed });
@@ -315,7 +354,7 @@ export class CallSession {
     if (!channel.open) this.detach(channel);
   }
 
-  private async connectEngine(resumed: boolean): Promise<boolean> {
+  private async connectEngine(resumed: boolean): Promise<"ok" | "quota" | "failed"> {
     const { instruction, tools } = await this.deps.brain.prepare(this.identity, this.options);
     const attempt = async (handle: string | null) => {
       const engine = await this.deps.createEngine();
@@ -331,24 +370,32 @@ export class CallSession {
       });
       return engine;
     };
+    const failed = async (error: unknown): Promise<"quota" | "failed"> => {
+      if (error instanceof Error && error.message === "provider_quota") {
+        log.warn({ event: "voice.provider_quota", callId: this.callId, model: this.options.model }, "Provider refused the session for quota");
+        await this.deps.seat?.quota(this.options.model).catch(() => undefined);
+        return "quota";
+      }
+      log.warn({ event: "voice.engine_connect_failed", callId: this.callId, err: error }, "Engine unavailable");
+      return "failed";
+    };
     try {
       this.engine = await attempt(resumed ? this.handle : null);
-      return true;
+      return "ok";
     } catch (error) {
+      if (error instanceof Error && error.message === "provider_quota") return failed(error);
       if (resumed && this.handle) {
         // The provider no longer knows the session: start a fresh one; the opening note carries the recent turns.
         log.warn({ event: "voice.resume_handle_rejected", callId: this.callId, err: error }, "Starting a fresh provider session");
         this.handle = null;
         try {
           this.engine = await attempt(null);
-          return true;
+          return "ok";
         } catch (retryError) {
-          log.warn({ event: "voice.engine_connect_failed", callId: this.callId, err: retryError }, "Engine unavailable");
-          return false;
+          return failed(retryError);
         }
       }
-      log.warn({ event: "voice.engine_connect_failed", callId: this.callId, err: error }, "Engine unavailable");
-      return false;
+      return failed(error);
     }
   }
 
@@ -399,6 +446,8 @@ export class CallSession {
     switch (message.type) {
       case "speech_end":
         if (this.status !== "live" || !this.engine) return;
+        this.turns += 1;
+        this.guard?.newRequest();
         this.speechEndedAt = Date.now();
         this.modelBusy = true;
         this.engine.endOfSpeech();
@@ -406,6 +455,8 @@ export class CallSession {
         return;
       case "text":
         if (this.status !== "live" || !this.engine) return;
+        this.turns += 1;
+        this.guard?.newRequest();
         this.lastActivity = Date.now();
         this.speechEndedAt = Date.now();
         this.addTranscript("user", message.text);
@@ -439,17 +490,16 @@ export class CallSession {
   private onEngineEvent(engine: VoiceEngine, event: EngineEvent): void {
     if (engine !== this.engine || this.status === "ended") return;
     switch (event.type) {
-      case "audio":
+      case "audio": {
         this.replyStarted();
         this.modelBusy = true;
-        if (this.speechEndedAt !== null) {
-          this.firstAudioMs.push(Date.now() - this.speechEndedAt);
-          this.speechEndedAt = null;
-        }
         this.lastActivity = Date.now();
-        this.setState("speaking");
-        this.channel?.sendAudio(event.pcm);
+        const verdict = this.guard?.audio(event.pcm, event.sampleRate, Date.now()) ?? { kind: "pass" as const };
+        if (verdict.kind === "hold") this.armGuardTimer();
+        if (verdict.kind === "release") this.releaseHeld(verdict);
+        if (verdict.kind === "pass") this.playAudio(event.pcm);
         return;
+      }
       case "input_transcript":
         this.lastActivity = Date.now();
         this.addTranscript("user", event.text);
@@ -457,17 +507,21 @@ export class CallSession {
         this.deps.brain.onUserWords?.(event.text);
         return;
       case "output_transcript": {
-        this.addTranscript("assistant", event.text);
-        this.send({ type: "caption", role: "assistant", text: event.text });
-        this.applySpeechCheck(this.deps.brain.onAssistantWords?.(event.text) ?? null);
+        const verdict = this.guard?.words(event.text, Date.now()) ?? { kind: "pass" as const };
+        if (verdict.kind === "drop") this.onLostToolCall(verdict.retry);
+        else if (verdict.kind === "release") this.releaseHeld(verdict);
+        else if (verdict.kind === "pass") this.assistantSaid(event.text);
         return;
       }
-      case "tool_calls":
+      case "tool_calls": {
+        const held = this.guard?.toolCalled();
+        if (held?.kind === "release") this.releaseHeld(held);
         this.modelBusy = true;
         this.replyStarted();
         this.setState("thinking", this.deps.brain.waitDetail?.(event.calls));
         void this.runTools(event.calls);
         return;
+      }
       case "working":
         this.modelBusy = true;
         // Still working after it stopped speaking, or on what the user just said: not listening. While the user is
@@ -484,14 +538,18 @@ export class CallSession {
         return;
       case "interrupted":
         this.replyStarted();
+        this.guard?.interrupted();
         this.send({ type: "interrupted" });
         return;
-      case "turn_complete":
-        this.turns += 1;
+      case "turn_complete": {
+        const held = this.guard?.utteranceEnded(event.working === true);
+        if (held?.kind === "release") this.releaseHeld(held);
+        this.utterances += 1;
         this.applySpeechCheck(this.deps.brain.onTurnEnd?.() ?? null);
         // The extended-thinking model may stop speaking and keep working: until it says IDLE it is thinking.
         if (this.thinkingModel && this.state === "speaking") this.setState("thinking", this.stateDetail);
         return;
+      }
       case "idle":
         // A tool is still running, or (the standard model, whose turn ends with the call) its answer is still owed:
         // the call is not listening while the answer is being prepared.
@@ -515,6 +573,10 @@ export class CallSession {
       case "reconnected":
         return;
       case "closed":
+        if (event.reason === "provider_quota") {
+          void this.deps.seat?.quota(this.options.model).catch(() => undefined);
+          this.send({ type: "notice", kind: "degraded", message: "المكالمات وصلت لحد الاستخدام المسموح دلوقتي. كمل بالكتابة في الشات، أو جرب بعد شوية." });
+        }
         void this.end("provider");
         return;
       default:
@@ -524,6 +586,53 @@ export class CallSession {
 
   private get thinkingModel(): boolean {
     return this.options.model.includes("extended-thinking");
+  }
+
+  private playAudio(pcm: Buffer): void {
+    if (this.speechEndedAt !== null) {
+      this.firstAudioMs.push(Date.now() - this.speechEndedAt);
+      this.speechEndedAt = null;
+    }
+    this.setState("speaking");
+    this.channel?.sendAudio(pcm);
+  }
+
+  private assistantSaid(text: string): void {
+    this.addTranscript("assistant", text);
+    this.send({ type: "caption", role: "assistant", text });
+    this.applySpeechCheck(this.deps.brain.onAssistantWords?.(text) ?? null);
+  }
+
+  /** What the guard held turned out to be an answer: play and show it now, in order. */
+  private releaseHeld(held: { audio: Array<{ pcm: Buffer }>; words: string[] }): void {
+    if (this.guardTimer) clearTimeout(this.guardTimer);
+    this.guardTimer = null;
+    for (const chunk of held.audio) this.playAudio(chunk.pcm);
+    for (const words of held.words) this.assistantSaid(words);
+  }
+
+  private armGuardTimer(): void {
+    if (this.guardTimer) return;
+    this.guardTimer = setTimeout(() => {
+      this.guardTimer = null;
+      const held = this.guard?.tick(Date.now() + 1);
+      if (held?.kind === "release") this.releaseHeld(held);
+      else if (this.guard?.holding) this.armGuardTimer();
+    }, 950);
+  }
+
+  /**
+   * The extended model lost its own tool call and began apologising for a failure no tool had: the apology was held
+   * back and is dropped; the model is asked to call the tool again, or, with no retries left, to say plainly that it
+   * cannot reach that information in this call.
+   */
+  private onLostToolCall(retry: boolean): void {
+    if (this.guardTimer) clearTimeout(this.guardTimer);
+    this.guardTimer = null;
+    this.lostToolCalls += 1;
+    this.recordIncident("lost_tool_call", { retry });
+    const note = this.deps.brain.lostToolCallNote?.(retry);
+    if (note) this.sendNote(note, true);
   }
 
   /**
@@ -597,10 +706,16 @@ export class CallSession {
    */
   private async runTools(calls: ToolCallRequest[]): Promise<void> {
     const engine = this.engine;
+    const request = this.turns;
     this.runningTools += calls.length;
     await Promise.all(calls.map(async (call) => {
       const result = await this.runTool(call);
+      // A read that answers a request the user has since replaced says so; a write's outcome is reported as it is.
+      if (result && request !== this.turns && !this.deps.brain.writes?.(call.name)) {
+        result.response = { ...result.response, earlier_request: EARLIER_REQUEST_NOTE };
+      }
       this.runningTools = Math.max(0, this.runningTools - 1);
+      if (result) this.guard?.toolAnswered(result.response.ok !== false);
       if (!result || !engine || engine !== this.engine || this.status !== "live" || this.cancelledTools.has(call.id)) return;
       engine.sendToolResults([result]);
       if (this.runningTools === 0) this.expectReply();
@@ -718,7 +833,7 @@ export class CallSession {
     }
     if (Date.now() - this.lastCheckpoint >= (this.deps.checkpointMs ?? 15_000)) {
       this.lastCheckpoint = Date.now();
-      await Promise.all([this.checkpoint(), this.persistState()]);
+      await Promise.all([this.checkpoint(), this.persistState(), this.deps.seat?.hold(this.options.model).catch(() => true)]);
     }
   }
 
@@ -774,6 +889,8 @@ export class CallSession {
     return {
       profile: this.options.coach ? "coach" : "standard",
       thinkingLevel: this.thinkingModel ? this.options.thinkingLevel : null,
+      utterances: this.utterances,
+      lostToolCalls: this.lostToolCalls,
       toolCostUsd: this.toolCostUsd,
       firstAudioMs: {
         count: this.firstAudioMs.length,
@@ -815,6 +932,7 @@ export class CallSession {
       epoch: this.epoch,
       billedMs: this.billedNowMs(),
       turns: this.turns,
+      utterances: this.utterances,
       toolCalls: this.toolCalls,
       incidents: this.incidents,
       reconnects: this.reconnects,
@@ -838,6 +956,9 @@ export class CallSession {
 
   private closeEngine(): void {
     this.replyStarted();
+    if (this.guardTimer) clearTimeout(this.guardTimer);
+    this.guardTimer = null;
+    this.guard?.interrupted();
     this.notes = [];
     this.runningTools = 0;
     this.modelBusy = false;
@@ -873,6 +994,7 @@ export class CallSession {
       await this.deps.saveTranscript(this.callId, [...this.transcript, ...forgotten]).catch(() => undefined);
     }
     await this.deps.deleteState(this.callId).catch(() => undefined);
+    await this.deps.seat?.release(this.options.model).catch(() => undefined);
 
     const summary = this.deps.brain.summary?.() ?? { done: [], notDone: [] };
     this.send({ type: "ended", reason, summary: { ...summary, billedSeconds: progress.billedSeconds } });

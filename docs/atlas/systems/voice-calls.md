@@ -86,7 +86,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `voice` — Voice | Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway, the Gemini Live engine, the brain with its tools and the checks on what is said, Egyptian number speech, the post-call memory and the admin dashboard's figures. api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 37 |
+| `voice` — Voice | Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway, the Gemini Live engine, the brain with its tools and the checks on what is said, Egyptian number speech, the post-call memory and the admin dashboard's figures. api/services/entitlements/voice.ts decides who may call, for how long and on which model, counting the Cairo month. | 39 |
 | `web-voice-call` — Live voice call UI | The live voice call in the app. The rebuilt call: a store any screen can start the call from (src/lib/voice/call-store.ts), which keeps it running across pages; microphone capture filtered down to 16 kHz with speech detection that sends audio only while the user speaks; the /api/voice/v2 socket client that resumes a dropped call; playback of the assistant's voice; and the call screen with its cards, the Home button and the AI Center tab (src/components/voice). | 13 |
 
 ## API procedures
@@ -149,7 +149,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/voice-calls.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>55 files and declarations</summary>
+<details><summary>57 files and declarations</summary>
 
 - `api/boot.ts#job:voice-call-memory`
 - `api/boot.ts#ws:/api/voice/v2`
@@ -182,8 +182,10 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/voice/brain/voices.ts`
 - `api/services/voice/engine/gemini-live.ts`
 - `api/services/voice/engine/types.ts`
+- `api/services/voice/gateway/admission.ts`
 - `api/services/voice/gateway/call-session.ts`
 - `api/services/voice/gateway/index.ts`
+- `api/services/voice/gateway/lost-call-guard.ts`
 - `api/services/voice/gateway/persistence.ts`
 - `api/services/voice/gateway/pricing.ts`
 - `api/services/voice/gateway/socket.ts`

@@ -20,6 +20,12 @@ describe("extractSpokenNumbers", () => {
   it("marks an approximation", () => {
     expect(extractSpokenNumbers("حوالي تلات آلاف ونص جنيه")[0]).toMatchObject({ value: 3500, approximate: true, money: true });
   });
+
+  it("reads piasters as the fraction of the pounds before them, never as an amount of their own", () => {
+    expect(extractSpokenNumbers("تقدر تصرف خمسمية تلاتة وخمسين جنيه وتلاتة وتلاتين قرش في اليوم").map(({ value, money }) => [value, money]))
+      .toEqual([[553.33, true]]);
+    expect(extractSpokenNumbers("الكيس بخمسين قرش").map(({ value, money }) => [value, money])).toEqual([[0.5, false]]);
+  });
 });
 
 describe("SpokenNumberValidator", () => {
@@ -29,6 +35,12 @@ describe("SpokenNumberValidator", () => {
     expect(validator.addAssistantWords("حوالي تلات آلاف ونص جنيه لحد النهارده.")).toBeNull();
     expect(validator.endTurn()).toBeNull();
     expect(validator.addAssistantWords("يعني حوالي تلات آلاف جنيه بس.")).toBeNull();
+    expect(validator.endTurn()).toBeNull();
+  });
+
+  it("accepts an exact per-day figure said in pounds and piasters", () => {
+    const { validator } = setup([["تصرف في اليوم", 553.33]]);
+    expect(validator.addAssistantWords("يعني تقدر تصرف خمسمية تلاتة وخمسين جنيه وتلاتة وتلاتين قرش في اليوم.")).toBeNull();
     expect(validator.endTurn()).toBeNull();
   });
 

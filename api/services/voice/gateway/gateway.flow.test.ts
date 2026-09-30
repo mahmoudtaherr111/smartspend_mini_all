@@ -10,6 +10,7 @@ import { WebSocketServer } from "ws";
 import type { VoiceCard } from "../../../../contracts/voice-protocol";
 import { FakeGeminiLive, type FakeLiveConnection } from "../../../../tests/helpers/fake-gemini-live";
 import { AppClient, until } from "../../../../tests/helpers/voice-app-client";
+import { claimsFailure, LOST_CALL_RETRY_NOTE } from "../brain/claims";
 import { GeminiLiveEngine } from "../engine/gemini-live";
 import type { CallBrain, CallSessionDeps, StoredCall, ToolRunOutcome } from "./call-session";
 import type { CallPersistence } from "./persistence";
@@ -28,6 +29,8 @@ function brainFor(tools: ToolPlan, cardNote = "(ملاحظة من التطبيق
     },
     openingNote: () => "[greet]",
     writes: (name) => name === "confirm",
+    claimsFailure,
+    lostToolCallNote: (retry) => (retry ? LOST_CALL_RETRY_NOTE : "[give up]"),
     forgotten: () => ["مرتبه بينزل يوم 25"],
     async runTool(call) {
       const plan = tools[call.name];
@@ -189,6 +192,75 @@ describe("a call's turns", () => {
     expect(notesSent(live)).not.toContain("(ملاحظة من التطبيق: المستخدم أكد من الشاشة.)");
     live.sendTurnComplete("IDLE");
     await live.waitFor((m) => m.clientContent?.turns?.[0]?.parts?.[0]?.text === "(ملاحظة من التطبيق: المستخدم أكد من الشاشة.)");
+    app.send({ type: "end" });
+    await app.waitFor("ended");
+  });
+
+  it("keeps the extended model's apology for a tool call it lost from the user, and asks for the tool again", async () => {
+    tools = { read_balance: { ms: 10, outcome: { response: { ok: true, balance: 5000 } } } };
+    const { app, live } = await startCall("gemini-3.8-live-extended-thinking");
+    app.send({ type: "text", text: "معايا كام؟" });
+    live.sendInteractionStatus("IN_PROGRESS");
+    live.sendAudio(Buffer.from([1, 1]));
+    live.sendOutputTranscript("هشوفلك الرصيد.");
+    live.sendTurnComplete("IN_PROGRESS");
+    // No toolCall ever comes; the model apologises for a failure that did not happen.
+    live.sendAudio(Buffer.from([9, 9]));
+    live.sendOutputTranscript("يا فندم حصل خطأ في النظام");
+    await live.waitFor((m) => m.clientContent?.turns?.[0]?.parts?.[0]?.text === LOST_CALL_RETRY_NOTE);
+    live.sendAudio(Buffer.from([9, 8]));
+    live.sendInterrupted();
+    await app.waitFor("interrupted");
+    expect(app.audio.map((frame) => [...frame])).toEqual([[1, 1]]);
+    const captions = app.messages.flatMap((m) => (m.type === "caption" && m.role === "assistant" ? [m.text] : []));
+    expect(captions.join(" ")).not.toContain("خطأ");
+    expect(incidents).toContain("lost_tool_call");
+    // The retry works: the answer is heard.
+    live.sendToolCall([{ id: "r1", name: "read_balance" }]);
+    await live.waitFor((m) => Boolean(m.toolResponse));
+    live.sendAudio(Buffer.from([5, 5]));
+    live.sendOutputTranscript("معاك خمس تلاف.");
+    live.sendTurnComplete("IDLE");
+    await until(() => app.audio.some((frame) => frame[0] === 5));
+    app.send({ type: "end" });
+    await app.waitFor("ended");
+  });
+
+  it("releases a real answer that follows a filler after a short hold", async () => {
+    tools = {};
+    const { app, live } = await startCall("gemini-3.8-live-extended-thinking");
+    app.send({ type: "text", text: "المرتب بيطير" });
+    live.sendInteractionStatus("IN_PROGRESS");
+    live.sendAudio(Buffer.from([1, 1]));
+    live.sendTurnComplete("IN_PROGRESS");
+    live.sendAudio(Buffer.from([2, 2]));
+    live.sendOutputTranscript("طيب ");
+    await delay(100);
+    // Held: too few words yet to tell an answer from an apology.
+    expect(app.audio.map((frame) => frame[0])).toEqual([1]);
+    live.sendOutputTranscript("خلينا نبص سوا على أكتر حاجة بتصرف عليها");
+    await until(() => app.audio.some((frame) => frame[0] === 2));
+    expect(incidents).not.toContain("lost_tool_call");
+    app.send({ type: "end" });
+    await app.waitFor("ended");
+  });
+
+  it("tells the model a read answers the request the user replaced while it ran", async () => {
+    tools = {
+      read_balance: { ms: 150, outcome: { response: { ok: true, balance: 5000 } } },
+      read_commitments: { ms: 10, outcome: { response: { ok: true, due: 3000 } } },
+    };
+    const { app, live } = await startCall();
+    app.send({ type: "text", text: "معايا كام؟" });
+    live.sendToolCall([{ id: "b1", name: "read_balance" }]);
+    await delay(40);
+    app.send({ type: "text", text: "لا استنى، قولي الالتزامات بس" });
+    await delay(20);
+    live.sendToolCall([{ id: "c1", name: "read_commitments" }]);
+    const answers = async (id: string) =>
+      (await live.waitFor((m) => Boolean(m.toolResponse?.functionResponses.some((r) => r.id === id)))).toolResponse!.functionResponses.find((r) => r.id === id)!.response;
+    expect(await answers("c1")).not.toHaveProperty("earlier_request");
+    expect(await answers("b1")).toMatchObject({ ok: true, balance: 5000, earlier_request: expect.stringContaining("طلب قبل") });
     app.send({ type: "end" });
     await app.waitFor("ended");
   });

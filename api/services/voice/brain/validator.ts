@@ -19,11 +19,14 @@ const APPROXIMATE_BEFORE = /(حوالي|حوالى|تقريبا|تقريباً|�
 const CURRENCY_AFTER = /^\s*(جنيه|جنيهات|ج\.?م|ج(?=\s|$)|pound)/;
 const COUNT_AFTER = /^\s*(يوم|أيام|ايام|مرة|مرات|عملية|عمليات|شهر|شهور|اشهر|أشهر|سنة|سنين|دقيقة|دقايق|دقائق|ساعة|ساعات|في المية|في المائة|%|حاجة|حاجات|بند|بنود|نفر)/;
 const DATE_BEFORE = /(يوم|الساعة|سنة|عام|شهر)\s*$/;
+const PIASTERS_AFTER = /^\s*(قرش|قروش|قرشا|قرشاً)/;
+/** What may stand between the pounds and the piasters of one amount: "553 جنيه و33 قرش". */
+const POUNDS_THEN_PIASTERS = /^\s*(جنيه|جنيهات)?\s*و?\s*$/;
 
 /** The numbers in a stretch of speech, with what surrounds each one. */
 export function extractSpokenNumbers(text: string): Array<SpokenNumber & { settled: boolean; index: number }> {
   const parsed = parseArabicNumbers(text);
-  const out: Array<SpokenNumber & { settled: boolean; index: number }> = [];
+  const out: Array<SpokenNumber & { settled: boolean; index: number; end: number }> = [];
   const pattern = /\d+(?:\.\d+)?/g;
   let match: RegExpExecArray | null;
   let index = 0;
@@ -33,6 +36,18 @@ export function extractSpokenNumbers(text: string): Array<SpokenNumber & { settl
     const after = parsed.slice(match.index + match[0].length);
     const currency = CURRENCY_AFTER.test(after);
     const isYear = value >= 1900 && value <= 2100 && Number.isInteger(value) && !currency;
+    // Piasters are the fraction of the pounds before them ("553 جنيه و33 قرش" is 553.33), never an amount of their own.
+    if (PIASTERS_AFTER.test(after)) {
+      const previous = out[out.length - 1];
+      const between = previous ? parsed.slice(previous.end, match.index) : "";
+      if (previous && previous.money && value < 100 && POUNDS_THEN_PIASTERS.test(between)) {
+        previous.value = Math.round((previous.value + value / 100) * 100) / 100;
+        previous.end = match.index + match[0].length;
+        continue;
+      }
+      out.push({ value: value / 100, approximate: false, money: false, settled: true, index: index++, end: match.index + match[0].length });
+      continue;
+    }
     const money = currency || (value >= 20 && !COUNT_AFTER.test(after) && !DATE_BEFORE.test(before) && !isYear);
     // A number is settled once two more words follow it: "تلتمية و" may still become "تلتمية وعشرين".
     const followingWords = after.trim().split(/\s+/).filter((word) => word && !/^\d/.test(word));
@@ -42,9 +57,10 @@ export function extractSpokenNumbers(text: string): Array<SpokenNumber & { settl
       money,
       settled: followingWords.length >= 2,
       index: index++,
+      end: match.index + match[0].length,
     });
   }
-  return out;
+  return out.map((number) => ({ value: number.value, approximate: number.approximate, money: number.money, settled: number.settled, index: number.index }));
 }
 
 export interface Mismatch {
