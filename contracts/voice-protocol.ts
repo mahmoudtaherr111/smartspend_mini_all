@@ -16,6 +16,9 @@ export const VOICE_RESUME_GRACE_MS = 45_000;
 /** Longest typed message accepted in a call. */
 export const VOICE_TEXT_MAX_LENGTH = 500;
 
+/** The call's two modes: quick answers on the plan's model, or "Ultra Thinking" (تفكير أعمق) on the extended model. */
+export type VoiceMode = "standard" | "ultra";
+
 /** Audio encodings the app can offer; the server answers with the one it picked in `ready`. */
 export type VoiceCodec = "pcm16";
 export type VoiceClientPlatform = "web" | "pwa" | "android" | "ios";
@@ -40,6 +43,8 @@ export type VoiceClientMessage =
   /** A tap on a draft card: an explicit confirmation or cancellation of that draft. */
   | { type: "confirm"; draftId: string }
   | { type: "cancel"; draftId: string }
+  /** Switch the call to the other mode from the next turn on. */
+  | { type: "mode"; mode: VoiceMode }
   | { type: "end" }
   | { type: "ping"; t: number };
 
@@ -142,7 +147,15 @@ export type VoiceServerMessage =
       maxSeconds: number;
       /** True when this `ready` continues a call after a reconnect. */
       resumed: boolean;
+      /** The mode the call is in, and whether the user may switch to Ultra Thinking. Absent from older servers. */
+      mode?: VoiceMode;
+      ultraAvailable?: boolean;
     }
+  /**
+   * A mode switch: `switching` while the new model connects, then `active`, or `refused` (with why) when the call
+   * stays as it was.
+   */
+  | { type: "mode"; mode: VoiceMode; status: "switching" | "active" | "refused"; message?: string }
   | { type: "state"; state: VoiceCallState; detail?: VoiceWaitDetail }
   /** Live captions; shown, never stored. */
   | { type: "caption"; role: "user" | "assistant"; text: string }
@@ -206,6 +219,8 @@ export function parseVoiceClientMessage(raw: string): VoiceClientMessage | null 
       return typeof value.draftId === "string" && ID.test(value.draftId) ? { type: value.type, draftId: value.draftId } : null;
     case "ping":
       return typeof value.t === "number" && Number.isFinite(value.t) ? { type: "ping", t: value.t } : null;
+    case "mode":
+      return value.mode === "standard" || value.mode === "ultra" ? { type: "mode", mode: value.mode } : null;
     default:
       return null;
   }

@@ -5,8 +5,9 @@
  *   npx tsx scripts/voice-eval/run.ts --arms coach:high,coach:medium,coach:low --reps 2 --split tuning
  *   npx tsx scripts/voice-eval/run.ts --cases consent-accept,debts-both-ways --arms coach:high
  *
- * Arms: `coach:<level>` (the coach's instructions and tools on gemini-3.8-live-extended-thinking), `coach-live` (the
- * same on gemini-3.8-live, for comparison) or `standard` (the standard call on gemini-3.8-live). For each case and repetition the arms run back to back in a shuffled
+ * Arms: `ultra:<level>` (Ultra Thinking: the coach with its Ultra section on gemini-3.8-live-extended-thinking),
+ * `coach:<level>` (the coach without it on the extended model), `coach-live` (the coach on gemini-3.8-live) or
+ * `standard` (the standard call on gemini-3.8-live). For each case and repetition the arms run back to back in a shuffled
  * order, so provider load falls on all of them alike. Typed turns test understanding and tools, not the
  * microphone: no result here says anything about speech recognition or playback.
  *
@@ -40,6 +41,8 @@ interface Arm {
   coach: boolean;
   model: string;
   level: "low" | "medium" | "high";
+  /** Ultra Thinking: the coach's instructions with its Ultra section, on the extended model. */
+  mode?: "standard" | "ultra";
 }
 
 function parseArms(spec: string): Arm[] {
@@ -47,8 +50,10 @@ function parseArms(spec: string): Arm[] {
     if (raw === "standard") return { id: raw, coach: false, model: "gemini-3.8-live", level: "low" as const };
     // The coach's instructions and tools on the standard Live model: a comparison arm, not a setting anyone gets.
     if (raw === "coach-live") return { id: raw, coach: true, model: "gemini-3.8-live", level: "low" as const };
-    const level = raw.split(":")[1];
+    const [kind, level] = raw.split(":");
     if (level !== "low" && level !== "medium" && level !== "high") throw new Error(`unknown arm ${raw}`);
+    if (kind === "ultra") return { id: raw, coach: true, model: "gemini-3.8-live-extended-thinking", level, mode: "ultra" as const };
+    if (kind !== "coach") throw new Error(`unknown arm ${raw}`);
     return { id: raw, coach: true, model: "gemini-3.8-live-extended-thinking", level };
   });
 }
@@ -179,6 +184,10 @@ async function main(): Promise<void> {
     };
     const session = new sessionModule.CallSession(identity, {
       model: arm.model, voiceName: "Kore", thinkingLevel: arm.level, coach: arm.coach, maxSeconds: 900, costBudgetUsd: null, client: "web",
+      mode: arm.mode ?? "standard",
+      modes: arm.mode === "ultra"
+        ? { standard: { model: "gemini-3.8-live", thinkingLevel: "low" }, ultra: { model: arm.model, thinkingLevel: arm.level } }
+        : undefined,
     }, {
       createEngine: () => {
         const engine = new engineModule.GeminiLiveEngine({ apiKeys });

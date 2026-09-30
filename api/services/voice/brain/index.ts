@@ -20,7 +20,7 @@ import {
 import { DraftBook } from "./drafts";
 import { FactLedger } from "./facts";
 import { buildCoachInstruction } from "./coach-instructions";
-import { buildInstruction, openingNote } from "./instructions";
+import { buildInstruction, modeNote, openingNote } from "./instructions";
 import { markAsked } from "./profile-questions";
 import { loadCallSnapshot } from "./snapshot";
 import { appHelpTool } from "./tools/app-help";
@@ -123,13 +123,15 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       const voiceGender = VOICE_CHOICES[callOptions.voiceName]?.gender ?? "female";
       return {
         instruction: coach
-          ? buildCoachInstruction({ snapshot, voiceGender, noteTag })
+          ? buildCoachInstruction({ snapshot, voiceGender, noteTag, mode: callOptions.mode, ultraAvailable: Boolean(callOptions.modes?.ultra) })
           : buildInstruction({ snapshot, voiceGender, noteTag }),
         tools: [...tools.values()].map((tool) => tool.declaration),
       };
     },
 
     openingNote,
+
+    modeNote,
 
     appNote(text) {
       const inner = text.replace(/^\(ملاحظة من التطبيق[^:]*:\s*/, "").replace(/\)\s*$/, "");

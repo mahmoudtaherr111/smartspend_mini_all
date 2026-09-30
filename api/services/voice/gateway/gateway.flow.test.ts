@@ -28,6 +28,7 @@ function brainFor(tools: ToolPlan, cardNote = "(ملاحظة من التطبيق
       return { instruction: "انت سمارت", tools: Object.keys(tools).map((name) => ({ name, description: name, parameters: { type: "object", properties: {} } })) };
     },
     openingNote: () => "[greet]",
+    modeNote: (mode) => `[mode:${mode}]`,
     writes: (name) => name === "confirm",
     claimsFailure,
     lostToolCallNote: (retry) => (retry ? LOST_CALL_RETRY_NOTE : "[give up]"),
@@ -93,12 +94,18 @@ describe("a call's turns", () => {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
-  async function startCall(model = "gemini-3.8-live"): Promise<{ app: AppClient; live: FakeLiveConnection }> {
+  const MODES = {
+    standard: { model: "gemini-3.8-live", thinkingLevel: "low" as const },
+    ultra: { model: "gemini-3.8-live-extended-thinking", thinkingLevel: "low" as const },
+  };
+
+  async function startCall(model = "gemini-3.8-live", modes?: TicketPayload["modes"]): Promise<{ app: AppClient; live: FakeLiveConnection }> {
     const ticket = `tk_${Math.random().toString(36).slice(2, 14)}`;
     tickets.set(ticket, {
       callId: `vc_flow${Math.random().toString(36).slice(2, 12)}`,
       userId: 7, userType: "local", plan: "pro", role: "user",
       model, voiceName: "Kore", thinkingLevel: "high", maxSeconds: 120, costBudgetUsd: null, client: "web",
+      coach: true, mode: "standard", modes,
     });
     const session = fake.nextSession();
     const app = await AppClient.connect(url);
@@ -261,6 +268,59 @@ describe("a call's turns", () => {
       (await live.waitFor((m) => Boolean(m.toolResponse?.functionResponses.some((r) => r.id === id)))).toolResponse!.functionResponses.find((r) => r.id === id)!.response;
     expect(await answers("c1")).not.toHaveProperty("earlier_request");
     expect(await answers("b1")).toMatchObject({ ok: true, balance: 5000, earlier_request: expect.stringContaining("طلب قبل") });
+    app.send({ type: "end" });
+    await app.waitFor("ended");
+  });
+
+  it("switches a call to Ultra Thinking with its conversation, and tells the app", async () => {
+    tools = {};
+    const { app, live } = await startCall("gemini-3.8-live", MODES);
+    app.send({ type: "text", text: "نفسي أجيب موبايل بتلاتين ألف" });
+    live.sendOutputTranscript("حلو، خلينا نشوف.");
+    live.sendAudio(Buffer.from([1]));
+    live.sendTurnComplete();
+    await until(() => app.messages.some((m) => m.type === "caption" && m.role === "assistant"));
+    const next = fake.nextSession();
+    app.send({ type: "mode", mode: "ultra" });
+    const ultra = await next;
+    expect((ultra.received[0].setup as { model?: string }).model).toBe("models/gemini-3.8-live-extended-thinking");
+    // The new session gets the conversation first, as history, then the note about the switch.
+    const history = await ultra.waitFor((m) => Boolean(m.clientContent));
+    expect(history.clientContent?.turns.map((t) => [t.role, t.parts[0].text])).toEqual([
+      ["user", "نفسي أجيب موبايل بتلاتين ألف"],
+      ["model", "حلو، خلينا نشوف."],
+    ]);
+    await ultra.waitFor((m) => (m.clientContent?.turns?.[0]?.parts?.[0]?.text ?? "") === "[mode:ultra]");
+    await until(() => app.messages.some((m) => m.type === "mode" && m.status === "active" && m.mode === "ultra"));
+    expect(app.messages.filter((m) => m.type === "mode").map((m) => m.type === "mode" && m.status)).toEqual(["switching", "active"]);
+    app.send({ type: "end" });
+    await app.waitFor("ended");
+    void live;
+  });
+
+  it("goes back to the mode it was in, and says so, when the new model cannot connect", async () => {
+    tools = {};
+    const { app } = await startCall("gemini-3.8-live", MODES);
+    fake.rejectModels(["gemini-3.8-live-extended-thinking"]);
+    app.send({ type: "text", text: "المرتب بيطير" });
+    const back = fake.nextSession(5_000);
+    app.send({ type: "mode", mode: "ultra" });
+    const standard = await back;
+    expect((standard.received[0].setup as { model?: string }).model).toBe("models/gemini-3.8-live");
+    await until(() => app.messages.some((m) => m.type === "mode" && m.status === "refused"));
+    expect(app.messages.filter((m) => m.type === "mode").at(-1)).toMatchObject({ mode: "standard", status: "refused", message: expect.stringContaining("كملنا عادي") });
+    expect(app.messages.some((m) => m.type === "ended")).toBe(false);
+    app.send({ type: "end" });
+    await app.waitFor("ended");
+  });
+
+  it("refuses Ultra Thinking when the call was not offered it", async () => {
+    tools = {};
+    const { app } = await startCall("gemini-3.8-live", { standard: MODES.standard, ultra: null });
+    app.send({ type: "mode", mode: "ultra" });
+    await until(() => app.messages.some((m) => m.type === "mode"));
+    expect(app.messages.find((m) => m.type === "mode")).toMatchObject({ mode: "standard", status: "refused" });
+    expect(fake.connections).toHaveLength(1);
     app.send({ type: "end" });
     await app.waitFor("ended");
   });

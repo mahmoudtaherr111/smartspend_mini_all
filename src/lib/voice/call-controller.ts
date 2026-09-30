@@ -16,7 +16,7 @@ import {
 } from "@contracts/voice-protocol";
 import { attachMicrophone, outputLevel, releaseCallAudio, ScreenWake, type PrimedAudio } from "./audio-io";
 import { CallConnection, type ConnectionClose, type ConnectionEvents, type SocketLike } from "./call-connection";
-import type { CallEnding, CallNotice, StartRequest, TimelineItem, VoiceCallView } from "./call-store";
+import { preferredMode, type CallEnding, type CallNotice, type StartRequest, type TimelineItem, type VoiceCallView } from "./call-store";
 import { Downsampler } from "./downsampler";
 import { PcmPlayer } from "./pcm-player";
 import { FRAME_SAMPLES, SpeechDetector } from "./speech-detector";
@@ -123,7 +123,7 @@ export class VoiceCallController {
     const { audio, request } = this.options;
     const client = clientPlatform();
     const [outcome, stream] = await Promise.all([
-      request.startCall({ voice: request.voice, client }).catch(() => null),
+      request.startCall({ voice: request.voice, client, mode: preferredMode() }).catch(() => null),
       audio.mic.then(
         (granted) => granted,
         () => null,
@@ -189,6 +189,9 @@ export class VoiceCallController {
           activity: "listening",
           meter: { ...view.meter, liveSince: Date.now() },
           notice: stale ? null : view.notice,
+          mode: message.mode ?? "standard",
+          ultraAvailable: message.ultraAvailable === true,
+          modeSwitching: false,
         });
       },
       message: (message) => this.onServerMessage(message),
@@ -244,6 +247,14 @@ export class VoiceCallController {
         return;
       case "notice":
         this.showNotice({ kind: message.kind, message: message.message }, message.kind === "time_warning" ? 12_000 : 6_000);
+        return;
+      case "mode":
+        if (message.status === "switching") {
+          this.patch({ modeSwitching: true });
+          return;
+        }
+        this.patch({ mode: message.mode, modeSwitching: false });
+        if (message.status === "refused" && message.message) this.showNotice({ kind: "degraded", message: message.message }, 6_000);
         return;
       default:
         // `ended` and `error` are read when the socket closes.
@@ -484,6 +495,11 @@ export class VoiceCallController {
     this.speechEndedAt = Date.now();
     this.patch({ activity: "thinking" });
     return true;
+  }
+
+  /** Asks the server to move the call to the other mode; the view follows the server's answer. */
+  setMode(mode: "standard" | "ultra"): void {
+    if (this.connection?.send({ type: "mode", mode })) this.patch({ modeSwitching: true });
   }
 
   cardAction(action: "confirm" | "cancel", draftId: string): void {

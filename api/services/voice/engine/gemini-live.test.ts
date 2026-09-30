@@ -46,6 +46,14 @@ describe("buildLiveSetup", () => {
     expect(message.generationConfig?.thinkingConfig).toEqual({ thinkingLevel: "MEDIUM" });
     expect(message.sessionResumption).toEqual({ handle: "h1" });
   });
+
+  it("asks for history in client content only for a fresh session that has some", () => {
+    const history = [{ role: "user" as const, text: "معايا ستة آلاف" }];
+    expect((buildLiveSetup({ ...setup, history }, null).setup as Record<string, unknown>).historyConfig)
+      .toEqual({ initialHistoryInClientContent: true });
+    expect((buildLiveSetup({ ...setup, history }, "h1").setup as Record<string, unknown>).historyConfig).toBeUndefined();
+    expect((buildLiveSetup(setup, null).setup as Record<string, unknown>).historyConfig).toBeUndefined();
+  });
 });
 
 describe("readLiveUsage", () => {
@@ -110,6 +118,18 @@ describe("GeminiLiveEngine against a fake Live API", () => {
     await engine.connect(setup);
     expect((await session).apiKey).toBe("good-key");
     expect(failures).toEqual([0]);
+  });
+
+  it("sends a fresh session the call's history before anything else, as roles and text", async () => {
+    engine = new GeminiLiveEngine({ apiKeys: ["good-key"], url: fake.url });
+    const session = fake.nextSession();
+    await engine.connect({ ...setup, history: [{ role: "user", text: "معايا ستة آلاف" }, { role: "model", text: "تمام" }] });
+    const live = await session;
+    const first = await live.waitFor((m) => Boolean(m.clientContent));
+    expect(first.clientContent).toEqual({
+      turns: [{ role: "user", parts: [{ text: "معايا ستة آلاف" }] }, { role: "model", parts: [{ text: "تمام" }] }],
+      turnComplete: true,
+    });
   });
 
   it("never tries another key after a quota refusal: limits are per project", async () => {

@@ -187,15 +187,18 @@ function CoachSettings({ formData, updateField }: Props) {
   return (
     <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-4">
       <div>
-        <div className="font-bold text-sm">سمارت المدرب</div>
+        <div className="font-bold text-sm">سمارت المدرب و«تفكير أعمق»</div>
         <p className="text-xs text-slate-500 mt-1">
-          مكالمة بتعليمات وأدوات المدرب: بيقرا الديون والأقساط والمواسم، وكل حسبة بتتعمل في الكود مش في الموديل. مابتتفعّلش
-          لحد غير اللي في القايمة أو النسبة. ابدأ بحسابات تجربة، وبعدين ٥٪ ثم ٢٥٪ ثم ١٠٠٪ بعد ما النتايج تعدّي.
+          المدرب: تعليمات وأدوات بتقرا الالتزامات والديون والأقساط والخطة، وكل حسبة بتتعمل في الكود مش في الموديل، على موديل
+          الباقة العادي. مابيتفعّلش لحد غير اللي في القايمة أو النسبة: حسابات تجربة، وبعدين ٥٪ ثم ٢٥٪ ثم ١٠٠٪ بعد ما النتايج
+          تعدّي. «تفكير أعمق» زرار في شاشة المكالمة لمستخدمين المدرب في الباقات اللي تفعّلها تحت: بينقل المكالمة للموديل
+          اللي بيفكر أعمق، وهو أبطأ وبيستهلك توكنز أكتر بكتير، وجوجل لسه بيضيّع جزء من طلبات الأدوات عليه (الحارس بيخبي ده
+          ويطلب تاني). سيبه مقفول لحد ما التقييم يعدّي.
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <FieldLabel hint="الموديل المستهدف للمدرب. مابيتبدلش لوحده لو فشل: المكالمة بتقول إن المحرك مش متاح.">موديل المدرب</FieldLabel>
+          <FieldLabel hint="موديل «تفكير أعمق». مابيتبدلش لوحده لو فشل: المكالمة بتقول كده وترجع للعادي قدام المستخدم.">موديل «تفكير أعمق»</FieldLabel>
           <Select value={formData.voice_coach_model || "gemini-3.8-live-extended-thinking"} onValueChange={(v) => updateField("voice_coach_model", v)}>
             <SelectTrigger className="h-8 bg-slate-50 dark:bg-slate-900 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -204,8 +207,8 @@ function CoachSettings({ formData, updateField }: Props) {
           </Select>
         </div>
         <div className="space-y-1">
-          <FieldLabel hint="high هو المستهدف. low وmedium للمقارنة بس، مش لتوفير التكلفة من غير قرار.">مستوى تفكير المدرب</FieldLabel>
-          <Select value={formData.voice_coach_thinking_level || "high"} onValueChange={(v) => updateField("voice_coach_thinking_level", v)}>
+          <FieldLabel hint="low هو اللي بيتأهل دلوقتي (قرار 0017). medium أبطأ وماظهرش فرق مثبت؛ high اتقاس وفشل. غيّره بس بعد تقييم.">مستوى التفكير</FieldLabel>
+          <Select value={formData.voice_coach_thinking_level || "low"} onValueChange={(v) => updateField("voice_coach_thinking_level", v)}>
             <SelectTrigger className="h-8 bg-slate-50 dark:bg-slate-900 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               {VOICE_THINKING_LEVELS.map((level) => <SelectItem key={level} value={level}>{level}</SelectItem>)}
@@ -213,7 +216,7 @@ function CoachSettings({ formData, updateField }: Props) {
           </Select>
         </div>
         <div className="space-y-1">
-          <FieldLabel hint="نسبة المستخدمين اللي بياخدوا المدرب (٠–١٠٠). نفس المستخدم بيفضل جوه لما النسبة تزيد.">نسبة الطرح (٪)</FieldLabel>
+          <FieldLabel hint="نسبة المستخدمين اللي بياخدوا المدرب (٠–١٠٠). نفس المستخدم بيفضل جوه لما النسبة تزيد.">نسبة طرح المدرب (٪)</FieldLabel>
           <Input
             type="number"
             min="0"
@@ -234,6 +237,51 @@ function CoachSettings({ formData, updateField }: Props) {
             className="h-8 font-mono bg-slate-50 dark:bg-slate-900"
           />
         </div>
+      </div>
+      <div className="space-y-2">
+        <FieldLabel hint="الباقة هنا اشتراك المستخدم في SmartSpend، مش صلاحية الأدمن ومش باقة جوجل.">«تفكير أعمق» متاح في باقة</FieldLabel>
+        <div className="flex flex-wrap gap-4">
+          {PLANS.map((plan) => {
+            const key = `voice_ultra_enabled_${plan.key}`;
+            return (
+              <label key={key} className="flex items-center gap-2 text-xs">
+                <Switch checked={formData[key] === "true"} onCheckedChange={(checked) => updateField(key, String(checked))} />
+                {plan.label}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Live calls at once, from the Google project's real limits: one pool per model across all servers. */
+function CapacitySettings({ formData, updateField }: Props) {
+  const fields = [
+    { key: "voice_max_concurrent_calls", fallback: "20", label: "مكالمات في نفس الوقت (الموديل العادي)" },
+    { key: "voice_ultra_max_concurrent_calls", fallback: "3", label: "مكالمات في نفس الوقت («تفكير أعمق»)" },
+    { key: "voice_max_calls_per_user", fallback: "1", label: "مكالمات شغالة لكل مستخدم" },
+  ];
+  return (
+    <div className="space-y-2">
+      <FieldLabel hint="حدود جوجل على المشروع كله ولكل موديل (AI Studio ← Rate limits). القيم الافتراضية مؤقتة ومش سعة متقاسة. ٠ = من غير حد.">
+        السعة
+      </FieldLabel>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {fields.map((field) => (
+          <div key={field.key} className="space-y-1">
+            <span className="text-xs text-slate-500">{field.label}</span>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={formData[field.key] ?? field.fallback}
+              onChange={(e) => updateField(field.key, e.target.value)}
+              className="h-8 font-mono bg-slate-50 dark:bg-slate-900"
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -329,6 +377,8 @@ export function AdminVoiceCallSection({ formData, updateField }: Props) {
         </div>
 
         <CoachSettings formData={formData} updateField={updateField} />
+
+        <CapacitySettings formData={formData} updateField={updateField} />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {TEXT_MODEL_SETTINGS.map((setting) => (

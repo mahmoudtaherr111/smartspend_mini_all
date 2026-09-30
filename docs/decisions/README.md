@@ -24,3 +24,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0014](0014-migrations-build-the-schema.md) | The migrations build the schema: a guarded reconcile migration, `db:doctor`, and a CI check |
 | [0015](0015-roles-before-categories.md) | Every number and every word gets its role before anything is classified |
 | [0016](0016-voice-coach-profile.md) | The coach call: the live model reasons, the app computes and writes, behind a rollout |
+| [0017](0017-ultra-thinking-mode.md) | Ultra Thinking: a mode the user switches to, on the extended model at LOW, off until qualified |

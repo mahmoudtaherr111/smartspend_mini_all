@@ -3,7 +3,8 @@
 - Status: accepted, implemented in `api/services/entitlements/voice.ts` (who gets it),
   `api/services/voice/brain/coach-instructions.ts`, `api/services/voice/brain/tools/calculate.ts` and
   `COACH_TOOLS` in `api/services/voice/brain/index.ts`; the rollout is at 0 until the call passes its qualification.
-- Decided and recorded: 2026-09-29.
+- Decided and recorded: 2026-09-29. Point 2 amended by [0017](0017-ultra-thinking-mode.md): the coach talks on the plan's
+  model, and its model and level became the Ultra Thinking mode the user switches to.
 
 ## Context
 The standard call answered questions and recorded expenses, but judged hard questions through `think`: a fast text

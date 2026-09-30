@@ -4,7 +4,7 @@
  */
 import { randomBytes, randomUUID } from "crypto";
 import { voiceCalls } from "../../../../db/schema";
-import type { VoiceClientPlatform } from "../../../../contracts/voice-protocol";
+import type { VoiceClientPlatform, VoiceMode } from "../../../../contracts/voice-protocol";
 import { executeSlidingWindowRateLimit } from "../../../lib/redis-client";
 import { mapModelName } from "../../../lib/model-mapper";
 import { db } from "../../../queries/connection";
@@ -26,6 +26,10 @@ export interface TicketPayload {
   thinkingLevel: VoiceEntitlements["thinkingLevel"];
   /** The coach call's instructions and tools (api/services/voice/brain). */
   coach: boolean;
+  /** The mode the call starts in; `model` and `thinkingLevel` are that mode's. Absent in older tickets: standard. */
+  mode?: VoiceMode;
+  /** What each mode runs on; `ultra` null when the user is not offered it. */
+  modes?: { standard: { model: string; thinkingLevel: VoiceEntitlements["thinkingLevel"] }; ultra: { model: string; thinkingLevel: VoiceEntitlements["thinkingLevel"] } | null };
   maxSeconds: number;
   costBudgetUsd: number | null;
   client: VoiceClientPlatform;
@@ -33,7 +37,7 @@ export interface TicketPayload {
 
 export type StartCallResult =
   | { kind: "blocked"; reason: string; message: string }
-  | { kind: "ok"; callId: string; ticket: string; maxSeconds: number; remainingSeconds: number; voice: string };
+  | { kind: "ok"; callId: string; ticket: string; maxSeconds: number; remainingSeconds: number; voice: string; mode: VoiceMode; ultraAvailable: boolean };
 
 const BLOCKED_MESSAGES: Record<string, string> = {
   disabled: "المكالمة الصوتية مش متاحة في باقتك الحالية.",
@@ -49,7 +53,7 @@ const BLOCKED_MESSAGES: Record<string, string> = {
 
 export async function startVoiceCall(
   user: VoiceEntitlementUser,
-  input: { voice?: string; client: VoiceClientPlatform },
+  input: { voice?: string; client: VoiceClientPlatform; mode?: VoiceMode },
 ): Promise<StartCallResult> {
   const entitlements = await getVoiceEntitlements(user);
   const reason = entitlements.blockedReason;
@@ -63,7 +67,13 @@ export async function startVoiceCall(
 
   const callId = `vc_${randomUUID().replace(/-/g, "")}`;
   const voiceName = resolveVoice(input.voice);
-  const model = mapModelName(entitlements.model);
+  // Ultra Thinking only when asked for and offered; otherwise the plan's model. Never a silent swap either way.
+  const modes = {
+    standard: { model: mapModelName(entitlements.model), thinkingLevel: entitlements.thinkingLevel },
+    ultra: entitlements.ultra ? { model: mapModelName(entitlements.ultra.model), thinkingLevel: entitlements.ultra.thinkingLevel } : null,
+  };
+  const mode: VoiceMode = input.mode === "ultra" && modes.ultra ? "ultra" : "standard";
+  const { model, thinkingLevel } = mode === "ultra" ? modes.ultra! : modes.standard;
   // A seat in the model's shared pool before anything is written: a full pool or a quota pause is said now, not after
   // the app has connected. The call renews the seat while it lives and gives it back when it ends.
   const seat = { pool: model, callId, user: { id: user.id, type: user.type } };
@@ -96,8 +106,10 @@ export async function startVoiceCall(
     role: String(user.role ?? "user"),
     model,
     voiceName,
-    thinkingLevel: entitlements.thinkingLevel,
+    thinkingLevel,
     coach: entitlements.coach,
+    mode,
+    modes,
     maxSeconds: entitlements.allowedCallSeconds,
     costBudgetUsd: entitlements.dailyCostCapUsd > 0
       ? Math.max(0, entitlements.dailyCostCapUsd - entitlements.spentTodayUsd)
@@ -112,5 +124,7 @@ export async function startVoiceCall(
     maxSeconds: entitlements.allowedCallSeconds,
     remainingSeconds: entitlements.remainingSecondsThisMonth,
     voice: voiceName,
+    mode,
+    ultraAvailable: Boolean(modes.ultra),
   };
 }

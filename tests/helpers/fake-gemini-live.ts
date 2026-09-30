@@ -136,13 +136,18 @@ export class FakeGeminiLive {
 
   private constructor(
     private readonly server: WebSocketServer,
-    private readonly options: { rejectKeys: string[]; quotaKeys: string[]; completeSetup: boolean },
+    private readonly options: { rejectKeys: string[]; quotaKeys: string[]; rejectModels: string[]; completeSetup: boolean },
   ) {
     server.on("connection", (socket, request) => {
       const apiKey = String(request.headers["x-goog-api-key"] ?? "");
       const connection = new FakeLiveConnection(socket, apiKey);
       this.connections.push(connection);
-      void connection.waitFor((m) => Boolean(m.setup), 5_000).then(() => {
+      void connection.waitFor((m) => Boolean(m.setup), 5_000).then((first) => {
+        const model = String((first.setup as { model?: string } | undefined)?.model ?? "");
+        if (this.options.rejectModels.some((name) => model.endsWith(name))) {
+          socket.close(1008, "model unavailable");
+          return;
+        }
         if (this.options.rejectKeys.includes(apiKey)) {
           socket.close(1008, "API key not valid");
           return;
@@ -159,10 +164,20 @@ export class FakeGeminiLive {
     });
   }
 
-  static async start(options: Partial<{ rejectKeys: string[]; quotaKeys: string[]; completeSetup: boolean }> = {}): Promise<FakeGeminiLive> {
+  static async start(options: Partial<{ rejectKeys: string[]; quotaKeys: string[]; rejectModels: string[]; completeSetup: boolean }> = {}): Promise<FakeGeminiLive> {
     const server = new WebSocketServer({ port: 0, host: "127.0.0.1" });
     await new Promise<void>((resolve) => server.once("listening", () => resolve()));
-    return new FakeGeminiLive(server, { rejectKeys: options.rejectKeys ?? [], quotaKeys: options.quotaKeys ?? [], completeSetup: options.completeSetup ?? true });
+    return new FakeGeminiLive(server, {
+      rejectKeys: options.rejectKeys ?? [],
+      quotaKeys: options.quotaKeys ?? [],
+      rejectModels: options.rejectModels ?? [],
+      completeSetup: options.completeSetup ?? true,
+    });
+  }
+
+  /** Sessions asking for these models are closed during setup from now on. */
+  rejectModels(models: string[]): void {
+    this.options.rejectModels = models;
   }
 
   get url(): string {

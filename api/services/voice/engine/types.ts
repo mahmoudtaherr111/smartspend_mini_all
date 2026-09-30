@@ -26,6 +26,11 @@ export interface EngineSetup {
   compression: { triggerTokens: number; targetTokens: number };
   /** Continue an earlier provider session (after a dropped connection) instead of starting a new one. */
   resumptionHandle?: string;
+  /**
+   * The conversation so far, for a fresh session that continues a call (another model, or a handle the provider no
+   * longer knows). Sent before the first turn as history, which does not make the model answer. Ignored on resumption.
+   */
+  history?: Array<{ role: "user" | "model"; text: string }>;
 }
 
 export interface ToolCallRequest {

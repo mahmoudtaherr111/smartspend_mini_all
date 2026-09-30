@@ -16,6 +16,13 @@ import { db } from "../../queries/connection";
 
 export type VoicePlan = "free" | "pro" | "ultra";
 export type ThinkingLevel = "low" | "medium" | "high";
+/** The call's two modes: the plan's Live model, or "Ultra Thinking" on the extended-thinking model. */
+export type VoiceMode = "standard" | "ultra";
+
+export interface VoiceModeConfig {
+  model: string;
+  thinkingLevel: ThinkingLevel;
+}
 
 export interface VoiceEntitlementUser {
   id: number;
@@ -41,13 +48,20 @@ export interface VoiceEntitlements {
   remainingSecondsThisMonth: number;
   /** How long the next call may last: the smaller of the per-call limit and what the month has left. */
   allowedCallSeconds: number;
+  /** The standard mode's model and level: the plan's Live model. */
   model: string;
   thinkingLevel: ThinkingLevel;
   /**
-   * The user gets the coach call: its instructions and tools, on the coach's model and thinking level
-   * (`voice_coach_*`). Decided by the allowlist, then by a stable hash against the rollout percent.
+   * The user gets the coach call: its instructions and tools (`voice_coach_allowlist`, then a stable hash against
+   * `voice_coach_rollout_percent`), in the standard mode on the plan's model.
    */
   coach: boolean;
+  /**
+   * "Ultra Thinking", the mode the user can switch a coach call into: the coach on `voice_coach_model` at
+   * `voice_coach_thinking_level`, offered only to coach users of plans the admin enabled (`voice_ultra_enabled_<plan>`).
+   * Null when not offered.
+   */
+  ultra: VoiceModeConfig | null;
   dailyCostCapUsd: number;
   spentTodayUsd: number;
   /** Why the user cannot start a call now, or null when they can. */
@@ -106,13 +120,12 @@ export function resolveVoiceEntitlements(
   const remaining = Math.max(0, minutesPerMonth * 60 - used);
   const dailyCostCapUsd = nonNegativeNumber(merged[`voice_daily_cost_cap_usd_${p}`], 0);
   const coach = inCoachRollout(user, merged);
-  // The coach's model and level are its own: a coach user is never moved to the standard model to save cost.
-  const thinkingLevel: ThinkingLevel = coach
-    ? level(merged.voice_coach_thinking_level, "high")
-    : level(merged.voice_v2_thinking_level, "low");
-  const model = coach
-    ? (merged.voice_coach_model || "gemini-3.8-live-extended-thinking").trim()
-    : (merged[`voice_v2_model_${p}`] || merged.voice_v2_model || "gemini-3.8-live").trim();
+  const thinkingLevel = level(merged.voice_v2_thinking_level, "low");
+  const model = (merged[`voice_v2_model_${p}`] || merged.voice_v2_model || "gemini-3.8-live").trim();
+  // Ultra Thinking keeps its own model and level: never quietly swapped for the standard model to save cost.
+  const ultra: VoiceModeConfig | null = coach && merged[`voice_ultra_enabled_${p}`] === "true"
+    ? { model: (merged.voice_coach_model || "gemini-3.8-live-extended-thinking").trim(), thinkingLevel: level(merged.voice_coach_thinking_level, "low") }
+    : null;
 
   let blockedReason: VoiceEntitlements["blockedReason"] = null;
   if (!enabled) blockedReason = "disabled";
@@ -133,6 +146,7 @@ export function resolveVoiceEntitlements(
     model,
     thinkingLevel,
     coach,
+    ultra,
     dailyCostCapUsd,
     spentTodayUsd: usage.spentTodayUsd,
     blockedReason,

@@ -19,6 +19,8 @@ export const voiceRouter = router({
     return {
       // The ways into the call show unless the plan has no calls or the admin stopped them for everyone.
       available: entitlements.enabled && !entitlements.killSwitch,
+      // Ultra Thinking (تفكير أعمق) is offered to this user: the call screen shows its switch.
+      ultraAvailable: Boolean(entitlements.ultra),
       enabled: entitlements.enabled,
       blockedReason: entitlements.blockedReason,
       minutesLeft: Math.floor(entitlements.remainingSecondsThisMonth / 60),
@@ -32,6 +34,7 @@ export const voiceRouter = router({
     .input(z.object({
       voice: z.string().max(20).optional(),
       client: z.enum(["web", "pwa", "android", "ios"]).default("web"),
+      mode: z.enum(["standard", "ultra"]).optional(),
     }))
     .mutation(({ ctx, input }) =>
       startVoiceCall({ id: ctx.user.id, type: ctx.user.type, plan: ctx.user.plan, role: ctx.user.role }, input)),

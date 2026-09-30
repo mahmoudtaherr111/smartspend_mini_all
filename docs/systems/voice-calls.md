@@ -23,7 +23,8 @@ has calls; the first call (`/api/voice/live`) was removed on 2026-09-25.
 (`voice_call_enabled_<plan>`), minutes a month (`voice_call_limit_<plan>`), seconds a call
 (`voice_call_duration_<plan>`), the model (`voice_v2_model_<plan>`, else `voice_v2_model`, default
 `gemini-3.8-live`), the thinking level for the extended-thinking model, a daily provider-cost cap in USD
-(`voice_daily_cost_cap_usd_<plan>`), and whether the user gets [the coach call](#the-coach-call) (`coach`);
+(`voice_daily_cost_cap_usd_<plan>`), whether the user gets [the coach call](#the-coach-call) (`coach`), and
+[Ultra Thinking](#ultra-thinking) (`ultra`: its model and level, or null when not offered);
 `voice_v2_kill_switch` stops every call and hides the ways in. Usage is the
 Cairo month's `voice_calls.billed_seconds` plus any `voice_usage` rows (source `gemini_voice_call`) the removed
 first call wrote that month, never dictation seconds.
@@ -62,7 +63,9 @@ first call wrote that month, never dictation seconds.
    RESOURCE_EXHAUSTED, or HTTP 429), which is never retried on another key: limits are per project, and spreading one
    workload over projects to get round a quota is not the app's to do — and Google's own end-of-turn detection set to
    wait a full second. Then it
-   sends `ready` (with a resume token) and an opening note that makes the model greet without numbers.
+   sends `ready` (with a resume token, the mode and whether Ultra Thinking is offered) and an opening note that makes
+   the model greet without numbers. A fresh session that continues a call (a switch of mode) is given the call's last
+   lines first as history (`EngineSetup#history`), which the model does not answer.
 4. The app sends 16 kHz PCM only while the user speaks and `speech_end` when they stop, which the engine turns into
    `audioStreamEnd` so the model answers without waiting for silence. The model's 24 kHz audio, live captions,
    the state (listening, thinking, speaking, awaiting confirmation) and cards come back. Captions are shown, never
@@ -99,10 +102,8 @@ first call wrote that month, never dictation seconds.
 A second profile of the same call, for the users the admin chooses: those on `voice_coach_allowlist` ("local:12,
 oauth:7", the account type and id together) and the share `voice_coach_rollout_percent` of the others, placed by a
 stable hash of the user (`api/services/entitlements/voice.ts#coachBucket`), so raising the percent keeps everyone who
-had it. Nobody gets it by default. A coach call runs on `voice_coach_model` (default
-`gemini-3.8-live-extended-thinking`) at `voice_coach_thinking_level` (default `high`), whatever the plan's standard
-model; the ticket and the call's state carry `coach`, and a coach call that cannot reach its model ends with the
-provider error rather than moving to the standard one.
+had it. Nobody gets it by default. A coach call talks on the plan's model like any other call; the ticket and the
+call's state carry `coach`.
 
 Its brain (`createCallBrain` with `coach`) has its own instructions
 (`api/services/voice/brain/coach-instructions.ts#buildCoachInstruction`: understand the need behind everyday
@@ -121,6 +122,25 @@ gave one), `commitment_paid`, and `bank_confirm` / `bank_dismiss` (a waiting ban
 is, through `profile.confirmSmsSuggestion` and `profile.dismissSmsSuggestion`; one already handled says so). They are drafts of kind `coach` behind the same gate; an amount in one must be a fact
 the call read or computed or a number the user said, and a plan keeps the facts it was agreed on. The standard call
 refuses both reads and drafts (`ToolContext#coach`).
+
+### Ultra Thinking
+"تفكير أعمق" is a mode a coach user can switch the call into from the call screen, where the admin enabled it for the
+plan (`voice_ultra_enabled_<plan>`, off by default). It runs the coach on `voice_coach_model` (default
+`gemini-3.8-live-extended-thinking`) at `voice_coach_thinking_level` (default `low`: the level being qualified, see
+decision 0017) with an Ultra section in the instructions: read everything that bears on the question first, work out
+two or three options with `calculate`, then speak a short recommendation and offer the details. In the standard mode
+the coach may suggest the switch once for a question that needs a full plan. The mode is the product's, not Google's
+tier and not the admin role.
+
+`voice.startCall` takes the mode the app asks for (the one the user chose last) and starts in it only when it is
+offered; the ticket carries both modes' models (`TicketPayload#modes`). A switch during the call
+(`{type:"mode"}` from the app, `CallSession#switchMode`) waits for no tool to be running, takes a seat in the new
+model's pool (a quota pause refuses it), closes the provider session and opens a fresh one on the new model with the
+call's last lines as history (`historyConfig.initialHistoryInClientContent`, at most 16 lines and 6,000 characters),
+then a note makes the model continue without greeting. Drafts, facts, consent and the meter are the server's and carry
+over; the old model's seat goes back. If the new model cannot connect, the call reconnects the mode it was in and
+says so ("مقدرتش أشغّل التفكير الأعمق دلوقتي، فكملنا عادي") — the model never changes silently. The app hears
+`mode` messages (`switching`, `active`, `refused` with why), and `ready` says the mode and whether Ultra is offered.
 
 ### The tools
 | Tool | What it does |
@@ -271,6 +291,10 @@ routes. The next call's snapshot reads these memories, and the memory screen lab
   microphone keeps the call going by text. The end screen lists what was done and what was not and how long the call
   was; a call that cannot start says why and offers the chat. Admins also see a trace (round trip, first-audio
   latency, reconnects, frames sent, noise floor, playback queue).
+- **Ultra Thinking.** When `ready` says it is offered, the screen shows a "تفكير أعمق" switch under the call's state
+  (`src/components/voice/VoiceCallScreen.tsx#UltraSwitch`): pressed while the call is in that mode, with a line saying it is slower and
+  checks more; "بنشغّل…" while switching; a refusal shows why. The choice is remembered on the device
+  (`src/lib/voice/call-store.ts#preferredMode`) and the next call asks to start in it.
 - **After a confirmed draft** the app refreshes every query, so what the call recorded shows behind it at once.
 - **Signing out.** `VoiceCallHost` is mounted for one account (keyed by its type and id in `src/App.tsx`); when the
   account signs out or another signs in, it unmounts and `voiceCall.signOut` (`src/lib/voice/call-store.ts`) ends the
@@ -285,7 +309,9 @@ The settings page's plans tab has a section for the call
 - **Models:** the default Live model (`voice_v2_model`) and one per plan (`voice_v2_model_<plan>`, empty means the
   default), the thinking level for the extended-thinking model, and the text models of `think`, `market_price` and
   the post-call summary.
-- **The coach:** its model, its thinking level, the rollout percent and the test accounts (`voice_coach_*`). The choices come from `contracts/voice-models.ts`, which `api/lib/model-mapper.ts` also
+- **The coach and Ultra Thinking:** the coach's rollout percent and test accounts, Ultra's model and thinking level
+  (`voice_coach_*`; the hint names LOW as the level being qualified), and the plans Ultra is offered on
+  (`voice_ultra_enabled_<plan>`). The choices come from `contracts/voice-models.ts`, which `api/lib/model-mapper.ts` also
   builds its fallback chain from.
 - **Cost:** the daily provider-cost cap per plan (`voice_daily_cost_cap_usd_<plan>`).
 - **Capacity:** live calls at once per model pool and per user (`voice_max_concurrent_calls`,
@@ -310,6 +336,7 @@ Monthly minutes, seconds per call and whether a plan may call at all are in the 
 | holding back the extended model's lost-call apology | `api/services/voice/gateway/lost-call-guard.ts`, the notes in `api/services/voice/brain/claims.ts` | `api/services/voice/gateway/lost-call-guard.test.ts`, `api/services/voice/gateway/gateway.flow.test.ts` |
 | the connection to Gemini Live | `api/services/voice/engine/gemini-live.ts` | `api/services/voice/engine/gemini-live.test.ts` |
 | the coach call: who gets it, its instructions and tools | `api/services/entitlements/voice.ts`, `api/services/voice/brain/coach-instructions.ts`, `COACH_TOOLS` in `api/services/voice/brain/index.ts` | `api/services/entitlements/voice.test.ts`, `api/services/voice/brain/coach.test.ts` |
+| Ultra Thinking: who is offered it, its instructions, the switch | `api/services/entitlements/voice.ts`, `ULTRA_SECTION` in `api/services/voice/brain/coach-instructions.ts`, `CallSession#switchMode`, `src/components/voice/VoiceCallScreen.tsx#UltraSwitch` | `api/services/entitlements/voice.test.ts`, `api/services/voice/gateway/gateway.flow.test.ts`, `src/lib/voice/call-controller.test.ts` |
 | the calculator | `api/services/voice/brain/tools/calculate.ts` | `api/services/voice/brain/tools/calculate.test.ts` |
 | instructions, snapshot, how numbers are spoken | `api/services/voice/brain/instructions.ts`, `api/services/voice/brain/snapshot.ts`, `api/services/voice/brain/spoken.ts` | `api/services/voice/brain/spoken.test.ts` |
 | the tools | `api/services/voice/brain/tools/`, and `api/services/voice/app-calls.ts` for the procedures they call | `api/services/voice/brain/tools/*.test.ts`; `api/services/voice/brain/tools/declarations.test.ts` holds every field typed and all declarations under 6,500 characters |
@@ -353,7 +380,9 @@ figure alone, the profile questions and their answers, the stored reports, and e
 one, "thinking" held while a tool outlasts the reply wait, IN_PROGRESS and IDLE of the extended-thinking model, a
 tap's note held until the model is idle, a slow write reported as still running and then as done, the extended
 model's lost-call apology kept from the user and the retry heard, a real answer after a filler released, and a read
-that answers a replaced request marked as such. `api/services/voice/gateway/admission.test.ts` holds the pool, the one
+that answers a replaced request marked as such, and a switch to Ultra Thinking (the new model's setup, the
+conversation as history, the note, `switching` then `active`), a refusal when it is not offered, and the way back
+with a message when the new model cannot connect. `api/services/voice/gateway/admission.test.ts` holds the pool, the one
 call per user (id and type together), renewal of a held seat, expiry of a dead server's seat and the breaker.
 `scripts/voice-eval/run.ts` evaluates the call against the real Gemini Live model: the cases of
 `scripts/voice-eval/corpus.ts` (a tuning set and a held-out set), each on a fresh fabricated user
@@ -388,8 +417,9 @@ Checked against the code; each one names where it lives.
    passed (86%, 95% interval 73–93%) against 26 of 26 for the standard model, the same with a minimal raw setup and
    with the app's; between the filler and the apology only ~62 text tokens reach the model's context, so the call is
    lost inside the provider, cause unknown (`api/services/voice/engine/gemini-live.ts`). `LostToolCallGuard` keeps the
-   apology from the user and asks again (three of three retries recovered in the last probe); the extended model also
-   takes about 4.6 seconds longer to call a tool and ~6× the tokens per turn. The coach stays off until qualified.
+   apology from the user and asks again. The rate varies with time: in one later batch of 20 the first call was lost in
+   13, the retries rescued 10 and 3 still failed. The extended model also takes about 4.6 seconds longer to call a
+   tool and ~6× the tokens per turn. Ultra Thinking stays off until it is qualified.
 5. **Gap.** The opening context (CALL FACTS) cannot be changed during a session: after the records change the model is
    told, and a stale figure said is recorded, but not stopped (`api/services/voice/brain/validator.ts`).
 6. **Debt.** An action draft that expires, or that a newer draft replaces, leaves its runtime action pending until the

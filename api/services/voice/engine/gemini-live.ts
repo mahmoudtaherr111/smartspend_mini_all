@@ -51,6 +51,8 @@ export function buildLiveSetup(setup: EngineSetup, handle: string | null): Json 
       // only decides when the app cannot, and the user talking over the assistant still interrupts it.
       realtimeInputConfig: { automaticActivityDetection: { silenceDurationMs: 1_000 } },
       sessionResumption: handle ? { handle } : {},
+      // A fresh session that continues a call takes its history first (sent right after setupComplete).
+      ...(!handle && setup.history?.length ? { historyConfig: { initialHistoryInClientContent: true } } : {}),
       contextWindowCompression: {
         triggerTokens: String(setup.compression.triggerTokens),
         slidingWindow: { targetTokens: String(setup.compression.targetTokens) },
@@ -267,6 +269,13 @@ export class GeminiLiveEngine implements VoiceEngine {
           clearTimeout(timer);
           ws.removeAllListeners();
           this.bind(ws);
+          const history = this.handle ? [] : setup.history ?? [];
+          if (history.length) {
+            // History ends with turnComplete: the provider then takes live input; the history itself is not answered.
+            ws.send(JSON.stringify({
+              clientContent: { turns: history.map((turn) => ({ role: turn.role, parts: [{ text: turn.text }] })), turnComplete: true },
+            }));
+          }
           resolve(ws);
         }
       });

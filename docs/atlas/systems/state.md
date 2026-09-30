@@ -12,16 +12,16 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (29 of
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-29 7e640a0 | 2026-09-29 68f5765 | 18 | — | — | 2 | — |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-29 fa056d1 | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-30 9bf9028 | 2026-09-30 9bf9028 | 10 | — | — | 4 | 2 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-30 10476f0 | 2026-09-30 10476f0 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-29 fa056d1 | 2026-09-29 fa056d1 | 4 | — | 4 | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-29 6e973a3 | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-29 7e640a0 | 2026-09-29 7e640a0 | 6 | — | 3 | 7 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-29 fa056d1 | 2026-09-29 fa056d1 | 14 | **2** | 1 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-28 af819ef | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 1 | **1** | 5 | 1 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-29 1a6f756 | 2026-09-29 1a6f756 | 4 | — | 2 | 5 | 1 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-30 10476f0 | 2026-09-30 10476f0 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-30 9bf9028 | 2026-09-29 1a6f756 | 5 | — | — | — | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-30 10476f0 | 2026-09-29 1a6f756 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-29 7e640a0 | 2026-09-29 7e640a0 | 7 | **1** | 1 | 3 | 2 |
 
 
@@ -161,7 +161,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
-- **Bug (provider).** On `gemini-3.8-live-extended-thinking`, a tool call sometimes never reaches the app: the model says a line, stays IN_PROGRESS, then apologises for a "system error" with no `toolCall` message and no provider error, while `gemini-3.8-live` calls the tool every time. On 2026-09-30 at LOW, 42 of 49 single-tool probe runs passed (86%, 95% interval 73–93%) against 26 of 26 for the standard model, the same with a minimal raw setup and with the app's; between the filler and the apology only ~62 text tokens reach the model's context, so the call is lost inside the provider, cause unknown (`api/services/voice/engine/gemini-live.ts`). `LostToolCallGuard` keeps the apology from the user and asks again (three of three retries recovered in the last probe); the extended model also takes about 4.6 seconds longer to call a tool and ~6× the tokens per turn. The coach stays off until qualified.
+- **Bug (provider).** On `gemini-3.8-live-extended-thinking`, a tool call sometimes never reaches the app: the model says a line, stays IN_PROGRESS, then apologises for a "system error" with no `toolCall` message and no provider error, while `gemini-3.8-live` calls the tool every time. On 2026-09-30 at LOW, 42 of 49 single-tool probe runs passed (86%, 95% interval 73–93%) against 26 of 26 for the standard model, the same with a minimal raw setup and with the app's; between the filler and the apology only ~62 text tokens reach the model's context, so the call is lost inside the provider, cause unknown (`api/services/voice/engine/gemini-live.ts`). `LostToolCallGuard` keeps the apology from the user and asks again. The rate varies with time: in one later batch of 20 the first call was lost in 13, the retries rescued 10 and 3 still failed. The extended model also takes about 4.6 seconds longer to call a tool and ~6× the tokens per turn. Ultra Thinking stays off until it is qualified.
 - An action draft that expires, or that a newer draft replaces, leaves its runtime action pending until the runtime's own expiry (`api/services/voice/brain/tools/record.ts#dropRuntimeAction` runs on cancel only); nothing can confirm it from the call.
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)

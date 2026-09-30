@@ -281,6 +281,33 @@ function TracePanel({ view }: { view: VoiceCallView }) {
   );
 }
 
+/**
+ * Ultra Thinking (تفكير أعمق): the call moves to the slower model that reads more and compares options before it
+ * answers. Shown only when the server offers it; the switch follows the server's answer, never the tap alone.
+ */
+function UltraSwitch({ view, live }: { view: VoiceCallView; live: boolean }) {
+  const on = view.mode === "ultra";
+  const label = view.modeSwitching ? (on ? "بنرجّع للردود السريعة…" : "بنشغّل التفكير الأعمق…") : "تفكير أعمق";
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <button
+        type="button"
+        aria-pressed={on}
+        disabled={!live || view.modeSwitching}
+        onClick={() => voiceCall.setMode(on ? "standard" : "ultra")}
+        className={cn(
+          "flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors disabled:opacity-60",
+          on ? "border-violet-500/50 bg-violet-500/15 text-violet-700 dark:text-violet-300" : "border-border bg-background text-muted-foreground",
+        )}
+      >
+        <Sparkles className="h-4 w-4" />
+        {label}
+      </button>
+      {on && !view.modeSwitching && <p className="text-xs text-muted-foreground">أبطأ شوية، بيراجع ويحسب أكتر قبل ما يرد</p>}
+    </div>
+  );
+}
+
 function Composer() {
   const [text, setText] = useState("");
   const submit = (event: FormEvent) => {
@@ -361,6 +388,7 @@ function LiveCall({ view, onOpenRoute }: { view: VoiceCallView; onOpenRoute(rout
         <p className="text-sm font-medium" aria-live="polite">
           {activityLabel(view)}
         </p>
+        {view.ultraAvailable && <UltraSwitch view={view} live={live} />}
       </div>
 
       {view.notice && (

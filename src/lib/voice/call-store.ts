@@ -12,6 +12,7 @@ import type {
   VoiceCard,
   VoiceClientPlatform,
   VoiceEndReason,
+  VoiceMode,
   VoiceWaitDetail,
 } from "@contracts/voice-protocol";
 import type { AppRouter } from "../../../api/router";
@@ -19,7 +20,7 @@ import { primeCallAudio } from "./audio-io";
 import type { VoiceCallController } from "./call-controller";
 
 export type StartCallOutcome = inferRouterOutputs<AppRouter>["voice"]["startCall"];
-export type StartCallInput = { voice?: string; client: VoiceClientPlatform };
+export type StartCallInput = { voice?: string; client: VoiceClientPlatform; mode?: VoiceMode };
 
 export interface StartRequest {
   voice?: string;
@@ -82,12 +83,18 @@ export interface VoiceCallView {
   failure: CallFailure | null;
   /** Goes up each time a draft is executed, so screens can refresh what it changed. */
   executed: number;
+  /** Quick answers, or Ultra Thinking (تفكير أعمق) on the slower model; the server says which and whether it is offered. */
+  mode: VoiceMode;
+  ultraAvailable: boolean;
+  /** A switch was asked for and the server has not answered yet. */
+  modeSwitching: boolean;
   trace: CallTrace;
 }
 
 const CAPTIONS_KEY = "smartspend_voice_captions";
 const INTRO_KEY = "smartspend_voice_intro_v1";
 const VOICE_KEY = "smartspend_voice_choice";
+const MODE_KEY = "smartspend_voice_mode";
 
 function readFlag(key: string, fallback: boolean): boolean {
   try {
@@ -123,6 +130,9 @@ function idleView(): VoiceCallView {
     ending: null,
     failure: null,
     executed: 0,
+    mode: "standard",
+    ultraAvailable: false,
+    modeSwitching: false,
     trace: {
       rttMs: null,
       firstAudioMs: [],
@@ -277,6 +287,13 @@ export const voiceCall = {
     return controller?.sendText(text) ?? false;
   },
 
+  /** A tap on the Ultra Thinking switch: the call changes mode from the next turn, and the next call starts in it. */
+  setMode(mode: VoiceMode): void {
+    if (!view.ultraAvailable || view.modeSwitching || view.mode === mode) return;
+    setPreferredMode(mode);
+    controller?.setMode(mode);
+  },
+
   confirmDraft(draftId: string): void {
     controller?.cardAction("confirm", draftId);
   },
@@ -290,6 +307,23 @@ export const voiceCall = {
     return controller?.levels() ?? { input: 0, output: 0 };
   },
 };
+
+/** The mode the user last chose; a call starts in it when the server offers it. */
+export function preferredMode(): VoiceMode {
+  try {
+    return localStorage.getItem(MODE_KEY) === "ultra" ? "ultra" : "standard";
+  } catch {
+    return "standard";
+  }
+}
+
+function setPreferredMode(mode: VoiceMode): void {
+  try {
+    localStorage.setItem(MODE_KEY, mode);
+  } catch {
+    // Storage blocked: the choice lasts for this call only.
+  }
+}
 
 /** The voice the user picked for the assistant, if any. */
 export function preferredVoice(): string | undefined {

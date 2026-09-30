@@ -44,9 +44,9 @@ export function createVoiceGateway(options: VoiceGatewayOptions): (ws: WebSocket
       },
       brain: createCallBrain({ app: options.appCalls }),
       seat: {
-        async hold(model) {
+        async hold(model, joining) {
           const seat = { pool: model, callId: identity.callId, user: { id: identity.userId, type: identity.userType } };
-          return (await admitCall(seat, admissionLimits(await getSystemSettings(), model), Date.now(), { live: true })).ok;
+          return (await admitCall(seat, admissionLimits(await getSystemSettings(), model), Date.now(), { live: !joining })).ok;
         },
         release: (model) => releaseCall({ pool: model, callId: identity.callId, user: { id: identity.userId, type: identity.userType } }),
         quota: async (model) => void (await tripBreaker(model)),

@@ -56,6 +56,13 @@ CALL FACTS (quick answers without a tool; no sensitive numbers in the greeting):
 ${input.snapshot.text}`;
 }
 
+/** After the user switched the call's mode: continue the conversation (its history is there), without greeting. */
+export function modeNote(mode: "standard" | "ultra"): string {
+  return mode === "ultra"
+    ? "(ملاحظة من التطبيق: المستخدم شغّل «تفكير أعمق». من غير تحية، قول في جملة قصيرة إنك هتاخد وقتك وتراجع كل حاجة، وكمّل على آخر حاجة كان بيسأل عنها.)"
+    : "(ملاحظة من التطبيق: المستخدم رجّع المكالمة للردود السريعة. من غير تحية، قول كلمتين إنك رجعت للعادي، وكمّل من مكان ما وقفتوا.)";
+}
+
 /** The first user-turn note: open the call, or continue it after a reconnect without greeting again. */
 export function openingNote(resumed: boolean, recent: TranscriptLine[]): string {
   if (!resumed) {

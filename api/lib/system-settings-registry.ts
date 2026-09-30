@@ -66,13 +66,18 @@ export const SETTINGS: SettingDef[] = [
   { key: "voice_v2_model_ultra", default: "" },
   // Only read by gemini-3.8-live-extended-thinking: low | medium | high.
   { key: "voice_v2_thinking_level", default: "low" },
-  // The coach call (api/services/voice/brain/coach-instructions.ts): its own model and thinking level, given to the
-  // users on the allowlist ("local:12,oauth:7") and to this percent of the others, by a stable hash of the user.
-  // 0 and an empty list mean nobody: the standard call is unchanged for everyone.
+  // The coach call (api/services/voice/brain/coach-instructions.ts), given to the users on the allowlist
+  // ("local:12,oauth:7") and to this percent of the others, by a stable hash of the user; it talks on the plan's
+  // model. 0 and an empty list mean nobody: the standard call is unchanged for everyone. A coach user of a plan
+  // with Ultra Thinking enabled may switch the call to the coach model at the coach thinking level (LOW is the level
+  // being qualified; decision 0017).
   { key: "voice_coach_model", default: "gemini-3.8-live-extended-thinking" },
-  { key: "voice_coach_thinking_level", default: "high" },
+  { key: "voice_coach_thinking_level", default: "low" },
   { key: "voice_coach_rollout_percent", default: "0" },
   { key: "voice_coach_allowlist", default: "" },
+  { key: "voice_ultra_enabled_free", default: "false" },
+  { key: "voice_ultra_enabled_pro", default: "false" },
+  { key: "voice_ultra_enabled_ultra", default: "false" },
   // Capacity (api/services/voice/gateway/admission.ts): live calls at once across all servers, per model pool, set
   // from the Google project's real limits (AI Studio → Rate limits); 0 means no cap. One live call per user.
   { key: "voice_max_concurrent_calls", default: "20" },

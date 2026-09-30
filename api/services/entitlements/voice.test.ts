@@ -52,7 +52,7 @@ describe("resolveVoiceEntitlements", () => {
   it("gives the coach call to nobody until the admin lists users or sets a percent", () => {
     expect(resolveVoiceEntitlements(freeUser, {}, noUsage, "2026-09")).toMatchObject({ coach: false, model: "gemini-3.8-live" });
     const listed = resolveVoiceEntitlements(freeUser, { voice_coach_allowlist: "oauth:7, local:7" }, noUsage, "2026-09");
-    expect(listed).toMatchObject({ coach: true, model: "gemini-3.8-live-extended-thinking", thinkingLevel: "high" });
+    expect(listed).toMatchObject({ coach: true, model: "gemini-3.8-live", ultra: null });
     // The same numeric id as a Google user is another person.
     expect(resolveVoiceEntitlements(freeUser, { voice_coach_allowlist: "oauth:7" }, noUsage, "2026-09").coach).toBe(false);
   });
@@ -72,10 +72,20 @@ describe("resolveVoiceEntitlements", () => {
     expect(inAt("5").map((user) => user.id)).toEqual(five.map((user) => user.id));
   });
 
-  it("keeps the coach's own model and level; a coach user is never moved to the standard model", () => {
-    const settings = { voice_coach_allowlist: "local:7", voice_coach_thinking_level: "medium", voice_v2_model: "gemini-3.8-live" };
-    expect(resolveVoiceEntitlements(freeUser, settings, noUsage, "2026-09"))
-      .toMatchObject({ coach: true, model: "gemini-3.8-live-extended-thinking", thinkingLevel: "medium" });
+  it("offers Ultra Thinking only to coach users of a plan the admin enabled, on the coach model and level", () => {
+    const settings = { voice_coach_allowlist: "local:7", voice_ultra_enabled_free: "true" };
+    expect(resolveVoiceEntitlements(freeUser, settings, noUsage, "2026-09")).toMatchObject({
+      coach: true,
+      model: "gemini-3.8-live",
+      ultra: { model: "gemini-3.8-live-extended-thinking", thinkingLevel: "low" },
+    });
+    expect(resolveVoiceEntitlements(freeUser, { ...settings, voice_coach_thinking_level: "medium" }, noUsage, "2026-09").ultra)
+      .toEqual({ model: "gemini-3.8-live-extended-thinking", thinkingLevel: "medium" });
+    // Not a coach user, or a plan without it: no Ultra.
+    expect(resolveVoiceEntitlements(freeUser, { voice_ultra_enabled_free: "true" }, noUsage, "2026-09").ultra).toBeNull();
+    expect(resolveVoiceEntitlements({ ...freeUser, plan: "pro" }, settings, noUsage, "2026-09").ultra).toBeNull();
+    // Admin access is not a plan: an admin on the free plan gets what the free plan gets.
+    expect(resolveVoiceEntitlements({ ...freeUser, role: "admin" }, { voice_coach_allowlist: "local:7" }, noUsage, "2026-09").ultra).toBeNull();
   });
 
   it("uses a per-plan model when the admin set one", () => {

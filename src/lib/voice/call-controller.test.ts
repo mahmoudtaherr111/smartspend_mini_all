@@ -83,7 +83,7 @@ function block(loud: boolean, seed: number): Float32Array {
   return out;
 }
 
-const ok: StartCallOutcome = { kind: "ok", callId: "vc_call00001", ticket: "tk_ticket000001", maxSeconds: 600, remainingSeconds: 1800, voice: "Kore" };
+const ok: StartCallOutcome = { kind: "ok", callId: "vc_call00001", ticket: "tk_ticket000001", maxSeconds: 600, remainingSeconds: 1800, voice: "Kore", mode: "standard", ultraAvailable: false };
 
 function ready(): VoiceServerMessage {
   return { type: "ready", callId: "vc_call00001", resumeToken: "rt_token000001", codec: "pcm16", maxSeconds: 600, resumed: false };
@@ -138,6 +138,9 @@ describe("VoiceCallController", () => {
       ending: null,
       failure: null,
       executed: 0,
+      mode: "standard",
+      ultraAvailable: false,
+      modeSwitching: false,
       trace: { rttMs: null, firstAudioMs: [], reconnects: 0, sentFrames: 0, noiseFloorDb: null, sampleRate: null, bufferedMs: 0, cushionMs: 0 },
     };
   });
@@ -196,6 +199,25 @@ describe("VoiceCallController", () => {
     socket.drop();
     expect(view.phase).toBe("ended");
     expect(view.ending).toEqual({ reason: "user", done: ["خمسين مواصلات"], notDone: [], billedSeconds: 42 });
+  });
+
+  it("switches to Ultra Thinking when offered, following what the server answers", async () => {
+    const { controller } = makeController();
+    await controller.start();
+    const socket = sockets[0];
+    socket.open();
+    socket.receive({ ...ready(), mode: "standard", ultraAvailable: true } as VoiceServerMessage);
+    expect(view).toMatchObject({ mode: "standard", ultraAvailable: true, modeSwitching: false });
+    controller.setMode("ultra");
+    expect(socket.json().find((m) => m.type === "mode")).toEqual({ type: "mode", mode: "ultra" });
+    expect(view.modeSwitching).toBe(true);
+    socket.receive({ type: "mode", mode: "ultra", status: "switching" });
+    socket.receive({ type: "mode", mode: "ultra", status: "active" });
+    expect(view).toMatchObject({ mode: "ultra", modeSwitching: false });
+    // Refused: the call stays as the server says, and the user is told why.
+    controller.setMode("standard");
+    socket.receive({ type: "mode", mode: "ultra", status: "refused", message: "استنى ثانية" });
+    expect(view).toMatchObject({ mode: "ultra", modeSwitching: false, notice: { kind: "degraded", message: "استنى ثانية" } });
   });
 
   it("keeps the call going by text when the microphone is refused", async () => {

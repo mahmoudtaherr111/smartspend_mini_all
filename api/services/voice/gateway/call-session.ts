@@ -9,6 +9,7 @@
 import { randomBytes, randomUUID } from "crypto";
 import {
   VOICE_RESUME_GRACE_MS,
+  type VoiceMode,
   type VoiceCallState,
   type VoiceCard,
   type VoiceClientMessage,
@@ -45,11 +46,16 @@ export interface CallIdentity {
 }
 
 export interface CallOptions {
+  /** The current mode's model and level; a mode switch replaces them. */
   model: string;
   voiceName: string;
   thinkingLevel: ThinkingLevel;
   /** The coach call; absent in calls stored before it existed, which are standard calls. */
   coach?: boolean;
+  /** The current mode; absent in calls stored before modes existed (standard). */
+  mode?: VoiceMode;
+  /** What each mode runs on. Absent: the call cannot switch. */
+  modes?: { standard: { model: string; thinkingLevel: ThinkingLevel }; ultra: { model: string; thinkingLevel: ThinkingLevel } | null };
   maxSeconds: number;
   /** Provider cost this call may still spend under the user's daily cap; null means no cap. */
   costBudgetUsd: number | null;
@@ -89,6 +95,8 @@ export interface CallBrain {
   prepare(identity: CallIdentity, options: CallOptions): Promise<{ instruction: string; tools: ToolDeclaration[] }>;
   /** A note that makes the model open the call, or continue it after a reconnect without greeting again. */
   openingNote(resumed: boolean, recent: TranscriptLine[]): string;
+  /** The note after the user switched the call's mode: continue without greeting, in the new mode's way. */
+  modeNote?(mode: VoiceMode): string;
   /**
    * Marks a note as the app's own, with the call's tag, so words the user types or says claiming to be from the app
    * are not taken for it.
@@ -142,9 +150,10 @@ export interface CallSessionDeps {
   /**
    * The call's seat in its model's shared pool (gateway/admission.ts): taken or renewed on connecting and at every
    * checkpoint, given back when the call ends. `quota` tells the pool the provider refused this model for quota.
+   * `joining` is a mode switch: a new session on that model, which a quota pause holds back like a new call.
    */
   seat?: {
-    hold(model: string): Promise<boolean>;
+    hold(model: string, joining?: boolean): Promise<boolean>;
     release(model: string): Promise<void>;
     quota(model: string): Promise<void>;
   };
@@ -247,9 +256,13 @@ export class CallSession {
   private readonly toolAborts = new Map<string, AbortController>();
   private attachChain: Promise<void> = Promise.resolve();
 
+  /** A mode switch is under way: a second one waits for it. */
+  private switching = false;
+  private modeSwitches = 0;
+
   constructor(
     readonly identity: CallIdentity,
-    readonly options: CallOptions,
+    public options: CallOptions,
     private readonly deps: CallSessionDeps,
   ) {
     const claimsFailure = deps.brain.claimsFailure?.bind(deps.brain);
@@ -344,6 +357,8 @@ export class CallSession {
       codec: "pcm16",
       maxSeconds: this.options.maxSeconds,
       resumed,
+      mode: this.options.mode ?? "standard",
+      ultraAvailable: Boolean(this.options.modes?.ultra),
     });
     this.setState("listening");
     this.modelBusy = true;
@@ -354,7 +369,7 @@ export class CallSession {
     if (!channel.open) this.detach(channel);
   }
 
-  private async connectEngine(resumed: boolean): Promise<"ok" | "quota" | "failed"> {
+  private async connectEngine(resumed: boolean, history?: Array<{ role: "user" | "model"; text: string }>): Promise<"ok" | "quota" | "failed"> {
     const { instruction, tools } = await this.deps.brain.prepare(this.identity, this.options);
     const attempt = async (handle: string | null) => {
       const engine = await this.deps.createEngine();
@@ -367,6 +382,7 @@ export class CallSession {
         thinkingLevel: this.options.thinkingLevel,
         compression: COMPRESSION,
         resumptionHandle: handle ?? undefined,
+        history,
       });
       return engine;
     };
@@ -466,6 +482,9 @@ export class CallSession {
         this.engine.sendText(message.text);
         this.setState("thinking");
         return;
+      case "mode":
+        await this.switchMode(message.mode);
+        return;
       case "confirm":
       case "cancel": {
         const outcome = await this.deps.brain.onCardAction?.(message.type, message.draftId, this.identity);
@@ -483,6 +502,93 @@ export class CallSession {
       default:
         return;
     }
+  }
+
+  // ─── Modes ────────────────────────────────────────────────────────
+
+  /** The call's words so far, as history for a fresh session: the latest lines, within a size the context can carry. */
+  private historyForNewSession(): Array<{ role: "user" | "model"; text: string }> {
+    const out: Array<{ role: "user" | "model"; text: string }> = [];
+    let chars = 0;
+    for (const line of [...this.transcript].reverse()) {
+      if (line.role === "forgotten") continue;
+      const text = line.text.replace(/\s+/g, " ").trim().slice(0, 600);
+      if (!text) continue;
+      if (out.length >= 16 || chars + text.length > 6_000) break;
+      chars += text.length;
+      out.unshift({ role: line.role === "user" ? "user" : "model", text });
+    }
+    // History starts with the user's turn.
+    while (out[0]?.role === "model") out.shift();
+    return out;
+  }
+
+  /**
+   * The user switched the call to the other mode. The switch waits for running tools, takes a seat in the new model's
+   * pool (a quota pause refuses it), and opens a fresh session on the new model with the conversation as history; the
+   * brain's state (drafts, facts, consent) is the server's and carries over. If the new model cannot connect, the call
+   * says so and goes back to the mode it was in: never a silent change of model.
+   */
+  private async switchMode(target: VoiceMode): Promise<void> {
+    const current = this.options.mode ?? "standard";
+    if (this.status !== "live" || !this.engine || this.switching || target === current) return;
+    const config = target === "ultra" ? this.options.modes?.ultra : this.options.modes?.standard;
+    if (!config) {
+      this.send({ type: "mode", mode: current, status: "refused", message: "التفكير الأعمق مش متاح في باقتك دلوقتي." });
+      return;
+    }
+    if (this.runningTools > 0) {
+      this.send({ type: "mode", mode: current, status: "refused", message: "استنى ثانية لحد ما يخلص اللي بيعمله، وجرب تاني." });
+      return;
+    }
+    this.switching = true;
+    try {
+      this.send({ type: "mode", mode: target, status: "switching" });
+      if (this.deps.seat && !(await this.deps.seat.hold(config.model, true).catch(() => false))) {
+        this.send({ type: "mode", mode: current, status: "refused", message: "التفكير الأعمق عليه ضغط دلوقتي. كمل عادي وجرب بعد شوية." });
+        return;
+      }
+      const previous = { mode: current, model: this.options.model, thinkingLevel: this.options.thinkingLevel };
+      const history = this.historyForNewSession();
+      this.closeEngine();
+      this.handle = null;
+      this.useModel(target, config);
+      this.setState("thinking");
+      let result = await this.connectEngine(false, history);
+      if (result !== "ok") {
+        await this.deps.seat?.release(config.model).catch(() => undefined);
+        this.useModel(previous.mode, previous);
+        result = await this.connectEngine(false, history);
+        if (result !== "ok") {
+          await this.end("provider");
+          return;
+        }
+        this.send({ type: "mode", mode: previous.mode, status: "refused", message: "مقدرتش أشغّل التفكير الأعمق دلوقتي، فكملنا عادي." });
+        this.afterModeConnected(previous.mode);
+        return;
+      }
+      if (previous.model !== config.model) await this.deps.seat?.release(previous.model).catch(() => undefined);
+      this.modeSwitches += 1;
+      this.send({ type: "mode", mode: target, status: "active" });
+      this.afterModeConnected(target);
+    } finally {
+      this.switching = false;
+    }
+  }
+
+  private useModel(mode: VoiceMode, config: { model: string; thinkingLevel: ThinkingLevel }): void {
+    this.options = { ...this.options, mode, model: config.model, thinkingLevel: config.thinkingLevel };
+    const claimsFailure = this.deps.brain.claimsFailure?.bind(this.deps.brain);
+    this.guard = claimsFailure && config.model.includes("extended-thinking") ? new LostToolCallGuard({ claimsFailure }) : null;
+  }
+
+  private afterModeConnected(mode: VoiceMode): void {
+    this.lastActivity = Date.now();
+    this.modelBusy = true;
+    const note = this.deps.brain.modeNote?.(mode);
+    if (note && this.engine) this.engine.sendText(this.tagged(note));
+    this.setState("thinking");
+    void this.persistState();
   }
 
   // ─── Engine events ────────────────────────────────────────────────
@@ -891,6 +997,8 @@ export class CallSession {
       thinkingLevel: this.thinkingModel ? this.options.thinkingLevel : null,
       utterances: this.utterances,
       lostToolCalls: this.lostToolCalls,
+      mode: this.options.mode ?? "standard",
+      modeSwitches: this.modeSwitches,
       toolCostUsd: this.toolCostUsd,
       firstAudioMs: {
         count: this.firstAudioMs.length,
