@@ -32,6 +32,12 @@ vi.mock("../../../finance-semantic-layer/resolvers", () => ({
   getFinanceBreakdown: vi.fn(async () => ({ items: [{ name: "2026-09-10", amount: 300, count: 2 }, { name: "2026-09-12", amount: 200, count: 1 }, { name: "2026-09-14", amount: 90, count: 1 }] })),
 }));
 vi.mock("../../../finance-semantic-layer/cache", () => ({ getFinanceCacheGen: vi.fn(async () => 1) }));
+// Unit tests run without MySQL (CI has none): the waiting classifier questions come from here, empty.
+vi.mock("./reports", async (original) => ({
+  ...(await original<typeof import("./reports")>()),
+  readPendingQuestions: vi.fn(async () => ({ count: 0, items: [] })),
+  readStoredReport: vi.fn(async () => null),
+}));
 
 import { DraftBook } from "../drafts";
 import { FactLedger } from "../facts";
