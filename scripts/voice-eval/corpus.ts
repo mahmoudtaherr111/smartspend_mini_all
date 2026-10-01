@@ -2,7 +2,8 @@
  * The coach evaluation's conversations: Egyptian multi-turn cases, each with the fixture it runs on and checks the
  * trace must pass. The checks read what happened (tools and their arguments, writes in the database, incidents,
  * what was said), never a fixed reply: many good answers are possible. Cases marked `heldOut` are never used to tune
- * the instructions; they measure whether a change generalizes.
+ * the instructions in the original run. Once their failures have been inspected for fixes, that split is no
+ * longer a blind acceptance set; use the separately frozen acceptance-v2 cases for a new qualification attempt.
  *
  * What these checks cannot judge — naturalness, warmth, whether the advice helps — is left to a human reading the
  * traces, blind to the thinking level.
@@ -182,14 +183,14 @@ export const says = (pattern: RegExp, turn?: number): Check => ({
   means: `says something matching ${pattern}${turn !== undefined ? ` in turn ${turn + 1}` : ""}`,
   test: (trace) =>
     (turn === undefined ? trace.turns : [trace.turns[turn]]).some(
-      (t) => Boolean(t) && pattern.test(t.assistant),
+      (t) => Boolean(t) && pattern.test(t.heard ?? t.assistant),
     ),
 });
 
 export const neverSays = (pattern: RegExp): Check => ({
   id: `never_says:${pattern.source}`,
   means: `never says anything matching ${pattern}`,
-  test: (trace) => trace.turns.every((turn) => !pattern.test(turn.assistant)),
+  test: (trace) => trace.turns.every((turn) => !pattern.test(turn.heard ?? turn.assistant)),
 });
 
 /** A question in the turn: a question mark, or the words Egyptians ask with. */
@@ -198,7 +199,7 @@ export const asks = (turn: number): Check => ({
   means: `asks the user something in turn ${turn + 1}`,
   test: (trace) =>
     /[؟?]|تحب|عايز|عايزة|ممكن تقول|قولي|إيه رأيك|ايه رأيك|كام|امتى|إمتى|أسجل|اسجل|أعمل|اعمل/.test(
-      trace.turns[turn]?.assistant ?? "",
+      trace.turns[turn]?.heard ?? trace.turns[turn]?.assistant ?? "",
     ),
 });
 
@@ -516,7 +517,7 @@ export const SCENARIOS: Scenario[] = [
     ],
   },
 
-  // ─── Held out: never used to tune the instructions ───
+  // ─── Original held-out split: now observed during fixes, not a blind release gate ───
   {
     id: "ho-money-runs-out",
     domain: "intent",

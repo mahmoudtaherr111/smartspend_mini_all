@@ -19,6 +19,8 @@
 import * as dotenv from "dotenv";
 import { mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 
 dotenv.config();
 
@@ -144,6 +146,7 @@ async function main(): Promise<void> {
   const arms = parseArms(arg("arms", "coach:high"));
   const reps = Math.max(1, Number(arg("reps", "1")));
   const split = arg("split", "tuning");
+  if (!["tuning", "heldout", "all", "acceptance-v2"].includes(split)) throw new Error("unknown_split");
   const onlyCases = arg("cases", "").split(",").filter(Boolean);
   const seed = Number(arg("seed", String(Date.now() % 100_000)));
   const turnTimeoutMs = Number(arg("turn-timeout", "60000"));
@@ -182,10 +185,12 @@ async function main(): Promise<void> {
   type TurnTrace = import("./corpus").TurnTrace;
   type ToolTrace = import("./corpus").ToolTrace;
 
-  const scenarios = SCENARIOS.filter((scenario) =>
+  const availableScenarios = split === "acceptance-v2"
+    ? (await import("./acceptance-v2")).ACCEPTANCE_V2 : SCENARIOS;
+  const scenarios = availableScenarios.filter((scenario) =>
     onlyCases.length
       ? onlyCases.includes(scenario.id)
-      : split === "all"
+      : split === "all" || split === "acceptance-v2"
         ? true
         : split === "heldout"
           ? scenario.heldOut
@@ -205,6 +210,15 @@ async function main(): Promise<void> {
   const runId = new Date().toISOString().replace(/[:.]/g, "-");
   const dir = join(".agents", "smart-coach-20260929", "eval", runId);
   mkdirSync(dir, { recursive: true });
+  // Record revision and a content fingerprint without storing source, secrets,
+  // environment values or provider keys. The same fingerprint is checked at end.
+  const source = () => ({
+    commit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
+    diffSha256: createHash("sha256").update(execFileSync("git", [
+      "diff", "--no-ext-diff", "HEAD", "--", "api", "contracts", "db", "scripts/voice-eval", "package.json", "package-lock.json",
+    ])).digest("hex"),
+  });
+  const startingSource = source();
   const next = random(seed);
   const plan = shuffle(
     scenarios.flatMap((scenario) =>
@@ -220,6 +234,7 @@ async function main(): Promise<void> {
         arms,
         reps,
         split,
+        source: startingSource,
         cases: scenarios.map((s) => s.id),
         order: plan.map((p) => `${p.scenario.id}#${p.rep}@${p.arm.id}`),
       },
@@ -712,9 +727,11 @@ async function main(): Promise<void> {
       ),
     };
   });
+  const endingSource = source();
   writeFileSync(
     join(dir, "summary.json"),
-    JSON.stringify({ runId, seed, split, reps, byArm }, null, 2),
+    JSON.stringify({ runId, seed, split, reps, byArm, source: startingSource,
+      sourceAtEnd: endingSource, sourceUnchanged: JSON.stringify(startingSource) === JSON.stringify(endingSource) }, null, 2),
   );
   const lines = [
     `# Coach evaluation ${runId}`,

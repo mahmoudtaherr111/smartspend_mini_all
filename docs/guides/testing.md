@@ -37,6 +37,15 @@ The benchmark's other commands (calibration, live providers, freezing a new base
   The CSS overscroll tests are skipped when the engine does not implement `overscroll-behavior`: Playwright's WebKit
   build on Windows reports it unsupported although Safari on iOS 16+ has it, so on iPhone projects it needs a device.
 
+## Live voice evaluation
+The original 30 cases in `scripts/voice-eval/corpus.ts` are an observed regression set: their failures
+have informed fixes, so its old `heldout` split is no longer a blind release gate. `--split acceptance-v2`
+selects ten newly frozen conversations from `scripts/voice-eval/acceptance-v2.ts`; once used for tuning,
+they also become observed cases. Checks of spoken wording use what passed through the audio guard (`heard`),
+falling back to `assistant` only for older traces lacking it. The plan and summary record the Git revision
+and a SHA-256 of the tracked runtime diff, without storing that diff or environment values. A changed source
+fingerprint invalidates a claim that the run qualified one frozen revision. Provider failures remain in the denominator.
+
 ## The database suite on your machine
 `docker compose -f docker-compose.test.yml up -d` starts MySQL 8 on port 3307 with the database
 `smartspend_test`. Point `DATABASE_URL` at it, create the schema, then run the suite:
