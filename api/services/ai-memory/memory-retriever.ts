@@ -11,6 +11,7 @@ import type { DataNeed, ResolvedFact } from "../ai-kernel/types";
 import { MemoryEmbeddingClient } from "./embedding-client";
 import { loadEmbeddingConfig } from "./embedding-settings";
 import { reformulateMemoryQuery } from "./retrieval-enhancements";
+import { slotMeta } from "./slots";
 import {
   cosineSimilarity,
   isLowSignalMemoryText,
@@ -164,6 +165,7 @@ async function loadVectorMemories(
       importance: aiMemoryItems.importance,
       sourceConversationId: aiMemoryItems.sourceConversationId,
       updatedAt: aiMemoryItems.updatedAt,
+      metadata: aiMemoryItems.metadata,
       vector: aiMemoryEmbeddings.vector,
       dimensions: aiMemoryEmbeddings.dimensions,
     })
@@ -184,7 +186,7 @@ async function loadVectorMemories(
     .limit(160);
 
   const items = rows
-    .filter((row) => !isLowSignalMemoryText(row.content))
+    .filter((row) => !isLowSignalMemoryText(row.content) && !expired(row.metadata))
     .map((row) => {
       const vector = parseVector(row.vector);
       const vectorScore = cosineSimilarity(queryVector, vector);
@@ -223,6 +225,12 @@ async function loadVectorMemories(
     ].filter(Boolean),
     errors: [],
   };
+}
+
+/** A declined offer or a follow-up whose time is over (./slots.ts) is no longer remembered. */
+function expired(metadata: unknown): boolean {
+  const until = slotMeta(metadata).validUntil;
+  return Boolean(until && until.getTime() < Date.now());
 }
 
 async function computeMemoryContext(
@@ -279,7 +287,7 @@ async function computeMemoryContext(
   const lexicalMemories = scoreAndSort(
     ctx.query,
     memoryRows
-      .filter((row) => !isLowSignalMemoryText(row.content))
+      .filter((row) => !isLowSignalMemoryText(row.content) && !expired(row.metadata))
       .map((row) => ({
       id: row.id,
       type: row.memoryType as MemoryType,

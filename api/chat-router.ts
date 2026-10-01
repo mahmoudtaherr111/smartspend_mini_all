@@ -45,6 +45,7 @@ import {
 import { findCapability, getCapabilityById } from "./services/ai-kernel/capability-registry";
 import { type IntentResult } from "./services/ai-kernel/types";
 import { hasSemanticMemoryCandidate, writeConversationMemory, invalidateMemoryUserCache, type MemoryMessage } from "./services/ai-memory";
+import { slotMeta } from "./services/ai-memory/slots";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 import {
   recordAICostMetric,
@@ -1298,10 +1299,14 @@ export const chatRouter = router({
       .orderBy(desc(aiMemoryItems.updatedAt))
       .limit(100);
 
-    // Only whether a memory came from a live call leaves the server, not the rest of its metadata.
-    return items.map(({ metadata, ...item }) => {
+    // Only whether a memory came from a live call leaves the server, not the rest of its metadata. A declined offer or
+    // a follow-up whose time is over (api/services/ai-memory/slots.ts) is no longer remembered, so it is not listed.
+    const now = Date.now();
+    return items.flatMap(({ metadata, ...item }) => {
+      const until = slotMeta(metadata).validUntil;
+      if (until && until.getTime() < now) return [];
       const source = metadata && typeof metadata === "object" ? (metadata as { source?: unknown }).source : undefined;
-      return { ...item, fromCall: source === "voice_call" || source === "voice" };
+      return [{ ...item, fromCall: source === "voice_call" || source === "voice" }];
     });
   }),
 

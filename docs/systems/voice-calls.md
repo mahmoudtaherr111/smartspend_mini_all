@@ -53,7 +53,9 @@ first call wrote that month, never dictation seconds.
 3. `api/services/voice/gateway/call-session.ts#CallSession` builds the call's brain
    (`api/services/voice/brain/index.ts#createCallBrain`): the snapshot (`api/services/voice/brain/snapshot.ts`: the Cairo day, name and a
    title from the profession (`api/services/voice/brain/honorific.ts`), today's and the salary cycle's spending, days to payday, the last
-   recorded day, one observation, up to five remembered things, and the next profile question the app has no answer
+   recorded day, one observation, what is remembered about the user (`memoryBrief`: up to five things they said, each
+   with its day, slotted ones first; up to two follow-ups left open; up to two offers they declined; the last call's
+   summary; expired ones left out), and the next profile question the app has no answer
    to, from `api/services/voice/brain/profile-questions.ts`, unless the app asked one in the last day; offering one
    starts that day's pause, `user_profiles.last_asked_at`, which the Home card shares), the instructions
    (`api/services/voice/brain/instructions.ts`, kept short because they are billed every turn) and nine tools. It connects the engine
@@ -225,18 +227,24 @@ is billed again for it on every later turn.
 `api/services/voice/post-call.ts#summarizeCall` runs as soon as a call ends, on the server that ran it
 (`createVoiceGateway` in `api/services/voice/gateway/index.ts`). It claims the call (`memory_status` from
 `pending` to `writing`, so two servers never both do it), reads the words from Redis, and, when the user said more
-than a few words, asks a text model once for a summary of at most two sentences and at most five things to remember
-(plans, agreements, preferences, stable facts), with the user's 30 latest memories so it does not repeat them and can
-name one a new fact replaces. What the user forgot during the call, or from the memory screen while the summary was
+than a few words, asks a text model once for a summary of at most two sentences and at most six things to remember
+(plans, agreements, preferences, stable facts, offers the user declined, things to pick up next call), with the
+user's 30 latest live memories, their slots and days, so it does not repeat them and can name one a new fact replaces.
+Each thing may carry a slot from a closed registry (`api/services/ai-memory/slots.ts`: `income.payday`,
+`housing.rent`, `preference.detail`, `goal:<topic>`, `refusal:<topic>`, `followup:<topic>`, …): a new value of a
+slot replaces whatever held it, a declined offer is kept for 30 days and a follow-up for 21 so they stop counting on
+their own, and the model may close a follow-up the call settled (`closes`). What the user forgot during the call, or from the memory screen while the summary was
 pending, travels with the words as `forgotten` lines (`api/services/voice/gateway/store.ts#appendForgotten`, the
 same Redis hour as the words, never MySQL): the model reads it as FORGOTTEN, the words it came from stay in the call
 text, and `repeatsForgotten` drops any fact or summary sharing most of its words; the forgotten items are read again
 just before writing, and words gone by then (the user forgot everything) mean nothing is written.
-`readCallMemory` holds the answer to the rules whatever the model wrote: at most five
-facts, only known ids replaced, and nothing about age, gender, health, religion or a judgment of the person
+`readCallMemory` holds the answer to the rules whatever the model wrote: at most six
+facts, only known ids replaced, only registered slots (a refusal or follow-up slot sets the type), only known
+follow-ups closed, and nothing about age, gender, health, religion or a judgment of the person
 (`api/services/voice/brain/never-kept.ts`). The summary is written to `ai_memory_items` as a `summary` ("مكالمة 23/9:
-…"), the facts under their own types, both with `metadata.source` `voice_call` and the call id; a replaced memory
-becomes `replaced`. Then the words are deleted and the call's `memory_status` becomes `saved` (or `empty`), with the
+…"), the facts under their own types, both with `metadata.source` `voice_call`, the call id and the day, and a fact's
+slot and end in `metadata.slot` and `metadata.validUntil`; a replaced memory becomes `replaced`, a closed follow-up
+`done`. In the call, `memory remember` takes the same slots, so "افتكر إن مرتبي بقى يوم 27" replaces the old payday. Then the words are deleted and the call's `memory_status` becomes `saved` (or `empty`), with the
 model and tokens in `voice_calls.metrics.memory`. A failure leaves the words for another try; after three the words are
 dropped and the status is `failed`. The `voice-call-memory` job (every ten minutes, in `api/boot.ts`) tries again the
 calls still pending and marks `expired` those whose words are gone after an hour.

@@ -92,7 +92,7 @@
     "ai-center": {
       "files": {
         "api/boot.ts#job:memory-embedding-backfill": "85d55cd9dc11",
-        "api/chat-router.ts": "47f5e656c284",
+        "api/chat-router.ts": "b993a5d21188",
         "api/services/action-runtime/artifacts.ts": "5292dfe6dc80",
         "api/services/action-runtime/confirmation-phrases.ts": "ecf79bb5cfe7",
         "api/services/action-runtime/extended-actions.ts": "b5986abafd8c",
@@ -114,11 +114,12 @@
         "api/services/ai-memory/embedding-client.ts": "eaef45fb15c6",
         "api/services/ai-memory/embedding-settings.ts": "5858ad27f0b6",
         "api/services/ai-memory/index.ts": "a069183c6110",
-        "api/services/ai-memory/memory-retriever.ts": "a489779e5066",
+        "api/services/ai-memory/memory-retriever.ts": "7491c600777f",
         "api/services/ai-memory/memory-writer.ts": "e13cfcc1e8df",
         "api/services/ai-memory/qdrant-vector-store.ts": "b2699ec5a25d",
         "api/services/ai-memory/quantized-vector-store.ts": "1710be3303f3",
         "api/services/ai-memory/retrieval-enhancements.ts": "7d2d6c01f0ea",
+        "api/services/ai-memory/slots.ts": "9f5df189b523",
         "api/services/ai-memory/text-utils.ts": "4669ecc99d2b",
         "api/services/ai-memory/types.ts": "0f4b17b0bd67",
         "api/services/ai-memory/vector-store.ts": "168cd18f91ad",
@@ -138,13 +139,13 @@
         "api/services/site-guide/retriever.ts": "e276a63d4ba1",
         "api/services/site-guide/types.ts": "18e510c0b423",
         "src/components/ai/AIChatbot.tsx": "cbd3900dcd37",
-        "src/components/ai/AIMemoryManager.tsx": "b54246a80606",
+        "src/components/ai/AIMemoryManager.tsx": "b2491b7f6097",
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "c384e6047412"
       },
-      "checked": "2026-09-29 fa056d1",
-      "arabic": "79fe8fda4d67",
-      "arabicChecked": "2026-09-29 fa056d1"
+      "checked": "2026-10-01 0e0890f",
+      "arabic": "82660cb4c7e8",
+      "arabicChecked": "2026-10-01 0e0890f"
     },
     "ai-platform": {
       "files": {
@@ -488,13 +489,13 @@
         "api/services/voice/brain/instructions.ts": "88f1c4ae53be",
         "api/services/voice/brain/never-kept.ts": "977be210350d",
         "api/services/voice/brain/profile-questions.ts": "14673f9bb35c",
-        "api/services/voice/brain/snapshot.ts": "ec381ecc1fd1",
+        "api/services/voice/brain/snapshot.ts": "6f2f54006727",
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
         "api/services/voice/brain/tools/app-help.ts": "429dac755057",
         "api/services/voice/brain/tools/calculate.ts": "3cdb9bc51ff9",
         "api/services/voice/brain/tools/coach.ts": "5f3954046f15",
         "api/services/voice/brain/tools/market-price.ts": "5bed0aca7f26",
-        "api/services/voice/brain/tools/memory.ts": "14feca9c3311",
+        "api/services/voice/brain/tools/memory.ts": "c073f335afa9",
         "api/services/voice/brain/tools/money-query.ts": "1262e9e4fe2d",
         "api/services/voice/brain/tools/record.ts": "4476cc91d765",
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
@@ -513,7 +514,7 @@
         "api/services/voice/gateway/socket.ts": "ca83b68fd3ce",
         "api/services/voice/gateway/start-call.ts": "52d4f13d84ac",
         "api/services/voice/gateway/store.ts": "b63ee8f8356d",
-        "api/services/voice/post-call.ts": "67b3213fa3a7",
+        "api/services/voice/post-call.ts": "69fdfaa69b32",
         "api/services/voice/text-model.ts": "761f53a3d212",
         "api/voice-router.ts": "23d99512b2c6",
         "scripts/vite-voice.ts": "661d231ec37f",
@@ -531,9 +532,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-09-30 10476f0",
-      "arabic": "8f85f6112707",
-      "arabicChecked": "2026-09-30 10476f0"
+      "checked": "2026-10-01 0e0890f",
+      "arabic": "4e4555392123",
+      "arabicChecked": "2026-10-01 0e0890f"
     },
     "web-app": {
       "files": {

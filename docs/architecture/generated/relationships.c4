@@ -781,6 +781,7 @@ model {
   smartspend.api.trpc.chat.getConversation -[reads]-> smartspend.mysql.chat_messages
   smartspend.api.trpc.chat.getConversations -[reads]-> smartspend.mysql.chat_conversations
   smartspend.api.trpc.chat.listMemories -[reads]-> smartspend.mysql.ai_memory_items
+  smartspend.api.trpc.chat.listMemories -[uses]-> smartspend.api.modules.ai-memory
   smartspend.api.trpc.chat.sendMessage -[reads]-> smartspend.mysql.ai_pending_actions
   smartspend.api.trpc.chat.sendMessage -[reads]-> smartspend.mysql.chat_conversations
   smartspend.api.trpc.chat.sendMessage -[reads]-> smartspend.mysql.chat_messages

@@ -3,11 +3,12 @@
  * It uses the app's one AI memory (`ai_memory_items`, `retrieveMemoryContext`), never a store of its own, and it
  * refuses to keep age or gender (the owner's decision), however the user phrases it.
  */
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { aiMemoryEmbeddings, aiMemoryItems } from "../../../../../db/schema";
 import { businessDateKey } from "../../../../lib/app-time";
 import { db } from "../../../../queries/connection";
 import { invalidateMemoryUserCache, retrieveMemoryContext } from "../../../ai-memory";
+import { readSlot, slotExpiry } from "../../../ai-memory/slots";
 import { contentHash } from "../../../ai-memory/text-utils";
 import type { ToolRunOutcome } from "../../gateway/call-session";
 import { getSmartProfile } from "../../../user-profile-service";
@@ -35,23 +36,44 @@ async function search(query: string, ctx: ToolContext): Promise<ToolRunOutcome> 
   };
 }
 
-async function remember(fact: string, ctx: ToolContext): Promise<ToolRunOutcome> {
+async function remember(fact: string, ctx: ToolContext, rawSlot?: unknown): Promise<ToolRunOutcome> {
   if (AGE_OR_GENDER.test(fact)) {
     return { response: { ok: false, error: "not_kept", say: "السن والنوع مش بنحفظهم. قول كده بلطف في جملة." } };
   }
   const content = fact.replace(/\s+/g, " ").trim().slice(0, 300);
+  const slot = readSlot(rawSlot);
+  const now = ctx.now();
+  const until = slot ? slotExpiry(slot.slot, now) : null;
+  const metadata = {
+    source: "voice",
+    callId: ctx.identity.callId,
+    explicit: true,
+    day: businessDateKey(now),
+    ...(slot ? { slot: slot.slot } : {}),
+    ...(until ? { validUntil: until.toISOString() } : {}),
+  };
+  const scope = and(eq(aiMemoryItems.userId, ctx.identity.userId), eq(aiMemoryItems.userType, ctx.identity.userType));
   // A request the user dropped (the model cancelled the call, or it ran out of time) writes nothing.
   ctx.signal.throwIfAborted();
+  // What the user says now is the slot's current value: an older one is replaced, not kept beside it.
+  if (slot) {
+    await db.update(aiMemoryItems).set({ status: "replaced" }).where(and(
+      scope,
+      eq(aiMemoryItems.status, "active"),
+      sql`JSON_UNQUOTE(JSON_EXTRACT(${aiMemoryItems.metadata}, '$.slot')) = ${slot.slot}`,
+    ));
+  }
+  const memoryType = slot?.kind === "refusal" ? "refusal" : slot?.kind === "followup" ? "followup" : slot?.kind === "profile" || slot?.kind === "life" ? "fact" : slot?.kind === "goal" ? "plan" : "preference";
   await db.insert(aiMemoryItems).values({
     userId: ctx.identity.userId,
     userType: ctx.identity.userType,
-    memoryType: "preference",
+    memoryType,
     content,
     contentHash: contentHash(content),
     importance: 75,
     status: "active",
-    metadata: { source: "voice", callId: ctx.identity.callId, explicit: true },
-  }).onDuplicateKeyUpdate({ set: { status: "active", updatedAt: new Date() } });
+    metadata,
+  }).onDuplicateKeyUpdate({ set: { status: "active", memoryType, metadata, updatedAt: new Date() } });
   await invalidateMemoryUserCache(ctx.identity.userId, ctx.identity.userType).catch(() => undefined);
   return { response: { ok: true, say: "قول إنك هتفتكر ده في جملة قصيرة." } };
 }
@@ -131,7 +153,9 @@ export const memoryTool: VoiceTool = {
   declaration: {
     name: "memory",
     description:
-      "search: what the user said before. remember: what they ask you to keep. forget: a memory they want gone (search " +
+      "search: what the user said before. remember: what they ask you to keep (with slot when it is one of: income.payday, " +
+      "income.monthly, housing.rent, preference.detail, goal:<topic>, refusal:<topic>, followup:<topic>; a new value " +
+      "replaces the old). forget: a memory they want gone (search " +
       "first for its memory_id). list: what you know about them. answer: their answer to the question in CALL FACTS " +
       "(key and value, or skip true if they would rather not say).",
     parameters: {
@@ -140,6 +164,7 @@ export const memoryTool: VoiceTool = {
         op: { type: "string", enum: ["search", "remember", "forget", "list", "answer"] },
         query: { type: "string", description: "What to look for, for search" },
         fact: { type: "string", description: "What to keep, in a short sentence, for remember" },
+        slot: { type: "string", description: "For remember: what it is about, e.g. income.payday or goal:phone (English topic)" },
         memory_id: { type: "integer", description: "From a search result, for forget" },
         key: { type: "string", description: "The question's key, for answer" },
         value: { type: "string", description: "For answer: a number, true or false, an option value, or option values separated by commas" },
@@ -152,7 +177,7 @@ export const memoryTool: VoiceTool = {
     const op = String(args.op ?? "search");
     if (op === "remember") {
       const fact = str(args.fact, 300);
-      return fact ? remember(fact, ctx) : { response: { ok: false, error: "missing_fact" } };
+      return fact ? remember(fact, ctx, args.slot) : { response: { ok: false, error: "missing_fact" } };
     }
     if (op === "list") return list(ctx);
     if (op === "answer") return answer(args, ctx);

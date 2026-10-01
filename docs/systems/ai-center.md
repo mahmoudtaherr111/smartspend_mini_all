@@ -138,7 +138,9 @@ the finance caches are cleared.
   end of a voice call: a capsule and a running summary per conversation in `ai_conversation_summaries`; up to five
   memories per turn, picked by word rules from the user's messages (preferences such as "بحب", commitments and limits
   such as "متنفذش غير لما أأكد" or a budget cap, interest in linking a card or bank messages, and an assistant plan the
-  user agreed to) into `ai_memory_items`, deduplicated by content; and, unless `ai_memory_embedding_enabled` is
+  user agreed to) into `ai_memory_items`, deduplicated by content (a voice call adds its own, some with a slot that keeps
+  one current value per subject and an end date for declined offers and follow-ups, `api/services/ai-memory/slots.ts`;
+  [after the call](voice-calls.md#after-the-call)); and, unless `ai_memory_embedding_enabled` is
   `false`, a vector of each memory in `ai_memory_embeddings`, written in the background with the model that made it.
   Vectors come from `api/lib/embedding-provider.ts`: the providers the admin assigned to "embedding" in the console, in
   their priority order, then Google's `gemini-embedding-2` with each Gemini key (`ai_embedding_model` may name another
@@ -146,7 +148,8 @@ the finance caches are cleared.
   next answers. The `memory-embedding-backfill` job (every 20 minutes, in `api/boot.ts`) gives up to 40 memories a run
   the vector of the current model they lack, so changing the model fills in older memories without a burst.
 - **Reading** (`retrieveMemoryContext`): cached for five minutes per user and query, and invalidated by a generation
-  counter. It scores recent capsules, active memories and executed actions by words, importance and recency, and adds
+  counter. It scores recent capsules, active memories (leaving out a declined offer or follow-up past its end) and
+  executed actions by words, importance and recency, and adds
   vector similarity from the stored embeddings only when embeddings are on and no strong word match was found, against
   the vectors of the model that embedded the question only. Query embeddings are cached in Redis for two weeks; with no
   provider answering, a local stand-in vector says so in the trace (`embedding:fallback:…`) and matches nothing stored.
@@ -157,8 +160,8 @@ the finance caches are cleared.
   (`api/services/voice/post-call.ts#forgetInPendingCalls`) (migration
   `db/migrations/0024_purge_forgotten_memories.sql` removed the ones earlier versions kept as `forgotten`). The manager is
   `src/components/ai/AIMemoryManager.tsx`. `chat.listMemories` also says whether a memory came from a live call
-  (`fromCall`, from its metadata, which does not leave the server otherwise); the manager labels a call's summary, a plan
-  and an agreement. The [voice call](voice-calls.md) opens the same manager from its end screen.
+  (`fromCall`, from its metadata, which does not leave the server otherwise) and leaves out what has passed its end; the
+  manager labels a call's summary, a plan, an agreement, a declined offer and a follow-up. The [voice call](voice-calls.md) opens the same manager from its end screen.
   `chat.clearConversation` deletes a conversation's messages and summary; the memories taken from it stay until they
   are deleted.
 

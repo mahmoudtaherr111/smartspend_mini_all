@@ -41,7 +41,7 @@ model {
     ai-memory = module 'AI memory' {
       description 'Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional Fireworks embeddings stored in MySQL with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests.'
       metadata {
-        files '12'
+        files '13'
         paths 'api/services/ai-memory/**'
       }
     }

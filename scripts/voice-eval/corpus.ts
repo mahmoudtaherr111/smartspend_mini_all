@@ -80,6 +80,13 @@ export const called = (name: string, want: Record<string, unknown> = {}, turn?: 
     .some((tool) => tool.name === name && matches(tool.args, want)),
 });
 
+/** The arithmetic went through a tool: `calculate` for the coach, `think` for the standard call, which has no calculator. */
+export const computed = (): Check => ({
+  id: "computed",
+  means: "works the numbers out with a tool (calculate, or think in the standard call)",
+  test: (trace) => allTools(trace).some((tool) => tool.name === "calculate" || tool.name === "think"),
+});
+
 export const notCalled = (name: string, turn?: number): Check => ({
   id: `not_called:${name}${turn !== undefined ? `@${turn}` : ""}`,
   means: `never calls ${name}${turn !== undefined ? ` in turn ${turn + 1}` : ""}`,
@@ -171,12 +178,12 @@ export const SCENARIOS: Scenario[] = [
   {
     id: "daily-allowance", domain: "affordability", fixture: "base",
     turns: ["أقدر أصرف كام في اليوم لحد القبض الجاي؟"],
-    checks: [called("calculate"), says(MONEY_WORD, 0)],
+    checks: [computed(), says(MONEY_WORD, 0)],
   },
   {
     id: "phone-goal-plan", domain: "coaching", fixture: "base",
     turns: ["نفسي أجيب موبايل بس الشهر خانقني", "حوالي تلاتين ألف", "طب لو حطيت ألفين كل شهر؟"],
-    checks: [called("money_query"), called("calculate"), notCalled("confirm")],
+    checks: [called("money_query"), computed(), notCalled("confirm")],
   },
   {
     id: "consent-refuse", domain: "consent", fixture: "base",
@@ -256,7 +263,7 @@ export const SCENARIOS: Scenario[] = [
   {
     id: "ho-save-daily-for-phone", domain: "coaching", fixture: "base", heldOut: true,
     turns: ["لو وفرت ميتين جنيه كل يوم، أجيب الموبايل إمتى؟"],
-    checks: [called("calculate"), notCalled("confirm")],
+    checks: [computed(), notCalled("confirm")],
   },
   {
     id: "ho-rent-already-paid", domain: "recording", fixture: "base", heldOut: true,

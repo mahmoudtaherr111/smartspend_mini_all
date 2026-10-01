@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import type { TranscriptLine } from "./gateway/store";
 import { memoryPrompt, readCallMemory, summarizeCall, type CallMemory, type ExistingMemory, type PostCallDeps } from "./post-call";
 
-const existing: ExistingMemory[] = [{ id: 41, type: "plan", content: "بيحوش لعربية" }];
+const existing: ExistingMemory[] = [
+  { id: 41, type: "plan", content: "بيحوش لعربية", slot: "goal:car", day: "2026-09-01" },
+  { id: 42, type: "followup", content: "هيشوف قيمة القسط ويقولها", slot: "followup:installment_amount", day: "2026-09-20" },
+];
 
 const words: TranscriptLine[] = [
   { role: "user", text: "أنا بحوش عشان أجيب عربية السنة الجاية، ومرتبي بينزل يوم 25" },
@@ -47,12 +50,33 @@ function fakeDeps(overrides: Partial<PostCallDeps> & { answer?: string } = {}) {
 }
 
 describe("readCallMemory", () => {
-  it("keeps at most five facts, only known ids as replaced, and a sane importance", () => {
-    const facts = Array.from({ length: 7 }, (_, i) => ({ type: "fact", content: `حقيقة رقم ${i} مهمة`, importance: 500, replaces: 99 }));
+  it("keeps at most six facts, only known ids as replaced, and a sane importance", () => {
+    const facts = Array.from({ length: 8 }, (_, i) => ({ type: "fact", content: `حقيقة رقم ${i} مهمة`, importance: 500, replaces: 99 }));
     const memory = readCallMemory(JSON.stringify({ summary: "  ملخص\nقصير ", facts }), existing)!;
     expect(memory.summary).toBe("ملخص قصير");
-    expect(memory.facts).toHaveLength(5);
-    expect(memory.facts[0]).toEqual({ type: "fact", content: "حقيقة رقم 0 مهمة", importance: 90, replaces: null });
+    expect(memory.facts).toHaveLength(6);
+    expect(memory.facts[0]).toEqual({ type: "fact", content: "حقيقة رقم 0 مهمة", importance: 90, replaces: null, slot: null });
+  });
+
+  it("keeps a registered slot, drops an invented one, and lets a refusal or follow-up slot set the type", () => {
+    const memory = readCallMemory(JSON.stringify({
+      summary: "",
+      facts: [
+        { type: "fact", slot: "INCOME.PAYDAY", content: "مرتبه بينزل يوم 25", importance: 70 },
+        { type: "fact", slot: "mood.today", content: "كان متضايق من الشغل", importance: 40 },
+        { type: "fact", slot: "refusal:food_budget", content: "مش عايز ميزانية للأكل دلوقتي", importance: 60 },
+        { type: "plan", slot: "goal:Phone!", content: "بيحوش لموبايل بتلاتين ألف", importance: 70 },
+      ],
+      closes: [42, 41, 7],
+    }), existing)!;
+    expect(memory.facts.map((fact) => [fact.type, fact.slot])).toEqual([
+      ["fact", "income.payday"],
+      ["fact", null],
+      ["refusal", "refusal:food_budget"],
+      ["plan", null],
+    ]);
+    // Only an existing follow-up can be closed.
+    expect(memory.closes).toEqual([42]);
   });
 
   it("drops what is never kept, whatever the model says", () => {
@@ -71,7 +95,7 @@ describe("readCallMemory", () => {
 describe("memoryPrompt", () => {
   it("shows the model what is already remembered, with ids, and the call's words", () => {
     const prompt = memoryPrompt(words, existing);
-    expect(prompt).toContain("[41] (plan) بيحوش لعربية");
+    expect(prompt).toContain("[41] (plan, goal:car, 2026-09-01) بيحوش لعربية");
     expect(prompt).toContain("المستخدم: أنا بحوش");
     expect(prompt).toContain("المساعد: تمام");
   });

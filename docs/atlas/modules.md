@@ -32,7 +32,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `classification` | Expense classification pipeline | 40 | `ai-providers`, `arabic-nlp`, `contracts`, `database`, `platform` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers` | — |
 | `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform` | `api-routers`, `voice` | — |
-| `ai-memory` | AI memory | 12 | `ai-governance`, `ai-providers`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-core`, `api-routers`, `voice` | `qdrant` |
+| `ai-memory` | AI memory | 13 | `ai-governance`, `ai-providers`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-core`, `api-routers`, `voice` | `qdrant` |
 | `finance-semantic-layer` | Finance semantic layer | 10 | `classification`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-routers`, `coaching`, `jobs`, `ledger`, `voice` | — |
 | `site-guide` | Site guide | 5 | — | `ai-kernel`, `voice` | — |
 | `storage` | File storage | 5 | — | — | `object-storage` |
@@ -289,7 +289,7 @@ Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway
 | `api/services/voice/brain/instructions.ts` | — | — | — | — |
 | `api/services/voice/brain/never-kept.ts` | — | — | — | — |
 | `api/services/voice/brain/profile-questions.ts` | `ai-insights`, `arabic-nlp`, `database` | — | `user_profiles` | `user_profiles` |
-| `api/services/voice/brain/snapshot.ts` | `ai-insights`, `database`, `finance-semantic-layer`, `platform` | — | `ai_memory_items`, `expenses`, `local_users`, `users` | — |
+| `api/services/voice/brain/snapshot.ts` | `ai-insights`, `ai-memory`, `database`, `finance-semantic-layer`, `platform` | — | `ai_memory_items`, `expenses`, `local_users`, `users` | — |
 | `api/services/voice/brain/spoken.ts` | — | — | — | — |
 | `api/services/voice/brain/tools/app-help.ts` | `site-guide` | — | — | — |
 | `api/services/voice/brain/tools/calculate.ts` | — | — | — | — |
@@ -486,6 +486,7 @@ Long-term memory about each user: conversation capsules and running summaries, m
 | `api/services/ai-memory/qdrant-vector-store.ts` | — | `qdrant` | — | — |
 | `api/services/ai-memory/quantized-vector-store.ts` | — | — | — | — |
 | `api/services/ai-memory/retrieval-enhancements.ts` | — | — | — | — |
+| `api/services/ai-memory/slots.ts` | — | — | — | — |
 | `api/services/ai-memory/text-utils.ts` | — | — | — | — |
 | `api/services/ai-memory/types.ts` | — | — | — | — |
 | `api/services/ai-memory/vector-store.ts` | — | — | — | — |
