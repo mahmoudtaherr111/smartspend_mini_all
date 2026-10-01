@@ -286,6 +286,14 @@ async function main(): Promise<void> {
         .where(and(eq(table.userId, user.id), eq(table.userType, "local"), gt(table.id, above)));
       return Number(row?.n ?? 0);
     };
+    const budgetStates = await connection.db
+      .select({ title: schema.userBudgets.title, limit: schema.userBudgets.monthlyLimit, status: schema.userBudgets.status })
+      .from(schema.userBudgets)
+      .where(and(eq(schema.userBudgets.userId, user.id), eq(schema.userBudgets.userType, "local")));
+    const cashflows = await connection.db
+      .select({ kind: schema.scheduledCashflows.kind, direction: schema.scheduledCashflows.direction, amount: schema.scheduledCashflows.amount, startDay: schema.scheduledCashflows.startDay })
+      .from(schema.scheduledCashflows)
+      .where(and(eq(schema.scheduledCashflows.userId, user.id), eq(schema.scheduledCashflows.userType, "local")));
     const trace: CallTrace = {
       turns,
       incidents,
@@ -293,6 +301,13 @@ async function main(): Promise<void> {
         expenses: written.map((row) => ({ amount: Number(row.amount), category: row.category, type: row.type })),
         goals: await count(schema.financialGoals, goalsBefore),
         budgets: await count(schema.userBudgets, budgetsBefore),
+        budgetStates: budgetStates.map((budget) => ({ title: budget.title, limit: Number(budget.limit), status: String(budget.status) })),
+        cashflows: cashflows.map((flow) => ({
+          kind: String(flow.kind),
+          direction: String(flow.direction),
+          amount: flow.amount === null ? null : Number(flow.amount),
+          startDay: flow.startDay ? String(flow.startDay).slice(0, 10) : null,
+        })),
       },
       costUsd: Number(final.costUsd ?? 0),
       tokens: final.tokens ?? null,

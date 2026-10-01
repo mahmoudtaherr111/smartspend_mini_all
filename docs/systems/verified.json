@@ -532,9 +532,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-10-01 39a0871",
-      "arabic": "1c595f0f8d40",
-      "arabicChecked": "2026-10-01 39a0871"
+      "checked": "2026-10-01 ecca083",
+      "arabic": "a8dddf9ccb0d",
+      "arabicChecked": "2026-10-01 ecca083"
     },
     "web-app": {
       "files": {

@@ -5,11 +5,16 @@
  */
 import { and, eq, inArray, like } from "drizzle-orm";
 import {
+  cashflowSettlements,
+  coachingPlans,
+  coachingSteps,
   expenses,
   financialGoals,
   installmentPlans,
   localUsers,
+  scheduledCashflows,
   userBudgets,
+  userBusinesses,
   userContacts,
   userProfiles,
   userWallets,
@@ -43,8 +48,8 @@ export type FixtureName = "base" | "empty" | "tight";
 
 /**
  * base: a salaried user half way through the cycle — salary, rent paid, food (much of it delivery), transport, bills,
- * a refund, a lent and a borrowed loan, three gam3eya payments, an installment plan, two wallets, a phone goal and a
- * food budget; last cycle for comparisons.
+ * a refund, a lent and a borrowed loan, three gam3eya payments, an installment plan, two wallets, a phone goal, a
+ * food budget, and a carpentry workshop with 2,750 of its own spending this cycle; last cycle for comparisons.
  * tight: the same user with spending above income this cycle and a small cash balance.
  * empty: a new user with nothing recorded.
  */
@@ -133,6 +138,15 @@ export async function createEvalUser(name: FixtureName, now = new Date()): Promi
   ];
   await db.insert(expenses).values(rows);
 
+  // The user's business, with its own ledger: never part of the personal figures above.
+  const [workshop] = await db.insert(userBusinesses).values({ ...user, name: "ورشة النجارة", type: "workshop", isActive: true });
+  const businessId = Number(workshop.insertId);
+  await db.insert(expenses).values([
+    row(day(2), "expense", 2_000, "خامات", "خشب", "خشب للورشة", { businessId }),
+    row(day(6), "expense", 450, "نقل", "نقل بضاعة", "نقل الخشب", { businessId }),
+    row(day(9), "expense", 300, "فواتير", "كهربا", "كهربا الورشة", { businessId }),
+  ]);
+
   await db.insert(userWallets).values([
     { ...user, name: "الكاش", provider: "cash", balance: tight ? "450.00" : "1800.00", createdAt: at(day(-10)) },
     { ...user, name: "حساب البنك", provider: "BankTransfer", balance: tight ? "600.00" : "6500.00", createdAt: at(day(-10)) },
@@ -157,7 +171,10 @@ export async function removeEvalUsers(ids: number[]): Promise<void> {
   if (!safe.length) return;
   const scope = (table: { userId: typeof expenses.userId; userType: typeof expenses.userType }) =>
     and(inArray(table.userId, safe), eq(table.userType, "local"));
-  for (const table of [expenses, userWallets, financialGoals, userBudgets, installmentPlans, userContacts, userProfiles]) {
+  for (const table of [
+    expenses, userWallets, financialGoals, userBudgets, installmentPlans, userContacts, userProfiles, userBusinesses,
+    cashflowSettlements, scheduledCashflows, coachingSteps, coachingPlans,
+  ]) {
     await db.delete(table).where(scope(table as never));
   }
   await db.delete(localUsers).where(inArray(localUsers.id, safe));

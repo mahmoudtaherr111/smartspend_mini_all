@@ -399,9 +399,11 @@ with a message when the new model cannot connect. `api/services/voice/gateway/ad
 call per user (id and type together), renewal of a held seat, expiry of a dead server's seat and the breaker.
 `scripts/voice-eval/run.ts` evaluates the call against the real Gemini Live model: the cases of
 `scripts/voice-eval/corpus.ts` (a tuning set and a held-out set), each on a fresh fabricated user
-(`scripts/voice-eval/fixtures.ts`) in a database whose name must end in `_eval`, typed turn by turn through
+(`scripts/voice-eval/fixtures.ts`: a salaried user with loans, a gam3eya, an installment plan, wallets, a goal, a
+budget and a business with its own spending) in a database whose name must end in `_eval`, typed turn by turn through
 `CallSession`, the brain and the app's own procedures, with each arm (`coach:low|medium|high`, `standard`) run back
-to back in a shuffled order. It checks tools, writes, incidents and false failure claims, and keeps every trace
+to back in a shuffled order. It checks tools, writes (expenses, new goals and budgets, every budget's limit and status, and commitments after the
+call), incidents and false failure claims, and keeps every trace
 (failed and timed-out ones too) and a summary under the ignored `.agents/` folder: the pass rate over every attempt
 with its 95% interval (the rate without provider failures apart), per turn the first audio, tools done, the answer's
 first audio, listening again and the estimated end of playback, incidents, and the cost at paid rates (an estimate,

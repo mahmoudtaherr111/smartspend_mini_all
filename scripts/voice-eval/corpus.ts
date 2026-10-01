@@ -42,7 +42,15 @@ export interface CallTrace {
   turns: TurnTrace[];
   incidents: string[];
   /** Rows the call wrote, read from the database after it ended. */
-  writes: { expenses: Array<{ amount: number; category: string; type: string }>; goals: number; budgets: number };
+  writes: {
+    expenses: Array<{ amount: number; category: string; type: string }>;
+    goals: number;
+    budgets: number;
+    /** Every budget after the call, for checks of a change to one. Absent in older traces. */
+    budgetStates?: Array<{ title: string; limit: number; status: string }>;
+    /** Commitments and expected income the call added. Absent in older traces. */
+    cashflows?: Array<{ kind: string; direction: string; amount: number | null; startDay: string | null }>;
+  };
   costUsd: number;
   tokens: unknown;
   providerErrors: string[];
@@ -230,6 +238,28 @@ export const SCENARIOS: Scenario[] = [
     id: "empty-user", domain: "data_quality", fixture: "empty",
     turns: ["المرتب بيطير"],
     checks: [called("money_query"), says(/متسجل|سجل|تسجل|مفيش/)],
+  },
+  {
+    id: "business-total", domain: "business", fixture: "base",
+    turns: ["الورشة صرفت كام الدورة دي؟"],
+    // 2,750 of the workshop's own; the personal ledger would say something else entirely.
+    checks: [called("money_query", { scope: "business" }), says(/2[,٬]?750|ألفين وسبعمية وخمسين|ألفين وسبعمية ونص/)],
+  },
+  {
+    id: "budget-lower", domain: "budgets", fixture: "base",
+    turns: ["عايزة أقلل ميزانية الأكل لألف وخمسمية", "آه غيرها"],
+    checks: [called("confirm", {}, 1), {
+      id: "budget_limit_1500", means: "the food budget's limit is 1,500 after the call",
+      test: (trace) => (trace.writes.budgetStates ?? []).some((budget) => /أكل/.test(budget.title) && budget.limit === 1_500 && budget.status === "active"),
+    }],
+  },
+  {
+    id: "debt-due-commitment", domain: "debts", fixture: "base",
+    turns: ["لازم أرجع لخالد التمنمية يوم خمستاشر الشهر الجاي، خليك فاكرها", "آه سجلها"],
+    checks: [{
+      id: "debt_commitment", means: "an outgoing commitment of 800 with a date is saved",
+      test: (trace) => (trace.writes.cashflows ?? []).some((flow) => flow.direction === "out" && flow.amount === 800 && Boolean(flow.startDay)),
+    }],
   },
   {
     id: "tight-can-buy", domain: "affordability", fixture: "tight",
