@@ -198,7 +198,8 @@ is billed again for it on every later turn.
   same number of digits and be at most twice or half the number said, or be its teen-and-tens twin (15 and 50, heard
   alike), so a number is never "corrected" into an unrelated figure. Numbers in the remembered things the call starts
   with, and the income and debt payment `memory list` reads, count as the user's own. A number word keeps its value with the article ("التمنمية" is 800; the article goes only before a number word, so
-"الف" stays a thousand), so an amount the user said that way counts as theirs. Piasters are the fraction of the
+"الف" stays a thousand, and never from "المية", so "في المية" stays a percentage), so an amount the user said that way
+counts as theirs. Piasters are the fraction of the
   pounds before them ("خمسمية تلاتة وخمسين جنيه وتلاتة وتلاتين قرش" is 553.33), never an amount of their own. Amounts are spoken as `api/services/voice/brain/spoken.ts` writes them
   ("تمن آلاف وربعمية", "حوالي خمستاشر ألف").
 - **Writes.** `api/services/voice/brain/drafts.ts#DraftBook`: only the latest pending draft, within two minutes, and

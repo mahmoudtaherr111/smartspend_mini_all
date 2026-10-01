@@ -23,6 +23,8 @@ describe("extractSpokenNumbers", () => {
     expect(extractSpokenNumbers("الخمسين دي").map(({ value }) => value)).toEqual([50]);
     expect(extractSpokenNumbers("الف جنيه").map(({ value }) => value)).toEqual([1000]);
     expect(extractSpokenNumbers("الفلوس خلصت")).toEqual([]);
+    // A percentage stays one: round 5 read "في المية" as a hundred pounds after the article was dropped.
+    expect(extractSpokenNumbers("تلاتة وأربعين في المية وجبات سريعة").map(({ value, money }) => [value, money])).toEqual([[43, false]]);
   });
 
   it("marks an approximation", () => {

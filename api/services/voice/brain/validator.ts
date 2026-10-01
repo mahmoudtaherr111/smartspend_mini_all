@@ -29,13 +29,19 @@ const PIASTERS_AFTER = /^\s*(قرش|قروش|قرشا|قرشاً)/;
 /** What may stand between the pounds and the piasters of one amount: "553 جنيه و33 قرش". */
 const POUNDS_THEN_PIASTERS = /^\s*(جنيه|جنيهات)?\s*و?\s*$/;
 
+/** "مية" on its own, as in the percentage "في المية". */
+const HUNDRED_ALONE = /^(مي[ةه]|مائ[ةه]|مئ[ةه])$/;
+
 /** The numbers in a stretch of speech, with what surrounds each one. */
 export function extractSpokenNumbers(
   text: string,
 ): Array<SpokenNumber & { settled: boolean; index: number }> {
-  // "التمنمية" and "الخمسين" are numbers too; the article goes only before a number word, so "الف" stays a thousand.
+  // "التمنمية" and "الخمسين" are numbers too; the article goes only before a number word, so "الف" stays a thousand,
+  // and never from "المية": "تلاتة وأربعين في المية" is a percentage, not forty-three pounds and a hundred.
   const parsed = parseArabicNumbers(
-    text.replace(/(^|\s)ال(\S+)/g, (whole, before: string, rest: string) => (isKnownNumberWord(rest) ? before + rest : whole)),
+    text.replace(/(^|\s)ال(\S+)/g, (whole, before: string, rest: string) =>
+      isKnownNumberWord(rest) && !HUNDRED_ALONE.test(rest) ? before + rest : whole,
+    ),
   );
   const out: Array<SpokenNumber & { settled: boolean; index: number; end: number }> = [];
   const pattern = /\d+(?:\.\d+)?/g;
