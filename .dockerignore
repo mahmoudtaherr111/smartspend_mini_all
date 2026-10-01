@@ -3,9 +3,16 @@
 .env.*
 !.env.example
 node_modules
+**/node_modules
+android
+android-app
+ios
 dist
 dev-dist
 coverage
+.agents
+test-results
+playwright-report
 whatsapp_auth_info
 scratch
 *.log

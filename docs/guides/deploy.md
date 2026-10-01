@@ -21,8 +21,17 @@ its first request. Sentry and node-cron stay outside the bundle and load from `n
 starts `dist/boot.js` and `dist/server/server.js` and asks each for /health.
 
 ## Docker
-The image starts from node:20-alpine, runs `npm run build`, and starts with `npm start` on port 3000. It contains `dist`,
+The image starts from node:22-alpine, matching CI's Node 22 line, runs `npm run build`, and starts with `npm start` on port 3000. Node 20 has reached end of life ([Node.js release schedule](https://nodejs.org/en/about/previous-releases)). It contains `dist`,
 `node_modules` and `package.json` only, so it cannot run migrations (see Database).
+The build context excludes environment files, `.agents`, Playwright reports and test results, nested `node_modules`,
+and the native projects (`android/`, `android-app/`, `ios/`), which the web and server image never uses.
+
+Install with the checked-in lockfile. The gRPC JavaScript override in `package.json` pins `1.14.5` across Firebase's
+client and admin dependency trees to close its high-severity advisory; removing it requires rechecking
+both trees with `npm audit`. The patched lockfile still reports moderate advisories in Drizzle Kit's
+development esbuild tree and ExcelJS's UUID tree. The security gate checks High and Critical findings;
+passing it does not mean there are zero advisories. Do not use `npm audit fix --force` to downgrade
+those parent packages. Development/test dependencies include Undici 8, requiring Node 22.19 or newer.
 
 `docker-compose.yml` defines:
 
