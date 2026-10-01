@@ -18,19 +18,46 @@ export const DONE_CLAIM_NOTE =
 export class DoneClaimCheck {
   private turnText = "";
   private flagged = false;
+  private notesThisRequest = 0;
+  private notes = 0;
 
-  /** Adds a chunk of the assistant's speech; true once, the first time it claims a waiting draft is done. */
-  add(chunk: string, draftWaiting: boolean): boolean {
+  /**
+   * At most `perRequest` corrections for one request of the user and `perCall` in all: a model that reads a draft back
+   * as "سجلت … أسجلها؟" would otherwise be stopped, restart with the same words, and be stopped again without end.
+   */
+  constructor(private readonly perRequest = 1, private readonly perCall = 3) {}
+
+  /** The user spoke: a new request may be corrected again. */
+  newRequest(): void {
+    this.notesThisRequest = 0;
+  }
+
+  /**
+   * Adds a chunk of the assistant's speech. The first time a reply claims a waiting draft is done: `note` while
+   * corrections are left (the model is told at once), `record` after (the incident only). Otherwise null.
+   */
+  add(chunk: string, draftWaiting: boolean): "note" | "record" | null {
     this.turnText += chunk;
-    if (this.flagged || !draftWaiting) return false;
-    if (!DONE_CLAIM.test(this.turnText.replace(DIACRITICS, ""))) return false;
+    if (this.flagged || !draftWaiting) return null;
+    if (!DONE_CLAIM.test(this.turnText.replace(DIACRITICS, ""))) return null;
     this.flagged = true;
-    return true;
+    if (this.notesThisRequest >= this.perRequest || this.notes >= this.perCall) return "record";
+    this.notesThisRequest += 1;
+    this.notes += 1;
+    return "note";
   }
 
   endTurn(): void {
     this.turnText = "";
     this.flagged = false;
+  }
+
+  snapshot(): { notes: number } {
+    return { notes: this.notes };
+  }
+
+  restore(state: { notes?: number } | null | undefined): void {
+    this.notes = state?.notes ?? 0;
   }
 }
 
@@ -42,8 +69,10 @@ export class DoneClaimCheck {
 export class WrittenAmountCheck {
   private turnText = "";
   private flagged = false;
+  private corrections = 0;
 
-  add(chunk: string, recent: { written: number[]; replaced: number[] } | null, amountsIn: (text: string) => number[]): { spoken: number; written: number } | null {
+  /** `correct` is false after two corrections in the call: the incident is still recorded, the model not stopped again. */
+  add(chunk: string, recent: { written: number[]; replaced: number[] } | null, amountsIn: (text: string) => number[]): { spoken: number; written: number; correct: boolean } | null {
     this.turnText += chunk;
     if (this.flagged || !recent || !recent.replaced.length) return null;
     const spoken = amountsIn(this.turnText);
@@ -51,7 +80,9 @@ export class WrittenAmountCheck {
       && !recent.written.some((amount) => Math.abs(amount - value) < 0.5));
     if (wrong === undefined) return null;
     this.flagged = true;
-    return { spoken: wrong, written: recent.written[0] };
+    const correct = this.corrections < 2;
+    if (correct) this.corrections += 1;
+    return { spoken: wrong, written: recent.written[0], correct };
   }
 
   endTurn(): void {

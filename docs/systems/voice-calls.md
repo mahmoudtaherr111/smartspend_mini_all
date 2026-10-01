@@ -214,10 +214,13 @@ is billed again for it on every later turn.
   model no tool failed and to call it again.
 - **Saying the wrong amount was written.** `api/services/voice/brain/claims.ts#WrittenAmountCheck`: right after an
   expense write and before the user speaks, an amount of a replaced draft (a "15" corrected to "50") said as written is
-  a `wrong_amount_after_write` incident, and a note makes the model say what was written.
+  a `wrong_amount_after_write` incident, and a note makes the model say what was written (twice a call at most; after
+  that the incident only).
 - **Saying it is done.** `api/services/voice/brain/claims.ts#DoneClaimCheck`: while a new record or action waits
   for consent, a reply that calls it recorded or done ("سجلت", "اتسجل", "اتعمل") gets a note at once that makes the
-  model say it is still waiting and ask; the `done_claim_before_confirm` incident records only that it happened.
+  model say it is still waiting and ask, once a request and three times a call at most (a model that reads a draft
+  back as "سجلت … أسجلها؟" was stopped and restarted 28 times in one evaluation call); the
+  `done_claim_before_confirm` incident records that it happened and whether it was corrected.
   An undo draft is left out, because it speaks of what was recorded before.
 - **Cost.** `api/services/voice/gateway/pricing.ts` prices the provider's token counts (Google's published Live
   rates) and the text models the tools ask (`textModelCostUsd`: `think`, a price lookup, which a cached price skips;

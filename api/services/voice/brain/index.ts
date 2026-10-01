@@ -172,6 +172,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
 
     onUserWords(text) {
       failures.newRequest();
+      claims.newRequest();
       drafts.heardUser(text);
       validator.noteUserWords(text);
     },
@@ -187,11 +188,13 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       const misstated = writtenAmounts.add(text, drafts.justWritten(), (words) =>
         extractSpokenNumbers(words).filter((number) => number.money || number.value >= 10).map((number) => number.value));
       const numbers = check(validator.addAssistantWords(text));
-      if (claimed) return { kind: "done_claim_before_confirm", note: DONE_CLAIM_NOTE, incident: { waitingDraft: true } };
+      if (claimed) return { kind: "done_claim_before_confirm", note: claimed === "note" ? DONE_CLAIM_NOTE : null, incident: { waitingDraft: true, corrected: claimed === "note" } };
       if (misstated) {
         return {
           kind: "wrong_amount_after_write",
-          note: `(ملاحظة من التطبيق: اللي اتسجل ${spellAmount(misstated.written, { exact: true }).text} مش ${spellAmount(misstated.spoken, { exact: true }).text}. صحح بجملة قصيرة.)`,
+          note: misstated.correct
+            ? `(ملاحظة من التطبيق: اللي اتسجل ${spellAmount(misstated.written, { exact: true }).text} مش ${spellAmount(misstated.spoken, { exact: true }).text}. صحح بجملة قصيرة.)`
+            : null,
           incident: { spoken: misstated.spoken, written: misstated.written },
         };
       }
@@ -258,6 +261,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       noteTag,
       recordsSeen: records.seen,
       failureRetries: failures.snapshot(),
+      doneNotes: claims.snapshot(),
       forgotten: [...forgotten],
     }),
 
@@ -269,6 +273,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
         noteTag?: string;
         recordsSeen?: number | null;
         failureRetries?: { retries?: number };
+        doneNotes?: { notes?: number };
         forgotten?: string[];
       };
       ledger.restore(saved.ledger);
@@ -277,6 +282,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       if (saved.noteTag) noteTag = saved.noteTag;
       records.seen = saved.recordsSeen ?? null;
       failures.restore(saved.failureRetries);
+      claims.restore(saved.doneNotes);
       forgotten.splice(0, forgotten.length, ...(saved.forgotten ?? []));
     },
   };
