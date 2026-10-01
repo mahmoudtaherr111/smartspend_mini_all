@@ -60,6 +60,9 @@ describe("spoken numbers", () => {
     expect(amounts("دفعت تلتميت")).toEqual([300]);
     expect(amounts("ربعميت جنيه")).toEqual([400]);
     expect(amounts("ستميت")).toEqual([600]);
+    // Eight hundred is written with or without the alef, as it is said: تمنمية and تمانمية.
+    expect(amounts("لازم أرجع لخالد تمانمية جنيه")).toEqual([800]);
+    expect(amounts("تمانميت جنيه")).toEqual([800]);
     expect(amounts("سبعميت")).toEqual([700]);
     expect(amounts("تمنميت")).toEqual([800]);
     expect(amounts("تسعميت")).toEqual([900]);

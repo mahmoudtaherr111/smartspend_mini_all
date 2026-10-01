@@ -37,6 +37,8 @@ export interface Draft<Payload = unknown> {
   /** Written ids once executed, for "undo the last thing". */
   resultIds?: number[];
   message?: string;
+  /** The draft itself changes something that exists (a budget's limit, a goal): "آه غيّرها" agrees with it. */
+  edits?: boolean;
 }
 
 export type GateRefusal =
@@ -120,6 +122,21 @@ const YES_TO_REMOVE = set([
   "شيل",
   "شيلها",
   "شيلهم",
+]);
+/** A yes only when the draft itself is the change ("أغيّر الحد لألف؟" — "آه غيّرها"); to anything else it is a change. */
+const YES_TO_EDIT = set([
+  "غير",
+  "غيره",
+  "غيرها",
+  "غيرهم",
+  "عدل",
+  "عدله",
+  "عدلها",
+  "عدلهم",
+  "خلي",
+  "خليه",
+  "خليها",
+  "خليهم",
 ]);
 /** No, wait, stop: never consent, whatever else the reply holds. */
 const NO = set([
@@ -257,6 +274,7 @@ export function readReply(
   text: string,
   draftNumbers: number[] = [],
   kind: Draft["kind"] = "expenses",
+  edits = false,
 ): "yes" | "no_or_change" | "unclear" {
   const reply = text
     .replace(/(مش|مفيش|ما فيش|مافيش)\s+مشكل[ةه]/g, " موافق ")
@@ -268,7 +286,11 @@ export function readReply(
     .filter(Boolean)
     .map(fold);
   const question = /[؟?]/.test(reply);
-  const yesWords = kind === "undo" ? new Set([...YES, ...YES_TO_REMOVE]) : YES;
+  const yesWords = new Set([
+    ...YES,
+    ...(kind === "undo" ? YES_TO_REMOVE : []),
+    ...(edits ? YES_TO_EDIT : []),
+  ]);
   // Egyptian negation wraps the verb: "ماتسجلش", "متعملهاش", "مابقاش".
   const negated = (word: string) =>
     NO.has(word) || (/^ما?.{2,}ش$/.test(word) && !yesWords.has(word));
@@ -276,7 +298,7 @@ export function readReply(
     words.some(
       (word) =>
         negated(word) ||
-        CHANGE.has(word) ||
+        (CHANGE.has(word) && !yesWords.has(word)) ||
         (kind !== "undo" && YES_TO_REMOVE.has(word)),
     )
   ) {
@@ -467,6 +489,7 @@ export class DraftBook {
         this.wordsSince(draft.presentedAt),
         amounts,
         draft.kind,
+        draft.edits === true,
       );
       if (reply === "no_or_change") return { ok: false, reason: "changed" };
       if (reply !== "yes") return { ok: false, reason: "no_yes" };

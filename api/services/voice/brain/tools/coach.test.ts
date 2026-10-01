@@ -160,7 +160,8 @@ describe("the coach's drafts", () => {
     expect(changes).toEqual([]);
     ctx.drafts.heardAssistant();
     clock.now += 1_000;
-    ctx.drafts.heardUser("آه");
+    // The evaluation's reply: to a draft that is itself a change, "change it" is the yes.
+    ctx.drafts.heardUser("آه غيّرها");
     expect((await confirmTool.run({ draft_id: drafted.response.draft_id }, ctx)).response).toMatchObject({ ok: true, done: "حد الميزانية بقى ألف وخمسمية في الشهر" });
     const resume = await changeDraftCoachTool.run({ action: "budget_update", fields: { budget_id: 13, paused: false, title: "خروجات" } }, ctx);
     expect(resume.card).toMatchObject({ title: "تشغيل ميزانية تاني" });

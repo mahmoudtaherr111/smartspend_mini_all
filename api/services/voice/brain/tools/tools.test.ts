@@ -57,6 +57,12 @@ vi.mock("./reports", () => ({
   })),
 }));
 
+vi.mock("../../../ai-memory/slot-store", () => ({
+  forgetConversationSummaries: vi.fn(async () => undefined),
+  putMemory: vi.fn(async () => undefined),
+  withMemoryOwnerLock: vi.fn(async (_identity: unknown, write: (tx: unknown) => Promise<unknown>) => write({})),
+}));
+vi.mock("../../../ai-memory", () => ({ invalidateMemoryUserCache: vi.fn(async () => undefined), retrieveMemoryContext: vi.fn() }));
 vi.mock("../../../../lib/ai-gateway", () => ({ executeAiGateway: vi.fn() }));
 vi.mock("../../../../lib/settings-cache", () => ({ getSystemSettings: vi.fn(async () => ({ voice_think_model: "" })) }));
 vi.mock("../../text-model", () => ({ askTextModel: vi.fn() }));
@@ -409,6 +415,17 @@ describe("memory", () => {
   it("never keeps age or gender", async () => {
     expect((await memoryTool.run({ op: "remember", fact: "أنا عندي 45 سنة" }, ctx)).response).toMatchObject({ ok: false, error: "not_kept" });
     expect((await memoryTool.run({ op: "remember", fact: "انا ست بيت" }, ctx)).response).toMatchObject({ ok: false, error: "not_kept" });
+  });
+
+  it("keeps money owed on a date as a note it never calls recorded, and points the coach to a commitment", async () => {
+    const fact = "لازم يرجع لخالد التمنمية جنيه يوم 15";
+    const plain = (await memoryTool.run({ op: "remember", fact }, ctx)).response as { kept_as?: string; say: string };
+    expect(plain.kept_as).toBe("note");
+    expect(plain.say).toContain("متقولش إنها اتسجلت");
+    const coach = (await memoryTool.run({ op: "remember", fact }, { ...ctx, coach: true })).response as { say: string };
+    expect(coach.say).toContain("commitment_add");
+    // A preference with no amount is remembered as before.
+    expect((await memoryTool.run({ op: "remember", fact: "بيحب يتكلم باختصار" }, ctx)).response).toEqual({ ok: true, say: "قول إنك هتفتكر ده في جملة قصيرة." });
   });
 });
 

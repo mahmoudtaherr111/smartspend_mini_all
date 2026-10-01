@@ -85,6 +85,20 @@ async function remember(
     );
   });
   await invalidateMemoryUserCache(ctx.identity.userId, ctx.identity.userType).catch(() => undefined);
+  // A memory is a note: an amount in it is counted nowhere (not in commitments, debts or the month's rest), so the
+  // model must not call it recorded, and the coach can offer the ledger's own place for money owed on a date.
+  // "التمنمية" is eight hundred too: drop the article before reading numbers, as the consent reader does.
+  if (extractSpokenNumbers(content.replace(/(^|\s)ال(?=\S)/g, "$1")).some((number) => number.money)) {
+    return {
+      response: {
+        ok: true,
+        kept_as: "note",
+        say: ctx.coach
+          ? "اتحفظت ملاحظة بس، مش داخلة في أي حساب. متقولش «سجلت». لو ده مبلغ عليه أو ليه بميعاد أو بيتكرر، اعرض تسجله التزام (change_draft commitment_add) بالمبلغ والميعاد اللي قالهم."
+          : "اتحفظت ملاحظة بس، مش داخلة في أي حساب. قول إنك هتفتكرها، ومتقولش إنها اتسجلت.",
+      },
+    };
+  }
   return { response: { ok: true, say: "قول إنك هتفتكر ده في جملة قصيرة." } };
 }
 

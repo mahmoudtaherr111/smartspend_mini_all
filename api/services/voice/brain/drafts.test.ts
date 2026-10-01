@@ -76,6 +76,19 @@ describe("readReply", () => {
     expect(readReply("آه الغيها", [], "undo")).toBe("yes");
   });
 
+  it("reads 'change it' by what the draft does: a yes to an edit, a change to anything else", () => {
+    // The draft: lower the food budget to 1500.
+    expect(readReply("آه غيّرها", [1500], "coach", true)).toBe("yes");
+    expect(readReply("أيوه خليها ألف وخمسمية", [1500], "coach", true)).toBe("yes");
+    expect(readReply("عدّلها", [1500], "coach", true)).toBe("yes");
+    expect(readReply("لا متغيرهاش", [1500], "coach", true)).toBe("no_or_change");
+    expect(readReply("آه غيرها لألفين", [1500], "coach", true)).toBe("no_or_change");
+    expect(readReply("آه غيرها بس الشهر الجاي", [1500], "coach", true)).toBe("unclear");
+    // To a new record, the same words still change it.
+    expect(readReply("آه غيرها", [50], "expenses")).toBe("no_or_change");
+    expect(readReply("آه خليها سبعين", [50], "coach")).toBe("no_or_change");
+  });
+
   it("folds spellings and takes a yes with a few words beside it, not a sentence about something else", () => {
     expect(readReply("أيوة يا سمارت سجلها لو سمحت")).toBe("yes");
     expect(readReply("آه سجل الأكل والمواصلات")).toBe("yes");

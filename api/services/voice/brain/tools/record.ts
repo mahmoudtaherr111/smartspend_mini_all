@@ -435,6 +435,7 @@ async function changeDraft(
       title: built.title,
       lines: built.lines,
       payload: built.payload,
+      edits: built.payload.op === "budget_update",
     });
     return {
       response: {
@@ -528,6 +529,7 @@ async function changeDraft(
     title: summary,
     lines: [{ label: summary }],
     payload: { actionName, payload, actionId: Number(pending.action.id) },
+    edits: actionName.endsWith(".update"),
   });
   return {
     response: {
