@@ -1479,7 +1479,8 @@ export const moneyQueryCoach: VoiceTool = {
           type: "string",
           enum: [...PERIODS],
           description:
-            "Default this_month (the salary cycle when there is a salary day).",
+            "Default this_month (the salary cycle when there is a salary day). With compare it is the period asked about, " +
+            "compared with the one before it: \"الشهر ده أكتر من اللي فات؟\" is this_month, never last_month.",
         },
         from: { type: "string", description: "YYYY-MM-DD, with period custom" },
         to: { type: "string", description: "YYYY-MM-DD, with period custom" },
@@ -1541,7 +1542,8 @@ export const moneyQuery: VoiceTool = {
           type: "string",
           enum: [...PERIODS],
           description:
-            "Default this_month (the salary cycle when there is a salary day).",
+            "Default this_month (the salary cycle when there is a salary day). With compare it is the period asked about, " +
+            "compared with the one before it: \"الشهر ده أكتر من اللي فات؟\" is this_month, never last_month.",
         },
         from: { type: "string", description: "YYYY-MM-DD, with period custom" },
         to: { type: "string", description: "YYYY-MM-DD, with period custom" },
