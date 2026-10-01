@@ -347,6 +347,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       if (
         waiting &&
         waiting.presentedAt === undefined &&
+        drafts.spokeAfter(waiting) &&
         !incompletePreviews.has(waiting.id)
       ) {
         incompletePreviews.add(waiting.id);

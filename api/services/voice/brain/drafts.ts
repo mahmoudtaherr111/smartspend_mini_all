@@ -336,6 +336,8 @@ export class DraftBook {
   private voiceBoundary = false;
   private consentReadyAt = 0;
   private presentationText = "";
+  /** The assistant's words since the user last spoke: the reply a draft made during it is read out in. */
+  private replyText = "";
 
   beginUserRequest(audio: boolean): void {
     this.voiceBoundary = audio;
@@ -352,10 +354,13 @@ export class DraftBook {
   private userWords: Array<{ at: number; text: string }> = [];
   /** When the assistant last spoke: user words after it are a new utterance, never the tail of an earlier one. */
   private lastAssistantAt = 0;
+  /** When the assistant last said words (not only audio). */
+  private lastWordsAt = 0;
 
   constructor(private readonly now: () => number = Date.now) {}
 
   heardUser(text: string): void {
+    this.replyText = "";
     if (this.voiceBoundary && !this.speaking)
       this.consentReadyAt = this.now() + 500;
     const at = this.now();
@@ -383,7 +388,9 @@ export class DraftBook {
   add<P>(
     draft: Omit<Draft<P>, "id" | "createdAt" | "expiresAt" | "status">,
   ): Draft<P> {
-    this.presentationText = "";
+    // The model may start reading the draft out while its tool is still making it ("تعديل حد الميزانية: ألف" before the
+    // draft, "وخمسمية…" after): the words of this same reply count, nothing said before the user last spoke.
+    this.presentationText = this.replyText;
     const createdAt = this.now();
     for (const pending of this.drafts) {
       if (pending.status === "pending") pending.status = "cancelled";
@@ -398,6 +405,14 @@ export class DraftBook {
     this.drafts.push(entry as Draft);
     if (this.drafts.length > 30) this.drafts.shift();
     return entry;
+  }
+
+  /**
+   * The assistant said something after the draft was made. A turn that ends with the tool call that made it (Live
+   * closes the turn as the call goes out) has not had the chance to read it out yet.
+   */
+  spokeAfter(draft: Draft): boolean {
+    return this.lastWordsAt >= draft.createdAt;
   }
 
   get(id: string): Draft | undefined {
@@ -419,7 +434,11 @@ export class DraftBook {
 
   /** The assistant is speaking: the latest pending draft is now being read out to the user. */
   heardAssistant(text?: string): void {
-    if (text !== undefined) this.presentationText += text;
+    if (text !== undefined) {
+      this.presentationText += text;
+      this.replyText += text;
+      if (text.trim()) this.lastWordsAt = this.now();
+    }
     const at = this.now();
     this.lastAssistantAt = at;
     for (const draft of this.drafts) {

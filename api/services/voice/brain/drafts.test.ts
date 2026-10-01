@@ -46,6 +46,29 @@ describe("voice consent boundaries", () => {
     drafts.heardAssistant(" قصدي ستين جنيه، أسجلها؟");
     expect(draft.presentedAt).toBeDefined();
   });
+
+  it("counts a read-back begun while the draft was being made, but nothing said before the user last spoke", () => {
+    // The evaluation: "تعديل حد الميزانية: ألف" before change_draft returned, "وخمسمية… أأكد؟" after it.
+    const { drafts, advance } = book();
+    drafts.heardUser("عايزة أقلل ميزانية الأكل لألف وخمسمية");
+    advance(600);
+    drafts.heardAssistant("تعديل حد الميزانية: ألف");
+    const lower = drafts.add({ ...expenseDraft, kind: "coach", lines: [{ label: "أكل", amount: 1500 }] });
+    advance(50);
+    drafts.heardAssistant(" وخمسمية جنيه. أأكد؟");
+    expect(lower.presentedAt).toBeDefined();
+
+    // Sixty said in an earlier reply, before the user answered, does not present a new draft of sixty.
+    const later = book();
+    later.drafts.heardAssistant("صرفت ستين جنيه على الأكل.");
+    later.advance(1000);
+    later.drafts.heardUser("طب سجل ستين");
+    later.advance(600);
+    const sixty = later.drafts.add(expenseDraft);
+    later.advance(50);
+    later.drafts.heardAssistant("أسجلها؟");
+    expect(sixty.presentedAt).toBeUndefined();
+  });
 });
 
 describe("readReply", () => {
