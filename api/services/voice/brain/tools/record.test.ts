@@ -1,8 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import { DraftBook } from "../drafts";
 import { FactLedger } from "../facts";
-import { confusableWith, confirmTool, changeDraftTool, recordDraftTool } from "./record";
-import type { ParseOutcome, SaveExpenseItem, ToolContext, VoiceAppCalls } from "./types";
+import {
+  confusableWith,
+  confirmTool,
+  changeDraftTool,
+  recordDraftTool,
+} from "./record";
+import type {
+  ParseOutcome,
+  SaveExpenseItem,
+  ToolContext,
+  VoiceAppCalls,
+} from "./types";
 
 function context(parse: ParseOutcome, clock = { now: 1_000_000 }) {
   const saved: SaveExpenseItem[][] = [];
@@ -14,15 +24,28 @@ function context(parse: ParseOutcome, clock = { now: 1_000_000 }) {
       saved.push(items);
       return { ids: items.map((_, index) => 500 + index) };
     }),
-    deleteExpenses: vi.fn(async (_identity, ids: number[]) => { deleted.push(ids); return { deleted: ids.length }; }),
+    deleteExpenses: vi.fn(async (_identity, ids: number[]) => {
+      deleted.push(ids);
+      return { deleted: ids.length };
+    }),
     listBudgets: vi.fn(async () => []),
-    dismissClarification: vi.fn(async (_identity, id: number) => { dismissed.push(id); }),
-    waitingEntry: vi.fn(async (_identity, id: number) => (id === 44 ? { words: "150 يوم الخميس" } : null)),
+    dismissClarification: vi.fn(async (_identity, id: number) => {
+      dismissed.push(id);
+    }),
+    waitingEntry: vi.fn(async (_identity, id: number) =>
+      id === 44 ? { words: "150 يوم الخميس" } : null,
+    ),
     answerProfileQuestion: vi.fn(),
   };
   const drafts = new DraftBook(() => clock.now);
   const ctx: ToolContext = {
-    identity: { callId: "vc_test0000000000", userId: 7, userType: "local", plan: "pro", role: "user" },
+    identity: {
+      callId: "vc_test0000000000",
+      userId: 7,
+      userType: "local",
+      plan: "pro",
+      role: "user",
+    },
     ledger: new FactLedger(),
     drafts,
     app,
@@ -54,37 +77,168 @@ describe("confusableWith", () => {
 });
 
 describe("record_draft", () => {
+  it("does not execute a confirmed preview when its durable write grant is refused", async () => {
+    const { ctx, saved, clock } = context(twoItems);
+    const result = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار", items: [{ amount: 60 }, { amount: 70 }] }, ctx);
+    ctx.drafts.heardAssistant();
+    clock.now += 1000;
+    ctx.drafts.heardUser("آه سجلهم");
+    ctx.beforeWrite = async () => false;
+    expect((await confirmTool.run({ draft_id: result.response.draft_id }, ctx)).response.ok).toBe(false);
+    expect(saved).toHaveLength(0);
+  });
+  it("does not confuse the merchant of a refund with the user's business ledger", async () => {
+    const { ctx, app } = context({
+      decision: "review",
+      items: [
+        {
+          amount: 300,
+          type: "expense",
+          category: "ملابس وإكسسوارات",
+          direction: "incoming",
+        },
+      ],
+    });
+    ctx.drafts.heardUser("رجعت الجزمة للمحل وخدت تلتمية جنيه");
+    const result = await recordDraftTool.run(
+      {
+        words: "رجعت الجزمة للمحل وخدت تلتمية جنيه",
+        scope: "personal",
+        items: [{ amount: 300 }],
+      },
+      ctx,
+    );
+    expect(result.response.ok).toBe(true);
+    expect(app.parseExpense).toHaveBeenCalled();
+  });
+  it("records a business expense only in the named business and carries its scope through confirmation", async () => {
+    const { ctx, app, saved, clock } = context({
+      decision: "review",
+      items: [{ amount: 300, type: "expense", category: "متنوعات" }],
+    });
+    app.business = vi.fn(async () => ({ id: 12, name: "الورشة" }));
+    ctx.drafts.heardUser("دفعت تلتمية للمحل");
+    const result = await recordDraftTool.run(
+      {
+        words: "دفعت تلتمية للمحل",
+        scope: "business",
+        items: [{ amount: 300 }],
+      },
+      ctx,
+    );
+    expect(app.parseExpense).toHaveBeenCalledWith(
+      ctx.identity,
+      "دفعت تلتمية للمحل",
+      { businessId: 12 },
+    );
+    expect(result.response.scope).toBe("مشروع الورشة");
+    ctx.drafts.heardAssistant("هسجل تلتمية جنيه لمشروع الورشة، أسجلها؟");
+    clock.now += 1000;
+    ctx.drafts.heardUser("آه سجلها");
+    expect(
+      (await confirmTool.run({ draft_id: result.response.draft_id }, ctx))
+        .response.ok,
+    ).toBe(true);
+    expect(saved[0][0].businessId).toBe(12);
+  });
+
+  it("asks about the ledger before parsing ambiguous business words and never falls back to personal", async () => {
+    const { ctx, app } = context(twoItems);
+    const unclear = await recordDraftTool.run(
+      { words: "دفعت تلتمية للمشروع" },
+      ctx,
+    );
+    expect(unclear.response).toMatchObject({
+      ok: false,
+      needs: "ledger_scope",
+    });
+    expect(app.parseExpense).not.toHaveBeenCalled();
+    app.business = vi.fn(async () => "not_in_plan");
+    expect(
+      (
+        await recordDraftTool.run(
+          { words: "دفعت تلتمية للمحل", scope: "business" },
+          ctx,
+        )
+      ).response,
+    ).toMatchObject({ ok: false, error: "business_unavailable" });
+    expect(app.parseExpense).not.toHaveBeenCalled();
+  });
   it("drafts what the parser found, and says the amounts exactly", async () => {
     const { ctx } = context(twoItems);
     ctx.drafts.heardUser("دفعت ستين مواصلات وسبعين فطار");
-    const result = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار", items: [{ amount: 60 }, { amount: 70 }] }, ctx);
+    const result = await recordDraftTool.run(
+      {
+        words: "دفعت ستين مواصلات وسبعين فطار",
+        items: [{ amount: 60 }, { amount: 70 }],
+      },
+      ctx,
+    );
     expect(result.response).toMatchObject({
       ok: true,
-      items: [{ what: "مواصلات", say: "ستين" }, { what: "فطار", say: "سبعين" }],
+      items: [
+        { what: "مواصلات", say: "ستين" },
+        { what: "فطار", say: "سبعين" },
+      ],
       total_say: "مية وتلاتين",
     });
-    expect(result.card).toMatchObject({ kind: "draft", total: 130, status: "pending" });
+    expect(result.card).toMatchObject({
+      kind: "draft",
+      total: 130,
+      status: "pending",
+    });
     expect(ctx.ledger.allows(130, false)).toBe(true);
   });
 
   it("asks about an amount the model and the parser disagree on", async () => {
-    const { ctx } = context({ ...twoItems, items: [{ amount: 15, type: "expense", category: "مواصلات" }] });
-    const result = await recordDraftTool.run({ words: "دفعت خمستاشر مواصلات", items: [{ amount: 50 }] }, ctx);
-    expect(result.response).toMatchObject({ ok: false, needs: "confirm_amounts", amounts: [{ amount: 15, say: "خمستاشر", or: "خمسين" }] });
+    const { ctx } = context({
+      ...twoItems,
+      items: [{ amount: 15, type: "expense", category: "مواصلات" }],
+    });
+    const result = await recordDraftTool.run(
+      { words: "دفعت خمستاشر مواصلات", items: [{ amount: 50 }] },
+      ctx,
+    );
+    expect(result.response).toMatchObject({
+      ok: false,
+      needs: "confirm_amounts",
+      amounts: [{ amount: 15, say: "خمستاشر", or: "خمسين" }],
+    });
     expect(ctx.drafts.latestPending()).toBeUndefined();
   });
 
   it("asks about an amount that was never heard from the user", async () => {
-    const { ctx } = context({ ...twoItems, items: [{ amount: 500, type: "expense", category: "مواصلات" }] });
+    const { ctx } = context({
+      ...twoItems,
+      items: [{ amount: 500, type: "expense", category: "مواصلات" }],
+    });
     ctx.drafts.heardUser("دفعت خمسين مواصلات");
-    const result = await recordDraftTool.run({ words: "دفعت خمسمية مواصلات" }, ctx);
-    expect(result.response).toMatchObject({ ok: false, needs: "confirm_amounts" });
+    const result = await recordDraftTool.run(
+      { words: "دفعت خمسمية مواصلات" },
+      ctx,
+    );
+    expect(result.response).toMatchObject({
+      ok: false,
+      needs: "confirm_amounts",
+    });
   });
 
   it("passes the parser's question on, and closes it once the expense is recorded", async () => {
-    const clarify = context({ decision: "clarify", items: [], clarificationQuestion: "مين أحمد؟", clarificationId: 33 });
-    const asked = await recordDraftTool.run({ words: "اديت أحمد مية" }, clarify.ctx);
-    expect(asked.response).toMatchObject({ ok: false, needs: "clarification", question: "مين أحمد؟" });
+    const clarify = context({
+      decision: "clarify",
+      items: [],
+      clarificationQuestion: "مين أحمد؟",
+      clarificationId: 33,
+    });
+    const asked = await recordDraftTool.run(
+      { words: "اديت أحمد مية" },
+      clarify.ctx,
+    );
+    expect(asked.response).toMatchObject({
+      ok: false,
+      needs: "clarification",
+      question: "مين أحمد؟",
+    });
     expect(clarify.ctx.openClarifications).toEqual([33]);
   });
 });
@@ -92,67 +246,109 @@ describe("record_draft", () => {
 describe("confirm", () => {
   it("refuses without the user's own yes after the draft, then writes once it comes", async () => {
     const { ctx, saved, clock } = context(twoItems);
-    const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
+    const draft = await recordDraftTool.run(
+      { words: "دفعت ستين مواصلات وسبعين فطار" },
+      ctx,
+    );
     const draftId = String(draft.response.draft_id);
     ctx.drafts.heardAssistant();
 
     vi.useFakeTimers();
     const refused = confirmTool.run({ draft_id: draftId }, ctx);
     await vi.advanceTimersByTimeAsync(1_300);
-    expect((await refused).response).toMatchObject({ ok: false, reason: "no_yes" });
+    expect((await refused).response).toMatchObject({
+      ok: false,
+      reason: "no_yes",
+    });
     vi.useRealTimers();
     expect(saved).toEqual([]);
 
     clock.now += 2_000;
     ctx.drafts.heardUser("آه سجلهم");
     const done = await confirmTool.run({ draft_id: draftId }, ctx);
-    expect(done.response).toMatchObject({ ok: true, done: "اتسجلت عمليتين بإجمالي مية وتلاتين" });
+    expect(done.response).toMatchObject({
+      ok: true,
+      done: "اتسجلت عمليتين بإجمالي مية وتلاتين",
+    });
     expect(saved[0].map((item) => item.clientRequestId)).toEqual([
       `vc:vc_test0000000000:${draftId}:0`,
       `vc:vc_test0000000000:${draftId}:1`,
     ]);
-    expect(saved[0][0]).toMatchObject({ rawText: "دفعت ستين مواصلات وسبعين فطار", classificationLogId: 91 });
+    expect(saved[0][0]).toMatchObject({
+      rawText: "دفعت ستين مواصلات وسبعين فطار",
+      classificationLogId: 91,
+    });
     expect(done.card).toMatchObject({ status: "executed" });
   });
 
   it("finishes an entry left waiting with the user's answer, and closes it only once it is saved", async () => {
-    const waitingFood: ParseOutcome = { decision: "review", items: [{ amount: 150, type: "expense", category: "أكل وشرب" }] };
+    const waitingFood: ParseOutcome = {
+      decision: "review",
+      items: [{ amount: 150, type: "expense", category: "أكل وشرب" }],
+    };
     const { ctx, app, saved, dismissed, clock } = context(waitingFood);
     // The user answers without repeating the amount they typed back then; it is still theirs.
     ctx.drafts.heardUser("كانت أكل");
-    const draft = await recordDraftTool.run({ words: "كانت أكل", clarification_id: 44, items: [{ amount: 150 }] }, ctx);
-    expect(app.parseExpense).toHaveBeenCalledWith(ctx.identity, "150 يوم الخميس (كانت أكل)");
-    expect(draft.response).toMatchObject({ ok: true, items: [{ say: "مية وخمسين" }] });
+    const draft = await recordDraftTool.run(
+      { words: "كانت أكل", clarification_id: 44, items: [{ amount: 150 }] },
+      ctx,
+    );
+    expect(app.parseExpense).toHaveBeenCalledWith(
+      ctx.identity,
+      "150 يوم الخميس (كانت أكل)",
+    );
+    expect(draft.response).toMatchObject({
+      ok: true,
+      items: [{ say: "مية وخمسين" }],
+    });
     expect(dismissed).toEqual([]);
 
     // The yes comes after the draft is read back, not within the same utterance.
     ctx.drafts.heardAssistant();
     clock.now += 4_000;
     ctx.drafts.heardUser("آه");
-    expect((await confirmTool.run({ draft_id: draft.response.draft_id }, ctx)).response).toMatchObject({ ok: true });
+    expect(
+      (await confirmTool.run({ draft_id: draft.response.draft_id }, ctx))
+        .response,
+    ).toMatchObject({ ok: true });
     expect(saved[0][0]).toMatchObject({ rawText: "150 يوم الخميس (كانت أكل)" });
     expect(dismissed).toEqual([44]);
   });
 
   it("refuses to finish an entry that is no longer waiting", async () => {
     const { ctx, app } = context(twoItems);
-    expect((await recordDraftTool.run({ words: "كانت أكل", clarification_id: 45 }, ctx)).response)
-      .toMatchObject({ ok: false, error: "not_waiting" });
+    expect(
+      (
+        await recordDraftTool.run(
+          { words: "كانت أكل", clarification_id: 45 },
+          ctx,
+        )
+      ).response,
+    ).toMatchObject({ ok: false, error: "not_waiting" });
     expect(app.parseExpense).not.toHaveBeenCalled();
   });
 
   it("refuses a yes that changes an amount", async () => {
     const { ctx, clock } = context(twoItems);
-    const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
+    const draft = await recordDraftTool.run(
+      { words: "دفعت ستين مواصلات وسبعين فطار" },
+      ctx,
+    );
     ctx.drafts.heardAssistant();
     clock.now += 1_000;
     ctx.drafts.heardUser("آه بس المواصلات خمسين");
-    expect((await confirmTool.run({ draft_id: draft.response.draft_id }, ctx)).response).toMatchObject({ ok: false, reason: "changed" });
+    expect(
+      (await confirmTool.run({ draft_id: draft.response.draft_id }, ctx))
+        .response,
+    ).toMatchObject({ ok: false, reason: "changed" });
   });
 
   it("undoes what this call recorded, after its own confirmation", async () => {
     const { ctx, deleted, clock } = context(twoItems);
-    const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
+    const draft = await recordDraftTool.run(
+      { words: "دفعت ستين مواصلات وسبعين فطار" },
+      ctx,
+    );
     ctx.drafts.heardAssistant();
     clock.now += 1_000;
     ctx.drafts.heardUser("تمام");
@@ -163,7 +359,10 @@ describe("confirm", () => {
     ctx.drafts.heardAssistant();
     clock.now += 1_000;
     ctx.drafts.heardUser("أيوه الغيها");
-    const done = await confirmTool.run({ draft_id: undo.response.draft_id }, ctx);
+    const done = await confirmTool.run(
+      { draft_id: undo.response.draft_id },
+      ctx,
+    );
     expect(done.response).toMatchObject({ ok: true, done: "اتلغى آخر تسجيل" });
     expect(deleted).toEqual([[500, 501]]);
   });
@@ -171,19 +370,38 @@ describe("confirm", () => {
   it("saves a refund as money back into its category, with its person, as the expense form does", async () => {
     const refund: ParseOutcome = {
       decision: "review",
-      items: [{ amount: 300, type: "expense", category: "تسوق", direction: "incoming", personName: "أحمد", personRelationship: "صديق" }],
+      items: [
+        {
+          amount: 300,
+          type: "expense",
+          category: "تسوق",
+          direction: "incoming",
+          personName: "أحمد",
+          personRelationship: "صديق",
+        },
+      ],
     };
     const { ctx, saved, clock } = context(refund);
     ctx.drafts.heardUser("رجعت القميص وأخدت تلتمية");
-    const draft = await recordDraftTool.run({ words: "رجعت القميص وأخدت تلتمية" }, ctx);
-    expect(draft.card).toMatchObject({ title: "تسجيل مرتجع", items: [{ label: "مرتجع: تسوق (أحمد)", amount: 300 }] });
+    const draft = await recordDraftTool.run(
+      { words: "رجعت القميص وأخدت تلتمية" },
+      ctx,
+    );
+    expect(draft.card).toMatchObject({
+      title: "تسجيل مرتجع",
+      items: [{ label: "مرتجع: تسوق (أحمد)", amount: 300 }],
+    });
     expect(draft.response).toHaveProperty("refund");
     ctx.drafts.heardAssistant();
     clock.now += 1_000;
     ctx.drafts.heardUser("آه");
     await confirmTool.run({ draft_id: draft.response.draft_id }, ctx);
     // Without the direction the ledger stores +300 of new spending instead of -300 (api/services/expense-rollups.ts#ledgerAmount).
-    expect(saved[0][0]).toMatchObject({ direction: "incoming", personName: "أحمد", personRelationship: "صديق" });
+    expect(saved[0][0]).toMatchObject({
+      direction: "incoming",
+      personName: "أحمد",
+      personRelationship: "صديق",
+    });
   });
 
   it("gives no single total for spending and a refund together", async () => {
@@ -191,12 +409,20 @@ describe("confirm", () => {
       decision: "review",
       items: [
         { amount: 200, type: "expense", category: "أكل وشرب" },
-        { amount: 50, type: "expense", category: "تسوق", direction: "incoming" },
+        {
+          amount: 50,
+          type: "expense",
+          category: "تسوق",
+          direction: "incoming",
+        },
       ],
     };
     const { ctx } = context(mixed);
     ctx.drafts.heardUser("صرفت ميتين أكل ورجعلي خمسين من المحل");
-    const draft = await recordDraftTool.run({ words: "صرفت ميتين أكل ورجعلي خمسين من المحل" }, ctx);
+    const draft = await recordDraftTool.run(
+      { words: "صرفت ميتين أكل ورجعلي خمسين من المحل" },
+      ctx,
+    );
     expect(draft.card).toMatchObject({ kind: "draft" });
     expect((draft.card as { total?: number }).total).toBeUndefined();
     expect(draft.response.total_say).toBeUndefined();
@@ -204,13 +430,19 @@ describe("confirm", () => {
 
   it("writes nothing when the call stopped the confirmation, and keeps the draft for an answer", async () => {
     const { ctx, saved, clock } = context(twoItems);
-    const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
+    const draft = await recordDraftTool.run(
+      { words: "دفعت ستين مواصلات وسبعين فطار" },
+      ctx,
+    );
     ctx.drafts.heardAssistant();
     clock.now += 1_000;
     ctx.drafts.heardUser("آه");
     const abort = new AbortController();
     abort.abort();
-    const stopped = await confirmTool.run({ draft_id: draft.response.draft_id }, { ...ctx, signal: abort.signal });
+    const stopped = await confirmTool.run(
+      { draft_id: draft.response.draft_id },
+      { ...ctx, signal: abort.signal },
+    );
     expect(stopped.response).toMatchObject({ ok: false, error: "stopped" });
     expect(saved).toEqual([]);
     expect(ctx.drafts.latestPending()?.id).toBe(draft.response.draft_id);
@@ -218,7 +450,10 @@ describe("confirm", () => {
 
   it("writes once when the card is tapped while the spoken yes is being confirmed", async () => {
     const { ctx, app, clock } = context(twoItems);
-    const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
+    const draft = await recordDraftTool.run(
+      { words: "دفعت ستين مواصلات وسبعين فطار" },
+      ctx,
+    );
     const draftId = String(draft.response.draft_id);
     ctx.drafts.heardAssistant();
     clock.now += 1_000;
@@ -235,13 +470,27 @@ describe("confirm", () => {
   it("tells the model its earlier figures are out of date once a write lands", async () => {
     const { ctx, clock } = context(twoItems);
     ctx.ledger.nextBatch();
-    const before = ctx.ledger.add({ id: "mq_0", label: "مصروف النهارده", value: 320, source: "ledger" });
-    const draft = await recordDraftTool.run({ words: "دفعت ستين مواصلات وسبعين فطار" }, ctx);
+    const before = ctx.ledger.add({
+      id: "mq_0",
+      label: "مصروف النهارده",
+      value: 320,
+      source: "ledger",
+    });
+    const draft = await recordDraftTool.run(
+      { words: "دفعت ستين مواصلات وسبعين فطار" },
+      ctx,
+    );
     ctx.drafts.heardAssistant();
     clock.now += 1_000;
     ctx.drafts.heardUser("آه");
-    const done = await confirmTool.run({ draft_id: draft.response.draft_id }, ctx);
-    expect(done.response).toMatchObject({ ok: true, records_changed: expect.any(String) });
+    const done = await confirmTool.run(
+      { draft_id: draft.response.draft_id },
+      ctx,
+    );
+    expect(done.response).toMatchObject({
+      ok: true,
+      records_changed: expect.any(String),
+    });
     // 320 was today's total before the write; said now, it is recorded as a stale figure.
     expect(ctx.ledger.byRef(before.ref)?.stale).toBe(true);
     expect(ctx.ledger.onlyStale(320, false)).toBe(true);
@@ -249,7 +498,11 @@ describe("confirm", () => {
 
   it("offers no undo when nothing was recorded in this call", async () => {
     const { ctx } = context(twoItems);
-    expect((await changeDraftTool.run({ action: "undo_last" }, ctx)).response).toMatchObject({ ok: false, error: "nothing_to_undo" });
-    expect((await changeDraftTool.run({ action: "goal_stop" }, ctx)).response).toMatchObject({ ok: false, error: "not_by_voice" });
+    expect(
+      (await changeDraftTool.run({ action: "undo_last" }, ctx)).response,
+    ).toMatchObject({ ok: false, error: "nothing_to_undo" });
+    expect(
+      (await changeDraftTool.run({ action: "goal_stop" }, ctx)).response,
+    ).toMatchObject({ ok: false, error: "not_by_voice" });
   });
 });

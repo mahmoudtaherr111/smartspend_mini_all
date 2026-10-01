@@ -84,9 +84,13 @@ flowchart LR
   mod_ai_memory --> sys_ai_platform
   mod_ai_memory --> sys_platform
   mod_ai_memory -.-> tbl_ai_action_memory
+  mod_ai_memory -.-> tbl_chat_messages
+  mod_ai_memory -.-> tbl_local_users
+  mod_ai_memory -.-> tbl_users
   mod_ai_memory ==> tbl_ai_conversation_summaries
   mod_ai_memory ==> tbl_ai_memory_embeddings
   mod_ai_memory ==> tbl_ai_memory_items
+  mod_ai_memory ==> tbl_chat_conversations
   mod_finance_semantic_layer --> sys_expense_capture
   mod_finance_semantic_layer --> sys_platform
   mod_finance_semantic_layer -.-> tbl_classification_logs
@@ -161,7 +165,7 @@ Drawn in `docs/architecture/flows/ai-chat.c4`; in the interactive map it is the 
 | --- | --- | --- |
 | `ai-actions` — AI action runtime | Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat. | 6 |
 | `ai-kernel` — AI Center kernel | Plans each AI Center turn without a model (intent, data needs, clarifying questions), packs the context, applies the capability registry and retrieval policy, words the answer with at most one model call, and logs traces. | 11 |
-| `ai-memory` — AI memory | Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional Fireworks embeddings stored in MySQL with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests. | 13 |
+| `ai-memory` — AI memory | Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional Fireworks embeddings stored in MySQL with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests. | 14 |
 | `finance-semantic-layer` — Finance semantic layer | Answers factual finance questions from the ledger: period resolution, category matching, row aggregation, monthly report facts, proactive insights, chart artifacts and a per-user cache. | 10 |
 | `site-guide` — Site guide | How-to answers about using SmartSpend (linking SMS, cards and wallets, goals, reports) from a built-in knowledge base with embedding retrieval. | 5 |
 | `web-ai` — AI Center UI | AI Center screens: the chatbot, the AI memory manager and the monthly AI report. | 3 |
@@ -199,18 +203,18 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_memory_embeddings` | F | `ai-memory`, `chat.clearAllMemories`, `chat.forgetMemory` | `ai-memory` |
 | `ai_memory_items` | F | `ai-memory`, `chat.clearAllMemories`, `chat.forgetMemory` | `ai-memory`, `chat.clearAllMemories`, `chat.forgetMemory`, `chat.listMemories` |
 | `ai_pending_actions` | D | `ai-actions` | `ai-actions`, `chat.sendMessage` |
-| `chat_conversations` | G | `chat.clearConversation`, `chat.sendMessage` | `chat.clearConversation`, `chat.getConversation`, `chat.getConversations`, `chat.sendMessage` |
-| `chat_messages` | G | `chat.clearConversation`, `chat.sendMessage` | `chat.getConversation`, `chat.sendMessage` |
+| `chat_conversations` | G | `ai-memory`, `chat.clearConversation`, `chat.sendMessage` | `ai-memory`, `chat.clearConversation`, `chat.getConversation`, `chat.getConversations`, `chat.sendMessage` |
+| `chat_messages` | G | `chat.clearConversation`, `chat.sendMessage` | `ai-memory`, `chat.getConversation`, `chat.sendMessage` |
 | `classification_logs` | E | — | `finance-semantic-layer` |
 | `expenses` | B | `ai-actions` | `ai-actions`, `finance-semantic-layer` |
 | `financial_goals` | C | `ai-actions` | `ai-actions`, `finance-semantic-layer` |
-| `local_users` | A | `chat.sendMessage` | — |
+| `local_users` | A | `chat.sendMessage` | `ai-memory` |
 | `monthly_behavior_snapshots` | C | — | `finance-semantic-layer` |
 | `user_budgets` | C | `ai-actions` | — |
 | `user_contacts` | A | — | `ai-kernel`, `finance-semantic-layer` |
 | `user_profiles` | A | — | `finance-semantic-layer` |
 | `user_wallets` | A | `ai-actions` | `ai-actions`, `finance-semantic-layer` |
-| `users` | A | `chat.sendMessage` | — |
+| `users` | A | `chat.sendMessage` | `ai-memory` |
 
 ## Outside systems
 
@@ -234,7 +238,7 @@ Used by: [Bank and wallet messages](bank-messages.md), [Recording spending](expe
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/ai-center.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>51 files and declarations</summary>
+<details><summary>52 files and declarations</summary>
 
 - `api/boot.ts#job:memory-embedding-backfill`
 - `api/chat-router.ts`
@@ -264,6 +268,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/ai-memory/qdrant-vector-store.ts`
 - `api/services/ai-memory/quantized-vector-store.ts`
 - `api/services/ai-memory/retrieval-enhancements.ts`
+- `api/services/ai-memory/slot-store.ts`
 - `api/services/ai-memory/slots.ts`
 - `api/services/ai-memory/text-utils.ts`
 - `api/services/ai-memory/types.ts`

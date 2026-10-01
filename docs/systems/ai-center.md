@@ -154,9 +154,8 @@ the finance caches are cleared.
   the vectors of the model that embedded the question only. Query embeddings are cached in Redis for two weeks; with no
   provider answering, a local stand-in vector says so in the trace (`embedding:fallback:…`) and matches nothing stored.
 - **Managing**: `chat.listMemories`, `chat.forgetMemory` and `chat.clearAllMemories`, behind the memory manager.
-  Forgetting deletes the memory and its embedding; nothing is kept behind a status. A live call whose summary is not
-  written yet still holds the words it came from: forgetting one memory adds it to those words as forgotten, so the
-  summary leaves it out, and forgetting everything drops those words
+  Forgetting deletes the memory and its embedding; nothing is kept behind a status. Deletion shares the account-row transaction lock with memory writers. A live call whose summary is not
+  written yet is suppressed durably when a memory is forgotten, and its temporary words are deleted. The whole unfinished summary is omitted; finalization and delayed writers cannot reactivate it. Forgetting also clears conversation capsules and advances their processed-message watermark, so old chat messages cannot recreate the deleted memory. New messages may create new memories
   (`api/services/voice/post-call.ts#forgetInPendingCalls`) (migration
   `db/migrations/0024_purge_forgotten_memories.sql` removed the ones earlier versions kept as `forgotten`). The manager is
   `src/components/ai/AIMemoryManager.tsx`. `chat.listMemories` also says whether a memory came from a live call
@@ -274,3 +273,6 @@ Checked against the code; each one names where it lives.
 - [Recording spending](expense-capture.md): classification traces the kernel explains, and the typed entry flow.
 - [AI providers and usage limits](ai-platform.md): the cost policy and cost metrics.
 - [Server platform and data](platform.md): Redis, the settings cache and the storage classes of the chat tables.
+
+### Atomic memory updates
+`api/services/ai-memory/slot-store.ts` locks the identity row for the user id/type during writes, deletion and account purge. A slotted fact carries an exact observation timestamp; older delayed facts do not replace newer ones, and replacement/insertion roll back together. Conversation memory processes stored message ids after a durable watermark in the conversation metadata, skips deleted conversations, and checks active memory again after asynchronous embedding work. `tests/voice-memory-slots.test.ts` exercises concurrency, rollback, deletion and delayed writes on migrated MySQL.

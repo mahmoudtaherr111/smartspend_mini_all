@@ -41,7 +41,12 @@ export interface VoiceStats {
   toolCallsPerCall: number;
   endReasons: Array<{ key: string; count: number }>;
   clients: Array<{ key: string; count: number }>;
-  models: Array<{ key: string; count: number; minutes: number; costUsd: number }>;
+  models: Array<{
+    key: string;
+    count: number;
+    minutes: number;
+    costUsd: number;
+  }>;
   memory: Array<{ key: string; count: number }>;
   incidents: Array<{ key: string; count: number }>;
   recent: Array<{
@@ -64,18 +69,31 @@ const MAX_ROWS = 20_000;
 function percentile(values: number[], p: number): number | null {
   if (!values.length) return null;
   const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(p * sorted.length) - 1))];
+  return sorted[
+    Math.min(sorted.length - 1, Math.max(0, Math.ceil(p * sorted.length) - 1))
+  ];
 }
 
-function counts(keys: Array<string | null | undefined>): Array<{ key: string; count: number }> {
+function counts(
+  keys: Array<string | null | undefined>,
+): Array<{ key: string; count: number }> {
   const map = new Map<string, number>();
-  for (const key of keys) map.set(key || "unknown", (map.get(key || "unknown") ?? 0) + 1);
-  return [...map.entries()].map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count);
+  for (const key of keys)
+    map.set(key || "unknown", (map.get(key || "unknown") ?? 0) + 1);
+  return [...map.entries()]
+    .map(([key, count]) => ({ key, count }))
+    .sort((a, b) => b.count - a.count);
 }
 
-function firstAudio(metrics: unknown): { p50: number | null; p95: number | null } {
-  const value = (metrics as { firstAudioMs?: { p50?: unknown; p95?: unknown } } | null)?.firstAudioMs;
-  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+function firstAudio(metrics: unknown): {
+  p50: number | null;
+  p95: number | null;
+} {
+  const value = (
+    metrics as { firstAudioMs?: { p50?: unknown; p95?: unknown } } | null
+  )?.firstAudioMs;
+  const num = (v: unknown) =>
+    typeof v === "number" && Number.isFinite(v) ? v : null;
   return { p50: num(value?.p50), p95: num(value?.p95) };
 }
 
@@ -87,7 +105,10 @@ function profileOf(metrics: unknown): string | null {
 /** A call that used Ultra Thinking (started in it or switched to it): its cost and time are that mode's at least in part. */
 function ultraOf(metrics: unknown): string | null {
   const value = metrics as { mode?: unknown; modeSwitches?: unknown } | null;
-  return value?.mode === "ultra" || (typeof value?.modeSwitches === "number" && value.modeSwitches > 0) ? "ultra" : null;
+  return value?.mode === "ultra" ||
+    (typeof value?.modeSwitches === "number" && value.modeSwitches > 0)
+    ? "ultra"
+    : null;
 }
 
 function levelOf(metrics: unknown): string | null {
@@ -102,14 +123,59 @@ function toolCost(metrics: unknown): number {
 
 const round = (value: number, places: number) => Number(value.toFixed(places));
 
-export function summarizeVoiceCalls(days: number, rows: VoiceCallStatRow[], incidentKinds: string[]): VoiceStats {
+export function summarizeVoiceCalls(
+  days: number,
+  rows: VoiceCallStatRow[],
+  incidentKinds: string[],
+): VoiceStats {
   const seconds = rows.reduce((sum, row) => sum + row.billedSeconds, 0);
   const cost = rows.reduce((sum, row) => sum + Number(row.costUsd || 0), 0);
   const audio = rows.map((row) => firstAudio(row.metrics));
-  const models = new Map<string, { count: number; seconds: number; cost: number }>();
+  const models = new Map<
+    string,
+    { count: number; seconds: number; cost: number }
+  >();
   for (const row of rows) {
+    const segments = (
+      row.metrics as {
+        modelSegments?: Array<{
+          model: string;
+          mode: string;
+          thinkingLevel: string | null;
+          billedSeconds: number;
+          costUsd: number;
+        }>;
+      } | null
+    )?.modelSegments;
+    if (segments?.length) {
+      const counted = new Set<string>();
+      for (const segment of segments) {
+        const key = [
+          segment.model,
+          profileOf(row.metrics),
+          segment.mode === "ultra" ? "ultra" : null,
+          segment.thinkingLevel,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        const entry = models.get(key) ?? { count: 0, seconds: 0, cost: 0 };
+        if (!counted.has(key)) entry.count += 1;
+        counted.add(key);
+        entry.seconds += Math.max(0, Number(segment.billedSeconds) || 0);
+        entry.cost += Math.max(0, Number(segment.costUsd) || 0);
+        models.set(key, entry);
+      }
+      continue;
+    }
     // The coach and the standard call on one model are different calls; so are two thinking levels.
-    const key = [row.model, profileOf(row.metrics), ultraOf(row.metrics), levelOf(row.metrics)].filter(Boolean).join(" · ");
+    const key = [
+      row.model,
+      profileOf(row.metrics),
+      ultraOf(row.metrics),
+      levelOf(row.metrics),
+    ]
+      .filter(Boolean)
+      .join(" · ");
     const entry = models.get(key) ?? { count: 0, seconds: 0, cost: 0 };
     entry.count += 1;
     entry.seconds += row.billedSeconds;
@@ -124,18 +190,46 @@ export function summarizeVoiceCalls(days: number, rows: VoiceCallStatRow[], inci
     minutes: round(minutes, 1),
     averageCallSeconds: rows.length ? Math.round(seconds / rows.length) : 0,
     costUsd: round(cost, 4),
-    toolCostUsd: round(rows.reduce((sum, row) => sum + toolCost(row.metrics), 0), 4),
+    toolCostUsd: round(
+      rows.reduce((sum, row) => sum + toolCost(row.metrics), 0),
+      4,
+    ),
     costPerMinuteUsd: minutes > 0 ? round(cost / minutes, 4) : null,
     firstAudioMs: {
-      p50: percentile(audio.map((a) => a.p50).filter((v): v is number => v !== null), 0.5),
-      p95: percentile(audio.map((a) => a.p95).filter((v): v is number => v !== null), 0.95),
+      p50: percentile(
+        audio.map((a) => a.p50).filter((v): v is number => v !== null),
+        0.5,
+      ),
+      p95: percentile(
+        audio.map((a) => a.p95).filter((v): v is number => v !== null),
+        0.95,
+      ),
     },
-    reconnectsPerCall: rows.length ? round(rows.reduce((sum, row) => sum + row.reconnects, 0) / rows.length, 2) : 0,
-    toolCallsPerCall: rows.length ? round(rows.reduce((sum, row) => sum + row.toolCalls, 0) / rows.length, 2) : 0,
-    endReasons: counts(rows.filter((row) => row.status === "ended" || row.status === "failed").map((row) => row.endReason)),
+    reconnectsPerCall: rows.length
+      ? round(
+          rows.reduce((sum, row) => sum + row.reconnects, 0) / rows.length,
+          2,
+        )
+      : 0,
+    toolCallsPerCall: rows.length
+      ? round(
+          rows.reduce((sum, row) => sum + row.toolCalls, 0) / rows.length,
+          2,
+        )
+      : 0,
+    endReasons: counts(
+      rows
+        .filter((row) => row.status === "ended" || row.status === "failed")
+        .map((row) => row.endReason),
+    ),
     clients: counts(rows.map((row) => row.client)),
     models: [...models.entries()]
-      .map(([key, entry]) => ({ key, count: entry.count, minutes: round(entry.seconds / 60, 1), costUsd: round(entry.cost, 4) }))
+      .map(([key, entry]) => ({
+        key,
+        count: entry.count,
+        minutes: round(entry.seconds / 60, 1),
+        costUsd: round(entry.cost, 4),
+      }))
       .sort((a, b) => b.count - a.count),
     memory: counts(rows.map((row) => row.memoryStatus)),
     incidents: counts(incidentKinds),
@@ -155,7 +249,10 @@ export function summarizeVoiceCalls(days: number, rows: VoiceCallStatRow[], inci
   };
 }
 
-export async function loadVoiceStats(days: number, now = new Date()): Promise<VoiceStats> {
+export async function loadVoiceStats(
+  days: number,
+  now = new Date(),
+): Promise<VoiceStats> {
   const since = new Date(now.getTime() - days * 86_400_000);
   const [rows, incidents] = await Promise.all([
     db
@@ -186,5 +283,9 @@ export async function loadVoiceStats(days: number, now = new Date()): Promise<Vo
       .where(gte(voiceCallIncidents.createdAt, since))
       .limit(MAX_ROWS),
   ]);
-  return summarizeVoiceCalls(days, rows, incidents.map((row) => row.kind));
+  return summarizeVoiceCalls(
+    days,
+    rows,
+    incidents.map((row) => row.kind),
+  );
 }

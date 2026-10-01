@@ -17,7 +17,7 @@ app's exact setup) found:
   never sends the `toolCall`, and apologises for a "system error". LOW passed 42 of 49 single-tool runs (86%, 95%
   interval 73–93%) against 26 of 26 for `gemini-3.8-live`, with a minimal raw setup as with ours; in a later batch the
   first call was lost in 13 of 20 runs. Only ~62 text tokens reach the model between the filler and the apology, no
-  error frame, a clean close. The cause is Google's and unknown; nothing shows it is the free tier.
+  error frame, a clean close. The failure is reproduced outside our app; its internal cause is unknown, and nothing proves it is free-tier specific.
 - LOW decides on a tool about 4.6 s later than the standard model (first tool call p50 5.9 s vs 1.3 s) and processes
   about 6× the tokens per turn (~2.7k hidden text tokens per internal step).
 - MEDIUM was not better than LOW on the same tasks (10 of 14 vs 12 of 14 with the guard) and thinks ~1.8× the tokens.
@@ -50,3 +50,5 @@ done task measured against the standard mode. Until then it runs for test accoun
 counted (`lost_tool_call` incidents, `lostToolCalls` in the metrics) so the provider defect stays visible; once Google
 fixes it the guard stops holding anything and can be removed. Customer data on the free tier is a separate question
 (Google's unpaid terms ask for no personal or confidential data): real users' calls need that settled first.
+
+Amended by 0018: request ownership, durable write claims, final recovery and input-TPM reservations are now enforced; model segments measure actual per-mode usage.

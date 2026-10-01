@@ -4,13 +4,62 @@
  */
 import { roundForSpeech, spellAmount } from "./spoken";
 
-export type FactSource = "ledger" | "snapshot" | "user" | "computed" | "price" | "draft";
+export type FactSource =
+  | "ledger"
+  | "snapshot"
+  | "user"
+  | "computed"
+  | "price"
+  | "draft";
 
 /** What a number counts: pounds, pounds a day or a month, days, months, a count, a percent, a ratio. */
-export type FactUnit = "EGP" | "EGP/day" | "EGP/month" | "days" | "months" | "count" | "percent" | "ratio";
+export type FactUnit =
+  | "EGP"
+  | "EGP/day"
+  | "EGP/month"
+  | "days"
+  | "months"
+  | "count"
+  | "percent"
+  | "ratio";
+export type FactMetric =
+  | "spending"
+  | "income"
+  | "balance"
+  | "debt"
+  | "budget"
+  | "goal";
+
+/** Explicit financial nouns only; silence about the subject is not evidence of a different subject. */
+export function factMetric(text: string): FactMetric | undefined {
+  const normalized = text.replace(/[أإآ]/g, "ا").replace(/ة/g, "ه");
+  const nouns: Array<[FactMetric, RegExp]> = [
+    ["spending", /مصروف|مصاريف|صرفت|اجمالي الصرف/],
+    ["income", /مرتب|راتب|دخل|قبضت/],
+    ["balance", /رصيد|ارصده|ارصدة|معاك|معايا/],
+    ["debt", /ديون|دين|سلف|مديون/],
+    ["budget", /ميزاني/],
+    ["goal", /هدف|اهداف/],
+  ];
+  let metric: FactMetric | undefined;
+  let last = -1;
+  for (const [candidate, pattern] of nouns) {
+    for (const match of normalized.matchAll(new RegExp(pattern.source, "g"))) {
+      if (match.index! > last) {
+        last = match.index!;
+        metric = candidate;
+      }
+    }
+  }
+  return metric;
+}
 
 /** Facts read from the records, which a write or new data during the call can make out of date. */
-const RECORD_SOURCES: ReadonlySet<FactSource> = new Set(["ledger", "snapshot", "computed"]);
+const RECORD_SOURCES: ReadonlySet<FactSource> = new Set([
+  "ledger",
+  "snapshot",
+  "computed",
+]);
 
 export interface CallFact {
   id: string;
@@ -32,6 +81,10 @@ export interface CallFact {
    * number was true when read and may not be now.
    */
   stale?: boolean;
+  metric?: FactMetric;
+  /** Scope and period stay attached to the fact and survive hand-off and resumption. */
+  scope?: string;
+  period?: string;
 }
 
 export class FactLedger {
@@ -46,7 +99,13 @@ export class FactLedger {
     return this.batch;
   }
 
-  add(fact: Omit<CallFact, "batch" | "say" | "ref" | "unit"> & { say?: string; exact?: boolean; unit?: FactUnit }): CallFact {
+  add(
+    fact: Omit<CallFact, "batch" | "say" | "ref" | "unit"> & {
+      say?: string;
+      exact?: boolean;
+      unit?: FactUnit;
+    },
+  ): CallFact {
     this.refs += 1;
     const entry: CallFact = {
       id: fact.id,
@@ -55,6 +114,9 @@ export class FactLedger {
       value: fact.value,
       unit: fact.unit ?? "EGP",
       source: fact.source,
+      metric: fact.metric ?? factMetric(fact.label),
+      ...(fact.scope ? { scope: fact.scope } : {}),
+      ...(fact.period ? { period: fact.period } : {}),
       say: fact.say ?? spellAmount(fact.value, { exact: fact.exact }).text,
       batch: this.batch,
       ...(fact.stale ? { stale: true } : {}),
@@ -119,7 +181,9 @@ export class FactLedger {
 
   latestBatch(): CallFact[] {
     const last = this.facts[this.facts.length - 1]?.batch;
-    return last === undefined ? [] : this.facts.filter((fact) => fact.batch === last);
+    return last === undefined
+      ? []
+      : this.facts.filter((fact) => fact.batch === last);
   }
 
   /** True when `value` is one of the call's numbers, as is or as speech rounds it. */
@@ -130,19 +194,62 @@ export class FactLedger {
     return this.facts.some((fact) => this.matches(v, fact, approximate));
   }
 
-  snapshot(): { facts: CallFact[]; userValues: number[]; batch: number; refs: number } {
-    return { facts: this.facts.slice(-200), userValues: [...this.userValues].slice(-200), batch: this.batch, refs: this.refs };
+  /** A known salary is not evidence for a claim about spending. Unknown subjects remain explicitly unverified. */
+  allowsClaim(
+    value: number,
+    approximate: boolean,
+    metric: FactMetric | undefined,
+  ): boolean {
+    if (!metric) return this.allows(value, approximate);
+    const subject = this.facts.filter(
+      (fact) => fact.metric === metric && !fact.stale,
+    );
+    if (!subject.length) return this.userValues.has(Math.abs(value));
+    return subject.some((fact) =>
+      this.matches(Math.abs(value), fact, approximate),
+    );
   }
 
-  restore(state: { facts?: CallFact[]; userValues?: number[]; batch?: number; refs?: number } | null | undefined): void {
+  snapshot(): {
+    facts: CallFact[];
+    userValues: number[];
+    batch: number;
+    refs: number;
+  } {
+    return {
+      facts: this.facts.slice(-200),
+      userValues: [...this.userValues].slice(-200),
+      batch: this.batch,
+      refs: this.refs,
+    };
+  }
+
+  restore(
+    state:
+      | {
+          facts?: CallFact[];
+          userValues?: number[];
+          batch?: number;
+          refs?: number;
+        }
+      | null
+      | undefined,
+  ): void {
     if (!state) return;
     // Facts stored before refs and units existed get them now, after the ones already numbered.
     let refs = state.refs ?? 0;
-    const facts = (state.facts ?? []).map((fact) => ({ ...fact, unit: fact.unit ?? "EGP", ref: fact.ref ?? `f${++refs}` }));
+    const facts = (state.facts ?? []).map((fact) => ({
+      ...fact,
+      unit: fact.unit ?? "EGP",
+      ref: fact.ref ?? `f${++refs}`,
+    }));
     this.facts.splice(0, this.facts.length, ...facts);
     this.userValues.clear();
     for (const value of state.userValues ?? []) this.userValues.add(value);
     this.batch = state.batch ?? 0;
-    this.refs = Math.max(refs, ...facts.map((fact) => Number(fact.ref.slice(1)) || 0));
+    this.refs = Math.max(
+      refs,
+      ...facts.map((fact) => Number(fact.ref.slice(1)) || 0),
+    );
   }
 }

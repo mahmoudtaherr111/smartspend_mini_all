@@ -31,7 +31,7 @@ describe("LostToolCallGuard", () => {
     g.toolCalled();
     g.toolAnswered(true);
     expect(g.audio(pcm(), 24_000, 6_000)).toEqual({ kind: "hold" });
-    expect(g.words("أنا بعتذر جداً، حصل عطل", 6_050)).toEqual({ kind: "drop", retry: true, afterTools: true });
+    expect(g.words("أنا بعتذر جداً، حصل عطل فني", 6_050)).toEqual({ kind: "drop", retry: true, afterTools: true });
   });
 
   it("releases a real answer as soon as its words show it is not an apology, and never holds the rest of it", () => {

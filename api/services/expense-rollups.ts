@@ -1,5 +1,8 @@
 import { sql } from "drizzle-orm";
 import Decimal from "decimal.js";
+import { createLogger } from "../lib/log";
+
+const log = createLogger("expense-rollups");
 import { expenseDailyRollups, expenses } from "../../db/schema";
 import { db } from "../queries/connection";
 import { businessDateKey, startOfBusinessDay } from "../lib/app-time";
@@ -172,7 +175,7 @@ export async function applyExpenseRollupDelta(
       txn_count = txn_count + VALUES(txn_count)
   `);
 
-  // Detect negative amounts and log an alert rather than silently clamping
+  // Refunds legitimately make spending negative on a later day; alert only impossible non-spending totals.
   try {
     const [checkRows] = await executor.execute(sql`
       SELECT income, expense, transfer, investment, automated_income, automated_expense, txn_count
@@ -187,26 +190,13 @@ export async function applyExpenseRollupDelta(
     if (r) {
       const hasNegative =
         new Decimal(r.income || 0).isNegative() ||
-        new Decimal(r.expense || 0).isNegative() ||
         new Decimal(r.transfer || 0).isNegative() ||
         new Decimal(r.investment || 0).isNegative() ||
         new Decimal(r.automated_income || 0).isNegative() ||
-        new Decimal(r.automated_expense || 0).isNegative() ||
         Number(r.txn_count || 0) < 0;
 
       if (hasNegative) {
-        console.warn(
-          `[RollupAlert] Negative rollup detected for user ${delta.userType}:${delta.userId} on ${delta.day} (biz: ${businessId}):`,
-          {
-            income: r.income,
-            expense: r.expense,
-            transfer: r.transfer,
-            investment: r.investment,
-            automatedIncome: r.automated_income,
-            automatedExpense: r.automated_expense,
-            txnCount: r.txn_count,
-          },
-        );
+        log.warn({ event: "rollup.invalid_negative", userId: delta.userId, userType: delta.userType, businessId, day: delta.day }, "Rollup needs reconciliation");
       }
     }
   } catch {

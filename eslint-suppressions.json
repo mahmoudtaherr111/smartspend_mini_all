@@ -119,7 +119,7 @@
   },
   "api/chat-router.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 7
+      "count": 4
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
@@ -521,11 +521,6 @@
       "count": 1
     }
   },
-  "api/services/ai-cost-policy.ts": {
-    "no-console": {
-      "count": 1
-    }
-  },
   "api/services/ai-kernel/agent-golden-contract.test.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 4
@@ -566,11 +561,6 @@
       "count": 2
     }
   },
-  "api/services/ai-memory/memory-writer.ts": {
-    "no-console": {
-      "count": 3
-    }
-  },
   "api/services/batch-ai-service.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -588,9 +578,6 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
-    },
-    "no-console": {
-      "count": 1
     }
   },
   "api/services/firebase.ts": {

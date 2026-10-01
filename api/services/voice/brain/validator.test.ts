@@ -29,6 +29,16 @@ describe("extractSpokenNumbers", () => {
 });
 
 describe("SpokenNumberValidator", () => {
+  it("binds a financial noun immediately after an amount before considering an earlier noun", () => {
+    const { validator } = setup([
+      ["دخل", 7000],
+      ["مصروف", 4000],
+    ]);
+    expect(
+      validator.addAssistantWords("سبعة آلاف دخل وأربع آلاف مصروف."),
+    ).toBeNull();
+    expect(validator.endTurn()).toBeNull();
+  });
   it("accepts a fact said exactly, rounded or approximately", () => {
     const { validator } = setup([["مصروف النهارده", 320], ["مصروف الدورة", 3456]]);
     expect(validator.addAssistantWords("لحد دلوقتي المسجّل تلتمية وعشرين جنيه، والدورة كلها ")).toBeNull();

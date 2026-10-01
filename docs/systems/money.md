@@ -44,7 +44,7 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
 - Every write that adds, changes or removes an item runs in a transaction that applies a delta to
   `expense_daily_rollups`, one row per user, business (0 for personal) and Cairo business day
   (`expenseToRollupDelta`, `applyExpenseRollupDelta`). Only confirmed items count; items from bank messages also
-  count as automated income or spending. A day that goes negative is logged.
+  count as automated income or spending. A negative net-spending day can be a legitimate refund and does not raise a corruption alert. Negative non-spending totals or transaction counts request reconciliation; the log records ids and the day, never financial totals.
 - `expense.update` backs out the old row's delta and applies the new one, stores new text in the details, checks that
   a referenced wallet, business or contact belongs to the user, marks muscle memory stale (its Redis generation),
   adds a contact for a person category, and when the category changed marks the classification log as corrected and
@@ -300,3 +300,6 @@ Checked against the code; each one names where it lives.
 - [Reports, insights and the smart profile](insights.md): the salary day, the profile and the monthly report.
 - [Notifications and WhatsApp](notifications.md): the budget alert template and delivery.
 - [Plans and payments](billing.md): the Pro plan that business mode and goal analysis need.
+
+### Installment attribution
+`expense.listInstallmentPlans` groups linked settlements by plan and due date: partial payments on two dates never count as a fully paid installment on either. Unlinked keyword payments use net recorded personal amounts, not row counts, and remain estimates. A word shared by two plans is ambiguous; no final remaining amount is claimed by voice and the installment panel requests linking instead of displaying false precision. Business ledger payments and schedules are excluded from personal installment progress. `tests/coach-follow-up.test.ts` holds these boundaries on migrated MySQL.

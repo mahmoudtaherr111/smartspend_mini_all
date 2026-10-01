@@ -19,7 +19,9 @@ import { directionToSave, personToSave } from "../../../contracts/expense-save";
 
 type Caller = ReturnType<AppRouter["createCaller"]>;
 
-async function unifiedUser(identity: CallIdentity): Promise<UnifiedUser> {
+export async function unifiedUser(
+  identity: CallIdentity,
+): Promise<UnifiedUser> {
   if (identity.userType === "oauth") {
     const [row] = await db.select().from(users).where(eq(users.id, identity.userId)).limit(1);
     if (!row) throw new Error("voice_user_missing");
@@ -33,14 +35,20 @@ async function unifiedUser(identity: CallIdentity): Promise<UnifiedUser> {
   };
 }
 
-export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller }): VoiceAppCalls {
+export function createVoiceAppCalls(router: {
+  createCaller(ctx: Context): Caller;
+}): VoiceAppCalls {
   const callerFor = async (identity: CallIdentity) =>
     router.createCaller({ user: await unifiedUser(identity), req: new Request("http://internal/voice-call"), ip: "voice-call" });
 
   return {
-    async parseExpense(identity, text): Promise<ParseOutcome> {
+    async parseExpense(identity, text, scope): Promise<ParseOutcome> {
       const caller = await callerFor(identity);
-      const result = await caller.ai.parseExpense({ text, inputChannel: "voice" });
+      const result = await caller.ai.parseExpense({
+        text,
+        inputChannel: "voice",
+        ...(scope ? { businessMode: true } : {}),
+      });
       return {
         decision: result.decision,
         // The same fields the expense form saves (contracts/expense-save.ts): a refund keeps its direction, a
@@ -63,21 +71,41 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
 
     async saveExpenses(identity, items) {
       const caller = await callerFor(identity);
-      await caller.expense.batchCreate(items.map((item) => ({
-        amount: item.amount,
-        type: item.type as "expense",
-        category: item.category,
-        subCategory: item.subCategory,
-        description: item.description,
-        rawText: item.rawText,
-        source: "voice" as const,
-        date: item.date,
-        classificationLogId: item.classificationLogId,
-        clientRequestId: item.clientRequestId,
-        direction: item.direction,
-        personName: item.personName,
-        personRelationship: item.personRelationship,
-      })));
+      const businessIds = [
+        ...new Set(
+          items
+            .map((item) => item.businessId)
+            .filter((id): id is number => id !== undefined),
+        ),
+      ];
+      if (businessIds.length) {
+        const { business } = await caller.business.get();
+        if (
+          businessIds.length !== 1 ||
+          !business ||
+          business.isActive === false ||
+          business.id !== businessIds[0]
+        )
+          throw new Error("voice_business_unavailable");
+      }
+      await caller.expense.batchCreate(
+        items.map((item) => ({
+          amount: item.amount,
+          type: item.type as "expense",
+          category: item.category,
+          subCategory: item.subCategory,
+          description: item.description,
+          rawText: item.rawText,
+          source: "voice" as const,
+          date: item.date,
+          classificationLogId: item.classificationLogId,
+          clientRequestId: item.clientRequestId,
+          direction: item.direction,
+          personName: item.personName,
+          personRelationship: item.personRelationship,
+          ...(item.businessId ? { businessId: item.businessId } : {}),
+        })),
+      );
       // The procedure answers with a count; the ids are what "undo" needs, found by the request ids it stored.
       const rows = await db.select({ id: expenses.id }).from(expenses).where(and(
         eq(expenses.userId, identity.userId),

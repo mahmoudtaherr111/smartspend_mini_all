@@ -6,9 +6,14 @@
 import { randomBytes } from "crypto";
 import { getProfileSnapshot } from "../../finance-semantic-layer";
 import type { VoiceWaitDetail } from "../../../../contracts/voice-protocol";
-import type { CallBrain, CallIdentity, SpeechCheck } from "../gateway/call-session";
+import type {
+  CallBrain,
+  CallIdentity,
+  SpeechCheck,
+} from "../gateway/call-session";
 import {
   claimsFailure,
+  claimsDone,
   DONE_CLAIM_NOTE,
   DoneClaimCheck,
   FAILURE_CLAIM_NOTE,
@@ -21,7 +26,12 @@ import {
 import { DraftBook } from "./drafts";
 import { FactLedger } from "./facts";
 import { buildCoachInstruction } from "./coach-instructions";
-import { buildInstruction, modeNote, openingNote, REPLY_NUDGE } from "./instructions";
+import {
+  buildInstruction,
+  modeNote,
+  openingNote,
+  REPLY_NUDGE,
+} from "./instructions";
 import { markAsked } from "./profile-questions";
 import { loadCallSnapshot } from "./snapshot";
 import { appHelpTool } from "./tools/app-help";
@@ -29,10 +39,24 @@ import { calculateTool } from "./tools/calculate";
 import { marketPriceTool } from "./tools/market-price";
 import { memoryTool } from "./tools/memory";
 import { moneyQuery, moneyQueryCoach } from "./tools/money-query";
-import { cancelTool, changeDraftCoachTool, changeDraftTool, confirmTool, dropRuntimeAction, executeDraft, RECORDS_CHANGED_SAY, recordDraftTool } from "./tools/record";
+import {
+  cancelTool,
+  changeDraftCoachTool,
+  changeDraftTool,
+  confirmTool,
+  dropRuntimeAction,
+  executeDraft,
+  RECORDS_CHANGED_SAY,
+  recordDraftTool,
+} from "./tools/record";
 import { thinkTool } from "./tools/think";
 import type { ToolContext, VoiceAppCalls, VoiceTool } from "./tools/types";
-import { correctionNote, extractSpokenNumbers, SpokenNumberValidator, type Mismatch } from "./validator";
+import {
+  correctionNote,
+  extractSpokenNumbers,
+  SpokenNumberValidator,
+  type Mismatch,
+} from "./validator";
 import { spellAmount } from "./spoken";
 import { VOICE_CHOICES } from "./voices";
 
@@ -80,16 +104,22 @@ export function createCallBrain(options: BrainOptions): CallBrain {
   const failures = new FailureClaimCheck();
   const writtenAmounts = new WrittenAmountCheck();
   const openClarifications: number[] = [];
-  const toolMap = (list: VoiceTool[]) => new Map(list.map((tool) => [tool.declaration.name, tool]));
+  const toolMap = (list: VoiceTool[]) =>
+    new Map(list.map((tool) => [tool.declaration.name, tool]));
   let tools = toolMap(options.tools ?? VOICE_TOOLS);
-  let salaryDay: Promise<number | undefined> | null = null;
   const records: { seen: number | null } = { seen: null };
   const forgotten: string[] = [];
   /** The call's own mark on the app's notes, unknown to the user (never sent to the app, never spoken). */
   let noteTag = `#${randomBytes(3).toString("hex")}`;
   let coach = false;
+  let explicitRequestBoundary = false;
+  const incompletePreviews = new Set<string>();
 
-  const context = (identity: CallIdentity, signal: AbortSignal): ToolContext => ({
+  const context = (
+    identity: CallIdentity,
+    signal: AbortSignal,
+    beforeWrite?: (draftId: string) => Promise<boolean>,
+  ): ToolContext => ({
     identity,
     ledger,
     drafts,
@@ -100,18 +130,31 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     records,
     coach,
     forgotten,
-    salaryDay: () => (salaryDay ??= getProfileSnapshot({ userId: identity.userId, userType: identity.userType })
-      .then((profile) => profile.salaryDay)
-      .catch(() => undefined)),
+    beforeWrite,
+    salaryDay: () =>
+      getProfileSnapshot({
+        userId: identity.userId,
+        userType: identity.userType,
+      })
+        .then((profile) => profile.salaryDay)
+        .catch(() => undefined),
   });
 
   const check = (mismatch: Mismatch | null): SpeechCheck | null => {
     if (!mismatch) return null;
-    if (mismatch.stale) return { kind: "stale_number", note: null, incident: { spoken: mismatch.spoken } };
+    if (mismatch.stale)
+      return {
+        kind: "stale_number",
+        note: null,
+        incident: { spoken: mismatch.spoken },
+      };
     return {
       note: validator.shouldCorrect(mismatch) ? correctionNote(mismatch) : null,
       // Numbers only: which figure was said and which it should have been, never the sentence.
-      incident: { spoken: mismatch.spoken, intended: mismatch.intended?.value ?? null },
+      incident: {
+        spoken: mismatch.spoken,
+        intended: mismatch.intended?.value ?? null,
+      },
     };
   };
 
@@ -119,14 +162,25 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     async prepare(identity, callOptions) {
       coach = callOptions.coach === true;
       tools = toolMap(options.tools ?? (coach ? COACH_TOOLS : VOICE_TOOLS));
-      const snapshot = await loadCallSnapshot(identity, ledger, now(), { refs: coach });
-      if (snapshot.question) await markAsked(identity.userId, identity.userType, now()).catch(() => undefined);
-      const voiceGender = VOICE_CHOICES[callOptions.voiceName]?.gender ?? "female";
+      const snapshot = await loadCallSnapshot(identity, ledger, now(), {
+        refs: coach,
+      });
+      if (snapshot.question)
+        await markAsked(identity.userId, identity.userType, now()).catch(
+          () => undefined,
+        );
+      const voiceGender =
+        VOICE_CHOICES[callOptions.voiceName]?.gender ?? "female";
       return {
         instruction: coach
           ? buildCoachInstruction({
-            snapshot, voiceGender, noteTag, mode: callOptions.mode, ultraAvailable: Boolean(callOptions.modes?.ultra), variant: callOptions.instructionVariant,
-          })
+              snapshot,
+              voiceGender,
+              noteTag,
+              mode: callOptions.mode,
+              ultraAvailable: Boolean(callOptions.modes?.ultra),
+              variant: callOptions.instructionVariant,
+            })
           : buildInstruction({ snapshot, voiceGender, noteTag }),
         tools: [...tools.values()].map((tool) => tool.declaration),
       };
@@ -139,17 +193,26 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     replyNudge: () => REPLY_NUDGE,
 
     appNote(text) {
-      const inner = text.replace(/^\(ملاحظة من التطبيق[^:]*:\s*/, "").replace(/\)\s*$/, "");
+      const inner = text
+        .replace(/^\(ملاحظة من التطبيق[^:]*:\s*/, "")
+        .replace(/\)\s*$/, "");
       return `(ملاحظة من التطبيق ${noteTag}: ${inner})`;
     },
 
     waitDetail(calls) {
       const call = calls[0];
       if (!call) return undefined;
-      if (call.name === "money_query") return call.args?.metric === "report" ? "report" : "records";
+      if (call.name === "money_query")
+        return call.args?.metric === "report" ? "report" : "records";
       const byTool: Record<string, VoiceWaitDetail> = {
-        memory: "memory", think: "thinking", market_price: "price", app_help: "guide",
-        record_draft: "saving", change_draft: "saving", confirm: "saving", cancel: "saving",
+        memory: "memory",
+        think: "thinking",
+        market_price: "price",
+        app_help: "guide",
+        record_draft: "saving",
+        change_draft: "saving",
+        confirm: "saving",
+        cancel: "saving",
       };
       return byTool[call.name];
     },
@@ -163,10 +226,27 @@ export function createCallBrain(options: BrainOptions): CallBrain {
         return { response: { ok: false, error: "unknown_tool" } };
       }
       // A tool the call stopped (its time ran out) failed as far as the user's request goes.
-      runContext.signal.addEventListener("abort", () => failures.toolAnswered(false), { once: true });
+      runContext.signal.addEventListener(
+        "abort",
+        () => failures.toolAnswered(false),
+        { once: true },
+      );
       try {
-        const outcome = await tool.run(call.args, context(runContext.identity, runContext.signal));
-        if (!runContext.signal.aborted) failures.toolAnswered(outcome.response.ok !== false || !/^tool_|unavailable|failed/.test(String(outcome.response.error ?? "")));
+        const outcome = await tool.run(
+          call.args,
+          context(
+            runContext.identity,
+            runContext.signal,
+            runContext.beforeWrite,
+          ),
+        );
+        if (!runContext.signal.aborted)
+          failures.toolAnswered(
+            outcome.response.ok !== false ||
+              !/^tool_|unavailable|failed/.test(
+                String(outcome.response.error ?? ""),
+              ),
+          );
         return outcome;
       } catch (error) {
         failures.toolAnswered(false);
@@ -174,25 +254,52 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       }
     },
 
-    onUserWords(text) {
+    onUserRequest(_epoch, audio) {
+      explicitRequestBoundary = true;
       failures.newRequest();
       claims.newRequest();
+      drafts.beginUserRequest(audio);
+    },
+
+    onUserSpeechEnded() {
+      drafts.endUserSpeech();
+    },
+
+    onUserWords(text) {
+      if (!explicitRequestBoundary) {
+        failures.newRequest();
+        claims.newRequest();
+      }
       drafts.heardUser(text);
       validator.noteUserWords(text);
     },
 
     onAssistantWords(text) {
       // The assistant speaking after a draft was made is it being read out: a spoken yes counts from here.
-      drafts.heardAssistant();
+      drafts.heardAssistant(text);
       // Saying a waiting draft is done is the worse mistake, so it is corrected first.
       // An undo draft talks about what was recorded before, so only new records and actions are checked.
       const waiting = drafts.latestPending();
-      const claimed = claims.add(text, Boolean(waiting) && waiting!.kind !== "undo");
+      const claimed = claims.add(
+        text,
+        Boolean(waiting) && waiting!.kind !== "undo",
+      );
       const failure = failures.add(text);
-      const misstated = writtenAmounts.add(text, drafts.justWritten(), (words) =>
-        extractSpokenNumbers(words).filter((number) => number.money || number.value >= 10).map((number) => number.value));
+      const misstated = writtenAmounts.add(
+        text,
+        drafts.justWritten(),
+        (words) =>
+          extractSpokenNumbers(words)
+            .filter((number) => number.money || number.value >= 10)
+            .map((number) => number.value),
+      );
       const numbers = check(validator.addAssistantWords(text));
-      if (claimed) return { kind: "done_claim_before_confirm", note: claimed === "note" ? DONE_CLAIM_NOTE : null, incident: { waitingDraft: true, corrected: claimed === "note" } };
+      if (claimed)
+        return {
+          kind: "done_claim_before_confirm",
+          note: claimed === "note" ? DONE_CLAIM_NOTE : null,
+          incident: { waitingDraft: true, corrected: claimed === "note" },
+        };
       if (misstated) {
         return {
           kind: "wrong_amount_after_write",
@@ -206,25 +313,59 @@ export function createCallBrain(options: BrainOptions): CallBrain {
         return {
           kind: "failure_claim_without_tool",
           note: failure.retry ? FAILURE_CLAIM_NOTE : null,
-          incident: { toolsCalled: failure.toolsCalled, retried: failure.retry },
+          incident: {
+            toolsCalled: failure.toolsCalled,
+            retried: failure.retry,
+          },
         };
       }
       return numbers;
     },
 
     claimsFailure,
+    claimsUnconfirmedDone: (text) =>
+      Boolean(drafts.latestPending()) &&
+      drafts.latestPending()?.kind !== "undo" &&
+      claimsDone(text),
+    unconfirmedDoneNote: () => DONE_CLAIM_NOTE,
 
-    lostToolCallNote: (retry, afterTools) =>
-      (!retry ? LOST_CALL_GIVE_UP_NOTE : afterTools ? FALSE_FAILURE_AFTER_TOOLS_NOTE : LOST_CALL_RETRY_NOTE),
+    lostToolCallNote: (retry, afterTools) => {
+      if (!retry) failures.providerFailed();
+      return !retry
+        ? LOST_CALL_GIVE_UP_NOTE
+        : afterTools
+          ? FALSE_FAILURE_AFTER_TOOLS_NOTE
+          : LOST_CALL_RETRY_NOTE;
+    },
 
     onTurnEnd() {
       claims.endTurn();
       failures.endTurn();
       writtenAmounts.endTurn();
-      return check(validator.endTurn());
+      const numbers = check(validator.endTurn());
+      const waiting = drafts.latestPending();
+      if (
+        waiting &&
+        waiting.presentedAt === undefined &&
+        !incompletePreviews.has(waiting.id)
+      ) {
+        incompletePreviews.add(waiting.id);
+        const readback = waiting.lines
+          .map(
+            (line) =>
+              `${line.amount === undefined ? "" : `${spellAmount(line.amount, { exact: true }).text} جنيه `}${line.label}`,
+          )
+          .join("، ");
+        return {
+          kind: "draft_preview_incomplete",
+          note: `(ملاحظة من التطبيق: المسودة لسه ما اتعرضتش كاملة. قول «${waiting.title}: ${readback}. أأكد؟» واستنى موافقته من جديد.)`,
+          incident: { previewIncomplete: true },
+        };
+      }
+      return numbers;
     },
 
-    async onCardAction(action, draftId, identity) {
+    async onCardAction(action, draftId, identity, beforeWrite) {
       const draft = drafts.get(draftId);
       if (!draft) return null;
       if (action === "cancel") {
@@ -243,7 +384,10 @@ export function createCallBrain(options: BrainOptions): CallBrain {
           note: "(ملاحظة من التطبيق: المستخدم ضغط تأكيد على مسودة قديمة أو خلصت صلاحيتها، فماتنفذتش. قوله كده في جملة واعرض تجهزها تاني.)",
         };
       }
-      const result = await executeDraft(gate.draft, context(identity, new AbortController().signal));
+      const result = await executeDraft(
+        gate.draft,
+        context(identity, new AbortController().signal, beforeWrite),
+      );
       return {
         card: drafts.card(drafts.get(draftId)!),
         note: result.ok
@@ -282,7 +426,11 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       };
       ledger.restore(saved.ledger);
       drafts.restore(saved.drafts);
-      openClarifications.splice(0, openClarifications.length, ...(saved.openClarifications ?? []));
+      openClarifications.splice(
+        0,
+        openClarifications.length,
+        ...(saved.openClarifications ?? []),
+      );
       if (saved.noteTag) noteTag = saved.noteTag;
       records.seen = saved.recordsSeen ?? null;
       failures.restore(saved.failureRetries);

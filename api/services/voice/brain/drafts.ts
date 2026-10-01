@@ -10,7 +10,10 @@
  * (or a retry) run it once. From that moment the write has started; a later "no" cannot unsay it, only undo it.
  */
 import { randomBytes } from "crypto";
-import type { VoiceCard, VoiceDraftCard } from "../../../../contracts/voice-protocol";
+import type {
+  VoiceCard,
+  VoiceDraftCard,
+} from "../../../../contracts/voice-protocol";
 import { extractSpokenNumbers } from "./validator";
 
 export const DRAFT_TTL_MS = 2 * 60_000;
@@ -36,7 +39,14 @@ export interface Draft<Payload = unknown> {
   message?: string;
 }
 
-export type GateRefusal = "unknown_draft" | "not_latest" | "expired" | "not_pending" | "no_yes" | "changed" | "not_presented";
+export type GateRefusal =
+  | "unknown_draft"
+  | "not_latest"
+  | "expired"
+  | "not_pending"
+  | "no_yes"
+  | "changed"
+  | "not_presented";
 
 /**
  * Words are compared after this folding: diacritics and tatweel dropped, every alef as ا, ى as ي, ة as ه, so "أيوة",
@@ -55,34 +65,185 @@ const set = (words: string[]) => new Set(words.map(fold));
 
 /** A plain yes to "أسجلها؟" / "أعملها؟". */
 const YES = set([
-  "اه", "ايوه", "ايوا", "اوه", "تمام", "ماشي", "ماشيه", "اوكي", "اوكيه", "اوك", "ok", "okay", "yes", "yeah", "اشطا", "حلو",
-  "سجل", "سجلها", "سجلهم", "سجله", "احفظ", "احفظها", "احفظهم", "اكد", "اكدها", "موافق", "موافقه", "يلا", "خلاص", "اتفقنا",
-  "اعمل", "اعملها", "اعمله", "اعملهم", "نفذ", "نفذها", "صح", "مظبوط", "بالظبط", "اكيد", "طبعا", "ياريت", "تسلم",
+  "اه",
+  "ايوه",
+  "ايوا",
+  "اوه",
+  "تمام",
+  "ماشي",
+  "ماشيه",
+  "اوكي",
+  "اوكيه",
+  "اوك",
+  "ok",
+  "okay",
+  "yes",
+  "yeah",
+  "اشطا",
+  "حلو",
+  "سجل",
+  "سجلها",
+  "سجلهم",
+  "سجله",
+  "احفظ",
+  "احفظها",
+  "احفظهم",
+  "اكد",
+  "اكدها",
+  "موافق",
+  "موافقه",
+  "يلا",
+  "خلاص",
+  "اتفقنا",
+  "اعمل",
+  "اعملها",
+  "اعمله",
+  "اعملهم",
+  "نفذ",
+  "نفذها",
+  "صح",
+  "مظبوط",
+  "بالظبط",
+  "اكيد",
+  "طبعا",
+  "ياريت",
+  "تسلم",
 ]);
 /** A yes only when the draft itself removes something (undo, delete): to a new record, "الغيها" means drop it. */
-const YES_TO_REMOVE = set(["امسح", "امسحها", "امسحهم", "الغي", "الغيها", "الغيهم", "شيل", "شيلها", "شيلهم"]);
+const YES_TO_REMOVE = set([
+  "امسح",
+  "امسحها",
+  "امسحهم",
+  "الغي",
+  "الغيها",
+  "الغيهم",
+  "شيل",
+  "شيلها",
+  "شيلهم",
+]);
 /** No, wait, stop: never consent, whatever else the reply holds. */
 const NO = set([
-  "لا", "لاء", "لاا", "no", "nope", "مش", "مو", "ما", "مفيش", "بلاش", "استني", "استنا", "لحظه", "ثانيه", "غلط", "لسه",
-  "معلش", "سيبك", "سيبها", "سيبهم", "انسي", "كنسل", "cancel", "بطل", "وقف",
+  "لا",
+  "لاء",
+  "لاا",
+  "no",
+  "nope",
+  "مش",
+  "مو",
+  "ما",
+  "مفيش",
+  "بلاش",
+  "استني",
+  "استنا",
+  "لحظه",
+  "ثانيه",
+  "غلط",
+  "لسه",
+  "معلش",
+  "سيبك",
+  "سيبها",
+  "سيبهم",
+  "انسي",
+  "كنسل",
+  "cancel",
+  "بطل",
+  "وقف",
 ]);
 /** The reply changes the draft: a new draft is needed, not this one executed. */
 const CHANGE = set([
-  "غير", "غيرها", "بدل", "قصدي", "اقصد", "خلي", "خليها", "خليه", "خليهم", "عدل", "عدلها", "صحح", "ضيف", "زود", "نقص",
+  "غير",
+  "غيرها",
+  "بدل",
+  "قصدي",
+  "اقصد",
+  "خلي",
+  "خليها",
+  "خليه",
+  "خليهم",
+  "عدل",
+  "عدلها",
+  "صحح",
+  "ضيف",
+  "زود",
+  "نقص",
 ]);
 /**
  * Words that make a yes something less: a condition ("لو وافقت"), a reservation ("تمام بس…"), only understanding
  * ("بفهم بس"), someone else's words ("قال آه"), later ("بعدين"), a question. Such a reply is asked again.
  */
 const HEDGE = set([
-  "بس", "لو", "ولا", "هفكر", "افكر", "بفكر", "بفهم", "افهم", "فاهم", "فاهمه", "بسال", "اسال", "يمكن", "بعدين", "بكره", "بكرا",
-  "شويه", "قال", "قالي", "قالتلي", "قالها", "بيقول", "بتقول", "ايه", "وايه", "ليه", "ازاي", "امتي", "كام", "فين", "مين", "هل", "طب",
-  "مستني", "هشوف", "نشوف",
+  "بس",
+  "لو",
+  "ولا",
+  "هفكر",
+  "افكر",
+  "بفكر",
+  "بفهم",
+  "افهم",
+  "فاهم",
+  "فاهمه",
+  "بسال",
+  "اسال",
+  "يمكن",
+  "بعدين",
+  "بكره",
+  "بكرا",
+  "شويه",
+  "قال",
+  "قالي",
+  "قالتلي",
+  "قالها",
+  "بيقول",
+  "بتقول",
+  "ايه",
+  "وايه",
+  "ليه",
+  "ازاي",
+  "امتي",
+  "كام",
+  "فين",
+  "مين",
+  "هل",
+  "طب",
+  "مستني",
+  "هشوف",
+  "نشوف",
 ]);
 /** Words that carry nothing either way. */
 const FILLER = set([
-  "يا", "سمارت", "حبيبي", "حبيبتي", "كده", "كدا", "بقي", "والله", "ده", "دي", "دول", "دا", "هو", "هي", "انا", "اللي", "و", "طيب",
-  "يعني", "بجد", "خالص", "اوي", "كلهم", "كلها", "الاتنين", "على", "عليها", "عليه", "من", "فضلك", "سمحت", "سمحتي", "لو_سمحت",
+  "يا",
+  "سمارت",
+  "حبيبي",
+  "حبيبتي",
+  "كده",
+  "كدا",
+  "بقي",
+  "والله",
+  "ده",
+  "دي",
+  "دول",
+  "دا",
+  "هو",
+  "هي",
+  "انا",
+  "اللي",
+  "و",
+  "طيب",
+  "يعني",
+  "بجد",
+  "خالص",
+  "اوي",
+  "كلهم",
+  "كلها",
+  "الاتنين",
+  "على",
+  "عليها",
+  "عليه",
+  "من",
+  "فضلك",
+  "سمحت",
+  "سمحتي",
+  "لو_سمحت",
 ]);
 /** At most this many other words beside a yes ("آه سجل الأكل والمواصلات"); a longer reply is something else. */
 const MAX_OTHER_WORDS = 3;
@@ -101,28 +262,69 @@ export function readReply(
     .replace(/(مش|مفيش|ما فيش|مافيش)\s+مشكل[ةه]/g, " موافق ")
     .replace(/لو\s+سمحت(ي)?|من\s+فضلك/g, " ");
   if (!reply.trim()) return "unclear";
-  const words = reply.replace(/[،,.!؛;:"«»()[\]-]/g, " ").split(/\s+/).filter(Boolean).map(fold);
+  const words = reply
+    .replace(/[،,.!؛;:"«»()[\]-]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(fold);
   const question = /[؟?]/.test(reply);
   const yesWords = kind === "undo" ? new Set([...YES, ...YES_TO_REMOVE]) : YES;
   // Egyptian negation wraps the verb: "ماتسجلش", "متعملهاش", "مابقاش".
-  const negated = (word: string) => NO.has(word) || (/^ما?.{2,}ش$/.test(word) && !yesWords.has(word));
-  if (words.some((word) => negated(word) || CHANGE.has(word) || (kind !== "undo" && YES_TO_REMOVE.has(word)))) {
+  const negated = (word: string) =>
+    NO.has(word) || (/^ما?.{2,}ش$/.test(word) && !yesWords.has(word));
+  if (
+    words.some(
+      (word) =>
+        negated(word) ||
+        CHANGE.has(word) ||
+        (kind !== "undo" && YES_TO_REMOVE.has(word)),
+    )
+  ) {
     return "no_or_change";
   }
   const known = new Set(draftNumbers.map((n) => Math.round(n * 100)));
   // "الستين" is sixty too: drop the article before reading numbers.
   const numbers = extractSpokenNumbers(reply.replace(/(^|\s)ال(?=\S)/g, "$1"));
-  if (numbers.some((number) => number.value >= 1 && !known.has(Math.round(number.value * 100)))) {
+  if (
+    numbers.some(
+      (number) =>
+        number.value >= 1 && !known.has(Math.round(number.value * 100)),
+    )
+  ) {
     return "no_or_change";
   }
   if (question || words.some((word) => HEDGE.has(word))) return "unclear";
   if (!words.some((word) => yesWords.has(word))) return "unclear";
-  const numberWords = new Set(draftNumbers.length ? words.filter((word) => extractSpokenNumbers(word.replace(/^ال/, "")).length > 0) : []);
-  const others = words.filter((word) => !yesWords.has(word) && !FILLER.has(word) && !numberWords.has(word));
+  const numberWords = new Set(
+    draftNumbers.length
+      ? words.filter(
+          (word) => extractSpokenNumbers(word.replace(/^ال/, "")).length > 0,
+        )
+      : [],
+  );
+  const others = words.filter(
+    (word) =>
+      !yesWords.has(word) && !FILLER.has(word) && !numberWords.has(word),
+  );
   return others.length <= MAX_OTHER_WORDS ? "yes" : "unclear";
 }
 
 export class DraftBook {
+  private speaking = false;
+  private voiceBoundary = false;
+  private consentReadyAt = 0;
+  private presentationText = "";
+
+  beginUserRequest(audio: boolean): void {
+    this.voiceBoundary = audio;
+    this.speaking = audio;
+    this.consentReadyAt = 0;
+  }
+
+  endUserSpeech(): void {
+    this.speaking = false;
+    this.consentReadyAt = this.now() + 500;
+  }
   private drafts: Draft[] = [];
   /** The user's words, with when they were heard, so a yes can be tied to what it answered. */
   private userWords: Array<{ at: number; text: string }> = [];
@@ -132,6 +334,8 @@ export class DraftBook {
   constructor(private readonly now: () => number = Date.now) {}
 
   heardUser(text: string): void {
+    if (this.voiceBoundary && !this.speaking)
+      this.consentReadyAt = this.now() + 500;
     const at = this.now();
     const last = this.userWords[this.userWords.length - 1];
     // Transcription arrives in pieces; pieces close together belong to the same utterance, unless the assistant
@@ -147,10 +351,17 @@ export class DraftBook {
 
   /** What the user said after `since`. */
   wordsSince(since: number): string {
-    return this.userWords.filter((entry) => entry.at > since).map((entry) => entry.text).join(" ").trim();
+    return this.userWords
+      .filter((entry) => entry.at > since)
+      .map((entry) => entry.text)
+      .join(" ")
+      .trim();
   }
 
-  add<P>(draft: Omit<Draft<P>, "id" | "createdAt" | "expiresAt" | "status">): Draft<P> {
+  add<P>(
+    draft: Omit<Draft<P>, "id" | "createdAt" | "expiresAt" | "status">,
+  ): Draft<P> {
+    this.presentationText = "";
     const createdAt = this.now();
     for (const pending of this.drafts) {
       if (pending.status === "pending") pending.status = "cancelled";
@@ -173,19 +384,54 @@ export class DraftBook {
 
   latestPending(): Draft | undefined {
     this.expire();
-    return [...this.drafts].reverse().find((draft) => draft.status === "pending");
+    return [...this.drafts]
+      .reverse()
+      .find((draft) => draft.status === "pending");
   }
 
   latestExecuted(kind: Draft["kind"]): Draft | undefined {
-    return [...this.drafts].reverse().find((draft) => draft.kind === kind && draft.status === "executed");
+    return [...this.drafts]
+      .reverse()
+      .find((draft) => draft.kind === kind && draft.status === "executed");
   }
 
   /** The assistant is speaking: the latest pending draft is now being read out to the user. */
-  heardAssistant(): void {
+  heardAssistant(text?: string): void {
+    if (text !== undefined) this.presentationText += text;
     const at = this.now();
     this.lastAssistantAt = at;
     for (const draft of this.drafts) {
-      if (draft.status === "pending" && draft.presentedAt === undefined && at >= draft.createdAt) draft.presentedAt = at;
+      if (
+        draft.status !== "pending" ||
+        draft.presentedAt !== undefined ||
+        at < draft.createdAt
+      )
+        continue;
+      // Live speech must actually present the amounts; a filler after preparing a draft is not its preview.
+      const required = draft.lines
+        .map((line) => line.amount)
+        .filter(
+          (amount): amount is number => amount !== undefined && amount > 0,
+        );
+      const said = extractSpokenNumbers(this.presentationText).map(
+        (number) => number.value,
+      );
+      if (
+        text !== undefined &&
+        required.some(
+          (amount) => !said.some((value) => Math.abs(value - amount) < 0.005),
+        )
+      )
+        continue;
+      if (
+        text !== undefined &&
+        !required.length &&
+        !/[؟?]|أسجل|اسجل|أعمل|اعمل|أحفظ|احفظ|أوقف|اوقف|ألغي|الغي/.test(
+          this.presentationText,
+        )
+      )
+        continue;
+      draft.presentedAt = at;
     }
   }
 
@@ -194,17 +440,34 @@ export class DraftBook {
    * user's own yes after the assistant presented the draft. A draft that passes is claimed (`executing`) before this
    * returns, so a second tap or yes is refused as `not_pending`.
    */
-  gate(id: string, byTap: boolean): { ok: true; draft: Draft } | { ok: false; reason: GateRefusal } {
+  gate(
+    id: string,
+    byTap: boolean,
+  ): { ok: true; draft: Draft } | { ok: false; reason: GateRefusal } {
     this.expire();
     const draft = this.get(id);
     if (!draft) return { ok: false, reason: "unknown_draft" };
     if (draft.status === "expired") return { ok: false, reason: "expired" };
     if (draft.status !== "pending") return { ok: false, reason: "not_pending" };
-    if (this.latestPending()?.id !== id) return { ok: false, reason: "not_latest" };
+    if (this.latestPending()?.id !== id)
+      return { ok: false, reason: "not_latest" };
     if (!byTap) {
-      if (draft.presentedAt === undefined) return { ok: false, reason: "not_presented" };
-      const amounts = [...draft.lines.map((line) => line.amount ?? 0), draft.total ?? 0].filter((n) => n > 0);
-      const reply = readReply(this.wordsSince(draft.presentedAt), amounts, draft.kind);
+      if (
+        this.speaking ||
+        (this.voiceBoundary && this.now() < this.consentReadyAt)
+      )
+        return { ok: false, reason: "no_yes" };
+      if (draft.presentedAt === undefined)
+        return { ok: false, reason: "not_presented" };
+      const amounts = [
+        ...draft.lines.map((line) => line.amount ?? 0),
+        draft.total ?? 0,
+      ].filter((n) => n > 0);
+      const reply = readReply(
+        this.wordsSince(draft.presentedAt),
+        amounts,
+        draft.kind,
+      );
       if (reply === "no_or_change") return { ok: false, reason: "changed" };
       if (reply !== "yes") return { ok: false, reason: "no_yes" };
     }
@@ -218,7 +481,11 @@ export class DraftBook {
     if (draft?.status === "executing") draft.status = "pending";
   }
 
-  settle(id: string, status: DraftStatus, patch: Partial<Pick<Draft, "resultIds" | "message">> = {}): Draft | undefined {
+  settle(
+    id: string,
+    status: DraftStatus,
+    patch: Partial<Pick<Draft, "resultIds" | "message">> = {},
+  ): Draft | undefined {
     const draft = this.get(id);
     if (!draft) return undefined;
     draft.status = status;
@@ -231,17 +498,29 @@ export class DraftBook {
    * Right after an expense write, before the user speaks again: the amounts it wrote, and the amounts of this call's
    * drafts it replaced (a corrected "15" that became "50"), which the assistant must not say as written.
    */
-  justWritten(withinMs = 30_000): { written: number[]; replaced: number[] } | null {
+  justWritten(
+    withinMs = 30_000,
+  ): { written: number[]; replaced: number[] } | null {
     const last = this.latestExecuted("expenses");
     const at = last?.settledAt;
     if (!last || at === undefined || this.now() - at > withinMs) return null;
     if (this.userWords.some((entry) => entry.at > at)) return null;
-    const amounts = (draft: Draft) => [...draft.lines.map((line) => line.amount ?? 0), draft.total ?? 0].filter((n) => n > 0);
+    const amounts = (draft: Draft) =>
+      [...draft.lines.map((line) => line.amount ?? 0), draft.total ?? 0].filter(
+        (n) => n > 0,
+      );
     const written = amounts(last);
     const replaced = this.drafts
-      .filter((draft) => draft.kind === "expenses" && draft !== last && (draft.status === "cancelled" || draft.status === "expired"))
+      .filter(
+        (draft) =>
+          draft.kind === "expenses" &&
+          draft !== last &&
+          (draft.status === "cancelled" || draft.status === "expired"),
+      )
       .flatMap(amounts)
-      .filter((amount) => !written.some((value) => Math.abs(value - amount) < 0.5));
+      .filter(
+        (amount) => !written.some((value) => Math.abs(value - amount) < 0.5),
+      );
     return { written, replaced };
   }
 
@@ -264,20 +543,37 @@ export class DraftBook {
   }
 
   summary(): { done: string[]; notDone: string[] } {
-    const done = this.drafts.filter((draft) => draft.status === "executed").map((draft) => draft.message ?? draft.title);
+    const done = this.drafts
+      .filter((draft) => draft.status === "executed")
+      .map((draft) => draft.message ?? draft.title);
     const notDone = this.drafts
-      .filter((draft) => draft.status === "pending" || draft.status === "expired" || draft.status === "failed")
+      .filter(
+        (draft) =>
+          draft.status === "pending" ||
+          draft.status === "expired" ||
+          draft.status === "failed",
+      )
       .map((draft) => draft.title);
     // A write that started and has no answer yet is neither: the end card says it is still being checked.
-    for (const draft of this.drafts) if (draft.status === "executing") notDone.push(`${draft.title} (لسه بنتأكد إنه اتنفذ)`);
+    for (const draft of this.drafts)
+      if (draft.status === "executing")
+        notDone.push(`${draft.title} (لسه بنتأكد إنه اتنفذ)`);
     return { done, notDone };
   }
 
-  snapshot(): { drafts: Draft[]; userWords: Array<{ at: number; text: string }> } {
+  snapshot(): {
+    drafts: Draft[];
+    userWords: Array<{ at: number; text: string }>;
+  } {
     return { drafts: this.drafts, userWords: this.userWords.slice(-10) };
   }
 
-  restore(state: { drafts?: Draft[]; userWords?: Array<{ at: number; text: string }> } | null | undefined): void {
+  restore(
+    state:
+      | { drafts?: Draft[]; userWords?: Array<{ at: number; text: string }> }
+      | null
+      | undefined,
+  ): void {
     if (!state) return;
     this.drafts = state.drafts ?? [];
     this.userWords = state.userWords ?? [];
@@ -286,7 +582,8 @@ export class DraftBook {
   private expire(): void {
     const now = this.now();
     for (const draft of this.drafts) {
-      if (draft.status === "pending" && draft.expiresAt <= now) draft.status = "expired";
+      if (draft.status === "pending" && draft.expiresAt <= now)
+        draft.status = "expired";
     }
   }
 }

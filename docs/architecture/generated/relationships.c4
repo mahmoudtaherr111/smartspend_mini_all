@@ -43,7 +43,9 @@ model {
   smartspend.api.http.post_webhooks_paymob -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.post_webhooks_paymob -[uses]-> smartspend.shared.contracts
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.chat_conversations
+  smartspend.api.modules.accounts -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.user_businesses
+  smartspend.api.modules.accounts -[reads]-> smartspend.mysql.users
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.ad_clicks
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.ai_action_audit_logs
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.ai_action_memory
@@ -153,10 +155,15 @@ model {
   smartspend.api.modules.ai-memory -[reads]-> smartspend.mysql.ai_conversation_summaries
   smartspend.api.modules.ai-memory -[reads]-> smartspend.mysql.ai_memory_embeddings
   smartspend.api.modules.ai-memory -[reads]-> smartspend.mysql.ai_memory_items
+  smartspend.api.modules.ai-memory -[reads]-> smartspend.mysql.chat_conversations
+  smartspend.api.modules.ai-memory -[reads]-> smartspend.mysql.chat_messages
+  smartspend.api.modules.ai-memory -[reads]-> smartspend.mysql.local_users
+  smartspend.api.modules.ai-memory -[reads]-> smartspend.mysql.users
   smartspend.api.modules.ai-memory -[uses]-> smartspend.qdrant
   smartspend.api.modules.ai-memory -[writes]-> smartspend.mysql.ai_conversation_summaries
   smartspend.api.modules.ai-memory -[writes]-> smartspend.mysql.ai_memory_embeddings
   smartspend.api.modules.ai-memory -[writes]-> smartspend.mysql.ai_memory_items
+  smartspend.api.modules.ai-memory -[writes]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.ai-providers -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.ai-providers -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ai-providers -[reads]-> smartspend.mysql.ai_models
@@ -767,6 +774,7 @@ model {
   smartspend.api.trpc.chat.clearAllMemories -[writes]-> smartspend.mysql.ai_memory_embeddings
   smartspend.api.trpc.chat.clearAllMemories -[writes]-> smartspend.mysql.ai_memory_items
   smartspend.api.trpc.chat.clearConversation -[reads]-> smartspend.mysql.chat_conversations
+  smartspend.api.trpc.chat.clearConversation -[uses]-> smartspend.api.modules.ai-memory
   smartspend.api.trpc.chat.clearConversation -[writes]-> smartspend.mysql.ai_conversation_summaries
   smartspend.api.trpc.chat.clearConversation -[writes]-> smartspend.mysql.chat_conversations
   smartspend.api.trpc.chat.clearConversation -[writes]-> smartspend.mysql.chat_messages
@@ -893,6 +901,7 @@ model {
   smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.installment_plans
   smartspend.api.trpc.expense.listInstallmentPlans -[reads]-> smartspend.mysql.scheduled_cashflows
+  smartspend.api.trpc.expense.listInstallmentPlans -[uses]-> smartspend.api.modules.arabic-nlp
   smartspend.api.trpc.expense.listInstallmentPlans -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.previewCategory -[reads]-> smartspend.mysql.user_dictionaries
   smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.api.modules.arabic-nlp

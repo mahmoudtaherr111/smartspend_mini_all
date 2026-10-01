@@ -14,7 +14,11 @@
  * them in memory, which is right for a single process (decision 0013).
  */
 import { createLogger } from "../../../lib/log";
-import { getRedisClient } from "../../../lib/redis-client";
+import { settingDefaults } from "../../../lib/system-settings-registry";
+import {
+  getCacheRuntimeStatus,
+  getRedisClient,
+} from "../../../lib/redis-client";
 
 const log = createLogger("voice-admission");
 
@@ -22,9 +26,14 @@ export const SEAT_TTL_MS = 60_000;
 const BREAKER_BASE_MS = 60_000;
 const BREAKER_MAX_MS = 30 * 60_000;
 
-export type AdmissionRefusal = "pool_full" | "user_busy" | "provider_quota";
+export type AdmissionRefusal =
+  | "pool_full"
+  | "user_busy"
+  | "provider_quota"
+  | "unavailable";
 
 export interface AdmissionLimits {
+  unavailable?: boolean;
   /** Seats in this model's pool across all servers; 0 = no cap. */
   poolMax: number;
   /** Live calls one user may hold at once; 0 = no cap. */
@@ -38,19 +47,41 @@ export interface SeatRequest {
 }
 
 /** The admin's caps for a model's pool: the extended-thinking model has its own (it spends several times the tokens). */
-export function admissionLimits(settings: Record<string, string | undefined>, model: string): AdmissionLimits {
+export function admissionLimits(
+  settings: Record<string, string | undefined>,
+  model: string,
+): AdmissionLimits {
+  const defaults = settingDefaults();
   const read = (key: string, fallback: number) => {
-    const value = Number.parseInt(String(settings[key] ?? ""), 10);
+    const value = Number.parseInt(String(settings[key] ?? defaults[key] ?? ""), 10);
     return Number.isFinite(value) && value >= 0 ? value : fallback;
   };
+  const extended = model.includes("extended-thinking");
+  const configured = extended
+    ? read("voice_ultra_max_concurrent_calls", 3)
+    : read("voice_max_concurrent_calls", 20);
+  const tpm = extended
+    ? read("voice_ultra_input_tpm", 0)
+    : read("voice_standard_input_tpm", 0);
+  const reserved = extended
+    ? read("voice_ultra_reserved_tpm", 60_000)
+    : read("voice_standard_reserved_tpm", 30_000);
+  // Leave 20% headroom. A seat reserves estimated input TPM; it is not a quota guarantee for unbounded context.
+  const capacity =
+    tpm > 0 ? Math.floor((tpm * 0.8) / Math.max(1, reserved)) : null;
   return {
-    poolMax: model.includes("extended-thinking") ? read("voice_ultra_max_concurrent_calls", 3) : read("voice_max_concurrent_calls", 20),
+    ...(capacity !== null && capacity < 1 ? { unavailable: true } : {}),
+    poolMax:
+      capacity === null
+        ? configured
+        : Math.min(configured || Infinity, Math.max(1, capacity)),
     userMax: read("voice_max_calls_per_user", 1),
   };
 }
 
 const poolKey = (pool: string) => `voice:admit:pool:${pool}`;
-const userKey = (user: SeatRequest["user"]) => `voice:admit:user:${user.type}:${user.id}`;
+const userKey = (user: SeatRequest["user"]) =>
+  `voice:admit:user:${user.type}:${user.id}`;
 const breakerKey = (pool: string) => `voice:breaker:${pool}`;
 const tripsKey = (pool: string) => `voice:breaker:trips:${pool}`;
 
@@ -93,12 +124,22 @@ function memorySet(key: string, now: number): Map<string, number> {
   return seats;
 }
 
-function memoryAdmit(request: SeatRequest, limits: AdmissionLimits, now: number): { ok: boolean; reason?: AdmissionRefusal; inUse: number } {
+function memoryAdmit(
+  request: SeatRequest,
+  limits: AdmissionLimits,
+  now: number,
+): { ok: boolean; reason?: AdmissionRefusal; inUse: number } {
   const pool = memorySet(poolKey(request.pool), now);
   const user = memorySet(userKey(request.user), now);
   if (!pool.has(request.callId)) {
-    if (limits.userMax > 0 && user.size >= limits.userMax && !user.has(request.callId)) return { ok: false, reason: "user_busy", inUse: pool.size };
-    if (limits.poolMax > 0 && pool.size >= limits.poolMax) return { ok: false, reason: "pool_full", inUse: pool.size };
+    if (
+      limits.userMax > 0 &&
+      user.size >= limits.userMax &&
+      !user.has(request.callId)
+    )
+      return { ok: false, reason: "user_busy", inUse: pool.size };
+    if (limits.poolMax > 0 && pool.size >= limits.poolMax)
+      return { ok: false, reason: "pool_full", inUse: pool.size };
   }
   pool.set(request.callId, now + SEAT_TTL_MS);
   user.set(request.callId, now + SEAT_TTL_MS);
@@ -116,42 +157,87 @@ export async function admitCall(
   limits: AdmissionLimits,
   now = Date.now(),
   options: { live?: boolean } = {},
-): Promise<{ ok: true; inUse: number } | { ok: false; reason: AdmissionRefusal; inUse: number; retryAfterMs?: number }> {
+): Promise<
+  | { ok: true; inUse: number }
+  | {
+      ok: false;
+      reason: AdmissionRefusal;
+      inUse: number;
+      retryAfterMs?: number;
+    }
+> {
+  if (limits.unavailable) return { ok: false, reason: "unavailable", inUse: 0 };
   // The breaker holds back new calls; a call already under way keeps (or takes back) its seat.
   const breaker = options.live ? null : await breakerState(request.pool, now);
-  if (breaker) return { ok: false, reason: "provider_quota", inUse: 0, retryAfterMs: breaker.retryAfterMs };
+  if (breaker)
+    return {
+      ok: false,
+      reason: "provider_quota",
+      inUse: 0,
+      retryAfterMs: breaker.retryAfterMs,
+    };
   const client = await getRedisClient();
   if (client) {
     try {
       const [ok, reason, inUse] = (await client.eval(ADMIT_LUA, {
         keys: [poolKey(request.pool), userKey(request.user)],
-        arguments: [String(now), String(SEAT_TTL_MS), String(limits.poolMax), String(limits.userMax), request.callId],
+        arguments: [
+          String(now),
+          String(SEAT_TTL_MS),
+          String(limits.poolMax),
+          String(limits.userMax),
+          request.callId,
+        ],
       })) as [number, string, number];
-      return ok === 1 ? { ok: true, inUse: Number(inUse) } : { ok: false, reason: reason as AdmissionRefusal, inUse: Number(inUse) };
+      return ok === 1
+        ? { ok: true, inUse: Number(inUse) }
+        : {
+            ok: false,
+            reason: reason as AdmissionRefusal,
+            inUse: Number(inUse),
+          };
     } catch (err) {
-      log.warn({ event: "voice.admission_redis_failed", err }, "Admission fell back to this process");
+      log.warn(
+        { event: "voice.admission_redis_failed", err },
+        "Admission fell back to this process",
+      );
     }
   }
+  if (!getCacheRuntimeStatus().memoryFallbackAllowed)
+    return { ok: false, reason: "unavailable", inUse: 0 };
   const result = memoryAdmit(request, limits, now);
-  return result.ok ? { ok: true, inUse: result.inUse } : { ok: false, reason: result.reason!, inUse: result.inUse };
+  return result.ok
+    ? { ok: true, inUse: result.inUse }
+    : { ok: false, reason: result.reason!, inUse: result.inUse };
 }
 
 /** Gives the seats back (the call ended, or moved to another model's pool). */
-export async function releaseCall(request: SeatRequest): Promise<void> {
+export async function releaseCall(
+  request: SeatRequest,
+  options: { keepUser?: boolean } = {},
+): Promise<void> {
   memorySeats.get(poolKey(request.pool))?.delete(request.callId);
-  memorySeats.get(userKey(request.user))?.delete(request.callId);
+  if (!options.keepUser)
+    memorySeats.get(userKey(request.user))?.delete(request.callId);
   const client = await getRedisClient();
   if (!client) return;
   try {
-    await client.zRem(poolKey(request.pool), request.callId);
-    await client.zRem(userKey(request.user), request.callId);
+    const release = client.multi().zRem(poolKey(request.pool), request.callId);
+    if (!options.keepUser) release.zRem(userKey(request.user), request.callId);
+    await release.exec();
   } catch (err) {
-    log.warn({ event: "voice.admission_release_failed", err }, "Seat not released; it expires on its own");
+    log.warn(
+      { event: "voice.admission_release_failed", err },
+      "Seat not released; it expires on its own",
+    );
   }
 }
 
 /** Seats in use per pool, for the admin screen. */
-export async function seatsInUse(pools: string[], now = Date.now()): Promise<Record<string, number>> {
+export async function seatsInUse(
+  pools: string[],
+  now = Date.now(),
+): Promise<Record<string, number>> {
   const out: Record<string, number> = {};
   const client = await getRedisClient();
   for (const pool of pools) {
@@ -172,8 +258,20 @@ export async function seatsInUse(pools: string[], now = Date.now()): Promise<Rec
 
 const memoryBreakers = new Map<string, { until: number; trips: number[] }>();
 
+const BREAKER_LUA = `
+local trips = redis.call('INCR', KEYS[2])
+if trips == 1 then redis.call('PEXPIRE', KEYS[2], 3600000) end
+local hold = math.min(tonumber(ARGV[2]), tonumber(ARGV[1]) * 2 ^ math.min(trips - 1, 10))
+local remaining = redis.call('PTTL', KEYS[1])
+if remaining < hold then redis.call('SET', KEYS[1], 'quota', 'PX', hold) end
+return {trips, math.max(hold, remaining)}
+`;
+
 /** Whether new calls on this model are held back after a quota refusal, and for how long. */
-export async function breakerState(pool: string, now = Date.now()): Promise<{ retryAfterMs: number } | null> {
+export async function breakerState(
+  pool: string,
+  now = Date.now(),
+): Promise<{ retryAfterMs: number } | null> {
   const client = await getRedisClient();
   if (client) {
     try {
@@ -184,31 +282,44 @@ export async function breakerState(pool: string, now = Date.now()): Promise<{ re
     }
   }
   const local = memoryBreakers.get(pool);
-  return local && local.until > now ? { retryAfterMs: local.until - now } : null;
+  return local && local.until > now
+    ? { retryAfterMs: local.until - now }
+    : null;
 }
 
 /**
  * The provider refused a session on this model for quota. New calls on it wait: a minute the first time in an hour,
  * doubling with each trip up to thirty minutes. Calls already live are not touched.
  */
-export async function tripBreaker(pool: string, now = Date.now()): Promise<number> {
+export async function tripBreaker(
+  pool: string,
+  now = Date.now(),
+): Promise<number> {
   const client = await getRedisClient();
   let trips = 1;
   if (client) {
     try {
-      trips = Number(await client.incr(tripsKey(pool)));
-      if (trips === 1) await client.pExpire(tripsKey(pool), 60 * 60_000);
-      const holdMs = Math.min(BREAKER_MAX_MS, BREAKER_BASE_MS * 2 ** (trips - 1));
-      await client.set(breakerKey(pool), "quota", { PX: holdMs });
-      log.warn({ event: "voice.breaker_tripped", pool, trips, holdMs }, "Provider quota refusal: new calls held back");
+      const result = await client.eval(BREAKER_LUA, { keys: [breakerKey(pool), tripsKey(pool)], arguments: [String(BREAKER_BASE_MS), String(BREAKER_MAX_MS)] }) as [number, number];
+      trips = Number(result[0]);
+      const holdMs = Number(result[1]);
+      log.warn(
+        { event: "voice.breaker_tripped", pool, trips, holdMs },
+        "Provider quota refusal: new calls held back",
+      );
       return holdMs;
     } catch (err) {
-      log.warn({ event: "voice.breaker_redis_failed", err }, "Breaker kept in this process");
+      log.warn(
+        { event: "voice.breaker_redis_failed", err },
+        "Breaker kept in this process",
+      );
     }
   }
   const local = memoryBreakers.get(pool) ?? { until: 0, trips: [] };
   local.trips = [...local.trips.filter((at) => at > now - 60 * 60_000), now];
-  const holdMs = Math.min(BREAKER_MAX_MS, BREAKER_BASE_MS * 2 ** (local.trips.length - 1));
+  const holdMs = Math.min(
+    BREAKER_MAX_MS,
+    BREAKER_BASE_MS * 2 ** (local.trips.length - 1),
+  );
   local.until = now + holdMs;
   memoryBreakers.set(pool, local);
   return holdMs;

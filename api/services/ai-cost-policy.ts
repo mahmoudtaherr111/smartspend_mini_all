@@ -4,9 +4,34 @@ import type {
   ResolvedFact,
   TokenBudget,
 } from "./ai-kernel/types";
+import { createLogger } from "../lib/log";
+
+const log = createLogger("ai-cost");
+
+/** Cost analytics needs routing codes, not the user's clauses, people, tool arguments or replies. */
+function costMetadata(input: Record<string, unknown>, depth = 0): Record<string, unknown> {
+  if (depth >= 4) return {};
+  const allowed = new Set(["conversationId", "traceId", "provider", "route", "reason", "parsedBy", "decision", "confidence", "itemCount", "inputChannel", "cachedTokens", "sttTokensUsed", "schemaVersion", "engine", "engineRole", "agentBoundary", "kernelMode", "agentRuntime", "fallback", "cacheHit", "segmentCount"]);
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if ((key === "trace" || key === "routing") && value && typeof value === "object" && !Array.isArray(value)) {
+      result[key] = costMetadata(value as Record<string, unknown>, depth + 1);
+    } else if (key === "cacheHits" && Array.isArray(value)) {
+      result[key] = value.filter((entry) => typeof entry === "string" && /^[A-Za-z0-9_.:/-]{1,200}$/.test(entry));
+    } else if (allowed.has(key) && (typeof value === "boolean" || (typeof value === "number" && Number.isFinite(value)) || (typeof value === "string" && /^[A-Za-z0-9_.:/-]{1,200}$/.test(value)))) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
 
 export type AICostPlan = "free" | "pro" | "ultra";
-export type AICostChannel = AIChannel | "embedding" | "action" | "parse" | "speech";
+export type AICostChannel =
+  | AIChannel
+  | "embedding"
+  | "action"
+  | "parse"
+  | "speech";
 
 export interface AICostPolicyInput {
   channel: AICostChannel;
@@ -217,7 +242,18 @@ const BASE_POLICIES: Record<AICostChannel, Record<AICostPlan, TokenBudget>> = {
   },
 };
 
-const HARD_CAPS: Record<AICostChannel, Pick<TokenBudget, "maxInputTokens" | "maxOutputTokens" | "maxFactTokens" | "maxMemoryTokens" | "maxHistoryTokens" | "maxToolRounds">> = {
+const HARD_CAPS: Record<
+  AICostChannel,
+  Pick<
+    TokenBudget,
+    | "maxInputTokens"
+    | "maxOutputTokens"
+    | "maxFactTokens"
+    | "maxMemoryTokens"
+    | "maxHistoryTokens"
+    | "maxToolRounds"
+  >
+> = {
   chat: budget(2500, 1200, 1000, 360, 420, 2),
   voice: budget(900, 220, 500, 160, 160, 1),
   report: budget(4200, 2600, 2200, 420, 420, 2),
@@ -257,33 +293,50 @@ function asCostPlan(plan: string | null | undefined): AICostPlan {
   return plan === "pro" || plan === "ultra" ? plan : "free";
 }
 
-function readSetting(settings: Record<string, unknown> | undefined, key: string): string | undefined {
+function readSetting(
+  settings: Record<string, unknown> | undefined,
+  key: string,
+): string | undefined {
   const value = settings?.[key];
   if (value === undefined || value === null) return undefined;
   return String(value);
 }
 
-function readBool(settings: Record<string, unknown> | undefined, key: string, fallback: boolean): boolean {
+function readBool(
+  settings: Record<string, unknown> | undefined,
+  key: string,
+  fallback: boolean,
+): boolean {
   const value = readSetting(settings, key);
   if (value === undefined) return fallback;
   return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
 }
 
-function readOptionalInt(settings: Record<string, unknown> | undefined, key: string): number | undefined {
+function readOptionalInt(
+  settings: Record<string, unknown> | undefined,
+  key: string,
+): number | undefined {
   const value = readSetting(settings, key);
   if (value === undefined) return undefined;
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function readNumber(settings: Record<string, unknown> | undefined, key: string, fallback: number): number {
+function readNumber(
+  settings: Record<string, unknown> | undefined,
+  key: string,
+  fallback: number,
+): number {
   const value = readSetting(settings, key);
   if (value === undefined) return fallback;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function readCsv(settings: Record<string, unknown> | undefined, key: string): string[] {
+function readCsv(
+  settings: Record<string, unknown> | undefined,
+  key: string,
+): string[] {
   const value = readSetting(settings, key);
   if (!value) return [];
   return value
@@ -306,7 +359,10 @@ function overrideBudgetValue(
 ): number {
   const planKey = `ai_cost_${channel}_${suffix}_${plan}`;
   const globalKey = `ai_cost_${channel}_${suffix}`;
-  const value = readOptionalInt(settings, planKey) ?? readOptionalInt(settings, globalKey) ?? fallback;
+  const value =
+    readOptionalInt(settings, planKey) ??
+    readOptionalInt(settings, globalKey) ??
+    fallback;
   return clamp(value, 0, max);
 }
 
@@ -320,11 +376,20 @@ export function estimateAICostUnits(input: {
 }): number {
   const inputTokens = Math.max(0, Math.round(input.inputTokens ?? 0));
   const outputTokens = Math.max(0, Math.round(input.outputTokens ?? 0));
-  const totalTokens = Math.max(0, Math.round(input.totalTokens ?? inputTokens + outputTokens));
+  const totalTokens = Math.max(
+    0,
+    Math.round(input.totalTokens ?? inputTokens + outputTokens),
+  );
   const embeddingCalls = Math.max(0, Math.round(input.embeddingCalls ?? 0));
   const llmCalls = Math.max(0, Math.round(input.llmCalls ?? 0));
   const toolCalls = Math.max(0, Math.round(input.toolCalls ?? 0));
-  return totalTokens + outputTokens * 2 + embeddingCalls * 25 + llmCalls * 100 + toolCalls * 10;
+  return (
+    totalTokens +
+    outputTokens * 2 +
+    embeddingCalls * 25 +
+    llmCalls * 100 +
+    toolCalls * 10
+  );
 }
 
 export function resolveAICostPolicy(input: AICostPolicyInput): AICostPolicy {
@@ -335,9 +400,10 @@ export function resolveAICostPolicy(input: AICostPolicyInput): AICostPolicy {
   const caps = HARD_CAPS[channel];
   const complexIntent = COMPLEX_TOOL_INTENTS.has(String(intentKind));
 
-  let maxToolRounds = complexIntent && channel !== "voice"
-    ? Math.max(base.maxToolRounds, 2)
-    : Math.min(base.maxToolRounds, 1);
+  let maxToolRounds =
+    complexIntent && channel !== "voice"
+      ? Math.max(base.maxToolRounds, 2)
+      : Math.min(base.maxToolRounds, 1);
 
   maxToolRounds = overrideBudgetValue(
     input.settings,
@@ -351,7 +417,12 @@ export function resolveAICostPolicy(input: AICostPolicyInput): AICostPolicy {
   if (!complexIntent && channel !== "report") {
     maxToolRounds = Math.min(maxToolRounds, 1);
   }
-  if (channel === "voice" || channel === "embedding" || channel === "speech" || channel === "parse") {
+  if (
+    channel === "voice" ||
+    channel === "embedding" ||
+    channel === "speech" ||
+    channel === "parse"
+  ) {
     maxToolRounds = Math.min(maxToolRounds, caps.maxToolRounds);
   }
 
@@ -359,11 +430,46 @@ export function resolveAICostPolicy(input: AICostPolicyInput): AICostPolicy {
     channel,
     plan,
     intentKind: String(intentKind),
-    maxInputTokens: overrideBudgetValue(input.settings, channel, plan, "max_input", base.maxInputTokens, caps.maxInputTokens),
-    maxOutputTokens: overrideBudgetValue(input.settings, channel, plan, "max_output", base.maxOutputTokens, caps.maxOutputTokens),
-    maxFactTokens: overrideBudgetValue(input.settings, channel, plan, "max_fact", base.maxFactTokens, caps.maxFactTokens),
-    maxMemoryTokens: overrideBudgetValue(input.settings, channel, plan, "max_memory", base.maxMemoryTokens, caps.maxMemoryTokens),
-    maxHistoryTokens: overrideBudgetValue(input.settings, channel, plan, "max_history", base.maxHistoryTokens, caps.maxHistoryTokens),
+    maxInputTokens: overrideBudgetValue(
+      input.settings,
+      channel,
+      plan,
+      "max_input",
+      base.maxInputTokens,
+      caps.maxInputTokens,
+    ),
+    maxOutputTokens: overrideBudgetValue(
+      input.settings,
+      channel,
+      plan,
+      "max_output",
+      base.maxOutputTokens,
+      caps.maxOutputTokens,
+    ),
+    maxFactTokens: overrideBudgetValue(
+      input.settings,
+      channel,
+      plan,
+      "max_fact",
+      base.maxFactTokens,
+      caps.maxFactTokens,
+    ),
+    maxMemoryTokens: overrideBudgetValue(
+      input.settings,
+      channel,
+      plan,
+      "max_memory",
+      base.maxMemoryTokens,
+      caps.maxMemoryTokens,
+    ),
+    maxHistoryTokens: overrideBudgetValue(
+      input.settings,
+      channel,
+      plan,
+      "max_history",
+      base.maxHistoryTokens,
+      caps.maxHistoryTokens,
+    ),
     maxToolRounds,
     estimatedMaxCostUnits: 0,
   };
@@ -379,10 +485,15 @@ export function resolveAICostPolicy(input: AICostPolicyInput): AICostPolicy {
   return policy;
 }
 
-export async function recordAICostMetric(input: AICostMetricInput): Promise<void> {
+export async function recordAICostMetric(
+  input: AICostMetricInput,
+): Promise<void> {
   const inputTokens = Math.max(0, Math.round(input.inputTokens ?? 0));
   const outputTokens = Math.max(0, Math.round(input.outputTokens ?? 0));
-  const totalTokens = Math.max(0, Math.round(input.totalTokens ?? inputTokens + outputTokens));
+  const totalTokens = Math.max(
+    0,
+    Math.round(input.totalTokens ?? inputTokens + outputTokens),
+  );
   const costUnits = Math.max(
     0,
     Math.round(
@@ -410,19 +521,28 @@ export async function recordAICostMetric(input: AICostMetricInput): Promise<void
     toolCalls: input.toolCalls ?? 0,
     latencyMs: input.latencyMs ?? null,
     costUnits,
-    ...(input.metadata || {}),
+    ...costMetadata(input.metadata || {}),
   };
 
-  try {
-    console.info("[AI Cost]", JSON.stringify({
+  // Trace metadata may contain raw clauses nested beyond the logger's redaction depth.
+  // Only explicit counters and identifiers belong in server logs.
+  log.info(
+    {
+      event: "ai.cost",
       userId: input.userId,
       userType: input.userType,
       channel: input.channel,
-      ...metadata,
-    }));
-  } catch {
-    // Ignore logging serialization failures.
-  }
+      inputTokens,
+      outputTokens,
+      totalTokens,
+      costUnits,
+      llmCalls: input.llmCalls ?? 0,
+      toolCalls: input.toolCalls ?? 0,
+      embeddingCalls: input.embeddingCalls ?? 0,
+      latencyMs: input.latencyMs ?? null,
+    },
+    "AI usage recorded",
+  );
 
   try {
     const [{ db }, schema] = await Promise.all([
@@ -446,12 +566,34 @@ export function summarizeAICostMetrics(events: AICostMetricSnapshot[]): {
   avgCostUnits: number;
   avgTokens: number;
   avgLatencyMs: number;
-  byChannel: Record<string, { count: number; avgCostUnits: number; avgTokens: number; avgLatencyMs: number }>;
+  byChannel: Record<
+    string,
+    {
+      count: number;
+      avgCostUnits: number;
+      avgTokens: number;
+      avgLatencyMs: number;
+    }
+  >;
 } {
   const count = events.length;
-  const totalCostUnits = events.reduce((sum, event) => sum + Number(event.costUnits || 0), 0);
-  const totalTokens = events.reduce((sum, event) => sum + Number(event.totalTokens ?? (Number(event.inputTokens || 0) + Number(event.outputTokens || 0))), 0);
-  const totalLatency = events.reduce((sum, event) => sum + Number(event.latencyMs || 0), 0);
+  const totalCostUnits = events.reduce(
+    (sum, event) => sum + Number(event.costUnits || 0),
+    0,
+  );
+  const totalTokens = events.reduce(
+    (sum, event) =>
+      sum +
+      Number(
+        event.totalTokens ??
+          Number(event.inputTokens || 0) + Number(event.outputTokens || 0),
+      ),
+    0,
+  );
+  const totalLatency = events.reduce(
+    (sum, event) => sum + Number(event.latencyMs || 0),
+    0,
+  );
   const grouped: Record<string, AICostMetricSnapshot[]> = {};
 
   for (const event of events) {
@@ -460,12 +602,34 @@ export function summarizeAICostMetrics(events: AICostMetricSnapshot[]): {
     grouped[key].push(event);
   }
 
-  const byChannel: Record<string, { count: number; avgCostUnits: number; avgTokens: number; avgLatencyMs: number }> = {};
+  const byChannel: Record<
+    string,
+    {
+      count: number;
+      avgCostUnits: number;
+      avgTokens: number;
+      avgLatencyMs: number;
+    }
+  > = {};
   for (const [channel, rows] of Object.entries(grouped)) {
     const rowCount = rows.length;
-    const rowCost = rows.reduce((sum, row) => sum + Number(row.costUnits || 0), 0);
-    const rowTokens = rows.reduce((sum, row) => sum + Number(row.totalTokens ?? (Number(row.inputTokens || 0) + Number(row.outputTokens || 0))), 0);
-    const rowLatency = rows.reduce((sum, row) => sum + Number(row.latencyMs || 0), 0);
+    const rowCost = rows.reduce(
+      (sum, row) => sum + Number(row.costUnits || 0),
+      0,
+    );
+    const rowTokens = rows.reduce(
+      (sum, row) =>
+        sum +
+        Number(
+          row.totalTokens ??
+            Number(row.inputTokens || 0) + Number(row.outputTokens || 0),
+        ),
+      0,
+    );
+    const rowLatency = rows.reduce(
+      (sum, row) => sum + Number(row.latencyMs || 0),
+      0,
+    );
     byChannel[channel] = {
       count: rowCount,
       avgCostUnits: rowCount ? Math.round(rowCost / rowCount) : 0,
@@ -509,12 +673,19 @@ export function resolveAIRollout(input: AIRolloutInput): AIRolloutDecision {
     return { enabled: true, reason: "user_allowlist", bucket };
   }
 
-  const adminOnly = readBool(input.settings, `${prefix}_rollout_admin_only`, false);
+  const adminOnly = readBool(
+    input.settings,
+    `${prefix}_rollout_admin_only`,
+    false,
+  );
   if (adminOnly && role !== "admin") {
     return { enabled: false, reason: "admin_only", bucket };
   }
 
-  if (role === "admin" && readBool(input.settings, `${prefix}_rollout_admin_bypass`, true)) {
+  if (
+    role === "admin" &&
+    readBool(input.settings, `${prefix}_rollout_admin_bypass`, true)
+  ) {
     return { enabled: true, reason: "admin", bucket };
   }
 
@@ -523,7 +694,11 @@ export function resolveAIRollout(input: AIRolloutInput): AIRolloutDecision {
     return { enabled: false, reason: "plan_not_in_rollout", bucket };
   }
 
-  const percentage = clamp(readNumber(input.settings, `${prefix}_rollout_percentage`, 100), 0, 100);
+  const percentage = clamp(
+    readNumber(input.settings, `${prefix}_rollout_percentage`, 100),
+    0,
+    100,
+  );
   if (percentage <= 0) {
     return { enabled: false, reason: "percentage_zero", bucket };
   }
@@ -566,7 +741,12 @@ function normalizeNumericText(value: string): string {
 
 function extractNumbers(value: string): string[] {
   const normalized = normalizeNumericText(value);
-  return normalized.match(/-?\d+(?:[,.]\d+)*/g)?.map(canonicalNumber).filter(Boolean) ?? [];
+  return (
+    normalized
+      .match(/-?\d+(?:[,.]\d+)*/g)
+      ?.map(canonicalNumber)
+      .filter(Boolean) ?? []
+  );
 }
 
 function canonicalNumber(value: string): string {
@@ -576,7 +756,11 @@ function canonicalNumber(value: string): string {
   return Object.is(parsed, -0) ? "0" : parsed.toString();
 }
 
-function collectNumbersFromFacts(value: unknown, target: Set<string>, depth = 0): void {
+function collectNumbersFromFacts(
+  value: unknown,
+  target: Set<string>,
+  depth = 0,
+): void {
   if (depth > 4 || value === null || value === undefined) return;
   if (typeof value === "number") {
     target.add(canonicalNumber(String(value)));
@@ -598,7 +782,10 @@ function collectNumbersFromFacts(value: unknown, target: Set<string>, depth = 0)
   }
 }
 
-export function validateNumbersAgainstFacts(responseText: string, facts: ResolvedFact[] | Record<string, unknown> | string): NumberFactAccuracy {
+export function validateNumbersAgainstFacts(
+  responseText: string,
+  facts: ResolvedFact[] | Record<string, unknown> | string,
+): NumberFactAccuracy {
   const numbers = [...new Set(extractNumbers(responseText))];
   const factNumbers = new Set<string>();
   collectNumbersFromFacts(facts, factNumbers);
@@ -614,12 +801,19 @@ export function validateNumbersAgainstFacts(responseText: string, facts: Resolve
   };
 }
 
-function candidateSource(candidate: RetrievalEvalCandidate): string | undefined {
+function candidateSource(
+  candidate: RetrievalEvalCandidate,
+): string | undefined {
   const metadataSource = candidate.document?.metadata?.source;
-  return candidate.source || (typeof metadataSource === "string" ? metadataSource : undefined);
+  return (
+    candidate.source ||
+    (typeof metadataSource === "string" ? metadataSource : undefined)
+  );
 }
 
-export function evaluateRetrievalQuality(input: RetrievalQualityInput): RetrievalQualityResult {
+export function evaluateRetrievalQuality(
+  input: RetrievalQualityInput,
+): RetrievalQualityResult {
   const candidates: RetrievalEvalCandidate[] =
     input.results ??
     (input.facts || []).map((fact) => ({
@@ -686,7 +880,10 @@ export function fallbackVectorSearch(input: {
     .slice(0, limit);
 }
 
-export function buildDeterministicFallbackEmbedding(text: string, dimensions: number): number[] {
+export function buildDeterministicFallbackEmbedding(
+  text: string,
+  dimensions: number,
+): number[] {
   const safeDimensions = Math.max(1, Math.min(Math.round(dimensions), 4096));
   const vector = Array.from({ length: safeDimensions }, () => 0);
   const tokens = normalizeSearchText(text);
@@ -700,6 +897,7 @@ export function buildDeterministicFallbackEmbedding(text: string, dimensions: nu
     vector[index] += sign * weight;
   }
 
-  const norm = Math.sqrt(vector.reduce((sum, item) => sum + item * item, 0)) || 1;
+  const norm =
+    Math.sqrt(vector.reduce((sum, item) => sum + item * item, 0)) || 1;
   return vector.map((item) => Number((item / norm).toFixed(6)));
 }

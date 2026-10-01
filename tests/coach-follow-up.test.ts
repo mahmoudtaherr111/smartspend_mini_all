@@ -19,6 +19,7 @@ const caller = expenseRouter.createCaller({
 } as never);
 
 async function clean() {
+  if (process.env.RUN_DB_INTEGRATION !== "1") return;
   for (const who of [user, other]) {
     const scope = <T extends { userId: typeof expenses.userId; userType: typeof expenses.userType }>(table: T) =>
       and(eq(table.userId, who.userId), eq(table.userType, who.userType));
@@ -41,6 +42,23 @@ async function spend(who: typeof user, amount: number, day: string, type = "expe
 }
 
 describe("scheduled cashflows and their payments", () => {
+  itWithDatabase("installment progress counts paid due dates separately, excludes business payments and reports overlapping names as ambiguous", async () => {
+    const [plan] = await db.insert(installmentPlans).values({ ...user, title: "موبايل", keyword: "فاليو", monthlyAmount: "800.00", totalInstallments: 12, paidBefore: 3, createdAt: new Date("2026-09-01T00:00:00Z") });
+    const planId = Number(plan.insertId);
+    await db.insert(expenses).values([
+      { ...user, amount: "400.00", type: "expense", category: "أقساط وفوايد", description: "فاليو", date: new Date("2026-09-10T10:00:00Z") },
+      { ...user, businessId: 88931, amount: "1600.00", type: "expense", category: "أقساط وفوايد", description: "فاليو", date: new Date("2026-09-10T10:00:00Z") },
+    ]);
+    expect((await caller.listInstallmentPlans())[0]).toMatchObject({ paid: 3, remainingAmount: 6800, countedBy: "keyword" });
+    await db.insert(installmentPlans).values({ ...user, title: "جهاز تاني", keyword: "قسط فاليو", monthlyAmount: "400.00", totalInstallments: 6 });
+    expect((await caller.listInstallmentPlans()).every((row) => row.countedBy === "ambiguous")).toBe(true);
+    const [schedule] = await db.insert(scheduledCashflows).values({ ...user, kind: "installment", direction: "out", title: "موبايل", amount: "800.00", recurrence: "monthly", startDay: "2026-09-05", installmentPlanId: planId });
+    await db.insert(cashflowSettlements).values([
+      { ...user, cashflowId: Number(schedule.insertId), dueDay: "2026-09-05", amount: "400.00", source: "declared" },
+      { ...user, cashflowId: Number(schedule.insertId), dueDay: "2026-10-05", amount: "400.00", source: "declared" },
+    ]);
+    expect((await caller.listInstallmentPlans()).find((row) => row.id === planId)).toMatchObject({ paid: 3, remaining: 9, remainingAmount: 6400, countedBy: "linked" });
+  });
   beforeEach(clean);
   afterAll(clean);
 
@@ -181,7 +199,7 @@ describe("installment progress from linked payments", () => {
     const byId = new Map(plans.map((p) => [p.id, p]));
     // Linked: 500 of 800 paid, so no whole installment more, and exactly 9 × 800 − 500 left.
     expect(byId.get(phone)).toMatchObject({ paid: 3, remaining: 9, remainingAmount: 6_700, countedBy: "linked" });
-    // The other plan still counts by its word, and so still takes the same payment: the reason to link.
-    expect(byId.get(fridge)).toMatchObject({ countedBy: "keyword" });
+    // Payments naming the same word cannot safely be attributed to the other plan.
+    expect(byId.get(fridge)).toMatchObject({ countedBy: "ambiguous" });
   });
 });

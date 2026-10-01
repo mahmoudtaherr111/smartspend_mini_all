@@ -298,7 +298,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `financial_goals` | C | `accounts` | `security` |
 | `in_app_notifications` | D | `accounts` | — |
 | `installment_plans` | C | `accounts` | — |
-| `local_users` | A | `accounts`, `auth`, `localAuth.login`, `localAuth.register`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.requestPhoneChange`, `profile.updateUserInfo`, `webauthn.generateRegistrationOptions` |
+| `local_users` | A | `accounts`, `auth`, `localAuth.login`, `localAuth.register`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `accounts`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.requestPhoneChange`, `profile.updateUserInfo`, `webauthn.generateRegistrationOptions` |
 | `monthly_behavior_snapshots` | C | `accounts` | — |
 | `monthly_reports` | C | `accounts` | — |
 | `notification_logs` | E | `accounts` | — |
@@ -320,7 +320,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_dictionaries` | F | `accounts` | — |
 | `user_profiles` | A | `accounts`, `profile.updateProfile` | `profile.getMyProfile` |
 | `user_wallets` | A | `accounts` | `security` |
-| `users` | A | `accounts`, `auth`, `auth.googleCallback`, `profile.updateUserInfo` | `auth.googleCallback`, `auth.me`, `webauthn.generateRegistrationOptions` |
+| `users` | A | `accounts`, `auth`, `auth.googleCallback`, `profile.updateUserInfo` | `accounts`, `auth.googleCallback`, `auth.me`, `webauthn.generateRegistrationOptions` |
 | `voice_call_incidents` | E | `accounts` | — |
 | `voice_calls` | E | `accounts` | — |
 | `voice_usage` | E | `accounts` | — |

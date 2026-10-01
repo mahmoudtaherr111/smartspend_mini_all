@@ -32,7 +32,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `classification` | Expense classification pipeline | 40 | `ai-providers`, `arabic-nlp`, `contracts`, `database`, `platform` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers`, `receipt-parsing`, `voice` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers` | — |
 | `ai-actions` | AI action runtime | 6 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform` | `api-routers`, `voice` | — |
-| `ai-memory` | AI memory | 13 | `ai-governance`, `ai-providers`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-core`, `api-routers`, `voice` | `qdrant` |
+| `ai-memory` | AI memory | 14 | `ai-governance`, `ai-providers`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-core`, `api-routers`, `voice` | `qdrant` |
 | `finance-semantic-layer` | Finance semantic layer | 10 | `classification`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-routers`, `coaching`, `jobs`, `ledger`, `voice` | — |
 | `site-guide` | Site guide | 5 | — | `ai-kernel`, `voice` | — |
 | `storage` | File storage | 5 | — | — | `object-storage` |
@@ -238,7 +238,7 @@ Account deletion: purgeUserData removes every row a user owns, inside the caller
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/services/user-purge-service.ts` | `database` | — | `chat_conversations`, `user_businesses` | `ad_clicks`, `ai_action_audit_logs`, `ai_action_memory`, `ai_conversation_summaries`, `ai_cost_monthly`, `ai_memory_embeddings`, `ai_memory_items`, `ai_pending_actions`, `ai_summaries`, `ai_token_ledgers`, `auth_challenges`, `business_categories`, `cashflow_settlements`, `chat_conversations`, `chat_messages`, `classification_logs`, `coaching_plans`, `coaching_steps`, `expense_categories`, `expense_daily_rollups`, `expenses`, `financial_goals`, `in_app_notifications`, `installment_plans`, `local_users`, `monthly_behavior_snapshots`, `monthly_reports`, `notification_logs`, `pending_clarifications`, `pro_subscriptions`, `profile_learning_events`, `push_subscriptions`, `raw_sms_events`, `referrals`, `scheduled_cashflows`, `sessions`, `support_tickets`, `user_analytics`, `user_budgets`, `user_businesses`, `user_contacts`, `user_correction_rules`, `user_credentials`, `user_dictionaries`, `user_profiles`, `user_wallets`, `users`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `webhook_tokens` |
+| `api/services/user-purge-service.ts` | `database` | — | `chat_conversations`, `local_users`, `user_businesses`, `users` | `ad_clicks`, `ai_action_audit_logs`, `ai_action_memory`, `ai_conversation_summaries`, `ai_cost_monthly`, `ai_memory_embeddings`, `ai_memory_items`, `ai_pending_actions`, `ai_summaries`, `ai_token_ledgers`, `auth_challenges`, `business_categories`, `cashflow_settlements`, `chat_conversations`, `chat_messages`, `classification_logs`, `coaching_plans`, `coaching_steps`, `expense_categories`, `expense_daily_rollups`, `expenses`, `financial_goals`, `in_app_notifications`, `installment_plans`, `local_users`, `monthly_behavior_snapshots`, `monthly_reports`, `notification_logs`, `pending_clarifications`, `pro_subscriptions`, `profile_learning_events`, `push_subscriptions`, `raw_sms_events`, `referrals`, `scheduled_cashflows`, `sessions`, `support_tickets`, `user_analytics`, `user_budgets`, `user_businesses`, `user_contacts`, `user_correction_rules`, `user_credentials`, `user_dictionaries`, `user_profiles`, `user_wallets`, `users`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `webhook_tokens` |
 
 ### `jobs` — Scheduled job bodies
 
@@ -297,7 +297,7 @@ Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway
 | `api/services/voice/brain/tools/market-price.ts` | `ai-providers`, `platform` | — | — | — |
 | `api/services/voice/brain/tools/memory.ts` | `ai-insights`, `ai-memory`, `database`, `platform` | — | `ai_memory_items` | `ai_memory_embeddings`, `ai_memory_items` |
 | `api/services/voice/brain/tools/money-query.ts` | `classification`, `finance-semantic-layer`, `platform` | — | — | — |
-| `api/services/voice/brain/tools/record.ts` | `ai-actions`, `contracts`, `finance-semantic-layer` | — | — | — |
+| `api/services/voice/brain/tools/record.ts` | `ai-actions`, `arabic-nlp`, `contracts`, `finance-semantic-layer` | — | — | — |
 | `api/services/voice/brain/tools/reports.ts` | `database`, `platform` | — | `ai_summaries`, `monthly_reports`, `pending_clarifications` | — |
 | `api/services/voice/brain/tools/think.ts` | `ai-providers`, `finance-semantic-layer`, `platform` | — | — | — |
 | `api/services/voice/brain/tools/types.ts` | — | — | — | — |
@@ -346,7 +346,7 @@ Per-plan token limits and per-request caps, burst counting, AI cost metrics and 
 | --- | --- | --- | --- | --- |
 | `api/lib/ai-usage-policy.ts` | `contracts`, `database`, `platform` | — | `classification_logs`, `local_users`, `user_analytics`, `users` | `user_analytics` |
 | `api/services/ai-cost-analytics.ts` | `database` | — | `user_analytics` | — |
-| `api/services/ai-cost-policy.ts` | `database` | — | — | — |
+| `api/services/ai-cost-policy.ts` | `database`, `platform` | — | — | — |
 
 ### `arabic-nlp` — Arabic and Egyptian text processing
 
@@ -482,10 +482,11 @@ Long-term memory about each user: conversation capsules and running summaries, m
 | `api/services/ai-memory/embedding-settings.ts` | `ai-providers`, `platform` | — | — | — |
 | `api/services/ai-memory/index.ts` | — | — | — | — |
 | `api/services/ai-memory/memory-retriever.ts` | `database`, `platform` | — | `ai_action_memory`, `ai_conversation_summaries`, `ai_memory_embeddings`, `ai_memory_items` | — |
-| `api/services/ai-memory/memory-writer.ts` | `database` | — | `ai_conversation_summaries`, `ai_memory_embeddings`, `ai_memory_items` | `ai_conversation_summaries`, `ai_memory_embeddings`, `ai_memory_items` |
+| `api/services/ai-memory/memory-writer.ts` | `database`, `platform` | — | `ai_conversation_summaries`, `ai_memory_embeddings`, `ai_memory_items`, `chat_conversations`, `chat_messages` | `ai_conversation_summaries`, `ai_memory_embeddings`, `ai_memory_items`, `chat_conversations` |
 | `api/services/ai-memory/qdrant-vector-store.ts` | — | `qdrant` | — | — |
 | `api/services/ai-memory/quantized-vector-store.ts` | — | — | — | — |
 | `api/services/ai-memory/retrieval-enhancements.ts` | — | — | — | — |
+| `api/services/ai-memory/slot-store.ts` | `database` | — | `ai_memory_items`, `chat_conversations`, `chat_messages`, `local_users`, `users` | `ai_conversation_summaries`, `ai_memory_items` |
 | `api/services/ai-memory/slots.ts` | — | — | — | — |
 | `api/services/ai-memory/text-utils.ts` | — | — | — | — |
 | `api/services/ai-memory/types.ts` | — | — | — | — |

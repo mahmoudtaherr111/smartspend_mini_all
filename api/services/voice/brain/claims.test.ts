@@ -61,7 +61,7 @@ describe("FailureClaimCheck", () => {
     expect(check.add("حصل عطل ومش قادر أجيب الرقم")).toBeNull();
     check.newRequest();
     check.toolAnswered(true);
-    expect(check.add("حصل عطل")).toEqual({ toolsCalled: 1, retry: true });
+    expect(check.add("حصل عطل فني")).toEqual({ toolsCalled: 1, retry: true });
   });
 
   it("does not take ordinary words for a failure", () => {
@@ -100,4 +100,3 @@ describe("WrittenAmountCheck", () => {
     expect([said(), said(), said()]).toEqual([true, true, false]);
   });
 });
-

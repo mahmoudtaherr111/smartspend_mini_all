@@ -14,9 +14,27 @@ import {
   type VoiceClientPlatform,
   type VoiceServerMessage,
 } from "@contracts/voice-protocol";
-import { attachMicrophone, outputLevel, releaseCallAudio, ScreenWake, type PrimedAudio } from "./audio-io";
-import { CallConnection, type ConnectionClose, type ConnectionEvents, type SocketLike } from "./call-connection";
-import { preferredMode, type CallEnding, type CallNotice, type StartRequest, type TimelineItem, type VoiceCallView } from "./call-store";
+import {
+  attachMicrophone,
+  outputLevel,
+  releaseCallAudio,
+  ScreenWake,
+  type PrimedAudio,
+} from "./audio-io";
+import {
+  CallConnection,
+  type ConnectionClose,
+  type ConnectionEvents,
+  type SocketLike,
+} from "./call-connection";
+import {
+  preferredMode,
+  type CallEnding,
+  type CallNotice,
+  type StartRequest,
+  type TimelineItem,
+  type VoiceCallView,
+} from "./call-store";
 import { Downsampler } from "./downsampler";
 import { PcmPlayer } from "./pcm-player";
 import { FRAME_SAMPLES, SpeechDetector } from "./speech-detector";
@@ -35,7 +53,9 @@ export function voiceSocketUrl(): string {
 export function clientPlatform(): VoiceClientPlatform {
   const platform = Capacitor.getPlatform();
   if (platform === "android" || platform === "ios") return platform;
-  return window.matchMedia?.("(display-mode: standalone)").matches ? "pwa" : "web";
+  return window.matchMedia?.("(display-mode: standalone)").matches
+    ? "pwa"
+    : "web";
 }
 
 const MAX_TIMELINE = 40;
@@ -50,13 +70,17 @@ const MICROPHONE_NOTICE: CallNotice = {
 
 function stopMeter(meter: VoiceCallView["meter"]): VoiceCallView["meter"] {
   return {
-    accumulatedMs: meter.accumulatedMs + (meter.liveSince !== null ? Date.now() - meter.liveSince : 0),
+    accumulatedMs:
+      meter.accumulatedMs +
+      (meter.liveSince !== null ? Date.now() - meter.liveSince : 0),
     liveSince: null,
   };
 }
 
 function trimTimeline(items: TimelineItem[]): TimelineItem[] {
-  return items.length > MAX_TIMELINE ? items.slice(items.length - MAX_TIMELINE) : items;
+  return items.length > MAX_TIMELINE
+    ? items.slice(items.length - MAX_TIMELINE)
+    : items;
 }
 
 export interface ControllerOptions {
@@ -123,7 +147,9 @@ export class VoiceCallController {
     const { audio, request } = this.options;
     const client = clientPlatform();
     const [outcome, stream] = await Promise.all([
-      request.startCall({ voice: request.voice, client, mode: preferredMode() }).catch(() => null),
+      request
+        .startCall({ voice: request.voice, client, mode: preferredMode() })
+        .catch(() => null),
       audio.mic.then(
         (granted) => granted,
         () => null,
@@ -135,7 +161,8 @@ export class VoiceCallController {
     }
     if (!outcome || outcome.kind !== "ok") {
       this.teardown(stream);
-      if (!outcome) this.fail("مقدرناش نبدأ المكالمة. اتأكد من النت وجرّب تاني.", true);
+      if (!outcome)
+        this.fail("مقدرناش نبدأ المكالمة. اتأكد من النت وجرّب تاني.", true);
       else this.fail(outcome.message, true);
       return;
     }
@@ -150,10 +177,16 @@ export class VoiceCallController {
     });
     if (stream) {
       try {
-        this.detachMic = await (this.options.attachMic ?? attachMicrophone)(audio.context, stream, (block) =>
-          this.onMicBlock(block),
+        this.detachMic = await (this.options.attachMic ?? attachMicrophone)(
+          audio.context,
+          stream,
+          (block) => this.onMicBlock(block),
         );
-        stream.getAudioTracks().forEach((track) => track.addEventListener("ended", this.onTrackEnded));
+        stream
+          .getAudioTracks()
+          .forEach((track) =>
+            track.addEventListener("ended", this.onTrackEnded),
+          );
       } catch {
         this.patch({ micAvailable: false, notice: MICROPHONE_NOTICE });
       }
@@ -181,7 +214,9 @@ export class VoiceCallController {
         const view = this.view;
         if (message.resumed) this.reconnects += 1;
         this.wasLive = true;
-        const stale = view.notice?.kind === "reconnecting" || view.notice?.kind === "degraded";
+        const stale =
+          view.notice?.kind === "reconnecting" ||
+          view.notice?.kind === "degraded";
         this.patch({
           phase: "live",
           callId: message.callId,
@@ -197,7 +232,10 @@ export class VoiceCallController {
       message: (message) => this.onServerMessage(message),
       audio: (pcm) => {
         if (this.speechEndedAt !== null) {
-          this.firstAudioMs = [...this.firstAudioMs.slice(-9), Date.now() - this.speechEndedAt];
+          this.firstAudioMs = [
+            ...this.firstAudioMs.slice(-9),
+            Date.now() - this.speechEndedAt,
+          ];
           this.speechEndedAt = null;
         }
         this.player.enqueue(pcm);
@@ -225,14 +263,20 @@ export class VoiceCallController {
   private onServerMessage(message: VoiceServerMessage): void {
     switch (message.type) {
       case "state":
-        if (message.state === "listening" || message.state === "awaiting_confirmation") {
+        if (
+          message.state === "listening" ||
+          message.state === "awaiting_confirmation"
+        ) {
           this.closeCaption();
           this.showWhenPlayed(message.state);
           return;
         }
         if (this.listeningTimer) clearTimeout(this.listeningTimer);
         if (message.state === "thinking") this.closeCaption();
-        this.patch({ activity: message.state, activityDetail: message.detail ?? null });
+        this.patch({
+          activity: message.state,
+          activityDetail: message.detail ?? null,
+        });
         return;
       case "caption":
         this.addCaption(message.role, message.text);
@@ -246,15 +290,24 @@ export class VoiceCallController {
         this.closeCaption();
         return;
       case "notice":
-        this.showNotice({ kind: message.kind, message: message.message }, message.kind === "time_warning" ? 12_000 : 6_000);
+        this.showNotice(
+          { kind: message.kind, message: message.message },
+          message.kind === "time_warning" ? 12_000 : 6_000,
+        );
         return;
       case "mode":
         if (message.status === "switching") {
-          this.patch({ modeSwitching: true });
+          this.patch({ modeSwitching: true, meter: stopMeter(this.view.meter) });
           return;
         }
-        this.patch({ mode: message.mode, modeSwitching: false });
-        if (message.status === "refused" && message.message) this.showNotice({ kind: "degraded", message: message.message }, 6_000);
+        this.patch({ mode: message.mode, modeSwitching: false,
+          ...(this.view.phase === "live" ? { meter: { ...this.view.meter, liveSince: this.view.meter.liveSince ?? Date.now() } } : {}),
+        });
+        if (message.status === "refused" && message.message)
+          this.showNotice(
+            { kind: "degraded", message: message.message },
+            6_000,
+          );
         return;
       default:
         // `ended` and `error` are read when the socket closes.
@@ -266,10 +319,14 @@ export class VoiceCallController {
   private showWhenPlayed(state: "listening" | "awaiting_confirmation"): void {
     if (this.listeningTimer) clearTimeout(this.listeningTimer);
     if (this.player.playing) {
-      this.listeningTimer = setTimeout(() => this.showWhenPlayed(state), this.player.bufferedMs + 30);
+      this.listeningTimer = setTimeout(
+        () => this.showWhenPlayed(state),
+        this.player.bufferedMs + 30,
+      );
       return;
     }
-    if (!this.detector.speaking) this.patch({ activity: state, activityDetail: null });
+    if (!this.detector.speaking)
+      this.patch({ activity: state, activityDetail: null });
   }
 
   private showNotice(notice: CallNotice, forMs: number): void {
@@ -287,8 +344,16 @@ export class VoiceCallController {
   private addCaption(role: "user" | "assistant", text: string): void {
     const timeline = this.view.timeline;
     const last = timeline[timeline.length - 1];
-    if (last && last.key === this.openCaption && last.kind === "caption" && last.role === role) {
-      const merged: TimelineItem = { ...last, text: `${last.text}${text}`.slice(-MAX_CAPTION_CHARS) };
+    if (
+      last &&
+      last.key === this.openCaption &&
+      last.kind === "caption" &&
+      last.role === role
+    ) {
+      const merged: TimelineItem = {
+        ...last,
+        text: `${last.text}${text}`.slice(-MAX_CAPTION_CHARS),
+      };
       this.patch({ timeline: [...timeline.slice(0, -1), merged] });
       return;
     }
@@ -296,21 +361,37 @@ export class VoiceCallController {
     if (!clean) return;
     const key = `c${++this.seq}`;
     this.openCaption = key;
-    this.patch({ timeline: trimTimeline([...timeline, { key, kind: "caption", role, text: clean }]) });
+    this.patch({
+      timeline: trimTimeline([
+        ...timeline,
+        { key, kind: "caption", role, text: clean },
+      ]),
+    });
   }
 
   private upsertCard(card: VoiceCard): void {
     this.closeCaption();
     const key =
-      card.kind === "draft" ? `draft:${card.draftId}` : card.kind === "fact" ? `fact:${card.id}` : `${card.kind}:${++this.seq}`;
+      card.kind === "draft"
+        ? `draft:${card.draftId}`
+        : card.kind === "fact"
+          ? `fact:${card.id}`
+          : `${card.kind}:${++this.seq}`;
     const timeline = this.view.timeline;
     const index = timeline.findIndex((item) => item.key === key);
     const before = index >= 0 ? timeline[index] : null;
     const item: TimelineItem = { key, kind: "card", card };
-    const wasExecuted = before?.kind === "card" && before.card.kind === "draft" && before.card.status === "executed";
-    const executed = card.kind === "draft" && card.status === "executed" && !wasExecuted;
+    const wasExecuted =
+      before?.kind === "card" &&
+      before.card.kind === "draft" &&
+      before.card.status === "executed";
+    const executed =
+      card.kind === "draft" && card.status === "executed" && !wasExecuted;
     this.patch({
-      timeline: index >= 0 ? timeline.map((existing, i) => (i === index ? item : existing)) : trimTimeline([...timeline, item]),
+      timeline:
+        index >= 0
+          ? timeline.map((existing, i) => (i === index ? item : existing))
+          : trimTimeline([...timeline, item]),
       executed: this.view.executed + (executed ? 1 : 0),
     });
   }
@@ -330,7 +411,11 @@ export class VoiceCallController {
     this.teardown(this.stream);
     if (this.hungUpEarly) return;
     const view = this.view;
-    const base = { minimized: false, meter: stopMeter(view.meter), notice: null };
+    const base = {
+      minimized: false,
+      meter: stopMeter(view.meter),
+      notice: null,
+    };
     if (outcome.kind === "ended") {
       if (!this.wasLive) {
         this.options.reset();
@@ -338,23 +423,42 @@ export class VoiceCallController {
       }
       const message = outcome.message;
       const ending: CallEnding = message?.summary
-        ? { reason: message.reason, done: message.summary.done, notDone: message.summary.notDone, billedSeconds: message.summary.billedSeconds }
-        : { reason: message?.reason ?? "user", ...this.localSummary(), billedSeconds: null };
+        ? {
+            reason: message.reason,
+            done: message.summary.done,
+            notDone: message.summary.notDone,
+            billedSeconds: message.summary.billedSeconds,
+          }
+        : {
+            reason: message?.reason ?? "user",
+            ...this.localSummary(),
+            billedSeconds: null,
+          };
       this.patch({ ...base, phase: "ended", ending });
       return;
     }
     if (this.wasLive) {
       // Refused or unreachable after the call was live: the server ended it while the line was down.
-      this.patch({ ...base, phase: "ended", ending: { reason: "lost", ...this.localSummary(), billedSeconds: null } });
+      this.patch({
+        ...base,
+        phase: "ended",
+        ending: { reason: "lost", ...this.localSummary(), billedSeconds: null },
+      });
       return;
     }
-    if (outcome.kind === "refused") this.fail(outcome.error.message, outcome.error.fallback === "chat");
+    if (outcome.kind === "refused")
+      this.fail(outcome.error.message, outcome.error.fallback === "chat");
     else this.fail("مقدرناش نوصل للمكالمة. اتأكد من النت وجرّب تاني.", true);
   }
 
   private fail(message: string, fallbackChat: boolean): void {
     this.teardown(this.stream);
-    this.patch({ phase: "failed", minimized: false, notice: null, failure: { message, fallbackChat } });
+    this.patch({
+      phase: "failed",
+      minimized: false,
+      notice: null,
+      failure: { message, fallbackChat },
+    });
   }
 
   // ─── The user's side ──────────────────────────────────────────────
@@ -378,7 +482,8 @@ export class VoiceCallController {
     const step = this.detector.push(frame, this.player.playing);
     if (step.speechStart) this.onSpeechStart();
     if (step.send.length) this.outbox.push(...step.send);
-    if (step.speechStart || step.speechEnd || this.outbox.length >= 2) this.flushOutbox();
+    if (step.speechStart || step.speechEnd || this.outbox.length >= 2)
+      this.flushOutbox();
     if (step.speechEnd) this.onSpeechEnd();
   }
 
@@ -428,7 +533,8 @@ export class VoiceCallController {
     void this.wake.acquire();
     this.connection?.retryNow();
     const tracks = this.stream?.getAudioTracks() ?? [];
-    if (tracks.length && tracks.every((track) => track.readyState === "ended")) void this.reopenMicrophone();
+    if (tracks.length && tracks.every((track) => track.readyState === "ended"))
+      void this.reopenMicrophone();
   }
 
   /** The system took the microphone away (the app went to the background on iOS): ask for it again. */
@@ -436,7 +542,12 @@ export class VoiceCallController {
     if (this.tornDown) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        },
       });
       if (this.tornDown) {
         stream.getTracks().forEach((track) => track.stop());
@@ -445,11 +556,19 @@ export class VoiceCallController {
       this.detachMic?.();
       this.stream?.getTracks().forEach((track) => track.stop());
       this.stream = stream;
-      this.detachMic = await (this.options.attachMic ?? attachMicrophone)(this.options.audio.context, stream, (block) =>
-        this.onMicBlock(block),
+      this.detachMic = await (this.options.attachMic ?? attachMicrophone)(
+        this.options.audio.context,
+        stream,
+        (block) => this.onMicBlock(block),
       );
-      stream.getAudioTracks().forEach((track) => track.addEventListener("ended", this.onTrackEnded));
-      this.patch({ micAvailable: true, notice: this.view.notice?.kind === "microphone" ? null : this.view.notice });
+      stream
+        .getAudioTracks()
+        .forEach((track) => track.addEventListener("ended", this.onTrackEnded));
+      this.patch({
+        micAvailable: true,
+        notice:
+          this.view.notice?.kind === "microphone" ? null : this.view.notice,
+      });
     } catch {
       this.patch({ micAvailable: false, notice: MICROPHONE_NOTICE });
     }
@@ -486,7 +605,8 @@ export class VoiceCallController {
 
   sendText(text: string): boolean {
     const clean = text.trim().slice(0, VOICE_TEXT_MAX_LENGTH);
-    if (!clean || !this.connection?.send({ type: "text", text: clean })) return false;
+    if (!clean || !this.connection?.send({ type: "text", text: clean }))
+      return false;
     this.player.flush();
     this.unduck();
     this.closeCaption();
@@ -499,7 +619,14 @@ export class VoiceCallController {
 
   /** Asks the server to move the call to the other mode; the view follows the server's answer. */
   setMode(mode: "standard" | "ultra"): void {
-    if (this.connection?.send({ type: "mode", mode })) this.patch({ modeSwitching: true });
+    if (
+      this.view.phase !== "live" ||
+      this.view.modeSwitching ||
+      mode === this.view.mode
+    )
+      return;
+    if (this.connection?.send({ type: "mode", mode }))
+      this.patch({ modeSwitching: true });
   }
 
   cardAction(action: "confirm" | "cancel", draftId: string): void {
@@ -508,8 +635,13 @@ export class VoiceCallController {
 
   levels(): { input: number; output: number } {
     if (this.tornDown) return { input: 0, output: 0 };
-    const input = this.muted ? 0 : Math.min(1, Math.max(0, (this.detector.levelDb + 60) / 45));
-    return { input, output: outputLevel(this.options.audio.outputMeter, this.meterScratch) };
+    const input = this.muted
+      ? 0
+      : Math.min(1, Math.max(0, (this.detector.levelDb + 60) / 45));
+    return {
+      input,
+      output: outputLevel(this.options.audio.outputMeter, this.meterScratch),
+    };
   }
 
   /** Hangs up. Before the call is connected there is nothing on the server to end: an unused ticket expires. */

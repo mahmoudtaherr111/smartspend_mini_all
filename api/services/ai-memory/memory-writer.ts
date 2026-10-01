@@ -1,10 +1,15 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import {
   aiConversationSummaries,
+  chatConversations,
+  chatMessages,
   aiMemoryEmbeddings,
   aiMemoryItems,
 } from "../../../db/schema";
 import { db } from "../../queries/connection";
+import { withMemoryOwnerLock } from "./slot-store";
+import { createLogger } from "../../lib/log";
+const log = createLogger("memory-writer");
 import { MemoryEmbeddingClient } from "./embedding-client";
 import { loadEmbeddingConfig } from "./embedding-settings";
 import { invalidateMemoryUserCache } from "./memory-retriever";
@@ -99,10 +104,18 @@ const MEMORY_SIGNAL_RULES: Array<{
   },
 ];
 
-function memorySignalFor(content: string): { type?: ExtractedMemory["type"]; importance: number; reason: string } | null {
+function memorySignalFor(content: string): {
+  type?: ExtractedMemory["type"];
+  importance: number;
+  reason: string;
+} | null {
   const normalized = normalizeMemoryText(content);
   for (const rule of MEMORY_SIGNAL_RULES) {
-    if (rule.patterns.some((pattern) => normalized.includes(normalizeMemoryText(pattern)))) {
+    if (
+      rule.patterns.some((pattern) =>
+        normalized.includes(normalizeMemoryText(pattern)),
+      )
+    ) {
       return {
         type: rule.type,
         importance: rule.importance,
@@ -111,7 +124,11 @@ function memorySignalFor(content: string): { type?: ExtractedMemory["type"]; imp
     }
   }
 
-  if (MEMORY_TRIGGERS.some((trigger) => normalized.includes(normalizeMemoryText(trigger)))) {
+  if (
+    MEMORY_TRIGGERS.some((trigger) =>
+      normalized.includes(normalizeMemoryText(trigger)),
+    )
+  ) {
     return {
       type: memoryTypeFor(content),
       importance: importanceFor(content),
@@ -133,17 +150,45 @@ function importanceFor(content: string): number {
 
 function memoryTypeFor(content: string): ExtractedMemory["type"] {
   const normalized = normalizeMemoryText(content);
-  if (normalized.includes("هدف") || normalized.includes("احوش") || normalized.includes("ادخر")) return "plan";
-  if (normalized.includes("اتفقنا") || normalized.includes("اتفاق")) return "agreement";
-  if (normalized.includes("افضل") || normalized.includes("بحب") || normalized.includes("بكره")) return "preference";
-  if (normalized.includes("ميزانيه") || normalized.includes("حد") || normalized.includes("قيد")) return "plan";
-  if (normalized.includes("مشروع") || normalized.includes("بيزنس") || normalized.includes("business")) return "plan";
+  if (
+    normalized.includes("هدف") ||
+    normalized.includes("احوش") ||
+    normalized.includes("ادخر")
+  )
+    return "plan";
+  if (normalized.includes("اتفقنا") || normalized.includes("اتفاق"))
+    return "agreement";
+  if (
+    normalized.includes("افضل") ||
+    normalized.includes("بحب") ||
+    normalized.includes("بكره")
+  )
+    return "preference";
+  if (
+    normalized.includes("ميزانيه") ||
+    normalized.includes("حد") ||
+    normalized.includes("قيد")
+  )
+    return "plan";
+  if (
+    normalized.includes("مشروع") ||
+    normalized.includes("بيزنس") ||
+    normalized.includes("business")
+  )
+    return "plan";
   return "fact";
 }
 
-function structuredMemoryTypeFor(content: string, fallback: ExtractedMemory["type"]): string {
+function structuredMemoryTypeFor(
+  content: string,
+  fallback: ExtractedMemory["type"],
+): string {
   const normalized = normalizeMemoryText(content);
-  if (normalized.includes("مشروع") || normalized.includes("بيزنس") || normalized.includes("business")) {
+  if (
+    normalized.includes("مشروع") ||
+    normalized.includes("بيزنس") ||
+    normalized.includes("business")
+  ) {
     return "business_context";
   }
   if (
@@ -167,7 +212,9 @@ function structuredMemoryTypeFor(content: string, fallback: ExtractedMemory["typ
 function extractStructuredMemoryMeta(content: string): Record<string, unknown> {
   const normalized = normalizeMemoryText(content);
   const meta: Record<string, unknown> = {};
-  const amountMatches = [...normalized.matchAll(/(\d+)\s*(الف|ألف|k|مليون|million)?/gi)];
+  const amountMatches = [
+    ...normalized.matchAll(/(\d+)\s*(الف|ألف|k|مليون|million)?/gi),
+  ];
   const amounts = amountMatches
     .map((match) => {
       const base = Number(match[1]);
@@ -177,7 +224,10 @@ function extractStructuredMemoryMeta(content: string): Record<string, unknown> {
       if (unit === "مليون" || unit === "million") return base * 1_000_000;
       return base;
     })
-    .filter((value): value is number => value !== undefined && Number.isFinite(value) && value > 10);
+    .filter(
+      (value): value is number =>
+        value !== undefined && Number.isFinite(value) && value > 10,
+    );
 
   if (amounts && amounts.length > 0) {
     const maxAmount = Math.max(...amounts);
@@ -189,14 +239,30 @@ function extractStructuredMemoryMeta(content: string): Record<string, unknown> {
   if (monthMatch) {
     meta.estimated_months = Number(monthMatch[1]);
     meta.period = `${Number(monthMatch[1])} months`;
-  } else if (normalized.includes("الشهر ده") || normalized.includes("هذا الشهر")) {
+  } else if (
+    normalized.includes("الشهر ده") ||
+    normalized.includes("هذا الشهر")
+  ) {
     meta.period = "current_month";
   }
 
-  const deadlineMatch = normalized.match(/(?:قبل|بحلول|deadline|by)\s+([^،.؟?]{2,40})/i);
+  const deadlineMatch = normalized.match(
+    /(?:قبل|بحلول|deadline|by)\s+([^،.؟?]{2,40})/i,
+  );
   if (deadlineMatch?.[1]) meta.deadline = deadlineMatch[1].trim();
 
-  const subjectPatterns = ["سياره", "سيارة", "شقه", "شقة", "سفر", "عربيه", "عربية", "لابتوب", "موبايل", "كاميرا"];
+  const subjectPatterns = [
+    "سياره",
+    "سيارة",
+    "شقه",
+    "شقة",
+    "سفر",
+    "عربيه",
+    "عربية",
+    "لابتوب",
+    "موبايل",
+    "كاميرا",
+  ];
   for (const subject of subjectPatterns) {
     if (normalized.includes(normalizeMemoryText(subject))) {
       meta.subject = subject;
@@ -204,10 +270,18 @@ function extractStructuredMemoryMeta(content: string): Record<string, unknown> {
     }
   }
 
-  if (normalized.includes("ادخار") || normalized.includes("احوش") || normalized.includes("ادخر")) {
+  if (
+    normalized.includes("ادخار") ||
+    normalized.includes("احوش") ||
+    normalized.includes("ادخر")
+  ) {
     meta.intent = "saving";
   }
-  if (normalized.includes("شراء") || normalized.includes("اشتري") || normalized.includes("اجيب")) {
+  if (
+    normalized.includes("شراء") ||
+    normalized.includes("اشتري") ||
+    normalized.includes("اجيب")
+  ) {
     meta.intent = "purchase";
   }
   meta.status =
@@ -240,15 +314,27 @@ function assistantPlanCandidate(content: string): boolean {
   const normalized = normalizeMemoryText(content);
   return (
     !isLowSignalMemoryText(content) &&
-    ["خطه", "خطة", "هدف", "ادخار", "احوش", "ميزانيه", "budget", "plan", "goal"].some((term) =>
-      normalized.includes(normalizeMemoryText(term)),
-    )
+    [
+      "خطه",
+      "خطة",
+      "هدف",
+      "ادخار",
+      "احوش",
+      "ميزانيه",
+      "budget",
+      "plan",
+      "goal",
+    ].some((term) => normalized.includes(normalizeMemoryText(term)))
   );
 }
 
 export function buildConversationCapsule(messages: MemoryMessage[]): string {
-  const lastUser = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
-  const lastAssistant = [...messages].reverse().find((message) => message.role === "assistant")?.content ?? "";
+  const lastUser =
+    [...messages].reverse().find((message) => message.role === "user")
+      ?.content ?? "";
+  const lastAssistant =
+    [...messages].reverse().find((message) => message.role === "assistant")
+      ?.content ?? "";
   if (lastUser && isLowSignalMemoryText(lastUser)) {
     return "استعلام ذاكرة بدون ذكرى جديدة";
   }
@@ -260,23 +346,42 @@ export function buildConversationCapsule(messages: MemoryMessage[]): string {
 
   const substantiveUser = [...messages]
     .reverse()
-    .find((message) => message.role === "user" && !isLowSignalMemoryText(message.content))?.content;
+    .find(
+      (message) =>
+        message.role === "user" && !isLowSignalMemoryText(message.content),
+    )?.content;
   const substantiveAssistant = [...messages]
     .reverse()
-    .find((message) => message.role === "assistant" && !isLowSignalMemoryText(message.content))?.content;
-  const fallback = [substantiveUser, substantiveAssistant].filter(Boolean).join(" ").replace(/\s+/g, " ");
-  return fallback ? truncateWords(fallback, 30) : "استعلام ذاكرة بدون ذكرى جديدة";
+    .find(
+      (message) =>
+        message.role === "assistant" && !isLowSignalMemoryText(message.content),
+    )?.content;
+  const fallback = [substantiveUser, substantiveAssistant]
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ");
+  return fallback
+    ? truncateWords(fallback, 30)
+    : "استعلام ذاكرة بدون ذكرى جديدة";
 }
 
-export function buildRunningSummary(messages: MemoryMessage[], previousSummary = ""): string {
+export function buildRunningSummary(
+  messages: MemoryMessage[],
+  previousSummary = "",
+): string {
   const recent = messages
     .slice(-8)
     .map((message) => `${message.role}: ${truncateWords(message.content, 28)}`)
     .join("\n");
-  return truncateWords([previousSummary, recent].filter(Boolean).join("\n"), 130);
+  return truncateWords(
+    [previousSummary, recent].filter(Boolean).join("\n"),
+    130,
+  );
 }
 
-export function extractSemanticMemories(messages: MemoryMessage[]): ExtractedMemory[] {
+export function extractSemanticMemories(
+  messages: MemoryMessage[],
+): ExtractedMemory[] {
   const memories = new Map<string, ExtractedMemory>();
 
   for (const [index, message] of messages.entries()) {
@@ -285,7 +390,10 @@ export function extractSemanticMemories(messages: MemoryMessage[]): ExtractedMem
     if (assistantPlanCommitSignal(message.content)) {
       const previousAssistant = [...messages.slice(0, index)]
         .reverse()
-        .find((item) => item.role === "assistant" && assistantPlanCandidate(item.content));
+        .find(
+          (item) =>
+            item.role === "assistant" && assistantPlanCandidate(item.content),
+        );
       if (previousAssistant) {
         const content = truncateWords(previousAssistant.content, 60);
         const hash = contentHash(`assistant_plan:${content}`);
@@ -358,7 +466,11 @@ export function draftConversationMemory(
   };
 }
 
-async function maybeStoreEmbedding(memoryItemId: number, input: ConversationMemoryInput, content: string): Promise<void> {
+async function maybeStoreEmbedding(
+  memoryItemId: number,
+  input: ConversationMemoryInput,
+  content: string,
+): Promise<void> {
   try {
     const config = await loadEmbeddingConfig("memory");
     if (!config.enabled) return;
@@ -387,117 +499,230 @@ async function maybeStoreEmbedding(memoryItemId: number, input: ConversationMemo
     });
 
     if (result.fallback) {
-      console.warn("[AI Memory] embedding skipped fallback", result.fallbackReason ?? "unknown");
+      log.warn(
+        {
+          event: "memory.embedding_fallback",
+          reason: result.fallbackReason ?? "unknown",
+        },
+        "Embedding skipped",
+      );
       return;
     }
 
-    await db
-      .insert(aiMemoryEmbeddings)
-      .values({
-        memoryItemId,
-        userId: input.userId,
-        userType: input.userType,
-        provider: result.provider,
-        model: result.model,
-        dimensions: result.dimensions,
-        vectorHash: contentHash(result.vector.join(",")),
-        vector: result.vector,
-      })
-      .onDuplicateKeyUpdate({
-        set: {
+    await withMemoryOwnerLock(input, async (tx) => {
+      const [current] = await tx
+        .select({ id: aiMemoryItems.id })
+        .from(aiMemoryItems)
+        .where(
+          and(
+            eq(aiMemoryItems.id, memoryItemId),
+            eq(aiMemoryItems.userId, input.userId),
+            eq(aiMemoryItems.userType, input.userType),
+            eq(aiMemoryItems.status, "active"),
+            eq(aiMemoryItems.contentHash, contentHash(content)),
+          ),
+        );
+      if (!current) return;
+      await tx
+        .insert(aiMemoryEmbeddings)
+        .values({
+          memoryItemId,
+          userId: input.userId,
+          userType: input.userType,
+          provider: result.provider,
+          model: result.model,
+          dimensions: result.dimensions,
           vectorHash: contentHash(result.vector.join(",")),
           vector: result.vector,
-        },
-      });
+        })
+        .onDuplicateKeyUpdate({
+          set: {
+            vectorHash: contentHash(result.vector.join(",")),
+            vector: result.vector,
+          },
+        });
+    });
   } catch (error) {
-    console.warn("[AI Memory] embedding skipped", error instanceof Error ? error.message : String(error));
+    log.warn(
+      { event: "memory.embedding_failed", err: error },
+      "Embedding skipped",
+    );
   }
 }
 
-export async function writeConversationMemory(input: ConversationMemoryInput): Promise<ConversationMemoryDraft> {
-  const [existing] = await db
-    .select()
-    .from(aiConversationSummaries)
-    .where(eq(aiConversationSummaries.conversationId, input.conversationId))
-    .limit(1);
-
-  const draft = draftConversationMemory(input, existing?.runningSummary ?? "");
-
-  await db
-    .insert(aiConversationSummaries)
-    .values({
-      userId: input.userId,
-      userType: input.userType,
-      conversationId: input.conversationId,
-      capsule: draft.capsule,
-      runningSummary: draft.runningSummary,
-      messageCount: input.messages.length,
-      source: input.source ?? "chat",
-    })
-    .onDuplicateKeyUpdate({
-      set: {
-        capsule: draft.capsule,
-        runningSummary: draft.runningSummary,
-        messageCount: input.messages.length,
-        source: input.source ?? "chat",
-      },
-    });
-
-  for (const memory of draft.memories) {
-    const hash = contentHash(memory.content);
-    await db
-      .insert(aiMemoryItems)
-      .values({
-        userId: input.userId,
-        userType: input.userType,
-        memoryType: memory.type,
-        content: memory.content,
-        contentHash: hash,
-        importance: memory.importance,
-        sourceConversationId: input.conversationId,
-        sourceMessageId: memory.sourceMessageId,
-        status: "active",
-        metadata: memory.metadata,
+export async function writeConversationMemory(
+  input: ConversationMemoryInput,
+): Promise<ConversationMemoryDraft> {
+  const indexed: Array<{ id: number; content: string }> = [];
+  let previousCapsule = "";
+  const draft = await withMemoryOwnerLock(input, async (tx) => {
+    const [conversation] = await tx
+      .select({
+        id: chatConversations.id,
+        metadata: chatConversations.metadata,
       })
-      .onDuplicateKeyUpdate({
-        set: {
-          importance: memory.importance,
-          status: "active",
-          metadata: memory.metadata,
-        },
-      });
-
-    const [stored] = await db
-      .select({ id: aiMemoryItems.id })
-      .from(aiMemoryItems)
+      .from(chatConversations)
       .where(
         and(
-          eq(aiMemoryItems.userId, input.userId),
-          eq(aiMemoryItems.userType, input.userType),
-          eq(aiMemoryItems.contentHash, hash),
+          eq(chatConversations.id, input.conversationId),
+          eq(chatConversations.userId, input.userId),
+          eq(chatConversations.userType, input.userType),
+        ),
+      )
+      .for("update");
+    // Conversation deletion wins against a delayed writer; no orphaned summary or recalled memory.
+    if (!conversation) return { capsule: "", runningSummary: "", memories: [] };
+    const [existing] = await tx
+      .select()
+      .from(aiConversationSummaries)
+      .where(
+        and(
+          eq(aiConversationSummaries.conversationId, input.conversationId),
+          eq(aiConversationSummaries.userId, input.userId),
+          eq(aiConversationSummaries.userType, input.userType),
         ),
       )
       .limit(1);
-
-    if (stored?.id) {
-      // The textual memory is already durable and can be retrieved lexically on
-      // the next turn. Vector indexing is an enrichment, not a reason to hold
-      // the chat response open or spend provider time on the critical path.
-      void maybeStoreEmbedding(stored.id, input, memory.content);
+    previousCapsule = existing?.capsule ?? "";
+    const metadata =
+      conversation.metadata && typeof conversation.metadata === "object"
+        ? (conversation.metadata as Record<string, unknown>)
+        : {};
+    const processed =
+      typeof metadata.memoryProcessedId === "number"
+        ? Math.max(0, metadata.memoryProcessedId)
+        : 0;
+    const rows = await tx
+      .select({
+        id: chatMessages.id,
+        role: chatMessages.role,
+        content: chatMessages.content,
+      })
+      .from(chatMessages)
+      .where(
+        and(
+          eq(chatMessages.conversationId, input.conversationId),
+          gt(chatMessages.id, processed),
+        ),
+      )
+      .orderBy(chatMessages.id)
+      .limit(100);
+    const fresh = rows.filter(
+      (row) => row.role === "user" || row.role === "assistant",
+    ) as MemoryMessage[];
+    const hasNewUser = fresh.some((row) => row.role === "user");
+    const context: MemoryMessage[] = [];
+    if (
+      processed > 0 &&
+      (existing?.capsule || existing?.runningSummary) &&
+      hasNewUser
+    ) {
+      const [previous] = await tx
+        .select({
+          id: chatMessages.id,
+          role: chatMessages.role,
+          content: chatMessages.content,
+        })
+        .from(chatMessages)
+        .where(
+          and(
+            eq(chatMessages.conversationId, input.conversationId),
+            eq(chatMessages.id, processed),
+          ),
+        )
+        .limit(1);
+      if (previous?.role === "assistant")
+        context.push({ ...previous, role: "assistant" });
     }
-  }
-
-  const previousCapsule = typeof existing?.capsule === "string" ? existing.capsule : "";
-  const retrievalRelevantMemoryChange =
-    draft.memories.length > 0 ||
+    const built = hasNewUser
+      ? draftConversationMemory(
+          { ...input, messages: [...context, ...fresh] },
+          existing?.runningSummary ?? "",
+        )
+      : {
+          capsule: existing?.capsule ?? "",
+          runningSummary: existing?.runningSummary ?? "",
+          memories: [],
+        };
+    const messageCount = (existing?.messageCount ?? 0) + rows.length;
+    await tx
+      .insert(aiConversationSummaries)
+      .values({
+        userId: input.userId,
+        userType: input.userType,
+        conversationId: input.conversationId,
+        capsule: built.capsule,
+        runningSummary: built.runningSummary,
+        messageCount,
+        source: input.source ?? "chat",
+      })
+      .onDuplicateKeyUpdate({
+        set: {
+          capsule: built.capsule,
+          runningSummary: built.runningSummary,
+          messageCount,
+          source: input.source ?? "chat",
+        },
+      });
+    const watermark = rows.at(-1)?.id ?? processed;
+    await tx
+      .update(chatConversations)
+      .set({
+        metadata: sql`JSON_SET(COALESCE(${chatConversations.metadata}, JSON_OBJECT()), '$.memoryProcessedId', ${watermark})`,
+      })
+      .where(
+        and(
+          eq(chatConversations.id, input.conversationId),
+          eq(chatConversations.userId, input.userId),
+          eq(chatConversations.userType, input.userType),
+        ),
+      );
+    for (const memory of built.memories) {
+      const hash = contentHash(memory.content);
+      await tx
+        .insert(aiMemoryItems)
+        .values({
+          userId: input.userId,
+          userType: input.userType,
+          memoryType: memory.type,
+          content: memory.content,
+          contentHash: hash,
+          importance: memory.importance,
+          sourceConversationId: input.conversationId,
+          sourceMessageId: memory.sourceMessageId,
+          status: "active",
+          metadata: memory.metadata,
+        })
+        .onDuplicateKeyUpdate({
+          set: {
+            importance: memory.importance,
+            status: "active",
+            metadata: memory.metadata,
+          },
+        });
+      const [stored] = await tx
+        .select({ id: aiMemoryItems.id })
+        .from(aiMemoryItems)
+        .where(
+          and(
+            eq(aiMemoryItems.userId, input.userId),
+            eq(aiMemoryItems.userType, input.userType),
+            eq(aiMemoryItems.contentHash, hash),
+          ),
+        )
+        .limit(1);
+      if (stored) indexed.push({ id: stored.id, content: memory.content });
+    }
+    return built;
+  });
+  for (const item of indexed)
+    void maybeStoreEmbedding(item.id, input, item.content);
+  if (
+    draft.memories.length ||
     !isLowSignalMemoryText(draft.capsule) ||
-    (previousCapsule.length > 0 && !isLowSignalMemoryText(previousCapsule));
-
-  if (retrievalRelevantMemoryChange) {
-    await invalidateMemoryUserCache(input.userId, input.userType).catch((error: unknown) => {
-      console.warn("[AI Memory] cache invalidation failed", error instanceof Error ? error.message : String(error));
-    });
+    (previousCapsule && !isLowSignalMemoryText(previousCapsule))
+  ) {
+    await invalidateMemoryUserCache(input.userId, input.userType);
   }
-
   return draft;
 }

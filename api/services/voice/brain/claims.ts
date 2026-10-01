@@ -7,9 +7,16 @@
 
 /** Past-tense "recorded / done" as the assistant says it about its own action, without diacritics. */
 const DONE_CLAIM =
-  /(^|[\s،,.؟?!])(سجلت|سجلتها|سجلتهم|سجلته|اتسجل|اتسجلت|اتسجلوا|اتعمل|اتعملت|اتنفذ|اتنفذت|خلصتها|عملتها)(?=$|[\s،,.؟?!])/;
+  /(^|[\s،,.؟?!])(سجلت|سجلنا|سجلناه|سجلتها|سجلتهم|سجلته|اتسجل|اتسجلت|اتسجلوا|اتعمل|اتعملت|اتنفذ|اتنفذت|خلصتها|عملتها|حفظت|حفظنا|اتحفظ|اتحفظت)(?=$|[\s،,.؟?!])/;
 /** Arabic short vowels, tanween, shadda and sukun (U+064B to U+0652). */
-const DIACRITICS = new RegExp(`[${String.fromCharCode(0x64b)}-${String.fromCharCode(0x652)}]`, "g");
+const DIACRITICS = new RegExp(
+  `[${String.fromCharCode(0x64b)}-${String.fromCharCode(0x652)}]`,
+  "g",
+);
+
+export function claimsDone(text: string): boolean {
+  return DONE_CLAIM.test(text.replace(DIACRITICS, ""));
+}
 
 export const DONE_CLAIM_NOTE =
   "(ملاحظة من التطبيق، مش من المستخدم: لسه ماتسجلش ولا اتعمل حاجة. دي مسودة مستنية موافقته. " +
@@ -25,7 +32,10 @@ export class DoneClaimCheck {
    * At most `perRequest` corrections for one request of the user and `perCall` in all: a model that reads a draft back
    * as "سجلت … أسجلها؟" would otherwise be stopped, restart with the same words, and be stopped again without end.
    */
-  constructor(private readonly perRequest = 1, private readonly perCall = 3) {}
+  constructor(
+    private readonly perRequest = 1,
+    private readonly perCall = 3,
+  ) {}
 
   /** The user spoke: a new request may be corrected again. */
   newRequest(): void {
@@ -39,9 +49,10 @@ export class DoneClaimCheck {
   add(chunk: string, draftWaiting: boolean): "note" | "record" | null {
     this.turnText += chunk;
     if (this.flagged || !draftWaiting) return null;
-    if (!DONE_CLAIM.test(this.turnText.replace(DIACRITICS, ""))) return null;
+    if (!claimsDone(this.turnText)) return null;
     this.flagged = true;
-    if (this.notesThisRequest >= this.perRequest || this.notes >= this.perCall) return "record";
+    if (this.notesThisRequest >= this.perRequest || this.notes >= this.perCall)
+      return "record";
     this.notesThisRequest += 1;
     this.notes += 1;
     return "note";
@@ -72,12 +83,19 @@ export class WrittenAmountCheck {
   private corrections = 0;
 
   /** `correct` is false after two corrections in the call: the incident is still recorded, the model not stopped again. */
-  add(chunk: string, recent: { written: number[]; replaced: number[] } | null, amountsIn: (text: string) => number[]): { spoken: number; written: number; correct: boolean } | null {
+  add(
+    chunk: string,
+    recent: { written: number[]; replaced: number[] } | null,
+    amountsIn: (text: string) => number[],
+  ): { spoken: number; written: number; correct: boolean } | null {
     this.turnText += chunk;
     if (this.flagged || !recent || !recent.replaced.length) return null;
     const spoken = amountsIn(this.turnText);
-    const wrong = spoken.find((value) => recent.replaced.some((amount) => Math.abs(amount - value) < 0.5)
-      && !recent.written.some((amount) => Math.abs(amount - value) < 0.5));
+    const wrong = spoken.find(
+      (value) =>
+        recent.replaced.some((amount) => Math.abs(amount - value) < 0.5) &&
+        !recent.written.some((amount) => Math.abs(amount - value) < 0.5),
+    );
     if (wrong === undefined) return null;
     this.flagged = true;
     const correct = this.corrections < 2;
@@ -93,11 +111,16 @@ export class WrittenAmountCheck {
 
 /** "حصل عطل", "مشكلة في النظام", "مش قادر أوصل": the assistant saying something broke, without diacritics. */
 const FAILURE_CLAIM =
-  /عطل|خطا في النظام|خطأ في النظام|مشكله في النظام|مشكلة في النظام|مشكله في السيستم|مشكلة في السيستم|مشكله تقنيه|مشكلة تقنية|مشكله فنيه|مشكلة فنية|خطا تقني|خطأ تقني|السيستم واقع|مش قادر اوصل|مش قادر أوصل|مش قادره اوصل|مش قادرة أوصل|مش قادرين نوصل/;
+  /عطل\s+(?:فني|تقني|في\s+(?:النظام|السيستم|التطبيق|الخدمه))|خطا في النظام|مشكله في النظام|مشكله في السيستم|مشكله تقنيه|مشكله فنيه|خطا تقني|السيستم واقع|مش قادر(?:ه|ين)?\s+(?:اوصل|نوصل)\s+(?:للمعلومه|للبيانات|لحساباتك|لبياناتك)/;
 
 /** Whether the words claim a technical failure ("حصل عطل", "مشكلة في السيستم"), however they are spelled. */
 export function claimsFailure(text: string): boolean {
-  return FAILURE_CLAIM.test(text.replace(DIACRITICS, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه"));
+  const normalized = text
+    .replace(DIACRITICS, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه");
+  // Only an explicit technical claim: a bare "عطل" or inability to reach a goal is ordinary financial speech.
+  return FAILURE_CLAIM.test(normalized);
 }
 
 export const FAILURE_CLAIM_NOTE =
@@ -131,11 +154,13 @@ export class FailureClaimCheck {
   private toolsFailed = 0;
   private toolsCalled = 0;
   private retries = 0;
+  private providerExhausted = false;
 
   constructor(private readonly maxRetries = 2) {}
 
   /** The user asked something new: the tools of the last request no longer explain a failure. */
   newRequest(): void {
+    this.providerExhausted = false;
     this.toolsCalled = 0;
     this.toolsFailed = 0;
     this.turnText = "";
@@ -147,13 +172,20 @@ export class FailureClaimCheck {
     if (!ok) this.toolsFailed += 1;
   }
 
+  /** Recovery exhausted at the provider boundary: an honest inability is no longer a false tool failure. */
+  providerFailed(): void {
+    this.toolsFailed += 1;
+    this.providerExhausted = true;
+  }
+
   /**
    * Adds a chunk of the assistant's speech. Returns what to do the first time a turn claims a failure no tool
    * reported: `retry` while retries are left, `record` after.
    */
   add(chunk: string): { toolsCalled: number; retry: boolean } | null {
     this.turnText += chunk;
-    if (this.flagged || this.toolsFailed > 0) return null;
+    if (this.flagged || this.toolsFailed > 0 || this.providerExhausted)
+      return null;
     if (!claimsFailure(this.turnText)) return null;
     this.flagged = true;
     const retry = this.retries < this.maxRetries;
@@ -166,11 +198,14 @@ export class FailureClaimCheck {
     this.flagged = false;
   }
 
-  snapshot(): { retries: number } {
-    return { retries: this.retries };
+  snapshot(): { retries: number; providerExhausted: boolean } {
+    return { retries: this.retries, providerExhausted: this.providerExhausted };
   }
 
-  restore(state: { retries?: number } | null | undefined): void {
+  restore(
+    state: { retries?: number; providerExhausted?: boolean } | null | undefined,
+  ): void {
     this.retries = state?.retries ?? 0;
+    this.providerExhausted = state?.providerExhausted === true;
   }
 }

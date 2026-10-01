@@ -212,7 +212,9 @@ describe("VoiceCallController", () => {
     expect(socket.json().find((m) => m.type === "mode")).toEqual({ type: "mode", mode: "ultra" });
     expect(view.modeSwitching).toBe(true);
     socket.receive({ type: "mode", mode: "ultra", status: "switching" });
+    expect(view.meter.liveSince).toBeNull();
     socket.receive({ type: "mode", mode: "ultra", status: "active" });
+    expect(view.meter.liveSince).not.toBeNull();
     expect(view).toMatchObject({ mode: "ultra", modeSwitching: false });
     // Refused: the call stays as the server says, and the user is told why.
     controller.setMode("standard");

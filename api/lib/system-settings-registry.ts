@@ -19,7 +19,10 @@
  * always saveable.
  */
 import { env } from "./env";
-import { PLAN_IDS, planSettingDefinitions } from "../../contracts/plan-features";
+import {
+  PLAN_IDS,
+  planSettingDefinitions,
+} from "../../contracts/plan-features";
 
 export interface SettingDef {
   key: string;
@@ -41,7 +44,11 @@ export const SETTINGS: SettingDef[] = [
   { key: "ai_api_key", default: () => env.GEMINI_API_KEY || "", secret: true },
   { key: "ai_api_key_2", default: "", secret: true },
   { key: "groq_api_key", default: "", secret: true },
-  { key: "fireworks_api_key", default: () => env.FIREWORKS_API_KEY || "", secret: true },
+  {
+    key: "fireworks_api_key",
+    default: () => env.FIREWORKS_API_KEY || "",
+    secret: true,
+  },
   // Previously renderable and unsaveable: the field existed, the write was discarded.
   { key: "nvidia_api_key", default: "", secret: true },
 
@@ -81,6 +88,10 @@ export const SETTINGS: SettingDef[] = [
   // Capacity (api/services/voice/gateway/admission.ts): live calls at once across all servers, per model pool, set
   // from the Google project's real limits (AI Studio → Rate limits); 0 means no cap. One live call per user.
   { key: "voice_max_concurrent_calls", default: "20" },
+  { key: "voice_standard_input_tpm", default: "65000" },
+  { key: "voice_standard_reserved_tpm", default: "30000" },
+  { key: "voice_ultra_input_tpm", default: "65000" },
+  { key: "voice_ultra_reserved_tpm", default: "60000" },
   { key: "voice_ultra_max_concurrent_calls", default: "3" },
   { key: "voice_max_calls_per_user", default: "1" },
   // The text model with Google Search that looks up gold and currency prices for the call. A fast one: the caller
@@ -96,10 +107,19 @@ export const SETTINGS: SettingDef[] = [
   { key: "voice_daily_cost_cap_usd_ultra", default: "1.50" },
 
   // ── Legacy model selectors (reports + ultra fallback) ──
-  { key: "ai_model_free", default: () => env.GEMINI_MODEL_FREE || "gemini-2.0-flash" },
-  { key: "ai_model_pro", default: () => env.GEMINI_MODEL_PRO || "gemini-1.5-flash" },
+  {
+    key: "ai_model_free",
+    default: () => env.GEMINI_MODEL_FREE || "gemini-2.0-flash",
+  },
+  {
+    key: "ai_model_pro",
+    default: () => env.GEMINI_MODEL_PRO || "gemini-1.5-flash",
+  },
   { key: "ai_model_ultra", default: "gemini-1.5-pro" },
-  { key: "ai_model_reports", default: () => env.GEMINI_MODEL_REPORTS || "gemini-1.5-flash" },
+  {
+    key: "ai_model_reports",
+    default: () => env.GEMINI_MODEL_REPORTS || "gemini-1.5-flash",
+  },
 
   // ── Token limits ──
   { key: "free_token_limit", default: "50000" },
@@ -212,11 +232,16 @@ export const SETTINGS: SettingDef[] = [
   // ── Per-plan features and limits (contracts/plan-features.ts) ──
   // The console rendered the chat switches and limits per plan, and saving them was
   // silently dropped because the keys were not here.
-  ...PLAN_IDS.map((plan) => ({ key: `chatbot_enabled_${plan}`, default: "true" })),
+  ...PLAN_IDS.map((plan) => ({
+    key: `chatbot_enabled_${plan}`,
+    default: "true",
+  })),
   ...planSettingDefinitions(),
 ];
 
-export const SETTING_KEYS: ReadonlySet<string> = new Set(SETTINGS.map((s) => s.key));
+export const SETTING_KEYS: ReadonlySet<string> = new Set(
+  SETTINGS.map((s) => s.key),
+);
 export const SECRET_KEYS: ReadonlySet<string> = new Set(
   SETTINGS.filter((s) => s.secret).map((s) => s.key),
 );
@@ -224,7 +249,8 @@ export const SECRET_KEYS: ReadonlySet<string> = new Set(
 export function settingDefaults(): Record<string, string> {
   const out: Record<string, string> = {};
   for (const def of SETTINGS) {
-    out[def.key] = typeof def.default === "function" ? def.default() : def.default;
+    out[def.key] =
+      typeof def.default === "function" ? def.default() : def.default;
   }
   return out;
 }
@@ -254,7 +280,9 @@ export function isMaskedValue(value: string): boolean {
 }
 
 /** Applies the mask to a full settings map, leaving non-secrets untouched. */
-export function maskSettingsForClient(config: Record<string, string>): Record<string, string> {
+export function maskSettingsForClient(
+  config: Record<string, string>,
+): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [key, value] of Object.entries(config)) {
     out[key] = SECRET_KEYS.has(key) ? maskSecretValue(value) : value;

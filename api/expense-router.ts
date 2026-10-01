@@ -36,7 +36,7 @@ import {
   toDayString,
 } from "./services/expense-rollups";
 import { businessDateKey, businessDayRange, parseBusinessInstant } from "./lib/app-time";
-import { installmentProgress, installmentProgressFromLinked } from "./services/installments";
+import { installmentProgress, installmentProgressFromLinked, installmentProgressFromRecorded } from "./services/installments";
 import { reconcileSettlementsOf, releaseSettlementsOf } from "./services/coach/cashflows";
 import { runRuleEngine } from "./lib/rule-engine";
 import { normalizeV2 } from "./lib/normalizer-v2";
@@ -1523,7 +1523,7 @@ export const expenseRouter = router({
     // A plan with a schedule of due dates is counted from the payments linked to them (api/services/coach).
     const schedules = plans.length
       ? await db
-          .select({ planId: scheduledCashflows.installmentPlanId, linked: sql<string>`COALESCE(SUM(${cashflowSettlements.amount}), 0)` })
+          .select({ planId: scheduledCashflows.installmentPlanId, dueDay: cashflowSettlements.dueDay, linked: sql<string>`COALESCE(SUM(${cashflowSettlements.amount}), 0)` })
           .from(scheduledCashflows)
           .leftJoin(cashflowSettlements, and(
             eq(cashflowSettlements.cashflowId, scheduledCashflows.id),
@@ -1533,17 +1533,26 @@ export const expenseRouter = router({
           .where(and(
             eq(scheduledCashflows.userId, userId),
             eq(scheduledCashflows.userType, userType),
+            or(isNull(scheduledCashflows.businessId), eq(scheduledCashflows.businessId, 0)),
             inArray(scheduledCashflows.installmentPlanId, plans.map((plan) => plan.id)),
           ))
-          .groupBy(scheduledCashflows.installmentPlanId)
+          .groupBy(scheduledCashflows.installmentPlanId, cashflowSettlements.dueDay)
       : [];
-    const linkedByPlan = new Map(schedules.map((row) => [Number(row.planId), row.linked]));
+    const linkedByPlan = new Map<number, string[]>();
+    for (const row of schedules) {
+      const amounts = linkedByPlan.get(Number(row.planId)) ?? [];
+      amounts.push(row.linked);
+      linkedByPlan.set(Number(row.planId), amounts);
+    }
+    const ambiguous = new Set(plans.filter((plan) => plans.some((other) => other.id !== plan.id &&
+      (normalizeV2(plan.keyword).forAI.includes(normalizeV2(other.keyword).forAI) || normalizeV2(other.keyword).forAI.includes(normalizeV2(plan.keyword).forAI)))).map((plan) => plan.id));
     const counts = await Promise.all(
       plans.map(async (plan) => {
         if (linkedByPlan.has(plan.id)) return 0;
+        if (ambiguous.has(plan.id)) return 0;
         const pattern = `%${plan.keyword.replace(/[%_]/g, "")}%`;
         const [row] = await db
-          .select({ count: sql<number>`COUNT(*)` })
+          .select({ amount: sql<string>`COALESCE(SUM(${expenses.amount}), 0)` })
           .from(expenses)
           .where(
             and(
@@ -1551,11 +1560,12 @@ export const expenseRouter = router({
               eq(expenses.userType, userType),
               eq(expenses.type, "expense"),
               eq(expenses.category, INSTALLMENTS_CATEGORY),
+              or(isNull(expenses.businessId), eq(expenses.businessId, 0)),
               gte(expenses.date, plan.createdAt),
               or(like(expenses.description, pattern), like(expenses.subCategory, pattern)),
             ),
           );
-        return Number(row?.count || 0);
+        return Number(row?.amount || 0);
       }),
     );
     return plans.map((plan, index) => {
@@ -1568,7 +1578,9 @@ export const expenseRouter = router({
         totalInstallments: plan.totalInstallments,
         ...(linkedByPlan.has(plan.id)
           ? installmentProgressFromLinked({ monthlyAmount, totalInstallments: plan.totalInstallments, paidBefore: plan.paidBefore }, linkedByPlan.get(plan.id)!)
-          : installmentProgress({ monthlyAmount, totalInstallments: plan.totalInstallments, paidBefore: plan.paidBefore }, counts[index])),
+          : ambiguous.has(plan.id)
+            ? { ...installmentProgress({ monthlyAmount, totalInstallments: plan.totalInstallments, paidBefore: plan.paidBefore }, 0), countedBy: "ambiguous" as const }
+            : installmentProgressFromRecorded({ monthlyAmount, totalInstallments: plan.totalInstallments, paidBefore: plan.paidBefore }, counts[index])),
       };
     });
   }),

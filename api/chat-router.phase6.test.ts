@@ -1,21 +1,26 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { chatRouter } from "./chat-router";
+import { aiConversationSummaries, aiMemoryItems } from "../db/schema";
 
-const { dbMock, selectQueries, updateQueries, deleteQueries } = vi.hoisted(() => {
-  const selectQueries: Array<Record<string, unknown>> = [];
-  const updateQueries: Array<Record<string, unknown>> = [];
-  const deleteQueries: Array<Record<string, unknown>> = [];
+const { dbMock, selectQueries, updateQueries, deleteQueries } = vi.hoisted(
+  () => {
+    const selectQueries: Array<Record<string, unknown>> = [];
+    const updateQueries: Array<Record<string, unknown>> = [];
+    const deleteQueries: Array<Record<string, unknown>> = [];
 
-  const dbMock: any = {
-    transaction: vi.fn(async (callback: (tx: any) => Promise<unknown>) => callback(dbMock)),
-    select: vi.fn((fields?: Record<string, unknown>) => {
-      selectQueries.push(fields ?? {});
-      const selectChain: any = {
-        from: vi.fn(() => selectChain),
-        where: vi.fn(() => selectChain),
-        orderBy: vi.fn(() => selectChain),
-        limit: vi.fn(() => selectChain),
-        then: (resolve: any) => {
+    const dbMock: any = {
+      transaction: vi.fn(async (callback: (tx: any) => Promise<unknown>) => callback(dbMock)),
+      select: vi.fn((fields?: Record<string, unknown>) => {
+        selectQueries.push(fields ?? {});
+        const selectChain: any = {
+          from: vi.fn(() => selectChain),
+          where: vi.fn(() => selectChain),
+          orderBy: vi.fn(() => selectChain),
+          limit: vi.fn(() => selectChain),
+          for: vi.fn(() => selectChain),
+          leftJoin: vi.fn(() => selectChain),
+          groupBy: vi.fn(() => selectChain),
+          then: (resolve: any) => {
           if (fields && "memoryType" in fields) {
             return resolve([
               {
@@ -33,10 +38,14 @@ const { dbMock, selectQueries, updateQueries, deleteQueries } = vi.hoisted(() =>
           }
           return resolve([{ id: 101, userId: 42, userType: "oauth" }]);
         },
-      };
-      return selectChain;
-    }),
-    update: vi.fn((table: unknown) => {
+        };
+        return selectChain;
+      }),
+      execute: vi.fn(async () => []),
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({ onDuplicateKeyUpdate: vi.fn(async () => []) })),
+      })),
+      update: vi.fn((table: unknown) => {
       return {
         set: vi.fn((values: Record<string, unknown>) => {
           updateQueries.push(values);
@@ -46,7 +55,7 @@ const { dbMock, selectQueries, updateQueries, deleteQueries } = vi.hoisted(() =>
         }),
       };
     }),
-    delete: vi.fn((table: unknown) => {
+      delete: vi.fn((table: unknown) => {
       return {
         where: vi.fn((condition: unknown) => {
           deleteQueries.push({ table, condition });
@@ -54,10 +63,11 @@ const { dbMock, selectQueries, updateQueries, deleteQueries } = vi.hoisted(() =>
         }),
       };
     }),
-  };
+    };
 
-  return { dbMock, selectQueries, updateQueries, deleteQueries };
-});
+    return { dbMock, selectQueries, updateQueries, deleteQueries };
+  },
+);
 
 vi.mock("./queries/connection", () => ({
   db: dbMock,
@@ -104,9 +114,16 @@ describe("chat router phase 6 memory controls & privacy", () => {
     const result = await caller.forgetMemory({ memoryId: 101 });
 
     expect(result).toEqual({ success: true });
-    expect(updateQueries).toEqual([]);
+    expect(deleteQueries.some((query) => query.table === aiMemoryItems)).toBe(
+      true,
+    );
     expect(deleteQueries.length).toBe(2);
-    expect(forgetInPendingCalls).toHaveBeenCalledWith({ userId: 42, userType: "oauth" }, expect.any(String));
+    expect(forgetInPendingCalls).toHaveBeenCalledWith(
+      { userId: 42, userType: "oauth" },
+      null,
+      dbMock,
+    );
+    expect(dbMock.insert).toHaveBeenCalledWith(aiConversationSummaries);
   });
 
   it("clearAllMemories deletes the user's memories and embeddings, and the words of calls not yet summarized", async () => {
@@ -115,7 +132,11 @@ describe("chat router phase 6 memory controls & privacy", () => {
     expect(result.success).toBe(true);
     expect(updateQueries).toEqual([]);
     expect(deleteQueries.length).toBe(2);
-    expect(forgetInPendingCalls).toHaveBeenCalledWith({ userId: 42, userType: "oauth" }, null);
+    expect(forgetInPendingCalls).toHaveBeenCalledWith(
+      { userId: 42, userType: "oauth" },
+      null,
+      dbMock,
+    );
   });
 
   it("clearConversation deletes conversation, messages, and summaries but preserves active memories", async () => {

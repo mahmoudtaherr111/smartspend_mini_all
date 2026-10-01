@@ -148,3 +148,6 @@ Checked against the code; each one names where it lives.
 - [Notifications and WhatsApp](notifications.md): templates and the WhatsApp tab.
 - [Plans and payments](billing.md): subscriptions and discount codes.
 - [Web and mobile app shell](web-app.md): the route guards, and the ads and events in the app shell.
+
+### Voice capacity and release controls
+The voice settings expose per-model input TPM and the per-call reservation, in addition to seat caps. The effective cap reserves 20% headroom; 65k TPM and 30k reserved allows one standard call. A quota below one reservation refuses calls. Extended defaults to 65k TPM and 60k reserved and stays off until task qualification and capacity permit it. All capacity inputs have accessible names. Model-segment statistics attribute switched-call time and cost to each effective model. A hidden apology or a successful tool invocation is not a task-qualification result.

@@ -172,6 +172,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/ai-memory/qdrant-vector-store.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-memory/quantized-vector-store.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-memory/retrieval-enhancements.ts` | [ai-center](ai-center.md) |
+| `api/services/ai-memory/slot-store.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-memory/slots.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-memory/text-utils.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-memory/types.ts` | [ai-center](ai-center.md) |

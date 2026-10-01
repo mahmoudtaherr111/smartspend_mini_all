@@ -161,3 +161,6 @@ Checked against the code; each one names where it lives.
   profile](insights.md), [Plans and payments](billing.md): the scheduled jobs registered here.
 - [Money: expenses, wallets, budgets, goals and businesses](money.md): the rollups the reconciliation job
   repairs, and the taxonomy migration job.
+
+### Voice capacity settings
+The settings registry defines `voice_standard_input_tpm`, `voice_standard_reserved_tpm`, `voice_ultra_input_tpm` and `voice_ultra_reserved_tpm`. Admission reads them through the shared settings accessor, combines them with per-model seat caps, and reserves 20% headroom. Values are editable in the admin voice section and require review against the active project’s AI Studio limits; an estimate is not a guarantee for unlimited conversation context.

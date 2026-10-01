@@ -9,6 +9,45 @@ function book() {
 
 const expenseDraft = { kind: "expenses" as const, title: "مصروفين", lines: [{ label: "مواصلات", amount: 60 }], total: 60, payload: {} };
 
+describe("voice consent boundaries", () => {
+  it("waits for the whole spoken answer and a trailing correction before allowing a write", () => {
+    const { drafts, advance } = book();
+    const draft = drafts.add(expenseDraft);
+    drafts.heardAssistant("هسجل ستين جنيه مواصلات، أسجلها؟");
+    advance(1000);
+    drafts.beginUserRequest(true);
+    drafts.heardUser("آه");
+    expect(drafts.gate(draft.id, false)).toMatchObject({
+      ok: false,
+      reason: "no_yes",
+    });
+    drafts.endUserSpeech();
+    advance(300);
+    drafts.heardUser(" بس لا متسجلش");
+    advance(600);
+    expect(drafts.gate(draft.id, false)).toMatchObject({
+      ok: false,
+      reason: "changed",
+    });
+  });
+
+  it("a filler or wrong read-back never presents the financial draft", () => {
+    const { drafts, advance } = book();
+    const draft = drafts.add(expenseDraft);
+    drafts.heardAssistant("خليني أراجع");
+    advance(1000);
+    drafts.heardUser("آه");
+    expect(drafts.gate(draft.id, false)).toMatchObject({
+      ok: false,
+      reason: "not_presented",
+    });
+    drafts.heardAssistant(" هسجل سبعين جنيه، أسجلها؟");
+    expect(draft.presentedAt).toBeUndefined();
+    drafts.heardAssistant(" قصدي ستين جنيه، أسجلها؟");
+    expect(draft.presentedAt).toBeDefined();
+  });
+});
+
 describe("readReply", () => {
   it("hears a yes, a no and a change", () => {
     expect(readReply("آه سجلهم")).toBe("yes");
@@ -43,7 +82,7 @@ describe("readReply", () => {
     expect(readReply("تمام الحمد لله النهارده كان يوم طويل في الشغل")).toBe("unclear");
   });
 
-  it("takes a yes that repeats the draft's own amount, and \"مش مشكلة\" as a yes", () => {
+  it('takes a yes that repeats the draft\'s own amount, and "مش مشكلة" as a yes', () => {
     expect(readReply("آه الستين دي سجلها", [60])).toBe("yes");
     expect(readReply("آه الستين دي سجلها", [50])).toBe("no_or_change");
     expect(readReply("مش مشكلة، سجل")).toBe("yes");
@@ -142,4 +181,3 @@ describe("DraftBook.gate", () => {
     expect(drafts.justWritten()).toBeNull();
   });
 });
-

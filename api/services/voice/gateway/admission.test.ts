@@ -1,14 +1,62 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../../lib/redis-client", () => ({ getRedisClient: vi.fn(async () => null) }));
+vi.mock("../../../lib/redis-client", () => ({
+  getRedisClient: vi.fn(async () => null),
+  getCacheRuntimeStatus: vi.fn(() => ({ memoryFallbackAllowed: true })),
+}));
 
-import { admitCall, breakerState, releaseCall, resetAdmissionMemory, SEAT_TTL_MS, seatsInUse, tripBreaker } from "./admission";
+import {
+  admissionLimits,
+  admitCall,
+  breakerState,
+  releaseCall,
+  resetAdmissionMemory,
+  SEAT_TTL_MS,
+  seatsInUse,
+  tripBreaker,
+} from "./admission";
 
 const user = (id: number, type = "local") => ({ id, type });
 const limits = { poolMax: 2, userMax: 1 };
 
 describe("voice admission (one process, no Redis)", () => {
+  it("applies quota defaults when older database settings have no new capacity keys", () => {
+    expect(admissionLimits({ voice_max_concurrent_calls: "20" }, "gemini-3.8-live").poolMax).toBe(1);
+    expect(admissionLimits({}, "gemini-3.8-live-extended-thinking").unavailable).toBe(true);
+  });
   beforeEach(() => resetAdmissionMemory());
+
+  it("reserves headroom under the reported 65k input-TPM limit, even with a higher configured seat count", async () => {
+    const caps = admissionLimits(
+      {
+        voice_standard_input_tpm: "65000",
+        voice_standard_reserved_tpm: "30000",
+        voice_max_concurrent_calls: "20",
+      },
+      "gemini-3.8-live",
+    );
+    expect(caps.poolMax).toBe(1);
+    const tooSmall = admissionLimits(
+      { voice_standard_input_tpm: "1000" },
+      "gemini-3.8-live",
+    );
+    expect(
+      await admitCall(
+        { pool: "m", callId: "blocked", user: user(1) },
+        tooSmall,
+      ),
+    ).toMatchObject({ ok: false, reason: "unavailable" });
+  });
+
+  it("refuses when shared state fails and production forbids the memory fallback", async () => {
+    const { getCacheRuntimeStatus } = await import("../../../lib/redis-client");
+    vi.mocked(getCacheRuntimeStatus).mockReturnValueOnce({
+      memoryFallbackAllowed: false,
+    } as ReturnType<typeof getCacheRuntimeStatus>);
+    expect(
+      await admitCall({ pool: "m", callId: "c", user: user(1) }, limits),
+    ).toMatchObject({ ok: false, reason: "unavailable" });
+  });
 
   it("fills a model's pool, then refuses, and a released seat is free again", async () => {
     const now = 1_000_000;

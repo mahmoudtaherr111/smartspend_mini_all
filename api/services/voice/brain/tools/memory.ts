@@ -3,12 +3,18 @@
  * It uses the app's one AI memory (`ai_memory_items`, `retrieveMemoryContext`), never a store of its own, and it
  * refuses to keep age or gender (the owner's decision), however the user phrases it.
  */
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { aiMemoryEmbeddings, aiMemoryItems } from "../../../../../db/schema";
 import { businessDateKey } from "../../../../lib/app-time";
 import { db } from "../../../../queries/connection";
 import { invalidateMemoryUserCache, retrieveMemoryContext } from "../../../ai-memory";
 import { readSlot, slotExpiry } from "../../../ai-memory/slots";
+import {
+  forgetConversationSummaries,
+  putMemory,
+  withMemoryOwnerLock,
+} from "../../../ai-memory/slot-store";
+import { forgetInPendingCalls } from "../../post-call";
 import { contentHash } from "../../../ai-memory/text-utils";
 import type { ToolRunOutcome } from "../../gateway/call-session";
 import { getSmartProfile } from "../../../user-profile-service";
@@ -36,7 +42,11 @@ async function search(query: string, ctx: ToolContext): Promise<ToolRunOutcome> 
   };
 }
 
-async function remember(fact: string, ctx: ToolContext, rawSlot?: unknown): Promise<ToolRunOutcome> {
+async function remember(
+  fact: string,
+  ctx: ToolContext,
+  rawSlot?: unknown,
+): Promise<ToolRunOutcome> {
   if (AGE_OR_GENDER.test(fact)) {
     return { response: { ok: false, error: "not_kept", say: "السن والنوع مش بنحفظهم. قول كده بلطف في جملة." } };
   }
@@ -52,19 +62,16 @@ async function remember(fact: string, ctx: ToolContext, rawSlot?: unknown): Prom
     ...(slot ? { slot: slot.slot } : {}),
     ...(until ? { validUntil: until.toISOString() } : {}),
   };
-  const scope = and(eq(aiMemoryItems.userId, ctx.identity.userId), eq(aiMemoryItems.userType, ctx.identity.userType));
   // A request the user dropped (the model cancelled the call, or it ran out of time) writes nothing.
   ctx.signal.throwIfAborted();
   // What the user says now is the slot's current value: an older one is replaced, not kept beside it.
-  if (slot) {
-    await db.update(aiMemoryItems).set({ status: "replaced" }).where(and(
-      scope,
-      eq(aiMemoryItems.status, "active"),
-      sql`JSON_UNQUOTE(JSON_EXTRACT(${aiMemoryItems.metadata}, '$.slot')) = ${slot.slot}`,
-    ));
-  }
   const memoryType = slot?.kind === "refusal" ? "refusal" : slot?.kind === "followup" ? "followup" : slot?.kind === "profile" || slot?.kind === "life" ? "fact" : slot?.kind === "goal" ? "plan" : "preference";
-  await db.insert(aiMemoryItems).values({
+  await withMemoryOwnerLock(ctx.identity, async (tx) => {
+    ctx.signal.throwIfAborted();
+    await putMemory(
+      tx,
+      ctx.identity,
+      {
     userId: ctx.identity.userId,
     userType: ctx.identity.userType,
     memoryType,
@@ -73,12 +80,18 @@ async function remember(fact: string, ctx: ToolContext, rawSlot?: unknown): Prom
     importance: 75,
     status: "active",
     metadata,
-  }).onDuplicateKeyUpdate({ set: { status: "active", memoryType, metadata, updatedAt: new Date() } });
+  },
+      now,
+    );
+  });
   await invalidateMemoryUserCache(ctx.identity.userId, ctx.identity.userType).catch(() => undefined);
   return { response: { ok: true, say: "قول إنك هتفتكر ده في جملة قصيرة." } };
 }
 
-async function forget(memoryId: number, ctx: ToolContext): Promise<ToolRunOutcome> {
+async function forget(
+  memoryId: number,
+  ctx: ToolContext,
+): Promise<ToolRunOutcome> {
   const scope = and(
     eq(aiMemoryItems.id, memoryId),
     eq(aiMemoryItems.userId, ctx.identity.userId),
@@ -88,12 +101,21 @@ async function forget(memoryId: number, ctx: ToolContext): Promise<ToolRunOutcom
   if (!item) return { response: { ok: false, error: "not_found", say: "مالقيتش الحاجة دي. دوّر بـ search الأول." } };
   ctx.signal.throwIfAborted();
   // Forgetting deletes the memory and its search vector; nothing of it is kept behind a status.
-  await db.delete(aiMemoryItems).where(scope);
-  await db.delete(aiMemoryEmbeddings).where(and(
+  await withMemoryOwnerLock(ctx.identity, async (tx) => {
+    ctx.signal.throwIfAborted();
+    await forgetInPendingCalls(ctx.identity, String(item.content ?? ""), tx);
+    await forgetConversationSummaries(tx, ctx.identity);
+    await tx.delete(aiMemoryItems).where(scope);
+    await tx
+      .delete(aiMemoryEmbeddings)
+      .where(
+        and(
     eq(aiMemoryEmbeddings.memoryItemId, memoryId),
     eq(aiMemoryEmbeddings.userId, ctx.identity.userId),
     eq(aiMemoryEmbeddings.userType, ctx.identity.userType),
-  ));
+  ),
+      );
+  });
   await invalidateMemoryUserCache(ctx.identity.userId, ctx.identity.userType).catch(() => undefined);
   // The words of this call may hold it too: the summary after the call is told to leave it out.
   ctx.forgotten?.push(String(item.content ?? ""));

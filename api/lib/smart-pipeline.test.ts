@@ -14,6 +14,19 @@ const baseInput = {
 };
 
 describe("smart pipeline person memory", () => {
+  it("keeps a spoken purchase refund incoming through the entire local pipeline", async () => {
+    const result = await runSmartPipeline({
+      ...baseInput,
+      userId: 955101,
+      text: "رجعت الجزمة للمحل وخدت تلتمية جنيه",
+    });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      amount: 300,
+      type: "expense",
+      direction: "incoming",
+    });
+  });
   it("asks who an unknown directed-payment person is without calling AI", async () => {
     const result = await runSmartPipeline({
       ...baseInput,
@@ -89,5 +102,4 @@ describe("smart pipeline person memory", () => {
     expect(result.clarificationQuestion).toContain("علاء");
     expect(result.items.map((item) => item.amount)).toEqual([400, 500]);
   });
-
 });

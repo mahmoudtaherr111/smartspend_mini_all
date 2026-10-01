@@ -64,7 +64,18 @@ const userScope = (table: { userId: unknown; userType: unknown }, userId: number
  * This deliberately owns the entire cascade so account deletion cannot drift
  * as different admin/self-delete entry points evolve.
  */
-export async function purgeUserData(tx: any, userId: number, userType: PurgeUserType): Promise<void> {
+export async function purgeUserData(
+  tx: any,
+  userId: number,
+  userType: PurgeUserType,
+): Promise<void> {
+  // Share the account-row lock with delayed memory writers before deleting any children.
+  const account = userType === "oauth" ? users : localUsers;
+  await tx
+    .select({ id: account.id })
+    .from(account)
+    .where(eq(account.id, userId))
+    .for("update");
   const [conversationRows, businessRows] = await Promise.all([
     tx
       .select({ id: chatConversations.id })

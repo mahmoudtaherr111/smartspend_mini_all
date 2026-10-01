@@ -19,6 +19,8 @@ import { admissionLimits, admitCall, releaseCall, tripBreaker } from "./admissio
 import { createVoiceSocketHandler } from "./socket";
 import { deleteCallState, loadCallState, saveCallState, saveTranscript, takeTicket } from "./store";
 import type { TicketPayload } from "./start-call";
+import { unifiedUser } from "../app-calls";
+import { resolveVoiceEntitlements } from "../../entitlements/voice";
 
 export interface VoiceGatewayOptions {
   appCalls: VoiceAppCalls;
@@ -31,7 +33,9 @@ const rememberCall = (callId: string) => {
   void summarizeCall(callId).catch(() => undefined);
 };
 
-export function createVoiceGateway(options: VoiceGatewayOptions): (ws: WebSocket) => void {
+export function createVoiceGateway(
+  options: VoiceGatewayOptions,
+): (ws: WebSocket) => void {
   return createVoiceSocketHandler({
     sessionDeps: (identity) => ({
       createEngine: async () => {
@@ -45,10 +49,39 @@ export function createVoiceGateway(options: VoiceGatewayOptions): (ws: WebSocket
       brain: createCallBrain({ app: options.appCalls }),
       seat: {
         async hold(model, joining) {
+          const settings = await getSystemSettings();
+          const currentUser = await unifiedUser(identity);
+          // Duration and cost were granted for this plan. A changed plan needs a fresh grant.
+          if (String(currentUser.plan ?? "free") !== identity.plan) return false;
+          identity.role = String(currentUser.role ?? "user");
+          const entitlement = resolveVoiceEntitlements(
+            currentUser,
+            settings,
+            { usedSecondsThisMonth: 0, spentTodayUsd: 0 },
+            "",
+          );
+          if (entitlement.killSwitch || !entitlement.enabled) return false;
+          if (
+            joining &&
+            model.includes("extended-thinking") &&
+            !entitlement.ultra
+          )
+            return false;
           const seat = { pool: model, callId: identity.callId, user: { id: identity.userId, type: identity.userType } };
-          return (await admitCall(seat, admissionLimits(await getSystemSettings(), model), Date.now(), { live: !joining })).ok;
+          return (
+            await admitCall(
+              seat,
+              admissionLimits(settings, model),
+              Date.now(),
+              { live: !joining },
+            )
+          ).ok;
         },
-        release: (model) => releaseCall({ pool: model, callId: identity.callId, user: { id: identity.userId, type: identity.userType } }),
+        release: (model, keepUser) =>
+          releaseCall(
+            { pool: model, callId: identity.callId, user: { id: identity.userId, type: identity.userType } },
+            { keepUser },
+          ),
         quota: async (model) => void (await tripBreaker(model)),
       },
       persistence: mysqlCallPersistence,
@@ -70,7 +103,9 @@ export type VoiceUpgradeHandler = (request: IncomingMessage, socket: Duplex, hea
  * refused. Both server entry points call it from their own `upgrade` listener.
  */
 export function createVoiceUpgradeHandler(
-  options: VoiceGatewayOptions & { isAllowedOrigin(origin: string | undefined): boolean },
+  options: VoiceGatewayOptions & {
+    isAllowedOrigin(origin: string | undefined): boolean;
+  },
 ): VoiceUpgradeHandler {
   const current = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
   const handleVoiceV2WebSocket = createVoiceGateway(options);

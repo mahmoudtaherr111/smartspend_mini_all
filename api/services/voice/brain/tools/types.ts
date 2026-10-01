@@ -26,6 +26,7 @@ export interface ParseOutcome {
 }
 
 export interface SaveExpenseItem extends ParsedExpenseItem {
+  businessId?: number;
   rawText: string;
   classificationLogId?: number;
   clientRequestId: string;
@@ -44,10 +45,22 @@ export interface BankSuggestion {
 
 /** "ليك وعليك", as the debts screen shows it (`expense.getDebtBalances`). */
 export interface DebtStanding {
-  people: Array<{ name: string; balance: number; lent: number; received: number; count: number; lastDate: string }>;
+  people: Array<{
+    name: string;
+    balance: number;
+    lent: number;
+    received: number;
+    count: number;
+    lastDate: string;
+  }>;
   owedToYou: number;
   youOwe: number;
-  gam3eya: { paid: number; received: number; held: number; installments: number };
+  gam3eya: {
+    paid: number;
+    received: number;
+    held: number;
+    installments: number;
+  };
 }
 
 /** An installment plan with what is left, as the installments screen shows it (`expense.listInstallmentPlans`). */
@@ -60,7 +73,7 @@ export interface InstallmentStanding {
   remaining: number;
   remainingAmount: number;
   /** linked: from payments tied to its due dates; keyword: from payments whose words name it. */
-  countedBy: "linked" | "keyword";
+  countedBy: "linked" | "keyword" | "ambiguous";
 }
 
 /** A season's personal spending and the same season a year before (`expense.getSeasonSpending`). */
@@ -92,7 +105,11 @@ export interface BudgetStatus {
  * entry points from the tRPC router; tests pass fakes.
  */
 export interface VoiceAppCalls {
-  parseExpense(identity: CallIdentity, text: string): Promise<ParseOutcome>;
+  parseExpense(
+    identity: CallIdentity,
+    text: string,
+    scope?: { businessId: number },
+  ): Promise<ParseOutcome>;
   saveExpenses(identity: CallIdentity, items: SaveExpenseItem[]): Promise<{ ids: number[] }>;
   /** Deletes the call's own records; answers how many were deleted, so a partial undo is said as one. */
   deleteExpenses(identity: CallIdentity, ids: number[]): Promise<{ deleted: number }>;
@@ -143,6 +160,7 @@ export interface ToolContext {
   coach?: boolean;
   /** What the user asked to forget during the call, handed to the post-call summary with the words (never stored). */
   forgotten?: string[];
+  beforeWrite?: (draftId: string) => Promise<boolean>;
 }
 
 export interface VoiceTool {

@@ -36,7 +36,10 @@ import {
 import type { AiPlanName } from "./ai-provider-registry";
 import { mapModelName } from "./model-mapper";
 import type { ParsedTransaction } from "./rule-engine";
-import { applyPersonResolution, type KnownPersonContext } from "./pipeline-person";
+import {
+  applyPersonResolution,
+  type KnownPersonContext,
+} from "./pipeline-person";
 import { normalizeArabicCompact as normalizeArabicString } from "./unified-normalizer";
 
 export { normalizeArabicString };
@@ -64,12 +67,19 @@ import {
   gateShortcutResult,
   withBlocker,
 } from "./final-acceptance";
-import { pickPersonCandidate, pickAllPersonCandidates, compactArabic } from "./person-resolver";
+import {
+  pickPersonCandidate,
+  pickAllPersonCandidates,
+  compactArabic,
+} from "./person-resolver";
 import { muscleMemoryLookup, userMemoryFingerprint } from "./muscle-memory";
 import { db } from "../queries/connection";
 import { expenses } from "../../db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { planFinancialEvents, type FinancialEventPlan } from "./financial-event-plan";
+import {
+  planFinancialEvents,
+  type FinancialEventPlan,
+} from "./financial-event-plan";
 import {
   classificationCacheKey,
   readCachedClassification,
@@ -78,7 +88,7 @@ import {
 } from "./classification-cache";
 
 /** Persisted alongside classification logs so observability reflects the active pipeline. */
-export const SMART_PIPELINE_VERSION = "v3.0";
+export const SMART_PIPELINE_VERSION = "v3.1";
 
 /**
  * The tenant segment of a cache key, in one place.
@@ -93,19 +103,52 @@ function tenantScope(userType: string, userId: number): string {
 }
 
 const PERSONAL_KEYWORDS = [
-  "فطرت", "اتعشيت", "اتغديت", "اكلت", "شربت", "قهوة", "كافيه",
-  "اوبر", "كريم", "مترو", "تاكسي", "بنزين", "مواصلات",
-  "كهرباء", "مياه", "غاز", "نت", "انترنت", "تليفون", "شحن",
-  "ايجار", "إيجار", "سكن",
-  "دكتور", "صيدلية", "دوا", "علاج",
-  "ملابس", "هاتف", "موبايل",
-  "سينما", "جيم", "نادي",
-  "مرتب", "راتب", "بونص", "جالي", "قبضت",
+  "فطرت",
+  "اتعشيت",
+  "اتغديت",
+  "اكلت",
+  "شربت",
+  "قهوة",
+  "كافيه",
+  "اوبر",
+  "كريم",
+  "مترو",
+  "تاكسي",
+  "بنزين",
+  "مواصلات",
+  "كهرباء",
+  "مياه",
+  "غاز",
+  "نت",
+  "انترنت",
+  "تليفون",
+  "شحن",
+  "ايجار",
+  "إيجار",
+  "سكن",
+  "دكتور",
+  "صيدلية",
+  "دوا",
+  "علاج",
+  "ملابس",
+  "هاتف",
+  "موبايل",
+  "سينما",
+  "جيم",
+  "نادي",
+  "مرتب",
+  "راتب",
+  "بونص",
+  "جالي",
+  "قبضت",
 ];
 
 const SALARY_PATTERN = /(?:مرتب|راتب|دفع\s+مرتب|اديت\s+مرتب|صرفت\s+مرتب)/;
 
-function isStructuralOrConjunction(text: string, candidates: string[] = []): boolean {
+function isStructuralOrConjunction(
+  text: string,
+  candidates: string[] = [],
+): boolean {
   if (!/\s+(?:او|أو)\s+/.test(text)) return false;
 
   // 1. If there are multiple candidates, check if 'أو' sits between any two of them
@@ -115,7 +158,9 @@ function isStructuralOrConjunction(text: string, candidates: string[] = []): boo
         const c1 = compactArabic(candidates[i]);
         const c2 = compactArabic(candidates[j]);
         const normText = compactArabic(text);
-        const reg = new RegExp(`${c1}.*?\\s+(?:او|أو)\\s+.*?${c2}|${c2}.*?\\s+(?:او|أو)\\s+.*?${c1}`);
+        const reg = new RegExp(
+          `${c1}.*?\\s+(?:او|أو)\\s+.*?${c2}|${c2}.*?\\s+(?:او|أو)\\s+.*?${c1}`,
+        );
         if (reg.test(normText)) return true;
       }
     }
@@ -124,7 +169,9 @@ function isStructuralOrConjunction(text: string, candidates: string[] = []): boo
   // 2. Or if 'أو' connects two alternative financial verbs / actions in this text
   const parts = text.split(/\s+(?:او|أو)\s+/);
   if (parts.length >= 2) {
-    const verbsFound = parts.filter(p => ALL_FINANCIAL_VERBS.some(v => p.includes(v)));
+    const verbsFound = parts.filter((p) =>
+      ALL_FINANCIAL_VERBS.some((v) => p.includes(v)),
+    );
     if (verbsFound.length >= 2) return true;
   }
 
@@ -213,7 +260,6 @@ export interface PipelineResult {
   logs?: PipelineLog[];
 }
 
-
 /**
  * Narrative order, by event identity rather than array position.
  *
@@ -236,17 +282,19 @@ function robustJsonParse(text: string): any {
   let cleaned = text;
   // 1. Remove <thought> blocks completely (if any)
   cleaned = cleaned.replace(/<thought>[\s\S]*?<\/thought>/gi, "");
-  
+
   // 2. Extract from markdown JSON blocks
   const matchMarkdown = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (matchMarkdown) {
-      cleaned = matchMarkdown[1];
+    cleaned = matchMarkdown[1];
   }
 
   try {
     return JSON.parse(cleaned.trim());
   } catch (e) {
-    console.warn("[JSON Fallback] Strict parse failed, attempting regex extraction...");
+    console.warn(
+      "[JSON Fallback] Strict parse failed, attempting regex extraction...",
+    );
     const match = cleaned.match(/\[.*\]|\{.*\}/s);
     if (match) {
       try {
@@ -262,8 +310,6 @@ function robustJsonParse(text: string): any {
     return [];
   }
 }
-
-
 
 function settingBoolean(
   settings: Record<string, string>,
@@ -288,81 +334,172 @@ function extractKeywords(text: string): string[] {
   const words = text
     .replace(/[^\u0600-\u06FFa-zA-Z0-9\s]/g, " ")
     .split(/\s+/)
-    .map(w => w.trim())
-    .filter(w => w.length >= 3);
-  
+    .map((w) => w.trim())
+    .filter((w) => w.length >= 3);
+
   const stopWords = new Set([
-    "دفعت", "صرفت", "اشتريت", "جبت", "ركبت", "اكلت", "شربت", "حولت", "بعت", "سلفت", "دفعتل",
-    "جنيه", "الف", "مليون", "مبلغ", "فلوس", "حساب", "طريق", "طريقه", "طريقة", "عشان", "علشان",
-    "بتاع", "بتاعتي", "بتاعته", "بتاعتنا", "معاها", "معاه", "معاهم"
+    "دفعت",
+    "صرفت",
+    "اشتريت",
+    "جبت",
+    "ركبت",
+    "اكلت",
+    "شربت",
+    "حولت",
+    "بعت",
+    "سلفت",
+    "دفعتل",
+    "جنيه",
+    "الف",
+    "مليون",
+    "مبلغ",
+    "فلوس",
+    "حساب",
+    "طريق",
+    "طريقه",
+    "طريقة",
+    "عشان",
+    "علشان",
+    "بتاع",
+    "بتاعتي",
+    "بتاعته",
+    "بتاعتنا",
+    "معاها",
+    "معاه",
+    "معاهم",
   ]);
-  
-  return words.filter(w => !stopWords.has(w));
+
+  return words.filter((w) => !stopWords.has(w));
 }
 
 /**
  * Smart Pipeline (v3) - Hybrid Intelligence
  */
 export async function runSmartPipeline(
-  input: PipelineInput
+  input: PipelineInput,
 ): Promise<PipelineResult> {
   const started = Date.now();
   const knownPeople = Array.isArray(input.userProfileContext?.knownPeople)
-    ? input.userProfileContext.knownPeople as KnownPersonContext[] : [];
-  const plan = planFinancialEvents(input.text, knownPeople.map((person) => person.name));
+    ? (input.userProfileContext.knownPeople as KnownPersonContext[])
+    : [];
+  const plan = planFinancialEvents(
+    input.text,
+    knownPeople.map((person) => person.name),
+  );
   if (plan.admitted.length === 0) {
     const admissibility = checkAdmissibility(input.text);
-    const question = plan.pending.length > 0 && admissibility.verdict === "financial"
-      ? `المبلغ كام للعملية: «${plan.pending[0].text}»؟`
-      : plan.events.some((event) => event.status === "rejected")
-        ? "الكلام فيه عملية منفية أو لسه مخططة أو سؤال، فما سجلتش مصروف. وضّح العملية اللي تمت فعلاً."
-        : admissibility.userMessage || "ممكن توضح المبلغ والحاجة اللي دفعت فيها؟";
-    return { items: [], decision: "clarify", overallConfidence: 0, tokensUsed: 0,
-      parsedBy: "system", modelUsed: mapModelName(input.modelName), actualModelUsed: null,
-      processingTimeMs: Date.now() - started, clarificationQuestion: question,
-      log: { originalText: input.text, finalDecision: "clarify", finalConfidence: 0,
-        routing: { route: "financial_event_gate", events: plan.events } } };
+    const question =
+      plan.pending.length > 0 && admissibility.verdict === "financial"
+        ? `المبلغ كام للعملية: «${plan.pending[0].text}»؟`
+        : plan.events.some((event) => event.status === "rejected")
+          ? "الكلام فيه عملية منفية أو لسه مخططة أو سؤال، فما سجلتش مصروف. وضّح العملية اللي تمت فعلاً."
+          : admissibility.userMessage ||
+            "ممكن توضح المبلغ والحاجة اللي دفعت فيها؟";
+    return {
+      items: [],
+      decision: "clarify",
+      overallConfidence: 0,
+      tokensUsed: 0,
+      parsedBy: "system",
+      modelUsed: mapModelName(input.modelName),
+      actualModelUsed: null,
+      processingTimeMs: Date.now() - started,
+      clarificationQuestion: question,
+      log: {
+        originalText: input.text,
+        finalDecision: "clarify",
+        finalConfidence: 0,
+        routing: { route: "financial_event_gate", events: plan.events },
+      },
+    };
   }
   // Rejected amounts never re-enter recovery or the category prompt.
-  const result = await classifyAdmittedEvents({ ...input,
-    text: plan.admitted.map((event) => event.text).join(" و ") }, plan);
+  const result = await classifyAdmittedEvents(
+    { ...input, text: plan.admitted.map((event) => event.text).join(" و ") },
+    plan,
+  );
   let items: ParsedTransaction[] = result.items.map((item) => {
-    const event = plan.admitted.find((event) => event.segmentIndex === item.sourceEventId) ||
-      (plan.admitted.length === 1 ? plan.admitted[0] : undefined);
-    return { ...item, sourceEventId: event?.segmentIndex ?? item.sourceEventId,
-      reviewReasons: [...new Set([...(item.reviewReasons || []), ...(event?.reviewReasons || [])])],
-      needsReview: item.needsReview || Boolean(event?.reviewReasons.length) };
+    const event =
+      plan.admitted.find(
+        (event) => event.segmentIndex === item.sourceEventId,
+      ) || (plan.admitted.length === 1 ? plan.admitted[0] : undefined);
+    return {
+      ...item,
+      sourceEventId: event?.segmentIndex ?? item.sourceEventId,
+      reviewReasons: [
+        ...new Set([
+          ...(item.reviewReasons || []),
+          ...(event?.reviewReasons || []),
+        ]),
+      ],
+      needsReview: item.needsReview || Boolean(event?.reviewReasons.length),
+    };
   });
   // Reconcile within each event, not by a bag of amounts across the message.
-  const missing = plan.admitted.filter((event) => !reconcileAmounts(
-    buildAnchors(extractAmounts(event.text).map((amount) => amount.amount)),
-    items.filter((item) => item.sourceEventId === event.segmentIndex),
-  ).balanced);
-  const unbound = items.some((item) => !plan.admitted.some((event) => event.segmentIndex === item.sourceEventId));
+  const missing = plan.admitted.filter(
+    (event) =>
+      !reconcileAmounts(
+        buildAnchors(extractAmounts(event.text).map((amount) => amount.amount)),
+        items.filter((item) => item.sourceEventId === event.segmentIndex),
+      ).balanced,
+  );
+  const unbound = items.some(
+    (item) =>
+      !plan.admitted.some((event) => event.segmentIndex === item.sourceEventId),
+  );
   let decision = result.decision;
   let clarificationQuestion = result.clarificationQuestion;
-  const totalMismatch = plan.totals.some((total) => toCents(total) !== items.reduce((sum, item) => sum + toCents(item.amount), 0));
+  const totalMismatch = plan.totals.some(
+    (total) =>
+      toCents(total) !==
+      items.reduce((sum, item) => sum + toCents(item.amount), 0),
+  );
   if (totalMismatch) {
     decision = "clarify";
-    clarificationQuestion = "الإجمالي اللي ذكرته مختلف عن مجموع العمليات. ممكن تأكد المبالغ؟";
+    clarificationQuestion =
+      "الإجمالي اللي ذكرته مختلف عن مجموع العمليات. ممكن تأكد المبالغ؟";
     items = items.map((item) => withBlocker(item, "stated_total_mismatch"));
   } else if (plan.pending.length > 0 || missing.length > 0 || unbound) {
     decision = "clarify";
-    const pendingText = [...plan.pending, ...missing].map((event) => `«${event.text}»`).join("، ");
+    const pendingText = [...plan.pending, ...missing]
+      .map((event) => `«${event.text}»`)
+      .join("، ");
     clarificationQuestion = `محتاج توضح المبلغ وتوزيعه للعملية: ${pendingText || "العمليات المذكورة"}؟`;
     items = items.map((item) => withBlocker(item, "event_incomplete"));
-  } else if (items.some((item) => (item.reviewReasons || []).length > 0) && decision === "auto_save") {
+  } else if (
+    items.some((item) => (item.reviewReasons || []).length > 0) &&
+    decision === "auto_save"
+  ) {
     decision = "review";
   }
-  const finalConfidence = decision === "clarify" || items.length === 0 ? 0
-    : Math.min(...items.map((item) => Number.isFinite(item.confidence) ? item.confidence : 0));
-  return { ...result, items, decision, clarificationQuestion,
+  const finalConfidence =
+    decision === "clarify" || items.length === 0
+      ? 0
+      : Math.min(
+          ...items.map((item) =>
+            Number.isFinite(item.confidence) ? item.confidence : 0,
+          ),
+        );
+  return {
+    ...result,
+    items,
+    decision,
+    clarificationQuestion,
     overallConfidence: finalConfidence,
     processingTimeMs: Date.now() - started,
-    log: { ...result.log, originalText: input.text, finalDecision: decision,
+    log: {
+      ...result.log,
+      originalText: input.text,
+      finalDecision: decision,
       finalConfidence,
-      routing: { ...result.log.routing, events: plan.events, statedTotals: plan.totals,
-        eventLedgerBalanced: missing.length === 0 && !unbound && !totalMismatch } } };
+      routing: {
+        ...result.log.routing,
+        events: plan.events,
+        statedTotals: plan.totals,
+        eventLedgerBalanced: missing.length === 0 && !unbound && !totalMismatch,
+      },
+    },
+  };
 }
 
 async function classifyAdmittedEvents(
@@ -392,7 +529,6 @@ async function classifyAdmittedEvents(
   )
     ? input.userProfileContext.knownPeople
     : [];
-
 
   // 1. Normalize (Light Normalization for AI, aggressive for rules)
   const normalized = normalizeV2(input.text);
@@ -435,7 +571,12 @@ async function classifyAdmittedEvents(
     key: string,
     legacyKey: string,
     fallback: number,
-  ): number => settingNumber(pipelineSettings, key, settingNumber(pipelineSettings, legacyKey, fallback));
+  ): number =>
+    settingNumber(
+      pipelineSettings,
+      key,
+      settingNumber(pipelineSettings, legacyKey, fallback),
+    );
 
   const autoSaveThreshold = resolveThreshold(
     "parser_auto_save_threshold",
@@ -466,9 +607,9 @@ async function classifyAdmittedEvents(
   const countAmounts = (text: string): number => extractAmounts(text).length;
 
   const countWords = (text: string): number => {
-    return text.split(/\s+/).filter(w => w.length > 0).length;
+    return text.split(/\s+/).filter((w) => w.length > 0).length;
   };
-  
+
   const numAmounts = countAmounts(normalizedText);
   const numWords = countWords(normalizedText);
 
@@ -539,7 +680,12 @@ async function classifyAdmittedEvents(
     log: {
       originalText: input.text,
       normalizedText,
-      routing: { route, ...routing, gateReason: gate.reason, blockers: gate.blockers },
+      routing: {
+        route,
+        ...routing,
+        gateReason: gate.reason,
+        blockers: gate.blockers,
+      },
       finalConfidence: gate.overallConfidence,
       finalDecision: gate.decision,
     },
@@ -553,7 +699,9 @@ async function classifyAdmittedEvents(
   // so both are read now, together; the rules are reused below.
   const [loadedRules, memoryFingerprint] = await Promise.all([
     loadCorrectionRules(input.userId, input.userType),
-    userMemoryFingerprint(input.userId, input.userType).catch(() => "unavailable"),
+    userMemoryFingerprint(input.userId, input.userType).catch(
+      () => "unavailable",
+    ),
   ]);
   correctionRules = loadedRules;
   const cacheKey = classificationCacheKey({
@@ -603,8 +751,11 @@ async function classifyAdmittedEvents(
   // to attach the correct person info. If the person is known → auto_save.
   // If unknown → clarify (don't auto-save an unknown person).
   try {
-    const memoryMatch = eventPlan.events.length === 1 && eventPlan.admitted[0].reviewReasons.length === 0
-      ? await muscleMemoryLookup(input.text, input.userId, input.userType) : null;
+    const memoryMatch =
+      eventPlan.events.length === 1 &&
+      eventPlan.admitted[0].reviewReasons.length === 0
+        ? await muscleMemoryLookup(input.text, input.userId, input.userType)
+        : null;
     if (memoryMatch && memoryMatch.matchScore >= 90 && memoryMatch.amount > 0) {
       const memItem: ParsedTransaction = {
         amount: memoryMatch.amount,
@@ -648,7 +799,13 @@ async function classifyAdmittedEvents(
 
         for (const candidateName of memCandidates) {
           const personApplied = applyPersonResolution(
-            { ...memItem, amount: memCandidates.length > 1 ? Number((memItem.amount / memCandidates.length).toFixed(2)) : memItem.amount },
+            {
+              ...memItem,
+              amount:
+                memCandidates.length > 1
+                  ? Number((memItem.amount / memCandidates.length).toFixed(2))
+                  : memItem.amount,
+            },
             candidateName,
             input.text,
             input.text,
@@ -664,7 +821,10 @@ async function classifyAdmittedEvents(
 
         if (memNeedsClarification) {
           const memResult: PipelineResult = {
-            items: memResolvedItems.length > 0 ? memResolvedItems : [{ ...memItem, needsReview: true, confidence: 60 }],
+            items:
+              memResolvedItems.length > 0
+                ? memResolvedItems
+                : [{ ...memItem, needsReview: true, confidence: 60 }],
             decision: "clarify",
             clarificationQuestion: memClarificationQ,
             overallConfidence: 0,
@@ -676,7 +836,11 @@ async function classifyAdmittedEvents(
             processingTimeMs: Date.now() - startTime,
             log: {
               originalText: input.text,
-              routing: { route: "muscle_memory", reason: "person_needs_clarification", matchScore: memoryMatch.matchScore },
+              routing: {
+                route: "muscle_memory",
+                reason: "person_needs_clarification",
+                matchScore: memoryMatch.matchScore,
+              },
               finalConfidence: 0,
               finalDecision: "clarify",
             },
@@ -731,7 +895,12 @@ async function classifyAdmittedEvents(
   // for the text. If business_score dominates → classify as business.
   // If personal_score dominates → let normal pipeline handle it (personal).
   // If close → tag as ambiguous and let the normal pipeline + AI decide.
-  let businessMatchResult: { categoryId: number; nameAr: string; type: string; score: number } | null = null;
+  let businessMatchResult: {
+    categoryId: number;
+    nameAr: string;
+    type: string;
+    score: number;
+  } | null = null;
   let businessScoreTotal = 0;
   let personalScoreTotal = 0;
 
@@ -765,12 +934,23 @@ async function classifyAdmittedEvents(
         }
       }
 
-      if (bizCat.nameAr && matchArabicPhrase(scoringNormalized, bizCat.nameAr)) {
+      if (
+        bizCat.nameAr &&
+        matchArabicPhrase(scoringNormalized, bizCat.nameAr)
+      ) {
         catScore += 20;
       }
 
-      if (catScore > 0 && (!businessMatchResult || catScore > businessMatchResult.score)) {
-        businessMatchResult = { categoryId: bizCat.id, nameAr: bizCat.nameAr, type: bizCat.type, score: catScore };
+      if (
+        catScore > 0 &&
+        (!businessMatchResult || catScore > businessMatchResult.score)
+      ) {
+        businessMatchResult = {
+          categoryId: bizCat.id,
+          nameAr: bizCat.nameAr,
+          type: bizCat.type,
+          score: catScore,
+        };
       }
       businessScoreTotal += catScore;
     }
@@ -786,15 +966,31 @@ async function classifyAdmittedEvents(
     // --- Salary detection in business mode ---
     // "دفعت مرتب فلان" or "اديت مرتب" → business salary expense
     const hasSalaryKeyword = SALARY_PATTERN.test(scoringNormalized);
-    if (hasSalaryKeyword && input.businessCategories.some(c => c.nameAr.includes("مرتب") || c.nameAr.includes("رواتب") || c.nameAr.includes("عمال"))) {
+    if (
+      hasSalaryKeyword &&
+      input.businessCategories.some(
+        (c) =>
+          c.nameAr.includes("مرتب") ||
+          c.nameAr.includes("رواتب") ||
+          c.nameAr.includes("عمال"),
+      )
+    ) {
       businessScoreTotal += 25;
       if (businessMatchResult) {
         // Override to salary category if available
-        const salaryCat = input.businessCategories.find(c =>
-          c.nameAr.includes("مرتب") || c.nameAr.includes("رواتب") || c.nameAr.includes("عمال")
+        const salaryCat = input.businessCategories.find(
+          (c) =>
+            c.nameAr.includes("مرتب") ||
+            c.nameAr.includes("رواتب") ||
+            c.nameAr.includes("عمال"),
         );
         if (salaryCat) {
-          businessMatchResult = { categoryId: salaryCat.id, nameAr: salaryCat.nameAr, type: salaryCat.type, score: businessMatchResult.score + 25 };
+          businessMatchResult = {
+            categoryId: salaryCat.id,
+            nameAr: salaryCat.nameAr,
+            type: salaryCat.type,
+            score: businessMatchResult.score + 25,
+          };
         }
       }
     }
@@ -802,7 +998,11 @@ async function classifyAdmittedEvents(
     // --- Decision based on score difference ---
     const scoreDiff = businessScoreTotal - personalScoreTotal;
 
-    if (businessMatchResult && businessMatchResult.score >= 15 && scoreDiff >= 10) {
+    if (
+      businessMatchResult &&
+      businessMatchResult.score >= 15 &&
+      scoreDiff >= 10
+    ) {
       // Strong business match — classify immediately (0 tokens)
       const bizAmounts = extractAmounts(input.text);
       const bizAmount = bizAmounts.length > 0 ? bizAmounts[0].amount : 0;
@@ -828,9 +1028,11 @@ async function classifyAdmittedEvents(
         // A "strong" keyword scores 50; anything below that is not a verb speaking, it
         // is a noun leaking. Only a strong, unambiguous reading is allowed to override.
         const spokenDirection: "income" | "expense" | null =
-          bizIntent.incomeScore >= 50 && bizIntent.incomeScore > bizIntent.expenseScore
+          bizIntent.incomeScore >= 50 &&
+          bizIntent.incomeScore > bizIntent.expenseScore
             ? "income"
-            : bizIntent.expenseScore >= 50 && bizIntent.expenseScore > bizIntent.incomeScore
+            : bizIntent.expenseScore >= 50 &&
+                bizIntent.expenseScore > bizIntent.incomeScore
               ? "expense"
               : null;
         const categoryType: "income" | "expense" =
@@ -844,7 +1046,11 @@ async function classifyAdmittedEvents(
         let bizPersonRel: string | undefined;
         if (hasSalaryKeyword) {
           const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
-          const candidates = pickAllPersonCandidates(null, input.text, knownNames);
+          const candidates = pickAllPersonCandidates(
+            null,
+            input.text,
+            knownNames,
+          );
           if (candidates.length > 0) {
             bizPerson = candidates[0];
             bizPersonRel = "موظف";
@@ -1013,9 +1219,14 @@ async function classifyAdmittedEvents(
   };
 
   /** Locally accepted items also get an identity, so narrative order is reconstructable. */
-  const registerAccepted = (items: ParsedTransaction[]): ParsedTransaction[] => {
+  const registerAccepted = (
+    items: ParsedTransaction[],
+  ): ParsedTransaction[] => {
     const clauseId = ++nextClauseId;
-    return items.map((item) => ({ ...item, sourceEventId: item.sourceEventId ?? clauseId }));
+    return items.map((item) => ({
+      ...item,
+      sourceEventId: item.sourceEventId ?? clauseId,
+    }));
   };
 
   // Fast path for long/multi-transaction narratives: classify each segment locally.
@@ -1025,10 +1236,11 @@ async function classifyAdmittedEvents(
 
     for (const segment of decomposition.segments) {
       const segmentText = segment.text.trim();
-      const segmentTextWithVerb = (segment.linkedVerb && !segmentText.includes(segment.linkedVerb))
-        ? `${segment.linkedVerb} ${segmentText}`
-        : segmentText;
-        
+      const segmentTextWithVerb =
+        segment.linkedVerb && !segmentText.includes(segment.linkedVerb)
+          ? `${segment.linkedVerb} ${segmentText}`
+          : segmentText;
+
       const segmentNormalized = normalizeV2(segmentTextWithVerb).forRules;
       const segmentAmountCount = countAmounts(segmentNormalized);
       const segmentRule = await runRuleEngine(
@@ -1036,10 +1248,17 @@ async function classifyAdmittedEvents(
         input.userDict,
         input.userProfileContext,
       );
-      segmentRule.items = segmentRule.items.map((item) => ({ ...item,
+      segmentRule.items = segmentRule.items.map((item) => ({
+        ...item,
         sourceEventId: segment.segmentIndex,
-        reviewReasons: [...new Set([...(item.reviewReasons || []),
-          ...(eventPlan.admitted.find((event) => event.segmentIndex === segment.segmentIndex)?.reviewReasons || [])])],
+        reviewReasons: [
+          ...new Set([
+            ...(item.reviewReasons || []),
+            ...(eventPlan.admitted.find(
+              (event) => event.segmentIndex === segment.segmentIndex,
+            )?.reviewReasons || []),
+          ]),
+        ],
       }));
       if (segmentRule.items.length === 0) {
         // Nothing extracted here. Before paying a model to look at it, ask whether it is
@@ -1077,44 +1296,57 @@ async function classifyAdmittedEvents(
       const segmentResolvedItems: ParsedTransaction[] = [];
 
       for (const item of segmentRule.items) {
-          const candidates = pickAllPersonCandidates(
-            item.person_mentioned || segment.personMentioned,
-            segmentTextWithVerb,
-            knownNames,
-          );
+        const candidates = pickAllPersonCandidates(
+          item.person_mentioned || segment.personMentioned,
+          segmentTextWithVerb,
+          knownNames,
+        );
 
-          if (candidates.length > 0) {
-            const hasOrConjunction = isStructuralOrConjunction(segmentTextWithVerb, candidates);
-            const splitAmount = segmentAmountCount === 1 && candidates.length > 1 && segmentRule.items.length === 1 && !hasOrConjunction
-              ? Number((item.amount / candidates.length).toFixed(2)) 
+        if (candidates.length > 0) {
+          const hasOrConjunction = isStructuralOrConjunction(
+            segmentTextWithVerb,
+            candidates,
+          );
+          const splitAmount =
+            segmentAmountCount === 1 &&
+            candidates.length > 1 &&
+            segmentRule.items.length === 1 &&
+            !hasOrConjunction
+              ? Number((item.amount / candidates.length).toFixed(2))
               : item.amount;
 
-            for (const candidateName of candidates) {
-              const clonedItem = { 
-                ...item, 
-                amount: splitAmount,
-                needsReview: hasOrConjunction ? true : item.needsReview,
-                confidence: hasOrConjunction ? Math.min(item.confidence, 50) : item.confidence
-              };
-              const personApplied = personMemoryEnabled
-                ? applyPersonResolution(
-                    clonedItem,
-                    candidateName,
-                    segmentTextWithVerb,
-                    input.text,
-                    knownPeople,
-                  )
-                : { item: clonedItem, needsClarification: false, clarificationQuestion: undefined };
-              
-              if (personApplied.needsClarification) {
-                anyNeedsClarification = true;
-                localUnknownNames.push(candidateName);
-              }
-              segmentResolvedItems.push(personApplied.item);
+          for (const candidateName of candidates) {
+            const clonedItem = {
+              ...item,
+              amount: splitAmount,
+              needsReview: hasOrConjunction ? true : item.needsReview,
+              confidence: hasOrConjunction
+                ? Math.min(item.confidence, 50)
+                : item.confidence,
+            };
+            const personApplied = personMemoryEnabled
+              ? applyPersonResolution(
+                  clonedItem,
+                  candidateName,
+                  segmentTextWithVerb,
+                  input.text,
+                  knownPeople,
+                )
+              : {
+                  item: clonedItem,
+                  needsClarification: false,
+                  clarificationQuestion: undefined,
+                };
+
+            if (personApplied.needsClarification) {
+              anyNeedsClarification = true;
+              localUnknownNames.push(candidateName);
             }
-          } else {
-            segmentResolvedItems.push(item);
+            segmentResolvedItems.push(personApplied.item);
           }
+        } else {
+          segmentResolvedItems.push(item);
+        }
       }
 
       // Does this segment need the model?
@@ -1135,11 +1367,17 @@ async function classifyAdmittedEvents(
       corrected.appliedRuleIds.forEach(noteRuleApplied);
 
       const calibratedSegment = applyCalibration(
-        corrected.items.map((item) => ({ ...item, clause: segmentTextWithVerb })),
+        corrected.items.map((item) => ({
+          ...item,
+          clause: segmentTextWithVerb,
+        })),
       );
       const segmentItems = calibratedSegment.items;
       const amountsFullyConsumed = reconcileAmounts(
-        buildAnchors(extractAmounts(segmentNormalized).map((amount) => amount.amount)), segmentItems,
+        buildAnchors(
+          extractAmounts(segmentNormalized).map((amount) => amount.amount),
+        ),
+        segmentItems,
       ).balanced;
 
       const escalations = segmentItems.map((it) =>
@@ -1169,9 +1407,10 @@ async function classifyAdmittedEvents(
 
       if (anyNeedsClarification) {
         const uniqueUnknowns = Array.from(new Set(localUnknownNames));
-        localClarification = uniqueUnknowns.length === 1 
-          ? `مين ${uniqueUnknowns[0]}؟ (أخوك، صديقك، موظف عندك...)`
-          : `محتاج أوضح دول مين: ${uniqueUnknowns.join(" و ")}؟`;
+        localClarification =
+          uniqueUnknowns.length === 1
+            ? `مين ${uniqueUnknowns[0]}؟ (أخوك، صديقك، موظف عندك...)`
+            : `محتاج أوضح دول مين: ${uniqueUnknowns.join(" و ")}؟`;
         decision = "clarify";
         clarificationQuestion = localClarification;
         overallConfidence = 0;
@@ -1187,85 +1426,110 @@ async function classifyAdmittedEvents(
         overallConfidence = localClarification
           ? 0
           : Math.round(
-              localSucceededItems.reduce((sum, item) => sum + item.confidence, 0) /
-                localSucceededItems.length,
+              localSucceededItems.reduce(
+                (sum, item) => sum + item.confidence,
+                0,
+              ) / localSucceededItems.length,
             );
       }
     } else {
       finalItems.push(...localSucceededItems);
     }
   }
-  
+
   // Only trust Rule Engine for short phrases (<= 30 words) with max 5 amounts
-  if (!ruleSucceeded && failedSegments.length === 0 && numAmounts <= 5 && numWords <= 30) {
-    ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext,);
-    
+  if (
+    !ruleSucceeded &&
+    failedSegments.length === 0 &&
+    numAmounts <= 5 &&
+    numWords <= 30
+  ) {
+    ruleResult = await runRuleEngine(
+      normalizedText,
+      input.userDict,
+      input.userProfileContext,
+    );
+
     if (ruleResult.items.length > 0) {
       const segmentResolvedItems: ParsedTransaction[] = [];
       let anyNeedsClarification = false;
       const localUnknownNames: string[] = [];
 
       for (const item of ruleResult.items) {
-          // Names are looked for in the normalized text, not the raw utterance: Franco
-          // becomes Arabic during normalization, so "7awalt 500 gneh l Ahmed" carried no
-          // Arabic name at all here and the friend was never resolved — while the same
-          // sentence inside a longer narrative resolved fine, because that path already
-          // passed the normalized segment.
-          const candidates = pickAllPersonCandidates(
-            item.person_mentioned,
-            normalizedText,
-            knownNames,
-          );
+        // Names are looked for in the normalized text, not the raw utterance: Franco
+        // becomes Arabic during normalization, so "7awalt 500 gneh l Ahmed" carried no
+        // Arabic name at all here and the friend was never resolved — while the same
+        // sentence inside a longer narrative resolved fine, because that path already
+        // passed the normalized segment.
+        const candidates = pickAllPersonCandidates(
+          item.person_mentioned,
+          normalizedText,
+          knownNames,
+        );
 
-          if (candidates.length > 0) {
-            // Only split amount if there's exactly 1 amount detected overall BUT multiple candidates 
-            // AND we only found 1 item from rule engine (to avoid double splitting)
-            const hasOrConjunction = isStructuralOrConjunction(input.text, candidates);
-            const splitAmount = numAmounts === 1 && candidates.length > 1 && ruleResult.items.length === 1 && !hasOrConjunction
-              ? Number((item.amount / candidates.length).toFixed(2)) 
+        if (candidates.length > 0) {
+          // Only split amount if there's exactly 1 amount detected overall BUT multiple candidates
+          // AND we only found 1 item from rule engine (to avoid double splitting)
+          const hasOrConjunction = isStructuralOrConjunction(
+            input.text,
+            candidates,
+          );
+          const splitAmount =
+            numAmounts === 1 &&
+            candidates.length > 1 &&
+            ruleResult.items.length === 1 &&
+            !hasOrConjunction
+              ? Number((item.amount / candidates.length).toFixed(2))
               : item.amount;
 
-            for (const candidateName of candidates) {
-              const clonedItem = { 
-                ...item, 
-                amount: splitAmount,
-                needsReview: hasOrConjunction ? true : item.needsReview,
-                confidence: hasOrConjunction ? Math.min(item.confidence, 50) : item.confidence
-              };
-              const personApplied = personMemoryEnabled
-                ? applyPersonResolution(
-                    clonedItem,
-                    candidateName,
-                    normalizedText,
-                    input.text,
-                    knownPeople,
-                  )
-                : { item: clonedItem, needsClarification: false, clarificationQuestion: undefined };
+          for (const candidateName of candidates) {
+            const clonedItem = {
+              ...item,
+              amount: splitAmount,
+              needsReview: hasOrConjunction ? true : item.needsReview,
+              confidence: hasOrConjunction
+                ? Math.min(item.confidence, 50)
+                : item.confidence,
+            };
+            const personApplied = personMemoryEnabled
+              ? applyPersonResolution(
+                  clonedItem,
+                  candidateName,
+                  normalizedText,
+                  input.text,
+                  knownPeople,
+                )
+              : {
+                  item: clonedItem,
+                  needsClarification: false,
+                  clarificationQuestion: undefined,
+                };
 
-              if (personApplied.needsClarification) {
-                anyNeedsClarification = true;
-                localUnknownNames.push(candidateName);
-              }
-              segmentResolvedItems.push(personApplied.item);
+            if (personApplied.needsClarification) {
+              anyNeedsClarification = true;
+              localUnknownNames.push(candidateName);
             }
-          } else {
-            segmentResolvedItems.push(item);
+            segmentResolvedItems.push(personApplied.item);
           }
+        } else {
+          segmentResolvedItems.push(item);
+        }
       }
 
       if (anyNeedsClarification) {
         const uniqueUnknowns = Array.from(new Set(localUnknownNames));
-        const localClarification = uniqueUnknowns.length === 1 
-          ? `مين ${uniqueUnknowns[0]}؟ (أخوك، صديقك، موظف عندك...)`
-          : `محتاج أوضح دول مين: ${uniqueUnknowns.join(" و ")}؟`;
-        
+        const localClarification =
+          uniqueUnknowns.length === 1
+            ? `مين ${uniqueUnknowns[0]}؟ (أخوك، صديقك، موظف عندك...)`
+            : `محتاج أوضح دول مين: ${uniqueUnknowns.join(" و ")}؟`;
+
         finalItems.push(...segmentResolvedItems);
         ruleSucceeded = true;
         decision = "clarify";
         clarificationQuestion = localClarification;
         overallConfidence = 0;
       }
-      
+
       const isPro = input.userPlan === "pro" || input.userPlan === "ultra";
 
       if (ruleSucceeded) {
@@ -1288,8 +1552,9 @@ async function classifyAdmittedEvents(
         let lowestConfidence = 100;
         let hasMutaNawi3at = false;
         for (const item of wholeItems) {
-            if ((item.confidence || 0) < lowestConfidence) lowestConfidence = item.confidence || 0;
-            if (item.category === "متنوعات") hasMutaNawi3at = true;
+          if ((item.confidence || 0) < lowestConfidence)
+            lowestConfidence = item.confidence || 0;
+          if (item.category === "متنوعات") hasMutaNawi3at = true;
         }
 
         const wholeEscalations = wholeItems.map((it) =>
@@ -1307,19 +1572,19 @@ async function classifyAdmittedEvents(
         const mustEscalate = wholeEscalations.some((e) => e.escalate);
 
         if (!mustEscalate) {
-            const acceptedWhole = registerAccepted(wholeItems);
-            finalItems.push(...acceptedWhole);
-            ruleSucceeded = true;
-            // Per item, not on the group's weakest score alone: `hasBlockingFlag` and
-            // `hasUnpricedItem` are properties of individual items, and folding them into
-            // one call let a clean sibling's numbers answer for a flagged one.
-            const outcome = decidePerItem(acceptedWhole, {
-              amountsFullyConsumed: acceptedWhole.length >= numAmounts,
-              needsAnswer: false,
-              thresholds: decisionThresholds,
-            });
-            decision = outcome.decision;
-            overallConfidence = outcome.weakestConfidence;
+          const acceptedWhole = registerAccepted(wholeItems);
+          finalItems.push(...acceptedWhole);
+          ruleSucceeded = true;
+          // Per item, not on the group's weakest score alone: `hasBlockingFlag` and
+          // `hasUnpricedItem` are properties of individual items, and folding them into
+          // one call let a clean sibling's numbers answer for a flagged one.
+          const outcome = decidePerItem(acceptedWhole, {
+            amountsFullyConsumed: acceptedWhole.length >= numAmounts,
+            needsAnswer: false,
+            thresholds: decisionThresholds,
+          });
+          decision = outcome.decision;
+          overallConfidence = outcome.weakestConfidence;
         } else {
           // Escalating: keep what the whole-text pass already resolved so an unavailable
           // model degrades the answer instead of erasing it. Without this, a single-clause
@@ -1334,7 +1599,9 @@ async function classifyAdmittedEvents(
             {
               text: input.text,
               amount: null,
-              direction: (wholeItems[0]?.type as DecomposedSegment["direction"]) || "unknown",
+              direction:
+                (wholeItems[0]?.type as DecomposedSegment["direction"]) ||
+                "unknown",
               linkedVerb: null,
               personMentioned: wholeItems[0]?.person_mentioned || null,
               segmentIndex: 0,
@@ -1343,13 +1610,12 @@ async function classifyAdmittedEvents(
           );
         }
         if (hasMutaNawi3at || lowestConfidence < reviewThreshold) {
-            // If any item is mutanawi3at or very low confidence, we should NOT accept it locally.
-            // Leave ruleSucceeded = false so it falls back to AI!
+          // If any item is mutanawi3at or very low confidence, we should NOT accept it locally.
+          // Leave ruleSucceeded = false so it falls back to AI!
         }
       }
     }
   }
-
 
   // 4. Single-Pass Semantic Extraction (AI — fallback of last resort)
   //
@@ -1358,7 +1624,11 @@ async function classifyAdmittedEvents(
   // the request costs a token budget, a round trip and a provider attempt, and any answer
   // it returns is dropped by the index check. A provider call that cannot succeed is not
   // a fallback, it is a bill.
-  if (!ruleSucceeded && escalationClauses.length === 0 && finalItems.length === 0) {
+  if (
+    !ruleSucceeded &&
+    escalationClauses.length === 0 &&
+    finalItems.length === 0
+  ) {
     // One more deterministic pass, over the LIGHTLY normalized text.
     //
     // The aggressive normalization the rule engine ran on above rewrites more than the
@@ -1386,46 +1656,68 @@ async function classifyAdmittedEvents(
     requiresAI = true;
 
     // Segment-level isolation: Send only failed segments to the AI
-    const textToClassify = failedSegments.length > 0 
-      // One per line, never rejoined with " و ". Gluing segments back into a run-on
-      // sentence handed the model a structure problem we had already solved correctly.
-      ? failedSegments.map((s) => s.text).join("\n")
-      : normalized.forAI;
+    const textToClassify =
+      failedSegments.length > 0
+        ? // One per line, never rejoined with " و ". Gluing segments back into a run-on
+          // sentence handed the model a structure problem we had already solved correctly.
+          failedSegments.map((s) => s.text).join("\n")
+        : normalized.forAI;
 
     // Fetch RAG Context (Recent user transactions matching keywords)
     let userHistoryContext = "";
     let userHistoryCategories: Array<{ category: string; count: number }> = [];
     try {
-      const recentTx = await db.select({
-        item_name: expenses.description,
-        main_category: expenses.category,
-        sub_category: expenses.subCategory
-      })
-      .from(expenses)
-      .where(and(eq(expenses.userId, input.userId), eq(expenses.userType, input.userType)))
-      .orderBy(desc(expenses.createdAt))
-      .limit(30);
-      
+      const recentTx = await db
+        .select({
+          item_name: expenses.description,
+          main_category: expenses.category,
+          sub_category: expenses.subCategory,
+        })
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.userId, input.userId),
+            eq(expenses.userType, input.userType),
+          ),
+        )
+        .orderBy(desc(expenses.createdAt))
+        .limit(30);
+
       if (recentTx.length > 0) {
         const keywords = extractKeywords(textToClassify);
-        const matchedTx = keywords.length > 0 
-          ? recentTx.filter(tx => {
-              const descClean = normalizeArabicString(tx.item_name || "").toLowerCase();
-              return keywords.some(kw => descClean.includes(normalizeArabicString(kw).toLowerCase()));
-            }).slice(0, 3)
-          : [];
+        const matchedTx =
+          keywords.length > 0
+            ? recentTx
+                .filter((tx) => {
+                  const descClean = normalizeArabicString(
+                    tx.item_name || "",
+                  ).toLowerCase();
+                  return keywords.some((kw) =>
+                    descClean.includes(normalizeArabicString(kw).toLowerCase()),
+                  );
+                })
+                .slice(0, 3)
+            : [];
 
         if (matchedTx.length > 0) {
-          userHistoryContext = matchedTx.map(tx => {
-            const words = (tx.item_name || "").split(/\s+/);
-            const truncated = words.slice(0, 5).join(" ") + (words.length > 5 ? "..." : "");
-            return `- "${truncated}" -> ${tx.main_category}/${tx.sub_category || "عام"}`;
-          }).join("\n");
+          userHistoryContext = matchedTx
+            .map((tx) => {
+              const words = (tx.item_name || "").split(/\s+/);
+              const truncated =
+                words.slice(0, 5).join(" ") + (words.length > 5 ? "..." : "");
+              return `- "${truncated}" -> ${tx.main_category}/${tx.sub_category || "عام"}`;
+            })
+            .join("\n");
           const categoryCounts = new Map<string, number>();
           for (const tx of matchedTx) {
-            categoryCounts.set(tx.main_category, (categoryCounts.get(tx.main_category) || 0) + 1);
+            categoryCounts.set(
+              tx.main_category,
+              (categoryCounts.get(tx.main_category) || 0) + 1,
+            );
           }
-          userHistoryCategories = Array.from(categoryCounts.entries()).map(([category, count]) => ({ category, count }));
+          userHistoryCategories = Array.from(categoryCounts.entries()).map(
+            ([category, count]) => ({ category, count }),
+          );
         }
       }
     } catch (e) {
@@ -1441,7 +1733,9 @@ async function classifyAdmittedEvents(
     // telling it one.
     const clauses: ClauseForModel[] = escalationClauses.map((entry, i) => {
       const local = entry.localItems[0];
-      const segAmounts = extractAmounts(entry.segment.text).map((a) => a.amount);
+      const segAmounts = extractAmounts(entry.segment.text).map(
+        (a) => a.amount,
+      );
       return {
         index: i + 1,
         text: entry.segment.text,
@@ -1451,7 +1745,9 @@ async function classifyAdmittedEvents(
           "expense") as ClauseForModel["direction"],
         localGuess:
           local && local.category !== "متنوعات" ? local.category : undefined,
-        candidates: local?.candidates?.filter((category) => category !== "متنوعات"),
+        candidates: local?.candidates?.filter(
+          (category) => category !== "متنوعات",
+        ),
       };
     });
 
@@ -1498,7 +1794,10 @@ async function classifyAdmittedEvents(
         },
         dbRoutes: adminRoutes.routes.map((route) => ({
           slug: route.slug,
-          protocol: route.protocol === "gemini" ? ("gemini" as const) : ("openai" as const),
+          protocol:
+            route.protocol === "gemini"
+              ? ("gemini" as const)
+              : ("openai" as const),
           baseUrl: route.baseUrl,
           apiKey: route.apiKey,
           model: route.model,
@@ -1528,7 +1827,10 @@ async function classifyAdmittedEvents(
         // One category per clause is a handful of tokens, not the 1024 the old contract
         // needed for reasoning, decomposed_sentences, amounts and self-assessed
         // confidence — none of which we keep.
-        maxOutputTokens: Math.min(input.maxTokens || 512, 60 + clauses.length * 40),
+        maxOutputTokens: Math.min(
+          input.maxTokens || 512,
+          60 + clauses.length * 40,
+        ),
         // Thinking tokens come out of that cap on Gemini 3, so a small reply stops at
         // MAX_TOKENS and the chain fails over. One category needs no deliberation.
         lowThinking: true,
@@ -1539,7 +1841,11 @@ async function classifyAdmittedEvents(
         // provider still leaves time for the next one in the chain. Settable so a
         // benchmark can measure a slow endpoint's ACCURACY without that endpoint's speed
         // silently becoming the result.
-        timeoutMs: settingNumber(input.pipelineSettings || {}, "llm_timeout_ms", 8_000),
+        timeoutMs: settingNumber(
+          input.pipelineSettings || {},
+          "llm_timeout_ms",
+          8_000,
+        ),
         // A ceiling for the whole chain, not just for each provider in it.
         //
         // Five routes at 25 seconds each bounded nothing the user experiences, and a
@@ -1577,16 +1883,23 @@ async function classifyAdmittedEvents(
       // Validate before trusting. Only Gemini enforces the enum; NVIDIA strips
       // response_format on a 400 and answers anyway, so structure is checked, never
       // assumed — and `degradedSchema` says when it was not even requested.
-      const reply = validateClassifierReply(robustJsonParse(llm.text), clauses.length);
+      const reply = validateClassifierReply(
+        robustJsonParse(llm.text),
+        clauses.length,
+      );
       if (reply.problems.length > 0) {
-        console.warn(`[Smart Pipeline] classifier reply: ${reply.problems.join("; ")}`);
+        console.warn(
+          `[Smart Pipeline] classifier reply: ${reply.problems.join("; ")}`,
+        );
       }
 
       // Merge the ONE thing the model was asked for back onto the items the local pass
       // built. The amount, direction and person never left this process, so a wrong or
       // missing answer costs a category, not a transaction.
       const merged = mergeCategoryDecisions(escalationClauses, reply.items, {
-        businessSubcategories: (input.businessCategories || []).map((c) => c.nameAr),
+        businessSubcategories: (input.businessCategories || []).map(
+          (c) => c.nameAr,
+        ),
       });
       classItems = merged.items;
 
@@ -1604,7 +1917,9 @@ async function classifyAdmittedEvents(
         modelReplyProblems = [
           ...reply.problems,
           ...merged.unansweredClauseIds.map((id) => `clause ${id} unanswered`),
-          ...merged.unresolvedClauseIds.map((id) => `clause ${id} has no extracted event`),
+          ...merged.unresolvedClauseIds.map(
+            (id) => `clause ${id} has no extracted event`,
+          ),
         ];
         classItems = classItems.map((item) =>
           withBlocker(item, BlockerReason.MODEL_REPLY_INVALID),
@@ -1623,24 +1938,29 @@ async function classifyAdmittedEvents(
       }
 
       if (classItems.length === 0) {
-         // A last deterministic pass, but only when the local side found nothing at all.
-         //
-         // This used to run whenever the MERGE produced nothing, which is a different
-         // condition: with one escalated clause and one accepted segment, the merge
-         // returning nothing for the escalated clause re-ran the rule engine over the
-         // WHOLE utterance and appended its output to items that were already there —
-         // "ماشتريتش جزمة 500 ودفعت 200 بنزين" came back with the petrol recorded twice.
-         if (finalItems.length === 0 && numAmounts <= 3 && numWords <= 15) {
-              if (!ruleResult) {
-                 ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext,);
-              }
-              if (ruleResult.items.length > 0) {
-                 finalItems.push(...registerAccepted(ruleResult.items));
-              }
-         } else if (finalItems.length === 0) {
-              decision = "clarify";
-              clarificationQuestion = "الجملة طويلة ومافهمناش كل العمليات اللي فيها. قسّمها لجمل أقصر وجرّب تاني.";
-         }
+        // A last deterministic pass, but only when the local side found nothing at all.
+        //
+        // This used to run whenever the MERGE produced nothing, which is a different
+        // condition: with one escalated clause and one accepted segment, the merge
+        // returning nothing for the escalated clause re-ran the rule engine over the
+        // WHOLE utterance and appended its output to items that were already there —
+        // "ماشتريتش جزمة 500 ودفعت 200 بنزين" came back with the petrol recorded twice.
+        if (finalItems.length === 0 && numAmounts <= 3 && numWords <= 15) {
+          if (!ruleResult) {
+            ruleResult = await runRuleEngine(
+              normalizedText,
+              input.userDict,
+              input.userProfileContext,
+            );
+          }
+          if (ruleResult.items.length > 0) {
+            finalItems.push(...registerAccepted(ruleResult.items));
+          }
+        } else if (finalItems.length === 0) {
+          decision = "clarify";
+          clarificationQuestion =
+            "الجملة طويلة ومافهمناش كل العمليات اللي فيها. قسّمها لجمل أقصر وجرّب تاني.";
+        }
       } else {
         // The merge already produced finished transactions: the local pass supplied the
         // amount, direction and person, and the model supplied only the category.
@@ -1673,7 +1993,9 @@ async function classifyAdmittedEvents(
           `[Smart Pipeline] Whole provider chain exhausted (${err.attempts.length} attempts): ${errMsg}`,
         );
       } else if (errMsg.includes("403") || errMsg.includes("429")) {
-        console.warn("[Smart Pipeline] AI API unavailable (rate limit/auth). Using local fallback.");
+        console.warn(
+          "[Smart Pipeline] AI API unavailable (rate limit/auth). Using local fallback.",
+        );
       } else {
         console.error("[Smart Pipeline] AI Error:", errMsg);
       }
@@ -1685,15 +2007,18 @@ async function classifyAdmittedEvents(
       // "حولت لمروان" reverts from العائلة/مروان أخوك to a generic bank transfer. The
       // items the local path produced for those segments are kept instead, marked for
       // review so the user sees them rather than having them silently saved.
-      const salvaged = orderedLocalItems.length > 0
-        ? orderedLocalItems
-        : [...localSucceededItems, ...escalatedSegmentItems];
+      const salvaged =
+        orderedLocalItems.length > 0
+          ? orderedLocalItems
+          : [...localSucceededItems, ...escalatedSegmentItems];
       if (salvaged.length > 0) {
         // Replace rather than append: the accepted segments were already pushed into
         // finalItems before the model was called, so appending the ordered list would
         // duplicate them and destroy narrative order. This list is the whole answer.
         finalItems.length = 0;
-        finalItems.push(...salvaged.map((it) => ({ ...it, needsReview: true })));
+        finalItems.push(
+          ...salvaged.map((it) => ({ ...it, needsReview: true })),
+        );
         if (decision === "unknown") decision = "review";
       } else if (numAmounts <= 3 && numWords <= 15) {
         // Nothing was segmented — a short single-clause input. One clean pass is the
@@ -1722,7 +2047,9 @@ async function classifyAdmittedEvents(
   // 200 + 200 looked exactly like a vanished 400, and asked about the FIRST missing
   // amount before `break` — say three numbers, lose three, get asked about one.
   if (finalItems.length > 0 && decision === "unknown") {
-    const anchors = buildAnchors(extractAmounts(input.text).map((a) => a.amount));
+    const anchors = buildAnchors(
+      extractAmounts(input.text).map((a) => a.amount),
+    );
     let ledger = reconcileAmounts(anchors, finalItems);
 
     if (ledger.unconsumed.length > 0) {
@@ -1748,7 +2075,9 @@ async function classifyAdmittedEvents(
         );
         if (recovered) {
           finalItems.push(recovered);
-          console.warn(`[Reconciliation] Recovered ${anchor.raw} from deterministic rules.`);
+          console.warn(
+            `[Reconciliation] Recovered ${anchor.raw} from deterministic rules.`,
+          );
         }
       }
       ledger = reconcileAmounts(anchors, finalItems);
@@ -1775,61 +2104,91 @@ async function classifyAdmittedEvents(
   // ONLY if their descriptions also overlap, to avoid destroying identical but separate transactions.
   const uniqueItems: ParsedTransaction[] = [];
   for (const item of finalItems) {
-      const itemDesc = String(item.description || (item as ParsedTransaction & { item_name?: string }).item_name || "").toLowerCase();
-      const itemWords = new Set(itemDesc.split(/\s+/).filter(w => w.length > 2));
-      let isDuplicate = false;
-      
-      for (let i = 0; i < uniqueItems.length; i++) {
-          const existing = uniqueItems[i];
-          // Parser choice cannot turn two separately anchored events into one payment.
-          if (item.sourceEventId !== undefined && existing.sourceEventId !== undefined &&
-              item.sourceEventId !== existing.sourceEventId) continue;
-          if (item.amount === existing.amount && item.category === existing.category) {
-              const existingDesc = String(existing.description || (existing as ParsedTransaction & { item_name?: string }).item_name || "").toLowerCase();
-              const existingWords = new Set(existingDesc.split(/\s+/).filter(w => w.length > 2));
-              
-              let intersection = 0;
-              for (const w of itemWords) {
-                  if (existingWords.has(w)) intersection++;
-              }
-              
-              const minWords = Math.min(itemWords.size, existingWords.size);
-              // Deduplicate if they share at least 1 significant word, or if both have no significant words.
-              // CRITICAL: Only deduplicate if they came from different parsers (e.g. AI vs Local) to prevent merging valid same-source transactions.
-              if ((minWords === 0 || intersection > 0) && item.parsedBy !== existing.parsedBy) {
-                  isDuplicate = true;
-                  // Keep the one with higher confidence
-                  if ((item.confidence || 0) > (existing.confidence || 0)) {
-                      uniqueItems[i] = item;
-                  }
-                  break;
-              }
+    const itemDesc = String(
+      item.description ||
+        (item as ParsedTransaction & { item_name?: string }).item_name ||
+        "",
+    ).toLowerCase();
+    const itemWords = new Set(
+      itemDesc.split(/\s+/).filter((w) => w.length > 2),
+    );
+    let isDuplicate = false;
+
+    for (let i = 0; i < uniqueItems.length; i++) {
+      const existing = uniqueItems[i];
+      // Parser choice cannot turn two separately anchored events into one payment.
+      if (
+        item.sourceEventId !== undefined &&
+        existing.sourceEventId !== undefined &&
+        item.sourceEventId !== existing.sourceEventId
+      )
+        continue;
+      if (
+        item.amount === existing.amount &&
+        item.category === existing.category
+      ) {
+        const existingDesc = String(
+          existing.description ||
+            (existing as ParsedTransaction & { item_name?: string })
+              .item_name ||
+            "",
+        ).toLowerCase();
+        const existingWords = new Set(
+          existingDesc.split(/\s+/).filter((w) => w.length > 2),
+        );
+
+        let intersection = 0;
+        for (const w of itemWords) {
+          if (existingWords.has(w)) intersection++;
+        }
+
+        const minWords = Math.min(itemWords.size, existingWords.size);
+        // Deduplicate if they share at least 1 significant word, or if both have no significant words.
+        // CRITICAL: Only deduplicate if they came from different parsers (e.g. AI vs Local) to prevent merging valid same-source transactions.
+        if (
+          (minWords === 0 || intersection > 0) &&
+          item.parsedBy !== existing.parsedBy
+        ) {
+          isDuplicate = true;
+          // Keep the one with higher confidence
+          if ((item.confidence || 0) > (existing.confidence || 0)) {
+            uniqueItems[i] = item;
           }
+          break;
+        }
       }
-      if (!isDuplicate) {
-          uniqueItems.push(item);
-      }
+    }
+    if (!isDuplicate) {
+      uniqueItems.push(item);
+    }
   }
   finalItems.length = 0;
   finalItems.push(...uniqueItems);
 
   // --- DEEP FIX: Logical Amount Thresholds ---
   for (const item of finalItems) {
-      if ((item.category === "استثمار" || item.category === "عقارات") && item.amount < 50) {
-          item.category = "متنوعات";
-          item.subCategory = "عام";
-      } else if (item.category === "مرتب" && item.amount < 100) {
-          // Only convert to عيدية if the text explicitly mentions eid/eidiya context
-          const textLower = input.text.toLowerCase();
-          if (/(عيد|عيدي|عيديه|عيدية)/.test(textLower)) {
-            item.category = "هدايا وعيديات";
-            item.subCategory = "عيدية";
-          }
-          // Otherwise keep as مرتب — small income is still income (freelance, cashback, etc.)
-      } else if (item.category === "سكن" && item.subCategory === "إيجار" && item.amount < 50) {
-          item.category = "متنوعات";
-          item.subCategory = "عام";
+    if (
+      (item.category === "استثمار" || item.category === "عقارات") &&
+      item.amount < 50
+    ) {
+      item.category = "متنوعات";
+      item.subCategory = "عام";
+    } else if (item.category === "مرتب" && item.amount < 100) {
+      // Only convert to عيدية if the text explicitly mentions eid/eidiya context
+      const textLower = input.text.toLowerCase();
+      if (/(عيد|عيدي|عيديه|عيدية)/.test(textLower)) {
+        item.category = "هدايا وعيديات";
+        item.subCategory = "عيدية";
       }
+      // Otherwise keep as مرتب — small income is still income (freelance, cashback, etc.)
+    } else if (
+      item.category === "سكن" &&
+      item.subCategory === "إيجار" &&
+      item.amount < 50
+    ) {
+      item.category = "متنوعات";
+      item.subCategory = "عام";
+    }
   }
 
   const normalizedFinalItems = normalizeTransactionTaxonomyList(
@@ -1845,53 +2204,53 @@ async function classifyAdmittedEvents(
   // happened to be in the subcategory map. A rescue answers "which category"; it says
   // nothing about the person we could not identify or the amount nobody claimed.
   for (const item of normalizedFinalItems) {
-      if (item.category === "متنوعات" && item.description) {
-          // Use item.description directly to prevent context leakage (e.g. gym shoes)
-          const rawWords = item.description
-              .replace(/[\u064B-\u065F\u0670]/g, "") 
-              .replace(/[إأآٱ]/g, "ا")
-              .replace(/ى/g, "ي")
-              .replace(/ة/g, "ه")
-              .replace(/ؤ/g, "و")
-              .replace(/ئ/g, "ي")
-              .toLowerCase()
-              .split(/\s+/)
-              .filter(Boolean);
+    if (item.category === "متنوعات" && item.description) {
+      // Use item.description directly to prevent context leakage (e.g. gym shoes)
+      const rawWords = item.description
+        .replace(/[\u064B-\u065F\u0670]/g, "")
+        .replace(/[إأآٱ]/g, "ا")
+        .replace(/ى/g, "ي")
+        .replace(/ة/g, "ه")
+        .replace(/ؤ/g, "و")
+        .replace(/ئ/g, "ي")
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean);
 
-          const wordCandidates = rawWords.flatMap(w => {
-              const stripped = stripArabicPrefix(w);
-              return stripped !== w ? [w, stripped] : [w];
-          });
+      const wordCandidates = rawWords.flatMap((w) => {
+        const stripped = stripArabicPrefix(w);
+        return stripped !== w ? [w, stripped] : [w];
+      });
 
-          let rescued = false;
-          // Check Bigrams
-          for (let i = 0; i < rawWords.length - 1; i++) {
-              const bigram = `${rawWords[i]} ${rawWords[i+1]}`;
-              if (SUB_CATEGORY_MAP[bigram]) {
-                  item.category = SUB_CATEGORY_MAP[bigram].category;
-                  item.subCategory = SUB_CATEGORY_MAP[bigram].subCategory;
-                    if (!(item.reviewReasons && item.reviewReasons.length > 0)) {
-                      item.needsReview = false;
-                    }
-                    rescued = true;
-                    break;
-              }
+      let rescued = false;
+      // Check Bigrams
+      for (let i = 0; i < rawWords.length - 1; i++) {
+        const bigram = `${rawWords[i]} ${rawWords[i + 1]}`;
+        if (SUB_CATEGORY_MAP[bigram]) {
+          item.category = SUB_CATEGORY_MAP[bigram].category;
+          item.subCategory = SUB_CATEGORY_MAP[bigram].subCategory;
+          if (!(item.reviewReasons && item.reviewReasons.length > 0)) {
+            item.needsReview = false;
           }
-          // Check Unigrams
-          if (!rescued) {
-              for (const word of wordCandidates) {
-                  if (word && SUB_CATEGORY_MAP[word]) {
-                      item.category = SUB_CATEGORY_MAP[word].category;
-                      item.subCategory = SUB_CATEGORY_MAP[word].subCategory;
-                    if (!(item.reviewReasons && item.reviewReasons.length > 0)) {
-                      item.needsReview = false;
-                    }
-                    rescued = true;
-                    break;
-                  }
-              }
-          }
+          rescued = true;
+          break;
+        }
       }
+      // Check Unigrams
+      if (!rescued) {
+        for (const word of wordCandidates) {
+          if (word && SUB_CATEGORY_MAP[word]) {
+            item.category = SUB_CATEGORY_MAP[word].category;
+            item.subCategory = SUB_CATEGORY_MAP[word].subCategory;
+            if (!(item.reviewReasons && item.reviewReasons.length > 0)) {
+              item.needsReview = false;
+            }
+            rescued = true;
+            break;
+          }
+        }
+      }
+    }
   }
 
   // Evidence becomes a probability here, and only here.
@@ -1962,41 +2321,44 @@ async function classifyAdmittedEvents(
   });
 
   if (decision === "unknown") {
-      if (verifiedFinalItems.length > 0) {
-          overallConfidence = finalItemDecision.weakestConfidence;
-          decision =
-            finalItemDecision.decision === "auto_save" &&
-            !hasVerifierErrors &&
-            !hasVerifierWarnings &&
-            // An item whose probability is the corpus prior rather than a measurement
-            // of its own path is shown to the user. The live benchmark put a number on
-            // what skipping this costs: 10.3% unsafe auto-saves against 1.1% offline,
-            // entirely from the model path this gate is the only one to see.
-            finalCalibration.unpriced === 0
-              ? "auto_save"
-              : finalItemDecision.decision === "clarify"
-                ? "clarify"
-                : "review";
-          if (decision === "clarify" && !clarificationQuestion) {
-            clarificationQuestion = "محتاج أتأكد من تفاصيل العملية دي. ممكن توضح؟";
-          }
-      } else {
-          decision = "clarify";
-          clarificationQuestion = "عذراً، لم أتمكن من استخراج عملية مالية واضحة. ممكن توضح؟";
-          overallConfidence = 0;
+    if (verifiedFinalItems.length > 0) {
+      overallConfidence = finalItemDecision.weakestConfidence;
+      decision =
+        finalItemDecision.decision === "auto_save" &&
+        !hasVerifierErrors &&
+        !hasVerifierWarnings &&
+        // An item whose probability is the corpus prior rather than a measurement
+        // of its own path is shown to the user. The live benchmark put a number on
+        // what skipping this costs: 10.3% unsafe auto-saves against 1.1% offline,
+        // entirely from the model path this gate is the only one to see.
+        finalCalibration.unpriced === 0
+          ? "auto_save"
+          : finalItemDecision.decision === "clarify"
+            ? "clarify"
+            : "review";
+      if (decision === "clarify" && !clarificationQuestion) {
+        clarificationQuestion = "محتاج أتأكد من تفاصيل العملية دي. ممكن توضح؟";
       }
+    } else {
+      decision = "clarify";
+      clarificationQuestion =
+        "عذراً، لم أتمكن من استخراج عملية مالية واضحة. ممكن توضح؟";
+      overallConfidence = 0;
+    }
   } else if (decision === "auto_save") {
-      // An earlier layer said auto_save. It may be overruled here, never confirmed here:
-      // this is the last gate, so everything it knows has to be able to say no.
-      overallConfidence = finalItemDecision.weakestConfidence || overallConfidence;
-      if (
-        hasVerifierErrors ||
-        hasVerifierWarnings ||
-        finalItemDecision.decision !== "auto_save" ||
-        finalCalibration.unpriced > 0
-      ) {
-          decision = finalItemDecision.decision === "clarify" ? "clarify" : "review";
-      }
+    // An earlier layer said auto_save. It may be overruled here, never confirmed here:
+    // this is the last gate, so everything it knows has to be able to say no.
+    overallConfidence =
+      finalItemDecision.weakestConfidence || overallConfidence;
+    if (
+      hasVerifierErrors ||
+      hasVerifierWarnings ||
+      finalItemDecision.decision !== "auto_save" ||
+      finalCalibration.unpriced > 0
+    ) {
+      decision =
+        finalItemDecision.decision === "clarify" ? "clarify" : "review";
+    }
   }
 
   const log: PipelineLog = {
@@ -2057,7 +2419,8 @@ async function classifyAdmittedEvents(
     // for. Reporting the requested model after a failover would put a name in the admin
     // dashboard that never ran.
     actualModelUsed: requiresAI
-      ? llmAttempts.find((a) => a.ok)?.model || (servedByRoute ? modelUsed : null)
+      ? llmAttempts.find((a) => a.ok)?.model ||
+        (servedByRoute ? modelUsed : null)
       : null,
     overallConfidence,
     decision,
@@ -2072,7 +2435,9 @@ async function classifyAdmittedEvents(
   // Kept only when complete: a question waits for the user, and an answer the model was
   // needed for but did not give (a timeout, an outage, a partial reply) is served now and
   // asked again next time rather than frozen for a week.
-  const modelAnsweredEverything = !requiresAI || (llmAttempts.some((a) => a.ok) && modelReplyProblems.length === 0);
+  const modelAnsweredEverything =
+    !requiresAI ||
+    (llmAttempts.some((a) => a.ok) && modelReplyProblems.length === 0);
   storeClassification(cacheKey, result, modelAnsweredEverything);
 
   return result;

@@ -14,6 +14,10 @@ import { router, authedProcedure, aiProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
 import {
+  forgetConversationSummaries,
+  withMemoryOwnerLock,
+} from "./services/ai-memory/slot-store";
+import {
   chatConversations,
   chatMessages,
   aiPendingActions,
@@ -23,7 +27,10 @@ import {
   users,
   localUsers,
 } from "../db/schema";
-import { getSystemSettings, invalidateSettingsCache } from "./lib/settings-cache";
+import {
+  getSystemSettings,
+  invalidateSettingsCache,
+} from "./lib/settings-cache";
 import { eq, and, desc, sql, gte, lt } from "drizzle-orm";
 import { businessDayRange } from "./lib/app-time";
 import {
@@ -42,9 +49,17 @@ import {
   mergeSlotsIntoIntent,
   buildClarificationResponse,
 } from "./services/ai-kernel/clarification-machine";
-import { findCapability, getCapabilityById } from "./services/ai-kernel/capability-registry";
+import {
+  findCapability,
+  getCapabilityById,
+} from "./services/ai-kernel/capability-registry";
 import { type IntentResult } from "./services/ai-kernel/types";
-import { hasSemanticMemoryCandidate, writeConversationMemory, invalidateMemoryUserCache, type MemoryMessage } from "./services/ai-memory";
+import {
+  hasSemanticMemoryCandidate,
+  writeConversationMemory,
+  invalidateMemoryUserCache,
+  type MemoryMessage,
+} from "./services/ai-memory";
 import { slotMeta } from "./services/ai-memory/slots";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 import {
@@ -67,7 +82,12 @@ import {
   matchesConfirmationPhrase,
   normalizeConfirmation,
 } from "./services/action-runtime/confirmation-phrases";
-import type { ActionDraftResult, GoalCreatePayload, RuntimeActionName, RuntimeActionPayload } from "./services/action-runtime/types";
+import type {
+  ActionDraftResult,
+  GoalCreatePayload,
+  RuntimeActionName,
+  RuntimeActionPayload,
+} from "./services/action-runtime/types";
 import { displayFinanceCategory } from "./services/finance-semantic-layer/category-matcher";
 import { createLogger } from "./lib/log";
 import { providerSlugForBaseUrl, recordAiLedger } from "./lib/ai-ledger";
@@ -80,7 +100,8 @@ const log = createLogger("chat");
 // ─── Helpers ───
 
 /** Google's OpenAI-compatible endpoint, which the chat client speaks as is. */
-const GEMINI_OPENAI_BASE = "https://generativelanguage.googleapis.com/v1beta/openai";
+const GEMINI_OPENAI_BASE =
+  "https://generativelanguage.googleapis.com/v1beta/openai";
 
 type ChatModel = { apiKey: string; baseUrl: string; model: string };
 
@@ -89,11 +110,16 @@ type ChatModel = { apiKey: string; baseUrl: string; model: string };
  * then the older chatbot settings when they hold a key, then Google's Gemini with the app's key. The first answers;
  * the rest take over when it fails.
  */
-async function chatModels(plan: string, s: Record<string, string>): Promise<ChatModel[]> {
+async function chatModels(
+  plan: string,
+  s: Record<string, string>,
+): Promise<ChatModel[]> {
   const tier = plan === "ultra" ? "ultra" : plan === "pro" ? "pro" : "free";
   const routes = await resolveAdminRoutes("chat", tier).catch(() => null);
   const models: ChatModel[] = (routes?.routes ?? [])
-    .filter((route) => route.protocol === "openai" || route.protocol === "gemini")
+    .filter(
+      (route) => route.protocol === "openai" || route.protocol === "gemini",
+    )
     .map((route) => ({
       apiKey: route.apiKey,
       baseUrl: route.protocol === "gemini" ? GEMINI_OPENAI_BASE : route.baseUrl,
@@ -108,7 +134,12 @@ async function chatModels(plan: string, s: Record<string, string>): Promise<Chat
     });
   }
   const geminiKey = s.ai_api_key || env.GEMINI_API_KEY || "";
-  if (geminiKey) models.push({ apiKey: geminiKey, baseUrl: GEMINI_OPENAI_BASE, model: defaultGeminiModelForPlan(tier) });
+  if (geminiKey)
+    models.push({
+      apiKey: geminiKey,
+      baseUrl: GEMINI_OPENAI_BASE,
+      model: defaultGeminiModelForPlan(tier),
+    });
   return models;
 }
 
@@ -246,7 +277,9 @@ function factNumber(
   label: string,
   source?: string,
 ): number | undefined {
-  const value = facts?.find((fact) => fact.label === label && (!source || fact.source === source))?.value;
+  const value = facts?.find(
+    (fact) => fact.label === label && (!source || fact.source === source),
+  )?.value;
   if (value === null || value === undefined || value === "") return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
@@ -288,13 +321,15 @@ function responseForActionDraft(
 
     return [
       `جهزت لك مسودة هدف: ${payload.title ?? action.summary}.`,
-      payload.targetAmount ? `المبلغ المستهدف ${localMoney(payload.targetAmount)}.` : "",
+      payload.targetAmount
+        ? `المبلغ المستهدف ${localMoney(payload.targetAmount)}.`
+        : "",
       payload.targetDate ? `التاريخ المستهدف ${payload.targetDate}.` : "",
       factsLine,
       "لسه ما نفذتش حاجة. راجع التفاصيل واضغط تأكيد لو موافق، أو إلغاء لو عايز نعدّل الخطة.",
     ]
       .filter(Boolean)
-        .join("\n");
+      .join("\n");
   }
 
   if (action.name === "expense.create") {
@@ -307,7 +342,9 @@ function responseForActionDraft(
     };
     return [
       `جهزت مسودة تسجيل مصروف بقيمة ${localMoney(payload.amount)}.`,
-      payload.category ? `الفئة المقترحة: ${localCategoryName(payload.category)}.` : "",
+      payload.category
+        ? `الفئة المقترحة: ${localCategoryName(payload.category)}.`
+        : "",
       payload.placeHint ? `المكان: ${payload.placeHint}.` : "",
       payload.date ? `التاريخ: ${payload.date}.` : "",
       "لسه ما سجلتش المصروف. اضغط تأكيد أو اكتب موافق لو التفاصيل صح، أو إلغاء لو عايز توقفها.",
@@ -323,7 +360,9 @@ function responseForActionDraft(
 }
 
 function responseForActionDraftFailure(errorMessage: string): string {
-  const freeLimit = errorMessage.match(/Free plan supports (\d+) active goals/i);
+  const freeLimit = errorMessage.match(
+    /Free plan supports (\d+) active goals/i,
+  );
   if (freeLimit) {
     return [
       `ماقدرتش أجهز مسودة هدف جديدة لأن خطة Free تسمح بـ ${freeLimit[1]} أهداف نشطة فقط.`,
@@ -337,8 +376,12 @@ function responseForActionDraftFailure(errorMessage: string): string {
   ].join("\n");
 }
 
-function embeddingCallsFromStructured(structured: AIResponse | undefined): number {
-  const debug = structured?.debug as { cacheHits?: unknown[]; embeddingCalls?: unknown } | undefined;
+function embeddingCallsFromStructured(
+  structured: AIResponse | undefined,
+): number {
+  const debug = structured?.debug as
+    | { cacheHits?: unknown[]; embeddingCalls?: unknown }
+    | undefined;
   const explicit = Number(debug?.embeddingCalls);
   if (Number.isFinite(explicit) && explicit >= 0) return explicit;
   const cacheHits = Array.isArray(debug?.cacheHits) ? debug.cacheHits : [];
@@ -349,7 +392,9 @@ function dataNeedKinds(structured: AIResponse | undefined): string[] {
   return [...new Set((structured?.dataNeeds ?? []).map((need) => need.kind))];
 }
 
-export function structuredFromToolResults(value: unknown): AIResponse | undefined {
+export function structuredFromToolResults(
+  value: unknown,
+): AIResponse | undefined {
   let parsed = value;
   if (typeof parsed === "string" && parsed.trim()) {
     try {
@@ -365,7 +410,9 @@ export function structuredFromToolResults(value: unknown): AIResponse | undefine
 
   const response = structured as AIResponse;
   const debug =
-    response.debug && typeof response.debug === "object" && !Array.isArray(response.debug)
+    response.debug &&
+    typeof response.debug === "object" &&
+    !Array.isArray(response.debug)
       ? response.debug
       : {};
 
@@ -399,20 +446,52 @@ function actionReplyKind(message: string): "confirm" | "cancel" | null {
   const text = normalizeActionReply(message);
   if (!text || text.length > 80) return null;
   if (/\d|[٠-٩۰-۹]/.test(text)) return null;
-  if (/(سجل|احفظ|اضف|ضيف|اشتريت|دفعت|صرفت|مصروف|هدف|ميزانيه|محفظه|كارت|فيزا)/i.test(text)) {
+  if (
+    /(سجل|احفظ|اضف|ضيف|اشتريت|دفعت|صرفت|مصروف|هدف|ميزانيه|محفظه|كارت|فيزا)/i.test(
+      text,
+    )
+  ) {
     return null;
   }
 
   const tokens = new Set(text.split(/\s+/).filter(Boolean));
-  const exactConfirm = new Set(["موافق", "اكد", "أكد", "اوك", "تمام", "yes", "confirm"]);
-  const exactCancel = new Set(["الغ", "الغي", "إلغاء", "الغاء", "cancel", "وقف", "بلاش", "لا"]);
+  const exactConfirm = new Set([
+    "موافق",
+    "اكد",
+    "أكد",
+    "اوك",
+    "تمام",
+    "yes",
+    "confirm",
+  ]);
+  const exactCancel = new Set([
+    "الغ",
+    "الغي",
+    "إلغاء",
+    "الغاء",
+    "cancel",
+    "وقف",
+    "بلاش",
+    "لا",
+  ]);
 
-  if (text === "مش موافق" || text === "لا مش موافق" || text === "لا نفذ" || text === "لا تنفذ") {
+  if (
+    text === "مش موافق" ||
+    text === "لا مش موافق" ||
+    text === "لا نفذ" ||
+    text === "لا تنفذ"
+  ) {
     return "cancel";
   }
-  if ([...exactCancel].some((item) => text === normalizeActionReply(item))) return "cancel";
-  if ([...exactConfirm].some((item) => text === normalizeActionReply(item))) return "confirm";
-  if ((tokens.has("تمام") && (tokens.has("نفذ") || tokens.has("نفذها"))) || text === "نفذها" || text === "اعملها") {
+  if ([...exactCancel].some((item) => text === normalizeActionReply(item)))
+    return "cancel";
+  if ([...exactConfirm].some((item) => text === normalizeActionReply(item)))
+    return "confirm";
+  if (
+    (tokens.has("تمام") && (tokens.has("نفذ") || tokens.has("نفذها"))) ||
+    text === "نفذها" ||
+    text === "اعملها"
+  ) {
     return "confirm";
   }
   return null;
@@ -422,7 +501,9 @@ async function findLatestPendingAction(
   userId: number,
   userType: string,
   conversationId: number,
-): Promise<{ id: number; actionName: RuntimeActionName; risk: string } | undefined> {
+): Promise<
+  { id: number; actionName: RuntimeActionName; risk: string } | undefined
+> {
   const rows = await db
     .select({
       id: aiPendingActions.id,
@@ -441,7 +522,9 @@ async function findLatestPendingAction(
     .orderBy(desc(aiPendingActions.createdAt))
     .limit(10);
 
-  const sameConversation = rows.find((row) => Number(row.conversationId) === conversationId);
+  const sameConversation = rows.find(
+    (row) => Number(row.conversationId) === conversationId,
+  );
   if (!sameConversation) return undefined;
   return {
     id: Number(sameConversation.id),
@@ -451,24 +534,43 @@ async function findLatestPendingAction(
 }
 
 /** The phrases high-risk actions ask for, normalised: only these make a typed reply worth a lookup. */
-const HIGH_RISK_PHRASES = new Set(HIGH_RISK_CONFIRMATION_PHRASES.map(normalizeConfirmation));
+const HIGH_RISK_PHRASES = new Set(
+  HIGH_RISK_CONFIRMATION_PHRASES.map(normalizeConfirmation),
+);
 
 async function resolveTextActionReply(
   ctx: { userId: number; userType: string; userPlan: string },
   message: string,
   conversationId: number,
-): Promise<{ response: string; structured: AIResponse; tokensUsed: number; model: string; toolsUsed: string[] } | null> {
+): Promise<{
+  response: string;
+  structured: AIResponse;
+  tokensUsed: number;
+  model: string;
+  toolsUsed: string[];
+} | null> {
   const typedPhrase = HIGH_RISK_PHRASES.has(normalizeConfirmation(message));
   const kind = typedPhrase ? "confirm" : actionReplyKind(message);
   if (!kind) return null;
-  const pending = await findLatestPendingAction(ctx.userId, ctx.userType, conversationId);
+  const pending = await findLatestPendingAction(
+    ctx.userId,
+    ctx.userType,
+    conversationId,
+  );
   if (!pending) return null;
   const actionId = pending.id;
 
   // "تمام" confirms a medium action; one that cannot be taken back waits for its own words, which the server
   // checks again in confirmAction.
-  const phrase = confirmationPhraseFor(pending.actionName, pending.risk === "high" ? "high" : "medium");
-  if (kind === "confirm" && phrase && !matchesConfirmationPhrase(message, phrase)) {
+  const phrase = confirmationPhraseFor(
+    pending.actionName,
+    pending.risk === "high" ? "high" : "medium",
+  );
+  if (
+    kind === "confirm" &&
+    phrase &&
+    !matchesConfirmationPhrase(message, phrase)
+  ) {
     const response = `العملية دي مش بترجع. لو متأكد اكتب «${phrase}» بالظبط، أو «إلغاء» لو مش عايزها.`;
     return {
       response,
@@ -481,9 +583,12 @@ async function resolveTextActionReply(
 
   const result =
     kind === "confirm"
-      ? await runtimeConfirmAction({ ...ctx, conversationId }, actionId, { phrase: phrase ? message : undefined })
+      ? await runtimeConfirmAction({ ...ctx, conversationId }, actionId, {
+          phrase: phrase ? message : undefined,
+        })
       : await runtimeCancelAction({ ...ctx, conversationId }, actionId);
-  const artifacts = result.artifacts ?? (result.artifact ? [result.artifact] : []);
+  const artifacts =
+    result.artifacts ?? (result.artifact ? [result.artifact] : []);
   const response = result.message;
   return {
     response,
@@ -539,7 +644,8 @@ export const chatRouter = router({
       if (!config.enabled[plan]) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "الشات بوت مش متاح في خطتك الحالية. ترقي للبرو عشان تستخدمه! 🚀",
+          message:
+            "الشات بوت مش متاح في خطتك الحالية. ترقي للبرو عشان تستخدمه! 🚀",
         });
       }
 
@@ -557,13 +663,17 @@ export const chatRouter = router({
       const todayCount = await getTodayMessageCount(user.id, user.type);
       const dailyLimit = config.dailyLimits[plan] || 20;
       const devQaBypassDailyLimit =
-        input.devQaBypassDailyLimit === true && process.env.NODE_ENV !== "production";
+        input.devQaBypassDailyLimit === true &&
+        process.env.NODE_ENV !== "production";
 
       if (!devQaBypassDailyLimit && todayCount >= dailyLimit) {
         const now = new Date();
         const midnight = new Date(now);
         midnight.setHours(24, 0, 0, 0);
-        const retryAfterSeconds = Math.max(60, Math.floor((midnight.getTime() - now.getTime()) / 1000));
+        const retryAfterSeconds = Math.max(
+          60,
+          Math.floor((midnight.getTime() - now.getTime()) / 1000),
+        );
 
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
@@ -594,7 +704,11 @@ export const chatRouter = router({
         }
         activeConv = { id: conversationId, metadata: null };
       } else {
-        activeConv = await requireOwnedConversation(conversationId, user.id, user.type);
+        activeConv = await requireOwnedConversation(
+          conversationId,
+          user.id,
+          user.type,
+        );
       }
       const activeConversationId: number = conversationId;
 
@@ -628,7 +742,9 @@ export const chatRouter = router({
 
       // Check for active clarification state
       let prePlannedIntent: IntentResult | undefined;
-      const clarificationState = activeConv?.metadata ? (activeConv.metadata as any).clarificationState : null;
+      const clarificationState = activeConv?.metadata
+        ? (activeConv.metadata as any).clarificationState
+        : null;
 
       if (clarificationState && !isClarificationExpired(clarificationState)) {
         if (isClarificationCancelled(input.message)) {
@@ -636,12 +752,15 @@ export const chatRouter = router({
           await db
             .update(chatConversations)
             .set({
-              metadata: {
-                ...((activeConv.metadata as any) || {}),
-                clarificationState: null,
-              },
+              metadata: sql`JSON_SET(COALESCE(${chatConversations.metadata}, JSON_OBJECT()), '$.clarificationState', CAST(${JSON.stringify(null)} AS JSON))`,
             })
-            .where(eq(chatConversations.id, activeConversationId));
+            .where(
+              and(
+                eq(chatConversations.id, activeConversationId),
+                eq(chatConversations.userId, ctx.user.id),
+                eq(chatConversations.userType, ctx.user.type),
+              ),
+            );
 
           const cancelMsg = "تمام، لغيت العملية دي. قولي تحب نعمل إيه تاني؟";
           await db.insert(chatMessages).values({
@@ -658,7 +777,13 @@ export const chatRouter = router({
               messageCount: sql`message_count + 2`,
               lastMessageAt: new Date(),
             })
-            .where(eq(chatConversations.id, activeConversationId));
+            .where(
+              and(
+                eq(chatConversations.id, activeConversationId),
+                eq(chatConversations.userId, ctx.user.id),
+                eq(chatConversations.userType, ctx.user.type),
+              ),
+            );
 
           return {
             response: cancelMsg,
@@ -671,18 +796,24 @@ export const chatRouter = router({
         }
 
         // Process reply
-        const replyResult = processClarificationReply(clarificationState, input.message);
+        const replyResult = processClarificationReply(
+          clarificationState,
+          input.message,
+        );
         if (replyResult.complete) {
           // Clarification completed! Clear state and set prePlannedIntent
           await db
             .update(chatConversations)
             .set({
-              metadata: {
-                ...((activeConv.metadata as any) || {}),
-                clarificationState: null,
-              },
+              metadata: sql`JSON_SET(COALESCE(${chatConversations.metadata}, JSON_OBJECT()), '$.clarificationState', CAST(${JSON.stringify(null)} AS JSON))`,
             })
-            .where(eq(chatConversations.id, activeConversationId));
+            .where(
+              and(
+                eq(chatConversations.id, activeConversationId),
+                eq(chatConversations.userId, ctx.user.id),
+                eq(chatConversations.userType, ctx.user.type),
+              ),
+            );
 
           const capDef = getCapabilityById(clarificationState.capabilityId);
           const reconstructedIntent: IntentResult = {
@@ -701,14 +832,19 @@ export const chatRouter = router({
           await db
             .update(chatConversations)
             .set({
-              metadata: {
-                ...((activeConv.metadata as any) || {}),
-                clarificationState: replyResult.updatedState,
-              },
+              metadata: sql`JSON_SET(COALESCE(${chatConversations.metadata}, JSON_OBJECT()), '$.clarificationState', CAST(${JSON.stringify(replyResult.updatedState)} AS JSON))`,
             })
-            .where(eq(chatConversations.id, activeConversationId));
+            .where(
+              and(
+                eq(chatConversations.id, activeConversationId),
+                eq(chatConversations.userId, ctx.user.id),
+                eq(chatConversations.userType, ctx.user.type),
+              ),
+            );
 
-          const { question, quickReplies } = buildClarificationResponse(replyResult.updatedState);
+          const { question, quickReplies } = buildClarificationResponse(
+            replyResult.updatedState,
+          );
 
           await db.insert(chatMessages).values({
             conversationId: activeConversationId,
@@ -724,7 +860,13 @@ export const chatRouter = router({
               messageCount: sql`message_count + 2`,
               lastMessageAt: new Date(),
             })
-            .where(eq(chatConversations.id, activeConversationId));
+            .where(
+              and(
+                eq(chatConversations.id, activeConversationId),
+                eq(chatConversations.userId, ctx.user.id),
+                eq(chatConversations.userType, ctx.user.type),
+              ),
+            );
 
           return {
             response: question,
@@ -769,7 +911,10 @@ export const chatRouter = router({
             input.message,
             activeConversationId,
           ).catch((error: unknown) => {
-            log.warn({ err: error, event: "chat.action.confirmation_failed" }, "Text confirmation of an action failed");
+            log.warn(
+              { err: error, event: "chat.action.confirmation_failed" },
+              "Text confirmation of an action failed",
+            );
             return null;
           })
         : null;
@@ -792,19 +937,32 @@ export const chatRouter = router({
             messageCount: sql`message_count + 2`,
             totalTokens: sql`total_tokens + ${textActionResult.tokensUsed}`,
             lastMessageAt: new Date(),
-            title: conversationHistory.length === 0 ? input.message.slice(0, 100) : undefined,
+            title:
+              conversationHistory.length === 0
+                ? input.message.slice(0, 100)
+                : undefined,
           })
-          .where(eq(chatConversations.id, activeConversationId));
+          .where(
+            and(
+              eq(chatConversations.id, activeConversationId),
+              eq(chatConversations.userId, ctx.user.id),
+              eq(chatConversations.userType, ctx.user.type),
+            ),
+          );
 
         if (user.type === "oauth") {
           await db
             .update(users)
-            .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${textActionResult.tokensUsed}` })
+            .set({
+              aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${textActionResult.tokensUsed}`,
+            })
             .where(eq(users.id, user.id));
         } else {
           await db
             .update(localUsers)
-            .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${textActionResult.tokensUsed}` })
+            .set({
+              aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${textActionResult.tokensUsed}`,
+            })
             .where(eq(localUsers.id, user.id));
         }
 
@@ -846,7 +1004,10 @@ export const chatRouter = router({
             fallbacks: config.fallbacks,
             maxTokens: chatPolicy.maxOutputTokens,
           }).catch((error: unknown) => {
-            log.warn({ err: error, event: "chat.kernel.failed" }, "The AI kernel failed; answering without it");
+            log.warn(
+              { err: error, event: "chat.kernel.failed" },
+              "The AI kernel failed; answering without it",
+            );
             return undefined;
           })
         : undefined;
@@ -867,18 +1028,23 @@ export const chatRouter = router({
 
       if (kernelPrimary) {
         const clarificationArtifact = kernelPrimary.artifacts.find(
-          (art) => art.type === "quick_replies" && art.id.startsWith("clarification:")
+          (art) =>
+            art.type === "quick_replies" && art.id.startsWith("clarification:"),
         );
         if (clarificationArtifact) {
-          const payload = clarificationArtifact.payload as { question: string; replies: string[]; missing: string[] };
+          const payload = clarificationArtifact.payload as {
+            question: string;
+            replies: string[];
+            missing: string[];
+          };
           const capability = findCapability(kernelPrimary.intent);
           const capabilityId = capability?.id ?? "unknown";
-          
+
           const newClarificationState = createClarificationState(
             capabilityId,
             kernelPrimary.intent.slots,
             payload.missing,
-            input.message
+            input.message,
           );
 
           await db
@@ -886,10 +1052,16 @@ export const chatRouter = router({
             .set({
               metadata: {
                 ...((activeConv?.metadata as any) || {}),
-                clarificationState: newClarificationState
-              }
+                clarificationState: newClarificationState,
+              },
             })
-            .where(eq(chatConversations.id, activeConversationId));
+            .where(
+              and(
+                eq(chatConversations.id, activeConversationId),
+                eq(chatConversations.userId, ctx.user.id),
+                eq(chatConversations.userType, ctx.user.type),
+              ),
+            );
         }
       }
 
@@ -903,7 +1075,8 @@ export const chatRouter = router({
             toolsUsed: dataNeedKinds(kernelPrimary),
           }
         : {
-            response: "المساعد الذكي متوقف مؤقتاً من الإعدادات. جرّب تاني بعد ما يتم تفعيله.",
+            response:
+              "المساعد الذكي متوقف مؤقتاً من الإعدادات. جرّب تاني بعد ما يتم تفعيله.",
             tokensUsed: 0,
             model: "ai-kernel-disabled",
             toolsUsed: [] as string[],
@@ -912,7 +1085,7 @@ export const chatRouter = router({
       const shadow = kernelPrimary;
       if (shadow) {
         console.info(
-            "[AI Kernel Execution]",
+          "[AI Kernel Execution]",
           JSON.stringify({
             traceId: shadow.traceId,
             conversationId: activeConversationId,
@@ -940,18 +1113,26 @@ export const chatRouter = router({
           conversationId: activeConversationId,
         };
         const proposedAction = shadow?.proposedActions?.[0];
-        actionDraft = await (proposedAction
-          ? proposedAction.name === "goal.create"
-            ? createPendingGoalAction(actionCtx, proposedAction.payload as unknown as GoalCreatePayload)
-            : createPendingRuntimeAction(
-                actionCtx,
-                proposedAction.name as RuntimeActionName,
-                proposedAction.payload as RuntimeActionPayload,
-              )
-          : maybeCreateActionDraftFromMessage(actionCtx, input.message)
+        actionDraft = await (
+          proposedAction
+            ? proposedAction.name === "goal.create"
+              ? createPendingGoalAction(
+                  actionCtx,
+                  proposedAction.payload as unknown as GoalCreatePayload,
+                )
+              : createPendingRuntimeAction(
+                  actionCtx,
+                  proposedAction.name as RuntimeActionName,
+                  proposedAction.payload as RuntimeActionPayload,
+                )
+            : maybeCreateActionDraftFromMessage(actionCtx, input.message)
         ).catch((error: unknown) => {
-          actionDraftError = error instanceof Error ? error.message : String(error);
-          log.warn({ err: error, event: "chat.action.draft_failed" }, "Drafting an action failed");
+          actionDraftError =
+            error instanceof Error ? error.message : String(error);
+          log.warn(
+            { err: error, event: "chat.action.draft_failed" },
+            "Drafting an action failed",
+          );
           return null;
         });
       }
@@ -971,7 +1152,10 @@ export const chatRouter = router({
           tokensUsed: result.tokensUsed,
         };
       }
-      const mergedActions = mergeActionArtifacts(shadow?.artifacts ?? [], actionDraft);
+      const mergedActions = mergeActionArtifacts(
+        shadow?.artifacts ?? [],
+        actionDraft,
+      );
       const structured: AIResponse | undefined = shadow
         ? {
             ...shadow,
@@ -980,7 +1164,11 @@ export const chatRouter = router({
             actions: [...(shadow.actions ?? []), ...mergedActions.actions],
           }
         : actionDraft
-          ? minimalStructuredResponse(result.response, mergedActions.artifacts, mergedActions.actions)
+          ? minimalStructuredResponse(
+              result.response,
+              mergedActions.artifacts,
+              mergedActions.actions,
+            )
           : undefined;
 
       // 7. Save assistant response to DB
@@ -1011,9 +1199,14 @@ export const chatRouter = router({
           source: "chat" as const,
           messages: memoryMessages,
         };
-        const memoryWrite = writeConversationMemory(memoryInput).catch((error: unknown) => {
-          log.warn({ err: error, event: "chat.memory.write_failed" }, "Writing the conversation memory failed");
-        });
+        const memoryWrite = writeConversationMemory(memoryInput).catch(
+          (error: unknown) => {
+            log.warn(
+              { err: error, event: "chat.memory.write_failed" },
+              "Writing the conversation memory failed",
+            );
+          },
+        );
         if (hasSemanticMemoryCandidate(memoryInput.messages)) {
           await memoryWrite;
         } else {
@@ -1033,8 +1226,12 @@ export const chatRouter = router({
       const numericAccuracy = structured?.facts?.length
         ? validateNumbersAgainstFacts(result.response, structured.facts)
         : undefined;
-      const structuredDebug = structured?.debug as Record<string, unknown> | undefined;
-      const cacheRuntime = structuredDebug?.cacheRuntime as Record<string, unknown> | undefined;
+      const structuredDebug = structured?.debug as
+        | Record<string, unknown>
+        | undefined;
+      const cacheRuntime = structuredDebug?.cacheRuntime as
+        | Record<string, unknown>
+        | undefined;
       void recordAICostMetric({
         userId: user.id,
         userType: user.type,
@@ -1045,7 +1242,10 @@ export const chatRouter = router({
         // For deterministic replies, estimated context size is telemetry only,
         // not provider usage or a user charge.
         inputTokens: measuredLlmCalls > 0 ? estimatedInputTokens : 0,
-        outputTokens: measuredLlmCalls > 0 ? Math.max(0, result.tokensUsed - estimatedInputTokens) : 0,
+        outputTokens:
+          measuredLlmCalls > 0
+            ? Math.max(0, result.tokensUsed - estimatedInputTokens)
+            : 0,
         totalTokens: result.tokensUsed,
         embeddingCalls: measuredEmbeddingCalls,
         llmCalls: measuredLlmCalls,
@@ -1089,23 +1289,34 @@ export const chatRouter = router({
           messageCount: sql`message_count + 2`,
           totalTokens: sql`total_tokens + ${result.tokensUsed}`,
           lastMessageAt: new Date(),
-          title: conversationHistory.length === 0
-            ? input.message.slice(0, 100)
-            : undefined,
+          title:
+            conversationHistory.length === 0
+              ? input.message.slice(0, 100)
+              : undefined,
         })
-        .where(eq(chatConversations.id, activeConversationId));
+        .where(
+          and(
+            eq(chatConversations.id, activeConversationId),
+            eq(chatConversations.userId, ctx.user.id),
+            eq(chatConversations.userType, ctx.user.type),
+          ),
+        );
 
       // 9. Update user's AI tokens used
       const tokensToAdd = result.tokensUsed;
       if (user.type === "oauth") {
         await db
           .update(users)
-          .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokensToAdd}` })
+          .set({
+            aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokensToAdd}`,
+          })
           .where(eq(users.id, user.id));
       } else {
         await db
           .update(localUsers)
-          .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokensToAdd}` })
+          .set({
+            aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokensToAdd}`,
+          })
           .where(eq(localUsers.id, user.id));
       }
 
@@ -1142,7 +1353,12 @@ export const chatRouter = router({
     }),
 
   cancelAction: aiProcedure
-    .input(z.object({ actionId: z.number().int().positive(), conversationId: z.number().int().positive().optional() }))
+    .input(
+      z.object({
+        actionId: z.number().int().positive(),
+        conversationId: z.number().int().positive().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       return runtimeCancelAction(
         {
@@ -1263,13 +1479,28 @@ export const chatRouter = router({
         });
       }
 
-      await db.transaction(async (tx) => {
-        await tx.delete(chatMessages).where(eq(chatMessages.conversationId, input.conversationId));
-        await tx.delete(aiConversationSummaries).where(eq(aiConversationSummaries.conversationId, input.conversationId));
-        await tx
-          .delete(chatConversations)
-          .where(and(eq(chatConversations.id, input.conversationId), eq(chatConversations.userId, ctx.user.id), eq(chatConversations.userType, ctx.user.type)));
-      });
+      await withMemoryOwnerLock(
+        { userId: ctx.user.id, userType: ctx.user.type },
+        async (tx) => {
+          await tx
+            .delete(chatMessages)
+            .where(eq(chatMessages.conversationId, input.conversationId));
+          await tx
+            .delete(aiConversationSummaries)
+            .where(
+              eq(aiConversationSummaries.conversationId, input.conversationId),
+            );
+          await tx
+            .delete(chatConversations)
+            .where(
+              and(
+                eq(chatConversations.id, input.conversationId),
+                eq(chatConversations.userId, ctx.user.id),
+                eq(chatConversations.userType, ctx.user.type),
+              ),
+            );
+        },
+      );
 
       return { success: true };
     }),
@@ -1305,8 +1536,13 @@ export const chatRouter = router({
     return items.flatMap(({ metadata, ...item }) => {
       const until = slotMeta(metadata).validUntil;
       if (until && until.getTime() < now) return [];
-      const source = metadata && typeof metadata === "object" ? (metadata as { source?: unknown }).source : undefined;
-      return [{ ...item, fromCall: source === "voice_call" || source === "voice" }];
+      const source =
+        metadata && typeof metadata === "object"
+          ? (metadata as { source?: unknown }).source
+          : undefined;
+      return [
+        { ...item, fromCall: source === "voice_call" || source === "voice" },
+      ];
     });
   }),
 
@@ -1316,97 +1552,73 @@ export const chatRouter = router({
   forgetMemory: authedProcedure
     .input(z.object({ memoryId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const [item] = await db
-        .select({ id: aiMemoryItems.id, content: aiMemoryItems.content })
-        .from(aiMemoryItems)
-        .where(
-          and(
-            eq(aiMemoryItems.id, input.memoryId),
-            eq(aiMemoryItems.userId, ctx.user.id),
-            eq(aiMemoryItems.userType, ctx.user.type),
-          ),
-        )
-        .limit(1);
-
-      if (!item) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "الذاكرة مش موجودة أو تم حذفها بالفعل.",
-        });
-      }
-
-      // Forgetting deletes: the text is not kept behind a status.
-      await db
-        .delete(aiMemoryItems)
-        .where(
-          and(
-            eq(aiMemoryItems.id, input.memoryId),
-            eq(aiMemoryItems.userId, ctx.user.id),
-            eq(aiMemoryItems.userType, ctx.user.type),
-          ),
+      const owner = { userId: ctx.user.id, userType: ctx.user.type };
+      await withMemoryOwnerLock(owner, async (tx) => {
+        const scope = and(
+          eq(aiMemoryItems.id, input.memoryId),
+          eq(aiMemoryItems.userId, owner.userId),
+          eq(aiMemoryItems.userType, owner.userType),
         );
-
-      await db
-        .delete(aiMemoryEmbeddings)
-        .where(
-          and(
-            eq(aiMemoryEmbeddings.memoryItemId, input.memoryId),
-            eq(aiMemoryEmbeddings.userId, ctx.user.id),
-            eq(aiMemoryEmbeddings.userType, ctx.user.type),
-          ),
-        );
-
-      invalidateUserMemory(ctx.user.id, ctx.user.type);
-      await invalidateMemoryUserCache(ctx.user.id, ctx.user.type).catch(() => {});
-      // A call whose summary is still to be written holds the words it came from: it is told to leave it out.
-      const { forgetInPendingCalls } = await import("./services/voice/post-call");
-      await forgetInPendingCalls({ userId: ctx.user.id, userType: ctx.user.type }, String(item.content ?? "")).catch(() => {});
-
+        const [item] = await tx
+          .select({ id: aiMemoryItems.id })
+          .from(aiMemoryItems)
+          .where(scope)
+          .limit(1);
+        if (!item)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "الذاكرة مش موجودة أو تم حذفها بالفعل.",
+          });
+        const { forgetInPendingCalls } =
+          await import("./services/voice/post-call");
+        await forgetInPendingCalls(owner, null, tx);
+        await forgetConversationSummaries(tx, owner);
+        await tx.delete(aiMemoryItems).where(scope);
+        await tx
+          .delete(aiMemoryEmbeddings)
+          .where(
+            and(
+              eq(aiMemoryEmbeddings.memoryItemId, input.memoryId),
+              eq(aiMemoryEmbeddings.userId, owner.userId),
+              eq(aiMemoryEmbeddings.userType, owner.userType),
+            ),
+          );
+      });
+      invalidateUserMemory(owner.userId, owner.userType);
+      await invalidateMemoryUserCache(owner.userId, owner.userType);
       return { success: true };
     }),
 
-  /**
-   * Clear/forget all active user memories.
-   */
+  /** Delete all saved memories, including replaced rows and vectors. */
   clearAllMemories: authedProcedure.mutation(async ({ ctx }) => {
-    // Calls whose summary is still to be written would bring memories back: their words go first.
-    const { forgetInPendingCalls } = await import("./services/voice/post-call");
-    await forgetInPendingCalls({ userId: ctx.user.id, userType: ctx.user.type }, null).catch(() => {});
-    const items = await db
-      .select({ id: aiMemoryItems.id })
-      .from(aiMemoryItems)
-      .where(
-        and(
-          eq(aiMemoryItems.userId, ctx.user.id),
-          eq(aiMemoryItems.userType, ctx.user.type),
-          eq(aiMemoryItems.status, "active"),
-        ),
+    const owner = { userId: ctx.user.id, userType: ctx.user.type };
+    const count = await withMemoryOwnerLock(owner, async (tx) => {
+      const scope = and(
+        eq(aiMemoryItems.userId, owner.userId),
+        eq(aiMemoryItems.userType, owner.userType),
       );
-
-    if (items.length > 0) {
-      await db
-        .delete(aiMemoryItems)
-        .where(
-          and(
-            eq(aiMemoryItems.userId, ctx.user.id),
-            eq(aiMemoryItems.userType, ctx.user.type),
-          ),
-        );
-
-      await db
+      const items = await tx
+        .select({ id: aiMemoryItems.id })
+        .from(aiMemoryItems)
+        .where(scope);
+      const { forgetInPendingCalls } =
+        await import("./services/voice/post-call");
+      await forgetInPendingCalls(owner, null, tx);
+      await forgetConversationSummaries(tx, owner);
+      await tx.delete(aiMemoryItems).where(scope);
+      await tx
         .delete(aiMemoryEmbeddings)
         .where(
           and(
-            eq(aiMemoryEmbeddings.userId, ctx.user.id),
-            eq(aiMemoryEmbeddings.userType, ctx.user.type),
+            eq(aiMemoryEmbeddings.userId, owner.userId),
+            eq(aiMemoryEmbeddings.userType, owner.userType),
           ),
         );
-
-      invalidateUserMemory(ctx.user.id, ctx.user.type);
-      await invalidateMemoryUserCache(ctx.user.id, ctx.user.type).catch(() => {});
-    }
-
-    return { success: true, count: items.length };
+      return items.length;
+    });
+    invalidateUserMemory(owner.userId, owner.userType);
+    await invalidateMemoryUserCache(owner.userId, owner.userType);
+    return { success: true, count };
   }),
 
   /**
@@ -1435,7 +1647,8 @@ export const chatRouter = router({
       },
       {
         label: "💼 تحليل الكاش فلو",
-        prompt: "إيه الدخل والمصروف والصافي الشهر ده؟ وإيه أكتر بندين عايزين مراجعة؟",
+        prompt:
+          "إيه الدخل والمصروف والصافي الشهر ده؟ وإيه أكتر بندين عايزين مراجعة؟",
       },
     ];
   }),

@@ -8,6 +8,49 @@ const row = (over: Partial<VoiceCallStatRow>): VoiceCallStatRow => ({
 });
 
 describe("summarizeVoiceCalls", () => {
+  it("attributes a switched call's time and costs to the effective model segments", () => {
+    const stats = summarizeVoiceCalls(
+      1,
+      [
+        row({
+          costUsd: "0.12",
+          billedSeconds: 120,
+          metrics: {
+            modelSegments: [
+              {
+                model: "gemini-3.8-live",
+                mode: "standard",
+                thinkingLevel: null,
+                billedSeconds: 90,
+                costUsd: 0.03,
+              },
+              {
+                model: "gemini-3.8-live-extended-thinking",
+                mode: "ultra",
+                thinkingLevel: "low",
+                billedSeconds: 30,
+                costUsd: 0.09,
+              },
+            ],
+          },
+        }),
+      ],
+      [],
+    );
+    expect(stats.models).toContainEqual({
+      key: "gemini-3.8-live",
+      count: 1,
+      minutes: 1.5,
+      costUsd: 0.03,
+    });
+    expect(stats.models).toContainEqual({
+      key: "gemini-3.8-live-extended-thinking · ultra · low",
+      count: 1,
+      minutes: 0.5,
+      costUsd: 0.09,
+    });
+    expect(stats.calls).toBe(1);
+  });
   it("adds up calls, callers, minutes and cost per minute", () => {
     const stats = summarizeVoiceCalls(7, [
       row({}),

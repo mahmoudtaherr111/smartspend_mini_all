@@ -12,7 +12,7 @@ export interface InstallmentProgress {
   remainingAmount: number;
   done: boolean;
   /** How later payments were counted: linked to due dates, or found by the plan's word. */
-  countedBy: "linked" | "keyword";
+  countedBy: "linked" | "keyword" | "ambiguous";
 }
 
 export function installmentProgress(
@@ -36,12 +36,14 @@ export function installmentProgress(
  */
 export function installmentProgressFromLinked(
   plan: { monthlyAmount: number; totalInstallments: number; paidBefore: number },
-  linkedTotal: number | string,
+  linkedTotal: number | string | Array<number | string>,
 ): InstallmentProgress {
   const monthly = new Decimal(plan.monthlyAmount);
   const owedAfterBefore = monthly.times(Math.max(0, plan.totalInstallments - Math.max(0, plan.paidBefore)));
-  const linked = Decimal.min(new Decimal(linkedTotal || 0), owedAfterBefore);
-  const whole = monthly.gt(0) ? linked.div(monthly).floor().toNumber() : 0;
+  const amounts = Array.isArray(linkedTotal) ? linkedTotal.map((value) => Decimal.max(new Decimal(value || 0), 0)) : null;
+  const total = amounts ? amounts.reduce((sum, value) => sum.plus(value), new Decimal(0)) : new Decimal(linkedTotal as number | string || 0);
+  const linked = Decimal.min(Decimal.max(total, 0), owedAfterBefore);
+  const whole = monthly.gt(0) ? amounts ? amounts.filter((amount) => amount.gte(monthly)).length : linked.div(monthly).floor().toNumber() : 0;
   const paid = Math.min(plan.totalInstallments, Math.max(0, plan.paidBefore) + whole);
   const remainingAmount = owedAfterBefore.minus(linked).toDecimalPlaces(2).toNumber();
   return {
@@ -51,4 +53,12 @@ export function installmentProgressFromLinked(
     done: remainingAmount <= 0,
     countedBy: "linked",
   };
+}
+
+/** Keyword matches are estimates by money paid, never by number of rows (a row can be a partial payment). */
+export function installmentProgressFromRecorded(
+  plan: { monthlyAmount: number; totalInstallments: number; paidBefore: number },
+  amount: number | string,
+): InstallmentProgress {
+  return { ...installmentProgressFromLinked(plan, amount), countedBy: "keyword" };
 }

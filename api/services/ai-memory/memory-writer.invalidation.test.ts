@@ -1,13 +1,21 @@
 import { invalidateMemoryUserCache } from "./memory-retriever";
 import { writeConversationMemory } from "./memory-writer";
 
-const { dbMock } = vi.hoisted(() => {
+const { dbMock, storedMessages } = vi.hoisted(() => {
+  const storedMessages: Array<{ id: number; role: string; content: string }> =
+    [];
   const dbMock: any = {
     select: vi.fn((fields?: Record<string, unknown>) => {
       const chain: any = {
         from: vi.fn(() => chain),
         where: vi.fn(() => chain),
-        limit: vi.fn(() => Promise.resolve(fields?.id ? [{ id: 123 }] : [])),
+        for: vi.fn(() => Promise.resolve([{ id: 99, metadata: {} }])),
+        orderBy: vi.fn(() => chain),
+        limit: vi.fn(() =>
+          Promise.resolve(
+            fields?.role ? storedMessages : fields?.id ? [{ id: 123 }] : [],
+          ),
+        ),
       };
       return chain;
     }),
@@ -16,9 +24,13 @@ const { dbMock } = vi.hoisted(() => {
         onDuplicateKeyUpdate: vi.fn(() => Promise.resolve()),
       })),
     })),
+    update: vi.fn(() => ({
+      set: vi.fn(() => ({ where: vi.fn(async () => {}) })),
+    })),
+    transaction: vi.fn(async (work) => work(dbMock)),
   };
 
-  return { dbMock };
+  return { dbMock, storedMessages };
 });
 
 vi.mock("../../queries/connection", () => ({
@@ -45,9 +57,14 @@ describe("AI memory writer cache invalidation", () => {
     dbMock.select.mockClear();
     dbMock.insert.mockClear();
     vi.mocked(invalidateMemoryUserCache).mockClear();
+    storedMessages.length = 0;
   });
 
   it("invalidates semantic memory retrieval cache after writing a conversation memory", async () => {
+    storedMessages.push(
+      { id: 1, role: "user", content: "remember this plan goal buy laptop" },
+      { id: 2, role: "assistant", content: "I will remember the laptop plan." },
+    );
     const draft = await writeConversationMemory({
       userId: 7,
       userType: "local",
@@ -64,6 +81,18 @@ describe("AI memory writer cache invalidation", () => {
   });
 
   it("does not invalidate semantic retrieval cache for recall-only conversations", async () => {
+    storedMessages.push(
+      {
+        id: 1,
+        role: "user",
+        content: "فاكر الخطة اللي اتكلمنا عنها عشان القهوة والنوم؟",
+      },
+      {
+        id: 2,
+        role: "assistant",
+        content: "Recalled the existing coffee and sleep plan.",
+      },
+    );
     const draft = await writeConversationMemory({
       userId: 7,
       userType: "local",

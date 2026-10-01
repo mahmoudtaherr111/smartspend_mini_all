@@ -10,18 +10,18 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (29 of
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-29 7e640a0 | 2026-09-29 68f5765 | 18 | — | — | 2 | — |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 18 | — | — | 2 | — |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-29 fa056d1 | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-01 abc6b88 | 2026-10-01 abc6b88 | 10 | — | — | 4 | 2 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-01 fa78417 | 2026-10-01 fa78417 | 4 | — | 4 | 2 | 2 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 10 | — | — | 4 | 2 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 4 | — | 4 | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-29 6e973a3 | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-29 7e640a0 | 2026-09-29 7e640a0 | 6 | — | 3 | 7 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-29 fa056d1 | 2026-09-29 fa056d1 | 14 | **2** | 1 | 4 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 6 | — | 3 | 7 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 14 | **2** | 1 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-28 af819ef | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 1 | **1** | 5 | 1 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-30 10476f0 | 2026-09-30 10476f0 | 4 | — | 2 | 5 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-30 10476f0 | 2026-09-29 1a6f756 | 5 | — | — | — | 7 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 4 | — | 2 | 5 | 1 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 8 | — | — | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-29 7e640a0 | 2026-09-29 7e640a0 | 7 | **1** | 1 | 3 | 2 |
 
 
@@ -103,7 +103,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A call does not go on with the screen locked or the app in the background: the page keeps the microphone only in the foreground, and the call resumes if the app comes back within the hold (`src/lib/voice/call-connection.ts`). Keeping it alive needs native work in the Android and iOS shells.
 - The speech detector's thresholds (`src/lib/voice/speech-detector.ts`) are tuned on synthetic audio in tests; they have not been checked against recordings of real users on phones in noisy places.
-- A business's own ledger can be read in a call (`money_query` with `scope: business`) but not written to: an expense spoken in a call is saved to the personal ledger; debts carry no due dates and several gam3eyas are added together (`api/services/debt-ledger.ts`); installments are counted from payments whose words name the plan (`api/services/installments.ts`), so a partial payment or two plans with one word are miscounted.
+- A business's own ledger can be read in a call (`money_query` with `scope: business`) but not written to: recording uses an explicit `record_draft.scope` (personal or business), checks the business feature again at confirmation, and asks instead of silently mixing ledgers; debts carry no due dates and several gam3eyas are added together (`api/services/debt-ledger.ts`); installments are counted from payments whose words name the plan (`api/services/installments.ts`); keyword matching is now an amount-based estimate, and overlapping names are reported as ambiguous instead of assigning a payment to both plans. Linked progress counts fully paid due dates separately.
 - The opening context (CALL FACTS) cannot be changed during a session: after the records change the model is told, and a stale figure said is recorded, but not stopped (`api/services/voice/brain/validator.ts`).
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)

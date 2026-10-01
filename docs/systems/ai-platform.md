@@ -191,3 +191,6 @@ Checked against the code; each one names where it lives.
 - [Admin console, support and growth tools](admin.md): providers, models, keys, quotas and telemetry.
 - [Plans and payments](billing.md): the plan a budget is resolved from.
 - [Server platform and data](platform.md): settings, environment variables and the database.
+
+### Cost log privacy
+`recordAICostMetric` logs through `createLogger`, with an explicit list of account identifiers, channel and numeric usage counters. Arbitrary routing or trace metadata is never forwarded to server logs, because it can contain raw expense clauses nested beyond redaction depth. The analytics row stores only scoped counters and whitelisted routing codes, never arbitrary nested traces or clauses; `api/services/ai-cost-policy.logging.test.ts` verifies that nested private text does not enter the log.

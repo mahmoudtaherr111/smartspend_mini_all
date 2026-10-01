@@ -10,6 +10,7 @@
  * Leaf module: it imports nothing from the classifier, so the negation detector, the loan rule and the intent
  * detector can all read it without an import cycle. Every pattern runs on `normalizeArabic` output (ى → ي).
  */
+import { parseArabicNumbers } from "./arabic-number-parser";
 
 /** A purchase undone: cancelled, returned, or the order and booking words that go with it. */
 const REVERSAL =
@@ -19,9 +20,20 @@ const REVERSAL =
 const MONEY_BACK =
   /(?:^|\s)[وف]?(?:استرجعت|استرجعنا|استرديت|استردت|استردينا|رجعولي|رجعوالي|رجعلي|رجعتلي|ردولي|ردوا|رجعوا|رجعوه|رجعوها)(?=\s|$)/;
 
+/** A thing returned to its seller, rather than returning home or repaying a person. */
+const RETURN_TO_SELLER =
+  /(?:^|\s)[وف]?(?:رجعت|رجعنا|رجعته|رجعتها)\s+(?:\S+\s+){0,5}(?:للمحل|للمتجر|للبائع|للبايع|للبياع|للموقع|للمندوب)(?=\s|$)/;
+const RECEIVED_MONEY =
+  /(?:^|\s)[وف]?(?:خدت|اخدت|استلمت)\s+(?:\d|فلوس|الفلوس|تمن|حق)|(?:^|\s)[وف]?(?:خدت|اخدت|استلمت)\s*$/;
+
 /** Whether normalized text says a purchase was undone and its money came back. */
 export function readsAsReversalRefund(norm: string): boolean {
-  return REVERSAL.test(norm) && MONEY_BACK.test(norm);
+  return (
+    REVERSAL.test(norm) &&
+    (MONEY_BACK.test(norm) ||
+      (RETURN_TO_SELLER.test(norm) &&
+        RECEIVED_MONEY.test(parseArabicNumbers(norm))))
+  );
 }
 
 /**

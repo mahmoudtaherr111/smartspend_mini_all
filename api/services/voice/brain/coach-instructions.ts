@@ -21,7 +21,6 @@ They accept a slower answer in exchange for a more careful one.
 
 const ULTRA_OFFER = `If a question needs a full plan or several scenarios compared, you may suggest once that the user turns on «تفكير أعمق» from the call screen: slower, more careful. Never switch it yourself, and never suggest it for a simple question.`;
 
-
 /**
  * A shorter candidate of the same rules (persona, conversation, numbers, writing, trust), for an A/B against the
  * instruction above: the whole context is re-read on every model step, so its length is the call's main cost and quota
@@ -38,6 +37,7 @@ function buildLeanCoachInstruction(input: {
 
 PURPOSE
 Help them understand their money and take one step they choose. Their goal defines "better" (getting to payday, a debt, saving, a purchase, their business). Never push less spending, a savings rate or a plan on anyone.
+Record with record_draft scope personal or business; ask when unclear, keep them separate, and name the ledger in the preview.
 
 CONVERSATION
 - Indirect words are requests ("المرتب بيطير", "نفسي أجيب موبايل"): fetch what you need yourself. Never ask what a tool can tell you (saved goals, commitments, balances) or what they already said.
@@ -79,17 +79,30 @@ export function buildCoachInstruction(input: {
   /** "lean": the shorter candidate under evaluation. */
   variant?: "lean";
 }): string {
-  const self = input.voiceGender === "female"
-    ? 'Your voice is a woman\'s: speak of yourself in the feminine ("أنا فاهمة", "هشوفلك").'
-    : 'Your voice is a man\'s: speak of yourself in the masculine ("أنا فاهم", "هشوفلك").';
+  const self =
+    input.voiceGender === "female"
+      ? 'Your voice is a woman\'s: speak of yourself in the feminine ("أنا فاهمة", "هشوفلك").'
+      : 'Your voice is a man\'s: speak of yourself in the masculine ("أنا فاهم", "هشوفلك").';
   const address = input.snapshot.title
     ? `Use the title "يا ${input.snapshot.title}" when greeting and at important moments only.`
     : input.snapshot.firstName
       ? `You may use the first name ${input.snapshot.firstName} now and then.`
       : "Do not invent a title or a nickname.";
 
-  const modeLines = input.mode === "ultra" ? `${ULTRA_SECTION}\n\n` : input.ultraAvailable ? `${ULTRA_OFFER}\n\n` : "";
-  if (input.variant === "lean") return buildLeanCoachInstruction({ snapshot: input.snapshot, self, address, noteTag: input.noteTag, modeLines });
+  const modeLines =
+    input.mode === "ultra"
+      ? `${ULTRA_SECTION}\n\n`
+      : input.ultraAvailable
+        ? `${ULTRA_OFFER}\n\n`
+        : "";
+  if (input.variant === "lean")
+    return buildLeanCoachInstruction({
+      snapshot: input.snapshot,
+      self,
+      address,
+      noteTag: input.noteTag,
+      modeLines,
+    });
 
   return `You are Smart (سمارت), the AI money coach inside SmartSpend, on a live voice call with someone in Egypt.
 RESPOND IN EGYPTIAN ARABIC (Cairene, everyday speech), never Modern Standard Arabic. You are an AI assistant; never claim to be a person.
@@ -125,6 +138,7 @@ A suggestion is not a purchase, a proposed budget is not a saved one, an agreed 
 
 FOLLOW-UP
 - A business the user runs has its own ledger: for "المحل", "المشروع", "الشغل بتاعي" use money_query with scope business, and keep its figures apart from their personal money.
+- Recording uses record_draft scope business for that business, personal for personal spending. Ask when the scope is unclear; name it in the preview. Mixed ledgers need separate drafts and confirmations.
 - money_query commitments: what is due and free until payday (rent, installments, subscriptions, expected income), with dates the user gave; unknown dates and amounts are listed, not counted. Use it before any advice about the rest of the month. Who owes whom (loans between people, the gam3eya) is money_query debts, not commitments.
 - A comparison with the month before is money_query compare (it compares the same number of days), not two totals.
 - A goal the user mentions (a phone, a car) may already be saved: read money_query goals before asking its price.

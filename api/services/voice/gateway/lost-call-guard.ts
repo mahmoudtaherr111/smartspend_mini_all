@@ -16,7 +16,13 @@
 export type GuardVerdict =
   | { kind: "pass" }
   | { kind: "hold" }
-  | { kind: "release"; audio: Array<{ pcm: Buffer; sampleRate: number }>; words: string[] }
+  /** Already suppressed: no second recovery decision for another chunk of this utterance. */
+  | { kind: "suppress" }
+  | {
+      kind: "release";
+      audio: Array<{ pcm: Buffer; sampleRate: number }>;
+      words: string[];
+    }
   /** `afterTools`: the request's tools had answered, so the model is to use their results rather than call again. */
   | { kind: "drop"; retry: boolean; afterTools: boolean };
 
@@ -34,7 +40,11 @@ export class LostToolCallGuard {
   /** The last utterance ended with the model still IN_PROGRESS: the next one continues the task. */
   private continuing = false;
   private toolFailed = false;
-  private held: { since: number; words: string[]; audio: Array<{ pcm: Buffer; sampleRate: number }> } | null = null;
+  private held: {
+    since: number;
+    words: string[];
+    audio: Array<{ pcm: Buffer; sampleRate: number }>;
+  } | null = null;
   /** The utterance under way was already let through: the rest of it is not held again. */
   private passing = false;
   /** The rest of a dropped utterance, until the provider confirms it stopped. */
@@ -42,6 +52,7 @@ export class LostToolCallGuard {
   /** An apology was dropped: whatever the model says next answers the same request and is held like a continuation. */
   private afterDrop = false;
   private retries = 0;
+  private finished = false;
 
   constructor(private readonly options: GuardOptions) {}
 
@@ -55,6 +66,7 @@ export class LostToolCallGuard {
     this.continuing = false;
     this.toolFailed = false;
     this.retries = 0;
+    this.finished = false;
     this.held = null;
     this.passing = false;
     this.dropping = false;
@@ -102,7 +114,10 @@ export class LostToolCallGuard {
       this.held.audio.push({ pcm, sampleRate });
       return this.expired(now) ? this.flush() : { kind: "hold" };
     }
-    if ((this.continuing || this.afterDrop) && !this.passing && !this.toolFailed) {
+    if (
+      (this.continuing || this.afterDrop) && !this.passing && !this.toolFailed &&
+      !this.finished
+    ) {
       this.held = { since: now, words: [], audio: [{ pcm, sampleRate }] };
       return { kind: "hold" };
     }
@@ -110,7 +125,16 @@ export class LostToolCallGuard {
   }
 
   words(text: string, now: number): GuardVerdict {
-    if (this.dropping) return { kind: "drop", retry: false, afterTools: this.toolCalls > 0 };
+    if (this.dropping) return { kind: "suppress" };
+    if (
+      !this.held &&
+      (this.continuing || this.afterDrop) &&
+      !this.passing &&
+      !this.toolFailed &&
+      !this.finished
+    ) {
+      this.held = { since: now, words: [], audio: [] };
+    }
     if (!this.held) return { kind: "pass" };
     this.held.words.push(text);
     // A tool of this request really failed: saying so is the truth, not a lost step.
@@ -122,6 +146,7 @@ export class LostToolCallGuard {
       this.afterDrop = true;
       const retry = this.retries < (this.options.maxRetries ?? 2);
       if (retry) this.retries += 1;
+      else this.finished = true;
       return { kind: "drop", retry, afterTools: this.toolCalls > 0 };
     }
     if (said.length >= (this.options.enoughChars ?? 28) || this.expired(now)) return this.flush();
@@ -150,7 +175,12 @@ export class LostToolCallGuard {
     return { kind: "release", audio, words };
   }
 
-  snapshot(): { retries: number } {
-    return { retries: this.retries };
+  snapshot(): { retries: number; finished: boolean } {
+    return { retries: this.retries, finished: this.finished };
+  }
+
+  restore(state: { retries?: number; finished?: boolean } | undefined): void {
+    this.retries = Math.max(0, state?.retries ?? 0);
+    this.finished = state?.finished === true;
   }
 }

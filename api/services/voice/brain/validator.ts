@@ -7,12 +7,18 @@
  * mismatch is only recorded, because a correction without a known truth would be a guess of our own.
  */
 import { parseArabicNumbers } from "../../../lib/arabic-number-parser";
-import type { CallFact, FactLedger } from "./facts";
+import {
+  factMetric,
+  type FactMetric,
+  type CallFact,
+  type FactLedger,
+} from "./facts";
 
 export interface SpokenNumber {
   value: number;
   approximate: boolean;
   money: boolean;
+  metric?: FactMetric;
 }
 
 const APPROXIMATE_BEFORE = /(حوالي|حوالى|تقريبا|تقريباً|يعني|أكتر من|اكتر من|أقل من|اقل من|قرب|يجي|ييجي|في حدود)\s*$/;
@@ -24,7 +30,9 @@ const PIASTERS_AFTER = /^\s*(قرش|قروش|قرشا|قرشاً)/;
 const POUNDS_THEN_PIASTERS = /^\s*(جنيه|جنيهات)?\s*و?\s*$/;
 
 /** The numbers in a stretch of speech, with what surrounds each one. */
-export function extractSpokenNumbers(text: string): Array<SpokenNumber & { settled: boolean; index: number }> {
+export function extractSpokenNumbers(
+  text: string,
+): Array<SpokenNumber & { settled: boolean; index: number }> {
   const parsed = parseArabicNumbers(text);
   const out: Array<SpokenNumber & { settled: boolean; index: number; end: number }> = [];
   const pattern = /\d+(?:\.\d+)?/g;
@@ -55,12 +63,31 @@ export function extractSpokenNumbers(text: string): Array<SpokenNumber & { settl
       value,
       approximate: APPROXIMATE_BEFORE.test(before),
       money,
+      metric:
+        factMetric(
+          after.match(
+            /^\s*(?:(?:جنيه|جنيهات)\s+)?(?:مصروف\S*|مصاريف\S*|دخل\S*|مرتب\S*|رصيد\S*|دين\S*|ميزاني\S*|هدف\S*)(?=\s|$)/,
+          )?.[0] ?? "",
+        ) ??
+        factMetric(
+          before
+            .split(/[،؛.!؟?]/)
+            .at(-1)
+            ?.slice(-100) ?? "",
+        ),
       settled: followingWords.length >= 2,
       index: index++,
       end: match.index + match[0].length,
     });
   }
-  return out.map((number) => ({ value: number.value, approximate: number.approximate, money: number.money, settled: number.settled, index: number.index }));
+  return out.map((number) => ({
+    value: number.value,
+    approximate: number.approximate,
+    money: number.money,
+    metric: number.metric,
+    settled: number.settled,
+    index: number.index,
+  }));
 }
 
 export interface Mismatch {
@@ -115,12 +142,17 @@ export class SpokenNumberValidator {
       if (!final && !number.settled) break;
       this.checkedInTurn = number.index + 1;
       if (!number.money) continue;
-      if (this.ledger.allows(number.value, number.approximate)) {
+      if (
+        this.ledger.allowsClaim(number.value, number.approximate, number.metric)
+      ) {
         // Recorded, not corrected: the figure was right when read, and the model was told the records changed.
         if (this.ledger.onlyStale(number.value, number.approximate)) found ??= { spoken: number.value, intended: null, stale: true };
         continue;
       }
-      found ??= { spoken: number.value, intended: this.intendedFact(number.value) };
+      found ??= {
+        spoken: number.value,
+        intended: this.intendedFact(number.value, number.metric),
+      };
     }
     return found;
   }
@@ -130,11 +162,12 @@ export class SpokenNumberValidator {
    * digit, "خمسمية وعشرين" for 320), or its teen/tens twin ("خمستاشر" for "خمسين", 1,500 for 5,000). Anything
    * further is recorded but not corrected, because a correction toward the wrong fact turns a right number wrong.
    */
-  private intendedFact(spoken: number): CallFact | null {
+  private intendedFact(spoken: number, metric?: FactMetric): CallFact | null {
     let best: CallFact | null = null;
     let bestRatio = Infinity;
     for (const fact of this.ledger.latestBatch()) {
       if (fact.value <= 0 || fact.unit !== "EGP") continue;
+      if (fact.stale || (metric && fact.metric !== metric)) continue;
       const ratio = Math.max(spoken, fact.value) / Math.min(spoken, fact.value);
       const sameSize = Math.floor(Math.log10(spoken)) === Math.floor(Math.log10(fact.value));
       if (((sameSize && ratio <= 2) || teenTensTwins(spoken, fact.value)) && ratio < bestRatio) {
@@ -162,6 +195,8 @@ export function teenTensTwins(a: number, b: number): boolean {
 /** The note that makes the model correct itself, in its own words. */
 export function correctionNote(mismatch: Mismatch): string {
   const fact = mismatch.intended!;
-  return `(ملاحظة من التطبيق، مش من المستخدم: الرقم اللي اتقال لـ«${fact.label}» غلط. الصح «${fact.say}». ` +
-    "صحح بجملة قصيرة وكمل من غير اعتذار طويل.)";
+  return (
+    `(ملاحظة من التطبيق، مش من المستخدم: الرقم اللي اتقال لـ«${fact.label}» غلط. الصح «${fact.say}». ` +
+    "صحح بجملة قصيرة وكمل من غير اعتذار طويل.)"
+  );
 }

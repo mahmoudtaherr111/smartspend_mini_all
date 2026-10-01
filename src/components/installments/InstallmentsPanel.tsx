@@ -18,6 +18,7 @@ type Plan = {
   remaining: number;
   remainingAmount: number;
   done: boolean;
+  countedBy?: "linked" | "keyword" | "ambiguous";
 };
 
 /**
@@ -105,14 +106,15 @@ export function InstallmentsPanel() {
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+              {plan.countedBy !== "ambiguous" && <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <div className="h-full bg-violet-500" style={{ width: `${(plan.paid / plan.totalInstallments) * 100}%` }} />
-              </div>
+              </div>}
               <p className="text-xs text-muted-foreground">
-                {plan.done
+                {plan.countedBy === "ambiguous" ? "الدفعات باسم متشابه مع خطة تانية. اربطها بمواعيد القسط عشان تعرف الباقي بدقة." : plan.done
                   ? "خلّصت الأقساط كلها 🎉"
                   : `فاضل ${plan.remaining.toLocaleString("ar-EG")} قسط من ${plan.totalInstallments.toLocaleString("ar-EG")} · ${egp(plan.remainingAmount)}`}
               </p>
+              {plan.countedBy === "keyword" && <p className="text-xs text-muted-foreground">تقدير من مبالغ الدفعات المسجلة؛ ربطها بمواعيد القسط أدق.</p>}
             </div>
           ))
         )}

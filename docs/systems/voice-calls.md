@@ -72,13 +72,13 @@ first call wrote that month, never dictation seconds.
    `audioStreamEnd` so the model answers without waiting for silence. The model's 24 kHz audio, live captions,
    the state (listening, thinking, speaking, awaiting confirmation) and cards come back. Captions are shown, never
    stored. The state follows the work, not a timer: from a tool call it stays "thinking" while any tool of the call
-   runs, and once the last answer is in the model has 8 seconds to start speaking (16 for the extended-thinking model);
+   runs, and once the last answer is in the standard model has 8 seconds to start speaking; the extended model is never nudged while it reports IN_PROGRESS (its 16-second check waits for that state to end);
    a model still silent then is told once per request to give the answer now (`CallBrain#replyNudge`), and only a second
    silence sends the screen back to listening; each silence is a `no_reply_after_tool` incident. The extended-thinking model reports its
    task apart from its speech (`interactionStatus`): the engine turns IN_PROGRESS into `working` and IDLE into `idle`,
    so a spoken filler line ends in "thinking", and only IDLE returns to "listening"; `turn_complete` says whether the
    utterance ended while the model is still IN_PROGRESS. Each tool answer goes back to the
-   model the moment it is ready (`CallSession#runTools`), never held behind a slower one. A read whose user spoke again
+   model the moment it is ready (`CallSession#runTools`), after verifying shared call ownership, never held behind a slower one. A read whose user spoke again
    while it ran carries `earlier_request` ("this answers the request before the user's latest words"): without it both
    Live models took a balance read as the answer to the question that replaced it. The state carries what the call is waiting on
    (`VoiceWaitDetail`: records, a report, memory, a calculation, a price, the guide, a draft), named by
@@ -142,7 +142,7 @@ tier and not the admin role.
 
 `voice.startCall` takes the mode the app asks for (the one the user chose last) and starts in it only when it is
 offered; the ticket carries both modes' models (`TicketPayload#modes`). A switch during the call
-(`{type:"mode"}` from the app, `CallSession#switchMode`) waits for no tool to be running, takes a seat in the new
+(`{type:"mode"}` from the app, `CallSession#switchMode`) refuses while a tool, unresolved write or pending confirmation exists, takes a seat in the new
 model's pool (a quota pause refuses it), closes the provider session and opens a fresh one on the new model with the
 call's last lines as history (`historyConfig.initialHistoryInClientContent`, at most 16 lines and 6,000 characters),
 then a note makes the model continue without greeting. Drafts, facts, consent and the meter are the server's and carry
@@ -212,7 +212,7 @@ is billed again for it on every later turn.
   (`api/services/voice/brain/claims.ts#claimsFailure`), they are dropped unheard and unshown, a `lost_tool_call`
   incident is recorded (with whether tools had answered), and a note asks the model to call the tool again (none was
   called) or to answer from the results it has (they came back), without apologising; after two retries in one request
-  the note asks it to say plainly that it cannot reach that information in this call. Anything else held is released
+  the note asks it to say plainly that it cannot reach that information in this call. Only the first suppressed text chunk triggers recovery; later chunks are suppressed without another note. The final inability answer is allowed. Transcript-first and audio-first continuations both enter the bounded hold. Anything else held is released
   at once, in order. The standard model is never held.
 - **Claiming a failure.** `api/services/voice/brain/claims.ts#FailureClaimCheck`: a reply that says something broke
   ("حصل عطل", "مشكلة في النظام", "مش قادر أوصل") while no tool of the user's latest request failed is a
@@ -432,9 +432,9 @@ Checked against the code; each one names where it lives.
 2. **Gap.** The speech detector's thresholds (`src/lib/voice/speech-detector.ts`) are tuned on synthetic audio in
    tests; they have not been checked against recordings of real users on phones in noisy places.
 3. **Gap.** A business's own ledger can be read in a call (`money_query` with `scope: business`) but not written to:
-   an expense spoken in a call is saved to the personal ledger; debts carry no due dates and several gam3eyas are added
+   recording uses an explicit `record_draft.scope` (personal or business), checks the business feature again at confirmation, and asks instead of silently mixing ledgers; debts carry no due dates and several gam3eyas are added
    together (`api/services/debt-ledger.ts`); installments are counted from payments whose words name the plan
-   (`api/services/installments.ts`), so a partial payment or two plans with one word are miscounted.
+   (`api/services/installments.ts`); keyword matching is now an amount-based estimate, and overlapping names are reported as ambiguous instead of assigning a payment to both plans. Linked progress counts fully paid due dates separately.
 4. **Bug (provider).** On `gemini-3.8-live-extended-thinking`, a tool call sometimes never reaches the app: the model
    says a line, stays IN_PROGRESS, then apologises for a "system error" with no `toolCall` message and no provider
    error, while `gemini-3.8-live` calls the tool every time. On 2026-09-30 at LOW, 42 of 49 single-tool probe runs
@@ -458,3 +458,17 @@ Checked against the code; each one names where it lives.
 - [Recording spending](expense-capture.md): voice dictation of expenses is a different feature with its own quota
   check.
 - [Server platform and data](platform.md): Redis and the settings cache.
+
+## Production boundaries (2026-10-01)
+- The first PCM of a new spoken request advances its epoch; the old read carries `earlier_request` even before speech ends. A spoken yes is not usable while the user speaks or for 500 ms after their last transcription; a draft must actually have its amounts read back. A tap remains an explicit confirmation.
+- The 8/16-second post-tool wait never sends an interrupting nudge while Extended reports IN_PROGRESS. A separate 90-second deadline covers reasoning before tools; it gives a clear notice and ends an unanswered request, while a write already started remains an unknown outcome until its result.
+- Mode switches refuse running tools, unresolved writes and pending consent. Up to 320 KB/600 events of input are replayed in order after connection, or the call ends explicitly on overflow. Connection generations close engines opened after cancellation; switching time is not billed. Moving pools retains the user seat; Redis failure cannot silently use process-local admission in production.
+- Redis call state uses owner/epoch/revision comparisons and a content-free tombstone after ending. A stale owner cannot overwrite a takeover. Every confirmed draft claims durable one-time write permission in `voice_calls.metrics.writeClaims` before execution; checkpoints preserve those claims. An unknown write must be inspected in the app, never blindly retried.
+- Model segments carry the effective model, mode, thinking level, time, provider tokens and tool cost through resumption. Admin statistics and the AI cost ledger attribute each segment to that model.
+- Capacity settings include input TPM and a per-call reservation for each mode; admission uses the smaller of the seat cap and 80% of input TPM divided by the reservation. The owner reported 65k TPM for standard; the visible AI Studio Free-tier project also shows 65k for Extended, with unlimited RPM/RPD. Defaults reserve 30k/60k TPM: one standard call and no Extended seat after headroom until its reservation is reduced on evidence or quota increased. These estimates do not guarantee capacity on arbitrary long calls. Ultra stays disabled until qualified.
+- Claim checks recognize explicit technical failures instead of a bare «عطل». Number checks bind explicit financial nouns to the fact metric and reject stale facts as correction targets; this is a guard, not a complete proof of every sentence’s meaning.
+- Memory writes use the account-row transaction lock, compare precise observation times before replacing a slot and roll back replacement with insertion. Forgetting suppresses pending/active voice summaries durably; finalization cannot undo the barrier.
+- Regression evidence: `tests/voice-production-regressions.test.ts`, draft/record tests, real Redis `api/services/voice/gateway/shared-state.integration.test.ts`, and migrated MySQL `tests/voice-memory-slots.test.ts`. Real Egyptian microphone recordings, physical phone/Bluetooth testing and repeated live-model qualification remain release requirements.
+
+### Complete financial previews
+Both models hold the beginning of a pending draft preview briefly using a separate preview guard. A premature «سجلنا» or «حفظت» is suppressed and corrected once per request, with `done_claim_suppressed` counted separately from claims the user heard. A second suppressed completion claim ends the call with a notice to inspect the draft in the app. A preview without its amounts is re-requested once; it never grants voice consent. The hold is bounded and transcripts have no guaranteed exact alignment with audio, so live-model and device qualification remains necessary.

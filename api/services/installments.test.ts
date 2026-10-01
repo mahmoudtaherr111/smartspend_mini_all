@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { installmentProgress, installmentProgressFromLinked } from "./installments";
+import { installmentProgress, installmentProgressFromLinked, installmentProgressFromRecorded } from "./installments";
 
 describe("installment progress", () => {
+  it("does not turn partial payments on separate due dates into a completed installment", () => {
+    expect(installmentProgressFromLinked({ monthlyAmount: 800, totalInstallments: 12, paidBefore: 3 }, [400, 400])).toMatchObject({ paid: 3, remaining: 9, remainingAmount: 6400 });
+    expect(installmentProgressFromLinked({ monthlyAmount: 800, totalInstallments: 12, paidBefore: 3 }, [800, 400])).toMatchObject({ paid: 4, remaining: 8, remainingAmount: 6000 });
+  });
+  it("counts unmatched recorded payments by amount rather than row count", () => {
+    expect(installmentProgressFromRecorded({ monthlyAmount: 800, totalInstallments: 12, paidBefore: 3 }, 400)).toMatchObject({ paid: 3, remainingAmount: 6800, countedBy: "keyword" });
+  });
   it("adds recorded payments to the ones paid before the plan was added", () => {
     expect(installmentProgress({ monthlyAmount: 800, totalInstallments: 12, paidBefore: 3 }, 2)).toEqual({
       paid: 5, remaining: 7, remainingAmount: 5600, done: false, countedBy: "keyword",

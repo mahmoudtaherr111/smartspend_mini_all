@@ -131,7 +131,7 @@ Then, per procedure:
   `api/lib/redis-client.ts`: Redis, or the process's memory where there is no Redis), so the confirmation may reach any
   replica; `profile.confirmPhoneChange` checks it, saves the number, bumps the auth version and returns a one-time
   grant that `profile.updateUserInfo` also accepts for fifteen minutes.
-- `purgeUserData` deletes, inside the caller's transaction, every user-owned row (conversations and memory, the ledger,
+- `purgeUserData` first locks the identity row, which delayed memory writers also lock; it deletes, inside the caller's transaction, every user-owned row (conversations and memory, the ledger,
   goals, contacts, sessions, passkeys, the profile, logs, voice usage and live calls with their incidents, and referrals)
   and then the identity row. `admin.deleteUser`
   and `localAuth.deleteUser` call it; `tests/knowledge/architecture.test.ts` fails when a user-owned table is left out.

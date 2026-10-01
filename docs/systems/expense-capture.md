@@ -189,7 +189,7 @@ nothing. Only whole names are kept, so a bare "coffee" is still spelled out. A n
 spells in Arabic ("uber", "vodafone cash") takes that Arabic, which the merchant registry and the payment rails read.
 
 Direction comes from `api/lib/intent-detector.ts#detectIntent`. Gift words (هدية، عيدية، نقطة) are spending on their
-own and income only beside a receiving verb (خدت، جالي، وصلني). Money back from a returned purchase ("رجعت الجزمة
+own and income only beside a receiving verb (خدت، جالي، وصلني). A returned purchase naming its seller with a received amount («رجعت الجزمة للمحل وخدت تلتمية») is also a refund; returning home, repaying a person and receiving a replacement item are not. Money back from a returned purchase ("رجعت الجزمة
 واخدت فلوسي") and the price of something sold ("بعت الموبايل ب 4000", but not an errand: "بعت الواد يجيب عيش") read
 as income too. When the direction is income but the words named something bought, the source decides the category:
 a gift received is هدايا وعيديات, a refund an expense in the bought thing's category with direction `incoming`
@@ -426,3 +426,5 @@ Checked against the code; each one names where it lives.
 - [Bank and wallet messages](bank-messages.md): bank notifications have their own parsers, not this pipeline.
 - [Admin console, support and growth tools](admin.md): the rule sandbox and the clarifications tab.
 - [AI Center](ai-center.md): the assistant can also propose recording an expense.
+
+A filing-only clause such as «سجلها في حساب مشروع ورشة النجارة» after a priced purchase is retained as a rejected instruction, not an incomplete financial event needing another amount. Real unpriced purchases or payments still require clarification. Pipeline version v3.1 separates the cache from results before this change. «للمحل» alone can name a merchant and never establishes that the user is recording in their own business ledger.
