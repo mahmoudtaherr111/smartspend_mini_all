@@ -16,6 +16,11 @@ export interface FinanceContext {
   userType: string;
   salaryDay?: number | null;
   referenceDate?: Date;
+  /**
+   * Read one business's own ledger instead of the personal one. The caller has checked that the business is this
+   * user's and that their plan has the business feature; absent or null is the personal ledger.
+   */
+  businessId?: number | null;
 }
 
 export interface FinancePeriodInput {

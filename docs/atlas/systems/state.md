@@ -12,8 +12,8 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (29 of
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-29 7e640a0 | 2026-09-29 68f5765 | 18 | — | — | 2 | — |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-29 fa056d1 | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-01 0e0890f | 2026-10-01 0e0890f | 10 | — | — | 4 | 2 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-01 0e0890f | 2026-10-01 0e0890f | 4 | — | 4 | 2 | 2 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-01 fa78417 | 2026-10-01 fa78417 | 10 | — | — | 4 | 2 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-01 fa78417 | 2026-10-01 fa78417 | 4 | — | 4 | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-29 6e973a3 | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-29 7e640a0 | 2026-09-29 7e640a0 | 6 | — | 3 | 7 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-29 fa056d1 | 2026-09-29 fa056d1 | 14 | **2** | 1 | 4 | — |
@@ -103,7 +103,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A call does not go on with the screen locked or the app in the background: the page keeps the microphone only in the foreground, and the call resumes if the app comes back within the hold (`src/lib/voice/call-connection.ts`). Keeping it alive needs native work in the Android and iOS shells.
 - The speech detector's thresholds (`src/lib/voice/speech-detector.ts`) are tuned on synthetic audio in tests; they have not been checked against recordings of real users on phones in noisy places.
-- A business's own ledger has no voice tool, and the finance layer reads the personal ledger only (`api/services/finance-semantic-layer/resolvers.ts`); debts carry no due dates and several gam3eyas are added together (`api/services/debt-ledger.ts`); installments are counted from payments whose words name the plan (`api/services/installments.ts`), so a partial payment or two plans with one word are miscounted.
+- A business's own ledger can be read in a call (`money_query` with `scope: business`) but not written to: an expense spoken in a call is saved to the personal ledger; debts carry no due dates and several gam3eyas are added together (`api/services/debt-ledger.ts`); installments are counted from payments whose words name the plan (`api/services/installments.ts`), so a partial payment or two plans with one word are miscounted.
 - The opening context (CALL FACTS) cannot be changed during a session: after the records change the model is told, and a stale figure said is recorded, but not stopped (`api/services/voice/brain/validator.ts`).
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)

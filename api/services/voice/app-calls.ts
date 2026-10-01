@@ -5,6 +5,7 @@
  * `expense.delete` and `budget.list`. The router is passed in by the server entry point, which keeps this module
  * out of the router's import graph.
  */
+import { TRPCError } from "@trpc/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { expenses, localUsers, pendingClarifications, users } from "../../../db/schema";
 import type { Context, UnifiedUser } from "../../context";
@@ -176,6 +177,18 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
         remainingAmount: plan.remainingAmount,
         countedBy: plan.countedBy,
       }));
+    },
+
+    async business(identity) {
+      const caller = await callerFor(identity);
+      try {
+        const { business } = await caller.business.get();
+        return business && business.isActive !== false ? { id: business.id, name: business.name } : "none";
+      } catch (error) {
+        // The business screen's own gate: the plan has no businesses.
+        if (error instanceof TRPCError && error.code === "FORBIDDEN") return "not_in_plan";
+        throw error;
+      }
     },
 
     async season(identity, season, year): Promise<SeasonSpending | null> {

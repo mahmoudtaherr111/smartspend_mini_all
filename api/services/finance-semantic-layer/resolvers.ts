@@ -58,6 +58,10 @@ type ExpenseRow = Pick<InferSelectModel<typeof expenses>, keyof typeof ROW_COLUM
 
 /** The personal ledger, as Home counts it: the expenses of a business (the B2B module) are that business's own. */
 const personalLedger = () => or(isNull(expenses.businessId), eq(expenses.businessId, 0));
+/** The ledger a context reads: one business's own when it names one, else the personal ledger. */
+const ledgerOf = (ctx: FinanceContext) => (ctx.businessId ? eq(expenses.businessId, ctx.businessId) : personalLedger());
+/** A cached answer belongs to its ledger: a business's results never share a key with the personal ones. */
+const scoped = (ctx: FinanceContext, capability: string) => (ctx.businessId ? `business_${ctx.businessId}.${capability}` : capability);
 type GoalRow = InferSelectModel<typeof financialGoals>;
 type WalletRow = InferSelectModel<typeof userWallets>;
 
@@ -151,7 +155,7 @@ async function loadRowsForPeriod(
       and(
         eq(expenses.userId, ctx.userId),
         eq(expenses.userType, ctx.userType),
-        personalLedger(),
+        ledgerOf(ctx),
         gte(expenses.date, period.startDate),
         lte(expenses.date, period.endDate),
       ),
@@ -187,7 +191,7 @@ export async function getFinanceSummary(
   input: FinancePeriodInput = {},
 ): Promise<FinanceSummary> {
   const period = resolveFinancePeriod(input, ctx);
-  const key = financeCacheKey(ctx.userId, ctx.userType, "summary", period.key);
+  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "summary"), period.key);
 
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
     // One aggregate in MySQL, without loading the rows: exact at any size (a year of forwarded bank messages is
@@ -210,7 +214,7 @@ export async function getFinanceSummary(
         and(
           eq(expenses.userId, ctx.userId),
           eq(expenses.userType, ctx.userType),
-          personalLedger(),
+          ledgerOf(ctx),
           gte(expenses.date, period.startDate),
           lte(expenses.date, period.endDate),
         ),
@@ -252,7 +256,7 @@ export async function getFinancePeriodComparison(
   const key = financeCacheKey(
     ctx.userId,
     ctx.userType,
-    "period_comparison",
+    scoped(ctx, "period_comparison"),
     currentInput.period ?? "current_month",
     currentInput.comparePeriod ?? "previous_month",
     input.startDate ? String(input.startDate) : "",
@@ -278,7 +282,7 @@ export async function getFinancePeriodComparison(
 }
 
 export async function getWalletSummary(ctx: FinanceContext): Promise<FinanceWalletSummary> {
-  const key = financeCacheKey(ctx.userId, ctx.userType, "wallet_summary_v2");
+  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "wallet_summary_v2"));
 
   return withFinanceCache(key, 60, async () => {
     const wallets = (await db
@@ -314,7 +318,7 @@ export async function getCategoryTotal(
   const aliases = getCategoryAliases(financeCategoryId(category));
   // Keyed by the ids the name covers, so "أكل" and "الأكل" share one cached answer and "الدخل" does not share one
   // with "other_income".
-  const key = financeCacheKey(ctx.userId, ctx.userType, "category_total", period.key, financeCategoryIds(category).join("+"));
+  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "category_total"), period.key, financeCategoryIds(category).join("+"));
 
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
     const loaded = await loadRowsForPeriod(ctx, period);
@@ -383,7 +387,7 @@ export async function getPersonTotal(
     .sort((left, right) => right.normalizedName.length - left.normalizedName.length)[0];
   if (!contact) return null;
 
-  const key = financeCacheKey(ctx.userId, ctx.userType, "person_total_v2", period.key, contact.id);
+  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "person_total_v2"), period.key, contact.id);
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
     const rows = (await loadRowsForPeriod(ctx, period)).filter((row) => row.contactId === contact.id);
     const spent = rows.filter((row) => row.type === "expense");
@@ -416,7 +420,7 @@ export async function getFinanceBreakdown(
   const key = financeCacheKey(
     ctx.userId,
     ctx.userType,
-    "breakdown",
+    scoped(ctx, "breakdown"),
     period.key,
     input.category ?? "all",
     granularity,
@@ -465,7 +469,7 @@ export async function getFinanceTransactions(
   const key = financeCacheKey(
     ctx.userId,
     ctx.userType,
-    "transactions",
+    scoped(ctx, "transactions"),
     period.key,
     categoryKey,
     transactionTypes.join("+"),
@@ -524,7 +528,7 @@ export async function getTextSpendingTotal(
 ): Promise<FinanceTextTotal> {
   const period = resolveFinancePeriod(input, ctx);
   const needle = normalizeLookupText(text).replace(/\s+/g, "");
-  const key = financeCacheKey(ctx.userId, ctx.userType, "text_total", period.key, needle || "none");
+  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "text_total"), period.key, needle || "none");
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
     const loaded = await loadRowsForPeriod(ctx, period);
     const rows = needle ? loaded.filter((row) => isSpendingRow(row) && rowText(row).includes(needle)) : [];
@@ -566,7 +570,7 @@ async function loadGoals(ctx: FinanceContext): Promise<GoalRow[]> {
 }
 
 export async function getGoalProgress(ctx: FinanceContext): Promise<FinanceGoalProgress> {
-  const key = financeCacheKey(ctx.userId, ctx.userType, "goals_active");
+  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "goals_active"));
 
   return withFinanceCache(key, 5 * 60, async () => {
     const [goals, summary] = await Promise.all([
@@ -606,7 +610,7 @@ export async function getChartData(
   const limit = Math.min(Math.max(input.limit ?? 12, 1), 60);
   const categories = uniqueList([...(input.categories ?? []), input.category]);
   const categoryKey = categories.length > 0 ? [...categories].sort().join("+") : "all";
-  const key = financeCacheKey(ctx.userId, ctx.userType, "chart_data", period.key, categoryKey, granularity, limit);
+  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "chart_data"), period.key, categoryKey, granularity, limit);
 
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
     let rows = await loadRowsForPeriod(ctx, period);
@@ -621,7 +625,7 @@ export async function getChartData(
 }
 
 export async function getProfileSnapshot(ctx: FinanceContext): Promise<FinanceProfileSnapshot> {
-  const key = financeCacheKey(ctx.userId, ctx.userType, "profile_snapshot");
+  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "profile_snapshot"));
 
   return withFinanceCache(key, 5 * 60, async () => {
     const [profile] = await db

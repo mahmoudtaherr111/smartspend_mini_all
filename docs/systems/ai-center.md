@@ -185,7 +185,10 @@ the finance caches are cleared.
 - A period's totals (`getFinanceSummary`) are one SQL aggregate over `expenses`, so they hold for any number of
   entries. Breakdowns, lookups and category totals read the period's entries instead: only the columns they use, and
   the newest 10,000 at most (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Both cover the
-  personal ledger only, as Home does: an expense with a `business_id` belongs to that business.
+  personal ledger only, as Home does: an expense with a `business_id` belongs to that business. A context that names
+  a business (`FinanceContext#businessId`, set by a caller that checked the business is the user's and their plan has
+  businesses) reads that business's rows instead, still filtered by the user, and its cached answers carry the
+  business in their key, so personal and business results never share an entry.
 - Wallet balances (`getWalletSummary`) carry the day each was entered and by what (`observedDay`, `source`), null for
   balances saved before that was kept.
 - Every filter applies to the whole period before a list is cut: `getFinanceTransactions` filters by type, category,

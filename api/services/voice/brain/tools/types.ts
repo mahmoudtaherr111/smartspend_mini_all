@@ -105,6 +105,11 @@ export interface VoiceAppCalls {
   installments(identity: CallIdentity): Promise<InstallmentStanding[]>;
   /** A season's spending; null when the season is not known for that year. */
   season(identity: CallIdentity, season: string, year?: number): Promise<SeasonSpending | null>;
+  /**
+   * The user's business (the business screen's procedure, behind its plan feature): its id and name, "none" without
+   * one, "not_in_plan" when the plan does not include businesses.
+   */
+  business(identity: CallIdentity): Promise<{ id: number; name: string } | "none" | "not_in_plan">;
   /** A question the parser opened for the home screen that the call has answered itself. */
   dismissClarification(identity: CallIdentity, clarificationId: number): Promise<void>;
   /** The words of an entry still waiting for the user's answer, when it is theirs and still waiting. */

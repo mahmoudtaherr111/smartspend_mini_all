@@ -38,6 +38,8 @@ const METRICS = [
 const SEASONS = ["ramadan", "eid_fitr", "eid_adha", "school", "summer"] as const;
 /** The coach call's follow-up reads (api/services/voice/brain/tools/coach.ts). */
 const COACH_METRICS = ["commitments", "plan"] as const;
+/** What a business's own ledger answers; balances, budgets, goals, debts and the rest are the person's. */
+const BUSINESS_METRICS = ["total", "breakdown", "compare", "drivers", "transactions", "why", "includes"] as const;
 const PERIODS = [
   "today", "yesterday", "this_week", "this_month", "last_month", "salary_cycle",
   "last_90_days", "this_year", "last_year", "custom",
@@ -272,10 +274,28 @@ async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<
     ? (String(args.period) as Period)
     : lookup ? "last_90_days" : "this_month";
   const finance: FinanceContext = { userId: ctx.identity.userId, userType: ctx.identity.userType, salaryDay: await ctx.salaryDay() };
+  // A business's own ledger, apart from the personal one: only the user's business, only on a plan that has them.
+  let business: { id: number; name: string } | null = null;
+  if (args.scope === "business") {
+    if (!(BUSINESS_METRICS as readonly string[]).includes(metric)) {
+      return { response: { ok: false, error: "personal_only", say: "ده بيتحسب للحساب الشخصي بس، مش للمشروع. قول كده واسأله لو عايز الشخصي." } };
+    }
+    const found = await ctx.app.business(ctx.identity);
+    if (found === "not_in_plan") {
+      return { response: { ok: false, error: "not_in_plan", say: "حسابات المشروع مش في باقته. قول كده بهدوء، ولو حابب يشوف الباقات من صفحة الاشتراك." } };
+    }
+    if (found === "none") {
+      return { response: { ok: false, error: "no_business", say: "مفيش مشروع متسجل له. لو عايز يفصل مصاريف شغله يقدر يعمل مشروع من «وضع المشروع»." } };
+    }
+    business = found;
+    finance.businessId = found.id;
+  }
   const named = periodFor(periodName, args, ctx.now());
   const input = named.input;
   // "This month" follows the salary day when there is one (the finance layer's current_month): said as the cycle it is.
-  const label = periodName === "this_month" && (finance.salaryDay ?? 1) > 1 ? "الدورة دي (من يوم القبض)" : named.label;
+  const period = periodName === "this_month" && (finance.salaryDay ?? 1) > 1 ? "الدورة دي (من يوم القبض)" : named.label;
+  // A business's figures say whose they are, so they are never taken for the person's.
+  const label = business ? `${period} — مشروع ${business.name}` : period;
   const income = args.type === "income";
   const category = str(args.category, 60);
   const person = str(args.person, 60);
@@ -704,6 +724,7 @@ export const moneyQueryCoach: VoiceTool = {
         season: { type: "string", enum: [...SEASONS] },
         year: { type: "integer" },
         amount: { type: "number", description: "EGP: for feasibility, or to find a transaction by its amount" },
+        scope: { type: "string", enum: ["personal", "business"], description: "business: their business's own ledger (totals, breakdowns, comparisons, transactions)" },
       },
       required: ["metric"],
     },
@@ -737,6 +758,7 @@ export const moneyQuery: VoiceTool = {
         season: { type: "string", enum: [...SEASONS], description: "For season" },
         year: { type: "integer", description: "For season; default the latest one" },
         amount: { type: "number", description: "EGP: for feasibility, or to find a transaction by its amount (why, transactions)" },
+        scope: { type: "string", enum: ["personal", "business"], description: "business: their business's own ledger (totals, breakdowns, comparisons, transactions)" },
       },
       required: ["metric"],
     },

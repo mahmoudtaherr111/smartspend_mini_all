@@ -130,9 +130,9 @@
         "api/services/finance-semantic-layer/monthly-report-facts.ts": "3f971c8a47ab",
         "api/services/finance-semantic-layer/period-resolver.ts": "6ebc06ee9807",
         "api/services/finance-semantic-layer/proactive-insights.ts": "4673f997eb5c",
-        "api/services/finance-semantic-layer/resolvers.ts": "fc98c834c10f",
+        "api/services/finance-semantic-layer/resolvers.ts": "8e2db16efc73",
         "api/services/finance-semantic-layer/row-aggregators.ts": "46f6753eac39",
-        "api/services/finance-semantic-layer/types.ts": "af6ba15f813a",
+        "api/services/finance-semantic-layer/types.ts": "d13d8332e9be",
         "api/services/site-guide/embedding.ts": "bc5457180269",
         "api/services/site-guide/index.ts": "d2416784dee1",
         "api/services/site-guide/knowledge-base.ts": "0c0483368ef3",
@@ -143,9 +143,9 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "c384e6047412"
       },
-      "checked": "2026-10-01 0e0890f",
-      "arabic": "82660cb4c7e8",
-      "arabicChecked": "2026-10-01 0e0890f"
+      "checked": "2026-10-01 fa78417",
+      "arabic": "ee19262c90ae",
+      "arabicChecked": "2026-10-01 fa78417"
     },
     "ai-platform": {
       "files": {
@@ -479,14 +479,14 @@
         "api/server.ts#ws:/api/voice/v2": "fe2eec327770",
         "api/services/entitlements/voice.ts": "29ffd71b4434",
         "api/services/voice/admin-stats.ts": "0c03b1f56b39",
-        "api/services/voice/app-calls.ts": "6e6f2e57e7b8",
+        "api/services/voice/app-calls.ts": "065b74c12377",
         "api/services/voice/brain/claims.ts": "690e2866015d",
-        "api/services/voice/brain/coach-instructions.ts": "b8a5ac1c6f92",
+        "api/services/voice/brain/coach-instructions.ts": "81228525ac79",
         "api/services/voice/brain/drafts.ts": "bdc0ffe84dfe",
         "api/services/voice/brain/facts.ts": "f6947c52bdb4",
         "api/services/voice/brain/honorific.ts": "451551920217",
         "api/services/voice/brain/index.ts": "431a5e7edca3",
-        "api/services/voice/brain/instructions.ts": "88f1c4ae53be",
+        "api/services/voice/brain/instructions.ts": "c1c40fc055d7",
         "api/services/voice/brain/never-kept.ts": "977be210350d",
         "api/services/voice/brain/profile-questions.ts": "14673f9bb35c",
         "api/services/voice/brain/snapshot.ts": "6f2f54006727",
@@ -496,11 +496,11 @@
         "api/services/voice/brain/tools/coach.ts": "5f3954046f15",
         "api/services/voice/brain/tools/market-price.ts": "5bed0aca7f26",
         "api/services/voice/brain/tools/memory.ts": "c073f335afa9",
-        "api/services/voice/brain/tools/money-query.ts": "1262e9e4fe2d",
+        "api/services/voice/brain/tools/money-query.ts": "5c1bd8444252",
         "api/services/voice/brain/tools/record.ts": "4476cc91d765",
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
         "api/services/voice/brain/tools/think.ts": "bbc093d02f9a",
-        "api/services/voice/brain/tools/types.ts": "3b01a54d67e0",
+        "api/services/voice/brain/tools/types.ts": "d14d81db9da8",
         "api/services/voice/brain/validator.ts": "1dd9f0a8a04e",
         "api/services/voice/brain/voices.ts": "7fa9ca3bf8ae",
         "api/services/voice/engine/gemini-live.ts": "73eb5ad104db",
@@ -532,9 +532,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-10-01 0e0890f",
-      "arabic": "4e4555392123",
-      "arabicChecked": "2026-10-01 0e0890f"
+      "checked": "2026-10-01 fa78417",
+      "arabic": "0867ff0b5501",
+      "arabicChecked": "2026-10-01 fa78417"
     },
     "web-app": {
       "files": {

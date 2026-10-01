@@ -431,3 +431,23 @@ describe("honorificFor", () => {
     expect(honorificFor(null)).toBeNull();
   });
 });
+
+describe("money_query: a business's own ledger", () => {
+  it("reads the user's business apart from their own money, and says whose figures they are", async () => {
+    ctx.app.business = vi.fn(async () => ({ id: 31, name: "ورشة النجارة" }));
+    const result = await moneyQuery.run({ metric: "total", scope: "business" }, ctx);
+    expect(vi.mocked(getFinanceSummary).mock.calls.at(-1)?.[0]).toMatchObject({ userId: 7, userType: "local", businessId: 31 });
+    expect(String(result.response.period)).toContain("مشروع ورشة النجارة");
+    // The personal question that follows reads the personal ledger.
+    await moneyQuery.run({ metric: "total" }, ctx);
+    expect(vi.mocked(getFinanceSummary).mock.calls.at(-1)?.[0]).not.toHaveProperty("businessId");
+  });
+
+  it("says plainly when there is no business, when the plan has none, and what only the person's ledger answers", async () => {
+    ctx.app.business = vi.fn(async () => "none" as const);
+    expect((await moneyQuery.run({ metric: "total", scope: "business" }, ctx)).response).toMatchObject({ ok: false, error: "no_business" });
+    ctx.app.business = vi.fn(async () => "not_in_plan" as const);
+    expect((await moneyQuery.run({ metric: "breakdown", scope: "business" }, ctx)).response).toMatchObject({ ok: false, error: "not_in_plan" });
+    expect((await moneyQuery.run({ metric: "balance", scope: "business" }, ctx)).response).toMatchObject({ ok: false, error: "personal_only" });
+  });
+});
