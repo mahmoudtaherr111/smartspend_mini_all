@@ -584,8 +584,14 @@ async function answer(
   const label = business ? `${period} — مشروع ${business.name}` : period;
   const income = args.type === "income";
   const category = str(args.category, 60);
-  const person = str(args.person, 60);
   const search = str(args.search, 60);
+  // A recorded person's name sent as words to search ("خالد اداني كام؟" came as search "خالد", and found no entry
+  // whose text says خالد) is a question about that person, answered whole like one.
+  const person =
+    str(args.person, 60) ??
+    (search && !business && (await personNames(finance)).some((name) => comparableArabic(name) === comparableArabic(search))
+      ? search
+      : undefined);
   const limit = Math.min(8, Math.max(1, Math.floor(num(args.limit) ?? 5)));
 
   if (metric === "balance") {

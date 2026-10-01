@@ -264,6 +264,15 @@ describe("money_query", () => {
     expect(vi.mocked(getFinanceTransactions)).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ transactionTypes: ["income"] }));
   });
 
+  it("answers a recorded person's name sent as words to search as a question about that person", async () => {
+    ctx.app.debts = vi.fn(async () => ({
+      people: [{ name: "أحمد", balance: -800, lent: 0, received: 800, count: 1, lastDate: "2026-09-21" }],
+      owedToYou: 0, youOwe: 800, gam3eya: { paid: 0, received: 0, held: 0, installments: 0 },
+    }));
+    const result = await moneyQuery.run({ metric: "transactions", type: "income", search: "أحمد" }, ctx);
+    expect(result.response.facts).toEqual(expect.arrayContaining([expect.objectContaining({ label: "إنت عليك لـأحمد (سلف)", value: 800 })]));
+  });
+
   it("gives back the recorded names when the one asked for matches nobody (a transliterated «Khaled»)", async () => {
     ctx.app.debts = vi.fn(async () => ({ people: [], owedToYou: 0, youOwe: 0, gam3eya: { paid: 0, received: 0, held: 0, installments: 0 } }));
     for (const metric of ["transactions", "average"]) {
