@@ -4,6 +4,7 @@
  *
  *   npx tsx scripts/voice-eval/run.ts --arms coach:high,coach:medium,coach:low --reps 2 --split tuning
  *   npx tsx scripts/voice-eval/run.ts --cases consent-accept,debts-both-ways --arms coach:high
+ *   npx tsx scripts/voice-eval/run.ts --cases budget-lower --arms coach-live --reps 3 --raw-text
  *
  * Arms: `ultra:<level>` (Ultra Thinking: the coach with its Ultra section on gemini-3.8-live-extended-thinking),
  * `coach:<level>` (the coach without it on the extended model), `coach-live` (the coach on gemini-3.8-live) or
@@ -740,12 +741,19 @@ async function main(): Promise<void> {
   process.exit(0);
 }
 
+/**
+ * `--raw-text`: also keep the assistant's transcription chunks as they arrived, with turnComplete and
+ * generationComplete, to see how text lines up with the end of a turn. The users are synthetic; still off by default.
+ */
+const RAW_TEXT = process.argv.includes("--raw-text");
+
 /** A provider message reduced to its shape and timing. */
 function shape(
   message: Record<string, unknown>,
   started: number,
 ): Record<string, unknown> {
   const content = (message.serverContent ?? {}) as Record<string, unknown>;
+  const transcript = (content.outputTranscription as { text?: string } | undefined)?.text;
   const parts =
     (
       content.modelTurn as
@@ -768,6 +776,10 @@ function shape(
     ...(calls.length
       ? { calls: calls.map((call) => ({ name: call.name, args: call.args })) }
       : {}),
+    ...(RAW_TEXT && typeof transcript === "string" ? { out: transcript } : {}),
+    ...(RAW_TEXT && content.turnComplete ? { turnComplete: true } : {}),
+    ...(RAW_TEXT && content.generationComplete ? { generationComplete: true } : {}),
+    ...(RAW_TEXT && content.interrupted ? { interrupted: true } : {}),
     ...(message.interactionStatus ? { status: message.interactionStatus } : {}),
     ...(content.interactionStatus ? { status: content.interactionStatus } : {}),
     ...(message.error ? { error: message.error } : {}),

@@ -442,7 +442,9 @@ export const SCENARIOS: Scenario[] = [
     // 2,750 of the workshop's own; the personal ledger would say something else entirely.
     checks: [
       called("money_query", { scope: "business" }),
-      says(/2[,٬]?750|ألفين وسبعمية وخمسين|ألفين وسبعمية ونص/),
+      // 2,750 exactly, or the app's own speech form for it: spoken.ts rounds 1,000–10,000 to the hundred with "حوالي"
+      // unless the user asked "بالظبط" (two rounds said "حوالي ألفين وتمنمية", the tool's say form, and failed).
+      says(/2[,٬]?750|ألفين وسبعمية وخمسين|ألفين وسبعمية ونص|حوالي ألفين وتمنمي[ةه]|حوالي 2[,٬]?800/),
     ],
   },
   {
