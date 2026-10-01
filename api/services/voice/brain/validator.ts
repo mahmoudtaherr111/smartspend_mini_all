@@ -6,7 +6,7 @@
  * plainly meant to be, the model gets a correction note at once and says the right number; otherwise the
  * mismatch is only recorded, because a correction without a known truth would be a guess of our own.
  */
-import { parseArabicNumbers } from "../../../lib/arabic-number-parser";
+import { isKnownNumberWord, parseArabicNumbers } from "../../../lib/arabic-number-parser";
 import {
   factMetric,
   type FactMetric,
@@ -33,7 +33,10 @@ const POUNDS_THEN_PIASTERS = /^\s*(جنيه|جنيهات)?\s*و?\s*$/;
 export function extractSpokenNumbers(
   text: string,
 ): Array<SpokenNumber & { settled: boolean; index: number }> {
-  const parsed = parseArabicNumbers(text);
+  // "التمنمية" and "الخمسين" are numbers too; the article goes only before a number word, so "الف" stays a thousand.
+  const parsed = parseArabicNumbers(
+    text.replace(/(^|\s)ال(\S+)/g, (whole, before: string, rest: string) => (isKnownNumberWord(rest) ? before + rest : whole)),
+  );
   const out: Array<SpokenNumber & { settled: boolean; index: number; end: number }> = [];
   const pattern = /\d+(?:\.\d+)?/g;
   let match: RegExpExecArray | null;

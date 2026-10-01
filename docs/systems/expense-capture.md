@@ -109,7 +109,8 @@ aside for the full path.
 For each admitted event:
 1. `api/lib/rule-engine.ts#runRuleEngine` finds each amount and classifies the words around it (layers below).
    Spoken and written amounts become digits in one place, `api/lib/arabic-number-parser.ts#parseArabicNumbers`:
-   Egyptian teens and hundreds ("خمستاشر", "خمسميت", eight hundred as "تمنمية" or "تمانمية"), a spoken unit before a separate hundred ("خمس مية" is 500),
+   Egyptian teens and hundreds ("خمستاشر", "خمسميت", eight hundred as "تمنمية" or "تمانمية"; `isKnownNumberWord` is exported for the call, which reads a number word
+   with its article), a spoken unit before a separate hundred ("خمس مية" is 500),
    halves ("ألفين ونص") and Arabic-Indic digits. "واحد" is a number only inside a tens compound ("واحد وخمسين" is
    51) or when it closes an amount ("مية وواحد جنيه" is 101), so "واحد صاحبي" stays a person. "مية" is water when
    the word before it is a container or a bill ("ازازة مية 10") or the word after it is "معدنية"; "تمن" before a

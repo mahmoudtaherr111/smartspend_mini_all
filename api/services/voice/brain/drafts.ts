@@ -305,8 +305,8 @@ export function readReply(
     return "no_or_change";
   }
   const known = new Set(draftNumbers.map((n) => Math.round(n * 100)));
-  // "الستين" is sixty too: drop the article before reading numbers.
-  const numbers = extractSpokenNumbers(reply.replace(/(^|\s)ال(?=\S)/g, "$1"));
+  // "الستين" is sixty too: extractSpokenNumbers reads a number word with its article.
+  const numbers = extractSpokenNumbers(reply);
   if (
     numbers.some(
       (number) =>
@@ -320,7 +320,7 @@ export function readReply(
   const numberWords = new Set(
     draftNumbers.length
       ? words.filter(
-          (word) => extractSpokenNumbers(word.replace(/^ال/, "")).length > 0,
+          (word) => extractSpokenNumbers(word).length > 0,
         )
       : [],
   );

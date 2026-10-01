@@ -187,7 +187,8 @@ export function arabicIndicToAscii(text: string): string {
   });
 }
 
-function isKnownNumberWord(word: string): boolean {
+/** True when the word alone is a number word, a multiplier, a run-together compound, a fraction or digits. */
+export function isKnownNumberWord(word: string): boolean {
   return (
     lookupNumberWord(numMap, FOLDED_NUM, word) !== undefined ||
     lookupNumberWord(multiplierMap, FOLDED_MULTIPLIER, word) !== undefined ||

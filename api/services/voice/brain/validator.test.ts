@@ -17,6 +17,14 @@ describe("extractSpokenNumbers", () => {
     ]);
   });
 
+  it("reads a number word with its article, and leaves a thousand written without its hamza whole", () => {
+    // The evaluation's "لازم أرجع لخالد التمنمية يوم خمستاشر": 800 was not taken as the user's own amount.
+    expect(extractSpokenNumbers("لازم أرجع لخالد التمنمية يوم خمستاشر").map(({ value }) => value)).toEqual([800, 15]);
+    expect(extractSpokenNumbers("الخمسين دي").map(({ value }) => value)).toEqual([50]);
+    expect(extractSpokenNumbers("الف جنيه").map(({ value }) => value)).toEqual([1000]);
+    expect(extractSpokenNumbers("الفلوس خلصت")).toEqual([]);
+  });
+
   it("marks an approximation", () => {
     expect(extractSpokenNumbers("حوالي تلات آلاف ونص جنيه")[0]).toMatchObject({ value: 3500, approximate: true, money: true });
   });

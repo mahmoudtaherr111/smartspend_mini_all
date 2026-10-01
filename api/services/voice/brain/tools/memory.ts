@@ -87,8 +87,7 @@ async function remember(
   await invalidateMemoryUserCache(ctx.identity.userId, ctx.identity.userType).catch(() => undefined);
   // A memory is a note: an amount in it is counted nowhere (not in commitments, debts or the month's rest), so the
   // model must not call it recorded, and the coach can offer the ledger's own place for money owed on a date.
-  // "التمنمية" is eight hundred too: drop the article before reading numbers, as the consent reader does.
-  if (extractSpokenNumbers(content.replace(/(^|\s)ال(?=\S)/g, "$1")).some((number) => number.money)) {
+  if (extractSpokenNumbers(content).some((number) => number.money)) {
     return {
       response: {
         ok: true,
