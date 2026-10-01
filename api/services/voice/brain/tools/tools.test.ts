@@ -279,6 +279,14 @@ describe("money_query", () => {
     expect(vi.mocked(getFinanceTransactions).mock.calls[0][1]).toMatchObject({ amount: 40, text: "أوبر", limit: 1 });
   });
 
+  it("answers a shop the model sent as a category with the shop, not the whole category under its name", async () => {
+    // The evaluation: "صرفت كام على طلبات الدورة دي؟" came as category "طلبات" and was answered with all food.
+    const shop = await moneyQuery.run({ metric: "total", category: "طلبات" }, ctx);
+    expect(shop.response).toMatchObject({ facts: [{ label: "المصروف على طلبات", value: 640 }] });
+    const food = await moneyQuery.run({ metric: "total", category: "أكل" }, ctx);
+    expect((food.response.facts as Array<{ label: string }>)[0].label).toBe("مصروف أكل");
+  });
+
   it("totals spending at a shop over every row of the period", async () => {
     const found = await moneyQuery.run({ metric: "total", search: "طلبات" }, ctx);
     expect(found.response).toMatchObject({ facts: [{ label: "المصروف على طلبات", value: 640 }], count: 3 });

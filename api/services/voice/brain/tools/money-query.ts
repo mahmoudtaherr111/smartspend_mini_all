@@ -9,6 +9,7 @@ import {
   arabicDisplayName,
   canonicalCategoryId,
   CATEGORIES,
+  comparableArabic,
 } from "../../../../lib/category-registry";
 import {
   getCategoryInclusion,
@@ -227,6 +228,15 @@ interface Built {
   extra?: Record<string, unknown>;
   coverage?: string;
   title: string;
+}
+
+/** True when the word is the category's own name ("أكل", "الأكل" for أكل وشرب), not a shop or word that leads to it. */
+function namesCategory(word: string): boolean {
+  const id = canonicalCategoryId(word);
+  if (id === "uncategorized") return true;
+  const own = comparableArabic(arabicDisplayName(id));
+  const said = comparableArabic(word.trim().replace(/^ال(?=\S)/, ""));
+  return said.length > 0 && own.includes(said);
 }
 
 /** Never a reason to skip the answer: a reader that fails leaves the list empty. */
@@ -1387,13 +1397,21 @@ async function answer(
       label,
     );
   }
-  if (search) {
-    const total = await getTextSpendingTotal(finance, search, input);
+  // A shop the model sent as a category ("طلبات" is the delivery app, and an alias of food): the user asked about the
+  // shop, so its own spending answers, never the whole category said under the shop's name.
+  const shop =
+    search ??
+    (category && !income && !namesCategory(category) &&
+    (await getTextSpendingTotal(finance, category, input)).transactionCount
+      ? category
+      : undefined);
+  if (shop) {
+    const total = await getTextSpendingTotal(finance, shop, input);
     return outcome(
       {
-        title: `المصروف على ${search}`,
+        title: `المصروف على ${shop}`,
         facts: total.transactionCount
-          ? [{ label: `المصروف على ${search}`, value: total.totalExpense }]
+          ? [{ label: `المصروف على ${shop}`, value: total.totalExpense }]
           : [],
         extra: total.transactionCount
           ? {
@@ -1405,7 +1423,7 @@ async function answer(
           ? PARTIAL_NOTE
           : total.transactionCount
             ? undefined
-            : `مالقيتش صرف باسم «${search}» في ${label}.`,
+            : `مالقيتش صرف باسم «${shop}» في ${label}.`,
       },
       ctx,
       label,
@@ -1414,11 +1432,13 @@ async function answer(
   if (category) {
     const total = await getCategoryTotal(finance, category, input);
     const value = income ? total.totalIncome : total.totalExpense;
+    // Named as the category it counted, so a word that only leads to a category is not said as its own total.
+    const counted = namesCategory(category) ? category : arabicDisplayName(canonicalCategoryId(category));
     return outcome(
       {
-        title: `${category}`,
+        title: counted,
         facts: [
-          { label: income ? `دخل ${category}` : `مصروف ${category}`, value },
+          { label: income ? `دخل ${counted}` : `مصروف ${counted}`, value },
         ],
         extra: {
           count: total.transactionCount,
