@@ -484,7 +484,7 @@
         "api/services/voice/brain/claims.ts": "1d9b9e1848f8",
         "api/services/voice/brain/coach-instructions.ts": "406d5f3a0f9a",
         "api/services/voice/brain/drafts.ts": "577f3baed851",
-        "api/services/voice/brain/facts.ts": "7d938b0108da",
+        "api/services/voice/brain/facts.ts": "30d3183e4ce2",
         "api/services/voice/brain/honorific.ts": "451551920217",
         "api/services/voice/brain/index.ts": "d5873392f9d9",
         "api/services/voice/brain/instructions.ts": "0ed7a97ef7c2",
@@ -533,9 +533,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-10-01 fd611b6",
-      "arabic": "a08e3ebca70d",
-      "arabicChecked": "2026-10-01 fd611b6"
+      "checked": "2026-10-01 944d516",
+      "arabic": "bbc948d61c1d",
+      "arabicChecked": "2026-10-01 944d516"
     },
     "web-app": {
       "files": {

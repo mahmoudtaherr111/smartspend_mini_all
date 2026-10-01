@@ -204,6 +204,9 @@ export class FactLedger {
     metric: FactMetric | undefined,
   ): boolean {
     if (!metric) return this.allows(value, approximate);
+    // The user's own number is always theirs to hear back ("قللها لألف وخمسمية" while the budget is 2,000): checking it
+    // only against the old figure corrected the model toward the old limit, four times in one evaluation call.
+    if (this.userValues.has(Math.abs(value))) return true;
     const subject = this.facts.filter(
       (fact) => (fact.metric === metric || fact.metric === undefined) && !fact.stale,
     );

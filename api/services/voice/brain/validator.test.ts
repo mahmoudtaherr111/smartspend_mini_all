@@ -56,6 +56,14 @@ describe("SpokenNumberValidator", () => {
     expect(salary.validator.addAssistantWords("صرفت سبعة آلاف جنيه الشهر ده كله.")).toMatchObject({ spoken: 7000, intended: null });
   });
 
+  it("never corrects the number the user asked for toward the old figure of the same subject", () => {
+    // The evaluation: the food budget was 2,000 and the user asked for 1,500.
+    const { validator } = setup([["ميزانية الأكل", 2000]]);
+    validator.noteUserWords("عايزة أقلل ميزانية الأكل لألف وخمسمية");
+    expect(validator.addAssistantWords("هعدل ميزانية الأكل لتكون ألف وخمسمية بدل ألفين، أأكد؟ ")).toBeNull();
+    expect(validator.endTurn()).toBeNull();
+  });
+
   it("accepts a fact said exactly, rounded or approximately", () => {
     const { validator } = setup([["مصروف النهارده", 320], ["مصروف الدورة", 3456]]);
     expect(validator.addAssistantWords("لحد دلوقتي المسجّل تلتمية وعشرين جنيه، والدورة كلها ")).toBeNull();
