@@ -131,7 +131,8 @@ is, through `profile.confirmSmsSuggestion` and `profile.dismissSmsSuggestion`; o
 `budget_update` (a budget's new monthly limit, an amount the user said, or pausing and resuming it, through
 `budget.update`; `money_query budgets` gives each budget's id and lists paused ones apart; in a coach call a
 `budget_create` for a category that already has a budget, or one whose words could not be read while budgets exist, is
-refused with those budgets and their ids so the change goes through `budget_update` instead of adding a second one). They are drafts of kind `coach` behind the same gate; an amount in one must be a fact
+refused with those budgets and their ids so the change goes through `budget_update` instead of adding a second one; the coach drafts such a change only when
+asked for it, and answers a "لو عملت…؟" question without a draft). They are drafts of kind `coach` behind the same gate; an amount in one must be a fact
 the call read or computed or a number the user said, and a plan keeps the facts it was agreed on. The standard call
 refuses both reads and drafts (`ToolContext#coach`).
 
@@ -202,6 +203,10 @@ is billed again for it on every later turn.
 counts as theirs. Piasters are the fraction of the
   pounds before them ("خمسمية تلاتة وخمسين جنيه وتلاتة وتلاتين قرش" is 553.33), never an amount of their own. Amounts are spoken as `api/services/voice/brain/spoken.ts` writes them
   ("تمن آلاف وربعمية", "حوالي خمستاشر ألف").
+  Explicit claims about recorded amounts ("المسجل", "السجل", "بياناتك") require a fresh monetary fact
+  from the records or a calculation, including the fact used to correct a mismatch. A figure merely mentioned
+  by the user, a pending draft, or a percentage cannot back that claim. Attributed user speech and proposed
+  changes can still repeat the user's amounts; this is a bounded language guard, not proof of every sentence's meaning.
 - **Writes.** `api/services/voice/brain/drafts.ts#DraftBook`: only the latest pending draft, within two minutes, and
   only after a tap on its card or the user's own yes said after the assistant presented it (its first words after the
   draft was made). `readReply` reads the reply with a "no" first: a negation (also wrapped around the verb,

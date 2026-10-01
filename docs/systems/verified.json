@@ -482,9 +482,9 @@
         "api/services/voice/admin-stats.ts": "377835dae587",
         "api/services/voice/app-calls.ts": "1a9863a88b02",
         "api/services/voice/brain/claims.ts": "1d9b9e1848f8",
-        "api/services/voice/brain/coach-instructions.ts": "406d5f3a0f9a",
+        "api/services/voice/brain/coach-instructions.ts": "a53ed8c8aa3e",
         "api/services/voice/brain/drafts.ts": "577f3baed851",
-        "api/services/voice/brain/facts.ts": "30d3183e4ce2",
+        "api/services/voice/brain/facts.ts": "81c41cbbfce3",
         "api/services/voice/brain/honorific.ts": "451551920217",
         "api/services/voice/brain/index.ts": "d5873392f9d9",
         "api/services/voice/brain/instructions.ts": "0ed7a97ef7c2",
@@ -502,7 +502,7 @@
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
         "api/services/voice/brain/tools/think.ts": "5224961b8aad",
         "api/services/voice/brain/tools/types.ts": "0bab17c2ae57",
-        "api/services/voice/brain/validator.ts": "0a1af5a077d7",
+        "api/services/voice/brain/validator.ts": "eeb090bf5855",
         "api/services/voice/brain/voices.ts": "7fa9ca3bf8ae",
         "api/services/voice/engine/gemini-live.ts": "73eb5ad104db",
         "api/services/voice/engine/types.ts": "15efb5ec2d12",
@@ -533,9 +533,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-10-01 47fc628",
-      "arabic": "707911b967e2",
-      "arabicChecked": "2026-10-01 47fc628"
+      "checked": "2026-10-01 249f21c",
+      "arabic": "847d84eed829",
+      "arabicChecked": "2026-10-01 249f21c"
     },
     "web-app": {
       "files": {

@@ -9,6 +9,7 @@
 import { isKnownNumberWord, parseArabicNumbers } from "../../../lib/arabic-number-parser";
 import {
   factMetric,
+  isRecordedMoneyFact,
   type FactMetric,
   type CallFact,
   type FactLedger,
@@ -19,6 +20,8 @@ export interface SpokenNumber {
   approximate: boolean;
   money: boolean;
   metric?: FactMetric;
+  /** Explicit assertions about the records need a fresh financial fact, not merely a number the user mentioned. */
+  recordsOnly?: boolean;
 }
 
 const APPROXIMATE_BEFORE = /(حوالي|حوالى|تقريبا|تقريباً|يعني|أكتر من|اكتر من|أقل من|اقل من|قرب|يجي|ييجي|في حدود)\s*$/;
@@ -31,6 +34,16 @@ const POUNDS_THEN_PIASTERS = /^\s*(جنيه|جنيهات)?\s*و?\s*$/;
 
 /** "مية" on its own, as in the percentage "في المية". */
 const HUNDRED_ALONE = /^(مي[ةه]|مائ[ةه]|مئ[ةه])$/;
+
+/** A bounded guard for explicit record claims; proposals and attributed user speech remain repeatable. */
+function claimsRecordedAmount(before: string, after: string): boolean {
+  const normalize = (text: string) => text.replace(/\p{M}/gu, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه");
+  const clause = normalize(before.split(/[،؛.!؟?\n]/).at(-1)?.slice(-180) ?? "");
+  if (/(?:^|\s)(?:لو|افترض|هنعدل|هعدل|هنغير|هغير|هنقلل|هقلل|هنخلي|هخلي|مقترح)(?=\s|$)/.test(clause) ||
+    /(?:انت|انتي)\s+(?:قلت|قلتي)|حسب كلامك|على كلامك/.test(clause)) return false;
+  const context = clause + " " + normalize(after.split(/[،؛.!؟?\n]/)[0].trim().split(/\s+/).slice(0, 3).join(" "));
+  return /(?:^|\s)(?:المسجل|المتسجل|المسجله|المتسجله|السجل|بياناتك)(?=\s|$)/.test(context);
+}
 
 /** The numbers in a stretch of speech, with what surrounds each one. */
 export function extractSpokenNumbers(
@@ -72,6 +85,7 @@ export function extractSpokenNumbers(
       value,
       approximate: APPROXIMATE_BEFORE.test(before),
       money,
+      ...(claimsRecordedAmount(before, after) ? { recordsOnly: true } : {}),
       metric:
         factMetric(
           after.match(
@@ -94,6 +108,7 @@ export function extractSpokenNumbers(
     approximate: number.approximate,
     money: number.money,
     metric: number.metric,
+    ...(number.recordsOnly ? { recordsOnly: true } : {}),
     settled: number.settled,
     index: number.index,
   }));
@@ -152,7 +167,7 @@ export class SpokenNumberValidator {
       this.checkedInTurn = number.index + 1;
       if (!number.money) continue;
       if (
-        this.ledger.allowsClaim(number.value, number.approximate, number.metric)
+        this.ledger.allowsClaim(number.value, number.approximate, number.metric, number.recordsOnly)
       ) {
         // Recorded, not corrected: the figure was right when read, and the model was told the records changed.
         if (this.ledger.onlyStale(number.value, number.approximate)) found ??= { spoken: number.value, intended: null, stale: true };
@@ -160,7 +175,7 @@ export class SpokenNumberValidator {
       }
       found ??= {
         spoken: number.value,
-        intended: this.intendedFact(number.value, number.metric),
+        intended: this.intendedFact(number.value, number.metric, number.recordsOnly),
       };
     }
     return found;
@@ -171,10 +186,11 @@ export class SpokenNumberValidator {
    * digit, "خمسمية وعشرين" for 320), or its teen/tens twin ("خمستاشر" for "خمسين", 1,500 for 5,000). Anything
    * further is recorded but not corrected, because a correction toward the wrong fact turns a right number wrong.
    */
-  private intendedFact(spoken: number, metric?: FactMetric): CallFact | null {
+  private intendedFact(spoken: number, metric?: FactMetric, recordsOnly = false): CallFact | null {
     let best: CallFact | null = null;
     let bestRatio = Infinity;
     for (const fact of this.ledger.latestBatch()) {
+      if (recordsOnly && !isRecordedMoneyFact(fact)) continue;
       if (fact.value <= 0 || fact.unit !== "EGP") continue;
       if (fact.stale || (metric && fact.metric !== undefined && fact.metric !== metric)) continue;
       const ratio = Math.max(spoken, fact.value) / Math.min(spoken, fact.value);

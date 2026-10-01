@@ -66,6 +66,50 @@ describe("SpokenNumberValidator", () => {
     expect(validator.endTurn()).toBeNull();
   });
 
+  it("never treats a hypothetical user amount as a recorded total", () => {
+    const { validator } = setup([["مصروف المواصلات", 450]]);
+    validator.noteUserWords("لو خليت ميزانية المواصلات خمسمية جنيه تكفيني؟");
+    expect(validator.addAssistantWords("المسجل من مصاريف المواصلات خمسمية جنيه في الشهر ده كله.")).toMatchObject({
+      spoken: 500, intended: { value: 450 },
+    });
+  });
+
+  it("allows quoting user words and proposing an edit without calling them recorded", () => {
+    const { validator } = setup([["ميزانية الأكل", 2000], ["مصروف المواصلات", 450]]);
+    validator.noteUserWords("دفعت خمسمية مواصلات وعايزة أقلل ميزانية الأكل لألف وخمسمية");
+    expect(validator.addAssistantWords("إنت قلتي دفعت خمسمية جنيه مواصلات ولسه هنسجلها.")).toBeNull();
+    expect(validator.endTurn()).toBeNull();
+    expect(validator.addAssistantWords("هعدل الميزانية المسجلة لألف وخمسمية جنيه، أأكد؟")).toBeNull();
+    expect(validator.endTurn()).toBeNull();
+  });
+
+  it("checks a record claim across transcript chunks and after resumption", () => {
+    const original = setup([["مصروف المواصلات", 450]]);
+    original.validator.noteUserWords("لو كانت خمسمية جنيه");
+    const ledger = new FactLedger();
+    ledger.restore(original.ledger.snapshot());
+    const validator = new SpokenNumberValidator(ledger);
+    expect(validator.addAssistantWords("المسجّل من مصاريف المواصلات ")).toBeNull();
+    expect(validator.addAssistantWords("خمسمية جنيه في الشهر ده.")).toMatchObject({ spoken: 500, intended: { value: 450 } });
+  });
+
+  it("does not back a recorded amount with a stale fact, draft, or a percentage", () => {
+    const ledger = new FactLedger();
+    ledger.add({ id: "old", label: "مصروف", value: 500, source: "ledger", stale: true });
+    ledger.add({ id: "draft", label: "مصروف", value: 500, source: "draft" });
+    ledger.add({ id: "share", label: "مصروف", value: 500, source: "computed", unit: "percent" });
+    ledger.noteUserValue(500);
+    const validator = new SpokenNumberValidator(ledger);
+    expect(validator.addAssistantWords("المسجل من مصاريفك خمسمية جنيه في السجل.")).toMatchObject({ spoken: 500, intended: null });
+  });
+
+  it("accepts the fresh recorded amount even when the user suggested a different amount", () => {
+    const { validator } = setup([["مصروف المواصلات", 450]]);
+    validator.noteUserWords("لو كانت خمسمية جنيه");
+    expect(validator.addAssistantWords("المسجل من مصاريف المواصلات ربعمية وخمسين جنيه في الشهر ده.")).toBeNull();
+    expect(validator.endTurn()).toBeNull();
+  });
+
   it("accepts a fact said exactly, rounded or approximately", () => {
     const { validator } = setup([["مصروف النهارده", 320], ["مصروف الدورة", 3456]]);
     expect(validator.addAssistantWords("لحد دلوقتي المسجّل تلتمية وعشرين جنيه، والدورة كلها ")).toBeNull();

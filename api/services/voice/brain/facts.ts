@@ -87,6 +87,12 @@ export interface CallFact {
   period?: string;
 }
 
+/** A current financial fact can back an explicit claim about the records. */
+export function isRecordedMoneyFact(fact: CallFact): boolean {
+  return !fact.stale && RECORD_SOURCES.has(fact.source) &&
+    ["EGP", "EGP/day", "EGP/month"].includes(fact.unit);
+}
+
 export class FactLedger {
   private readonly facts: CallFact[] = [];
   private readonly userValues = new Set<number>();
@@ -202,7 +208,15 @@ export class FactLedger {
     value: number,
     approximate: boolean,
     metric: FactMetric | undefined,
+    recordsOnly = false,
   ): boolean {
+    if (recordsOnly) {
+      return this.facts.some((fact) =>
+        isRecordedMoneyFact(fact) &&
+        (!metric || fact.metric === metric || fact.metric === undefined) &&
+        this.matches(Math.abs(value), fact, approximate),
+      );
+    }
     if (!metric) return this.allows(value, approximate);
     // The user's own number is always theirs to hear back ("قللها لألف وخمسمية" while the budget is 2,000): checking it
     // only against the old figure corrected the model toward the old limit, four times in one evaluation call.
