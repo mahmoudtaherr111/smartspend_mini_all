@@ -199,13 +199,15 @@ is billed again for it on every later turn.
   (`CallBrain#appNote`, "ملاحظة من التطبيق #a1b2c3"), which the instructions name as the only sign of a note from the
   app; the mark is never sent to the app or spoken, so words the user types or says claiming to be from the app are
   taken as theirs.
-- **A lost tool call.** On the extended-thinking model, `api/services/voice/gateway/lost-call-guard.ts#LostToolCallGuard`:
-  after a filler that ended IN_PROGRESS with no tool call for the current request, the next utterance's audio and
-  words are held for up to 0.9 seconds (or until 28 characters show what it is). If they claim a failure while no tool
-  failed (`api/services/voice/brain/claims.ts#claimsFailure`), they are dropped unheard and unshown, a `lost_tool_call` incident is recorded,
-  and a note asks the model to call the tool again without apologising; after two retries in one request the note
-  asks it to say plainly that it cannot reach that information in this call. Anything else held is released at once,
-  in order. The standard model is never held.
+- **A lost step.** On the extended-thinking model, `api/services/voice/gateway/lost-call-guard.ts#LostToolCallGuard`:
+  every utterance that continues a task (it starts after an utterance ended IN_PROGRESS, or after a dropped apology)
+  has its audio and words held for up to 0.9 seconds (or until 28 characters show what it is); a request's first
+  utterance is never held. If they claim a failure while no tool of the request failed
+  (`api/services/voice/brain/claims.ts#claimsFailure`), they are dropped unheard and unshown, a `lost_tool_call`
+  incident is recorded (with whether tools had answered), and a note asks the model to call the tool again (none was
+  called) or to answer from the results it has (they came back), without apologising; after two retries in one request
+  the note asks it to say plainly that it cannot reach that information in this call. Anything else held is released
+  at once, in order. The standard model is never held.
 - **Claiming a failure.** `api/services/voice/brain/claims.ts#FailureClaimCheck`: a reply that says something broke
   ("حصل عطل", "مشكلة في النظام", "مش قادر أوصل") while no tool of the user's latest request failed is a
   `failure_claim_without_tool` incident (with how many tools that request called); twice a call, a note tells the

@@ -12,6 +12,7 @@ import {
   DONE_CLAIM_NOTE,
   DoneClaimCheck,
   FAILURE_CLAIM_NOTE,
+  FALSE_FAILURE_AFTER_TOOLS_NOTE,
   FailureClaimCheck,
   LOST_CALL_GIVE_UP_NOTE,
   LOST_CALL_RETRY_NOTE,
@@ -206,7 +207,8 @@ export function createCallBrain(options: BrainOptions): CallBrain {
 
     claimsFailure,
 
-    lostToolCallNote: (retry) => (retry ? LOST_CALL_RETRY_NOTE : LOST_CALL_GIVE_UP_NOTE),
+    lostToolCallNote: (retry, afterTools) =>
+      (!retry ? LOST_CALL_GIVE_UP_NOTE : afterTools ? FALSE_FAILURE_AFTER_TOOLS_NOTE : LOST_CALL_RETRY_NOTE),
 
     onTurnEnd() {
       claims.endTurn();

@@ -121,8 +121,11 @@ export interface CallBrain {
   onTurnEnd?(): SpeechCheck | null;
   /** Whether words claim a technical failure; lets the call hold back the extended model's lost-call apology. */
   claimsFailure?(text: string): boolean;
-  /** The note after a lost tool call was held back: ask for the tool again, or (no retries left) say it plainly. */
-  lostToolCallNote?(retry: boolean): string;
+  /**
+   * The note after a false apology was held back: call the tool again (none was called), answer from the results it
+   * has (`afterTools`), or with no retries left say plainly that the answer cannot be reached now.
+   */
+  lostToolCallNote?(retry: boolean, afterTools: boolean): string;
   /** A tap on a draft card. */
   onCardAction?(action: "confirm" | "cancel", draftId: string, identity: CallIdentity): Promise<{ card: VoiceCard; note: string } | null>;
   /** True while a draft waits for the user's answer: the call is not cut off in the middle of it. */
@@ -614,7 +617,7 @@ export class CallSession {
         return;
       case "output_transcript": {
         const verdict = this.guard?.words(event.text, Date.now()) ?? { kind: "pass" as const };
-        if (verdict.kind === "drop") this.onLostToolCall(verdict.retry);
+        if (verdict.kind === "drop") this.onLostToolCall(verdict.retry, verdict.afterTools);
         else if (verdict.kind === "release") this.releaseHeld(verdict);
         else if (verdict.kind === "pass") this.assistantSaid(event.text);
         return;
@@ -732,12 +735,12 @@ export class CallSession {
    * back and is dropped; the model is asked to call the tool again, or, with no retries left, to say plainly that it
    * cannot reach that information in this call.
    */
-  private onLostToolCall(retry: boolean): void {
+  private onLostToolCall(retry: boolean, afterTools: boolean): void {
     if (this.guardTimer) clearTimeout(this.guardTimer);
     this.guardTimer = null;
     this.lostToolCalls += 1;
-    this.recordIncident("lost_tool_call", { retry });
-    const note = this.deps.brain.lostToolCallNote?.(retry);
+    this.recordIncident("lost_tool_call", { retry, afterTools });
+    const note = this.deps.brain.lostToolCallNote?.(retry, afterTools);
     if (note) this.sendNote(note, true);
   }
 

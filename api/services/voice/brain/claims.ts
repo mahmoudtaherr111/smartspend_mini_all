@@ -78,6 +78,11 @@ export const LOST_CALL_RETRY_NOTE =
   "(ملاحظة من التطبيق، مش من المستخدم: طلب الأداة بتاعك ماوصلش للتطبيق، ومفيش أي عطل عندنا. متعتذرش ومتقولش إن " +
   "فيه مشكلة؛ نادي الأداة المناسبة تاني دلوقتي بنفس الطلب.)";
 
+/** After the held-back apology came once the request's tools had answered: the results are there to use. */
+export const FALSE_FAILURE_AFTER_TOOLS_NOTE =
+  "(ملاحظة من التطبيق، مش من المستخدم: الأدوات ردت عادي ومفيش أي عطل عندنا، والنتايج عندك. متعتذرش ومتقولش إن فيه " +
+  "مشكلة؛ كمّل الإجابة من النتايج دي، ولو محتاج حاجة تانية نادي الأداة.)";
+
 /** The same, when the tool call was lost again and again within one request. */
 export const LOST_CALL_GIVE_UP_NOTE =
   "(ملاحظة من التطبيق، مش من المستخدم: طلب الأداة ماوصلش للتطبيق أكتر من مرة. قول للمستخدم بصراحة في جملة إنك مش " +

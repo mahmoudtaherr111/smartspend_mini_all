@@ -1,12 +1,15 @@
 /**
- * The extended-thinking model sometimes loses its own tool call inside the provider: it says a filler ("هشوفلك
- * الرصيد"), ends that utterance while still IN_PROGRESS, never sends the `toolCall`, and then apologises for a "system
- * error" that did not happen (docs/systems/voice-calls.md, known issues; .agents evidence: ~1 request in 10 at LOW).
+ * The extended-thinking model sometimes loses a step inside the provider and then apologises for a "system error"
+ * that did not happen (docs/systems/voice-calls.md, known issues): either its tool call never reaches the app (a filler,
+ * IN_PROGRESS, no `toolCall`, an apology), or the tools answered and it apologises anyway before using their results.
+ * Measured on LOW: one request in ten to one in two, by the hour.
  *
- * This guard keeps that apology from the user. After a filler that ended IN_PROGRESS with no tool call for the current
- * request, the next utterance's first audio and words are held for a moment. If the words claim a failure while no
- * tool failed, the held audio is dropped and the call asks the model to call the tool again; otherwise everything held
- * is released at once. The cost is a delay of at most `holdMs` on that one kind of utterance.
+ * This guard keeps that apology from the user. Every utterance that continues a task (one that starts after an
+ * utterance ended while the model was still IN_PROGRESS) has its first audio and words held for a moment. If the words
+ * claim a failure while no tool of the request failed, the held audio is dropped and the call sends a note: call the
+ * tool again (no tool was called) or answer from the results it has (tools answered). Anything else held is released at
+ * once, in order. The cost is a delay of at most `holdMs` at the start of those utterances; a first answer, or the
+ * standard model, is never held.
  *
  * Pure bookkeeping: CallSession feeds it events and does what it answers.
  */
@@ -14,7 +17,8 @@ export type GuardVerdict =
   | { kind: "pass" }
   | { kind: "hold" }
   | { kind: "release"; audio: Array<{ pcm: Buffer; sampleRate: number }>; words: string[] }
-  | { kind: "drop"; retry: boolean };
+  /** `afterTools`: the request's tools had answered, so the model is to use their results rather than call again. */
+  | { kind: "drop"; retry: boolean; afterTools: boolean };
 
 export interface GuardOptions {
   /** Longest hold before the utterance is released untested. */
@@ -27,11 +31,16 @@ export interface GuardOptions {
 
 export class LostToolCallGuard {
   private toolCalls = 0;
-  private fillerEnded = false;
+  /** The last utterance ended with the model still IN_PROGRESS: the next one continues the task. */
+  private continuing = false;
   private toolFailed = false;
   private held: { since: number; words: string[]; audio: Array<{ pcm: Buffer; sampleRate: number }> } | null = null;
+  /** The utterance under way was already let through: the rest of it is not held again. */
+  private passing = false;
   /** The rest of a dropped utterance, until the provider confirms it stopped. */
   private dropping = false;
+  /** An apology was dropped: whatever the model says next answers the same request and is held like a continuation. */
+  private afterDrop = false;
   private retries = 0;
 
   constructor(private readonly options: GuardOptions) {}
@@ -40,21 +49,25 @@ export class LostToolCallGuard {
     return this.options.holdMs ?? 900;
   }
 
-  /** The user made a new request: its own tools and fillers count from here. */
+  /** The user made a new request: its own tools and utterances count from here. */
   newRequest(): void {
     this.toolCalls = 0;
-    this.fillerEnded = false;
+    this.continuing = false;
     this.toolFailed = false;
     this.retries = 0;
     this.held = null;
+    this.passing = false;
     this.dropping = false;
+    this.afterDrop = false;
   }
 
-  /** The model called a tool: whatever it says next is not a lost call. */
+  /** The model called a tool: what was held is not an apology, and what it says after the results is held again. */
   toolCalled(): GuardVerdict {
     this.toolCalls += 1;
-    this.fillerEnded = false;
-    return this.flush();
+    const release = this.flush();
+    this.passing = false;
+    this.continuing = true;
+    return release;
   }
 
   toolAnswered(ok: boolean): void {
@@ -65,26 +78,31 @@ export class LostToolCallGuard {
   utteranceEnded(working: boolean): GuardVerdict {
     if (this.dropping) {
       this.dropping = false;
+      this.continuing = true;
       return { kind: "pass" };
     }
     const release = this.flush();
-    if (working && this.toolCalls === 0) this.fillerEnded = true;
+    this.passing = false;
+    // After a dropped apology the provider may close the stopped utterance as IDLE; the note's answer still continues.
+    this.continuing = working || this.afterDrop;
+    this.afterDrop = false;
     return release;
   }
 
-  /** The provider stopped the utterance (the retry note, or the user talking over it). */
+  /** The provider stopped the utterance (the guard's note, or the user talking over it). */
   interrupted(): void {
     this.dropping = false;
     this.held = null;
+    this.passing = false;
   }
 
   audio(pcm: Buffer, sampleRate: number, now: number): GuardVerdict {
-    if (this.dropping) return { kind: "drop", retry: false };
+    if (this.dropping) return { kind: "drop", retry: false, afterTools: this.toolCalls > 0 };
     if (this.held) {
       this.held.audio.push({ pcm, sampleRate });
       return this.expired(now) ? this.flush() : { kind: "hold" };
     }
-    if (this.fillerEnded && this.toolCalls === 0) {
+    if ((this.continuing || this.afterDrop) && !this.passing && !this.toolFailed) {
       this.held = { since: now, words: [], audio: [{ pcm, sampleRate }] };
       return { kind: "hold" };
     }
@@ -92,19 +110,19 @@ export class LostToolCallGuard {
   }
 
   words(text: string, now: number): GuardVerdict {
-    if (this.dropping) return { kind: "drop", retry: false };
+    if (this.dropping) return { kind: "drop", retry: false, afterTools: this.toolCalls > 0 };
     if (!this.held) return { kind: "pass" };
     this.held.words.push(text);
-    // A tool of this request really failed: saying so is the truth, not a lost call.
+    // A tool of this request really failed: saying so is the truth, not a lost step.
     if (this.toolFailed) return this.flush();
     const said = this.held.words.join("");
     if (this.options.claimsFailure(said)) {
       this.held = null;
       this.dropping = true;
-      this.fillerEnded = false;
+      this.afterDrop = true;
       const retry = this.retries < (this.options.maxRetries ?? 2);
       if (retry) this.retries += 1;
-      return { kind: "drop", retry };
+      return { kind: "drop", retry, afterTools: this.toolCalls > 0 };
     }
     if (said.length >= (this.options.enoughChars ?? 28) || this.expired(now)) return this.flush();
     return { kind: "hold" };
@@ -128,7 +146,7 @@ export class LostToolCallGuard {
     const { audio, words } = this.held;
     this.held = null;
     // What was held was not an apology: the rest of this utterance goes straight through.
-    this.fillerEnded = false;
+    this.passing = true;
     return { kind: "release", audio, words };
   }
 

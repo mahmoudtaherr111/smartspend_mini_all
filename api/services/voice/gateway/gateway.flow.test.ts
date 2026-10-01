@@ -31,7 +31,7 @@ function brainFor(tools: ToolPlan, cardNote = "(ملاحظة من التطبيق
     modeNote: (mode) => `[mode:${mode}]`,
     writes: (name) => name === "confirm",
     claimsFailure,
-    lostToolCallNote: (retry) => (retry ? LOST_CALL_RETRY_NOTE : "[give up]"),
+    lostToolCallNote: (retry, afterTools) => (!retry ? "[give up]" : afterTools ? "[use the results]" : LOST_CALL_RETRY_NOTE),
     forgotten: () => ["مرتبه بينزل يوم 25"],
     async runTool(call) {
       const plan = tools[call.name];
@@ -229,6 +229,25 @@ describe("a call's turns", () => {
     live.sendOutputTranscript("معاك خمس تلاف.");
     live.sendTurnComplete("IDLE");
     await until(() => app.audio.some((frame) => frame[0] === 5));
+    app.send({ type: "end" });
+    await app.waitFor("ended");
+  });
+
+  it("keeps an apology after the tools answered from the user, and tells the model to use the results", async () => {
+    tools = { read_balance: { ms: 10, outcome: { response: { ok: true, balance: 5000 } } } };
+    const { app, live } = await startCall("gemini-3.8-live-extended-thinking");
+    app.send({ type: "text", text: "معايا كام؟" });
+    live.sendInteractionStatus("IN_PROGRESS");
+    live.sendAudio(Buffer.from([1, 1]));
+    live.sendTurnComplete("IN_PROGRESS");
+    live.sendToolCall([{ id: "r1", name: "read_balance" }]);
+    await live.waitFor((m) => Boolean(m.toolResponse));
+    live.sendAudio(Buffer.from([9, 9]));
+    live.sendOutputTranscript("أنا بعتذر جداً، حصل عطل");
+    await live.waitFor((m) => m.clientContent?.turns?.[0]?.parts?.[0]?.text === "[use the results]");
+    live.sendInterrupted();
+    await app.waitFor("interrupted");
+    expect(app.audio.map((frame) => frame[0])).toEqual([1]);
     app.send({ type: "end" });
     await app.waitFor("ended");
   });
