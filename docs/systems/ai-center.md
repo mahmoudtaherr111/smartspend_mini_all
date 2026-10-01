@@ -194,7 +194,8 @@ the finance caches are cleared.
   an amount (within half a pound, a refund by its size) and a text (its description, words, shop and category)
   before `limit`, and says `partial` when the period held more than `ROW_LIMIT` entries. `getTextSpendingTotal` sums
   the spending whose text holds a shop's name over every entry of the period, with the places it matched.
-  `getPersonTotal` gives a contact's spending and income apart (`totalExpense`, `totalIncome`).
+  `getPersonTotal` gives a contact's spending and income apart (`totalExpense`, `totalIncome`); `listPersonNames` lists
+  the names it can match (the user's contacts that are not silenced, at most twenty).
 - Results are cached per user (`api/services/finance-semantic-layer/cache.ts#withFinanceCache`): a minute for today,
   ten minutes for yesterday, five minutes for any other period that still holds today, an hour for a closed one
   (`financeCacheTtl`), a minute for wallet balances and five minutes for goals and the

@@ -23,6 +23,7 @@ import {
   getTextSpendingTotal,
   getTransactionLookup,
   getWalletSummary,
+  listPersonNames,
 } from "../../../finance-semantic-layer/resolvers";
 import { resolveFinancePeriod } from "../../../finance-semantic-layer/period-resolver";
 import { getFinanceCacheGen } from "../../../finance-semantic-layer/cache";
@@ -224,6 +225,25 @@ interface Built {
   extra?: Record<string, unknown>;
   coverage?: string;
   title: string;
+}
+
+/** Never a reason to skip the answer: a reader that fails leaves the list empty. */
+async function personNames(finance: Parameters<typeof listPersonNames>[0]): Promise<string[]> {
+  try {
+    return await listPersonNames(finance);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * No one matched the name the model sent. The names that exist go back with it, so a name the model transliterated
+ * ("Khaled" for خالد) or misheard is asked again as it is recorded, instead of being answered as "nobody".
+ */
+function noSuchPerson(person: string, known: string[]): string {
+  return known.length
+    ? `مفيش حد متسجل باسم «${person}». الأسماء المتسجلة: ${known.join("، ")}. لو حد منهم هو المقصود، اسأل تاني بالاسم زي ما هو متسجل؛ لو لأ، قول إنه مش متسجل.`
+    : `مفيش حد متسجل باسم «${person}».`;
 }
 
 function outcome(
@@ -1222,6 +1242,7 @@ async function answer(
         key(entry.name) === key(total?.name ?? person) ||
         key(entry.name).includes(key(person)),
     );
+    const known = !total && !loan ? await personNames(finance) : [];
     const facts = [
       ...(total && total.totalIncome
         ? [
@@ -1261,7 +1282,7 @@ async function answer(
         },
         coverage:
           !total && !loan
-            ? `مفيش حد متسجل باسم «${person}».`
+            ? noSuchPerson(person, known)
             : facts.length === 0
               ? `مفيش فلوس متسجلة مع ${total?.name ?? person} في ${label}.`
               : loan
@@ -1354,7 +1375,7 @@ async function answer(
         facts,
         extra: total ? { count } : {},
         coverage: !total
-          ? `مفيش حد متسجل باسم «${person}».`
+          ? noSuchPerson(person, await personNames(finance))
           : count === 0
             ? `مفيش ${income ? "دخل" : "مصروف"} متسجل مربوط بـ${total.name} في ${label}.`
             : undefined,
@@ -1466,7 +1487,7 @@ export const moneyQueryCoach: VoiceTool = {
           type: "string",
           description: "Category in the user's words, e.g. أكل, مواصلات",
         },
-        person: { type: "string", description: "A person's name" },
+        person: { type: "string", description: "A person's name exactly as the user said it, in the user's script (never transliterated)" },
         search: { type: "string", description: "Merchant or word, e.g. طلبات" },
         type: { type: "string", enum: ["expense", "income"] },
         group_by: {
@@ -1528,7 +1549,7 @@ export const moneyQuery: VoiceTool = {
           type: "string",
           description: "Category in the user's words, e.g. أكل, مواصلات",
         },
-        person: { type: "string", description: "A person's name" },
+        person: { type: "string", description: "A person's name exactly as the user said it, in the user's script (never transliterated)" },
         search: { type: "string", description: "Merchant or word, e.g. طلبات" },
         type: { type: "string", enum: ["expense", "income"] },
         group_by: {

@@ -363,6 +363,20 @@ export async function getCategoryTotal(
  * linked to that canonical contact id. We deliberately do not fall back to raw
  * text matching: that would reintroduce the ambiguity this relation removes.
  */
+/** The names a person question can match: the user's contacts that are not silenced, at most `limit` of them. */
+export async function listPersonNames(ctx: FinanceContext, limit = 20): Promise<string[]> {
+  const contacts = await db
+    .select({ name: userContacts.name })
+    .from(userContacts)
+    .where(and(
+      eq(userContacts.userId, ctx.userId),
+      eq(userContacts.userType, ctx.userType),
+      eq(userContacts.isSilenced, false),
+    ))
+    .limit(limit);
+  return contacts.map((contact) => contact.name).filter(Boolean);
+}
+
 export async function getPersonTotal(
   ctx: FinanceContext,
   personQuery: string,

@@ -131,7 +131,7 @@
         "api/services/finance-semantic-layer/monthly-report-facts.ts": "3f971c8a47ab",
         "api/services/finance-semantic-layer/period-resolver.ts": "6ebc06ee9807",
         "api/services/finance-semantic-layer/proactive-insights.ts": "4673f997eb5c",
-        "api/services/finance-semantic-layer/resolvers.ts": "8e2db16efc73",
+        "api/services/finance-semantic-layer/resolvers.ts": "271e3a0624f4",
         "api/services/finance-semantic-layer/row-aggregators.ts": "46f6753eac39",
         "api/services/finance-semantic-layer/types.ts": "d13d8332e9be",
         "api/services/site-guide/embedding.ts": "bc5457180269",
@@ -144,9 +144,9 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "c384e6047412"
       },
-      "checked": "2026-10-01 b5d9955",
-      "arabic": "187fce938b55",
-      "arabicChecked": "2026-10-01 b5d9955"
+      "checked": "2026-10-01 1d4bf03",
+      "arabic": "62d7706bf304",
+      "arabicChecked": "2026-10-01 1d4bf03"
     },
     "ai-platform": {
       "files": {
@@ -497,7 +497,7 @@
         "api/services/voice/brain/tools/coach.ts": "d5b03209590d",
         "api/services/voice/brain/tools/market-price.ts": "5bed0aca7f26",
         "api/services/voice/brain/tools/memory.ts": "53a2c2270349",
-        "api/services/voice/brain/tools/money-query.ts": "7c690cded1c7",
+        "api/services/voice/brain/tools/money-query.ts": "f9253d4c05b9",
         "api/services/voice/brain/tools/record.ts": "8d3978e3caac",
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
         "api/services/voice/brain/tools/think.ts": "5224961b8aad",
@@ -533,9 +533,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-10-01 e355bf2",
-      "arabic": "d248f8c5637e",
-      "arabicChecked": "2026-10-01 e355bf2"
+      "checked": "2026-10-01 1d4bf03",
+      "arabic": "ca588c47b73c",
+      "arabicChecked": "2026-10-01 1d4bf03"
     },
     "web-app": {
       "files": {

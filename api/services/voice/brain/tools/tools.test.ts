@@ -23,6 +23,7 @@ vi.mock("../../../finance-semantic-layer/resolvers", () => {
       person === "أحمد"
         ? { period: period("p"), contactId: 3, name: "أحمد", totalExpense: 400, totalIncome: 2_500, expenseCount: 2, incomeCount: 1, transactionCount: 3 }
         : null),
+    listPersonNames: vi.fn(async () => ["أحمد", "خالد"]),
     getTextSpendingTotal: vi.fn(async (_ctx, text: string) => ({
       period: period("p"), text, totalExpense: text === "طلبات" ? 640 : 0, transactionCount: text === "طلبات" ? 3 : 0,
       places: text === "طلبات" ? [{ name: "طلبات", amount: 640, count: 3 }] : [],
@@ -261,6 +262,14 @@ describe("money_query", () => {
       expect(String(result.response.coverage)).toContain("السلفة مش دخل");
     }
     expect(vi.mocked(getFinanceTransactions)).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ transactionTypes: ["income"] }));
+  });
+
+  it("gives back the recorded names when the one asked for matches nobody (a transliterated «Khaled»)", async () => {
+    ctx.app.debts = vi.fn(async () => ({ people: [], owedToYou: 0, youOwe: 0, gam3eya: { paid: 0, received: 0, held: 0, installments: 0 } }));
+    for (const metric of ["transactions", "average"]) {
+      const result = await moneyQuery.run({ metric, person: "Khaled", type: "income" }, ctx);
+      expect(String(result.response.coverage)).toContain("الأسماء المتسجلة: أحمد، خالد");
+    }
   });
 
   it("finds a transaction by its amount over the whole period, not among the latest few", async () => {
