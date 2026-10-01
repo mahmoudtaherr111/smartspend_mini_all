@@ -126,6 +126,23 @@ export function PwaInstallPrompt() {
     };
   }, []);
 
+  // The card floats over the end of the page; while it shows, the page reserves its height
+  // (`.pb-nav-safe` in index.css) so the controls under it can still be scrolled into reach.
+  const [card, setCard] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (!card) return;
+    const reserve = () =>
+      root.style.setProperty("--install-card-space", `${Math.ceil(card.getBoundingClientRect().height) + 16}px`);
+    reserve();
+    const observer = new ResizeObserver(reserve);
+    observer.observe(card);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--install-card-space");
+    };
+  }, [card]);
+
   const dismiss = () => {
     setDismissed(true);
     setShowGuide(false);
@@ -174,6 +191,7 @@ export function PwaInstallPrompt() {
 
   return (
     <div
+      ref={setCard}
       className="fixed inset-x-3 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-sm animate-in fade-in slide-in-from-bottom-6 duration-300 lg:hidden"
       role="region"
       aria-label="تثبيت SmartSpend كتطبيق"

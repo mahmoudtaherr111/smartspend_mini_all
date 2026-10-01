@@ -12,46 +12,85 @@ test.describe("R3: Zero-Latency Instant Tab Switching & Warm View Pre-Rendering"
     await page.waitForLoadState("domcontentloaded");
 
     // Check presence of primary container
-    const mainArea = page.locator("main, [data-testid='warm-tab-container'], #root").first();
+    const mainArea = page
+      .locator("main, [data-testid='warm-tab-container'], #root")
+      .first();
     await expect(mainArea).toBeVisible();
 
     // Verify record tab elements exist
-    const expenseFormOrInput = page.locator("input[placeholder*='مبلغ'], input[placeholder*='0.00'], [data-testid='expense-form']").first();
+    const expenseFormOrInput = page
+      .locator(
+        "input[placeholder*='مبلغ'], input[placeholder*='0.00'], [data-testid='expense-form']",
+      )
+      .first();
     if ((await expenseFormOrInput.count()) > 0) {
       await expect(expenseFormOrInput).toBeAttached();
     }
   });
 
-  test("Tier 1 (F9): Tab switching executes instantaneously (sub-100ms) with zero skeleton reload flash", async ({
+  test("Tier 1 (F9): Tab selection shows the active warm panel within 1500ms of input", async ({
     page,
   }) => {
     await page.goto("/dashboard?tab=record");
     await page.waitForLoadState("domcontentloaded");
 
-    const startTime = Date.now();
-
-    // Switch to stats
-    const statsTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("إحصائيات").first();
-    await statsTab.click();
-
-    // Measure visibility latency
-    const statsContent = page.locator("#home-panel-stats[data-state='active']");
-    await expect(statsContent).toBeVisible({ timeout: 1000 });
-
-    const switchDuration = Date.now() - startTime;
-    // Tab switch should be near instantaneous
-    expect(switchDuration).toBeLessThan(1500);
-
-    // Switch to calendar
-    const calendarStartTime = Date.now();
-    const calendarTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تقويم").first();
-    await calendarTab.click();
-
-    const calendarContent = page.locator("#home-panel-calendar[data-state='active']");
-    await expect(calendarContent).toBeVisible({ timeout: 1000 });
-
-    const calendarDuration = Date.now() - calendarStartTime;
-    expect(calendarDuration).toBeLessThan(1500);
+    for (const id of ["stats", "calendar"]) {
+      const tab = page.getByTestId(`nav-tab-${id}`);
+      // Measure in the browser from the user's release to the next paint of
+      // the active panel. Playwright's navigation auto-wait adds engine and
+      // transport overhead that is not the app's response time.
+      await page.evaluate((panelId) => {
+        document.body.removeAttribute("data-selection-ms");
+        let started: number | null = null;
+        const start = (event: Event) => {
+          if (started !== null || !(event.target instanceof Element)) return;
+          // iOS captures the pointer on the nav, so release is retargeted
+          // from the tab link to its parent navigation element.
+          if (event.target.closest("[data-testid='mobile-bottom-nav']"))
+            started = performance.now();
+        };
+        // WebKit's automation port can emit mouse events without pointer events.
+        document.addEventListener("pointerup", start, true);
+        document.addEventListener("mouseup", start, true);
+        document.addEventListener("touchend", start, true);
+        document.addEventListener("click", start, true);
+        const observer = new MutationObserver(() => {
+          if (
+            started === null ||
+            document.getElementById(panelId)?.dataset.state !== "active"
+          )
+            return;
+          observer.disconnect();
+          document.removeEventListener("pointerup", start, true);
+          document.removeEventListener("mouseup", start, true);
+          document.removeEventListener("touchend", start, true);
+          document.removeEventListener("click", start, true);
+          requestAnimationFrame(() => {
+            document.body.setAttribute(
+              "data-selection-ms",
+              String(performance.now() - started!),
+            );
+          });
+        });
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["data-state"],
+        });
+      }, `home-panel-${id}`);
+      await tab.click();
+      await expect(
+        page.locator(`#home-panel-${id}[data-state='active']`),
+      ).toBeVisible({ timeout: 1000 });
+      await expect(page.locator("body")).toHaveAttribute(
+        "data-selection-ms",
+        /\d/,
+      );
+      expect(
+        Number(await page.locator("body").getAttribute("data-selection-ms")),
+      ).toBeLessThan(1500);
+    }
   });
 
   test("Tier 1 (F9): Form draft state is 100% preserved across tab switches", async ({
@@ -60,8 +99,16 @@ test.describe("R3: Zero-Latency Instant Tab Switching & Warm View Pre-Rendering"
     await page.goto("/dashboard?tab=record");
     await page.waitForLoadState("domcontentloaded");
 
-    const amountInput = page.locator("input[type='number'], input[placeholder*='0.00'], input[placeholder*='مبلغ']").first();
-    const noteInput = page.locator("input[placeholder*='ملاحظات'], input[placeholder*='تفاصيل'], textarea").first();
+    const amountInput = page
+      .locator(
+        "input[type='number'], input[placeholder*='0.00'], input[placeholder*='مبلغ']",
+      )
+      .first();
+    const noteInput = page
+      .locator(
+        "input[placeholder*='ملاحظات'], input[placeholder*='تفاصيل'], textarea",
+      )
+      .first();
 
     if ((await amountInput.count()) > 0) {
       // Type test input into amount and note fields
@@ -72,17 +119,26 @@ test.describe("R3: Zero-Latency Instant Tab Switching & Warm View Pre-Rendering"
       }
 
       // Switch away to stats tab
-      const statsTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("إحصائيات").first();
+      const statsTab = page
+        .locator("[data-testid='mobile-bottom-nav']")
+        .getByText("إحصائيات")
+        .first();
       await statsTab.click();
       await page.waitForTimeout(100);
 
       // Switch away to calendar tab
-      const calendarTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تقويم").first();
+      const calendarTab = page
+        .locator("[data-testid='mobile-bottom-nav']")
+        .getByText("تقويم")
+        .first();
       await calendarTab.click();
       await page.waitForTimeout(100);
 
       // Switch back to record tab
-      const recordTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تسجيل").first();
+      const recordTab = page
+        .locator("[data-testid='mobile-bottom-nav']")
+        .getByText("تسجيل")
+        .first();
       await recordTab.click();
       await page.waitForTimeout(100);
 
@@ -106,12 +162,18 @@ test.describe("R3: Zero-Latency Instant Tab Switching & Warm View Pre-Rendering"
     const initialScrollY = await page.evaluate(() => window.scrollY);
 
     // Switch to stats
-    const statsTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("إحصائيات").first();
+    const statsTab = page
+      .locator("[data-testid='mobile-bottom-nav']")
+      .getByText("إحصائيات")
+      .first();
     await statsTab.click();
     await page.waitForTimeout(100);
 
     // Switch back to record
-    const recordTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تسجيل").first();
+    const recordTab = page
+      .locator("[data-testid='mobile-bottom-nav']")
+      .getByText("تسجيل")
+      .first();
     await recordTab.click();
     await page.waitForTimeout(100);
 
@@ -137,8 +199,14 @@ test.describe("R3: Zero-Latency Instant Tab Switching & Warm View Pre-Rendering"
     const initialCount = statsQueryCount;
 
     // Switch away to record and back to stats multiple times
-    const recordTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("تسجيل").first();
-    const statsTab = page.locator("[data-testid='mobile-bottom-nav']").getByText("إحصائيات").first();
+    const recordTab = page
+      .locator("[data-testid='mobile-bottom-nav']")
+      .getByText("تسجيل")
+      .first();
+    const statsTab = page
+      .locator("[data-testid='mobile-bottom-nav']")
+      .getByText("إحصائيات")
+      .first();
 
     await recordTab.click();
     await page.waitForTimeout(50);

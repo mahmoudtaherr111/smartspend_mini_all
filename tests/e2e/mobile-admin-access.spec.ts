@@ -99,9 +99,13 @@ for (const authType of ["oauth", "local"] as const) {
         () => document.documentElement.scrollWidth > window.innerWidth,
       ),
     ).toBe(false);
-    await expect(
-      page.getByRole("article", { name: "حساب مسؤول الاختبار" }),
-    ).toBeVisible();
+    const wideUsersLayout = await page.evaluate(() => matchMedia("(min-width: 768px)").matches);
+    if (wideUsersLayout) {
+      await expect(page.getByRole("table")).toBeVisible();
+      await expect(page.getByRole("row", { name: /مسؤول الاختبار/ })).toBeVisible();
+    } else {
+      await expect(page.getByRole("article", { name: "حساب مسؤول الاختبار" })).toBeVisible();
+    }
     await page.screenshot({
       path: testInfo.outputPath("admin-users.png"),
       animations: "disabled",

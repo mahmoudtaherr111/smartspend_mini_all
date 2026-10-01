@@ -27,6 +27,15 @@ The benchmark's other commands (calibration, live providers, freezing a new base
   `RUN_DB_INTEGRATION`, `RUN_REDIS_INTEGRATION` or `REQUIRE_BUILD`, and is listed in the matching script, so
   `npm run test` runs on any machine.
 - DOM matchers such as `toBeInTheDocument` are registered for every test by `tests/setup/jest-dom.ts`.
+- The mobile fixture's normal `ai.getUserLimits` reply is checked against the router output type, per plan.
+  `limitsReply` replaces it with another payload or a server error: `tests/e2e/voice-limits.spec.ts` checks that an
+  unknown or malformed balance and a used-up month never ask for the microphone and keep text usable, and that
+  minutes left or an unlimited plan do ask for it. This is separate from provider/live-call qualification.
+- Mobile journeys default to an installed PWA, including the browser display-mode APIs; installation onboarding
+  explicitly uses `installedPwa: false`. A localStorage flag alone does not emulate installed display mode.
+  Synthetic touch and pointer events check our handlers; they do not prove native scrolling or device gestures.
+  The CSS overscroll tests are skipped when the engine does not implement `overscroll-behavior`: Playwright's WebKit
+  build on Windows reports it unsupported although Safari on iOS 16+ has it, so on iPhone projects it needs a device.
 
 ## The database suite on your machine
 `docker compose -f docker-compose.test.yml up -d` starts MySQL 8 on port 3307 with the database

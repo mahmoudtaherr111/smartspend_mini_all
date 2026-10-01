@@ -87,6 +87,10 @@ test.describe("Mobile Fidelity Track: Comprehensive 4-Tier E2E Specification", (
       await page.waitForLoadState("domcontentloaded");
 
       // Verify document body or scroll container is scrollable and styled
+      test.skip(
+        !await page.evaluate(() => CSS.supports("overscroll-behavior-y", "none")),
+        "This engine lacks CSS overscroll control; native scrolling needs device verification.",
+      );
       const scrollStyle = await page.evaluate(() => {
         const main = document.querySelector("main") || document.body;
         return window.getComputedStyle(main).overscrollBehaviorY;

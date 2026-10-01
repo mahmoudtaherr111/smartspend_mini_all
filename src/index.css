@@ -164,7 +164,8 @@
     padding-right: max(1rem, env(safe-area-inset-right));
   }
   .pb-nav-safe {
-    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+    /* --install-card-space: set by PwaInstallPrompt while its card floats above the nav. */
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom) + var(--install-card-space, 0px));
   }
   .top-safe {
     top: env(safe-area-inset-top);

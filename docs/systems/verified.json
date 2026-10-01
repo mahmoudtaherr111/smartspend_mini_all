@@ -292,14 +292,14 @@
         "api/lib/unified-normalizer.ts": "603756615433",
         "api/lib/voice-intake-gate.ts": "0a8bf7293a27",
         "api/services/parser-trace.ts": "aa8b5bad3877",
-        "src/components/expenses/ExpenseForm.tsx": "84d11aaa1a50",
+        "src/components/expenses/ExpenseForm.tsx": "39a1b0c52277",
         "src/components/expenses/ReceiptCapture.tsx": "5940b1b1e056",
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-10-01 b5d9955",
-      "arabic": "6a6449f2893e",
-      "arabicChecked": "2026-10-01 b5d9955"
+      "checked": "2026-10-01 68f0871",
+      "arabic": "56c3ba1d3a32",
+      "arabicChecked": "2026-10-01 68f0871"
     },
     "insights": {
       "files": {
@@ -553,13 +553,13 @@
         "src/components/pwa/NetworkStatusToast.tsx": "ef9a09045e3c",
         "src/components/pwa/PullToRefreshWrapper.tsx": "d46aea97fa6d",
         "src/components/pwa/PwaEnhancements.tsx": "4c57fbea51db",
-        "src/components/pwa/PwaInstallPrompt.tsx": "721a4a3a9e93",
+        "src/components/pwa/PwaInstallPrompt.tsx": "e929cfa71153",
         "src/components/pwa/PwaOfflineSyncDialog.tsx": "503aacea636f",
         "src/components/routing/PlanGates.tsx": "0ce4ccef1e39",
         "src/components/seo/SEOMeta.tsx": "03bceb61485e",
         "src/components/ui/accordion.tsx": "fc01c611406e",
         "src/components/ui/adaptive-dialog.tsx": "3123b5119fd2",
-        "src/components/ui/alert-dialog.tsx": "c08f82fb0e64",
+        "src/components/ui/alert-dialog.tsx": "4f555bee1731",
         "src/components/ui/alert.tsx": "b4a69e859d1d",
         "src/components/ui/aspect-ratio.tsx": "7706745e217b",
         "src/components/ui/avatar.tsx": "7986654f3baa",
@@ -575,7 +575,7 @@
         "src/components/ui/collapsible.tsx": "95b5b9ea89a4",
         "src/components/ui/command.tsx": "c69e234423a5",
         "src/components/ui/context-menu.tsx": "0afe917eaa88",
-        "src/components/ui/dialog.tsx": "53c33547e48f",
+        "src/components/ui/dialog.tsx": "0885f15b7e3b",
         "src/components/ui/drawer.tsx": "8b8e4079720f",
         "src/components/ui/dropdown-menu.tsx": "bf01d6f0e81d",
         "src/components/ui/empty.tsx": "8cfd93837a69",
@@ -644,7 +644,7 @@
         "src/lib/utils.ts": "fe02cb01defc",
         "src/main.tsx": "edecd8a6865f",
         "src/pages/Landing.tsx": "c618847f38a4",
-        "src/pages/More.tsx": "6a5495b15ee6",
+        "src/pages/More.tsx": "b7e547e0cf60",
         "src/pages/NotFound.tsx": "8c62f9d22119",
         "src/pages/Privacy.tsx": "d888313990ad",
         "src/pages/Terms.tsx": "4ff361a45f01",
@@ -655,9 +655,9 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-09-29 7e640a0",
-      "arabic": "8d4889ce6503",
-      "arabicChecked": "2026-09-29 7e640a0"
+      "checked": "2026-10-01 68f0871",
+      "arabic": "b933854e4a74",
+      "arabicChecked": "2026-10-01 68f0871"
     }
   }
 }

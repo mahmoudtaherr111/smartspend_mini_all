@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell,
@@ -137,6 +137,7 @@ export default function More() {
   // Logging out clears the offline queue (it belongs to this account); say so first.
   const unsentCount = logoutOpen ? countUnsentOffline() : 0;
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const cancelLogoutRef = useRef<HTMLButtonElement>(null);
 
   const confirmLogout = async () => {
     if (isLoggingOut) return;
@@ -268,7 +269,12 @@ export default function More() {
             )}
 
             <div className="border-t border-slate-200/70 dark:border-slate-800 p-2">
-              <AdaptiveDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+              <AdaptiveDialog
+                open={logoutOpen}
+                onOpenChange={(open) => {
+                  if (!isLoggingOut) setLogoutOpen(open);
+                }}
+              >
                 <AdaptiveDialogTrigger asChild>
                   <button
                     type="button"
@@ -278,7 +284,12 @@ export default function More() {
                     تسجيل الخروج
                   </button>
                 </AdaptiveDialogTrigger>
-                <AdaptiveDialogContent>
+                <AdaptiveDialogContent
+                  onOpenAutoFocus={(event) => {
+                    event.preventDefault();
+                    cancelLogoutRef.current?.focus();
+                  }}
+                >
                   <AdaptiveDialogHeader>
                     <AdaptiveDialogTitle>تسجيل الخروج؟</AdaptiveDialogTitle>
                     <AdaptiveDialogDescription>
@@ -293,7 +304,7 @@ export default function More() {
                   </AdaptiveDialogHeader>
                   <AdaptiveDialogFooter>
                     <AdaptiveDialogClose asChild>
-                      <Button variant="outline" disabled={isLoggingOut}>
+                      <Button ref={cancelLogoutRef} variant="outline" disabled={isLoggingOut}>
                         إلغاء
                       </Button>
                     </AdaptiveDialogClose>

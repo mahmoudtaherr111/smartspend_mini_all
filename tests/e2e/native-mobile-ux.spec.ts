@@ -272,6 +272,10 @@ test.describe("Native Mobile Transformation: Comprehensive 4-Tier UX & Physics S
       await page.goto("/dashboard");
       await page.waitForLoadState("domcontentloaded");
 
+      test.skip(
+        !await page.evaluate(() => CSS.supports("overscroll-behavior-y", "none")),
+        "This browser engine does not implement CSS overscroll control; verify on a physical device.",
+      );
       const overscroll = await page.evaluate(() => {
         return window.getComputedStyle(document.body).overscrollBehaviorY;
       });
@@ -299,6 +303,9 @@ test.describe("Native Mobile Transformation: Comprehensive 4-Tier UX & Physics S
       const confirmation = page.getByRole("dialog");
       await expect(confirmation).toBeVisible();
       await expect(confirmation).toContainText("تسجيل الخروج؟");
+      // The visible animation frame precedes the focus scope's setup. Wait for
+      // keyboard readiness, and keep the safe action as the initial focus.
+      await expect(confirmation.getByRole("button", { name: "إلغاء", exact: true })).toBeFocused();
       await page.keyboard.press("Escape");
       await expect(confirmation).toBeHidden();
 

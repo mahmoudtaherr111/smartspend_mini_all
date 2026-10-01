@@ -4,6 +4,8 @@ import {
   type Page,
   type Locator,
 } from "@playwright/test";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "../../api/router";
 
 /**
  * Standard Mock User Profile for Unified Auth Context
@@ -61,6 +63,9 @@ export interface MobileTestFixtures {
   /** Setup mock auth and tRPC query interceptors */
   setupMockEnvironment: (options?: {
     plan?: "free" | "pro" | "ultra";
+    installedPwa?: boolean;
+    /** What ai.getUserLimits answers instead of the plan's limits: another payload, or a server error. */
+    limitsReply?: { data: unknown } | "error";
   }) => Promise<void>;
   /** Error tracking trap to catch runtime console.error and uncaught exceptions */
   consoleErrors: string[];
@@ -91,7 +96,10 @@ export const test = base.extend<MobileTestFixtures>({
           !text.includes(
             "Failed to load resource: net::ERR_CONNECTION_REFUSED",
           ) &&
-          !text.includes("favicon.ico")
+          !text.includes("favicon.ico") &&
+          // WebKit ignores this Chromium-only viewport hint; it is a browser
+          // capability notice, not an application exception.
+          text !== 'Viewport argument key "interactive-widget" not recognized and ignored.'
         ) {
           errors.push(text);
         }
@@ -112,7 +120,11 @@ export const test = base.extend<MobileTestFixtures>({
   },
 
   setupMockEnvironment: async ({ page, context }, use) => {
-    const setup = async (options?: { plan?: "free" | "pro" | "ultra" }) => {
+    const setup = async (options?: {
+      plan?: "free" | "pro" | "ultra";
+      installedPwa?: boolean;
+      limitsReply?: { data: unknown } | "error";
+    }) => {
       const activeUser = {
         ...MOCK_USER,
         plan: options?.plan || "pro",
@@ -132,7 +144,7 @@ export const test = base.extend<MobileTestFixtures>({
       ]);
 
       // Seed localStorage for fast-boot PWA client cache
-      await page.addInitScript((user) => {
+      await page.addInitScript(({ user, installedPwa }) => {
         try {
           window.localStorage.setItem("smartspend_user", JSON.stringify(user));
           // The device identity snapshot a returning user has (src/lib/queryPersister.ts), so
@@ -141,17 +153,28 @@ export const test = base.extend<MobileTestFixtures>({
             "smartspend_offline_identity_v1",
             JSON.stringify({ id: user.id, type: user.type, name: user.name, plan: user.plan, role: user.role, savedAt: Date.now() }),
           );
-          window.localStorage.setItem("smartspend_pwa_standalone", "true");
+          window.localStorage.setItem("smartspend_pwa_standalone", String(installedPwa));
+          // Installed display mode is a browser capability, not a storage flag.
+          Object.defineProperty(navigator, "standalone", { configurable: true, value: installedPwa });
+          const matchMedia = window.matchMedia.bind(window);
+          window.matchMedia = (query) => {
+            const result = matchMedia(query);
+            if (query === "(display-mode: standalone)") {
+              Object.defineProperty(result, "matches", { configurable: true, value: installedPwa });
+            }
+            return result;
+          };
           window.localStorage.setItem("smartspend_theme", "dark");
           window.localStorage.setItem("theme", "dark");
           // Mark document element as standalone and dark mode
-          document.documentElement.classList.add("dark", "pwa-standalone");
+          document.documentElement.classList.add("dark");
+          document.documentElement.classList.toggle("pwa-standalone", installedPwa);
           document.documentElement.setAttribute("dir", "rtl");
           document.documentElement.setAttribute("lang", "ar");
         } catch {
           // ignore
         }
-      }, activeUser);
+      }, { user: activeUser, installedPwa: options?.installedPwa ?? true });
 
       // Route-level tRPC API Mocking
       await page.route("**/api/trpc/**", async (route) => {
@@ -161,6 +184,21 @@ export const test = base.extend<MobileTestFixtures>({
         const procedures = encodedProcedures.split(",").filter(Boolean);
 
         const dataForProcedure = (procedure: string): unknown => {
+          if (procedure === "ai.getUserLimits") {
+            const reply = options?.limitsReply;
+            if (reply && reply !== "error") return reply.data;
+            const limit = activeUser.plan === "ultra" ? 0
+              : activeUser.plan === "pro" ? 1800 : 300;
+            return {
+              ai: { limit: 30000, used: 0, remaining: 30000, maxPerRequest: 1000 },
+              voice: {
+                limit, used: 0, remaining: limit ? limit : -1,
+                resetDate: "2030-01-01T00:00:00.000Z",
+                maxPerRequest: activeUser.plan === "free" ? 60 : activeUser.plan === "pro" ? 180 : 300,
+              },
+              offline: { limit: 3 },
+            } satisfies inferRouterOutputs<AppRouter>["ai"]["getUserLimits"];
+          }
           // The tRPC procedure returns the user itself, not `{ user }`.
           if (procedure === "auth.me" || procedure === "auth.getSession") {
             return activeUser;
@@ -215,12 +253,16 @@ export const test = base.extend<MobileTestFixtures>({
           return {};
         };
 
-        const response = procedures.map((procedure) => ({
-          result: { data: dataForProcedure(procedure) },
-        }));
+        const failing = (procedure: string) =>
+          procedure === "ai.getUserLimits" && options?.limitsReply === "error";
+        const response = procedures.map((procedure) =>
+          failing(procedure)
+            ? { error: { message: "Internal server error", code: -32603, data: { code: "INTERNAL_SERVER_ERROR", httpStatus: 500, path: procedure } } }
+            : { result: { data: dataForProcedure(procedure) } },
+        );
 
         return route.fulfill({
-          status: 200,
+          status: procedures.some(failing) ? 207 : 200,
           contentType: "application/json",
           body: JSON.stringify(response),
         });
@@ -241,9 +283,12 @@ export const test = base.extend<MobileTestFixtures>({
       // Evaluate continuous touch events on the active page
       await page.evaluate(
         async ({ startX, startY, endX, endY, steps }) => {
+          // Synthetic events exercise our handlers, not native browser scrolling.
+          // WebKit exposes Touch but rejects its constructor. Supply the same
+          // coordinate fields through ordinary events on both engines.
           const createTouch = (x: number, y: number, target: Element) =>
-            new Touch({
-              identifier: Date.now(),
+            ({
+              identifier: 1,
               target,
               clientX: x,
               clientY: y,
@@ -256,55 +301,52 @@ export const test = base.extend<MobileTestFixtures>({
               rotationAngle: 0,
               force: 0.8,
             });
+          const touchEvent = (type: string, touch: ReturnType<typeof createTouch>) => {
+            const event = new Event(type, { bubbles: true, cancelable: true });
+            Object.defineProperties(event, {
+              touches: { value: type === "touchend" ? [] : [touch] },
+              targetTouches: { value: type === "touchend" ? [] : [touch] },
+              changedTouches: { value: [touch] },
+            });
+            return event;
+          };
 
           const startTarget =
             document.elementFromPoint(startX, startY) || document.body;
           const initialTouch = createTouch(startX, startY, startTarget);
+          const isNavigation = Boolean(startTarget.closest("[data-testid='mobile-bottom-nav']"));
+          const pointerEvent = (type: string, x: number, y: number) => new PointerEvent(type, {
+            bubbles: true, cancelable: true, pointerId: 1, pointerType: "touch",
+            isPrimary: true, buttons: type === "pointerup" ? 0 : 1, clientX: x, clientY: y,
+          });
+          if (isNavigation) startTarget.dispatchEvent(pointerEvent("pointerdown", startX, startY));
 
           startTarget.dispatchEvent(
-            new TouchEvent("touchstart", {
-              bubbles: true,
-              cancelable: true,
-              touches: [initialTouch],
-              targetTouches: [initialTouch],
-              changedTouches: [initialTouch],
-            }),
+            touchEvent("touchstart", initialTouch),
           );
 
           for (let i = 1; i <= steps; i++) {
             const currentX = startX + ((endX - startX) * i) / steps;
             const currentY = startY + ((endY - startY) * i) / steps;
-            const moveTarget =
-              document.elementFromPoint(currentX, currentY) || startTarget;
+            const moveTarget = startTarget;
             const moveTouch = createTouch(currentX, currentY, moveTarget);
 
             moveTarget.dispatchEvent(
-              new TouchEvent("touchmove", {
-                bubbles: true,
-                cancelable: true,
-                touches: [moveTouch],
-                targetTouches: [moveTouch],
-                changedTouches: [moveTouch],
-              }),
+              touchEvent("touchmove", moveTouch),
             );
+            if (isNavigation) startTarget.dispatchEvent(pointerEvent("pointermove", currentX, currentY));
 
             // Micro-delay between touch interpolation steps (approx 16ms / 60fps)
             await new Promise((resolve) => setTimeout(resolve, 16));
           }
 
-          const endTarget =
-            document.elementFromPoint(endX, endY) || startTarget;
+          const endTarget = startTarget;
           const endTouch = createTouch(endX, endY, endTarget);
 
           endTarget.dispatchEvent(
-            new TouchEvent("touchend", {
-              bubbles: true,
-              cancelable: true,
-              touches: [],
-              targetTouches: [],
-              changedTouches: [endTouch],
-            }),
+            touchEvent("touchend", endTouch),
           );
+          if (isNavigation) startTarget.dispatchEvent(pointerEvent("pointerup", endX, endY));
         },
         { startX, startY, endX, endY, steps },
       );

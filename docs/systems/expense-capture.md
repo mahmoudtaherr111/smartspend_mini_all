@@ -28,6 +28,10 @@ parses it when the connection returns: what the pipeline would auto-save is save
 marked for review, while the rest of the queue keeps syncing. At the end the first entry waiting for review is parsed
 again so its review card is the one on screen.
 
+The recording microphone requires a finite, non-negative remaining quota or the explicit unlimited
+sentinel `-1` from `ai.getUserLimits`. A missing or malformed voice balance keeps the form usable,
+refetches the limits and asks the person to retry or type; it never opens the microphone implicitly.
+
 ### 2. The entry point checks and gathers context
 `parseExpense`:
 - refuses when the plan's parse feature is switched off (setting `<plan>_ai_parse`) or the daily request limit

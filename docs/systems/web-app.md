@@ -74,6 +74,17 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
 - Items recorded while offline wait in `localStorage` and a dialog offers to send them when the connection
   returns ([recording spending](expense-capture.md)).
 - Push permission and Firebase messaging are set up here and used by [notifications](notifications.md).
+- The install card (`src/components/pwa/PwaInstallPrompt.tsx`) floats above the tab bar on `/dashboard` and `/more`
+  for a browser that has not installed the app. While it shows it sets `--install-card-space` on the root element and
+  `.pb-nav-safe` (`src/index.css`) adds that height to the bottom padding of `<main>`, so the last controls of a page
+  can still be scrolled out from under it; dismissing it gives the space back (`tests/e2e/pwa-install-onboarding.spec.ts`).
+- The More page's logout confirmation focuses Cancel first. Escape and the back button close it through the
+  dialog's own handling, and the dialog cannot be dismissed while a confirmed logout is running.
+- Centered dialogs (`src/components/ui/dialog.tsx`, `src/components/ui/alert-dialog.tsx`) are placed with a -50%
+  translate. The enter and exit keyframes of `tailwindcss-animate` replace the whole transform, so both carry the same
+  -50% offset (the slide-in-from-left and slide-in-from-top classes at one half); without it a dialog opened from half its size off-centre and
+  spilled past the right edge of a tablet for its first frames (`tests/e2e/people-settings-mobile.spec.ts` checks
+  every frame of the opening).
 
 ## Where to change what
 | To change | Edit | Check with |

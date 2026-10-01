@@ -278,7 +278,8 @@ export function ExpenseForm({
     };
   }, []);
 
-  const { data: userLimits } = trpc.ai.getUserLimits.useQuery();
+  const { data: userLimits, refetch: refetchUserLimits } =
+    trpc.ai.getUserLimits.useQuery();
   const {
     success: hapticSuccess,
     error: hapticError,
@@ -619,7 +620,7 @@ export function ExpenseForm({
 
   // ─── Voice Limit Effect ───
   useEffect(() => {
-    if (isRecording && userLimits && userLimits.voice.remaining !== -1) {
+    if (isRecording && userLimits?.voice && userLimits.voice.remaining !== -1) {
       if (recordingDuration >= userLimits.voice.remaining) {
         stopRecording();
         hapticError();
@@ -782,7 +783,17 @@ export function ExpenseForm({
       toast.error("التسجيل الصوتي يتطلب اتصالاً بالإنترنت.");
       return;
     }
-    if (userLimits && userLimits.voice.remaining === 0) {
+    const remainingVoice = userLimits?.voice?.remaining;
+    if (
+      typeof remainingVoice !== "number" ||
+      !Number.isFinite(remainingVoice) ||
+      (remainingVoice !== -1 && remainingVoice < 0)
+    ) {
+      toast.error("مش قادرين نعرف دقايق الصوت دلوقتي. جرّب تاني أو سجّل بالنص.");
+      void refetchUserLimits();
+      return;
+    }
+    if (userLimits?.voice && userLimits.voice.remaining === 0) {
       toast.error("دقايق الصوت بتاعة الشهر ده خلصت. تقدر تكتب، أو ترقّي لـ Pro.");
       return;
     }
@@ -1712,7 +1723,7 @@ export function ExpenseForm({
                   aria-label={
                     isRecording
                       ? "إيقاف التسجيل الصوتي"
-                      : userLimits && userLimits.voice.remaining >= 0
+                      : userLimits?.voice && userLimits.voice.remaining >= 0
                         ? `بدء التسجيل الصوتي، فاضلك ${voiceBalanceLabel(userLimits.voice.remaining)} الشهر ده`
                         : "بدء التسجيل الصوتي"
                   }
@@ -1726,7 +1737,7 @@ export function ExpenseForm({
                   )}
                   disabled={showSuccessAnim || !isOnline}
                 >
-                  {!isRecording && isOnline && userLimits && userLimits.voice.remaining >= 0 && (
+                  {!isRecording && isOnline && userLimits?.voice && userLimits.voice.remaining >= 0 && (
                     <span
                       className="absolute -top-2 -end-2 rounded-full bg-slate-900 px-1.5 text-[10px] font-bold leading-4 text-white dark:bg-white dark:text-slate-900"
                       aria-hidden="true"
