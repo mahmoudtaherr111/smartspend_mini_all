@@ -35,6 +35,19 @@ describe("summarizeVoiceCalls", () => {
     ]);
   });
 
+  it("counts calls that used Ultra Thinking apart, switched to or started in", () => {
+    const stats = summarizeVoiceCalls(7, [
+      row({ id: "vc_6", metrics: { profile: "coach", mode: "standard", modeSwitches: 2 } }),
+      row({ id: "vc_7", model: "gemini-3.8-live-extended-thinking", metrics: { profile: "coach", mode: "ultra", thinkingLevel: "low" } }),
+      row({ id: "vc_8", metrics: { profile: "coach", mode: "standard", modeSwitches: 0 } }),
+    ], []);
+    expect(stats.models.map((model) => model.key).sort()).toEqual([
+      "gemini-3.8-live · coach",
+      "gemini-3.8-live · coach · ultra",
+      "gemini-3.8-live-extended-thinking · coach · ultra · low",
+    ]);
+  });
+
   it("stays readable with no calls", () => {
     expect(summarizeVoiceCalls(1, [], [])).toMatchObject({ calls: 0, costPerMinuteUsd: null, firstAudioMs: { p50: null, p95: null } });
   });

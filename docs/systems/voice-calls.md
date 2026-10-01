@@ -121,7 +121,9 @@ spending step's daily figure since it was agreed against its target, and the day
 possibly unrecorded rather than kept); its `change_draft` (`changeDraftCoachTool`) adds `plan_save`, `step_done`,
 `reminder_set` (a future day and hour on Cairo's clock), `reminder_cancel`, `commitment_add` (no date unless the user
 gave one), `commitment_paid`, and `bank_confirm` / `bank_dismiss` (a waiting bank message confirmed or dropped as it
-is, through `profile.confirmSmsSuggestion` and `profile.dismissSmsSuggestion`; one already handled says so). They are drafts of kind `coach` behind the same gate; an amount in one must be a fact
+is, through `profile.confirmSmsSuggestion` and `profile.dismissSmsSuggestion`; one already handled says so), and
+`budget_update` (a budget's new monthly limit, an amount the user said, or pausing and resuming it, through
+`budget.update`; `money_query budgets` gives each budget's id and lists paused ones apart). They are drafts of kind `coach` behind the same gate; an amount in one must be a fact
 the call read or computed or a number the user said, and a plan keeps the facts it was agreed on. The standard call
 refuses both reads and drafts (`ToolContext#coach`).
 
@@ -328,7 +330,8 @@ The settings page's plans tab has a section for the call
 - **Dashboard:** `voice.adminStats` (admin only, `api/services/voice/admin-stats.ts`) over the last day, 7 or 30
   days: calls, callers, minutes, cost at Google and per minute (tools included), first-audio median and p95, tools
   and reconnects per call, why calls ended, incidents by kind, post-call memory status, clients, minutes and cost per
-  model, coach profile and thinking level (from `voice_calls.metrics`), and the 25 latest calls. It reads `voice_calls` and `voice_call_incidents` only: counts, times
+  model, coach profile, whether the call used Ultra Thinking and thinking level (from `voice_calls.metrics`), and the
+  25 latest calls. It reads `voice_calls` and `voice_call_incidents` only: counts, times
   and costs, never what was said.
 Monthly minutes, seconds per call and whether a plan may call at all are in the card above it.
 

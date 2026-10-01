@@ -104,8 +104,10 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
         const caller = await callerFor(identity);
         const { budgets } = await caller.budget.list();
         return budgets
-          .filter((budget) => budget.status === "active")
+          .filter((budget) => budget.status === "active" || budget.status === "paused")
           .map((budget) => ({
+            id: Number(budget.id),
+            status: budget.status === "paused" ? ("paused" as const) : ("active" as const),
             title: budget.title,
             category: budget.category,
             limit: Number(budget.monthlyLimit),
@@ -177,6 +179,11 @@ export function createVoiceAppCalls(router: { createCaller(ctx: Context): Caller
         remainingAmount: plan.remainingAmount,
         countedBy: plan.countedBy,
       }));
+    },
+
+    async updateBudget(identity, budgetId, change) {
+      const caller = await callerFor(identity);
+      await caller.budget.update({ budgetId, ...change });
     },
 
     async business(identity) {

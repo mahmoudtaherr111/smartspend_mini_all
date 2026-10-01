@@ -84,6 +84,12 @@ function profileOf(metrics: unknown): string | null {
   return value === "coach" ? "coach" : null;
 }
 
+/** A call that used Ultra Thinking (started in it or switched to it): its cost and time are that mode's at least in part. */
+function ultraOf(metrics: unknown): string | null {
+  const value = metrics as { mode?: unknown; modeSwitches?: unknown } | null;
+  return value?.mode === "ultra" || (typeof value?.modeSwitches === "number" && value.modeSwitches > 0) ? "ultra" : null;
+}
+
 function levelOf(metrics: unknown): string | null {
   const value = (metrics as { thinkingLevel?: unknown } | null)?.thinkingLevel;
   return typeof value === "string" && value ? value : null;
@@ -103,7 +109,7 @@ export function summarizeVoiceCalls(days: number, rows: VoiceCallStatRow[], inci
   const models = new Map<string, { count: number; seconds: number; cost: number }>();
   for (const row of rows) {
     // The coach and the standard call on one model are different calls; so are two thinking levels.
-    const key = [row.model, profileOf(row.metrics), levelOf(row.metrics)].filter(Boolean).join(" · ");
+    const key = [row.model, profileOf(row.metrics), ultraOf(row.metrics), levelOf(row.metrics)].filter(Boolean).join(" · ");
     const entry = models.get(key) ?? { count: 0, seconds: 0, cost: 0 };
     entry.count += 1;
     entry.seconds += row.billedSeconds;

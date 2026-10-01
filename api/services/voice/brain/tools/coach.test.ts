@@ -140,6 +140,37 @@ describe("the coach's drafts", () => {
     expect(calls.cashflows[0]).toMatchObject({ amount: 2_500, startDay: null, source: "voice" });
   });
 
+  it("changes a budget's limit to what the user said, or pauses and resumes it, only after consent", async () => {
+    const changes: unknown[] = [];
+    ctx.app = {
+      ...ctx.app,
+      listBudgets: async () => [
+        { id: 12, status: "active", title: "أكل", category: "أكل وشرب", limit: 2_000, spent: 1_250, percent: 63, exceeded: false },
+        { id: 13, status: "paused", title: "خروجات", category: "ترفيه", limit: 800, spent: 0, percent: 0, exceeded: false },
+      ],
+      updateBudget: async (_identity: unknown, id: number, change: unknown) => { changes.push({ id, change }); },
+    } as never;
+    const budgets = await moneyQueryCoach.run({ metric: "budgets" }, ctx);
+    expect(budgets.response).toMatchObject({ used: [{ budget: "أكل", budget_id: 12 }], paused: [{ budget: "خروجات", budget_id: 13 }] });
+    // An amount nobody said is refused; one the user said is drafted.
+    expect((await changeDraftCoachTool.run({ action: "budget_update", fields: { budget_id: 12, limit: 1_700 } }, ctx)).response).toMatchObject({ ok: false });
+    ctx.ledger.noteUserValue(1_500);
+    const drafted = await changeDraftCoachTool.run({ action: "budget_update", fields: { budget_id: 12, limit: 1_500, title: "أكل" } }, ctx);
+    expect(drafted.card).toMatchObject({ title: "تعديل حد الميزانية", items: [{ label: "أكل", amount: 1_500 }] });
+    expect(changes).toEqual([]);
+    ctx.drafts.heardAssistant();
+    clock.now += 1_000;
+    ctx.drafts.heardUser("آه");
+    expect((await confirmTool.run({ draft_id: drafted.response.draft_id }, ctx)).response).toMatchObject({ ok: true, done: "حد الميزانية بقى ألف وخمسمية في الشهر" });
+    const resume = await changeDraftCoachTool.run({ action: "budget_update", fields: { budget_id: 13, paused: false, title: "خروجات" } }, ctx);
+    expect(resume.card).toMatchObject({ title: "تشغيل ميزانية تاني" });
+    ctx.drafts.heardAssistant();
+    clock.now += 1_000;
+    ctx.drafts.heardUser("أيوه رجعها");
+    await confirmTool.run({ draft_id: resume.response.draft_id }, ctx);
+    expect(changes).toEqual([{ id: 12, change: { monthlyLimit: 1_500 } }, { id: 13, change: { status: "active" } }]);
+  });
+
   it("confirms a waiting bank message as it is, once, and says so when it was already handled", async () => {
     const confirmed: number[] = [];
     ctx.app = {

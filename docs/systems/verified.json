@@ -478,8 +478,8 @@
         "api/boot.ts#ws:/api/voice/v2": "b03b3ce6af5e",
         "api/server.ts#ws:/api/voice/v2": "fe2eec327770",
         "api/services/entitlements/voice.ts": "29ffd71b4434",
-        "api/services/voice/admin-stats.ts": "0c03b1f56b39",
-        "api/services/voice/app-calls.ts": "065b74c12377",
+        "api/services/voice/admin-stats.ts": "f9dce70f7506",
+        "api/services/voice/app-calls.ts": "a07e5a96e20a",
         "api/services/voice/brain/claims.ts": "690e2866015d",
         "api/services/voice/brain/coach-instructions.ts": "81228525ac79",
         "api/services/voice/brain/drafts.ts": "bdc0ffe84dfe",
@@ -493,14 +493,14 @@
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
         "api/services/voice/brain/tools/app-help.ts": "429dac755057",
         "api/services/voice/brain/tools/calculate.ts": "3cdb9bc51ff9",
-        "api/services/voice/brain/tools/coach.ts": "5f3954046f15",
+        "api/services/voice/brain/tools/coach.ts": "1723fb054d91",
         "api/services/voice/brain/tools/market-price.ts": "5bed0aca7f26",
         "api/services/voice/brain/tools/memory.ts": "c073f335afa9",
-        "api/services/voice/brain/tools/money-query.ts": "5c1bd8444252",
-        "api/services/voice/brain/tools/record.ts": "4476cc91d765",
+        "api/services/voice/brain/tools/money-query.ts": "0c64d5482596",
+        "api/services/voice/brain/tools/record.ts": "ca6e1fd4debd",
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
-        "api/services/voice/brain/tools/think.ts": "bbc093d02f9a",
-        "api/services/voice/brain/tools/types.ts": "d14d81db9da8",
+        "api/services/voice/brain/tools/think.ts": "5224961b8aad",
+        "api/services/voice/brain/tools/types.ts": "6bc4d7b0ae13",
         "api/services/voice/brain/validator.ts": "1dd9f0a8a04e",
         "api/services/voice/brain/voices.ts": "7fa9ca3bf8ae",
         "api/services/voice/engine/gemini-live.ts": "73eb5ad104db",
@@ -532,9 +532,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-10-01 fa78417",
-      "arabic": "0867ff0b5501",
-      "arabicChecked": "2026-10-01 fa78417"
+      "checked": "2026-10-01 9f4556a",
+      "arabic": "d2e931194848",
+      "arabicChecked": "2026-10-01 9f4556a"
     },
     "web-app": {
       "files": {

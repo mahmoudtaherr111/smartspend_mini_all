@@ -75,6 +75,9 @@ export interface SeasonSpending {
 }
 
 export interface BudgetStatus {
+  id: number;
+  /** Active budgets count spending; a paused one is listed so it can be resumed. */
+  status: "active" | "paused";
   title: string;
   category: string | null;
   limit: number;
@@ -110,6 +113,8 @@ export interface VoiceAppCalls {
    * one, "not_in_plan" when the plan does not include businesses.
    */
   business(identity: CallIdentity): Promise<{ id: number; name: string } | "none" | "not_in_plan">;
+  /** Changes a budget's monthly limit or pauses/resumes it (the budget screen's procedure, which checks ownership). */
+  updateBudget(identity: CallIdentity, budgetId: number, change: { monthlyLimit?: number; status?: "active" | "paused" }): Promise<void>;
   /** A question the parser opened for the home screen that the call has answered itself. */
   dismissClarification(identity: CallIdentity, clarificationId: number): Promise<void>;
   /** The words of an entry still waiting for the user's answer, when it is theirs and still waiting. */

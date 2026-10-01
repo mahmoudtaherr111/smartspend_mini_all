@@ -99,6 +99,7 @@ export async function planAnswer(ctx: ToolContext, answer: Answer): Promise<Tool
 
 export const COACH_ACTIONS = [
   "plan_save", "step_done", "reminder_set", "reminder_cancel", "commitment_add", "commitment_paid", "bank_confirm", "bank_dismiss",
+  "budget_update",
 ] as const;
 export type CoachAction = (typeof COACH_ACTIONS)[number];
 
@@ -109,7 +110,8 @@ export type CoachDraftPayload =
   | { op: "reminder_cancel"; stepId: number }
   | { op: "commitment_add"; cashflow: Parameters<typeof createCashflow>[1] }
   | { op: "commitment_paid"; cashflowId: number; dueDay: string; expenseId: number | null; amount: number | null }
-  | { op: "bank_confirm" | "bank_dismiss"; suggestionId: number };
+  | { op: "bank_confirm" | "bank_dismiss"; suggestionId: number }
+  | { op: "budget_update"; budgetId: number; monthlyLimit?: number; status?: "active" | "paused" };
 
 const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -214,6 +216,20 @@ export function coachDraft(action: string, fields: Record<string, unknown>, ctx:
         lines: [{ label: str(fields.title, 120) ?? "رسالة البنك", ...(typeof amount === "number" ? { amount } : {}) }],
       };
     }
+    case "budget_update": {
+      const budgetId = num(fields.budget_id);
+      if (!budgetId) return { refuse: "أنهي ميزانية؟ هاتها من money_query budgets (budget_id)." };
+      const limit = knownAmount(ctx, fields.limit);
+      if (limit === "unknown") return { refuse: "الحد الجديد لازم يكون رقم قاله المستخدم." };
+      const status = fields.paused === true ? "paused" as const : fields.paused === false ? "active" as const : undefined;
+      if (limit === null && !status) return { refuse: "عايز تغير الحد ولا توقفها ولا ترجعها؟" };
+      const name = str(fields.title, 120) ?? "الميزانية";
+      return {
+        payload: { op: "budget_update", budgetId, ...(limit !== null ? { monthlyLimit: limit } : {}), ...(status ? { status } : {}) },
+        title: status === "paused" ? "إيقاف ميزانية" : status === "active" ? "تشغيل ميزانية تاني" : "تعديل حد الميزانية",
+        lines: [{ label: name, ...(limit !== null ? { amount: limit, detail: "في الشهر" } : {}) }],
+      };
+    }
     case "commitment_paid": {
       const cashflowId = num(fields.cashflow_id);
       const dueDay = day(fields.due_day);
@@ -260,6 +276,15 @@ export async function executeCoachDraft(draft: Draft, ctx: ToolContext): Promise
       return (await ctx.app.dismissBankSuggestion(ctx.identity, payload.suggestionId))
         ? "اتشالت رسالة البنك من غير تسجيل"
         : "الرسالة دي اتسجلت أو اتشالت قبل كده";
+    case "budget_update": {
+      await ctx.app.updateBudget(ctx.identity, payload.budgetId, {
+        ...(payload.monthlyLimit !== undefined ? { monthlyLimit: payload.monthlyLimit } : {}),
+        ...(payload.status ? { status: payload.status } : {}),
+      });
+      if (payload.status === "paused") return "الميزانية وقفت";
+      if (payload.status === "active") return "الميزانية رجعت تشتغل";
+      return `حد الميزانية بقى ${spellAmount(payload.monthlyLimit ?? 0, { exact: true }).text} في الشهر`;
+    }
     case "commitment_paid": {
       const done = await settle(user, { cashflowId: payload.cashflowId, dueDay: payload.dueDay, expenseId: payload.expenseId, amount: payload.amount });
       return `اتسجل إن ${spellAmount(done.amount, { exact: true }).text} اتدفعوا للميعاد ده`;

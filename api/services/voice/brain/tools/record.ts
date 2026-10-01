@@ -476,8 +476,8 @@ export const changeDraftCoachTool: VoiceTool = {
       "this call recorded; plan_save (fields: title, goal, steps [{title, kind, amount_per_day, category, amount, " +
       "due_day}], review_day, evidence_refs), step_done / reminder_set (at YYYY-MM-DDTHH:mm Cairo) / reminder_cancel " +
       "(step_id), commitment_add (kind, direction in|out, title, amount, recurrence, start_day, certainty), " +
-      "commitment_paid (cashflow_id, due_day, expense_id or amount), bank_confirm / bank_dismiss (bank_id). " +
-      "Amounts only from tool facts or the user.",
+      "commitment_paid (cashflow_id, due_day, expense_id or amount), bank_confirm / bank_dismiss (bank_id), " +
+      "budget_update (budget_id from money_query budgets; limit, or paused true/false). Amounts only from tool facts or the user.",
     parameters: {
       type: "object",
       properties: {

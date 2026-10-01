@@ -84,7 +84,7 @@ async function gather(ctx: ToolContext): Promise<DataPoint[]> {
   for (const goal of goals?.goals.filter((g) => g.status === "active").slice(0, 3) ?? []) {
     data.push({ label: `هدف ${goal.title}`, value: goal.targetAmount });
   }
-  for (const budget of budgets.slice(0, 4)) {
+  for (const budget of budgets.filter((item) => item.status !== "paused").slice(0, 4)) {
     data.push({ label: `ميزانية ${budget.title}`, value: budget.limit }, { label: `المصروف من ميزانية ${budget.title}`, value: budget.spent });
   }
   for (const fact of ctx.ledger.all().slice(-12)) data.push({ label: fact.label, value: fact.value });

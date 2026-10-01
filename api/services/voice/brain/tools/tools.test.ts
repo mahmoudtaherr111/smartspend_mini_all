@@ -86,7 +86,7 @@ beforeEach(() => {
     drafts: new DraftBook(),
     app: {
       parseExpense: vi.fn(), saveExpenses: vi.fn(), deleteExpenses: vi.fn(), dismissClarification: vi.fn(), waitingEntry: vi.fn(), answerProfileQuestion: vi.fn(),
-      listBudgets: vi.fn(async () => [{ title: "أكل", category: "أكل وشرب", limit: 2_000, spent: 1_250, percent: 63, exceeded: false }]),
+      listBudgets: vi.fn(async () => [{ id: 12, status: "active" as const, title: "أكل", category: "أكل وشرب", limit: 2_000, spent: 1_250, percent: 63, exceeded: false }]),
     },
     signal: new AbortController().signal,
     now: () => new Date("2026-09-22T10:00:00Z"),

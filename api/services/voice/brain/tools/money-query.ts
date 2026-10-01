@@ -337,15 +337,20 @@ async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<
   }
 
   if (metric === "budgets") {
-    const budgets = (await ctx.app.listBudgets(ctx.identity)).slice(0, limit);
+    const all = await ctx.app.listBudgets(ctx.identity);
+    const budgets = all.filter((budget) => budget.status !== "paused").slice(0, limit);
+    const paused = all.filter((budget) => budget.status === "paused");
     return outcome({
       title: "الميزانيات",
       facts: budgets.flatMap((budget) => [
         { label: `ميزانية ${budget.title}`, value: budget.limit },
         { label: `المصروف من ميزانية ${budget.title}`, value: budget.spent },
       ]),
-      extra: { used: budgets.map((budget) => ({ budget: budget.title, say: spellPercent(budget.percent), over: budget.exceeded })) },
-      coverage: budgets.length ? undefined : "مفيش ميزانيات متعملة.",
+      extra: {
+        used: budgets.map((budget) => ({ budget: budget.title, budget_id: budget.id, say: spellPercent(budget.percent), over: budget.exceeded })),
+        ...(paused.length ? { paused: paused.map((budget) => ({ budget: budget.title, budget_id: budget.id })) } : {}),
+      },
+      coverage: budgets.length ? undefined : paused.length ? "كل الميزانيات واقفة." : "مفيش ميزانيات متعملة.",
     }, ctx, "الدورة دي");
   }
 
