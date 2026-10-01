@@ -256,6 +256,24 @@ async function recordDraft(
     : [];
   const modelDisagrees =
     understood.length > 0 && !sameAmounts(understood, amounts);
+  // The words carry a number the user never said while every amount the model understood is one they did: the
+  // model misquoted them ("لا قصدي خمسين" sent as "خمسمية عيش"). That is not the user's doubt to settle; the model
+  // sends their words again, and the new draft goes through these same checks.
+  const misquoted =
+    unheard.length > 0 &&
+    understood.length > 0 &&
+    understood.every((amount) => heard.some((value) => Math.abs(value - amount) < 0.5));
+  if (misquoted) {
+    return {
+      response: {
+        ok: false,
+        needs: "user_words",
+        say:
+          `الـwords فيها ${unheard.map((amount) => spellAmount(amount, { exact: true }).text).join(" و")} والمستخدم ماقالهوش. ` +
+          "نادي record_draft تاني والـwords بكلام المستخدم نفسه زي ما قاله، من غير ما تسأله.",
+      },
+    };
+  }
   if (unheard.length || modelDisagrees) {
     const doubtful = unheard.length ? unheard : amounts;
     return {

@@ -44,6 +44,7 @@ import { FactLedger } from "../facts";
 import { moneyQueryCoach, moneyQuery } from "./money-query";
 import { changeDraftCoachTool, changeDraftTool, confirmTool } from "./record";
 import type { ToolContext, VoiceAppCalls } from "./types";
+import { SpokenNumberValidator } from "../validator";
 
 let ctx: ToolContext;
 const clock = { now: new Date("2026-09-15T10:00:00Z").getTime() };
@@ -164,6 +165,10 @@ describe("the coach's drafts", () => {
     } as never;
     const budgets = await moneyQueryCoach.run({ metric: "budgets" }, ctx);
     expect(budgets.response).toMatchObject({ used: [{ budget: "أكل", budget_id: 12 }], paused: [{ budget: "خروجات", budget_id: 13 }] });
+    // What was spent from a budget is spending: said as spending after the read, it is not a wrong number.
+    const heard = new SpokenNumberValidator(ctx.ledger);
+    expect(heard.addAssistantWords("المصروف الفعلي لحد دلوقتي ألف ومتين وخمسين، والحد ألفين جنيه. ")).toBeNull();
+    expect(heard.endTurn()).toBeNull();
     // Asked as a new budget (how the evaluation's model asked "أقلل ميزانية الأكل لألف وخمسمية"), it is sent to
     // budget_update with the existing budget, never added beside it.
     const unparsed = await changeDraftCoachTool.run({ action: "budget_create", words: "ميزانية الأكل ألف وخمسمية" }, ctx);

@@ -223,6 +223,23 @@ describe("record_draft", () => {
     });
   });
 
+  it("sends the model back to the user's own words when it misquoted a number the user never said", async () => {
+    // The evaluation: "دفعت خمستاشر جنيه عيش", "لا قصدي خمسين", then record_draft with words "خمسمية عيش", amount 50.
+    const { ctx } = context({
+      ...twoItems,
+      items: [{ amount: 500, type: "expense", category: "مخبوزات" }],
+    });
+    ctx.drafts.heardUser("دفعت خمستاشر جنيه عيش");
+    ctx.drafts.heardUser("لا قصدي خمسين");
+    const result = await recordDraftTool.run(
+      { words: "خمسمية عيش", items: [{ amount: 50, what: "عيش" }] },
+      ctx,
+    );
+    expect(result.response).toMatchObject({ ok: false, needs: "user_words" });
+    expect(String(result.response.say)).toContain("خمسمية");
+    expect(ctx.drafts.latestPending()).toBeUndefined();
+  });
+
   it("passes the parser's question on, and closes it once the expense is recorded", async () => {
     const clarify = context({
       decision: "clarify",

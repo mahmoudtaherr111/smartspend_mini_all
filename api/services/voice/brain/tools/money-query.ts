@@ -33,7 +33,7 @@ import type {
   FinancePeriodInput,
 } from "../../../finance-semantic-layer/types";
 import type { ToolRunOutcome } from "../../gateway/call-session";
-import type { FactUnit } from "../facts";
+import type { FactMetric, FactUnit } from "../facts";
 import { spellPercent } from "../spoken";
 import { extractSpokenNumbers } from "../validator";
 import { readPendingQuestions, readStoredReport } from "./reports";
@@ -221,6 +221,8 @@ interface Built {
     value: number;
     exact?: boolean;
     unit?: FactUnit;
+    /** When the label alone would bind the wrong subject ("المصروف من ميزانية" is spending, not a budget). */
+    metric?: FactMetric;
   }>;
   extra?: Record<string, unknown>;
   coverage?: string;
@@ -260,6 +262,7 @@ function outcome(
       source: "ledger",
       exact: fact.exact,
       unit: fact.unit,
+      ...(fact.metric ? { metric: fact.metric } : {}),
       period: periodLabel,
       ...(fact.unit && fact.unit !== "EGP" ? { say: String(fact.value) } : {}),
     });
@@ -641,8 +644,8 @@ async function answer(
       {
         title: "الميزانيات",
         facts: budgets.flatMap((budget) => [
-          { label: `ميزانية ${budget.title}`, value: budget.limit },
-          { label: `المصروف من ميزانية ${budget.title}`, value: budget.spent },
+          { label: `ميزانية ${budget.title}`, value: budget.limit, metric: "budget" as const },
+          { label: `المصروف من ميزانية ${budget.title}`, value: budget.spent, metric: "spending" as const },
         ]),
         extra: {
           used: budgets.map((budget) => ({
