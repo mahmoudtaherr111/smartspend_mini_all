@@ -112,7 +112,10 @@ Its brain (`createCallBrain` with `coach`) has its own instructions
 (`api/services/voice/brain/coach-instructions.ts#buildCoachInstruction`: understand the need behind everyday
 words, keep the thread, one question that changes the advice, the coaching path from goal to one agreed step, the
 meanings not to mix — income and balance, left this month and available today, capacity and savings — and the
-consent rules) and its own tools (`COACH_TOOLS`): no `think`, and `calculate` for every sum. The facts in its opening
+consent rules) and its own tools (`COACH_TOOLS`): no `think`, and `calculate` for every sum. A shorter candidate of
+the same rules (`buildCoachInstruction` with `variant: "lean"`, about half the length) exists for evaluation only:
+the whole context is re-read on every model step, so the instruction's length is the call's main cost and quota driver;
+it is chosen by `CallOptions#instructionVariant`, which nothing sets for users. The facts in its opening
 context and in every tool answer carry a ref ("f12") that `calculate` takes.
 
 The coach also follows up (`api/services/voice/brain/tools/coach.ts`, on the services of

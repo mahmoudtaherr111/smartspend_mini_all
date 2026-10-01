@@ -124,7 +124,9 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       const voiceGender = VOICE_CHOICES[callOptions.voiceName]?.gender ?? "female";
       return {
         instruction: coach
-          ? buildCoachInstruction({ snapshot, voiceGender, noteTag, mode: callOptions.mode, ultraAvailable: Boolean(callOptions.modes?.ultra) })
+          ? buildCoachInstruction({
+            snapshot, voiceGender, noteTag, mode: callOptions.mode, ultraAvailable: Boolean(callOptions.modes?.ultra), variant: callOptions.instructionVariant,
+          })
           : buildInstruction({ snapshot, voiceGender, noteTag }),
         tools: [...tools.values()].map((tool) => tool.declaration),
       };

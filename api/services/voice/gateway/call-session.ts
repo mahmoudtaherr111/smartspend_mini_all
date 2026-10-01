@@ -54,6 +54,8 @@ export interface CallOptions {
   coach?: boolean;
   /** The current mode; absent in calls stored before modes existed (standard). */
   mode?: VoiceMode;
+  /** A candidate instruction under evaluation (scripts/voice-eval); never set for users. */
+  instructionVariant?: "lean";
   /** What each mode runs on. Absent: the call cannot switch. */
   modes?: { standard: { model: string; thinkingLevel: ThinkingLevel }; ultra: { model: string; thinkingLevel: ThinkingLevel } | null };
   maxSeconds: number;

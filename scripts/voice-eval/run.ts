@@ -43,6 +43,8 @@ interface Arm {
   level: "low" | "medium" | "high";
   /** Ultra Thinking: the coach's instructions with its Ultra section, on the extended model. */
   mode?: "standard" | "ultra";
+  /** The shorter instruction candidate. */
+  variant?: "lean";
 }
 
 function parseArms(spec: string): Arm[] {
@@ -50,6 +52,7 @@ function parseArms(spec: string): Arm[] {
     if (raw === "standard") return { id: raw, coach: false, model: "gemini-3.8-live", level: "low" as const };
     // The coach's instructions and tools on the standard Live model: a comparison arm, not a setting anyone gets.
     if (raw === "coach-live") return { id: raw, coach: true, model: "gemini-3.8-live", level: "low" as const };
+    if (raw === "coach-lean") return { id: raw, coach: true, model: "gemini-3.8-live", level: "low" as const, variant: "lean" as const };
     const [kind, level] = raw.split(":");
     if (level !== "low" && level !== "medium" && level !== "high") throw new Error(`unknown arm ${raw}`);
     if (kind === "ultra") return { id: raw, coach: true, model: "gemini-3.8-live-extended-thinking", level, mode: "ultra" as const };
@@ -185,6 +188,7 @@ async function main(): Promise<void> {
     const session = new sessionModule.CallSession(identity, {
       model: arm.model, voiceName: "Kore", thinkingLevel: arm.level, coach: arm.coach, maxSeconds: 900, costBudgetUsd: null, client: "web",
       mode: arm.mode ?? "standard",
+      instructionVariant: arm.variant,
       modes: arm.mode === "ultra"
         ? { standard: { model: "gemini-3.8-live", thinkingLevel: "low" }, ultra: { model: arm.model, thinkingLevel: arm.level } }
         : undefined,
