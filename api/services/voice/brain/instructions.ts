@@ -63,6 +63,9 @@ export function modeNote(mode: "standard" | "ultra"): string {
     : "(ملاحظة من التطبيق: المستخدم رجّع المكالمة للردود السريعة. من غير تحية، قول كلمتين إنك رجعت للعادي، وكمّل من مكان ما وقفتوا.)";
 }
 
+/** Every tool answer of the request is in and the model has said nothing for a while. */
+export const REPLY_NUDGE = "(ملاحظة من التطبيق: نتايج الأدوات وصلتك. قول للمستخدم الإجابة دلوقتي في جملة أو اتنين.)";
+
 /** The first user-turn note: open the call, or continue it after a reconnect without greeting again. */
 export function openingNote(resumed: boolean, recent: TranscriptLine[]): string {
   if (!resumed) {

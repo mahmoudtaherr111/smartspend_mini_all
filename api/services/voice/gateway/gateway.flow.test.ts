@@ -29,6 +29,7 @@ function brainFor(tools: ToolPlan, cardNote = "(ملاحظة من التطبيق
     },
     openingNote: () => "[greet]",
     modeNote: (mode) => `[mode:${mode}]`,
+    replyNudge: () => "[answer now]",
     writes: (name) => name === "confirm",
     claimsFailure,
     lostToolCallNote: (retry, afterTools) => (!retry ? "[give up]" : afterTools ? "[use the results]" : LOST_CALL_RETRY_NOTE),
@@ -229,6 +230,23 @@ describe("a call's turns", () => {
     live.sendOutputTranscript("معاك خمس تلاف.");
     live.sendTurnComplete("IDLE");
     await until(() => app.audio.some((frame) => frame[0] === 5));
+    app.send({ type: "end" });
+    await app.waitFor("ended");
+  });
+
+  it("tells a model that stays silent after its tool answers to answer, once a request, then gives up waiting", async () => {
+    tools = { read_balance: { ms: 10, outcome: { response: { ok: true, balance: 5000 } } } };
+    const { app, live } = await startCall();
+    app.send({ type: "text", text: "معايا كام؟" });
+    live.sendToolCall([{ id: "b1", name: "read_balance" }]);
+    await live.waitFor((m) => Boolean(m.toolResponse));
+    // replyWaitMs is 150: the silence is nudged once.
+    await live.waitFor((m) => m.clientContent?.turns?.[0]?.parts?.[0]?.text === "[answer now]", 2_000);
+    expect(stateLog(app).at(-1)).toBe("thinking");
+    // Still silent: the screen goes back to listening, and no second nudge is sent.
+    await until(() => stateLog(app).at(-1) === "listening", 2_000);
+    expect(notesSent(live).filter((text) => text === "[answer now]")).toHaveLength(1);
+    expect(incidents.filter((kind) => kind === "no_reply_after_tool")).toHaveLength(2);
     app.send({ type: "end" });
     await app.waitFor("ended");
   });

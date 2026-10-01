@@ -239,11 +239,22 @@ describe("money_query", () => {
     expect(result.response).toMatchObject({ ok: true, facts: [{ value: 1_250 }, { value: 1_250 }, { value: 0 }] });
   });
 
-  it("answers money from a person with their income, and money to them with spending", async () => {
-    const received = await moneyQuery.run({ metric: "total", person: "أحمد", type: "income" }, ctx);
-    expect(received.response).toMatchObject({ facts: [{ label: "اللي جالك من أحمد", value: 2_500 }] });
-    const paid = await moneyQuery.run({ metric: "total", person: "أحمد" }, ctx);
-    expect(paid.response).toMatchObject({ facts: [{ label: "اللي اتدفع لـأحمد", value: 400 }] });
+  it("answers a person whole: what came from them, what went to them, and the loan standing apart", async () => {
+    ctx.app.debts = vi.fn(async () => ({
+      people: [{ name: "أحمد", balance: -800, lent: 0, received: 800, count: 1, lastDate: "2026-09-21" }],
+      owedToYou: 0, youOwe: 800, gam3eya: { paid: 0, received: 0, held: 0, installments: 0 },
+    }));
+    // Asked as "transactions of type income" (how the model asked "خالد اداني كام؟"), it still reads the person.
+    for (const args of [{ metric: "total", person: "أحمد", type: "income" }, { metric: "transactions", person: "أحمد", type: "income" }]) {
+      const result = await moneyQuery.run(args, ctx);
+      expect(result.response.facts).toEqual([
+        expect.objectContaining({ label: "اللي جالك من أحمد كدخل", value: 2_500 }),
+        expect.objectContaining({ label: "اللي اتدفع لـأحمد", value: 400 }),
+        expect.objectContaining({ label: "إنت عليك لـأحمد (سلف)", value: 800 }),
+      ]);
+      expect(String(result.response.coverage)).toContain("السلفة مش دخل");
+    }
+    expect(vi.mocked(getFinanceTransactions)).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ transactionTypes: ["income"] }));
   });
 
   it("finds a transaction by its amount over the whole period, not among the latest few", async () => {

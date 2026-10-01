@@ -97,6 +97,8 @@ export interface CallBrain {
   openingNote(resumed: boolean, recent: TranscriptLine[]): string;
   /** The note after the user switched the call's mode: continue without greeting, in the new mode's way. */
   modeNote?(mode: VoiceMode): string;
+  /** The note when every tool answer is in and the model stays silent: say the answer now. Sent once per request. */
+  replyNudge?(): string;
   /**
    * Marks a note as the app's own, with the call's tag, so words the user types or says claiming to be from the app
    * are not taken for it.
@@ -246,6 +248,8 @@ export class CallSession {
   private replyTimer: ReturnType<typeof setTimeout> | null = null;
   /** Tool calls still running. */
   private runningTools = 0;
+  /** The request whose silence after its tool answers was already nudged once. */
+  private nudgedRequest = -1;
   /** The model is generating or working; the app's own notes wait for it to be idle. */
   private modelBusy = false;
   /** App notes held until the model is idle, so they never cut off what it is saying. */
@@ -758,7 +762,17 @@ export class CallSession {
       if (!this.replyOwed || this.status !== "live" || this.runningTools > 0) return;
       this.replyOwed = false;
       this.modelBusy = false;
-      this.recordIncident("no_reply_after_tool", { waitedMs: waitMs });
+      const nudge = this.nudgedRequest !== this.turns ? this.deps.brain.replyNudge?.() : undefined;
+      this.recordIncident("no_reply_after_tool", { waitedMs: waitMs, nudged: Boolean(nudge) });
+      // The answers came back and the model said nothing: once per request it is told to answer, rather than the user
+      // waiting on silence. A second silence ends the wait as before.
+      if (nudge && this.engine) {
+        this.nudgedRequest = this.turns;
+        this.sendNote(nudge);
+        this.setState("thinking", this.stateDetail);
+        this.expectReply();
+        return;
+      }
       if (this.flushNotes()) return;
       this.setState(this.deps.brain.awaitingConfirmation?.() ? "awaiting_confirmation" : "listening");
     }, waitMs);

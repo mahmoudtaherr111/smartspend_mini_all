@@ -21,7 +21,7 @@ import {
 import { DraftBook } from "./drafts";
 import { FactLedger } from "./facts";
 import { buildCoachInstruction } from "./coach-instructions";
-import { buildInstruction, modeNote, openingNote } from "./instructions";
+import { buildInstruction, modeNote, openingNote, REPLY_NUDGE } from "./instructions";
 import { markAsked } from "./profile-questions";
 import { loadCallSnapshot } from "./snapshot";
 import { appHelpTool } from "./tools/app-help";
@@ -133,6 +133,8 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     openingNote,
 
     modeNote,
+
+    replyNudge: () => REPLY_NUDGE,
 
     appNote(text) {
       const inner = text.replace(/^\(ملاحظة من التطبيق[^:]*:\s*/, "").replace(/\)\s*$/, "");

@@ -42,6 +42,8 @@ export async function commitmentsAnswer(ctx: ToolContext, answer: Answer): Promi
     cash.duesUnconfirmed.length ? `مش معروف اتدفع ولا لأ: ${cash.duesUnconfirmed.map((o) => `${o.title} (${o.dueDay})`).join("، ")}.` : null,
     cash.undated.length ? `التزامات من غير ميعاد معروف مش محسوبة: ${cash.undated.map((u) => u.title).join("، ")}.` : null,
     cash.incomeEstimated ? "الدخل المتوقع مش داخل في الفاضل؛ قوله لوحده «لو وصل»." : null,
+    // A schedule is not the loans ledger: "مين ليا ومين عليا" answered from here said "nothing owed" in an evaluation.
+    "السلف بين الناس (مين ليه ومين عليه) والجمعية مش هنا: دول في money_query debts.",
   ].filter(Boolean);
   return answer({
     title: cash.untilIsPayday ? "لحد القبض" : "لحد آخر الشهر",

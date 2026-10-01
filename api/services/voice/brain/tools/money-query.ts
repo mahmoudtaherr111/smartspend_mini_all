@@ -618,6 +618,38 @@ async function answer(args: Record<string, unknown>, ctx: ToolContext): Promise<
     }, ctx, label);
   }
 
+  // A question about a person is answered whole, whatever metric the model picked ("خالد اداني كام؟" came as
+  // transactions of type income and returned the salary): what came from them, what went to them, and the loan
+  // standing with them, which is neither income nor spending.
+  if (person && (metric === "transactions" || metric === "total")) {
+    const [total, standing] = await Promise.all([
+      getPersonTotal(finance, person, input),
+      business ? Promise.resolve(null) : ctx.app.debts(ctx.identity).catch(() => null),
+    ]);
+    const key = (name: string) => name.replace(/\s+/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه");
+    const loan = standing?.people.find((entry) => key(entry.name) === key(total?.name ?? person) || key(entry.name).includes(key(person)));
+    const facts = [
+      ...(total && total.totalIncome ? [{ label: `اللي جالك من ${total.name} كدخل`, value: total.totalIncome }] : []),
+      ...(total && total.totalExpense ? [{ label: `اللي اتدفع لـ${total.name}`, value: total.totalExpense }] : []),
+      ...(loan && loan.balance ? [{ label: loan.balance > 0 ? `${loan.name} عليه ليك (سلف)` : `إنت عليك لـ${loan.name} (سلف)`, value: Math.abs(loan.balance) }] : []),
+    ];
+    return outcome({
+      title: `فلوس ${person}`,
+      facts,
+      extra: {
+        ...(total ? { income_count: total.incomeCount, spent_count: total.expenseCount } : {}),
+        ...(loan ? { loan_since: loan.lastDate } : {}),
+      },
+      coverage: !total && !loan
+        ? `مفيش حد متسجل باسم «${person}».`
+        : facts.length === 0
+          ? `مفيش فلوس متسجلة مع ${total?.name ?? person} في ${label}.`
+          : loan
+            ? "السلفة مش دخل ولا مصروف: قولها كسلف (مين عليه لمين)، والدخل والمصروف بفترتهم."
+            : undefined,
+    }, ctx, label);
+  }
+
   if (metric === "transactions") {
     const amount = num(args.amount);
     if (search || amount !== undefined) {
