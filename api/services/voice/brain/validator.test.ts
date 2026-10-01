@@ -39,6 +39,15 @@ describe("SpokenNumberValidator", () => {
     ).toBeNull();
     expect(validator.endTurn()).toBeNull();
   });
+  it("lets a fact whose label names no metric back a spending claim, but never a fact of another metric", () => {
+    // The evaluation's food total: money_query labels it by category, with no word for spending in it.
+    const { validator } = setup([["أكل وشرب", 1640]]);
+    expect(validator.addAssistantWords("صرفتي حوالي ألف وستمية على الأكل، غالباً بقالة ووجبات سريعة.")).toBeNull();
+    expect(validator.endTurn()).toBeNull();
+    const salary = setup([["المرتب", 7000]]);
+    expect(salary.validator.addAssistantWords("صرفت سبعة آلاف جنيه الشهر ده كله.")).toMatchObject({ spoken: 7000, intended: null });
+  });
+
   it("accepts a fact said exactly, rounded or approximately", () => {
     const { validator } = setup([["مصروف النهارده", 320], ["مصروف الدورة", 3456]]);
     expect(validator.addAssistantWords("لحد دلوقتي المسجّل تلتمية وعشرين جنيه، والدورة كلها ")).toBeNull();

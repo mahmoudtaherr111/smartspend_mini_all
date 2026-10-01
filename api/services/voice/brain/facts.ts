@@ -194,7 +194,10 @@ export class FactLedger {
     return this.facts.some((fact) => this.matches(v, fact, approximate));
   }
 
-  /** A known salary is not evidence for a claim about spending. Unknown subjects remain explicitly unverified. */
+  /**
+   * A known salary is not evidence for a claim about spending: a fact of another metric never backs the claim. A fact
+   * whose label names no metric ("أكل وشرب", "بقالة") is not of another subject, so it still can.
+   */
   allowsClaim(
     value: number,
     approximate: boolean,
@@ -202,7 +205,7 @@ export class FactLedger {
   ): boolean {
     if (!metric) return this.allows(value, approximate);
     const subject = this.facts.filter(
-      (fact) => fact.metric === metric && !fact.stale,
+      (fact) => (fact.metric === metric || fact.metric === undefined) && !fact.stale,
     );
     if (!subject.length) return this.userValues.has(Math.abs(value));
     return subject.some((fact) =>

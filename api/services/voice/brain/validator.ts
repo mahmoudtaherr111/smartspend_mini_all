@@ -167,7 +167,7 @@ export class SpokenNumberValidator {
     let bestRatio = Infinity;
     for (const fact of this.ledger.latestBatch()) {
       if (fact.value <= 0 || fact.unit !== "EGP") continue;
-      if (fact.stale || (metric && fact.metric !== metric)) continue;
+      if (fact.stale || (metric && fact.metric !== undefined && fact.metric !== metric)) continue;
       const ratio = Math.max(spoken, fact.value) / Math.min(spoken, fact.value);
       const sameSize = Math.floor(Math.log10(spoken)) === Math.floor(Math.log10(fact.value));
       if (((sameSize && ratio <= 2) || teenTensTwins(spoken, fact.value)) && ratio < bestRatio) {
