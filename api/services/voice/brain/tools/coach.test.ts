@@ -164,6 +164,13 @@ describe("the coach's drafts", () => {
     } as never;
     const budgets = await moneyQueryCoach.run({ metric: "budgets" }, ctx);
     expect(budgets.response).toMatchObject({ used: [{ budget: "أكل", budget_id: 12 }], paused: [{ budget: "خروجات", budget_id: 13 }] });
+    // Asked as a new budget (how the evaluation's model asked "أقلل ميزانية الأكل لألف وخمسمية"), it is sent to
+    // budget_update with the existing budget, never added beside it.
+    const unparsed = await changeDraftCoachTool.run({ action: "budget_create", words: "ميزانية الأكل ألف وخمسمية" }, ctx);
+    expect(unparsed.response).toMatchObject({ ok: false });
+    expect(String(unparsed.response.say)).toMatch(/أكل \(budget_id 12.*budget_update/);
+    const duplicate = await changeDraftCoachTool.run({ action: "budget_create", fields: { title: "أكل", category: "أكل وشرب", monthlyLimit: 1_500 } }, ctx);
+    expect(duplicate.response).toMatchObject({ ok: false, error: "budget_exists" });
     // An amount nobody said is refused; one the user said is drafted.
     expect((await changeDraftCoachTool.run({ action: "budget_update", fields: { budget_id: 12, limit: 1_700 } }, ctx)).response).toMatchObject({ ok: false });
     ctx.ledger.noteUserValue(1_500);

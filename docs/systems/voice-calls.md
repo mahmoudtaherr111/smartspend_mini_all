@@ -129,7 +129,9 @@ than kept as a memory; an incomplete one is refused with the fields to send, one
 `once`, so the model asks the user only what they never said), `commitment_paid`, and `bank_confirm` / `bank_dismiss` (a waiting bank message confirmed or dropped as it
 is, through `profile.confirmSmsSuggestion` and `profile.dismissSmsSuggestion`; one already handled says so), and
 `budget_update` (a budget's new monthly limit, an amount the user said, or pausing and resuming it, through
-`budget.update`; `money_query budgets` gives each budget's id and lists paused ones apart). They are drafts of kind `coach` behind the same gate; an amount in one must be a fact
+`budget.update`; `money_query budgets` gives each budget's id and lists paused ones apart; in a coach call a
+`budget_create` for a category that already has a budget, or one whose words could not be read while budgets exist, is
+refused with those budgets and their ids so the change goes through `budget_update` instead of adding a second one). They are drafts of kind `coach` behind the same gate; an amount in one must be a fact
 the call read or computed or a number the user said, and a plan keeps the facts it was agreed on. The standard call
 refuses both reads and drafts (`ToolContext#coach`).
 

@@ -482,7 +482,7 @@
         "api/services/voice/admin-stats.ts": "377835dae587",
         "api/services/voice/app-calls.ts": "1a9863a88b02",
         "api/services/voice/brain/claims.ts": "1d9b9e1848f8",
-        "api/services/voice/brain/coach-instructions.ts": "27dee4fb2cb2",
+        "api/services/voice/brain/coach-instructions.ts": "406d5f3a0f9a",
         "api/services/voice/brain/drafts.ts": "977fa3b55332",
         "api/services/voice/brain/facts.ts": "7d938b0108da",
         "api/services/voice/brain/honorific.ts": "451551920217",
@@ -498,7 +498,7 @@
         "api/services/voice/brain/tools/market-price.ts": "5bed0aca7f26",
         "api/services/voice/brain/tools/memory.ts": "53a2c2270349",
         "api/services/voice/brain/tools/money-query.ts": "28e1ad2345c1",
-        "api/services/voice/brain/tools/record.ts": "8d3978e3caac",
+        "api/services/voice/brain/tools/record.ts": "c443abd6eb0f",
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
         "api/services/voice/brain/tools/think.ts": "5224961b8aad",
         "api/services/voice/brain/tools/types.ts": "0bab17c2ae57",
@@ -533,9 +533,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-10-01 d96bdc0",
-      "arabic": "725c44fa27df",
-      "arabicChecked": "2026-10-01 d96bdc0"
+      "checked": "2026-10-01 36a90e4",
+      "arabic": "146e2b4ec57f",
+      "arabicChecked": "2026-10-01 36a90e4"
     },
     "web-app": {
       "files": {

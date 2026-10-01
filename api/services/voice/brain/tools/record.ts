@@ -31,6 +31,7 @@ import { normalizeArabic } from "../../../../lib/unified-normalizer";
 import {
   num,
   str,
+  type BudgetStatus,
   type ParsedExpenseItem,
   type ToolContext,
   type VoiceTool,
@@ -504,6 +505,28 @@ async function changeDraft(
             : "اسأل عن الناقص بس.",
       },
     };
+  }
+  // In a coach call an existing budget is changed with budget_update; budget_create would add a second one for the
+  // same category beside it (the evaluation's "أقلل ميزانية الأكل لألف وخمسمية" came as budget_create).
+  if (actionName === "budget.create" && ctx.coach) {
+    const budgets = await ctx.app.listBudgets(ctx.identity).catch(() => [] as BudgetStatus[]);
+    const category = payload ? (payload as { category?: string | null }).category ?? null : null;
+    const same = category ? budgets.find((budget) => budget.category === category) : undefined;
+    if (same || (!payload && budgets.length)) {
+      const listed = (same ? [same] : budgets)
+        .slice(0, 6)
+        .map((budget) => `${budget.title} (budget_id ${budget.id}، الحد ${budget.limit})`)
+        .join("، ");
+      return {
+        response: {
+          ok: false,
+          error: same ? "budget_exists" : "missing_fields",
+          say: same
+            ? `فيه ميزانية للبند ده بالفعل: ${listed}. لتغيير حدها أو وقفها استخدم change_draft budget_update بالـbudget_id ده، مش budget_create.`
+            : `الميزانيات الموجودة: ${listed}. لو المستخدم بيغير واحدة منهم استخدم change_draft budget_update بالـbudget_id؛ budget_create بس لبند مالوش ميزانية، وتفاصيله في fields.`,
+        },
+      };
+    }
   }
   if (!payload)
     return {
