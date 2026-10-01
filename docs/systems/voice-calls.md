@@ -125,7 +125,8 @@ spending step's daily figure since it was agreed against its target, and the day
 possibly unrecorded rather than kept); its `change_draft` (`changeDraftCoachTool`) adds `plan_save`, `step_done`,
 `reminder_set` (a future day and hour on Cairo's clock), `reminder_cancel`, `commitment_add` (no date unless the user
 gave one; money owed on a date, "لازم أرجع لخالد التمنمية يوم 15", is offered here as kind `debt`, once, rather
-than kept as a memory), `commitment_paid`, and `bank_confirm` / `bank_dismiss` (a waiting bank message confirmed or dropped as it
+than kept as a memory; an incomplete one is refused with the fields to send, one date with no repetition being
+`once`, so the model asks the user only what they never said), `commitment_paid`, and `bank_confirm` / `bank_dismiss` (a waiting bank message confirmed or dropped as it
 is, through `profile.confirmSmsSuggestion` and `profile.dismissSmsSuggestion`; one already handled says so), and
 `budget_update` (a budget's new monthly limit, an amount the user said, or pausing and resuming it, through
 `budget.update`; `money_query budgets` gives each budget's id and lists paused ones apart). They are drafts of kind `coach` behind the same gate; an amount in one must be a fact

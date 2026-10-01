@@ -167,7 +167,15 @@ function cashflowDraft(fields: Record<string, unknown>, ctx: ToolContext): Built
   const kind = (CASHFLOW_KINDS as readonly string[]).includes(String(fields.kind)) ? (String(fields.kind) as CashflowKind) : "other";
   const amount = knownAmount(ctx, fields.amount);
   const recurrence = ["once", "weekly", "monthly", "yearly"].includes(String(fields.recurrence)) ? String(fields.recurrence) : null;
-  if (!title || !recurrence) return { refuse: "محتاج اسم الالتزام وبيتكرر إزاي (مرة، كل أسبوع، كل شهر، كل سنة)." };
+  // Said to the model, not the user: the evaluation's model put the whole sentence in `words`, was refused, and asked
+  // the user whether a dated debt repeats. One date with no repetition is `once`; ask only what the user never said.
+  if (!title || !recurrence) {
+    return {
+      refuse:
+        "ابعت commitment_add تاني والتفاصيل في fields: title (لمين أو على إيه)، amount، recurrence (once لو ميعاد واحد زي " +
+        "«يوم 15 الشهر الجاي»، أو weekly / monthly / yearly لو قال إنه بيتكرر)، start_day بصيغة YYYY-MM-DD. اسأل المستخدم بس عن حاجة ماقالهاش.",
+    };
+  }
   if (amount === "unknown") return { refuse: "المبلغ ده مش من كلام المستخدم. اسأله عن المبلغ." };
   const direction = fields.direction === "in" ? "in" : "out";
   const startDay = day(fields.start_day);

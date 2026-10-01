@@ -12,7 +12,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (29 of
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-01 adcd185 | 2026-10-01 adcd185 | 18 | — | — | 2 | — |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-29 fa056d1 | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-01 ba944ab | 2026-10-01 ba944ab | 10 | — | — | 4 | 2 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-01 d96bdc0 | 2026-10-01 d96bdc0 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-01 1d4bf03 | 2026-10-01 1d4bf03 | 4 | — | 4 | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-29 6e973a3 | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 6 | — | 3 | 7 | — |

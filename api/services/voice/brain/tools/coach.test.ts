@@ -127,6 +127,18 @@ describe("the coach's drafts", () => {
     expect(calls.reminders).toEqual([{ stepId: 31, at: new Date("2026-09-16T06:00:00.000Z") }]);
   });
 
+  it("tells the model how to send a dated debt instead of making it ask the user whether it repeats", async () => {
+    // The evaluation's call: the sentence in `words`, no fields.
+    const refused = await changeDraftCoachTool.run({ action: "commitment_add", words: "أرجع لخالد التمنمية يوم خمستاشر الشهر الجاي" }, ctx);
+    expect(refused.response).toMatchObject({ ok: false });
+    expect(String(refused.response.say)).toMatch(/fields.*recurrence \(once لو ميعاد واحد/);
+    ctx.ledger.noteUserValue(800);
+    const drafted = await changeDraftCoachTool.run({
+      action: "commitment_add", fields: { kind: "debt", direction: "out", title: "خالد", amount: 800, recurrence: "once", start_day: "2026-10-15" },
+    }, ctx);
+    expect(drafted.card).toMatchObject({ title: "التزام: خالد", items: [{ amount: 800, detail: "من 2026-10-15" }] });
+  });
+
   it("adds a commitment with the amount the user said and no invented date", async () => {
     ctx.ledger.noteUserValue(2_500);
     const drafted = await changeDraftCoachTool.run({

@@ -494,7 +494,7 @@
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
         "api/services/voice/brain/tools/app-help.ts": "429dac755057",
         "api/services/voice/brain/tools/calculate.ts": "3cdb9bc51ff9",
-        "api/services/voice/brain/tools/coach.ts": "d5b03209590d",
+        "api/services/voice/brain/tools/coach.ts": "1cb10f987b9c",
         "api/services/voice/brain/tools/market-price.ts": "5bed0aca7f26",
         "api/services/voice/brain/tools/memory.ts": "53a2c2270349",
         "api/services/voice/brain/tools/money-query.ts": "28e1ad2345c1",
@@ -533,9 +533,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-10-01 ba944ab",
-      "arabic": "8d4d15279d55",
-      "arabicChecked": "2026-10-01 ba944ab"
+      "checked": "2026-10-01 d96bdc0",
+      "arabic": "725c44fa27df",
+      "arabicChecked": "2026-10-01 d96bdc0"
     },
     "web-app": {
       "files": {
