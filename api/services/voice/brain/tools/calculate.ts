@@ -11,7 +11,7 @@
 import Decimal from "decimal.js";
 import type { VoiceFactCard } from "../../../../../contracts/voice-protocol";
 import type { ToolRunOutcome } from "../../gateway/call-session";
-import type { CallFact, FactUnit } from "../facts";
+import { isRecordedMoneyFact, type CallFact, type FactUnit } from "../facts";
 import { spellAmount } from "../spoken";
 import { str, type ToolContext, type VoiceTool } from "./types";
 
@@ -29,6 +29,7 @@ interface Operand {
   /** The fact or step it came from, for the explanation. */
   from: string;
   stale: boolean;
+  recordBacked: boolean;
 }
 
 export class CalcError extends Error {
@@ -120,7 +121,8 @@ function operand(raw: unknown, steps: Map<string, Operand>, ctx: ToolContext): O
   if (/^f\d+$/.test(text)) {
     const fact: CallFact | undefined = ctx.ledger.byRef(text);
     if (!fact) throw new CalcError("unknown_fact", `مفيش حقيقة اسمها ${text} في المكالمة. هات الرقم بـ money_query الأول.`);
-    return { value: new Decimal(fact.value), unit: fact.unit, from: `${fact.label} (${fact.ref})`, stale: Boolean(fact.stale) };
+    return { value: new Decimal(fact.value), unit: fact.unit, from: `${fact.label} (${fact.ref})`, stale: Boolean(fact.stale),
+      recordBacked: !isMoney(fact.unit) || isRecordedMoneyFact(fact) };
   }
   const literal = text.match(LITERAL);
   if (!literal) throw new CalcError("bad_operand", `«${text}» مش رقم ولا اسم خطوة ولا حقيقة.`);
@@ -132,9 +134,9 @@ function operand(raw: unknown, steps: Map<string, Operand>, ctx: ToolContext): O
   if (unit === "EGP") {
     // An amount of money enters a sum only from the records (a fact the call read or computed, typed as a number) or
     // from the user's own words; any other amount is refused.
-    if (ctx.ledger.heardFromUser(value.toNumber())) return { value, unit, from: "من كلام المستخدم", stale: false };
+    if (ctx.ledger.heardFromUser(value.toNumber())) return { value, unit, from: "من كلام المستخدم", stale: false, recordBacked: false };
     const fact = ctx.ledger.all().find((known) => known.unit === "EGP" && Math.abs(known.value - value.toNumber()) < 0.005);
-    if (fact) return { value, unit, from: `${fact.label} (${fact.ref})`, stale: Boolean(fact.stale) };
+    if (fact) return { value, unit, from: `${fact.label} (${fact.ref})`, stale: Boolean(fact.stale), recordBacked: isRecordedMoneyFact(fact) };
     throw new CalcError(
       "unknown_amount",
       `مبلغ ${value.toString()} مش من كلام المستخدم ولا من أي رقم قريته. استخدم ref الحقيقة (زي f12) من نتيجة الأداة، أو اسأل المستخدم عنه.`,
@@ -142,7 +144,7 @@ function operand(raw: unknown, steps: Map<string, Operand>, ctx: ToolContext): O
   }
   const limit = LITERAL_LIMITS[unit];
   if (limit !== undefined && value.abs().gt(limit)) throw new CalcError("bad_operand", `${value.toString()} ${unit} رقم كبير أوي.`);
-  return { value, unit, from: `${value.toString()} ${unit}`, stale: false };
+  return { value, unit, from: `${value.toString()} ${unit}`, stale: false, recordBacked: !isMoney(unit) };
 }
 
 interface StepInput {
@@ -171,7 +173,7 @@ export function runCalculation(stepsInput: unknown, ctx: ToolContext): {
   if (!Array.isArray(stepsInput) || stepsInput.length === 0) throw new CalcError("no_steps", "ابعت الخطوات: كل خطوة ليها اسم وعملية وأرقام.");
   if (stepsInput.length > MAX_STEPS) throw new CalcError("too_many_steps", `أقصى حاجة ${MAX_STEPS} خطوات في المرة.`);
   const steps = new Map<string, Operand>();
-  const out: Array<{ name: string; label: string; value: Decimal; unit: FactUnit; how: string; stale: boolean }> = [];
+  const out: Array<{ name: string; label: string; value: Decimal; unit: FactUnit; how: string; stale: boolean; recordBacked: boolean }> = [];
   for (const [index, raw] of (stepsInput as StepInput[]).entries()) {
     const name = str(raw?.name, 30) ?? `s${index + 1}`;
     if (!/^[a-z_][a-z0-9_]*$/i.test(name) || /^f\d+$/.test(name)) throw new CalcError("bad_name", `اسم الخطوة «${name}» مش مسموح.`);
@@ -187,10 +189,11 @@ export function runCalculation(stepsInput: unknown, ctx: ToolContext): {
     const unit = resultUnit(op, units);
     const value = apply(op, operands.map((item) => item.value), operands.map((item) => item.unit));
     const stale = operands.some((item) => item.stale);
+    const recordBacked = operands.every((item) => item.recordBacked);
     const label = str(raw?.label, 80) ?? name;
     const how = `${op}(${operands.map((item) => item.from).join("، ")})`;
-    steps.set(name, { value, unit, from: `${label} (${name})`, stale });
-    out.push({ name, label, value, unit, how, stale });
+    steps.set(name, { value, unit, from: `${label} (${name})`, stale, recordBacked });
+    out.push({ name, label, value, unit, how, stale, recordBacked });
   }
   ctx.ledger.nextBatch();
   return {
@@ -204,6 +207,7 @@ export function runCalculation(stepsInput: unknown, ctx: ToolContext): {
         source: "computed",
         say: say(value, step.unit),
         stale: step.stale,
+        recordBacked: step.recordBacked,
       });
       return { name: step.name, ref: fact.ref, label: step.label, value, unit: step.unit, say: fact.say, how: step.how, stale: step.stale };
     }),

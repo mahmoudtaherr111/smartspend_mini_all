@@ -85,11 +85,14 @@ export interface CallFact {
   /** Scope and period stay attached to the fact and survive hand-off and resumption. */
   scope?: string;
   period?: string;
+  /** Computed facts need explicit provenance before they can support a claim about recorded money. */
+  recordBacked?: boolean;
 }
 
 /** A current financial fact can back an explicit claim about the records. */
 export function isRecordedMoneyFact(fact: CallFact): boolean {
-  return !fact.stale && RECORD_SOURCES.has(fact.source) &&
+  return !fact.stale && (fact.source === "ledger" || fact.source === "snapshot" ||
+    (fact.source === "computed" && fact.recordBacked === true)) &&
     ["EGP", "EGP/day", "EGP/month"].includes(fact.unit);
 }
 
@@ -120,6 +123,7 @@ export class FactLedger {
       value: fact.value,
       unit: fact.unit ?? "EGP",
       source: fact.source,
+      ...(fact.recordBacked !== undefined ? { recordBacked: fact.recordBacked } : {}),
       metric: fact.metric ?? factMetric(fact.label),
       ...(fact.scope ? { scope: fact.scope } : {}),
       ...(fact.period ? { period: fact.period } : {}),

@@ -207,6 +207,12 @@ counts as theirs. Piasters are the fraction of the
   from the records or a calculation, including the fact used to correct a mismatch. A figure merely mentioned
   by the user, a pending draft, or a percentage cannot back that claim. Attributed user speech and proposed
   changes can still repeat the user's amounts; this is a bounded language guard, not proof of every sentence's meaning.
+  Calculations keep `recordBacked` provenance through steps and snapshots: a result involving user-supplied
+  hypothetical money may be discussed as a calculation, but cannot back an explicit record claim. A computed
+  fact from an older snapshot without this provenance is not accepted as evidence for recorded money.
+  Greetings such as "ألف مبروك", "ألف سلامة" and "ألف شكر" are removed before parsing spoken amounts;
+  a real "ألف جنيه" still counts. Pending-draft completion checks also recognize "سجلتلك" and "حفظتلك",
+  without treating a future "هسجل لك" or a calculation's "عملتلك حسبة" as a financial write.
 - **Writes.** `api/services/voice/brain/drafts.ts#DraftBook`: only the latest pending draft, within two minutes, and
   only after a tap on its card or the user's own yes said after the assistant presented it (its first words after the
   draft was made). `readReply` reads the reply with a "no" first: a negation (also wrapped around the verb,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DraftBook } from "../drafts";
-import { FactLedger } from "../facts";
+import { FactLedger, isRecordedMoneyFact } from "../facts";
 import { calculateTool, resultUnit, runCalculation } from "./calculate";
 import type { ToolContext, VoiceAppCalls } from "./types";
 
@@ -24,6 +24,24 @@ function context() {
 }
 
 describe("calculate", () => {
+  it("keeps hypothetical money separate from recorded money through steps and resumption", () => {
+    const { ctx, ledger, refs } = context();
+    ledger.noteUserValue(500);
+    const { results } = runCalculation([
+      { name: "whatif", op: "sub", of: [refs.income, "500 EGP"], label: "الافتراض" },
+      { name: "later", op: "div", of: ["whatif", "10 days"], label: "الافتراض في اليوم" },
+      { name: "actual", op: "sub", of: [refs.income, refs.spent], label: "الفاضل المسجل" },
+    ], ctx);
+    expect(isRecordedMoneyFact(ledger.byRef(results[0].ref)!)).toBe(false);
+    expect(isRecordedMoneyFact(ledger.byRef(results[1].ref)!)).toBe(false);
+    expect(isRecordedMoneyFact(ledger.byRef(results[2].ref)!)).toBe(true);
+    expect(ledger.allowsClaim(13500, false, undefined, true)).toBe(false);
+    expect(ledger.allows(13500, false)).toBe(true);
+    const restored = new FactLedger();
+    restored.restore(ledger.snapshot());
+    expect(isRecordedMoneyFact(restored.byRef(results[0].ref)!)).toBe(false);
+    expect(isRecordedMoneyFact(restored.byRef(results[2].ref)!)).toBe(true);
+  });
   it("does the multi-step sum the old number screen refused: (14,000 − 2,800) ÷ 10 days", async () => {
     const { ctx, ledger, refs } = context();
     const result = await calculateTool.run({

@@ -126,7 +126,7 @@ afterEach(async () => {
 
 describe("requirements missing from Claude qualification", () => {
   beforeEach(resetAdmissionMemory);
-  it("holds an unconfirmed done claim and recovers without the false caption reaching the user", async () => {
+  it.each(["سجلنا خمسين جنيه", "تمام، سجلتلك تلتمية جنيه"])("holds an unconfirmed done claim (%s) without false audio or captions", async (claim) => {
     const { deps } = await setup();
     const engine = new Engine();
     deps.createEngine = () => engine;
@@ -180,7 +180,7 @@ describe("requirements missing from Claude qualification", () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 10));
     engine.emit(audio);
-    engine.emit({ type: "output_transcript", text: "سجلنا خمسين جنيه" });
+    engine.emit({ type: "output_transcript", text: claim });
     engine.emit({ type: "output_transcript", text: " أأكد؟" });
     expect(audioFrames).toHaveLength(0);
     expect(

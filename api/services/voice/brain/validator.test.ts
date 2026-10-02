@@ -10,6 +10,11 @@ function setup(facts: Array<[string, number]>) {
 }
 
 describe("extractSpokenNumbers", () => {
+  it("does not treat greetings as a thousand pounds, while retaining real thousands", () => {
+    expect(extractSpokenNumbers("ألف مبروك وألف سلامة، الف شكر ليك.")).toEqual([]);
+    expect(extractSpokenNumbers("خدت ألف جنيه من المرتجع").map(({ value }) => value)).toEqual([1000]);
+    expect(extractSpokenNumbers("ألف مبروك، دفعت ألف وخمسمية جنيه").map(({ value }) => value)).toEqual([1500]);
+  });
   it("reads money, counts, days and years apart", () => {
     const numbers = extractSpokenNumbers("صرفت تلتمية وعشرين جنيه في تلات أيام، ويوم 25 سنة 2026 كان فيه 20 عملية وبعدين خمسين");
     expect(numbers.map(({ value, money }) => [value, money])).toEqual([
@@ -98,6 +103,7 @@ describe("SpokenNumberValidator", () => {
     ledger.add({ id: "old", label: "مصروف", value: 500, source: "ledger", stale: true });
     ledger.add({ id: "draft", label: "مصروف", value: 500, source: "draft" });
     ledger.add({ id: "share", label: "مصروف", value: 500, source: "computed", unit: "percent" });
+    ledger.add({ id: "whatif", label: "مصروف", value: 500, source: "computed" });
     ledger.noteUserValue(500);
     const validator = new SpokenNumberValidator(ledger);
     expect(validator.addAssistantWords("المسجل من مصاريفك خمسمية جنيه في السجل.")).toMatchObject({ spoken: 500, intended: null });

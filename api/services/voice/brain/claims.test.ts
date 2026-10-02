@@ -39,6 +39,17 @@ describe("DoneClaimCheck", () => {
     expect(check.add("سَجّلت الأكل", true)).toBe("note");
   });
 
+  it("catches completion with a recipient suffix, including the refund preview's سجلتلك", () => {
+    for (const phrase of ["سجلتلك", "سجلت لك", "حفظتلك", "سجلتهالك", "سجلنالك"]) {
+      const check = new DoneClaimCheck();
+      expect(check.add(`تمام، ${phrase} تلتمية جنيه، أأكد؟`, true)).toBe("note");
+    }
+    const check = new DoneClaimCheck();
+    expect(check.add("هسجلتلك", true)).toBeNull();
+    expect(check.add("هسجّل لك تلتمية، أأكد؟", true)).toBeNull();
+    expect(check.add("عملتلك حسبة بس، القرار لسه مسودة.", true)).toBeNull();
+  });
+
 });
 
 describe("FailureClaimCheck", () => {

@@ -52,7 +52,8 @@ export function extractSpokenNumbers(
   // "التمنمية" and "الخمسين" are numbers too; the article goes only before a number word, so "الف" stays a thousand,
   // and never from "المية": "تلاتة وأربعين في المية" is a percentage, not forty-three pounds and a hundred.
   const parsed = parseArabicNumbers(
-    text.replace(/(^|\s)ال(\S+)/g, (whole, before: string, rest: string) =>
+    text.replace(/(^|[\s،؛.!؟?])و?[أا]لف\s+(?:مبروك|سلام[ةه]|شكر)(?=$|[\s،؛.!؟?])/g, "$1")
+      .replace(/(^|\s)ال(\S+)/g, (whole, before: string, rest: string) =>
       isKnownNumberWord(rest) && !HUNDRED_ALONE.test(rest) ? before + rest : whole,
     ),
   );

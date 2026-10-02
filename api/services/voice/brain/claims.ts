@@ -7,7 +7,7 @@
 
 /** Past-tense "recorded / done" as the assistant says it about its own action, without diacritics. */
 const DONE_CLAIM =
-  /(^|[\s،,.؟?!])(سجلت|سجلنا|سجلناه|سجلتها|سجلتهم|سجلته|اتسجل|اتسجلت|اتسجلوا|اتعمل|اتعملت|اتنفذ|اتنفذت|خلصتها|عملتها|حفظت|حفظنا|اتحفظ|اتحفظت)(?=$|[\s،,.؟?!])/;
+  /(^|[\s،,.؟?!])(سجلت|سجلنا|سجلناه|سجلتها|سجلتهم|سجلته|سجلتلك|سجلنالك|سجلتهالك|حفظتلك|حفظنالك|حفظتهالك|اتسجل|اتسجلت|اتسجلوا|اتعمل|اتعملت|اتنفذ|اتنفذت|خلصتها|عملتها|حفظت|حفظنا|اتحفظ|اتحفظت)(?=$|[\s،,.؟?!])/;
 /** Arabic short vowels, tanween, shadda and sukun (U+064B to U+0652). */
 const DIACRITICS = new RegExp(
   `[${String.fromCharCode(0x64b)}-${String.fromCharCode(0x652)}]`,
