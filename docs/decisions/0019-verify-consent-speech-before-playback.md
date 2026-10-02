@@ -15,7 +15,8 @@ precedes generationComplete or interruption; precise ordering within audio/trans
 
 Presentation is deferred until validation succeeds. A rejected preview cannot make a voice yes eligible.
 False completion claims use the existing bounded recovery counter. Other rejected speech records a suppression
-incident and requests a correction only when the checker knows the correction; otherwise the call ends with a
+incident and requests a correction only when the checker knows the correction, telling the model that the
+rejected words never reached the user so it can give the correct result directly. Otherwise the call ends with a
 truthful notice and its actual write summary. Suppressed provider wording remains distinguishable from what
 reached the user, rather than being reported as an audible failure.
 

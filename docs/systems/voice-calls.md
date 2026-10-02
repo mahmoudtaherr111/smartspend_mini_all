@@ -208,6 +208,8 @@ is billed again for it on every later turn.
   Receipt verification covers success, failure and uncertain writes, is kept until the next user request and
   survives resume; held audio is never saved. A failure or uncertain outcome cannot be called completed.
   Suppression incidents count separately from actual heard mistakes. See decision 0019 for the latency tradeoff.
+  A correction note says the rejected words were not heard, so the model gives the correct result directly
+  rather than apologizing for an audible error that never occurred.
 - **Numbers said.** `api/services/voice/brain/validator.ts` reads the numbers in the assistant's transcribed speech
   with `api/lib/arabic-number-parser.ts`. A money number that matches no fact of the call
   (`api/services/voice/brain/facts.ts`), no rounding of one and nothing the user said is recorded as a

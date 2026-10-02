@@ -1246,7 +1246,7 @@ export class CallSession {
     }
     if (verified && check) {
       this.recordIncident("speech_check_suppressed", { reason: check.kind ?? "spoken_number_mismatch", corrected: Boolean(check.note) });
-      if (check.note) this.sendNote(check.note, true);
+      if (check.note) this.sendNote(check.note + " الكلام المرفوض لسه ما وصلش للمستخدم؛ قول النتيجة الصح مباشرة، من غير اعتذار أو «أنا قصدي» عن خطأ ما سمعوش.", true);
       else this.failProtectedSpeech("unverifiable_claim");
       return false;
     }

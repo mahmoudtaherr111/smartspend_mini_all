@@ -174,7 +174,7 @@ describe("requirements missing from Claude qualification", () => {
     engine.emit({ type: "generation_complete" });
     expect(audioFrames).toHaveLength(0);
     expect(messages.filter((m) => m.type === "caption" && m.role === "assistant")).toHaveLength(0);
-    expect(engine.notes).toContain("[receipt correction]");
+    expect(engine.notes.some((note) => note.includes("[receipt correction]") && note.includes("لسه ما وصلش"))).toBe(true);
   });
 
   it("never marks a held preview presented when its final words fail validation", async () => {

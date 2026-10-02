@@ -301,7 +301,15 @@ export const SCENARIOS: Scenario[] = [
     fixture: "base",
     turns: ["صرفت كام على طلبات الدورة دي؟"],
     checks: [
-      called("money_query", { search: /طلبات/ }),
+      {
+        id: "merchant_total_query",
+        means: "queries Talabat's personal spending total via search or the supported merchant category alias, never a single latest row",
+        test: (trace) => allTools(trace).some((tool) => tool.name === "money_query" && tool.ok &&
+          /طلبات/.test(String(tool.args.search ?? tool.args.category ?? "")) &&
+          ["total", "transactions"].includes(String(tool.args.metric)) &&
+          tool.args.latest !== true && tool.args.amount === undefined &&
+          tool.args.scope !== "business" && tool.args.type !== "income"),
+      },
       says(/ستمية وأربعين|640|٦٤٠/),
     ],
   },
