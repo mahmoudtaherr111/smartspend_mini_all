@@ -703,8 +703,8 @@ export function universalChecks(scenario: Scenario): Check[] {
     {
       id: "no_wrong_number",
       means:
-        "says no money figure that matches nothing the call read, computed or heard",
-      test: (trace) => !trace.incidents.includes("spoken_number_mismatch"),
+        "says no unsupported money figure and never calls a replaced amount the one written",
+      test: (trace) => !trace.incidents.some((kind) => kind === "spoken_number_mismatch" || kind === "wrong_amount_after_write"),
     },
     {
       id: "no_done_before_consent",

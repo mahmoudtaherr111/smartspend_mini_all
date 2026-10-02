@@ -156,6 +156,19 @@ describe("money_query: what was already written, and why", () => {
 });
 
 describe("money_query", () => {
+  it("reads a direct total exactly and keeps rounding an explicit choice", async () => {
+    const precise = await moneyQuery.run({ metric: "total", category: "أكل" }, ctx);
+    expect(precise.response).toMatchObject({ facts: [{ value: 1250, say: "ألف وميتين وخمسين" }] });
+    const approximate = await moneyQuery.run({ metric: "total", category: "أكل", exact: false }, ctx);
+    expect(approximate.response).toMatchObject({ facts: [{ value: 1250, say: "حوالي ألف وتلتمية" }] });
+  });
+
+  it("honors an exact readout for a breakdown without changing the default summary", async () => {
+    const precise = await moneyQuery.run({ metric: "breakdown", exact: true }, ctx);
+    expect((precise.response.facts as Array<{ say: string }>)[1].say).toBe("ألف وميتين وخمسين");
+    const summary = await moneyQuery.run({ metric: "breakdown" }, ctx);
+    expect((summary.response.facts as Array<{ say: string }>)[1].say).toBe("حوالي ألف وتلتمية");
+  });
   it("answers a total with the Egyptian way to say it, and lets the call say it", async () => {
     const result = await moneyQuery.run({ metric: "total", period: "today" }, ctx);
     expect(result.response).toMatchObject({ ok: true, period: "النهارده", facts: [{ label: "مصروف النهارده", value: 320, say: "تلتمية وعشرين" }] });
@@ -209,8 +222,19 @@ describe("money_query", () => {
     const list = await moneyQuery.run({ metric: "transactions", period: "this_month" }, ctx);
     // A stored English key is said in Arabic.
     expect(list.response).toMatchObject({ facts: [{ label: "مواصلات", value: 40 }], total_matched: 1 });
-    const found = await moneyQuery.run({ metric: "transactions", search: "أوبر" }, ctx);
+    const found = await moneyQuery.run({ metric: "transactions", search: "أوبر", latest: true }, ctx);
     expect(found.response).toMatchObject({ facts: [{ label: "أوبر", value: 85 }], category: "مواصلات / تاكسي" });
+  });
+
+  it("keeps a merchant's displayed row apart from the whole-period total, even when the model asks transactions", async () => {
+    vi.mocked(getFinanceTransactions).mockResolvedValueOnce({
+      transactions: [{ id: 3, type: "expense", amount: 220, category: "أكل وشرب", description: "طلبات", date: "2026-09-21" }],
+      totalMatched: 3,
+    } as never);
+    const result = await moneyQuery.run({ metric: "transactions", search: "طلبات" }, ctx);
+    expect(result.response).toMatchObject({ whole_period_spent: 640, total_matched: 3,
+      period: "الدورة دي (من يوم القبض)", facts: [{ value: 640 }, { value: 220 }] });
+    expect(getFinanceTransactions).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ text: "طلبات", period: "current_month" }));
   });
 
   it("gives each budget's limit and what was spent from it", async () => {

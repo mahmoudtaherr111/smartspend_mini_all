@@ -94,6 +94,15 @@ describe("DoneClaimCheck: what it leaves alone", () => {
 
 describe("WrittenAmountCheck", () => {
   const amounts = (text: string) => extractSpokenNumbers(text).map((number) => number.value);
+  it("does not correct the correction itself or a historical amount", () => {
+    const recent = { written: [50], replaced: [15] };
+    for (const phrase of ["الصح هو خمسين جنيه مش خمستاشر.", "اتسجلت خمسين بدل خمستاشر.", "قبل التعديل كان خمستاشر جنيه."]) {
+      expect(new WrittenAmountCheck().add(phrase, recent, amounts)).toBeNull();
+    }
+    const check = new WrittenAmountCheck();
+    expect(check.add("اتسجلت خمسين جنيه مش ", recent, amounts)).toBeNull();
+    expect(check.add("خمستاشر.", recent, amounts)).toBeNull();
+  });
   it("catches a replaced amount said as the written one, and leaves the right one alone", () => {
     const check = new WrittenAmountCheck();
     const recent = { written: [50], replaced: [15] };

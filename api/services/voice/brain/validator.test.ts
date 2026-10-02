@@ -44,6 +44,11 @@ describe("extractSpokenNumbers", () => {
 });
 
 describe("SpokenNumberValidator", () => {
+  it("keeps the financial subject separate from a salary-day period", () => {
+    const { validator } = setup([["مصروف الأكل", 1640], ["المرتب", 14000]]);
+    expect(validator.addAssistantWords("مصروف الأكل من يوم المرتب وصل لحوالي ألف وستمية جنيه.")).toBeNull();
+    expect(validator.endTurn()).toBeNull();
+  });
   it("binds a financial noun immediately after an amount before considering an earlier noun", () => {
     const { validator } = setup([
       ["دخل", 7000],

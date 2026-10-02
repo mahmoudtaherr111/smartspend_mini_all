@@ -18,6 +18,30 @@ import { num, str, type ToolContext } from "./types";
 type Fact = { label: string; value: number; unit?: FactUnit; exact?: boolean };
 type Answer = (built: { title: string; facts: Fact[]; extra?: Record<string, unknown>; coverage?: string }, label: string) => ToolRunOutcome;
 
+/** Fields are visible in the provider schema, not just buried in a prose list of action names. */
+export const COACH_FIELDS_SCHEMA = {
+  type: "object",
+  description: "Action details. Dates: Cairo YYYY-MM-DD.",
+  properties: {
+    title: { type: "string" }, goal: { type: "string" },
+    kind: { type: "string" },
+    direction: { type: "string", enum: ["in", "out"] },
+    amount: { type: "number" },
+    recurrence: { type: "string", enum: ["once", "weekly", "monthly", "yearly"] },
+    start_day: { type: "string" }, end_day: { type: "string" },
+    certainty: { type: "string", enum: ["confirmed", "estimated"] },
+    budget_id: { type: "integer" }, limit: { type: "number" }, paused: { type: "boolean" },
+    cashflow_id: { type: "integer" }, due_day: { type: "string" }, expense_id: { type: "integer" },
+    step_id: { type: "integer" }, bank_id: { type: "integer" },
+    at: { type: "string", description: "YYYY-MM-DDTHH:mm Cairo" }, review_day: { type: "string" },
+    evidence_refs: { type: "array", items: { type: "string" } },
+    steps: { type: "array", items: { type: "object", properties: {
+      title: { type: "string" }, kind: { type: "string" },
+      amount_per_day: { type: "number" }, amount: { type: "number" }, category: { type: "string" }, due_day: { type: "string" },
+    }, required: ["title", "kind"] } },
+  },
+};
+
 const STATUS: Record<string, string> = { paid: "اتدفع", partial: "اتدفع جزء", due: "لسه", overdue: "فات ميعاده", unconfirmed: "مش معروف اتدفع ولا لأ" };
 
 /** money_query commitments: what is due, what may come in, and what is free until the next payday. */

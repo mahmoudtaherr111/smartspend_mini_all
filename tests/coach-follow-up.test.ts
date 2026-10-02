@@ -89,6 +89,11 @@ describe("scheduled cashflows and their payments", () => {
     const { id } = await createCashflow(user, {
       kind: "rent", direction: "out", title: "إيجار", amount: 4000, recurrence: "monthly", startDay: "2026-09-01", certainty: "confirmed", source: "user",
     });
+    // This scenario starts tracking on 10 September. The database's real clock
+    // changes which previous monthly due date is visible after 1 October.
+    await db.update(scheduledCashflows).set({ createdAt: new Date("2026-09-10T10:00:00Z") }).where(and(
+      eq(scheduledCashflows.id, id), eq(scheduledCashflows.userId, user.userId), eq(scheduledCashflows.userType, user.userType),
+    ));
     const rent = await spend(user, 4000, "2026-09-01");
     await settle(user, { cashflowId: id, dueDay: "2026-09-01", expenseId: rent });
     await caller.update({ id: rent, amount: 3500 });

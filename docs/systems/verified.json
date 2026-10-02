@@ -481,10 +481,10 @@
         "api/services/entitlements/voice.ts": "29ffd71b4434",
         "api/services/voice/admin-stats.ts": "377835dae587",
         "api/services/voice/app-calls.ts": "1a9863a88b02",
-        "api/services/voice/brain/claims.ts": "3a600ef82a48",
-        "api/services/voice/brain/coach-instructions.ts": "a53ed8c8aa3e",
+        "api/services/voice/brain/claims.ts": "0386387fcec6",
+        "api/services/voice/brain/coach-instructions.ts": "0d0ad3a6a9b1",
         "api/services/voice/brain/drafts.ts": "577f3baed851",
-        "api/services/voice/brain/facts.ts": "1d405d125c7d",
+        "api/services/voice/brain/facts.ts": "fa9189cb62db",
         "api/services/voice/brain/honorific.ts": "451551920217",
         "api/services/voice/brain/index.ts": "d5873392f9d9",
         "api/services/voice/brain/instructions.ts": "0ed7a97ef7c2",
@@ -494,11 +494,11 @@
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
         "api/services/voice/brain/tools/app-help.ts": "429dac755057",
         "api/services/voice/brain/tools/calculate.ts": "70da29e0a57e",
-        "api/services/voice/brain/tools/coach.ts": "1cb10f987b9c",
+        "api/services/voice/brain/tools/coach.ts": "a611f007a71a",
         "api/services/voice/brain/tools/market-price.ts": "5bed0aca7f26",
         "api/services/voice/brain/tools/memory.ts": "31b87da806da",
-        "api/services/voice/brain/tools/money-query.ts": "79e1236ab7ba",
-        "api/services/voice/brain/tools/record.ts": "acba762eb923",
+        "api/services/voice/brain/tools/money-query.ts": "ce748a2a8a75",
+        "api/services/voice/brain/tools/record.ts": "ce613659812d",
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
         "api/services/voice/brain/tools/think.ts": "5224961b8aad",
         "api/services/voice/brain/tools/types.ts": "0bab17c2ae57",
@@ -533,9 +533,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-10-02 fd19e3e",
-      "arabic": "489574213ca5",
-      "arabicChecked": "2026-10-02 fd19e3e"
+      "checked": "2026-10-02 59977b8",
+      "arabic": "c2e893ac2c24",
+      "arabicChecked": "2026-10-02 59977b8"
     },
     "web-app": {
       "files": {

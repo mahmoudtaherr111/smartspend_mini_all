@@ -32,7 +32,9 @@ export type FactMetric =
 
 /** Explicit financial nouns only; silence about the subject is not evidence of a different subject. */
 export function factMetric(text: string): FactMetric | undefined {
-  const normalized = text.replace(/[أإآ]/g, "ا").replace(/ة/g, "ه");
+  const normalized = text.replace(/[أإآ]/g, "ا").replace(/ة/g, "ه")
+    // A salary day defines a period, not the subject of the figure: "مصروف الأكل من يوم المرتب" is spending.
+    .replace(/(?:^|\s)(?:من|لحد|حتى|قبل|بعد)\s+(?:يوم|ميعاد|موعد|تاريخ|نزول)\s+(?:ال)?(?:مرتب|راتب|قبض)(?:ك|ي|نا|ها)?(?=\s|$)/g, " ");
   const nouns: Array<[FactMetric, RegExp]> = [
     ["spending", /مصروف|مصاريف|صرفت|اجمالي الصرف/],
     ["income", /مرتب|راتب|دخل|قبضت/],

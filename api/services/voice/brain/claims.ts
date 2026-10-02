@@ -90,10 +90,15 @@ export class WrittenAmountCheck {
   ): { spoken: number; written: number; correct: boolean } | null {
     this.turnText += chunk;
     if (this.flagged || !recent || !recent.replaced.length) return null;
+    if (!claimsDone(this.turnText)) return null;
     const spoken = amountsIn(this.turnText);
+    // A correction says "خمسين مش خمستاشر" or "خمسين بدل خمستاشر": the old amount is denied, not claimed as written.
+    const denied = [...this.turnText.matchAll(/(?:^|[\s،,.؟?!])(?:مش|بدل|بدلا من)\s+([^،,.؟?!]+)/g)]
+      .flatMap((match) => amountsIn(match[1]).slice(0, 1));
     const wrong = spoken.find(
       (value) =>
         recent.replaced.some((amount) => Math.abs(amount - value) < 0.5) &&
+        !denied.some((amount) => Math.abs(amount - value) < 0.5) &&
         !recent.written.some((amount) => Math.abs(amount - value) < 0.5),
     );
     if (wrong === undefined) return null;

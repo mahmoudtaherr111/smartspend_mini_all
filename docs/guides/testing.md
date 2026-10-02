@@ -45,6 +45,8 @@ they also become observed cases. Checks of spoken wording use what passed throug
 falling back to `assistant` only for older traces lacking it. The plan and summary record the Git revision
 and a SHA-256 of the tracked runtime diff, without storing that diff or environment values. A changed source
 fingerprint invalidates a claim that the run qualified one frozen revision. Provider failures remain in the denominator.
+API `.test` and `.spec` files are excluded from the runtime fingerprint. Keep the evaluated production source,
+runner, corpus and revision frozen until the summary is written; run statistical acceptance on that revision.
 
 ## The database suite on your machine
 `docker compose -f docker-compose.test.yml up -d` starts MySQL 8 on port 3307 with the database

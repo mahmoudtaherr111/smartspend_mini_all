@@ -36,7 +36,7 @@ import {
   type ToolContext,
   type VoiceTool,
 } from "./types";
-import { COACH_ACTIONS, coachDraft, executeCoachDraft } from "./coach";
+import { COACH_ACTIONS, COACH_FIELDS_SCHEMA, coachDraft, executeCoachDraft } from "./coach";
 
 interface ExpenseDraftPayload {
   businessId?: number;
@@ -870,12 +870,9 @@ export const changeDraftCoachTool: VoiceTool = {
   declaration: {
     name: "change_draft",
     description:
-      "Prepare a change to confirm: a goal, a budget, a wallet, a profile detail, a recategorized expense, undoing what " +
-      "this call recorded; plan_save (fields: title, goal, steps [{title, kind, amount_per_day, category, amount, " +
-      "due_day}], review_day, evidence_refs), step_done / reminder_set (at YYYY-MM-DDTHH:mm Cairo) / reminder_cancel " +
-      "(step_id), commitment_add (kind, direction in|out, title, amount, recurrence, start_day, certainty), " +
-      "commitment_paid (cashflow_id, due_day, expense_id or amount), bank_confirm / bank_dismiss (bank_id), " +
-      "budget_update (budget_id from money_query budgets; limit, or paused true/false). Amounts only from tool facts or the user.",
+      "Draft the requested action in fields; read it and ask consent. Money from facts or the user, dates as given. " +
+      "budget_update uses a read budget_id. commitment_add needs title, kind, direction, amount, recurrence " +
+      "(once for one date), start_day. No execution.",
     parameters: {
       type: "object",
       properties: {
@@ -897,10 +894,7 @@ export const changeDraftCoachTool: VoiceTool = {
           type: "string",
           description: "What the user asked for, in their words",
         },
-        fields: {
-          type: "object",
-          description: "Exact fields when already known",
-        },
+        fields: COACH_FIELDS_SCHEMA,
       },
       required: ["action"],
     },

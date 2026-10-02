@@ -260,7 +260,7 @@ function noSuchPerson(person: string, known: string[]): string {
 
 function outcome(
   built: Built,
-  ctx: ToolContext,
+  ctx: ToolContext & { exactReadout?: boolean },
   periodLabel: string,
 ): ToolRunOutcome {
   ctx.ledger.nextBatch();
@@ -270,7 +270,7 @@ function outcome(
       label: fact.label,
       value: fact.value,
       source: "ledger",
-      exact: fact.exact,
+      exact: fact.exact ?? ctx.exactReadout,
       unit: fact.unit,
       ...(fact.metric ? { metric: fact.metric } : {}),
       period: periodLabel,
@@ -487,7 +487,9 @@ async function run(
       ctx.records.seen = generation;
     }
   }
-  const result = await answer(args, ctx);
+  const exactReadout = typeof args.exact === "boolean" ? args.exact
+    : ["total", "compare", "balance", "budgets", "goals", "transactions", "why"].includes(String(args.metric ?? "total"));
+  const result = await answer(args, { ...ctx, exactReadout });
   if (!changed) return result;
   return {
     ...result,
@@ -501,7 +503,7 @@ async function run(
 
 async function answer(
   args: Record<string, unknown>,
-  ctx: ToolContext,
+  ctx: ToolContext & { exactReadout?: boolean },
 ): Promise<ToolRunOutcome> {
   if ((COACH_METRICS as readonly string[]).includes(String(args.metric))) {
     if (!ctx.coach)
@@ -526,7 +528,7 @@ async function answer(
   const lookup =
     metric === "why" ||
     metric === "includes" ||
-    (metric === "transactions" && Boolean(str(args.search)));
+    (metric === "transactions" && (args.latest === true || num(args.amount) !== undefined));
   const periodName = (PERIODS as readonly string[]).includes(
     String(args.period),
   )
@@ -1315,7 +1317,7 @@ async function answer(
 
   if (metric === "transactions") {
     const amount = num(args.amount);
-    if (search || amount !== undefined) {
+    if (args.latest === true || amount !== undefined) {
       const match = await findTransaction(
         finance,
         input,
@@ -1356,22 +1358,31 @@ async function answer(
     const list = await getFinanceTransactions(finance, {
       ...input,
       category,
+      ...(search ? { text: search } : {}),
       limit,
       transactionTypes: income ? ["income"] : ["expense"],
     });
+    const merchantTotal = search && !income
+      ? await getTextSpendingTotal(finance, search, input) : null;
     return outcome(
       {
         title: "آخر العمليات",
-        facts: list.transactions.slice(0, limit).map((tx) => ({
+        facts: [
+          ...(merchantTotal ? [{ label: `إجمالي المصروف على ${search} في ${label}`, value: merchantTotal.totalExpense, exact: true }] : []),
+          ...list.transactions.slice(0, limit).map((tx) => ({
           label: tx.description || categoryName(tx.category),
           value: tx.amount,
           exact: true,
-        })),
+          })),
+        ],
         extra: {
           dates: list.transactions.slice(0, limit).map((tx) => tx.date),
           total_matched: list.totalMatched,
+          ...(merchantTotal ? { whole_period_spent: merchantTotal.totalExpense,
+            note: "إجمالي الفترة مذكور لوحده؛ مبالغ العمليات المعروضة عينة من الفترة." } : {}),
         },
-        coverage: list.transactions.length ? undefined : EMPTY_NOTE,
+        coverage: list.partial || merchantTotal?.partial ? PARTIAL_NOTE
+          : list.transactions.length || merchantTotal?.transactionCount ? undefined : EMPTY_NOTE,
       },
       ctx,
       label,
@@ -1496,20 +1507,19 @@ export const moneyQueryCoach: VoiceTool = {
   declaration: {
     name: "money_query",
     description:
-      "The user's own records, one question per call: total, breakdown, compare (same days before), drivers, transactions, " +
-      "why (how one was classified), includes, report (a month's written report), feasibility, balance (with when each was " +
-      "entered), budgets, goals, pending, debts, installments, season, commitments (what is due and free until payday, " +
-      "expected income apart), plan (the agreed plan and how it is going). Facts carry a ref for calculate.",
+      "Read the user's records. compare uses same days before; balance is dated, entered, not live. " +
+      "commitments gives due and free until payday, expected income apart; plan gives follow-up. Facts carry refs for calculate.",
     parameters: {
       type: "object",
       properties: {
+        latest: { type: "boolean", description: "One latest match only; otherwise a list plus merchant whole_period_spent." },
+        exact: { type: "boolean", description: "Exact amounts and piasters; totals default exact. False rounds a summary." },
         metric: { type: "string", enum: [...METRICS, ...COACH_METRICS] },
         period: {
           type: "string",
           enum: [...PERIODS],
           description:
-            "Default this_month (the salary cycle when there is a salary day). With compare it is the period asked about, " +
-            "compared with the one before it: \"الشهر ده أكتر من اللي فات؟\" is this_month, never last_month.",
+            "Default current salary cycle. compare names the requested period; this_month compares it with the one before.",
         },
         from: { type: "string", description: "YYYY-MM-DD, with period custom" },
         to: { type: "string", description: "YYYY-MM-DD, with period custom" },
@@ -1558,21 +1568,19 @@ export const moneyQuery: VoiceTool = {
   declaration: {
     name: "money_query",
     description:
-      "The user's own records, one question per call: total, breakdown, compare (same days before), drivers (what " +
-      "changed), transactions, why (how a transaction was classified; needs search), includes (what a category " +
-      "counts), report (a month's written report; month), feasibility (can they afford amount), balance, budgets, " +
-      "goals, pending (entries waiting for their answer), debts (who owes whom, the gam3eya), installments, season " +
-      "(Ramadan, the Eids, school, summer). Facts carry a ref for calculate. Say numbers as the 'say' forms.",
+      "Read the user's records: totals, comparisons over same days, filtered transactions, classification (why, search), " +
+      "reports and affordability. balance is dated, entered, not live. Use each fact's say form; debts includes the gam3eya.",
     parameters: {
       type: "object",
       properties: {
+        latest: { type: "boolean", description: "One latest match only; otherwise a list plus merchant whole_period_spent." },
+        exact: { type: "boolean", description: "Exact amounts and piasters; totals default exact. False rounds a summary." },
         metric: { type: "string", enum: [...METRICS] },
         period: {
           type: "string",
           enum: [...PERIODS],
           description:
-            "Default this_month (the salary cycle when there is a salary day). With compare it is the period asked about, " +
-            "compared with the one before it: \"الشهر ده أكتر من اللي فات؟\" is this_month, never last_month.",
+            "Default current salary cycle. compare names the requested period; this_month compares it with the one before.",
         },
         from: { type: "string", description: "YYYY-MM-DD, with period custom" },
         to: { type: "string", description: "YYYY-MM-DD, with period custom" },

@@ -216,6 +216,7 @@ async function main(): Promise<void> {
     commit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
     diffSha256: createHash("sha256").update(execFileSync("git", [
       "diff", "--no-ext-diff", "HEAD", "--", "api", "contracts", "db", "scripts/voice-eval", "package.json", "package-lock.json",
+      ":(exclude,glob)api/**/*.test.*", ":(exclude,glob)api/**/*.spec.*",
     ])).digest("hex"),
   });
   const startingSource = source();
