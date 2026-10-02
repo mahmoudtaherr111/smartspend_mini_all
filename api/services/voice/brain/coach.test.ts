@@ -37,6 +37,24 @@ beforeEach(() => {
 });
 
 describe("the coach call", () => {
+  it("keeps an unsuccessful receipt behind verification across resume, until a new user request", async () => {
+    const brain = createCallBrain({ app: {} as VoiceAppCalls, tools: [{
+      declaration: { name: "confirm", description: "test", parameters: { type: "object", properties: {} } },
+      run: async () => ({ response: { ok: false, error: "not_done" } }),
+    }] });
+    await brain.prepare(identity, options(false));
+    await brain.runTool({ id: "confirm1", name: "confirm", args: { draft_id: "dr_unknown" } }, {
+      identity, signal: new AbortController().signal,
+    });
+    expect(brain.verifySpeechBeforePlayback?.()).toBe(true);
+    expect(brain.claimsUnconfirmedDone?.("اتسجلت خمسين جنيه")).toBe(true);
+    const resumed = createCallBrain({ app: {} as VoiceAppCalls });
+    resumed.restore?.(brain.snapshot?.());
+    expect(resumed.verifySpeechBeforePlayback?.()).toBe(true);
+    expect(resumed.claimsUnconfirmedDone?.("اتسجلت")).toBe(true);
+    resumed.onUserRequest?.(2, false);
+    expect(resumed.verifySpeechBeforePlayback?.()).toBe(false);
+  });
   it("gets calculate and no text-model judge; the standard call keeps its tools", async () => {
     const brain = createCallBrain({ app: {} as VoiceAppCalls });
     const coach = await brain.prepare(identity, options(true));

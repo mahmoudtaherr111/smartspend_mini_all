@@ -199,6 +199,15 @@ Finance answers come from the finance layer's per-user Redis cache when it holds
 is billed again for it on every later turn.
 
 ### The checks
+- **Before playback.** Draft previews and the first write receipt are buffered as a complete utterance
+  (audio and captions) until generation_complete or the completed-turn fallback. The brain checks the whole
+  text and its final number before presentation; only validated words can make a voice yes eligible. False
+  completion claims use the existing recovery bound; another rejected claim is corrected only with a known
+  truth. The limits are 30 seconds, 3 MiB PCM and 8,000 characters; missing transcript or overflow ends the call
+  with a notice and actual summary. Request changes, interruption, new tools and reconnect discard the buffer.
+  Receipt verification covers success, failure and uncertain writes, is kept until the next user request and
+  survives resume; held audio is never saved. A failure or uncertain outcome cannot be called completed.
+  Suppression incidents count separately from actual heard mistakes. See decision 0019 for the latency tradeoff.
 - **Numbers said.** `api/services/voice/brain/validator.ts` reads the numbers in the assistant's transcribed speech
   with `api/lib/arabic-number-parser.ts`. A money number that matches no fact of the call
   (`api/services/voice/brain/facts.ts`), no rounding of one and nothing the user said is recorded as a
@@ -225,6 +234,7 @@ counts as theirs. Piasters are the fraction of the
   The post-write amount check needs an actual completion claim; it does not correct a historical mention
   or the denied old amount in "خمسين مش خمستاشر" / "خمسين بدل خمستاشر". Live evaluation counts a
   genuine wrong written receipt as a number failure even when the user mentioned the old amount earlier.
+  Explicit negation ("لسه ما اتسجلت", "مفيش حاجة اتحفظت") is not a completion claim.
 - **Writes.** `api/services/voice/brain/drafts.ts#DraftBook`: only the latest pending draft, within two minutes, and
   only after a tap on its card or the user's own yes said after the assistant presented it (its first words after the
   draft was made). `readReply` reads the reply with a "no" first: a negation (also wrapped around the verb,
@@ -467,16 +477,17 @@ Checked against the code; each one names where it lives.
    Keeping it alive needs native work in the Android and iOS shells.
 2. **Gap.** The speech detector's thresholds (`src/lib/voice/speech-detector.ts`) are tuned on synthetic audio in
    tests; they have not been checked against recordings of real users on phones in noisy places.
-3. **Gap.** A business's own ledger can be read in a call (`money_query` with `scope: business`) but not written to:
-   recording uses an explicit `record_draft.scope` (personal or business), checks the business feature again at confirmation, and asks instead of silently mixing ledgers; debts carry no due dates and several gam3eyas are added
-   together (`api/services/debt-ledger.ts`); installments are counted from payments whose words name the plan
-   (`api/services/installments.ts`); keyword matching is now an amount-based estimate, and overlapping names are reported as ambiguous instead of assigning a payment to both plans. Linked progress counts fully paid due dates separately.
+3. **Gap.** Dated repayments can be saved as commitments, but the voice draft does not attach the debt contact id;
+   the debts ledger still has no due dates and aggregates multiple gam3eyas (`api/services/debt-ledger.ts`).
+   Installment keyword matching remains an amount-based estimate (`api/services/installments.ts`); overlapping
+   names are ambiguous, while linked progress counts fully paid due dates separately. Business reading and writing
+   use an explicit scope and recheck the feature and ownership at confirmation; they are no longer a missing capability.
 4. **Bug (provider).** On `gemini-3.8-live-extended-thinking`, a tool call sometimes never reaches the app: the model
    says a line, stays IN_PROGRESS, then apologises for a "system error" with no `toolCall` message and no provider
-   error, while `gemini-3.8-live` calls the tool every time. On 2026-09-30 at LOW, 42 of 49 single-tool probe runs
+   error. In matched probes the standard model called the tool in 26 of 26 attempts. On 2026-09-30 at LOW, 42 of 49 single-tool probe runs
    passed (86%, 95% interval 73–93%) against 26 of 26 for the standard model, the same with a minimal raw setup and
    with the app's; between the filler and the apology only ~62 text tokens reach the model's context, so the call is
-   lost inside the provider, cause unknown (`api/services/voice/engine/gemini-live.ts`). `LostToolCallGuard` keeps the
+   also absent in the minimal harness; its internal cause is not established (`api/services/voice/engine/gemini-live.ts`). `LostToolCallGuard` keeps the
    apology from the user and asks again. The rate varies with time: in one later batch of 20 the first call was lost in
    13, the retries rescued 10 and 3 still failed. The extended model also takes about 4.6 seconds longer to call a
    tool and ~6× the tokens per turn. Ultra Thinking stays off until it is qualified.

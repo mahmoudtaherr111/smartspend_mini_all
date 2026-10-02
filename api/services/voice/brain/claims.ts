@@ -15,7 +15,11 @@ const DIACRITICS = new RegExp(
 );
 
 export function claimsDone(text: string): boolean {
-  return DONE_CLAIM.test(text.replace(DIACRITICS, ""));
+  const normalized = text.replace(DIACRITICS, "");
+  return [...normalized.matchAll(new RegExp(DONE_CLAIM.source, "g"))].some((match) => {
+    const before = normalized.slice(0, match.index).trimEnd();
+    return !/(?:^|\s)(?:ما|مش|لم|مفيش حاجة|مفيش أي حاجة|هل)$/.test(before);
+  });
 }
 
 export const DONE_CLAIM_NOTE =

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DoneClaimCheck, FailureClaimCheck, WrittenAmountCheck } from "./claims";
+import { claimsDone, DoneClaimCheck, FailureClaimCheck, WrittenAmountCheck } from "./claims";
 import { extractSpokenNumbers } from "./validator";
 
 describe("DoneClaimCheck", () => {
@@ -83,6 +83,10 @@ describe("FailureClaimCheck", () => {
 });
 
 describe("DoneClaimCheck: what it leaves alone", () => {
+  it("leaves explicit denials alone without hiding a later positive completion claim", () => {
+    for (const phrase of ["لسه ما اتسجلت.", "مفيش حاجة اتحفظت، أأكد؟", "هل اتسجلت؟"]) expect(claimsDone(phrase)).toBe(false);
+    expect(claimsDone("ما اتسجلت قبل كده، لكن سجلتلك دلوقتي.")).toBe(true);
+  });
   it("leaves questions, other words and replies without a waiting draft alone", () => {
     const check = new DoneClaimCheck();
     expect(check.add("خمسين مواصلات، أسجلهم؟", true)).toBeNull();

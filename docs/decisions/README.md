@@ -25,3 +25,5 @@ A record explains why the code looks the way it does. What the code does today i
 | [0015](0015-roles-before-categories.md) | Every number and every word gets its role before anything is classified |
 | [0016](0016-voice-coach-profile.md) | The coach call: the live model reasons, the app computes and writes, behind a rollout |
 | [0017](0017-ultra-thinking-mode.md) | Ultra Thinking: a mode the user switches to, on the extended model at LOW, off until qualified |
+| [0018](0018-voice-production-boundaries.md) | Durable consent, distributed call ownership, recovery, memory forgetting and measured capacity |
+| [0019](0019-verify-consent-speech-before-playback.md) | Complete draft previews and write receipts are verified before audio or captions are released |

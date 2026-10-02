@@ -57,9 +57,10 @@ class Engine implements VoiceEngine {
   }
 }
 const active: CallSession[] = [];
-async function setup(runTool?: CallBrain["runTool"]) {
+async function setup(runTool?: CallBrain["runTool"], extraBrain: Partial<CallBrain> = {}, model = "gemini-3.8-live-extended-thinking") {
   const engine = new Engine();
   const messages: VoiceServerMessage[] = [];
+  const audioFrames: Buffer[] = [];
   const brain: CallBrain = {
     prepare: async () => ({ instruction: "synthetic", tools: [] }),
     openingNote: () => "[opening]",
@@ -67,6 +68,7 @@ async function setup(runTool?: CallBrain["runTool"]) {
     lostToolCallNote: (retry) =>
       retry ? LOST_CALL_RETRY_NOTE : LOST_CALL_GIVE_UP_NOTE,
     runTool: runTool ?? (async () => ({ response: { ok: true } })),
+    ...extraBrain,
   };
   const deps: CallSessionDeps = {
     brain,
@@ -91,7 +93,7 @@ async function setup(runTool?: CallBrain["runTool"]) {
       role: "user",
     },
     {
-      model: "gemini-3.8-live-extended-thinking",
+      model,
       thinkingLevel: "low",
       voiceName: "Kore",
       maxSeconds: 120,
@@ -101,19 +103,17 @@ async function setup(runTool?: CallBrain["runTool"]) {
     deps,
   );
   active.push(session);
-  await session.attach(
-    {
+  const channel = {
       open: true,
-      sendJson: (message) => messages.push(message),
-      sendAudio: () => {},
+      sendJson: (message: VoiceServerMessage) => messages.push(message),
+      sendAudio: (pcm: Buffer) => { audioFrames.push(pcm); },
       close: () => {},
-    },
-    false,
-  );
+    };
+  await session.attach(channel, false);
   engine.notes.length = 0;
   await session.onClientMessage({ type: "text", text: "معايا كام؟" });
   engine.notes.length = 0;
-  return { session, engine, messages, deps };
+  return { session, engine, messages, deps, audioFrames, channel };
 }
 const audio: EngineEvent = {
   type: "audio",
@@ -125,6 +125,126 @@ afterEach(async () => {
 });
 
 describe("requirements missing from Claude qualification", () => {
+  it.each(["gemini-3.8-live", "gemini-3.8-live-extended-thinking"])("holds the complete preview on %s even when a completion claim arrives late", async (model) => {
+    vi.useFakeTimers();
+    try {
+      const { engine, audioFrames, messages } = await setup(undefined, {
+        verifySpeechBeforePlayback: () => true, awaitingConfirmation: () => true,
+        claimsUnconfirmedDone: claimsDone, unconfirmedDoneNote: () => "[preview only]",
+      }, model);
+      engine.emit(audio);
+      engine.emit({ type: "output_transcript", text: "خليني أراجع التزامك لخالد، " });
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(audioFrames).toHaveLength(0);
+      engine.emit({ type: "output_transcript", text: "تمام سجلت تمنمية جنيه." });
+      engine.emit({ type: "generation_complete" });
+      expect(audioFrames).toHaveLength(0);
+      expect(messages.filter((m) => m.type === "caption" && m.role === "assistant")).toHaveLength(0);
+      expect(engine.notes.filter((note) => note === "[preview only]")).toHaveLength(1);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("releases a verified preview exactly once and in PCM order, with no early presentation callback", async () => {
+    const words = vi.fn(() => null);
+    const { engine, audioFrames, messages } = await setup(undefined, {
+      verifySpeechBeforePlayback: () => true, awaitingConfirmation: () => true,
+      claimsUnconfirmedDone: claimsDone, onAssistantWords: words,
+    });
+    const first = Buffer.from([1, 2]); const second = Buffer.from([3, 4]);
+    engine.emit({ type: "audio", pcm: first, sampleRate: 24000 });
+    engine.emit({ type: "output_transcript", text: "مسودة خمسين جنيه. " });
+    engine.emit({ type: "audio", pcm: second, sampleRate: 24000 });
+    engine.emit({ type: "output_transcript", text: "أأكد؟" });
+    expect(words).not.toHaveBeenCalled();
+    expect(audioFrames).toHaveLength(0);
+    engine.emit({ type: "generation_complete" });
+    engine.emit({ type: "turn_complete", working: false });
+    expect(audioFrames).toEqual([first, second]);
+    expect(words).toHaveBeenCalledTimes(1);
+    expect(messages.filter((m) => m.type === "caption" && m.role === "assistant")).toHaveLength(1);
+  });
+
+  it("suppresses an invalid write receipt before audio or captions", async () => {
+    const { engine, audioFrames, messages } = await setup(undefined, {
+      verifySpeechBeforePlayback: () => true,
+      onAssistantWords: () => ({ kind: "wrong_amount_after_write", note: "[receipt correction]", incident: {} }),
+    });
+    engine.emit(audio);
+    engine.emit({ type: "output_transcript", text: "اتسجلت خمستاشر" });
+    engine.emit({ type: "generation_complete" });
+    expect(audioFrames).toHaveLength(0);
+    expect(messages.filter((m) => m.type === "caption" && m.role === "assistant")).toHaveLength(0);
+    expect(engine.notes).toContain("[receipt correction]");
+  });
+
+  it("never marks a held preview presented when its final words fail validation", async () => {
+    const presented = vi.fn();
+    const { engine, audioFrames } = await setup(undefined, {
+      verifySpeechBeforePlayback: () => true, onAssistantWords: () => null,
+      onAssistantPresented: presented,
+      onTurnEnd: () => ({ kind: "spoken_number_mismatch", note: "[tail correction]", incident: {} }),
+    });
+    engine.emit(audio); engine.emit({ type: "output_transcript", text: "مسودة فيها رقم غلط في الآخر" });
+    engine.emit({ type: "generation_complete" });
+    expect(presented).not.toHaveBeenCalled();
+    expect(audioFrames).toHaveLength(0);
+  });
+
+  it("discards a held preview on a new request or reconnect instead of replaying old audio", async () => {
+    const { session, engine, audioFrames, channel } = await setup(undefined, { verifySpeechBeforePlayback: () => true });
+    engine.emit(audio); engine.emit({ type: "output_transcript", text: "مسودة قديمة" });
+    await session.onClientMessage({ type: "text", text: "بلاش ده" });
+    // Already-generated old chunks can arrive before the provider's interruption acknowledgement.
+    engine.emit(audio); engine.emit({ type: "output_transcript", text: "قديم وصل متأخر" });
+    engine.emit({ type: "generation_complete" });
+    expect(audioFrames).toHaveLength(0);
+    engine.emit(audio); engine.emit({ type: "output_transcript", text: "لسه محجوزة" });
+    session.detach(channel);
+    engine.emit({ type: "generation_complete" });
+    expect(audioFrames).toHaveLength(0);
+  });
+
+  it("fails closed when protected audio lacks a transcript or exceeds the byte bound", async () => {
+    const missing = await setup(undefined, { verifySpeechBeforePlayback: () => true });
+    missing.engine.emit(audio); missing.engine.emit({ type: "generation_complete" });
+    expect(missing.audioFrames).toHaveLength(0);
+    expect(missing.messages.some((m) => m.type === "notice")).toBe(true);
+    const oversized = await setup(undefined, { verifySpeechBeforePlayback: () => true });
+    oversized.engine.emit({ type: "audio", pcm: Buffer.alloc(3 * 1024 * 1024 + 1), sampleRate: 24000 });
+    expect(oversized.audioFrames).toHaveLength(0);
+    expect(oversized.messages.some((m) => m.type === "notice")).toBe(true);
+  });
+
+  it("bounds verification time and drops a preview on barge-in", async () => {
+    vi.useFakeTimers();
+    try {
+      const timed = await setup(undefined, { verifySpeechBeforePlayback: () => true });
+      timed.engine.emit(audio); timed.engine.emit({ type: "output_transcript", text: "مسودة لسه شغالة" });
+      await vi.advanceTimersByTimeAsync(30_001);
+      expect(timed.audioFrames).toHaveLength(0);
+      expect(timed.messages.some((m) => m.type === "notice")).toBe(true);
+    } finally { vi.useRealTimers(); }
+    const interrupted = await setup(undefined, { verifySpeechBeforePlayback: () => true });
+    interrupted.engine.emit(audio);
+    interrupted.engine.emit({ type: "output_transcript", text: "كلام قديم محجوز" });
+    interrupted.engine.emit({ type: "interrupted" });
+    interrupted.engine.emit({ type: "generation_complete" });
+    expect(interrupted.audioFrames).toHaveLength(0);
+  });
+
+  it("does not play an old confirmation question after the user acted on its card", async () => {
+    const { session, engine, audioFrames } = await setup(undefined, {
+      verifySpeechBeforePlayback: () => true,
+      onCardAction: async () => ({ card: { kind: "draft", draftId: "dr_card", title: "مسودة", items: [], status: "executed", expiresAt: new Date().toISOString() }, note: "[tap receipt]" }),
+    });
+    engine.emit(audio); engine.emit({ type: "output_transcript", text: "أأكد؟" });
+    await session.onClientMessage({ type: "confirm", draftId: "dr_card" });
+    engine.emit(audio); engine.emit({ type: "output_transcript", text: "سؤال قديم وصل بعد الضغط" });
+    engine.emit({ type: "generation_complete" });
+    expect(audioFrames).toHaveLength(0);
+    engine.emit({ type: "idle" });
+    expect(engine.notes).toContain("[tap receipt]");
+  });
   beforeEach(resetAdmissionMemory);
   it.each(["سجلنا خمسين جنيه", "تمام، سجلتلك تلتمية جنيه"])("holds an unconfirmed done claim (%s) without false audio or captions", async (claim) => {
     const { deps } = await setup();

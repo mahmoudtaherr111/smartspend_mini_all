@@ -137,9 +137,13 @@ export interface CallBrain {
    * Called with the assistant's words as transcribed. A returned incident is recorded; a returned note is sent to the
    * model at once so it corrects itself.
    */
-  onAssistantWords?(text: string): SpeechCheck | null;
+  onAssistantWords?(text: string, presented?: boolean): SpeechCheck | null;
+  /** Called only after a complete held reply passed its checks. */
+  onAssistantPresented?(text: string): void;
   /** The model finished a turn; what it said last is checked in full. */
   onTurnEnd?(): SpeechCheck | null;
+  /** Draft read-backs and the first receipt after a write are checked before any audio or captions leave. */
+  verifySpeechBeforePlayback?(): boolean;
   /** Whether words claim a technical failure; lets the call hold back the extended model's lost-call apology. */
   claimsFailure?(text: string): boolean;
   claimsUnconfirmedDone?(text: string): boolean;
@@ -314,6 +318,9 @@ export class CallSession {
   private guard: LostToolCallGuard | null = null;
   private previewGuard: LostToolCallGuard | null = null;
   private guardTimer: ReturnType<typeof setTimeout> | null = null;
+  private protectedSpeech: { epoch: number; audio: Buffer[]; words: string[]; bytes: number; chars: number } | null = null;
+  private protectedSpeechTimer: ReturnType<typeof setTimeout> | null = null;
+  private suppressOldProtectedSpeech = false;
   private lostToolCalls = 0;
   private readonly toolAborts = new Map<string, AbortController>();
   private attachChain: Promise<void> = Promise.resolve();
@@ -686,6 +693,8 @@ export class CallSession {
       case "confirm":
       case "cancel": {
         if (!(await this.persistState())) return;
+        if (this.protectedSpeech) this.suppressOldProtectedSpeech = true;
+        this.discardProtectedSpeech();
         this.pendingWrites += 1;
         let outcome;
         try {
@@ -735,6 +744,8 @@ export class CallSession {
   }
 
   private beginRequest(audio = false): void {
+    if (this.protectedSpeech) this.suppressOldProtectedSpeech = true;
+    this.discardProtectedSpeech();
     this.requestEpoch += 1;
     this.deps.brain.onUserRequest?.(this.requestEpoch, audio);
     this.guard?.newRequest();
@@ -980,9 +991,18 @@ export class CallSession {
     if (engine !== this.engine || this.status === "ended") return;
     switch (event.type) {
       case "audio": {
+        if (this.suppressOldProtectedSpeech) return;
         this.replyStarted();
         this.modelBusy = true;
         this.lastActivity = Date.now();
+        if (this.deps.brain.verifySpeechBeforePlayback?.()) {
+          const held = this.holdProtectedSpeech();
+          held.audio.push(Buffer.from(event.pcm));
+          held.bytes += event.pcm.length;
+          this.checkProtectedSpeechSize();
+          return;
+        }
+        this.discardProtectedSpeech();
         const verdict = this.activeSpeechGuard()?.audio(
           event.pcm,
           event.sampleRate,
@@ -1000,6 +1020,15 @@ export class CallSession {
         this.deps.brain.onUserWords?.(event.text);
         return;
       case "output_transcript": {
+        if (this.suppressOldProtectedSpeech) return;
+        if (this.deps.brain.verifySpeechBeforePlayback?.()) {
+          const held = this.holdProtectedSpeech();
+          held.words.push(event.text);
+          held.chars += event.text.length;
+          this.checkProtectedSpeechSize();
+          return;
+        }
+        this.discardProtectedSpeech();
         const checkingPreview = Boolean(
           this.previewGuard && this.deps.brain.awaitingConfirmation?.(),
         );
@@ -1033,6 +1062,8 @@ export class CallSession {
         return;
       }
       case "tool_calls": {
+        this.suppressOldProtectedSpeech = false;
+        this.discardProtectedSpeech();
         const held = this.guard?.toolCalled();
         if (held?.kind === "release") this.releaseHeld(held);
         this.modelBusy = true;
@@ -1061,12 +1092,20 @@ export class CallSession {
         }
         return;
       case "interrupted":
+        this.suppressOldProtectedSpeech = false;
+        this.discardProtectedSpeech();
         this.replyStarted();
         this.guard?.interrupted();
         this.previewGuard?.interrupted();
         this.send({ type: "interrupted" });
         return;
+      case "generation_complete":
+        if (this.suppressOldProtectedSpeech) { this.suppressOldProtectedSpeech = false; this.discardProtectedSpeech(); return; }
+        this.finishProtectedSpeech();
+        return;
       case "turn_complete": {
+        if (this.suppressOldProtectedSpeech) { this.suppressOldProtectedSpeech = false; this.discardProtectedSpeech(); }
+        this.finishProtectedSpeech();
         const held = this.activeSpeechGuard()?.utteranceEnded(
           event.working === true,
         );
@@ -1151,10 +1190,70 @@ export class CallSession {
       : this.guard;
   }
 
-  private assistantSaid(text: string): void {
+  private holdProtectedSpeech(): NonNullable<CallSession["protectedSpeech"]> {
+    if (!this.protectedSpeech) {
+      this.protectedSpeech = { epoch: this.requestEpoch, audio: [], words: [], bytes: 0, chars: 0 };
+      this.protectedSpeechTimer = setTimeout(() => this.failProtectedSpeech("timeout"), 30_000);
+    }
+    return this.protectedSpeech;
+  }
+
+  private checkProtectedSpeechSize(): void {
+    if (this.protectedSpeech && (this.protectedSpeech.bytes > 3 * 1024 * 1024 || this.protectedSpeech.chars > 8_000))
+      this.failProtectedSpeech("size");
+  }
+
+  private discardProtectedSpeech(): void {
+    this.protectedSpeech = null;
+    if (this.protectedSpeechTimer) clearTimeout(this.protectedSpeechTimer);
+    this.protectedSpeechTimer = null;
+  }
+
+  private failProtectedSpeech(reason: string): void {
+    this.discardProtectedSpeech();
+    if (this.status !== "live") return;
+    this.recordIncident("speech_verification_failed", { reason });
+    this.send({ type: "notice", kind: "degraded", message: "مش قادرين نراجع الرد الصوتي دلوقتي. راجع اللي اتحفظ واللي لسه مسودة في التطبيق قبل أي تأكيد." });
+    void this.end("provider");
+  }
+
+  /** The last transcription precedes generation_complete (Live API); no prefix is released unverified. */
+  private finishProtectedSpeech(): void {
+    const held = this.protectedSpeech;
+    this.discardProtectedSpeech();
+    if (!held || held.epoch !== this.requestEpoch || !this.deps.brain.verifySpeechBeforePlayback?.() || this.status !== "live") return;
+    const text = held.words.join("");
+    if (!text.trim()) { this.failProtectedSpeech("missing_transcript"); return; }
+    if (this.deps.brain.claimsUnconfirmedDone?.(text)) {
+      this.previewGuard?.toolCalled();
+      const verdict = this.previewGuard?.words(text, Date.now());
+      const retry = verdict?.kind === "drop" && verdict.retry;
+      this.recordIncident("done_claim_suppressed", { retried: retry });
+      if (retry) this.sendNote(this.deps.brain.unconfirmedDoneNote?.() ?? "دي مسودة مستنية تأكيد. اقراها واسأل الأول.", true);
+      else this.failProtectedSpeech("unconfirmed_done");
+      return;
+    }
+    if (!this.assistantSaid(text, true)) return;
+    for (const pcm of held.audio) this.playAudio(pcm);
+  }
+
+  private assistantSaid(text: string, verified = false): boolean {
+    let check = (verified ? this.deps.brain.onAssistantWords?.(text, false) : this.deps.brain.onAssistantWords?.(text))
+      ?? (verified ? this.deps.brain.onTurnEnd?.() ?? null : null);
+    if (verified && !check) {
+      this.deps.brain.onAssistantPresented?.(text);
+      check = this.deps.brain.onTurnEnd?.() ?? null;
+    }
+    if (verified && check) {
+      this.recordIncident("speech_check_suppressed", { reason: check.kind ?? "spoken_number_mismatch", corrected: Boolean(check.note) });
+      if (check.note) this.sendNote(check.note, true);
+      else this.failProtectedSpeech("unverifiable_claim");
+      return false;
+    }
     this.addTranscript("assistant", text);
     this.send({ type: "caption", role: "assistant", text });
-    this.applySpeechCheck(this.deps.brain.onAssistantWords?.(text) ?? null);
+    this.applySpeechCheck(check);
+    return true;
   }
 
   /** What the guard held turned out to be an answer: play and show it now, in order. */
@@ -1718,6 +1817,8 @@ export class CallSession {
   }
 
   private closeEngine(): void {
+    this.suppressOldProtectedSpeech = false;
+    this.discardProtectedSpeech();
     this.connectionGeneration += 1;
     for (const engine of this.pendingEngines) engine.close();
     this.pendingEngines.clear();

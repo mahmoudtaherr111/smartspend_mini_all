@@ -481,12 +481,12 @@
         "api/services/entitlements/voice.ts": "29ffd71b4434",
         "api/services/voice/admin-stats.ts": "377835dae587",
         "api/services/voice/app-calls.ts": "1a9863a88b02",
-        "api/services/voice/brain/claims.ts": "0386387fcec6",
+        "api/services/voice/brain/claims.ts": "3e99516a76c8",
         "api/services/voice/brain/coach-instructions.ts": "0d0ad3a6a9b1",
         "api/services/voice/brain/drafts.ts": "577f3baed851",
         "api/services/voice/brain/facts.ts": "fa9189cb62db",
         "api/services/voice/brain/honorific.ts": "451551920217",
-        "api/services/voice/brain/index.ts": "d5873392f9d9",
+        "api/services/voice/brain/index.ts": "ef3b8c211c52",
         "api/services/voice/brain/instructions.ts": "0ed7a97ef7c2",
         "api/services/voice/brain/never-kept.ts": "977be210350d",
         "api/services/voice/brain/profile-questions.ts": "14673f9bb35c",
@@ -507,7 +507,7 @@
         "api/services/voice/engine/gemini-live.ts": "73eb5ad104db",
         "api/services/voice/engine/types.ts": "15efb5ec2d12",
         "api/services/voice/gateway/admission.ts": "db43a9e257bb",
-        "api/services/voice/gateway/call-session.ts": "156fdf6c20d8",
+        "api/services/voice/gateway/call-session.ts": "41618d931219",
         "api/services/voice/gateway/index.ts": "cf64a866d258",
         "api/services/voice/gateway/lost-call-guard.ts": "f9c7065855f6",
         "api/services/voice/gateway/persistence.ts": "a8198f22ab3b",
@@ -533,9 +533,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "11fda8ab924d"
       },
-      "checked": "2026-10-02 59977b8",
-      "arabic": "c2e893ac2c24",
-      "arabicChecked": "2026-10-02 59977b8"
+      "checked": "2026-10-02 88cbba5",
+      "arabic": "c8c8a5639883",
+      "arabicChecked": "2026-10-02 88cbba5"
     },
     "web-app": {
       "files": {

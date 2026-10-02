@@ -113,6 +113,14 @@ export function createCallBrain(options: BrainOptions): CallBrain {
   let noteTag = `#${randomBytes(3).toString("hex")}`;
   let coach = false;
   let explicitRequestBoundary = false;
+  let receiptPending = false;
+  let receiptDraftId: string | null = null;
+  const completionBlocked = () => {
+    const waiting = drafts.latestPending();
+    return waiting ? waiting.kind !== "undo" : receiptPending && drafts.get(receiptDraftId ?? "")?.status !== "executed";
+  };
+  const completionNote = () => drafts.latestPending() ? DONE_CLAIM_NOTE
+    : "(ملاحظة من التطبيق: التنفيذ لسه ما اتأكدش إنه اكتمل. متقولش إنه اتحفظ. وضح إنك بتتأكد من النتيجة أو إن المحاولة ما اكتملتش، حسب رد الأداة.)";
   const incompletePreviews = new Set<string>();
 
   const context = (
@@ -232,6 +240,10 @@ export function createCallBrain(options: BrainOptions): CallBrain {
         { once: true },
       );
       try {
+        if (call.name === "confirm") {
+          receiptPending = true;
+          receiptDraftId = typeof call.args.draft_id === "string" ? call.args.draft_id : drafts.latestPending()?.id ?? null;
+        }
         const outcome = await tool.run(
           call.args,
           context(
@@ -240,6 +252,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
             runContext.beforeWrite,
           ),
         );
+        if (call.name === "confirm" && outcome.response.ok === true && outcome.card?.kind === "draft" && outcome.card.status === "executed") receiptPending = true;
         if (!runContext.signal.aborted)
           failures.toolAnswered(
             outcome.response.ok !== false ||
@@ -255,6 +268,8 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     },
 
     onUserRequest(_epoch, audio) {
+      receiptPending = false;
+      receiptDraftId = null;
       explicitRequestBoundary = true;
       failures.newRequest();
       claims.newRequest();
@@ -274,20 +289,18 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       validator.noteUserWords(text);
     },
 
-    onAssistantWords(text) {
+    onAssistantWords(text, presented = true) {
       // The assistant speaking after a draft was made is it being read out: a spoken yes counts from here.
-      drafts.heardAssistant(text);
       // Saying a waiting draft is done is the worse mistake, so it is corrected first.
       // An undo draft talks about what was recorded before, so only new records and actions are checked.
-      const waiting = drafts.latestPending();
       const claimed = claims.add(
         text,
-        Boolean(waiting) && waiting!.kind !== "undo",
+        completionBlocked(),
       );
       const failure = failures.add(text);
       const misstated = writtenAmounts.add(
         text,
-        drafts.justWritten(),
+        drafts.justWritten(Infinity),
         (words) =>
           extractSpokenNumbers(words)
             .filter((number) => number.money || number.value >= 10)
@@ -297,7 +310,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       if (claimed)
         return {
           kind: "done_claim_before_confirm",
-          note: claimed === "note" ? DONE_CLAIM_NOTE : null,
+          note: claimed === "note" ? completionNote() : null,
           incident: { waitingDraft: true, corrected: claimed === "note" },
         };
       if (misstated) {
@@ -319,15 +332,15 @@ export function createCallBrain(options: BrainOptions): CallBrain {
           },
         };
       }
+      if (!numbers && presented) drafts.heardAssistant(text);
       return numbers;
     },
 
+    onAssistantPresented: (text) => drafts.heardAssistant(text),
+
     claimsFailure,
-    claimsUnconfirmedDone: (text) =>
-      Boolean(drafts.latestPending()) &&
-      drafts.latestPending()?.kind !== "undo" &&
-      claimsDone(text),
-    unconfirmedDoneNote: () => DONE_CLAIM_NOTE,
+    claimsUnconfirmedDone: (text) => completionBlocked() && claimsDone(text),
+    unconfirmedDoneNote: completionNote,
 
     lostToolCallNote: (retry, afterTools) => {
       if (!retry) failures.providerFailed();
@@ -378,6 +391,8 @@ export function createCallBrain(options: BrainOptions): CallBrain {
           note: "(ملاحظة من التطبيق: المستخدم لغى المسودة من الشاشة. قول إنها اتلغت في كلمتين.)",
         };
       }
+      receiptPending = true;
+      receiptDraftId = draftId;
       const gate = drafts.gate(draftId, true);
       if (!gate.ok) {
         return {
@@ -398,6 +413,7 @@ export function createCallBrain(options: BrainOptions): CallBrain {
     },
 
     awaitingConfirmation: () => drafts.awaiting(),
+    verifySpeechBeforePlayback: () => drafts.awaiting() || receiptPending,
 
     summary: () => drafts.summary(),
 
@@ -411,6 +427,8 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       recordsSeen: records.seen,
       failureRetries: failures.snapshot(),
       doneNotes: claims.snapshot(),
+      receiptPending,
+      receiptDraftId,
       forgotten: [...forgotten],
     }),
 
@@ -423,6 +441,8 @@ export function createCallBrain(options: BrainOptions): CallBrain {
         recordsSeen?: number | null;
         failureRetries?: { retries?: number };
         doneNotes?: { notes?: number };
+        receiptPending?: boolean;
+        receiptDraftId?: string | null;
         forgotten?: string[];
       };
       ledger.restore(saved.ledger);
@@ -436,6 +456,8 @@ export function createCallBrain(options: BrainOptions): CallBrain {
       records.seen = saved.recordsSeen ?? null;
       failures.restore(saved.failureRetries);
       claims.restore(saved.doneNotes);
+      receiptPending = saved.receiptPending === true;
+      receiptDraftId = saved.receiptDraftId ?? null;
       forgotten.splice(0, forgotten.length, ...(saved.forgotten ?? []));
     },
   };
