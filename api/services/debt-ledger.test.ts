@@ -19,6 +19,10 @@ describe("ليك وعليك", () => {
   it("leaves settled people and rows without a direction out", () => {
     expect(debtBalances([row(300, "outgoing", "محمد"), row(300, "incoming", "محمد"), row(50, "", "سارة")])).toEqual([]);
   });
+
+  it("keeps fractional pounds exact in the displayed loan totals", () => {
+    expect(debtBalances([row(0.1, "outgoing", "خالد"), row(0.2, "outgoing", "خالد")])[0]).toMatchObject({ lent: 0.3, balance: 0.3 });
+  });
 });
 
 describe("the gam3eya", () => {
@@ -29,5 +33,9 @@ describe("the gam3eya", () => {
       { amount: 1000, direction: "outgoing" },
       { amount: 10000, direction: "incoming" },
     ])).toEqual({ paid: 2000, received: 10000, held: -8000, installments: 2 });
+  });
+  it("keeps piastres exact in the gam3eya's paid and held figures", async () => {
+    const { gam3eyaStanding } = await import("./debt-ledger");
+    expect(gam3eyaStanding([{ amount: 0.1, direction: "outgoing" }, { amount: 0.2, direction: "outgoing" }])).toMatchObject({ paid: 0.3, held: 0.3 });
   });
 });

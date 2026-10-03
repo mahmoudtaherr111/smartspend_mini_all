@@ -342,6 +342,7 @@ _None._
 | `coach.setReminder` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.setStepStatus` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.settle` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.unsettle` | useMutation | `src/pages/PlanPage.tsx` |
 | `expense.getMonthlyStats` | useQuery | `src/components/settings/BusinessSettingsView.tsx` |
 | `export.allUsers` | useMutation | `src/pages/Admin.tsx` |
 | `export.myExpenses` | useMutation | `src/components/expenses/ExportExpensesCard.tsx` |
@@ -363,7 +364,7 @@ _None._
 | `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/components/profile/SmartProfileView.tsx`, `src/pages/Settings.tsx` |
 | `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
-| `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx` |
+| `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx`, `src/pages/PlanPage.tsx` |
 | `profile.mergeContacts` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.updateContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
@@ -406,6 +407,8 @@ _None._
 | `coach.setReminder` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.setStepStatus` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.settle` | useMutation | `src/pages/PlanPage.tsx` |
+| `coach.unsettle` | useMutation | `src/pages/PlanPage.tsx` |
+| `profile.listContacts` | useQuery | `src/pages/PlanPage.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 
 ### `Privacy` — `src/pages/Privacy.tsx`

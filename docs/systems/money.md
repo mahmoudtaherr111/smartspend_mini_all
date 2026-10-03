@@ -127,7 +127,7 @@ spending, and delete. The assistant can also create them. The standing of each b
 `api/services/budget-status.ts#listBudgetStatuses` (expense rows only, in the budget's own cycle).
 
 ## ليك وعليك (who owes whom)
-`expense.getDebtBalances` reads every confirmed loan (transfer under تحويل/دين/سلفة with a direction) and nets it per
+`expense.getDebtBalances` reads every confirmed personal loan (transfer under تحويل/دين/سلفة with a direction) and nets it per
 person (`api/services/debt-ledger.ts`): money that went out (lent, or a debt repaid) raises what the person owes the
 user, money that came in lowers it. People are the loan's contact, else "من غير اسم"; settled people are left out.
 The statistics tab shows the open balances under the budgets (`src/components/debts/DebtsPanel.tsx`), with the totals
@@ -161,24 +161,42 @@ income, with a direction, an amount or none (unknown), a recurrence (once, weekl
 none (unknown), and a certainty (`confirmed`, or `estimated` for income that varies). An installment plan has at most
 one schedule (`scheduled_cashflows_plan_unique`), so the same installment is never a second commitment. It is a
 promise about the future, never a ledger row.
+Dates must be real calendar days, with an end on or after the start; invalid legacy anchors yield no occurrences
+instead of entering a recurrence loop. The page preserves piastres and accepts Arabic decimal/thousands separators.
+Debt commitments can carry an owned contact id, displayed with the current contact name. The form lets the user
+choose whether they will repay or receive a repayment, and which personal contact it concerns. The voice coach
+resolves the exact normalized name the user said; duplicate names require a choice, an unknown name remains
+explicitly unlinked, and no person or loan is created implicitly. Merging contacts moves both expenses and schedules
+to the primary contact; deleting one clears both links in the same transaction, leaving the commitment itself.
+For duplicate names the tool returns owned contact choices with their relationships; the coach asks the user to
+identify one before preparing a draft. An unknown person's name is retained in the commitment title.
 - **Due dates** (`api/services/coach/schedule.ts#dueDays`, pure, Cairo day keys): a monthly 31st falls on a short
   month's last day and comes back to the 31st; a yearly 29 February is the 28th in other years; no start day means no
   dated occurrence.
 - **Paid or not** (`occurrences`): `cashflow_settlements` links a payment to one due date, `linked` to a ledger row or
   `declared` when the user says it was paid off the records. `settle` checks, in one transaction with row locks, that
   the schedule and the expense are the user's (same id and type), that the day is one of the schedule's due dates,
-  that the expense is money going the right way (a refund or income never pays a rent), and that neither the due date
+  that the confirmed personal expense is money going the right way (a transfer needs explicit incoming/outgoing
+  metadata, and a refund or income never pays a rent), and that neither the due date
   nor the expense is allocated beyond its amount; a partial payment leaves the rest owed. A due date is `paid`,
   `partial`, `due`, `overdue`, or `unconfirmed`: the last due date before the schedule was added (within 45 days) is
   asked about, never owed or overdue, and earlier ones are not tracked. Deleting a paying expense, or editing it below
-  what it paid, releases its settlements inside the same transaction (`releaseSettlementsOf`,
+  what it paid, releases its settlements inside the same transaction. Edits that change the contact, kind, scope
+  or direction also release incompatible links (`releaseSettlementsOf`,
   `reconcileSettlementsOf`, called from `expense.delete`, `expense.update` and the action runtime's undo).
+  A debt repayment must be a loan transfer (`تحويل/دين/سلفة`) for the linked contact. An off-record declaration
+  changes only the due date's payment status, never the loan balance. Changing a schedule so an existing payment
+  no longer fits, reducing it below the paid amount, or moving a paid date is refused until its settlements are unlinked.
+  The allocated amounts are read with `FOR UPDATE` after taking the expense lock, so concurrent settlements for
+  different schedules cannot reuse the older transaction snapshot and allocate that payment twice.
 - **Free until payday** (`cashPosition`): the wallets as last entered, minus what is due and unpaid before the next
   payday (the profile's salary day, else the first of next month), with confirmed income added apart and estimated
   income apart again; unknown amounts, unconfirmed dates and undated commitments are listed, never subtracted. Decimal
   throughout.
-- **Suggestions** (`suggestPayments`): recorded payments within a week of a due date whose amount is what is owed or
-  whose words share one with the title, offered to the user; nothing is linked without their tap or consent.
+- **Suggestions** (`suggestPayments`): eligible payments within a week of a due date, using the amount still free
+  after all allocations. A linked contact must match; otherwise available amount or a title word suggests a match.
+  Fully allocated, unconfirmed, business and wrong-direction payments are excluded. Multiple schedules on the same
+  day are selected by schedule id; nothing is linked without the user's tap or consent.
 
 A coaching plan (`coaching_plans`, `coaching_steps`, `api/services/coach/plans.ts`) is what the user accepted with the
 coach: a title, a goal in their words, the figures it rests on (`evidence`), up to eight steps (a spending limit a day
@@ -194,7 +212,9 @@ due, never an amount.
 The page «خطتك والتزاماتك» (`/plan`, linked from the More page and from the reminder) shows what is free until payday
 with every unknown named, the active plan with its steps (done, skipped, back), a reminder per step (set on Cairo's
 clock, cancel), the due dates of 45 days either side with a payment to confirm from the suggestions or "paid off the
-records", and a form to add a commitment or expected income. The [voice call](voice-calls.md)'s coach reads the same
+records", and a form to add a commitment or expected income. A partial date shows the amount paid and remaining;
+paid dates can be opened to inspect and unlink each settlement (`coach.unsettle`), which never deletes or changes
+the ledger payment. `overview` includes settlement ids scoped to the same account and 90-day window. The [voice call](voice-calls.md)'s coach reads the same
 figures and saves plans, steps, reminders and commitments through the same services after the user's consent.
 
 ## Goals

@@ -126,7 +126,7 @@ possibly unrecorded rather than kept); its `change_draft` (`changeDraftCoachTool
 `reminder_set` (a future day and hour on Cairo's clock), `reminder_cancel`, `commitment_add` (no date unless the user
 gave one; money owed on a date, "لازم أرجع لخالد التمنمية يوم 15", is offered here as kind `debt`, once, rather
 than kept as a memory; an incomplete one is refused with the fields to send, one date with no repetition being
-`once`, so the model asks the user only what they never said), `commitment_paid`, and `bank_confirm` / `bank_dismiss` (a waiting bank message confirmed or dropped as it
+`once`, so the model asks the user only what they never said; contact linking uses `contact_id` or `contact_name` via `resolveCashflowContact`), `commitment_paid`, and `bank_confirm` / `bank_dismiss` (a waiting bank message confirmed or dropped as it
 is, through `profile.confirmSmsSuggestion` and `profile.dismissSmsSuggestion`; one already handled says so), and
 `budget_update` (a budget's new monthly limit, an amount the user said, or pausing and resuming it, through
 `budget.update`; `money_query budgets` gives each budget's id and lists paused ones apart; in a coach call a
@@ -479,8 +479,9 @@ Checked against the code; each one names where it lives.
    Keeping it alive needs native work in the Android and iOS shells.
 2. **Gap.** The speech detector's thresholds (`src/lib/voice/speech-detector.ts`) are tuned on synthetic audio in
    tests; they have not been checked against recordings of real users on phones in noisy places.
-3. **Gap.** Dated repayments can be saved as commitments, but the voice draft does not attach the debt contact id;
-   the debts ledger still has no due dates and aggregates multiple gam3eyas (`api/services/debt-ledger.ts`).
+3. **Gap.** Dated repayments can be saved as commitments linked to an owned contact by exact name/id; debt reads
+   expose contact ids, and unknown names stay explicitly unlinked. Due dates live in commitments, separately from
+   the loan ledger; off-record settlements never change a loan balance. The debts ledger aggregates multiple gam3eyas (`api/services/debt-ledger.ts`).
    Installment keyword matching remains an amount-based estimate (`api/services/installments.ts`); overlapping
    names are ambiguous, while linked progress counts fully paid due dates separately. Business reading and writing
    use an explicit scope and recheck the feature and ownership at confirmation; they are no longer a missing capability.

@@ -47,6 +47,7 @@ export interface BankSuggestion {
 export interface DebtStanding {
   people: Array<{
     name: string;
+    contactId?: number | null;
     balance: number;
     lent: number;
     received: number;

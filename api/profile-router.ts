@@ -14,6 +14,7 @@ import {
   inAppNotifications,
   pushSubscriptions,
   userContacts,
+  scheduledCashflows,
 } from "../db/schema";
 import { eq, and, gte, lte, desc, sql, isNotNull, like } from "drizzle-orm";
 
@@ -1138,6 +1139,10 @@ export const profileRouter = router({
             eq(expenses.userType, ctx.user.type),
           ));
 
+        await tx.update(scheduledCashflows).set({ contactId: null }).where(and(
+          eq(scheduledCashflows.contactId, input.id), eq(scheduledCashflows.userId, ctx.user.id as number), eq(scheduledCashflows.userType, ctx.user.type),
+        ));
+
         await tx
           .delete(userContacts)
           .where(and(
@@ -1238,6 +1243,10 @@ export const profileRouter = router({
             eq(expenses.userId, ctx.user.id as number),
             eq(expenses.userType, ctx.user.type),
           ));
+
+        await tx.update(scheduledCashflows).set({ contactId: primary.id }).where(and(
+          eq(scheduledCashflows.contactId, secondary.id), eq(scheduledCashflows.userId, ctx.user.id as number), eq(scheduledCashflows.userType, ctx.user.type),
+        ));
 
         const [canonicalCount] = await tx
           .select({ total: sql<number>`COUNT(*)` })

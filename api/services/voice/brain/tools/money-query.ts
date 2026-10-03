@@ -991,6 +991,7 @@ async function answer(
         extra: {
           people: people.map((person) => ({
             name: person.name,
+            contact_id: person.contactId ?? null,
             since: person.lastDate,
             moves: person.count,
           })),

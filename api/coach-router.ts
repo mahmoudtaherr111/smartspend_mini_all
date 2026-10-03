@@ -12,6 +12,7 @@ import {
   CASHFLOW_KINDS,
   createCashflow,
   listCashflows,
+  listSettlements,
   position,
   settle,
   suggestPayments,
@@ -19,10 +20,10 @@ import {
   updateCashflow,
   upcoming,
 } from "./services/coach/cashflows";
-import { addDays } from "./services/coach/schedule";
+import { addDays, isCalendarDay } from "./services/coach/schedule";
 import { activePlan, cancelReminder, endPlan, setReminder, setStepStatus } from "./services/coach/plans";
 
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "التاريخ لازم يكون بالشكل 2026-09-30");
+const day = z.string().refine(isCalendarDay, "اختار يوم موجود بالشكل 2026-09-30");
 const amount = z.number().positive().max(ExpenseInputLimits.amountMax);
 
 const cashflowFields = z.object({
@@ -44,13 +45,14 @@ export const coachRouter = router({
   overview: authedProcedure.query(async ({ ctx }) => {
     const user = me(ctx);
     const today = businessDateKey();
-    const [plan, due, cash, schedules] = await Promise.all([
+    const [plan, due, cash, schedules, settlements] = await Promise.all([
       activePlan(user),
       upcoming(user, addDays(today, -45), addDays(today, 45), today),
       position(user),
       listCashflows(user),
+      listSettlements(user, addDays(today, -45), addDays(today, 45)),
     ]);
-    return { today, plan, due, position: cash, schedules };
+    return { today, plan, due, position: cash, schedules, settlements };
   }),
 
   addCashflow: authedProcedure
@@ -81,8 +83,8 @@ export const coachRouter = router({
     .input(z.object({ cashflowId: z.number().int().positive(), dueDay: day }))
     .query(async ({ ctx, input }) => {
       const user = me(ctx);
-      const [occurrence] = await upcoming(user, input.dueDay, input.dueDay);
-      if (!occurrence || occurrence.cashflowId !== input.cashflowId) return [];
+      const occurrence = (await upcoming(user, input.dueDay, input.dueDay)).find((row) => row.cashflowId === input.cashflowId);
+      if (!occurrence || occurrence.status === "paid") return [];
       return suggestPayments(user, occurrence);
     }),
 

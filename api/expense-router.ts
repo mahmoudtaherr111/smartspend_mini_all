@@ -1303,9 +1303,7 @@ export const expenseRouter = router({
             ),
           );
 
-        if (updateData.amount !== undefined) {
-          await reconcileSettlementsOf(tx, { userId, userType }, input.id, updateData.amount);
-        }
+        await reconcileSettlementsOf(tx, { userId, userType }, input.id);
 
         const oldDelta = expenseToRollupDelta(originalExpense, -1);
         await applyExpenseRollupDelta(tx, oldDelta);

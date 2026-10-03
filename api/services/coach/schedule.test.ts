@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cashPosition, dueDays, nextPayday, occurrences, type ScheduleRow } from "./schedule";
+import { cashPosition, dueDays, isCalendarDay, nextPayday, occurrences, type ScheduleRow } from "./schedule";
 
 const row = (over: Partial<ScheduleRow>): ScheduleRow => ({
   id: 1, kind: "rent", direction: "out", title: "إيجار", amount: "4000.00", recurrence: "monthly",
@@ -7,6 +7,13 @@ const row = (over: Partial<ScheduleRow>): ScheduleRow => ({
 });
 
 describe("dueDays", () => {
+  it("rejects impossible days and legacy malformed anchors without normalizing them to another month", () => {
+    expect(isCalendarDay("2028-02-29")).toBe(true);
+    for (const bad of ["2026-02-29", "2026-02-30", "2026-13-01", "2026-00-01", "bad", "2026-1-01"]) {
+      expect(isCalendarDay(bad)).toBe(false);
+      expect(dueDays(row({ startDay: bad }), "2026-01-01", "2026-12-31")).toEqual([]);
+    }
+  });
   it("puts a monthly 31st on the last day of short months and back on the 31st after", () => {
     expect(dueDays(row({}), "2026-01-01", "2026-05-31")).toEqual(["2026-01-31", "2026-02-28", "2026-03-31", "2026-04-30", "2026-05-31"]);
     expect(dueDays(row({ startDay: "2027-12-31" }), "2028-02-01", "2028-02-29")).toEqual(["2028-02-29"]);

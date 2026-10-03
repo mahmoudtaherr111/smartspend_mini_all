@@ -5,7 +5,8 @@
  * that came in (borrowed, or a loan repaid to the user) lowers it. The balance per person is
  * outgoing minus incoming: positive means they owe the user, negative that the user owes them.
  */
-import { and, eq } from "drizzle-orm";
+import Decimal from "decimal.js";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../queries/connection";
 import { expenses, userContacts } from "../../db/schema";
 
@@ -25,19 +26,19 @@ export interface Gam3eyaStanding {
 
 /** Pure: what a user put into their gam3eya and what they took out, from its transfers. */
 export function gam3eyaStanding(rows: Array<{ amount: string | number; direction: string | null }>): Gam3eyaStanding {
-  let paid = 0;
-  let received = 0;
+  let paid = new Decimal(0);
+  let received = new Decimal(0);
   let installments = 0;
   for (const row of rows) {
     const amount = Math.abs(Number(row.amount)) || 0;
     if (row.direction === "outgoing") {
-      paid += amount;
+      paid = paid.plus(amount);
       installments += 1;
     } else if (row.direction === "incoming") {
-      received += amount;
+      received = received.plus(amount);
     }
   }
-  return { paid, received, held: Math.round((paid - received) * 100) / 100, installments };
+  return { paid: paid.toNumber(), received: received.toNumber(), held: paid.minus(received).toDecimalPlaces(2).toNumber(), installments };
 }
 
 /** The user's gam3eya standing across all its recorded payments and payouts. */
@@ -49,6 +50,7 @@ export async function getGam3eyaStanding(userId: number, userType: string): Prom
       and(
         eq(expenses.userId, userId),
         eq(expenses.userType, userType),
+        isNull(expenses.businessId),
         eq(expenses.type, "transfer"),
         eq(expenses.category, LOAN_CATEGORY),
         eq(expenses.subCategory, GAM3EYA_SUBCATEGORY),
@@ -103,9 +105,9 @@ export function debtBalances(rows: LoanRow[]): DebtBalance[] {
       lastDate: row.date,
       count: 0,
     };
-    if (direction === "outgoing") entry.lent += amount;
-    else entry.received += amount;
-    entry.balance = Math.round((entry.lent - entry.received) * 100) / 100;
+    if (direction === "outgoing") entry.lent = new Decimal(entry.lent).plus(amount).toNumber();
+    else entry.received = new Decimal(entry.received).plus(amount).toNumber();
+    entry.balance = new Decimal(entry.lent).minus(entry.received).toDecimalPlaces(2).toNumber();
     if (row.date > entry.lastDate) entry.lastDate = row.date;
     entry.count += 1;
     byPerson.set(key, entry);
@@ -139,6 +141,7 @@ export async function listDebtBalances(userId: number, userType: string): Promis
       and(
         eq(expenses.userId, userId),
         eq(expenses.userType, userType),
+        isNull(expenses.businessId),
         eq(expenses.type, "transfer"),
         eq(expenses.category, LOAN_CATEGORY),
         eq(expenses.subCategory, LOAN_SUBCATEGORY),

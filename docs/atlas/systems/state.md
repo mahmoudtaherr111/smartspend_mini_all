@@ -11,14 +11,14 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (29 of
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-01 85479c6 | 2026-10-01 85479c6 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-29 fa056d1 | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-02 3dda3cd | 2026-10-02 3dda3cd | 10 | — | — | 4 | 2 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-02 e851624 | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-03 e851624 | 2026-10-03 e851624 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-01 1d4bf03 | 2026-10-01 1d4bf03 | 4 | — | 4 | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-29 6e973a3 | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 6 | — | 3 | 7 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 14 | **2** | 1 | 4 | — |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-02 e851624 | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-02 e851624 | 2026-10-02 e851624 | 6 | — | 3 | 7 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-02 e851624 | 2026-10-01 b5d9955 | 14 | **2** | 1 | 4 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-28 af819ef | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-29 dfd750a | 2026-09-29 dfd750a | 1 | **1** | 5 | 1 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-02 e851624 | 2026-09-29 dfd750a | 1 | **1** | 5 | 1 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 8 | — | — | 3 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 5 | — | — | — | 7 |
@@ -103,7 +103,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A call does not go on with the screen locked or the app in the background: the page keeps the microphone only in the foreground, and the call resumes if the app comes back within the hold (`src/lib/voice/call-connection.ts`). Keeping it alive needs native work in the Android and iOS shells.
 - The speech detector's thresholds (`src/lib/voice/speech-detector.ts`) are tuned on synthetic audio in tests; they have not been checked against recordings of real users on phones in noisy places.
-- Dated repayments can be saved as commitments, but the voice draft does not attach the debt contact id; the debts ledger still has no due dates and aggregates multiple gam3eyas (`api/services/debt-ledger.ts`). Installment keyword matching remains an amount-based estimate (`api/services/installments.ts`); overlapping names are ambiguous, while linked progress counts fully paid due dates separately. Business reading and writing use an explicit scope and recheck the feature and ownership at confirmation; they are no longer a missing capability.
+- Dated repayments can be saved as commitments linked to an owned contact by exact name/id; debt reads expose contact ids, and unknown names stay explicitly unlinked. Due dates live in commitments, separately from the loan ledger; off-record settlements never change a loan balance. The debts ledger aggregates multiple gam3eyas (`api/services/debt-ledger.ts`). Installment keyword matching remains an amount-based estimate (`api/services/installments.ts`); overlapping names are ambiguous, while linked progress counts fully paid due dates separately. Business reading and writing use an explicit scope and recheck the feature and ownership at confirmation; they are no longer a missing capability.
 - The opening context (CALL FACTS) cannot be changed during a session: after the records change the model is told, and a stale figure said is recorded, but not stopped (`api/services/voice/brain/validator.ts`).
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)

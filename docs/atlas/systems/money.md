@@ -68,7 +68,9 @@ flowchart LR
   job_coaching_reminders --> mod_coaching
   job_nightly_rollup_reconciliation --> sys_platform
   job_taxonomy_migration --> sys_platform
+  mod_coaching --> mod_ledger
   mod_coaching --> sys_ai_center
+  mod_coaching --> sys_expense_capture
   mod_coaching --> sys_platform
   mod_coaching -.-> tbl_expenses
   mod_coaching -.-> tbl_installment_plans
@@ -92,6 +94,7 @@ flowchart LR
   page_Home --> router_expense
   page_Home --> router_goals
   page_PlanPage --> router_coach
+  page_PlanPage --> router_profile
   router_budget --> mod_ledger
   router_budget --> sys_accounts
   router_budget --> sys_ai_center
@@ -139,6 +142,7 @@ flowchart LR
   router_profile --> sys_ai_center
   router_profile --> sys_expense_capture
   router_profile ==> tbl_expenses
+  router_profile ==> tbl_scheduled_cashflows
   router_profile ==> tbl_user_contacts
   router_profile ==> tbl_user_profiles
   router_wallet --> sys_ai_center
@@ -192,7 +196,7 @@ flowchart LR
 | `coach.setReminder` | mutation | `authedProcedure` | — | — | `More`, `PlanPage` |
 | `coach.setStepStatus` | mutation | `authedProcedure` | — | — | `More`, `PlanPage` |
 | `coach.settle` | mutation | `authedProcedure` | — | — | `More`, `PlanPage` |
-| `coach.unsettle` | mutation | `authedProcedure` | — | — | — |
+| `coach.unsettle` | mutation | `authedProcedure` | — | — | `More`, `PlanPage` |
 | `coach.updateCashflow` | mutation | `authedProcedure` | — | — | — |
 | `expense.createInstallmentPlan` | mutation | `authedProcedure` | — | `installment_plans` | `Home` |
 | `expense.delete` | mutation | `authedProcedure` | `expenses` | `expenses`, `user_contacts` | `Home` |
@@ -215,9 +219,9 @@ flowchart LR
 | `goals.list` | query | `authedProcedure` | `financial_goals` | — | `Home`, `More`, `Settings` |
 | `goals.setStatus` | mutation | `authedProcedure` | — | `financial_goals` | `More`, `Settings` |
 | `profile.addContact` | mutation | `authedProcedure` | `user_contacts` | `user_contacts` | `More`, `Settings` |
-| `profile.deleteContact` | mutation | `authedProcedure` | `user_contacts`, `user_profiles` | `expenses`, `user_contacts`, `user_profiles` | `More`, `Settings` |
-| `profile.listContacts` | query | `authedProcedure` | `expenses`, `user_contacts` | — | `More`, `Settings` |
-| `profile.mergeContacts` | mutation | `authedProcedure` | `expenses`, `user_contacts`, `user_profiles` | `expenses`, `user_contacts`, `user_profiles` | `More`, `Settings` |
+| `profile.deleteContact` | mutation | `authedProcedure` | `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `More`, `Settings` |
+| `profile.listContacts` | query | `authedProcedure` | `expenses`, `user_contacts` | — | `More`, `PlanPage`, `Settings` |
+| `profile.mergeContacts` | mutation | `authedProcedure` | `expenses`, `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `More`, `Settings` |
 | `profile.updateContact` | mutation | `authedProcedure` | `user_contacts` | `user_contacts` | `More`, `Settings` |
 | `wallet.createWallet` | mutation | `authedProcedure` | — | `user_wallets` | `BankSyncPage`, `More` |
 | `wallet.deleteWallet` | mutation | `authedProcedure` | — | `expenses`, `user_wallets` | `BankSyncPage`, `More` |
@@ -250,7 +254,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `in_app_notifications` | D | `coaching` | — |
 | `installment_plans` | C | `expense.createInstallmentPlan`, `expense.deleteInstallmentPlan` | `coaching`, `expense.listInstallmentPlans` |
 | `local_users` | A | `goals.analyze` | — |
-| `scheduled_cashflows` | C | `coaching` | `coaching`, `expense.listInstallmentPlans` |
+| `scheduled_cashflows` | C | `coaching`, `profile.deleteContact`, `profile.mergeContacts` | `coaching`, `expense.listInstallmentPlans` |
 | `user_budgets` | C | `budget.create`, `budget.delete`, `budget.update`, `goals.delete`, `ledger` | `budget.delete`, `budget.update`, `ledger` |
 | `user_businesses` | A | `business.create`, `business.delete`, `business.update` | `business.addCategory`, `business.create`, `business.delete`, `business.get`, `business.linkContact`, `business.removeCategory`, `business.update`, `business.updateCategory` |
 | `user_contacts` | A | `business.delete`, `business.linkContact`, `expense.delete`, `profile.addContact`, `profile.deleteContact`, `profile.mergeContacts`, `profile.updateContact` | `business.get`, `business.linkContact`, `coaching`, `ledger`, `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` |

@@ -145,7 +145,6 @@ flowchart LR
   mod_api_routers -.-> tbl_expense_daily_rollups
   mod_api_routers -.-> tbl_notification_logs
   mod_api_routers -.-> tbl_onboarding_questions
-  mod_api_routers -.-> tbl_scheduled_cashflows
   mod_api_routers -.-> tbl_sessions
   mod_api_routers -.-> tbl_voice_calls
   mod_api_routers ==> tbl_ad_clicks
@@ -175,6 +174,7 @@ flowchart LR
   mod_api_routers ==> tbl_push_subscriptions
   mod_api_routers ==> tbl_raw_sms_events
   mod_api_routers ==> tbl_referrals
+  mod_api_routers ==> tbl_scheduled_cashflows
   mod_api_routers ==> tbl_seo_pages
   mod_api_routers ==> tbl_support_tickets
   mod_api_routers ==> tbl_system_settings
@@ -306,7 +306,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `push_subscriptions` | A | `api-routers` | `api-routers` |
 | `raw_sms_events` | E | `api-routers`, `jobs` | `api-routers` |
 | `referrals` | A | `api-routers` | `api-routers` |
-| `scheduled_cashflows` | C | — | `api-routers` |
+| `scheduled_cashflows` | C | `api-routers` | `api-routers` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
 | `sessions` | D | — | `api-routers` |
 | `support_tickets` | A | `api-routers` | `api-routers` |

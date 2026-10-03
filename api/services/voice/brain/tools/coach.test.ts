@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const calls = vi.hoisted(() => ({ accepted: [] as unknown[], reminders: [] as unknown[], settled: [] as unknown[], cashflows: [] as unknown[] }));
+const calls = vi.hoisted(() => ({ accepted: [] as unknown[], reminders: [] as unknown[], settled: [] as unknown[], cashflows: [] as unknown[], resolveContact: vi.fn() }));
 vi.mock("../../../coach/cashflows", () => ({
   CASHFLOW_KINDS: ["rent", "bill", "subscription", "school", "installment", "debt", "gam3eya", "salary", "freelance", "other"],
   position: vi.fn(async () => ({
@@ -13,6 +13,7 @@ vi.mock("../../../coach/cashflows", () => ({
   })),
   createCashflow: vi.fn(async (_user, input) => { calls.cashflows.push(input); return { id: 5 }; }),
   settle: vi.fn(async (_user, input) => { calls.settled.push(input); return { id: 1, amount: 350 }; }),
+  resolveCashflowContact: calls.resolveContact,
 }));
 vi.mock("../../../coach/plans", () => ({
   STEP_KINDS: ["spending_limit", "save", "pay", "record", "review", "other"],
@@ -54,6 +55,7 @@ beforeEach(() => {
   calls.reminders = [];
   calls.settled = [];
   calls.cashflows = [];
+  calls.resolveContact.mockReset().mockResolvedValue({ contact: null });
   clock.now = new Date("2026-09-15T10:00:00Z").getTime();
   ctx = {
     identity: { callId: "vc_coachtool0000", userId: 7, userType: "local", plan: "pro", role: "user" },
@@ -95,6 +97,56 @@ describe("the coach's follow-up reads", () => {
 });
 
 describe("the coach's drafts", () => {
+  it("refuses impossible or reversed commitment dates before they reach a preview", async () => {
+    ctx.ledger.noteUserValue(800);
+    const fields = { kind: "debt", title: "خالد", amount: 800, recurrence: "once" };
+    for (const dates of [{ start_day: "2026-02-30" }, { start_day: "2026-11-15", end_day: "2026-11-14" }]) {
+      expect((await changeDraftCoachTool.run({ action: "commitment_add", fields: { ...fields, ...dates } }, ctx)).response.ok).toBe(false);
+    }
+    expect(ctx.drafts.latestPending()).toBeUndefined();
+  });
+  it("reads the owned contact before a debt preview and saves the link only after consent", async () => {
+    calls.resolveContact.mockResolvedValue({ contact: { id: 41, name: "خالد" } });
+    ctx.ledger.noteUserValue(800);
+    const draft = await changeDraftCoachTool.run({ action: "commitment_add", fields: {
+      kind: "debt", direction: "out", title: "رد السلفة", contact_name: "خالد", contact_id: 41, amount: 800, recurrence: "once", start_day: "2026-10-15",
+    } }, ctx);
+    expect(calls.resolveContact).toHaveBeenCalledWith({ userId: 7, userType: "local" }, { id: 41, name: "خالد" });
+    expect(draft.card).toMatchObject({ items: [{ detail: "من 2026-10-15، الشخص: خالد" }] });
+    expect(calls.cashflows).toEqual([]);
+    ctx.drafts.heardAssistant(); clock.now += 1_000; ctx.drafts.heardUser("آه احفظها");
+    await confirmTool.run({ draft_id: draft.response.draft_id }, ctx);
+    expect(calls.cashflows).toEqual([expect.objectContaining({ contactId: 41, direction: "out", amount: 800 })]);
+  });
+
+  it("refuses an ambiguous contact and describes an unknown one as unlinked, never creates a person", async () => {
+    ctx.ledger.noteUserValue(800);
+    const fields = { kind: "debt", title: "خالد", contact_name: "خالد", amount: 800, recurrence: "once" };
+    calls.resolveContact.mockResolvedValue({ error: "الاسم ده متسجل أكتر من مرة.", choices: [{ contact_id: 41, name: "خالد", relation: "صديق" }, { contact_id: 42, name: "خالد", relation: "أخ" }] });
+    const ambiguous = await changeDraftCoachTool.run({ action: "commitment_add", fields }, ctx);
+    expect(ambiguous.response).toMatchObject({ ok: false, say: expect.stringContaining("أكتر من مرة") });
+    expect(ambiguous.response.choices).toEqual([{ contact_id: 41, name: "خالد", relation: "صديق" }, { contact_id: 42, name: "خالد", relation: "أخ" }]);
+    expect(ctx.drafts.latestPending()).toBeUndefined();
+    calls.resolveContact.mockResolvedValue({ contact: null });
+    const unknown = await changeDraftCoachTool.run({ action: "commitment_add", fields }, ctx);
+    expect(unknown.card).toMatchObject({ items: [{ detail: expect.stringContaining("مش مرتبط بجهة اتصال متسجلة") }] });
+    expect(calls.cashflows).toEqual([]);
+    const named = await changeDraftCoachTool.run({ action: "commitment_add", fields: { ...fields, title: "رد السلفة" } }, ctx);
+    expect(named.card).toMatchObject({ title: "التزام: رد السلفة (خالد)" });
+    expect(ctx.drafts.latestPending()?.payload).toMatchObject({ cashflow: { title: "رد السلفة (خالد)", contactId: null } });
+  });
+
+  it("does not turn a missing or malformed contact id into a guessed person", async () => {
+    ctx.ledger.noteUserValue(800);
+    const fields = { kind: "debt", title: "خالد", amount: 800, recurrence: "once" };
+    for (const id of [0, -1, 1.5, "bad"]) {
+      expect((await changeDraftCoachTool.run({ action: "commitment_add", fields: { ...fields, contact_id: id } }, ctx)).response.ok).toBe(false);
+    }
+    expect(calls.resolveContact).not.toHaveBeenCalled();
+    calls.resolveContact.mockResolvedValue({ error: "الشخص ده مش موجود بالاسم والرقم دول" });
+    expect((await changeDraftCoachTool.run({ action: "commitment_add", fields: { ...fields, contact_id: 88 } }, ctx)).response.ok).toBe(false);
+    expect(ctx.drafts.latestPending()).toBeUndefined();
+  });
   it("saves an agreed plan only with amounts the call computed or heard, after the user's yes", async () => {
     const refused = await changeDraftCoachTool.run({ action: "plan_save", fields: { title: "لحد القبض", steps: [{ title: "الأكل", kind: "spending_limit", amount_per_day: 180 }] } }, ctx);
     expect(refused.response).toMatchObject({ ok: false, say: expect.stringContaining("مش من الحسبة") });

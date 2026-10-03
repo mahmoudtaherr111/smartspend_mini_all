@@ -34,6 +34,8 @@ export interface ScheduleRow {
    * whatever the start day says. Null: tracked from the start day.
    */
   trackedFrom?: string | null;
+  contactId?: number | null;
+  contactName?: string | null;
 }
 
 export interface SettlementRow {
@@ -47,6 +49,8 @@ export type DueStatus = "paid" | "partial" | "due" | "overdue" | "unconfirmed";
 
 export interface Occurrence {
   cashflowId: number;
+  contactId?: number | null;
+  contactName?: string | null;
   title: string;
   kind: string;
   direction: "in" | "out";
@@ -60,6 +64,14 @@ export interface Occurrence {
 }
 
 const DAY_MS = 86_400_000;
+
+/** Real calendar days only; a malformed stored anchor must never enter a recurrence loop. */
+export function isCalendarDay(day: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  const [y, m, d] = day.split("-").map(Number);
+  const instant = new Date(Date.UTC(y, m - 1, d));
+  return y >= 1000 && instant.getUTCFullYear() === y && instant.getUTCMonth() + 1 === m && instant.getUTCDate() === d;
+}
 
 function parts(day: string): [number, number, number] {
   const [y, m, d] = day.split("-").map(Number);
@@ -102,7 +114,7 @@ function yearlyDue(anchor: string, index: number): string {
 
 /** Every due day of a schedule in [from, to], both included. */
 export function dueDays(row: Pick<ScheduleRow, "recurrence" | "startDay" | "endDay">, from: string, to: string): string[] {
-  if (!row.startDay || to < from) return [];
+  if (!row.startDay || !isCalendarDay(row.startDay) || !isCalendarDay(from) || !isCalendarDay(to) || (row.endDay && !isCalendarDay(row.endDay)) || to < from) return [];
   const last = row.endDay && row.endDay < to ? row.endDay : to;
   const out: string[] = [];
   const push = (day: string) => {
@@ -176,6 +188,8 @@ export function occurrences(
         : settled ? "paid" : paid.gt(0) ? "partial" : dueDay < today ? "overdue" : "due";
       out.push({
         cashflowId: row.id,
+        contactId: row.contactId ?? null,
+        contactName: row.contactName ?? null,
         title: row.title,
         kind: row.kind,
         direction: row.direction,

@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/providers/trpc";
 
-const egp = (value: number) => `${Math.round(value).toLocaleString("ar-EG")} ج`;
+const egp = (value: number) => `${value.toLocaleString("ar-EG", { maximumFractionDigits: 2 })} ج`;
 
 const STATUS: Record<string, { label: string; tone: string }> = {
   paid: { label: "اتدفع", tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" },
@@ -187,11 +187,15 @@ function PlanCard({ plan }: { plan: NonNullable<NonNullable<ReturnType<typeof us
   );
 }
 
-function DueList({ due }: { due: NonNullable<ReturnType<typeof useOverview>["data"]>["due"] }) {
+function DueList({ due, settlements }: Pick<NonNullable<ReturnType<typeof useOverview>["data"]>, "due" | "settlements">) {
   const utils = trpc.useUtils();
   const [open, setOpen] = useState<string | null>(null);
   const settle = trpc.coach.settle.useMutation({
     onSuccess: () => { toast.success("اتسجل إنه اتدفع."); setOpen(null); void utils.coach.overview.invalidate(); },
+    onError: (error) => toast.error(error.message),
+  });
+  const unsettle = trpc.coach.unsettle.useMutation({
+    onSuccess: () => { toast.success("اتفكّ ربط السداد؛ العملية نفسها موجودة زي ما هي."); void utils.coach.overview.invalidate(); },
     onError: (error) => toast.error(error.message),
   });
   const openItem = useMemo(() => due.find((o) => `${o.cashflowId}:${o.dueDay}` === open) ?? null, [due, open]);
@@ -211,31 +215,39 @@ function DueList({ due }: { due: NonNullable<ReturnType<typeof useOverview>["dat
               <div className="min-w-0">
                 <div className="truncate font-medium">{o.direction === "in" ? "جاي: " : ""}{o.title}</div>
                 <div className="text-xs text-muted-foreground">{o.dueDay}{o.amount !== null ? ` · ${egp(o.amount)}` : " · المبلغ مش معروف"}{o.certainty === "estimated" ? " · تقديري" : ""}</div>
+                {o.contactName && <div className="text-xs text-muted-foreground">الشخص: {o.contactName}</div>}
+                {o.status === "partial" && <div className="text-xs text-muted-foreground">اتدفع {egp(o.paid)}{o.remaining !== null ? ` · فاضل ${egp(o.remaining)}` : ""}</div>}
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Badge className={status.tone} variant="secondary">{status.label}</Badge>
-                {o.status !== "paid" && (
-                  <Button size="sm" variant="outline" onClick={() => setOpen(open === key ? null : key)}>اتدفع؟</Button>
-                )}
+                <Button size="sm" variant="outline" onClick={() => setOpen(open === key ? null : key)}>{o.status === "paid" ? "راجع السداد" : "اتدفع؟"}</Button>
               </div>
             </div>
             {open === key && (
               <div className="mt-3 space-y-2 border-t pt-3 text-xs">
-                {suggestions.data?.length ? (
+                {settlements.filter((s) => s.cashflowId === o.cashflowId && s.dueDay === o.dueDay).map((s) => (
+                  <div key={s.id} className="flex flex-wrap items-center gap-2">
+                    <span>{s.expenseId === null ? "سداد من غير عملية متسجلة" : "سداد مربوط بعملية"} · {egp(Number(s.amount))}</span>
+                    <Button size="sm" variant="outline" disabled={unsettle.isPending} onClick={() => unsettle.mutate({ settlementId: s.id })}>فكّ ربط السداد</Button>
+                  </div>
+                ))}
+                {o.status !== "paid" && (suggestions.isLoading ? <div className="text-muted-foreground">بيجيب العمليات القريبة…</div> : suggestions.error ? <div className="text-red-600">مش قادرين نجيب اقتراحات السداد دلوقتي. جرّب تاني.</div> : suggestions.data?.length ? (
                   <>
                     <div className="text-muted-foreground">عمليات قريبة ممكن تكون هي (اختار واحدة):</div>
                     {suggestions.data.map((s) => (
-                      <Button key={s.id} size="sm" variant="secondary" className="me-2" onClick={() => settle.mutate({ cashflowId: o.cashflowId, dueDay: o.dueDay, expenseId: s.id })}>
-                        {s.description || s.category} · {egp(s.amount)}
+                      <Button key={s.id} size="sm" variant="secondary" className="me-2" disabled={settle.isPending} onClick={() => settle.mutate({ cashflowId: o.cashflowId, dueDay: o.dueDay, expenseId: s.id })}>
+                        {s.description || s.category} · المتاح {egp(s.available)}
                       </Button>
                     ))}
                   </>
                 ) : (
                   <div className="text-muted-foreground">مالقيناش عملية متسجلة شبهه.</div>
-                )}
-                <Button size="sm" variant="ghost" onClick={() => settle.mutate({ cashflowId: o.cashflowId, dueDay: o.dueDay, expenseId: null, amount: o.remaining ?? undefined })} disabled={o.remaining === null}>
+                ))}
+                {o.status !== "paid" && <Button size="sm" variant="ghost" onClick={() => settle.mutate({ cashflowId: o.cashflowId, dueDay: o.dueDay, expenseId: null, amount: o.remaining ?? undefined })} disabled={o.remaining === null || settle.isPending}>
                   دفعته من غير ما أسجله
-                </Button>
+                </Button>}
+                <p className="text-muted-foreground">فكّ الربط بيرجع الميعاد غير مدفوع، وبيسيب العملية المتسجلة زي ما هي.</p>
+                {o.kind === "debt" && <p className="text-muted-foreground">ده يعلّم الميعاد إنه اتدفع بس. رصيد الدين بيتغيّر لما تسجّل السداد في عملياتك.</p>}
               </div>
             )}
           </li>
@@ -254,11 +266,14 @@ function AddCommitment() {
   const [recurrence, setRecurrence] = useState("monthly");
   const [startDay, setStartDay] = useState("");
   const [estimated, setEstimated] = useState(false);
+  const [contactId, setContactId] = useState("none");
+  const [debtDirection, setDebtDirection] = useState<"in" | "out">("out");
+  const contacts = trpc.profile.listContacts.useQuery({ filter: "personal" }, { enabled: open && kind === "debt" });
   const add = trpc.coach.addCashflow.useMutation({
-    onSuccess: () => { toast.success("اتضاف."); setOpen(false); setTitle(""); setAmount(""); setStartDay(""); void utils.coach.overview.invalidate(); },
+    onSuccess: () => { toast.success("اتضاف."); setOpen(false); setTitle(""); setAmount(""); setStartDay(""); setContactId("none"); void utils.coach.overview.invalidate(); },
     onError: (error) => toast.error(error.message),
   });
-  const direction = KINDS.find((k) => k.id === kind)?.direction ?? "out";
+  const direction = kind === "debt" ? debtDirection : KINDS.find((k) => k.id === kind)?.direction ?? "out";
   if (!open) return <Button variant="outline" onClick={() => setOpen(true)}><Plus className="me-1 h-4 w-4" />ضيف التزام أو دخل جاي</Button>;
   return (
     <Card>
@@ -273,6 +288,26 @@ function AddCommitment() {
             <SelectContent>{RECURRENCE.map((r) => <SelectItem key={r.id} value={r.id}>{r.label}</SelectItem>)}</SelectContent>
           </Select>
         </div>
+        {kind === "debt" && (
+          <>
+            <Select value={debtDirection} onValueChange={(value) => setDebtDirection(value as "in" | "out")}>
+              <SelectTrigger aria-label="اتجاه رد الدين"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="out">أنا هردّ الفلوس</SelectItem>
+                <SelectItem value="in">هترجعلي الفلوس</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={contactId} onValueChange={setContactId}>
+              <SelectTrigger aria-label="صاحب الدين"><SelectValue placeholder="اختار الشخص" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">من غير ربط بشخص</SelectItem>
+                {contacts.data?.contacts.map((contact) => <SelectItem key={contact.id} value={String(contact.id)}>{contact.name}{contact.relation ? ` (${contact.relation})` : ""}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {contacts.error && <p className="text-xs text-red-600">مش قادرين نجيب الأشخاص دلوقتي. جرّب تاني.</p>}
+            <p className="text-xs text-muted-foreground">ده ميعاد ردّ الدين بس، مش تسجيل سلفة جديدة أو سداد.</p>
+          </>
+        )}
         <Input placeholder="الاسم (إيجار الشقة، قسط الموبايل…)" value={title} onChange={(e) => setTitle(e.target.value)} />
         <Input inputMode="decimal" placeholder="المبلغ (سيبه فاضي لو مش عارفه)" value={amount} onChange={(e) => setAmount(e.target.value)} />
         <label className="block text-xs text-muted-foreground">
@@ -292,10 +327,11 @@ function AddCommitment() {
               kind: kind as never,
               direction,
               title: title.trim(),
-              amount: amount.trim() ? Number(amount.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/[,،\s]/g, "")) : null,
+              amount: amount.trim() ? Number(amount.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/٫/g, ".").replace(/[,،٬\s]/g, "")) : null,
               recurrence: recurrence as never,
               startDay: startDay || null,
-              certainty: estimated ? "estimated" : "confirmed",
+              certainty: direction === "in" && estimated ? "estimated" : "confirmed",
+              contactId: kind === "debt" && contactId !== "none" ? Number(contactId) : null,
             })}
           >
             احفظ
@@ -332,7 +368,7 @@ export default function PlanPage() {
           )}
           <section className="space-y-2">
             <h2 className="text-sm font-bold">المواعيد</h2>
-            <DueList due={data.due} />
+            <DueList due={data.due} settlements={data.settlements ?? []} />
           </section>
           <AddCommitment />
         </>

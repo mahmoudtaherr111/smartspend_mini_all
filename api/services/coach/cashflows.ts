@@ -9,9 +9,11 @@ import Decimal from "decimal.js";
 import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { cashflowSettlements, expenses, installmentPlans, scheduledCashflows, userContacts, userWallets } from "../../../db/schema";
 import { businessDateKey, startOfBusinessDay } from "../../lib/app-time";
+import { normalizeArabic } from "../../lib/unified-normalizer";
 import { db } from "../../queries/connection";
+import { LOAN_CATEGORY, LOAN_SUBCATEGORY } from "../debt-ledger";
 import { getProfileSnapshot } from "../finance-semantic-layer";
-import { addDays, cashPosition, dueDays, occurrences, type CashPosition, type Occurrence, type ScheduleRow } from "./schedule";
+import { addDays, cashPosition, dueDays, isCalendarDay, occurrences, type CashPosition, type Occurrence, type ScheduleRow } from "./schedule";
 
 export interface CoachUser {
   userId: number;
@@ -37,7 +39,7 @@ export interface CashflowInput {
 
 const scope = (user: CoachUser) => and(eq(scheduledCashflows.userId, user.userId), eq(scheduledCashflows.userType, user.userType));
 
-function toScheduleRow(row: typeof scheduledCashflows.$inferSelect): ScheduleRow {
+function toScheduleRow(row: typeof scheduledCashflows.$inferSelect, contactName: string | null = null): ScheduleRow {
   return {
     id: row.id,
     kind: row.kind,
@@ -50,13 +52,46 @@ function toScheduleRow(row: typeof scheduledCashflows.$inferSelect): ScheduleRow
     certainty: row.certainty === "estimated" ? "estimated" : "confirmed",
     status: row.status,
     trackedFrom: businessDateKey(row.createdAt),
+    contactId: row.contactId,
+    contactName,
   };
 }
 
 export async function listCashflows(user: CoachUser): Promise<ScheduleRow[]> {
-  const rows = await db.select().from(scheduledCashflows).where(and(scope(user), inArray(scheduledCashflows.status, ["active", "paused"])))
+  const rows = await db.select({ schedule: scheduledCashflows, contactName: userContacts.name }).from(scheduledCashflows)
+    .leftJoin(userContacts, and(eq(userContacts.id, scheduledCashflows.contactId), eq(userContacts.userId, user.userId), eq(userContacts.userType, user.userType)))
+    .where(and(scope(user), inArray(scheduledCashflows.status, ["active", "paused"])))
     .orderBy(desc(scheduledCashflows.createdAt)).limit(200);
-  return rows.map(toScheduleRow);
+  return rows.map((row) => toScheduleRow(row.schedule, row.contactName));
+}
+
+/** Exact normalized names only: overlapping or duplicate names need the user's choice, never a fuzzy guess. */
+export async function resolveCashflowContact(user: CoachUser, input: { id?: number; name?: string }) {
+  const key = (name: string) => normalizeArabic(name).toLocaleLowerCase().replace(/\s+/g, " ");
+  const rows = await db.select({ id: userContacts.id, name: userContacts.name, relation: userContacts.relation }).from(userContacts).where(and(
+    eq(userContacts.userId, user.userId), eq(userContacts.userType, user.userType),
+    ...(input.id !== undefined ? [eq(userContacts.id, input.id)] : []),
+  ));
+  const matches = input.name ? rows.filter((row) => key(row.name) === key(input.name!)) : rows;
+  if (matches.length > 1) return { error: "الاسم ده متسجل أكتر من مرة. اسأل مين المقصود من الاختيارات، من غير تخمين ولا قراءة أرقام الأشخاص.", choices: matches.slice(0, 10).map((row) => ({ contact_id: row.id, name: row.name, relation: row.relation })) };
+  if (!matches.length) return input.id !== undefined
+    ? { error: "الشخص ده مش موجود بالاسم والرقم دول في جهات اتصالك. راجع الشخص قبل المسودة." }
+    : { contact: null };
+  return { contact: matches[0] };
+}
+
+type Payment = Pick<typeof expenses.$inferSelect, "amount" | "type" | "category" | "subCategory" | "contactId" | "businessId" | "status" | "parsedMetadata">;
+type Payable = Pick<ScheduleRow, "kind" | "direction" | "contactId">;
+
+/** Used by suggestions, confirmation and edits: a transfer's direction is never inferred from its positive size. */
+export function canPayCashflow(schedule: Payable, payment: Payment): boolean {
+  if (payment.status !== "confirmed" || payment.businessId !== null || new Decimal(payment.amount).lte(0)) return false;
+  const direction = (payment.parsedMetadata as { direction?: string } | null)?.direction;
+  const rightWay = payment.type === "transfer"
+    ? direction === (schedule.direction === "in" ? "incoming" : "outgoing")
+    : payment.type === (schedule.direction === "in" ? "income" : "expense");
+  if (!rightWay || (schedule.contactId != null && payment.contactId !== schedule.contactId)) return false;
+  return schedule.kind !== "debt" || (payment.type === "transfer" && payment.category === LOAN_CATEGORY && payment.subCategory === LOAN_SUBCATEGORY);
 }
 
 async function assertOwned(user: CoachUser, input: Pick<CashflowInput, "installmentPlanId" | "contactId">): Promise<void> {
@@ -75,6 +110,7 @@ async function assertOwned(user: CoachUser, input: Pick<CashflowInput, "installm
 }
 
 export async function createCashflow(user: CoachUser, input: CashflowInput): Promise<{ id: number }> {
+  assertDates(input);
   await assertOwned(user, input);
   if (input.installmentPlanId) {
     // An installment plan has one schedule: a second one would count the same installment twice.
@@ -101,6 +137,13 @@ export async function createCashflow(user: CoachUser, input: CashflowInput): Pro
   return { id: Number(inserted.insertId) };
 }
 
+function assertDates(input: { startDay?: string | null; endDay?: string | null }) {
+  if ((input.startDay != null && !isCalendarDay(input.startDay)) || (input.endDay != null && !isCalendarDay(input.endDay)) ||
+      (input.startDay && input.endDay && input.endDay < input.startDay)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "ميعاد الالتزام مش صحيح. اختار يوم موجود، والنهاية بعد البداية." });
+  }
+}
+
 export async function updateCashflow(
   user: CoachUser,
   id: number,
@@ -118,8 +161,27 @@ export async function updateCashflow(
   if (patch.certainty) set.certainty = patch.certainty;
   if (patch.contactId !== undefined) set.contactId = patch.contactId;
   if (patch.status) set.status = patch.status;
-  const [result] = await db.update(scheduledCashflows).set(set).where(and(scope(user), eq(scheduledCashflows.id, id)));
-  if (!(result as { affectedRows?: number }).affectedRows) throw new TRPCError({ code: "NOT_FOUND", message: "الالتزام ده مش موجود." });
+  await db.transaction(async (tx) => {
+    const [row] = await tx.select().from(scheduledCashflows).where(and(scope(user), eq(scheduledCashflows.id, id))).limit(1).for("update");
+    if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "الالتزام ده مش موجود." });
+    if (!Object.keys(set).length) return;
+    const changed = toScheduleRow({ ...row, ...set } as typeof row);
+    assertDates(changed);
+    const allocations = await tx.select().from(cashflowSettlements).where(and(
+      eq(cashflowSettlements.userId, user.userId), eq(cashflowSettlements.userType, user.userType), eq(cashflowSettlements.cashflowId, id),
+    ));
+    const paidByDay = new Map<string, Decimal>();
+    for (const allocation of allocations) {
+      paidByDay.set(allocation.dueDay, (paidByDay.get(allocation.dueDay) ?? new Decimal(0)).plus(allocation.amount));
+      if (!dueDays(changed, allocation.dueDay, allocation.dueDay).length) throw new TRPCError({ code: "CONFLICT", message: "فيه سداد مربوط بالميعاد القديم. فكّ ربطه قبل تغيير الميعاد." });
+      if (allocation.expenseId !== null) {
+        const [payment] = await tx.select().from(expenses).where(and(eq(expenses.id, allocation.expenseId), eq(expenses.userId, user.userId), eq(expenses.userType, user.userType))).limit(1);
+        if (!payment || !canPayCashflow(changed, payment)) throw new TRPCError({ code: "CONFLICT", message: "التعديل ده مش متوافق مع السداد المربوط. فكّ ربط السداد الأول." });
+      }
+    }
+    if (changed.amount !== null && [...paidByDay.values()].some((paid) => paid.gt(changed.amount!))) throw new TRPCError({ code: "CONFLICT", message: "المبلغ الجديد أقل من السداد المربوط. راجع السداد الأول." });
+    await tx.update(scheduledCashflows).set(set).where(and(scope(user), eq(scheduledCashflows.id, id)));
+  });
 }
 
 /**
@@ -151,19 +213,20 @@ export async function settle(
 
     let amount: Decimal;
     if (input.expenseId) {
-      const [expense] = await tx.select({ id: expenses.id, amount: expenses.amount, type: expenses.type }).from(expenses).where(and(
+      const [expense] = await tx.select().from(expenses).where(and(
         eq(expenses.id, input.expenseId), eq(expenses.userId, user.userId), eq(expenses.userType, user.userType),
       )).limit(1).for("update");
       if (!expense) throw new TRPCError({ code: "NOT_FOUND", message: "العملية دي مش موجودة." });
       const size = new Decimal(expense.amount);
-      const wantsIn = row.direction === "in";
-      if (size.lte(0) || (wantsIn ? expense.type !== "income" && expense.type !== "transfer" : expense.type === "income")) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: wantsIn ? "دي مش فلوس داخلة." : "دي مش فلوس خارجة (مرتجع أو دخل)." });
+      if (!canPayCashflow(schedule, expense)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "العملية دي مش فلوس " + (row.direction === "in" ? "داخلة" : "خارجة") + " مناسبة للالتزام وصاحبه." });
       }
-      const [allocated] = await tx.select({ total: sql<string>`COALESCE(SUM(${cashflowSettlements.amount}), 0)` }).from(cashflowSettlements).where(and(
+      // A locking read sees allocations committed while this transaction waited for the expense lock.
+      // Its earlier per-date read may already have created an older repeatable-read snapshot.
+      const allocated = await tx.select({ amount: cashflowSettlements.amount }).from(cashflowSettlements).where(and(
         eq(cashflowSettlements.userId, user.userId), eq(cashflowSettlements.userType, user.userType), eq(cashflowSettlements.expenseId, expense.id),
-      ));
-      const free = size.minus(allocated?.total ?? 0);
+      )).for("update");
+      const free = size.minus(allocated.reduce((sum, allocation) => sum.plus(allocation.amount), new Decimal(0)));
       if (free.lte(0)) throw new TRPCError({ code: "CONFLICT", message: "العملية دي متوزعة كلها على مواعيد تانية." });
       amount = new Decimal(input.amount ?? Decimal.min(free, owed ?? free));
       if (amount.gt(free)) throw new TRPCError({ code: "BAD_REQUEST", message: "المبلغ أكبر من اللي فاضل من العملية." });
@@ -197,17 +260,19 @@ export async function unsettle(user: CoachUser, settlementId: number): Promise<v
   ));
 }
 
-async function settlementsSince(user: CoachUser, fromDay: string) {
+export async function listSettlements(user: CoachUser, fromDay: string, toDay?: string) {
   return db.select({
+    id: cashflowSettlements.id, source: cashflowSettlements.source,
     cashflowId: cashflowSettlements.cashflowId, dueDay: cashflowSettlements.dueDay, amount: cashflowSettlements.amount, expenseId: cashflowSettlements.expenseId,
   }).from(cashflowSettlements).where(and(
     eq(cashflowSettlements.userId, user.userId), eq(cashflowSettlements.userType, user.userType), gte(cashflowSettlements.dueDay, fromDay),
+    ...(toDay ? [lte(cashflowSettlements.dueDay, toDay)] : []),
   ));
 }
 
 /** The due dates in [from, to] with what was paid toward each. */
 export async function upcoming(user: CoachUser, from: string, to: string, today = businessDateKey()): Promise<Occurrence[]> {
-  const [rows, settlements] = await Promise.all([listCashflows(user), settlementsSince(user, from)]);
+  const [rows, settlements] = await Promise.all([listCashflows(user), listSettlements(user, from, to)]);
   return occurrences(rows, settlements, from, to, today);
 }
 
@@ -216,7 +281,7 @@ export async function position(user: CoachUser, now = new Date()): Promise<CashP
   const today = businessDateKey(now);
   const [rows, settlements, wallets, profile] = await Promise.all([
     listCashflows(user),
-    settlementsSince(user, addDays(today, -60)),
+    listSettlements(user, addDays(today, -60)),
     db.select({ balance: userWallets.balance, observedAt: userWallets.balanceObservedAt }).from(userWallets)
       .where(and(eq(userWallets.userId, user.userId), eq(userWallets.userType, user.userType))),
     getProfileSnapshot({ userId: user.userId, userType: user.userType }).catch(() => null),
@@ -226,46 +291,57 @@ export async function position(user: CoachUser, now = new Date()): Promise<CashP
 
 /**
  * Recorded payments that may have paid a due date: the user's own expenses within a week of it, not refunds, with
- * room left to allocate, whose amount is what is owed or whose words share one with the schedule's title. Offered to
- * the user to confirm; never linked by this function.
+ * room left to allocate, whose available amount is what is owed or whose words share one with the schedule's title.
+ * A contact-linked commitment instead requires that exact contact. Offered to the user; never linked here.
  */
-export async function suggestPayments(user: CoachUser, occurrence: Pick<Occurrence, "cashflowId" | "dueDay" | "remaining" | "title" | "direction">) {
+export async function suggestPayments(user: CoachUser, occurrence: Occurrence) {
   const from = startOfBusinessDay(new Date(`${addDays(occurrence.dueDay, -7)}T12:00:00Z`));
   const to = startOfBusinessDay(new Date(`${addDays(occurrence.dueDay, 8)}T12:00:00Z`));
-  const rows = await db.select({ id: expenses.id, amount: expenses.amount, description: expenses.description, category: expenses.category, date: expenses.date, type: expenses.type })
+  const rows = await db.select()
     .from(expenses).where(and(
       eq(expenses.userId, user.userId), eq(expenses.userType, user.userType), gte(expenses.date, from), lte(expenses.date, to),
     )).orderBy(desc(expenses.date)).limit(60);
   const words = occurrence.title.split(/\s+/).filter((word) => word.length >= 3);
+  const allocated = rows.length ? await db.select({ expenseId: cashflowSettlements.expenseId, total: sql<string>`SUM(${cashflowSettlements.amount})` })
+    .from(cashflowSettlements).where(and(eq(cashflowSettlements.userId, user.userId), eq(cashflowSettlements.userType, user.userType),
+      inArray(cashflowSettlements.expenseId, rows.map((row) => row.id))))
+    .groupBy(cashflowSettlements.expenseId) : [];
+  const used = new Map(allocated.map((row) => [row.expenseId, row.total]));
   return rows
-    .filter((row) => Number(row.amount) > 0 && (occurrence.direction === "in" ? row.type !== "expense" : row.type !== "income"))
+    .filter((row) => canPayCashflow(occurrence, row))
     .map((row) => ({
-      ...row,
+      id: row.id, description: row.description, category: row.category, date: row.date, type: row.type,
       amount: Number(row.amount),
-      sameAmount: occurrence.remaining !== null && Math.abs(Number(row.amount) - occurrence.remaining) < 0.5,
+      available: Decimal.max(0, new Decimal(row.amount).minus(used.get(row.id) ?? 0)).toNumber(),
+      sameAmount: occurrence.remaining !== null && new Decimal(row.amount).minus(used.get(row.id) ?? 0).eq(occurrence.remaining),
       sharedWord: words.find((word) => `${row.description ?? ""} ${row.category ?? ""}`.includes(word)) ?? null,
     }))
-    .filter((row) => row.sameAmount || row.sharedWord)
+    .filter((row) => row.available > 0 && (occurrence.contactId != null || row.sameAmount || row.sharedWord))
     .slice(0, 5);
 }
 
 /**
- * An edited ledger row that can no longer pay what it was allocated to (now smaller than its allocations, or no
- * longer money going out) releases them all; the due dates show as unpaid again for the user to link anew.
+ * An edited ledger row releases incompatible allocations (direction, contact, kind, personal scope or status).
+ * If the remaining valid allocations exceed its new size, it releases those too, for the user to link anew.
  * Called inside the edit's transaction.
  */
 export async function reconcileSettlementsOf(
   tx: Pick<typeof db, "delete" | "select">,
   user: CoachUser,
   expenseId: number,
-  amount: string | number,
 ): Promise<void> {
-  const [allocated] = await tx.select({ total: sql<string>`COALESCE(SUM(${cashflowSettlements.amount}), 0)` }).from(cashflowSettlements).where(and(
+  const [payment] = await tx.select().from(expenses).where(and(eq(expenses.id, expenseId), eq(expenses.userId, user.userId), eq(expenses.userType, user.userType))).limit(1);
+  if (!payment) return releaseSettlementsOf(tx, user, [expenseId]);
+  const allocations = await tx.select({ id: cashflowSettlements.id, amount: cashflowSettlements.amount, schedule: scheduledCashflows }).from(cashflowSettlements)
+    .innerJoin(scheduledCashflows, and(eq(scheduledCashflows.id, cashflowSettlements.cashflowId), scope(user))).where(and(
     eq(cashflowSettlements.userId, user.userId), eq(cashflowSettlements.userType, user.userType), eq(cashflowSettlements.expenseId, expenseId),
   ));
-  const total = new Decimal(allocated?.total ?? 0);
-  if (total.isZero()) return;
-  if (new Decimal(amount).lt(total)) await releaseSettlementsOf(tx, user, [expenseId]);
+  const invalid = allocations.filter((allocation) => !canPayCashflow(toScheduleRow(allocation.schedule), payment));
+  if (invalid.length) await tx.delete(cashflowSettlements).where(and(
+    eq(cashflowSettlements.userId, user.userId), eq(cashflowSettlements.userType, user.userType), inArray(cashflowSettlements.id, invalid.map((allocation) => allocation.id)),
+  ));
+  const remaining = allocations.filter((allocation) => !invalid.includes(allocation)).reduce((sum, allocation) => sum.plus(allocation.amount), new Decimal(0));
+  if (new Decimal(payment.amount).lt(remaining)) await releaseSettlementsOf(tx, user, [expenseId]);
 }
 
 /** A deleted ledger row pays nothing any more: its allocations go with it. Called inside the delete's transaction. */

@@ -29,6 +29,14 @@ describe("createVoiceAppCalls", () => {
     rows.saved = [{ id: 900 }];
   });
 
+  it("keeps debt contact ids available to the coach instead of discarding the ledger link", async () => {
+    const app = createVoiceAppCalls({ createCaller: () => ({ expense: { getDebtBalances: async () => ({
+      balances: [{ contactId: 41, name: "خالد", balance: -800, lent: 0, received: 800, count: 1, lastDate: new Date("2026-09-10T10:00:00Z") }],
+      owedToYou: 0, youOwe: 800, gam3eya: { paid: 0, received: 0, held: 0, installments: 0 },
+    }) } }) as never });
+    expect((await app.debts(identity)).people).toEqual([expect.objectContaining({ contactId: 41, name: "خالد", balance: -800 })]);
+  });
+
   it("keeps a refund's direction and the person beside the purpose from parse to save", async () => {
     const batchCreate = vi.fn(async () => ({ success: true, count: 1 }));
     const parseExpense = vi.fn(async () => ({

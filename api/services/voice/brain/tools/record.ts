@@ -439,13 +439,14 @@ async function changeDraft(
       !Array.isArray(args.fields)
         ? (args.fields as Record<string, unknown>)
         : {};
-    const built = coachDraft(action, fields, ctx);
+    const built = await coachDraft(action, fields, ctx);
     if (!built || "refuse" in built)
       return {
         response: {
           ok: false,
           error: "missing_fields",
           say: built?.refuse ?? "محتاج تفاصيل أكتر.",
+          ...(built && "refuse" in built && built.choices ? { choices: built.choices } : {}),
         },
       };
     ctx.signal.throwIfAborted();
@@ -870,9 +871,8 @@ export const changeDraftCoachTool: VoiceTool = {
   declaration: {
     name: "change_draft",
     description:
-      "Draft the requested action in fields; read it and ask consent. Money from facts or the user, dates as given. " +
-      "budget_update uses a read budget_id. commitment_add needs title, kind, direction, amount, recurrence " +
-      "(once for one date), start_day. No execution.",
+      "Draft only; read back then confirm. Money from user/facts, dates as given. budget_id from a read. " +
+      "commitment_add: title, kind, direction, amount, recurrence (once for one date), start_day.",
     parameters: {
       type: "object",
       properties: {

@@ -182,6 +182,7 @@ export function createVoiceAppCalls(router: {
       return {
         people: result.balances.map((entry) => ({
           name: entry.name,
+          contactId: entry.contactId,
           balance: entry.balance,
           lent: entry.lent,
           received: entry.received,

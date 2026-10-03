@@ -295,6 +295,7 @@ model {
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.push_subscriptions
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.raw_sms_events
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.referrals
+  smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.seo_pages
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.support_tickets
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.system_settings
@@ -335,7 +336,9 @@ model {
   smartspend.api.modules.classification -[uses]-> gemini
   smartspend.api.modules.classification -[writes]-> smartspend.mysql.user_correction_rules
   smartspend.api.modules.classification-qa -[imports]-> smartspend.api.modules.classification
+  smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.finance-semantic-layer
+  smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.cashflow_settlements
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.coaching_plans
@@ -1021,6 +1024,7 @@ model {
   smartspend.api.trpc.profile.deleteContact -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.profile.deleteContact -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.expenses
+  smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.user_profiles
   smartspend.api.trpc.profile.dismissOnboarding -[writes]-> smartspend.mysql.user_profiles
@@ -1048,6 +1052,7 @@ model {
   smartspend.api.trpc.profile.mergeContacts -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.profile.mergeContacts -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.profile.mergeContacts -[writes]-> smartspend.mysql.expenses
+  smartspend.api.trpc.profile.mergeContacts -[writes]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.trpc.profile.mergeContacts -[writes]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.mergeContacts -[writes]-> smartspend.mysql.user_profiles
   smartspend.api.trpc.profile.refreshInferences -[reads]-> smartspend.mysql.expenses
@@ -1458,6 +1463,7 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.setReminder
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.setStepStatus
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.settle
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.unsettle
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.expense.getMonthlyStats
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.export.allUsers
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.export.myExpenses
@@ -1509,6 +1515,8 @@ model {
   smartspend.web.pages.PlanPage -[calls]-> smartspend.api.trpc.coach.setReminder
   smartspend.web.pages.PlanPage -[calls]-> smartspend.api.trpc.coach.setStepStatus
   smartspend.web.pages.PlanPage -[calls]-> smartspend.api.trpc.coach.settle
+  smartspend.web.pages.PlanPage -[calls]-> smartspend.api.trpc.coach.unsettle
+  smartspend.web.pages.PlanPage -[calls]-> smartspend.api.trpc.profile.listContacts
   smartspend.web.pages.PlanPage -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.Privacy -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.pro.cancel

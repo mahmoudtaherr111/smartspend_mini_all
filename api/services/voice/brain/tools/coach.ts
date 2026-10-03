@@ -5,9 +5,9 @@
  * screen uses. Amounts in a draft must be ones the call read, computed or heard from the user.
  */
 import { businessDateKey, parseBusinessInstant } from "../../../../lib/app-time";
-import { CASHFLOW_KINDS, createCashflow, position, settle, type CashflowKind } from "../../../coach/cashflows";
+import { CASHFLOW_KINDS, createCashflow, position, resolveCashflowContact, settle, type CashflowKind } from "../../../coach/cashflows";
 import { acceptPlan, activePlan, cancelReminder, setReminder, setStepStatus, STEP_KINDS, type StepKind } from "../../../coach/plans";
-import { addDays, daysBetween } from "../../../coach/schedule";
+import { addDays, daysBetween, isCalendarDay } from "../../../coach/schedule";
 import { getCategoryTotal, getFinanceBreakdown } from "../../../finance-semantic-layer/resolvers";
 import type { ToolRunOutcome } from "../../gateway/call-session";
 import type { Draft } from "../drafts";
@@ -21,7 +21,7 @@ type Answer = (built: { title: string; facts: Fact[]; extra?: Record<string, unk
 /** Fields are visible in the provider schema, not just buried in a prose list of action names. */
 export const COACH_FIELDS_SCHEMA = {
   type: "object",
-  description: "Action details. Dates: Cairo YYYY-MM-DD.",
+  description: "Cairo dates: YYYY-MM-DD.",
   properties: {
     title: { type: "string" }, goal: { type: "string" },
     kind: { type: "string" },
@@ -32,6 +32,7 @@ export const COACH_FIELDS_SCHEMA = {
     certainty: { type: "string", enum: ["confirmed", "estimated"] },
     budget_id: { type: "integer" }, limit: { type: "number" }, paused: { type: "boolean" },
     cashflow_id: { type: "integer" }, due_day: { type: "string" }, expense_id: { type: "integer" },
+    contact_id: { type: "integer" }, contact_name: { type: "string", description: "User's exact person name" },
     step_id: { type: "integer" }, bank_id: { type: "integer" },
     at: { type: "string", description: "YYYY-MM-DDTHH:mm Cairo" }, review_day: { type: "string" },
     evidence_refs: { type: "array", items: { type: "string" } },
@@ -74,7 +75,7 @@ export async function commitmentsAnswer(ctx: ToolContext, answer: Answer): Promi
     facts,
     extra: {
       until: cash.until,
-      due: next.map((o) => ({ what: o.title, day: o.dueDay, left: o.remaining, state: STATUS[o.status], id: o.cashflowId })),
+      due: next.map((o) => ({ what: o.title, day: o.dueDay, left: o.remaining, state: STATUS[o.status], id: o.cashflowId, contact_id: o.contactId ?? null, person: o.contactName ?? null })),
     },
     coverage: caveats.length ? caveats.join(" ") : undefined,
   }, cash.untilIsPayday ? `لحد القبض (${cash.until})` : `لحد ${cash.until}`);
@@ -150,7 +151,7 @@ function knownAmount(ctx: ToolContext, value: unknown): number | null | "unknown
   return amount > 0 && ctx.ledger.allows(amount, false) ? amount : "unknown";
 }
 
-type Built = { payload: CoachDraftPayload; title: string; lines: Array<{ label: string; amount?: number; detail?: string }> } | { refuse: string };
+type Built = { payload: CoachDraftPayload; title: string; lines: Array<{ label: string; amount?: number; detail?: string }> } | { refuse: string; choices?: Array<{ contact_id: number; name: string; relation: string | null }> };
 
 function planDraft(fields: Record<string, unknown>, ctx: ToolContext): Built {
   const title = str(fields.title, 160);
@@ -186,7 +187,7 @@ function planDraft(fields: Record<string, unknown>, ctx: ToolContext): Built {
   };
 }
 
-function cashflowDraft(fields: Record<string, unknown>, ctx: ToolContext): Built {
+async function cashflowDraft(fields: Record<string, unknown>, ctx: ToolContext): Promise<Built> {
   const title = str(fields.title, 120);
   const kind = (CASHFLOW_KINDS as readonly string[]).includes(String(fields.kind)) ? (String(fields.kind) as CashflowKind) : "other";
   const amount = knownAmount(ctx, fields.amount);
@@ -202,26 +203,39 @@ function cashflowDraft(fields: Record<string, unknown>, ctx: ToolContext): Built
   }
   if (amount === "unknown") return { refuse: "المبلغ ده مش من كلام المستخدم. اسأله عن المبلغ." };
   const direction = fields.direction === "in" ? "in" : "out";
+  if ([fields.start_day, fields.end_day].some((value) => value != null && (typeof value !== "string" || !isCalendarDay(value)))) return { refuse: "ميعاد الالتزام مش يوم موجود. راجع التاريخ قبل المسودة." };
   const startDay = day(fields.start_day);
+  if (startDay && day(fields.end_day) && String(fields.end_day) < startDay) return { refuse: "نهاية الالتزام قبل بدايته. راجع الميعاد." };
+  const name = str(fields.contact_name, 255);
+  const id = fields.contact_id == null ? undefined : num(fields.contact_id);
+  if (fields.contact_id != null && (!id || !Number.isSafeInteger(id) || id < 1)) return { refuse: "رقم الشخص مش صحيح. هاته من بيانات الدين، ماتخمنوش." };
+  const resolved = name || id ? await resolveCashflowContact({ userId: ctx.identity.userId, userType: ctx.identity.userType }, { id, name }) : { contact: null };
+  if (resolved.error) return { refuse: resolved.error, ...(resolved.choices ? { choices: resolved.choices } : {}) };
+  const contact = resolved.contact;
+  // Unknown people have no id yet: retain their name in the schedule title, not just the transient preview.
+  const savedTitle = !contact && name && !title.includes(name) ? `${title} (${name})` : title;
+  if (savedTitle.length > 120) return { refuse: "اسم الالتزام طويل. اختار وصف أقصر يحتفظ باسم الشخص." };
+  const personDetail = contact ? `، الشخص: ${contact.name}${contact.relation ? ` (${contact.relation})` : ""}` : name ? `، ${name} مش مرتبط بجهة اتصال متسجلة` : "";
   return {
     payload: {
       op: "commitment_add",
       cashflow: {
-        kind, direction, title, amount, recurrence: recurrence as "monthly", startDay, endDay: day(fields.end_day),
+        kind, direction, title: savedTitle, amount, recurrence: recurrence as "monthly", startDay, endDay: day(fields.end_day),
         certainty: fields.certainty === "estimated" ? "estimated" : "confirmed", source: "voice",
+        contactId: contact?.id ?? null,
       },
     },
-    title: direction === "in" ? `دخل جاي: ${title}` : `التزام: ${title}`,
+    title: direction === "in" ? `دخل جاي: ${savedTitle}` : `التزام: ${savedTitle}`,
     lines: [{
-      label: title,
+      label: savedTitle,
       ...(amount ? { amount } : {}),
-      detail: `${startDay ? `من ${startDay}` : "الميعاد مش معروف"}${fields.certainty === "estimated" ? "، تقديري" : ""}`,
+      detail: `${startDay ? `من ${startDay}` : "الميعاد مش معروف"}${personDetail}${fields.certainty === "estimated" ? "، تقديري" : ""}`,
     }],
   };
 }
 
 /** change_draft for the coach's actions; null for any other action. */
-export function coachDraft(action: string, fields: Record<string, unknown>, ctx: ToolContext): Built | null {
+export async function coachDraft(action: string, fields: Record<string, unknown>, ctx: ToolContext): Promise<Built | null> {
   const stepId = num(fields.step_id);
   switch (action) {
     case "plan_save":
