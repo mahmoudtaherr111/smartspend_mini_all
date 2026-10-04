@@ -344,6 +344,7 @@
         "src/main.tsx",
         "src/App.tsx",
         "src/providers/**",
+        "src/i18n/**",
         "src/pwa/**",
         "src/components/layout/**",
         "src/components/routing/**",

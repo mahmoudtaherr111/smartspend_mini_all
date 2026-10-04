@@ -10,35 +10,48 @@ const AIChatbot = lazy(() => import("@/components/ai/AIChatbot"));
 const VoiceCallTab = lazy(() => import("@/components/voice/VoiceCallTab"));
 const AIMonthlyReport = lazy(() => import("@/components/ai/AIMonthlyReport"));
 
+import { useLanguage } from "@/i18n/context";
+import type { MessageKey } from "@/i18n/ar";
+
 type AITab = "chat" | "voice" | "report";
 
-const aiTabs = [
+interface AITabConfig {
+  id: AITab;
+  labelKey: MessageKey;
+  icon: typeof MessageSquare;
+  gradient: string;
+  bgActive: string;
+  textActive: string;
+  descKey: MessageKey;
+}
+
+const aiTabs: AITabConfig[] = [
   {
-    id: "chat" as AITab,
-    label: "شات ذكي",
+    id: "chat",
+    labelKey: "aiCenter.tab.chat",
     icon: MessageSquare,
     gradient: "from-indigo-500 to-violet-600",
     bgActive: "bg-indigo-500/10 dark:bg-indigo-500/15 border-indigo-500/30",
     textActive: "text-indigo-600 dark:text-indigo-400",
-    description: "اسأل سمارت أي سؤال مالي",
+    descKey: "aiCenter.tab.chatDesc",
   },
   {
-    id: "voice" as AITab,
-    label: "مكالمة صوتية",
+    id: "voice",
+    labelKey: "aiCenter.tab.voice",
     icon: Phone,
     gradient: "from-emerald-500 to-teal-600",
     bgActive: "bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500/30",
     textActive: "text-emerald-600 dark:text-emerald-400",
-    description: "اتكلم مع مستشارك المالي",
+    descKey: "aiCenter.tab.voiceDesc",
   },
   {
-    id: "report" as AITab,
-    label: "تحليل شهري",
+    id: "report",
+    labelKey: "aiCenter.tab.report",
     icon: BarChart3,
     gradient: "from-amber-500 to-orange-600",
     bgActive: "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/30",
     textActive: "text-amber-600 dark:text-amber-400",
-    description: "تقرير شهري مفصل بالـ AI",
+    descKey: "aiCenter.tab.reportDesc",
   },
 ];
 
@@ -57,6 +70,7 @@ function TabSkeleton() {
 }
 
 export default function AICenter() {
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = normalizeAiTab(searchParams.get("ai_tab"));
   const { lightTap } = useHaptics();
@@ -92,8 +106,8 @@ export default function AICenter() {
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground">مركز الذكاء الاصطناعي</h1>
-            <p className="text-xs text-muted-foreground">مستشارك المالي الذكي</p>
+            <h1 className="text-lg font-bold text-foreground">{t("aiCenter.title")}</h1>
+            <p className="text-xs text-muted-foreground">{t("aiCenter.subtitle")}</p>
           </div>
         </div>
 
@@ -126,7 +140,7 @@ export default function AICenter() {
                 )}
                 <Icon className={cn("w-5 h-5 relative z-10", isActive && "scale-110")} />
                 <span className="relative z-10 max-w-full truncate text-[10px] font-semibold sm:text-[11px]">
-                  {tab.label}
+                  {t(tab.labelKey)}
                 </span>
               </button>
             );

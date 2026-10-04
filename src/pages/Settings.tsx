@@ -9,6 +9,8 @@ import { SmartProfileView } from "@/components/profile/SmartProfileView";
 import { PasskeySettings } from "@/components/auth/PasskeySettings";
 import { PeopleSettingsView } from "@/components/settings/PeopleSettingsView";
 import { BusinessSettingsView } from "@/components/settings/BusinessSettingsView";
+import { LanguageSettings } from "@/components/settings/LanguageSettings";
+import { useLanguage } from "@/i18n/context";
 import { Button } from "@/components/ui/button";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
@@ -24,6 +26,7 @@ import {
   Bell,
   BellRing,
   ArrowRight,
+  ArrowLeft,
   Fingerprint,
   Moon,
   Sun,
@@ -102,10 +105,14 @@ export default function Settings() {
   const updateProfileMut = trpc.profile.updateSmartProfile.useMutation();
 
   const { isSupported, isSubscribed, subscribeToPush } = usePushNotifications();
+  const { dir, t } = useLanguage();
+  // Written for right-to-left; in English the slides are mirrored.
+  const sign = dir === "rtl" ? 1 : -1;
+  const BackArrow = dir === "rtl" ? ArrowRight : ArrowLeft;
 
   const rtlSubViewVariants: Variants = {
     initial: (isSubView: boolean) => ({
-      x: isSubView ? "-100%" : "25%",
+      x: isSubView ? `${-100 * sign}%` : `${25 * sign}%`,
       opacity: 0,
       scale: isSubView ? 1 : 0.96,
     }),
@@ -121,7 +128,7 @@ export default function Settings() {
       },
     },
     exit: (isSubView: boolean) => ({
-      x: isSubView ? "25%" : "-100%",
+      x: isSubView ? `${25 * sign}%` : `${-100 * sign}%`,
       opacity: 0,
       scale: isSubView ? 0.96 : 1,
       transition: {
@@ -143,9 +150,9 @@ export default function Settings() {
       <button
         onClick={onBack}
         className="tap-target active-press flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors shadow-sm"
-        aria-label="رجوع"
+        aria-label={t("common.back")}
       >
-        <ArrowRight className="w-5 h-5" />
+        <BackArrow className="w-5 h-5" />
       </button>
       <div>
         <h1 className="text-2xl font-black text-slate-900 dark:text-white">
@@ -158,7 +165,7 @@ export default function Settings() {
   return (
     <div
       className="min-h-screen bg-background px-4 pb-8 pt-[calc(env(safe-area-inset-top)+1rem)] md:p-8"
-      dir="rtl"
+      dir={dir}
     >
       <SEOMeta path="/settings" title="الإعدادات الذكية - SmartSpend AI" />
 
@@ -219,7 +226,7 @@ export default function Settings() {
                 WebkitBackfaceVisibility: "hidden",
               }}
             >
-              <SubViewHeader title="الأمان والدخول" onBack={closeView} />
+              <SubViewHeader title={t("settings.subview.security")} onBack={closeView} />
               <PasskeySettings />
             </motion.div>
           )}
@@ -239,7 +246,7 @@ export default function Settings() {
                 WebkitBackfaceVisibility: "hidden",
               }}
             >
-              <SubViewHeader title="إعدادات الإشعارات" onBack={closeView} />
+              <SubViewHeader title={t("settings.subview.notifications")} onBack={closeView} />
               <Card className="border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-xl rounded-3xl overflow-hidden">
                 <CardHeader className="py-5 px-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/10">
                   <CardTitle className="text-lg flex items-center gap-2 font-black">
@@ -305,7 +312,7 @@ export default function Settings() {
                 WebkitBackfaceVisibility: "hidden",
               }}
             >
-              <SubViewHeader title="مظهر التطبيق" onBack={closeView} />
+              <SubViewHeader title={t("settings.subview.appearance")} onBack={closeView} />
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Card: Light */}
@@ -322,10 +329,10 @@ export default function Settings() {
                   </div>
                   <div className="text-center">
                     <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                      فاتح (Light)
+                      {t("settings.appearance.light")}
                     </h3>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                      مناسب للإضاءة القوية
+                      {t("settings.appearance.lightHint")}
                     </p>
                   </div>
                   {theme === "light" && (
@@ -347,10 +354,10 @@ export default function Settings() {
                   </div>
                   <div className="text-center">
                     <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                      داكن (Dark)
+                      {t("settings.appearance.dark")}
                     </h3>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                      مريح للعين بالليل
+                      {t("settings.appearance.darkHint")}
                     </p>
                   </div>
                   {theme === "dark" && (
@@ -372,10 +379,10 @@ export default function Settings() {
                   </div>
                   <div className="text-center">
                     <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                      تلقائي (System)
+                      {t("settings.appearance.system")}
                     </h3>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
-                      يتماشى مع نظام جهازك
+                      {t("settings.appearance.systemHint")}
                     </p>
                   </div>
                   {theme === "system" && (
@@ -383,6 +390,8 @@ export default function Settings() {
                   )}
                 </button>
               </div>
+
+              <LanguageSettings />
             </motion.div>
           )}
 
@@ -401,7 +410,7 @@ export default function Settings() {
               }}
             >
               <SubViewHeader
-                title="إعدادات التحليل والواتساب"
+                title={t("settings.subview.aiReport")}
                 onBack={closeView}
               />
 

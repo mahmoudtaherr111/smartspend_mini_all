@@ -30,7 +30,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `App shell` — `src/App.tsx`
 
-48 files in its import closure (not counting `src/components/ui/`).
+54 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -45,7 +45,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `profile.getInAppNotifications` | useQuery, utils.invalidate | `src/components/NotificationBell.tsx` |
-| `profile.getSmartProfile` | useQuery | `src/hooks/useBiometricOnboarding.ts` |
+| `profile.getSmartProfile` | useQuery | `src/hooks/useBiometricOnboarding.ts`, `src/i18n/LanguagePreferenceSync.tsx` |
 | `profile.markInAppNotificationRead` | useMutation | `src/components/NotificationBell.tsx` |
 | `profile.sendBiometricPromptNotification` | useMutation | `src/hooks/useBiometricOnboarding.ts` |
 | `voice.eligibility` | utils.invalidate | `src/components/voice/VoiceCallHost.tsx` |
@@ -56,7 +56,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `AICenter` — `src/pages/AICenter.tsx`
 
-25 files in its import closure (not counting `src/components/ui/`).
+28 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -185,7 +185,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-48 files in its import closure (not counting `src/components/ui/`).
+52 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -257,7 +257,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-54 files in its import closure (not counting `src/components/ui/`).
+58 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -361,14 +361,14 @@ _None._
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.generateWebhookToken` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/SmartProfileSettings.tsx` |
-| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/components/profile/SmartProfileView.tsx`, `src/pages/Settings.tsx` |
+| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/components/profile/SmartProfileView.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
 | `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx`, `src/pages/PlanPage.tsx` |
 | `profile.mergeContacts` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.updateContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | useMutation | `src/components/profile/SmartProfileSettings.tsx` |
 | `referral.applyCode` | useMutation | `src/pages/Pro.tsx` |
 | `referral.myCode` | useQuery | `src/pages/Pro.tsx` |
@@ -437,7 +437,7 @@ _None._
 
 ### `Settings` — `src/pages/Settings.tsx`
 
-20 files in its import closure (not counting `src/components/ui/`).
+24 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -461,12 +461,12 @@ _None._
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/SmartProfileSettings.tsx` |
-| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/profile/SmartProfileSettings.tsx`, `src/components/profile/SmartProfileView.tsx`, `src/pages/Settings.tsx` |
+| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/profile/SmartProfileSettings.tsx`, `src/components/profile/SmartProfileView.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.mergeContacts` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.updateContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.updateSmartProfile` | useMutation | `src/components/profile/SmartProfileSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.updateSmartProfile` | useMutation | `src/components/profile/SmartProfileSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | useMutation | `src/components/profile/SmartProfileSettings.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 | `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx` |

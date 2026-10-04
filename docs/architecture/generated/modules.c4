@@ -215,7 +215,7 @@ model {
     web-account = module 'Account UI' {
       description 'Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt.'
       metadata {
-        files '9'
+        files '10'
         paths 'src/components/auth/**, src/components/profile/**, src/components/settings/**, src/components/bank-sync/**, src/components/notifications/**'
       }
     }
@@ -299,8 +299,8 @@ model {
     web-shell = module 'Web app shell' {
       description 'Entry point, providers, layout, route guards and PWA or native integration.'
       metadata {
-        files '18'
-        paths 'src/main.tsx, src/App.tsx, src/providers/**, src/pwa/**, src/components/layout/**, src/components/routing/**, src/components/pwa/**'
+        files '25'
+        paths 'src/main.tsx, src/App.tsx, src/providers/**, src/i18n/**, src/pwa/**, src/components/layout/**, src/components/routing/**, src/components/pwa/**'
       }
     }
     web-ui-kit = module 'UI primitives' {

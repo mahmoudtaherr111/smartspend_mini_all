@@ -10,6 +10,8 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { StreakCounter } from "@/components/dashboard/StreakCounter";
+import { useLanguage } from "@/i18n/context";
+import { formatMonthLabel } from "@/i18n/format";
 
 export type HomeTab = "record" | "stats" | "calendar";
 
@@ -18,11 +20,12 @@ export const HealthBadge = memo(function HealthBadge({
 }: {
   ratio: number | null;
 }) {
+  const { t } = useLanguage();
   if (ratio === null)
-    return <Badge variant="secondary">أضف الدخل لقراءة أدق</Badge>;
-  if (ratio <= 60) return <Badge className="bg-emerald-600">مستقر</Badge>;
-  if (ratio <= 90) return <Badge className="bg-amber-600">تحت المتابعة</Badge>;
-  return <Badge variant="destructive">ضغط مالي</Badge>;
+    return <Badge variant="secondary">{t("dashboard.health.addIncome")}</Badge>;
+  if (ratio <= 60) return <Badge className="bg-emerald-600">{t("dashboard.health.stable")}</Badge>;
+  if (ratio <= 90) return <Badge className="bg-amber-600">{t("dashboard.health.monitoring")}</Badge>;
+  return <Badge variant="destructive">{t("dashboard.health.stress")}</Badge>;
 });
 
 export const getMonthLabelAr = (monthStr: string) => {
@@ -85,12 +88,16 @@ export function HomeHeader({
   userName,
   currentStreak,
 }: HomeHeaderProps) {
+  const { language, dir, t } = useLanguage();
   const subtitle =
     activeTab === "stats"
-      ? "راجع اتجاهات صرفك واتخذ قرارك بهدوء"
+      ? t("dashboard.subtitle.stats")
       : activeTab === "calendar"
-        ? "تابع عمليات الشهر يومًا بيوم"
-        : "سجل عملياتك اليومية بالذكاء الاصطناعي";
+        ? t("dashboard.subtitle.calendar")
+        : t("dashboard.subtitle.record");
+
+  const PrevMonthIcon = dir === "rtl" ? ChevronRight : ChevronLeft;
+  const NextMonthIcon = dir === "rtl" ? ChevronLeft : ChevronRight;
 
   return (
     <header className="flex flex-col gap-2 -mx-1 px-1 py-1 sm:py-2">
@@ -112,7 +119,11 @@ export function HomeHeader({
                   ? "border-indigo-400 bg-indigo-500 text-white"
                   : "border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
               }`}
-              title={businessMode ? "ارجع للحساب الشخصي" : "لوضع المشروع"}
+              title={
+                businessMode
+                  ? t("dashboard.business.backPersonal")
+                  : t("dashboard.business.modeProject")
+              }
             >
               {businessMode ? (
                 <>
@@ -121,7 +132,7 @@ export function HomeHeader({
                 </>
               ) : (
                 <>
-                  <UserIcon className="w-3.5 h-3.5" /> شخصي
+                  <UserIcon className="w-3.5 h-3.5" /> {t("dashboard.business.personal")}
                 </>
               )}
             </button>
@@ -129,7 +140,10 @@ export function HomeHeader({
         </div>
 
         <p className="text-xs text-muted-foreground">
-          أهلاً {userName || "صديقي"} 👋 • {subtitle}
+          {t("dashboard.greeting", {
+            name: userName || t("dashboard.defaultUserName"),
+            subtitle,
+          })}
         </p>
 
         <div className="flex flex-wrap items-center justify-between gap-2 w-full">
@@ -147,9 +161,9 @@ export function HomeHeader({
                   size="icon"
                   className="w-6 h-6 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/40 active-press"
                   onClick={() => onMonthChange(getPreviousMonthString(month))}
-                  title="الشهر السابق"
+                  title={t("dashboard.monthPrev")}
                 >
-                  <ChevronRight className="w-3 h-3" />
+                  <PrevMonthIcon className="w-3 h-3" />
                 </Button>
 
                 <div className="relative flex items-center min-w-[85px] justify-center px-1 py-0.5 text-[10px] sm:text-[11px] font-bold select-none text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-200/30 dark:hover:bg-slate-700/20 transition-colors duration-200">
@@ -161,7 +175,7 @@ export function HomeHeader({
                   />
                   <span className="flex items-center gap-1 cursor-pointer">
                     <CalendarDays className="w-2.5 h-2.5 text-sky-600 shrink-0" />
-                    {getMonthLabelAr(month)}
+                    {formatMonthLabel(month, language)}
                   </span>
                 </div>
 
@@ -170,9 +184,9 @@ export function HomeHeader({
                   size="icon"
                   className="w-6 h-6 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/40 active-press"
                   onClick={() => onMonthChange(getNextMonthString(month))}
-                  title="الشهر التالي"
+                  title={t("dashboard.monthNext")}
                 >
-                  <ChevronLeft className="w-3 h-3" />
+                  <NextMonthIcon className="w-3 h-3" />
                 </Button>
               </div>
             )}
@@ -187,13 +201,13 @@ export function HomeHeader({
       >
         <TabsList className="w-full grid grid-cols-3 h-auto p-1">
           <TabsTrigger value="record" className="text-xs sm:text-sm">
-            تسجيل
+            {t("dashboard.tabs.record")}
           </TabsTrigger>
           <TabsTrigger value="stats" className="text-xs sm:text-sm">
-            إحصائيات
+            {t("dashboard.tabs.stats")}
           </TabsTrigger>
           <TabsTrigger value="calendar" className="text-xs sm:text-sm">
-            تقويم
+            {t("dashboard.tabs.calendar")}
           </TabsTrigger>
         </TabsList>
       </Tabs>

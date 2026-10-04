@@ -37,7 +37,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `site-guide` | Site guide | 5 | — | `ai-kernel`, `voice` | — |
 | `storage` | File storage | 5 | — | — | `object-storage` |
 | `ai-insights` | AI insights and reports | 7 | `classification`, `contracts`, `database`, `platform` | `ai-actions`, `api-routers`, `jobs`, `voice` | `gemini` |
-| `web-shell` | Web app shell | 18 | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit`, `web-voice-call` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-insights`, `web-pages`, `web-shared`, `web-voice-call` | `capacitor`, `firebase` |
+| `web-shell` | Web app shell | 25 | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit`, `web-voice-call` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-insights`, `web-pages`, `web-shared`, `web-voice-call` | `capacitor`, `firebase` |
 | `web-pages` | Web pages | 16 | `contracts`, `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `web-shell` | — |
 | `web-ui-kit` | UI primitives | 55 | `web-hooks`, `web-lib` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-voice-call` | — |
 | `web-admin` | Admin UI | 22 | `contracts`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | `fireworks`, `openrouter` |
@@ -47,7 +47,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-insights` | Insights UI | 1 | `web-hooks`, `web-shell`, `web-ui-kit` | `web-ai` | — |
 | `web-finance` | Finance UI | 20 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-account`, `web-pages` | — |
 | `web-bank-sync` | Bank sync UI | 5 | `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
-| `web-account` | Account UI | 9 | `web-finance`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `turnstile` |
+| `web-account` | Account UI | 10 | `web-finance`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `turnstile` |
 | `web-growth` | Ads and SEO UI | 2 | `web-hooks`, `web-shell` | `web-pages`, `web-shell` | — |
 | `web-shared` | Shared web components | 5 | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
 | `web-hooks` | Web hooks | 20 | `web-lib`, `web-shell` | `web-account`, `web-ai`, `web-capture`, `web-finance`, `web-growth`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor`, `firebase` |
@@ -564,6 +564,13 @@ Entry point, providers, layout, route guards and PWA or native integration.
 | `src/components/pwa/PwaInstallPrompt.tsx` | `web-hooks`, `web-ui-kit` | — | — | — |
 | `src/components/pwa/PwaOfflineSyncDialog.tsx` | `web-lib`, `web-ui-kit` | — | — | — |
 | `src/components/routing/PlanGates.tsx` | `web-hooks`, `web-shared` | — | — | — |
+| `src/i18n/LanguagePreferenceSync.tsx` | — | — | — | — |
+| `src/i18n/LanguageProvider.tsx` | — | — | — | — |
+| `src/i18n/ar.ts` | — | — | — | — |
+| `src/i18n/context.ts` | — | — | — | — |
+| `src/i18n/en.ts` | — | — | — | — |
+| `src/i18n/format.ts` | — | — | — | — |
+| `src/i18n/language.ts` | — | — | — | — |
 | `src/main.tsx` | — | — | — | — |
 | `src/providers/BiometricLockProvider.tsx` | `web-hooks`, `web-lib` | — | — | — |
 | `src/providers/trpc.ts` | — | — | — | — |
@@ -578,14 +585,14 @@ Route-level page components lazy-loaded by src/App.tsx.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `src/pages/AICenter.tsx` | `web-ai`, `web-hooks`, `web-lib`, `web-ui-kit`, `web-voice-call` | — | — | — |
+| `src/pages/AICenter.tsx` | `web-ai`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit`, `web-voice-call` | — | — | — |
 | `src/pages/Admin.tsx` | `web-admin`, `web-growth`, `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/AuthCallback.tsx` | — | — | — | — |
 | `src/pages/BankSyncPage.tsx` | `web-bank-sync`, `web-growth`, `web-shell` | — | — | — |
 | `src/pages/Home.tsx` | `web-account`, `web-bank-sync`, `web-capture`, `web-finance`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | — | — | — |
 | `src/pages/Landing.tsx` | `web-growth`, `web-ui-kit` | — | — | — |
 | `src/pages/Login.tsx` | `web-account`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
-| `src/pages/More.tsx` | `web-finance`, `web-hooks`, `web-ui-kit` | — | — | — |
+| `src/pages/More.tsx` | `web-finance`, `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/NotFound.tsx` | `web-ui-kit` | — | — | — |
 | `src/pages/PlanPage.tsx` | `web-growth`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/Privacy.tsx` | `web-growth`, `web-ui-kit` | — | — | — |
@@ -745,8 +752,8 @@ Home dashboard (summaries, calendar, charts, search, streaks), recent expenses a
 | `src/components/dashboard/BehaviorInsights.tsx` | `web-ui-kit` | — | — | — |
 | `src/components/dashboard/ExpenseChart.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/dashboard/GlobalSearch.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/dashboard/HomeHeader.tsx` | `web-ui-kit` | — | — | — |
-| `src/components/dashboard/HomeSummaryCards.tsx` | `web-lib` | — | — | — |
+| `src/components/dashboard/HomeHeader.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/dashboard/HomeSummaryCards.tsx` | `web-lib`, `web-shell` | — | — | — |
 | `src/components/dashboard/MonthlyCalendar.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/dashboard/MonthlyStats.tsx` | `web-ui-kit` | — | — | — |
 | `src/components/dashboard/NativeTabPanels.tsx` | `web-lib` | — | — | — |
@@ -788,6 +795,7 @@ Biometric lock and passkeys, the smart profile, business and people settings, an
 | `src/components/profile/SmartProfileSettings.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/profile/SmartProfileView.tsx` | `web-finance`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/settings/BusinessSettingsView.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/settings/LanguageSettings.tsx` | `web-shell` | — | — | — |
 | `src/components/settings/PeopleSettingsView.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 
 ### `web-growth` — Ads and SEO UI
@@ -809,7 +817,7 @@ Shell components at the root of src/components: sidebar, notification bell, onbo
 | `src/components/OnboardingCard.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/PageLoadingSkeleton.tsx` | `web-ui-kit` | — | — | — |
 | `src/components/ProductTour.tsx` | `web-ui-kit` | — | — | — |
-| `src/components/Sidebar.tsx` | `web-hooks`, `web-lib`, `web-ui-kit` | — | — | — |
+| `src/components/Sidebar.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 
 ### `web-hooks` — Web hooks
 

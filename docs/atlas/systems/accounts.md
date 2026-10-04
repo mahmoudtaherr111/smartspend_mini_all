@@ -221,7 +221,7 @@ flowchart LR
 | `accounts` — Account lifecycle | Account deletion: purgeUserData removes every row a user owns, inside the caller's transaction. | 1 |
 | `auth` — Authentication and sessions | Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in. | 5 |
 | `security` — Request security | HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging. | 11 |
-| `web-account` — Account UI | Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt. | 9 |
+| `web-account` — Account UI | Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt. | 10 |
 
 ## API procedures
 
@@ -364,7 +364,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/accounts.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>43 files and declarations</summary>
+<details><summary>44 files and declarations</summary>
 
 - `api/auth-router.ts`
 - `api/boot.ts#GET /api/auth/google/callback`
@@ -405,6 +405,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/profile/SmartProfileSettings.tsx`
 - `src/components/profile/SmartProfileView.tsx`
 - `src/components/settings/BusinessSettingsView.tsx`
+- `src/components/settings/LanguageSettings.tsx`
 - `src/components/settings/PeopleSettingsView.tsx`
 - `src/pages/AuthCallback.tsx`
 - `src/pages/Login.tsx`

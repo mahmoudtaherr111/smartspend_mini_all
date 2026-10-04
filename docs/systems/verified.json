@@ -42,14 +42,15 @@
         "src/components/profile/SmartProfileSettings.tsx": "25e4ecbc90d5",
         "src/components/profile/SmartProfileView.tsx": "54d469674272",
         "src/components/settings/BusinessSettingsView.tsx": "ced2674cdee4",
+        "src/components/settings/LanguageSettings.tsx": "2e84329609e6",
         "src/components/settings/PeopleSettingsView.tsx": "fe994df04b34",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
         "src/pages/Login.tsx": "531d183ea874",
-        "src/pages/Settings.tsx": "6ff1aea34043"
+        "src/pages/Settings.tsx": "43c713e1f021"
       },
-      "checked": "2026-10-04 f894496",
-      "arabic": "31746965098a",
-      "arabicChecked": "2026-10-04 f894496"
+      "checked": "2026-10-04 188f986",
+      "arabic": "318c6d76420b",
+      "arabicChecked": "2026-10-04 188f986"
     },
     "admin": {
       "files": {
@@ -142,9 +143,9 @@
         "src/components/ai/AIChatbot.tsx": "cbd3900dcd37",
         "src/components/ai/AIMemoryManager.tsx": "b2491b7f6097",
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
-        "src/pages/AICenter.tsx": "c384e6047412"
+        "src/pages/AICenter.tsx": "05db1979579d"
       },
-      "checked": "2026-10-01 1d4bf03",
+      "checked": "2026-10-04 188f986",
       "arabic": "62d7706bf304",
       "arabicChecked": "2026-10-01 1d4bf03"
     },
@@ -383,8 +384,8 @@
         "src/components/dashboard/BehaviorInsights.tsx": "47729e6b7532",
         "src/components/dashboard/ExpenseChart.tsx": "59163d319548",
         "src/components/dashboard/GlobalSearch.tsx": "4bc9913b8a0a",
-        "src/components/dashboard/HomeHeader.tsx": "08868be5adc7",
-        "src/components/dashboard/HomeSummaryCards.tsx": "c351df86b6d7",
+        "src/components/dashboard/HomeHeader.tsx": "5925ad849a4f",
+        "src/components/dashboard/HomeSummaryCards.tsx": "054ebc48bc66",
         "src/components/dashboard/MonthlyCalendar.tsx": "e72b1c0e2bd7",
         "src/components/dashboard/MonthlyStats.tsx": "55ac8f2618fe",
         "src/components/dashboard/NativeTabPanels.tsx": "8d5e7d72c996",
@@ -402,7 +403,7 @@
         "src/pages/Home.tsx": "fe674b3c4b88",
         "src/pages/PlanPage.tsx": "107068a002b0"
       },
-      "checked": "2026-10-04 f894496",
+      "checked": "2026-10-04 188f986",
       "arabic": "39e64ff2be64",
       "arabicChecked": "2026-10-02 e851624"
     },
@@ -539,14 +540,14 @@
     },
     "web-app": {
       "files": {
-        "src/App.tsx": "4840c127c480",
+        "src/App.tsx": "7ab08d72ab8f",
         "src/components/NotificationBell.tsx": "72b3b942601d",
         "src/components/OnboardingCard.tsx": "25693e197629",
         "src/components/PageLoadingSkeleton.tsx": "fa0fe3239b38",
         "src/components/ProductTour.tsx": "c9145b3fe557",
-        "src/components/Sidebar.tsx": "0015e3b8454b",
+        "src/components/Sidebar.tsx": "371c7d984356",
         "src/components/ads/AdBanner.tsx": "a64b7fe711e6",
-        "src/components/layout/MobileBottomNav.tsx": "2bdd2e5ae21d",
+        "src/components/layout/MobileBottomNav.tsx": "631763419fa2",
         "src/components/layout/PageTransition.tsx": "500656dd741d",
         "src/components/layout/PlanUsageStrip.tsx": "76b79575019d",
         "src/components/layout/mobile-nav-platform.ts": "be85b5893eb0",
@@ -632,6 +633,13 @@
         "src/hooks/useSheetManager.ts": "aa86d4665d9a",
         "src/hooks/useSwipeNavigation.ts": "917fec8a1242",
         "src/hooks/useVirtualKeyboard.ts": "cd9133e4472c",
+        "src/i18n/LanguagePreferenceSync.tsx": "f1a533c6da56",
+        "src/i18n/LanguageProvider.tsx": "10f3c6a09aa8",
+        "src/i18n/ar.ts": "e93e0de58bc2",
+        "src/i18n/context.ts": "862082f8b940",
+        "src/i18n/en.ts": "5ba645292e8d",
+        "src/i18n/format.ts": "99c743113c52",
+        "src/i18n/language.ts": "398827de4cd9",
         "src/lib/back-button-manager.ts": "8f9f1a1d70ca",
         "src/lib/backButtonManager.ts": "20a39bae7640",
         "src/lib/biometricAuth.ts": "fb737d92cb8d",
@@ -644,7 +652,7 @@
         "src/lib/utils.ts": "fe02cb01defc",
         "src/main.tsx": "edecd8a6865f",
         "src/pages/Landing.tsx": "c618847f38a4",
-        "src/pages/More.tsx": "b7e547e0cf60",
+        "src/pages/More.tsx": "fe3ad01587ed",
         "src/pages/NotFound.tsx": "8c62f9d22119",
         "src/pages/Privacy.tsx": "d888313990ad",
         "src/pages/Terms.tsx": "4ff361a45f01",
@@ -655,9 +663,9 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-10-04 f894496",
-      "arabic": "b933854e4a74",
-      "arabicChecked": "2026-10-01 68f0871"
+      "checked": "2026-10-04 188f986",
+      "arabic": "74de4af25fce",
+      "arabicChecked": "2026-10-04 188f986"
     }
   }
 }

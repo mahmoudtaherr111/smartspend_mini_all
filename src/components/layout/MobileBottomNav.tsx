@@ -29,10 +29,12 @@ import {
   supportsIphoneNavScrub,
   type HorizontalTabRect,
 } from "./mobile-nav-platform";
+import { useLanguage } from "@/i18n/context";
+import type { MessageKey } from "@/i18n/ar";
 
 interface TabItem {
   id: string;
-  label: string;
+  labelKey: MessageKey;
   icon: typeof PlusCircle;
   tab: string;
   href: string;
@@ -41,30 +43,31 @@ interface TabItem {
 const navTabs: TabItem[] = [
   {
     id: "record",
-    label: "تسجيل",
+    labelKey: "nav.record",
     icon: PlusCircle,
     tab: "record",
     href: "/dashboard?tab=record",
   },
   {
     id: "stats",
-    label: "إحصائيات",
+    labelKey: "nav.stats",
     icon: BarChart3,
     tab: "stats",
     href: "/dashboard?tab=stats",
   },
-  { id: "ai", label: "مركز AI", icon: Sparkles, tab: "ai", href: "/ai" },
+  { id: "ai", labelKey: "nav.ai", icon: Sparkles, tab: "ai", href: "/ai" },
   {
     id: "calendar",
-    label: "تقويم",
+    labelKey: "nav.calendar",
     icon: CalendarDays,
     tab: "calendar",
     href: "/dashboard?tab=calendar",
   },
-  { id: "more", label: "المزيد", icon: Menu, tab: "more", href: "/more" },
+  { id: "more", labelKey: "nav.more", icon: Menu, tab: "more", href: "/more" },
 ];
 
 export function MobileBottomNav() {
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -389,7 +392,7 @@ export function MobileBottomNav() {
                     isPressed && "scale-[1.025] -translate-y-px",
                   )}
                   aria-current={isSelected ? "page" : undefined}
-                  aria-label={item.label}
+                  aria-label={t(item.labelKey)}
                 >
                   {isVisualSelected && !isIos && (
                     <motion.div
@@ -409,7 +412,7 @@ export function MobileBottomNav() {
                     )}
                   />
                   <span className="truncate max-w-full px-0.5">
-                    {item.label}
+                    {t(item.labelKey)}
                   </span>
                 </Link>
               );

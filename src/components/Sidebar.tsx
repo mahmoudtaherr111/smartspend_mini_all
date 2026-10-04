@@ -33,6 +33,9 @@ import {
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useLanguage } from "@/i18n/context";
+import type { MessageKey } from "@/i18n/ar";
+
 const darkModeLogo = "/photos/dark_mode_logo-removebg-preview.png";
 const whiteModeLogo = "/photos/white_mode_logo-removebg-preview.png";
 
@@ -41,21 +44,28 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "الرئيسية", href: "/dashboard" },
-  { icon: BarChart3, label: "إحصائيات", href: "/dashboard?tab=stats" },
-  { icon: Sparkles, label: "مركز AI", href: "/ai" },
-  { icon: Calendar, label: "التقويم", href: "/dashboard?tab=calendar" },
+interface SidebarItem {
+  icon: typeof LayoutDashboard;
+  labelKey: MessageKey;
+  href: string;
+}
+
+const menuItems: SidebarItem[] = [
+  { icon: LayoutDashboard, labelKey: "nav.home", href: "/dashboard" },
+  { icon: BarChart3, labelKey: "nav.stats", href: "/dashboard?tab=stats" },
+  { icon: Sparkles, labelKey: "nav.ai", href: "/ai" },
+  { icon: Calendar, labelKey: "nav.calendar", href: "/dashboard?tab=calendar" },
 ];
 
-const bottomItems = [
-  { icon: HelpCircle, label: "الدعم", href: "/support" },
-  { icon: Menu, label: "المزيد", href: "/more" },
+const bottomItems: SidebarItem[] = [
+  { icon: HelpCircle, labelKey: "nav.support", href: "/support" },
+  { icon: Menu, labelKey: "nav.more", href: "/more" },
 ];
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const { user, isAdmin, isPro, hasUltraAccess, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { dir, t } = useLanguage();
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -191,20 +201,20 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   "tap-target flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-xl transition-all duration-200 group relative select-none",
                   "hover:bg-white/10 active:scale-98",
                   isActive
-                    ? "bg-emerald-500/15 text-emerald-400 font-bold border-r-2 border-emerald-500 shadow-xs"
+                    ? "bg-emerald-500/15 text-emerald-400 font-bold border-s-2 border-emerald-500 shadow-xs"
                     : "text-white/70 hover:text-white",
                 )}
-                onMouseEnter={() => setHoveredItem(item.label)}
+                onMouseEnter={() => setHoveredItem(item.labelKey)}
                 onMouseLeave={() => setHoveredItem(null)}
               >
                 <Icon
                   className={cn(
                     "w-4 h-4 shrink-0 transition-transform duration-200",
-                    hoveredItem === item.label && "scale-110",
+                    hoveredItem === item.labelKey && "scale-110",
                   )}
                 />
                 <span className="text-xs font-semibold whitespace-nowrap">
-                  {item.label}
+                  {t(item.labelKey)}
                 </span>
               </Link>
             );
@@ -217,13 +227,13 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               "tap-target flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-xl transition-all duration-200 group relative select-none",
               "hover:bg-white/10 active:scale-98",
               location.pathname === "/pro"
-                ? "bg-amber-500/15 text-amber-300 font-bold border-r-2 border-amber-400 shadow-xs"
+                ? "bg-amber-500/15 text-amber-300 font-bold border-s-2 border-amber-400 shadow-xs"
                 : "text-white/70 hover:text-white",
             )}
           >
             <Crown className="w-4 h-4 shrink-0 text-amber-400" />
             <span className="text-xs font-semibold whitespace-nowrap">
-              البرو والأسعار
+              {t("more.item.pro")}
             </span>
           </Link>
 
@@ -234,13 +244,13 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               "tap-target flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-xl transition-all duration-200 group relative select-none",
               "hover:bg-white/10 active:scale-98",
               location.pathname === "/bank-sync"
-                ? "bg-emerald-500/15 text-emerald-300 font-bold border-r-2 border-emerald-400 shadow-xs"
+                ? "bg-emerald-500/15 text-emerald-300 font-bold border-s-2 border-emerald-400 shadow-xs"
                 : "text-white/70 hover:text-white",
             )}
           >
             <Smartphone className="w-4 h-4 shrink-0 text-emerald-400" />
             <span className="text-xs font-semibold whitespace-nowrap">
-              الربط البنكي
+              {t("more.item.bankSync")}
             </span>
           </Link>
 
@@ -249,7 +259,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             <>
               <div className="pt-3 pb-1">
                 <p className="text-[10px] font-bold text-white/40 px-3 uppercase tracking-wider">
-                  الإدارة
+                  {t("more.item.admin")}
                 </p>
               </div>
               <Link
@@ -259,12 +269,12 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   "flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-xl transition-all duration-200 group relative select-none",
                   "hover:bg-white/10 active:scale-98",
                   location.pathname === "/admin"
-                    ? "bg-amber-500/15 text-amber-400 font-bold border-r-2 border-amber-500 shadow-xs"
+                    ? "bg-amber-500/15 text-amber-400 font-bold border-s-2 border-amber-500 shadow-xs"
                     : "text-white/70 hover:text-white",
                 )}
               >
                 <Shield className="w-4 h-4 shrink-0 text-amber-400" />
-                <span className="text-xs font-semibold">لوحة الأدمن</span>
+                <span className="text-xs font-semibold">{t("more.item.admin")}</span>
               </Link>
             </>
           )}
@@ -282,7 +292,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 className="flex items-center gap-3 px-3 py-2 rounded-xl text-white/70 hover:bg-white/10 hover:text-white transition-all duration-200 text-xs font-semibold active:scale-98 select-none"
               >
                 <Icon className="w-4 h-4 shrink-0" />
-                <span>{item.label}</span>
+                <span>{t(item.labelKey)}</span>
               </Link>
             );
           })}
@@ -293,10 +303,10 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               if (isOpen) onToggle();
               setShowLogoutConfirm(true);
             }}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-400 transition-all duration-200 text-xs font-bold active:scale-98 select-none"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-400 transition-all duration-200 text-xs font-bold active:scale-98 select-none cursor-pointer"
           >
             <LogOut className="w-4 h-4 shrink-0" />
-            <span>تسجيل الخروج</span>
+            <span>{t("more.logout.button")}</span>
           </button>
         </div>
       </aside>
@@ -304,19 +314,18 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
       {/* Calm & Professional Logout Confirmation Dialog */}
       <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
         <AlertDialogContent
-          className="z-[100005] max-w-sm rounded-2xl border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl p-6 text-end"
-          dir="rtl"
+          className="z-[100005] max-w-sm rounded-2xl border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl p-6"
+          dir={dir}
         >
-          <AlertDialogHeader className="text-end space-y-2">
+          <AlertDialogHeader className="space-y-2 text-start">
             <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 mb-1">
               <LogOut className="w-5 h-5" />
             </div>
             <AlertDialogTitle className="text-base font-black text-slate-900 dark:text-white">
-              تسجيل الخروج
+              {t("more.logout.title")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              هل تريد تسجيل الخروج من حسابك؟ سيتوجب عليك تسجيل الدخول مجدداً
-              للمتابعة.
+              {t("more.logout.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse justify-start gap-2 mt-4 sm:space-x-0">
@@ -328,14 +337,14 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 logout();
               }}
             >
-              تسجيل الخروج
+              {t("more.logout.confirm")}
             </Button>
             <Button
               variant="outline"
               className="rounded-xl font-semibold text-xs h-9 px-4 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
               onClick={() => setShowLogoutConfirm(false)}
             >
-              إلغاء
+              {t("more.logout.cancel")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

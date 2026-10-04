@@ -17,7 +17,7 @@ account of the same person.
 | Piece | Where | What it does |
 | --- | --- | --- |
 | Login screen | `src/pages/Login.tsx#Login` | Phone login, phone sign-up with optional WhatsApp verification, Google and passkey sign-in |
-| Settings | `src/pages/Settings.tsx#Settings`, `src/components/profile/SmartProfileSettings.tsx#SmartProfileSettings`, `src/components/auth/PasskeySettings.tsx#PasskeySettings` | Name, avatar and profile; passkeys and the app lock PIN |
+| Settings | `src/pages/Settings.tsx#Settings`, `src/components/profile/SmartProfileSettings.tsx#SmartProfileSettings`, `src/components/auth/PasskeySettings.tsx#PasskeySettings`, `src/components/settings/LanguageSettings.tsx` | Name, avatar and profile; passkeys, app lock PIN, appearance and interface language |
 | Profile view | `src/components/profile/SmartProfileView.tsx#SmartProfileView` | The profile's answers: income, fixed commitments, the share of income left after them (named as such: it is not savings, spending is not in it), and how complete the profile is, without claiming the reports are more accurate for it |
 | Client session | `src/hooks/useAuth.ts`, `src/providers/trpc.ts` | Who is signed in, the offline identity, tab sync, logout; the token header on every call |
 | Google sign-in | the `/api/auth/google/start` and `/api/auth/google/callback` routes in `api/boot.ts`, `api/auth-router.ts` | OAuth with a state cookie, account creation, the `google_session` cookie |

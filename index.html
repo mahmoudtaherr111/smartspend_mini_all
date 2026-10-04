@@ -254,6 +254,14 @@
             document.documentElement.style.backgroundColor = "#f8fafc";
             document.documentElement.style.colorScheme = "light";
           }
+          var savedLang = localStorage.getItem("smartspend_lang");
+          if (savedLang === "en") {
+            document.documentElement.lang = "en";
+            document.documentElement.dir = "ltr";
+          } else {
+            document.documentElement.lang = "ar";
+            document.documentElement.dir = "rtl";
+          }
         } catch (e) {}
       })();
     </script>

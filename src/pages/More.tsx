@@ -4,6 +4,7 @@ import {
   Bell,
   Briefcase,
   ChevronLeft,
+  ChevronRight,
   CircleHelp,
   CreditCard,
   Gauge,
@@ -19,6 +20,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ExportExpensesCard } from "@/components/expenses/ExportExpensesCard";
+import { useLanguage } from "@/i18n/context";
+import type { MessageKey } from "@/i18n/ar";
 import {
   AdaptiveDialog,
   AdaptiveDialogClose,
@@ -30,78 +33,90 @@ import {
   AdaptiveDialogTrigger,
 } from "@/components/ui/adaptive-dialog";
 
-const sections = [
+interface MoreItem {
+  href: string;
+  labelKey: MessageKey;
+  descKey: MessageKey;
+  icon: typeof UserRound;
+}
+
+interface MoreSection {
+  titleKey: MessageKey;
+  items: MoreItem[];
+}
+
+const sections: MoreSection[] = [
   {
-    title: "الحساب والبيانات",
+    titleKey: "more.section.account",
     items: [
       {
         href: "/settings/profile",
-        label: "الملف الشخصي",
-        description: "بياناتك وملفك المالي الذكي",
+        labelKey: "more.item.profile",
+        descKey: "more.item.profileDesc",
         icon: UserRound,
       },
       {
         href: "/settings/people",
-        label: "الأشخاص والديون",
-        description: "إدارة جهات الاتصال، الديون، والسلف",
+        labelKey: "more.item.people",
+        descKey: "more.item.peopleDesc",
         icon: Users,
       },
       {
         href: "/settings/business",
-        label: "النشاط التجاري",
-        description: "إدارة حسابك التجاري وفصل مصاريف العمل",
+        labelKey: "more.item.business",
+        descKey: "more.item.businessDesc",
         icon: Briefcase,
       },
     ],
   },
   {
-    title: "التفضيلات والمظهر",
+    titleKey: "more.section.preferences",
     items: [
       {
         href: "/settings/appearance",
-        label: "مظهر التطبيق",
-        description: "الوضع الفاتح والداكن ومظهر الواجهة",
+        labelKey: "more.item.appearance",
+        descKey: "more.item.appearanceDesc",
         icon: Palette,
       },
       {
         href: "/settings/notifications",
-        label: "الإشعارات والتنبيهات",
-        description: "التحكم في التنبيهات والتذكيرات المالية",
+        labelKey: "more.item.notifications",
+        descKey: "more.item.notificationsDesc",
         icon: Bell,
       },
       {
         href: "/settings/ai-report",
-        label: "تقرير الذكاء الاصطناعي وواتساب",
-        description: "التقارير الدورية وتنبيهات واتساب الذكية",
+        labelKey: "more.item.aiReport",
+        descKey: "more.item.aiReportDesc",
         icon: Sparkles,
       },
     ],
   },
   {
-    title: "الخدمات",
+    titleKey: "more.section.services",
     items: [
       {
         href: "/pro",
-        label: "الخطة والاشتراك",
-        description: "راجع خطتك ومزايا SmartSpend",
+        labelKey: "more.item.pro",
+        descKey: "more.item.proDesc",
         icon: CreditCard,
       },
       {
         href: "/plan",
-        label: "خطتك والتزاماتك",
-        description: "اللي عليك لحد القبض، والخطة اللي اتفقت عليها مع سمارت",
+        labelKey: "more.item.plan",
+        descKey: "more.item.planDesc",
         icon: ListChecks,
       },
       {
         href: "/bank-sync",
-        label: "الربط البنكي",
-        description: "استيراد العمليات بأمان من هاتفك",
+        labelKey: "more.item.bankSync",
+        descKey: "more.item.bankSyncDesc",
         icon: Smartphone,
       },
       {
         href: "/support",
-        label: "المساعدة والدعم",
-        description: "الأسئلة الشائعة والتواصل معنا",
+        labelKey: "more.item.support",
+        descKey: "more.item.supportDesc",
         icon: CircleHelp,
       },
     ],
@@ -133,6 +148,8 @@ function countUnsentOffline(): number {
 
 export default function More() {
   const { user, isAdmin, logout } = useAuth();
+  const { dir, t } = useLanguage();
+  const ForwardChevron = dir === "rtl" ? ChevronLeft : ChevronRight;
   const [logoutOpen, setLogoutOpen] = useState(false);
   // Logging out clears the offline queue (it belongs to this account); say so first.
   const unsentCount = logoutOpen ? countUnsentOffline() : 0;
@@ -149,9 +166,9 @@ export default function More() {
     <div className="min-h-full bg-slate-50/70 px-4 py-5 dark:bg-slate-950/40 sm:px-6">
       <div className="mx-auto max-w-2xl space-y-6">
         <header className="space-y-1">
-          <h1 className="text-2xl font-bold">المزيد</h1>
+          <h1 className="text-2xl font-bold">{t("more.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            حسابك وخدمات SmartSpend في مكان واحد
+            {t("more.subtitle")}
           </p>
         </header>
 
@@ -161,25 +178,25 @@ export default function More() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate font-bold" dir="auto">
-              <bdi>{user?.name || "مستخدم SmartSpend"}</bdi>
+              <bdi>{user?.name || t("more.defaultUserName")}</bdi>
             </p>
             <p className="truncate text-xs text-muted-foreground" dir="auto">
-              <bdi>{user?.email || user?.phone || "حساب مسجل"}</bdi>
+              <bdi>{user?.email || user?.phone || t("more.defaultUserAccount")}</bdi>
             </p>
           </div>
           <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
             {user?.plan === "ultra"
-              ? "Ultra"
+              ? t("more.plan.ultra")
               : user?.plan === "pro"
-                ? "Pro"
-                : "مجاني"}
+                ? t("more.plan.pro")
+                : t("more.plan.free")}
           </span>
         </div>
 
         {sections.map((section) => (
-          <section key={section.title} className="space-y-2">
+          <section key={section.titleKey} className="space-y-2">
             <h2 className="px-1 text-xs font-bold text-muted-foreground">
-              {section.title}
+              {t(section.titleKey)}
             </h2>
             <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
               {section.items.map((item, index) => {
@@ -201,13 +218,13 @@ export default function More() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-bold">
-                        {item.label}
+                        {t(item.labelKey)}
                       </span>
                       <span className="block truncate text-xs text-muted-foreground">
-                        {item.description}
+                        {t(item.descKey)}
                       </span>
                     </span>
-                    <ChevronLeft className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    <ForwardChevron className="h-5 w-5 shrink-0 text-muted-foreground" />
                   </Link>
                 );
               })}
@@ -222,7 +239,7 @@ export default function More() {
             id="security-system-title"
             className="px-1 text-xs font-bold text-muted-foreground"
           >
-            الأمان والنظام
+            {t("more.section.security")}
           </h2>
           <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
             <Link
@@ -236,13 +253,13 @@ export default function More() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-bold">
-                  الأمان والدخول بالبصمة
+                  {t("more.item.security")}
                 </span>
                 <span className="block truncate text-xs text-muted-foreground">
-                  البصمة ومفاتيح المرور وقفل التطبيق
+                  {t("more.item.securityDesc")}
                 </span>
               </span>
-              <ChevronLeft className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <ForwardChevron className="h-5 w-5 shrink-0 text-muted-foreground" />
             </Link>
 
             {isAdmin && (
@@ -258,13 +275,13 @@ export default function More() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold text-amber-700 dark:text-amber-400">
-                    لوحة الإدارة
+                    {t("more.item.admin")}
                   </span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    المستخدمون والدعم وإعدادات النظام
+                    {t("more.item.adminDesc")}
                   </span>
                 </span>
-                <ChevronLeft className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <ForwardChevron className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
               </Link>
             )}
 
@@ -281,7 +298,7 @@ export default function More() {
                     className="active-press flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-2.5 text-sm font-bold text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:text-red-400 cursor-pointer"
                   >
                     <LogOut className="h-4 w-4" />
-                    تسجيل الخروج
+                    {t("more.logout.button")}
                   </button>
                 </AdaptiveDialogTrigger>
                 <AdaptiveDialogContent
@@ -291,21 +308,20 @@ export default function More() {
                   }}
                 >
                   <AdaptiveDialogHeader>
-                    <AdaptiveDialogTitle>تسجيل الخروج؟</AdaptiveDialogTitle>
+                    <AdaptiveDialogTitle>{t("more.logout.title")}</AdaptiveDialogTitle>
                     <AdaptiveDialogDescription>
-                      هتحتاج تسجل دخولك مرة تانية للوصول لبياناتك على الجهاز ده.
+                      {t("more.logout.description")}
                     </AdaptiveDialogDescription>
                     {unsentCount > 0 && (
                       <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                        عندك {unsentCount} تسجيل اتكتب من غير نت ولسه ماتبعتش. لو خرجت دلوقتي هيتمسحوا من الجهاز ده؛
-                        وصّل النت واستنى لما يتبعتوا الأول.
+                        {t("more.logout.unsentWarning", { count: unsentCount })}
                       </p>
                     )}
                   </AdaptiveDialogHeader>
                   <AdaptiveDialogFooter>
                     <AdaptiveDialogClose asChild>
                       <Button ref={cancelLogoutRef} variant="outline" disabled={isLoggingOut}>
-                        إلغاء
+                        {t("more.logout.cancel")}
                       </Button>
                     </AdaptiveDialogClose>
                     <Button
@@ -313,7 +329,7 @@ export default function More() {
                       disabled={isLoggingOut}
                       onClick={() => void confirmLogout()}
                     >
-                      {isLoggingOut ? "جاري تسجيل الخروج..." : "تسجيل الخروج"}
+                      {isLoggingOut ? t("more.logout.loading") : t("more.logout.confirm")}
                     </Button>
                   </AdaptiveDialogFooter>
                 </AdaptiveDialogContent>

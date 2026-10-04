@@ -1,6 +1,8 @@
 import { memo, type ReactNode } from "react";
 import { TrendingDown, WalletCards } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/i18n/context";
+import { formatCurrency } from "@/i18n/format";
 
 export function money(value: unknown) {
   return Number(value || 0).toLocaleString("en-US", {
@@ -56,17 +58,19 @@ export function HomeSummaryCards({
   totalIncome = 0,
   totalExpense = 0,
 }: HomeSummaryCardsProps) {
+  const { language, t } = useLanguage();
+
   return (
     <section className="grid grid-cols-2 gap-2">
       <SummaryChip
-        label="دخل الشهر"
-        value={`${money(totalIncome)} ج.م`}
+        label={t("dashboard.income")}
+        value={formatCurrency(totalIncome, language)}
         tone="income"
         icon={<WalletCards className="w-3.5 h-3.5" />}
       />
       <SummaryChip
-        label="مصروف الشهر"
-        value={`${money(totalExpense)} ج.م`}
+        label={t("dashboard.expense")}
+        value={formatCurrency(totalExpense, language)}
         tone="expense"
         icon={<TrendingDown className="w-3.5 h-3.5" />}
       />

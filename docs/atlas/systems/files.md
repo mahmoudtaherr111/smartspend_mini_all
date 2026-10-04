@@ -358,6 +358,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/seasons/SeasonsPanel.tsx` | [money](money.md) |
 | `src/components/seo/SEOMeta.tsx` | [web-app](web-app.md) |
 | `src/components/settings/BusinessSettingsView.tsx` | [accounts](accounts.md) |
+| `src/components/settings/LanguageSettings.tsx` | [accounts](accounts.md) |
 | `src/components/settings/PeopleSettingsView.tsx` | [accounts](accounts.md) |
 | `src/components/settings/SmsWebhookSettings.tsx` | [bank-messages](bank-messages.md) |
 | `src/components/ui/accordion.tsx` | [web-app](web-app.md) |
@@ -441,6 +442,13 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/hooks/useSwipeNavigation.ts` | [web-app](web-app.md) |
 | `src/hooks/useVirtualKeyboard.ts` | [web-app](web-app.md) |
 | `src/hooks/useVoiceCallEntry.ts` | [voice-calls](voice-calls.md) |
+| `src/i18n/LanguagePreferenceSync.tsx` | [web-app](web-app.md) |
+| `src/i18n/LanguageProvider.tsx` | [web-app](web-app.md) |
+| `src/i18n/ar.ts` | [web-app](web-app.md) |
+| `src/i18n/context.ts` | [web-app](web-app.md) |
+| `src/i18n/en.ts` | [web-app](web-app.md) |
+| `src/i18n/format.ts` | [web-app](web-app.md) |
+| `src/i18n/language.ts` | [web-app](web-app.md) |
 | `src/lib/back-button-manager.ts` | [web-app](web-app.md) |
 | `src/lib/backButtonManager.ts` | [web-app](web-app.md) |
 | `src/lib/biometricAuth.ts` | [web-app](web-app.md) |

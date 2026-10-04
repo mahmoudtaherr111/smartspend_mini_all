@@ -322,7 +322,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `profile.getMyProfile` | query | `authedProcedure` | no | `user_profiles` | — | — | — |
 | `profile.getNextOnboardingQuestion` | query | `authedProcedure` | no | `user_profiles` | — | `api/services/adaptive-question-engine.ts`, `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/profile/SmartProfileSettings.tsx` |
 | `profile.getQuestions` | query | `authedProcedure` | no | `onboarding_questions` | — | `api/services/adaptive-question-engine.ts` | — |
-| `profile.getSmartProfile` | query | `authedProcedure` | no | — | — | `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/components/profile/SmartProfileView.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/pages/Home.tsx`, `src/pages/Settings.tsx` |
+| `profile.getSmartProfile` | query | `authedProcedure` | no | — | — | `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/components/profile/SmartProfileView.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/i18n/LanguagePreferenceSync.tsx`, `src/pages/Home.tsx`, `src/pages/Settings.tsx` |
 | `profile.getSmsLogs` | query | `authedProcedure` | no | `raw_sms_events` | — | — | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getSmsSuggestions` | query | `authedProcedure` | no | `raw_sms_events` | — | — | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.getWebhookToken` | query | `authedProcedure` | no | `raw_sms_events`, `webhook_tokens` | — | — | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
@@ -336,7 +336,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `profile.submitOnboardingAnswer` | mutation | `authedProcedure` | yes | — | — | `api/services/adaptive-question-engine.ts`, `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx` |
 | `profile.updateContact` | mutation | `authedProcedure` | yes | `user_contacts` | `user_contacts` | `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts` | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.updateProfile` | mutation | `authedProcedure` | yes | — | `user_profiles` | — | — |
-| `profile.updateSmartProfile` | mutation | `authedProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.updateSmartProfile` | mutation | `authedProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | mutation | `authedProcedure` | yes | `local_users` | `local_users`, `users` | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts` | `src/components/profile/SmartProfileSettings.tsx` |
 
 ### `referral` — `api/referral-router.ts`

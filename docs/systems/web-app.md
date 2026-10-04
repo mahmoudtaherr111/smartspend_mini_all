@@ -24,6 +24,7 @@ public pages (landing, privacy, terms and the not-found page).
 | Robot check | `src/lib/turnstile-config.ts`, `src/components/auth/TurnstileWidget.tsx` | The Cloudflare Turnstile widget on the sign-up form, built in only when `VITE_TURNSTILE_SITE_KEY` is set ([accounts](accounts.md)) |
 | Behaviour hooks | `src/hooks/useAppResume.ts`, `src/hooks/useScrollRestoration.ts`, `src/hooks/useVirtualKeyboard.ts`, `src/hooks/useSwipeNavigation.ts` | Returning to the app, scroll position, the on-screen keyboard and swipe gestures |
 | Utilities | `src/lib/transactionDisplay.ts`, `src/lib/financial-taxonomy.ts`, `src/lib/utils.ts` | How a transaction is presented; the category pickers, icons and colours, read from the server's taxonomy in `contracts/categories.ts` rather than a copy; the class-name helper |
+| Interface language | `src/i18n/` | Arabic source of truth and default (`src/i18n/ar.ts`), optional English dictionary loaded on demand (`src/i18n/en.ts`), `DirectionProvider`, and pre-render synchronous direction application |
 | Public pages | `src/pages/Landing.tsx`, `src/pages/More.tsx`, `src/pages/Privacy.tsx`, `src/pages/Terms.tsx`, `src/pages/NotFound.tsx` | The landing page, the settings menu (which also holds the expense export card of [money](money.md)), the two legal pages and the 404 |
 
 ## Routes and who may open them
@@ -95,6 +96,7 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
 | What is cached offline | `src/lib/queryPersister.ts` | `tests/query-persister.test.ts` |
 | Service worker and install | `src/pwa/register-sw.ts`, `src/components/pwa/PwaInstallPrompt.tsx` | `tests/pwa-instant-resume.test.ts` |
 | The Android back button | `src/lib/back-button-manager.ts` | `tests/back-button-manager-adversarial.test.ts` |
+| Interface language or dictionary | `src/i18n/ar.ts`, `src/i18n/en.ts`, `src/i18n/context.ts` | `tests/unit/ui-language.test.ts` |
 
 ## Rules for changes here
 1. Reach the server only through `trpc.<router>.<procedure>`; from `api/` import types only (`src/AGENTS.md`,

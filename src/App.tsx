@@ -21,6 +21,9 @@ import {
 import { trpc, trpcClient } from "@/providers/trpc";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { LanguageProvider } from "@/i18n/LanguageProvider";
+import { LanguagePreferenceSync } from "@/i18n/LanguagePreferenceSync";
+import { useLanguage } from "@/i18n/context";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { Sidebar } from "@/components/Sidebar";
 import { useNativeThemeSync } from "@/hooks/useNativeThemeSync";
@@ -169,6 +172,7 @@ export function getAppContentMode(pathname: string): AppContentMode {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const { user, isVerified, isLoading: isAuthLoading } = useAuth();
+  const { dir } = useLanguage();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   useScrollRestoration(scrollRef);
   useLaunchNavigation();
@@ -198,7 +202,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="app-shell bg-background relative overflow-hidden" dir="rtl">
+    <div className="app-shell bg-background relative overflow-hidden" dir={dir}>
       {/* Premium Ambient Background Glows */}
       <div className="absolute top-[-5%] right-[-10%] ambient-glow glow-emerald pointer-events-none" />
       <div className="absolute bottom-[15%] left-[-15%] ambient-glow glow-indigo pointer-events-none" />
@@ -581,21 +585,24 @@ function AuthScopedApplication() {
 
   const application = (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <VirtualKeyboardProvider>
-        <NativeLifecycleBridge />
-        <BrowserRouter>
-          <BiometricLockProvider>
-            <Layout>
-              <Suspense fallback={<PageLoadingSkeleton />}>
-                <AnimatedRoutes />
-              </Suspense>
-            </Layout>
-            <BiometricAppEnhancements />
-            {user && <VoiceCallHost key={`${user.type}:${user.id}`} />}
-            <Toaster position="top-center" richColors className="pt-safe" />
-          </BiometricLockProvider>
-        </BrowserRouter>
-      </VirtualKeyboardProvider>
+      <LanguageProvider englishAccess="allowed">
+        <LanguagePreferenceSync />
+        <VirtualKeyboardProvider>
+          <NativeLifecycleBridge />
+          <BrowserRouter>
+            <BiometricLockProvider>
+              <Layout>
+                <Suspense fallback={<PageLoadingSkeleton />}>
+                  <AnimatedRoutes />
+                </Suspense>
+              </Layout>
+              <BiometricAppEnhancements />
+              {user && <VoiceCallHost key={`${user.type}:${user.id}`} />}
+              <Toaster position="top-center" richColors className="pt-safe" />
+            </BiometricLockProvider>
+          </BrowserRouter>
+        </VirtualKeyboardProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 

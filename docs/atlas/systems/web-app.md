@@ -88,7 +88,7 @@ flowchart LR
 | `web-lib` — Web utilities | Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/. | 10 |
 | `web-pages` — Web pages | Route-level page components lazy-loaded by src/App.tsx. | 16 |
 | `web-shared` — Shared web components | Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton. | 5 |
-| `web-shell` — Web app shell | Entry point, providers, layout, route guards and PWA or native integration. | 18 |
+| `web-shell` — Web app shell | Entry point, providers, layout, route guards and PWA or native integration. | 25 |
 | `web-ui-kit` — UI primitives | shadcn and Radix UI primitives in src/components/ui/. | 55 |
 
 ## API procedures
@@ -139,7 +139,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/web-app.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>115 files and declarations</summary>
+<details><summary>122 files and declarations</summary>
 
 - `src/App.tsx`
 - `src/components/NotificationBell.tsx`
@@ -234,6 +234,13 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/hooks/useSheetManager.ts`
 - `src/hooks/useSwipeNavigation.ts`
 - `src/hooks/useVirtualKeyboard.ts`
+- `src/i18n/LanguagePreferenceSync.tsx`
+- `src/i18n/LanguageProvider.tsx`
+- `src/i18n/ar.ts`
+- `src/i18n/context.ts`
+- `src/i18n/en.ts`
+- `src/i18n/format.ts`
+- `src/i18n/language.ts`
 - `src/lib/back-button-manager.ts`
 - `src/lib/backButtonManager.ts`
 - `src/lib/biometricAuth.ts`
