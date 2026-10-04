@@ -257,7 +257,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-57 files in its import closure (not counting `src/components/ui/`).
+54 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -384,6 +384,7 @@ _None._
 | `wallet.getWalletTransactions` | useQuery | `src/components/bank-sync/DigitalBankingSuite.tsx` |
 | `wallet.getWallets` | useQuery, utils.invalidate | `src/components/bank-sync/DigitalBankingSuite.tsx` |
 | `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx` |
+| `webauthn.deletePasskey` | useMutation | `src/components/auth/PasskeySettings.tsx` |
 | `webauthn.generateRegistrationOptions` | useMutation | `src/components/auth/PasskeySettings.tsx` |
 | `webauthn.verifyRegistration` | useMutation | `src/components/auth/PasskeySettings.tsx` |
 
@@ -436,7 +437,7 @@ _None._
 
 ### `Settings` — `src/pages/Settings.tsx`
 
-23 files in its import closure (not counting `src/components/ui/`).
+20 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -469,6 +470,7 @@ _None._
 | `profile.updateUserInfo` | useMutation | `src/components/profile/SmartProfileSettings.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 | `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx` |
+| `webauthn.deletePasskey` | useMutation | `src/components/auth/PasskeySettings.tsx` |
 | `webauthn.generateRegistrationOptions` | useMutation | `src/components/auth/PasskeySettings.tsx` |
 | `webauthn.verifyRegistration` | useMutation | `src/components/auth/PasskeySettings.tsx` |
 

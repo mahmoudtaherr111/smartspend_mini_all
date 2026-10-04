@@ -3,7 +3,7 @@
  * the socket. The session token never goes into a WebSocket URL; the ticket lives 60 seconds and opens one call.
  */
 import { randomBytes, randomUUID } from "crypto";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { voiceCalls } from "../../../../db/schema";
 import type {
   VoiceClientPlatform,
@@ -53,7 +53,13 @@ export interface TicketPayload {
 }
 
 export type StartCallResult =
-  | { kind: "blocked"; reason: string; message: string }
+  | {
+      kind: "blocked";
+      reason: string;
+      message: string;
+      canTakeover?: boolean;
+      activeCallId?: string;
+    }
   | {
       kind: "ok";
       callId: string;
@@ -83,7 +89,12 @@ const BLOCKED_MESSAGES: Record<string, string> = {
 
 export async function startVoiceCall(
   user: VoiceEntitlementUser,
-  input: { voice?: string; client: VoiceClientPlatform; mode?: VoiceMode },
+  input: {
+    voice?: string;
+    client: VoiceClientPlatform;
+    mode?: VoiceMode;
+    takeover?: boolean;
+  },
 ): Promise<StartCallResult> {
   const entitlements = await getVoiceEntitlements(user);
   const reason = entitlements.blockedReason;
@@ -132,10 +143,69 @@ export async function startVoiceCall(
   // A seat in the model's shared pool before anything is written: a full pool or a quota pause is said now, not after
   // the app has connected. The call renews the seat while it lives and gives it back when it ends.
   const seat = { pool: model, callId, user: { id: user.id, type: user.type } };
-  const admitted = await admitCall(
+  let admitted = await admitCall(
     seat,
     admissionLimits(await getSystemSettings(), model),
   );
+
+  // If user has an open seat on another device, check if that call disconnected or if takeover was requested
+  if (!admitted.ok && admitted.reason === "user_busy") {
+    const existing = await db
+      .select({
+        id: voiceCalls.id,
+        status: voiceCalls.status,
+        model: voiceCalls.model,
+      })
+      .from(voiceCalls)
+      .where(
+        and(
+          eq(voiceCalls.userId, user.id),
+          eq(voiceCalls.userType, user.type),
+          inArray(voiceCalls.status, ["starting", "live", "reconnecting"]),
+        ),
+      );
+
+    const reconnectingOrStale = existing.filter(
+      (c) => c.status === "reconnecting" || c.status === "starting",
+    );
+
+    // If previous call dropped connection (reconnecting) or never connected (starting), clean up immediately.
+    // If user explicitly asked for takeover, close any active call as well.
+    if (reconnectingOrStale.length > 0 || input.takeover) {
+      const toClose = input.takeover ? existing : reconnectingOrStale;
+      for (const oldCall of toClose) {
+        await db
+          .update(voiceCalls)
+          .set({
+            status: "ended",
+            endReason: input.takeover ? "takeover" : "device_switched",
+            endedAt: new Date(),
+          })
+          .where(eq(voiceCalls.id, oldCall.id));
+        await releaseCall({
+          pool: oldCall.model,
+          callId: oldCall.id,
+          user: { id: user.id, type: user.type },
+        });
+      }
+      admitted = await admitCall(
+        seat,
+        admissionLimits(await getSystemSettings(), model),
+      );
+    }
+
+    if (!admitted.ok) {
+      const activeCall = existing.find((c) => c.status === "live");
+      return {
+        kind: "blocked",
+        reason: admitted.reason,
+        message: BLOCKED_MESSAGES[admitted.reason],
+        canTakeover: Boolean(activeCall),
+        activeCallId: activeCall?.id,
+      };
+    }
+  }
+
   if (!admitted.ok)
     return {
       kind: "blocked",

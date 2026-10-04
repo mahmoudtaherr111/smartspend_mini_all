@@ -4,8 +4,9 @@
  * which due date. Everything comes from `coach.*` (api/coach-router.ts); nothing here computes money itself.
  */
 import { useMemo, useState } from "react";
+import { useNavigate, useInRouterContext } from "react-router-dom";
 import { toast } from "sonner";
-import { CalendarClock, CheckCircle2, CircleDashed, ListChecks, Plus, Wallet } from "lucide-react";
+import { ArrowRight, CalendarClock, CheckCircle2, CircleDashed, ListChecks, Plus, Wallet } from "lucide-react";
 import { SEOMeta } from "@/components/seo/SEOMeta";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -343,13 +344,58 @@ function AddCommitment() {
   );
 }
 
+function RouterPlanBackButton() {
+  const navigate = useNavigate();
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate("/more");
+    }
+  };
+  return (
+    <button
+      onClick={handleBack}
+      className="tap-target active-press flex size-11 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/80 text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200"
+      aria-label="الرجوع"
+    >
+      <ArrowRight className="size-5" />
+    </button>
+  );
+}
+
+function PlanBackButton() {
+  const inRouter = useInRouterContext();
+  if (inRouter) {
+    return <RouterPlanBackButton />;
+  }
+  return (
+    <button
+      onClick={() => {
+        if (typeof window !== "undefined" && window.history.length > 1) {
+          window.history.back();
+        } else if (typeof window !== "undefined") {
+          window.location.href = "/more";
+        }
+      }}
+      className="tap-target active-press flex size-11 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/80 text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200"
+      aria-label="الرجوع"
+    >
+      <ArrowRight className="size-5" />
+    </button>
+  );
+}
+
 export default function PlanPage() {
   const overview = useOverview();
   const data = overview.data;
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 px-4 pb-24 pt-4" dir="rtl">
       <SEOMeta title="خطتك والتزاماتك - SmartSpend" />
-      <h1 className="text-lg font-bold">خطتك والتزاماتك</h1>
+      <div className="flex items-center gap-3">
+        <PlanBackButton />
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">خطتك والتزاماتك</h1>
+      </div>
       {overview.isLoading ? (
         <p className="text-sm text-muted-foreground">بيحمّل…</p>
       ) : overview.error || !data ? (

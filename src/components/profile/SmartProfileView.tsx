@@ -14,7 +14,7 @@ import { FinancialGoalsPanel } from "@/components/goals/FinancialGoalsPanel";
 import { cn } from "@/lib/utils";
 import {
   Edit,
-  ChevronRight,
+  ArrowRight,
   Sparkles,
   Home,
   Users,
@@ -239,10 +239,10 @@ export function SmartProfileView({ onEdit, onBack }: { onEdit: () => void; onBac
           {onBack && (
             <button
               onClick={onBack}
-              className="absolute top-4 end-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/25 transition-all shadow-md active:scale-90 hover:scale-105"
-              aria-label="رجوع"
+              className="absolute top-4 start-4 z-20 flex size-11 items-center justify-center rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/25 transition-all shadow-md active:scale-95 hover:scale-105"
+              aria-label="الرجوع إلى الإعدادات"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ArrowRight className="size-5" />
             </button>
           )}
           {/* Glass pattern overlay */}

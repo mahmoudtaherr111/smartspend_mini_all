@@ -32,10 +32,12 @@ import {
 // ─── Adaptive Dialog Context ───
 interface AdaptiveDialogContextValue {
   isMobile: boolean;
+  isInDrawer?: boolean;
 }
 
 const AdaptiveDialogContext = React.createContext<AdaptiveDialogContextValue>({
   isMobile: false,
+  isInDrawer: false,
 });
 
 export function useAdaptiveDialog() {
@@ -77,14 +79,16 @@ export function AdaptiveDialog({
   breakpointQuery = "(max-width: 768px)",
   ...props
 }: AdaptiveDialogProps) {
+  const parentContext = React.useContext(AdaptiveDialogContext);
   const isMobile = useMediaQuery(breakpointQuery);
+  const effectiveNested = nested || (parentContext.isMobile && Boolean(parentContext.isInDrawer));
 
   // Register with Sheet Stack for Android Hardware Back Button and web popstate
   useSheetManager(Boolean(open), () => onOpenChange?.(false));
 
   if (isMobile) {
     return (
-      <AdaptiveDialogContext.Provider value={{ isMobile: true }}>
+      <AdaptiveDialogContext.Provider value={{ isMobile: true, isInDrawer: true }}>
         <Drawer
           open={open}
           onOpenChange={onOpenChange}
@@ -97,7 +101,7 @@ export function AdaptiveDialog({
           shouldScaleBackground={shouldScaleBackground}
           dismissible={dismissible}
           direction={direction}
-          nested={nested}
+          nested={effectiveNested}
           {...props}
         >
           {children}
@@ -107,7 +111,7 @@ export function AdaptiveDialog({
   }
 
   return (
-    <AdaptiveDialogContext.Provider value={{ isMobile: false }}>
+    <AdaptiveDialogContext.Provider value={{ isMobile: false, isInDrawer: false }}>
       <Dialog
         open={open}
         onOpenChange={onOpenChange}
@@ -181,7 +185,7 @@ export const AdaptiveDialogContent = React.forwardRef<
       <DrawerContent
         ref={ref}
         className={cn(
-          "max-h-[92vh] pb-[max(1.5rem,env(safe-area-inset-bottom))] rounded-t-3xl border-t border-slate-200 dark:border-slate-800 bg-background shadow-2xl focus:outline-hidden",
+          "max-h-[92dvh] pb-[max(1.5rem,env(safe-area-inset-bottom))] rounded-t-3xl border-t border-slate-200 dark:border-slate-800 bg-background shadow-2xl focus:outline-hidden [&>div:first-child]:hidden",
           className
         )}
         {...props}
@@ -189,7 +193,7 @@ export const AdaptiveDialogContent = React.forwardRef<
         {showGrabber && (
           <div className="mx-auto w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 my-3 shrink-0" />
         )}
-        <div className="overflow-y-auto px-4 pb-4 flex-1">{children}</div>
+        <div className="overflow-y-auto px-4 pb-4 flex-1 overscroll-contain">{children}</div>
       </DrawerContent>
     );
   }

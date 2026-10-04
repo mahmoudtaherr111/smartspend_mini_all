@@ -121,10 +121,24 @@
     -webkit-touch-callout: default;
   }
 
+  /* Mobile input zoom prevention: iOS WebKit and Android Chrome auto-zoom if input font-size < 16px */
+  @media (max-width: 1024px), (pointer: coarse) {
+    input,
+    textarea,
+    select,
+    input.text-sm,
+    input.text-xs,
+    textarea.text-sm,
+    textarea.text-xs,
+    select.text-sm,
+    select.text-xs {
+      font-size: 16px !important;
+    }
+  }
+
   input,
   textarea,
   select {
-    font-size: 16px;
     touch-action: manipulation;
   }
   img {
@@ -136,13 +150,6 @@
   a {
     touch-action: manipulation; /* Instant physical click response (zero 300ms mobile tap delay) */
     -webkit-touch-callout: none;
-  }
-  @media (min-width: 640px) {
-    input,
-    textarea,
-    select {
-      font-size: inherit;
-    }
   }
 }
 

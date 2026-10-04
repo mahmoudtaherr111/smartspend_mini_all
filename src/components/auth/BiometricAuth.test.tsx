@@ -5,6 +5,7 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { BiometricOnboardingModal } from "./BiometricOnboardingModal";
 import { BiometricLockOverlay } from "./BiometricLockOverlay";
+import { PasskeySettings } from "./PasskeySettings";
 
 // Mock router navigation
 const mockNavigate = vi.fn();
@@ -13,16 +14,74 @@ vi.mock("react-router-dom", async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
+    useSearchParams: () => [new URLSearchParams()],
   };
 });
+
+// Mock WebAuthn browser API
+const mockStartRegistration = vi.fn();
+vi.mock("@simplewebauthn/browser", () => ({
+  startRegistration: (...args: unknown[]) => mockStartRegistration(...args),
+}));
+
+// Mock tRPC
+let mockHasPasskey = false;
+const mockInvalidateCheck = vi.fn();
+const mockGenerateOptionsMutate = vi
+  .fn()
+  .mockResolvedValue({ challenge: "test-challenge" });
+const mockVerifyRegistrationMutate = vi
+  .fn()
+  .mockResolvedValue({ success: true });
+const mockDeletePasskeyMutate = vi.fn().mockResolvedValue({ success: true });
+
+vi.mock("@/providers/trpc", () => ({
+  trpc: {
+    useUtils: () => ({
+      webauthn: {
+        checkHasPasskey: {
+          invalidate: mockInvalidateCheck,
+        },
+      },
+    }),
+    webauthn: {
+      checkHasPasskey: {
+        useQuery: () => ({
+          data: { hasPasskey: mockHasPasskey },
+        }),
+      },
+      generateRegistrationOptions: {
+        useMutation: () => ({
+          mutateAsync: mockGenerateOptionsMutate,
+        }),
+      },
+      verifyRegistration: {
+        useMutation: () => ({
+          mutateAsync: mockVerifyRegistrationMutate,
+        }),
+      },
+      deletePasskey: {
+        useMutation: () => ({
+          mutateAsync: mockDeletePasskeyMutate,
+        }),
+      },
+    },
+  },
+}));
 
 // Mock BiometricLockProvider
 const mockBiometricContext = {
   isLocked: false,
   isPrivacyMaskActive: false,
   hasPin: true,
+  isLockEnabled: false,
+  gracePeriod: 30000,
   isAuthenticating: false,
   lastAuthResult: null,
+  enableLock: vi.fn(),
+  disableLock: vi.fn(),
+  setPin: vi.fn(),
+  setGracePeriod: vi.fn(),
   unlockWithBiometrics: vi.fn().mockResolvedValue({ success: true }),
   unlockWithPin: vi.fn().mockResolvedValue(true),
 };
@@ -57,6 +116,10 @@ vi.mock("@/hooks/useHaptics", () => ({
 describe("Biometric UI Components", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockHasPasskey = false;
+    localStorage.clear();
+    mockBiometricContext.hasPin = false;
+    mockBiometricContext.isLockEnabled = false;
   });
 
   describe("BiometricOnboardingModal", () => {
@@ -120,6 +183,84 @@ describe("Biometric UI Components", () => {
       const optOutBtn = screen.getByText("عدم التذكير مجدداً");
       fireEvent.click(optOutBtn);
       expect(onOptOut).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("PasskeySettings", () => {
+    it("registers passkey directly without popping up a local PIN dialog", async () => {
+      mockHasPasskey = false;
+      mockStartRegistration.mockResolvedValueOnce({ id: "cred-123" });
+
+      render(
+        <BrowserRouter>
+          <PasskeySettings />
+        </BrowserRouter>,
+      );
+
+      expect(screen.getByText("تفعيل الدخول بالبصمة الآن")).toBeDefined();
+
+      // Click "تفعيل الدخول بالبصمة الآن"
+      const activateBtn = screen.getByText("تفعيل الدخول بالبصمة الآن");
+      await act(async () => {
+        fireEvent.click(activateBtn);
+      });
+
+      // No PIN dialog should be open
+      expect(screen.queryByText("رمز PIN الجديد (4 أرقام):")).toBeNull();
+
+      // SimpleWebAuthn registration should be initiated directly
+      expect(mockGenerateOptionsMutate).toHaveBeenCalled();
+      expect(mockStartRegistration).toHaveBeenCalled();
+      expect(mockVerifyRegistrationMutate).toHaveBeenCalled();
+      expect(mockInvalidateCheck).toHaveBeenCalled();
+      expect(localStorage.getItem("smartspend_has_passkey")).toBe("1");
+    });
+
+    it("renders enrolled state with re-enroll and revocation buttons when passkey is active", async () => {
+      mockHasPasskey = true;
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+
+      render(
+        <BrowserRouter>
+          <PasskeySettings />
+        </BrowserRouter>,
+      );
+
+      expect(screen.getByText("البصمة مفعلة بنجاح على هذا الحساب")).toBeDefined();
+      expect(screen.getByText("إعادة ربط البصمة")).toBeDefined();
+
+      const deleteBtn = screen.getByText("إلغاء التفعيل");
+      expect(deleteBtn).toBeDefined();
+
+      await act(async () => {
+        fireEvent.click(deleteBtn);
+      });
+
+      expect(mockDeletePasskeyMutate).toHaveBeenCalled();
+      expect(mockInvalidateCheck).toHaveBeenCalled();
+      expect(localStorage.getItem("smartspend_has_passkey")).toBeNull();
+    });
+
+    it("opens emergency PIN dialog when toggling App Lock without existing PIN", async () => {
+      mockBiometricContext.isLockEnabled = false;
+      mockBiometricContext.hasPin = false;
+
+      render(
+        <BrowserRouter>
+          <PasskeySettings />
+        </BrowserRouter>,
+      );
+
+      const checkbox = screen.getByRole("checkbox");
+      expect(checkbox).not.toBeChecked();
+
+      // Toggle switch to ON
+      await act(async () => {
+        fireEvent.click(checkbox);
+      });
+
+      // PIN dialog should now be open
+      expect(screen.getByText("تعيين رمز PIN احتياطي لقفل التطبيق")).toBeDefined();
     });
   });
 

@@ -23,7 +23,7 @@ import {
   User,
   Bell,
   BellRing,
-  ChevronRight,
+  ArrowRight,
   Fingerprint,
   Moon,
   Sun,
@@ -87,7 +87,13 @@ export default function Settings() {
   const navigate = useNavigate();
   const legacyTab = new URLSearchParams(location.search).get("tab");
   const currentView = resolveSettingsView(location.pathname, legacyTab);
-  const closeView = () => navigate("/more");
+  const closeView = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate("/more");
+    }
+  };
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
@@ -136,10 +142,10 @@ export default function Settings() {
     <div className="flex items-center gap-3 mb-6">
       <button
         onClick={onBack}
-        className="tap-target active-press flex items-center justify-center w-11 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors shadow-sm"
+        className="tap-target active-press flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors shadow-sm"
         aria-label="رجوع"
       >
-        <ChevronRight className="w-5 h-5" />
+        <ArrowRight className="w-5 h-5" />
       </button>
       <div>
         <h1 className="text-2xl font-black text-slate-900 dark:text-white">

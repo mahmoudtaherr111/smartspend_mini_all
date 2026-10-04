@@ -80,7 +80,7 @@ import { buildInstruction, openingNote } from "../instructions";
 import { appHelpTool } from "./app-help";
 import { lookup, marketPriceTool } from "./market-price";
 import { memoryTool } from "./memory";
-import { moneyQuery, periodFor } from "./money-query";
+import { customPeriodProblem, moneyQuery, periodFor } from "./money-query";
 import { derivable, thinkTool } from "./think";
 import type { ToolContext } from "./types";
 
@@ -355,6 +355,20 @@ describe("money_query", () => {
     expect(periodFor("last_year", {}, now).input).toEqual({ period: "custom", startDate: "2025-01-01", endDate: "2025-12-31" });
     expect(periodFor("last_90_days", {}, now).input).toEqual({ period: "custom", startDate: "2026-06-25", endDate: "2026-09-22" });
     expect(periodFor("custom", { from: "2026-03-01", to: "2026-03-30" }, now).input).toMatchObject({ startDate: "2026-03-01", endDate: "2026-03-30" });
+  });
+
+  it("refuses a custom period it cannot read instead of answering with today's figure", async () => {
+    expect(customPeriodProblem({ from: "2026-03-01", to: "2026-03-30" })).toBeNull();
+    expect(customPeriodProblem({ from: "2026-03-01" })).toBeNull();
+    expect(customPeriodProblem({})).toBe("from");
+    expect(customPeriodProblem({ from: "1 March" })).toBe("from");
+    expect(customPeriodProblem({ from: "2026-02-30" })).toBe("from");
+    expect(customPeriodProblem({ from: "2026-03-01", to: "March 30" })).toBe("to");
+    expect(customPeriodProblem({ from: "2026-03-30", to: "2026-03-01" })).toBe("order");
+    vi.mocked(getFinanceSummary).mockClear();
+    const result = await moneyQuery.run({ metric: "total", period: "custom", from: "امبارح" }, ctx);
+    expect(result.response).toMatchObject({ ok: false, error: "invalid_period", field: "from" });
+    expect(getFinanceSummary).not.toHaveBeenCalled();
   });
 });
 

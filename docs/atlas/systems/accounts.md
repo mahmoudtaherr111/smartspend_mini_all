@@ -29,7 +29,7 @@ flowchart LR
     router_localAuth["localAuth API · 12 procedures"]
     router_profile["profile API · 5 procedures"]
     router_session["session API · 5 procedures"]
-    router_webauthn["webauthn API · 5 procedures"]
+    router_webauthn["webauthn API · 6 procedures"]
   end
   subgraph g_modules["Code modules"]
     mod_accounts["Account lifecycle"]
@@ -254,6 +254,7 @@ flowchart LR
 | `session.stats` | query | `adminProcedure` | `sessions` | — | — |
 | `session.trackEvent` | mutation | `authedProcedure` | — | `user_analytics` | — |
 | `webauthn.checkHasPasskey` | query | `authedProcedure` | `user_credentials` | — | `App shell`, `More`, `Settings` |
+| `webauthn.deletePasskey` | mutation | `authedProcedure` | — | `user_credentials` | `More`, `Settings` |
 | `webauthn.generateAuthenticationOptions` | mutation | `strictPublicProcedure` | — | `auth_challenges` | `Login` |
 | `webauthn.generateRegistrationOptions` | mutation | `authedProcedure` | `local_users`, `user_credentials`, `users` | `auth_challenges` | `More`, `Settings` |
 | `webauthn.verifyAuthentication` | mutation | `strictPublicProcedure` | `auth_challenges`, `user_credentials` | `auth_challenges`, `user_credentials` | `Login` |
@@ -316,7 +317,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_businesses` | A | `accounts` | `accounts`, `security` |
 | `user_contacts` | A | `accounts` | `security` |
 | `user_correction_rules` | F | `accounts` | — |
-| `user_credentials` | A | `accounts`, `webauthn.verifyAuthentication`, `webauthn.verifyRegistration` | `webauthn.checkHasPasskey`, `webauthn.generateRegistrationOptions`, `webauthn.verifyAuthentication` |
+| `user_credentials` | A | `accounts`, `webauthn.deletePasskey`, `webauthn.verifyAuthentication`, `webauthn.verifyRegistration` | `webauthn.checkHasPasskey`, `webauthn.generateRegistrationOptions`, `webauthn.verifyAuthentication` |
 | `user_dictionaries` | F | `accounts` | — |
 | `user_profiles` | A | `accounts`, `profile.updateProfile` | `profile.getMyProfile` |
 | `user_wallets` | A | `accounts` | `security` |

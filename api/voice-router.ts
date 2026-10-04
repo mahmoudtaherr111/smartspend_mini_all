@@ -35,6 +35,7 @@ export const voiceRouter = router({
       voice: z.string().max(20).optional(),
       client: z.enum(["web", "pwa", "android", "ios"]).default("web"),
       mode: z.enum(["standard", "ultra"]).optional(),
+      takeover: z.boolean().optional(),
     }))
     .mutation(({ ctx, input }) =>
       startVoiceCall({ id: ctx.user.id, type: ctx.user.type, plan: ctx.user.plan, role: ctx.user.role }, input)),

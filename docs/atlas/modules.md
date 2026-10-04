@@ -312,7 +312,7 @@ Live voice calls in api/services/voice: the ticket and the /api/voice/v2 gateway
 | `api/services/voice/gateway/persistence.ts` | `ai-providers`, `database`, `platform` | — | `voice_calls` | `voice_call_incidents`, `voice_calls` |
 | `api/services/voice/gateway/pricing.ts` | `ai-providers` | — | — | — |
 | `api/services/voice/gateway/socket.ts` | `contracts`, `platform` | — | — | — |
-| `api/services/voice/gateway/start-call.ts` | `ai-providers`, `database`, `platform` | — | — | `voice_calls` |
+| `api/services/voice/gateway/start-call.ts` | `ai-providers`, `database`, `platform` | — | `voice_calls` | `voice_calls` |
 | `api/services/voice/gateway/store.ts` | `platform` | — | — | — |
 | `api/services/voice/post-call.ts` | `ai-memory`, `ai-providers`, `database`, `platform` | — | `ai_memory_items`, `voice_calls` | `ai_memory_items`, `voice_calls` |
 | `api/services/voice/text-model.ts` | `ai-providers`, `platform` | `gemini` | — | — |
@@ -788,7 +788,7 @@ Biometric lock and passkeys, the smart profile, business and people settings, an
 | `src/components/profile/SmartProfileSettings.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/profile/SmartProfileView.tsx` | `web-finance`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/settings/BusinessSettingsView.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/settings/PeopleSettingsView.tsx` | `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/settings/PeopleSettingsView.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 
 ### `web-growth` — Ads and SEO UI
 

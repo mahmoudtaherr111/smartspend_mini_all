@@ -2442,7 +2442,7 @@ model {
       }
     }
     webauthn = router 'webauthn' {
-      description 'api/webauthn-router.ts — 5 procedures.'
+      description 'api/webauthn-router.ts — 6 procedures.'
       metadata {
         file 'api/webauthn-router.ts'
       }
@@ -2454,6 +2454,16 @@ model {
           file 'api/webauthn-router.ts'
           builder 'authedProcedure'
           procedureKind 'query'
+        }
+      }
+      deletePasskey = procedure 'webauthn.deletePasskey' {
+        #mutation #authed
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure'
+        metadata {
+          file 'api/webauthn-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
         }
       }
       generateAuthenticationOptions = procedure 'webauthn.generateAuthenticationOptions' {

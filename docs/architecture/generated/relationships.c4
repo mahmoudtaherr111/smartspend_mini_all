@@ -1130,6 +1130,7 @@ model {
   smartspend.api.trpc.wallet.getWallets -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.trpc.wallet.updateWallet -[writes]-> smartspend.mysql.user_wallets
   smartspend.api.trpc.webauthn.checkHasPasskey -[reads]-> smartspend.mysql.user_credentials
+  smartspend.api.trpc.webauthn.deletePasskey -[writes]-> smartspend.mysql.user_credentials
   smartspend.api.trpc.webauthn.generateAuthenticationOptions -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.webauthn.generateAuthenticationOptions -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.webauthn.generateAuthenticationOptions -[writes]-> smartspend.mysql.auth_challenges
@@ -1505,6 +1506,7 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.getWalletTransactions
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.getWallets
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.webauthn.checkHasPasskey
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.webauthn.deletePasskey
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.webauthn.generateRegistrationOptions
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.webauthn.verifyRegistration
   smartspend.web.pages.PlanPage -[calls]-> smartspend.api.trpc.coach.addCashflow
@@ -1556,6 +1558,7 @@ model {
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.updateUserInfo
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.webauthn.checkHasPasskey
+  smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.webauthn.deletePasskey
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.webauthn.generateRegistrationOptions
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.webauthn.verifyRegistration
   smartspend.web.pages.Support -[calls]-> smartspend.api.trpc.auth.logout

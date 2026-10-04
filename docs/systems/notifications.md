@@ -40,7 +40,7 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 | `inactivity_reminder`, from `checkAndTriggerSmartActivityNotifications` in the job `smart-activity-notifications` | daily at 20:00 | users with a streak of at least 2 whose last recorded day was 12 to 36 hours ago; once a day |
 | `pro_conversion_streak` | the same run | Free users with a streak of at least 4 who recorded in the last 36 hours; once a week |
 | `dormant_reactivation` | the same run | users whose last recorded day was 7 to 8 days ago; once a week |
-| The passkey suggestion, `profile.sendBiometricPromptNotification` | when the app suggests a passkey | once per user, in the bell only |
+| The passkey suggestion, `profile.sendBiometricPromptNotification` | when the app suggests a passkey | once per user, in the bell only (links to `/settings/security?highlight=1`) |
 | Admin pushes, `admin.sendPushNotification` | on demand, though no screen calls it | everyone, Free users, paying users or one user; push only |
 
 The thresholds of the activity checks can be changed in a template's segment (`minStreak`, `inactivityDays`). The four

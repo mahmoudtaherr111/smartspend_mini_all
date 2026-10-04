@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { trpc } from "../providers/trpc";
 import { SEOMeta } from "../components/seo/SEOMeta";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  ArrowRight,
   MessageCircle,
   Phone,
   Mail,
@@ -27,6 +29,14 @@ import {
 import { toast } from "sonner";
 
 export default function Support() {
+  const navigate = useNavigate();
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate("/more");
+    }
+  };
   const { user } = useAuth();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
@@ -69,8 +79,17 @@ export default function Support() {
       <SEOMeta path="/support" title="مركز الدعم - SmartSpend AI" />
 
       <div className="max-w-4xl mx-auto space-y-6">
-        <header className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-bold">مركز الدعم</h1>
+        <header className="space-y-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleBack}
+              className="tap-target active-press flex size-11 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/80 text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200"
+              aria-label="الرجوع"
+            >
+              <ArrowRight className="size-5" />
+            </button>
+            <h1 className="text-2xl sm:text-3xl font-bold">مركز الدعم</h1>
+          </div>
           <p className="text-muted-foreground text-sm sm:text-base">
             فريقنا يرد خلال <strong>24 ساعة</strong> في أيام العمل. اترك رقم
             موبايلك للمتابعة السريعة.

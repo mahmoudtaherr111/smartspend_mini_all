@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { trpc } from "../../providers/trpc";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,17 +33,16 @@ import {
   X,
   AlertTriangle,
   ChevronLeft,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { useToast } from "@/components/ui/sonner";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useHistoryBound } from "@/hooks/useHistoryBound";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
@@ -71,34 +71,52 @@ const CONTACT_SHEET_CLASS =
   "max-w-none rounded-t-[28px] rounded-b-none border-slate-200 bg-white p-0 dark:border-slate-800 dark:bg-slate-950 sm:max-w-md sm:rounded-2xl sm:p-6";
 
 // ─── Constants ───
-const RELATION_OPTIONS = [
+const QUICK_RELATIONS = [
   "أخ",
   "أخت",
   "أب",
   "أم",
-  "ابن",
-  "ابنة",
   "زوج",
   "زوجة",
   "صديق",
-  "صديقة",
   "زميل",
-  "زميلة",
-  "مدير",
-  "موظف",
-  "قريب",
-  "قريبة",
-  "عم",
-  "خال",
-  "عمة",
-  "خالة",
-  "جد",
-  "جدة",
-  "حارس",
-  "سائق",
-  "مورد",
   "عميل",
-  "جهة اتصال عامة",
+  "مورد",
+];
+
+const RELATION_CATEGORIES = [
+  {
+    category: "عائلة وأقارب",
+    icon: "👨‍👩‍👧‍👦",
+    items: [
+      "أخ",
+      "أخت",
+      "أب",
+      "أم",
+      "ابن",
+      "ابنة",
+      "زوج",
+      "زوجة",
+      "جد",
+      "جدة",
+      "عم",
+      "خال",
+      "عمة",
+      "خالة",
+      "قريب",
+      "قريبة",
+    ],
+  },
+  {
+    category: "عمل وتجارة",
+    icon: "💼",
+    items: ["زميل", "زميلة", "مدير", "موظف", "مورد", "عميل", "شريك"],
+  },
+  {
+    category: "أصدقاء وخدمات عامة",
+    icon: "🤝",
+    items: ["صديق", "صديقة", "حارس", "سائق", "جهة اتصال عامة"],
+  },
 ];
 
 const TYPE_LABELS: Record<
@@ -159,7 +177,10 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
     search: search || undefined,
   });
   const utils = trpc.useUtils();
-  const contacts = contactsQuery.data?.contacts || [];
+  const contacts = useMemo(
+    () => contactsQuery.data?.contacts || [],
+    [contactsQuery.data?.contacts],
+  );
 
   const filteredContacts = useMemo(() => {
     let result = contacts as Contact[];
@@ -613,6 +634,250 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
   );
 }
 
+// ─── Mobile-Native Relationship Picker ───
+function RelationshipPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [customInput, setCustomInput] = useState("");
+  const { lightTap, mediumTap } = useHaptics();
+
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return RELATION_CATEGORIES;
+    const q = searchQuery.trim().toLowerCase();
+    return RELATION_CATEGORIES.map((cat) => ({
+      ...cat,
+      items: cat.items.filter((item) => item.toLowerCase().includes(q)),
+    })).filter((cat) => cat.items.length > 0);
+  }, [searchQuery]);
+
+  const handleSelect = (rel: string) => {
+    lightTap();
+    onChange(rel);
+    setIsOpen(false);
+    setSearchQuery("");
+  };
+
+  const handleAddCustom = () => {
+    const trimmed = customInput.trim();
+    if (!trimmed) return;
+    mediumTap();
+    onChange(trimmed);
+    setCustomInput("");
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="space-y-2.5">
+      {/* Combobox Trigger Button */}
+      <div className="relative">
+        <button
+          type="button"
+          role="combobox"
+          aria-expanded={isOpen}
+          aria-haspopup="dialog"
+          aria-label="اختر صلة العلاقة"
+          onClick={() => {
+            lightTap();
+            setIsOpen(true);
+          }}
+          className={cn(
+            "flex h-12 w-full items-center justify-between rounded-2xl border px-4 text-right transition-all",
+            "border-slate-200 bg-slate-50/80 hover:bg-slate-100/80 active:scale-[0.99] dark:border-white/10 dark:bg-slate-900/70 dark:hover:bg-slate-900",
+            value
+              ? "font-bold text-slate-900 dark:text-white"
+              : "text-sm font-normal text-slate-400",
+          )}
+        >
+          <span className="flex items-center gap-2">
+            {value ? (
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                <Check className="size-3.5" />
+                {value}
+              </span>
+            ) : (
+              <span>اختر صلة العلاقة</span>
+            )}
+          </span>
+          <div className="flex items-center gap-1">
+            {value && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  lightTap();
+                  onChange("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation();
+                    onChange("");
+                  }
+                }}
+                className="flex size-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/60 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                aria-label="إزالة الصلة"
+              >
+                <X className="size-3.5" />
+              </span>
+            )}
+            <ChevronDown className="size-4 text-slate-400" />
+          </div>
+        </button>
+      </div>
+
+      {/* Quick selection chips for frequent relations */}
+      <div className="flex flex-wrap gap-1.5 pt-0.5">
+        {QUICK_RELATIONS.map((r) => {
+          const isSelected = value === r;
+          return (
+            <button
+              key={r}
+              type="button"
+              onClick={() => {
+                lightTap();
+                onChange(isSelected ? "" : r);
+              }}
+              className={cn(
+                "tap-target inline-flex min-h-8 items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-bold transition-all active:scale-95",
+                isSelected
+                  ? "bg-emerald-600 text-white shadow-sm dark:bg-emerald-500 dark:text-slate-950"
+                  : "border border-slate-200/80 bg-slate-100/70 text-slate-600 hover:bg-slate-200/60 dark:border-white/10 dark:bg-slate-900/50 dark:text-slate-300 dark:hover:bg-slate-800",
+              )}
+            >
+              {isSelected && <Check className="size-3" />}
+              {r}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => {
+            lightTap();
+            setIsOpen(true);
+          }}
+          className="tap-target inline-flex min-h-8 items-center gap-1 rounded-xl border border-dashed border-emerald-500/40 bg-emerald-500/5 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
+        >
+          المزيد...
+        </button>
+      </div>
+
+      {/* Mobile-Native Bottom Sheet / Dialog for Picking Relation */}
+      <AdaptiveDialog open={isOpen} onOpenChange={setIsOpen} nested={true}>
+        <AdaptiveDialogContent
+          showGrabber={true}
+          className="max-w-md rounded-t-[28px] p-5 sm:rounded-2xl sm:p-6"
+          dir="rtl"
+        >
+          <AdaptiveDialogHeader className="pb-2 text-right">
+            <AdaptiveDialogTitle className="text-right text-lg font-black text-slate-900 dark:text-white">
+              صلة القرابة أو العلاقة
+            </AdaptiveDialogTitle>
+            <AdaptiveDialogDescription className="text-right text-xs text-slate-500 dark:text-slate-400">
+              اختر الصلة لتسهيل التعرف وتصنيف المعاملات تلقائياً
+            </AdaptiveDialogDescription>
+          </AdaptiveDialogHeader>
+
+          {/* Search bar */}
+          <div className="relative my-3">
+            <Search className="pointer-events-none absolute end-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="ابحث بالاسم أو صلة القرابة..."
+              className="h-11 rounded-xl border-slate-200 pe-10 ps-4 text-base dark:border-white/10"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute start-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Categorized Options */}
+          <div className="max-h-[50vh] space-y-4 overflow-y-auto py-1 pe-1">
+            {filteredCategories.map((group) => (
+              <div key={group.category} className="space-y-1.5">
+                <p className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400">
+                  <span>{group.icon}</span>
+                  <span>{group.category}</span>
+                </p>
+                <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+                  {group.items.map((item) => {
+                    const isSelected = value === item;
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => handleSelect(item)}
+                        className={cn(
+                          "active-press flex min-h-11 items-center justify-center rounded-xl border p-2 text-center text-xs font-bold transition-all",
+                          isSelected
+                            ? "border-emerald-500 bg-emerald-500/15 text-emerald-800 ring-1 ring-emerald-500/30 dark:text-emerald-300"
+                            : "border-slate-200/80 bg-slate-50/70 text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800",
+                        )}
+                      >
+                        {item}
+                        {isSelected && (
+                          <Check className="ms-1 size-3 text-emerald-600 dark:text-emerald-400" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {filteredCategories.length === 0 && (
+              <div className="py-6 text-center text-sm text-slate-500">
+                مفيش صلة بالاسم ده
+              </div>
+            )}
+          </div>
+
+          {/* Custom Relation input */}
+          <div className="mt-4 border-t border-slate-100 pt-3 dark:border-white/5">
+            <p className="mb-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+              أو اكتب صلة مخصصة مش موجودة في القائمة:
+            </p>
+            <div className="flex gap-2">
+              <Input
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddCustom();
+                  }
+                }}
+                placeholder="مثال: محاسب، ابن عم..."
+                className="h-11 flex-1 rounded-xl text-base"
+              />
+              <Button
+                type="button"
+                onClick={handleAddCustom}
+                disabled={!customInput.trim()}
+                className="h-11 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700"
+              >
+                تأكيد
+              </Button>
+            </div>
+          </div>
+        </AdaptiveDialogContent>
+      </AdaptiveDialog>
+    </div>
+  );
+}
+
 // ─── Shared Form Component ───
 function ContactForm({
   name,
@@ -652,18 +917,7 @@ function ContactForm({
           صلة العلاقة{" "}
           <span className="font-normal text-slate-400">(اختياري)</span>
         </label>
-        <Select value={relation} onValueChange={setRelation}>
-          <SelectTrigger className="!h-12 w-full rounded-2xl border-slate-200 bg-slate-50/80 px-4 text-sm dark:border-white/10 dark:bg-slate-900/70">
-            <SelectValue placeholder="اختر صلة العلاقة" />
-          </SelectTrigger>
-          <SelectContent>
-            {RELATION_OPTIONS.map((r) => (
-              <SelectItem key={r} value={r}>
-                {r}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <RelationshipPicker value={relation} onChange={setRelation} />
       </div>
       <div>
         <label className="mb-2 block text-right text-sm font-bold text-slate-700 dark:text-slate-200">
@@ -758,7 +1012,7 @@ function AddContactDialog({
   return (
     <AdaptiveDialog open={open} onOpenChange={onOpenChange}>
       <AdaptiveDialogContent
-        showGrabber={false}
+        showGrabber={true}
         className={CONTACT_SHEET_CLASS}
         dir="rtl"
       >
@@ -844,7 +1098,7 @@ function EditContactDialog({
       onOpenChange={(open) => !open && onClose()}
     >
       <AdaptiveDialogContent
-        showGrabber={false}
+        showGrabber={true}
         className={CONTACT_SHEET_CLASS}
         dir="rtl"
       >

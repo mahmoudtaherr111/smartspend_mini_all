@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SEOMeta } from "@/components/seo/SEOMeta";
 import { IosSetupFlow } from "@/components/bank-sync/IosSetupFlow";
 import { AndroidSetupFlow } from "@/components/bank-sync/AndroidSetupFlow";
@@ -9,7 +10,6 @@ import {
   Apple,
   ArrowRight,
   RefreshCw,
-  ChevronLeft,
 } from "lucide-react";
 
 type Device = "ios" | "android" | null;
@@ -21,6 +21,14 @@ export function detectMobileDevice(userAgent: string): Device {
 }
 
 export default function BankSyncPage() {
+  const navigate = useNavigate();
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate("/more");
+    }
+  };
   const [device, setDevice] = useState<Device>(() =>
     typeof navigator === "undefined"
       ? null
@@ -50,8 +58,18 @@ export default function BankSyncPage() {
   // If already connected and not forcing instructions, show the premium Digital Banking Suite
   if (hasToken && !forceShowInstructions) {
     return (
-      <div className="w-full max-w-6xl mx-auto space-y-6 pb-20 px-4">
+      <div className="w-full max-w-6xl mx-auto space-y-6 pb-20 px-4" dir="rtl">
         <SEOMeta title="المحفظة الرقمية الذكية - SmartSpend" />
+        <div className="pt-2">
+          <button
+            onClick={handleBack}
+            className="tap-target active-press inline-flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/80 px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200"
+            aria-label="الرجوع"
+          >
+            <ArrowRight className="size-4" />
+            <span>رجوع</span>
+          </button>
+        </div>
         <DigitalBankingSuite
           onShowSetupInstructions={() => setForceShowInstructions(true)}
         />
@@ -72,7 +90,8 @@ export default function BankSyncPage() {
               }}
               className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs px-4 py-2 rounded-2xl flex items-center gap-2 transition-colors border border-emerald-500/20"
             >
-              « العودة للمحفظة الرقمية 💳
+              <ArrowRight className="w-3.5 h-3.5" />
+              <span>العودة للمحفظة الرقمية 💳</span>
             </button>
           </div>
         )}
@@ -93,7 +112,8 @@ export default function BankSyncPage() {
               }}
               className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs px-4 py-2 rounded-2xl flex items-center gap-2 transition-colors border border-emerald-500/20"
             >
-              « العودة للمحفظة الرقمية 💳
+              <ArrowRight className="w-3.5 h-3.5" />
+              <span>العودة للمحفظة الرقمية 💳</span>
             </button>
           </div>
         )}
@@ -106,16 +126,28 @@ export default function BankSyncPage() {
     <div className="w-full max-w-3xl mx-auto space-y-6 pb-20 px-4" dir="rtl">
       <SEOMeta title="ربط حسابك البنكي - SmartSpend" />
 
-      {/* Back button if user is already connected but wanted to see instructions */}
-      {hasToken && (
+      {/* Top back & status controls */}
+      <div className="flex items-center justify-between gap-3 pt-2">
         <button
-          onClick={() => setForceShowInstructions(false)}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-4 py-2.5 rounded-2xl flex items-center gap-2 transition-all shadow-md btn-press"
+          onClick={handleBack}
+          className="tap-target active-press inline-flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/80 px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200"
+          aria-label="الرجوع"
         >
-          <ChevronLeft className="w-4 h-4" />
-          العودة إلى المحفظة الرقمية 💳
+          <ArrowRight className="size-4" />
+          <span>رجوع</span>
         </button>
-      )}
+
+        {/* Back button if user is already connected but wanted to see instructions */}
+        {hasToken && (
+          <button
+            onClick={() => setForceShowInstructions(false)}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-4 py-2 rounded-2xl flex items-center gap-2 transition-all shadow-md btn-press"
+          >
+            <ArrowRight className="w-4 h-4" />
+            العودة إلى المحفظة الرقمية 💳
+          </button>
+        )}
+      </div>
 
       {/* Hero */}
       <div className="bg-gradient-to-br from-emerald-600 to-teal-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden text-center">

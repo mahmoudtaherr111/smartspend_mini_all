@@ -865,7 +865,7 @@ export const profileRouter = router({
         .where(and(
           eq(inAppNotifications.userId, ctx.user.id as number),
           eq(inAppNotifications.userType, ctx.user.type),
-          like(inAppNotifications.actionUrl, "%passkeys%")
+          sql`(${like(inAppNotifications.actionUrl, "%passkeys%")} OR ${like(inAppNotifications.actionUrl, "%security%")})`
         ))
         .limit(1);
 
@@ -873,9 +873,9 @@ export const profileRouter = router({
         await db.insert(inAppNotifications).values({
           userId: ctx.user.id as number,
           userType: ctx.user.type,
-          title: "تفعيل الدخول السريع بالبصمة ⚡",
-          body: "احمِ حسابك وسجل دخولك بلمسة واحدة باستخدام Face ID أو بصمة الأصبع بدون الحاجة لكلمة سر.",
-          actionUrl: "/settings?tab=passkeys&highlight=1",
+          title: "تفعيل الدخول بالبصمة",
+          body: "احمِ حسابك وسجّل دخولك بلمسة واحدة ببصمة الإصبع أو الوجه دون الحاجة لكتابة كلمة المرور كل مرة.",
+          actionUrl: "/settings/security?highlight=1",
           isRead: false,
         });
       }

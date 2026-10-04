@@ -50,7 +50,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `support` | `api/support-router.ts` | 7 | 3 | 4 | `adminProcedure`, `authedProcedure` |
 | `voice` | `api/voice-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `wallet` | `api/wallet-router.ts` | 5 | 2 | 3 | `authedProcedure` |
-| `webauthn` | `api/webauthn-router.ts` | 5 | 1 | 4 | `authedProcedure`, `strictPublicProcedure` |
+| `webauthn` | `api/webauthn-router.ts` | 6 | 1 | 5 | `authedProcedure`, `strictPublicProcedure` |
 
 ## Procedures by router
 
@@ -404,6 +404,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `webauthn.checkHasPasskey` | query | `authedProcedure` | no | `user_credentials` | — | — | `src/components/auth/PasskeySettings.tsx`, `src/hooks/useBiometricOnboarding.ts` |
+| `webauthn.deletePasskey` | mutation | `authedProcedure` | no | — | `user_credentials` | — | `src/components/auth/PasskeySettings.tsx` |
 | `webauthn.generateAuthenticationOptions` | mutation | `strictPublicProcedure` | yes | — | `auth_challenges` | `api/lib/env.ts`, `api/lib/get-client-ip.ts` | `src/pages/Login.tsx` |
 | `webauthn.generateRegistrationOptions` | mutation | `authedProcedure` | no | `local_users`, `user_credentials`, `users` | `auth_challenges` | `api/lib/env.ts`, `api/lib/get-client-ip.ts` | `src/components/auth/PasskeySettings.tsx` |
 | `webauthn.verifyAuthentication` | mutation | `strictPublicProcedure` | yes | `auth_challenges`, `user_credentials` | `auth_challenges`, `user_credentials` | `api/lib/env.ts`, `api/lib/get-client-ip.ts`, `api/local-auth-utils.ts` | `src/pages/Login.tsx` |

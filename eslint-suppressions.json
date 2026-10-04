@@ -940,11 +940,6 @@
       "count": 1
     }
   },
-  "src/components/auth/PasskeySettings.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "src/components/bank-sync/AndroidSetupFlow.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
@@ -1119,9 +1114,6 @@
     }
   },
   "src/components/settings/PeopleSettingsView.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }
@@ -1326,7 +1318,7 @@
       "count": 2
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 7
+      "count": 4
     },
     "no-empty": {
       "count": 2

@@ -11,18 +11,18 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (29 of
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-01 85479c6 | 2026-10-01 85479c6 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-02 e851624 | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-03 e851624 | 2026-10-03 e851624 | 10 | — | — | 4 | 2 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-04 f894496 | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-04 f894496 | 2026-10-03 e851624 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-01 1d4bf03 | 2026-10-01 1d4bf03 | 4 | — | 4 | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-02 e851624 | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-02 e851624 | 2026-10-02 e851624 | 6 | — | 3 | 7 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-02 e851624 | 2026-10-01 b5d9955 | 14 | **2** | 1 | 4 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-28 af819ef | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-02 e851624 | 2026-09-29 dfd750a | 1 | **1** | 5 | 1 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 4 | — | 2 | 5 | 1 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-04 f894496 | 2026-10-02 e851624 | 6 | — | 3 | 7 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-04 f894496 | 2026-10-04 f894496 | 14 | **2** | 1 | 4 | — |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-04 f894496 | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-04 f894496 | 2026-10-04 f894496 | 1 | **1** | 5 | 1 | 2 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-04 f894496 | 2026-10-01 b5d9955 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 8 | — | — | 3 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 5 | — | — | — | 7 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-01 68f0871 | 2026-10-01 68f0871 | 7 | **1** | 1 | 3 | 2 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-04 f894496 | 2026-10-01 68f0871 | 7 | **1** | 1 | 3 | 2 |
 
 
 ## Where the risk is

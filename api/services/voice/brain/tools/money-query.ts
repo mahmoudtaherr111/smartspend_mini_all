@@ -102,7 +102,25 @@ function shiftKey(key: string, days: number): string {
 }
 
 function validKey(value: string | undefined): string | undefined {
-  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+  const [y, m, d] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  // "2026-02-30" passes the pattern but is no day: refused rather than rolled over into March.
+  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d ? value : undefined;
+}
+
+/**
+ * Why a custom period cannot be read, or null when it can. A missing or malformed day used to fall back to today in
+ * silence, so the model said today's figure as the period the user asked about.
+ */
+export function customPeriodProblem(args: Record<string, unknown>): string | null {
+  const rawFrom = typeof args.from === "string" ? args.from.trim() : "";
+  const rawTo = typeof args.to === "string" ? args.to.trim() : "";
+  const from = validKey(rawFrom || undefined);
+  if (!from) return "from";
+  if (rawTo && !validKey(rawTo)) return "to";
+  if (rawTo && rawTo < from) return "order";
+  return null;
 }
 
 /** The period the model asked for, as the finance layer reads it, with an Arabic name for it. */
@@ -574,6 +592,19 @@ async function answer(
     }
     business = found;
     finance.businessId = found.id;
+  }
+  if (periodName === "custom") {
+    const problem = customPeriodProblem(args);
+    if (problem) {
+      return {
+        response: {
+          ok: false,
+          error: "invalid_period",
+          field: problem,
+          say: "الفترة مش واضحة. ابعت from و to كأيام YYYY-MM-DD (from قبل to)، ولو المستخدم ما حددش اليوم اسأله عنه في جملة قصيرة.",
+        },
+      };
+    }
   }
   const named = periodFor(periodName, args, ctx.now());
   const input = named.input;

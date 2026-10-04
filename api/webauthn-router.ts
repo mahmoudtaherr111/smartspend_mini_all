@@ -71,6 +71,24 @@ export const webauthnRouter = router({
     return { hasPasskey: !!credential };
   }),
 
+  // Revoke/Delete passkey credentials for current user
+  deletePasskey: authedProcedure.mutation(async ({ ctx }) => {
+    const db = getDb();
+    const userId = ctx.user.id;
+    const userType = ctx.user.type;
+
+    await db
+      .delete(userCredentials)
+      .where(
+        and(
+          eq(userCredentials.userId, userId),
+          eq(userCredentials.userType, userType),
+        ),
+      );
+
+    return { success: true };
+  }),
+
   // 1. Generate Registration Options (Requires Auth to tie passkey to an existing account)
   generateRegistrationOptions: authedProcedure.mutation(async ({ ctx }) => {
     const db = getDb();

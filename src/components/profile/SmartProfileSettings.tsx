@@ -30,6 +30,7 @@ import {
   Cigarette,
   CreditCard,
   Users,
+  ArrowRight,
   ChevronLeft,
   ChevronRight,
   Trash2,
@@ -419,15 +420,27 @@ export function SmartProfileSettings({ onCancel }: { onCancel?: () => void }) {
   return (
     <Card className="border-slate-200/60 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-950">
       <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/10">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2 text-xl font-black">
-              <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
-              تعديل البروفايل الذكي
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              البيانات هنا تؤثر مباشرة على التصنيف المالي الذكي وتوصيات الذكاء الاصطناعي.
-            </CardDescription>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="tap-target active-press flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors shadow-xs"
+                aria-label="الرجوع إلى البروفايل"
+              >
+                <ArrowRight className="size-5" />
+              </button>
+            )}
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2 text-xl font-black">
+                <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
+                تعديل البروفايل الذكي
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                البيانات هنا تؤثر مباشرة على التصنيف المالي الذكي وتوصيات الذكاء الاصطناعي.
+              </CardDescription>
+            </div>
           </div>
           <Badge
             variant={completionScore >= 70 ? "default" : "secondary"}

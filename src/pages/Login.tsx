@@ -224,10 +224,9 @@ export default function Login() {
 
   const { data: googleUrl } = trpc.auth.googleUrl.useQuery();
   const { data: botPhoneNumber } = trpc.localAuth.getBotPhoneNumber.useQuery();
-
   const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
 
-  const handlePasskeyLogin = async () => {
+  const handlePasskeyLogin = async (isManual = false) => {
     try {
       setIsPasskeyLoading(true);
       // 1. Get options
@@ -238,20 +237,33 @@ export default function Login() {
       try {
         asseResp = await startAuthentication({ optionsJSON: options });
       } catch (err: any) {
-        toast.error("تم إلغاء الدخول بالبصمة");
+        if (err?.name === "NotAllowedError" || err?.name === "AbortError") {
+          if (isManual) {
+            toast.info("تم إلغاء التحقق بالبصمة");
+          }
+          return;
+        }
+        toast.error("ماقدرناش نتحقق من البصمة. جرّب تاني أو ادخل بكلمة المرور.");
         return;
       }
 
       // 3. Verify on server
       await verifyAuthMutation.mutateAsync({ response: asseResp, sessionId });
     } catch (err: any) {
-      toast.error(err.message || "فشل الدخول بالبصمة");
+      toast.error(err.message || "فشل الدخول بالبصمة، جرّب تاني");
     } finally {
       setIsPasskeyLoading(false);
     }
   };
 
   const [hasAttemptedAutoLogin, setHasAttemptedAutoLogin] = useState(false);
+  const [deviceHasPasskey, setDeviceHasPasskey] = useState(() => {
+    try {
+      return localStorage.getItem("smartspend_has_passkey") === "1";
+    } catch {
+      return false;
+    }
+  });
 
   // Auto-trigger biometric quick login if passkey is registered
   useEffect(() => {
@@ -260,12 +272,13 @@ export default function Login() {
     let hasPasskey = false;
     try {
       hasPasskey = localStorage.getItem("smartspend_has_passkey") === "1";
+      setDeviceHasPasskey(hasPasskey);
     } catch (e) {}
 
     if (hasPasskey) {
       setHasAttemptedAutoLogin(true);
       const timer = setTimeout(() => {
-        handlePasskeyLogin();
+        handlePasskeyLogin(false);
       }, 1000);
       return () => clearTimeout(timer);
     }
@@ -364,6 +377,31 @@ export default function Login() {
 
             {/* TAB 1: LOGIN */}
             <TabsContent value="login" className="space-y-4 mt-4">
+              {deviceHasPasskey && (
+                <div className="space-y-3 pb-1">
+                  <Button
+                    type="button"
+                    onClick={() => handlePasskeyLogin(true)}
+                    disabled={isPasskeyLoading}
+                    className="w-full h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-indigo-600/20 gap-2.5 transition-all"
+                  >
+                    {isPasskeyLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Fingerprint className="w-5 h-5 text-indigo-200" />
+                    )}
+                    <span>الدخول السريع ببصمة الإصبع أو الوجه</span>
+                  </Button>
+
+                  <div className="relative flex items-center justify-center pt-1">
+                    <Separator className="bg-slate-200 dark:bg-slate-800" />
+                    <span className="absolute bg-white dark:bg-slate-900 px-3 text-[11px] font-medium text-slate-400">
+                      أو باستخدام رقم الهاتف
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleLogin} className="space-y-3.5">
                 <div className="space-y-1.5">
                   <Label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">

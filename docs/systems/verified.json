@@ -33,23 +33,23 @@
         "api/services/turnstile-service.ts": "89a28fc96d49",
         "api/services/user-purge-service.ts": "6479af182611",
         "api/session-router.ts": "e255f9db4207",
-        "api/webauthn-router.ts": "10e55c7473d8",
+        "api/webauthn-router.ts": "8a7c2294a8d1",
         "src/components/auth/BiometricLockOverlay.tsx": "221e0a53b323",
-        "src/components/auth/BiometricOnboardingModal.tsx": "bf1276a98d91",
-        "src/components/auth/PasskeySettings.tsx": "5f00185fa2be",
+        "src/components/auth/BiometricOnboardingModal.tsx": "cd01165c603d",
+        "src/components/auth/PasskeySettings.tsx": "b63bcc6c043f",
         "src/components/auth/TurnstileWidget.tsx": "9a0df28a6e7b",
         "src/components/notifications/PushNotificationPrompt.tsx": "b7d1e5b30b68",
-        "src/components/profile/SmartProfileSettings.tsx": "9010f214a2bb",
-        "src/components/profile/SmartProfileView.tsx": "795f5b20d342",
+        "src/components/profile/SmartProfileSettings.tsx": "25e4ecbc90d5",
+        "src/components/profile/SmartProfileView.tsx": "54d469674272",
         "src/components/settings/BusinessSettingsView.tsx": "ced2674cdee4",
-        "src/components/settings/PeopleSettingsView.tsx": "d14db778fc4a",
+        "src/components/settings/PeopleSettingsView.tsx": "fe994df04b34",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
-        "src/pages/Login.tsx": "c3f3cb05781e",
-        "src/pages/Settings.tsx": "0d88f7c557e3"
+        "src/pages/Login.tsx": "531d183ea874",
+        "src/pages/Settings.tsx": "6ff1aea34043"
       },
-      "checked": "2026-10-02 e851624",
-      "arabic": "8268c986f40c",
-      "arabicChecked": "2026-10-01 b5d9955"
+      "checked": "2026-10-04 f894496",
+      "arabic": "31746965098a",
+      "arabicChecked": "2026-10-04 f894496"
     },
     "admin": {
       "files": {
@@ -83,9 +83,9 @@
         "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
         "src/components/admin/settings/AdminVoiceCallSection.tsx": "ae339f527cf2",
         "src/pages/Admin.tsx": "d0445cee1a99",
-        "src/pages/Support.tsx": "9175518fbc4c"
+        "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-10-01 b5d9955",
+      "checked": "2026-10-04 f894496",
       "arabic": "7bc77c7a9a8e",
       "arabicChecked": "2026-10-01 b5d9955"
     },
@@ -199,9 +199,9 @@
         "src/components/bank-sync/IosSetupFlow.tsx": "d9df23b4367c",
         "src/components/bank-sync/SmsSuggestionsCard.tsx": "23336674d769",
         "src/components/settings/SmsWebhookSettings.tsx": "c540d4df52db",
-        "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
+        "src/pages/BankSyncPage.tsx": "b6052297414a"
       },
-      "checked": "2026-10-02 e851624",
+      "checked": "2026-10-04 f894496",
       "arabic": "e95177442fa9",
       "arabicChecked": "2026-09-29 fa056d1"
     },
@@ -215,10 +215,10 @@
         "api/lib/subscription-service.ts": "f3666e029e61",
         "api/pro-router.ts": "ae4da5c10100",
         "api/referral-router.ts": "b298497fadda",
-        "src/pages/Pro.tsx": "6d86839c80c7",
+        "src/pages/Pro.tsx": "5beaa63617ea",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "checked": "2026-09-28 af819ef",
+      "checked": "2026-10-04 f894496",
       "arabic": "e197d4dd2067",
       "arabicChecked": "2026-09-28 6019f83"
     },
@@ -400,9 +400,9 @@
         "src/components/installments/InstallmentsPanel.tsx": "a23758827f16",
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
         "src/pages/Home.tsx": "fe674b3c4b88",
-        "src/pages/PlanPage.tsx": "64506b4768b0"
+        "src/pages/PlanPage.tsx": "107068a002b0"
       },
-      "checked": "2026-10-02 e851624",
+      "checked": "2026-10-04 f894496",
       "arabic": "39e64ff2be64",
       "arabicChecked": "2026-10-02 e851624"
     },
@@ -416,15 +416,15 @@
         "api/profile-router.ts#profile.getInAppNotifications": "ff2aee79554d",
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
         "api/profile-router.ts#profile.savePushSubscription": "788ec5760eef",
-        "api/profile-router.ts#profile.sendBiometricPromptNotification": "ae8ae7ea27ee",
+        "api/profile-router.ts#profile.sendBiometricPromptNotification": "32a5a122e99f",
         "api/profile-router.ts#rest-of-file": "a8cc22c4ce42",
         "api/services/firebase.ts": "3b9319b2c3a5",
         "api/services/otp-cache.ts": "f68f57b187fb",
         "api/services/whatsapp-service.ts": "1177804a1f23"
       },
-      "checked": "2026-10-02 e851624",
-      "arabic": "a6a7fe684338",
-      "arabicChecked": "2026-09-29 dfd750a"
+      "checked": "2026-10-04 f894496",
+      "arabic": "502f7d05c155",
+      "arabicChecked": "2026-10-04 f894496"
     },
     "platform": {
       "files": {
@@ -487,7 +487,7 @@
         "api/services/voice/brain/facts.ts": "fa9189cb62db",
         "api/services/voice/brain/honorific.ts": "451551920217",
         "api/services/voice/brain/index.ts": "ef3b8c211c52",
-        "api/services/voice/brain/instructions.ts": "0ed7a97ef7c2",
+        "api/services/voice/brain/instructions.ts": "c5bf64f7517f",
         "api/services/voice/brain/never-kept.ts": "977be210350d",
         "api/services/voice/brain/profile-questions.ts": "14673f9bb35c",
         "api/services/voice/brain/snapshot.ts": "6f2f54006727",
@@ -497,7 +497,7 @@
         "api/services/voice/brain/tools/coach.ts": "dcea025f2742",
         "api/services/voice/brain/tools/market-price.ts": "5bed0aca7f26",
         "api/services/voice/brain/tools/memory.ts": "31b87da806da",
-        "api/services/voice/brain/tools/money-query.ts": "d37ad870a2a8",
+        "api/services/voice/brain/tools/money-query.ts": "bc1fe731fac2",
         "api/services/voice/brain/tools/record.ts": "40b5704378d8",
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
         "api/services/voice/brain/tools/think.ts": "5224961b8aad",
@@ -513,11 +513,11 @@
         "api/services/voice/gateway/persistence.ts": "a8198f22ab3b",
         "api/services/voice/gateway/pricing.ts": "a0a41c068414",
         "api/services/voice/gateway/socket.ts": "ca83b68fd3ce",
-        "api/services/voice/gateway/start-call.ts": "977354851236",
+        "api/services/voice/gateway/start-call.ts": "8f7b0a25e73f",
         "api/services/voice/gateway/store.ts": "bef55c259fc4",
         "api/services/voice/post-call.ts": "c72ba93196a3",
         "api/services/voice/text-model.ts": "761f53a3d212",
-        "api/voice-router.ts": "23d99512b2c6",
+        "api/voice-router.ts": "33365281ae1c",
         "scripts/vite-voice.ts": "661d231ec37f",
         "src/components/voice/CallSmartButton.tsx": "9c46b8a2f532",
         "src/components/voice/VoiceCallCards.tsx": "5cb5e23b62df",
@@ -531,9 +531,9 @@
         "src/lib/voice/call-store.ts": "ad8581741c71",
         "src/lib/voice/downsampler.ts": "6a008987a406",
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
-        "src/lib/voice/speech-detector.ts": "11fda8ab924d"
+        "src/lib/voice/speech-detector.ts": "69cc55d954de"
       },
-      "checked": "2026-10-03 e851624",
+      "checked": "2026-10-04 f894496",
       "arabic": "e8a54a6ecffb",
       "arabicChecked": "2026-10-03 e851624"
     },
@@ -558,7 +558,7 @@
         "src/components/routing/PlanGates.tsx": "0ce4ccef1e39",
         "src/components/seo/SEOMeta.tsx": "03bceb61485e",
         "src/components/ui/accordion.tsx": "fc01c611406e",
-        "src/components/ui/adaptive-dialog.tsx": "3123b5119fd2",
+        "src/components/ui/adaptive-dialog.tsx": "7a928813e970",
         "src/components/ui/alert-dialog.tsx": "4f555bee1731",
         "src/components/ui/alert.tsx": "b4a69e859d1d",
         "src/components/ui/aspect-ratio.tsx": "7706745e217b",
@@ -655,7 +655,7 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-10-01 68f0871",
+      "checked": "2026-10-04 f894496",
       "arabic": "b933854e4a74",
       "arabicChecked": "2026-10-01 68f0871"
     }

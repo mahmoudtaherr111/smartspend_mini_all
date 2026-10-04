@@ -76,10 +76,11 @@ and the code only a label (`api/services/phone-challenge.ts`).
 ### Passkeys
 - In Settings, a signed-in user registers a passkey: `webauthn.generateRegistrationOptions` stores a five-minute
   challenge, the browser creates the credential, and `webauthn.verifyRegistration` checks it against the request's
-  allowed origin and saves the public key and counter in `user_credentials`.
+  allowed origin and saves the public key and counter in `user_credentials`. Signed-in users can also revoke their
+  passkey credentials via `webauthn.deletePasskey`.
 - On the Login screen, `webauthn.generateAuthenticationOptions` and `webauthn.verifyAuthentication` sign in without a
-  username: the credential is found by its id, its counter updated and a session created. A browser that registered a
-  passkey opens the prompt by itself.
+  username: the credential is found by its id, its counter updated and a session created. A browser with a registered
+  passkey displays a quick one-tap biometric login button and can auto-prompt on open.
 
 ## Sessions
 - **Token.** A JWT signed with `JWT_SECRET` that names the user and its type and expires after seven days

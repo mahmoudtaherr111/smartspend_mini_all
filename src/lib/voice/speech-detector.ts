@@ -47,9 +47,9 @@ const DEFAULTS: Required<SpeechDetectorOptions> = {
   onsetFrames: 3,
   playbackOnsetDb: 18,
   playbackOnsetFrames: 5,
-  offsetDb: 6,
-  minSpeechDbfs: -55,
-  minBargeInDbfs: -42,
+  offsetDb: 8,
+  minSpeechDbfs: -44,
+  minBargeInDbfs: -36,
 };
 
 const SILENT_DBFS = -96;
@@ -111,7 +111,6 @@ export class SpeechDetector {
   push(frame: Int16Array, assistantSpeaking = false): DetectorStep {
     const o = this.options;
     const db = frameDbfs(frame);
-    this.lastDb = db;
     // The floor is judged on what came before this frame, so a loud first frame of speech cannot raise it.
     const floor = this.energies.length ? this.noiseFloorDb : db;
     this.remember(db);
