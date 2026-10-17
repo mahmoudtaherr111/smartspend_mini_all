@@ -349,15 +349,17 @@ export const profileRouter = router({
 
   // Dismiss onboarding card — updates lastAskedAt for 24h cooldown
   dismissOnboarding: authedProcedure.mutation(async ({ ctx }) => {
+    const now = new Date();
     await db
-      .update(userProfiles)
-      .set({ lastAskedAt: new Date() })
-      .where(
-        and(
-          eq(userProfiles.userId, ctx.user.id),
-          eq(userProfiles.userType, ctx.user.type),
-        ),
-      );
+      .insert(userProfiles)
+      .values({
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        lastAskedAt: now,
+      })
+      .onDuplicateKeyUpdate({
+        set: { lastAskedAt: now },
+      });
     return { success: true };
   }),
 

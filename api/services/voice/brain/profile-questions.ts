@@ -45,9 +45,9 @@ export async function lastAskedAt(userId: number, userType: string): Promise<Dat
  */
 export async function markAsked(userId: number, userType: string, now = new Date()): Promise<void> {
   await db
-    .update(userProfiles)
-    .set({ lastAskedAt: now })
-    .where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
+    .insert(userProfiles)
+    .values({ userId, userType, lastAskedAt: now })
+    .onDuplicateKeyUpdate({ set: { lastAskedAt: now } });
 }
 
 /** How the question reads in the call's facts: the words to ask, and what an answer may be. */

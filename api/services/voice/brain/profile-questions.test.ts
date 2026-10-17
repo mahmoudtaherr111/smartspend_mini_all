@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { callQuestion, checkedAnswer, nextCallQuestion, questionLine } from "./profile-questions";
+import { describe, expect, it, vi } from "vitest";
+import { callQuestion, checkedAnswer, markAsked, nextCallQuestion, questionLine } from "./profile-questions";
 import { PROFILE_FIELDS } from "../../../../contracts/profile-fields";
+import { userProfiles } from "../../../../db/schema";
+import { db } from "../../../queries/connection";
 import type { AdaptiveQuestion } from "../../adaptive-question-engine";
 
 const now = new Date("2026-09-24T10:00:00Z");
@@ -24,6 +26,19 @@ describe("the profile question a call may ask", () => {
 
   it("writes the question with the answers it accepts", () => {
     expect(questionLine(callQuestion("salary_day")!)).toContain("key=salary_day; الإجابة: رقم");
+  });
+
+  it("upserts lastAskedAt so a new user without a user_profiles row still records the pause", async () => {
+    const onDuplicateKeyUpdate = vi.fn().mockResolvedValue(undefined);
+    const values = vi.fn(() => ({ onDuplicateKeyUpdate }));
+    const insertSpy = vi.spyOn(db, "insert").mockReturnValue({ values } as unknown as ReturnType<typeof db.insert>);
+
+    await markAsked(42, "local", now);
+
+    expect(insertSpy).toHaveBeenCalledWith(userProfiles);
+    expect(values).toHaveBeenCalledWith({ userId: 42, userType: "local", lastAskedAt: now });
+    expect(onDuplicateKeyUpdate).toHaveBeenCalledWith({ set: { lastAskedAt: now } });
+    insertSpy.mockRestore();
   });
 });
 
