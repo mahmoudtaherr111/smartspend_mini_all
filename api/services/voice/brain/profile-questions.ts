@@ -1,7 +1,7 @@
 /**
  * Getting to know the user during a call: the same profile questions the Home card asks
- * (api/services/adaptive-question-engine.ts), limited to the ones that change a money answer (no family names,
- * pets or smoking). The next unanswered one goes into the call's facts, the assistant may ask it once when the call
+ * (`contracts/profile-fields.ts`, through api/services/adaptive-question-engine.ts). The next unanswered one goes
+ * into the call's facts, the assistant may ask it once when the call
  * allows, and the answer is saved through `profile.submitOnboardingAnswer`, exactly as a tap on the card would be,
  * after it is checked against the question's type.
  */
@@ -11,12 +11,10 @@ import { parseArabicNumbers } from "../../../lib/arabic-number-parser";
 import { db } from "../../../queries/connection";
 import { ADAPTIVE_ONBOARDING_QUESTIONS, type AdaptiveQuestion } from "../../adaptive-question-engine";
 import type { OnboardingAnswer } from "../../user-profile-service";
+import { PROFILE_FIELD_KEYS } from "../../../../contracts/profile-fields";
 
-/** Asked in this order, each only once answered or skipped questions are out of the way. */
-const CALL_QUESTION_KEYS = [
-  "income_level", "income_sources", "salary_day", "app_goal", "profession", "has_debt", "debt_monthly",
-  "housing_type", "supports_others", "subscription_services", "car_ownership",
-] as const;
+/** Asked in the shared order of `contracts/profile-fields.ts`, each only once answered or skipped ones are out of the way. */
+const CALL_QUESTION_KEYS: readonly string[] = PROFILE_FIELD_KEYS;
 
 const DAY_MS = 86_400_000;
 
@@ -28,14 +26,8 @@ export function callQuestion(key: string): AdaptiveQuestion | null {
 /** The next question worth asking in a call, or null when there is none or the app asked one in the last day. */
 export function nextCallQuestion(answers: Record<string, OnboardingAnswer>, lastAskedAt: Date | null, now = new Date()): AdaptiveQuestion | null {
   if (lastAskedAt && now.getTime() - lastAskedAt.getTime() < DAY_MS) return null;
-  const value = (key: string) => (answers[key] && !answers[key].skipped ? answers[key].value : undefined);
-  for (const key of CALL_QUESTION_KEYS) {
-    if (answers[key]) continue;
-    if (key === "salary_day" && !(Array.isArray(value("income_sources")) && (value("income_sources") as unknown[]).includes("salary"))) continue;
-    if (key === "debt_monthly" && value("has_debt") !== true) continue;
-    return callQuestion(key);
-  }
-  return null;
+  const key = CALL_QUESTION_KEYS.find((candidate) => !answers[candidate]);
+  return key ? callQuestion(key) : null;
 }
 
 export async function lastAskedAt(userId: number, userType: string): Promise<Date | null> {
@@ -78,7 +70,8 @@ export function checkedAnswer(question: AdaptiveQuestion, raw: unknown): unknown
       const match = text.match(/\d+(?:\.\d+)?/);
       const value = match ? Number(match[0]) : NaN;
       if (!Number.isFinite(value) || value < 0) return null;
-      if (question.key === "salary_day" && (value < 1 || value > 31 || !Number.isInteger(value))) return null;
+      // 0 is "no fixed day", as on the Home card.
+      if (question.key === "salary_day" && value !== 0 && (value < 1 || value > 31 || !Number.isInteger(value))) return null;
       return value;
     }
     case "boolean": {

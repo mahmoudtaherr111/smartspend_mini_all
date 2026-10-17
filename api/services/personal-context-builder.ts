@@ -198,7 +198,8 @@ export function buildPersonalContext(
  * This is injected into the AI system prompt for classification and reports.
  */
 export function buildPersonalContextPrompt(ctx: PersonalContext): string {
-  if (ctx.knownPeople.length === 0 && ctx.knownSubscriptions.length === 0) {
+  const hasSalaryDay = Boolean(ctx.salaryDay && ctx.salaryDay > 0);
+  if (ctx.knownPeople.length === 0 && ctx.knownSubscriptions.length === 0 && !ctx.hasCar && !ctx.smokes && !hasSalaryDay) {
     return "";
   }
 
@@ -249,7 +250,7 @@ export function buildPersonalContextPrompt(ctx: PersonalContext): string {
   }
 
   // Salary day context
-  if (ctx.salaryDay && ctx.salaryDay > 0) {
+  if (hasSalaryDay) {
     lines.push(`مرتب المستخدم بينزل يوم ${ctx.salaryDay} من كل شهر.`);
     lines.push(
       `تعليمة: لو المستخدم ذكر "المرتب" أو "القبض" أو "الراتب"، صنّفه كـ "دخل" وتاريخه يوم ${ctx.salaryDay} من الشهر الحالي.`,

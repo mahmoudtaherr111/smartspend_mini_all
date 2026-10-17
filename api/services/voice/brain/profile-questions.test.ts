@@ -1,45 +1,51 @@
 import { describe, expect, it } from "vitest";
 import { callQuestion, checkedAnswer, nextCallQuestion, questionLine } from "./profile-questions";
+import { PROFILE_FIELDS } from "../../../../contracts/profile-fields";
+import type { AdaptiveQuestion } from "../../adaptive-question-engine";
 
 const now = new Date("2026-09-24T10:00:00Z");
 
 describe("the profile question a call may ask", () => {
-  it("starts with income and skips what is answered or declined", () => {
-    expect(nextCallQuestion({}, null, now)?.key).toBe("income_level");
-    expect(nextCallQuestion({ income_level: { value: 12_000 }, income_sources: { skipped: true } }, null, now)?.key).toBe("app_goal");
+  it("asks the Home card's questions in the same order and skips what is answered or declined", () => {
+    expect(nextCallQuestion({}, null, now)?.key).toBe(PROFILE_FIELDS[0].key);
+    expect(nextCallQuestion({ income_level: { value: 12_000 } }, null, now)?.key).toBe("salary_day");
+    expect(nextCallQuestion({ income_level: { skipped: true }, salary_day: { value: 0 } }, null, now)?.key).toBe("profession");
+    expect(
+      nextCallQuestion({ income_level: { skipped: true }, salary_day: { value: 0 }, profession: { value: "مدرس" } }, null, now),
+    ).toBeNull();
   });
 
-  it("asks for payday only with a salary, and debt payments only with debt", () => {
-    const base = { income_level: { value: 9_000 }, app_goal: { value: "save_money" }, profession: { value: "مهندس" } };
-    expect(nextCallQuestion({ ...base, income_sources: { value: ["salary"] } }, null, now)?.key).toBe("salary_day");
-    expect(nextCallQuestion({ ...base, income_sources: { value: ["freelance"] } }, null, now)?.key).toBe("has_debt");
-    expect(nextCallQuestion({ ...base, income_sources: { value: ["freelance"] }, has_debt: { value: true } }, null, now)?.key).toBe("debt_monthly");
-  });
-
-  it("never asks about family names, pets or smoking, and waits a day after the app asked", () => {
+  it("never asks a question the card no longer asks, and waits a day after the app asked", () => {
     expect(callQuestion("children_names")).toBeNull();
     expect(callQuestion("smoking")).toBeNull();
+    expect(callQuestion("income_sources")).toBeNull();
     expect(nextCallQuestion({}, new Date("2026-09-24T02:00:00Z"), now)).toBeNull();
   });
 
   it("writes the question with the answers it accepts", () => {
     expect(questionLine(callQuestion("salary_day")!)).toContain("key=salary_day; الإجابة: رقم");
-    expect(questionLine(callQuestion("income_sources")!)).toContain("salary=وظيفة / مرتب");
   });
 });
 
 describe("checkedAnswer", () => {
-  it("reads numbers said in words and refuses an impossible payday", () => {
+  it("reads numbers said in words, refuses an impossible payday and accepts 0 for no fixed day", () => {
     expect(checkedAnswer(callQuestion("income_level")!, "تمن آلاف")).toBe(8_000);
     expect(checkedAnswer(callQuestion("salary_day")!, "خمسة وعشرين")).toBe(25);
     expect(checkedAnswer(callQuestion("salary_day")!, "45")).toBeNull();
+    expect(checkedAnswer(callQuestion("salary_day")!, 0)).toBe(0);
   });
 
   it("maps options by value or label, and yes or no", () => {
-    expect(checkedAnswer(callQuestion("income_sources")!, "salary, فريلانس / عمل حر")).toEqual(["salary", "freelance"]);
-    expect(checkedAnswer(callQuestion("app_goal")!, "save_money")).toBe("save_money");
-    expect(checkedAnswer(callQuestion("app_goal")!, "حاجة مش في القايمة")).toBeNull();
-    expect(checkedAnswer(callQuestion("has_debt")!, "لأ")).toBe(false);
-    expect(checkedAnswer(callQuestion("has_debt")!, "true")).toBe(true);
+    const choice: AdaptiveQuestion = {
+      key: "example_choice",
+      text: "؟",
+      type: "multi_select",
+      options: [{ value: "salary", label: "وظيفة / مرتب" }, { value: "freelance", label: "فريلانس / عمل حر" }],
+    };
+    expect(checkedAnswer(choice, "salary, فريلانس / عمل حر")).toEqual(["salary", "freelance"]);
+    expect(checkedAnswer({ ...choice, type: "select" }, "freelance")).toBe("freelance");
+    expect(checkedAnswer({ ...choice, type: "select" }, "حاجة مش في القايمة")).toBeNull();
+    expect(checkedAnswer({ key: "example_yes_no", text: "؟", type: "boolean" }, "لأ")).toBe(false);
+    expect(checkedAnswer({ key: "example_yes_no", text: "؟", type: "boolean" }, "true")).toBe(true);
   });
 });

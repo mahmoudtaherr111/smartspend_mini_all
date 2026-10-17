@@ -150,14 +150,12 @@ flowchart LR
   router_wallet ==> tbl_user_wallets
   screens_accounts --> router_business
   screens_accounts --> router_expense
-  screens_accounts --> router_goals
   screens_accounts --> router_profile
   screens_bank_messages --> router_wallet
   screens_web_app --> router_business
   screens_web_app --> router_coach
   screens_web_app --> router_expense
   screens_web_app --> router_export
-  screens_web_app --> router_goals
   screens_web_app --> router_profile
   screens_web_app --> router_wallet
 ```
@@ -213,11 +211,11 @@ flowchart LR
 | `expense.searchTransactions` | query | `authedProcedure` | `expenses` | — | `Home` |
 | `expense.update` | mutation | `authedProcedure` | `classification_logs`, `expenses` | `classification_logs`, `expenses` | `Home` |
 | `export.myExpenses` | mutation | `authedProcedure` | `expenses` | — | `More` |
-| `goals.analyze` | mutation | `goalAnalysisProcedure` | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `users` | `Home`, `More`, `Settings` |
-| `goals.create` | mutation | `authedProcedure` | `financial_goals` | `financial_goals` | `Home`, `More`, `Settings` |
+| `goals.analyze` | mutation | `goalAnalysisProcedure` | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `users` | `Home` |
+| `goals.create` | mutation | `authedProcedure` | `financial_goals` | `financial_goals` | `Home` |
 | `goals.delete` | mutation | `authedProcedure` | — | `financial_goals`, `user_budgets` | — |
-| `goals.list` | query | `authedProcedure` | `financial_goals` | — | `Home`, `More`, `Settings` |
-| `goals.setStatus` | mutation | `authedProcedure` | — | `financial_goals` | `More`, `Settings` |
+| `goals.list` | query | `authedProcedure` | `financial_goals` | — | `Home` |
+| `goals.setStatus` | mutation | `authedProcedure` | — | `financial_goals` | — |
 | `profile.addContact` | mutation | `authedProcedure` | `user_contacts` | `user_contacts` | `More`, `Settings` |
 | `profile.deleteContact` | mutation | `authedProcedure` | `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `More`, `Settings` |
 | `profile.listContacts` | query | `authedProcedure` | `expenses`, `user_contacts` | — | `More`, `PlanPage`, `Settings` |

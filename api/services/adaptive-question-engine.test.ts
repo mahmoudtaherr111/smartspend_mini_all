@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  ADAPTIVE_ONBOARDING_QUESTIONS,
   applyOnboardingAnswer,
   getNextOnboardingQuestion,
 } from "./adaptive-question-engine";
+import { PROFILE_FIELDS } from "../../contracts/profile-fields";
 import { buildDefaultSmartProfile } from "./user-profile-service";
 
 function profile() {
@@ -10,45 +12,52 @@ function profile() {
 }
 
 describe("adaptive question engine", () => {
-  it("starts with income and follows the family path", () => {
+  it("asks the shared profile fields in order, then is complete", () => {
     let current = profile();
-    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe(
-      "income_level",
-    );
+    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe("income_level");
 
     current = applyOnboardingAnswer(current, "income_level", 12000);
-    current = applyOnboardingAnswer(current, "income_sources", ["salary"]);
-    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe(
-      "salary_day",
-    );
+    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe("salary_day");
 
-    current = applyOnboardingAnswer(current, "salary_day", 1);
-    current = applyOnboardingAnswer(current, "app_goal", "organize_expenses");
-    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe(
-      "children",
-    );
+    current = applyOnboardingAnswer(current, "salary_day", 27);
+    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe("profession");
+    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.type).toBe("text");
 
-    current = applyOnboardingAnswer(current, "children", true);
-    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe(
-      "children_count",
+    current = applyOnboardingAnswer(current, "profession", "مهندسة");
+    expect(getNextOnboardingQuestion(current.onboardingAnswers)).toBeNull();
+    expect(current.basicInfo.profession).toBe("مهندسة");
+    expect(current.profileCompleted).toBe(true);
+  });
+
+  it("asks exactly the questions of contracts/profile-fields.ts", () => {
+    expect(ADAPTIVE_ONBOARDING_QUESTIONS.map((question) => question.key)).toEqual(
+      PROFILE_FIELDS.map((field) => field.key),
+    );
+    expect(ADAPTIVE_ONBOARDING_QUESTIONS.map((question) => question.text)).toEqual(
+      PROFILE_FIELDS.map((field) => field.question.ar),
     );
   });
 
-  it("uses lifestyle path when there is no family responsibility", () => {
+  it("no longer asks a removed question, and keeps an old answer to one", () => {
     let current = profile();
+    current = applyOnboardingAnswer(current, "smoking", true);
     current = applyOnboardingAnswer(current, "income_level", 8000);
-    current = applyOnboardingAnswer(current, "income_sources", ["freelance"]);
+    current = applyOnboardingAnswer(current, "salary_day", null, true);
+    current = applyOnboardingAnswer(current, "profession", null, true);
+    expect(getNextOnboardingQuestion(current.onboardingAnswers)).toBeNull();
+    expect(current.lifestyleInfo.smoking).toBe(true);
+    expect(current.onboardingAnswers.smoking.value).toBe(true);
+  });
 
-    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe(
-      "app_goal",
-    );
+  it("turns the payday on for Home and the calendar, and 0 means no fixed day", () => {
+    let current = applyOnboardingAnswer(profile(), "salary_day", 25);
+    expect(current.financialInfo.hasFixedSalary).toBe(true);
+    expect(current.financialInfo.salaryDay).toBe(25);
 
-    current = applyOnboardingAnswer(current, "app_goal", "organize_expenses");
-    current = applyOnboardingAnswer(current, "children", false);
-
-    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe(
-      "living_situation",
-    );
+    current = applyOnboardingAnswer(current, "salary_day", 0);
+    expect(current.financialInfo.hasFixedSalary).toBe(false);
+    expect(current.financialInfo.salaryDay).toBeNull();
+    expect(current.onboardingAnswers.salary_day.skipped).toBe(false);
   });
 
   it("supports skip and edit without losing answer metadata", () => {

@@ -73,9 +73,9 @@ export function MobileBottomNav() {
   const [searchParams] = useSearchParams();
   const { lightTap } = useHaptics();
   const { isKeyboardOpen } = useVirtualKeyboard();
-  const now = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const month = searchParams.get("month") || currentMonth;
+  // Only a month the user picked travels between tabs; otherwise Home opens the month holding today, which with a
+  // payday is not always the calendar month.
+  const month = searchParams.get("month");
   const isIos = detectMobileNavPlatform() === "ios";
   const isIphoneScrubEnabled = supportsIphoneNavScrub();
   const [scrubIndex, setScrubIndex] = useState<number | null>(null);
@@ -136,7 +136,7 @@ export function MobileBottomNav() {
   const trailStart = Math.min(trailOrigin, indicatorPosition);
   const trailWidth = Math.abs(indicatorPosition - trailOrigin) + 1;
   const tabHref = (item: TabItem) =>
-    item.href.includes("?") ? `${item.href}&month=${month}` : item.href;
+    item.href.includes("?") && month ? `${item.href}&month=${month}` : item.href;
 
   const resetGesture = () => {
     activePointerRef.current = null;

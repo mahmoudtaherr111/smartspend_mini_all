@@ -185,7 +185,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-52 files in its import closure (not counting `src/components/ui/`).
+53 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -225,7 +225,7 @@ _None._
 | `profile.confirmSmsSuggestion` | useMutation | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.dismissOnboarding` | useMutation | `src/components/OnboardingCard.tsx` |
 | `profile.dismissSmsSuggestion` | useMutation | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
-| `profile.getNextOnboardingQuestion` | useQuery | `src/components/OnboardingCard.tsx` |
+| `profile.getNextOnboardingQuestion` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/pages/Home.tsx` |
 | `profile.getSmsSuggestions` | useQuery, utils.invalidate | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
@@ -323,10 +323,10 @@ _None._
 | `ads.delete` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.stats` | useQuery | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.update` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
-| `ai.getUserLimits` | useQuery | `src/components/layout/PlanUsageStrip.tsx` |
+| `ai.getUserLimits` | useQuery | `src/components/profile/ProfileScreen.tsx` |
 | `ai.parseExpense` | useMutation | `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
-| `auth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/SmartProfileSettings.tsx`, `src/hooks/useAuth.ts` |
+| `auth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
 | `business.addCategory` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.create` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.delete` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
@@ -346,12 +346,8 @@ _None._
 | `expense.getMonthlyStats` | useQuery | `src/components/settings/BusinessSettingsView.tsx` |
 | `export.allUsers` | useMutation | `src/pages/Admin.tsx` |
 | `export.myExpenses` | useMutation | `src/components/expenses/ExportExpensesCard.tsx` |
-| `goals.analyze` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
-| `goals.create` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
-| `goals.list` | useQuery | `src/components/goals/FinancialGoalsPanel.tsx`, `src/components/profile/SmartProfileView.tsx` |
-| `goals.setStatus` | useMutation | `src/components/profile/SmartProfileView.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
-| `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/SmartProfileSettings.tsx`, `src/hooks/useAuth.ts` |
+| `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
 | `pro.cancel` | useMutation | `src/hooks/usePro.ts` |
 | `pro.createCheckoutSession` | useMutation | `src/hooks/usePro.ts` |
 | `pro.myPlan` | useQuery, utils.invalidate | `src/hooks/usePro.ts` |
@@ -360,16 +356,17 @@ _None._
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.generateWebhookToken` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/SmartProfileSettings.tsx` |
-| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/components/profile/SmartProfileView.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/ProfileScreen.tsx` |
+| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
 | `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx`, `src/pages/PlanPage.tsx` |
 | `profile.mergeContacts` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
+| `profile.submitOnboardingAnswer` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `profile.updateContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/SmartProfileSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
-| `profile.updateUserInfo` | useMutation | `src/components/profile/SmartProfileSettings.tsx` |
+| `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.updateUserInfo` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `referral.applyCode` | useMutation | `src/pages/Pro.tsx` |
 | `referral.myCode` | useQuery | `src/pages/Pro.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
@@ -441,9 +438,9 @@ _None._
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
-| `ai.getUserLimits` | useQuery | `src/components/layout/PlanUsageStrip.tsx` |
+| `ai.getUserLimits` | useQuery | `src/components/profile/ProfileScreen.tsx` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
-| `auth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/SmartProfileSettings.tsx`, `src/hooks/useAuth.ts` |
+| `auth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
 | `business.addCategory` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.create` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.delete` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
@@ -452,22 +449,19 @@ _None._
 | `business.suggestCategories` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.update` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `expense.getMonthlyStats` | useQuery | `src/components/settings/BusinessSettingsView.tsx` |
-| `goals.analyze` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
-| `goals.create` | useMutation | `src/components/goals/FinancialGoalsPanel.tsx` |
-| `goals.list` | useQuery | `src/components/goals/FinancialGoalsPanel.tsx`, `src/components/profile/SmartProfileView.tsx` |
-| `goals.setStatus` | useMutation | `src/components/profile/SmartProfileView.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
-| `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/SmartProfileSettings.tsx`, `src/hooks/useAuth.ts` |
+| `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/SmartProfileSettings.tsx` |
-| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/profile/SmartProfileSettings.tsx`, `src/components/profile/SmartProfileView.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/ProfileScreen.tsx` |
+| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.mergeContacts` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
+| `profile.submitOnboardingAnswer` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `profile.updateContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.updateSmartProfile` | useMutation | `src/components/profile/SmartProfileSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
-| `profile.updateUserInfo` | useMutation | `src/components/profile/SmartProfileSettings.tsx` |
+| `profile.updateSmartProfile` | useMutation | `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.updateUserInfo` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 | `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx` |
 | `webauthn.deletePasskey` | useMutation | `src/components/auth/PasskeySettings.tsx` |

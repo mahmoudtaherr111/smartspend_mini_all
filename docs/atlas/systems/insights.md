@@ -107,7 +107,7 @@ flowchart LR
 | `profile.getQuestions` | query | `authedProcedure` | `onboarding_questions` | — | — |
 | `profile.getSmartProfile` | query | `authedProcedure` | — | — | `App shell`, `BankSyncPage`, `Home`, `More`, `Settings` |
 | `profile.refreshInferences` | mutation | `authedProcedure` | `expenses` | `monthly_behavior_snapshots` | — |
-| `profile.submitOnboardingAnswer` | mutation | `authedProcedure` | — | — | `Home` |
+| `profile.submitOnboardingAnswer` | mutation | `authedProcedure` | — | — | `Home`, `More`, `Settings` |
 | `profile.updateSmartProfile` | mutation | `authedProcedure` | — | — | `BankSyncPage`, `More`, `Settings` |
 
 ## HTTP routes, WebSockets and scheduled jobs

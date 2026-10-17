@@ -65,6 +65,8 @@ flowchart LR
   mod_web_shared --> mod_web_lib
   mod_web_shared --> mod_web_shell
   mod_web_shared --> mod_web_ui_kit
+  mod_web_shared --> sys_accounts
+  mod_web_shared --> sys_platform
   mod_web_shell --> ext_capacitor
   mod_web_shell --> ext_firebase
   mod_web_shell --> mod_web_growth
@@ -88,7 +90,7 @@ flowchart LR
 | `web-lib` — Web utilities | Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/. | 10 |
 | `web-pages` — Web pages | Route-level page components lazy-loaded by src/App.tsx. | 16 |
 | `web-shared` — Shared web components | Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton. | 5 |
-| `web-shell` — Web app shell | Entry point, providers, layout, route guards and PWA or native integration. | 25 |
+| `web-shell` — Web app shell | Entry point, providers, layout, route guards and PWA or native integration. | 24 |
 | `web-ui-kit` — UI primitives | shadcn and Radix UI primitives in src/components/ui/. | 55 |
 
 ## API procedures
@@ -139,7 +141,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/web-app.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>122 files and declarations</summary>
+<details><summary>121 files and declarations</summary>
 
 - `src/App.tsx`
 - `src/components/NotificationBell.tsx`
@@ -150,7 +152,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/ads/AdBanner.tsx`
 - `src/components/layout/MobileBottomNav.tsx`
 - `src/components/layout/PageTransition.tsx`
-- `src/components/layout/PlanUsageStrip.tsx`
 - `src/components/layout/mobile-nav-platform.ts`
 - `src/components/pwa/NetworkStatusToast.tsx`
 - `src/components/pwa/PullToRefreshWrapper.tsx`

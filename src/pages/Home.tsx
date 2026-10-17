@@ -49,9 +49,16 @@ const MonthlyCalendar = lazy(() =>
   })),
 );
 
-function currentMonthValue() {
+/**
+ * The month that holds today. With a payday after the 1st, a month runs from payday to payday and is named after the
+ * calendar month it starts in (api/services/financial-month.ts), so before payday today belongs to last month's cycle.
+ */
+function currentMonthValue(salaryDay?: number) {
   const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const beforePayday = Boolean(salaryDay && salaryDay > 1 && now.getDate() < Math.min(salaryDay, daysInMonth));
+  const start = new Date(now.getFullYear(), now.getMonth() - (beforePayday ? 1 : 0), 1);
+  return `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function normalizeTab(value: string | null): HomeTab {
@@ -140,13 +147,13 @@ export default function Home() {
   const activeBusinessId =
     businessMode && hasBusiness ? businessQuery.data!.business!.id : undefined;
 
-  // Sync tab & month from URL
+  // Sync tab & month from URL; without a month in it, the one holding today (once the payday is known).
   useEffect(() => {
     const nextTab = normalizeTab(currentParams.get("tab"));
-    const nextMonth = currentParams.get("month") || currentMonthValue();
+    const nextMonth = currentParams.get("month") || currentMonthValue(salaryDay);
     setActiveTab((current) => (current === nextTab ? current : nextTab));
     setMonth((current) => (current === nextMonth ? current : nextMonth));
-  }, [currentParams]);
+  }, [currentParams, salaryDay]);
 
   // Prefetch Adjacent Months
   useEffect(() => {
@@ -172,7 +179,7 @@ export default function Home() {
     }
   }, [month, salaryDay, activeTab, utils, activeBusinessId]);
 
-  const isPastMonth = month < currentMonthValue();
+  const isPastMonth = month < currentMonthValue(salaryDay);
   const statsStaleTime = isPastMonth ? 60 * 60 * 1000 : 60_000;
 
   const { data: summary } = trpc.expense.getMonthSummary.useQuery(
@@ -222,7 +229,6 @@ export default function Home() {
   return (
     <div className="min-h-full bg-slate-50/70 dark:bg-slate-950/40">
       <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-3 sm:space-y-4">
-        <OnboardingCard />
         <HomeHeader
           pageTitle={pageTitle}
           businessMode={businessMode}
@@ -243,6 +249,10 @@ export default function Home() {
         <HomeSummaryCards
           totalIncome={summary?.totalIncome}
           totalExpense={summary?.totalExpense}
+        />
+
+        <OnboardingCard
+          hasActivity={(summary?.totalIncome ?? 0) + (summary?.totalExpense ?? 0) > 0}
         />
 
         <NativeTabPanels activeTab={activeTab} tabOrder={TAB_ORDER}>

@@ -14,6 +14,12 @@
       "port": 3005
     },
     {
+      "name": "smartspend-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["cross-env", "ENABLE_CRONS=false", "vite", "--port", "3010", "--strictPort"],
+      "port": 3010
+    },
+    {
       "name": "architecture-map",
       "runtimeExecutable": "node",
       "runtimeArgs": [

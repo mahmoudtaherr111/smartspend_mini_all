@@ -1152,7 +1152,7 @@ model {
   smartspend.api.trpc.webauthn.verifyRegistration -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.webauthn.verifyRegistration -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.trpc.webauthn.verifyRegistration -[writes]-> smartspend.mysql.user_credentials
-  smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-finance
+  smartspend.web.modules.web-account -[imports]-> smartspend.shared.contracts
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-account -[imports]-> smartspend.web.modules.web-shell
@@ -1207,6 +1207,8 @@ model {
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-voice-call
+  smartspend.web.modules.web-shared -[imports]-> smartspend.shared.contracts
+  smartspend.web.modules.web-shared -[imports]-> smartspend.web.modules.web-account
   smartspend.web.modules.web-shared -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-shared -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-shared -[imports]-> smartspend.web.modules.web-shell
@@ -1468,10 +1470,6 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.expense.getMonthlyStats
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.export.allUsers
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.export.myExpenses
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.goals.analyze
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.goals.create
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.goals.list
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.goals.setStatus
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.localAuth.me
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.pro.cancel
@@ -1489,6 +1487,7 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.listContacts
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.mergeContacts
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.savePushSubscription
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.submitOnboardingAnswer
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.updateContact
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.updateSmartProfile
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.updateUserInfo
@@ -1540,10 +1539,6 @@ model {
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.business.suggestCategories
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.business.update
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.expense.getMonthlyStats
-  smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.goals.analyze
-  smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.goals.create
-  smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.goals.list
-  smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.goals.setStatus
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.localAuth.me
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.addContact
@@ -1553,6 +1548,7 @@ model {
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.listContacts
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.mergeContacts
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.savePushSubscription
+  smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.submitOnboardingAnswer
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.updateContact
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.updateSmartProfile
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.updateUserInfo

@@ -727,6 +727,11 @@ function syncOnboardingAnswersFromProfile(
   if (Array.isArray(fi.incomeSources) && fi.incomeSources.length > 0)
     markAnswered("income_sources", fi.incomeSources);
   if (fi.primaryGoal) markAnswered("app_goal", fi.primaryGoal);
+  if (fi.hasFixedSalary && fi.salaryDay) markAnswered("salary_day", fi.salaryDay);
+  // "No fixed day" is an answer too (0), so the payday question is not asked again.
+  if (fi.hasFixedSalary === false && !answers.salary_day) {
+    answers.salary_day = { value: 0, skipped: false, answeredAt: now, updatedAt: now };
+  }
   if (fi.hasDebt !== null && fi.hasDebt !== undefined)
     markAnswered("has_debt", fi.hasDebt);
   if (fi.monthlyDebtPayment)

@@ -1601,9 +1601,9 @@ model {
         }
       }
       setStatus = procedure 'goals.setStatus' {
-        #mutation #authed
+        #mutation #authed #uncalled
         technology 'authedProcedure'
-        description 'mutation · authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
         metadata {
           file 'api/goals-router.ts'
           builder 'authedProcedure'

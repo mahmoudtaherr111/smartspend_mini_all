@@ -1,4 +1,3 @@
-import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell,
@@ -18,20 +17,10 @@ import {
   Users,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
+import { SignOutDialog } from "@/components/auth/SignOutDialog";
 import { ExportExpensesCard } from "@/components/expenses/ExportExpensesCard";
 import { useLanguage } from "@/i18n/context";
 import type { MessageKey } from "@/i18n/ar";
-import {
-  AdaptiveDialog,
-  AdaptiveDialogClose,
-  AdaptiveDialogContent,
-  AdaptiveDialogDescription,
-  AdaptiveDialogFooter,
-  AdaptiveDialogHeader,
-  AdaptiveDialogTitle,
-  AdaptiveDialogTrigger,
-} from "@/components/ui/adaptive-dialog";
 
 interface MoreItem {
   href: string;
@@ -133,34 +122,10 @@ function preloadDestination(href: string) {
   return Promise.resolve();
 }
 
-/** How many entries were written offline and are still waiting to be sent. */
-function countUnsentOffline(): number {
-  const count = (key: string) => {
-    try {
-      const items: unknown = JSON.parse(localStorage.getItem(key) || "[]");
-      return Array.isArray(items) ? items.length : 0;
-    } catch {
-      return 0;
-    }
-  };
-  return count("smartspend_offline_texts") + count("smartspend_offline_manual");
-}
-
 export default function More() {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { dir, t } = useLanguage();
   const ForwardChevron = dir === "rtl" ? ChevronLeft : ChevronRight;
-  const [logoutOpen, setLogoutOpen] = useState(false);
-  // Logging out clears the offline queue (it belongs to this account); say so first.
-  const unsentCount = logoutOpen ? countUnsentOffline() : 0;
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const cancelLogoutRef = useRef<HTMLButtonElement>(null);
-
-  const confirmLogout = async () => {
-    if (isLoggingOut) return;
-    setIsLoggingOut(true);
-    await logout();
-  };
 
   return (
     <div className="min-h-full bg-slate-50/70 px-4 py-5 dark:bg-slate-950/40 sm:px-6">
@@ -286,13 +251,8 @@ export default function More() {
             )}
 
             <div className="border-t border-slate-200/70 dark:border-slate-800 p-2">
-              <AdaptiveDialog
-                open={logoutOpen}
-                onOpenChange={(open) => {
-                  if (!isLoggingOut) setLogoutOpen(open);
-                }}
-              >
-                <AdaptiveDialogTrigger asChild>
+              <SignOutDialog
+                trigger={
                   <button
                     type="button"
                     className="active-press flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-2.5 text-sm font-bold text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:text-red-400 cursor-pointer"
@@ -300,40 +260,8 @@ export default function More() {
                     <LogOut className="h-4 w-4" />
                     {t("more.logout.button")}
                   </button>
-                </AdaptiveDialogTrigger>
-                <AdaptiveDialogContent
-                  onOpenAutoFocus={(event) => {
-                    event.preventDefault();
-                    cancelLogoutRef.current?.focus();
-                  }}
-                >
-                  <AdaptiveDialogHeader>
-                    <AdaptiveDialogTitle>{t("more.logout.title")}</AdaptiveDialogTitle>
-                    <AdaptiveDialogDescription>
-                      {t("more.logout.description")}
-                    </AdaptiveDialogDescription>
-                    {unsentCount > 0 && (
-                      <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                        {t("more.logout.unsentWarning", { count: unsentCount })}
-                      </p>
-                    )}
-                  </AdaptiveDialogHeader>
-                  <AdaptiveDialogFooter>
-                    <AdaptiveDialogClose asChild>
-                      <Button ref={cancelLogoutRef} variant="outline" disabled={isLoggingOut}>
-                        {t("more.logout.cancel")}
-                      </Button>
-                    </AdaptiveDialogClose>
-                    <Button
-                      variant="destructive"
-                      disabled={isLoggingOut}
-                      onClick={() => void confirmLogout()}
-                    >
-                      {isLoggingOut ? t("more.logout.loading") : t("more.logout.confirm")}
-                    </Button>
-                  </AdaptiveDialogFooter>
-                </AdaptiveDialogContent>
-              </AdaptiveDialog>
+                }
+              />
             </div>
           </div>
         </section>

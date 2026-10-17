@@ -4,8 +4,7 @@ import { trpc } from "../providers/trpc";
 import { SEOMeta } from "../components/seo/SEOMeta";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
-import { SmartProfileSettings } from "@/components/profile/SmartProfileSettings";
-import { SmartProfileView } from "@/components/profile/SmartProfileView";
+import { ProfileScreen } from "@/components/profile/ProfileScreen";
 import { PasskeySettings } from "@/components/auth/PasskeySettings";
 import { PeopleSettingsView } from "@/components/settings/PeopleSettingsView";
 import { BusinessSettingsView } from "@/components/settings/BusinessSettingsView";
@@ -97,8 +96,6 @@ export default function Settings() {
       navigate("/more");
     }
   };
-
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const profileQuery = trpc.profile.getSmartProfile.useQuery();
   const trpcContext = trpc.useContext();
@@ -194,20 +191,10 @@ export default function Settings() {
                 WebkitBackfaceVisibility: "hidden",
               }}
             >
-              {isEditingProfile ? (
-                <div className="space-y-4">
-                  <SmartProfileSettings
-                    onCancel={() => setIsEditingProfile(false)}
-                  />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <SmartProfileView
-                    onEdit={() => setIsEditingProfile(true)}
-                    onBack={closeView}
-                  />
-                </div>
-              )}
+              <div className="mx-auto max-w-2xl">
+                <SubViewHeader title={t("settings.subview.profile")} onBack={closeView} />
+                <ProfileScreen />
+              </div>
             </motion.div>
           )}
 

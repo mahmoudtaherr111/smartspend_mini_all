@@ -1,555 +1,121 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { trpc } from "@/providers/trpc";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-import { ArrowLeft, Check, Sparkles, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/providers/trpc";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/i18n/context";
+import { PROFILE_FIELDS, normalizeProfileFieldValue, profileField, type ProfileFieldValue } from "@contracts/profile-fields";
+import { ProfileFieldInput, isValidProfileFieldValue } from "@/components/profile/ProfileFieldInput";
 
-// Arabic question texts matching the new adaptive-question-engine
-const questionMeta: Record<
-  string,
-  { text: string; emoji: string; hint?: string }
-> = {
-  income_level: {
-    text: "كام تقريباً دخلك الشهري؟",
-    emoji: "💰",
-    hint: "بالجنيه المصري - اكتب رقم تقريبي",
-  },
-  income_sources: {
-    text: "إيه مصادر دخلك الأساسية؟",
-    emoji: "🏦",
-    hint: "ممكن تختار أكثر من واحد",
-  },
-  has_fixed_salary: {
-    text: "مرتبك بينزل في وقت ثابت كل شهر؟",
-    emoji: "📅",
-    hint: "عشان نحسب شهرك المالي صح",
-  },
-  salary_day: {
-    text: "مرتبك بينزل يوم كام من الشهر؟",
-    emoji: "💵",
-    hint: "رقم من 1 لـ 31",
-  },
-  app_goal: { text: "إيه أهم حاجة عايز SmartSpend يساعدك فيها؟", emoji: "🎯" },
-  children: { text: "عندك أطفال؟", emoji: "👶" },
-  children_count: { text: "كام طفل عندك؟", emoji: "👧" },
-  children_names: {
-    text: "إيه أسماء أطفالك؟",
-    emoji: "👧",
-    hint: "اكتب اسم كل طفل",
-  },
-  living_situation: { text: "إيه وضع سكنك الحالي؟", emoji: "🏠" },
-  partner_name: {
-    text: "إيه اسم شريك/شريكة حياتك؟",
-    emoji: "💑",
-    hint: "عشان نعرفه لما تقول بعتت فلوس لـ...",
-  },
-  housing_type: { text: "سكنك إيجار ولا ملك؟", emoji: "🏡" },
-  monthly_rent: {
-    text: "الإيجار بيبلغ كام شهرياً؟",
-    emoji: "🔑",
-    hint: "بالجنيه المصري",
-  },
-  supports_others: {
-    text: "بتصرف على مين بشكل منتظم؟",
-    emoji: "🤝",
-    hint: "ممكن تختار أكثر من واحد",
-  },
-  has_debt: { text: "عندك أي ديون أو أقساط؟", emoji: "📉" },
-  debt_monthly: {
-    text: "بتدفع كام على الديون شهرياً؟",
-    emoji: "💸",
-    hint: "بالجنيه المصري تقريباً",
-  },
-  profession: {
-    text: "إيه وظيفتك أو مجال شغلك؟",
-    emoji: "💼",
-    hint: "اكتب بحرية - مثال: مصمم، موظف، طبيب",
-  },
-  car_ownership: { text: "عندك عربية خاصة؟", emoji: "🚗" },
-  car_type: { text: "نوع العربية إيه؟", emoji: "🚘", hint: "مثال: كيا سيراتو" },
-  monthly_car_cost: {
-    text: "بتصرف كام على العربية شهرياً تقريباً؟",
-    emoji: "⛽",
-    hint: "بنزين + صيانة بالجنيه",
-  },
-  has_pets: { text: "عندك حيوانات أليفة؟", emoji: "🐾" },
-  pet_names: { text: "إيه أسماءهم؟", emoji: "🐱" },
-  smoking: { text: "بتدخن؟", emoji: "🚬" },
-  subscription_services: {
-    text: "إيه الاشتراكات الثابتة عندك؟",
-    emoji: "📺",
-    hint: "ممكن تختار أكثر من واحد",
-  },
-  regular_contacts: {
-    text: "مين الأشخاص اللي بتحولهم فلوس بانتظام؟",
-    emoji: "📇",
-    hint: "غير العيلة - اكتب اسم كل شخص",
-  },
-};
+/** "Not now" hides the card on this device for a week; the server pause (a day) covers other devices and calls. */
+const LOCAL_PAUSE_MS = 7 * 24 * 60 * 60 * 1000;
+const SERVER_PAUSE_MS = 24 * 60 * 60 * 1000;
 
-const TOTAL_QUESTIONS = 21; // including conditional salary_day questions
-
-function normalizeOptions(question: any) {
-  const options = Array.isArray(question?.options) ? question.options : [];
-  return options.map((option: any) => {
-    const value = typeof option === "string" ? option : option.value;
-    const label = typeof option === "string" ? option : option.label;
-    return { value, label };
-  });
+interface OnboardingCardProps {
+  /** Shown only once the user has recorded something, so the first visit is never interrupted. */
+  hasActivity: boolean;
 }
 
-function initValue(type: string | undefined) {
-  if (type === "multi_select") return [];
-  if (type === "text_list") return [""];
-  return "";
-}
-
-export function OnboardingCard() {
+/**
+ * The profile questions on Home, one at a time, inline (never a pop-up). The questions, their order and the
+ * "why we ask" line come from `contracts/profile-fields.ts`, like the profile screen and the voice call.
+ */
+export function OnboardingCard({ hasActivity }: OnboardingCardProps) {
   const { user } = useAuth();
+  const { language, t } = useLanguage();
   const utils = trpc.useUtils();
-  const [show, setShow] = useState(false);
-  const [value, setValue] = useState<any>("");
-  // Track the current question locally to avoid race conditions with query invalidation
-  const [localQuestion, setLocalQuestion] = useState<any>(null);
-  const isUsingLocal = useRef(false);
-  // CRITICAL: Accumulate ALL answers locally so we never lose them even if DB save fails
-  const accumulatedAnswers = useRef<Record<string, any>>({});
-  const storageScope = user ? `${user.type}_${user.id}` : "anonymous";
-  const answersStorageKey = `onboarding_answers_${storageScope}`;
-  const dismissedStorageKey = `onboarding_last_dismissed_${storageScope}`;
+  const pauseKey = `onboarding_card_paused_${user ? `${user.type}_${user.id}` : "anonymous"}`;
+  const [pausedLocally, setPausedLocally] = useState(() => {
+    try {
+      const at = Number(localStorage.getItem(pauseKey) || 0);
+      return Date.now() - at < LOCAL_PAUSE_MS;
+    } catch {
+      return false;
+    }
+  });
+  const [value, setValue] = useState<ProfileFieldValue | undefined>(undefined);
 
-  const profile = trpc.profile.getSmartProfile.useQuery(undefined, {
+  const next = trpc.profile.getNextOnboardingQuestion.useQuery(undefined, {
+    enabled: hasActivity && !pausedLocally,
     retry: false,
   });
-  const nextQuestion = trpc.profile.getNextOnboardingQuestion.useQuery(
-    undefined,
-    { retry: false },
-  );
-  const dismissMutation = trpc.profile.dismissOnboarding.useMutation();
-  const submitAnswer = trpc.profile.submitOnboardingAnswer.useMutation({
-    onSuccess: (data) => {
-      // Merge server-returned answers into our local accumulator
-      if (data.allAnswers) {
-        accumulatedAnswers.current = {
-          ...accumulatedAnswers.current,
-          ...data.allAnswers,
-        };
-      }
+  const field = next.data?.question ? profileField(next.data.question.key) : undefined;
 
-      if (!data.nextQuestion) {
-        toast.success(
-          "تم تجهيز البروفايل الذكي! 🎉 التقارير ستكون أدق وأكثر تخصيصاً.",
-        );
-        setShow(false);
-        setLocalQuestion(null);
-        isUsingLocal.current = false;
-        accumulatedAnswers.current = {};
-        try {
-          localStorage.removeItem(answersStorageKey);
-          localStorage.removeItem(dismissedStorageKey);
-        } catch (e) {}
-      } else {
-        // Use local question state to avoid race condition with server refetch
-        setLocalQuestion(data.nextQuestion);
-        isUsingLocal.current = true;
-      }
-      // Reset value for the NEXT question type
-      setValue(initValue(data.nextQuestion?.type));
-      // Only invalidate the profile (for progress count), NOT the question query
+  useEffect(() => setValue(undefined), [field?.key]);
+
+  const submit = trpc.profile.submitOnboardingAnswer.useMutation({
+    onSuccess: (data) => {
+      if (!data.nextQuestion) toast.success(t("onboarding.card.done"));
+      utils.profile.getNextOnboardingQuestion.invalidate();
       utils.profile.getSmartProfile.invalidate();
     },
-    onError: (err) => toast.error(err.message || "ماقدرناش نحفظ الإجابة. جرّب تاني."),
+    onError: () => toast.error(t("onboarding.card.saveError")),
   });
+  const dismiss = trpc.profile.dismissOnboarding.useMutation();
 
-  // Initialize accumulated answers from server profile on first load
-  useEffect(() => {
-    if (profile.data) {
-      if (
-        profile.data.onboardingAnswers &&
-        Object.keys(accumulatedAnswers.current).length === 0
-      ) {
-        accumulatedAnswers.current = { ...profile.data.onboardingAnswers };
-      }
-      
-      // Local Storage fallback to reconstruct lost DB state
-      try {
-        const local = localStorage.getItem(answersStorageKey);
-        if (local) {
-          const parsed = JSON.parse(local);
-          accumulatedAnswers.current = { ...parsed, ...accumulatedAnswers.current };
-        }
-      } catch (e) {}
+  const lastAskedAt = next.data?.lastAskedAt ? new Date(next.data.lastAskedAt).getTime() : 0;
+  const pausedOnServer = Date.now() - lastAskedAt < SERVER_PAUSE_MS;
+  if (!hasActivity || pausedLocally || pausedOnServer || !field) return null;
+
+  const step = PROFILE_FIELDS.findIndex((item) => item.key === field.key) + 1;
+  const canSave = isValidProfileFieldValue(field, value) && !submit.isPending;
+
+  const notNow = () => {
+    try {
+      localStorage.setItem(pauseKey, String(Date.now()));
+    } catch {
+      // Without storage the server pause still applies.
     }
-  }, [profile.data?.onboardingAnswers, profile.data?.basicInfo?.name]);
-
-  // Sync to local storage when accumulated answers change via submission
-  useEffect(() => {
-    if (Object.keys(accumulatedAnswers.current).length > 0 && profile.data) {
-      try {
-        localStorage.setItem(
-          answersStorageKey,
-          JSON.stringify(accumulatedAnswers.current)
-        );
-      } catch (e) {}
-    }
-  }, [localQuestion]);
-
-  // Determine which question to show: local (after submit) or server (initial load)
-  const question =
-    isUsingLocal.current && localQuestion
-      ? localQuestion
-      : nextQuestion.data?.question;
-  const options = useMemo(() => normalizeOptions(question), [question]);
-  // Only consider complete if profileCompleted=true AND there are no more questions from the engine
-  const isComplete = Boolean(
-    (profile.data?.profileCompleted || nextQuestion.data?.profileCompleted) &&
-    !question,
-  );
-
-  const answeredCount = Math.max(
-    Object.keys(profile.data?.onboardingAnswers || {}).length,
-    Object.keys(accumulatedAnswers.current).length,
-  );
-  const progress = Math.min(
-    95,
-    Math.round((answeredCount / TOTAL_QUESTIONS) * 100),
-  );
-
-  // Smart reminder: show after delay + 48h cooldown
-  useEffect(() => {
-    if (profile.data && !isComplete && question) {
-      const lastAsked = nextQuestion.data?.lastAskedAt;
-      let inCooldown = false;
-      
-      const now = Date.now();
-      
-      // Check server cooldown
-      if (lastAsked) {
-        const hoursSince = (now - new Date(lastAsked).getTime()) / (1000 * 3600);
-        if (hoursSince < 48) inCooldown = true;
-      }
-      
-      // Check local dismiss cooldown (CRITICAL: because server doesn't save dismissals)
-      try {
-        const localDismissed = localStorage.getItem(dismissedStorageKey);
-        if (localDismissed) {
-          const hoursSinceDismiss = (now - parseInt(localDismissed, 10)) / (1000 * 3600);
-          if (hoursSinceDismiss < 48) inCooldown = true;
-        }
-      } catch (e) {}
-
-      if (!inCooldown) {
-        const delay = answeredCount === 0 ? 15000 : 300000; // 15s for new users, 5min otherwise
-        const timer = setTimeout(() => setShow(true), delay);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [
-    profile.data,
-    isComplete,
-    question,
-    nextQuestion.data?.lastAskedAt,
-    answeredCount,
-  ]);
-
-  // Initialize value when server question loads (only if we're not using local state)
-  useEffect(() => {
-    if (!isUsingLocal.current && question) {
-      setValue(initValue(question.type));
-    }
-  }, [question?.key]);
-
-  // If queries are still loading, don't render anything yet
-  if (profile.isLoading || nextQuestion.isLoading) return null;
-
-  // If profile is truly complete and no more questions, hide the card
-  if (isComplete) return null;
-
-  // If there's no question (query error or all answered), check if we should show based on error
-  if (!question) {
-    // If the query errored, show a retry button so user isn't stuck
-    if (nextQuestion.isError || profile.isError) {
-      return null; // silently hide on error
-    }
-    return null;
-  }
-
-  if (!show) {
-    return (
-      <Button
-        onClick={() => setShow(true)}
-        className="w-full sm:w-auto mb-4 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-md animate-in fade-in zoom-in"
-      >
-        <Sparkles className="w-4 h-4" />
-        كمل بياناتك عشان نعرفك أكتر
-      </Button>
-    );
-  }
-
-  const meta = questionMeta[question.key] || {
-    text: question.text,
-    emoji: "❓",
-  };
-  const selectedList = Array.isArray(value) ? value : [];
-
-  const submit = (skipped = false) => {
-    if (submitAnswer.isPending) return;
-    submitAnswer.mutate({
-      key: question.key,
-      value,
-      skipped,
-      // Send ALL accumulated answers so backend can reconstruct state even if DB lost them
-      accumulatedAnswers: accumulatedAnswers.current,
-    });
-  };
-
-  const canSubmit =
-    question.type === "boolean"
-      ? typeof value === "boolean"
-      : question.type === "text_list"
-        ? Array.isArray(value) && value.some((v: string) => v.trim() !== "")
-        : Array.isArray(value)
-          ? value.length > 0
-          : value !== "";
-
-  const renderInput = () => {
-    if (question.type === "boolean") {
-      return (
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { label: "✅ نعم", val: true },
-            { label: "❌ لا", val: false },
-          ].map(({ label, val }) => (
-            <Button
-              key={String(val)}
-              type="button"
-              variant={value === val ? "default" : "outline"}
-              className={cn(
-                "h-12 text-base",
-                value === val && "ring-2 ring-emerald-400",
-              )}
-              onClick={() => setValue(val)}
-            >
-              {label}
-            </Button>
-          ))}
-        </div>
-      );
-    }
-
-    if (question.type === "select") {
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {options.map((option: any) => (
-            <Button
-              key={option.value}
-              type="button"
-              variant={value === option.value ? "default" : "outline"}
-              className={cn(
-                "justify-start h-11 text-sm",
-                value === option.value && "ring-2 ring-emerald-400",
-              )}
-              onClick={() => setValue(option.value)}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
-      );
-    }
-
-    if (question.type === "multi_select") {
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {options.map((option: any) => {
-            const active = selectedList.includes(option.value);
-            return (
-              <Button
-                key={option.value}
-                type="button"
-                variant={active ? "default" : "outline"}
-                className={cn(
-                  "justify-between h-11 text-sm",
-                  active && "ring-2 ring-emerald-400",
-                )}
-                onClick={() =>
-                  setValue(
-                    active
-                      ? selectedList.filter(
-                          (item: string) => item !== option.value,
-                        )
-                      : [...selectedList, option.value],
-                  )
-                }
-              >
-                <span>{option.label}</span>
-                {active && <Check className="w-4 h-4 shrink-0" />}
-              </Button>
-            );
-          })}
-        </div>
-      );
-    }
-
-    // text_list: multiple text inputs (e.g. children names)
-    if (question.type === "text_list") {
-      const listItems = Array.isArray(value) ? value : [""];
-      const listCount = question.listCount || 3;
-      return (
-        <div className="space-y-2">
-          {listItems.map((item: string, idx: number) => (
-            <Input
-              key={idx}
-              value={item}
-              onChange={(e) => {
-                const next = [...listItems];
-                next[idx] = e.target.value;
-                setValue(next);
-              }}
-              placeholder={`الاسم ${idx + 1}...`}
-              className="h-11 text-base"
-              dir="rtl"
-              autoFocus={idx === 0}
-            />
-          ))}
-          {listItems.length < Math.max(listCount, 10) && (
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full text-sm text-muted-foreground h-9"
-              onClick={() => setValue([...listItems, ""])}
-            >
-              + إضافة اسم تاني
-            </Button>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <Input
-        type={question.type === "number" ? "number" : "text"}
-        value={value}
-        onChange={(e) =>
-          setValue(
-            question.type === "number"
-              ? Number(e.target.value)
-              : e.target.value,
-          )
-        }
-        placeholder={question.type === "number" ? "اكتب رقم..." : "اكتب هنا..."}
-        className="h-12 text-base"
-        dir={question.type === "number" ? "ltr" : "rtl"}
-        autoFocus
-      />
-    );
+    setPausedLocally(true);
+    dismiss.mutate();
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
-      <Card className="w-full sm:max-w-lg rounded-b-none sm:rounded-2xl border-0 shadow-2xl overflow-hidden">
-        {/* Gradient header bar */}
-        <div className="h-1 bg-gradient-to-r from-emerald-400 via-sky-400 to-violet-400" />
+    <section
+      aria-labelledby="onboarding-card-question"
+      className="rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-xs font-semibold text-muted-foreground">
+          {t("onboarding.card.title")} · {t("onboarding.card.step", { current: step, total: PROFILE_FIELDS.length })}
+        </p>
+        <button
+          type="button"
+          onClick={notNow}
+          aria-label={t("onboarding.card.later")}
+          className="-m-2 flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:hover:bg-slate-800"
+        >
+          <X className="size-4" aria-hidden="true" />
+        </button>
+      </div>
 
-        <CardContent className="p-5 sm:p-6 space-y-5" dir="rtl">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-50 to-sky-50 dark:from-emerald-950/40 dark:to-sky-950/40 flex items-center justify-center text-2xl shadow-sm">
-                {meta.emoji}
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-bold text-base">البروفايل الذكي</h3>
-                  <Badge
-                    variant="secondary"
-                    className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 text-xs"
-                  >
-                    {progress}% مكتمل
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  إجاباتك تجعل تقارير AI أدق وأكثر تخصيصاً لك.
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0 -mt-1"
-              onClick={() => {
-                setShow(false);
-                try { localStorage.setItem(dismissedStorageKey, Date.now().toString()); } catch(e) {}
-                dismissMutation.mutate();
-              }}
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
+      <h2 id="onboarding-card-question" className="mt-1 text-base font-bold">
+        {field.question[language]}
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">{field.why[language]}</p>
 
-          {/* Progress bar */}
-          <Progress value={progress} className="h-1.5" />
+      <div className="mt-4">
+        <ProfileFieldInput field={field} value={value} onChange={setValue} />
+      </div>
 
-          {/* Question */}
-          <div className="space-y-3">
-            <p className="font-semibold text-base leading-relaxed">
-              {meta.text}
-            </p>
-            {meta.hint && (
-              <p className="text-xs text-muted-foreground -mt-1">{meta.hint}</p>
-            )}
-            {renderInput()}
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-2 pt-1">
-            <Button
-              className={cn(
-                "flex-1 gap-2 h-11 text-sm transition-all",
-                canSubmit && !submitAnswer.isPending
-                  ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg ring-2 ring-emerald-500/50"
-                  : ""
-              )}
-              onClick={() => submit(false)}
-              disabled={!canSubmit || submitAnswer.isPending}
-            >
-              {submitAnswer.isPending ? (
-                <Sparkles className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  التالي
-                  <ArrowLeft className="w-4 h-4" />
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => submit(true)}
-              disabled={submitAnswer.isPending}
-              className="sm:w-24 h-11 text-sm"
-            >
-              تخطي
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setShow(false);
-                try { localStorage.setItem(dismissedStorageKey, Date.now().toString()); } catch(e) {}
-                dismissMutation.mutate();
-              }}
-              className="sm:w-24 h-11 text-sm text-muted-foreground"
-            >
-              لاحقاً
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+      <div className="mt-4 flex items-center gap-2">
+        <Button
+          className="h-11 flex-1"
+          disabled={!canSave}
+          onClick={() => submit.mutate({ key: field.key, value: normalizeProfileFieldValue(field, value) ?? undefined, skipped: false })}
+        >
+          {t("onboarding.card.save")}
+        </Button>
+        <Button
+          variant="ghost"
+          className="h-11 px-4 text-muted-foreground"
+          disabled={submit.isPending}
+          onClick={() => submit.mutate({ key: field.key, skipped: true })}
+        >
+          {t("onboarding.card.skip")}
+        </Button>
+      </div>
+    </section>
   );
 }

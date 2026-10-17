@@ -205,7 +205,7 @@ model {
     contracts = module 'Shared contracts' {
       description 'Types, limits and billing plans shared by the web app and the API.'
       metadata {
-        files '10'
+        files '11'
         paths 'contracts/**'
       }
     }
@@ -215,7 +215,7 @@ model {
     web-account = module 'Account UI' {
       description 'Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt.'
       metadata {
-        files '10'
+        files '12'
         paths 'src/components/auth/**, src/components/profile/**, src/components/settings/**, src/components/bank-sync/**, src/components/notifications/**'
       }
     }
@@ -299,7 +299,7 @@ model {
     web-shell = module 'Web app shell' {
       description 'Entry point, providers, layout, route guards and PWA or native integration.'
       metadata {
-        files '25'
+        files '24'
         paths 'src/main.tsx, src/App.tsx, src/providers/**, src/i18n/**, src/pwa/**, src/components/layout/**, src/components/routing/**, src/components/pwa/**'
       }
     }
