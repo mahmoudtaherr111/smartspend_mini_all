@@ -91,4 +91,28 @@ describe("useBiometricOnboarding", () => {
     });
     expect(readBiometricPromptRecord({}, "local_7").dismissals).toBe(1);
   });
+
+  it("does not open the sheet while another dialog is already open", async () => {
+    const existingDialog = document.createElement("div");
+    existingDialog.setAttribute("role", "dialog");
+    existingDialog.setAttribute("data-state", "open");
+    document.body.appendChild(existingDialog);
+
+    try {
+      const { result } = renderHook(() => useBiometricOnboarding());
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(1200);
+      });
+
+      expect(result.current.open).toBe(false);
+      expect(mutateSpy).not.toHaveBeenCalled();
+    } finally {
+      existingDialog.remove();
+    }
+  });
 });

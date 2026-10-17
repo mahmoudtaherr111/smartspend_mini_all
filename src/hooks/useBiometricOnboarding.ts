@@ -88,6 +88,12 @@ export function useBiometricOnboarding() {
   useEffect(() => {
     if (!show) return;
     const timer = window.setTimeout(() => {
+      if (
+        typeof document !== "undefined" &&
+        document.querySelector('[role="dialog"]:not([data-state="closed"]), [role="alertdialog"]:not([data-state="closed"])')
+      ) {
+        return;
+      }
       try {
         window.sessionStorage.setItem(BIOMETRIC_PROMPT_SHOWN_KEY, "1");
       } catch {
