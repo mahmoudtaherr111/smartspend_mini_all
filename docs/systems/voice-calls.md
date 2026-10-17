@@ -57,7 +57,7 @@ first call wrote that month, never dictation seconds.
    with its day, slotted ones first; up to two follow-ups left open; up to two offers they declined; the last call's
    summary; expired ones left out), and the next of the Home card's profile questions (`contracts/profile-fields.ts`: income, payday, work) the app has no answer
    to, from `api/services/voice/brain/profile-questions.ts`, unless the app asked one in the last day; offering one
-   starts that day's pause, `user_profiles.last_asked_at`, which the Home card shares), the instructions
+   starts that day's pause, `user_profiles.last_asked_at`, which the Home card shares; the row is created if missing), the instructions
    (`api/services/voice/brain/instructions.ts`, kept short because they are billed every turn) and nine tools. It connects the engine
    (`api/services/voice/engine/gemini-live.ts#GeminiLiveEngine`): input and output transcription on, session
    resumption, a context window of 16k tokens trimmed to 8k, tools NON_BLOCKING, the key in a header, and the second

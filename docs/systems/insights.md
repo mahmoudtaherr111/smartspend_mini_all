@@ -99,7 +99,9 @@ printable HTML file that the browser downloads.
   family and names, housing, debt, car, pets, smoking, subscriptions) are no longer asked; their stored answers stay
   and an older app that sends one is still filed. The Home card (`src/components/OnboardingCard.tsx`) appears inline
   once the user has recorded something this month, one question at a time with quick answers; "مش دلوقتي" hides it
-  for a week on the device and a day everywhere (`profile.dismissOnboarding`). The profile screen
+  for a week on the device and a day everywhere (`profile.dismissOnboarding`, which creates the profile row when there is
+  none yet). The work question offers its quick answers in both forms (مهندس / مهندسة …), since the form is how the call
+  knows how to address the user. The profile screen
   (`src/components/profile/ProfileScreen.tsx`) shows and edits the same fields with the same control.
 - **Inferences.** On the 1st at 01:00, `monthly-behavior-snapshots` runs `refreshMonthlyInferences` for the previous
   month for every user with spending that month or a profile: it builds the behaviour snapshot, saves the inferred

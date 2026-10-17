@@ -77,7 +77,8 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
 - **Month and cycle.** The month comes from the address, or else the month that holds today. When the profile has a
   fixed salary with a salary day (set in Settings, the profile or the onboarding question), the summary and statistics
   use the salary cycle from `getFinancialMonthDayRange`, and a cycle is named after the calendar month it starts in, so
-  before payday the month that holds today is the previous one; the calendar always uses the calendar month. The tab
+  before payday the month that holds today is the previous one; the calendar draws and counts the same cycle. The
+  health badge compares spending with the month's recorded income, or the profile's income when none is recorded. The tab
   bar carries a month only when the user picked one. A budget alert opens the statistics tab at the budgets card
   (`#budget`).
 - **Summary cards** (`expense.getMonthSummary`): income, spending, transfers, investments, net flow and count of the

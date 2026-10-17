@@ -85,7 +85,8 @@ and the code only a label (`api/services/phone-challenge.ts`).
 - **The suggestion.** `useBiometricOnboarding` offers fingerprint / Face ID sign-in in one bottom sheet, named for the
   platform (Face ID on iPhone, fingerprint on Android, a passkey elsewhere): once when the app opens on Home, never in
   the tab where the account was just created (`SIGN_UP_SESSION_KEY`), never without a platform authenticator or with a
-  passkey on the account, 14 days apart and never after two "Not now" (`shouldShowBiometricPrompt` in
+  passkey on the account, never over another open dialog, 14 days apart and never after two "Not now" (one close
+  counts once) (`shouldShowBiometricPrompt` in
   `src/lib/biometricAuth.ts`). The record is kept in the profile preferences (`biometricPromptDismissals`,
   `biometricPromptLastShownAt`), so another device does not start over. The button registers the passkey right there
   (`usePasskeyEnrolment`, with the options fetched when the sheet opens so iOS keeps the tap); Settings › Security

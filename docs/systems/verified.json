@@ -41,9 +41,9 @@
         "src/components/auth/TurnstileWidget.tsx": "9a0df28a6e7b",
         "src/components/notifications/NotificationList.tsx": "f4618380ebee",
         "src/components/notifications/NotificationSettings.tsx": "2fa4ec7ab23e",
-        "src/components/notifications/PushNotificationPrompt.tsx": "691d0f1ea3ff",
+        "src/components/notifications/PushNotificationPrompt.tsx": "4db7262c73a0",
         "src/components/profile/ProfileFieldInput.tsx": "1254997bba32",
-        "src/components/profile/ProfileScreen.tsx": "c419dd8a18f0",
+        "src/components/profile/ProfileScreen.tsx": "d911068a85b9",
         "src/components/profile/UserAvatar.tsx": "a6445444d011",
         "src/components/settings/BusinessSettingsView.tsx": "ced2674cdee4",
         "src/components/settings/LanguageSettings.tsx": "2e84329609e6",
@@ -52,9 +52,9 @@
         "src/pages/Login.tsx": "59d76ce265d9",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-17 6d541cd",
-      "arabic": "11380e934625",
-      "arabicChecked": "2026-10-17 6d541cd"
+      "checked": "2026-10-17 1f120c7",
+      "arabic": "a309dbf8c677",
+      "arabicChecked": "2026-10-17 1f120c7"
     },
     "admin": {
       "files": {
@@ -319,7 +319,7 @@
         "api/export-router.ts#rest-of-file": "264f56b1884e",
         "api/jobs/monthly-behavior-job.ts": "41da3de3a5f6",
         "api/jobs/monthly-report-job.ts": "530135db4242",
-        "api/profile-router.ts#profile.dismissOnboarding": "575744cb7639",
+        "api/profile-router.ts#profile.dismissOnboarding": "4c7744ab992d",
         "api/profile-router.ts#profile.getNextOnboardingQuestion": "45b300c9691a",
         "api/profile-router.ts#profile.getQuestions": "ec6916cf9c0c",
         "api/profile-router.ts#profile.getSmartProfile": "cd843b296675",
@@ -336,9 +336,9 @@
         "api/services/user-profile-service.ts": "0eb900cbb886",
         "src/components/insights/AIInsights.tsx": "4b618cdf3ad2"
       },
-      "checked": "2026-10-17 6d541cd",
-      "arabic": "e8015a96981e",
-      "arabicChecked": "2026-10-17 6d541cd"
+      "checked": "2026-10-17 1f120c7",
+      "arabic": "4c367bd069cb",
+      "arabicChecked": "2026-10-17 1f120c7"
     },
     "money": {
       "files": {
@@ -404,12 +404,12 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/components/installments/InstallmentsPanel.tsx": "a23758827f16",
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
-        "src/pages/Home.tsx": "ea5dfbc304a9",
+        "src/pages/Home.tsx": "900e47a71057",
         "src/pages/PlanPage.tsx": "107068a002b0"
       },
-      "checked": "2026-10-17 6d541cd",
-      "arabic": "143631b39b73",
-      "arabicChecked": "2026-10-17 6d541cd"
+      "checked": "2026-10-17 1f120c7",
+      "arabic": "fbff3cb7e18f",
+      "arabicChecked": "2026-10-17 1f120c7"
     },
     "notifications": {
       "files": {
@@ -428,9 +428,9 @@
         "api/services/whatsapp-service.ts": "1177804a1f23",
         "src/pages/Notifications.tsx": "57d9f2b4b95f"
       },
-      "checked": "2026-10-17 6d541cd",
-      "arabic": "4e899c168165",
-      "arabicChecked": "2026-10-17 6d541cd"
+      "checked": "2026-10-17 1f120c7",
+      "arabic": "6a8d754ce6f7",
+      "arabicChecked": "2026-10-17 1f120c7"
     },
     "platform": {
       "files": {
@@ -468,7 +468,7 @@
         "contracts/notification-types.ts": "796e38e868ce",
         "contracts/plan-features.ts": "3d832876be38",
         "contracts/plans.ts": "371c028a6907",
-        "contracts/profile-fields.ts": "fe3007d4dde1",
+        "contracts/profile-fields.ts": "5bf4f78b90e6",
         "contracts/types.ts": "191164b8f041",
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
@@ -477,9 +477,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "e05665bec173"
       },
-      "checked": "2026-10-17 6d541cd",
+      "checked": "2026-10-17 1f120c7",
       "arabic": "5283780fdde8",
-      "arabicChecked": "2026-10-17 6d541cd"
+      "arabicChecked": "2026-10-17 1f120c7"
     },
     "voice-calls": {
       "files": {
@@ -497,7 +497,7 @@
         "api/services/voice/brain/index.ts": "ef3b8c211c52",
         "api/services/voice/brain/instructions.ts": "c5bf64f7517f",
         "api/services/voice/brain/never-kept.ts": "977be210350d",
-        "api/services/voice/brain/profile-questions.ts": "36cc1a377db4",
+        "api/services/voice/brain/profile-questions.ts": "5a25e3ec2e4a",
         "api/services/voice/brain/snapshot.ts": "6f2f54006727",
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
         "api/services/voice/brain/tools/app-help.ts": "429dac755057",
@@ -541,15 +541,15 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "69cc55d954de"
       },
-      "checked": "2026-10-17 6d541cd",
-      "arabic": "1d194177d462",
-      "arabicChecked": "2026-10-17 6d541cd"
+      "checked": "2026-10-17 1f120c7",
+      "arabic": "99e1f7c6ecab",
+      "arabicChecked": "2026-10-17 1f120c7"
     },
     "web-app": {
       "files": {
         "src/App.tsx": "f130a5a8c688",
         "src/components/NotificationBell.tsx": "ee7049e0f405",
-        "src/components/OnboardingCard.tsx": "1551901c71fc",
+        "src/components/OnboardingCard.tsx": "9b752f09004c",
         "src/components/PageLoadingSkeleton.tsx": "fa0fe3239b38",
         "src/components/ProductTour.tsx": "c9145b3fe557",
         "src/components/Sidebar.tsx": "371c7d984356",
@@ -624,7 +624,7 @@
         "src/hooks/useAds.ts": "b08bb3b71bf5",
         "src/hooks/useAppResume.ts": "b626940d2e71",
         "src/hooks/useAuth.ts": "d4dfa51fd4da",
-        "src/hooks/useBiometricOnboarding.ts": "877ac5c1204e",
+        "src/hooks/useBiometricOnboarding.ts": "8f122a8e13d0",
         "src/hooks/useHaptics.ts": "ab20cb714dfe",
         "src/hooks/useHistoryBound.ts": "ceffbe90aeae",
         "src/hooks/useKeyboardNav.ts": "05ef375be3b2",
@@ -670,9 +670,9 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-10-17 6d541cd",
+      "checked": "2026-10-17 1f120c7",
       "arabic": "c6a443cfd657",
-      "arabicChecked": "2026-10-17 6d541cd"
+      "arabicChecked": "2026-10-17 1f120c7"
     }
   }
 }

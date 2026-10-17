@@ -4,7 +4,7 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (26 of 95 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (25 of 95 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
@@ -12,17 +12,17 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (26 of
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-01 85479c6 | 2026-10-01 85479c6 | 18 | — | — | 2 | — |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-17 6d541cd | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 10 | — | — | 4 | 2 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-04 188f986 | 2026-10-01 1d4bf03 | 4 | — | 4 | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 6 | — | 8 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 6 | — | 2 | 7 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 14 | **2** | — | 5 | — |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 6 | — | 8 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 6 | — | 2 | 7 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 14 | **2** | — | 5 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-17 6d541cd | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 1 | **1** | 4 | 2 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 1 | **1** | 3 | 3 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-17 6d541cd | 2026-10-01 b5d9955 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 5 | — | — | — | 7 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 7 | **1** | 1 | 3 | 2 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 5 | — | — | — | 7 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 7 | **1** | 1 | 3 | 2 |
 
 
 ## Where the risk is
@@ -48,7 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (21)
+### Bugs (20)
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - A reply to a clarifying question starts over: `sendMessage` stores the clarification state in the conversation's metadata, but reads it from `requireOwnedConversation`, which selects only the id, so the state is never found and the reply is planned as a new message.
@@ -72,7 +72,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - The admin console always shows WhatsApp verification as off: `adminWhatsapp.getSettings` returns a fixed "temporarily disabled" answer, while `adminWhatsapp.toggleOtpVerification` still changes the `whatsapp_otp_enabled` setting that registration reads.
-- The permission prompt promises weekly follow-ups, daily voice reminders and alerts for unusual spending; the server sends none of those, and the reminder reaches only users with a streak whose last recorded day was 12 to 36 hours ago.
 - When `VITE_VAPID_PUBLIC_KEY` is missing, the browser subscribes with a public key written in `src/hooks/usePushNotifications.ts`, and those subscriptions receive nothing unless the server's keys match. `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are read from `process.env` instead of `api/lib/env.ts` (golden rule 8).
 - The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
 
@@ -83,7 +82,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (43)
+### Gaps (44)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -132,6 +131,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days and one day before the end and pays again; in the last week the subscription card on the plans screen (`src/pages/Pro.tsx`) offers the same plan in one tap (`pro.createCheckoutSession` with the current plan), and the paid period starts where the current one ends. Charging a stored card needs Paymob's recurring flow. `pro.cancel` only changes the status the plans screen shows, and there is no refund path.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
+- The logging reminder the permission prompt mentions reaches only users with a streak whose last recorded day was 12 to 36 hours ago.
 - A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount that checkout never gives ([billing](billing.md)); unedited ones were replaced.
 - Push cannot be turned off from the app, a device cannot be removed, the bell has no clearing, and nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion. Bell items keep no type, so the icon is read from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
 

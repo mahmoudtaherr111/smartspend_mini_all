@@ -59,8 +59,9 @@ job `seed-default-templates` at boot on replicas with `ENABLE_CRONS=true`, and a
 runs; a stored template still holding the previous default title and body is updated, an edited one is left alone.
 
 ## Push in the browser
-- A prompt asks for permission eight seconds after the app opens while permission is undecided, and at most once a week
-  after it is dismissed; Settings has the same button.
+- A prompt asks for permission eight seconds after the app opens while permission is undecided, never in the sign-up
+  session or one where the passkey suggestion appeared, and at most once a week after it is dismissed. It promises only
+  what is sent (budget alerts, the logging reminder, plan ending); Settings has the same button.
 - With the web Firebase configuration (`VITE_FIREBASE_*`), the browser gets a Firebase token; otherwise it subscribes to
   Web Push with `VITE_VAPID_PUBLIC_KEY`. `profile.savePushSubscription` stores the token or subscription with the
   device type, and moves an existing one to the user who is signed in.
@@ -123,9 +124,8 @@ Checked against the code; each one names where it lives.
 2. **Bug.** The admin console always shows WhatsApp verification as off: `adminWhatsapp.getSettings` returns a fixed "temporarily
    disabled" answer, while `adminWhatsapp.toggleOtpVerification` still changes the `whatsapp_otp_enabled` setting that
    registration reads.
-3. **Bug.** The permission prompt promises weekly follow-ups, daily voice reminders and alerts for unusual spending; the
-   server sends none of those, and the reminder reaches only users with a streak whose last recorded day was 12 to 36
-   hours ago.
+3. **Gap.** The logging reminder the permission prompt mentions reaches only users with a streak whose last recorded day
+   was 12 to 36 hours ago.
 4. **Gap.** A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount
    that checkout never gives ([billing](billing.md)); unedited ones were replaced.
 5. **Bug.** When `VITE_VAPID_PUBLIC_KEY` is missing, the browser subscribes with a public key written in
