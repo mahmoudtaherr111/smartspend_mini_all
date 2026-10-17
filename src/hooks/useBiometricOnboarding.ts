@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { trpc } from "@/providers/trpc";
@@ -36,6 +36,7 @@ export function useBiometricOnboarding() {
   const [open, setOpen] = useState(false);
   const [hardware, setHardware] = useState<boolean | null>(null);
   const { prefetch, enrol, isEnrolling } = usePasskeyEnrolment();
+  const openRef = useRef(false);
 
   const { data: passkeyInfo } = trpc.webauthn.checkHasPasskey.useQuery(undefined, {
     enabled: !!user,
@@ -93,6 +94,7 @@ export function useBiometricOnboarding() {
         // Without session storage the 14-day pause still holds.
       }
       prefetch();
+      openRef.current = true;
       setOpen(true);
       remember({ ...record, lastShownAt: Date.now() });
     }, OPEN_DELAY_MS);
@@ -102,12 +104,17 @@ export function useBiometricOnboarding() {
   }, [show]);
 
   const notNow = useCallback(() => {
+    if (!openRef.current) return;
+    openRef.current = false;
     setOpen(false);
     remember({ ...record, dismissals: record.dismissals + 1 });
   }, [record, remember]);
 
   const turnOn = useCallback(async () => {
-    if (await enrol()) setOpen(false);
+    if (await enrol()) {
+      openRef.current = false;
+      setOpen(false);
+    }
   }, [enrol]);
 
   return { open, notNow, turnOn, isEnrolling };
