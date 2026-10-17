@@ -220,11 +220,13 @@ export default function Home() {
     setSearchParams(newParams, { replace: true });
   };
 
-  const healthRatio =
+  const monthIncome =
     (summary?.totalIncome ?? 0) > 0
-      ? Math.round(
-          ((summary?.totalExpense ?? 0) / (summary?.totalIncome ?? 1)) * 100,
-        )
+      ? summary!.totalIncome
+      : Number(profile?.financialInfo?.averageMonthlyIncome) || 0;
+  const healthRatio =
+    monthIncome > 0
+      ? Math.round(((summary?.totalExpense ?? 0) / monthIncome) * 100)
       : null;
 
   return (
@@ -253,7 +255,7 @@ export default function Home() {
         />
 
         <OnboardingCard
-          hasActivity={(summary?.totalIncome ?? 0) + (summary?.totalExpense ?? 0) > 0}
+          hasActivity={(summary?.count ?? 0) > 0}
         />
 
         <NativeTabPanels activeTab={activeTab} tabOrder={TAB_ORDER}>

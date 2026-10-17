@@ -23,6 +23,15 @@ interface OnboardingCardProps {
   hasActivity: boolean;
 }
 
+function isPausedLocally(pauseKey: string): boolean {
+  try {
+    const at = Number(localStorage.getItem(pauseKey) || 0);
+    return Date.now() - at < LOCAL_PAUSE_MS;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * The profile questions on Home, one at a time, inline (never a pop-up). The questions, their order and the
  * "why we ask" line come from `contracts/profile-fields.ts`, like the profile screen and the voice call.
@@ -32,14 +41,8 @@ export function OnboardingCard({ hasActivity }: OnboardingCardProps) {
   const { language, t } = useLanguage();
   const utils = trpc.useUtils();
   const pauseKey = `onboarding_card_paused_${user ? `${user.type}_${user.id}` : "anonymous"}`;
-  const [pausedLocally, setPausedLocally] = useState(() => {
-    try {
-      const at = Number(localStorage.getItem(pauseKey) || 0);
-      return Date.now() - at < LOCAL_PAUSE_MS;
-    } catch {
-      return false;
-    }
-  });
+  const [dismissedNow, setDismissedNow] = useState(false);
+  const pausedLocally = dismissedNow || isPausedLocally(pauseKey);
   // The answer being typed, kept with its question so a new question starts empty.
   const [answer, setAnswer] = useState<{ key: string; value: ProfileFieldValue | undefined } | null>(null);
   const [openedAt] = useState(() => Date.now());
@@ -75,7 +78,7 @@ export function OnboardingCard({ hasActivity }: OnboardingCardProps) {
     } catch {
       // Without storage the server pause still applies.
     }
-    setPausedLocally(true);
+    setDismissedNow(true);
     dismiss.mutate();
   };
 
