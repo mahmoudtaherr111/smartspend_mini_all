@@ -122,6 +122,7 @@ export function ProfileScreen() {
         onSaved={() => {
           void utils.auth.me.invalidate();
           void utils.localAuth.me.invalidate();
+          void utils.profile.getSmartProfile.invalidate();
         }}
       />
       <FieldSheet
