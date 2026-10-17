@@ -4,32 +4,32 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (29 of 96 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (26 of 95 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-01 85479c6 | 2026-10-01 85479c6 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-04 f894496 | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-04 f894496 | 2026-10-03 e851624 | 10 | — | — | 4 | 2 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-17 6d541cd | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-04 188f986 | 2026-10-01 1d4bf03 | 4 | — | 4 | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-02 e851624 | 2026-09-29 a380e03 | 6 | — | 8 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-04 188f986 | 2026-10-02 e851624 | 6 | — | 3 | 7 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-04 188f986 | 2026-10-04 188f986 | 14 | **2** | 1 | 4 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-04 f894496 | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-04 f894496 | 2026-10-04 f894496 | 1 | **1** | 5 | 1 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-04 f894496 | 2026-10-01 b5d9955 | 4 | — | 2 | 5 | 1 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 6 | — | 8 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 6 | — | 2 | 7 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 14 | **2** | — | 5 | — |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-17 6d541cd | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 1 | **1** | 4 | 2 | 2 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-17 6d541cd | 2026-10-01 b5d9955 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 5 | — | — | — | 7 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-04 188f986 | 2026-10-04 188f986 | 7 | **1** | 1 | 3 | 2 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 5 | — | — | — | 7 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-17 6d541cd | 2026-10-17 6d541cd | 7 | **1** | 1 | 3 | 2 |
 
 
 ## Where the risk is
 
 Every system's explanation names at least one test.
 
-## What is waiting (96 issue(s))
+## What is waiting (95 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -48,7 +48,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (24)
+### Bugs (21)
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - A reply to a clarifying question starts over: `sendMessage` stores the clarification state in the conversation's metadata, but reads it from `requireOwnedConversation`, which selects only the id, so the state is never found and the reply is planned as a new message.
@@ -67,17 +67,12 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is ahead of UTC; snapshot days are grouped by UTC date.
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
-- The home screen uses the salary cycle only when "fixed salary" is switched on in Settings (`hasFixedSalary`); a salary day given in the onboarding questions does not change it, while the AI Center and the reports use the salary day either way.
 - The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an established account sees a low daily average early in the month.
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
-
-**Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
-- Saving the profile in Settings never changes the name or avatar, and says nothing: `SmartProfileSettings` always sends the phone field, which `profile.updateUserInfo` rejects without a code (and rejects when empty, for Google users). Changing a phone number has no screen, and with verification off its code is never sent.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - The admin console always shows WhatsApp verification as off: `adminWhatsapp.getSettings` returns a fixed "temporarily disabled" answer, while `adminWhatsapp.toggleOtpVerification` still changes the `whatsapp_otp_enabled` setting that registration reads.
 - The permission prompt promises weekly follow-ups, daily voice reminders and alerts for unusual spending; the server sends none of those, and the reminder reaches only users with a streak whose last recorded day was 12 to 36 hours ago.
-- The default Pro upsell promises a 30% discount that checkout never gives ([billing](billing.md)).
 - When `VITE_VAPID_PUBLIC_KEY` is missing, the browser subscribes with a public key written in `src/hooks/usePushNotifications.ts`, and those subscriptions receive nothing unless the server's keys match. `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are read from `process.env` instead of `api/lib/env.ts` (golden rule 8).
 - The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
 
@@ -88,7 +83,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (41)
+### Gaps (43)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -112,7 +107,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - The scheduled report describes the Cairo month that ended (`reportMonthFor` in `api/jobs/monthly-report-job.ts`); a report asked for from the app or the admin still names its month explicitly, and nothing re-sends a month whose scheduled run failed.
-- Names given in the onboarding questions (children, partner, siblings, parents, regular contacts) become contacts when the answer is saved (`namedPeopleOfAnswer` in `api/services/adaptive-question-engine.ts`, called by `profile.submitOnboardingAnswer`). Names answered before that, after the profile was marked as migrated, stay in the profile only, and `getSmartProfile` blanks those lists; pet names are never contacts.
+- Names answered in the old onboarding questions (children, partner, siblings, parents, regular contacts) after the profile was marked as migrated stay in the profile only, and `getSmartProfile` blanks those lists, so they never became contacts; pet names never were. The questions are no longer asked (people are learned when a name first appears in a message, and managed on the People screen).
 - No `assertAiBudget` check runs before either report model call, and the WhatsApp job records no tokens for the user (`api/AGENTS.md`, rule 5).
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
@@ -127,7 +122,8 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - Verification is the setting `whatsapp_otp_enabled`: while it is off any number registers without proof that it belongs to the person, and the admin console shows it as off whatever its value ([notifications](notifications.md)).
 - In production, verification needs both Turnstile keys: `TURNSTILE_SECRET_KEY` on the server and `VITE_TURNSTILE_SITE_KEY` in the web build. With verification on and either missing, nobody can sign up with a phone number.
-- A passkey cannot be removed; users cannot see or end their sessions (`session.listMine` and `session.revokeMine` have no screen) or delete their own account.
+- Changing a phone number has no screen, and with verification off its code is never sent; the profile shows the number read-only.
+- Users cannot see or end their sessions (`session.listMine` and `session.revokeMine` have no screen) or delete their own account: the profile's "حذف الحساب" explains and opens Support, and only an admin deletes (`purgeUserData`).
 - The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
@@ -136,7 +132,8 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days and one day before the end and pays again; in the last week the subscription card on the plans screen (`src/pages/Pro.tsx`) offers the same plan in one tap (`pro.createCheckoutSession` with the current plan), and the paid period starts where the current one ends. Charging a stored card needs Paymob's recurring flow. `pro.cancel` only changes the status the plans screen shows, and there is no refund path.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- Push cannot be turned off from the app, a device cannot be removed, the bell has no "mark all read" or clearing, and nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion.
+- A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount that checkout never gives ([billing](billing.md)); unedited ones were replaced.
+- Push cannot be turned off from the app, a device cannot be removed, the bell has no clearing, and nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion. Bell items keep no type, so the icon is read from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - Nothing records what admins do. The audit tab lists recent sessions, and changing a role or plan, editing settings, deleting an account or sending a message leaves no trail.

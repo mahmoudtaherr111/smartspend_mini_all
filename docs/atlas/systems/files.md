@@ -137,7 +137,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/middleware.ts` | [platform](platform.md) |
 | `api/notification-engine.ts` | [notifications](notifications.md) |
 | `api/pro-router.ts` | [billing](billing.md) |
-| `api/profile-router.ts` | [accounts](accounts.md): `profile.confirmPhoneChange`, `profile.getMyProfile`, `profile.requestPhoneChange`, `profile.updateProfile`, `profile.updateUserInfo` · [bank-messages](bank-messages.md): `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion`, `profile.generateMagicCode`, `profile.generateWebhookToken`, `profile.getSmsLogs`, `profile.getSmsSuggestions`, `profile.getWebhookToken` · [insights](insights.md): `profile.dismissOnboarding`, `profile.getNextOnboardingQuestion`, `profile.getQuestions`, `profile.getSmartProfile`, `profile.refreshInferences`, `profile.submitOnboardingAnswer`, `profile.updateSmartProfile` · [money](money.md): `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` · [notifications](notifications.md): `profile.getInAppNotifications`, `profile.markInAppNotificationRead`, `profile.savePushSubscription` · rest of the file: [accounts](accounts.md), [bank-messages](bank-messages.md), [insights](insights.md), [money](money.md), [notifications](notifications.md) |
+| `api/profile-router.ts` | [accounts](accounts.md): `profile.confirmPhoneChange`, `profile.getMyProfile`, `profile.requestPhoneChange`, `profile.updateProfile`, `profile.updateUserInfo` · [bank-messages](bank-messages.md): `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion`, `profile.generateMagicCode`, `profile.generateWebhookToken`, `profile.getSmsLogs`, `profile.getSmsSuggestions`, `profile.getWebhookToken` · [insights](insights.md): `profile.dismissOnboarding`, `profile.getNextOnboardingQuestion`, `profile.getQuestions`, `profile.getSmartProfile`, `profile.refreshInferences`, `profile.submitOnboardingAnswer`, `profile.updateSmartProfile` · [money](money.md): `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` · [notifications](notifications.md): `profile.getInAppNotifications`, `profile.markAllInAppNotificationsRead`, `profile.markInAppNotificationRead`, `profile.savePushSubscription` · rest of the file: [accounts](accounts.md), [bank-messages](bank-messages.md), [insights](insights.md), [money](money.md), [notifications](notifications.md) |
 | `api/queries/connection.ts` | [platform](platform.md) |
 | `api/referral-router.ts` | [billing](billing.md) |
 | `api/router.ts` | [platform](platform.md) |
@@ -484,6 +484,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/pages/Login.tsx` | [accounts](accounts.md) |
 | `src/pages/More.tsx` | [web-app](web-app.md) |
 | `src/pages/NotFound.tsx` | [web-app](web-app.md) |
+| `src/pages/Notifications.tsx` | [notifications](notifications.md) |
 | `src/pages/PlanPage.tsx` | [money](money.md) |
 | `src/pages/Privacy.tsx` | [web-app](web-app.md) |
 | `src/pages/Pro.tsx` | [billing](billing.md) |

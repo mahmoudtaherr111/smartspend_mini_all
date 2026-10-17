@@ -147,7 +147,8 @@
       "summaryAr": "إشعارات المتصفح والموبايل والإشعارات جوه التطبيق والرسايل المجدولة ورسايل النشاط، وخدمة واتساب ومعاها حالة أكواد التأكيد.",
       "clusters": ["notifications", "whatsapp"],
       "routers": ["adminWhatsapp"],
-      "procedures": ["profile.savePushSubscription", "profile.getInAppNotifications", "profile.markInAppNotificationRead", "profile.sendBiometricPromptNotification"],
+      "procedures": ["profile.savePushSubscription", "profile.getInAppNotifications", "profile.markInAppNotificationRead", "profile.markAllInAppNotificationsRead"],
+      "pages": ["NotificationsPage"],
       "jobs": ["scheduled-notifications", "smart-activity-notifications", "seed-default-templates"]
     },
     {

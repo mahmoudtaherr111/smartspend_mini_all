@@ -19,7 +19,7 @@ spending, and the people they deal with. Classification prompts read the same pr
 | WhatsApp monthly report | `api/jobs/monthly-report-job.ts#runMonthlyReportJob` | Writes a short report per Pro user and sends it on WhatsApp |
 | Monthly behaviour refresh | `api/jobs/monthly-behavior-job.ts#runMonthlyBehaviorJob`, `api/profile-router.ts#refreshMonthlyInferences` | Stores last month's snapshot and inferred attributes for every user |
 | Smart profile | `api/services/user-profile-service.ts`, the profile procedures in `api/profile-router.ts` | Reads, merges and saves the profile, its learning events and the user's contacts |
-| Onboarding questions | `api/services/adaptive-question-engine.ts`, `src/components/OnboardingCard.tsx#OnboardingCard` | The next question to ask and where each answer goes; the card on the home screen |
+| Onboarding questions | `contracts/profile-fields.ts`, `api/services/adaptive-question-engine.ts`, `src/components/OnboardingCard.tsx#OnboardingCard` | The next question to ask and where each answer goes; the card on the home screen |
 | Personal context | `api/services/personal-context-builder.ts`, `summarizeProfileForAI` in `api/services/user-profile-service.ts` | What prompts are told about the user: known people, subscriptions, car, smoking, salary day |
 
 ## The monthly analysis, step by step
@@ -91,14 +91,16 @@ printable HTML file that the browser downloads.
 - **Saving** (`saveSmartProfile`): one upsert of every section. If it fails, only the older columns are saved.
 - **Editing** (`updateSmartProfile`, behind `profile.updateSmartProfile` in Settings and the bank-sync screens):
   merges the patch section by section and marks the onboarding questions whose fields are now filled as answered.
-- **Onboarding.** `api/services/adaptive-question-engine.ts#getNextOnboardingQuestion` walks
-  `ADAPTIVE_ONBOARDING_QUESTIONS` in order and asks follow-ups only when they apply (the salary day only for salary
-  income, children's names only with children, a partner's name when married or living with family, debt per month
-  only with debt, and so on). `applyOnboardingAnswer` stores the answer or skip and copies the value into its profile
-  field; the profile is complete when no question is left. `profile.submitOnboardingAnswer` also merges the answers
-  the card kept, in case an earlier save was lost. The card on the home screen opens by itself after a short delay
-  unless a dismissal (`profile.dismissOnboarding`) is less than 48 hours old; Settings shows and edits the profile
-  (`src/components/profile/SmartProfileView.tsx`, `src/components/profile/SmartProfileSettings.tsx`).
+- **Onboarding.** Three questions, defined once in `contracts/profile-fields.ts#PROFILE_FIELDS` with what each answer
+  changes: the monthly income (the spending limit and warning before budgets exist), the payday (months run payday to
+  payday) and the work (the voice call's title, e.g. «يا باشمهندس»). `api/services/adaptive-question-engine.ts#getNextOnboardingQuestion`
+  asks the first one not yet answered or skipped; `applyOnboardingAnswer` stores it into its profile field, and a
+  payday also sets `hasFixedSalary` (0 means no fixed day). The twenty earlier questions (income sources, goal,
+  family and names, housing, debt, car, pets, smoking, subscriptions) are no longer asked; their stored answers stay
+  and an older app that sends one is still filed. The Home card (`src/components/OnboardingCard.tsx`) appears inline
+  once the user has recorded something this month, one question at a time with quick answers; "مش دلوقتي" hides it
+  for a week on the device and a day everywhere (`profile.dismissOnboarding`). The profile screen
+  (`src/components/profile/ProfileScreen.tsx`) shows and edits the same fields with the same control.
 - **Inferences.** On the 1st at 01:00, `monthly-behavior-snapshots` runs `refreshMonthlyInferences` for the previous
   month for every user with spending that month or a profile: it builds the behaviour snapshot, saves the inferred
   attributes (stability, spending behaviour, top categories and days, spikes, change, income ratio) into the profile,
@@ -109,7 +111,8 @@ printable HTML file that the browser downloads.
   sees the change. [Recording spending](expense-capture.md) calls them.
 - **Prompts.** `api/services/personal-context-builder.ts#buildPersonalContextPrompt` tells the classification model
   who the user's known people are and which categories to use for them, the subscriptions, the car, smoking and the
-  salary day; `summarizeProfileForAI` adds a short profile summary to the parsing, receipt and goal prompts.
+  salary day (also when there are no known people or subscriptions); `summarizeProfileForAI` adds a short profile
+  summary to the parsing, receipt and goal prompts.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -121,7 +124,7 @@ printable HTML file that the browser downloads.
 | The analysis screen | `src/components/insights/AIInsights.tsx`, `src/components/ai/AIMonthlyReport.tsx` | |
 | The printable report | `api/services/pro-report-engine.ts`, `export.monthlyReportHtml` in `api/export-router.ts` | |
 | The WhatsApp monthly report and its schedule | `api/jobs/monthly-report-job.ts`, `api/boot.ts` | `api/jobs/monthly-report-job.test.ts` |
-| Onboarding questions and their order | `api/services/adaptive-question-engine.ts`; the card shows its own text and icon for known keys in `src/components/OnboardingCard.tsx` | `api/services/adaptive-question-engine.test.ts` |
+| Onboarding questions, their order, wording and quick answers (card, profile and voice) | `contracts/profile-fields.ts` | `api/services/adaptive-question-engine.test.ts`, `api/services/voice/brain/profile-questions.test.ts` |
 | Profile fields, reading and saving | `api/services/user-profile-service.ts`; input schemas in `api/profile-router.ts` | `api/services/user-profile-service.test.ts`, `api/profile-router.schema.test.ts` |
 | What classification prompts know about the user | `api/services/personal-context-builder.ts`, `summarizeProfileForAI` | `npm run bench:classify` |
 
@@ -145,10 +148,10 @@ Checked against the code; each one names where it lives.
 1. **Gap.** The scheduled report describes the Cairo month that ended (`reportMonthFor` in
    `api/jobs/monthly-report-job.ts`); a report asked for from the app or the admin still names its month explicitly,
    and nothing re-sends a month whose scheduled run failed.
-2. **Gap.** Names given in the onboarding questions (children, partner, siblings, parents, regular contacts) become
-   contacts when the answer is saved (`namedPeopleOfAnswer` in `api/services/adaptive-question-engine.ts`, called by
-   `profile.submitOnboardingAnswer`). Names answered before that, after the profile was marked as migrated, stay in the
-   profile only, and `getSmartProfile` blanks those lists; pet names are never contacts.
+2. **Gap.** Names answered in the old onboarding questions (children, partner, siblings, parents, regular contacts)
+   after the profile was marked as migrated stay in the profile only, and `getSmartProfile` blanks those lists, so
+   they never became contacts; pet names never were. The questions are no longer asked (people are learned when a
+   name first appears in a message, and managed on the People screen).
 3. **Bug.** `getSmartProfile` appends the latest learning events, with literal `\n` text, to the inferred spending behaviour.
    Every onboarding answer or profile edit saves that value, so it grows until the next behaviour refresh replaces
    it, and `summarizeProfileForAI` sends it to classification prompts.

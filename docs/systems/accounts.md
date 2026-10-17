@@ -17,8 +17,9 @@ account of the same person.
 | Piece | Where | What it does |
 | --- | --- | --- |
 | Login screen | `src/pages/Login.tsx#Login` | Phone login, phone sign-up with optional WhatsApp verification, Google and passkey sign-in |
-| Settings | `src/pages/Settings.tsx#Settings`, `src/components/profile/SmartProfileSettings.tsx#SmartProfileSettings`, `src/components/auth/PasskeySettings.tsx#PasskeySettings`, `src/components/settings/LanguageSettings.tsx` | Name, avatar and profile; passkeys, app lock PIN, appearance and interface language |
-| Profile view | `src/components/profile/SmartProfileView.tsx#SmartProfileView` | The profile's answers: income, fixed commitments, the share of income left after them (named as such: it is not savings, spending is not in it), and how complete the profile is, without claiming the reports are more accurate for it |
+| Settings | `src/pages/Settings.tsx#Settings`, `src/components/auth/PasskeySettings.tsx#PasskeySettings`, `src/components/settings/LanguageSettings.tsx` | Passkeys, app lock PIN, appearance and interface language |
+| Profile | `src/components/profile/ProfileScreen.tsx#ProfileScreen`, `src/components/profile/UserAvatar.tsx`, `src/components/auth/SignOutDialog.tsx` | Photo or initials, name (editable), phone or email and plan; the onboarding answers (`contracts/profile-fields.ts`) with the same control as the Home card; call minutes left; sign out and how to delete the account |
+| Sign-in suggestion | `src/hooks/useBiometricOnboarding.ts`, `src/components/auth/BiometricOnboardingModal.tsx`, `src/hooks/usePasskeyEnrolment.ts` | The sheet that offers fingerprint / Face ID sign-in and registers the passkey in place |
 | Client session | `src/hooks/useAuth.ts`, `src/providers/trpc.ts` | Who is signed in, the offline identity, tab sync, logout; the token header on every call |
 | Google sign-in | the `/api/auth/google/start` and `/api/auth/google/callback` routes in `api/boot.ts`, `api/auth-router.ts` | OAuth with a state cookie, account creation, the `google_session` cookie |
 | Phone accounts | `api/local-auth-router.ts`, `api/local-auth-utils.ts` | Register, login, WhatsApp verification codes, logout |
@@ -81,6 +82,14 @@ and the code only a label (`api/services/phone-challenge.ts`).
 - On the Login screen, `webauthn.generateAuthenticationOptions` and `webauthn.verifyAuthentication` sign in without a
   username: the credential is found by its id, its counter updated and a session created. A browser with a registered
   passkey displays a quick one-tap biometric login button and can auto-prompt on open.
+- **The suggestion.** `useBiometricOnboarding` offers fingerprint / Face ID sign-in in one bottom sheet, named for the
+  platform (Face ID on iPhone, fingerprint on Android, a passkey elsewhere): once when the app opens on Home, never in
+  the tab where the account was just created (`SIGN_UP_SESSION_KEY`), never without a platform authenticator or with a
+  passkey on the account, 14 days apart and never after two "Not now" (`shouldShowBiometricPrompt` in
+  `src/lib/biometricAuth.ts`). The record is kept in the profile preferences (`biometricPromptDismissals`,
+  `biometricPromptLastShownAt`), so another device does not start over. The button registers the passkey right there
+  (`usePasskeyEnrolment`, with the options fetched when the sheet opens so iOS keeps the tap); Settings › Security
+  offers the same, highlighted by `?highlight=biometric` (or the older `1`). It writes no bell notification.
 
 ## Sessions
 - **Token.** A JWT signed with `JWT_SECRET` that names the user and its type and expires after seven days
@@ -99,7 +108,8 @@ and the code only a label (`api/services/phone-challenge.ts`).
   token, the offline queues and both server sessions.
 - **App lock.** Settings can turn on a lock screen for this device (`src/providers/BiometricLockProvider.tsx`,
   `src/lib/biometricAuth.ts`): biometrics, or a four-digit PIN whose hash is kept in `localStorage`, with a short
-  lockout after repeated wrong PINs. It hides the app on the device; the server session stays valid.
+  lockout after repeated wrong PINs. It hides the app on the device; the server session stays valid. Only the user
+  turns it on: a passkey on the device no longer does (it used to, with no PIN to fall back on).
 
 ## Request security
 Every HTTP request passes, in the order `api/boot.ts` mounts them:
@@ -181,11 +191,11 @@ Checked against the code; each one names where it lives.
 2. **Gap.** In production, verification needs both Turnstile keys: `TURNSTILE_SECRET_KEY` on the server and
    `VITE_TURNSTILE_SITE_KEY` in the web build. With verification on and either missing, nobody can sign up with a phone
    number.
-3. **Bug.** Saving the profile in Settings never changes the name or avatar, and says nothing: `SmartProfileSettings` always
-   sends the phone field, which `profile.updateUserInfo` rejects without a code (and rejects when empty, for Google
-   users). Changing a phone number has no screen, and with verification off its code is never sent.
-4. **Gap.** A passkey cannot be removed; users cannot see or end their sessions (`session.listMine` and `session.revokeMine`
-   have no screen) or delete their own account.
+3. **Gap.** Changing a phone number has no screen, and with verification off its code is never sent; the profile shows the
+   number read-only.
+4. **Gap.** Users cannot see or end their sessions (`session.listMine` and `session.revokeMine` have no screen) or delete
+   their own account: the profile's "حذف الحساب" explains and opens Support, and only an admin deletes
+   (`purgeUserData`).
 5. **Security.** The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read
    it, while the content security policy allows inline scripts (`src/AGENTS.md`, rule 4).
 6. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.

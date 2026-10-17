@@ -27,8 +27,7 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 
 Screens of other systems use these APIs: wallets in `src/components/bank-sync/DigitalBankingSuite.tsx`
 ([bank messages](bank-messages.md)), people in `src/components/settings/PeopleSettingsView.tsx`, the business in
-`src/components/settings/BusinessSettingsView.tsx`, and the goal list with its status in
-`src/components/profile/SmartProfileView.tsx`.
+`src/components/settings/BusinessSettingsView.tsx`.
 
 ## The ledger and its daily rollups
 - An item is a row of `expenses` with a type (income, expense, transfer, investment), an amount, a category and
@@ -75,9 +74,12 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   rollup delta back.
 
 ## The home screen
-- **Month and cycle.** The month comes from the address or today's month. When the profile has a fixed salary switched
-  on with a salary day, the summary and statistics use the salary cycle from `getFinancialMonthDayRange`; the calendar
-  always uses the calendar month.
+- **Month and cycle.** The month comes from the address, or else the month that holds today. When the profile has a
+  fixed salary with a salary day (set in Settings, the profile or the onboarding question), the summary and statistics
+  use the salary cycle from `getFinancialMonthDayRange`, and a cycle is named after the calendar month it starts in, so
+  before payday the month that holds today is the previous one; the calendar always uses the calendar month. The tab
+  bar carries a month only when the user picked one. A budget alert opens the statistics tab at the budgets card
+  (`#budget`).
 - **Summary cards** (`expense.getMonthSummary`): income, spending, transfers, investments, net flow and count of the
   period's rollups, personal or, in business mode, the active business's, cached per cache generation for five
   minutes while the month (or the salary cycle spilling into it) is open and a day once it is closed
@@ -290,28 +292,25 @@ database cases run with
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Bug.** The home screen uses the salary cycle only when "fixed salary" is switched on in Settings (`hasFixedSalary`); a
-   salary day given in the onboarding questions does not change it, while the AI Center and the reports use the salary
-   day either way.
-2. **Bug.** The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an
+1. **Bug.** The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an
    established account sees a low daily average early in the month.
-3. **Gap.** The chart's "budget" tab compares the month's spending with the user's budget for all spending
+2. **Gap.** The chart's "budget" tab compares the month's spending with the user's budget for all spending
    (`budget.list`); with none it falls back to the profile's income or the month's income, and with neither it asks
    the user to make a budget. A user with only category budgets sees the income comparison there.
-4. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
+3. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
    snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
-5. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
+4. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
    (`src/components/goals/FinancialGoalsPanel.tsx`).
-6. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger);
+5. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger);
     `business.get` returns the user's first business even when it is inactive.
-7. **Gap.** `expense.getYearlyStats` has no screen.
-8. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
+6. **Gap.** `expense.getYearlyStats` has no screen.
+7. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
     (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming
     credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative
     spending in a month when the purchase fell in an earlier one.
-9. **Gap.** Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on
+8. **Gap.** Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on
     `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).
-10. **Gap.** Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
+9. **Gap.** Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
 
 ## Related systems
 - [Recording spending](expense-capture.md): creates the items this system reads, and triggers the budget alert.

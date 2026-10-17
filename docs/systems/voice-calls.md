@@ -55,7 +55,7 @@ first call wrote that month, never dictation seconds.
    title from the profession (`api/services/voice/brain/honorific.ts`), today's and the salary cycle's spending, days to payday, the last
    recorded day, one observation, what is remembered about the user (`memoryBrief`: up to five things they said, each
    with its day, slotted ones first; up to two follow-ups left open; up to two offers they declined; the last call's
-   summary; expired ones left out), and the next profile question the app has no answer
+   summary; expired ones left out), and the next of the Home card's profile questions (`contracts/profile-fields.ts`: income, payday, work) the app has no answer
    to, from `api/services/voice/brain/profile-questions.ts`, unless the app asked one in the last day; offering one
    starts that day's pause, `user_profiles.last_asked_at`, which the Home card shares), the instructions
    (`api/services/voice/brain/instructions.ts`, kept short because they are billed every turn) and nine tools. It connects the engine

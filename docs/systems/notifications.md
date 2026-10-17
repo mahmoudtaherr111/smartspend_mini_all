@@ -14,7 +14,9 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 | Engine | `api/notification-engine.ts` | Templates, scheduled and event notifications, the activity checks, the budget alert, push delivery |
 | Firebase | `api/services/firebase.ts` | Firebase Cloud Messaging for tokens from Android, iOS and browsers |
 | Push subscriptions | `profile.savePushSubscription` in `api/profile-router.ts`, `src/hooks/usePushNotifications.ts`, `src/components/notifications/PushNotificationPrompt.tsx` | Asking for permission and saving the device's token or Web Push subscription |
-| Bell | `src/components/NotificationBell.tsx`, `profile.getInAppNotifications`, `profile.markInAppNotificationRead` | The latest in-app notifications, and marking one read |
+| Destinations | `contracts/notification-types.ts#NOTIFICATION_TYPES`, `resolveNotificationTarget` | Each type and the page it opens; old stored destinations repaired |
+| Notification center | `src/components/NotificationBell.tsx`, `src/components/notifications/NotificationList.tsx`, `src/pages/Notifications.tsx`, `profile.getInAppNotifications`, `profile.markInAppNotificationRead`, `profile.markAllInAppNotificationsRead` | The bell with the unread count, the list in a sheet and on `/notifications`, marking one or all read |
+| Settings | `src/components/notifications/NotificationSettings.tsx` | This device's push state and the budget-alerts switch |
 | WhatsApp service | `api/services/whatsapp-service.ts#whatsappService` | A WhatsApp Web client (Baileys) with its session on disk; sends messages and reads verification codes |
 | Verification state | `api/services/otp-cache.ts` | The blocklist of senders who sent codes that were not theirs, in the WhatsApp service's process |
 | WhatsApp admin | `api/admin-whatsapp-router.ts`, `src/components/admin/AdminWhatsAppTab.tsx` | Status and QR code, start and stop, direct messages, broadcasts, the verification switch |
@@ -26,6 +28,15 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
   Web Push with the `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` keys otherwise. A single send deletes a token Firebase
   reports as unregistered, and Web Push deletes a subscription reported gone; batches pace themselves, Firebase in large
   chunks with a pause and Web Push a few devices at a time.
+- Both carry the same content (`fcmMessage`, `legacyPayload`): title and body, the app icon (`/icon-192.png`), an
+  alpha-only badge (`/badge-96.png`, what Android shows in the status bar), the type as `tag` so a newer one of the same
+  type replaces the older, `dir` and `lang` from the user's language, and the destination with the type in `data`. No
+  large image.
+- The destination always comes from `contracts/notification-types.ts`: budgets open the statistics at the budgets
+  (`/dashboard?tab=stats#budget`), a plan ending and the streak open `/pro`, the activity reminders the record tab,
+  coach reminders `/plan`, the passkey suggestion Settings › Security, and anything else the notification center.
+- The budget and activity alerts are skipped for a user who switched them off (`preferences.alertsEnabled === false`,
+  Settings › Notifications), read in the query that already reads the language; scheduled admin messages still arrive.
 - A template has an Arabic and an English title and body with `{{variables}}`; the text follows `preferences.language`
   in the user's profile and falls back to Arabic.
 - A templated notification is also stored in `in_app_notifications` for the bell and logged in `notification_logs`.
@@ -40,12 +51,12 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 | `inactivity_reminder`, from `checkAndTriggerSmartActivityNotifications` in the job `smart-activity-notifications` | daily at 20:00 | users with a streak of at least 2 whose last recorded day was 12 to 36 hours ago; once a day |
 | `pro_conversion_streak` | the same run | Free users with a streak of at least 4 who recorded in the last 36 hours; once a week |
 | `dormant_reactivation` | the same run | users whose last recorded day was 7 to 8 days ago; once a week |
-| The passkey suggestion, `profile.sendBiometricPromptNotification` | when the app suggests a passkey | once per user, in the bell only (links to `/settings/security?highlight=1`) |
 | Admin pushes, `admin.sendPushNotification` | on demand, though no screen calls it | everyone, Free users, paying users or one user; push only |
 
-The thresholds of the activity checks can be changed in a template's segment (`minStreak`, `inactivityDays`). The four
-default templates are created when their event type has none, by the job `seed-default-templates` at boot on replicas
-with `ENABLE_CRONS=true`, and again before the scheduled and activity runs.
+The thresholds of the activity checks can be changed in a template's segment (`minStreak`, `inactivityDays`). The default
+templates (`DEFAULT_TEMPLATES`, short, in the house voice, no emoji) are created when their event type has none, by the
+job `seed-default-templates` at boot on replicas with `ENABLE_CRONS=true`, and again before the scheduled and activity
+runs; a stored template still holding the previous default title and body is updated, an edited one is left alone.
 
 ## Push in the browser
 - A prompt asks for permission eight seconds after the app opens while permission is undecided, and at most once a week
@@ -53,7 +64,15 @@ with `ENABLE_CRONS=true`, and again before the scheduled and activity runs.
 - With the web Firebase configuration (`VITE_FIREBASE_*`), the browser gets a Firebase token; otherwise it subscribes to
   Web Push with `VITE_VAPID_PUBLIC_KEY`. `profile.savePushSubscription` stores the token or subscription with the
   device type, and moves an existing one to the user who is signed in.
-- The bell fetches the latest 50 in-app notifications every minute; opening one marks it read and follows its link.
+- The service worker (`src/sw.js`) reads both payload shapes, shows the notification with its tag and direction, and
+  tells an open app to refresh the bell; a tap focuses the app (or opens it) at the resolved destination. The
+  Firebase token is requested with the app's own service worker. The prompt does not appear in a session where the
+  passkey suggestion already did.
+- The bell fetches the latest 50 in-app notifications every minute and shows the unread count; the list is grouped
+  Today / Yesterday / Earlier with an icon per kind (read from the destination, as the table has no type), relative
+  time and an unread dot. Opening one marks it read and goes to its destination; "تعليم الكل كمقروء" marks all.
+- Settings › Notifications shows whether this device gets them (on, off, blocked by the browser, or iPhone where
+  only the Home-Screen app can) and the budget-alerts switch.
 
 ## WhatsApp
 - The service is WhatsApp Web through Baileys, logged in by scanning a QR code shown in the admin console. Its session
@@ -107,7 +126,8 @@ Checked against the code; each one names where it lives.
 3. **Bug.** The permission prompt promises weekly follow-ups, daily voice reminders and alerts for unusual spending; the
    server sends none of those, and the reminder reaches only users with a streak whose last recorded day was 12 to 36
    hours ago.
-4. **Bug.** The default Pro upsell promises a 30% discount that checkout never gives ([billing](billing.md)).
+4. **Gap.** A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount
+   that checkout never gives ([billing](billing.md)); unedited ones were replaced.
 5. **Bug.** When `VITE_VAPID_PUBLIC_KEY` is missing, the browser subscribes with a public key written in
    `src/hooks/usePushNotifications.ts`, and those subscriptions receive nothing unless the server's keys match.
    `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are read from `process.env` instead of `api/lib/env.ts` (golden rule 8).
@@ -115,8 +135,9 @@ Checked against the code; each one names where it lives.
    wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing
    checks that recipients agreed.
 7. **Debt.** The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
-8. **Gap.** Push cannot be turned off from the app, a device cannot be removed, the bell has no "mark all read" or clearing, and
-   nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion.
+8. **Gap.** Push cannot be turned off from the app, a device cannot be removed, the bell has no clearing, and nothing prunes
+   `in_app_notifications` or `notification_logs` apart from account deletion. Bell items keep no type, so the icon is read
+   from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
 9. **Bug.** The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a
    day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
 

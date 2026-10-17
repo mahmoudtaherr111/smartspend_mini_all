@@ -13,6 +13,7 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 ```mermaid
 flowchart LR
   subgraph g_screens["Screens"]
+    page_NotificationsPage["NotificationsPage screen"]
     screens_accounts["Screens of Accounts, sign-in and security"]
     screens_admin["Screens of Admin console, support and growth tools"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
@@ -23,7 +24,7 @@ flowchart LR
     job_seed_default_templates["Job · seed-default-templates"]
     job_smart_activity_notifications["Job · smart-activity-notifications"]
     router_adminWhatsapp["adminWhatsapp API · 9 procedures"]
-    router_profile["profile API · 3 procedures"]
+    router_profile["profile API · 4 procedures"]
   end
   subgraph g_modules["Code modules"]
     mod_notifications["Notifications"]
@@ -64,6 +65,7 @@ flowchart LR
   mod_whatsapp --> ext_whatsapp
   mod_whatsapp --> sys_accounts
   mod_whatsapp --> sys_platform
+  page_NotificationsPage --> router_profile
   router_adminWhatsapp --> mod_whatsapp
   router_adminWhatsapp --> sys_platform
   router_adminWhatsapp -.-> tbl_local_users
@@ -99,6 +101,7 @@ flowchart LR
 | `adminWhatsapp.stopService` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `adminWhatsapp.toggleOtpVerification` | mutation | `adminProcedure` | — | `system_settings` | `Admin`, `More` |
 | `profile.getInAppNotifications` | query | `authedProcedure` | `in_app_notifications` | — | `App shell`, `NotificationsPage` |
+| `profile.markAllInAppNotificationsRead` | mutation | `authedProcedure` | — | `in_app_notifications` | `App shell`, `NotificationsPage` |
 | `profile.markInAppNotificationRead` | mutation | `authedProcedure` | — | `in_app_notifications` | `App shell`, `NotificationsPage` |
 | `profile.savePushSubscription` | mutation | `authedProcedure` | `push_subscriptions` | `push_subscriptions` | `Home`, `More`, `Settings` |
 
@@ -117,7 +120,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `expense_daily_rollups` | C | — | `notifications` |
-| `in_app_notifications` | D | `notifications`, `profile.markInAppNotificationRead` | `profile.getInAppNotifications` |
+| `in_app_notifications` | D | `notifications`, `profile.markAllInAppNotificationsRead`, `profile.markInAppNotificationRead` | `profile.getInAppNotifications` |
 | `local_users` | A | — | `adminWhatsapp.broadcastMessage`, `adminWhatsapp.getUsers`, `notifications` |
 | `notification_logs` | E | `notifications` | `notifications` |
 | `notification_templates` | A | `notifications` | `notifications` |
@@ -155,7 +158,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/notifications.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>12 files and declarations</summary>
+<details><summary>14 files and declarations</summary>
 
 - `api/admin-whatsapp-router.ts`
 - `api/boot.ts#job:scheduled-notifications`
@@ -163,11 +166,13 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/boot.ts#job:smart-activity-notifications`
 - `api/notification-engine.ts`
 - `api/profile-router.ts#profile.getInAppNotifications`
+- `api/profile-router.ts#profile.markAllInAppNotificationsRead`
 - `api/profile-router.ts#profile.markInAppNotificationRead`
 - `api/profile-router.ts#profile.savePushSubscription`
 - `api/profile-router.ts#rest-of-file`
 - `api/services/firebase.ts`
 - `api/services/otp-cache.ts`
 - `api/services/whatsapp-service.ts`
+- `src/pages/Notifications.tsx`
 
 </details>

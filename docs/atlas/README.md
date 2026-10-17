@@ -47,6 +47,4 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 
 Gaps the generator found between the code and the hand-maintained maps in `docs/architecture/`, or code patterns it cannot read.
 
-- docs/architecture/systems.json: notifications lists the procedure "profile.sendBiometricPromptNotification", which does not exist.
-- docs/architecture/systems.json: the page "NotificationsPage" belongs to no system.
-- docs/architecture/systems.json: the procedure "profile.markAllInAppNotificationsRead" belongs to no system.
+None.
