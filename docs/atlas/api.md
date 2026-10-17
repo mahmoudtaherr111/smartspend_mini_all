@@ -43,7 +43,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `image` | `api/image-router.ts` | 1 | 0 | 1 | `receiptsProcedure` |
 | `localAuth` | `api/local-auth-router.ts` | 12 | 5 | 7 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
 | `pro` | `api/pro-router.ts` | 6 | 3 | 3 | `adminProcedure`, `authedProcedure` |
-| `profile` | `api/profile-router.ts` | 27 | 9 | 18 | `authedProcedure` |
+| `profile` | `api/profile-router.ts` | 28 | 9 | 19 | `authedProcedure` |
 | `referral` | `api/referral-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `seo` | `api/seo-router.ts` | 5 | 3 | 2 | `adminProcedure`, `publicProcedure` |
 | `session` | `api/session-router.ts` | 5 | 3 | 2 | `adminProcedure`, `authedProcedure` |
@@ -103,7 +103,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `admin.resolveClarification` | mutation | `adminProcedure` | yes | — | `pending_clarifications` | — | `src/components/admin/ClarificationsTab.tsx` |
 | `admin.revokeSession` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
 | `admin.saveAiModels` | mutation | `adminProcedure` | yes | `ai_models` | `ai_models` | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.sendPushNotification` | mutation | `adminProcedure` | yes | `local_users`, `push_subscriptions`, `users` | — | `api/notification-engine.ts` | — |
+| `admin.sendPushNotification` | mutation | `adminProcedure` | yes | `local_users`, `push_subscriptions`, `users` | — | `api/notification-engine.ts`, `contracts/notification-types.ts` | — |
 | `admin.setUserTokenLimit` | mutation | `adminProcedure` | yes | `system_settings` | `system_settings` | `api/lib/settings-cache.ts` | — |
 | `admin.toggleNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerActivityCheck` | mutation | `adminProcedure` | no | — | — | `api/notification-engine.ts` | `src/components/admin/NotificationsTab.tsx` |
@@ -318,16 +318,17 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `profile.dismissSmsSuggestion` | mutation | `authedProcedure` | yes | — | — | `api/services/sms-ledger.ts` | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.generateMagicCode` | mutation | `authedProcedure` | no | `webhook_tokens` | — | `api/sms-router.ts` | — |
 | `profile.generateWebhookToken` | mutation | `authedProcedure` | no | — | `webhook_tokens` | — | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getInAppNotifications` | query | `authedProcedure` | no | `in_app_notifications` | — | — | `src/components/NotificationBell.tsx` |
+| `profile.getInAppNotifications` | query | `authedProcedure` | no | `in_app_notifications` | — | — | `src/components/NotificationBell.tsx`, `src/components/notifications/NotificationList.tsx` |
 | `profile.getMyProfile` | query | `authedProcedure` | no | `user_profiles` | — | — | — |
 | `profile.getNextOnboardingQuestion` | query | `authedProcedure` | no | `user_profiles` | — | `api/services/adaptive-question-engine.ts`, `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/profile/ProfileScreen.tsx` |
 | `profile.getQuestions` | query | `authedProcedure` | no | `onboarding_questions` | — | `api/services/adaptive-question-engine.ts` | — |
-| `profile.getSmartProfile` | query | `authedProcedure` | no | — | — | `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/i18n/LanguagePreferenceSync.tsx`, `src/pages/Home.tsx`, `src/pages/Settings.tsx` |
+| `profile.getSmartProfile` | query | `authedProcedure` | no | — | — | `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/i18n/LanguagePreferenceSync.tsx`, `src/pages/Home.tsx`, `src/pages/Settings.tsx` |
 | `profile.getSmsLogs` | query | `authedProcedure` | no | `raw_sms_events` | — | — | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getSmsSuggestions` | query | `authedProcedure` | no | `raw_sms_events` | — | — | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.getWebhookToken` | query | `authedProcedure` | no | `raw_sms_events`, `webhook_tokens` | — | — | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
 | `profile.listContacts` | query | `authedProcedure` | yes | `expenses`, `user_contacts` | — | — | `src/components/settings/PeopleSettingsView.tsx`, `src/pages/PlanPage.tsx` |
-| `profile.markInAppNotificationRead` | mutation | `authedProcedure` | yes | — | `in_app_notifications` | — | `src/components/NotificationBell.tsx` |
+| `profile.markAllInAppNotificationsRead` | mutation | `authedProcedure` | no | — | `in_app_notifications` | — | `src/components/notifications/NotificationList.tsx` |
+| `profile.markInAppNotificationRead` | mutation | `authedProcedure` | yes | — | `in_app_notifications` | — | `src/components/notifications/NotificationList.tsx` |
 | `profile.mergeContacts` | mutation | `authedProcedure` | yes | `expenses`, `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.refreshInferences` | mutation | `authedProcedure` | yes | `expenses` | `monthly_behavior_snapshots` | `api/services/lifestyle-inference-engine.ts`, `api/services/user-profile-service.ts` | — |
 | `profile.requestPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | — | `api/lib/redis-client.ts`, `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/whatsapp-service.ts` | — |
@@ -335,7 +336,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `profile.submitOnboardingAnswer` | mutation | `authedProcedure` | yes | — | — | `api/services/adaptive-question-engine.ts`, `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/profile/ProfileScreen.tsx` |
 | `profile.updateContact` | mutation | `authedProcedure` | yes | `user_contacts` | `user_contacts` | `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts` | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.updateProfile` | mutation | `authedProcedure` | yes | — | `user_profiles` | — | — |
-| `profile.updateSmartProfile` | mutation | `authedProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/pages/Settings.tsx` |
+| `profile.updateSmartProfile` | mutation | `authedProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | mutation | `authedProcedure` | yes | `local_users` | `local_users`, `users` | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts` | `src/components/profile/ProfileScreen.tsx` |
 
 ### `referral` — `api/referral-router.ts`

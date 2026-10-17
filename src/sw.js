@@ -11,6 +11,7 @@ import {
 } from "workbox-precaching";
 import { registerRoute, setCatchHandler } from "workbox-routing";
 import { StaleWhileRevalidate } from "workbox-strategies";
+import { resolveNotificationTarget } from "../contracts/notification-types";
 
 const RUNTIME_CACHE = "smartspend-runtime-v4";
 const IMAGE_CACHE = "smartspend-images-v4";
@@ -121,27 +122,53 @@ self.addEventListener("activate", (event) => {
 });
 
 // 5. Push Notifications
+/**
+ * Reads a push in either shape the server sends: Firebase's ({ notification, data, fcmOptions }) or plain Web
+ * Push ({ title, body, url, type, icon, badge, tag, dir, lang }). The destination goes through the same map as the
+ * bell, so a tap opens what the notification is about.
+ */
+function readPush(raw) {
+  const notification = raw.notification || {};
+  const data = raw.data || {};
+  const options = raw.webpush?.notification || {};
+  const lang = raw.lang || options.lang || "ar";
+  return {
+    title: notification.title || raw.title || "SmartSpend",
+    body: notification.body || raw.body || "",
+    url: resolveNotificationTarget(data.url || raw.fcmOptions?.link || raw.url),
+    tag: raw.tag || options.tag || data.type || raw.type || undefined,
+    icon: raw.icon || options.icon || "/icon-192.png",
+    badge: raw.badge || options.badge || "/badge-96.png",
+    lang,
+    dir: raw.dir || options.dir || (lang === "en" ? "ltr" : "rtl"),
+  };
+}
+
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 
   try {
-    const data = event.data.json();
-    const title = data.title || "SmartSpend AI";
-    const options = {
-      body: data.body || "",
-      icon: data.icon || "/icon-192.png",
-      badge: data.badge || "/icon-192.png",
-      vibrate: [100, 50, 100],
-      data: data.url || "/", // Default URL to open when clicked
-    };
-
-    const promises = [self.registration.showNotification(title, options)];
-
-    // Premium PWA App Badging: Set home screen app badge dynamically
+    const push = readPush(event.data.json());
+    const promises = [
+      self.registration.showNotification(push.title, {
+        body: push.body,
+        icon: push.icon,
+        badge: push.badge,
+        dir: push.dir,
+        lang: push.lang,
+        // Same type, same slot: a newer budget alert replaces the older one instead of piling up.
+        tag: push.tag,
+        renotify: Boolean(push.tag),
+        data: { url: push.url },
+      }),
+      // An open app refreshes its bell right away.
+      self.clients
+        .matchAll({ type: "window", includeUncontrolled: true })
+        .then((windows) => windows.forEach((client) => client.postMessage({ type: "PUSH_RECEIVED" }))),
+    ];
     if (self.navigator && "setAppBadge" in self.navigator) {
-      promises.push(self.navigator.setAppBadge(1).catch(() => {}));
+      promises.push(self.navigator.setAppBadge().catch(() => {}));
     }
-
     event.waitUntil(Promise.all(promises));
   } catch (err) {
     console.error("Push event error:", err);
@@ -151,23 +178,12 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  let targetUrl = "/";
-  const notificationData = event.notification.data;
-
-  if (notificationData) {
-    if (typeof notificationData === "string") {
-      targetUrl = notificationData;
-    } else if (typeof notificationData === "object") {
-      // Support FCM payload formats, webpush format, and data object format
-      targetUrl =
-        notificationData.url ||
-        notificationData.FCM_MSG?.data?.url ||
-        notificationData.FCM_MSG?.notification?.click_action ||
-        "/";
-    }
-  }
-
-  const urlToOpen = new URL(targetUrl, self.location.origin).href;
+  const data = event.notification.data;
+  const stored =
+    typeof data === "string"
+      ? data
+      : data?.url || data?.FCM_MSG?.data?.url || data?.FCM_MSG?.notification?.click_action;
+  const urlToOpen = new URL(resolveNotificationTarget(stored), self.location.origin).href;
 
   event.waitUntil(
     self.clients

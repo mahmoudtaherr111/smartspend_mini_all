@@ -1820,7 +1820,7 @@ model {
       }
     }
     profile = router 'profile' {
-      description 'api/profile-router.ts — 27 procedures.'
+      description 'api/profile-router.ts — 28 procedures.'
       metadata {
         file 'api/profile-router.ts'
       }
@@ -1992,6 +1992,16 @@ model {
           file 'api/profile-router.ts'
           builder 'authedProcedure'
           procedureKind 'query'
+        }
+      }
+      markAllInAppNotificationsRead = procedure 'profile.markAllInAppNotificationsRead' {
+        #mutation #authed
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure'
+        metadata {
+          file 'api/profile-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
         }
       }
       markInAppNotificationRead = procedure 'profile.markInAppNotificationRead' {

@@ -34,9 +34,15 @@ export function usePushNotifications() {
 
       // 1. If Firebase is configured and permission is already granted, refresh/fetch token
       if (isFirebaseConfigured && messaging && Notification.permission === "granted") {
-        getToken(messaging, {
-          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-        })
+        const firebaseMessaging = messaging;
+        navigator.serviceWorker.ready
+          .then((registration) =>
+            getToken(firebaseMessaging, {
+              vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+              // Our own service worker shows Firebase's pushes; without it Firebase looks for a file that does not exist.
+              serviceWorkerRegistration: registration,
+            }),
+          )
           .then((token) => {
             if (token) {
               setIsSubscribed(true);
@@ -78,6 +84,8 @@ export function usePushNotifications() {
         // Get registration token
         const token = await getToken(messaging, {
           vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+          // Our own service worker shows Firebase's pushes; without it Firebase looks for a file that does not exist.
+          serviceWorkerRegistration: await navigator.serviceWorker.ready,
         });
 
         if (token) {

@@ -75,6 +75,13 @@ model {
         routes '*'
       }
     }
+    NotificationsPage = page 'NotificationsPage' {
+      description 'src/pages/Notifications.tsx'
+      metadata {
+        file 'src/pages/Notifications.tsx'
+        routes '/notifications'
+      }
+    }
     PlanPage = page 'PlanPage' {
       description 'src/pages/PlanPage.tsx'
       metadata {

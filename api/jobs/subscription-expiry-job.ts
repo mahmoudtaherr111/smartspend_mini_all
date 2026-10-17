@@ -65,7 +65,6 @@ export async function runRenewalReminders(now = new Date()): Promise<number> {
           planName: sub.plan.startsWith("ultra") ? "Ultra" : "Pro",
           daysLeft: days === 1 ? "بكرة" : "بعد 3 أيام",
         },
-        "/pro",
       );
       sent += 1;
     } catch (err) {

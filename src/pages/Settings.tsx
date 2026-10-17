@@ -3,13 +3,12 @@ import { trpc } from "../providers/trpc";
 import { SEOMeta } from "../components/seo/SEOMeta";
 import { useTheme } from "next-themes";
 import { ProfileScreen } from "@/components/profile/ProfileScreen";
+import { NotificationSettings } from "@/components/notifications/NotificationSettings";
 import { PasskeySettings } from "@/components/auth/PasskeySettings";
 import { PeopleSettingsView } from "@/components/settings/PeopleSettingsView";
 import { BusinessSettingsView } from "@/components/settings/BusinessSettingsView";
 import { LanguageSettings } from "@/components/settings/LanguageSettings";
 import { useLanguage } from "@/i18n/context";
-import { Button } from "@/components/ui/button";
-import { usePushNotifications } from "../hooks/usePushNotifications";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Card,
@@ -19,18 +18,13 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import {
-  BellRing,
   ArrowRight,
   ArrowLeft,
   Moon,
   Sun,
   Monitor,
-  Briefcase,
   Check,
-  ShieldCheck,
   Sparkles,
-  Users,
-  Store,
 } from "lucide-react";
 
 type SettingsView =
@@ -116,7 +110,6 @@ export default function Settings() {
   const trpcContext = trpc.useContext();
   const updateProfileMut = trpc.profile.updateSmartProfile.useMutation();
 
-  const { isSupported, isSubscribed, subscribeToPush } = usePushNotifications();
   const { dir, t } = useLanguage();
   // Written for right-to-left; in English the slides are mirrored.
   const sign = dir === "rtl" ? 1 : -1;
@@ -225,53 +218,7 @@ export default function Settings() {
               }}
             >
               <SubViewHeader title={t("settings.subview.notifications")} onBack={closeView} />
-              <Card className="border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-xl rounded-3xl overflow-hidden">
-                <CardHeader className="py-5 px-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/10">
-                  <CardTitle className="text-lg flex items-center gap-2 font-black">
-                    <BellRing
-                      className="w-5 h-5 text-indigo-500 animate-bounce"
-                      style={{ animationDuration: "3s" }}
-                    />
-                    إشعارات المتصفح والموبايل
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    فعل الإشعارات لتتلقى تنبيهات هامة من النظام على هاتفك عند
-                    تجاوز سقف الميزانية.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="text-end">
-                    <p className="font-bold text-slate-800 dark:text-slate-200">
-                      إشعارات النظام الفورية
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1 leading-relaxed">
-                      سيتم إرسال الإشعارات مباشرة إلى هذا الجهاز. تأكد من إعطاء
-                      الصلاحية عند طلب المتصفح.
-                    </p>
-                  </div>
-                  {!isSupported ? (
-                    <Button variant="outline" className="rounded-xl" disabled>
-                      غير مدعوم في متصفحك
-                    </Button>
-                  ) : isSubscribed ? (
-                    <Button
-                      variant="secondary"
-                      className="gap-2 rounded-xl text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 hover:bg-emerald-100 cursor-default font-bold h-11"
-                    >
-                      <ShieldCheck className="w-4 h-4" />
-                      مفعلة مسبقاً بنجاح
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={subscribeToPush}
-                      className="gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 shadow-lg shadow-indigo-500/10"
-                    >
-                      <BellRing className="w-4 h-4" />
-                      تفعيل الإشعارات الآن
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+              <NotificationSettings />
             </motion.div>
           )}
 

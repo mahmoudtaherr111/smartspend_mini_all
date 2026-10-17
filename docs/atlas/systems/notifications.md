@@ -98,8 +98,8 @@ flowchart LR
 | `adminWhatsapp.startService` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `adminWhatsapp.stopService` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `adminWhatsapp.toggleOtpVerification` | mutation | `adminProcedure` | — | `system_settings` | `Admin`, `More` |
-| `profile.getInAppNotifications` | query | `authedProcedure` | `in_app_notifications` | — | `App shell` |
-| `profile.markInAppNotificationRead` | mutation | `authedProcedure` | — | `in_app_notifications` | `App shell` |
+| `profile.getInAppNotifications` | query | `authedProcedure` | `in_app_notifications` | — | `App shell`, `NotificationsPage` |
+| `profile.markInAppNotificationRead` | mutation | `authedProcedure` | — | `in_app_notifications` | `App shell`, `NotificationsPage` |
 | `profile.savePushSubscription` | mutation | `authedProcedure` | `push_subscriptions` | `push_subscriptions` | `Home`, `More`, `Settings` |
 
 ## HTTP routes, WebSockets and scheduled jobs

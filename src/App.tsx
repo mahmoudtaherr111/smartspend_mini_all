@@ -74,6 +74,7 @@ const AICenter = lazy(() => import("@/pages/AICenter"));
 const More = lazy(() => import("@/pages/More"));
 const UltraLounge = lazy(() => import("@/pages/UltraLounge"));
 const PlanPage = lazy(() => import("@/pages/PlanPage"));
+const NotificationsPage = lazy(() => import("@/pages/Notifications"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -464,6 +465,16 @@ function AnimatedRoutes() {
           <ProtectedRoute>
             <PageTransition>
               <PlanPage />
+            </PageTransition>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <PageTransition>
+              <NotificationsPage />
             </PageTransition>
           </ProtectedRoute>
         }

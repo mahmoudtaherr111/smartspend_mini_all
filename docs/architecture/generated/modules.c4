@@ -205,7 +205,7 @@ model {
     contracts = module 'Shared contracts' {
       description 'Types, limits and billing plans shared by the web app and the API.'
       metadata {
-        files '11'
+        files '12'
         paths 'contracts/**'
       }
     }
@@ -215,7 +215,7 @@ model {
     web-account = module 'Account UI' {
       description 'Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt.'
       metadata {
-        files '12'
+        files '14'
         paths 'src/components/auth/**, src/components/profile/**, src/components/settings/**, src/components/bank-sync/**, src/components/notifications/**'
       }
     }
@@ -285,7 +285,7 @@ model {
     web-pages = module 'Web pages' {
       description 'Route-level page components lazy-loaded by src/App.tsx.'
       metadata {
-        files '16'
+        files '17'
         paths 'src/pages/**'
       }
     }

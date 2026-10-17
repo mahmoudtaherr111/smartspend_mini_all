@@ -340,6 +340,7 @@ model {
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.coaching -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.coaching -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.cashflow_settlements
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.coaching_plans
   smartspend.api.modules.coaching -[reads]-> smartspend.mysql.coaching_steps
@@ -431,6 +432,7 @@ model {
   smartspend.api.modules.ledger -[writes]-> smartspend.mysql.user_budgets
   smartspend.api.modules.notifications -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.notifications -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.notifications -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.notifications -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.modules.notifications -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.notifications -[reads]-> smartspend.mysql.notification_logs
@@ -596,6 +598,7 @@ model {
   smartspend.api.trpc.admin.sendPushNotification -[reads]-> smartspend.mysql.push_subscriptions
   smartspend.api.trpc.admin.sendPushNotification -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.admin.sendPushNotification -[uses]-> smartspend.api.modules.notifications
+  smartspend.api.trpc.admin.sendPushNotification -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.admin.setUserTokenLimit -[reads]-> smartspend.mysql.system_settings
   smartspend.api.trpc.admin.setUserTokenLimit -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.admin.setUserTokenLimit -[writes]-> smartspend.mysql.system_settings
@@ -1045,6 +1048,7 @@ model {
   smartspend.api.trpc.profile.getWebhookToken -[reads]-> smartspend.mysql.webhook_tokens
   smartspend.api.trpc.profile.listContacts -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.profile.listContacts -[reads]-> smartspend.mysql.user_contacts
+  smartspend.api.trpc.profile.markAllInAppNotificationsRead -[writes]-> smartspend.mysql.in_app_notifications
   smartspend.api.trpc.profile.markInAppNotificationRead -[writes]-> smartspend.mysql.in_app_notifications
   smartspend.api.trpc.profile.mergeContacts -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.profile.mergeContacts -[reads]-> smartspend.mysql.user_contacts
@@ -1506,6 +1510,9 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.webauthn.deletePasskey
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.webauthn.generateRegistrationOptions
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.webauthn.verifyRegistration
+  smartspend.web.pages.NotificationsPage -[calls]-> smartspend.api.trpc.profile.getInAppNotifications
+  smartspend.web.pages.NotificationsPage -[calls]-> smartspend.api.trpc.profile.markAllInAppNotificationsRead
+  smartspend.web.pages.NotificationsPage -[calls]-> smartspend.api.trpc.profile.markInAppNotificationRead
   smartspend.web.pages.PlanPage -[calls]-> smartspend.api.trpc.coach.addCashflow
   smartspend.web.pages.PlanPage -[calls]-> smartspend.api.trpc.coach.cancelReminder
   smartspend.web.pages.PlanPage -[calls]-> smartspend.api.trpc.coach.endPlan
@@ -1576,6 +1583,7 @@ model {
   smartspend.web.shell -[calls]-> smartspend.api.trpc.localAuth.me
   smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.getInAppNotifications
   smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.getSmartProfile
+  smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.markAllInAppNotificationsRead
   smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.markInAppNotificationRead
   smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.updateSmartProfile
   smartspend.web.shell -[calls]-> smartspend.api.trpc.voice.eligibility

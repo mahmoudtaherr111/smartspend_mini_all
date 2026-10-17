@@ -17,6 +17,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `/dashboard` | signed-in | `Home` | `src/pages/Home.tsx` | — |
 | `/login` | signed-out only | `Login` | `src/pages/Login.tsx` | — |
 | `/more` | signed-in | `More` | `src/pages/More.tsx` | — |
+| `/notifications` | signed-in | `NotificationsPage` | `src/pages/Notifications.tsx` | — |
 | `/plan` | signed-in | `PlanPage` | `src/pages/PlanPage.tsx` | — |
 | `/privacy` | public | `Privacy` | `src/pages/Privacy.tsx` | — |
 | `/pro` | signed-in | `Pro` | `src/pages/Pro.tsx` | — |
@@ -30,7 +31,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `App shell` — `src/App.tsx`
 
-55 files in its import closure (not counting `src/components/ui/`).
+56 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -44,9 +45,10 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `chat.listMemories` | useQuery, utils.invalidate | `src/components/ai/AIMemoryManager.tsx`, `src/components/voice/VoiceCallHost.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
-| `profile.getInAppNotifications` | useQuery, utils.invalidate | `src/components/NotificationBell.tsx` |
+| `profile.getInAppNotifications` | useQuery, utils.invalidate | `src/components/NotificationBell.tsx`, `src/components/notifications/NotificationList.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate | `src/hooks/useBiometricOnboarding.ts`, `src/i18n/LanguagePreferenceSync.tsx` |
-| `profile.markInAppNotificationRead` | useMutation | `src/components/NotificationBell.tsx` |
+| `profile.markAllInAppNotificationsRead` | useMutation | `src/components/notifications/NotificationList.tsx` |
+| `profile.markInAppNotificationRead` | useMutation | `src/components/notifications/NotificationList.tsx` |
 | `profile.updateSmartProfile` | useMutation | `src/hooks/useBiometricOnboarding.ts` |
 | `voice.eligibility` | utils.invalidate | `src/components/voice/VoiceCallHost.tsx` |
 | `voice.listCalls` | utils.invalidate | `src/components/voice/VoiceCallHost.tsx` |
@@ -259,7 +261,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-59 files in its import closure (not counting `src/components/ui/`).
+60 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -359,7 +361,7 @@ _None._
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.generateWebhookToken` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/ProfileScreen.tsx` |
-| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
 | `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx`, `src/pages/PlanPage.tsx` |
@@ -367,7 +369,7 @@ _None._
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `profile.updateContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `referral.applyCode` | useMutation | `src/pages/Pro.tsx` |
 | `referral.myCode` | useQuery | `src/pages/Pro.tsx` |
@@ -392,6 +394,16 @@ _None._
 1 files in its import closure (not counting `src/components/ui/`).
 
 _None._
+
+### `NotificationsPage` — `src/pages/Notifications.tsx`
+
+7 files in its import closure (not counting `src/components/ui/`).
+
+| Procedure | Calls | Files |
+| --- | --- | --- |
+| `profile.getInAppNotifications` | useQuery, utils.invalidate | `src/components/notifications/NotificationList.tsx` |
+| `profile.markAllInAppNotificationsRead` | useMutation | `src/components/notifications/NotificationList.tsx` |
+| `profile.markInAppNotificationRead` | useMutation | `src/components/notifications/NotificationList.tsx` |
 
 ### `PlanPage` — `src/pages/PlanPage.tsx`
 
@@ -436,7 +448,7 @@ _None._
 
 ### `Settings` — `src/pages/Settings.tsx`
 
-25 files in its import closure (not counting `src/components/ui/`).
+26 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -456,13 +468,13 @@ _None._
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/ProfileScreen.tsx` |
-| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.mergeContacts` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `profile.updateContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.updateSmartProfile` | useMutation | `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.updateSmartProfile` | useMutation | `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 | `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx`, `src/hooks/usePasskeyEnrolment.ts` |

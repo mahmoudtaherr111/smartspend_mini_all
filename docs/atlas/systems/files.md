@@ -270,6 +270,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `contracts/constants.ts` | [platform](platform.md) |
 | `contracts/errors.ts` | [platform](platform.md) |
 | `contracts/expense-save.ts` | [platform](platform.md) |
+| `contracts/notification-types.ts` | [platform](platform.md) |
 | `contracts/plan-features.ts` | [platform](platform.md) |
 | `contracts/plans.ts` | [platform](platform.md) |
 | `contracts/profile-fields.ts` | [platform](platform.md) |
@@ -347,6 +348,8 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/layout/MobileBottomNav.tsx` | [web-app](web-app.md) |
 | `src/components/layout/PageTransition.tsx` | [web-app](web-app.md) |
 | `src/components/layout/mobile-nav-platform.ts` | [web-app](web-app.md) |
+| `src/components/notifications/NotificationList.tsx` | [accounts](accounts.md) |
+| `src/components/notifications/NotificationSettings.tsx` | [accounts](accounts.md) |
 | `src/components/notifications/PushNotificationPrompt.tsx` | [accounts](accounts.md) |
 | `src/components/profile/ProfileFieldInput.tsx` | [accounts](accounts.md) |
 | `src/components/profile/ProfileScreen.tsx` | [accounts](accounts.md) |

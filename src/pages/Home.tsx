@@ -147,6 +147,16 @@ export default function Home() {
   const activeBusinessId =
     businessMode && hasBusiness ? businessQuery.data!.business!.id : undefined;
 
+  // A budget alert opens /dashboard?tab=stats#budget: bring the budgets card into view once the tab has drawn.
+  useEffect(() => {
+    if (activeTab !== "stats" || location.hash !== "#budget") return;
+    const timer = window.setTimeout(
+      () => document.getElementById("budget")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      400,
+    );
+    return () => window.clearTimeout(timer);
+  }, [activeTab, location.hash]);
+
   // Sync tab & month from URL; without a month in it, the one holding today (once the payday is known).
   useEffect(() => {
     const nextTab = normalizeTab(currentParams.get("tab"));

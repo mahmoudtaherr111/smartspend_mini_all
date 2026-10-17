@@ -14,6 +14,7 @@ import { coachingPlans, coachingSteps, inAppNotifications } from "../../../db/sc
 import { businessDateKey } from "../../lib/app-time";
 import { db } from "../../queries/connection";
 import type { CoachUser } from "./cashflows";
+import { notificationType } from "../../../contracts/notification-types";
 
 export const STEP_KINDS = ["spending_limit", "save", "pay", "record", "review", "other"] as const;
 export type StepKind = (typeof STEP_KINDS)[number];
@@ -201,7 +202,7 @@ export async function deliverDueReminders(now = new Date(), limit = 200): Promis
         // No amount and no detail in the notification itself: the step is read in the app.
         title: "تذكير بخطتك",
         body: "عندك خطوة في خطتك النهارده. افتحها تشوف التفاصيل.",
-        actionUrl: "/plan",
+        actionUrl: notificationType("coach_reminder").destination,
       });
       return true;
     });

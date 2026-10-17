@@ -6,11 +6,43 @@ import { messaging, isFirebaseInitialized } from "./services/firebase";
 import { env } from "./lib/env";
 import { businessDateKey, businessDayRange, businessMonthRange } from "./lib/app-time";
 import { createLogger } from "./lib/log";
+import { notificationType } from "../contracts/notification-types";
 
 const log = createLogger("notifications");
 
 const appUrl = env.APP_URL || "http://localhost:3000";
-const logoUrl = `${appUrl}/photos/white_mode_logo-removebg-preview.png`;
+// The app icon beside the text, and an alpha-only mark for Android's status bar: a full-colour image there shows
+// as a white square. No large image: the logo used to fill the expanded notification.
+const iconUrl = `${appUrl}/icon-192.png`;
+const badgeUrl = `${appUrl}/badge-96.png`;
+
+/** One push, shaped the same for FCM and plain Web Push: grouped by type, written in the user's direction. */
+interface PushContent {
+  title: string;
+  body: string;
+  actionUrl: string;
+  type: string;
+  lang: string;
+}
+
+function webPushOptions(item: PushContent) {
+  const dir: "ltr" | "rtl" = item.lang === "en" ? "ltr" : "rtl";
+  return { icon: iconUrl, badge: badgeUrl, tag: item.type, dir, lang: item.lang };
+}
+
+export function fcmMessage(token: string, item: PushContent) {
+  return {
+    token,
+    notification: { title: item.title, body: item.body },
+    data: { url: item.actionUrl, type: item.type },
+    webpush: { notification: webPushOptions(item), fcmOptions: { link: item.actionUrl } },
+    apns: { payload: { aps: { sound: "default" } } },
+  };
+}
+
+export function legacyPayload(item: PushContent): string {
+  return JSON.stringify({ title: item.title, body: item.body, url: item.actionUrl, type: item.type, ...webPushOptions(item) });
+}
 
 function parseSegment(segment: any): any {
   if (!segment) return {};
@@ -28,12 +60,7 @@ function parseSegment(segment: any): any {
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function sendPushBatch(
-  notifications: Array<{
-    sub: any;
-    title: string;
-    body: string;
-    actionUrl: string;
-  }>
+  notifications: Array<PushContent & { sub: any }>
 ) {
   if (notifications.length === 0) return;
 
@@ -41,36 +68,9 @@ export async function sendPushBatch(
   const legacyWebPushList: any[] = [];
 
   for (const item of notifications) {
-    const { sub, title, body, actionUrl } = item;
+    const { sub } = item;
     if (isFirebaseInitialized && messaging && sub.fcmToken) {
-      fcmMessages.push({
-        token: sub.fcmToken,
-        notification: {
-          title,
-          body,
-          imageUrl: logoUrl
-        },
-        data: {
-          url: actionUrl,
-        },
-        webpush: {
-          notification: {
-            icon: logoUrl,
-            badge: logoUrl,
-          },
-          fcmOptions: {
-            link: actionUrl,
-          }
-        },
-        apns: {
-          payload: {
-            aps: {
-              sound: "default",
-              badge: 1,
-            }
-          }
-        }
-      });
+      fcmMessages.push(fcmMessage(sub.fcmToken, item));
     } else if (sub.endpoint && sub.p256dh && sub.auth) {
       legacyWebPushList.push(item);
     }
@@ -106,13 +106,7 @@ export async function sendPushBatch(
             await webpush.sendNotification({
               endpoint: item.sub.endpoint,
               keys: { p256dh: item.sub.p256dh, auth: item.sub.auth }
-            }, JSON.stringify({
-              title: item.title,
-              body: item.body,
-              icon: logoUrl,
-              badge: logoUrl,
-              url: item.actionUrl
-            }));
+            }, legacyPayload(item));
           } catch (err: any) {
             console.error("Legacy push failed for sub:", item.sub.id, err.message);
             if (err.statusCode === 410 || err.statusCode === 404) {
@@ -129,9 +123,10 @@ async function triggerTemplateNotificationsBatch(
   template: any,
   targets: Array<{ id: number; type: string; name?: string; currentStreak?: number | null }>,
   variablesBuilder: (user: any) => Record<string, string>,
-  actionUrl: string = "/"
 ) {
   if (targets.length === 0) return;
+  const type = String(template.eventType || "manual_scheduled");
+  const actionUrl = notificationType(type).destination;
 
   const targetIds = targets.map(u => u.id);
   const oauthIds = targets.filter(u => u.type === "oauth").map(u => u.id);
@@ -154,12 +149,15 @@ async function triggerTemplateNotificationsBatch(
     : [];
 
   const langMap = new Map<string, string>();
+  // Users who switched budget and activity alerts off in Settings > Notifications. Messages an admin schedules still arrive.
+  const alertsOff = new Set<string>();
   for (const p of profiles) {
     let lang = "ar";
     try {
       if (p.preferences) {
         const prefs = typeof p.preferences === "string" ? JSON.parse(p.preferences) : p.preferences;
         if (prefs && prefs.language) lang = prefs.language;
+        if (prefs?.alertsEnabled === false) alertsOff.add(`${p.userType}:${p.userId}`);
       }
     } catch(e) {}
     langMap.set(`${p.userType}:${p.userId}`, lang);
@@ -189,6 +187,7 @@ async function triggerTemplateNotificationsBatch(
   const pushBatchList: any[] = [];
 
   for (const user of targets) {
+    if (type !== "manual_scheduled" && alertsOff.has(`${user.type}:${user.id}`)) continue;
     const lang = langMap.get(`${user.type}:${user.id}`) || "ar";
     let title = lang === "en" 
       ? (template.titleTemplateEn || template.titleTemplate || "") 
@@ -227,12 +226,7 @@ async function triggerTemplateNotificationsBatch(
         continue;
       }
 
-      pushBatchList.push({
-        sub,
-        title,
-        body,
-        actionUrl
-      });
+      pushBatchList.push({ sub, title, body, actionUrl, type, lang });
     }
   }
 
@@ -284,7 +278,7 @@ if (vapidPublicKey && vapidPrivateKey) {
  * Resolves preferred language for a user based on userProfiles preferences.
  * Defaults to "ar" (Arabic).
  */
-export async function getUserLanguage(userId: number, userType: string): Promise<string> {
+export async function getUserNotificationPrefs(userId: number, userType: string): Promise<{ lang: string; alertsEnabled: boolean }> {
   try {
     const profile = await db.select({ preferences: userProfiles.preferences })
       .from(userProfiles)
@@ -295,51 +289,22 @@ export async function getUserLanguage(userId: number, userType: string): Promise
       const prefs = typeof profile[0].preferences === "string" 
         ? JSON.parse(profile[0].preferences) 
         : profile[0].preferences;
-      if (prefs && prefs.language) {
-        return prefs.language; // "ar" or "en"
-      }
+      return { lang: prefs?.language || "ar", alertsEnabled: prefs?.alertsEnabled !== false };
     }
   } catch (error) {
     console.error("Failed to retrieve user language:", error);
   }
-  return "ar"; // default fallback
+  return { lang: "ar", alertsEnabled: true };
 }
 
 /**
  * Universal helper to send a push notification to a device subscription.
  * Handles both modern FCM tokens (iOS/Android/Web) and legacy Web-Push endpoints.
  */
-export async function sendPush(sub: any, title: string, body: string, actionUrl: string = "/"): Promise<boolean> {
+export async function sendPush(sub: any, item: PushContent): Promise<boolean> {
   if (isFirebaseInitialized && messaging && sub.fcmToken) {
     try {
-      await messaging.send({
-        token: sub.fcmToken,
-        notification: {
-          title,
-          body,
-          imageUrl: logoUrl
-        },
-        data: {
-          url: actionUrl,
-        },
-        webpush: {
-          notification: {
-            icon: logoUrl,
-            badge: logoUrl,
-          },
-          fcmOptions: {
-            link: actionUrl,
-          }
-        },
-        apns: {
-          payload: {
-            aps: {
-              sound: "default",
-              badge: 1,
-            }
-          }
-        }
-      });
+      await messaging.send(fcmMessage(sub.fcmToken, item));
       return true;
     } catch (err: any) {
       // A registration token lets anyone holding the server key push to that phone: the row id is enough.
@@ -359,13 +324,7 @@ export async function sendPush(sub: any, title: string, body: string, actionUrl:
       await webpush.sendNotification({
         endpoint: sub.endpoint,
         keys: { p256dh: sub.p256dh, auth: sub.auth }
-      }, JSON.stringify({
-        title,
-        body,
-        icon: logoUrl,
-        badge: logoUrl,
-        url: actionUrl
-      }));
+      }, legacyPayload(item));
       return true;
     } catch (err: any) {
       console.error("Legacy Web Push failed for sub id:", sub.id, err);
@@ -450,12 +409,15 @@ export async function processScheduledNotifications() {
   }
 }
 
-export async function triggerEventNotification(eventType: string, user: { id: number, type: string }, variables: Record<string, string>, actionUrl: string = "/") {
+export async function triggerEventNotification(eventType: string, user: { id: number, type: string }, variables: Record<string, string>) {
   const templates = await db.select().from(notificationTemplates)
     .where(and(eq(notificationTemplates.eventType, eventType), eq(notificationTemplates.isActive, true)));
+  if (templates.length === 0) return;
+  const { lang, alertsEnabled } = await getUserNotificationPrefs(user.id, user.type);
+  if (!alertsEnabled) return;
+  const actionUrl = notificationType(eventType).destination;
 
   for (const template of templates) {
-    const lang = await getUserLanguage(user.id, user.type);
     
     let title = lang === "en" 
       ? (template.titleTemplateEn || template.titleTemplate || "") 
@@ -482,7 +444,7 @@ export async function triggerEventNotification(eventType: string, user: { id: nu
     );
 
     for (const sub of subs) {
-       await sendPush(sub, title, body, actionUrl);
+       await sendPush(sub, { title, body, actionUrl, type: eventType, lang });
     }
     
     await db.insert(notificationLogs).values({
@@ -516,7 +478,6 @@ export async function checkUserBudgetExceeded(userId: number, userType: string) 
             limit: Number(status.monthlyLimit).toLocaleString("ar-EG"),
             percentage: String(status.percentage),
           },
-          "/#budget",
         );
       });
       return;
@@ -583,7 +544,6 @@ export async function checkUserBudgetExceeded(userId: number, userType: string) 
             totalSpent: totalSpent.toLocaleString("ar-EG"), 
             budgetLimit: budgetLimit.toLocaleString("ar-EG") 
           },
-          "/#budget"
         );
       }
     }
@@ -592,97 +552,99 @@ export async function checkUserBudgetExceeded(userId: number, userType: string) 
   }
 }
 
-export async function seedDefaultTemplates() {
-  const defaults = [
-    {
-      name: "ميزانية قربت تخلص",
-      eventType: "budget_near_limit",
-      titleTemplate: "ميزانية {{budgetTitle}} قربت تخلص",
-      bodyTemplate: "صرفت {{spent}} من {{limit}} جنيه ({{percentage}}%). خلّي بالك الأيام الجاية.",
-      titleTemplateAr: "ميزانية {{budgetTitle}} قربت تخلص",
-      bodyTemplateAr: "صرفت {{spent}} من {{limit}} جنيه ({{percentage}}%). خلّي بالك الأيام الجاية.",
-      titleTemplateEn: "{{budgetTitle}} budget almost used",
-      bodyTemplateEn: "You spent {{spent}} of {{limit}} EGP ({{percentage}}%).",
-    },
-    {
-      name: "الاشتراك قرب يخلص",
-      eventType: "subscription_ending",
-      titleTemplate: "اشتراك {{planName}} بيخلص {{daysLeft}}",
-      bodyTemplate: "جدّد دلوقتي عشان تفضل مميزاتك شغالة من غير ما تقف.",
-      titleTemplateAr: "اشتراك {{planName}} بيخلص {{daysLeft}}",
-      bodyTemplateAr: "جدّد دلوقتي عشان تفضل مميزاتك شغالة من غير ما تقف.",
-      titleTemplateEn: "Your {{planName}} plan ends soon",
-      bodyTemplateEn: "Renew now to keep your features running.",
-    },
-    {
-      name: "ميزانية عدّت الحد",
-      eventType: "budget_category_exceeded",
-      titleTemplate: "ميزانية {{budgetTitle}} عدّت الحد",
-      bodyTemplate: "صرفت {{spent}} والحد كان {{limit}} جنيه ({{percentage}}%).",
-      titleTemplateAr: "ميزانية {{budgetTitle}} عدّت الحد",
-      bodyTemplateAr: "صرفت {{spent}} والحد كان {{limit}} جنيه ({{percentage}}%).",
-      titleTemplateEn: "{{budgetTitle}} budget exceeded",
-      bodyTemplateEn: "You spent {{spent}}; the limit was {{limit}} EGP ({{percentage}}%).",
-    },
-    {
-      name: "تنبيه تجاوز الميزانية",
-      eventType: "budget_exceeded",
-      titleTemplate: "تنبيه: عدّيت الميزانية اللي حاططها ⚠️",
-      bodyTemplate: "إجمالي نفقاتك هذا الشهر {{totalSpent}} تخطى الحد المسموح به {{budgetLimit}} في ملفك الشخصي. اضغط لمراجعة إحصائياتك.",
-      titleTemplateAr: "تنبيه: عدّيت الميزانية اللي حاططها ⚠️",
-      bodyTemplateAr: "إجمالي نفقاتك هذا الشهر {{totalSpent}} تخطى الحد المسموح به {{budgetLimit}} في ملفك الشخصي. اضغط لمراجعة إحصائياتك.",
-      titleTemplateEn: "Warning: Budget Exceeded! ⚠️",
-      bodyTemplateEn: "Your total expenses this month {{totalSpent}} exceeded your planned budget of {{budgetLimit}}. Click to review your statistics."
-    },
-    {
-      name: "تذكير عدم النشاط اليومي",
-      eventType: "inactivity_reminder",
-      titleTemplate: "أين اختفيت؟ 🎯",
-      bodyTemplate: "بقالك فترة ماسجلتش مصاريفك. سجّل اللي صرفته عشان أرقامك تفضل مظبوطة.",
-      titleTemplateAr: "أين اختفيت؟ 🎯",
-      bodyTemplateAr: "بقالك فترة ماسجلتش مصاريفك. سجّل اللي صرفته عشان أرقامك تفضل مظبوطة.",
-      titleTemplateEn: "Where have you been? 🎯",
-      bodyTemplateEn: "It's been a while since you last logged your expenses. Keep up your financial discipline and log them now!"
-    },
-    {
-      name: "تنبيه حماس الاستمرار (ترقية برو)",
-      eventType: "pro_conversion_streak",
-      titleTemplate: "أنت على مسار رائع! 🌟",
-      bodyTemplate: "سجّلت مصاريفك {{currentStreak}} أيام متتالية. اشترك في برو الآن للحصول على تقارير وتحليلات غير محدودة بخصم 30%!",
-      titleTemplateAr: "أنت على مسار رائع! 🌟",
-      bodyTemplateAr: "سجّلت مصاريفك {{currentStreak}} أيام متتالية. اشترك في برو الآن للحصول على تقارير وتحليلات غير محدودة بخصم 30%!",
-      titleTemplateEn: "You are on a roll! 🌟",
-      bodyTemplateEn: "You have recorded your expenses for {{currentStreak}} consecutive days. Subscribe to Pro now for unlimited reports with 30% discount!"
-    },
-    {
-      name: "تذكير المستخدم الغائب",
-      eventType: "dormant_reactivation",
-      titleTemplate: "افتقدناك في SmartSpend! 💙",
-      bodyTemplate: "بقالك أسبوع ماسجلتش مصاريفك. العودة للتتبع ستساعدك على تحقيق أهدافك المالية وضبط ميزانيتك!",
-      titleTemplateAr: "افتقدناك في SmartSpend! 💙",
-      bodyTemplateAr: "بقالك أسبوع ماسجلتش مصاريفك. العودة للتتبع ستساعدك على تحقيق أهدافك المالية وضبط ميزانيتك!",
-      titleTemplateEn: "We miss you at SmartSpend! 💙",
-      bodyTemplateEn: "It's been a week since you last recorded your expenses. Getting back to tracking will help you reach your goals!"
-    }
-  ];
+/** A default template: Arabic (also the language-less fallback) and English. */
+interface DefaultTemplate {
+  name: string;
+  eventType: string;
+  ar: { title: string; body: string };
+  en: { title: string; body: string };
+}
 
-  for (const item of defaults) {
-    const existing = await db.select().from(notificationTemplates)
+/**
+ * The texts the app ships with, in the voice of docs/guides/writing-app-messages.md: short, no emoji, no English
+ * in the Arabic, nothing promised that does not exist.
+ */
+export const DEFAULT_TEMPLATES: DefaultTemplate[] = [
+  {
+    name: "ميزانية قربت تخلص",
+    eventType: "budget_near_limit",
+    ar: { title: "ميزانية {{budgetTitle}} قربت تخلص", body: "صرفت {{spent}} من {{limit}} جنيه ({{percentage}}%)." },
+    en: { title: "{{budgetTitle}} budget almost used", body: "You spent {{spent}} of {{limit}} EGP ({{percentage}}%)." },
+  },
+  {
+    name: "ميزانية عدّت الحد",
+    eventType: "budget_category_exceeded",
+    ar: { title: "ميزانية {{budgetTitle}} عدّت الحد", body: "صرفت {{spent}} والحد {{limit}} جنيه." },
+    en: { title: "{{budgetTitle}} budget exceeded", body: "You spent {{spent}}; the limit is {{limit}} EGP." },
+  },
+  {
+    name: "الصرف عدّى الدخل",
+    eventType: "budget_exceeded",
+    ar: { title: "صرفك عدّى دخلك الشهر ده", body: "صرفت {{totalSpent}} جنيه، ودخلك المسجّل {{budgetLimit}}. افتح الإحصائيات تشوف راحت فين." },
+    en: { title: "You spent more than your income", body: "You spent {{totalSpent}} EGP against {{budgetLimit}} EGP of income. Open your stats to see where it went." },
+  },
+  {
+    name: "الاشتراك قرب يخلص",
+    eventType: "subscription_ending",
+    ar: { title: "اشتراك {{planName}} بيخلص {{daysLeft}}", body: "جدّد عشان مميزاتك تفضل شغالة." },
+    en: { title: "Your {{planName}} plan ends soon", body: "Renew to keep your features." },
+  },
+  {
+    name: "تذكير بالتسجيل",
+    eventType: "inactivity_reminder",
+    ar: { title: "سجّلت مصاريف النهارده؟", body: "سجّل اللي صرفته عشان أرقامك تفضل مظبوطة." },
+    en: { title: "Logged today's spending?", body: "Add what you spent so your numbers stay right." },
+  },
+  {
+    name: "أيام متتالية",
+    eventType: "pro_conversion_streak",
+    ar: { title: "{{currentStreak}} أيام ورا بعض", body: "بتسجّل مصاريفك بانتظام. Pro فيه تقارير وتحليلات أكتر لو حابب." },
+    en: { title: "{{currentStreak}} days in a row", body: "You log your spending every day. Pro has more reports if you want them." },
+  },
+  {
+    name: "رجوع بعد غياب",
+    eventType: "dormant_reactivation",
+    ar: { title: "بقالك أسبوع مسجلتش", body: "سجّل عملية واحدة النهارده وكمّل متابعة فلوسك." },
+    en: { title: "It's been a week", body: "Log one thing today and keep track of your money." },
+  },
+];
+
+/** The Arabic texts shipped before: a stored template still holding both was never edited, so it is updated. */
+const PREVIOUS_DEFAULTS: Record<string, { title: string; body: string }> = {
+  budget_near_limit: { title: "ميزانية {{budgetTitle}} قربت تخلص", body: "صرفت {{spent}} من {{limit}} جنيه ({{percentage}}%). خلّي بالك الأيام الجاية." },
+  budget_category_exceeded: { title: "ميزانية {{budgetTitle}} عدّت الحد", body: "صرفت {{spent}} والحد كان {{limit}} جنيه ({{percentage}}%)." },
+  budget_exceeded: { title: "تنبيه: عدّيت الميزانية اللي حاططها ⚠️", body: "إجمالي نفقاتك هذا الشهر {{totalSpent}} تخطى الحد المسموح به {{budgetLimit}} في ملفك الشخصي. اضغط لمراجعة إحصائياتك." },
+  subscription_ending: { title: "اشتراك {{planName}} بيخلص {{daysLeft}}", body: "جدّد دلوقتي عشان تفضل مميزاتك شغالة من غير ما تقف." },
+  inactivity_reminder: { title: "أين اختفيت؟ 🎯", body: "بقالك فترة ماسجلتش مصاريفك. سجّل اللي صرفته عشان أرقامك تفضل مظبوطة." },
+  pro_conversion_streak: { title: "أنت على مسار رائع! 🌟", body: "سجّلت مصاريفك {{currentStreak}} أيام متتالية. اشترك في برو الآن للحصول على تقارير وتحليلات غير محدودة بخصم 30%!" },
+  dormant_reactivation: { title: "افتقدناك في SmartSpend! 💙", body: "بقالك أسبوع ماسجلتش مصاريفك. العودة للتتبع ستساعدك على تحقيق أهدافك المالية وضبط ميزانيتك!" },
+};
+
+export async function seedDefaultTemplates() {
+  for (const item of DEFAULT_TEMPLATES) {
+    const texts = {
+      name: item.name,
+      titleTemplate: item.ar.title,
+      bodyTemplate: item.ar.body,
+      titleTemplateAr: item.ar.title,
+      bodyTemplateAr: item.ar.body,
+      titleTemplateEn: item.en.title,
+      bodyTemplateEn: item.en.body,
+    };
+    const [existing] = await db.select().from(notificationTemplates)
       .where(eq(notificationTemplates.eventType, item.eventType))
       .limit(1);
-    if (existing.length === 0) {
-      await db.insert(notificationTemplates).values({
-        name: item.name,
-        eventType: item.eventType,
-        titleTemplate: item.titleTemplate,
-        bodyTemplate: item.bodyTemplate,
-        titleTemplateAr: item.titleTemplateAr,
-        bodyTemplateAr: item.bodyTemplateAr,
-        titleTemplateEn: item.titleTemplateEn,
-        bodyTemplateEn: item.bodyTemplateEn,
-        isActive: true
-      });
-      console.log(`[Notification Engine] Seeded default template for: ${item.eventType}`);
+    if (!existing) {
+      await db.insert(notificationTemplates).values({ eventType: item.eventType, ...texts, isActive: true });
+      log.info({ event: "notifications.template.seeded", eventType: item.eventType }, "default template seeded");
+      continue;
+    }
+    const previous = PREVIOUS_DEFAULTS[item.eventType];
+    const storedTitle = existing.titleTemplateAr ?? existing.titleTemplate;
+    const storedBody = existing.bodyTemplateAr ?? existing.bodyTemplate;
+    if (previous && storedTitle === previous.title && storedBody === previous.body) {
+      await db.update(notificationTemplates).set(texts).where(eq(notificationTemplates.id, existing.id));
+      log.info({ event: "notifications.template.updated", eventType: item.eventType }, "default template text updated");
     }
   }
 }
@@ -756,7 +718,6 @@ export async function checkAndTriggerSmartActivityNotifications() {
         template,
         targets,
         (user) => ({ name: user.name || "المستخدم" }),
-        "/"
       );
     }
 
@@ -824,7 +785,6 @@ export async function checkAndTriggerSmartActivityNotifications() {
         template,
         targets,
         (user) => ({ currentStreak: String(user.currentStreak || 0) }),
-        "/pro"
       );
     }
 
@@ -893,7 +853,6 @@ export async function checkAndTriggerSmartActivityNotifications() {
         template,
         targets,
         (user) => ({ name: user.name || "المستخدم" }),
-        "/"
       );
     }
   } catch (error) {

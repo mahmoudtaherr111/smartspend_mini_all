@@ -78,6 +78,7 @@ import { getSmartProfile } from "./services/user-profile-service";
 import { loadAICostOverview } from "./services/ai-cost-analytics";
 import webpush from "web-push";
 import { sendPush, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
+import { notificationType } from "../contracts/notification-types";
 import { purgeUserData } from "./services/user-purge-service";
 import { asPlan, resolvePlanTokenLimit } from "./lib/ai-usage-policy";
 
@@ -1628,7 +1629,13 @@ export const adminRouter = router({
 
       await Promise.all(
         subsToNotify.map(async (sub) => {
-          const success = await sendPush(sub, input.title, input.body, "/");
+          const success = await sendPush(sub, {
+            title: input.title,
+            body: input.body,
+            actionUrl: notificationType("manual_scheduled").destination,
+            type: "manual_scheduled",
+            lang: "ar",
+          });
           if (success) {
             successCount++;
           } else {

@@ -858,6 +858,17 @@ export const profileRouter = router({
       return { success: true };
     }),
 
+  markAllInAppNotificationsRead: authedProcedure.mutation(async ({ ctx }) => {
+    await db.update(inAppNotifications)
+      .set({ isRead: true })
+      .where(and(
+        eq(inAppNotifications.userId, ctx.user.id as number),
+        eq(inAppNotifications.userType, ctx.user.type),
+        eq(inAppNotifications.isRead, false),
+      ));
+    return { success: true };
+  }),
+
   // ─── People Management (People Hub) ───
 
   listContacts: authedProcedure
