@@ -104,8 +104,10 @@ export const PROFILE_FIELDS: readonly ProfileField[] = [
       { value: "مهندسة", label: { ar: "مهندسة", en: "Engineer (f)" } },
       { value: "دكتور", label: { ar: "دكتور", en: "Doctor (m)" } },
       { value: "دكتورة", label: { ar: "دكتورة", en: "Doctor (f)" } },
-      { value: "محاسب", label: { ar: "محاسب", en: "Accountant" } },
-      { value: "مدرس", label: { ar: "مدرس", en: "Teacher" } },
+      { value: "محاسب", label: { ar: "محاسب", en: "Accountant (m)" } },
+      { value: "محاسبة", label: { ar: "محاسبة", en: "Accountant (f)" } },
+      { value: "مدرس", label: { ar: "مدرس", en: "Teacher (m)" } },
+      { value: "مدرسة", label: { ar: "مدرسة", en: "Teacher (f)" } },
     ],
   },
 ];

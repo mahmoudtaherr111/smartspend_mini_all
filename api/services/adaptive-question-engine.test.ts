@@ -38,6 +38,23 @@ describe("adaptive question engine", () => {
     );
   });
 
+  it("pairs masculine and feminine quick choices for work so voice calls use the right title", async () => {
+    const { honorificFor } = await import("./voice/brain/honorific");
+    const professionField = PROFILE_FIELDS.find((field) => field.key === "profession")!;
+    const values = professionField.quickChoices.map((choice) => String(choice.value));
+    expect(values).toEqual(["مهندس", "مهندسة", "دكتور", "دكتورة", "محاسب", "محاسبة", "مدرس", "مدرسة"]);
+    expect(values.map((v) => honorificFor(v))).toEqual([
+      "باشمهندس",
+      "باشمهندسة",
+      "دكتور",
+      "دكتورة",
+      "أستاذ",
+      "أستاذة",
+      "أستاذ",
+      "أستاذة",
+    ]);
+  });
+
   it("no longer asks a removed question, and keeps an old answer to one", () => {
     let current = profile();
     current = applyOnboardingAnswer(current, "smoking", true);
