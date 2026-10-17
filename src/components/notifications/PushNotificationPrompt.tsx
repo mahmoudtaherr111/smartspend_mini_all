@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { toast } from "sonner";
-import { BIOMETRIC_PROMPT_SHOWN_KEY } from "@/lib/biometricAuth";
+import { BIOMETRIC_PROMPT_SHOWN_KEY, SIGN_UP_SESSION_KEY } from "@/lib/biometricAuth";
 
 export function PushNotificationPrompt() {
   const { subscribeToPush } = usePushNotifications();
@@ -22,14 +23,16 @@ export function PushNotificationPrompt() {
 
       if (isCoolDownOver) {
         const timer = setTimeout(() => {
-          // One first-run prompt per session: not on top of, or right after, the fingerprint suggestion.
-          let biometricShown = false;
+          // Never in the sign-up session, and never on top of or right after the fingerprint suggestion.
+          let skipThisSession = false;
           try {
-            biometricShown = sessionStorage.getItem(BIOMETRIC_PROMPT_SHOWN_KEY) === "1";
+            skipThisSession =
+              sessionStorage.getItem(SIGN_UP_SESSION_KEY) === "1" ||
+              sessionStorage.getItem(BIOMETRIC_PROMPT_SHOWN_KEY) === "1";
           } catch {
             // Without session storage both may appear; nothing breaks.
           }
-          if (!biometricShown) setShowPushPrompt(true);
+          if (!skipThisSession) setShowPushPrompt(true);
         }, 8000);
         return () => clearTimeout(timer);
       }
@@ -40,10 +43,9 @@ export function PushNotificationPrompt() {
     setShowPushPrompt(false);
     try {
       await subscribeToPush();
-      toast.success("تم تفعيل التنبيهات الذكية بنجاح! 🔔");
     } catch (err) {
       console.error(err);
-      toast.error("حدث خطأ أثناء تفعيل التنبيهات.");
+      toast.error("ماقدرناش نفعّل الإشعارات. جرّب تاني.");
     }
   };
 
@@ -68,36 +70,29 @@ export function PushNotificationPrompt() {
       <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200 ease-out">
         <div className="flex flex-col items-center text-center space-y-2">
           <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-inner">
-            <span className="text-2xl">🔔</span>
+            <Bell className="w-6 h-6" aria-hidden="true" />
           </div>
           <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
-            فَعّل التنبيهات المالية الذكية
+            فعّل الإشعارات
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            تابع مصاريفك أسبوعياً، واحصل على نصائح تحليلات الذكاء الاصطناعي
-            لميزانيتك وتذكير يومي لتسجيل مصاريفك بصوتك.
+            هيوصلك تنبيه لما ميزانية تقرّب تخلص أو تعدّي الحد، وتذكيرات خطتك.
           </p>
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/40 text-xs text-slate-700 dark:text-slate-300">
-            <span className="text-base">🎯</span>
-            <div className="text-right">
-              <p className="font-bold text-xs">تذكير التسجيل اليومي</p>
-              <p className="text-[10px] text-slate-400">
-                تذكيرك في نهاية اليوم لتسجيل معاملاتك بصوتك في ثوانٍ.
-              </p>
-            </div>
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/40 text-xs text-slate-700 dark:text-slate-300 text-right">
+            <p className="font-bold text-xs">تنبيهات الميزانية</p>
+            <p className="text-[10px] text-slate-400">
+              بننبهك لما فئة تقرّب من حدها أو لما صرفك يعدّي دخلك المسجّل.
+            </p>
           </div>
 
-          <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/40 text-xs text-slate-700 dark:text-slate-300">
-            <span className="text-base">💡</span>
-            <div className="text-right">
-              <p className="font-bold text-xs">تحليلات وتنبيهات فورية</p>
-              <p className="text-[10px] text-slate-400">
-                تنبيه فوري عند تخطي ميزانية الفئات أو حدوث نمط صرف شاذ.
-              </p>
-            </div>
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/40 text-xs text-slate-700 dark:text-slate-300 text-right">
+            <p className="font-bold text-xs">تذكير بالتسجيل واشتراكك</p>
+            <p className="text-[10px] text-slate-400">
+              تذكير هادي لو نسيت تسجّل مصاريفك، وتنبيه قبل ما اشتراكك يخلص.
+            </p>
           </div>
         </div>
 
@@ -106,13 +101,13 @@ export function PushNotificationPrompt() {
             onClick={handleEnablePush}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600 rounded-xl py-2.5 font-bold text-xs shadow-md active-press"
           >
-            تفعيل التنبيهات الآن
+            فعّل الإشعارات
           </Button>
           <button
             onClick={handleDismissPush}
             className="w-full text-center py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
           >
-            ليس الآن، تذكيري لاحقاً
+            مش دلوقتي
           </button>
         </div>
       </div>
