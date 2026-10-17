@@ -142,7 +142,14 @@ export function ProfileScreen() {
                 {t("profile.edit.cancel")}
               </Button>
             </AdaptiveDialogClose>
-            <Button variant="destructive" className="h-11" onClick={() => navigate("/support")}>
+            <Button
+              variant="destructive"
+              className="h-11"
+              onClick={() => {
+                setDeleteOpen(false);
+                navigate("/support");
+              }}
+            >
               {t("profile.delete.confirm")}
             </Button>
           </AdaptiveDialogFooter>
