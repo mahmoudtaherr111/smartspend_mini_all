@@ -255,9 +255,9 @@ flowchart LR
 | `webauthn.checkHasPasskey` | query | `authedProcedure` | `user_credentials` | — | `App shell`, `More`, `Settings` |
 | `webauthn.deletePasskey` | mutation | `authedProcedure` | — | `user_credentials` | `More`, `Settings` |
 | `webauthn.generateAuthenticationOptions` | mutation | `strictPublicProcedure` | — | `auth_challenges` | `Login` |
-| `webauthn.generateRegistrationOptions` | mutation | `authedProcedure` | `local_users`, `user_credentials`, `users` | `auth_challenges` | `More`, `Settings` |
+| `webauthn.generateRegistrationOptions` | mutation | `authedProcedure` | `local_users`, `user_credentials`, `users` | `auth_challenges` | `App shell`, `More`, `Settings` |
 | `webauthn.verifyAuthentication` | mutation | `strictPublicProcedure` | `auth_challenges`, `user_credentials` | `auth_challenges`, `user_credentials` | `Login` |
-| `webauthn.verifyRegistration` | mutation | `authedProcedure` | `auth_challenges` | `auth_challenges`, `user_credentials` | `More`, `Settings` |
+| `webauthn.verifyRegistration` | mutation | `authedProcedure` | `auth_challenges` | `auth_challenges`, `user_credentials` | `App shell`, `More`, `Settings` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 

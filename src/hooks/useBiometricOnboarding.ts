@@ -1,149 +1,114 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { trpc } from "@/providers/trpc";
+import { usePasskeyEnrolment } from "@/hooks/usePasskeyEnrolment";
 import {
-  getBiometricLockEnabled,
   getUserStorageKey,
-  incrementBiometricPromptCount,
-  isBiometricPromptOptedOut,
   isPlatformAuthenticatorAvailable,
-  setBiometricPromptOptedOut,
-  setLastBiometricPromptTime,
-  shouldShowBiometricOnboarding,
+  readBiometricPromptRecord,
+  shouldShowBiometricPrompt,
+  SIGN_UP_SESSION_KEY,
+  BIOMETRIC_PROMPT_SHOWN_KEY,
+  writeLocalBiometricPromptRecord,
 } from "@/lib/biometricAuth";
 
+/** Lets Home finish drawing first, so the sheet arrives as part of opening the app, not over a task. */
+const OPEN_DELAY_MS = 1200;
+
+function sessionFlag(key: string): boolean {
+  try {
+    return window.sessionStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The suggestion to turn on fingerprint / Face ID sign-in: once, when the app opens on Home, never in the sign-up
+ * session, never when the device cannot or a passkey exists, 14 days apart, and never again after two "Not now".
+ */
 export function useBiometricOnboarding() {
   const { user } = useAuth();
+  const { pathname } = useLocation();
   const userKey = getUserStorageKey(user);
-  const [showModal, setShowModal] = useState(false);
-  const [isHardwareAvailable, setIsHardwareAvailable] = useState<
-    boolean | null
-  >(null);
+  const utils = trpc.useUtils();
+  const [open, setOpen] = useState(false);
+  const [hardware, setHardware] = useState<boolean | null>(null);
+  const { prefetch, enrol, isEnrolling } = usePasskeyEnrolment();
 
-  const { data: passkeyInfo } = trpc.webauthn.checkHasPasskey.useQuery(
-    undefined,
-    {
-      enabled: !!user,
-      staleTime: 60000,
-    },
-  );
-  const { data: smartProfile } = trpc.profile.getSmartProfile.useQuery(
-    undefined,
-    {
-      enabled: !!user,
-      staleTime: 60000,
-    },
-  );
+  const { data: passkeyInfo } = trpc.webauthn.checkHasPasskey.useQuery(undefined, {
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+  const { data: profile } = trpc.profile.getSmartProfile.useQuery(undefined, {
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+  const savePreferences = trpc.profile.updateSmartProfile.useMutation({
+    onSuccess: () => utils.profile.getSmartProfile.invalidate(),
+  });
 
-  const sendNotificationMutation =
-    trpc.profile.sendBiometricPromptNotification.useMutation();
-
-  const sessionStartTime = useRef<number>(Date.now());
-  const activeDurationMs = useRef<number>(0);
-  const hasTriggeredPromptThisSession = useRef<boolean>(false);
-
-  // 1. Silent hardware capability detection in background
   useEffect(() => {
-    let isMounted = true;
-    void isPlatformAuthenticatorAvailable().then((available) => {
-      if (isMounted) {
-        setIsHardwareAvailable(available);
-      }
-    });
+    let alive = true;
+    void isPlatformAuthenticatorAvailable().then((available) => alive && setHardware(available));
     return () => {
-      isMounted = false;
+      alive = false;
     };
   }, []);
 
-  const hasBiometrics =
-    !!passkeyInfo?.hasPasskey ||
-    (typeof window !== "undefined" &&
-      (window.localStorage.getItem(`smartspend_has_passkey_${userKey}`) ===
-        "1" ||
-        getBiometricLockEnabled(userKey) ||
-        (userKey === "anonymous" &&
-          window.localStorage.getItem("smartspend_has_passkey") === "1")));
+  const record = readBiometricPromptRecord(profile?.preferences as Record<string, unknown> | undefined, userKey);
 
-  const sendNotificationRef = useRef(sendNotificationMutation.mutate);
+  const remember = useCallback(
+    (next: typeof record) => {
+      writeLocalBiometricPromptRecord(userKey, next);
+      savePreferences.mutate({
+        preferences: {
+          biometricPromptDismissals: next.dismissals,
+          biometricPromptLastShownAt: next.lastShownAt ? new Date(next.lastShownAt).toISOString() : null,
+        },
+      });
+    },
+    [savePreferences, userKey],
+  );
+
+  const ready = Boolean(user) && pathname === "/dashboard" && hardware !== null && passkeyInfo !== undefined && profile !== undefined;
+  const show =
+    ready &&
+    !open &&
+    shouldShowBiometricPrompt({
+      isHardwareAvailable: hardware === true,
+      hasPasskey: Boolean(passkeyInfo?.hasPasskey),
+      record,
+      isSignUpSession: sessionFlag(SIGN_UP_SESSION_KEY),
+      shownThisSession: sessionFlag(BIOMETRIC_PROMPT_SHOWN_KEY),
+    });
+
   useEffect(() => {
-    sendNotificationRef.current = sendNotificationMutation.mutate;
-  });
-
-  // Reset session duration and trigger status when user switches accounts
-  useEffect(() => {
-    sessionStartTime.current = Date.now();
-    activeDurationMs.current = 0;
-    hasTriggeredPromptThisSession.current = false;
-  }, [userKey]);
-
-  // 2. Active session tracker & 5-minute threshold trigger
-  useEffect(() => {
-    if (
-      !user ||
-      smartProfile?.profileCompleted !== true ||
-      isHardwareAvailable !== true ||
-      hasBiometrics
-    )
-      return;
-    if (isBiometricPromptOptedOut(userKey)) return;
-
-    sessionStartTime.current = Date.now();
-
-    const interval = setInterval(() => {
-      if (document.visibilityState === "visible") {
-        activeDurationMs.current += 1000;
+    if (!show) return;
+    const timer = window.setTimeout(() => {
+      try {
+        window.sessionStorage.setItem(BIOMETRIC_PROMPT_SHOWN_KEY, "1");
+      } catch {
+        // Without session storage the 14-day pause still holds.
       }
+      prefetch();
+      setOpen(true);
+      remember({ ...record, lastShownAt: Date.now() });
+    }, OPEN_DELAY_MS);
+    return () => window.clearTimeout(timer);
+    // record is derived from profile; re-running on it would reschedule after our own save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show]);
 
-      if (
-        !hasTriggeredPromptThisSession.current &&
-        shouldShowBiometricOnboarding({
-          userKey,
-          sessionDurationMs: activeDurationMs.current,
-          isHardwareAvailable: true,
-          hasBiometricsOrPasskey: hasBiometrics,
-        })
-      ) {
-        hasTriggeredPromptThisSession.current = true;
-        setShowModal(true);
+  const notNow = useCallback(() => {
+    setOpen(false);
+    remember({ ...record, dismissals: record.dismissals + 1 });
+  }, [record, remember]);
 
-        // Record prompt frequency metrics
-        incrementBiometricPromptCount(userKey);
-        setLastBiometricPromptTime(userKey, Date.now());
+  const turnOn = useCallback(async () => {
+    if (await enrol()) setOpen(false);
+  }, [enrol]);
 
-        // Dispatch in-app notification via tRPC
-        sendNotificationRef.current();
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [
-    user,
-    userKey,
-    smartProfile?.profileCompleted,
-    isHardwareAvailable,
-    hasBiometrics,
-  ]);
-
-  const postponePrompt = useCallback(() => {
-    setShowModal(false);
-    setLastBiometricPromptTime(userKey, Date.now());
-  }, [userKey]);
-
-  const optOutPermanently = useCallback(() => {
-    setShowModal(false);
-    setBiometricPromptOptedOut(userKey, true);
-  }, [userKey]);
-
-  const closeModal = useCallback(() => {
-    setShowModal(false);
-  }, []);
-
-  return {
-    showModal,
-    isHardwareAvailable,
-    hasBiometrics,
-    closeModal,
-    postponePrompt,
-    optOutPermanently,
-  };
+  return { open, notNow, turnOn, isEnrolling };
 }

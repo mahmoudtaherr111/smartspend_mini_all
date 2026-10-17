@@ -12,12 +12,6 @@ export interface BiometricAuthResult {
 }
 
 export const BIOMETRIC_CONSTANTS = {
-  /** First onboarding prompt triggers after exactly 5 minutes of active session */
-  INITIAL_SESSION_DELAY_MS: 5 * 60 * 1000,
-  /** 10 days cooldown between subsequent onboarding prompts */
-  COOLDOWN_MS: 10 * 24 * 60 * 60 * 1000,
-  /** Maximum 3 onboarding prompts lifetime per device/user */
-  MAX_PROMPTS: 3,
   /** Default grace period on tab switch / background: 30 seconds */
   DEFAULT_GRACE_PERIOD_MS: 30 * 1000,
   /** Safety timeout for biometric verification: 12 seconds */
@@ -63,13 +57,9 @@ export function getBiometricLockEnabled(userKey: string): boolean {
 
     const explicitlyEnabled =
       window.localStorage.getItem(`smartspend_biometric_lock_enabled_${userKey}`) === "1";
-    if (explicitlyEnabled) return true;
-
-    // Auto-enable app lock whenever user has registered passkey on this device
-    const hasPasskey =
-      window.localStorage.getItem(`smartspend_has_passkey_${userKey}`) === "1" ||
-      window.localStorage.getItem("smartspend_has_passkey") === "1";
-    return hasPasskey;
+    // Only the user's own choice turns the lock on. A passkey used to turn it on too, with no PIN to fall back on,
+    // so a failed fingerprint left signing out as the only way in.
+    return explicitlyEnabled;
   } catch {
     return false;
   }
@@ -313,117 +303,88 @@ export function setLastActiveTimestamp(ts: number, userKey: string = "default"):
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Onboarding & Frequency Capping Storage
+// The suggestion to turn on fingerprint / Face ID sign-in
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function getBiometricPromptCount(userKey: string): number {
-  if (typeof window === "undefined" || !window.localStorage) return 0;
-  try {
-    const raw = window.localStorage.getItem(`smartspend_biometric_prompt_count_${userKey}`);
-    if (raw) {
-      const parsed = parseInt(raw, 10);
-      if (!isNaN(parsed)) return parsed;
-    }
-  } catch {}
-  return 0;
-}
-
-export function incrementBiometricPromptCount(userKey: string): number {
-  const current = getBiometricPromptCount(userKey);
-  const next = current + 1;
-  if (typeof window !== "undefined" && window.localStorage) {
-    try {
-      window.localStorage.setItem(`smartspend_biometric_prompt_count_${userKey}`, next.toString());
-    } catch {}
-  }
-  return next;
-}
-
-export function getLastBiometricPromptTime(userKey: string): number | null {
-  if (typeof window === "undefined" || !window.localStorage) return null;
-  try {
-    const raw = window.localStorage.getItem(`smartspend_biometric_last_prompt_time_${userKey}`);
-    if (raw) {
-      const parsed = parseInt(raw, 10);
-      if (!isNaN(parsed)) return parsed;
-    }
-  } catch {}
-  return null;
-}
-
-export function setLastBiometricPromptTime(userKey: string, ts: number): void {
-  if (typeof window === "undefined" || !window.localStorage) return;
-  try {
-    window.localStorage.setItem(
-      `smartspend_biometric_last_prompt_time_${userKey}`,
-      ts.toString(),
-    );
-  } catch {}
-}
-
-export function isBiometricPromptOptedOut(userKey: string): boolean {
-  if (typeof window === "undefined" || !window.localStorage) return false;
-  try {
-    return (
-      window.localStorage.getItem(`smartspend_biometric_prompt_opted_out_${userKey}`) === "1"
-    );
-  } catch {
-    return false;
-  }
-}
-
-export function setBiometricPromptOptedOut(userKey: string, optedOut: boolean): void {
-  if (typeof window === "undefined" || !window.localStorage) return;
-  try {
-    if (optedOut) {
-      window.localStorage.setItem(`smartspend_biometric_prompt_opted_out_${userKey}`, "1");
-    } else {
-      window.localStorage.removeItem(`smartspend_biometric_prompt_opted_out_${userKey}`);
-    }
-  } catch {}
-}
-
-export interface ShouldShowOnboardingParams {
-  userKey: string;
-  sessionDurationMs: number;
-  isHardwareAvailable: boolean;
-  hasBiometricsOrPasskey: boolean;
-}
-
 /**
- * Pure evaluation of whether the biometric onboarding modal/prompt should be displayed.
+ * How often the sign-in suggestion may appear. The record lives in the user's profile preferences, so a new phone or
+ * a cleared browser does not start over; this device keeps a copy only to decide before the profile has loaded.
  */
-export function shouldShowBiometricOnboarding({
-  userKey,
-  sessionDurationMs,
-  isHardwareAvailable,
-  hasBiometricsOrPasskey,
-}: ShouldShowOnboardingParams): boolean {
-  // 1. Must have hardware biometrics (Face ID / Fingerprint)
-  if (!isHardwareAvailable) return false;
+export const BIOMETRIC_PROMPT = {
+  /** After this many "Not now" taps it never appears again (Settings › Security still offers it). */
+  MAX_DISMISSALS: 2,
+  /** Days between two appearances. */
+  COOLDOWN_MS: 14 * 24 * 60 * 60 * 1000,
+} as const;
 
-  // 2. Must not already have enrolled biometrics / passkey
-  if (hasBiometricsOrPasskey) return false;
+/** Set by the sign-up form: the tab where the account was created never gets the suggestion. */
+export const SIGN_UP_SESSION_KEY = "smartspend_signup_session";
+/** Set for the session once the suggestion appeared; other first-run prompts (push permission) wait for another session. */
+export const BIOMETRIC_PROMPT_SHOWN_KEY = "smartspend_biometric_prompt_shown";
 
-  // 3. Must not have opted out permanently
-  if (isBiometricPromptOptedOut(userKey)) return false;
+export interface BiometricPromptRecord {
+  dismissals: number;
+  lastShownAt: number | null;
+}
 
-  // 4. Hard frequency cap: maximum 3 suggestions lifetime
-  const promptCount = getBiometricPromptCount(userKey);
-  if (promptCount >= BIOMETRIC_CONSTANTS.MAX_PROMPTS) return false;
+function localPromptKey(userKey: string): string {
+  return `smartspend_biometric_prompt_${userKey}`;
+}
 
-  // 5. Must have completed active initial session threshold (5 minutes)
-  if (sessionDurationMs < BIOMETRIC_CONSTANTS.INITIAL_SESSION_DELAY_MS) return false;
-
-  // 6. Cooldown enforcement: 10-12 days between subsequent suggestions
-  const lastPromptTime = getLastBiometricPromptTime(userKey);
-  if (lastPromptTime !== null) {
-    const elapsedSinceLastPrompt = Date.now() - lastPromptTime;
-    if (elapsedSinceLastPrompt < BIOMETRIC_CONSTANTS.COOLDOWN_MS) {
-      return false;
-    }
+/** The record from the profile preferences and this device's copy, whichever has seen more. */
+export function readBiometricPromptRecord(
+  preferences: Record<string, unknown> | null | undefined,
+  userKey: string,
+): BiometricPromptRecord {
+  const server: BiometricPromptRecord = {
+    dismissals: Number(preferences?.biometricPromptDismissals) || 0,
+    lastShownAt: Date.parse(String(preferences?.biometricPromptLastShownAt ?? "")) || null,
+  };
+  let local: BiometricPromptRecord = { dismissals: 0, lastShownAt: null };
+  try {
+    const raw = window.localStorage?.getItem(localPromptKey(userKey));
+    if (raw) local = { ...local, ...(JSON.parse(raw) as Partial<BiometricPromptRecord>) };
+  } catch {
+    // No storage: the profile's record alone decides.
   }
+  return {
+    dismissals: Math.max(server.dismissals, Number(local.dismissals) || 0),
+    lastShownAt: Math.max(server.lastShownAt ?? 0, Number(local.lastShownAt) || 0) || null,
+  };
+}
 
+export function writeLocalBiometricPromptRecord(userKey: string, record: BiometricPromptRecord): void {
+  try {
+    window.localStorage?.setItem(localPromptKey(userKey), JSON.stringify(record));
+  } catch {
+    // The profile's copy is enough.
+  }
+}
+
+export interface ShouldShowBiometricPromptParams {
+  isHardwareAvailable: boolean;
+  hasPasskey: boolean;
+  record: BiometricPromptRecord;
+  /** The tab where the account was just created: the first visit is never interrupted. */
+  isSignUpSession: boolean;
+  /** Already shown since the app was opened. */
+  shownThisSession: boolean;
+  now?: number;
+}
+
+/** Whether to offer fingerprint / Face ID sign-in now. Pure, so the rules are tested on their own. */
+export function shouldShowBiometricPrompt({
+  isHardwareAvailable,
+  hasPasskey,
+  record,
+  isSignUpSession,
+  shownThisSession,
+  now = Date.now(),
+}: ShouldShowBiometricPromptParams): boolean {
+  if (!isHardwareAvailable || hasPasskey) return false;
+  if (isSignUpSession || shownThisSession) return false;
+  if (record.dismissals >= BIOMETRIC_PROMPT.MAX_DISMISSALS) return false;
+  if (record.lastShownAt !== null && now - record.lastShownAt < BIOMETRIC_PROMPT.COOLDOWN_MS) return false;
   return true;
 }
 

@@ -795,20 +795,6 @@
       "count": 1
     }
   },
-  "src/components/OnboardingCard.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 6
-    },
-    "no-empty": {
-      "count": 6
-    },
-    "react-hooks/refs": {
-      "count": 3
-    }
-  },
   "src/components/Sidebar.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
@@ -1059,25 +1045,6 @@
       "count": 2
     }
   },
-  "src/components/profile/SmartProfileSettings.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 6
-    },
-    "react-hooks/preserve-manual-memoization": {
-      "count": 1
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 2
-    }
-  },
-  "src/components/profile/SmartProfileView.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 4
-    }
-  },
   "src/components/pwa/PullToRefreshWrapper.tsx": {
     "react-refresh/only-export-components": {
       "count": 2
@@ -1205,11 +1172,6 @@
       "count": 1
     }
   },
-  "src/hooks/useBiometricOnboarding.ts": {
-    "react-hooks/purity": {
-      "count": 1
-    }
-  },
   "src/hooks/useHaptics.ts": {
     "no-empty": {
       "count": 19
@@ -1258,7 +1220,7 @@
       "count": 10
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 4
+      "count": 1
     }
   },
   "src/lib/biometricAuth.ts": {
@@ -1266,7 +1228,7 @@
       "count": 1
     },
     "no-empty": {
-      "count": 16
+      "count": 11
     }
   },
   "src/lib/transactionDisplay.ts": {
@@ -1329,9 +1291,6 @@
       "count": 3
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 7
-    },
-    "react-hooks/static-components": {
       "count": 4
     }
   },

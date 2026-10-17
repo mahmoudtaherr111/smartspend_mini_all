@@ -126,63 +126,38 @@ describe("Biometric UI Components", () => {
     it("does not render when isOpen is false", () => {
       render(
         <BrowserRouter>
-          <BiometricOnboardingModal
-            isOpen={false}
-            onClose={vi.fn()}
-            onPostpone={vi.fn()}
-            onOptOut={vi.fn()}
-          />
+          <BiometricOnboardingModal isOpen={false} isEnrolling={false} onTurnOn={vi.fn()} onNotNow={vi.fn()} />
         </BrowserRouter>,
       );
 
-      expect(screen.queryByTestId("biometric-onboarding-modal")).toBeNull();
+      expect(screen.queryByTestId("biometric-prompt")).toBeNull();
     });
 
-    it("renders modal content and triggers 1-click navigation to settings tab=passkeys", () => {
-      const onClose = vi.fn();
+    it("enrols from the sheet itself instead of sending the user to Settings", () => {
+      const onTurnOn = vi.fn();
       render(
         <BrowserRouter>
-          <BiometricOnboardingModal
-            isOpen={true}
-            onClose={onClose}
-            onPostpone={vi.fn()}
-            onOptOut={vi.fn()}
-          />
+          <BiometricOnboardingModal isOpen={true} isEnrolling={false} onTurnOn={onTurnOn} onNotNow={vi.fn()} />
         </BrowserRouter>,
       );
 
-      expect(screen.getByTestId("biometric-onboarding-modal")).toBeDefined();
-      expect(screen.getByText("تفعيل الدخول بالبصمة (Face ID)")).toBeDefined();
-
-      const activateBtn = screen.getByText("تفعيل الآن بلمسة واحدة");
-      fireEvent.click(activateBtn);
-
-      expect(onClose).toHaveBeenCalledTimes(1);
-      expect(mockNavigate).toHaveBeenCalledWith("/settings/security?highlight=1");
+      expect(screen.getByTestId("biometric-prompt")).toBeDefined();
+      fireEvent.click(screen.getByRole("button", { name: /فعّل/ }));
+      expect(onTurnOn).toHaveBeenCalledTimes(1);
+      expect(mockNavigate).not.toHaveBeenCalled();
     });
 
-    it("triggers postpone and opt-out handlers properly", () => {
-      const onPostpone = vi.fn();
-      const onOptOut = vi.fn();
-
+    it("has one quiet way out", () => {
+      const onNotNow = vi.fn();
       render(
         <BrowserRouter>
-          <BiometricOnboardingModal
-            isOpen={true}
-            onClose={vi.fn()}
-            onPostpone={onPostpone}
-            onOptOut={onOptOut}
-          />
+          <BiometricOnboardingModal isOpen={true} isEnrolling={false} onTurnOn={vi.fn()} onNotNow={onNotNow} />
         </BrowserRouter>,
       );
 
-      const postponeBtn = screen.getByText("تذكيري لاحقاً");
-      fireEvent.click(postponeBtn);
-      expect(onPostpone).toHaveBeenCalledTimes(1);
-
-      const optOutBtn = screen.getByText("عدم التذكير مجدداً");
-      fireEvent.click(optOutBtn);
-      expect(onOptOut).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole("button", { name: "مش دلوقتي" }));
+      expect(onNotNow).toHaveBeenCalledTimes(1);
+      expect(screen.queryByText("عدم التذكير مجدداً")).toBeNull();
     });
   });
 
@@ -197,10 +172,7 @@ describe("Biometric UI Components", () => {
         </BrowserRouter>,
       );
 
-      expect(screen.getByText("تفعيل الدخول بالبصمة الآن")).toBeDefined();
-
-      // Click "تفعيل الدخول بالبصمة الآن"
-      const activateBtn = screen.getByText("تفعيل الدخول بالبصمة الآن");
+      const activateBtn = screen.getByText("فعّل الدخول بالبصمة");
       await act(async () => {
         fireEvent.click(activateBtn);
       });

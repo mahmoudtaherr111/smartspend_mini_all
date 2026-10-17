@@ -129,6 +129,14 @@ export function normalizeProfileFieldValue(field: ProfileField, raw: unknown): P
   return value >= field.min && value <= field.max ? value : null;
 }
 
+/** Whether a value can be saved for the field. */
+export function isValidProfileFieldValue(
+  field: ProfileField,
+  value: ProfileFieldValue | undefined,
+): value is ProfileFieldValue {
+  return value !== undefined && normalizeProfileFieldValue(field, value) !== null;
+}
+
 /** The stored value of a field in a smart profile, or undefined when the user never gave it. */
 export function profileFieldValue(
   profile: { financialInfo?: Record<string, unknown> | null; basicInfo?: Record<string, unknown> | null } | null | undefined,

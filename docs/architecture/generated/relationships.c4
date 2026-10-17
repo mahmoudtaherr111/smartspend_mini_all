@@ -1064,8 +1064,6 @@ model {
   smartspend.api.trpc.profile.requestPhoneChange -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.trpc.profile.savePushSubscription -[reads]-> smartspend.mysql.push_subscriptions
   smartspend.api.trpc.profile.savePushSubscription -[writes]-> smartspend.mysql.push_subscriptions
-  smartspend.api.trpc.profile.sendBiometricPromptNotification -[reads]-> smartspend.mysql.in_app_notifications
-  smartspend.api.trpc.profile.sendBiometricPromptNotification -[writes]-> smartspend.mysql.in_app_notifications
   smartspend.api.trpc.profile.submitOnboardingAnswer -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.profile.updateContact -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.updateContact -[uses]-> smartspend.api.modules.classification
@@ -1579,8 +1577,10 @@ model {
   smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.getInAppNotifications
   smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.getSmartProfile
   smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.markInAppNotificationRead
-  smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.sendBiometricPromptNotification
+  smartspend.web.shell -[calls]-> smartspend.api.trpc.profile.updateSmartProfile
   smartspend.web.shell -[calls]-> smartspend.api.trpc.voice.eligibility
   smartspend.web.shell -[calls]-> smartspend.api.trpc.voice.listCalls
   smartspend.web.shell -[calls]-> smartspend.api.trpc.webauthn.checkHasPasskey
+  smartspend.web.shell -[calls]-> smartspend.api.trpc.webauthn.generateRegistrationOptions
+  smartspend.web.shell -[calls]-> smartspend.api.trpc.webauthn.verifyRegistration
 }

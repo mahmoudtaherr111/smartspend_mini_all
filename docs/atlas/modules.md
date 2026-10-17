@@ -50,7 +50,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-account` | Account UI | 12 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shared`, `web-shell` | `turnstile` |
 | `web-growth` | Ads and SEO UI | 2 | `web-hooks`, `web-shell` | `web-pages`, `web-shell` | — |
 | `web-shared` | Shared web components | 5 | `contracts`, `web-account`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
-| `web-hooks` | Web hooks | 20 | `web-lib`, `web-shell` | `web-account`, `web-ai`, `web-capture`, `web-finance`, `web-growth`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor`, `firebase` |
+| `web-hooks` | Web hooks | 21 | `web-lib`, `web-shell` | `web-account`, `web-ai`, `web-capture`, `web-finance`, `web-growth`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor`, `firebase` |
 | `web-lib` | Web utilities | 10 | `contracts` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-hooks`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor` |
 
 ## External systems
@@ -788,12 +788,12 @@ Biometric lock and passkeys, the smart profile, business and people settings, an
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `src/components/auth/BiometricLockOverlay.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/auth/BiometricOnboardingModal.tsx` | `web-hooks`, `web-ui-kit` | — | — | — |
+| `src/components/auth/BiometricOnboardingModal.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/auth/PasskeySettings.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/auth/SignOutDialog.tsx` | `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/auth/TurnstileWidget.tsx` | `web-lib` | `turnstile` | — | — |
-| `src/components/notifications/PushNotificationPrompt.tsx` | `web-hooks`, `web-ui-kit` | — | — | — |
-| `src/components/profile/ProfileFieldInput.tsx` | `contracts`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/notifications/PushNotificationPrompt.tsx` | `web-hooks`, `web-lib`, `web-ui-kit` | — | — | — |
+| `src/components/profile/ProfileFieldInput.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/profile/ProfileScreen.tsx` | `contracts`, `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/profile/UserAvatar.tsx` | `web-lib` | — | — | — |
 | `src/components/settings/BusinessSettingsView.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
@@ -839,6 +839,7 @@ React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycl
 | `src/hooks/useLaunchNavigation.ts` | `web-shell` | — | — | — |
 | `src/hooks/useMediaQuery.ts` | — | — | — | — |
 | `src/hooks/useNativeThemeSync.ts` | — | `capacitor` | — | — |
+| `src/hooks/usePasskeyEnrolment.ts` | `web-lib`, `web-shell` | — | — | — |
 | `src/hooks/usePro.ts` | `web-shell` | — | — | — |
 | `src/hooks/usePushNotifications.ts` | `web-shell` | `firebase` | — | — |
 | `src/hooks/usePwaLifecycle.ts` | — | — | — | — |

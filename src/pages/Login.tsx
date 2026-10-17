@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/providers/trpc";
+import { SIGN_UP_SESSION_KEY } from "@/lib/biometricAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -114,6 +115,12 @@ export default function Login() {
   const registerMutation = trpc.localAuth.register.useMutation({
     onSuccess: (data) => {
       localStorage.setItem("local_auth_token", data.token);
+      try {
+        // The first visit after creating an account is never interrupted by the fingerprint suggestion.
+        sessionStorage.setItem(SIGN_UP_SESSION_KEY, "1");
+      } catch {
+        // Without session storage the suggestion can appear on the first visit; nothing else changes.
+      }
       toast.success("تم إنشاء الحساب بنجاح! 🎉");
       window.location.href = "/dashboard";
     },

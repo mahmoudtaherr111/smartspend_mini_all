@@ -1820,7 +1820,7 @@ model {
       }
     }
     profile = router 'profile' {
-      description 'api/profile-router.ts — 28 procedures.'
+      description 'api/profile-router.ts — 27 procedures.'
       metadata {
         file 'api/profile-router.ts'
       }
@@ -2035,16 +2035,6 @@ model {
         }
       }
       savePushSubscription = procedure 'profile.savePushSubscription' {
-        #mutation #authed
-        technology 'authedProcedure'
-        description 'mutation · authedProcedure'
-        metadata {
-          file 'api/profile-router.ts'
-          builder 'authedProcedure'
-          procedureKind 'mutation'
-        }
-      }
-      sendBiometricPromptNotification = procedure 'profile.sendBiometricPromptNotification' {
         #mutation #authed
         technology 'authedProcedure'
         description 'mutation · authedProcedure'

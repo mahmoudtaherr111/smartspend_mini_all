@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { toast } from "sonner";
+import { BIOMETRIC_PROMPT_SHOWN_KEY } from "@/lib/biometricAuth";
 
 export function PushNotificationPrompt() {
   const { subscribeToPush } = usePushNotifications();
@@ -21,7 +22,14 @@ export function PushNotificationPrompt() {
 
       if (isCoolDownOver) {
         const timer = setTimeout(() => {
-          setShowPushPrompt(true);
+          // One first-run prompt per session: not on top of, or right after, the fingerprint suggestion.
+          let biometricShown = false;
+          try {
+            biometricShown = sessionStorage.getItem(BIOMETRIC_PROMPT_SHOWN_KEY) === "1";
+          } catch {
+            // Without session storage both may appear; nothing breaks.
+          }
+          if (!biometricShown) setShowPushPrompt(true);
         }, 8000);
         return () => clearTimeout(timer);
       }

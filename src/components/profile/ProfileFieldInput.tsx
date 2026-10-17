@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/i18n/context";
 import {
-  normalizeProfileFieldValue,
   type ProfileField,
   type ProfileFieldValue,
 } from "@contracts/profile-fields";
@@ -83,10 +82,3 @@ export function ProfileFieldInput({ field, value, onChange, autoFocus }: Profile
   );
 }
 
-/** Whether a value can be saved for the field. */
-export function isValidProfileFieldValue(
-  field: ProfileField,
-  value: ProfileFieldValue | undefined,
-): value is ProfileFieldValue {
-  return value !== undefined && normalizeProfileFieldValue(field, value) !== null;
-}

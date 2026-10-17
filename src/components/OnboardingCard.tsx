@@ -1,12 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/i18n/context";
-import { PROFILE_FIELDS, normalizeProfileFieldValue, profileField, type ProfileFieldValue } from "@contracts/profile-fields";
-import { ProfileFieldInput, isValidProfileFieldValue } from "@/components/profile/ProfileFieldInput";
+import {
+  PROFILE_FIELDS,
+  isValidProfileFieldValue,
+  normalizeProfileFieldValue,
+  profileField,
+  type ProfileFieldValue,
+} from "@contracts/profile-fields";
+import { ProfileFieldInput } from "@/components/profile/ProfileFieldInput";
 
 /** "Not now" hides the card on this device for a week; the server pause (a day) covers other devices and calls. */
 const LOCAL_PAUSE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -34,7 +40,9 @@ export function OnboardingCard({ hasActivity }: OnboardingCardProps) {
       return false;
     }
   });
-  const [value, setValue] = useState<ProfileFieldValue | undefined>(undefined);
+  // The answer being typed, kept with its question so a new question starts empty.
+  const [answer, setAnswer] = useState<{ key: string; value: ProfileFieldValue | undefined } | null>(null);
+  const [openedAt] = useState(() => Date.now());
 
   const next = trpc.profile.getNextOnboardingQuestion.useQuery(undefined, {
     enabled: hasActivity && !pausedLocally,
@@ -42,7 +50,7 @@ export function OnboardingCard({ hasActivity }: OnboardingCardProps) {
   });
   const field = next.data?.question ? profileField(next.data.question.key) : undefined;
 
-  useEffect(() => setValue(undefined), [field?.key]);
+  const value = answer && answer.key === field?.key ? answer.value : undefined;
 
   const submit = trpc.profile.submitOnboardingAnswer.useMutation({
     onSuccess: (data) => {
@@ -55,7 +63,7 @@ export function OnboardingCard({ hasActivity }: OnboardingCardProps) {
   const dismiss = trpc.profile.dismissOnboarding.useMutation();
 
   const lastAskedAt = next.data?.lastAskedAt ? new Date(next.data.lastAskedAt).getTime() : 0;
-  const pausedOnServer = Date.now() - lastAskedAt < SERVER_PAUSE_MS;
+  const pausedOnServer = openedAt - lastAskedAt < SERVER_PAUSE_MS;
   if (!hasActivity || pausedLocally || pausedOnServer || !field) return null;
 
   const step = PROFILE_FIELDS.findIndex((item) => item.key === field.key) + 1;
@@ -96,7 +104,7 @@ export function OnboardingCard({ hasActivity }: OnboardingCardProps) {
       <p className="mt-1 text-sm text-muted-foreground">{field.why[language]}</p>
 
       <div className="mt-4">
-        <ProfileFieldInput field={field} value={value} onChange={setValue} />
+        <ProfileFieldInput field={field} value={value} onChange={(next) => setAnswer({ key: field.key, value: next })} />
       </div>
 
       <div className="mt-4 flex items-center gap-2">

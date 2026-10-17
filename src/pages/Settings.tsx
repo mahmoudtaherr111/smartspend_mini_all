@@ -1,9 +1,7 @@
-import { useState } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { trpc } from "../providers/trpc";
 import { SEOMeta } from "../components/seo/SEOMeta";
 import { useTheme } from "next-themes";
-import { toast } from "sonner";
 import { ProfileScreen } from "@/components/profile/ProfileScreen";
 import { PasskeySettings } from "@/components/auth/PasskeySettings";
 import { PeopleSettingsView } from "@/components/settings/PeopleSettingsView";
@@ -21,12 +19,9 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import {
-  User,
-  Bell,
   BellRing,
   ArrowRight,
   ArrowLeft,
-  Fingerprint,
   Moon,
   Sun,
   Monitor,
@@ -83,6 +78,26 @@ function resolveSettingsView(
   return "main";
 }
 
+/** The title and back button of a settings sub-page. */
+function SubViewHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  const { dir, t } = useLanguage();
+  const BackArrow = dir === "rtl" ? ArrowRight : ArrowLeft;
+  return (
+    <div className="flex items-center gap-3 mb-6">
+      <button
+        onClick={onBack}
+        className="tap-target active-press flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors shadow-sm"
+        aria-label={t("common.back")}
+      >
+        <BackArrow className="w-5 h-5" />
+      </button>
+      <div>
+        <h1 className="text-2xl font-black text-slate-900 dark:text-white">{title}</h1>
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
@@ -134,30 +149,6 @@ export default function Settings() {
       },
     }),
   };
-
-  // Reusable header for sub-views
-  const SubViewHeader = ({
-    title,
-    onBack,
-  }: {
-    title: string;
-    onBack: () => void;
-  }) => (
-    <div className="flex items-center gap-3 mb-6">
-      <button
-        onClick={onBack}
-        className="tap-target active-press flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors shadow-sm"
-        aria-label={t("common.back")}
-      >
-        <BackArrow className="w-5 h-5" />
-      </button>
-      <div>
-        <h1 className="text-2xl font-black text-slate-900 dark:text-white">
-          {title}
-        </h1>
-      </div>
-    </div>
-  );
 
   return (
     <div

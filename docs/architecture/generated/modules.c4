@@ -264,7 +264,7 @@ model {
     web-hooks = module 'Web hooks' {
       description 'React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics.'
       metadata {
-        files '20'
+        files '21'
         paths 'src/hooks/**'
       }
     }

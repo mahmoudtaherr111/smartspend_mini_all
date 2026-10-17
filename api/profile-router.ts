@@ -16,7 +16,7 @@ import {
   userContacts,
   scheduledCashflows,
 } from "../db/schema";
-import { eq, and, gte, lte, desc, sql, isNotNull, like } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql, isNotNull } from "drizzle-orm";
 
 import { randomBytes, randomInt } from "crypto";
 import {
@@ -855,30 +855,6 @@ export const profileRouter = router({
           eq(inAppNotifications.userId, ctx.user.id as number),
           eq(inAppNotifications.userType, ctx.user.type)
         ));
-      return { success: true };
-    }),
-
-  sendBiometricPromptNotification: authedProcedure
-    .mutation(async ({ ctx }) => {
-      const existing = await db.select()
-        .from(inAppNotifications)
-        .where(and(
-          eq(inAppNotifications.userId, ctx.user.id as number),
-          eq(inAppNotifications.userType, ctx.user.type),
-          sql`(${like(inAppNotifications.actionUrl, "%passkeys%")} OR ${like(inAppNotifications.actionUrl, "%security%")})`
-        ))
-        .limit(1);
-
-      if (existing.length === 0) {
-        await db.insert(inAppNotifications).values({
-          userId: ctx.user.id as number,
-          userType: ctx.user.type,
-          title: "تفعيل الدخول بالبصمة",
-          body: "احمِ حسابك وسجّل دخولك بلمسة واحدة ببصمة الإصبع أو الوجه دون الحاجة لكتابة كلمة المرور كل مرة.",
-          actionUrl: "/settings/security?highlight=1",
-          isRead: false,
-        });
-      }
       return { success: true };
     }),
 

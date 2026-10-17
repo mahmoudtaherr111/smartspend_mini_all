@@ -86,7 +86,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `web-growth` — Ads and SEO UI | The ad banner and SEO meta tags. | 2 |
-| `web-hooks` — Web hooks | React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics. | 20 |
+| `web-hooks` — Web hooks | React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics. | 21 |
 | `web-lib` — Web utilities | Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/. | 10 |
 | `web-pages` — Web pages | Route-level page components lazy-loaded by src/App.tsx. | 16 |
 | `web-shared` — Shared web components | Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton. | 5 |
@@ -141,7 +141,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/web-app.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>121 files and declarations</summary>
+<details><summary>122 files and declarations</summary>
 
 - `src/App.tsx`
 - `src/components/NotificationBell.tsx`
@@ -227,6 +227,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/hooks/useLaunchNavigation.ts`
 - `src/hooks/useMediaQuery.ts`
 - `src/hooks/useNativeThemeSync.ts`
+- `src/hooks/usePasskeyEnrolment.ts`
 - `src/hooks/usePro.ts`
 - `src/hooks/usePushNotifications.ts`
 - `src/hooks/usePwaLifecycle.ts`

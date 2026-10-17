@@ -30,7 +30,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `App shell` — `src/App.tsx`
 
-54 files in its import closure (not counting `src/components/ui/`).
+55 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -45,12 +45,14 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `profile.getInAppNotifications` | useQuery, utils.invalidate | `src/components/NotificationBell.tsx` |
-| `profile.getSmartProfile` | useQuery | `src/hooks/useBiometricOnboarding.ts`, `src/i18n/LanguagePreferenceSync.tsx` |
+| `profile.getSmartProfile` | useQuery, utils.invalidate | `src/hooks/useBiometricOnboarding.ts`, `src/i18n/LanguagePreferenceSync.tsx` |
 | `profile.markInAppNotificationRead` | useMutation | `src/components/NotificationBell.tsx` |
-| `profile.sendBiometricPromptNotification` | useMutation | `src/hooks/useBiometricOnboarding.ts` |
+| `profile.updateSmartProfile` | useMutation | `src/hooks/useBiometricOnboarding.ts` |
 | `voice.eligibility` | utils.invalidate | `src/components/voice/VoiceCallHost.tsx` |
 | `voice.listCalls` | utils.invalidate | `src/components/voice/VoiceCallHost.tsx` |
-| `webauthn.checkHasPasskey` | useQuery | `src/hooks/useBiometricOnboarding.ts` |
+| `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/hooks/useBiometricOnboarding.ts`, `src/hooks/usePasskeyEnrolment.ts` |
+| `webauthn.generateRegistrationOptions` | useMutation | `src/hooks/usePasskeyEnrolment.ts` |
+| `webauthn.verifyRegistration` | useMutation | `src/hooks/usePasskeyEnrolment.ts` |
 
 ## Pages
 
@@ -185,7 +187,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-53 files in its import closure (not counting `src/components/ui/`).
+54 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -242,7 +244,7 @@ _None._
 
 ### `Login` — `src/pages/Login.tsx`
 
-4 files in its import closure (not counting `src/components/ui/`).
+5 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -257,7 +259,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-58 files in its import closure (not counting `src/components/ui/`).
+59 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -380,10 +382,10 @@ _None._
 | `wallet.deleteWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
 | `wallet.getWalletTransactions` | useQuery | `src/components/bank-sync/DigitalBankingSuite.tsx` |
 | `wallet.getWallets` | useQuery, utils.invalidate | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx` |
+| `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx`, `src/hooks/usePasskeyEnrolment.ts` |
 | `webauthn.deletePasskey` | useMutation | `src/components/auth/PasskeySettings.tsx` |
-| `webauthn.generateRegistrationOptions` | useMutation | `src/components/auth/PasskeySettings.tsx` |
-| `webauthn.verifyRegistration` | useMutation | `src/components/auth/PasskeySettings.tsx` |
+| `webauthn.generateRegistrationOptions` | useMutation | `src/hooks/usePasskeyEnrolment.ts` |
+| `webauthn.verifyRegistration` | useMutation | `src/hooks/usePasskeyEnrolment.ts` |
 
 ### `NotFound` — `src/pages/NotFound.tsx`
 
@@ -434,7 +436,7 @@ _None._
 
 ### `Settings` — `src/pages/Settings.tsx`
 
-24 files in its import closure (not counting `src/components/ui/`).
+25 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -463,10 +465,10 @@ _None._
 | `profile.updateSmartProfile` | useMutation | `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
-| `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx` |
+| `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx`, `src/hooks/usePasskeyEnrolment.ts` |
 | `webauthn.deletePasskey` | useMutation | `src/components/auth/PasskeySettings.tsx` |
-| `webauthn.generateRegistrationOptions` | useMutation | `src/components/auth/PasskeySettings.tsx` |
-| `webauthn.verifyRegistration` | useMutation | `src/components/auth/PasskeySettings.tsx` |
+| `webauthn.generateRegistrationOptions` | useMutation | `src/hooks/usePasskeyEnrolment.ts` |
+| `webauthn.verifyRegistration` | useMutation | `src/hooks/usePasskeyEnrolment.ts` |
 
 ### `Support` — `src/pages/Support.tsx`
 

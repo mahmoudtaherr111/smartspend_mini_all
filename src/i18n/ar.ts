@@ -154,6 +154,16 @@ export const ar = {
   "profile.delete.confirm": "افتح صفحة الدعم",
   "profileField.otherText": "أو اكتب شغلك",
   "profileField.textPlaceholder": "مثلاً: محاسبة، مبرمج، صاحب محل",
+  "biometric.prompt.title.ios": "ادخل بـ Face ID",
+  "biometric.prompt.title.android": "ادخل ببصمة صباعك",
+  "biometric.prompt.title.other": "ادخل من غير كلمة سر",
+  "biometric.prompt.body": "أسرع من كتابة كلمة السر، والبصمة نفسها بتفضل على موبايلك.",
+  "biometric.prompt.body.other": "استخدم قفل الجهاز ده بدل كلمة السر.",
+  "biometric.prompt.action.ios": "فعّل Face ID",
+  "biometric.prompt.action.android": "فعّل البصمة",
+  "biometric.prompt.action.other": "فعّل الدخول السريع",
+  "biometric.prompt.enrolling": "لحظة...",
+  "biometric.prompt.notNow": "مش دلوقتي",
 } as const;
 
 export type MessageKey = keyof typeof ar;

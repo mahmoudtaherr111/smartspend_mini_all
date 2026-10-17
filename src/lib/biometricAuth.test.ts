@@ -16,13 +16,10 @@ import {
   setLastUnlockedTimestamp,
   getLastActiveTimestamp,
   setLastActiveTimestamp,
-  getBiometricPromptCount,
-  incrementBiometricPromptCount,
-  getLastBiometricPromptTime,
-  setLastBiometricPromptTime,
-  isBiometricPromptOptedOut,
-  setBiometricPromptOptedOut,
-  shouldShowBiometricOnboarding,
+  BIOMETRIC_PROMPT,
+  readBiometricPromptRecord,
+  writeLocalBiometricPromptRecord,
+  shouldShowBiometricPrompt,
   authenticateLocalBiometrics,
 } from "./biometricAuth";
 
@@ -158,108 +155,45 @@ describe("Biometric Authentication & Local App Lock Utilities", () => {
     });
   });
 
-  describe("4. Onboarding Rules & Frequency Capping", () => {
+  describe("4. The fingerprint / Face ID suggestion", () => {
     const userKey = "oauth_55";
-    const FIVE_MINUTES = 5 * 60 * 1000;
-    const TEN_DAYS = 10 * 24 * 60 * 60 * 1000;
+    const DAY = 24 * 60 * 60 * 1000;
+    const now = Date.UTC(2026, 9, 17);
+    const fresh = { dismissals: 0, lastShownAt: null };
+    const base = { isHardwareAvailable: true, hasPasskey: false, record: fresh, isSignUpSession: false, shownThisSession: false, now };
 
-    it("blocks onboarding when hardware is unavailable or biometrics already enrolled", () => {
-      expect(
-        shouldShowBiometricOnboarding({
-          userKey,
-          sessionDurationMs: FIVE_MINUTES,
-          isHardwareAvailable: false,
-          hasBiometricsOrPasskey: false,
-        }),
-      ).toBe(false);
-
-      expect(
-        shouldShowBiometricOnboarding({
-          userKey,
-          sessionDurationMs: FIVE_MINUTES,
-          isHardwareAvailable: true,
-          hasBiometricsOrPasskey: true,
-        }),
-      ).toBe(false);
+    it("appears at once on a capable device without a passkey; no timer", () => {
+      expect(shouldShowBiometricPrompt(base)).toBe(true);
     });
 
-    it("blocks onboarding before 5-minute active session threshold", () => {
-      expect(
-        shouldShowBiometricOnboarding({
-          userKey,
-          sessionDurationMs: 4 * 60 * 1000, // 4 mins
-          isHardwareAvailable: true,
-          hasBiometricsOrPasskey: false,
-        }),
-      ).toBe(false);
+    it("never when the device can't, a passkey exists, in the sign-up session, or twice in a session", () => {
+      expect(shouldShowBiometricPrompt({ ...base, isHardwareAvailable: false })).toBe(false);
+      expect(shouldShowBiometricPrompt({ ...base, hasPasskey: true })).toBe(false);
+      expect(shouldShowBiometricPrompt({ ...base, isSignUpSession: true })).toBe(false);
+      expect(shouldShowBiometricPrompt({ ...base, shownThisSession: true })).toBe(false);
     });
 
-    it("allows first suggestion at exactly 5 minutes of active session", () => {
-      expect(
-        shouldShowBiometricOnboarding({
-          userKey,
-          sessionDurationMs: FIVE_MINUTES,
-          isHardwareAvailable: true,
-          hasBiometricsOrPasskey: false,
-        }),
-      ).toBe(true);
+    it("waits 14 days between appearances and stops after two 'Not now'", () => {
+      expect(shouldShowBiometricPrompt({ ...base, record: { dismissals: 1, lastShownAt: now - 5 * DAY } })).toBe(false);
+      expect(shouldShowBiometricPrompt({ ...base, record: { dismissals: 1, lastShownAt: now - BIOMETRIC_PROMPT.COOLDOWN_MS } })).toBe(true);
+      expect(shouldShowBiometricPrompt({ ...base, record: { dismissals: 2, lastShownAt: now - 60 * DAY } })).toBe(false);
     });
 
-    it("enforces 10-day cooldown between subsequent suggestions", () => {
-      const lastPrompt = Date.now() - 5 * 24 * 60 * 60 * 1000; // 5 days ago
-      setLastBiometricPromptTime(userKey, lastPrompt);
-      incrementBiometricPromptCount(userKey); // 1 prompt
-
-      // Still in cooldown
+    it("keeps the record in the profile, so a new device does not start over, and takes this device's copy too", () => {
       expect(
-        shouldShowBiometricOnboarding({
-          userKey,
-          sessionDurationMs: FIVE_MINUTES,
-          isHardwareAvailable: true,
-          hasBiometricsOrPasskey: false,
-        }),
-      ).toBe(false);
-
-      // Cooldown expired (11 days ago)
-      setLastBiometricPromptTime(userKey, Date.now() - 11 * 24 * 60 * 60 * 1000);
-      expect(
-        shouldShowBiometricOnboarding({
-          userKey,
-          sessionDurationMs: FIVE_MINUTES,
-          isHardwareAvailable: true,
-          hasBiometricsOrPasskey: false,
-        }),
-      ).toBe(true);
+        readBiometricPromptRecord({ biometricPromptDismissals: 2, biometricPromptLastShownAt: "2026-10-01T00:00:00.000Z" }, userKey),
+      ).toEqual({ dismissals: 2, lastShownAt: Date.parse("2026-10-01T00:00:00.000Z") });
+      writeLocalBiometricPromptRecord(userKey, { dismissals: 1, lastShownAt: now });
+      expect(readBiometricPromptRecord({}, userKey)).toEqual({ dismissals: 1, lastShownAt: now });
+      expect(readBiometricPromptRecord({ biometricPromptDismissals: 2 }, userKey).dismissals).toBe(2);
     });
 
-    it("enforces hard frequency cap of maximum 3 suggestions lifetime", () => {
-      incrementBiometricPromptCount(userKey);
-      incrementBiometricPromptCount(userKey);
-      incrementBiometricPromptCount(userKey); // Count = 3
-      setLastBiometricPromptTime(userKey, Date.now() - 20 * 24 * 60 * 60 * 1000);
-
-      expect(
-        shouldShowBiometricOnboarding({
-          userKey,
-          sessionDurationMs: FIVE_MINUTES,
-          isHardwareAvailable: true,
-          hasBiometricsOrPasskey: false,
-        }),
-      ).toBe(false);
-    });
-
-    it("permanently stops prompts when opted out", () => {
-      setBiometricPromptOptedOut(userKey, true);
-      expect(isBiometricPromptOptedOut(userKey)).toBe(true);
-
-      expect(
-        shouldShowBiometricOnboarding({
-          userKey,
-          sessionDurationMs: FIVE_MINUTES,
-          isHardwareAvailable: true,
-          hasBiometricsOrPasskey: false,
-        }),
-      ).toBe(false);
+    it("a passkey on the device no longer turns the app lock on", () => {
+      localStorage.setItem(`smartspend_has_passkey_${userKey}`, "1");
+      localStorage.setItem("smartspend_has_passkey", "1");
+      expect(getBiometricLockEnabled(userKey)).toBe(false);
+      setBiometricLockEnabled(userKey, true);
+      expect(getBiometricLockEnabled(userKey)).toBe(true);
     });
   });
 

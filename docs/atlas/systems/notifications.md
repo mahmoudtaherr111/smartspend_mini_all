@@ -23,7 +23,7 @@ flowchart LR
     job_seed_default_templates["Job · seed-default-templates"]
     job_smart_activity_notifications["Job · smart-activity-notifications"]
     router_adminWhatsapp["adminWhatsapp API · 9 procedures"]
-    router_profile["profile API · 4 procedures"]
+    router_profile["profile API · 3 procedures"]
   end
   subgraph g_modules["Code modules"]
     mod_notifications["Notifications"]
@@ -101,7 +101,6 @@ flowchart LR
 | `profile.getInAppNotifications` | query | `authedProcedure` | `in_app_notifications` | — | `App shell` |
 | `profile.markInAppNotificationRead` | mutation | `authedProcedure` | — | `in_app_notifications` | `App shell` |
 | `profile.savePushSubscription` | mutation | `authedProcedure` | `push_subscriptions` | `push_subscriptions` | `Home`, `More`, `Settings` |
-| `profile.sendBiometricPromptNotification` | mutation | `authedProcedure` | `in_app_notifications` | `in_app_notifications` | `App shell` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -118,7 +117,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `expense_daily_rollups` | C | — | `notifications` |
-| `in_app_notifications` | D | `notifications`, `profile.markInAppNotificationRead`, `profile.sendBiometricPromptNotification` | `profile.getInAppNotifications`, `profile.sendBiometricPromptNotification` |
+| `in_app_notifications` | D | `notifications`, `profile.markInAppNotificationRead` | `profile.getInAppNotifications` |
 | `local_users` | A | — | `adminWhatsapp.broadcastMessage`, `adminWhatsapp.getUsers`, `notifications` |
 | `notification_logs` | E | `notifications` | `notifications` |
 | `notification_templates` | A | `notifications` | `notifications` |
@@ -156,7 +155,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/notifications.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>13 files and declarations</summary>
+<details><summary>12 files and declarations</summary>
 
 - `api/admin-whatsapp-router.ts`
 - `api/boot.ts#job:scheduled-notifications`
@@ -166,7 +165,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/profile-router.ts#profile.getInAppNotifications`
 - `api/profile-router.ts#profile.markInAppNotificationRead`
 - `api/profile-router.ts#profile.savePushSubscription`
-- `api/profile-router.ts#profile.sendBiometricPromptNotification`
 - `api/profile-router.ts#rest-of-file`
 - `api/services/firebase.ts`
 - `api/services/otp-cache.ts`

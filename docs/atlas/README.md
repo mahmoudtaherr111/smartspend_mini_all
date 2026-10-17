@@ -28,16 +28,16 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 | Tables with relations | 55 |
 | Foreign-key constraints | 0 |
 | tRPC routers | 24 |
-| tRPC procedures | 236 |
+| tRPC procedures | 235 |
 | — queries | 98 |
-| — mutations | 138 |
+| — mutations | 137 |
 | Procedure builders | 14 |
 | HTTP routes (outside tRPC) | 15 |
 | WebSocket upgrade prefixes | 2 |
 | Scheduled jobs | 14 |
 | Browser routes | 17 |
 | Lazy-loaded pages | 16 |
-| Runtime source files | 479 |
+| Runtime source files | 480 |
 | Clusters | 44 |
 | External systems in use | 18 |
 | Validated server env vars | 45 |
@@ -47,4 +47,4 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 
 Gaps the generator found between the code and the hand-maintained maps in `docs/architecture/`, or code patterns it cannot read.
 
-None.
+- docs/architecture/systems.json: notifications lists the procedure "profile.sendBiometricPromptNotification", which does not exist.

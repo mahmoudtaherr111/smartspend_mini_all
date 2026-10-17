@@ -43,7 +43,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `image` | `api/image-router.ts` | 1 | 0 | 1 | `receiptsProcedure` |
 | `localAuth` | `api/local-auth-router.ts` | 12 | 5 | 7 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
 | `pro` | `api/pro-router.ts` | 6 | 3 | 3 | `adminProcedure`, `authedProcedure` |
-| `profile` | `api/profile-router.ts` | 28 | 9 | 19 | `authedProcedure` |
+| `profile` | `api/profile-router.ts` | 27 | 9 | 18 | `authedProcedure` |
 | `referral` | `api/referral-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `seo` | `api/seo-router.ts` | 5 | 3 | 2 | `adminProcedure`, `publicProcedure` |
 | `session` | `api/session-router.ts` | 5 | 3 | 2 | `adminProcedure`, `authedProcedure` |
@@ -332,11 +332,10 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `profile.refreshInferences` | mutation | `authedProcedure` | yes | `expenses` | `monthly_behavior_snapshots` | `api/services/lifestyle-inference-engine.ts`, `api/services/user-profile-service.ts` | — |
 | `profile.requestPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | — | `api/lib/redis-client.ts`, `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/whatsapp-service.ts` | — |
 | `profile.savePushSubscription` | mutation | `authedProcedure` | yes | `push_subscriptions` | `push_subscriptions` | — | `src/hooks/usePushNotifications.ts` |
-| `profile.sendBiometricPromptNotification` | mutation | `authedProcedure` | no | `in_app_notifications` | `in_app_notifications` | — | `src/hooks/useBiometricOnboarding.ts` |
 | `profile.submitOnboardingAnswer` | mutation | `authedProcedure` | yes | — | — | `api/services/adaptive-question-engine.ts`, `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/profile/ProfileScreen.tsx` |
 | `profile.updateContact` | mutation | `authedProcedure` | yes | `user_contacts` | `user_contacts` | `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts` | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.updateProfile` | mutation | `authedProcedure` | yes | — | `user_profiles` | — | — |
-| `profile.updateSmartProfile` | mutation | `authedProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.updateSmartProfile` | mutation | `authedProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | mutation | `authedProcedure` | yes | `local_users` | `local_users`, `users` | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts` | `src/components/profile/ProfileScreen.tsx` |
 
 ### `referral` — `api/referral-router.ts`
@@ -403,12 +402,12 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `webauthn.checkHasPasskey` | query | `authedProcedure` | no | `user_credentials` | — | — | `src/components/auth/PasskeySettings.tsx`, `src/hooks/useBiometricOnboarding.ts` |
+| `webauthn.checkHasPasskey` | query | `authedProcedure` | no | `user_credentials` | — | — | `src/components/auth/PasskeySettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/hooks/usePasskeyEnrolment.ts` |
 | `webauthn.deletePasskey` | mutation | `authedProcedure` | no | — | `user_credentials` | — | `src/components/auth/PasskeySettings.tsx` |
 | `webauthn.generateAuthenticationOptions` | mutation | `strictPublicProcedure` | yes | — | `auth_challenges` | `api/lib/env.ts`, `api/lib/get-client-ip.ts` | `src/pages/Login.tsx` |
-| `webauthn.generateRegistrationOptions` | mutation | `authedProcedure` | no | `local_users`, `user_credentials`, `users` | `auth_challenges` | `api/lib/env.ts`, `api/lib/get-client-ip.ts` | `src/components/auth/PasskeySettings.tsx` |
+| `webauthn.generateRegistrationOptions` | mutation | `authedProcedure` | no | `local_users`, `user_credentials`, `users` | `auth_challenges` | `api/lib/env.ts`, `api/lib/get-client-ip.ts` | `src/hooks/usePasskeyEnrolment.ts` |
 | `webauthn.verifyAuthentication` | mutation | `strictPublicProcedure` | yes | `auth_challenges`, `user_credentials` | `auth_challenges`, `user_credentials` | `api/lib/env.ts`, `api/lib/get-client-ip.ts`, `api/local-auth-utils.ts` | `src/pages/Login.tsx` |
-| `webauthn.verifyRegistration` | mutation | `authedProcedure` | yes | `auth_challenges` | `auth_challenges`, `user_credentials` | `api/lib/env.ts`, `api/lib/get-client-ip.ts` | `src/components/auth/PasskeySettings.tsx` |
+| `webauthn.verifyRegistration` | mutation | `authedProcedure` | yes | `auth_challenges` | `auth_challenges`, `user_credentials` | `api/lib/env.ts`, `api/lib/get-client-ip.ts` | `src/hooks/usePasskeyEnrolment.ts` |
 
 ## Procedures with no caller in src/
 

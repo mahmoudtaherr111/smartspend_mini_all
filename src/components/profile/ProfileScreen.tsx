@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SignOutDialog } from "@/components/auth/SignOutDialog";
 import { UserAvatar } from "@/components/profile/UserAvatar";
-import { ProfileFieldInput, isValidProfileFieldValue } from "@/components/profile/ProfileFieldInput";
+import { ProfileFieldInput } from "@/components/profile/ProfileFieldInput";
 import {
   PROFILE_FIELDS,
   formatProfileFieldValue,
+  isValidProfileFieldValue,
   normalizeProfileFieldValue,
   profileFieldValue,
   type ProfileField,

@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/providers/trpc";
-import { startRegistration } from "@simplewebauthn/browser";
 import { Button } from "@/components/ui/button";
+import { usePasskeyEnrolment } from "@/hooks/usePasskeyEnrolment";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserStorageKey, normalizeDigits } from "@/lib/biometricAuth";
 import {
   Fingerprint,
   CheckCircle2,
   Shield,
-  ShieldCheck,
   Loader2,
   Lock,
   KeyRound,
@@ -34,7 +33,8 @@ export function PasskeySettings() {
   const { user } = useAuth();
   const userKey = getUserStorageKey(user);
   const [searchParams] = useSearchParams();
-  const isHighlighted = searchParams.get("highlight") === "1";
+  // "biometric" comes from the notification map; "1" from links and notifications written before it.
+  const isHighlighted = ["biometric", "1"].includes(searchParams.get("highlight") ?? "");
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,7 +43,6 @@ export function PasskeySettings() {
     }
   }, [isHighlighted]);
 
-  const [isRegistering, setIsRegistering] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
   const [pinPurpose, setPinPurpose] = useState<"enable_lock" | "change_pin">(
@@ -67,56 +66,9 @@ export function PasskeySettings() {
     setGracePeriod,
   } = useBiometricLock();
 
-  const generateOptionsMutation =
-    trpc.webauthn.generateRegistrationOptions.useMutation();
-  const verifyRegistrationMutation =
-    trpc.webauthn.verifyRegistration.useMutation();
   const deletePasskeyMutation = trpc.webauthn.deletePasskey.useMutation();
-
-  const handleRegisterPasskey = async () => {
-    try {
-      setIsRegistering(true);
-
-      // 1. Get options from server
-      const options = await generateOptionsMutation.mutateAsync();
-
-      // 2. Start biometric prompt in browser
-      let attResp;
-      try {
-        attResp = await startRegistration({ optionsJSON: options });
-      } catch (err) {
-        const error = err as Error;
-        if (error.name === "InvalidStateError") {
-          toast.error("البصمة مسجلة بالفعل على هذا الجهاز");
-        } else if (error.name === "NotAllowedError") {
-          toast.info("تم إلغاء تسجيل البصمة");
-        } else {
-          toast.error("ماقدرناش نسجل البصمة. اتأكد من تفعيل البصمة في جهازك وجرّب تاني.");
-        }
-        return;
-      }
-
-      // 3. Send response to server for verification
-      await verifyRegistrationMutation.mutateAsync({ response: attResp });
-
-      try {
-        localStorage.setItem("smartspend_has_passkey", "1");
-        if (userKey) {
-          localStorage.setItem(`smartspend_has_passkey_${userKey}`, "1");
-        }
-      } catch {
-        // Storage access might fail in private browsing
-      }
-
-      await utils.webauthn.checkHasPasskey.invalidate();
-      toast.success("تم تفعيل الدخول بالبصمة بنجاح! 🎉");
-    } catch (err) {
-      const error = err as Error;
-      toast.error(error.message || "حصل خطأ أثناء تفعيل البصمة، جرّب تاني");
-    } finally {
-      setIsRegistering(false);
-    }
-  };
+  const { enrol, isEnrolling: isRegistering } = usePasskeyEnrolment();
+  const handleRegisterPasskey = () => void enrol();
 
   const handleDeletePasskey = async () => {
     if (!window.confirm("متأكد إنك عايز توقف الدخول بالبصمة لهذا الحساب؟")) {
@@ -200,32 +152,31 @@ export function PasskeySettings() {
         ref={cardRef}
         className={`bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border transition-all duration-300 ${
           isHighlighted
-            ? "border-indigo-500/80 ring-2 ring-indigo-500/20 shadow-indigo-500/5 bg-indigo-50/[0.03]"
+            ? "border-emerald-500/80 ring-2 ring-emerald-500/20"
             : "border-slate-200/80 dark:border-slate-800"
         }`}
       >
         {isHighlighted && (
-          <div className="mb-4 flex items-center gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800/80 px-3.5 py-1.5 rounded-full w-fit">
-            <Shield className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span>تم التوجيه لتفعيل أمان البصمة</span>
+          <div className="mb-4 flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+            <Shield className="w-3.5 h-3.5" />
+            <span>فعّل الدخول بالبصمة من هنا</span>
           </div>
         )}
 
         <div className="flex flex-col sm:flex-row items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center shrink-0 text-indigo-600 dark:text-indigo-400">
+          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 text-slate-700 dark:text-slate-200">
             <Fingerprint className="w-6 h-6" />
           </div>
 
           <div className="flex-1 space-y-1.5 w-full">
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
-                الدخول ببصمة الإصبع أو الوجه (Face ID / Passkey)
+                الدخول بالبصمة
               </h3>
-              <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
             </div>
 
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              سجّل دخولك لحسابك وأكّد هويتك بسرعة وأمان باستخدام بصمة هذا الجهاز، دون الحاجة لكتابة كلمة المرور في كل مرة.
+              ادخل حسابك ببصمة الإصبع أو الوجه بدل كلمة السر، على الجهاز ده.
             </p>
 
             <div className="pt-3">
@@ -280,7 +231,7 @@ export function PasskeySettings() {
                   <Button
                     onClick={handleRegisterPasskey}
                     disabled={isRegistering}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md shadow-indigo-600/20 px-6 gap-2 font-bold h-11 transition-all active:scale-[0.99]"
+                    className="rounded-xl px-6 gap-2 font-bold h-11"
                   >
                     {isRegistering ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -289,10 +240,10 @@ export function PasskeySettings() {
                     )}
                     {isRegistering
                       ? "جاري تفعيل البصمة..."
-                      : "تفعيل الدخول بالبصمة الآن"}
+                      : "فعّل الدخول بالبصمة"}
                   </Button>
                   <p className="text-[11px] text-slate-400">
-                    مشفر ومحمي عبر نظام التشغيل في جهازك (Apple Keychain / Google Passkey).
+                    البصمة نفسها بتفضل على جهازك، إحنا مابنشوفهاش.
                   </p>
                 </div>
               )}
@@ -305,15 +256,15 @@ export function PasskeySettings() {
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200/80 dark:border-slate-800 space-y-5">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/50 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+            <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-700 dark:text-slate-200 shrink-0">
               <Lock className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
-                قفل التطبيق المحلي <bdi dir="ltr">(App Lock)</bdi>
+                قفل التطبيق
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-normal">
-                طلب البصمة فور فتح التطبيق أو العودة إليه، مع تمويه الشاشة لحماية خصوصيتك
+                يطلب البصمة كل ما تفتح التطبيق، عشان محدش يشوف أرقامك لو مسك موبايلك.
               </p>
             </div>
           </div>

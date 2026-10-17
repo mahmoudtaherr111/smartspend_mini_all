@@ -534,17 +534,16 @@ function PersistedQueryScope({
 }
 
 function BiometricAppEnhancements() {
-  const { showModal, closeModal, postponePrompt, optOutPermanently } =
-    useBiometricOnboarding();
+  const { open, notNow, turnOn, isEnrolling } = useBiometricOnboarding();
 
   return (
     <>
       <BiometricLockOverlay />
       <BiometricOnboardingModal
-        isOpen={showModal}
-        onClose={closeModal}
-        onPostpone={postponePrompt}
-        onOptOut={optOutPermanently}
+        isOpen={open}
+        isEnrolling={isEnrolling}
+        onTurnOn={() => void turnOn()}
+        onNotNow={notNow}
       />
     </>
   );
