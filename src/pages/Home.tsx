@@ -174,18 +174,9 @@ export default function Home() {
     utils.expense.getMonthSummary.prefetch({ month: prevMonth, salaryDay, businessId: activeBusinessId ?? null });
     utils.expense.getMonthSummary.prefetch({ month: nextMonth, salaryDay, businessId: activeBusinessId ?? null });
 
-    if (activeTab === "stats") {
+    if (activeTab === "stats" || activeTab === "calendar") {
       utils.expense.getMonthlyStats.prefetch({ month: prevMonth, salaryDay });
       utils.expense.getMonthlyStats.prefetch({ month: nextMonth, salaryDay });
-    } else if (activeTab === "calendar") {
-      utils.expense.getMonthlyStats.prefetch({
-        month: prevMonth,
-        salaryDay: null,
-      });
-      utils.expense.getMonthlyStats.prefetch({
-        month: nextMonth,
-        salaryDay: null,
-      });
     }
   }, [month, salaryDay, activeTab, utils, activeBusinessId]);
 
@@ -211,7 +202,7 @@ export default function Home() {
 
   const { data: calendarStats, isFetching: calendarFetching } =
     trpc.expense.getMonthlyStats.useQuery(
-      { month, salaryDay: null, businessId: activeBusinessId ?? null } as any,
+      { month, salaryDay, businessId: activeBusinessId ?? null } as any,
       { enabled: activeTab === "calendar", staleTime: statsStaleTime, retry: 1 },
     );
 
@@ -287,10 +278,6 @@ export default function Home() {
                       utils.expense.getMonthlyStats.invalidate({
                         month,
                         salaryDay,
-                      });
-                      utils.expense.getMonthlyStats.invalidate({
-                        month,
-                        salaryDay: null,
                       });
                       utils.profile.getSmartProfile.invalidate();
                       setSharedText("");
