@@ -1,0 +1,162 @@
+name: Mobile screenshots
+
+# Pictures of every tab of the Flutter app on a real Android emulator and iOS simulator, so the app can be reviewed
+# without a phone or a Mac (mobile/app/integration_test/screenshots_test.dart). On main they are published to the
+# mobile-screenshots branch, whose README shows them all; on other branches they stay artifacts of the run.
+on:
+  push:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-screenshots.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android emulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Let the emulator use hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: mobile/pubspec.yaml
+          cache: true
+      - name: Screenshots on a Pixel emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          working-directory: mobile/app
+          script: mkdir -p build && flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart --dart-define-from-file=config/development.json > build/drive.log 2>&1 || (cat build/drive.log; exit 1)
+      - name: Show the end of the drive log as an annotation
+        if: failure()
+        run: |
+          log=mobile/app/build/drive.log
+          [ -f "$log" ] || exit 0
+          echo "::error title=flutter drive (android)::$(tail -n 60 "$log" | awk '{ gsub(/%/, "%25"); gsub(/\r/, ""); printf "%s%%0A", $0 }')"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-android
+          path: mobile/app/build/screenshots/
+          if-no-files-found: warn
+          retention-days: 14
+
+  ios:
+    name: iOS simulator
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: mobile/pubspec.yaml
+          cache: true
+      - name: Boot an iPhone simulator
+        id: simulator
+        run: |
+          devices=$(xcrun simctl list devices available --json)
+          pick() { echo "$devices" | jq -r "[.devices | to_entries[] | select(.key | contains(\"iOS\")) | .value[] | select(.name | test(\"$1\"))] | first | .udid // empty"; }
+          udid=$(pick '^iPhone [0-9]+ Pro$')
+          [ -n "$udid" ] || udid=$(pick '^iPhone')
+          [ -n "$udid" ] || { echo "::error::No iPhone simulator is available on this runner."; exit 1; }
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+      - name: Screenshots
+        working-directory: mobile/app
+        timeout-minutes: 30
+        run: |
+          mkdir -p build
+          flutter drive -d "${{ steps.simulator.outputs.udid }}" --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart --dart-define-from-file=config/development.json > build/drive.log 2>&1 || { cat build/drive.log; exit 1; }
+      - name: Show the end of the drive log as an annotation
+        if: failure()
+        run: |
+          log=mobile/app/build/drive.log
+          [ -f "$log" ] || exit 0
+          echo "::error title=flutter drive (ios)::$(tail -n 60 "$log" | awk '{ gsub(/%/, "%25"); gsub(/\r/, ""); printf "%s%%0A", $0 }')"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-ios
+          path: mobile/app/build/screenshots/
+          if-no-files-found: warn
+          retention-days: 14
+
+  publish:
+    name: Publish to the mobile-screenshots branch
+    needs: [android, ios]
+    # Publishes whatever pictures exist, so one platform failing still shows the other.
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: mobile-screenshots-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: screenshots-*
+          path: ${{ runner.temp }}/shots
+      - name: Replace the branch with this run's pictures and a gallery
+        env:
+          SHOTS: ${{ runner.temp }}/shots
+        run: |
+          set -euo pipefail
+          short="${GITHUB_SHA::7}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q --orphan mobile-screenshots
+          git rm -rfq .
+          mkdir -p android ios
+          cp "$SHOTS"/screenshots-android/*.png android/ 2>/dev/null || true
+          cp "$SHOTS"/screenshots-ios/*.png ios/ 2>/dev/null || true
+          {
+            echo "# SmartSpend mobile screenshots"
+            echo
+            echo "The Flutter app at [\`$short\`](https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) on main," \
+              "$(date -u '+%Y-%m-%d %H:%M UTC'), on an Android emulator and an iOS simulator."
+            echo "Made by \`.github/workflows/mobile-screenshots.yml\`; every run on main replaces this branch."
+            for platform in android ios; do
+              for theme in dark light; do
+                echo
+                echo "## $platform, $theme"
+                echo
+                files=$(ls "$platform"/*-"$theme"-*.png 2>/dev/null | sort || true)
+                if [ -z "$files" ]; then echo "No pictures from this run."; continue; fi
+                header="|"; separator="|"; row="|"
+                for file in $files; do
+                  name=$(basename "$file" .png)
+                  header="$header ${name##*-} |"; separator="$separator --- |"
+                  row="$row <img src=\"$file\" width=\"180\"> |"
+                done
+                echo "$header"; echo "$separator"; echo "$row"
+              done
+            done
+          } > README.md
+          git add -A
+          git commit -qm "Screenshots of $short"
+          git push -qf origin mobile-screenshots
+          echo "Gallery: https://github.com/$GITHUB_REPOSITORY/tree/mobile-screenshots" >> "$GITHUB_STEP_SUMMARY"
