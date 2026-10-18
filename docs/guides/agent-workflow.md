@@ -39,6 +39,9 @@ keeps the documentation true without anyone updating it by hand. It is written f
 | Anyone pushes | `.githooks/pre-push` | Runs `agent:finish --check`; the push is refused while a rule is broken or the atlas is stale |
 | A push reaches main | `.github/workflows/knowledge-autofix.yml` | Regenerates the atlas and commits it to main when it is stale; writes an Arabic summary of the system changes into the run |
 | Any push or pull request | `.github/workflows/ci.yml`, knowledge job | Atlas freshness (outside main), `tests/knowledge`, LikeC4 validation |
+| A push or pull request changes `mobile/` | `.github/workflows/mobile.yml` | Generated Dart code matches its sources, format, analysis and the tests of the four packages, then an Android debug build and an unsigned iOS build |
+| `android-app/` changes on main | `.github/workflows/build-apk.yml` | Builds the companion's debug APK and commits it under `public/downloads/` ([bank messages](../systems/bank-messages.md)) |
+| `docs/` or `docs-site/` changes on main | `.github/workflows/docs-site.yml` | Builds the documentation site and keeps it as a private workflow artifact; nothing is published |
 
 `npm install` and `npm ci` install the git hooks through the `prepare` script, and `npm run hooks:install`
 does it by hand. The hooks live in the common git directory, so one install covers every worktree. The

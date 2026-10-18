@@ -34,6 +34,11 @@ the rule parser and the model that read them, and the setup screens.
   and retried after the next successful send; a retry the server rejects is dropped.
 - **iPhone**: the user builds a Shortcuts automation on messages that contain a keyword, running a SmartSpend
   Shortcut that posts the message to the address the setup screen copied, `<origin>/api/sms/ingest?token=<token>`.
+- **The Flutter app** (`mobile/`, [decision 0022](../decisions/0022-flutter-mobile-app.md)) is meant to replace both
+  paths. Today its plugin, `mobile/packages/bank_capture`, only tells the app how the phone can capture (the
+  notification listener on Android, a Shortcuts automation on iOS), whether the user allowed it, and opens the
+  screen where they can. Its Android listener is a stub: nothing is read, queued or posted yet, so the two paths
+  above are still the only ones that deliver a message.
 
 ### 2. The ingest route accepts or refuses
 `POST /api/sms/ingest`:
@@ -190,6 +195,7 @@ Checked against the code; each one names where it lives.
 5. **Debt.** `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 ## Related systems
+- The Flutter app in `mobile/` (see step 1): not a system page; its rules are in `mobile/AGENTS.md`.
 - [Money](money.md): the ledger the messages are saved into, and the wallets the digital wallet view manages.
 - [Recording spending](expense-capture.md): typed, spoken and photographed entries use a different pipeline.
 - [Accounts, sign-in and security](accounts.md): the sessions the setup routes read.

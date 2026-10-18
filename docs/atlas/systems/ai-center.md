@@ -148,7 +148,7 @@ sequenceDiagram
   p3->>p5: plan the turn: intent, data needs, clarification
   p5->>p6: resolve the facts
   p5->>p7: at most one call, only when the facts need wording
-  p7->>p8: DeepSeek V4 Flash on Fireworks unless an admin sets another chatbot model
+  p7->>p8: the chat models the admin assigned, then the chatbot settings (DeepSeek V4 Flash on Fireworks by default), then Gemini
   p3->>p9: draft an action for confirmation
   p9->>p10: pending action
   p3-->>p2: answer, artifacts and any draft action

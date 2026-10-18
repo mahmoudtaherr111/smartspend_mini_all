@@ -12,7 +12,7 @@ views {
     smartspend.api.trpc.chat.sendMessage -> smartspend.api.modules.ai-kernel 'plan the turn: intent, data needs, clarification'
     smartspend.api.modules.ai-kernel -> smartspend.api.modules.finance-semantic-layer 'resolve the facts'
     smartspend.api.modules.ai-kernel -> smartspend.api.modules.ai-providers 'at most one call, only when the facts need wording'
-    smartspend.api.modules.ai-providers -> fireworks 'DeepSeek V4 Flash on Fireworks unless an admin sets another chatbot model'
+    smartspend.api.modules.ai-providers -> fireworks 'the chat models the admin assigned, then the chatbot settings (DeepSeek V4 Flash on Fireworks by default), then Gemini'
     smartspend.api.trpc.chat.sendMessage -> smartspend.api.modules.ai-actions 'draft an action for confirmation'
     smartspend.api.modules.ai-actions -> smartspend.mysql.ai_pending_actions 'pending action'
     smartspend.web.pages.AICenter <- smartspend.api.trpc.chat.sendMessage 'answer, artifacts and any draft action'

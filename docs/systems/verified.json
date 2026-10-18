@@ -207,9 +207,9 @@
         "src/components/settings/SmsWebhookSettings.tsx": "c540d4df52db",
         "src/pages/BankSyncPage.tsx": "b6052297414a"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "e95177442fa9",
-      "arabicChecked": "2026-09-29 fa056d1"
+      "checked": "2026-10-18 59352bb",
+      "arabic": "8b44dcbeed90",
+      "arabicChecked": "2026-10-18 59352bb"
     },
     "billing": {
       "files": {
@@ -480,9 +480,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "e05665bec173"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "177558109d3b",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-10-18 59352bb",
+      "arabic": "38675737a329",
+      "arabicChecked": "2026-10-18 59352bb"
     },
     "voice-calls": {
       "files": {

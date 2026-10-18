@@ -143,7 +143,7 @@ sequenceDiagram
   participant p13 as expense_daily_rollups table
   p1->>p2: types or dictates a spending sentence
   p2->>p3: parse the text
-  p3->>p4: runSmartPipeline: events, cache, muscle memory, rules, embeddings
+  p3->>p4: runSmartPipeline: events, cache, muscle memory, rules
   p4->>p5: category of the clauses the local pass could not settle
   p5->>p6: provider chain, Gemini unless configured otherwise
   p3->>p7: decision trace

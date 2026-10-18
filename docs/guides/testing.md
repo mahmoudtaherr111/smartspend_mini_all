@@ -12,10 +12,14 @@ and `.github/workflows/ci.yml`.
 | The migrations build the schema | `npx drizzle-kit migrate` on an empty database, then `npm run db:doctor -- --strict` | an empty MySQL database in `DATABASE_URL` | `integration-tests` |
 | Build output, and both server bundles start and answer /health | `npm run test:build` | `npm run build` and `npm run backend:build` first | `build` |
 | Knowledge rules | `npx vitest run tests/knowledge` | nothing | `knowledge` |
-| End to end | `npm run test:e2e` | Playwright, configured in `playwright.config.ts` | `e2e-tests` |
+| End to end | `npm run test:e2e` (`npm run test:e2e:mobile` for the two phone projects only) | Playwright, configured in `playwright.config.ts` | `e2e-tests` |
+| Types and generated facts | `npm run check` | nothing | `typecheck` (types), `knowledge` (facts) |
+| The Flutter app in `mobile/` | `dart test` in `mobile/packages/smartspend_api`, `flutter test` in the other three packages, after `flutter pub get`, `dart format .` and `flutter analyze` | the Flutter release pinned in `mobile/pubspec.yaml` ([setup](../../mobile/README.md)) | `.github/workflows/mobile.yml`, which also builds an Android debug APK and an unsigned iOS build |
 | Classification quality: the local engine on the labelled sentences, then the gates against the frozen baseline | `npm run bench:classify`, then `npm run bench:classify:compare` | nothing: no model is called | `classification-quality` |
 
 The benchmark's other commands (calibration, live providers, freezing a new baseline) are in `api/lib/AGENTS.md`.
+`npm run qa:ai-center` seeds a QA user in the database `DATABASE_URL` names, runs the AI Center kernel over a fixed set
+of questions and rewrites `docs/reports/AI_CENTER_QA_RUNNER_LAST_RESULT.md`; it needs MySQL and is not part of CI.
 `bench:classify` rewrites the reports in `docs/reports/`; on your machine, `git checkout -- docs/reports` afterwards.
 
 ## Rules for tests
@@ -38,9 +42,10 @@ The benchmark's other commands (calibration, live providers, freezing a new base
   build on Windows reports it unsupported although Safari on iOS 16+ has it, so on iPhone projects it needs a device.
 
 ## Live voice evaluation
-The original 30 cases in `scripts/voice-eval/corpus.ts` are an observed regression set: their failures
+`scripts/voice-eval/run.ts` runs the cases against a live model (usage is in its header comment).
+The original cases in `scripts/voice-eval/corpus.ts` are an observed regression set: their failures
 have informed fixes, so its old `heldout` split is no longer a blind release gate. `--split acceptance-v2`
-selects ten newly frozen conversations from `scripts/voice-eval/acceptance-v2.ts`; once used for tuning,
+selects the newly frozen conversations of `scripts/voice-eval/acceptance-v2.ts`; once used for tuning,
 they also become observed cases. Checks of spoken wording use what passed through the audio guard (`heard`),
 falling back to `assistant` only for older traces lacking it. The plan and summary record the Git revision
 and a SHA-256 of the tracked runtime diff, without storing that diff or environment values. A changed source
