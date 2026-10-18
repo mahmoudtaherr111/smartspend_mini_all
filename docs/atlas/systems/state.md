@@ -4,14 +4,14 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of 84 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of 85 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-18 2bbf17c | 2026-10-01 85479c6 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-18 2bbf17c | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-18 59352bb | 2026-10-18 59352bb | 5 | — | — | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 7 | — | 3 | 3 | 3 |
@@ -21,7 +21,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 1 | **1** | 1 | 3 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-18 2bbf17c | 2026-10-01 b5d9955 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-18 59352bb | 2026-10-18 2bbf17c | 5 | — | — | — | 6 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-18 59352bb | 2026-10-18 59352bb | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 7 | **1** | — | 2 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (84 issue(s))
+## What is waiting (85 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -138,7 +138,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (25)
+### Debt (26)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
@@ -174,11 +174,12 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat, report, SMS and voice paths do not.
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
-- Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
+- Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; `GROQ_API_KEY` in `api/ai-router.ts`, `GEMINI_API_KEY` in `api/lib/ai-gateway.ts` and `api/services/batch-ai-service.ts`, and `NODE_ENV` in `api/chat-router.ts`, `api/local-auth-router.ts` and `api/middleware.ts` are read directly too.
 - `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the history the admin screens show ends where the ninety-day pruning starts.
-- `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
+- `db/seed.ts` is an empty stub that nothing runs: no npm script calls it.
 - `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library update can silently turn into zeroes.
 - The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the entry and `NODE_ENV=production`; `api/server.ts` repeats the server setup for the standalone deployment. Both route the voice socket (`/api/voice/v2`) through the one `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their `upgrade` listeners pass on have to be kept in step by hand.
+- The weekly `classification-log-cleanup` job in `api/boot.ts` deletes classification logs after 180 days, but the retention policy for the same table deletes them after ninety, so the job removes nothing.
 - The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten: they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that print `error.message` as text print provider, socket and storage errors today, or failed reads whose values are ids and dates (`api/ai-router.ts`, `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)

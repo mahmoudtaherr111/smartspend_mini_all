@@ -27,7 +27,14 @@ Each system has three pages:
 | Admin console, support and growth tools | the admin console and its settings, support tickets, ads, SEO pages, analytics | [admin.md](admin.md) | [عربي](../ar/systems/admin.md) | [facts](../atlas/systems/admin.md) |
 | AI providers and usage limits | model providers, routing and fallback, model names, token limits and budgets, AI cost | [ai-platform.md](ai-platform.md) | [عربي](../ar/systems/ai-platform.md) | [facts](../atlas/systems/ai-platform.md) |
 | Server platform and data | server and tRPC wiring, environment variables, caches, the database schema, file storage, jobs, data retention | [platform.md](platform.md) | [عربي](../ar/systems/platform.md) | [facts](../atlas/systems/platform.md) |
-| Web and mobile app shell | routes and guards, layout, PWA install and offline behaviour, UI primitives, hooks, client utilities | [web-app.md](web-app.md) | [عربي](../ar/systems/web-app.md) | [facts](../atlas/systems/web-app.md) |
+| Web and mobile app shell | the React app (also run as an installed PWA and in the Capacitor shells): routes and guards, layout, PWA install and offline behaviour, UI primitives, hooks, client utilities | [web-app.md](web-app.md) | [عربي](../ar/systems/web-app.md) | [facts](../atlas/systems/web-app.md) |
+
+Two pieces of code are not systems. The Flutter app in `mobile/` is described by `mobile/README.md`, its rules in
+`mobile/AGENTS.md` and its decision in [0022](../decisions/0022-flutter-mobile-app.md); the atlas does not read Dart,
+so there is nothing for a page here to be checked against. It calls the procedures the other systems own (its list is
+generated from `api/router.ts`), and where it touches one, the page says so ([bank messages](bank-messages.md)). The
+Android companion in `android-app/` belongs to [bank-messages](bank-messages.md), which lists it as an extra path of
+that system.
 
 Before you change a file, find its systems in `docs/atlas/systems/files.md` and read their explanations. A file
 that several systems share is split there down to single procedures, routes and jobs.

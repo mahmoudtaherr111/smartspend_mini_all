@@ -12,10 +12,10 @@ storage, the contracts shared with the web app, and the retention job that prune
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, the `/api/sms` sub-app, `/api/trpc/*`, `/health`, the static files and the voice WebSockets (old and rebuilt call) in production, and the cron registrations |
+| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, the `/api/sms` sub-app, `/api/trpc/*`, `/health`, the static files and the live-call WebSocket (`/api/voice/v2`) in production, and the cron registrations |
 | Standalone entry | `api/server.ts` | The same app served on its own, for deploying the API apart from the web app |
 | Request context | `api/context.ts` | Resolves `ctx.user` from the Bearer header, the `smartspend_token`/`local_session` cookie or the `google_session` cookie, and the client IP |
-| Builders | `api/middleware.ts` | The nine procedure builders, their rate limits and their role and plan checks |
+| Builders | `api/middleware.ts` | The procedure builders, their rate limits and their role and plan checks |
 | Root router | `api/router.ts` | Mounts every `*-router.ts` under its name |
 | Environment | `api/lib/env.ts` | One Zod schema parsed at import (`parseServerEnv`): the server refuses to start without the required values, or in production with `JWT_SECRET`, `AI_GATEWAY_SECRET` or `RATE_LIMIT_KEY_SECRET` under 32 characters |
 | Database | `api/queries/connection.ts`, `db/schema.ts`, `db/relations.ts`, `db/table-classes.ts` | The MySQL pool with slow-query logging, the Drizzle schema, the relations that stand in for foreign keys, and every table's storage class |
@@ -66,12 +66,13 @@ storage, the contracts shared with the web app, and the retention job that prune
   API, and integrity lives in application code. Every table has a storage class in `db/table-classes.ts`,
   from A (identity and configuration) to G (conversations), and `tests/table-classes.test.ts` fails when a new
   table has none.
-- The retention job runs daily at 05:00 and walks the declared policies: user analytics after thirty days (the
-  `ai_cost_*` events after ninety, like the token ledger beside them),
-  classification logs, token ledgers, notification logs, ad clicks, raw bank messages (`raw_sms_events`, suggestions
-  included), voice usage and live-call incidents after ninety, the action audit trail and live voice calls after a year, chat messages after ninety days once the conversation has a summary, and expired
-  challenges and pending actions in between. Token ledgers and ad clicks are rolled up into `ai_cost_monthly`
-  and `ad_stats_daily` before the rows go, and deletes run in chunks with a pause between them.
+- The retention job runs daily at 05:00 and walks `RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`, one
+  policy per table (some per kind of row), each with a cut-off in days: thirty to ninety for telemetry, ad clicks,
+  notification logs, token ledgers, raw bank messages (`raw_sms_events`, unanswered suggestions included), voice
+  usage and live-call incidents; a year for the action audit trail and live voice calls; chat messages after ninety
+  days once the conversation has a summary; expired challenges and pending actions, and answered clarifications,
+  in between. Token ledgers and ad clicks are rolled up into `ai_cost_monthly` and `ad_stats_daily` before the rows
+  go, and deletes run in chunks with a pause between them. Read the list in the file for each table's days.
 
 ## Cache
 - `getRedisClient` connects once with a two-second timeout and backs off after failures. Without Redis the
@@ -96,11 +97,14 @@ storage, the contracts shared with the web app, and the retention job that prune
 ## Jobs
 Registered in `api/boot.ts` and only where `ENABLE_CRONS=true`; each takes a MySQL advisory lock named after
 the job, so every replica may register it and one runs it (golden rule 7). The hours are Cairo time: node-cron
-schedules each job in `APP_TIMEZONE`, not the server's clock. Expired sessions and challenges
-(daily), classification logs older than 180 days (Sundays), scheduled notifications (every minute), the smart
-activity check (20:00), the monthly report (1st at 02:00), the monthly behaviour snapshot (1st at 01:00), the
-rollup reconciliation (04:00), data retention (05:00), subscription expiry (06:00), and the live calls' memory
-(every ten minutes; see [voice calls](voice-calls.md)).
+schedules each job in `APP_TIMEZONE`, not the server's clock. The list, with each schedule, is in
+[docs/atlas/entrypoints.md](../atlas/entrypoints.md). In short: session, challenge and phone-code cleanup
+(daily), classification logs (Sundays), scheduled notifications (every minute) and the smart activity check
+(20:00), coaching reminders (every five minutes), the taxonomy migration (every thirty), the memory embedding
+backfill (every twenty), the live calls' memory (every ten; see [voice calls](voice-calls.md)), the monthly
+behaviour snapshot (1st at 01:00) and report (1st at 02:00), the rollup reconciliation (04:00), data retention
+(05:00), and subscription expiry with renewal reminders (06:00). With crons on, boot also seeds the default
+notification templates.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -135,10 +139,12 @@ the rule checks in `tests/knowledge/`.
 Checked against the code; each one names where it lives.
 1. **Debt.** Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8):
    `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and
-   public URL; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
+   public URL; `GROQ_API_KEY` in `api/ai-router.ts`, `GEMINI_API_KEY` in `api/lib/ai-gateway.ts` and
+   `api/services/batch-ai-service.ts`, and `NODE_ENV` in `api/chat-router.ts`, `api/local-auth-router.ts` and
+   `api/middleware.ts` are read directly too.
 2. **Debt.** `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the
    history the admin screens show ends where the ninety-day pruning starts.
-3. **Debt.** `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
+3. **Debt.** `db/seed.ts` is an empty stub that nothing runs: no npm script calls it.
 4. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
    update can silently turn into zeroes.
 5. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
@@ -146,7 +152,9 @@ Checked against the code; each one names where it lives.
    route the voice socket (`/api/voice/v2`) through the one
    `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their
    `upgrade` listeners pass on have to be kept in step by hand.
-6. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
+6. **Debt.** The weekly `classification-log-cleanup` job in `api/boot.ts` deletes classification logs after 180 days,
+   but the retention policy for the same table deletes them after ninety, so the job removes nothing.
+7. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
    they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that
    print `error.message` as text print provider, socket and storage errors today, or failed reads whose values
    are ids and dates (`api/ai-router.ts`,

@@ -8,7 +8,7 @@ views {
 
     user -> smartspend.web.pages.Home 'types or dictates a spending sentence' // intent: the person opens the page
     smartspend.web.pages.Home -> smartspend.api.trpc.ai.parseExpense 'parse the text'
-    smartspend.api.trpc.ai.parseExpense -> smartspend.api.modules.classification 'runSmartPipeline: events, cache, muscle memory, rules, embeddings'
+    smartspend.api.trpc.ai.parseExpense -> smartspend.api.modules.classification 'runSmartPipeline: events, cache, muscle memory, rules'
     smartspend.api.modules.classification -> smartspend.api.modules.ai-providers 'category of the clauses the local pass could not settle'
     smartspend.api.modules.ai-providers -> gemini 'provider chain, Gemini unless configured otherwise'
     smartspend.api.trpc.ai.parseExpense -> smartspend.mysql.classification_logs 'decision trace'
