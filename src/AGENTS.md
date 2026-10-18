@@ -18,12 +18,15 @@ is `docs/systems/web-app.md`. Find the system of a file in `docs/atlas/systems/f
 ## Rules
 1. Reach the server only through `trpc.<router>.<procedure>`. From `api/`, import types only
    (`import type { AppRouter }`); never runtime code from `api/` or `db/`. (`tests/knowledge/architecture.test.ts`)
-2. The interface is Arabic and right-to-left: use logical utilities (`ms-`, `me-`, `ps-`, `pe-`, `start-`,
-   `end-`) instead of left and right ones. (unenforced)
+2. The interface is Arabic first and right-to-left, with an optional English interface
+   (`docs/decisions/0020-optional-english-interface.md`): use logical utilities (`ms-`, `me-`, `ps-`, `pe-`,
+   `start-`, `end-`) instead of left and right ones. (unenforced)
 3. After a mutation, invalidate the queries it changes through `trpc.useUtils()`.
 4. Do not add new reads of the session token from `localStorage`; the API also accepts the HttpOnly
    `smartspend_token` cookie. (unenforced)
-5. Limits and plan features shown to users come from `contracts/constants.ts` and `contracts/plans.ts`.
+5. Prices come from `contracts/plans.ts`. What a plan includes and its limits come from the server (`pro.myPlan`,
+   `pro.planCatalog`, `ai.getUserLimits`), which reads the admin's settings (`contracts/plan-features.ts`,
+   `docs/decisions/0007-plan-limits-are-admin-settings.md`); a screen never hard-codes them.
 6. Text users read follows `docs/guides/writing-app-messages.md`. (`tests/knowledge/user-copy.test.ts`)
 7. Component tests use Vitest and Testing Library; `tests/setup/jest-dom.ts` registers the DOM matchers, such
    as `toBeInTheDocument`, for every test.

@@ -46,6 +46,7 @@ Never quote a count from memory or from an old document; read it from `docs/atla
 | What changed recently, and which tool changed it | `npm run changes` |
 | Rules for a folder | `api/AGENTS.md`, `api/lib/AGENTS.md`, `src/AGENTS.md`, `db/AGENTS.md`, `mobile/AGENTS.md` |
 | The Flutter app: layout, setup, running it against the API, its generated code | `mobile/README.md` |
+| The Flutter app's design rules, each with its source and check | `docs/guides/mobile-design.md` |
 | Why something is built the way it is | `docs/decisions/` |
 | How agents work here and what the hooks do | `docs/guides/agent-workflow.md` |
 | Which tests exist, what they need, where CI runs them | `docs/guides/testing.md` |

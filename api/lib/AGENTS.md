@@ -14,7 +14,7 @@ Read `smart-pipeline.ts` before changing any stage.
 2. Admissibility gate (`admissibility-gate.ts`), the result cache (`classification-cache.ts`, keyed by
    everything the answer depends on), muscle memory (`muscle-memory.ts`), business scoring (business mode only).
 3. Per segment: `rule-engine.ts` (user dictionary, merchant registry, synonym graph, dictionaries, fuzzy
-   match, embeddings), then user correction rules (`correction-rules.ts`), calibration
+   match), then user correction rules (`correction-rules.ts`), calibration
    (`confidence-calibrator.ts`) and the escalation decision (`classification-decision.ts`).
 4. Only escalated clauses reach a model, through `llm-provider-chain.ts` and `llm-router.ts`, with a fixed
    prompt (`classification-prompt.ts`) and reply contract (`classifier-contract.ts`). The model returns
