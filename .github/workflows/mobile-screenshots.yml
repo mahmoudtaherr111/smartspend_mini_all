@@ -47,7 +47,13 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           working-directory: mobile/app
-          script: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart --dart-define-from-file=config/development.json
+          script: mkdir -p build && flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart --dart-define-from-file=config/development.json > build/drive.log 2>&1 || (cat build/drive.log; exit 1)
+      - name: Show the end of the drive log as an annotation
+        if: failure()
+        run: |
+          log=mobile/app/build/drive.log
+          [ -f "$log" ] || exit 0
+          echo "::error title=flutter drive (android)::$(tail -n 60 "$log" | awk '{ gsub(/%/, "%25"); gsub(/\r/, ""); printf "%s%%0A", $0 }')"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -79,7 +85,16 @@ jobs:
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
       - name: Screenshots
         working-directory: mobile/app
-        run: flutter drive -d "${{ steps.simulator.outputs.udid }}" --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart --dart-define-from-file=config/development.json
+        timeout-minutes: 30
+        run: |
+          mkdir -p build
+          flutter drive -d "${{ steps.simulator.outputs.udid }}" --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart --dart-define-from-file=config/development.json > build/drive.log 2>&1 || { cat build/drive.log; exit 1; }
+      - name: Show the end of the drive log as an annotation
+        if: failure()
+        run: |
+          log=mobile/app/build/drive.log
+          [ -f "$log" ] || exit 0
+          echo "::error title=flutter drive (ios)::$(tail -n 60 "$log" | awk '{ gsub(/%/, "%25"); gsub(/\r/, ""); printf "%s%%0A", $0 }')"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
