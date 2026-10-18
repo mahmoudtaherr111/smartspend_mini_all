@@ -48,6 +48,19 @@ flutter analyze
 
 Tests, per package: `dart test` in `packages/smartspend_api`, `flutter test` in the other three.
 
+## Seeing the app without a phone or a Mac
+`.github/workflows/mobile-screenshots.yml` runs the app on an Android emulator and an iOS simulator on GitHub's
+machines and photographs every tab in the dark and light themes (`app/integration_test/screenshots_test.dart`). After
+a change reaches `main`, the pictures are on the
+[mobile-screenshots branch](https://github.com/mahmoudtaherr111/smartspend_mini_all/tree/mobile-screenshots), whose
+README shows them side by side; on other branches they are artifacts of the run. A new screen belongs in that test,
+so its picture appears there too. With a device or simulator of your own:
+
+```bash
+cd app
+flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart
+```
+
 ## Generated code
 | File | Made by | When |
 | --- | --- | --- |
