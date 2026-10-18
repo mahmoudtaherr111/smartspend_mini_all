@@ -894,7 +894,7 @@ model {
       }
     }
     auth = router 'auth' {
-      description 'api/auth-router.ts — 4 procedures.'
+      description 'api/auth-router.ts — 5 procedures.'
       metadata {
         file 'api/auth-router.ts'
       }
@@ -936,6 +936,16 @@ model {
           file 'api/auth-router.ts'
           builder 'publicProcedure'
           procedureKind 'query'
+        }
+      }
+      signInWithGoogle = procedure 'auth.signInWithGoogle' {
+        #mutation #strictPublic #uncalled
+        technology 'strictPublicProcedure'
+        description 'mutation · strictPublicProcedure · no caller in src/'
+        metadata {
+          file 'api/auth-router.ts'
+          builder 'strictPublicProcedure'
+          procedureKind 'mutation'
         }
       }
     }

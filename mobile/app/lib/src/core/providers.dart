@@ -1,8 +1,10 @@
 import 'package:bank_capture/bank_capture.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:smartspend_api/smartspend_api.dart';
 
 import '../config/app_config.dart';
+import '../features/auth/session_controller.dart';
 import 'session_store.dart';
 
 /// This build's configuration. `bootstrap()` provides it; tests override it.
@@ -12,18 +14,35 @@ final appConfigProvider = Provider<AppConfig>(
 
 final sessionStoreProvider = Provider<SessionStore>((ref) => SessionStore());
 
+/// The HTTP client every call to the API goes through. Tests answer it with `MockClient`.
+final httpClientProvider = Provider<http.Client>((ref) {
+  final client = http.Client();
+  ref.onDispose(client.close);
+  return client;
+});
+
 /// The one API client of the app. It reads the session token on every call, so signing in or out needs no new
-/// client.
+/// client. When the server refuses the token a call carried, the session ends and the router shows sign-in.
 final trpcClientProvider = Provider<TrpcClient>((ref) {
   final config = ref.watch(appConfigProvider);
   final sessions = ref.watch(sessionStoreProvider);
-  final client = TrpcClient(
+  return TrpcClient(
     baseUri: config.apiBaseUri,
+    httpClient: ref.watch(httpClientProvider),
     readSessionToken: sessions.readToken,
     userAgent: config.userAgent,
+    onSessionRejected: (_) => ref.read(sessionProvider.notifier).expire(),
   );
-  ref.onDispose(client.close);
-  return client;
+});
+
+/// Follows WhatsApp phone challenges on `/api/sse/otp`.
+final phoneChallengeEventsProvider = Provider<PhoneChallengeEvents>((ref) {
+  final config = ref.watch(appConfigProvider);
+  return PhoneChallengeEvents(
+    baseUri: config.apiBaseUri,
+    httpClient: ref.watch(httpClientProvider),
+    userAgent: config.userAgent,
+  );
 });
 
 final bankCaptureProvider = Provider<BankCapture>((ref) => BankCapture());

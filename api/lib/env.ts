@@ -10,6 +10,10 @@ const envSchema = z.object({
   GOOGLE_REDIRECT_URI: z
     .string()
     .default("http://localhost:3000/api/auth/google/callback"),
+  // The OAuth client ids of the mobile app (decision 0022), comma-separated (the store build and the dev build
+  // have one each). `auth.signInWithGoogle` accepts only ID tokens issued to one of them; unset, it refuses all.
+  GOOGLE_ANDROID_CLIENT_IDS: z.string().optional(),
+  GOOGLE_IOS_CLIENT_IDS: z.string().optional(),
 
   // JWT
   JWT_SECRET: z.string().min(1),

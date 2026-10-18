@@ -9,6 +9,9 @@ import 'procedure.dart';
 /// Reads the session token to send, or null when nobody is signed in.
 typedef SessionTokenReader = FutureOr<String?> Function();
 
+/// Told when the server refused the session token a call carried: it expired, was revoked, or its account is gone.
+typedef SessionRejectedListener = void Function(ApiException error);
+
 /// Calls the SmartSpend tRPC API (`/api/trpc/*` in `api/boot.ts`) over plain HTTP and JSON.
 ///
 /// The server has no transformer, so inputs and answers are ordinary JSON: a query is
@@ -23,6 +26,7 @@ final class TrpcClient {
     http.Client? httpClient,
     this._readSessionToken,
     this._userAgent,
+    this._onSessionRejected,
     this.timeout = const Duration(seconds: 30),
   }) : _http = httpClient ?? http.Client();
 
@@ -30,6 +34,10 @@ final class TrpcClient {
   final http.Client _http;
   final SessionTokenReader? _readSessionToken;
   final String? _userAgent;
+
+  /// Called before the error is thrown, only for a call that sent a token: a sign-in that fails with
+  /// `UNAUTHORIZED` (a wrong password) sends none and ends no session.
+  final SessionRejectedListener? _onSessionRejected;
 
   /// How long a call may take before it fails with [ApiNetworkException].
   final Duration timeout;
@@ -95,7 +103,11 @@ final class TrpcClient {
         path: procedure.path,
       );
     }
-    throw _errorFrom(procedure, response.statusCode, body);
+    final error = _errorFrom(procedure, response.statusCode, body);
+    if (error.isUnauthorized && token != null && token.isNotEmpty) {
+      _onSessionRejected?.call(error);
+    }
+    throw error;
   }
 
   static Object? _decode(http.Response response) {

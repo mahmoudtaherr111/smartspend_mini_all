@@ -209,6 +209,52 @@ void main() {
       );
     });
 
+    test('report a refused session token before throwing', () async {
+      final rejected = <ApiException>[];
+      sent = [];
+      final client = TrpcClient(
+        baseUri: Uri.parse('https://api.example.test'),
+        readSessionToken: () => 'revoked-token',
+        onSessionRejected: rejected.add,
+        httpClient: MockClient(
+          (_) async => _json({
+            'error': {
+              'message': 'يجب تسجيل الدخول أولاً',
+              'code': -32001,
+              'data': {'code': 'UNAUTHORIZED', 'httpStatus': 401},
+            },
+          }, 401),
+        ),
+      );
+
+      await expectLater(client.query(_list), throwsA(isA<ApiException>()));
+      expect(rejected.single.isUnauthorized, isTrue);
+    });
+
+    test('of a sign-in without a token end no session', () async {
+      final rejected = <ApiException>[];
+      final client = TrpcClient(
+        baseUri: Uri.parse('https://api.example.test'),
+        readSessionToken: () => null,
+        onSessionRejected: rejected.add,
+        httpClient: MockClient(
+          (_) async => _json({
+            'error': {
+              'message': 'رقم التليفون أو الباسورد غلط',
+              'code': -32001,
+              'data': {'code': 'UNAUTHORIZED', 'httpStatus': 401},
+            },
+          }, 401),
+        ),
+      );
+
+      await expectLater(
+        client.mutate(Procedures.localAuth.login, input: {}),
+        throwsA(isA<ApiException>()),
+      );
+      expect(rejected, isEmpty);
+    });
+
     test('that are not tRPC answers get a message for their status', () async {
       final client = clientAnswering(
         (_) => http.Response('<html>Bad Gateway</html>', 502),
@@ -241,5 +287,7 @@ void main() {
     expect(Procedures.localAuth.login, isA<ApiMutation>());
     expect(Procedures.auth.me, isA<ApiQuery>());
     expect(Procedures.localAuth.login.isPublic, isTrue);
+    expect(Procedures.auth.signInWithGoogle, isA<ApiMutation>());
+    expect(Procedures.auth.signInWithGoogle.isPublic, isTrue);
   });
 }

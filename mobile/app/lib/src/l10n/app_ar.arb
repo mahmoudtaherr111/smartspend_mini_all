@@ -18,5 +18,81 @@
   "captureOff": "مش شغّالة",
   "captureOpenSettings": "افتح الإعدادات",
   "captureOpenShortcuts": "افتح الاختصارات",
-  "captureStatusFailed": "مش قادرين نعرف حالتها دلوقتي. جرّب تاني."
+  "captureStatusFailed": "مش قادرين نعرف حالتها دلوقتي. جرّب تاني.",
+  "signInTitle": "أهلاً بيك في SmartSpend",
+  "signInSubtitle": "ادخل برقم تليفونك أو بحساب Google.",
+  "phoneLabel": "رقم التليفون",
+  "passwordLabel": "الباسورد",
+  "showPassword": "اظهر الباسورد",
+  "hidePassword": "اخفي الباسورد",
+  "signInButton": "ادخل",
+  "orSeparator": "أو",
+  "signInWithGoogle": "ادخل بحساب Google",
+  "noAccountPrompt": "معندكش حساب؟",
+  "createAccount": "اعمل حساب جديد",
+  "sessionEnded": "الجلسة خلصت. سجّل دخولك تاني.",
+  "@sessionEnded": {
+    "description": "Shown on the sign-in screen after the server refused the stored session token."
+  },
+  "enterPhoneAndPassword": "اكتب رقم التليفون والباسورد.",
+  "tryAgainIn": "{seconds, plural, =1{جرّب تاني بعد ثانية.} =2{جرّب تاني بعد ثانيتين.} few{جرّب تاني بعد {seconds} ثواني.} other{جرّب تاني بعد {seconds} ثانية.}}",
+  "@tryAgainIn": {
+    "description": "Under the sign-in button while the server asks the phone to wait after failed attempts.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "googleFailed": "ماقدرناش نكمّل الدخول بحساب Google. جرّب تاني.",
+  "registerTitle": "حساب جديد",
+  "registerSubtitle": "سجّل برقم تليفونك المصري.",
+  "nameLabel": "اسمك",
+  "passwordHint": "6 حروف على الأقل",
+  "referralLabel": "كود دعوة (لو معاك)",
+  "registerButton": "اعمل الحساب",
+  "haveAccountPrompt": "عندك حساب؟",
+  "goToSignIn": "ادخل",
+  "enterRegisterFields": "اكتب اسمك ورقم التليفون والباسورد.",
+  "nameTooShort": "الاسم لازم يكون حرفين على الأقل.",
+  "passwordTooShort": "الباسورد لازم يكون 6 حروف على الأقل.",
+  "humanCheckPending": "استنى لحظة لحد ما التحقق يخلص.",
+  "@humanCheckPending": {
+    "description": "The Cloudflare Turnstile check has not produced a token yet."
+  },
+  "verifyTitle": "أكّد رقمك من واتساب",
+  "verifyBody": "ابعت الكود ده لبوت SmartSpend من واتساب الرقم اللي كتبته. أول ما يوصل هنكمّل إنشاء حسابك.",
+  "verifyCodeLabel": "كود التأكيد",
+  "verifySendOnWhatsApp": "ابعته من واتساب",
+  "verifyCopyCode": "انسخ الكود",
+  "verifyCodeCopied": "الكود اتنسخ.",
+  "verifyWaiting": "مستنيين رسالتك…",
+  "verifyTimeLeft": "فاضل {time}",
+  "@verifyTimeLeft": {
+    "description": "Time left before the confirmation code expires, as minutes:seconds.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "9:41"
+      }
+    }
+  },
+  "verifyWrongSender": "الكود وصل من رقم واتساب غير الرقم اللي بتسجّل بيه. ابعته من نفس الرقم.",
+  "verifyExpired": "وقت التأكيد خلص. اطلب كود جديد.",
+  "verifyDone": "الرقم اتأكد. بنجهّز حسابك…",
+  "verifyBack": "رجوع وتعديل",
+  "verifyBotUnavailable": "بوت الواتساب مش شغّال دلوقتي. جرّب كمان شوية، أو ادخل بطريقة تانية.",
+  "verifyWhatsAppText": "تفعيل حسابي: {code}",
+  "@verifyWhatsAppText": {
+    "description": "The WhatsApp message the person sends to the bot. The bot reads the code from it.",
+    "placeholders": {
+      "code": {
+        "type": "String",
+        "example": "SS-123456"
+      }
+    }
+  },
+  "whatsappNotOpened": "مش قادرين نفتح واتساب. انسخ الكود وابعته للبوت بنفسك.",
+  "accountTitle": "حسابك",
+  "signOut": "تسجيل الخروج"
 }

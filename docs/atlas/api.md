@@ -32,7 +32,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `ads` | `api/ads-router.ts` | 7 | 2 | 5 | `adminProcedure`, `authedProcedure`, `publicProcedure` |
 | `ai` | `api/ai-router.ts` | 9 | 2 | 7 | `aiProcedure`, `authedProcedure` |
 | `analytics` | `api/analytics-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
-| `auth` | `api/auth-router.ts` | 4 | 2 | 2 | `authedProcedure`, `publicProcedure`, `strictPublicProcedure` |
+| `auth` | `api/auth-router.ts` | 5 | 2 | 3 | `authedProcedure`, `publicProcedure`, `strictPublicProcedure` |
 | `budget` | `api/budget-router.ts` | 4 | 1 | 3 | `authedProcedure` |
 | `business` | `api/business-router.ts` | 10 | 2 | 8 | `businessAiProcedure`, `businessProcedure` |
 | `chat` | `api/chat-router.ts` | 10 | 4 | 6 | `aiProcedure`, `authedProcedure` |
@@ -173,6 +173,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `auth.googleUrl` | query | `publicProcedure` | no | — | — | `api/lib/env.ts` | `src/pages/Login.tsx` |
 | `auth.logout` | mutation | `authedProcedure` | no | — | — | `api/local-auth-utils.ts` | `src/hooks/useAuth.ts` |
 | `auth.me` | query | `publicProcedure` | no | `users` | — | — | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
+| `auth.signInWithGoogle` | mutation | `strictPublicProcedure` | yes | `users` | `users` | `api/lib/google-id-token.ts`, `api/local-auth-utils.ts` | — |
 
 ### `budget` — `api/budget-router.ts`
 
@@ -415,4 +416,4 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 These are not referenced by the web app. Some may be called by other clients (Android app, iOS shortcuts) or server-side through `createCaller`; the rest are candidates for removal.
 
-`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.generateMagicCode`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`
+`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `auth.signInWithGoogle`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.generateMagicCode`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`
