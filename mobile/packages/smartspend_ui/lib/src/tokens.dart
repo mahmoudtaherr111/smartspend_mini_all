@@ -3,6 +3,8 @@ import 'package:flutter/services.dart' show Brightness;
 
 /// The colors of one brightness. The values follow the web app (`src/index.css`, `tailwind.config.js`): the
 /// near-black navy of the dark theme and its splash screen, the emerald accent most screens use, indigo for AI.
+/// Every text colour reaches 4.5:1 on every surface of its theme (rule 6.1 of docs/guides/mobile-design.md,
+/// `test/contrast_test.dart`), which is why the light theme uses darker shades than the web's.
 final class SmartSpendColors {
   const SmartSpendColors({
     required this.brightness,
@@ -67,7 +69,7 @@ final class SmartSpendColors {
     onAccent: Color(0xFF04140E),
     ai: Color(0xFF818CF8),
     warning: Color(0xFFF59E0B),
-    danger: Color(0xFFF43F5E),
+    danger: Color(0xFFFB7185),
     info: Color(0xFF38BDF8),
   );
 
@@ -78,14 +80,14 @@ final class SmartSpendColors {
     surfaceRaised: Color(0xFFF1F3F6),
     border: Color(0xFFE4E4E7),
     foreground: Color(0xFF18181B),
-    mutedForeground: Color(0xFF71717A),
-    accent: Color(0xFF059669),
+    mutedForeground: Color(0xFF5F6068),
+    accent: Color(0xFF047857),
     accentGlow: Color(0xFF10B981),
     onAccent: Color(0xFFFFFFFF),
-    ai: Color(0xFF6366F1),
-    warning: Color(0xFFD97706),
-    danger: Color(0xFFE11D48),
-    info: Color(0xFF0284C7),
+    ai: Color(0xFF4F46E5),
+    warning: Color(0xFFB45309),
+    danger: Color(0xFFBE123C),
+    info: Color(0xFF0369A1),
   );
 }
 
