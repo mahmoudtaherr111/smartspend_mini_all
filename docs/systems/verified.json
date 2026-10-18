@@ -54,9 +54,9 @@
         "src/pages/Login.tsx": "59d76ce265d9",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-18 59352bb",
-      "arabic": "8ecfe9cfc468",
-      "arabicChecked": "2026-10-18 59352bb"
+      "checked": "2026-10-18 d3e45a3",
+      "arabic": "c14d66cffa33",
+      "arabicChecked": "2026-10-18 d3e45a3"
     },
     "admin": {
       "files": {
@@ -304,9 +304,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "e8560e2e93f6",
-      "arabicChecked": "2026-10-01 85479c6"
+      "checked": "2026-10-18 d3e45a3",
+      "arabic": "458682d3200a",
+      "arabicChecked": "2026-10-18 d3e45a3"
     },
     "insights": {
       "files": {

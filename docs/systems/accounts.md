@@ -133,8 +133,8 @@ ending the attempt.
   row must exist and be unexpired (`validateActiveSessionToken`), and the role and plan are read from the user table.
 - **Revocation.** Logout deletes the session row and its cached copy and clears the cookies. Bumping the auth version
   (`bumpAuthVersion`) drops every cached session of a user at once; phone changes and `session.revokeMine` do it.
-- **Cleanup.** `daily-auth-cleanup` deletes expired sessions and passkey challenges every night at midnight on replicas
-  with `ENABLE_CRONS=true`.
+- **Cleanup.** `daily-auth-cleanup` deletes expired sessions, passkey challenges and phone challenges every night at midnight
+  on replicas with `ENABLE_CRONS=true`.
 - **In the browser** (`src/hooks/useAuth.ts`): both `auth.me` and `localAuth.me` are asked; a short offline snapshot
   keeps the name and plan visible without a network; logins and logouts are shared between tabs; logout clears the
   token, the offline queues and both server sessions.

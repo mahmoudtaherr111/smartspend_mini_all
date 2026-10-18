@@ -165,9 +165,9 @@ Drawn in `docs/architecture/flows/ai-chat.c4`; in the interactive map it is the 
 | --- | --- | --- |
 | `ai-actions` — AI action runtime | Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat. | 6 |
 | `ai-kernel` — AI Center kernel | Plans each AI Center turn without a model (intent, data needs, clarifying questions), packs the context, applies the capability registry and retrieval policy, words the answer with at most one model call, and logs traces. | 11 |
-| `ai-memory` — AI memory | Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional Fireworks embeddings stored in MySQL with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests. | 14 |
+| `ai-memory` — AI memory | Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional embeddings stored in MySQL (from the providers the admin assigned, else Google) with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests. | 14 |
 | `finance-semantic-layer` — Finance semantic layer | Answers factual finance questions from the ledger: period resolution, category matching, row aggregation, monthly report facts, proactive insights, chart artifacts and a per-user cache. | 10 |
-| `site-guide` — Site guide | How-to answers about using SmartSpend (linking SMS, cards and wallets, goals, reports) from a built-in knowledge base with embedding retrieval. | 5 |
+| `site-guide` — Site guide | How-to answers about using SmartSpend (linking SMS, cards and wallets, goals, reports) from a built-in knowledge base, found by words and a small local hashed-token vector (no model call). | 5 |
 | `web-ai` — AI Center UI | AI Center screens: the chatbot, the AI memory manager and the monthly AI report. | 3 |
 
 ## API procedures

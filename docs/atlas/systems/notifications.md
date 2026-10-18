@@ -85,7 +85,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `notifications` — Notifications | Web push (VAPID) and Firebase Cloud Messaging delivery, scheduled and event-triggered notifications, budget alerts, activity nudges and the default templates. | 2 |
-| `whatsapp` — WhatsApp | Baileys WhatsApp client and the in-process OTP state it verifies against. | 2 |
+| `whatsapp` — WhatsApp | Baileys WhatsApp client and its in-process sender blocklist; the phone codes themselves are shared state (`phone-challenge.ts`, `redis-client.ts`). | 2 |
 
 ## API procedures
 

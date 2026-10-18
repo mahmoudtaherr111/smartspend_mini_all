@@ -432,4 +432,4 @@ Checked against the code; each one names where it lives.
 - [Admin console, support and growth tools](admin.md): the rule sandbox and the clarifications tab.
 - [AI Center](ai-center.md): the assistant can also propose recording an expense.
 
-A filing-only clause such as «سجلها في حساب مشروع ورشة النجارة» after a priced purchase is retained as a rejected instruction, not an incomplete financial event needing another amount. Real unpriced purchases or payments still require clarification. Pipeline version v3.1 separates the cache from results before this change. «للمحل» alone can name a merchant and never establishes that the user is recording in their own business ledger.
+A filing-only clause such as «سجلها في حساب مشروع ورشة النجارة» after a priced purchase is retained as a rejected instruction, not an incomplete financial event needing another amount. Real unpriced purchases or payments still require clarification. «للمحل» alone can name a merchant and never establishes that the user is recording in their own business ledger.

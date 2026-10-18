@@ -268,7 +268,7 @@ Web push (VAPID) and Firebase Cloud Messaging delivery, scheduled and event-trig
 
 ### `whatsapp` — WhatsApp
 
-Baileys WhatsApp client and the in-process OTP state it verifies against.
+Baileys WhatsApp client and its in-process sender blocklist; the phone codes themselves are shared state (`phone-challenge.ts`, `redis-client.ts`).
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -399,7 +399,7 @@ Helpers used only by the classification benchmark and QA scripts: taxonomy asser
 
 ### `classification` — Expense classification pipeline
 
-smart-pipeline.ts and the modules it composes: financial events, the role of each number and of each word in a clause, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.
+smart-pipeline.ts and the modules it composes: financial events, the role of each number and of each word in a clause, admissibility, rules, muscle memory, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -477,7 +477,7 @@ Actions the assistant proposes, such as recording an expense, updating a wallet 
 
 ### `ai-memory` — AI memory
 
-Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional Fireworks embeddings stored in MySQL with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests.
+Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional embeddings stored in MySQL (from the providers the admin assigned, else Google) with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -515,7 +515,7 @@ Answers factual finance questions from the ledger: period resolution, category m
 
 ### `site-guide` — Site guide
 
-How-to answers about using SmartSpend (linking SMS, cards and wallets, goals, reports) from a built-in knowledge base with embedding retrieval.
+How-to answers about using SmartSpend (linking SMS, cards and wallets, goals, reports) from a built-in knowledge base, found by words and a small local hashed-token vector (no model call).
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -700,7 +700,7 @@ Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, 
 
 ### `web-voice-call` — Live voice call UI
 
-The live voice call in the app. The rebuilt call: a store any screen can start the call from (src/lib/voice/call-store.ts), which keeps it running across pages; microphone capture filtered down to 16 kHz with speech detection that sends audio only while the user speaks; the /api/voice/v2 socket client that resumes a dropped call; playback of the assistant's voice; and the call screen with its cards, the Home button and the AI Center tab (src/components/voice).
+The live voice call in the app. The call: a store any screen can start the call from (src/lib/voice/call-store.ts), which keeps it running across pages; microphone capture filtered down to 16 kHz with speech detection that sends audio only while the user speaks; the /api/voice/v2 socket client that resumes a dropped call; playback of the assistant's voice; and the call screen with its cards, the Home button and the AI Center tab (src/components/voice).
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
