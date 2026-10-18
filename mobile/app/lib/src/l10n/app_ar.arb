@@ -1,0 +1,22 @@
+{
+  "@@locale": "ar",
+  "appTitle": "SmartSpend",
+  "navRecord": "تسجيل",
+  "navStats": "إحصائيات",
+  "navAi": "مركز AI",
+  "navCalendar": "تقويم",
+  "navMore": "المزيد",
+  "screenInProgress": "الشاشة دي لسه بتتبني في التطبيق الجديد.",
+  "@screenInProgress": {
+    "description": "Shown on a tab whose screen is not built yet."
+  },
+  "captureAndroidTitle": "إشعارات البنك والمحفظة",
+  "captureAndroidBody": "التطبيق بيقرا إشعارات البنك والمحفظة ويسجّل المصروف لوحده.",
+  "captureIosTitle": "رسايل البنك من الاختصارات",
+  "captureIosBody": "أتمتة في تطبيق الاختصارات بتبعت رسايل البنك للتطبيق أول ما توصل.",
+  "captureOn": "شغّالة",
+  "captureOff": "مش شغّالة",
+  "captureOpenSettings": "افتح الإعدادات",
+  "captureOpenShortcuts": "افتح الاختصارات",
+  "captureStatusFailed": "مش قادرين نعرف حالتها دلوقتي. جرّب تاني."
+}

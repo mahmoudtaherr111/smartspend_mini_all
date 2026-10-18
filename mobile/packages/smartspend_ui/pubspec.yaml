@@ -1,0 +1,23 @@
+name: smartspend_ui
+description: "SmartSpend design system: tokens, theme and components."
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  fonts:
+    # Cairo, the web app's typeface, as one variable font (SIL Open Font License, assets/fonts/OFL.txt). Apps
+    # name it through `SmartSpendTypography.fontFamily`, since a package font is `packages/smartspend_ui/Cairo`.
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-Variable.ttf

@@ -1,0 +1,97 @@
+name: Mobile
+
+# The Flutter app in mobile/ (docs/decisions/0022-flutter-mobile-app.md). Runs when mobile/ changes, which includes
+# a server change that renamed or removed a procedure: its regenerated catalog lives under mobile/.
+on:
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile.yml"
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: mobile
+
+jobs:
+  check:
+    name: Format, analysis and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The exact Flutter release named in mobile/pubspec.yaml (environment.flutter).
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: mobile/pubspec.yaml
+          cache: true
+      - run: flutter pub get
+      - name: Generated code matches its sources (localizations, Pigeon bridge)
+        run: |
+          (cd packages/bank_capture && dart run pigeon --input pigeons/bank_capture_api.dart && dart format lib/src)
+          git diff --exit-code -- . || {
+            echo "::error::Generated files are stale. Run flutter pub get, and Pigeon as pigeons/bank_capture_api.dart says, then commit."
+            exit 1
+          }
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: flutter analyze
+      - name: API client tests
+        working-directory: mobile/packages/smartspend_api
+        run: dart test
+      - name: Design system tests
+        working-directory: mobile/packages/smartspend_ui
+        run: flutter test
+      - name: Native bridge tests
+        working-directory: mobile/packages/bank_capture
+        run: flutter test
+      - name: App tests
+        working-directory: mobile/app
+        run: flutter test
+
+  android:
+    name: Android build (Kotlin compiles)
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: mobile/pubspec.yaml
+          cache: true
+      - name: Debug APK
+        working-directory: mobile/app
+        run: flutter build apk --debug --dart-define-from-file=config/development.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smartspend-mobile-debug-apk
+          path: mobile/app/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
+
+  ios:
+    name: iOS build without signing (Swift compiles)
+    needs: check
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: mobile/pubspec.yaml
+          cache: true
+      - name: Debug build for a device, unsigned
+        working-directory: mobile/app
+        run: flutter build ios --debug --no-codesign --dart-define-from-file=config/development.json

@@ -1,0 +1,17 @@
+# The SmartSpend mobile workspace (docs/decisions/0022-flutter-mobile-app.md). It is not an app itself: the app is
+# in app/, its parts in packages/. One `flutter pub get` here resolves every member into one pubspec.lock.
+name: smartspend_mobile
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+  # The one Flutter release everyone builds with. .github/workflows/mobile.yml installs exactly this version.
+  flutter: 3.47.7
+
+workspace:
+  - app
+  - packages/bank_capture
+  - packages/smartspend_api
+  - packages/smartspend_ui
+dev_dependencies:
+  flutter_lints: ^6.0.0

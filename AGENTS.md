@@ -10,11 +10,13 @@ turns each sentence into categorized transactions, and an AI Center answers ques
 
 `src/` React + Vite PWA (Capacitor shells in `android/` and `ios/`) · `api/` Hono + tRPC on Node ·
 `db/` Drizzle schema for MySQL · `contracts/` code shared by both · `android-app/` native companion that
-forwards bank and wallet notifications.
+forwards bank and wallet notifications · `mobile/` the Flutter app for Android and iOS that will replace the
+Capacitor shells and the companion (`docs/decisions/0022-flutter-mobile-app.md`).
 
 ## Trust order
 1. The code.
-2. Generated facts: `docs/atlas/` and `docs/architecture/generated/`, rebuilt from the code by `npm run atlas`.
+2. Generated facts: `docs/atlas/`, `docs/architecture/generated/` and the mobile procedure catalog
+   (`mobile/packages/smartspend_api/lib/src/generated/`), rebuilt from the code by `npm run atlas`.
 3. The rules in this file and in the nearest folder `AGENTS.md`, each backed by the check it names.
 4. System explanations in `docs/systems/`: hand-written, but each one is recorded as checked against the code
    it describes, and `npm run agent:finish` asks for a new check as soon as that code changes.
@@ -42,7 +44,8 @@ Never quote a count from memory or from an old document; read it from `docs/atla
 | Environment variables | `docs/atlas/env.md` |
 | Impact questions ("who writes expenses?") or one journey as a diagram | the `likec4` MCP server, or `npm run arch`; see `docs/architecture/README.md` |
 | What changed recently, and which tool changed it | `npm run changes` |
-| Rules for a folder | `api/AGENTS.md`, `api/lib/AGENTS.md`, `src/AGENTS.md`, `db/AGENTS.md` |
+| Rules for a folder | `api/AGENTS.md`, `api/lib/AGENTS.md`, `src/AGENTS.md`, `db/AGENTS.md`, `mobile/AGENTS.md` |
+| The Flutter app: layout, setup, running it against the API, its generated code | `mobile/README.md` |
 | Why something is built the way it is | `docs/decisions/` |
 | How agents work here and what the hooks do | `docs/guides/agent-workflow.md` |
 | Which tests exist, what they need, where CI runs them | `docs/guides/testing.md` |
@@ -89,6 +92,7 @@ conflicting, and pre-push refuses a push while a rule is broken. Claude Code and
 | Architecture map / validation | `npm run arch` / `npm run arch:validate` |
 | Schema change | `npm run db:generate`, review, `npm run db:migrate` (`db:push` only on a throwaway local database); `npm run db:doctor` compares a database with the schema |
 | Production build and start (the Docker image runs `dist/boot.js`) | `npm run build`, `npm start` |
+| The Flutter app, from `mobile/` (Flutter release pinned in `mobile/pubspec.yaml`) | `flutter pub get`, `dart format .`, `flutter analyze`, then each package's tests (`mobile/README.md`) |
 
 Lint errors that predate the lint rules are frozen in `eslint-suppressions.json`: a new violation fails
 `npm run lint`, and after fixing old ones run `npm run lint:prune`. If a check fails on files you did not
@@ -126,8 +130,8 @@ touch, say so in your report and do not change unrelated code to make it pass.
 ## Definition of done
 1. `npm run agent:finish` reports no broken rule, and the tests of the files you touched pass (it prints the
    `npx vitest related` command for them).
-2. The regenerated files in `docs/atlas/` and `docs/architecture/generated/` are in the same commit as the
-   code. The pre-commit hook adds them when every changed code file is staged.
+2. The regenerated files in `docs/atlas/`, `docs/architecture/generated/` and the mobile procedure catalog are in
+   the same commit as the code. The pre-commit hook adds them when every changed code file is staged.
 3. `agent:finish` names a system explanation your change made stale: read it, correct whatever no longer
    matches the code — including the known issues — then `npm run docs:verify -- <id>`. An edited English page
    asks for the Arabic page in `docs/ar/systems/` to be brought in line and re-checked with `--ar`. The

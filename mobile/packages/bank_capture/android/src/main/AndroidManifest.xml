@@ -1,0 +1,18 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- Notification access for bank and wallet messages. Only the system can bind it
+             (BIND_NOTIFICATION_LISTENER_SERVICE), and only after the user turns it on in Settings.
+             No default_filter_types: some banks post silent notifications, so the listener receives every
+             type and its own code decides what is a bank message. -->
+        <service
+            android:name=".BankNotificationListener"
+            android:exported="true"
+            android:label="SmartSpend"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

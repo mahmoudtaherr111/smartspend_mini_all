@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "appTitle": "SmartSpend",
+  "navRecord": "Record",
+  "navStats": "Stats",
+  "navAi": "AI Center",
+  "navCalendar": "Calendar",
+  "navMore": "More",
+  "screenInProgress": "This screen is still being built in the new app.",
+  "captureAndroidTitle": "Bank and wallet notifications",
+  "captureAndroidBody": "The app reads your bank and wallet notifications and records the spending for you.",
+  "captureIosTitle": "Bank messages from Shortcuts",
+  "captureIosBody": "An automation in the Shortcuts app sends each bank message to the app as it arrives.",
+  "captureOn": "On",
+  "captureOff": "Off",
+  "captureOpenSettings": "Open settings",
+  "captureOpenShortcuts": "Open Shortcuts",
+  "captureStatusFailed": "We can't tell its state right now. Try again."
+}

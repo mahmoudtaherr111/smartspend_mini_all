@@ -1,0 +1,9 @@
+# Pub and tool state, rebuilt by `flutter pub get` (pubspec.lock is committed: it pins every dependency).
+.dart_tool/
+.flutter-plugins-dependencies
+build/
+
+# Editor files.
+.idea/
+*.iml
+.vscode/

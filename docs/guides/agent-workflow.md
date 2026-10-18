@@ -21,9 +21,9 @@ keeps the documentation true without anyone updating it by hand. It is written f
 2. Read `AGENTS.md`, the system explanation of what you are about to change (find it in
    `docs/atlas/systems/files.md`), and the `AGENTS.md` of each folder to be edited.
 3. Work in small commits.
-4. Finish: `npm run agent:finish` regenerates `docs/atlas` and `docs/architecture/generated`, then checks the
-   architecture rules, the hand-written documents, the flows and the system explanations, and prints the tests
-   for the changed files.
+4. Finish: `npm run agent:finish` regenerates `docs/atlas`, `docs/architecture/generated` and the mobile
+   procedure catalog (`mobile/packages/smartspend_api/lib/src/generated`), then checks the architecture rules,
+   the hand-written documents, the flows and the system explanations, and prints the tests for the changed files.
 5. Commit the code together with the regenerated files, then `npm run ship`: it refuses uncommitted changes,
    merges `origin/main` again and pushes the branch to `main`. When `main` moved in the meantime, it merges
    and pushes again.

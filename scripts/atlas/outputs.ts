@@ -8,6 +8,7 @@ import type { AtlasGraph } from "./graph";
 import { ATLAS_DIR, renderAtlas } from "./emit/markdown";
 import { ARCH_GENERATED_DIR, renderLikeC4 } from "./emit/likec4";
 import { SYSTEMS_DIR, renderSystems } from "./emit/systems";
+import { MOBILE_API_GENERATED_DIR, renderDart } from "./emit/dart";
 import { REPO_ROOT } from "./lib/util";
 
 interface Output {
@@ -20,6 +21,7 @@ const OUTPUTS: Output[] = [
   { dir: ATLAS_DIR, extension: ".md", render: renderAtlas },
   { dir: SYSTEMS_DIR, extension: ".md", render: renderSystems },
   { dir: ARCH_GENERATED_DIR, extension: ".c4", render: renderLikeC4 },
+  { dir: MOBILE_API_GENERATED_DIR, extension: ".g.dart", render: renderDart },
 ];
 
 /** Folders whose content is generated. Never edit or hand-merge them. */

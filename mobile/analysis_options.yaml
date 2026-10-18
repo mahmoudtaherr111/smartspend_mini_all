@@ -1,0 +1,19 @@
+# One set of rules for every package in the workspace. `flutter analyze` from mobile/ checks them all.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - "**/build/**"
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_dynamic_calls
+    - directives_ordering
+    - prefer_final_locals
+    - prefer_single_quotes
+    - unawaited_futures
