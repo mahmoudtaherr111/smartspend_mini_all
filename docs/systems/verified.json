@@ -3,7 +3,7 @@
   "systems": {
     "accounts": {
       "files": {
-        "api/auth-router.ts": "20fc04d1a094",
+        "api/auth-router.ts": "e2a342a9e3ce",
         "api/boot.ts#GET /api/auth/google/callback": "4aa70d89b69f",
         "api/boot.ts#GET /api/auth/google/start": "30860aaa6f6e",
         "api/boot.ts#GET /api/sse/otp": "17c9d19750db",
@@ -12,6 +12,7 @@
         "api/lib/admin-safe-fields.ts": "cfb73d6bbe66",
         "api/lib/anonymizer.ts": "5c18efa7eec1",
         "api/lib/get-client-ip.ts": "72af77e654a4",
+        "api/lib/google-id-token.ts": "008e0247eaad",
         "api/lib/http-origin-security.ts": "066096844fe2",
         "api/lib/image-magic-bytes.ts": "4e8c26a07b43",
         "api/lib/login-protection.ts": "2e7377afad07",
@@ -53,9 +54,9 @@
         "src/pages/Login.tsx": "59d76ce265d9",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "68858629f3ab",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-10-18 59352bb",
+      "arabic": "8ecfe9cfc468",
+      "arabicChecked": "2026-10-18 59352bb"
     },
     "admin": {
       "files": {
@@ -444,7 +445,7 @@
         "api/jobs/data-retention-job.ts": "d43acf75679a",
         "api/lib/app-time.ts": "f53d4623a239",
         "api/lib/cache-keys.ts": "e4adb63af12d",
-        "api/lib/env.ts": "33dce14765ca",
+        "api/lib/env.ts": "c1943bec00ee",
         "api/lib/error-logger.ts": "9cb0f25fe459",
         "api/lib/error-reporting.ts": "9891f7185094",
         "api/lib/log.ts": "65a6302d6f7d",
@@ -480,7 +481,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "e05665bec173"
       },
-      "checked": "2026-10-18 2bbf17c",
+      "checked": "2026-10-18 59352bb",
       "arabic": "177558109d3b",
       "arabicChecked": "2026-10-18 2bbf17c"
     },

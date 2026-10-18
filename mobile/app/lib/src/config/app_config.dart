@@ -7,12 +7,16 @@ import 'package:flutter/foundation.dart';
 ///     flutter run --dart-define-from-file=config/development.json
 ///     flutter build appbundle --dart-define=SMARTSPEND_ENV=production --dart-define=SMARTSPEND_API_URL=https://…
 ///
-/// Nothing secret belongs here: everything in a dart-define ships inside the app.
+/// Nothing secret belongs here: everything in a dart-define ships inside the app. OAuth client ids and the Turnstile
+/// site key are public identifiers, which every copy of the app and the website carry anyway.
 final class AppConfig {
   const AppConfig({
     required this.environment,
     required this.apiBaseUri,
     required this.userAgent,
+    this.googleServerClientId = '',
+    this.googleIosClientId = '',
+    this.turnstileSiteKey = '',
   });
 
   /// Reads the dart-defines of this build.
@@ -31,6 +35,11 @@ final class AppConfig {
       apiUrl: apiUrl,
       isReleaseBuild: kReleaseMode,
       platform: Platform.operatingSystem,
+      googleServerClientId: const String.fromEnvironment(
+        'GOOGLE_SERVER_CLIENT_ID',
+      ),
+      googleIosClientId: const String.fromEnvironment('GOOGLE_IOS_CLIENT_ID'),
+      turnstileSiteKey: const String.fromEnvironment('TURNSTILE_SITE_KEY'),
     );
   }
 
@@ -40,6 +49,9 @@ final class AppConfig {
     required String apiUrl,
     required bool isReleaseBuild,
     required String platform,
+    String googleServerClientId = '',
+    String googleIosClientId = '',
+    String turnstileSiteKey = '',
   }) {
     if (apiUrl.isEmpty && isReleaseBuild) {
       throw StateError(
@@ -57,6 +69,9 @@ final class AppConfig {
       environment: environment,
       apiBaseUri: uri,
       userAgent: 'SmartSpend-Mobile ($platform; $environment)',
+      googleServerClientId: googleServerClientId.trim(),
+      googleIosClientId: googleIosClientId.trim(),
+      turnstileSiteKey: turnstileSiteKey.trim(),
     );
   }
 
@@ -69,6 +84,18 @@ final class AppConfig {
   /// Sent with every request; the server keeps it with each session, so the user can tell this phone apart in
   /// their list of sessions.
   final String userAgent;
+
+  /// The server's web OAuth client id (`GOOGLE_CLIENT_ID` on the server). Android's Google SDK issues the ID token
+  /// for it, and `auth.signInWithGoogle` checks that the Android app asked for it.
+  final String googleServerClientId;
+
+  /// This build's iOS OAuth client id. iOS also needs its reversed form as a URL scheme, `GOOGLE_REVERSED_CLIENT_ID`
+  /// in `ios/Flutter/GoogleSignIn.xcconfig`.
+  final String googleIosClientId;
+
+  /// The Cloudflare Turnstile site key, the same public key as the web build's `VITE_TURNSTILE_SITE_KEY`. Without
+  /// it no check is shown and none is sent, which a development server accepts.
+  final String turnstileSiteKey;
 
   bool get isProduction => environment == 'production';
 }

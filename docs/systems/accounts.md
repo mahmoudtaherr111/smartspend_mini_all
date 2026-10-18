@@ -1,7 +1,7 @@
 # Accounts, sign-in and security
 
 How people get in and stay in: Google sign-in, phone numbers with passwords, passkeys, sessions and logout, the app
-lock on the device, and the protections every request passes through (origins, headers, client IP, rate limits, login
+lock on the device, the sign-in of the Flutter app in `mobile/`, and the protections every request passes through (origins, headers, client IP, rate limits, login
 protection, ownership checks, upload checks, bot protection). Also account changes and account deletion.
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/accounts.md](../atlas/systems/accounts.md)
@@ -22,6 +22,8 @@ account of the same person.
 | Sign-in suggestion | `src/hooks/useBiometricOnboarding.ts`, `src/components/auth/BiometricOnboardingModal.tsx`, `src/hooks/usePasskeyEnrolment.ts` | The sheet that offers fingerprint / Face ID sign-in and registers the passkey in place |
 | Client session | `src/hooks/useAuth.ts`, `src/providers/trpc.ts` | Who is signed in, the offline identity, tab sync, logout; the token header on every call |
 | Google sign-in | the `/api/auth/google/start` and `/api/auth/google/callback` routes in `api/boot.ts`, `api/auth-router.ts` | OAuth with a state cookie, account creation, the `google_session` cookie |
+| Google sign-in from the mobile app | `auth.signInWithGoogle` in `api/auth-router.ts`, `api/lib/google-id-token.ts` | Checks the ID token of the phone's Google SDK and answers a session token |
+| Mobile app sign-in | `mobile/app/lib/src/features/auth/`, `PhoneChallengeEvents` in `mobile/packages/smartspend_api` | Phone login, sign-up with WhatsApp verification and Google in the Flutter app; the token in the Keychain or Keystore; the route guard |
 | Phone accounts | `api/local-auth-router.ts`, `api/local-auth-utils.ts` | Register, login, WhatsApp verification codes, logout |
 | Passkeys | `api/webauthn-router.ts` | Register a passkey while signed in, sign in with it |
 | Sessions | `api/context.ts#createContext`, `api/lib/session-validation.ts`, `api/session-router.ts` | Resolving the caller from a token, the Redis cache, revocation |
@@ -43,6 +45,27 @@ account of the same person.
    creates a session.
 4. The route sets the `google_session` cookie (HttpOnly, seven days) and redirects to the dashboard; any failure
    returns to the login screen.
+5. Both Google flows share the account step (`findOrCreateGoogleUser`, keyed by Google's account id in
+   `users.union_id`) and the session step (`startGoogleSession`).
+
+### Google, in the mobile app
+A native app has no cookie to receive, so it signs in with the phone's own Google SDK (`google_sign_in`: Credential
+Manager on Android, the Google Sign-In SDK on iOS) and sends the ID token it gets to `auth.signInWithGoogle`
+(`strictPublicProcedure`, input `{ idToken }`).
+1. `verifyGoogleIdToken` (`api/lib/google-id-token.ts`) checks the RS256 signature against Google's published keys
+   (fetched with `jose` and cached; an unknown key id fetches them again), the issuer `accounts.google.com`, the expiry
+   with a minute of tolerance, and a verified email.
+2. It checks who the token was issued to. The app asks for a token for the server, so its audience (`aud`) is the web
+   client `GOOGLE_CLIENT_ID`, or the iOS client when the iOS SDK signs in on its own; its authorized party (`azp`, or
+   the audience when absent) must be one of `GOOGLE_ANDROID_CLIENT_IDS` or `GOOGLE_IOS_CLIENT_IDS` (comma-separated,
+   for the store and dev builds). A token the website obtained for itself is refused.
+3. With neither variable set the procedure answers `SERVICE_UNAVAILABLE`; a token that fails a check answers
+   `UNAUTHORIZED`, and Google's keys being unreachable `SERVICE_UNAVAILABLE`. It logs `auth.google_id_token.*` with the
+   reason or the user id, never the token or the email.
+4. The account and session are made as in the redirect flow, and the token comes back in the answer; no cookie is set.
+
+The app shows the Google button only when the build has `GOOGLE_SERVER_CLIENT_ID` (the web client id) and, on iOS,
+`GOOGLE_IOS_CLIENT_ID` with its reversed form in `mobile/app/ios/Flutter/GoogleSignIn.xcconfig`.
 
 ### Phone number and password
 - **Register** (`localAuth.register`): an Egyptian mobile number starting with 010, 011, 012 or 015
@@ -73,6 +96,13 @@ and the code only a label (`api/services/phone-challenge.ts`).
 4. On `verified` the page calls `localAuth.register` with the ticket; `localAuth.verifyOtp` does the same for an
    existing account and returns a session. Both spend the challenge with a conditional delete, so a ticket works
    once. Challenges nobody finished are deleted by the nightly `daily-auth-cleanup`.
+
+The mobile app's sign-up (`RegisterScreen`) runs the same steps. It shows the Turnstile widget in a web view loaded as
+the API's origin when the build has `TURNSTILE_SITE_KEY`, opens the `wa.me` link with url_launcher, and follows the
+stream through `PhoneChallengeEvents`. The person leaves for WhatsApp in the middle, so `ChallengeFollower` opens the
+stream again when the app returns to the foreground and after a dropped connection (2 to 30 seconds apart, a minute
+after a 429), and stops at the challenge's deadline. A `wrong_sender` keeps it waiting for the right number instead of
+ending the attempt.
 
 ### Passkeys
 - In Settings, a signed-in user registers a passkey: `webauthn.generateRegistrationOptions` stores a five-minute
@@ -108,6 +138,12 @@ and the code only a label (`api/services/phone-challenge.ts`).
 - **In the browser** (`src/hooks/useAuth.ts`): both `auth.me` and `localAuth.me` are asked; a short offline snapshot
   keeps the name and plan visible without a network; logins and logouts are shared between tabs; logout clears the
   token, the offline queues and both server sessions.
+- **In the mobile app** (`SessionController` in `mobile/app/lib/src/features/auth/session_controller.dart`): the token
+  sits in `SessionStore` (Keychain or Keystore). On start the app opens the tabs on a stored token at once, even
+  offline, and asks `auth.me` and `localAuth.me`; when both answer null, or any call that carried the token is refused
+  as `UNAUTHORIZED` (`TrpcClient`'s `onSessionRejected`), it forgets the token and the router shows sign-in with
+  «الجلسة خلصت». The router (`sessionRedirect`) lets a signed-out person reach only the sign-in screens. Sign-out calls
+  `localAuth.logout`, which revokes the Bearer token's session of either kind, then clears the token.
 - **App lock.** Settings can turn on a lock screen for this device (`src/providers/BiometricLockProvider.tsx`,
   `src/lib/biometricAuth.ts`): biometrics, or a four-digit PIN whose hash is kept in `localStorage`, with a short
   lockout after repeated wrong PINs. It hides the app on the device; the server session stays valid. Only the user
@@ -162,6 +198,8 @@ Then, per procedure:
 | To change | Edit | Check with |
 | --- | --- | --- |
 | Google sign-in | the Google routes in `api/boot.ts`, `api/auth-router.ts` | |
+| Google sign-in from the mobile app | `api/lib/google-id-token.ts`, `auth.signInWithGoogle` in `api/auth-router.ts`, the `GOOGLE_*_CLIENT_IDS` variables in `api/lib/env.ts`, `mobile/app/lib/src/features/auth/google_identity.dart` | `api/lib/google-id-token.test.ts`, `api/auth-router.google-id-token.test.ts`, `mobile/app/test/sign_in_screen_test.dart` |
+| The mobile app's sign-in, sign-up and route guard | `mobile/app/lib/src/features/auth/`, `mobile/app/lib/src/routing/app_router.dart` | the tests in `mobile/app/test/` (`flutter test`) |
 | Phone registration and login | `api/local-auth-router.ts`, `api/local-auth-utils.ts`, `src/pages/Login.tsx` | `api/local-auth-router.security.test.ts` |
 | Proving a phone number | `api/services/phone-challenge.ts`, `receiveVerificationCode` in `api/services/whatsapp-service.ts`, `/api/sse/otp` in `api/boot.ts`, `src/pages/Login.tsx` | `api/local-auth-router.phone.test.ts`, `api/services/whatsapp-service.receive.test.ts`, `tests/phone-challenge.test.ts` (database) |
 | The robot check | `api/services/turnstile-service.ts`, `src/components/auth/TurnstileWidget.tsx` | `tests/security/r3-turnstile-defense.test.ts` |
@@ -195,7 +233,10 @@ Then, per procedure:
 `api/admin-router.security.test.ts`, `api/business-router.security.test.ts`, `api/middleware.test.ts`,
 `api/lib/login-protection.test.ts`, `api/lib/login-protection.integration.test.ts`, `api/lib/origin-policy.test.ts`,
 `api/lib/get-client-ip.test.ts`, `api/lib/rate-limit.test.ts`, the suites in `tests/security/` and, for the app lock,
-`src/providers/BiometricLockProvider.test.tsx` and `src/components/auth/BiometricAuth.test.tsx`.
+`src/providers/BiometricLockProvider.test.tsx` and `src/components/auth/BiometricAuth.test.tsx`. Google ID tokens:
+`api/lib/google-id-token.test.ts` and `api/auth-router.google-id-token.test.ts`. The mobile app: `flutter test` in
+`mobile/app` (sign-in, sign-up with verification, route guard, answer shapes) and `dart test` in
+`mobile/packages/smartspend_api` (the client's session hook and the challenge stream).
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -213,6 +254,16 @@ Checked against the code; each one names where it lives.
 6. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
 7. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
    same storage.
+8. **Gap.** Google sign-in in the mobile app is off until it is configured on both sides: `GOOGLE_ANDROID_CLIENT_IDS` or
+   `GOOGLE_IOS_CLIENT_IDS` on the server, `GOOGLE_SERVER_CLIENT_ID` (and on iOS `GOOGLE_IOS_CLIENT_ID` with the reversed id
+   in `GoogleSignIn.xcconfig`) in the app build. None of these values is set yet, so the app hides the button.
+9. **Gap.** In the mobile app Turnstile runs in a web view loaded as the API's origin, so the site key must list the
+   API's host. A build without `TURNSTILE_SITE_KEY` sends no token, and a production server with verification on then
+   refuses its sign-ups, as known issue 2 says for the web.
+10. **Security.** `auth.signInWithGoogle` asks for no nonce: an ID token issued to the app signs in whoever presents it
+    until it expires, about an hour after Google issued it.
+11. **Gap.** The mobile app has no passkey sign-in, and neither the app nor the web's Login screen offers WhatsApp
+    sign-in (`localAuth.verifyOtp`).
 
 ## Related systems
 - [Notifications and WhatsApp](notifications.md): the WhatsApp bot that receives the codes, and push subscriptions.

@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/auth/register_screen.dart';
+import '../features/auth/session_controller.dart';
+import '../features/auth/sign_in_screen.dart';
+import '../features/auth/starting_screen.dart';
 import '../features/in_progress_screen.dart';
 import '../features/more/more_screen.dart';
 import '../l10n/app_localizations.dart';
@@ -66,11 +70,49 @@ final appTabs = <AppTab>[
   ),
 ];
 
-/// The app's routes: one branch per tab, each keeping its own back stack while the user moves between tabs.
+/// Where the session sends a [location], or null to let it open.
+///
+/// Signed out, only the sign-in screens open; signed in, they lead to the first tab; while the stored token is
+/// being read, the starting screen shows. Every tab sits behind this guard.
+String? sessionRedirect(SessionState session, String location) {
+  final onSignIn =
+      location == SignInScreen.path ||
+      location.startsWith('${SignInScreen.path}/');
+  return switch (session) {
+    SessionRestoring() =>
+      location == StartingScreen.path ? null : StartingScreen.path,
+    SignedOut() => onSignIn ? null : SignInScreen.path,
+    SignedIn() =>
+      onSignIn || location == StartingScreen.path ? appTabs.first.path : null,
+  };
+}
+
+/// The app's routes: the sign-in screens, and one branch per tab, each keeping its own back stack while the user
+/// moves between tabs. The router follows the session: signing in, out, or a session the server ended moves the
+/// user at once.
 final routerProvider = Provider<GoRouter>((ref) {
+  final session = ValueNotifier<SessionState>(ref.read(sessionProvider));
+  ref.listen(sessionProvider, (_, next) => session.value = next);
   final router = GoRouter(
     initialLocation: appTabs.first.path,
+    refreshListenable: session,
+    redirect: (context, state) =>
+        sessionRedirect(session.value, state.uri.path),
     routes: [
+      GoRoute(
+        path: StartingScreen.path,
+        builder: (context, state) => const StartingScreen(),
+      ),
+      GoRoute(
+        path: SignInScreen.path,
+        builder: (context, state) => const SignInScreen(),
+        routes: [
+          GoRoute(
+            path: RegisterScreen.path.substring(SignInScreen.path.length + 1),
+            builder: (context, state) => const RegisterScreen(),
+          ),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
@@ -88,6 +130,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
-  ref.onDispose(router.dispose);
+  ref.onDispose(() {
+    router.dispose();
+    session.dispose();
+  });
   return router;
 });

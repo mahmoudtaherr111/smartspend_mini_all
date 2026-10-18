@@ -314,6 +314,7 @@ model {
   smartspend.api.modules.auth -[imports]-> smartspend.api.modules.security
   smartspend.api.modules.auth -[reads]-> smartspend.mysql.sessions
   smartspend.api.modules.auth -[reads]-> smartspend.mysql.whatsapp_otp_codes
+  smartspend.api.modules.auth -[uses]-> google-oauth
   smartspend.api.modules.auth -[writes]-> smartspend.mysql.local_users
   smartspend.api.modules.auth -[writes]-> smartspend.mysql.sessions
   smartspend.api.modules.auth -[writes]-> smartspend.mysql.users
@@ -725,6 +726,9 @@ model {
   smartspend.api.trpc.auth.googleUrl -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.auth.logout -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.auth.me -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.auth.signInWithGoogle -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.auth.signInWithGoogle -[uses]-> smartspend.api.modules.auth
+  smartspend.api.trpc.auth.signInWithGoogle -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.budget.create -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.budget.create -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.budget.create -[uses]-> smartspend.api.modules.security

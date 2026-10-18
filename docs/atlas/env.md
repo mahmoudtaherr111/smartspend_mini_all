@@ -27,8 +27,10 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `GEMINI_MODEL_FREE` | no | `gemini-3.1-flash-lite` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_PRO` | no | `gemini-3.5-flash` | `api/ai-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_REPORTS` | no | `gemini-3.8-flash` | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
+| `GOOGLE_ANDROID_CLIENT_IDS` | no | — | — |
 | `GOOGLE_CLIENT_ID` | yes | — | `api/auth-router.ts` |
 | `GOOGLE_CLIENT_SECRET` | yes | — | `api/auth-router.ts` |
+| `GOOGLE_IOS_CLIENT_IDS` | no | — | — |
 | `GOOGLE_REDIRECT_URI` | no | `http://localhost:3000/api/auth/google/callback` | `api/auth-router.ts` |
 | `GROQ_API_KEY` | no | — | `api/ai-router.ts` |
 | `JWT_SECRET` | yes | — | `api/lib/login-protection.ts`, `api/lib/provider-key-crypto.ts`, `api/lib/session-validation.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` |
@@ -78,7 +80,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 
 ## Declared but never read outside the schema
 
-`OWNER_EMAIL`
+`GOOGLE_ANDROID_CLIENT_IDS`, `GOOGLE_IOS_CLIENT_IDS`, `OWNER_EMAIL`
 
 ## Frontend (Vite)
 

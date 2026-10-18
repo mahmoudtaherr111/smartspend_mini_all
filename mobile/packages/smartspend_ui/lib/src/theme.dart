@@ -107,9 +107,48 @@ abstract final class SmartSpendTheme {
           ),
         ),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(52),
+          foregroundColor: c.foreground,
+          side: BorderSide(color: c.border),
+          textStyle: SmartSpendTypography.style(16, FontWeight.w600),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+          ),
+        ),
+      ),
+      // Text fields are filled, with the accent on the one being typed in, as the web app's inputs.
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: c.surfaceRaised,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: SmartSpendSpacing.lg,
+          vertical: SmartSpendSpacing.md + 2,
+        ),
+        labelStyle: SmartSpendTypography.style(
+          14,
+          FontWeight.w500,
+        ).copyWith(color: c.mutedForeground),
+        hintStyle: SmartSpendTypography.style(
+          14,
+          FontWeight.w400,
+        ).copyWith(color: c.mutedForeground),
+        border: _fieldBorder(c.border),
+        enabledBorder: _fieldBorder(c.border),
+        focusedBorder: _fieldBorder(c.accent, width: 1.5),
+        errorBorder: _fieldBorder(c.danger),
+        focusedErrorBorder: _fieldBorder(c.danger, width: 1.5),
+      ),
       extensions: [SmartSpendColorsTheme(c)],
     );
   }
+
+  static OutlineInputBorder _fieldBorder(Color color, {double width = 1}) =>
+      OutlineInputBorder(
+        borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+        borderSide: BorderSide(color: color, width: width),
+      );
 }
 
 /// Carries [SmartSpendColors] in the theme, for the colours Material's scheme has no slot for.

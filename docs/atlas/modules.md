@@ -10,7 +10,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | --- | --- | --- | --- | --- | --- |
 | `api-core` | API server core | 5 | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `coaching`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | — |
 | `api-routers` | tRPC routers and HTTP sub-apps | 25 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq` |
-| `auth` | Authentication and sessions | 5 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `whatsapp` | — |
+| `auth` | Authentication and sessions | 6 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `whatsapp` | `google-oauth` |
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
 | `platform` | Platform services | 11 | `contracts`, `database` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `coaching`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice` | `mysql` |
@@ -62,7 +62,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `firebase` | Firebase | push | `notifications`, `web-hooks`, `web-shell` | `api/services/firebase.ts`, `src/hooks/usePushNotifications.ts`, `src/pwa/firebase.ts` |
 | `fireworks` | Fireworks AI | ai-provider | `ai-providers`, `api-routers`, `jobs`, `web-admin` | `api/chat-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/fireworks-client.ts`, `api/lib/llm-provider-chain.ts`, `src/components/admin/settings/AdminPlansTab.tsx` |
 | `gemini` | Google Gemini API | ai-provider | `ai-insights`, `ai-providers`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/goals-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/classifier-contract.ts`, `api/lib/embedding-provider.ts`, `api/lib/llm-router.ts`, `api/lib/narrative-decomposer.ts`, `api/lib/receipt-image-parser.ts`, `api/lib/sms-ai-parser.ts`, `api/services/batch-ai-service.ts`, `api/services/voice/engine/gemini-live.ts`, `api/services/voice/text-model.ts` |
-| `google-oauth` | Google OAuth 2.0 | identity | `api-routers` | `api/auth-router.ts` |
+| `google-oauth` | Google OAuth 2.0 | identity | `api-routers`, `auth` | `api/auth-router.ts`, `api/lib/google-id-token.ts` |
 | `groq` | Groq | ai-provider | `ai-providers`, `api-routers` | `api/ai-router.ts`, `api/lib/groq-client.ts`, `api/lib/llm-provider-chain.ts` |
 | `mysql` | MySQL | datastore | `database` | `api/queries/connection.ts` |
 | `nvidia` | NVIDIA NIM | ai-provider | `ai-providers` | `api/lib/llm-provider-chain.ts`, `api/lib/nvidia-client.ts` |
@@ -124,11 +124,12 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 
 ### `auth` — Authentication and sessions
 
-Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in.
+Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in, and the check of a Google ID token from the mobile app (Google's signature, issuer, expiry, and an audience and authorized party that are the app's own client ids).
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/lib/access-control.ts` | `database`, `platform` | — | `sessions` | `local_users`, `sessions`, `users` |
+| `api/lib/google-id-token.ts` | `platform` | `google-oauth` | — | — |
 | `api/lib/login-protection.ts` | `platform`, `security` | — | — | — |
 | `api/lib/session-validation.ts` | `database`, `platform` | — | `sessions` | — |
 | `api/local-auth-utils.ts` | `database`, `platform`, `security` | — | — | `sessions` |
