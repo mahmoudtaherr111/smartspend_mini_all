@@ -31,7 +31,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `App shell` — `src/App.tsx`
 
-56 files in its import closure (not counting `src/components/ui/`).
+57 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -261,7 +261,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-60 files in its import closure (not counting `src/components/ui/`).
+61 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -359,6 +359,7 @@ _None._
 | `pro.upgrade` | useMutation | `src/hooks/usePro.ts` |
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
+| `profile.deleteMyAccount` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `profile.generateWebhookToken` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/ProfileScreen.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
@@ -448,7 +449,7 @@ _None._
 
 ### `Settings` — `src/pages/Settings.tsx`
 
-26 files in its import closure (not counting `src/components/ui/`).
+27 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -467,6 +468,7 @@ _None._
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
+| `profile.deleteMyAccount` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/ProfileScreen.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx` |

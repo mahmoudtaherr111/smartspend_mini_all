@@ -25,8 +25,8 @@ export const PLAN_FEATURE_DEFAULTS: Record<PlanFeature, Record<PlanId, boolean>>
   receipts: { free: false, pro: true, ultra: true },
   pro_report: { free: false, pro: true, ultra: true },
   goal_analysis: { free: false, pro: true, ultra: true },
-  // Only Pro received it; Ultra was left out by the job's query, not by a decision.
-  whatsapp_report: { free: false, pro: true, ultra: false },
+  // Ultra was once left out by the job's query, not by a decision: the dearer plan includes it too.
+  whatsapp_report: { free: false, pro: true, ultra: true },
 };
 
 /** Numbers per plan that had no setting. Setting key: `<name>_<plan>`. 0 means no limit. */

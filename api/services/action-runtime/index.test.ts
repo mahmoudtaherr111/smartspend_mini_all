@@ -1,4 +1,4 @@
-import { confirmAction, createPendingGoalAction, createPendingRuntimeAction } from "./index";
+import { confirmAction, createPendingGoalAction, createPendingRuntimeAction, expiresAt } from "./index";
 import { invalidateMemoryUserCache } from "../ai-memory";
 
 const { dbMock, insertedRows, updatedRows, state } = vi.hoisted(() => {
@@ -287,5 +287,12 @@ describe("confirming an action that cannot be taken back", () => {
     expect(draft.action.risk).toBe("medium");
     expect(draft.action).not.toHaveProperty("confirmationPhrase");
     await expect(confirmAction(ctx, Number(draft.action.id))).resolves.toMatchObject({ status: "executed" });
+  });
+});
+
+describe("how long a draft can be confirmed", () => {
+  it("is the 30 minutes the user is told, whatever the server's time zone", () => {
+    const now = new Date("2026-10-18T10:00:00.000Z");
+    expect(expiresAt(now).toISOString()).toBe("2026-10-18T10:30:00.000Z");
   });
 });

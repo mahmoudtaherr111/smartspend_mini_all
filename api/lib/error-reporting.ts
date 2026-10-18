@@ -101,8 +101,10 @@ export function initErrorReporting(): void {
   Sentry.init({
     dsn: env.SENTRY_DSN,
     integrations: [nodeProfilingIntegration()],
-    tracesSampleRate: 1.0,
-    profilesSampleRate: 1.0,
+    // Errors are always sent; traces and profiles only for a share of requests (SENTRY_TRACES_SAMPLE_RATE, 10% by
+    // default): sampling every request in production costs every request.
+    tracesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE,
+    profilesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE,
     sendDefaultPii: false,
     beforeBreadcrumb: (breadcrumb) => privateBreadcrumb(breadcrumb),
     beforeSend: (event) => privateEvent(event),

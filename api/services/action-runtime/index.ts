@@ -59,11 +59,13 @@ export {
 
 const ACTION_TTL_MINUTES = 30;
 
-function expiresAt(): Date {
-  const date = new Date();
-  const timezoneSafetyMinutes = Math.max(0, -date.getTimezoneOffset());
-  date.setMinutes(date.getMinutes() + ACTION_TTL_MINUTES + timezoneSafetyMinutes);
-  return date;
+/**
+ * When a draft stops being confirmable. Drizzle writes and reads `datetime` columns as UTC, so the instant comes
+ * back unchanged: the server's offset from UTC used to be added "for safety", which on a Cairo clock let a draft be
+ * confirmed hours after the 30 minutes the user was told.
+ */
+export function expiresAt(now: Date = new Date()): Date {
+  return new Date(now.getTime() + ACTION_TTL_MINUTES * 60_000);
 }
 
 function parsePayload(value: unknown): RuntimeActionPayload {

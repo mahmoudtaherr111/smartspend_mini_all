@@ -3,7 +3,7 @@ import { Hono, type Context as HonoContext } from "hono";
 import { getConnInfo } from "@hono/node-server/conninfo";
 import { compress } from "hono/compress";
 import { HTTPException } from "hono/http-exception";
-import { httpsRedirect, securityHeaders } from "./lib/security-headers";
+import { builtIndexScriptHashes, httpsRedirect, securityHeaders } from "./lib/security-headers";
 import { logger } from "hono/logger";
 import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./router";
@@ -72,10 +72,15 @@ function scheduleProtectedJob(
   task: () => Promise<void>,
 ) {
   if (!cronsEnabled) return;
-  cron.schedule(expression, () =>
-    withScheduledJobLock(jobName, task).catch((error) => {
-      console.error(`[Cron] ${jobName} failed:`, error);
-    }),
+  // The hours below are Cairo business time (golden rule 6), not the server's clock: on a UTC host the 20:00
+  // activity reminder reached people at 23:00 in summer.
+  cron.schedule(
+    expression,
+    () =>
+      withScheduledJobLock(jobName, task).catch((error) => {
+        console.error(`[Cron] ${jobName} failed:`, error);
+      }),
+    { timezone: env.APP_TIMEZONE, name: jobName },
   );
 }
 
@@ -230,7 +235,8 @@ app.use("*", httpsRedirect(isProduction));
 app.use("*", logger());
 app.use("*", compress());
 
-app.use("*", securityHeaders(isProduction));
+// The built page's inline scripts are allowed by hash, read once: a deploy starts a new process.
+app.use("*", securityHeaders(isProduction, isProduction ? builtIndexScriptHashes() : []));
 
 let warnedAboutUntrustedProxy = false;
 if (env.NODE_ENV === "production" && env.TRUST_PROXY !== "true") {

@@ -9,12 +9,12 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | Cluster | Title | Files | Depends on | Used by | External systems referenced |
 | --- | --- | --- | --- | --- | --- |
 | `api-core` | API server core | 5 | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `coaching`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | — |
-| `api-routers` | tRPC routers and HTTP sub-apps | 25 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq`, `web-push` |
+| `api-routers` | tRPC routers and HTTP sub-apps | 25 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq` |
 | `auth` | Authentication and sessions | 5 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `whatsapp` | — |
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
 | `platform` | Platform services | 11 | `contracts`, `database` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `coaching`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice` | `mysql` |
-| `contracts` | Shared contracts | 12 | — | `ai-actions`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `api-routers`, `billing`, `classification`, `coaching`, `jobs`, `notifications`, `platform`, `voice`, `web-account`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-pages`, `web-shared`, `web-voice-call` | — |
+| `contracts` | Shared contracts | 13 | — | `ai-actions`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `api-routers`, `billing`, `classification`, `coaching`, `jobs`, `notifications`, `platform`, `voice`, `web-account`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-pages`, `web-shared`, `web-voice-call` | — |
 | `billing` | Billing | 3 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
 | `ledger` | Ledger aggregates | 6 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `coaching`, `ingestion-parsers`, `jobs`, `notifications`, `voice` | — |
 | `coaching` | Commitments and coaching plans | 3 | `arabic-nlp`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | `ai-actions`, `api-core`, `api-routers`, `voice` | — |
@@ -36,7 +36,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `finance-semantic-layer` | Finance semantic layer | 10 | `classification`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-routers`, `coaching`, `jobs`, `ledger`, `voice` | — |
 | `site-guide` | Site guide | 5 | — | `ai-kernel`, `voice` | — |
 | `storage` | File storage | 5 | — | — | `object-storage` |
-| `ai-insights` | AI insights and reports | 7 | `classification`, `contracts`, `database`, `platform` | `ai-actions`, `api-routers`, `jobs`, `voice` | `gemini` |
+| `ai-insights` | AI insights and reports | 8 | `classification`, `contracts`, `database`, `platform` | `ai-actions`, `api-routers`, `jobs`, `voice` | `gemini` |
 | `web-shell` | Web app shell | 24 | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit`, `web-voice-call` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-insights`, `web-pages`, `web-shared`, `web-voice-call` | `capacitor`, `firebase` |
 | `web-pages` | Web pages | 17 | `contracts`, `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `web-shell` | — |
 | `web-ui-kit` | UI primitives | 55 | `web-hooks`, `web-lib` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-voice-call` | — |
@@ -51,7 +51,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-growth` | Ads and SEO UI | 2 | `web-hooks`, `web-shell` | `web-pages`, `web-shell` | — |
 | `web-shared` | Shared web components | 5 | `contracts`, `web-account`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
 | `web-hooks` | Web hooks | 21 | `web-lib`, `web-shell` | `web-account`, `web-ai`, `web-capture`, `web-finance`, `web-growth`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor`, `firebase` |
-| `web-lib` | Web utilities | 10 | `contracts` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-hooks`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor` |
+| `web-lib` | Web utilities | 11 | `contracts` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-hooks`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor` |
 
 ## External systems
 
@@ -73,7 +73,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `redis` | Redis | datastore | `platform` | `api/lib/redis-client.ts` |
 | `sentry` | Sentry | observability | `platform` | `api/lib/error-reporting.ts` |
 | `turnstile` | Cloudflare Turnstile | bot-protection | `security`, `web-account` | `api/lib/security-headers.ts`, `api/services/turnstile-service.ts`, `src/components/auth/TurnstileWidget.tsx` |
-| `web-push` | Web Push | push | `api-routers`, `notifications` | `api/admin-router.ts`, `api/notification-engine.ts` |
+| `web-push` | Web Push | push | `notifications` | `api/notification-engine.ts` |
 | `whatsapp` | WhatsApp through Baileys | messaging | `whatsapp` | `api/services/whatsapp-service.ts` |
 
 ## Files by cluster
@@ -96,7 +96,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/admin-router.ts` | `accounts`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `auth`, `classification`, `contracts`, `database`, `notifications`, `platform` | `gemini`, `web-push` | `ads`, `ai_models`, `ai_providers`, `ai_token_ledgers`, `classification_logs`, `discount_codes`, `expense_daily_rollups`, `expenses`, `local_users`, `notification_logs`, `notification_templates`, `onboarding_questions`, `pending_clarifications`, `pro_subscriptions`, `push_subscriptions`, `raw_sms_events`, `sessions`, `support_tickets`, `system_settings`, `user_dictionaries`, `users`, `voice_usage` | `ai_models`, `ai_providers`, `discount_codes`, `local_users`, `notification_templates`, `pending_clarifications`, `system_settings`, `user_dictionaries`, `users` |
+| `api/admin-router.ts` | `accounts`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `auth`, `classification`, `contracts`, `database`, `notifications`, `platform` | `gemini` | `ads`, `ai_models`, `ai_providers`, `ai_token_ledgers`, `classification_logs`, `discount_codes`, `expense_daily_rollups`, `expenses`, `local_users`, `notification_logs`, `notification_templates`, `onboarding_questions`, `pending_clarifications`, `pro_subscriptions`, `push_subscriptions`, `raw_sms_events`, `sessions`, `support_tickets`, `system_settings`, `user_dictionaries`, `users`, `voice_usage` | `ai_models`, `ai_providers`, `discount_codes`, `local_users`, `notification_templates`, `pending_clarifications`, `system_settings`, `user_dictionaries`, `users` |
 | `api/admin-whatsapp-router.ts` | `api-core`, `database`, `platform`, `whatsapp` | — | `local_users`, `users` | `system_settings` |
 | `api/ads-router.ts` | `api-core`, `database` | — | `ads` | `ad_clicks`, `ads` |
 | `api/ai-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `arabic-nlp`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security`, `voice` | `gemini`, `groq` | `ai_summaries`, `business_categories`, `expenses`, `local_users`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `users`, `voice_usage` | `ai_summaries`, `classification_logs`, `local_users`, `monthly_behavior_snapshots`, `pending_clarifications`, `user_dictionaries`, `users`, `voice_usage` |
@@ -112,7 +112,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/image-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `classification`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `receipt-parsing`, `security` | — | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` |
 | `api/local-auth-router.ts` | `accounts`, `api-core`, `auth`, `database`, `platform`, `security`, `whatsapp` | — | `expenses`, `local_users` | `local_users` |
 | `api/pro-router.ts` | `api-core`, `auth`, `billing`, `contracts`, `database`, `platform` | — | `local_users`, `pro_subscriptions`, `users` | `pro_subscriptions` |
-| `api/profile-router.ts` | `ai-insights`, `api-core`, `auth`, `classification`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `notifications`, `platform`, `security`, `whatsapp` | — | `expenses`, `in_app_notifications`, `local_users`, `onboarding_questions`, `push_subscriptions`, `raw_sms_events`, `user_contacts`, `user_profiles`, `webhook_tokens` | `expenses`, `in_app_notifications`, `local_users`, `monthly_behavior_snapshots`, `push_subscriptions`, `scheduled_cashflows`, `user_contacts`, `user_profiles`, `users`, `webhook_tokens` |
+| `api/profile-router.ts` | `accounts`, `ai-insights`, `api-core`, `auth`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `notifications`, `platform`, `security`, `whatsapp` | — | `expenses`, `in_app_notifications`, `local_users`, `onboarding_questions`, `push_subscriptions`, `raw_sms_events`, `user_contacts`, `user_profiles`, `webhook_tokens` | `expenses`, `in_app_notifications`, `local_users`, `monthly_behavior_snapshots`, `push_subscriptions`, `scheduled_cashflows`, `user_contacts`, `user_profiles`, `users`, `webhook_tokens` |
 | `api/referral-router.ts` | `api-core`, `database`, `platform` | — | `discount_codes`, `local_users`, `referrals`, `users` | `local_users`, `referrals`, `users` |
 | `api/seo-router.ts` | `api-core`, `database` | — | `seo_pages` | `seo_pages` |
 | `api/session-router.ts` | `api-core`, `auth`, `database`, `security` | — | `sessions` | `user_analytics` |
@@ -188,6 +188,7 @@ Types, limits and billing plans shared by the web app and the API.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
+| `contracts/account-deletion.ts` | — | — | — | — |
 | `contracts/ai-models.ts` | — | — | — | — |
 | `contracts/categories.ts` | — | — | — | — |
 | `contracts/constants.ts` | — | — | — | — |
@@ -468,7 +469,7 @@ Actions the assistant proposes, such as recording an expense, updating a wallet 
 | --- | --- | --- | --- | --- |
 | `api/services/action-runtime/artifacts.ts` | `finance-semantic-layer` | — | — | — |
 | `api/services/action-runtime/confirmation-phrases.ts` | — | — | — | — |
-| `api/services/action-runtime/extended-actions.ts` | `ai-insights`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `ledger`, `notifications` | — | `ai_action_memory`, `expenses`, `financial_goals`, `user_wallets` | `expenses`, `financial_goals`, `user_budgets`, `user_wallets` |
+| `api/services/action-runtime/extended-actions.ts` | `ai-insights`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `ledger`, `notifications` | — | `ai_action_memory`, `expenses`, `financial_goals`, `user_wallets` | `ai_action_memory`, `expenses`, `financial_goals`, `user_budgets`, `user_wallets` |
 | `api/services/action-runtime/goal-create.ts` | `contracts`, `database`, `finance-semantic-layer`, `platform` | — | `financial_goals` | `financial_goals` |
 | `api/services/action-runtime/index.ts` | `ai-governance`, `ai-memory`, `database` | — | `ai_pending_actions` | `ai_action_audit_logs`, `ai_action_memory`, `ai_pending_actions` |
 | `api/services/action-runtime/types.ts` | — | — | — | — |
@@ -537,10 +538,11 @@ File storage behind one driver interface (local disk or S3-compatible storage su
 
 ### `ai-insights` — AI insights and reports
 
-The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, and the printable Pro report. The Gemini batch service only simulates its calls.
+The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, the printable Pro report, and the wait each plan has between two AI reports. The Gemini batch service only simulates its calls.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
+| `api/lib/report-wait.ts` | — | — | — | — |
 | `api/services/adaptive-question-engine.ts` | `contracts` | — | — | — |
 | `api/services/batch-ai-service.ts` | — | `gemini` | — | — |
 | `api/services/lifestyle-inference-engine.ts` | `contracts`, `database` | — | `expenses` | — |
@@ -792,7 +794,7 @@ Biometric lock and passkeys, the smart profile, business and people settings, an
 | `src/components/auth/BiometricLockOverlay.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/auth/BiometricOnboardingModal.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/auth/PasskeySettings.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/auth/SignOutDialog.tsx` | `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/auth/SignOutDialog.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/auth/TurnstileWidget.tsx` | `web-lib` | `turnstile` | — | — |
 | `src/components/notifications/NotificationList.tsx` | `contracts`, `web-lib`, `web-shell` | — | — | — |
 | `src/components/notifications/NotificationSettings.tsx` | `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
@@ -864,6 +866,7 @@ Client utilities (back-button handling, biometric auth, client rules engine, ima
 | `src/lib/biometricAuth.ts` | — | — | — | — |
 | `src/lib/financial-taxonomy.ts` | `contracts` | — | — | — |
 | `src/lib/ledger-refresh.ts` | — | — | — | — |
+| `src/lib/offline-queue-count.ts` | — | — | — | — |
 | `src/lib/queryPersister.ts` | — | — | — | — |
 | `src/lib/saved-toast.ts` | — | — | — | — |
 | `src/lib/transactionDisplay.ts` | — | — | — | — |

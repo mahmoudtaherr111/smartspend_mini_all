@@ -477,7 +477,9 @@ export const databaseDeps: PostCallDeps = {
       )
       .orderBy(desc(aiMemoryItems.updatedAt))
       .limit(40);
-    const now = Date.now();
+    // Measured at the end of the call being written, as `write` dates what it says: a call written late, by a
+    // retry, still sees what was true while it went on.
+    const now = (user.endedAt ?? new Date()).getTime();
     return rows
       .flatMap((row) => {
         const meta = slotMeta(row.metadata);

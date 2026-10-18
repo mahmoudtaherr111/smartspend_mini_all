@@ -43,7 +43,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `image` | `api/image-router.ts` | 1 | 0 | 1 | `receiptsProcedure` |
 | `localAuth` | `api/local-auth-router.ts` | 12 | 5 | 7 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
 | `pro` | `api/pro-router.ts` | 6 | 3 | 3 | `adminProcedure`, `authedProcedure` |
-| `profile` | `api/profile-router.ts` | 28 | 9 | 19 | `authedProcedure` |
+| `profile` | `api/profile-router.ts` | 29 | 9 | 20 | `authedProcedure` |
 | `referral` | `api/referral-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `seo` | `api/seo-router.ts` | 5 | 3 | 2 | `adminProcedure`, `publicProcedure` |
 | `session` | `api/session-router.ts` | 5 | 3 | 2 | `adminProcedure`, `authedProcedure` |
@@ -147,7 +147,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ai.compareMonths` | mutation | `aiProcedure` | yes | — | — | `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/settings-cache.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | `src/components/insights/AIInsights.tsx` |
-| `ai.generateMonthlyInsights` | mutation | `aiProcedure` | yes | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `local_users`, `monthly_behavior_snapshots`, `users` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/anonymizer.ts`, `api/lib/env.ts`, `api/lib/fireworks-client.ts`, `api/lib/model-mapper.ts`, `api/lib/nvidia-client.ts`, `api/lib/settings-cache.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/financial-month.ts`, `api/services/lifestyle-inference-engine.ts`, `api/services/personal-context-builder.ts`, `api/services/report-personalization-engine.ts`, `api/services/user-profile-service.ts`, `contracts/categories.ts` | `src/components/insights/AIInsights.tsx` |
+| `ai.generateMonthlyInsights` | mutation | `aiProcedure` | yes | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `local_users`, `monthly_behavior_snapshots`, `users` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/anonymizer.ts`, `api/lib/env.ts`, `api/lib/fireworks-client.ts`, `api/lib/model-mapper.ts`, `api/lib/nvidia-client.ts`, `api/lib/report-wait.ts`, `api/lib/settings-cache.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/financial-month.ts`, `api/services/lifestyle-inference-engine.ts`, `api/services/personal-context-builder.ts`, `api/services/report-personalization-engine.ts`, `api/services/user-profile-service.ts`, `contracts/categories.ts` | `src/components/insights/AIInsights.tsx` |
 | `ai.generateYearlyInsights` | mutation | `aiProcedure` | yes | — | — | `api/lib/ai-usage-policy.ts`, `api/lib/settings-cache.ts`, `api/services/ai-cost-policy.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | — |
 | `ai.getCachedMonthlyInsights` | query | `authedProcedure` | yes | `ai_summaries` | — | — | `src/components/insights/AIInsights.tsx` |
 | `ai.getUserLimits` | query | `authedProcedure` | no | `voice_usage` | — | `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/settings-cache.ts`, `api/services/entitlements/voice.ts`, `contracts/plan-features.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/profile/ProfileScreen.tsx` |
@@ -282,7 +282,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `localAuth.deleteUser` | mutation | `adminProcedure` | yes | — | — | `api/services/user-purge-service.ts` | — |
+| `localAuth.deleteUser` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/services/user-purge-service.ts` | — |
 | `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | yes | — | — | `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts`, `api/services/turnstile-service.ts` | `src/pages/Login.tsx` |
 | `localAuth.getBotPhoneNumber` | query | `publicProcedure` | no | — | — | `api/services/whatsapp-service.ts` | `src/pages/Login.tsx` |
 | `localAuth.getStats` | query | `adminProcedure` | no | `expenses`, `local_users` | — | — | — |
@@ -314,6 +314,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `profile.confirmPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | `local_users` | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts` | — |
 | `profile.confirmSmsSuggestion` | mutation | `authedProcedure` | yes | — | — | `api/lib/category-registry.ts`, `api/notification-engine.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/sms-ledger.ts` | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.deleteContact` | mutation | `authedProcedure` | yes | `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/settings/PeopleSettingsView.tsx` |
+| `profile.deleteMyAccount` | mutation | `authedProcedure` | yes | `local_users` | — | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts`, `api/services/user-purge-service.ts`, `contracts/account-deletion.ts` | `src/components/profile/ProfileScreen.tsx` |
 | `profile.dismissOnboarding` | mutation | `authedProcedure` | no | — | `user_profiles` | — | `src/components/OnboardingCard.tsx` |
 | `profile.dismissSmsSuggestion` | mutation | `authedProcedure` | yes | — | — | `api/services/sms-ledger.ts` | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.generateMagicCode` | mutation | `authedProcedure` | no | `webhook_tokens` | — | `api/sms-router.ts` | — |

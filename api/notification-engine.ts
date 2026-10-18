@@ -258,15 +258,12 @@ async function triggerTemplateNotificationsBatch(
   }
 }
 
-const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+// The one place the Web Push keys are set; the browser subscribes with VITE_VAPID_PUBLIC_KEY, the same public key.
+const vapidPublicKey = env.VAPID_PUBLIC_KEY;
+const vapidPrivateKey = env.VAPID_PRIVATE_KEY;
 if (vapidPublicKey && vapidPrivateKey) {
   try {
-    webpush.setVapidDetails(
-      "mailto:contact@smartspend.com",
-      vapidPublicKey,
-      vapidPrivateKey,
-    );
+    webpush.setVapidDetails(env.VAPID_SUBJECT, vapidPublicKey, vapidPrivateKey);
   } catch (error) {
     console.warn("⚠️ Failed to set VAPID details for Web Push. Web Push fallback might not function:", error);
   }

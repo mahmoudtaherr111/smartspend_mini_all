@@ -90,20 +90,25 @@ The capabilities the planner recognises, with their required details and action 
   numeric accuracy, hallucination risk), and `logAITrace` records the turn.
 
 ### 6. After the kernel
-- A clarifying question is saved as a clarification state in the conversation's metadata (see known issues).
+- A clarifying question is saved as a clarification state under one key of the conversation's metadata
+  (`JSON_SET`, the rest of the metadata stays). `requireOwnedConversation` reads the metadata with the id, so the next
+  message is taken as the answer while the state is open: a cancelling word («الغاء», «خلاص»...) ends it with a local
+  reply, anything else goes through `processClarificationReply` (`api/services/ai-kernel/clarification-machine.ts`).
 - A draft is stored as a pending action: the kernel's proposal, or one parsed from the message by
   `api/services/action-runtime/index.ts#maybeCreateActionDraftFromMessage`. The reply is reworded to say that nothing
   has run yet, or why the draft failed (for example the Free plan's goal limit).
 - The assistant's message is stored with its structured response, the conversation is written to AI memory (awaited
   when it holds something worth remembering), the provider tokens are added to the user's usage, and a cost metric
   records model calls, embedding calls, tools and numeric accuracy.
-- When the kernel throws, the reply is the same fixed "paused" message as when it is turned off.
+- When the kernel throws, the reply says something went wrong and to try again (model `ai-kernel-failed`); the fixed
+  "paused" message (model `ai-kernel-disabled`) is kept for an assistant an operator turned off.
 
 ## Actions
 Actions are `goal.create`, `goal.update`, `goal.stop`, `expense.create`, `expense.recategorize`, `budget.create`,
 `profile.update`, `wallet.create`, `wallet.update` and `action.undo`. A draft is validated
 (`api/services/action-runtime/extended-actions.ts#validateRuntimeAction`), stored in `ai_pending_actions` with a
-summary and an expiry, and shown as a confirmation card. An `expense.create` draft is filed by the entry form's engine
+summary and an expiry 30 minutes later (`expiresAt` in `api/services/action-runtime/index.ts`; Drizzle writes and reads
+the column as UTC), and shown as a confirmation card. An `expense.create` draft is filed by the entry form's engine
 (`api/lib/classify-text.ts#classifyText`): its confident answer, with the type and a refund's direction, replaces the
 keyword guess or the model's category; a weak one only fills a draft that has none. Saving it marks muscle memory stale,
 bumps the ledger generation and checks budget alerts as the entry form does; the chat refreshes every ledger view
@@ -125,9 +130,11 @@ confirmation):
    (the voice call, which has no card to show that draft on);
 5. on failure marks it `failed`. `cancelAction` marks it `cancelled`.
 
-`action.undo` looks at the most recent executed actions and reverses the newest one that can be undone: creating,
-changing or stopping a goal, recategorizing an expense, creating or changing a wallet, or a profile change. Undoing an
-AI-recorded expense also frees any due date it paid ([commitments](money.md#commitments-and-plans)). A wallet balance
+`action.undo` looks at the most recent executed actions (newest first, the id breaking a tie in the same second) and
+reverses the newest one that can be undone: creating, changing or stopping a goal, recording an expense, recategorizing
+an expense, creating a budget, creating or changing a wallet, or a profile change. The undone action is marked `undone`
+in `ai_action_memory`, so the next undo reaches the one before it. Undoing an AI-recorded expense removes it with its
+rollup delta in one transaction and frees any due date it paid ([commitments](money.md#commitments-and-plans)). A wallet balance
 an action sets is stamped as the assistant's, with its time.
 
 An AI-recorded expense is inserted in a transaction with its details and daily rollup delta, then muscle memory and
@@ -244,25 +251,20 @@ database.
 `api/services/ai-kernel/` (`agent-contract`, `agent-golden-contract`, `agent-planner`, `index`, `intent-router`,
 `phase2-resolution`, `phase3-memory`, `phase6-site-chart`); the tests in `api/services/ai-memory/`,
 `api/services/finance-semantic-layer/`, `api/services/action-runtime/` and `api/services/site-guide/`;
-`api/services/ai-center.creative-smoke.test.ts` and `tests/ai-chatbot-resilience.test.ts`.
+`api/services/ai-center.creative-smoke.test.ts` and `tests/ai-chatbot-resilience.test.ts`. With MySQL (`npm run test:db`):
+`tests/chat-clarification.test.ts` (a reply reaches the stored clarification) and `tests/action-undo.test.ts` (undo of
+an expense and a budget an action created, newest first, each once).
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Bug.** A reply to a clarifying question starts over: `sendMessage` stores the clarification state in the conversation's
-   metadata, but reads it from `requireOwnedConversation`, which selects only the id, so the state is never found and
-   the reply is planned as a new message.
-2. **Bug.** A pending action expires 30 minutes after it is drafted plus the server's offset from UTC.
-3. **Gap.** No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the
+1. **Gap.** No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the
    chat. The model id skips `mapModelName` (golden rule 9), the `chatbot_max_tokens_<plan>` settings are read but do
    not limit replies, and the retry time in the daily-limit error is counted to the server's midnight.
-4. **Debt.** The Qdrant, quantized on-disk and in-memory vector stores exported by `api/services/ai-memory/index.ts` are
+2. **Debt.** The Qdrant, quantized on-disk and in-memory vector stores exported by `api/services/ai-memory/index.ts` are
    used only by tests, and embedding calls do not reach the AI cost ledger (the providers report no token counts; Google's
    free tier does not bill them).
-5. **Bug.** Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in
-   `api/services/action-runtime/extended-actions.ts` leaves them out, so the undo code for them is never reached.
-6. **Bug.** When the kernel throws, the user sees the same message as when an operator turned the assistant off.
-7. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
-8. **Gap.** A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest
+3. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
+4. **Gap.** A breakdown, lookup or category total over a period with more than 10,000 entries reads only the newest
    10,000 (`ROW_LIMIT` in `api/services/finance-semantic-layer/resolvers.ts`). Breakdowns and category totals mark
    it (`partial`, a `partial_read` fact for the chat), and the call and the chat say so; lookups and the other readers
    of those rows do not. Only the period's totals are exact at any size.

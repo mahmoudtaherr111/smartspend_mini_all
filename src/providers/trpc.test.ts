@@ -11,6 +11,7 @@ import {
   registerDraftCollector,
   preserveActiveFormDrafts,
   handleUnauthenticatedSession,
+  deviceHadSession,
   DRAFT_STORAGE_PREFIX,
   ACTIVE_DRAFTS_INDEX_KEY,
 } from "./trpc";
@@ -296,6 +297,25 @@ describe("tRPC Client Headers & Tunnel Bypass Removal", () => {
 
       expect(broadcastCalled).toBe(true);
       expect(postedMessage?.type).toBe("SESSION_EXPIRED");
+    });
+
+    it("reads a 401 as an ended session only on a device that was signed in", () => {
+      const store = new Map<string, string>();
+      Object.defineProperty(globalThis, "localStorage", {
+        value: {
+          getItem: (key: string) => store.get(key) ?? null,
+          setItem: (key: string, value: string) => store.set(key, value),
+          removeItem: (key: string) => store.delete(key),
+        },
+        writable: true,
+        configurable: true,
+      });
+      expect(deviceHadSession()).toBe(false);
+      store.set("smartspend_offline_identity_v1", "{}");
+      expect(deviceHadSession()).toBe(true);
+      store.clear();
+      store.set("local_auth_token", "t");
+      expect(deviceHadSession()).toBe(true);
     });
   });
 });

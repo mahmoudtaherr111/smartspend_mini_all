@@ -21,7 +21,7 @@ describe("R7 Security: Security Headers & Transport Layer Security", () => {
   it("api/boot.ts mounts both middlewares on the live app", () => {
     const boot = fs.readFileSync(path.resolve(__dirname, "../../api/boot.ts"), "utf8");
     expect(boot).toContain("httpsRedirect(isProduction)");
-    expect(boot).toContain("securityHeaders(isProduction)");
+    expect(boot).toContain("securityHeaders(isProduction, isProduction ? builtIndexScriptHashes() : [])");
   });
 
   describe("Production Environment Security Headers", () => {

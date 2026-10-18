@@ -113,6 +113,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/redis-client.ts` | [platform](platform.md) |
 | `api/lib/refund-context.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/relationship-normalizer.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/report-wait.ts` | [insights](insights.md) |
 | `api/lib/rule-engine.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/seasons.ts` | [money](money.md) |
 | `api/lib/security-headers.ts` | [accounts](accounts.md) |
@@ -137,7 +138,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/middleware.ts` | [platform](platform.md) |
 | `api/notification-engine.ts` | [notifications](notifications.md) |
 | `api/pro-router.ts` | [billing](billing.md) |
-| `api/profile-router.ts` | [accounts](accounts.md): `profile.confirmPhoneChange`, `profile.getMyProfile`, `profile.requestPhoneChange`, `profile.updateProfile`, `profile.updateUserInfo` · [bank-messages](bank-messages.md): `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion`, `profile.generateMagicCode`, `profile.generateWebhookToken`, `profile.getSmsLogs`, `profile.getSmsSuggestions`, `profile.getWebhookToken` · [insights](insights.md): `profile.dismissOnboarding`, `profile.getNextOnboardingQuestion`, `profile.getQuestions`, `profile.getSmartProfile`, `profile.refreshInferences`, `profile.submitOnboardingAnswer`, `profile.updateSmartProfile` · [money](money.md): `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` · [notifications](notifications.md): `profile.getInAppNotifications`, `profile.markAllInAppNotificationsRead`, `profile.markInAppNotificationRead`, `profile.savePushSubscription` · rest of the file: [accounts](accounts.md), [bank-messages](bank-messages.md), [insights](insights.md), [money](money.md), [notifications](notifications.md) |
+| `api/profile-router.ts` | [accounts](accounts.md): `profile.confirmPhoneChange`, `profile.deleteMyAccount`, `profile.getMyProfile`, `profile.requestPhoneChange`, `profile.updateProfile`, `profile.updateUserInfo` · [bank-messages](bank-messages.md): `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion`, `profile.generateMagicCode`, `profile.generateWebhookToken`, `profile.getSmsLogs`, `profile.getSmsSuggestions`, `profile.getWebhookToken` · [insights](insights.md): `profile.dismissOnboarding`, `profile.getNextOnboardingQuestion`, `profile.getQuestions`, `profile.getSmartProfile`, `profile.refreshInferences`, `profile.submitOnboardingAnswer`, `profile.updateSmartProfile` · [money](money.md): `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` · [notifications](notifications.md): `profile.getInAppNotifications`, `profile.markAllInAppNotificationsRead`, `profile.markInAppNotificationRead`, `profile.savePushSubscription` · rest of the file: [accounts](accounts.md), [bank-messages](bank-messages.md), [insights](insights.md), [money](money.md), [notifications](notifications.md) |
 | `api/queries/connection.ts` | [platform](platform.md) |
 | `api/referral-router.ts` | [billing](billing.md) |
 | `api/router.ts` | [platform](platform.md) |
@@ -265,6 +266,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/voice-router.ts` | [voice-calls](voice-calls.md) |
 | `api/wallet-router.ts` | [money](money.md) |
 | `api/webauthn-router.ts` | [accounts](accounts.md) |
+| `contracts/account-deletion.ts` | [platform](platform.md) |
 | `contracts/ai-models.ts` | [platform](platform.md) |
 | `contracts/categories.ts` | [platform](platform.md) |
 | `contracts/constants.ts` | [platform](platform.md) |
@@ -462,6 +464,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/lib/compress-image.ts` | [expense-capture](expense-capture.md) |
 | `src/lib/financial-taxonomy.ts` | [web-app](web-app.md) |
 | `src/lib/ledger-refresh.ts` | [web-app](web-app.md) |
+| `src/lib/offline-queue-count.ts` | [web-app](web-app.md) |
 | `src/lib/queryPersister.ts` | [web-app](web-app.md) |
 | `src/lib/saved-toast.ts` | [web-app](web-app.md) |
 | `src/lib/transactionDisplay.ts` | [web-app](web-app.md) |

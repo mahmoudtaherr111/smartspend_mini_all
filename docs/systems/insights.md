@@ -25,8 +25,9 @@ spending, and the people they deal with. Classification prompts read the same pr
 ## The monthly analysis, step by step
 1. **Open the tab.** `ai.getCachedMonthlyInsights` returns the report saved for the month in `ai_summaries`, if any.
    "Analyze" and "Refresh" both call `ai.generateMonthlyInsights` with `forceRefresh`.
-2. **Waiting period.** When the user already has a monthly report, a new one needs `report_limit_<plan>` days since
-   the last (30, 14 and 1 when the setting is empty); refreshing a month that already has a report skips this check.
+2. **Waiting period.** When the user already has a monthly report, a new one — a refresh of a month included — needs
+   `report_limit_<plan>` days since the last one was generated (`reportWaitDays` in `api/lib/report-wait.ts`: 30, 14
+   and 1 when the setting is empty or not a number; 0 means no wait). The refusal says how many days are left.
 3. **Facts.** The salary day comes from the smart profile. `buildMonthlyReportFactsPack` resolves the period's
    income, spending, net flow, transaction count, daily average, top categories and active goals, plus a category
    chart; it is cached for ten minutes unless the call is a refresh. The procedure also loads the month's and the
@@ -38,7 +39,7 @@ spending, and the people they deal with. Classification prompts read the same pr
    to or far below income), bills that were paid last period but not yet this one, and a month-end forecast for the
    current month.
 5. **Model settings.** `getAiClient("report", plan)` in `api/ai-router.ts` refuses the request when
-   `<plan>_ai_analysis` is `false`, and picks the provider and model (`report_provider_<plan>`,
+   `<plan>_ai_analysis` is `false` (checked from the settings too when no client can be built), and picks the provider and model (`report_provider_<plan>`,
    `report_model_<plan>`, through `mapModelName`; Ultra uses Pro's settings), the target words and the plan's token
    limit. The admin's report settings (`ai_response_length`, `ai_focus`, `ai_system_prompt`,
    `ai_advanced_instructions`, `ai_report_structure_override`) apply only when the facts pack failed; with facts, a
@@ -48,13 +49,16 @@ spending, and the people they deal with. Classification prompts read the same pr
    alerts, personality and a data table. Tokens are recorded (`trackTokens`), a cost metric is written, and the call goes to the [AI cost ledger](ai-platform.md#how-a-call-is-recorded) with its input and output split.
 7. **Basic report.** When no model is used or its reply is not JSON, the server writes the text itself from the
    numbers above, with alerts, personalised cards and saving opportunities
-   (`api/services/report-personalization-engine.ts#buildBackendPersonalizedInsights`) and the top categories.
+   (`api/services/report-personalization-engine.ts#buildBackendPersonalizedInsights`) and the top categories. Its note
+   says the user's AI allowance ran out only when that is the reason; otherwise it says the AI is not available right
+   now. A provider's error goes to the log, never into the text.
 8. **Checks and storage.** Numbers in the text are measured against the facts (`ai_trace.numericAccuracy`, with a
    hallucination risk). The inferred attributes are saved to the smart profile, the snapshot to
    `monthly_behavior_snapshots`, a `report_generation` learning event is recorded, and the report is saved in
    `ai_summaries`.
 
-The screen shows the text, alerts, the personalised cards and the personality, with a share button and, for Pro,
+The screen shows the text, alerts, the personalised cards and the personality (the technical trace — route, tools,
+tokens, model — only in a development build), with a share button and, for Pro,
 Ultra and admins, "export Pro report": `export.monthlyReportHtml` wraps the report the screen holds in an escaped,
 printable HTML file that the browser downloads.
 
@@ -68,8 +72,10 @@ printable HTML file that the browser downloads.
 ## The WhatsApp monthly report
 `monthly-report-generation` runs `runMonthlyReportJob` at 02:00 on the 1st of each month on replicas with
 `ENABLE_CRONS=true`:
-1. It takes every user whose plan is `pro`, with the phone number of a phone account or the phone in the profile;
-   users without a number are skipped.
+1. It takes every user whose plan has `feature_whatsapp_report_<plan>` on (Pro and Ultra by default,
+   `contracts/plan-features.ts`), with the phone number of a phone account or the phone in the profile; users without a
+   number, and users who turned off "إرسال التقرير عبر الواتساب" in Settings (`wantsWhatsappReport`, the preference
+   `whatsappReportsEnabled`), are skipped.
 2. A report already stored in `monthly_reports` for the month with the current `MONTHLY_REPORT_CACHE_VERSION` is
    reused.
 3. Otherwise it builds the facts pack and, when `chatbot_api_key` or `fireworks_api_key` is set, asks the chat model
@@ -86,8 +92,10 @@ printable HTML file that the browser downloads.
 - **Reading** (`api/services/user-profile-service.ts#getSmartProfile`): the row merged over defaults, the streaks from
   the user table, and the user's contacts. The first read of a profile copies the people named in older profile lists
   into `user_contacts` and marks the profile as migrated; after that every read loads the contacts from
-  `user_contacts` and blanks the older lists. The latest learning events are appended to the inferred spending
-  behaviour.
+  `user_contacts` and blanks the older lists. The five latest learning events are returned beside the inferred spending
+  behaviour, as `aiInferredAttributes.recentLearningEvents`, and `summarizeProfileForAI` gives them to classification
+  prompts on their own line. They are never stored: `saveSmartProfile` drops them, and `storedSpendingBehavior` cuts
+  the text that reads used to append to the stored behaviour, so rows that grew are cleaned on their next save.
 - **Saving** (`saveSmartProfile`): one upsert of every section. If it fails, only the older columns are saved.
 - **Editing** (`updateSmartProfile`, behind `profile.updateSmartProfile` in Settings and the bank-sync screens):
   merges the patch section by section and marks the onboarding questions whose fields are now filled as answered.
@@ -143,7 +151,7 @@ printable HTML file that the browser downloads.
 ## Tests
 `api/ai-router.monthly-report-guard.test.ts`, `api/jobs/monthly-report-job.test.ts`,
 `api/services/adaptive-question-engine.test.ts`, `api/services/lifestyle-inference-engine.test.ts`,
-`api/services/user-profile-service.test.ts` and `api/profile-router.schema.test.ts`.
+`api/services/user-profile-service.test.ts`, `api/lib/report-wait.test.ts` and `api/profile-router.schema.test.ts`.
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -154,38 +162,25 @@ Checked against the code; each one names where it lives.
    after the profile was marked as migrated stay in the profile only, and `getSmartProfile` blanks those lists, so
    they never became contacts; pet names never were. The questions are no longer asked (people are learned when a
    name first appears in a message, and managed on the People screen).
-3. **Bug.** `getSmartProfile` appends the latest learning events, with literal `\n` text, to the inferred spending behaviour.
-   Every onboarding answer or profile edit saves that value, so it grows until the next behaviour refresh replaces
-   it, and `summarizeProfileForAI` sends it to classification prompts.
-4. **Bug.** Refreshing a month that already has a report skips the waiting period, so the analysis of that month can be
-   regenerated, with a paid model call, as often as the AI rate limit allows. A `report_limit_<plan>` of 0 falls back
-   to 30 days.
-5. **Bug.** The WhatsApp report goes to the plans whose `feature_whatsapp_report_<plan>` switch is on — Pro only by
-   default, so Ultra users do not get it until an admin turns it on — and the job ignores the user's "send the report on
-   WhatsApp" switch in Settings (`whatsappReportsEnabled`).
-6. **Bug.** With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and
+3. **Bug.** With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and
    family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the
    financial month only.
-7. **Bug.** Numbers in a model-written report are measured against the facts but not enforced: unlike the chat, a report with
+4. **Bug.** Numbers in a model-written report are measured against the facts but not enforced: unlike the chat, a report with
    unsupported numbers is shown as it is.
-8. **Bug.** The analysis and the comparison show a technical trace (route, tools, tokens, model) to every user, not only in
-   development.
-9. **Bug.** The basic report says the user ran out of AI tokens whenever there is no Gemini client, including when no key is
-   configured; and when the client cannot be built, the `<plan>_ai_analysis` switch is never checked.
-10. **Gap.** No `assertAiBudget` check runs before either report model call, and the WhatsApp job records no tokens for the
-    user (`api/AGENTS.md`, rule 5).
-11. **Bug.** Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period
-    is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is
-    ahead of UTC; snapshot days are grouped by UTC date.
-12. **Debt.** `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns
-    with `ALTER TABLE` when a read fails, outside the migrations in `db/`.
-13. **Debt.** The behaviour snapshots are written but not read: `getProactiveInsights` in
-    `api/services/finance-semantic-layer/proactive-insights.ts` has no caller, and no caller asks the facts pack to
-    prefer a snapshot.
-15. **Debt.** Unused code: `api/services/batch-ai-service.ts` only simulates a Gemini batch job; `buildProReportPrompt` and
-    `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are
-    not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called
-    only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.
+5. **Gap.** No `assertAiBudget` check runs before either report model call, and the WhatsApp job records no tokens for the
+   user (`api/AGENTS.md`, rule 5).
+6. **Bug.** Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period
+   is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is
+   ahead of UTC; snapshot days are grouped by UTC date.
+7. **Debt.** `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns
+   with `ALTER TABLE` when a read fails, outside the migrations in `db/`.
+8. **Debt.** The behaviour snapshots are written but not read: `getProactiveInsights` in
+   `api/services/finance-semantic-layer/proactive-insights.ts` has no caller, and no caller asks the facts pack to
+   prefer a snapshot.
+9. **Debt.** Unused code: `api/services/batch-ai-service.ts` only simulates a Gemini batch job; `buildProReportPrompt` and
+   `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are
+   not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called
+   only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.
 
 ## Related systems
 - [AI Center](ai-center.md): hosts the analysis tab and owns the finance layer the facts come from.

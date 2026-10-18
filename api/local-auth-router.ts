@@ -67,7 +67,7 @@ import {
   releaseLoginAttempt,
   setLoginRateLimitHeaders,
 } from "./lib/login-protection";
-import { setRole } from "./lib/access-control";
+import { invalidatePrincipal, setRole } from "./lib/access-control";
 
 // A fixed cost-12 hash keeps nonexistent-account failures on the same bcrypt
 // path as incorrect passwords without deriving a hash during each request.
@@ -525,6 +525,8 @@ export const localAuthRouter = router({
       await db.transaction(async (tx) => {
         await purgeUserData(tx, userId, userType);
       });
+      // Without this a session resolved before the deletion keeps answering for the deleted account.
+      await invalidatePrincipal(userType, userId);
 
       return { success: true };
     }),

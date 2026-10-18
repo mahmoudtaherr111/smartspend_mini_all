@@ -12,7 +12,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `AI_GATEWAY_SECRET` | no | — | `api/lib/provider-key-crypto.ts` |
 | `AI_GATEWAY_SECRET_PREVIOUS` | no | — | `api/lib/provider-key-crypto.ts` |
 | `ALLOWED_ORIGINS` | no | — | `api/lib/origin-policy.ts` |
-| `APP_TIMEZONE` | no | `Africa/Cairo` | `api/lib/app-time.ts`, `api/lib/seasons.ts` |
+| `APP_TIMEZONE` | no | `Africa/Cairo` | `api/boot.ts`, `api/lib/app-time.ts`, `api/lib/seasons.ts` |
 | `APP_URL` | no | `http://localhost:5173` | `api/lib/origin-policy.ts`, `api/notification-engine.ts`, `api/webauthn-router.ts` |
 | `BILLING_SIMULATE` | no | — | `api/pro-router.ts` |
 | `DATABASE_URL` | yes | — | `api/queries/connection.ts` |
@@ -48,11 +48,15 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `RATE_LIMIT_KEY_SECRET` | no | — | `api/lib/login-protection.ts` |
 | `REDIS_URL` | no | — | `api/lib/redis-client.ts` |
 | `SENTRY_DSN` | no | — | `api/lib/error-reporting.ts` |
+| `SENTRY_TRACES_SAMPLE_RATE` | no | `0.1` | `api/lib/error-reporting.ts` |
 | `SLOW_QUERY_THRESHOLD_MS` | no | `100` | `api/queries/connection.ts` |
 | `TRUSTED_PROXY_HEADER` | no | `x-forwarded-for` | `api/lib/get-client-ip.ts` |
 | `TRUSTED_PROXY_IPS` | no | — | `api/lib/get-client-ip.ts` |
 | `TRUST_PROXY` | no | — | `api/boot.ts`, `api/lib/get-client-ip.ts` |
 | `TURNSTILE_SECRET_KEY` | no | — | `api/services/turnstile-service.ts` |
+| `VAPID_PRIVATE_KEY` | no | — | `api/notification-engine.ts` |
+| `VAPID_PUBLIC_KEY` | no | — | `api/notification-engine.ts` |
+| `VAPID_SUBJECT` | no | `mailto:contact@smartspend.com` | `api/notification-engine.ts` |
 
 ## Read directly from process.env (not validated)
 
@@ -71,8 +75,6 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `S3_ENDPOINT` | `api/services/storage/s3-driver.ts` |
 | `STORAGE_DRIVER` | `api/services/storage/index.ts` |
 | `STORAGE_PUBLIC_URL` | `api/services/storage/s3-driver.ts` |
-| `VAPID_PRIVATE_KEY` | `api/admin-router.ts`, `api/notification-engine.ts` |
-| `VAPID_PUBLIC_KEY` | `api/admin-router.ts`, `api/notification-engine.ts` |
 
 ## Declared but never read outside the schema
 

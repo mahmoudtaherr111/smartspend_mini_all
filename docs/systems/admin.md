@@ -81,15 +81,18 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
   closable only by its owner or an admin.
 
 ## Ads, SEO and usage events
-- `ads.list` is public: active campaigns inside their dates for a placement and plan. `src/components/ads/AdBanner.tsx`
+- `ads.list` is public: active campaigns inside their dates for a placement, targeted at `all` or at the caller's own
+  plan — `free` for a visitor or a Free account, `pro` for Pro and Ultra. The `userPlan` the request names is ignored (the
+  app always sent `free`). `src/components/ads/AdBanner.tsx`
   shows one and counts a click through `ads.click`, which also stores a row in `ad_clicks`.
 - `seo.getPage` returns the saved metadata of a path, or a default Arabic title, description, keywords and
   canonical address; `SEOMeta` writes them into the document head of the public pages. `seo.sitemap` builds an
   XML sitemap of fixed routes and saved pages.
-- `analytics.trackEvent` stores an event with metadata in `user_analytics`; `src/hooks/useSessionTracker.ts`
+- `analytics.trackEvent` stores an event in `user_analytics`: only the names in `CLIENT_ANALYTICS_EVENTS`
+  (`session_duration` today), with at most ten metadata keys holding short strings, numbers or booleans; `src/hooks/useSessionTracker.ts`
   calls it from the app shell. The same table carries the AI usage events of `api/lib/ai-usage-policy.ts` and
   the upgrade events of `api/lib/subscription-service.ts`; the founder metrics count upgrades from `pro_subscriptions`
-  instead, since these events are pruned after thirty days and a signed-in client can add its own.
+  instead, since these events are pruned after thirty days.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -130,15 +133,12 @@ Checked against the code; each one names where it lives.
 5. **Gap.** Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it
    would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either
    (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
-6. **Bug.** Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero;
-   `ads.list` trusts the plan the client sends, and `analytics.trackEvent` stores any event name and metadata a
-   signed-in caller sends.
+6. **Bug.** Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.
 7. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
    `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`,
    `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one),
    `support.getById`, `support.assign` and every statistic of `analytics`.
-8. **Bug.** Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp
-   tab always shows verification as off ([notifications](notifications.md)).
+8. **Bug.** Discount codes are created here but checkout never applies them ([billing](billing.md)).
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): roles, sessions and account deletion.

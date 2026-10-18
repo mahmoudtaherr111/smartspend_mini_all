@@ -4,39 +4,39 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (25 of 95 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (12 of 80 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-01 85479c6 | 2026-10-01 85479c6 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-17 6d541cd | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 10 | — | — | 4 | 2 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-04 188f986 | 2026-10-01 1d4bf03 | 4 | — | 4 | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 6 | — | 8 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 6 | — | 2 | 7 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 14 | **2** | — | 5 | — |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-18 2bbf17c | 2026-10-01 85479c6 | 18 | — | — | 2 | — |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-18 2bbf17c | 2026-09-29 fa056d1 | 5 | — | — | 4 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 10 | — | — | 4 | 2 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 6 | — | — | 2 | 2 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 7 | — | 3 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 6 | — | 1 | 7 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 14 | **2** | — | 5 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-17 6d541cd | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 1 | **1** | 3 | 3 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-17 6d541cd | 2026-10-01 b5d9955 | 4 | — | 2 | 5 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-01 b5d9955 | 2026-10-01 b5d9955 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 5 | — | — | — | 7 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-17 1f120c7 | 2026-10-17 1f120c7 | 7 | **1** | 1 | 3 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 1 | **1** | 1 | 3 | 2 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 4 | — | 2 | 5 | 1 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-18 2bbf17c | 2026-10-01 b5d9955 | 8 | — | — | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 5 | — | — | — | 6 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 7 | **1** | — | 2 | 2 |
 
 
 ## Where the risk is
 
 Every system's explanation names at least one test.
 
-## What is waiting (95 issue(s))
+## What is waiting (80 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
 ### Security (5)
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
-- The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read it, while the content security policy allows inline scripts (`src/AGENTS.md`, rule 4).
+- The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read it (`src/AGENTS.md`, rule 4). In production the content security policy runs no inline script it does not know by hash, which narrows that risk without removing it.
 - The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the same storage.
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
@@ -48,41 +48,24 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (20)
-
-**AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
-- A reply to a clarifying question starts over: `sendMessage` stores the clarification state in the conversation's metadata, but reads it from `requireOwnedConversation`, which selects only the id, so the state is never found and the reply is planned as a new message.
-- A pending action expires 30 minutes after it is drafted plus the server's offset from UTC.
-- Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in `api/services/action-runtime/extended-actions.ts` leaves them out, so the undo code for them is never reached.
-- When the kernel throws, the user sees the same message as when an operator turned the assistant off.
+### Bugs (7)
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
-- `getSmartProfile` appends the latest learning events, with literal `\n` text, to the inferred spending behaviour. Every onboarding answer or profile edit saves that value, so it grows until the next behaviour refresh replaces it, and `summarizeProfileForAI` sends it to classification prompts.
-- Refreshing a month that already has a report skips the waiting period, so the analysis of that month can be regenerated, with a paid model call, as often as the AI rate limit allows. A `report_limit_<plan>` of 0 falls back to 30 days.
-- The WhatsApp report goes to the plans whose `feature_whatsapp_report_<plan>` switch is on — Pro only by default, so Ultra users do not get it until an admin turns it on — and the job ignores the user's "send the report on WhatsApp" switch in Settings (`whatsappReportsEnabled`).
 - With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the financial month only.
 - Numbers in a model-written report are measured against the facts but not enforced: unlike the chat, a report with unsupported numbers is shown as it is.
-- The analysis and the comparison show a technical trace (route, tools, tokens, model) to every user, not only in development.
-- The basic report says the user ran out of AI tokens whenever there is no Gemini client, including when no key is configured; and when the client cannot be built, the `<plan>_ai_analysis` switch is never checked.
 - Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is ahead of UTC; snapshot days are grouped by UTC date.
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
-- The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an established account sees a low daily average early in the month.
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- The admin console always shows WhatsApp verification as off: `adminWhatsapp.getSettings` returns a fixed "temporarily disabled" answer, while `adminWhatsapp.toggleOtpVerification` still changes the `whatsapp_otp_enabled` setting that registration reads.
-- When `VITE_VAPID_PUBLIC_KEY` is missing, the browser subscribes with a public key written in `src/hooks/usePushNotifications.ts`, and those subscriptions receive nothing unless the server's keys match. `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are read from `process.env` instead of `api/lib/env.ts` (golden rule 8).
-- The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
+- The activity checks take at most 1000 users per account table a day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
-- Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero; `ads.list` trusts the plan the client sends, and `analytics.trackEvent` stores any event name and metadata a signed-in caller sends.
-- Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp tab always shows verification as off ([notifications](notifications.md)).
+- Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.
+- Discount codes are created here but checkout never applies them ([billing](billing.md)).
 
-**Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
-- When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
-
-### Gaps (44)
+### Gaps (43)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -119,10 +102,10 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
-- Verification is the setting `whatsapp_otp_enabled`: while it is off any number registers without proof that it belongs to the person, and the admin console shows it as off whatever its value ([notifications](notifications.md)).
+- Verification is the setting `whatsapp_otp_enabled` (shown and switched in the admin console's WhatsApp tab, [notifications](notifications.md)): while it is off any number registers without proof that it belongs to the person.
 - In production, verification needs both Turnstile keys: `TURNSTILE_SECRET_KEY` on the server and `VITE_TURNSTILE_SITE_KEY` in the web build. With verification on and either missing, nobody can sign up with a phone number.
 - Changing a phone number has no screen, and with verification off its code is never sent; the profile shows the number read-only.
-- Users cannot see or end their sessions (`session.listMine` and `session.revokeMine` have no screen) or delete their own account: the profile's "حذف الحساب" explains and opens Support, and only an admin deletes (`purgeUserData`).
+- Users cannot see or end their sessions: `session.listMine` and `session.revokeMine` have no screen.
 - The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
@@ -149,10 +132,9 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
-- Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, since they belong to the account. The logout dialog in `src/pages/More.tsx` says how many entries are still unsent first; the sidebar's and the biometric lock's logout do not.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (26)
+### Debt (25)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
@@ -189,7 +171,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
 - Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
-- Sentry, when configured, is initialised with full tracing and profiling (`tracesSampleRate: 1.0`), which samples every request in production.
 - `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the history the admin screens show ends where the ninety-day pruning starts.
 - `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
 - `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library update can silently turn into zeroes.

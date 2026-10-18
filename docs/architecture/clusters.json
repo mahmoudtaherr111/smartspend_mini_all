@@ -325,7 +325,7 @@
     {
       "id": "ai-insights",
       "title": "AI insights and reports",
-      "description": "The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, and the printable Pro report. The Gemini batch service only simulates its calls.",
+      "description": "The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, the printable Pro report, and the wait each plan has between two AI reports. The Gemini batch service only simulates its calls.",
       "paths": [
         "api/services/adaptive-question-engine.ts",
         "api/services/lifestyle-inference-engine.ts",
@@ -333,7 +333,8 @@
         "api/services/pro-report-engine.ts",
         "api/services/report-personalization-engine.ts",
         "api/services/user-profile-service.ts",
-        "api/services/batch-ai-service.ts"
+        "api/services/batch-ai-service.ts",
+        "api/lib/report-wait.ts"
       ]
     },
     {

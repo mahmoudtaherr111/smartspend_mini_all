@@ -43,8 +43,16 @@ import {
 } from "./services/sms-ledger";
 import { normalizeTransactionTaxonomy } from "./lib/category-registry";
 import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
-import { cleanPhoneNumber, validatePhone } from "./local-auth-utils";
-import { stateDel, stateGet, stateSet, stateTake } from "./lib/redis-client";
+import { cleanPhoneNumber, comparePassword, validatePhone } from "./local-auth-utils";
+import {
+  executeSlidingWindowRateLimit,
+  stateDel,
+  stateGet,
+  stateSet,
+  stateTake,
+} from "./lib/redis-client";
+import { purgeUserData } from "./services/user-purge-service";
+import { isAccountDeletionConfirmed } from "../contracts/account-deletion";
 import { whatsappService } from "./services/whatsapp-service";
 import { getSystemSettings } from "./lib/settings-cache";
 import { invalidatePrincipal } from "./lib/access-control";
@@ -247,6 +255,57 @@ export async function refreshMonthlyInferences(
 }
 
 export const profileRouter = router({
+  // The owner deletes the account and everything it holds, from the app: the app stores require it, and the
+  // profile used to send people to Support for it. A phone account also gives its password, so a session left open
+  // on someone else's phone cannot delete it.
+  deleteMyAccount: authedProcedure
+    .input(
+      z.object({
+        confirmation: z.string().max(60),
+        password: z.string().max(200).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user.id;
+      const userType = ctx.user.type === "local" ? "local" : "oauth";
+      if (!isAccountDeletionConfirmed(input.confirmation)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "اكتب «احذف حسابي» عشان نتأكد إنك عايز تحذفه." });
+      }
+      if (ctx.user.role === "admin") {
+        // The console's last admin must not lock everyone out by accident.
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "حساب الإدارة مينفعش يتحذف من هنا. اطلب من مدير تاني يحذفه من لوحة الإدارة.",
+        });
+      }
+      if (userType === "local") {
+        const attempts = await executeSlidingWindowRateLimit(`account-delete:${userId}`, 5, 15 * 60_000);
+        if (!attempts.allowed) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "جربت كتير. استنى ربع ساعة وجرّب تاني." });
+        }
+        const [row] = await db
+          .select({ password: localUsers.password })
+          .from(localUsers)
+          .where(eq(localUsers.id, userId))
+          .limit(1);
+        if (!row || !input.password || !(await comparePassword(input.password, row.password))) {
+          // Not UNAUTHORIZED: the app reads that as a session that ended and signs the person out.
+          throw new TRPCError({ code: "BAD_REQUEST", message: "الباسورد مش صح." });
+        }
+      }
+
+      await db.transaction(async (tx) => {
+        await purgeUserData(tx, userId, userType);
+      });
+      // As for an admin deletion: a principal resolved a minute ago would keep answering for the deleted account.
+      await invalidatePrincipal(userType, userId);
+      if (ctx.resHeaders) {
+        ctx.resHeaders.append("Set-Cookie", "google_session=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax");
+        ctx.resHeaders.append("Set-Cookie", "smartspend_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax");
+      }
+      return { success: true };
+    }),
+
   getMyProfile: authedProcedure.query(async ({ ctx }) => {
     const profile = await db
       .select()

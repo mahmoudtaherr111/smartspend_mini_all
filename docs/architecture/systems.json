@@ -121,7 +121,7 @@
       "summaryAr": "الدخول بجوجل، والحسابات بالموبايل والباسورد مع أكواد التأكيد، ومفاتيح المرور، والجلسات، وحماية الطلبات، ومسح الحساب.",
       "clusters": ["auth", "security", "accounts", "web-account"],
       "routers": ["auth", "localAuth", "session", "webauthn"],
-      "procedures": ["profile.getMyProfile", "profile.updateProfile", "profile.updateUserInfo", "profile.requestPhoneChange", "profile.confirmPhoneChange"],
+      "procedures": ["profile.getMyProfile", "profile.updateProfile", "profile.updateUserInfo", "profile.requestPhoneChange", "profile.confirmPhoneChange", "profile.deleteMyAccount"],
       "pages": ["Login", "AuthCallback", "Settings"],
       "routes": ["GET /api/auth/google/start", "GET /api/auth/google/callback", "GET /api/sse/otp"],
       "jobs": ["daily-auth-cleanup"]

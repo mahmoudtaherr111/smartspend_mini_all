@@ -846,7 +846,7 @@ async function findUndoTarget(ctx: ActionRuntimeContext, payload: UndoPayload) {
           eq(aiActionMemory.status, "executed"),
         ),
       )
-      .orderBy(desc(aiActionMemory.updatedAt))
+      .orderBy(desc(aiActionMemory.updatedAt), desc(aiActionMemory.id))
       .limit(5);
   }
 
@@ -861,6 +861,8 @@ async function findUndoTarget(ctx: ActionRuntimeContext, payload: UndoPayload) {
       "wallet.create",
       "wallet.update",
       "profile.update",
+      "budget.create",
+      "expense.create",
     ].includes(row.actionName);
   });
 }
@@ -871,6 +873,25 @@ async function executeUndo(
 ): Promise<Record<string, unknown>> {
   const target = await findUndoTarget(ctx, payload);
   if (!target) throw new Error("No reversible action found");
+  const result = await undoAction(ctx, target);
+  // An undone action is no longer "executed", so the next undo reaches the action before it instead of this one again.
+  await db
+    .update(aiActionMemory)
+    .set({ status: "undone" })
+    .where(
+      and(
+        eq(aiActionMemory.id, target.id),
+        eq(aiActionMemory.userId, ctx.userId),
+        eq(aiActionMemory.userType, ctx.userType),
+      ),
+    );
+  return result;
+}
+
+async function undoAction(
+  ctx: ActionRuntimeContext,
+  target: NonNullable<Awaited<ReturnType<typeof findUndoTarget>>>,
+): Promise<Record<string, unknown>> {
 
   const targetPayload = (target.payload || {}) as Record<string, unknown>;
   if (target.actionName === "goal.create") {

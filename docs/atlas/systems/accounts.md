@@ -27,7 +27,7 @@ flowchart LR
     job_daily_auth_cleanup["Job · daily-auth-cleanup"]
     router_auth["auth API · 4 procedures"]
     router_localAuth["localAuth API · 12 procedures"]
-    router_profile["profile API · 5 procedures"]
+    router_profile["profile API · 6 procedures"]
     router_session["session API · 5 procedures"]
     router_webauthn["webauthn API · 6 procedures"]
   end
@@ -184,6 +184,7 @@ flowchart LR
   router_localAuth --> sys_platform
   router_localAuth -.-> tbl_expenses
   router_localAuth ==> tbl_local_users
+  router_profile --> mod_accounts
   router_profile --> mod_auth
   router_profile --> sys_notifications
   router_profile --> sys_platform
@@ -243,6 +244,7 @@ flowchart LR
 | `localAuth.updateRole` | mutation | `adminProcedure` | — | — | — |
 | `localAuth.verifyOtp` | mutation | `strictPublicProcedure` | `local_users` | — | — |
 | `profile.confirmPhoneChange` | mutation | `authedProcedure` | `local_users` | `local_users` | — |
+| `profile.deleteMyAccount` | mutation | `authedProcedure` | `local_users` | — | `More`, `Settings` |
 | `profile.getMyProfile` | query | `authedProcedure` | `user_profiles` | — | — |
 | `profile.requestPhoneChange` | mutation | `authedProcedure` | `local_users` | — | — |
 | `profile.updateProfile` | mutation | `authedProcedure` | — | `user_profiles` | — |
@@ -298,7 +300,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `financial_goals` | C | `accounts` | `security` |
 | `in_app_notifications` | D | `accounts` | — |
 | `installment_plans` | C | `accounts` | — |
-| `local_users` | A | `accounts`, `auth`, `localAuth.login`, `localAuth.register`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `accounts`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.requestPhoneChange`, `profile.updateUserInfo`, `webauthn.generateRegistrationOptions` |
+| `local_users` | A | `accounts`, `auth`, `localAuth.login`, `localAuth.register`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `accounts`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.deleteMyAccount`, `profile.requestPhoneChange`, `profile.updateUserInfo`, `webauthn.generateRegistrationOptions` |
 | `monthly_behavior_snapshots` | C | `accounts` | — |
 | `monthly_reports` | C | `accounts` | — |
 | `notification_logs` | E | `accounts` | — |
@@ -363,7 +365,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/accounts.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>48 files and declarations</summary>
+<details><summary>49 files and declarations</summary>
 
 - `api/auth-router.ts`
 - `api/boot.ts#GET /api/auth/google/callback`
@@ -386,6 +388,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/local-auth-router.ts`
 - `api/local-auth-utils.ts`
 - `api/profile-router.ts#profile.confirmPhoneChange`
+- `api/profile-router.ts#profile.deleteMyAccount`
 - `api/profile-router.ts#profile.getMyProfile`
 - `api/profile-router.ts#profile.requestPhoneChange`
 - `api/profile-router.ts#profile.updateProfile`

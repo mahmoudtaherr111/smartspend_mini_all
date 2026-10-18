@@ -95,7 +95,10 @@ Screens of other systems use these APIs: wallets in `src/components/bank-sync/Di
   - a spending behaviour (planned, spiky, emotional or concentrated, overridden by impulsive or conservative from the
     share of income spent), whose discretionary share counts `DISCRETIONARY_CATEGORIES` from
     `contracts/categories.ts` (ترفيه، تسوق، أكل وشرب، عناية شخصية، اشتراكات);
-  - the daily average and the month's items (the columns the charts read, up to `MONTH_ITEMS_BOUND`, 5,000).
+  - the daily average: the month's spending over the Cairo calendar days of the month so far, from its first day or
+    from the user's first item when that is later (`dailyAverageDays` in `api/expense-router.ts`), so a clock change
+    does not add a day;
+  - the month's items (the columns the charts read, up to `MONTH_ITEMS_BOUND`, 5,000).
 - **Search** (`expense.searchTransactions`): up to 20 of the user's items whose category, subcategory, description or
   original text contains the query, newest first.
 - **Record tab list** (`expense.list`): the month's latest items, page by page, newest id first; the calendar asks the
@@ -293,25 +296,23 @@ database cases run with
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Bug.** The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an
-   established account sees a low daily average early in the month.
-2. **Gap.** The chart's "budget" tab compares the month's spending with the user's budget for all spending
+1. **Gap.** The chart's "budget" tab compares the month's spending with the user's budget for all spending
    (`budget.list`); with none it falls back to the profile's income or the month's income, and with neither it asks
    the user to make a budget. A user with only category budgets sees the income comparison there.
-3. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
+2. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
    snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
-4. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
+3. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
    (`src/components/goals/FinancialGoalsPanel.tsx`).
-5. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger);
+4. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger);
     `business.get` returns the user's first business even when it is inactive.
-6. **Gap.** `expense.getYearlyStats` has no screen.
-7. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
+5. **Gap.** `expense.getYearlyStats` has no screen.
+6. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
     (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming
     credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative
     spending in a month when the purchase fell in an earlier one.
-8. **Gap.** Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on
+7. **Gap.** Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on
     `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).
-9. **Gap.** Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
+8. **Gap.** Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
 
 ## Related systems
 - [Recording spending](expense-capture.md): creates the items this system reads, and triggers the budget alert.

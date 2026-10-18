@@ -15,6 +15,24 @@ import { createLogger } from "../lib/log";
 // (golden rule 10).
 const log = createLogger("user-profile");
 
+/** Where the learning events used to be appended to the stored spending behaviour. */
+const LEARNING_EVENTS_MARKER = "أحدث أحداث التعلم:";
+
+/**
+ * The spending behaviour as inferred, without the learning events a read used to append to it: every save wrote the
+ * appended text back, so it grew with each onboarding answer or profile edit and went to classification prompts.
+ */
+export function storedSpendingBehavior(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const at = value.indexOf(LEARNING_EVENTS_MARKER);
+  // The old text joined its lines with a literal backslash-n.
+  const kept = (at === -1 ? value : value.slice(0, at)).replace(/(\\n|\s)+$/u, "");
+  return kept || null;
+}
+
+/** Fields of aiInferredAttributes a read fills in and a save must not keep. */
+const READ_ONLY_INFERRED_KEYS = ["recentLearningEvents"] as const;
+
 export const SMART_PROFILE_VERSION = 2;
 
 export type UserType = "local" | "oauth" | string;
@@ -508,20 +526,17 @@ export async function getSmartProfile(
       .orderBy(desc(profileLearningEvents.createdAt))
       .limit(5);
 
-    if (events.length > 0) {
-      result.aiInferredAttributes.spendingBehavior =
-        (result.aiInferredAttributes.spendingBehavior ? result.aiInferredAttributes.spendingBehavior + "\\n" : "") +
-        "أحدث أحداث التعلم:\\n" +
-        events
-          .map((e) => {
-            const meta =
-              e.metadata && typeof e.metadata === "object"
-                ? JSON.stringify(e.metadata).slice(0, 160)
-                : "";
-            return `- ${e.eventType}${meta ? `: ${meta}` : ""}`;
-          })
-          .join("\\n");
-    }
+    // Kept beside the spending behaviour, not inside it: a save writes the behaviour back.
+    result.aiInferredAttributes.spendingBehavior = storedSpendingBehavior(
+      result.aiInferredAttributes.spendingBehavior,
+    );
+    result.aiInferredAttributes.recentLearningEvents = events.map((e) => {
+      const meta =
+        e.metadata && typeof e.metadata === "object"
+          ? JSON.stringify(e.metadata).slice(0, 160)
+          : "";
+      return `${e.eventType}${meta ? `: ${meta}` : ""}`;
+    });
   } catch(err) {
     log.error({ err, event: "profile.context.failed", userId }, "Could not load the profile's extra context");
   }
@@ -562,7 +577,10 @@ export async function saveSmartProfile(
   const basicJson = JSON.stringify(profile.basicInfo || {});
   const financialJson = JSON.stringify(profile.financialInfo || {});
   const lifestyleJson = JSON.stringify(profile.lifestyleInfo || {});
-  const inferredJson = JSON.stringify(profile.aiInferredAttributes || {});
+  const inferred: Record<string, unknown> = { ...(profile.aiInferredAttributes || {}) };
+  for (const key of READ_ONLY_INFERRED_KEYS) delete inferred[key];
+  if ("spendingBehavior" in inferred) inferred.spendingBehavior = storedSpendingBehavior(inferred.spendingBehavior);
+  const inferredJson = JSON.stringify(inferred);
   const prefsJson = JSON.stringify(profile.preferences || {});
   const completed = profile.profileCompleted ? 1 : 0;
 
@@ -790,7 +808,8 @@ export function summarizeProfileForAI(profile: SmartUserProfile): string {
     `Has car: ${lifestyleInfo.carOwnership ?? "unknown"}${lifestyleInfo.carType ? ` (${lifestyleInfo.carType})` : ""}`,
     `Smoker: ${lifestyleInfo.smoking ?? "unknown"}`,
     `Financial stability: ${inferred.financialStability ?? "unknown"}`,
-    `Spending behavior: ${inferred.spendingBehavior ?? "unknown"}`,
+    `Spending behavior: ${storedSpendingBehavior(inferred.spendingBehavior) ?? "unknown"}`,
+    `Recent learning: ${Array.isArray(inferred.recentLearningEvents) && inferred.recentLearningEvents.length > 0 ? inferred.recentLearningEvents.join("; ") : "none"}`,
     `Report preference: ${preferences.detailLevel ?? "summary"}`,
   ].join("\n");
 }

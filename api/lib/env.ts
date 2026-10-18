@@ -79,6 +79,13 @@ const envSchema = z.object({
   REDIS_URL: z.string().optional(),
   AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION: z.enum(["true", "false"]).optional(),
   SENTRY_DSN: z.string().optional(),
+  /** Share of requests Sentry traces and profiles, 0 to 1. */
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
+
+  // Web Push without Firebase. The public key is also built into the web app as VITE_VAPID_PUBLIC_KEY.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default("mailto:contact@smartspend.com"),
 
   // Firebase FCM
   FIREBASE_PROJECT_ID: z.string().optional(),
@@ -90,4 +97,27 @@ const envSchema = z.object({
   SLOW_QUERY_THRESHOLD_MS: z.coerce.number().default(100),
 });
 
-export const env = envSchema.parse(process.env);
+/** Shortest secret production accepts: JWT_SECRET signs every session, so a guessable one lets anyone sign in as anyone. */
+export const MIN_PRODUCTION_SECRET_LENGTH = 32;
+
+const PRODUCTION_SECRETS = ["JWT_SECRET", "AI_GATEWAY_SECRET", "RATE_LIMIT_KEY_SECRET"] as const;
+
+export function parseServerEnv(source: NodeJS.ProcessEnv) {
+  return envSchema
+    .superRefine((value, ctx) => {
+      if (value.NODE_ENV !== "production") return;
+      for (const key of PRODUCTION_SECRETS) {
+        const secret = value[key];
+        if (secret !== undefined && secret.length < MIN_PRODUCTION_SECRET_LENGTH) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: `${key} must be at least ${MIN_PRODUCTION_SECRET_LENGTH} random characters in production`,
+          });
+        }
+      }
+    })
+    .parse(source);
+}
+
+export const env = parseServerEnv(process.env);

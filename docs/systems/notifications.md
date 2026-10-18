@@ -25,7 +25,8 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 ## Delivering a notification
 - `sendPush` (one device) and `sendPushBatch` (many) send through Firebase Cloud Messaging when the subscription has a
   token and Firebase is configured (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`), and through
-  Web Push with the `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` keys otherwise. A single send deletes a token Firebase
+  Web Push with the `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` keys otherwise (validated in `api/lib/env.ts` and set once,
+  in `api/notification-engine.ts`, with `VAPID_SUBJECT`). A single send deletes a token Firebase
   reports as unregistered, and Web Push deletes a subscription reported gone; batches pace themselves, Firebase in large
   chunks with a pause and Web Push a few devices at a time.
 - Both carry the same content (`fcmMessage`, `legacyPayload`): title and body, the app icon (`/icon-192.png`), an
@@ -48,7 +49,7 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 | `subscription_ending`, from `runRenewalReminders` in the job `daily-subscription-expiry` | daily at 06:00 | a subscriber whose plan ends in three days, and again on its last day, unless a paid renewal runs past it ([Plans and payments](billing.md)) |
 | `budget_exceeded`, from `checkUserBudgetExceeded` | after an item is saved ([Recording spending](expense-capture.md)) | a user without budgets whose spending in this Cairo calendar month passed the monthly income in the profile; once a month |
 | `manual_scheduled` templates, from `processScheduledNotifications` in the job `scheduled-notifications` | every minute, for active templates whose send time has passed | one user, or every user filtered by plan and a minimum number of transactions; the template is then switched off |
-| `inactivity_reminder`, from `checkAndTriggerSmartActivityNotifications` in the job `smart-activity-notifications` | daily at 20:00 | users with a streak of at least 2 whose last recorded day was 12 to 36 hours ago; once a day |
+| `inactivity_reminder`, from `checkAndTriggerSmartActivityNotifications` in the job `smart-activity-notifications` | daily at 20:00 Cairo time | users with a streak of at least 2 whose last recorded day was 12 to 36 hours ago; once a day |
 | `pro_conversion_streak` | the same run | Free users with a streak of at least 4 who recorded in the last 36 hours; once a week |
 | `dormant_reactivation` | the same run | users whose last recorded day was 7 to 8 days ago; once a week |
 | Admin pushes, `admin.sendPushNotification` | on demand, though no screen calls it | everyone, Free users, paying users or one user; push only |
@@ -63,7 +64,9 @@ runs; a stored template still holding the previous default title and body is upd
   session or one where the passkey suggestion appeared, and at most once a week after it is dismissed. It promises only
   what is sent (budget alerts, the logging reminder, plan ending); Settings has the same button.
 - With the web Firebase configuration (`VITE_FIREBASE_*`), the browser gets a Firebase token; otherwise it subscribes to
-  Web Push with `VITE_VAPID_PUBLIC_KEY`. `profile.savePushSubscription` stores the token or subscription with the
+  Web Push with `VITE_VAPID_PUBLIC_KEY`, the server's public key built into the app. With neither, the app does not offer
+  push (the prompt and Settings read `isSupported` from `src/hooks/usePushNotifications.ts`), and no key is written in the
+  code. `profile.savePushSubscription` stores the token or subscription with the
   device type, and moves an existing one to the user who is signed in.
 - The service worker (`src/sw.js`) reads both payload shapes, shows the notification with its tag and direction, and
   tells an open app to refresh the bell; a tap focuses the app (or opens it) at the resolved destination. The
@@ -121,25 +124,18 @@ this system has a test.
 Checked against the code; each one names where it lives.
 1. **Debt.** Nothing tests notification delivery, the templates, the activity checks or the WhatsApp connection and its
    sending.
-2. **Bug.** The admin console always shows WhatsApp verification as off: `adminWhatsapp.getSettings` returns a fixed "temporarily
-   disabled" answer, while `adminWhatsapp.toggleOtpVerification` still changes the `whatsapp_otp_enabled` setting that
-   registration reads.
-3. **Gap.** The logging reminder the permission prompt mentions reaches only users with a streak whose last recorded day
+2. **Gap.** The logging reminder the permission prompt mentions reaches only users with a streak whose last recorded day
    was 12 to 36 hours ago.
-4. **Gap.** A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount
+3. **Gap.** A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount
    that checkout never gives ([billing](billing.md)); unedited ones were replaced.
-5. **Bug.** When `VITE_VAPID_PUBLIC_KEY` is missing, the browser subscribes with a public key written in
-   `src/hooks/usePushNotifications.ts`, and those subscriptions receive nothing unless the server's keys match.
-   `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are read from `process.env` instead of `api/lib/env.ts` (golden rule 8).
-6. **Security.** WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied
+4. **Security.** WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied
    wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing
    checks that recipients agreed.
-7. **Debt.** The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
-8. **Gap.** Push cannot be turned off from the app, a device cannot be removed, the bell has no clearing, and nothing prunes
+5. **Debt.** The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
+6. **Gap.** Push cannot be turned off from the app, a device cannot be removed, the bell has no clearing, and nothing prunes
    `in_app_notifications` or `notification_logs` apart from account deletion. Bell items keep no type, so the icon is read
    from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
-9. **Bug.** The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a
-   day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
+7. **Bug.** The activity checks take at most 1000 users per account table a day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): phone verification and the passkey suggestion.

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { countUnsentOffline } from "@/lib/offline-queue-count";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -327,6 +328,12 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             <AlertDialogDescription className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
               {t("more.logout.description")}
             </AlertDialogDescription>
+            {/* Signing out deletes what was written offline and not sent yet, so it says so, as More does. */}
+            {showLogoutConfirm && countUnsentOffline() > 0 && (
+              <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                {t("more.logout.unsentWarning", { count: countUnsentOffline() })}
+              </p>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse justify-start gap-2 mt-4 sm:space-x-0">
             <Button

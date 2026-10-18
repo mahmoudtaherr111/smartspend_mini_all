@@ -12,19 +12,7 @@ import {
   AdaptiveDialogTitle,
   AdaptiveDialogTrigger,
 } from "@/components/ui/adaptive-dialog";
-
-/** How many entries were written offline and are still waiting to be sent. */
-function countUnsentOffline(): number {
-  const count = (key: string) => {
-    try {
-      const items: unknown = JSON.parse(localStorage.getItem(key) || "[]");
-      return Array.isArray(items) ? items.length : 0;
-    } catch {
-      return 0;
-    }
-  };
-  return count("smartspend_offline_texts") + count("smartspend_offline_manual");
-}
+import { countUnsentOffline } from "@/lib/offline-queue-count";
 
 /** Sign-out with a confirmation (More and the profile). Logging out clears the offline queue, so it says so first. */
 export function SignOutDialog({ trigger }: { trigger: ReactNode }) {

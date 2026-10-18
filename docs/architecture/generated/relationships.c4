@@ -267,7 +267,6 @@ model {
   smartspend.api.modules.api-routers -[uses]-> gemini
   smartspend.api.modules.api-routers -[uses]-> google-oauth
   smartspend.api.modules.api-routers -[uses]-> groq
-  smartspend.api.modules.api-routers -[uses]-> web-push
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.ad_clicks
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.ads
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.ai_conversation_summaries
@@ -969,6 +968,7 @@ model {
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.localAuth.deleteUser -[uses]-> smartspend.api.modules.accounts
+  smartspend.api.trpc.localAuth.deleteUser -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.localAuth.generateVerificationCode -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.localAuth.generateVerificationCode -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.localAuth.generateVerificationCode -[uses]-> smartspend.api.modules.security
@@ -1030,6 +1030,11 @@ model {
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.user_profiles
+  smartspend.api.trpc.profile.deleteMyAccount -[reads]-> smartspend.mysql.local_users
+  smartspend.api.trpc.profile.deleteMyAccount -[uses]-> smartspend.api.modules.accounts
+  smartspend.api.trpc.profile.deleteMyAccount -[uses]-> smartspend.api.modules.auth
+  smartspend.api.trpc.profile.deleteMyAccount -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.profile.deleteMyAccount -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.profile.dismissOnboarding -[writes]-> smartspend.mysql.user_profiles
   smartspend.api.trpc.profile.dismissSmsSuggestion -[uses]-> smartspend.api.modules.ingestion-parsers
   smartspend.api.trpc.profile.generateMagicCode -[reads]-> smartspend.mysql.webhook_tokens
@@ -1481,6 +1486,7 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.pro.upgrade
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.addContact
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.deleteContact
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.deleteMyAccount
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.generateWebhookToken
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.getNextOnboardingQuestion
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.getSmartProfile
@@ -1548,6 +1554,7 @@ model {
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.localAuth.me
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.addContact
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.deleteContact
+  smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.deleteMyAccount
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.getNextOnboardingQuestion
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.getSmartProfile
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.profile.listContacts

@@ -294,7 +294,8 @@ user's 30 latest live memories, their slots and days, so it does not repeat them
 Each thing may carry a slot from a closed registry (`api/services/ai-memory/slots.ts`: `income.payday`,
 `housing.rent`, `preference.detail`, `goal:<topic>`, `refusal:<topic>`, `followup:<topic>`, …): a new value of a
 slot replaces whatever held it, a declined offer is kept for 30 days and a follow-up for 21 so they stop counting on
-their own, and the model may close a follow-up the call settled (`closes`). What the user forgot during the call, or from the memory screen while the summary was
+their own (both counted from the call's end, which is also the moment the model's list is read against, so a call
+written late by a retry sees what held while it went on), and the model may close a follow-up the call settled (`closes`). What the user forgot during the call, or from the memory screen while the summary was
 pending, travels with the words as `forgotten` lines (`api/services/voice/gateway/store.ts#appendForgotten`, the
 same Redis hour as the words, never MySQL): the model reads it as FORGOTTEN, the words it came from stay in the call
 text, and `repeatsForgotten` drops any fact or summary sharing most of its words; the forgotten items are read again

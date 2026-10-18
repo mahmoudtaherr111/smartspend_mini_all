@@ -30,6 +30,7 @@ vi.mock("../lib/fireworks-client", () => ({
 
 import {
   isMonthlyReportCacheValid,
+  wantsWhatsappReport,
   MONTHLY_REPORT_CACHE_VERSION,
 } from "./monthly-report-job";
 
@@ -58,5 +59,14 @@ describe("monthly report cache", () => {
         insights: JSON.stringify({ cacheVersion: MONTHLY_REPORT_CACHE_VERSION }),
       }),
     ).toBe(false);
+  });
+});
+
+describe("who gets the report on WhatsApp", () => {
+  it("leaves out whoever turned the switch off in Settings, and nobody else", () => {
+    expect(wantsWhatsappReport({ whatsappReportsEnabled: false })).toBe(false);
+    expect(wantsWhatsappReport({ whatsappReportsEnabled: true })).toBe(true);
+    expect(wantsWhatsappReport({})).toBe(true);
+    expect(wantsWhatsappReport(undefined)).toBe(true);
   });
 });

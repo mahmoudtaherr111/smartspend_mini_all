@@ -94,7 +94,6 @@ flowchart LR
   ext_object_storage{{"S3-compatible object storage (R2/S3)"}}
   ext_redis{{"Redis"}}
   ext_sentry{{"Sentry"}}
-  ext_web_push{{"Web Push"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_ai_center[["AI Center (system)"]]
   sys_ai_platform[["AI providers and usage limits (system)"]]
@@ -126,7 +125,6 @@ flowchart LR
   mod_api_routers --> ext_gemini
   mod_api_routers --> ext_google_oauth
   mod_api_routers --> ext_groq
-  mod_api_routers --> ext_web_push
   mod_api_routers --> mod_contracts
   mod_api_routers --> mod_platform
   mod_api_routers --> sys_accounts
@@ -243,7 +241,7 @@ flowchart LR
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
 | `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 25 |
-| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 12 |
+| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 13 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
 | `platform` — Platform services | Environment validation, Redis client (cache, shared state for one-time codes, generation counters with replay of bumps Redis missed) and cache keys, the generation watcher that tells a per-process copy of shared data to reload, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 11 |
@@ -338,7 +336,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | S3-compatible object storage (R2/S3) | datastore | `storage` |
 | Redis | datastore | `platform` |
 | Sentry | observability | `platform` |
-| Web Push | push | `api-routers` |
 
 ## Other systems
 
@@ -351,7 +348,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
 | `AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION` | yes | `api/lib/redis-client.ts` |
-| `APP_TIMEZONE` | yes | `api/lib/app-time.ts` |
+| `APP_TIMEZONE` | yes | `api/boot.ts`, `api/lib/app-time.ts` |
 | `APP_URL` | yes | `api/webauthn-router.ts` |
 | `AWS_ACCESS_KEY_ID` | no | `api/services/storage/s3-driver.ts` |
 | `AWS_REGION` | no | `api/services/storage/s3-driver.ts` |
@@ -384,18 +381,17 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `S3_BUCKET` | no | `api/services/storage/s3-driver.ts` |
 | `S3_ENDPOINT` | no | `api/services/storage/s3-driver.ts` |
 | `SENTRY_DSN` | yes | `api/lib/error-reporting.ts` |
+| `SENTRY_TRACES_SAMPLE_RATE` | yes | `api/lib/error-reporting.ts` |
 | `SLOW_QUERY_THRESHOLD_MS` | yes | `api/queries/connection.ts` |
 | `STORAGE_DRIVER` | no | `api/services/storage/index.ts` |
 | `STORAGE_PUBLIC_URL` | no | `api/services/storage/s3-driver.ts` |
 | `TRUST_PROXY` | yes | `api/boot.ts` |
-| `VAPID_PRIVATE_KEY` | no | `api/admin-router.ts` |
-| `VAPID_PUBLIC_KEY` | no | `api/admin-router.ts` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>42 files and declarations</summary>
+<details><summary>43 files and declarations</summary>
 
 - `api/boot.ts#ALL /api/trpc/*`
 - `api/boot.ts#GET /health`
@@ -423,6 +419,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/storage/local-driver.ts`
 - `api/services/storage/s3-driver.ts`
 - `api/services/storage/types.ts`
+- `contracts/account-deletion.ts`
 - `contracts/ai-models.ts`
 - `contracts/categories.ts`
 - `contracts/constants.ts`

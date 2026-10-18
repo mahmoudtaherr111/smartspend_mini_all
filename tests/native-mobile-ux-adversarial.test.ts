@@ -34,7 +34,8 @@ describe("Native Mobile Transformation: Adversarial Vitest Integration & Archite
     it("uses semantic links with stable test and accessibility labels", () => {
       expect(navComponent).toContain("<Link");
       expect(navComponent).toContain("data-testid={`nav-tab-${item.id}`}");
-      expect(navComponent).toContain("aria-label={item.label}");
+      // Since 5ba6921 the label is the tab's translated name.
+      expect(navComponent).toContain("aria-label={t(item.labelKey)}");
       expect(navComponent).toContain(
         'aria-current={isSelected ? "page" : undefined}',
       );

@@ -19,6 +19,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { countUnsentOffline } from "@/lib/offline-queue-count";
+import { useLanguage } from "@/i18n/context";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function BiometricLockOverlay() {
@@ -33,6 +35,7 @@ export function BiometricLockOverlay() {
   } = useBiometricLock();
 
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const userKey = getUserStorageKey(user);
   const {
     lightTap,
@@ -42,6 +45,8 @@ export function BiometricLockOverlay() {
   } = useHaptics();
 
   const [mode, setMode] = useState<"biometric" | "pin">("biometric");
+  // Signing out deletes entries written offline and not sent yet: with some waiting, the first tap asks.
+  const [unsentOnLogout, setUnsentOnLogout] = useState(0);
   const [pinInput, setPinInput] = useState<string>("");
   const [pinError, setPinError] = useState<string | null>(null);
   const [isVerifyingPin, setIsVerifyingPin] = useState<boolean>(false);
@@ -196,6 +201,11 @@ export function BiometricLockOverlay() {
           type="button"
           onClick={() => {
             mediumTap();
+            const unsent = countUnsentOffline();
+            if (unsent > 0 && unsentOnLogout === 0) {
+              setUnsentOnLogout(unsent);
+              return;
+            }
             void logout();
           }}
           className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 px-3 py-1.5 rounded-full transition-colors backdrop-blur-md"
@@ -204,6 +214,23 @@ export function BiometricLockOverlay() {
           <span>تسجيل الخروج</span>
         </button>
       </div>
+
+      {unsentOnLogout > 0 && (
+        <div
+          role="alert"
+          className="relative z-10 mt-3 w-full max-w-sm rounded-xl border border-amber-500/30 bg-amber-950/40 p-3 text-start text-xs text-amber-100"
+        >
+          <p>{t("more.logout.unsentWarning", { count: unsentOnLogout })}</p>
+          <div className="mt-2 flex gap-2">
+            <Button size="sm" variant="destructive" onClick={() => void logout()}>
+              {t("more.logout.confirm")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setUnsentOnLogout(0)}>
+              {t("more.logout.cancel")}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Main Center Area */}
       <div className="w-full max-w-sm flex flex-col items-center text-center space-y-6 my-auto relative z-10">

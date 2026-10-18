@@ -18,7 +18,7 @@ account of the same person.
 | --- | --- | --- |
 | Login screen | `src/pages/Login.tsx#Login` | Phone login, phone sign-up with optional WhatsApp verification, Google and passkey sign-in |
 | Settings | `src/pages/Settings.tsx#Settings`, `src/components/auth/PasskeySettings.tsx#PasskeySettings`, `src/components/settings/LanguageSettings.tsx` | Passkeys, app lock PIN, appearance and interface language |
-| Profile | `src/components/profile/ProfileScreen.tsx#ProfileScreen`, `src/components/profile/UserAvatar.tsx`, `src/components/auth/SignOutDialog.tsx` | Photo or initials, name (editable), phone or email and plan; the onboarding answers (`contracts/profile-fields.ts`) with the same control as the Home card; call minutes left; sign out and how to delete the account |
+| Profile | `src/components/profile/ProfileScreen.tsx#ProfileScreen`, `src/components/profile/UserAvatar.tsx`, `src/components/auth/SignOutDialog.tsx` | Photo or initials, name (editable), phone or email and plan; the onboarding answers (`contracts/profile-fields.ts`) with the same control as the Home card; call minutes left; sign out and account deletion (`profile.deleteMyAccount`) |
 | Sign-in suggestion | `src/hooks/useBiometricOnboarding.ts`, `src/components/auth/BiometricOnboardingModal.tsx`, `src/hooks/usePasskeyEnrolment.ts` | The sheet that offers fingerprint / Face ID sign-in and registers the passkey in place |
 | Client session | `src/hooks/useAuth.ts`, `src/providers/trpc.ts` | Who is signed in, the offline identity, tab sync, logout; the token header on every call |
 | Google sign-in | the `/api/auth/google/start` and `/api/auth/google/callback` routes in `api/boot.ts`, `api/auth-router.ts` | OAuth with a state cookie, account creation, the `google_session` cookie |
@@ -93,7 +93,8 @@ and the code only a label (`api/services/phone-challenge.ts`).
   offers the same, highlighted by `?highlight=biometric` (or the older `1`). It writes no bell notification.
 
 ## Sessions
-- **Token.** A JWT signed with `JWT_SECRET` that names the user and its type and expires after seven days
+- **Token.** A JWT signed with `JWT_SECRET` (production refuses to start with one under 32 characters, as with
+  `AI_GATEWAY_SECRET` and `RATE_LIMIT_KEY_SECRET` when they are set: `parseServerEnv` in `api/lib/env.ts`) that names the user and its type and expires after seven days
   (`generateToken`), plus a `sessions` row that stores only the SHA-256 hash of the token with its expiry, IP and user
   agent (`createSession`).
 - **Resolving the caller** (`createContext`): a Bearer header first, then the `smartspend_token` or older
@@ -115,7 +116,10 @@ and the code only a label (`api/services/phone-challenge.ts`).
 ## Request security
 Every HTTP request passes, in the order `api/boot.ts` mounts them:
 1. `httpsRedirect` in production and `securityHeaders`: a content security policy for the app's own files, Cloudflare
-   Turnstile, Google fonts and avatars; HSTS in production; no framing or MIME sniffing; the microphone only.
+   Turnstile, Google fonts and avatars; HSTS in production; no framing or MIME sniffing; the microphone only. In
+   production scripts run only from the app's origin, Turnstile, and the two inline scripts of the built `index.html`,
+   allowed by their SHA-256 hashes, which `builtIndexScriptHashes` reads once at boot; development keeps
+   `'unsafe-inline'` for Vite.
 2. `applyOriginSecurity`: a browser origin that is not allowed is refused before any handler runs, then CORS with
    credentials and a CSRF check for allowed origins. Allowed origins are exactly `APP_URL`, `FRONTEND_URL`,
    `ALLOWED_ORIGINS`, the local ports and the Capacitor shells (`createOriginPolicy`).
@@ -145,8 +149,14 @@ Then, per procedure:
   grant that `profile.updateUserInfo` also accepts for fifteen minutes.
 - `purgeUserData` first locks the identity row, which delayed memory writers also lock; it deletes, inside the caller's transaction, every user-owned row (conversations and memory, the ledger,
   goals, contacts, sessions, passkeys, the profile, logs, voice usage and live calls with their incidents, and referrals)
-  and then the identity row. `admin.deleteUser`
-  and `localAuth.deleteUser` call it; `tests/knowledge/architecture.test.ts` fails when a user-owned table is left out.
+  and then the identity row. `admin.deleteUser`, `localAuth.deleteUser` and `profile.deleteMyAccount` call it, then
+  drop the cached principal (`invalidatePrincipal`), so a session resolved before the deletion stops answering at once;
+  `tests/knowledge/architecture.test.ts` fails when a user-owned table is left out.
+- **Deleting your own account** (`profile.deleteMyAccount`, the profile's "حذف الحساب"): the person types «احذف حسابي»
+  (or "delete my account"; `contracts/account-deletion.ts`), and a phone account also gives its password, checked at
+  most five times in fifteen minutes (a wrong one answers `BAD_REQUEST`, since the app reads `UNAUTHORIZED` as a
+  session that ended). An admin is refused, so the console never loses its last admin by accident. The data is purged
+  in one transaction, the session cookies are cleared, and the app then signs out as usual.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -158,10 +168,12 @@ Then, per procedure:
 | Login limits | `api/lib/login-protection.ts` and the `LOGIN_*` variables in `api/lib/env.ts` | `api/lib/login-protection.test.ts`, `api/lib/login-protection.integration.test.ts` |
 | Passkeys | `api/webauthn-router.ts`, `src/components/auth/PasskeySettings.tsx` | |
 | How a request becomes a user | `api/context.ts`, `api/lib/session-validation.ts` | `tests/security/r5-session-hashing.test.ts`, `api/admin-authentication.security.test.ts` |
-| Allowed origins and headers | `api/lib/origin-policy.ts`, `api/lib/security-headers.ts` | `api/lib/origin-policy.test.ts`, `tests/security/r7-security-headers.test.ts` |
+| Allowed origins and headers | `api/lib/origin-policy.ts`, `api/lib/security-headers.ts` | `api/lib/origin-policy.test.ts`, `tests/security/r7-security-headers.test.ts`, `tests/security/csp-inline-scripts.test.ts` |
 | Rate limits | `api/middleware.ts`, `api/lib/rate-limit.ts` | `api/middleware.test.ts`, `api/lib/rate-limit.test.ts` |
 | Ownership checks | `api/lib/ownership-guard.ts` | `tests/security/r6-bola-idor.test.ts` |
 | What account deletion removes | `api/services/user-purge-service.ts` | `tests/knowledge/architecture.test.ts` |
+| Deleting your own account | `profile.deleteMyAccount` in `api/profile-router.ts`, `contracts/account-deletion.ts`, `DeleteAccountSheet` in `src/components/profile/ProfileScreen.tsx` | `tests/account-self-deletion.test.ts` (MySQL), `src/components/profile/ProfileScreen.delete.test.tsx` |
+| Secrets production accepts | `parseServerEnv` in `api/lib/env.ts` | `api/lib/env.test.ts` |
 
 ## Rules for changes here
 1. Take the caller from `ctx.user`; never trust a user id from the input.
@@ -187,18 +199,17 @@ Then, per procedure:
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** Verification is the setting `whatsapp_otp_enabled`: while it is off any number registers without proof that it
-   belongs to the person, and the admin console shows it as off whatever its value ([notifications](notifications.md)).
+1. **Gap.** Verification is the setting `whatsapp_otp_enabled` (shown and switched in the admin console's WhatsApp tab,
+   [notifications](notifications.md)): while it is off any number registers without proof that it belongs to the person.
 2. **Gap.** In production, verification needs both Turnstile keys: `TURNSTILE_SECRET_KEY` on the server and
    `VITE_TURNSTILE_SITE_KEY` in the web build. With verification on and either missing, nobody can sign up with a phone
    number.
 3. **Gap.** Changing a phone number has no screen, and with verification off its code is never sent; the profile shows the
    number read-only.
-4. **Gap.** Users cannot see or end their sessions (`session.listMine` and `session.revokeMine` have no screen) or delete
-   their own account: the profile's "حذف الحساب" explains and opens Support, and only an admin deletes
-   (`purgeUserData`).
+4. **Gap.** Users cannot see or end their sessions: `session.listMine` and `session.revokeMine` have no screen.
 5. **Security.** The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read
-   it, while the content security policy allows inline scripts (`src/AGENTS.md`, rule 4).
+   it (`src/AGENTS.md`, rule 4). In production the content security policy runs no inline script it does not know by
+   hash, which narrows that risk without removing it.
 6. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
 7. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
    same storage.

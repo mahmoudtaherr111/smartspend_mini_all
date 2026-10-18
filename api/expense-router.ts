@@ -586,12 +586,20 @@ function safeDateString(value: unknown, fallback = ""): string {
   return isValidDate(date) ? date.toISOString().split("T")[0] : fallback;
 }
 
-function safeDayDiff(start: Date, end: Date): number {
-  if (!isValidDate(start) || !isValidDate(end)) return 1;
-  const diff = Math.ceil(
-    (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-  );
-  return Number.isFinite(diff) && diff > 0 ? diff : 1;
+/**
+ * The days a period's daily average divides by: from the period's start, or the user's first entry when that is
+ * later, to today or the period's end. It used to count from the first entry ever, capped at 30, so an established
+ * account divided the first days' spending by 30 and saw a fraction of what it spends a day.
+ */
+export function dailyAverageDays(periodStart: Date, periodEnd: Date, firstEntry: Date, now: Date): number {
+  if (!isValidDate(periodStart) || !isValidDate(periodEnd)) return 1;
+  const from = isValidDate(firstEntry) && firstEntry > periodStart ? firstEntry : periodStart;
+  // The period's end is the first instant after it; today counts as a day already begun.
+  const last = periodEnd > now ? now : new Date(periodEnd.getTime() - 1);
+  // Cairo calendar days, not 24-hour blocks: a month with a clock change is not a day longer or shorter.
+  const dayNumber = (value: Date) => Date.parse(`${businessDateKey(value)}T00:00:00Z`) / 86_400_000;
+  const days = dayNumber(last) - dayNumber(from) + 1;
+  return Number.isFinite(days) && days > 0 ? days : 1;
 }
 
 const CAIRO_HOUR_FORMATTER = new Intl.DateTimeFormat("en-US", {
@@ -2084,12 +2092,9 @@ export const expenseRouter = router({
           income: data.income,
         }));
 
-      // Date-aware daily average: from user's first expense date to today (or month end)
       const today = new Date();
-      const endOfMonth =
-        isValidDate(endDate) && endDate > today ? today : endDate;
-      const activeDays = safeDayDiff(userStartDate, endOfMonth);
-      const dailyAverage = totalExpense / Math.min(activeDays, 30);
+      const dailyAverage =
+        totalExpense / dailyAverageDays(startDate, endDate, userStartDate, today);
       const previousNetFlow = previousTotalIncome - previousTotalExpense;
       // Day-matched weekly vs monthly comparison logic
       const getDayOfFinancialMonth = (d: Date, start: Date) => {

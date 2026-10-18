@@ -61,20 +61,29 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
 ## Talking to the API
 - One `httpBatchLink` to `/api/trpc`, or to `VITE_API_URL` when the API is deployed separately, always with
   cookies. A token in `localStorage` is also sent as a Bearer header.
-- A 401 — as a status or inside a batched answer — preserves every registered form draft in `sessionStorage`,
-  tells the other tabs through a `BroadcastChannel`, and shows one Arabic message instead of dropping the
-  user's typing.
+- A 401 — as a status or inside a batched answer — on a device that was signed in (`deviceHadSession`: a phone token or
+  the offline identity in `localStorage`) preserves every registered form draft in `sessionStorage`, tells the other
+  tabs through a `BroadcastChannel`, and shows one Arabic message instead of dropping the user's typing. Without a
+  session it says nothing: a first visit, or a sign-up refused with 401, used to be told the session had ended. So a
+  procedure refuses a wrong password inside a session with `BAD_REQUEST`, never `UNAUTHORIZED`.
 - Sign-in, sign-out and session expiry are broadcast between tabs, so a second tab does not keep acting as the
   previous user.
 
 ## Phone and PWA
+- The viewport (`index.html`) fills the screen edge to edge and lets the keyboard resize only the visual viewport, and
+  never locks zoom: people can pinch to enlarge text. Fields are 16px on phones (`src/index.css`), so iOS and Android do
+  not zoom into a focused field.
 - Installed as a PWA or wrapped by Capacitor, the same build gets: a splash screen dismissed when React
   mounts, theme colour and status bar synced to the theme, the Android back button routed through one manager,
   haptics, a tab bar that respects the safe area and the on-screen keyboard, pull to refresh outside the chat,
   and scroll positions restored per screen.
 - Items recorded while offline wait in `localStorage` and a dialog offers to send them when the connection
-  returns ([recording spending](expense-capture.md)).
-- Push permission and Firebase messaging are set up here and used by [notifications](notifications.md).
+  returns ([recording spending](expense-capture.md)). Signing out deletes them, since they belong to the account, so every
+  way out — More and the profile (`SignOutDialog`), the sidebar, and the app lock, which asks inline — first says how
+  many are unsent (`countUnsentOffline` in `src/lib/offline-queue-count.ts`).
+- Push permission and Firebase messaging are set up here and used by [notifications](notifications.md). Without
+  Firebase's web configuration the app uses Web Push only with `VITE_VAPID_PUBLIC_KEY`; with neither it does not offer
+  push.
 - The install card (`src/components/pwa/PwaInstallPrompt.tsx`) floats above the tab bar on `/dashboard` and `/more`
   for a browser that has not installed the app. While it shows it sets `--install-card-space` on the root element and
   `.pb-nav-safe` (`src/index.css`) adds that height to the bottom padding of `<main>`, so the last controls of a page
@@ -128,13 +137,8 @@ Checked against the code; each one names where it lives.
    `src/lib/back-button-manager.ts` for an importer that no longer exists.
 4. **Debt.** The list of routes that show the tab bar lives in `BOTTOM_NAV_ROUTES` next to the route table, so a new
    screen has to be added in both places or it loses its navigation.
-5. **Gap.** Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from
-   `localStorage`, since they belong to the account. The logout dialog in `src/pages/More.tsx` says how many entries
-   are still unsent first; the sidebar's and the biometric lock's logout do not.
-6. **Gap.** The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten
+5. **Gap.** The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten
    seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
-7. **Bug.** When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in
-   the code ([notifications](notifications.md)).
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): the session behind every guard, and the app lock.

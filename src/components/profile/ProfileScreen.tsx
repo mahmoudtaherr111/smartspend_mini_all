@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/providers/trpc";
@@ -19,6 +19,7 @@ import {
   type ProfileField,
   type ProfileFieldValue,
 } from "@contracts/profile-fields";
+import { ACCOUNT_DELETION_PHRASE, isAccountDeletionConfirmed } from "@contracts/account-deletion";
 import {
   AdaptiveDialog,
   AdaptiveDialogClose,
@@ -36,7 +37,6 @@ import {
 export function ProfileScreen() {
   const { user } = useAuth();
   const { dir, language, t } = useLanguage();
-  const navigate = useNavigate();
   const utils = trpc.useUtils();
   const Chevron = dir === "rtl" ? ChevronLeft : ChevronRight;
   const { data: profile } = trpc.profile.getSmartProfile.useQuery();
@@ -130,31 +130,7 @@ export function ProfileScreen() {
         initial={editingField ? profileFieldValue(profile, editingField) : undefined}
         onOpenChange={(open) => !open && setEditingField(null)}
       />
-      <AdaptiveDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AdaptiveDialogContent>
-          <AdaptiveDialogHeader>
-            <AdaptiveDialogTitle>{t("profile.delete.title")}</AdaptiveDialogTitle>
-            <AdaptiveDialogDescription>{t("profile.delete.body")}</AdaptiveDialogDescription>
-          </AdaptiveDialogHeader>
-          <AdaptiveDialogFooter>
-            <AdaptiveDialogClose asChild>
-              <Button variant="outline" className="h-11">
-                {t("profile.edit.cancel")}
-              </Button>
-            </AdaptiveDialogClose>
-            <Button
-              variant="destructive"
-              className="h-11"
-              onClick={() => {
-                setDeleteOpen(false);
-                navigate("/support");
-              }}
-            >
-              {t("profile.delete.confirm")}
-            </Button>
-          </AdaptiveDialogFooter>
-        </AdaptiveDialogContent>
-      </AdaptiveDialog>
+      <DeleteAccountSheet open={deleteOpen} onOpenChange={setDeleteOpen} needsPassword={user?.type === "local"} />
     </div>
   );
 }
@@ -213,6 +189,100 @@ function Row({ label, value, placeholder, valueDir = "auto", onClick, to, chevro
     );
   }
   return <div className={rowClass()}>{content}</div>;
+}
+
+/**
+ * Deletes the account from the app (`profile.deleteMyAccount`): the person types the phrase, and a phone account
+ * gives its password too. Afterwards the sign-out clears what the device kept for the account.
+ */
+function DeleteAccountSheet({
+  open,
+  onOpenChange,
+  needsPassword,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  needsPassword: boolean;
+}) {
+  const { t } = useLanguage();
+  const { logout } = useAuth();
+  const [phrase, setPhrase] = useState("");
+  const [password, setPassword] = useState("");
+  const remove = trpc.profile.deleteMyAccount.useMutation({
+    onSuccess: async () => {
+      toast.success(t("profile.delete.done"));
+      await logout();
+    },
+    onError: (error) => toast.error(error.message || t("profile.delete.error")),
+  });
+  const ready = isAccountDeletionConfirmed(phrase) && (!needsPassword || password.length > 0);
+
+  return (
+    <AdaptiveDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (remove.isPending) return;
+        if (next) {
+          setPhrase("");
+          setPassword("");
+        }
+        onOpenChange(next);
+      }}
+    >
+      <AdaptiveDialogContent>
+        <AdaptiveDialogHeader>
+          <AdaptiveDialogTitle>{t("profile.delete.title")}</AdaptiveDialogTitle>
+          <AdaptiveDialogDescription>{t("profile.delete.body")}</AdaptiveDialogDescription>
+        </AdaptiveDialogHeader>
+        <form
+          className="space-y-3 px-4 pb-2 md:px-0"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (ready && !remove.isPending) {
+              remove.mutate({ confirmation: phrase, password: needsPassword ? password : undefined });
+            }
+          }}
+        >
+          <label className="block space-y-1.5 text-sm">
+            <span>{t("profile.delete.phraseLabel", { phrase: ACCOUNT_DELETION_PHRASE })}</span>
+            <Input
+              value={phrase}
+              onChange={(event) => setPhrase(event.target.value)}
+              maxLength={60}
+              dir="auto"
+              autoComplete="off"
+              className="h-11 text-base"
+              data-testid="delete-account-phrase"
+            />
+          </label>
+          {needsPassword && (
+            <label className="block space-y-1.5 text-sm">
+              <span>{t("profile.delete.passwordLabel")}</span>
+              <Input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                maxLength={200}
+                autoComplete="current-password"
+                className="h-11 text-base"
+                data-testid="delete-account-password"
+              />
+            </label>
+          )}
+          <AdaptiveDialogFooter className="px-0">
+            <AdaptiveDialogClose asChild>
+              <Button type="button" variant="outline" className="h-11" disabled={remove.isPending}>
+                {t("profile.edit.cancel")}
+              </Button>
+            </AdaptiveDialogClose>
+            <Button type="submit" variant="destructive" className="h-11" disabled={!ready || remove.isPending}>
+              {remove.isPending ? t("profile.delete.deleting") : t("profile.delete.confirm")}
+            </Button>
+          </AdaptiveDialogFooter>
+        </form>
+      </AdaptiveDialogContent>
+    </AdaptiveDialog>
+  );
 }
 
 function NameSheet({

@@ -35,7 +35,8 @@ function serverEnv(port: number): NodeJS.ProcessEnv {
     DATABASE_URL: "mysql://bundle:bundle@127.0.0.1:1/bundle",
     GOOGLE_CLIENT_ID: "bundle-test",
     GOOGLE_CLIENT_SECRET: "bundle-test",
-    JWT_SECRET: "bundle-test-secret",
+    // Production refuses a secret under 32 characters (api/lib/env.ts).
+    JWT_SECRET: "bundle-test-secret-of-at-least-32-characters",
     GEMINI_API_KEY: "bundle-test",
   };
 }

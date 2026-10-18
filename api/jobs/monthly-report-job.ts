@@ -141,6 +141,14 @@ function parseReportText(raw: string): string {
  * The month a scheduled report describes: the Cairo month that ended before `now`. The job
  * runs early on the 1st, when the current month has barely begun.
  */
+/**
+ * The switch "إرسال التقرير عبر الواتساب" in Settings. It is on until the user turns it off, as the switch shows it,
+ * and the job used to send the report whatever it said.
+ */
+export function wantsWhatsappReport(preferences: Record<string, unknown> | null | undefined): boolean {
+  return preferences?.whatsappReportsEnabled !== false;
+}
+
 export function reportMonthFor(now = new Date()): string {
   const [year, month] = businessDateKey(now).split("-").map(Number);
   const previous = new Date(Date.UTC(year, month - 2, 1));
@@ -217,8 +225,7 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
         continue;
       }
 
-      // Check if user has WhatsApp sending enabled (future setting)
-      // if (profile.preferences.disable_whatsapp_report) continue;
+      if (!wantsWhatsappReport(profile.preferences)) continue;
 
       console.log(`[MonthlyReportJob] Preparing semantic report for user ${u.id}...`);
       const reportStartedAt = Date.now();

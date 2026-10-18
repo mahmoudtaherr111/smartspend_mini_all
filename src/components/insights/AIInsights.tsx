@@ -256,7 +256,8 @@ export function AIInsights({ month }: AIInsightsProps) {
 
               return (
                 <div className="p-4 rounded-xl bg-white/60 dark:bg-slate-800/60 space-y-4">
-                  {trace && (
+                  {/* The route, tools, tokens and model are for whoever builds the app, not for the people using it. */}
+                  {import.meta.env.DEV && trace && (
                     <div
                       className="rounded-lg border bg-white/70 dark:bg-slate-900/70 p-3 text-xs text-muted-foreground space-y-1"
                       aria-label={`report-ai-trace route=${String(trace.route ?? "unknown")} tools=${traceTools} risk=${String(trace.hallucinationRisk ?? "unknown")}`}
@@ -519,7 +520,8 @@ export function AIInsights({ month }: AIInsightsProps) {
 
           {showComparison && compareData && (
             <div className="space-y-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-              {compareTrace &&
+              {import.meta.env.DEV &&
+                compareTrace &&
                 (() => {
                   const traceTools = Array.isArray(compareTrace.tools)
                     ? compareTrace.tools.map((item) => String(item)).join(", ")

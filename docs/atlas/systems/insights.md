@@ -90,7 +90,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `ai-insights` — AI insights and reports | The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, and the printable Pro report. The Gemini batch service only simulates its calls. | 7 |
+| `ai-insights` — AI insights and reports | The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, the printable Pro report, and the wait each plan has between two AI reports. The Gemini batch service only simulates its calls. | 8 |
 | `web-insights` — Insights UI | The monthly AI insights view shown in the AI Center's analysis tab. | 1 |
 
 ## API procedures
@@ -156,7 +156,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/insights.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>27 files and declarations</summary>
+<details><summary>28 files and declarations</summary>
 
 - `api/ai-router.ts#ai.compareMonths`
 - `api/ai-router.ts#ai.generateMonthlyInsights`
@@ -169,6 +169,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/export-router.ts#rest-of-file`
 - `api/jobs/monthly-behavior-job.ts`
 - `api/jobs/monthly-report-job.ts`
+- `api/lib/report-wait.ts`
 - `api/profile-router.ts#profile.dismissOnboarding`
 - `api/profile-router.ts#profile.getNextOnboardingQuestion`
 - `api/profile-router.ts#profile.getQuestions`

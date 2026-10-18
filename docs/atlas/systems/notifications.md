@@ -151,8 +151,9 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `FIREBASE_CLIENT_EMAIL` | yes | `api/services/firebase.ts` |
 | `FIREBASE_PRIVATE_KEY` | yes | `api/services/firebase.ts` |
 | `FIREBASE_PROJECT_ID` | yes | `api/services/firebase.ts` |
-| `VAPID_PRIVATE_KEY` | no | `api/notification-engine.ts` |
-| `VAPID_PUBLIC_KEY` | no | `api/notification-engine.ts` |
+| `VAPID_PRIVATE_KEY` | yes | `api/notification-engine.ts` |
+| `VAPID_PUBLIC_KEY` | yes | `api/notification-engine.ts` |
+| `VAPID_SUBJECT` | yes | `api/notification-engine.ts` |
 
 ## Source its explanation describes
 

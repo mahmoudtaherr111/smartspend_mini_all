@@ -76,31 +76,11 @@ import {
 import { BUILTIN_BASE_URLS } from "./lib/llm-provider-chain";
 import { getSmartProfile } from "./services/user-profile-service";
 import { loadAICostOverview } from "./services/ai-cost-analytics";
-import webpush from "web-push";
 import { sendPush, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
 import { notificationType } from "../contracts/notification-types";
 import { purgeUserData } from "./services/user-purge-service";
 import { asPlan, resolvePlanTokenLimit } from "./lib/ai-usage-policy";
 
-// Setup Web Push
-// In a real app these should be in env vars, but we'll use the ones generated earlier
-const vapidPublicKey =
-  process.env.VAPID_PUBLIC_KEY || "";
-const vapidPrivateKey =
-  process.env.VAPID_PRIVATE_KEY || "";
-if (vapidPublicKey && vapidPrivateKey) {
-  try {
-    webpush.setVapidDetails(
-      "mailto:admin@smartspend.ai",
-      vapidPublicKey,
-      vapidPrivateKey,
-    );
-  } catch (error) {
-    console.warn("⚠️ Failed to set VAPID details in admin-router.ts:", error);
-  }
-} else {
-  console.warn("⚠️ VAPID keys not configured — push notifications will not work.");
-}
 
 function isMissingTableError(err: unknown, table: string): boolean {
   const message = err instanceof Error ? err.message : String(err ?? "");

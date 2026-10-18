@@ -121,7 +121,16 @@
     -webkit-touch-callout: default;
   }
 
-  /* Mobile input zoom prevention: iOS WebKit and Android Chrome auto-zoom if input font-size < 16px */
+  /* iOS WebKit and Android Chrome zoom into a focused field whose text is under 16px. This keeps them from it
+     without locking zoom in the viewport, so people who need larger text can still pinch. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+    touch-action: manipulation;
+  }
+
+  /* Tailwind's text-sm and text-xs utilities come later and would shrink fields again on phones. */
   @media (max-width: 1024px), (pointer: coarse) {
     input,
     textarea,
@@ -136,11 +145,6 @@
     }
   }
 
-  input,
-  textarea,
-  select {
-    touch-action: manipulation;
-  }
   img {
     -webkit-user-drag: none;
     user-drag: none;

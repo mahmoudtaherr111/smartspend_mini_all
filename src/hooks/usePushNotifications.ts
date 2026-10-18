@@ -4,8 +4,14 @@ import { toast } from "sonner";
 import { messaging, isFirebaseConfigured } from "../pwa/firebase";
 import { getToken } from "firebase/messaging";
 
-const VAPID_PUBLIC_KEY =
-  import.meta.env.VITE_VAPID_PUBLIC_KEY || "BBtKP6w97Av5YT6NvKCh3EostLvYiXIHQqM-QGSMlMYRk8fJPalWo3dvXEcghrnlizV1selpCWTOjU4qTjIBb3o";
+// No key written here: a subscription made with a key the server does not hold receives nothing, so without the
+// build's key (or Firebase) the app does not offer push at all.
+const VAPID_PUBLIC_KEY: string | undefined = import.meta.env.VITE_VAPID_PUBLIC_KEY || undefined;
+
+/** Whether this build can deliver a push at all: Firebase, or Web Push with the server's public key. */
+function canDeliverPush(): boolean {
+  return Boolean((isFirebaseConfigured && messaging) || VAPID_PUBLIC_KEY);
+}
 
 function urlB64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -29,7 +35,7 @@ export function usePushNotifications() {
   const saveSubscription = trpc.profile.savePushSubscription.useMutation();
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
+    if ("serviceWorker" in navigator && canDeliverPush()) {
       setIsSupported(true);
 
       // 1. If Firebase is configured and permission is already granted, refresh/fetch token
@@ -67,6 +73,10 @@ export function usePushNotifications() {
   }, []);
 
   const subscribeToPush = async () => {
+    if ("serviceWorker" in navigator && !canDeliverPush()) {
+      toast.error("الإشعارات مش متاحة دلوقتي.");
+      return;
+    }
     if (!isSupported) {
       toast.error("متصفحك لا يدعم الإشعارات");
       return;
@@ -98,7 +108,7 @@ export function usePushNotifications() {
         } else {
           throw new Error("No FCM token returned");
         }
-      } else {
+      } else if (VAPID_PUBLIC_KEY) {
         // 2. Legacy standard Web-Push Path (Fallback)
         const registration = await navigator.serviceWorker.ready;
         const sub = await registration.pushManager.subscribe({

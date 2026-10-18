@@ -22,9 +22,12 @@ export const adsRouter = router({
         })
         .optional(),
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const now = new Date();
-      const plan = input?.userPlan ?? "free";
+      // The caller's own plan, never the one the request names: the app always sent "free", so paying users were
+      // served the ads meant for free accounts. `userPlan` stays in the input for older clients and is ignored.
+      void input?.userPlan;
+      const plan = ctx.user && ctx.user.plan !== "free" ? "pro" : "free";
 
       const conditions = [
         eq(ads.isActive, true),

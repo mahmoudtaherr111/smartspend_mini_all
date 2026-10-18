@@ -5,12 +5,22 @@ import { userAnalytics, expenses, localUsers, users } from "../db/schema";
 import { eq, and, gte, sql, desc, or, inArray } from "drizzle-orm";
 import { businessDayRange } from "./lib/app-time";
 
+/** Usage events the web app may record about its own user. */
+const CLIENT_ANALYTICS_EVENTS = ["session_duration"] as const;
+
 export const analyticsRouter = router({
+  // Only what the app sends (src/hooks/useSessionTracker.ts): any name and any metadata used to be stored as given.
   trackEvent: authedProcedure
     .input(
       z.object({
-        event: z.string(),
-        metadata: z.record(z.string(), z.any()).optional(),
+        event: z.enum(CLIENT_ANALYTICS_EVENTS),
+        metadata: z
+          .record(
+            z.string().max(40),
+            z.union([z.string().max(200), z.number().finite(), z.boolean()]),
+          )
+          .refine((value) => Object.keys(value).length <= 10)
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

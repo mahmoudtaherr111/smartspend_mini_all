@@ -171,6 +171,25 @@ export function preserveActiveFormDrafts(): void {
   }
 }
 
+/**
+ * Whether this device believed it was signed in: a phone account's token, or the identity any sign-in leaves for
+ * offline starts. Only then does a 401 mean a session ended. A first visit, or a sign-up refused with 401, used to
+ * greet people with "the session ended, sign in again".
+ */
+export function deviceHadSession(): boolean {
+  try {
+    return (
+      typeof localStorage !== "undefined" &&
+      Boolean(
+        localStorage.getItem("local_auth_token") ||
+          localStorage.getItem("smartspend_offline_identity_v1"),
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
 let lastSessionExpiredNotification = 0;
 const SESSION_EXPIRED_THROTTLE_MS = 4000;
 
@@ -298,7 +317,8 @@ export const trpcClient = trpc.createClient({
         }
 
         // Handle 401 unauthenticated HTTP status gracefully
-        if (response.status === 401) {
+        const hadSession = deviceHadSession();
+        if (response.status === 401 && hadSession) {
           handleUnauthenticatedSession({ source: requestUrl });
         }
 
@@ -317,7 +337,7 @@ export const trpcClient = trpc.createClient({
             : parsed?.error?.data?.code === "UNAUTHORIZED" ||
               parsed?.error?.data?.httpStatus === 401;
 
-          if (has401 && response.status !== 401) {
+          if (has401 && response.status !== 401 && hadSession) {
             handleUnauthenticatedSession({ source: requestUrl });
           }
 

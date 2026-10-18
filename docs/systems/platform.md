@@ -17,7 +17,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 | Request context | `api/context.ts` | Resolves `ctx.user` from the Bearer header, the `smartspend_token`/`local_session` cookie or the `google_session` cookie, and the client IP |
 | Builders | `api/middleware.ts` | The nine procedure builders, their rate limits and their role and plan checks |
 | Root router | `api/router.ts` | Mounts every `*-router.ts` under its name |
-| Environment | `api/lib/env.ts` | One Zod schema parsed at import: the server refuses to start without the required values |
+| Environment | `api/lib/env.ts` | One Zod schema parsed at import (`parseServerEnv`): the server refuses to start without the required values, or in production with `JWT_SECRET`, `AI_GATEWAY_SECRET` or `RATE_LIMIT_KEY_SECRET` under 32 characters |
 | Database | `api/queries/connection.ts`, `db/schema.ts`, `db/relations.ts`, `db/table-classes.ts` | The MySQL pool with slow-query logging, the Drizzle schema, the relations that stand in for foreign keys, and every table's storage class |
 | Cache | `api/lib/redis-client.ts`, `api/lib/cache-keys.ts` | Redis with an in-process fallback, the key shapes, counters and the sliding-window rate limiter |
 | Settings | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` (with the embedding keys and `usd_to_egp_rate`) | `system_settings` behind one cached read, and the registry of keys, defaults and secrets |
@@ -28,7 +28,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 | Shared contracts | `contracts/` | Input limits, plan prices and plan features, the category taxonomy (`contracts/categories.ts`, with the map from old category names), the live call's wire protocol (`contracts/voice-protocol.ts`), what a parsed item carries into a save from any channel (`contracts/expense-save.ts`), the Gemini models it may use (`contracts/voice-models.ts`; same per-token prices, labelled without a cost factor), the purposes a model can serve and the published model prices (`contracts/ai-models.ts`), the profile questions the app asks and why (`contracts/profile-fields.ts`), each notification type and the page it opens (`contracts/notification-types.ts`), and shared types the web app imports |
 | Error log | `api/lib/error-logger.ts` | Classifies provider errors and records them in `api_key_errors` for the admin console |
 | Logging | `api/lib/log.ts` | The server logger. It redacts the fields that carry message text, codes, tokens and phone numbers (`text`, `body`, `code`, `token`, `phone` and others, three levels deep; a phone keeps its last four digits, and a `code` without a run of four digits, such as an error's code or a tool's refusal, is kept), and writes an error with its codes and statement but without the values of a failed query |
-| Error reporting | `api/lib/error-reporting.ts` | Sentry, when `SENTRY_DSN` is set, under the same rule: console breadcrumbs are dropped, query strings, request bodies, cookies and credentials are removed, and a failed query's values are cut before an event leaves |
+| Error reporting | `api/lib/error-reporting.ts` | Sentry, when `SENTRY_DSN` is set, under the same rule: console breadcrumbs are dropped, query strings, request bodies, cookies and credentials are removed, and a failed query's values are cut before an event leaves. Traces and profiles cover `SENTRY_TRACES_SAMPLE_RATE` of requests (10% by default); errors are always sent |
 
 ## A request, end to end
 1. HTTPS redirect (production), request log, compression, security headers, the forwarded-IP warning when
@@ -95,7 +95,8 @@ storage, the contracts shared with the web app, and the retention job that prune
 
 ## Jobs
 Registered in `api/boot.ts` and only where `ENABLE_CRONS=true`; each takes a MySQL advisory lock named after
-the job, so every replica may register it and one runs it (golden rule 7): expired sessions and challenges
+the job, so every replica may register it and one runs it (golden rule 7). The hours are Cairo time: node-cron
+schedules each job in `APP_TIMEZONE`, not the server's clock. Expired sessions and challenges
 (daily), classification logs older than 180 days (Sundays), scheduled notifications (every minute), the smart
 activity check (20:00), the monthly report (1st at 02:00), the monthly behaviour snapshot (1st at 01:00), the
 rollup reconciliation (04:00), data retention (05:00), subscription expiry (06:00), and the live calls' memory
@@ -104,7 +105,7 @@ rollup reconciliation (04:00), data retention (05:00), subscription expiry (06:0
 ## Where to change what
 | To change | Edit | Check with |
 | --- | --- | --- |
-| A configuration value | `api/lib/env.ts` (golden rule 8) | `tests/knowledge/architecture.test.ts` |
+| A configuration value | `api/lib/env.ts` (golden rule 8) | `tests/knowledge/architecture.test.ts`, `api/lib/env.test.ts` |
 | Who may call a procedure, or its rate limit | `api/middleware.ts` | `tests/knowledge/architecture.test.ts` |
 | A new router | the file plus `api/router.ts` | `tests/knowledge/architecture.test.ts` |
 | A table | `db/schema.ts`, `db/relations.ts`, `db/table-classes.ts`, then `npm run db:generate` | `tests/table-classes.test.ts`, `npm run db:doctor` on a database built with `npm run db:migrate` |
@@ -135,19 +136,17 @@ Checked against the code; each one names where it lives.
 1. **Debt.** Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8):
    `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and
    public URL; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
-2. **Debt.** Sentry, when configured, is initialised with full tracing and profiling (`tracesSampleRate: 1.0`), which
-   samples every request in production.
-3. **Debt.** `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the
+2. **Debt.** `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the
    history the admin screens show ends where the ninety-day pruning starts.
-4. **Debt.** `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
-5. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
+3. **Debt.** `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
+4. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
    update can silently turn into zeroes.
-6. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
+5. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
    entry and `NODE_ENV=production`; `api/server.ts` repeats the server setup for the standalone deployment. Both
    route the voice socket (`/api/voice/v2`) through the one
    `createVoiceUpgradeHandler` in `api/services/voice/gateway/index.ts`, so only its options and the paths their
    `upgrade` listeners pass on have to be kept in step by hand.
-7. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
+6. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
    they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that
    print `error.message` as text print provider, socket and storage errors today, or failed reads whose values
    are ids and dates (`api/ai-router.ts`,

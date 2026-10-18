@@ -145,6 +145,21 @@ describe("chat router phase 0 smoke", () => {
     });
   });
 
+  it("tells the user to try again when the kernel fails, not that the assistant was turned off", async () => {
+    vi.mocked(runAIKernelActive).mockRejectedValueOnce(new Error("provider down"));
+    const caller = chatRouter.createCaller({
+      user: { id: 1, type: "oauth", name: "Test User", email: "test@example.com", role: "user", plan: "free" },
+      req: new Request("http://localhost/trpc"),
+      ip: "127.0.0.1",
+    });
+
+    const result = await caller.sendMessage({ message: "صرفت كام النهاردة؟" });
+
+    expect(result.model).toBe("ai-kernel-failed");
+    expect(result.response).toContain("جرّب تاني");
+    expect(result.response).not.toContain("متوقف");
+  });
+
   it("keeps daily limits for normal users but lets the dev QA prompt path bypass them", async () => {
     dbState.todayCount = 20;
     const caller = chatRouter.createCaller({

@@ -18,7 +18,7 @@ describe("plan features as admin settings", () => {
       expect(isPlanFeatureEnabled(none, "ultra", feature)).toBe(true);
     }
     expect(isPlanFeatureEnabled(none, "pro", "whatsapp_report")).toBe(true);
-    expect(isPlanFeatureEnabled(none, "ultra", "whatsapp_report")).toBe(false);
+    expect(isPlanFeatureEnabled(none, "ultra", "whatsapp_report")).toBe(true);
     expect(planNumber(none, "free", "goals_active_limit")).toBe(3);
     expect(planNumber(none, "pro", "goals_active_limit")).toBe(0);
     expect(planNumber(none, "free", "burst_limit_per_minute")).toBe(20);

@@ -250,8 +250,9 @@ async function requireOwnedConversation(
   userId: number,
   userType: string,
 ) {
+  // The metadata carries the clarification a reply answers, so `sendMessage` needs it with the id.
   const [conversation] = await db
-    .select({ id: chatConversations.id })
+    .select({ id: chatConversations.id, metadata: chatConversations.metadata })
     .from(chatConversations)
     .where(
       and(
@@ -996,6 +997,7 @@ export const chatRouter = router({
         };
       }
 
+      let kernelFailed = false;
       const kernelPrimary = aiKernelActive
         ? await runAIKernelActive(kernelRequest, {
             apiKey: config.apiKey,
@@ -1008,6 +1010,7 @@ export const chatRouter = router({
               { err: error, event: "chat.kernel.failed" },
               "The AI kernel failed; answering without it",
             );
+            kernelFailed = true;
             return undefined;
           })
         : undefined;
@@ -1050,10 +1053,8 @@ export const chatRouter = router({
           await db
             .update(chatConversations)
             .set({
-              metadata: {
-                ...((activeConv?.metadata as any) || {}),
-                clarificationState: newClarificationState,
-              },
+              // Only this key: the rest of the metadata stays as stored, as in the other clarification writes.
+              metadata: sql`JSON_SET(COALESCE(${chatConversations.metadata}, JSON_OBJECT()), '$.clarificationState', CAST(${JSON.stringify(newClarificationState)} AS JSON))`,
             })
             .where(
               and(
@@ -1074,13 +1075,21 @@ export const chatRouter = router({
             model: kernelPrimary.model ?? config.model,
             toolsUsed: dataNeedKinds(kernelPrimary),
           }
-        : {
-            response:
-              "المساعد الذكي متوقف مؤقتاً من الإعدادات. جرّب تاني بعد ما يتم تفعيله.",
-            tokensUsed: 0,
-            model: "ai-kernel-disabled",
-            toolsUsed: [] as string[],
-          };
+        : kernelFailed
+          ? {
+              // A failure is not the operator's switch: the user can simply try again.
+              response: "حصلت مشكلة عندنا وإحنا بنجهز الرد. جرّب تاني كمان شوية.",
+              tokensUsed: 0,
+              model: "ai-kernel-failed",
+              toolsUsed: [] as string[],
+            }
+          : {
+              response:
+                "المساعد الذكي متوقف مؤقتاً من الإعدادات. جرّب تاني بعد ما يتم تفعيله.",
+              tokensUsed: 0,
+              model: "ai-kernel-disabled",
+              toolsUsed: [] as string[],
+            };
 
       const shadow = kernelPrimary;
       if (shadow) {

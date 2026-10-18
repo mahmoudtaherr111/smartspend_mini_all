@@ -23,6 +23,7 @@ import {
   userBusinesses,
   businessCategories as bizCategoriesTable,
 } from "../db/schema";
+import { reportWaitDays, reportWaitMessage } from "./lib/report-wait";
 import { getSystemSettings } from "./lib/settings-cache";
 import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { env } from "./lib/env";
@@ -1746,24 +1747,18 @@ export const aiRouter = router({
         .orderBy(desc(aiSummaries.createdAt))
         .limit(1);
 
-      if (lastSummary[0] && !(input.forceRefresh && existingSummary[0])) {
-        const sysSettings = await getSystemSettings();
-        const limits: Record<string, number> = { free: 30, pro: 14, ultra: 1 };
-        if (sysSettings.report_limit_free) limits.free = parseInt(sysSettings.report_limit_free);
-        if (sysSettings.report_limit_pro) limits.pro = parseInt(sysSettings.report_limit_pro);
-        if (sysSettings.report_limit_ultra) limits.ultra = parseInt(sysSettings.report_limit_ultra);
-
-        const plan = ctx.user.plan || "free";
-        const allowedDays = limits[plan] || 30;
+      // A refresh is a new paid generation too, so it waits like any other report: refreshing a month that already
+      // had one used to skip the wait and call the model as often as the rate limit allowed.
+      if (lastSummary[0]) {
+        const allowedDays = reportWaitDays(await getSystemSettings(), ctx.user.plan);
         const daysSinceLast =
           (new Date().getTime() - (lastSummary[0]?.createdAt?.getTime() || 0)) /
           (1000 * 3600 * 24);
 
         if (allowedDays > 0 && daysSinceLast < allowedDays) {
-          const remainingDays = Math.ceil(allowedDays - daysSinceLast);
           throw new TRPCError({
             code: "TOO_MANY_REQUESTS",
-            message: `متبقي ${remainingDays} يوم لطلب التقرير الذكي القادم في خطتك (${plan.toUpperCase()}). للترقية، قم بزيارة صفحة الاشتراك.`,
+            message: reportWaitMessage(Math.ceil(allowedDays - daysSinceLast)),
           });
         }
       }
@@ -2095,6 +2090,8 @@ export const aiRouter = router({
       let modelName = "backend";
       let aiResponseLength = "medium";
       let aiFocus = "balanced";
+      /** Why the report is the basic one: only "tokens" is the user's own limit. */
+      let basicReportReason: "tokens" | "unavailable" = "unavailable";
       let aiSystemPrompt =
         "[Persona] مستشار مالي مصري ذكي ومتعاطف. لغتك عامية مصرية راقية ومبسطة، وتتحدث وكأنك إنسان حقيقي.\n[Rules]\n1. لا تستخدم العناوين الآلية (مثل التطبيع أو السببية).\n2. واجه المستخدم بالأرقام الحقيقية.\n3. قدم نصائح عملية مصممة خصيصاً للمستخدم بناءً على سلوكه المالي.";
       let aiAdvancedInstructions = "";
@@ -2157,9 +2154,19 @@ export const aiRouter = router({
           aiModel = null;
           modelName = "backend";
           reportProvider = "backend";
+          basicReportReason = "tokens";
         }
       } catch (e) {
         if (e instanceof TRPCError) throw e;
+        // Without a client the plan's switch was never read, so a plan without AI analysis got the basic report
+        // instead of being told it is not in the plan.
+        const settings = await getSystemSettings();
+        if (settings[`${ctx.user.plan || "free"}_ai_analysis`] === "false") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "التحليلات الشهرية بالذكاء الاصطناعي غير متاحة في خطتك الحالية.",
+          });
+        }
       }
 
       // ── Dynamic Data Feed (subcategories depth + item descriptions based on plan) ──
@@ -2256,7 +2263,6 @@ ${prevTotal > 0 ? `تغير إجمالي المصاريف عن الشهر الس
       const personalizedSummaryForAI = compactReportContext;
 
       let responseJson: any;
-      let aiErrorMsg = "";
       let reportEstimatedInputTokens = 0;
       let reportTotalTokens = 0;
       let reportLlmCalls = 0;
@@ -2508,14 +2514,8 @@ ${personalizedSummaryForAI}
               }
             }
         } catch (err: any) {
+          // The provider's error is for the logs; the user reads that the AI is not available right now.
           console.error(`AI Insights Error: ${err.message}\n${err.stack}`);
-          if (err.message.includes("429") || err.message.includes("Quota"))
-            aiErrorMsg =
-              "تم استهلاك رصيد مفتاح الـ API (Quota Exceeded). يرجى إعداد مفتاح جديد من لوحة الإدارة.";
-          else if (err.message.includes("key not valid"))
-            aiErrorMsg =
-              "مفتاح الذكاء الاصطناعي غير صالح. يرجى التأكد من الإعدادات.";
-          else aiErrorMsg = err.message;
         }
       }
 
@@ -2527,11 +2527,12 @@ ${personalizedSummaryForAI}
         const fallbackDailyAvg = semanticNumber("daily_average_expense") ?? dailyAvg;
         const fallbackTotalExpense = semanticNumber("total_expense") ?? totalExpense;
 
-        if (!aiModel) {
+        if (!aiModel && basicReportReason === "tokens") {
           text +=
-            "💡 (ملاحظة: هذا التقرير تم توليده بواسطة النظام الأساسي لأنك استهلكت كل التوكنز المتاحة للذكاء الاصطناعي هذا الشهر. قم بالترقية لزيادة الحدود!)\n\n";
+            "💡 (ملاحظة: ده التحليل الأساسي، لأن رصيد الذكاء الاصطناعي بتاعك للشهر ده خلص. تقدر ترقّي باقتك لو عايز حدود أعلى.)\n\n";
         } else {
-          text += `💡 (ملاحظة: تم استخدام التحليل الأساسي بدلاً من الذكاء الاصطناعي للسبب التالي: ${aiErrorMsg})\n\n`;
+          text +=
+            "💡 (ملاحظة: الذكاء الاصطناعي مش متاح دلوقتي، فده التحليل الأساسي من أرقامك. جرّب تاني بعد شوية.)\n\n";
         }
 
         if (topCategoryPercent > 50) {

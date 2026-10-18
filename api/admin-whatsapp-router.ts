@@ -12,7 +12,6 @@ const broadcastLog = createLogger("whatsapp-broadcast");
 // A simple in-memory queue for broadcasting
 let broadcastQueue: { phone: string; text: string }[] = [];
 let isBroadcasting = false;
-const WHATSAPP_AUTH_TEMPORARILY_DISABLED = true;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -94,11 +93,9 @@ export const adminWhatsappRouter = router({
     }
   }),
 
+  // The value registration reads (api/local-auth-router.ts). It used to answer "off" whatever was stored, while the
+  // toggle below still changed what sign-up does, so the console hid whether numbers were being verified.
   getSettings: adminProcedure.query(async () => {
-    if (WHATSAPP_AUTH_TEMPORARILY_DISABLED) {
-      return { otpEnabled: false, temporarilyDisabled: true };
-    }
-
     const settings = await getSystemSettings();
     return { otpEnabled: settings["whatsapp_otp_enabled"] === "true" };
   }),
