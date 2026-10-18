@@ -1,7 +1,7 @@
 # 0022. A Flutter app in `mobile/`, on the same API, with native code only where the platform demands it
 
-- Status: accepted; the foundation (workspace, API client, generated procedure catalog, design tokens, app shell,
-  native bridge, CI) is in `mobile/` and `.github/workflows/mobile.yml`. The milestones below are not built yet.
+- Status: accepted; milestones 1 (foundation) and 2 (sign-in) are built, in `mobile/` and
+  `.github/workflows/mobile.yml`; milestones 3 to 6 are not.
 - Decided and recorded: 2026-10-18.
 
 ## Context
@@ -86,8 +86,8 @@ What the code already gives a native client:
 - A procedure change on the server shows up in the generated Dart file in the same commit, and the mobile workflow
   fails if Dart code still calls the old one. Changing an input or answer shape is still caught only by the Dart
   tests written for it.
-- Google sign-in on mobile needs a server change first: a procedure that accepts a Google ID token from the native
-  sign-in SDK, checks it, and returns a session token like a phone login.
+- Google sign-in on mobile needed a server change first: `auth.signInWithGoogle` accepts a Google ID token from the
+  native sign-in SDK, checks it (`api/lib/google-id-token.ts`), and returns a session token like a phone login.
 - The Android app will ask for notification access from a store install, which Play reviews against its policy
   and which the Data safety form must disclose.
 - iOS capture needs the user to set up one Shortcuts automation once; it is not automatic like Android.
@@ -97,7 +97,12 @@ What the code already gives a native client:
 
 ## Milestones
 1. Foundation (this record): workspace, client, catalog, tokens, shell, bridge, CI.
-2. Sign-in: phone accounts with a stored token; the Google ID-token procedure on the server; `auth.me`.
+2. Sign-in (built): `auth.signInWithGoogle` on the server, which accepts only ID tokens Google signed for the app's
+   own Android and iOS clients (`GOOGLE_ANDROID_CLIENT_IDS`, `GOOGLE_IOS_CLIENT_IDS`); in the app, phone login, sign-up
+   with WhatsApp verification (Turnstile in a web view, the code sent through a `wa.me` link, `/api/sse/otp` followed
+   across app switches) and Google through `google_sign_in`; the token in `SessionStore`, the user from `auth.me` or
+   `localAuth.me`, a route guard on every tab, and a token the server refuses forgotten at once. Google stays hidden
+   until its client ids are configured ([accounts](../systems/accounts.md), known issues 8 to 11).
 3. The ledger: home summary, recording by text, the list, the offline store and outbox, the app lock.
 4. Android capture: the listener, queue and upload in `bank_capture`, the setup flow; retire `android-app/`.
 5. iOS capture and extras: the App Intent and automation guide, the share extension, the widget; voice calls on

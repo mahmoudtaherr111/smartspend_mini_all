@@ -25,7 +25,7 @@ flowchart LR
     http__api_auth["HTTP /api/auth/… · 2 routes"]
     http__api_sse["GET /api/sse/otp"]
     job_daily_auth_cleanup["Job · daily-auth-cleanup"]
-    router_auth["auth API · 4 procedures"]
+    router_auth["auth API · 5 procedures"]
     router_localAuth["localAuth API · 12 procedures"]
     router_profile["profile API · 6 procedures"]
     router_session["session API · 5 procedures"]
@@ -91,6 +91,7 @@ flowchart LR
     tbl_webhook_tokens[("webhook_tokens")]
     tbl_whatsapp_otp_codes[("whatsapp_otp_codes")]
   end
+  ext_google_oauth{{"Google OAuth 2.0"}}
   ext_turnstile{{"Cloudflare Turnstile"}}
   sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_platform[["Server platform and data (system)"]]
@@ -152,6 +153,7 @@ flowchart LR
   mod_accounts ==> tbl_voice_calls
   mod_accounts ==> tbl_voice_usage
   mod_accounts ==> tbl_webhook_tokens
+  mod_auth --> ext_google_oauth
   mod_auth --> mod_security
   mod_auth --> sys_platform
   mod_auth ==> tbl_local_users
@@ -219,7 +221,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `accounts` — Account lifecycle | Account deletion: purgeUserData removes every row a user owns, inside the caller's transaction. | 1 |
-| `auth` — Authentication and sessions | Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in. | 5 |
+| `auth` — Authentication and sessions | Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in, and the check of a Google ID token from the mobile app (Google's signature, issuer, expiry, and an audience and authorized party that are the app's own client ids). | 6 |
 | `security` — Request security | HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging. | 11 |
 | `web-account` — Account UI | Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt. | 14 |
 
@@ -231,6 +233,7 @@ flowchart LR
 | `auth.googleUrl` | query | `publicProcedure` | — | — | `Login` |
 | `auth.logout` | mutation | `authedProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
 | `auth.me` | query | `publicProcedure` | `users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
+| `auth.signInWithGoogle` | mutation | `strictPublicProcedure` | `users` | `users` | — |
 | `localAuth.deleteUser` | mutation | `adminProcedure` | — | — | — |
 | `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | — | — | `Login` |
 | `localAuth.getBotPhoneNumber` | query | `publicProcedure` | — | — | `Login` |
@@ -322,7 +325,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_dictionaries` | F | `accounts` | — |
 | `user_profiles` | A | `accounts`, `profile.updateProfile` | `profile.getMyProfile` |
 | `user_wallets` | A | `accounts` | `security` |
-| `users` | A | `accounts`, `auth`, `auth.googleCallback`, `profile.updateUserInfo` | `accounts`, `auth.googleCallback`, `auth.me`, `webauthn.generateRegistrationOptions` |
+| `users` | A | `accounts`, `auth`, `auth.googleCallback`, `auth.signInWithGoogle`, `profile.updateUserInfo` | `accounts`, `auth.googleCallback`, `auth.me`, `auth.signInWithGoogle`, `webauthn.generateRegistrationOptions` |
 | `voice_call_incidents` | E | `accounts` | — |
 | `voice_calls` | E | `accounts` | — |
 | `voice_usage` | E | `accounts` | — |
@@ -333,6 +336,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | System | Kind | Modules |
 | --- | --- | --- |
+| Google OAuth 2.0 | identity | `auth` |
 | Cloudflare Turnstile | bot-protection | `security`, `web-account` |
 
 ## Other systems
@@ -365,7 +369,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/accounts.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>49 files and declarations</summary>
+<details><summary>50 files and declarations</summary>
 
 - `api/auth-router.ts`
 - `api/boot.ts#GET /api/auth/google/callback`
@@ -376,6 +380,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/admin-safe-fields.ts`
 - `api/lib/anonymizer.ts`
 - `api/lib/get-client-ip.ts`
+- `api/lib/google-id-token.ts`
 - `api/lib/http-origin-security.ts`
 - `api/lib/image-magic-bytes.ts`
 - `api/lib/login-protection.ts`

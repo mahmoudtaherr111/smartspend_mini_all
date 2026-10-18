@@ -6,6 +6,8 @@ import 'package:smartspend_app/src/app.dart';
 import 'package:smartspend_app/src/config/app_config.dart';
 import 'package:smartspend_app/src/core/providers.dart';
 
+import 'support/test_app.dart';
+
 class _FakeBankCapture implements BankCapture {
   _FakeBankCapture(this.answer);
 
@@ -19,6 +21,7 @@ class _FakeBankCapture implements BankCapture {
   Future<void> openAccessSettings() async => opened++;
 }
 
+/// The app with a phone account already signed in.
 Future<_FakeBankCapture> _pumpApp(
   WidgetTester tester, {
   CaptureMethod method = CaptureMethod.notificationListener,
@@ -27,6 +30,7 @@ Future<_FakeBankCapture> _pumpApp(
   final capture = _FakeBankCapture(
     CaptureStatus(method: method, access: access),
   );
+  final api = FakeApi()..answer('localAuth.me', (_) => phoneUser());
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -37,6 +41,10 @@ Future<_FakeBankCapture> _pumpApp(
             userAgent: 'SmartSpend-Mobile (test)',
           ),
         ),
+        sessionStoreProvider.overrideWithValue(
+          MemorySessionStore('session-token'),
+        ),
+        httpClientProvider.overrideWithValue(api.client),
         bankCaptureProvider.overrideWithValue(capture),
       ],
       child: const SmartSpendApp(),

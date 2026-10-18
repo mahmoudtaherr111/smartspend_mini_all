@@ -78,6 +78,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/fireworks-client.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/fuzzy-match.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/get-client-ip.ts` | [accounts](accounts.md) |
+| `api/lib/google-id-token.ts` | [accounts](accounts.md) |
 | `api/lib/groq-client.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/http-origin-security.ts` | [accounts](accounts.md) |
 | `api/lib/image-magic-bytes.ts` | [accounts](accounts.md) |

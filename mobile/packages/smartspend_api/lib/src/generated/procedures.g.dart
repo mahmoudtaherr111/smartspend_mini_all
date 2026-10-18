@@ -74,6 +74,7 @@ final class AuthProcedures {
   ApiQuery get googleUrl => const ApiQuery('auth.googleUrl', builder: 'publicProcedure');
   ApiMutation get logout => const ApiMutation('auth.logout', builder: 'authedProcedure');
   ApiQuery get me => const ApiQuery('auth.me', builder: 'publicProcedure');
+  ApiMutation get signInWithGoogle => const ApiMutation('auth.signInWithGoogle', builder: 'strictPublicProcedure', hasInput: true);
 }
 
 /// The `budget` router, `api/budget-router.ts`.
