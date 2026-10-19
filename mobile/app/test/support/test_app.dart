@@ -12,6 +12,7 @@ import 'package:http/testing.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_app/src/app.dart';
 import 'package:smartspend_app/src/config/app_config.dart';
+import 'package:smartspend_app/src/core/preferences.dart';
 import 'package:smartspend_app/src/core/providers.dart';
 import 'package:smartspend_app/src/core/session_store.dart';
 import 'package:smartspend_app/src/features/auth/google_identity.dart';
@@ -255,6 +256,9 @@ final class TestApp {
   final lockStore = MemoryLockStore();
   final deviceLock = FakeDeviceLock();
 
+  /// The phone's own choices, such as the interface language, as bootstrap() reads them before the first frame.
+  final preferences = MemoryPreferencesStore();
+
   /// Whether the phone has a network; send false to cut it, true to bring it back.
   final connection = StreamController<bool>.broadcast();
   final FakeApi api;
@@ -294,6 +298,8 @@ final class TestApp {
           outboxRetryDelaysProvider.overrideWithValue(const []),
           lockStoreProvider.overrideWithValue(lockStore),
           deviceLockProvider.overrideWithValue(deviceLock),
+          preferencesStoreProvider.overrideWithValue(preferences),
+          initialPreferencesProvider.overrideWithValue(preferences.preferences),
         ],
         child: const SmartSpendApp(),
       ),

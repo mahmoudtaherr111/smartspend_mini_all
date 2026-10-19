@@ -584,4 +584,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get pinOfferNo => 'مش دلوقتي';
+
+  @override
+  String get languageTitle => 'لغة التطبيق';
+
+  @override
+  String get languageArabic => 'العربية';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageNote =>
+      'التسجيل والتصنيفات بيفضلوا بالعربي: اكتب واتكلم بالعامية زي ما انت.';
 }

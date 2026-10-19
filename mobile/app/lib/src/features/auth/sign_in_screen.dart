@@ -8,6 +8,7 @@ import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../more/language_card.dart';
 import 'auth_api.dart';
 import 'auth_widgets.dart';
 import 'google_identity.dart';
@@ -207,6 +208,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ),
           ],
         ),
+        const SizedBox(height: SmartSpendSpacing.sm),
+        const LanguageSwitchButton(),
       ],
     );
   }

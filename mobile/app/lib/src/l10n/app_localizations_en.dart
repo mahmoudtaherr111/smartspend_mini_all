@@ -581,4 +581,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pinOfferNo => 'Not now';
+
+  @override
+  String get languageTitle => 'App language';
+
+  @override
+  String get languageArabic => 'العربية';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageNote =>
+      'Recording and categories stay in Arabic: keep typing and speaking in Egyptian Arabic.';
 }

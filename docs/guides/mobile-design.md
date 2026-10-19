@@ -51,6 +51,11 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
 5. **Arabic needs room.** No letter spacing on Arabic; body lines at 1.5–1.7 of the font size; labels leave about a
    fifth more room than their English; no text in fixed-width boxes. (unenforced)
 6. **Align a paragraph by its own language** and keep one alignment within a list. (Apple, right to left)
+7. **The interface can be English, the content cannot.** The person may switch the interface to English, left to
+   right ([decision 0020](../decisions/0020-optional-english-interface.md)); what they type and say, the categories
+   and the AI's answers stay Egyptian Arabic. So no screen assumes right to left: paddings are symmetric or
+   start/end, a forward arrow is `Icons.chevron_right` (Flutter mirrors it), and the language is read before the
+   first frame. (`mobile/app/test/language_test.dart`)
 
 ## 3. Layout and touch
 1. **Every target is at least 48 by 48** (Android asks 48 dp, Apple 44 pt; we use the larger everywhere).

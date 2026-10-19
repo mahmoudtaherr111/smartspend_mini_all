@@ -1039,6 +1039,30 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'مش دلوقتي'**
   String get pinOfferNo;
+
+  /// No description provided for @languageTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لغة التطبيق'**
+  String get languageTitle;
+
+  /// No description provided for @languageArabic.
+  ///
+  /// In ar, this message translates to:
+  /// **'العربية'**
+  String get languageArabic;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In ar, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languageNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسجيل والتصنيفات بيفضلوا بالعربي: اكتب واتكلم بالعامية زي ما انت.'**
+  String get languageNote;
 }
 
 class _AppLocalizationsDelegate

@@ -44,3 +44,7 @@ Why it exists and what is decided: `docs/decisions/0022-flutter-mobile-app.md`. 
     one before changing the lock, goes through `AppLock.checkPin` so wrong PINs are always counted. Amounts follow
     `MoneyPrivacy`: a screen that writes money in text uses `moneyText`, never `formatMoney` directly.
     (`app/test/lock_test.dart`; the `formatMoney` ban in screens is unenforced)
+15. The interface language is a choice of the phone, not of the account: `languageProvider` in
+    `app/lib/src/core/preferences.dart`, read by `bootstrap()` before the first frame and kept through signing out.
+    English changes the interface only; categories, the person's sentences and the AI's answers are never translated
+    (decision 0020). (`app/test/language_test.dart`)

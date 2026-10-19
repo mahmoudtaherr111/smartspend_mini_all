@@ -156,5 +156,9 @@
   "pinOfferBiometricsTitle": "Also unlock with {method}?",
   "pinOfferBiometricsBody": "Faster than the PIN, and the PIN still works when you need it.",
   "pinOfferYes": "Yes, turn it on",
-  "pinOfferNo": "Not now"
+  "pinOfferNo": "Not now",
+  "languageTitle": "App language",
+  "languageArabic": "العربية",
+  "languageEnglish": "English",
+  "languageNote": "Recording and categories stay in Arabic: keep typing and speaking in Egyptian Arabic."
 }

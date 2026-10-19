@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import 'core/preferences.dart';
 import 'features/lock/lock_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'routing/app_router.dart';
@@ -19,8 +20,9 @@ class SmartSpendApp extends ConsumerWidget {
       theme: SmartSpendTheme.light(),
       darkTheme: SmartSpendTheme.dark(),
       themeMode: ThemeMode.system,
-      // Arabic first, right to left. English becomes a setting later (decision 0020).
-      locale: const Locale('ar'),
+      // Arabic first, right to left; English, left to right, when the person chooses it (decision 0020). The
+      // direction follows the language through Flutter's localizations.
+      locale: ref.watch(languageProvider).locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       routerConfig: ref.watch(routerProvider),

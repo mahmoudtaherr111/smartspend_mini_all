@@ -308,5 +308,9 @@
   },
   "pinOfferBiometricsBody": "أسرع من الرمز، والرمز يفضل شغال لو احتجته.",
   "pinOfferYes": "أيوه، شغّلها",
-  "pinOfferNo": "مش دلوقتي"
+  "pinOfferNo": "مش دلوقتي",
+  "languageTitle": "لغة التطبيق",
+  "languageArabic": "العربية",
+  "languageEnglish": "English",
+  "languageNote": "التسجيل والتصنيفات بيفضلوا بالعربي: اكتب واتكلم بالعامية زي ما انت."
 }

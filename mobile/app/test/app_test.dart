@@ -86,6 +86,8 @@ void main() {
     expect(find.text('إشعارات البنك والمحفظة'), findsOneWidget);
     expect(find.text('مش شغّالة'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('افتح الإعدادات'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('افتح الإعدادات'));
     await tester.pump();
     expect(capture.opened, 1);

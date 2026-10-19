@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:smartspend_app/src/app.dart';
 import 'package:smartspend_app/src/config/app_config.dart';
+import 'package:smartspend_app/src/core/preferences.dart';
 import 'package:smartspend_app/src/core/providers.dart';
 import 'package:smartspend_app/src/features/ledger/ledger_providers.dart';
 import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
@@ -148,6 +149,7 @@ void main() {
     String? token,
     LockStore? lockStore,
     FakeDeviceLock? device,
+    AppLanguage language = AppLanguage.arabic,
   }) async {
     final api = FakeApi()..answer('localAuth.me', (_) => phoneUser());
     _answerLedger(api);
@@ -163,6 +165,10 @@ void main() {
           outboxRetryDelaysProvider.overrideWithValue(const []),
           lockStoreProvider.overrideWithValue(lockStore ?? MemoryLockStore()),
           deviceLockProvider.overrideWithValue(device ?? FakeDeviceLock()),
+          preferencesStoreProvider.overrideWithValue(MemoryPreferencesStore()),
+          initialPreferencesProvider.overrideWithValue(
+            DevicePreferences(language: language),
+          ),
         ],
         child: const SmartSpendApp(),
       ),
@@ -258,6 +264,14 @@ void main() {
       await tester.pumpAndSettle();
       await _type(tester, _shotPin);
       await photograph(theme, 'security');
+
+      // The interface in English: the recorded categories stay Arabic.
+      await openApp(
+        tester,
+        token: 'screenshot-session',
+        language: AppLanguage.english,
+      );
+      await photograph(theme, 'english');
 
       // The design system's components, page by page. Skeletons keep moving, so the page is drawn, not settled.
       await tester.pumpWidget(
