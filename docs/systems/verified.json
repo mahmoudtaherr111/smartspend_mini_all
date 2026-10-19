@@ -92,9 +92,9 @@
         "src/pages/Admin.tsx": "d0445cee1a99",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "da317032bd35",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-10-19 9b9acea",
+      "arabic": "edb9c761879c",
+      "arabicChecked": "2026-10-19 9b9acea"
     },
     "ai-center": {
       "files": {
@@ -481,9 +481,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "e05665bec173"
       },
-      "checked": "2026-10-18 59352bb",
-      "arabic": "38675737a329",
-      "arabicChecked": "2026-10-18 59352bb"
+      "checked": "2026-10-19 9b9acea",
+      "arabic": "120f7c3e7657",
+      "arabicChecked": "2026-10-19 9b9acea"
     },
     "voice-calls": {
       "files": {
@@ -545,9 +545,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "69cc55d954de"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "4702285ecec4",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-10-19 9b9acea",
+      "arabic": "b5b34bc0c6b9",
+      "arabicChecked": "2026-10-19 9b9acea"
     },
     "web-app": {
       "files": {

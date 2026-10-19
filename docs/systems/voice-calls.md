@@ -501,16 +501,7 @@ Checked against the code; each one names where it lives.
    runtime's own expiry (`api/services/voice/brain/tools/record.ts#dropRuntimeAction` runs on cancel only); nothing
    can confirm it from the call.
 
-## Related systems
-- [AI Center](ai-center.md): the finance semantic layer, AI memory and action runtime the tools call, and the page
-  the call lives in.
-- [AI providers and usage limits](ai-platform.md): the cost policy and cost metrics.
-- [Accounts, sign-in and security](accounts.md): sessions and the origin policy.
-- [Recording spending](expense-capture.md): voice dictation of expenses is a different feature with its own quota
-  check.
-- [Server platform and data](platform.md): Redis and the settings cache.
-
-## Production boundaries (2026-10-01)
+## Production boundaries
 - The first PCM of a new spoken request advances its epoch; the old read carries `earlier_request` even before speech ends. A spoken yes is not usable while the user speaks or for 500 ms after their last transcription; a draft must actually have its amounts read back. A tap remains an explicit confirmation.
 - The 8/16-second post-tool wait never sends an interrupting nudge while Extended reports IN_PROGRESS. A separate 90-second deadline covers reasoning before tools; it gives a clear notice and ends an unanswered request, while a write already started remains an unknown outcome until its result.
 - Mode switches refuse running tools, unresolved writes and pending consent. Up to 320 KB/600 events of input are replayed in order after connection, or the call ends explicitly on overflow. Connection generations close engines opened after cancellation; switching time is not billed. Moving pools retains the user seat; Redis failure cannot silently use process-local admission in production.
@@ -528,3 +519,12 @@ Both models hold the beginning of a pending draft preview briefly using a separa
 closes the turn as the tool call goes out, and a note sent then interrupted a correct read-back that followed (the user
 heard the draft twice). Words of the same reply said while the tool was still making the draft count toward the
 read-back; nothing said before the user last spoke does. The re-request never grants voice consent. The hold is bounded and transcripts have no guaranteed exact alignment with audio, so live-model and device qualification remains necessary.
+
+## Related systems
+- [AI Center](ai-center.md): the finance semantic layer, AI memory and action runtime the tools call, and the page
+  the call lives in.
+- [AI providers and usage limits](ai-platform.md): the cost policy and cost metrics.
+- [Accounts, sign-in and security](accounts.md): sessions and the origin policy.
+- [Recording spending](expense-capture.md): voice dictation of expenses is a different feature with its own quota
+  check.
+- [Server platform and data](platform.md): Redis and the settings cache.
