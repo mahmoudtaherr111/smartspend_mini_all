@@ -5,6 +5,7 @@ library;
 export 'src/bidi.dart';
 export 'src/bottom_sheet.dart';
 export 'src/buttons.dart';
+export 'src/dates.dart';
 export 'src/haptics.dart';
 export 'src/money.dart';
 export 'src/motion.dart';

@@ -65,10 +65,10 @@ void main() {
     }
     final context = tester.element(find.byType(NavigationBar));
     expect(Directionality.of(context), TextDirection.rtl);
-    expect(
-      find.text('الشاشة دي لسه بتتبني في التطبيق الجديد.'),
-      findsOneWidget,
-    );
+    // The record tab: the month, an invitation to record, and the sentence box.
+    expect(find.textContaining('صرفت في'), findsOneWidget);
+    expect(find.text('لسه مفيش عمليات'), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
   });
 
   testWidgets('the More tab shows that bank notifications are off', (

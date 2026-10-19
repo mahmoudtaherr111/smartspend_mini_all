@@ -211,4 +211,122 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signOut => 'Sign out';
+
+  @override
+  String summarySpentIn(String month) {
+    return 'Spent in $month';
+  }
+
+  @override
+  String get summaryIncome => 'Income';
+
+  @override
+  String get summaryNet => 'Net';
+
+  @override
+  String summaryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions',
+      one: 'One transaction',
+      zero: 'No transactions',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get summaryLoadFailed =>
+      'We can\'t load this month\'s summary right now.';
+
+  @override
+  String get recentTitle => 'Latest transactions';
+
+  @override
+  String get seeAll => 'See all';
+
+  @override
+  String get ledgerEmptyTitle => 'No transactions yet';
+
+  @override
+  String get ledgerEmptyBody =>
+      'Type your first expense below in your own words, and we\'ll sort it for you.';
+
+  @override
+  String get ledgerLoadFailed =>
+      'We can\'t load your transactions right now. Check your connection and try again.';
+
+  @override
+  String get retry => 'Try again';
+
+  @override
+  String get composerHint => 'Type what you spent… e.g. coffee 50 and Uber 120';
+
+  @override
+  String get composerSend => 'Send';
+
+  @override
+  String savedAuto(String summary) {
+    return 'Saved automatically: $summary';
+  }
+
+  @override
+  String savedManual(String summary) {
+    return 'Saved: $summary';
+  }
+
+  @override
+  String savedItemsSummary(int count, String total) {
+    return '$count transactions · $total';
+  }
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get undone => 'Undone.';
+
+  @override
+  String get undoFailed => 'We couldn\'t undo it. Delete it from the list.';
+
+  @override
+  String get nothingToSave =>
+      'We couldn\'t find an amount in that. Add the amount and try again.';
+
+  @override
+  String get offlineKeepText =>
+      'We can\'t reach the server. Your text is still here; send it again when you\'re back online.';
+
+  @override
+  String get reviewTitle => 'Check before we save';
+
+  @override
+  String get reviewSave => 'Save';
+
+  @override
+  String get reviewEdit => 'Edit the text';
+
+  @override
+  String get clarifyDefault => 'Could you say a bit more?';
+
+  @override
+  String get clarifyAnswerLabel => 'Your answer';
+
+  @override
+  String get clarifySend => 'Send answer';
+
+  @override
+  String get clarifyLater => 'Later';
+
+  @override
+  String get transactionsTitle => 'All transactions';
+
+  @override
+  String get entryDeleted => 'Transaction deleted.';
+
+  @override
+  String get deleteFailed => 'We couldn\'t delete it. Try again.';
+
+  @override
+  String get deleteAction => 'Delete';
 }

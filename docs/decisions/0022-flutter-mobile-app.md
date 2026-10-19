@@ -103,7 +103,11 @@ What the code already gives a native client:
    across app switches) and Google through `google_sign_in`; the token in `SessionStore`, the user from `auth.me` or
    `localAuth.me`, a route guard on every tab, and a token the server refuses forgotten at once. Google stays hidden
    until its client ids are configured ([accounts](../systems/accounts.md), known issues 8 to 11).
-3. The ledger: home summary, recording by text, the list, the offline store and outbox, the app lock.
+3. The ledger (first part built): the record tab with the month's totals from `expense.getMonthSummary` and the
+   latest transactions by day; recording by text through `ai.parseExpense`, saved at once, after a review sheet or
+   after the server's question (`expense.answerClarification`), each save with a request id and an undo; the full
+   list a page at a time, with swipe-to-delete that waits for its undo to expire. Left: the offline store and
+   outbox, with recording that shows before the server confirms, and the app lock.
 4. Android capture: the listener, queue and upload in `bank_capture`, the setup flow; retire `android-app/`.
 5. iOS capture and extras: the App Intent and automation guide, the share extension, the widget; voice calls on
    both platforms over `/api/voice/v2`.

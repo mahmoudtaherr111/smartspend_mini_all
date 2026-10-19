@@ -40,6 +40,16 @@ final class FakeApi {
     answer('localAuth.getVerificationSettings', (_) => {'enabled': false});
     answer('localAuth.getBotPhoneNumber', (_) => '201555000111');
     answer('localAuth.logout', (_) => {'success': true});
+    // An account with nothing recorded yet: the record tab asks these as it opens.
+    answer(
+      'profile.getSmartProfile',
+      (_) => {'financialInfo': <String, Object?>{}},
+    );
+    answer('expense.list', (_) => {'items': <Object?>[], 'total': 0});
+    answer(
+      'expense.getMonthSummary',
+      (_) => {'totalIncome': 0, 'totalExpense': 0, 'count': 0},
+    );
   }
 
   final _answers = <String, Object? Function(Object? input)>{};

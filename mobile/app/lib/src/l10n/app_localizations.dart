@@ -457,6 +457,198 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تسجيل الخروج'**
   String get signOut;
+
+  /// No description provided for @summarySpentIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت في {month}'**
+  String summarySpentIn(String month);
+
+  /// No description provided for @summaryIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'دخل'**
+  String get summaryIncome;
+
+  /// No description provided for @summaryNet.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصافي'**
+  String get summaryNet;
+
+  /// No description provided for @summaryCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{مفيش عمليات} =1{عملية واحدة} =2{عمليتين} few{{count} عمليات} many{{count} عملية} other{{count} عملية}}'**
+  String summaryCount(int count);
+
+  /// No description provided for @summaryLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب ملخص الشهر دلوقتي.'**
+  String get summaryLoadFailed;
+
+  /// No description provided for @recentTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر العمليات'**
+  String get recentTitle;
+
+  /// No description provided for @seeAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get seeAll;
+
+  /// No description provided for @ledgerEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش عمليات'**
+  String get ledgerEmptyTitle;
+
+  /// No description provided for @ledgerEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب أول مصروف تحت بالعامية، وإحنا هنصنّفه لوحدنا.'**
+  String get ledgerEmptyBody;
+
+  /// No description provided for @ledgerLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب العمليات دلوقتي. اتأكد من النت وجرّب تاني.'**
+  String get ledgerLoadFailed;
+
+  /// No description provided for @retry.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get retry;
+
+  /// No description provided for @composerHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اللي صرفته… مثلاً: قهوة 50 وأوبر 120'**
+  String get composerHint;
+
+  /// No description provided for @composerSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابعت'**
+  String get composerSend;
+
+  /// After a sentence the server saved without asking.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحفظت لوحدها: {summary}'**
+  String savedAuto(String summary);
+
+  /// No description provided for @savedManual.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحفظت: {summary}'**
+  String savedManual(String summary);
+
+  /// Several items saved from one sentence, and their total.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =2{عمليتين} few{{count} عمليات} other{{count} عملية}} · {total}'**
+  String savedItemsSummary(int count, String total);
+
+  /// No description provided for @undo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تراجع'**
+  String get undo;
+
+  /// No description provided for @undone.
+  ///
+  /// In ar, this message translates to:
+  /// **'اترجعت.'**
+  String get undone;
+
+  /// No description provided for @undoFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نرجعها، امسحها من القايمة.'**
+  String get undoFailed;
+
+  /// No description provided for @nothingToSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش لاقيين مبلغ في الجملة. اكتب المبلغ وجرّب تاني.'**
+  String get nothingToSave;
+
+  /// No description provided for @offlineKeepText.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نوصل للسيرفر. الجملة لسه مكتوبة، ابعتها تاني لما النت يرجع.'**
+  String get offlineKeepText;
+
+  /// No description provided for @reviewTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع قبل ما نحفظ'**
+  String get reviewTitle;
+
+  /// No description provided for @reviewSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ'**
+  String get reviewSave;
+
+  /// No description provided for @reviewEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّل الجملة'**
+  String get reviewEdit;
+
+  /// No description provided for @clarifyDefault.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممكن توضح أكتر؟'**
+  String get clarifyDefault;
+
+  /// No description provided for @clarifyAnswerLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'ردّك'**
+  String get clarifyAnswerLabel;
+
+  /// No description provided for @clarifySend.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابعت الرد'**
+  String get clarifySend;
+
+  /// No description provided for @clarifyLater.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعدين'**
+  String get clarifyLater;
+
+  /// No description provided for @transactionsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل العمليات'**
+  String get transactionsTitle;
+
+  /// No description provided for @entryDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتمسحت العملية.'**
+  String get entryDeleted;
+
+  /// No description provided for @deleteFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نمسحها. جرّب تاني.'**
+  String get deleteFailed;
+
+  /// No description provided for @deleteAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح'**
+  String get deleteAction;
 }
 
 class _AppLocalizationsDelegate

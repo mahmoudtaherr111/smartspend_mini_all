@@ -48,11 +48,9 @@ class SmartSpendButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.smartSpendColors;
     final action = busy ? null : onPressed;
-    final spinnerColor = switch (variant) {
-      ButtonVariant.primary => colors.onAccent,
-      ButtonVariant.destructive => Colors.white,
-      ButtonVariant.secondary || ButtonVariant.quiet => colors.foreground,
-    };
+    // A busy button is disabled, so it sits on the theme's disabled fill rather than its own colour: the spinner
+    // takes the main text colour, which shows on that fill in both themes.
+    final spinnerColor = colors.foreground;
     final Widget content = busy
         ? SizedBox.square(
             dimension: 22,

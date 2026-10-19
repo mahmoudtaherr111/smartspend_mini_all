@@ -7,6 +7,8 @@ import '../features/auth/session_controller.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/auth/starting_screen.dart';
 import '../features/in_progress_screen.dart';
+import '../features/ledger/record_screen.dart';
+import '../features/ledger/transactions_screen.dart';
 import '../features/more/more_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'app_shell.dart';
@@ -19,6 +21,7 @@ final class AppTab {
     required this.selectedIcon,
     required this.label,
     required this.screen,
+    this.routes = const [],
   });
 
   final String path;
@@ -26,6 +29,9 @@ final class AppTab {
   final IconData selectedIcon;
   final String Function(AppLocalizations l10n) label;
   final WidgetBuilder screen;
+
+  /// Screens reached from the tab, which keep the tab selected and return to it on back.
+  final List<RouteBase> routes;
 }
 
 final appTabs = <AppTab>[
@@ -34,8 +40,13 @@ final appTabs = <AppTab>[
     icon: Icons.add_circle_outline,
     selectedIcon: Icons.add_circle,
     label: (l10n) => l10n.navRecord,
-    screen: (context) =>
-        InProgressScreen(title: AppLocalizations.of(context).navRecord),
+    screen: (context) => const RecordScreen(),
+    routes: [
+      GoRoute(
+        path: TransactionsScreen.path.substring(RecordScreen.path.length + 1),
+        builder: (context, state) => const TransactionsScreen(),
+      ),
+    ],
   ),
   AppTab(
     path: '/stats',
@@ -123,6 +134,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 GoRoute(
                   path: tab.path,
                   builder: (context, state) => tab.screen(context),
+                  routes: tab.routes,
                 ),
               ],
             ),

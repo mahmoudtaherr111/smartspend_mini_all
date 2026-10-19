@@ -208,4 +208,131 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get signOut => 'تسجيل الخروج';
+
+  @override
+  String summarySpentIn(String month) {
+    return 'صرفت في $month';
+  }
+
+  @override
+  String get summaryIncome => 'دخل';
+
+  @override
+  String get summaryNet => 'الصافي';
+
+  @override
+  String summaryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عملية',
+      many: '$count عملية',
+      few: '$count عمليات',
+      two: 'عمليتين',
+      one: 'عملية واحدة',
+      zero: 'مفيش عمليات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get summaryLoadFailed => 'مش قادرين نجيب ملخص الشهر دلوقتي.';
+
+  @override
+  String get recentTitle => 'آخر العمليات';
+
+  @override
+  String get seeAll => 'الكل';
+
+  @override
+  String get ledgerEmptyTitle => 'لسه مفيش عمليات';
+
+  @override
+  String get ledgerEmptyBody =>
+      'اكتب أول مصروف تحت بالعامية، وإحنا هنصنّفه لوحدنا.';
+
+  @override
+  String get ledgerLoadFailed =>
+      'مش قادرين نجيب العمليات دلوقتي. اتأكد من النت وجرّب تاني.';
+
+  @override
+  String get retry => 'جرّب تاني';
+
+  @override
+  String get composerHint => 'اكتب اللي صرفته… مثلاً: قهوة 50 وأوبر 120';
+
+  @override
+  String get composerSend => 'ابعت';
+
+  @override
+  String savedAuto(String summary) {
+    return 'اتحفظت لوحدها: $summary';
+  }
+
+  @override
+  String savedManual(String summary) {
+    return 'اتحفظت: $summary';
+  }
+
+  @override
+  String savedItemsSummary(int count, String total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عملية',
+      few: '$count عمليات',
+      two: 'عمليتين',
+    );
+    return '$_temp0 · $total';
+  }
+
+  @override
+  String get undo => 'تراجع';
+
+  @override
+  String get undone => 'اترجعت.';
+
+  @override
+  String get undoFailed => 'ماقدرناش نرجعها، امسحها من القايمة.';
+
+  @override
+  String get nothingToSave =>
+      'مش لاقيين مبلغ في الجملة. اكتب المبلغ وجرّب تاني.';
+
+  @override
+  String get offlineKeepText =>
+      'مش قادرين نوصل للسيرفر. الجملة لسه مكتوبة، ابعتها تاني لما النت يرجع.';
+
+  @override
+  String get reviewTitle => 'راجع قبل ما نحفظ';
+
+  @override
+  String get reviewSave => 'احفظ';
+
+  @override
+  String get reviewEdit => 'عدّل الجملة';
+
+  @override
+  String get clarifyDefault => 'ممكن توضح أكتر؟';
+
+  @override
+  String get clarifyAnswerLabel => 'ردّك';
+
+  @override
+  String get clarifySend => 'ابعت الرد';
+
+  @override
+  String get clarifyLater => 'بعدين';
+
+  @override
+  String get transactionsTitle => 'كل العمليات';
+
+  @override
+  String get entryDeleted => 'اتمسحت العملية.';
+
+  @override
+  String get deleteFailed => 'ماقدرناش نمسحها. جرّب تاني.';
+
+  @override
+  String get deleteAction => 'امسح';
 }

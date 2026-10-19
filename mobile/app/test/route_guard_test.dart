@@ -130,7 +130,7 @@ void main() {
     final api = FakeApi()
       ..answer('localAuth.me', (_) => phoneUser())
       ..answer(
-        'expense.list',
+        'expense.getById',
         (_) => throw const TrpcFailure(
           'UNAUTHORIZED',
           401,
@@ -144,7 +144,7 @@ void main() {
     await expectLater(
       app.container
           .read(trpcClientProvider)
-          .query(Procedures.expense.list, input: {}),
+          .query(Procedures.expense.getById, input: {'id': 1}),
       throwsA(isA<ApiException>()),
     );
     await tester.pumpAndSettle();
@@ -159,7 +159,7 @@ void main() {
     final api = FakeApi()
       ..answer('localAuth.me', (_) => phoneUser())
       ..answer(
-        'expense.list',
+        'expense.getById',
         (_) => throw const TrpcFailure(
           'INTERNAL_SERVER_ERROR',
           500,
@@ -172,7 +172,7 @@ void main() {
     await expectLater(
       app.container
           .read(trpcClientProvider)
-          .query(Procedures.expense.list, input: {}),
+          .query(Procedures.expense.getById, input: {'id': 1}),
       throwsA(isA<ApiException>()),
     );
     await tester.pumpAndSettle();

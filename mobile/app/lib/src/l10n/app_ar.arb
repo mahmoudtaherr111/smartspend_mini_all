@@ -94,5 +94,81 @@
   },
   "whatsappNotOpened": "مش قادرين نفتح واتساب. انسخ الكود وابعته للبوت بنفسك.",
   "accountTitle": "حسابك",
-  "signOut": "تسجيل الخروج"
+  "signOut": "تسجيل الخروج",
+  "summarySpentIn": "صرفت في {month}",
+  "@summarySpentIn": {
+    "placeholders": {
+      "month": {
+        "type": "String",
+        "example": "أكتوبر"
+      }
+    }
+  },
+  "summaryIncome": "دخل",
+  "summaryNet": "الصافي",
+  "summaryCount": "{count, plural, =0{مفيش عمليات} =1{عملية واحدة} =2{عمليتين} few{{count} عمليات} many{{count} عملية} other{{count} عملية}}",
+  "@summaryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "summaryLoadFailed": "مش قادرين نجيب ملخص الشهر دلوقتي.",
+  "recentTitle": "آخر العمليات",
+  "seeAll": "الكل",
+  "ledgerEmptyTitle": "لسه مفيش عمليات",
+  "ledgerEmptyBody": "اكتب أول مصروف تحت بالعامية، وإحنا هنصنّفه لوحدنا.",
+  "ledgerLoadFailed": "مش قادرين نجيب العمليات دلوقتي. اتأكد من النت وجرّب تاني.",
+  "retry": "جرّب تاني",
+  "composerHint": "اكتب اللي صرفته… مثلاً: قهوة 50 وأوبر 120",
+  "composerSend": "ابعت",
+  "savedAuto": "اتحفظت لوحدها: {summary}",
+  "@savedAuto": {
+    "description": "After a sentence the server saved without asking.",
+    "placeholders": {
+      "summary": {
+        "type": "String",
+        "example": "185 ج.م · أكل وشرب"
+      }
+    }
+  },
+  "savedManual": "اتحفظت: {summary}",
+  "@savedManual": {
+    "placeholders": {
+      "summary": {
+        "type": "String",
+        "example": "185 ج.م · أكل وشرب"
+      }
+    }
+  },
+  "savedItemsSummary": "{count, plural, =2{عمليتين} few{{count} عمليات} other{{count} عملية}} · {total}",
+  "@savedItemsSummary": {
+    "description": "Several items saved from one sentence, and their total.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String",
+        "example": "250 ج.م"
+      }
+    }
+  },
+  "undo": "تراجع",
+  "undone": "اترجعت.",
+  "undoFailed": "ماقدرناش نرجعها، امسحها من القايمة.",
+  "nothingToSave": "مش لاقيين مبلغ في الجملة. اكتب المبلغ وجرّب تاني.",
+  "offlineKeepText": "مش قادرين نوصل للسيرفر. الجملة لسه مكتوبة، ابعتها تاني لما النت يرجع.",
+  "reviewTitle": "راجع قبل ما نحفظ",
+  "reviewSave": "احفظ",
+  "reviewEdit": "عدّل الجملة",
+  "clarifyDefault": "ممكن توضح أكتر؟",
+  "clarifyAnswerLabel": "ردّك",
+  "clarifySend": "ابعت الرد",
+  "clarifyLater": "بعدين",
+  "transactionsTitle": "كل العمليات",
+  "entryDeleted": "اتمسحت العملية.",
+  "deleteFailed": "ماقدرناش نمسحها. جرّب تاني.",
+  "deleteAction": "امسح"
 }
