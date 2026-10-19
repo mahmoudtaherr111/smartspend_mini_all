@@ -154,8 +154,9 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
 
 ## 13. Security people can see
 1. **The session lives in the Keychain or Keystore only** (`mobile/AGENTS.md`, rule 7).
-2. **Amounts never show in the app switcher,** and the person can lock the app with biometrics and hide amounts while
-   in public. (unenforced, planned)
+2. **Amounts never show in the app switcher,** and the person can lock the app with a PIN and biometrics and hide
+   amounts while in public ([decision 0023](../decisions/0023-mobile-app-lock.md)). (`mobile/app/test/lock_test.dart`;
+   the switcher cover itself is native and checked on a phone)
 3. **Screens showing a secret** (the bank message token, a one-time code) cannot be captured on Android and are
    covered on iOS while the screen is recorded. (unenforced, planned)
 4. **The bar is OWASP MASVS at the L2 profile,** the level for apps that handle sensitive data such as money: storage,

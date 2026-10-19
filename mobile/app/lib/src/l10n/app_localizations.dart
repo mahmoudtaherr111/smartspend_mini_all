@@ -727,6 +727,318 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'امسحها'**
   String get outboxDelete;
+
+  /// No description provided for @lockTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب الرمز السري'**
+  String get lockTitle;
+
+  /// No description provided for @lockDigitsEntered.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتكتب {count} من {total}'**
+  String lockDigitsEntered(int count, int total);
+
+  /// No description provided for @lockDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح رقم'**
+  String get lockDelete;
+
+  /// No description provided for @lockWrong.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرمز غلط. جرّب تاني.'**
+  String get lockWrong;
+
+  /// No description provided for @lockWrongWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرمز غلط. فاضل {count, plural, =1{محاولة واحدة} =2{محاولتين} few{{count} محاولات} other{{count} محاولة}}، وبعدها هنخرجك من الحساب على الموبايل ده.'**
+  String lockWrongWarning(int count);
+
+  /// No description provided for @lockWait.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني بعد {time}.'**
+  String lockWait(String time);
+
+  /// No description provided for @lockBiometricsChanged.
+  ///
+  /// In ar, this message translates to:
+  /// **'البصمات على الموبايل اتغيّرت، فوقفنا الفتح بيها. ادخل بالرمز، وشغّلها تاني من الأمان والخصوصية.'**
+  String get lockBiometricsChanged;
+
+  /// No description provided for @lockBiometricsLockedOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايل وقف البصمة شوية بعد محاولات كتير. ادخل بالرمز.'**
+  String get lockBiometricsLockedOut;
+
+  /// No description provided for @lockBiometricsFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نتأكد منك بالبصمة. ادخل بالرمز.'**
+  String get lockBiometricsFailed;
+
+  /// No description provided for @lockDamaged.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نقرأ قفل التطبيق على الموبايل ده. اخرج من الحساب وادخل تاني.'**
+  String get lockDamaged;
+
+  /// No description provided for @lockForgot.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسيت الرمز؟'**
+  String get lockForgot;
+
+  /// No description provided for @lockForgotBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'هنخرجك من الحساب على الموبايل ده ونشيل القفل. ادخل تاني برقمك وكلمة السر أو بجوجل، وحط رمز جديد. حسابك وعملياتك محفوظين.'**
+  String get lockForgotBody;
+
+  /// No description provided for @lockForgotUnsent.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيه {count, plural, =1{عملية واحدة} =2{عمليتين} few{{count} عمليات} other{{count} عملية}} على الموبايل لسه ماتبعتتش، وهتتمسح.'**
+  String lockForgotUnsent(int count);
+
+  /// No description provided for @lockSignOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'اخرج من الحساب'**
+  String get lockSignOut;
+
+  /// No description provided for @lockBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get lockBack;
+
+  /// No description provided for @biometricFingerprint.
+  ///
+  /// In ar, this message translates to:
+  /// **'البصمة'**
+  String get biometricFingerprint;
+
+  /// No description provided for @biometricFace.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوش'**
+  String get biometricFace;
+
+  /// No description provided for @biometricIris.
+  ///
+  /// In ar, this message translates to:
+  /// **'العين'**
+  String get biometricIris;
+
+  /// No description provided for @lockUseBiometrics.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح ب{method}'**
+  String lockUseBiometrics(String method);
+
+  /// No description provided for @biometricPromptTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح SmartSpend'**
+  String get biometricPromptTitle;
+
+  /// No description provided for @biometricPromptReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان تشوف حساباتك.'**
+  String get biometricPromptReason;
+
+  /// No description provided for @biometricPromptUsePin.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخدم الرمز السري'**
+  String get biometricPromptUsePin;
+
+  /// No description provided for @securityTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأمان والخصوصية'**
+  String get securityTitle;
+
+  /// No description provided for @securityEntryBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'القفل والبصمة وإخفاء المبالغ'**
+  String get securityEntryBody;
+
+  /// No description provided for @securityLockSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'قفل التطبيق'**
+  String get securityLockSection;
+
+  /// No description provided for @securityLock.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقفل التطبيق'**
+  String get securityLock;
+
+  /// No description provided for @securityLockBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يطلب رمز سري لما تفتح التطبيق، ويخفي محتواه في قايمة التطبيقات المفتوحة.'**
+  String get securityLockBody;
+
+  /// No description provided for @securityBiometricsNotEnrolled.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل {method} في إعدادات الموبايل الأول.'**
+  String securityBiometricsNotEnrolled(String method);
+
+  /// No description provided for @securityRelock.
+  ///
+  /// In ar, this message translates to:
+  /// **'يطلب الرمز تاني بعد ما تسيب التطبيق'**
+  String get securityRelock;
+
+  /// No description provided for @relockNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'على طول'**
+  String get relockNow;
+
+  /// No description provided for @relockMinute.
+  ///
+  /// In ar, this message translates to:
+  /// **'دقيقة'**
+  String get relockMinute;
+
+  /// No description provided for @relockFiveMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'5 دقايق'**
+  String get relockFiveMinutes;
+
+  /// No description provided for @securityChangePin.
+  ///
+  /// In ar, this message translates to:
+  /// **'غيّر الرمز السري'**
+  String get securityChangePin;
+
+  /// No description provided for @securityConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب الرمز السري عشان تغيّر إعدادات القفل'**
+  String get securityConfirm;
+
+  /// No description provided for @securityPrivacySection.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصوصية'**
+  String get securityPrivacySection;
+
+  /// No description provided for @hideAmounts.
+  ///
+  /// In ar, this message translates to:
+  /// **'اخفي المبالغ'**
+  String get hideAmounts;
+
+  /// No description provided for @showAmounts.
+  ///
+  /// In ar, this message translates to:
+  /// **'اظهر المبالغ'**
+  String get showAmounts;
+
+  /// No description provided for @hideAmountsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرقام تبان •••• لحد ما تظهرها. زرار العين في شاشة التسجيل بيغيّرها بسرعة.'**
+  String get hideAmountsBody;
+
+  /// No description provided for @lockTurnedOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'القفل اشتغل.'**
+  String get lockTurnedOn;
+
+  /// No description provided for @lockTurnedOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقفنا قفل التطبيق.'**
+  String get lockTurnedOff;
+
+  /// No description provided for @pinChanged.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرمز السري اتغيّر.'**
+  String get pinChanged;
+
+  /// No description provided for @biometricsTurnedOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفتح ب{method} اشتغل.'**
+  String biometricsTurnedOn(String method);
+
+  /// No description provided for @biometricsUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نستخدم {method} دلوقتي. اتأكد إن الموبايل عليه رمز قفل وجرّب تاني.'**
+  String biometricsUnavailable(String method);
+
+  /// No description provided for @pinChooseTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار رمز سري من 6 أرقام'**
+  String get pinChooseTitle;
+
+  /// No description provided for @pinChooseBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'هتكتبه كل ما تفتح التطبيق. ماتستخدمش تاريخ ميلادك ولا رمز قفل الموبايل.'**
+  String get pinChooseBody;
+
+  /// No description provided for @pinConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتبه تاني للتأكيد'**
+  String get pinConfirmTitle;
+
+  /// No description provided for @pinMismatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرمزين مش زي بعض. اختار الرمز من الأول.'**
+  String get pinMismatch;
+
+  /// No description provided for @pinGuessable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرمز ده سهل يتخمّن. اختار رمز تاني.'**
+  String get pinGuessable;
+
+  /// No description provided for @pinOfferBiometricsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفتح ب{method} كمان؟'**
+  String pinOfferBiometricsTitle(String method);
+
+  /// No description provided for @pinOfferBiometricsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسرع من الرمز، والرمز يفضل شغال لو احتجته.'**
+  String get pinOfferBiometricsBody;
+
+  /// No description provided for @pinOfferYes.
+  ///
+  /// In ar, this message translates to:
+  /// **'أيوه، شغّلها'**
+  String get pinOfferYes;
+
+  /// No description provided for @pinOfferNo.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش دلوقتي'**
+  String get pinOfferNo;
 }
 
 class _AppLocalizationsDelegate

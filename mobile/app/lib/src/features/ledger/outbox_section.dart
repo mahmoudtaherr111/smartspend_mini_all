@@ -101,7 +101,10 @@ class _OutboxRow extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      item.text,
+                      // The sentence carries its amount: its numbers hide with the others.
+                      MoneyPrivacy.hiddenOf(context)
+                          ? maskDigits(item.text)
+                          : item.text,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.titleSmall,

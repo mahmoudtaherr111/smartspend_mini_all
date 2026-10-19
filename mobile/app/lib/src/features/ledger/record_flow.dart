@@ -35,15 +35,15 @@ void announceSaved(
 }) {
   if (!context.mounted) return;
   final l10n = AppLocalizations.of(context);
-  final money = MoneyLocale.of(context);
   SmartSpendHaptics.success();
+  // moneyText: «•••• ج.م» while amounts are hidden.
   final summary = items.length == 1
-      ? '${formatMoney(items.single.amount, locale: money)} · ${items.single.categoryLabel}'
+      ? '${moneyText(context, items.single.amount)} · ${items.single.categoryLabel}'
       : l10n.savedItemsSummary(
           items.length,
-          formatMoney(
+          moneyText(
+            context,
             items.fold<num>(0, (sum, item) => sum + item.amount),
-            locale: money,
           ),
         );
   showSmartSpendNotice(
@@ -83,12 +83,16 @@ Future<bool?> reviewAndSave(
   final items = parse.items.where((entry) => entry.isSavable).toList();
   final choice = await showSmartSpendSheet<bool>(
     context: context,
-    builder: (sheetContext) => _ReviewSheet(
-      items: items,
-      alert: parse.alertMessage,
-      title: l10n.reviewTitle,
-      saveLabel: l10n.reviewSave,
-      editLabel: l10n.reviewEdit,
+    // The person opened it to check the amounts: they show even while amounts are hidden.
+    builder: (sheetContext) => MoneyPrivacy(
+      hidden: false,
+      child: _ReviewSheet(
+        items: items,
+        alert: parse.alertMessage,
+        title: l10n.reviewTitle,
+        saveLabel: l10n.reviewSave,
+        editLabel: l10n.reviewEdit,
+      ),
     ),
   );
   if (choice != true || !context.mounted) return choice;
@@ -119,11 +123,14 @@ Future<void> answerAndSave(
     }
     final answer = await showSmartSpendSheet<String>(
       context: context,
-      builder: (sheetContext) => _ClarifySheet(
-        question: question,
-        answerLabel: l10n.clarifyAnswerLabel,
-        sendLabel: l10n.clarifySend,
-        laterLabel: l10n.clarifyLater,
+      builder: (sheetContext) => MoneyPrivacy(
+        hidden: false,
+        child: _ClarifySheet(
+          question: question,
+          answerLabel: l10n.clarifyAnswerLabel,
+          sendLabel: l10n.clarifySend,
+          laterLabel: l10n.clarifyLater,
+        ),
       ),
     );
     if (answer == null || answer.trim().isEmpty || !context.mounted) return;

@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:bank_capture/bank_capture.dart';
+import 'package:crypto/crypto.dart';
+import 'package:device_lock/device_lock.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -18,6 +21,8 @@ import 'package:smartspend_app/src/features/auth/session_controller.dart';
 import 'package:smartspend_app/src/features/ledger/ledger_providers.dart';
 import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
 import 'package:smartspend_app/src/features/ledger/offline/outbox.dart';
+import 'package:smartspend_app/src/features/lock/app_lock.dart';
+import 'package:smartspend_app/src/features/lock/lock_store.dart';
 
 /// A tRPC error the fake API answers with.
 final class TrpcFailure implements Exception {
@@ -72,6 +77,11 @@ final class FakeApi {
   void answer(String path, Object? Function(Object? input) handler) =>
       _answers[path] = handler;
 
+  final _held = <String, Completer<void>>{};
+
+  /// Holds the next call to [path] until the returned completer completes, as a slow network would.
+  Completer<void> hold(String path) => _held[path] = Completer<void>();
+
   List<String> get paths => [for (final call in calls) call.path];
 
   Object? lastInput(String path) =>
@@ -90,6 +100,8 @@ final class FakeApi {
       token: authorization?.replaceFirst('Bearer ', ''),
       input: input,
     ));
+    final held = _held.remove(path);
+    if (held != null) await held.future;
     final handler = _answers[path];
     if (handler == null) {
       return _json({
@@ -239,6 +251,10 @@ final class TestApp {
   /// The outbox and the offline copy of the ledger.
   final ledgerStore = MemoryLedgerStore();
 
+  /// The app lock as kept on the phone, and the phone's side of it.
+  final lockStore = MemoryLockStore();
+  final deviceLock = FakeDeviceLock();
+
   /// Whether the phone has a network; send false to cut it, true to bring it back.
   final connection = StreamController<bool>.broadcast();
   final FakeApi api;
@@ -276,6 +292,8 @@ final class TestApp {
           ledgerStoreProvider.overrideWithValue(ledgerStore),
           connectivityProvider.overrideWith((ref) => connection.stream),
           outboxRetryDelaysProvider.overrideWithValue(const []),
+          lockStoreProvider.overrideWithValue(lockStore),
+          deviceLockProvider.overrideWithValue(deviceLock),
         ],
         child: const SmartSpendApp(),
       ),
@@ -285,4 +303,88 @@ final class TestApp {
     );
     if (settle) await tester.pumpAndSettle();
   }
+}
+
+/// The phone's side of the app lock, in Dart: a PIN key that tags like the Keystore's HMAC key, and biometrics that
+/// answer what the test asks.
+class FakeDeviceLock implements DeviceLock {
+  FakeDeviceLock({
+    this.kind = BiometricKind.fingerprint,
+    this.availability = BiometricAvailability.ready,
+  });
+
+  BiometricKind kind;
+  BiometricAvailability availability;
+
+  /// What the next biometric prompts answer, in order; success when empty.
+  final outcomes = <BiometricOutcome>[];
+
+  /// Prompts shown so far.
+  int prompts = 0;
+  bool cover = false;
+  List<int>? _pinKey;
+  Uint8List? _secret;
+
+  /// Someone enrolled another finger: the key no longer opens.
+  void changeEnrolment() => _secret = null;
+
+  bool get hasPinKey => _pinKey != null;
+
+  @override
+  Future<LockCapabilities> capabilities() async =>
+      LockCapabilities(kind: kind, availability: availability);
+
+  BiometricOutcome _next() {
+    prompts++;
+    return outcomes.isEmpty ? BiometricOutcome.success : outcomes.removeAt(0);
+  }
+
+  @override
+  Future<BiometricResult> enrollBiometrics(BiometricPromptText text) async {
+    final outcome = _next();
+    if (outcome != BiometricOutcome.success) {
+      return BiometricResult(outcome: outcome);
+    }
+    _secret = Uint8List.fromList(List.generate(32, (i) => i * 7 % 256));
+    return BiometricResult(
+      outcome: outcome,
+      secret: _secret,
+      sealed: Uint8List.fromList([9, ..._secret!]),
+    );
+  }
+
+  @override
+  Future<BiometricResult> unlockWithBiometrics(
+    BiometricPromptText text,
+    Uint8List? sealed,
+  ) async {
+    final outcome = _next();
+    if (outcome != BiometricOutcome.success) {
+      return BiometricResult(outcome: outcome);
+    }
+    if (_secret == null) {
+      return BiometricResult(outcome: BiometricOutcome.changed);
+    }
+    return BiometricResult(outcome: outcome, secret: _secret);
+  }
+
+  @override
+  Future<void> forgetBiometrics() async => _secret = null;
+
+  @override
+  Future<Uint8List> pinTag(Uint8List input, {required bool create}) async {
+    if (_pinKey == null) {
+      if (!create) {
+        throw PlatformException(code: 'no-pin-key', message: 'gone');
+      }
+      _pinKey = List.generate(32, (i) => (i * 31 + 5) % 256);
+    }
+    return Uint8List.fromList(Hmac(sha256, _pinKey!).convert(input).bytes);
+  }
+
+  @override
+  Future<void> forgetPinKey() async => _pinKey = null;
+
+  @override
+  Future<void> setSwitcherCover(bool enabled) async => cover = enabled;
 }

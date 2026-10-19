@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 ///
 /// Set [isDismissible] to false for a sheet that must end in a choice, such as a confirmation that deletes data;
 /// it then also refuses the swipe.
+///
+/// The sheet opens on the root navigator, so it covers the tab bar instead of sliding up behind it.
 Future<T?> showSmartSpendSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -12,6 +14,7 @@ Future<T?> showSmartSpendSheet<T>({
 }) {
   return showModalBottomSheet<T>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,

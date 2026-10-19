@@ -11,6 +11,7 @@ export 'src/money.dart';
 export 'src/motion.dart';
 export 'src/navigation_bar.dart';
 export 'src/notices.dart';
+export 'src/pin_pad.dart';
 export 'src/rows.dart';
 export 'src/states.dart';
 export 'src/theme.dart';

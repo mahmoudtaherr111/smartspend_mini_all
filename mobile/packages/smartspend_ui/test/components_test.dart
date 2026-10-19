@@ -227,4 +227,122 @@ void main() {
     expect(normal, SmartSpendMotion.medium);
     expect(reduced, Duration.zero);
   });
+
+  group('hidden amounts', () {
+    testWidgets('an amount shows no digits, and is read as hidden', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _app(
+          const MoneyPrivacy(
+            hidden: true,
+            child: AmountText(185, kind: AmountKind.expense),
+          ),
+        ),
+      );
+
+      expect(find.textContaining('185'), findsNothing);
+      expect(find.text('•••• ج.م'), findsOneWidget);
+      expect(find.bySemanticsLabel('مصروف مبلغ مخفي'), findsOneWidget);
+      semantics.dispose();
+    });
+
+    testWidgets('text for a notice follows the same choice', (tester) async {
+      late String shown;
+      late String hidden;
+      await tester.pumpWidget(
+        _app(
+          Column(
+            children: [
+              Builder(
+                builder: (context) {
+                  shown = moneyText(context, 1250);
+                  return const SizedBox();
+                },
+              ),
+              MoneyPrivacy(
+                hidden: true,
+                child: Builder(
+                  builder: (context) {
+                    hidden = moneyText(context, 1250);
+                    return const SizedBox();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(shown, '1,250 ج.م');
+      expect(hidden, '•••• ج.م');
+    });
+
+    test('a written sentence loses its numbers, in either kind of digit', () {
+      expect(maskDigits('قهوة 50 وأوبر ١٢٠'), 'قهوة •• وأوبر ••');
+      expect(maskDigits('إيجار 1,250.50'), 'إيجار ••');
+    });
+  });
+
+  group('PIN pad', () {
+    testWidgets('keeps the phone pad order in Arabic and sends each digit', (
+      tester,
+    ) async {
+      final typed = <String>[];
+      var deleted = 0;
+      await tester.pumpWidget(
+        _app(
+          PinPad(
+            onDigit: typed.add,
+            onDelete: () => deleted++,
+            deleteLabel: 'امسح رقم',
+          ),
+        ),
+      );
+
+      // 1 left of 3 even though the screen is right to left.
+      expect(
+        tester.getCenter(find.text('1')).dx,
+        lessThan(tester.getCenter(find.text('3')).dx),
+      );
+      for (final digit in ['4', '0', '9']) {
+        await tester.tap(find.text(digit));
+      }
+      await tester.tap(find.bySemanticsLabel('امسح رقم'));
+      expect(typed, ['4', '0', '9']);
+      expect(deleted, 1);
+    });
+
+    testWidgets('ignores the keys while disabled', (tester) async {
+      final typed = <String>[];
+      await tester.pumpWidget(
+        _app(
+          PinPad(
+            onDigit: typed.add,
+            onDelete: () {},
+            deleteLabel: 'امسح رقم',
+            enabled: false,
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('5'));
+      expect(typed, isEmpty);
+    });
+
+    testWidgets('the dots say how many digits are in, never which', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _app(
+          const PinDots(length: 6, filled: 3, semanticsLabel: 'اتكتب 3 من 6'),
+        ),
+      );
+
+      expect(find.bySemanticsLabel('اتكتب 3 من 6'), findsOneWidget);
+      semantics.dispose();
+    });
+  });
 }

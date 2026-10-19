@@ -39,3 +39,8 @@ Why it exists and what is decided: `docs/decisions/0022-flutter-mobile-app.md`. 
     save of it carries the outbox item's id as its `clientRequestId`, so a save repeated after a lost answer is stored
     once. Signing out empties the outbox, and another account never sends the previous one's sentences.
     (`app/test/offline_test.dart`)
+14. The app lock is `AppLock` in `app/lib/src/features/lock/app_lock.dart` (decision 0023): no other code reads or
+    writes its record or the `device_lock` keys, a PIN is never stored or logged, and every PIN check, including the
+    one before changing the lock, goes through `AppLock.checkPin` so wrong PINs are always counted. Amounts follow
+    `MoneyPrivacy`: a screen that writes money in text uses `moneyText`, never `formatMoney` directly.
+    (`app/test/lock_test.dart`; the `formatMoney` ban in screens is unenforced)

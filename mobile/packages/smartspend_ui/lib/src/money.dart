@@ -13,6 +13,7 @@ final class MoneyLocale {
     required this.spokenIncome,
     required this.spokenExpense,
     required this.spokenPending,
+    required this.spokenHidden,
   });
 
   /// Written after the number.
@@ -24,12 +25,16 @@ final class MoneyLocale {
   final String spokenExpense;
   final String spokenPending;
 
+  /// Read instead of an amount while amounts are hidden.
+  final String spokenHidden;
+
   static const arabic = MoneyLocale._(
     symbol: 'ج.م',
     spokenCurrency: 'جنيه',
     spokenIncome: 'دخل',
     spokenExpense: 'مصروف',
     spokenPending: 'لسه بيتسجّل',
+    spokenHidden: 'مبلغ مخفي',
   );
 
   static const english = MoneyLocale._(
@@ -38,6 +43,7 @@ final class MoneyLocale {
     spokenIncome: 'income',
     spokenExpense: 'spent',
     spokenPending: 'still saving',
+    spokenHidden: 'amount hidden',
   );
 
   /// The locale of the interface around [context]: English when its language is English, Arabic otherwise.
@@ -51,6 +57,39 @@ final class MoneyLocale {
 /// minus sign.
 String formatMoney(num value, {MoneyLocale locale = MoneyLocale.arabic}) =>
     '${groupDigits(value.round())} ${locale.symbol}';
+
+/// What shows instead of the digits of an amount while amounts are hidden.
+const hiddenDigits = '••••';
+
+/// Money as text for a notice or a label: [formatMoney] in the interface's language, or «•••• ج.م» while
+/// amounts are hidden ([MoneyPrivacy]).
+String moneyText(BuildContext context, num value) {
+  final locale = MoneyLocale.of(context);
+  return MoneyPrivacy.hiddenOf(context)
+      ? '$hiddenDigits ${locale.symbol}'
+      : formatMoney(value, locale: locale);
+}
+
+/// Hides every number in [text], for text a person wrote while amounts are hidden, such as a sentence waiting to be
+/// recorded: «قهوة 50» becomes «قهوة ••».
+String maskDigits(String text) =>
+    normalizeDigits(text).replaceAll(RegExp(r'\d+([.,]\d+)*'), '••');
+
+/// Whether the amounts below it are hidden, for when someone else may see the screen. [AmountText] and [moneyText]
+/// follow it; the app puts one above every screen.
+class MoneyPrivacy extends InheritedWidget {
+  const MoneyPrivacy({super.key, required this.hidden, required super.child});
+
+  final bool hidden;
+
+  /// Whether amounts are hidden around [context]; false where no [MoneyPrivacy] is above it.
+  static bool hiddenOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<MoneyPrivacy>()?.hidden ??
+      false;
+
+  @override
+  bool updateShouldNotify(MoneyPrivacy oldWidget) => hidden != oldWidget.hidden;
+}
 
 /// Groups the digits of a whole number in threes with commas: 1250000 → "1,250,000".
 String groupDigits(int value) {
@@ -144,12 +183,15 @@ class AmountText extends StatelessWidget {
       AmountKind.pending => '${locale.spokenPending} ',
       AmountKind.neutral => '',
     };
+    final hidden = MoneyPrivacy.hiddenOf(context);
     final base =
         style ??
         Theme.of(context).textTheme.titleMedium ??
         SmartSpendTypography.style(16, FontWeight.w700);
     return Text(
-      '${ltrIsolate('$sign$whole')} ${locale.symbol}',
+      hidden
+          ? '$hiddenDigits ${locale.symbol}'
+          : '${ltrIsolate('$sign$whole')} ${locale.symbol}',
       style: base.copyWith(
         color: color,
         fontWeight: FontWeight.w700,
@@ -158,8 +200,9 @@ class AmountText extends StatelessWidget {
           FontWeight.w700,
         ).fontVariations,
       ),
-      semanticsLabel:
-          '$spokenKind${value.abs().round()} ${locale.spokenCurrency}',
+      semanticsLabel: hidden
+          ? '$spokenKind${locale.spokenHidden}'
+          : '$spokenKind${value.abs().round()} ${locale.spokenCurrency}',
     );
   }
 }

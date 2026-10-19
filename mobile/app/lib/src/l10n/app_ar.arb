@@ -190,5 +190,123 @@
   "outboxNeedsAnswer": "محتاجة رد منك",
   "outboxFailed": "ماتبعتتش. دوس عليها عشان تبعتها تاني.",
   "outboxSendNow": "ابعتها دلوقتي",
-  "outboxDelete": "امسحها"
+  "outboxDelete": "امسحها",
+  "lockTitle": "اكتب الرمز السري",
+  "lockDigitsEntered": "اتكتب {count} من {total}",
+  "@lockDigitsEntered": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "lockDelete": "امسح رقم",
+  "lockWrong": "الرمز غلط. جرّب تاني.",
+  "lockWrongWarning": "الرمز غلط. فاضل {count, plural, =1{محاولة واحدة} =2{محاولتين} few{{count} محاولات} other{{count} محاولة}}، وبعدها هنخرجك من الحساب على الموبايل ده.",
+  "@lockWrongWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lockWait": "جرّب تاني بعد {time}.",
+  "@lockWait": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "lockBiometricsChanged": "البصمات على الموبايل اتغيّرت، فوقفنا الفتح بيها. ادخل بالرمز، وشغّلها تاني من الأمان والخصوصية.",
+  "lockBiometricsLockedOut": "الموبايل وقف البصمة شوية بعد محاولات كتير. ادخل بالرمز.",
+  "lockBiometricsFailed": "ماقدرناش نتأكد منك بالبصمة. ادخل بالرمز.",
+  "lockDamaged": "مش قادرين نقرأ قفل التطبيق على الموبايل ده. اخرج من الحساب وادخل تاني.",
+  "lockForgot": "نسيت الرمز؟",
+  "lockForgotBody": "هنخرجك من الحساب على الموبايل ده ونشيل القفل. ادخل تاني برقمك وكلمة السر أو بجوجل، وحط رمز جديد. حسابك وعملياتك محفوظين.",
+  "lockForgotUnsent": "فيه {count, plural, =1{عملية واحدة} =2{عمليتين} few{{count} عمليات} other{{count} عملية}} على الموبايل لسه ماتبعتتش، وهتتمسح.",
+  "@lockForgotUnsent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lockSignOut": "اخرج من الحساب",
+  "lockBack": "رجوع",
+  "biometricFingerprint": "البصمة",
+  "biometricFace": "الوش",
+  "biometricIris": "العين",
+  "lockUseBiometrics": "افتح ب{method}",
+  "@lockUseBiometrics": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "biometricPromptTitle": "افتح SmartSpend",
+  "biometricPromptReason": "عشان تشوف حساباتك.",
+  "biometricPromptUsePin": "استخدم الرمز السري",
+  "securityTitle": "الأمان والخصوصية",
+  "securityEntryBody": "القفل والبصمة وإخفاء المبالغ",
+  "securityLockSection": "قفل التطبيق",
+  "securityLock": "اقفل التطبيق",
+  "securityLockBody": "يطلب رمز سري لما تفتح التطبيق، ويخفي محتواه في قايمة التطبيقات المفتوحة.",
+  "securityBiometricsNotEnrolled": "سجّل {method} في إعدادات الموبايل الأول.",
+  "@securityBiometricsNotEnrolled": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "securityRelock": "يطلب الرمز تاني بعد ما تسيب التطبيق",
+  "relockNow": "على طول",
+  "relockMinute": "دقيقة",
+  "relockFiveMinutes": "5 دقايق",
+  "securityChangePin": "غيّر الرمز السري",
+  "securityConfirm": "اكتب الرمز السري عشان تغيّر إعدادات القفل",
+  "securityPrivacySection": "الخصوصية",
+  "hideAmounts": "اخفي المبالغ",
+  "showAmounts": "اظهر المبالغ",
+  "hideAmountsBody": "الأرقام تبان •••• لحد ما تظهرها. زرار العين في شاشة التسجيل بيغيّرها بسرعة.",
+  "lockTurnedOn": "القفل اشتغل.",
+  "lockTurnedOff": "وقفنا قفل التطبيق.",
+  "pinChanged": "الرمز السري اتغيّر.",
+  "biometricsTurnedOn": "الفتح ب{method} اشتغل.",
+  "@biometricsTurnedOn": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "biometricsUnavailable": "مش قادرين نستخدم {method} دلوقتي. اتأكد إن الموبايل عليه رمز قفل وجرّب تاني.",
+  "@biometricsUnavailable": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "pinChooseTitle": "اختار رمز سري من 6 أرقام",
+  "pinChooseBody": "هتكتبه كل ما تفتح التطبيق. ماتستخدمش تاريخ ميلادك ولا رمز قفل الموبايل.",
+  "pinConfirmTitle": "اكتبه تاني للتأكيد",
+  "pinMismatch": "الرمزين مش زي بعض. اختار الرمز من الأول.",
+  "pinGuessable": "الرمز ده سهل يتخمّن. اختار رمز تاني.",
+  "pinOfferBiometricsTitle": "تفتح ب{method} كمان؟",
+  "@pinOfferBiometricsTitle": {
+    "placeholders": {
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "pinOfferBiometricsBody": "أسرع من الرمز، والرمز يفضل شغال لو احتجته.",
+  "pinOfferYes": "أيوه، شغّلها",
+  "pinOfferNo": "مش دلوقتي"
 }

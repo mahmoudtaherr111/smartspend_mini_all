@@ -111,7 +111,8 @@ What the code already gives a native client:
    with the web's offline rules (the sentence check and the plan's `offline.limit` from `ai.getUserLimits`); the last
    month totals and transactions seen stay on screen offline. The outbox and that copy are one JSON file per
    account in the app's private folder, as the web keeps its queue in one JSON list; SQLite (point 6) comes when
-   the app keeps the whole ledger offline. Left: the app lock.
+   the app keeps the whole ledger offline. The app lock (built): its own plugin, `device_lock`, instead of
+   `local_auth` (point 8), as [decision 0023](0023-mobile-app-lock.md) explains.
 4. Android capture: the listener, queue and upload in `bank_capture`, the setup flow; retire `android-app/`.
 5. iOS capture and extras: the App Intent and automation guide, the share extension, the widget; voice calls on
    both platforms over `/api/voice/v2`.

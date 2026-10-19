@@ -380,4 +380,205 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get outboxDelete => 'Delete it';
+
+  @override
+  String get lockTitle => 'Enter your PIN';
+
+  @override
+  String lockDigitsEntered(int count, int total) {
+    return '$count of $total entered';
+  }
+
+  @override
+  String get lockDelete => 'Delete digit';
+
+  @override
+  String get lockWrong => 'Wrong PIN. Try again.';
+
+  @override
+  String lockWrongWarning(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tries',
+      one: '1 try',
+    );
+    return 'Wrong PIN. $_temp0 left, then you will be signed out on this phone.';
+  }
+
+  @override
+  String lockWait(String time) {
+    return 'Try again in $time.';
+  }
+
+  @override
+  String get lockBiometricsChanged =>
+      'The biometrics on this phone changed, so unlocking with them is off. Use your PIN, then turn them on again in Security and privacy.';
+
+  @override
+  String get lockBiometricsLockedOut =>
+      'The phone paused biometrics after too many tries. Use your PIN.';
+
+  @override
+  String get lockBiometricsFailed =>
+      'We couldn\'t confirm it\'s you. Use your PIN.';
+
+  @override
+  String get lockDamaged =>
+      'We can\'t read the app lock on this phone. Sign out and sign in again.';
+
+  @override
+  String get lockForgot => 'Forgot your PIN?';
+
+  @override
+  String get lockForgotBody =>
+      'We will sign you out on this phone and remove the lock. Sign in again with your number and password or with Google, and set a new PIN. Your account and transactions stay safe.';
+
+  @override
+  String lockForgotUnsent(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count entries',
+      one: '1 entry',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'haven\'t',
+      one: 'hasn\'t',
+    );
+    return '$_temp0 on this phone $_temp1 been sent yet and will be deleted.';
+  }
+
+  @override
+  String get lockSignOut => 'Sign out';
+
+  @override
+  String get lockBack => 'Back';
+
+  @override
+  String get biometricFingerprint => 'fingerprint';
+
+  @override
+  String get biometricFace => 'face';
+
+  @override
+  String get biometricIris => 'iris';
+
+  @override
+  String lockUseBiometrics(String method) {
+    return 'Unlock with $method';
+  }
+
+  @override
+  String get biometricPromptTitle => 'Unlock SmartSpend';
+
+  @override
+  String get biometricPromptReason => 'To see your accounts.';
+
+  @override
+  String get biometricPromptUsePin => 'Use PIN';
+
+  @override
+  String get securityTitle => 'Security and privacy';
+
+  @override
+  String get securityEntryBody => 'Lock, biometrics and hidden amounts';
+
+  @override
+  String get securityLockSection => 'App lock';
+
+  @override
+  String get securityLock => 'Lock the app';
+
+  @override
+  String get securityLockBody =>
+      'Asks for a PIN when you open the app, and hides its content in the app switcher.';
+
+  @override
+  String securityBiometricsNotEnrolled(String method) {
+    return 'Set up your $method in the phone\'s settings first.';
+  }
+
+  @override
+  String get securityRelock => 'Ask again after leaving the app';
+
+  @override
+  String get relockNow => 'At once';
+
+  @override
+  String get relockMinute => '1 minute';
+
+  @override
+  String get relockFiveMinutes => '5 minutes';
+
+  @override
+  String get securityChangePin => 'Change PIN';
+
+  @override
+  String get securityConfirm => 'Enter your PIN to change the lock settings';
+
+  @override
+  String get securityPrivacySection => 'Privacy';
+
+  @override
+  String get hideAmounts => 'Hide amounts';
+
+  @override
+  String get showAmounts => 'Show amounts';
+
+  @override
+  String get hideAmountsBody =>
+      'Amounts show as •••• until you show them. The eye button on the Record tab switches it quickly.';
+
+  @override
+  String get lockTurnedOn => 'The app lock is on.';
+
+  @override
+  String get lockTurnedOff => 'The app lock is off.';
+
+  @override
+  String get pinChanged => 'Your PIN changed.';
+
+  @override
+  String biometricsTurnedOn(String method) {
+    return 'Unlocking with $method is on.';
+  }
+
+  @override
+  String biometricsUnavailable(String method) {
+    return 'We can\'t use $method now. Check that the phone has a screen lock, and try again.';
+  }
+
+  @override
+  String get pinChooseTitle => 'Choose a 6-digit PIN';
+
+  @override
+  String get pinChooseBody =>
+      'You will enter it each time you open the app. Don\'t use your birthday or your phone\'s screen lock.';
+
+  @override
+  String get pinConfirmTitle => 'Enter it again to confirm';
+
+  @override
+  String get pinMismatch => 'The PINs don\'t match. Choose your PIN again.';
+
+  @override
+  String get pinGuessable => 'That PIN is easy to guess. Choose another one.';
+
+  @override
+  String pinOfferBiometricsTitle(String method) {
+    return 'Also unlock with $method?';
+  }
+
+  @override
+  String get pinOfferBiometricsBody =>
+      'Faster than the PIN, and the PIN still works when you need it.';
+
+  @override
+  String get pinOfferYes => 'Yes, turn it on';
+
+  @override
+  String get pinOfferNo => 'Not now';
 }

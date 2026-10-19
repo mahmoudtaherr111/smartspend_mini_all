@@ -9,6 +9,7 @@ import '../features/auth/starting_screen.dart';
 import '../features/in_progress_screen.dart';
 import '../features/ledger/record_screen.dart';
 import '../features/ledger/transactions_screen.dart';
+import '../features/lock/security_screen.dart';
 import '../features/more/more_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'app_shell.dart';
@@ -78,6 +79,18 @@ final appTabs = <AppTab>[
     selectedIcon: Icons.menu_open,
     label: (l10n) => l10n.navMore,
     screen: (context) => const MoreScreen(),
+    routes: [
+      GoRoute(
+        path: SecurityScreen.path.substring('/more/'.length),
+        builder: (context, state) => const SecurityScreen(),
+        routes: [
+          GoRoute(
+            path: PinSetupScreen.path.substring(SecurityScreen.path.length + 1),
+            builder: (context, state) => const PinSetupScreen(),
+          ),
+        ],
+      ),
+    ],
   ),
 ];
 

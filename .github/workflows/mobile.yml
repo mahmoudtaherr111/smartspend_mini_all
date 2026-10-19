@@ -40,8 +40,9 @@ jobs:
       - name: Generated code matches its sources (localizations, Pigeon bridge)
         run: |
           (cd packages/bank_capture && dart run pigeon --input pigeons/bank_capture_api.dart && dart format lib/src)
+          (cd packages/device_lock && dart run pigeon --input pigeons/device_lock_api.dart && dart format lib/src)
           git diff --exit-code -- . || {
-            echo "::error::Generated files are stale. Run flutter pub get, and Pigeon as pigeons/bank_capture_api.dart says, then commit."
+            echo "::error::Generated files are stale. Run flutter pub get, and Pigeon as each package's pigeons/*.dart says, then commit."
             exit 1
           }
       - run: dart format --output=none --set-exit-if-changed .
@@ -54,6 +55,9 @@ jobs:
         run: flutter test
       - name: Native bridge tests
         working-directory: mobile/packages/bank_capture
+        run: flutter test
+      - name: App lock bridge tests
+        working-directory: mobile/packages/device_lock
         run: flutter test
       - name: App tests
         working-directory: mobile/app

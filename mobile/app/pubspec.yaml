@@ -15,6 +15,9 @@ dependencies:
     path: ../packages/bank_capture
   clock: ^1.1.2
   connectivity_plus: ^7.3.2
+  crypto: ^3.0.7
+  device_lock:
+    path: ../packages/device_lock
   flutter:
     sdk: flutter
   flutter_localizations:

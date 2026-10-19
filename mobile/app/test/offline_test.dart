@@ -166,6 +166,59 @@ void main() {
       expect(read, ['قهوة 50', 'أوبر 120']);
     });
 
+    testWidgets(
+      'a sentence sent while older ones are still going out waits its turn, and is read once, for its writer',
+      (tester) async {
+        final api = FakeApi()
+          ..answer(
+            'ai.parseExpense',
+            (input) => (input! as Map)['text'] == 'أوبر 120'
+                ? _parsed('auto_save', [_item(120, 'مواصلات')])
+                : _parsed('review', [_item(50, 'أكل وشرب')]),
+          )
+          ..answer('expense.create', (_) => {'id': 5})
+          ..answer('localAuth.me', (_) => phoneUser())
+          ..offline = true;
+        final app = TestApp(token: 'session-token', api: api);
+        app.ledgerStore.ledger = StoredLedger(
+          accountKey: 'phone:42',
+          outbox: [
+            OutboxItem(
+              id: 'older',
+              text: 'أوبر 120',
+              createdAt: DateTime(2026, 10, 19, 9),
+            ),
+          ],
+        );
+        await app.pump(tester);
+
+        // The network returns, and the older sentence starts going out on a slow line.
+        api.offline = false;
+        final slow = api.hold('ai.parseExpense');
+        app.connection.add(true);
+        await tester.pump();
+        // Sent while that one is held; no settling, which would let the slow call time out.
+        await tester.enterText(find.byType(TextField), 'قهوة 50');
+        await tester.tap(find.byTooltip('ابعت'));
+        await tester.pump();
+        slow.complete();
+        await tester.pumpAndSettle();
+
+        final reads = [
+          for (final call in api.calls)
+            if (call.path == 'ai.parseExpense') (call.input! as Map)['text'],
+        ];
+        expect(reads, ['أوبر 120', 'قهوة 50']);
+        // Read after the older sentence was saved, not alongside it.
+        expect(
+          api.paths.indexOf('expense.create'),
+          lessThan(api.paths.lastIndexOf('ai.parseExpense')),
+        );
+        // The person who wrote it reviews it now, instead of finding it in the waiting list later.
+        expect(find.text('احفظ'), findsOneWidget);
+      },
+    );
+
     testWidgets('a sentence without an amount is not kept offline', (
       tester,
     ) async {

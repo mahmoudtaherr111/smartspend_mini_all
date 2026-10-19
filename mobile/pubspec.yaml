@@ -11,6 +11,7 @@ environment:
 workspace:
   - app
   - packages/bank_capture
+  - packages/device_lock
   - packages/smartspend_api
   - packages/smartspend_ui
 dev_dependencies:

@@ -386,4 +386,202 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get outboxDelete => 'امسحها';
+
+  @override
+  String get lockTitle => 'اكتب الرمز السري';
+
+  @override
+  String lockDigitsEntered(int count, int total) {
+    return 'اتكتب $count من $total';
+  }
+
+  @override
+  String get lockDelete => 'امسح رقم';
+
+  @override
+  String get lockWrong => 'الرمز غلط. جرّب تاني.';
+
+  @override
+  String lockWrongWarning(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محاولة',
+      few: '$count محاولات',
+      two: 'محاولتين',
+      one: 'محاولة واحدة',
+    );
+    return 'الرمز غلط. فاضل $_temp0، وبعدها هنخرجك من الحساب على الموبايل ده.';
+  }
+
+  @override
+  String lockWait(String time) {
+    return 'جرّب تاني بعد $time.';
+  }
+
+  @override
+  String get lockBiometricsChanged =>
+      'البصمات على الموبايل اتغيّرت، فوقفنا الفتح بيها. ادخل بالرمز، وشغّلها تاني من الأمان والخصوصية.';
+
+  @override
+  String get lockBiometricsLockedOut =>
+      'الموبايل وقف البصمة شوية بعد محاولات كتير. ادخل بالرمز.';
+
+  @override
+  String get lockBiometricsFailed => 'ماقدرناش نتأكد منك بالبصمة. ادخل بالرمز.';
+
+  @override
+  String get lockDamaged =>
+      'مش قادرين نقرأ قفل التطبيق على الموبايل ده. اخرج من الحساب وادخل تاني.';
+
+  @override
+  String get lockForgot => 'نسيت الرمز؟';
+
+  @override
+  String get lockForgotBody =>
+      'هنخرجك من الحساب على الموبايل ده ونشيل القفل. ادخل تاني برقمك وكلمة السر أو بجوجل، وحط رمز جديد. حسابك وعملياتك محفوظين.';
+
+  @override
+  String lockForgotUnsent(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عملية',
+      few: '$count عمليات',
+      two: 'عمليتين',
+      one: 'عملية واحدة',
+    );
+    return 'فيه $_temp0 على الموبايل لسه ماتبعتتش، وهتتمسح.';
+  }
+
+  @override
+  String get lockSignOut => 'اخرج من الحساب';
+
+  @override
+  String get lockBack => 'رجوع';
+
+  @override
+  String get biometricFingerprint => 'البصمة';
+
+  @override
+  String get biometricFace => 'الوش';
+
+  @override
+  String get biometricIris => 'العين';
+
+  @override
+  String lockUseBiometrics(String method) {
+    return 'افتح ب$method';
+  }
+
+  @override
+  String get biometricPromptTitle => 'افتح SmartSpend';
+
+  @override
+  String get biometricPromptReason => 'عشان تشوف حساباتك.';
+
+  @override
+  String get biometricPromptUsePin => 'استخدم الرمز السري';
+
+  @override
+  String get securityTitle => 'الأمان والخصوصية';
+
+  @override
+  String get securityEntryBody => 'القفل والبصمة وإخفاء المبالغ';
+
+  @override
+  String get securityLockSection => 'قفل التطبيق';
+
+  @override
+  String get securityLock => 'اقفل التطبيق';
+
+  @override
+  String get securityLockBody =>
+      'يطلب رمز سري لما تفتح التطبيق، ويخفي محتواه في قايمة التطبيقات المفتوحة.';
+
+  @override
+  String securityBiometricsNotEnrolled(String method) {
+    return 'سجّل $method في إعدادات الموبايل الأول.';
+  }
+
+  @override
+  String get securityRelock => 'يطلب الرمز تاني بعد ما تسيب التطبيق';
+
+  @override
+  String get relockNow => 'على طول';
+
+  @override
+  String get relockMinute => 'دقيقة';
+
+  @override
+  String get relockFiveMinutes => '5 دقايق';
+
+  @override
+  String get securityChangePin => 'غيّر الرمز السري';
+
+  @override
+  String get securityConfirm => 'اكتب الرمز السري عشان تغيّر إعدادات القفل';
+
+  @override
+  String get securityPrivacySection => 'الخصوصية';
+
+  @override
+  String get hideAmounts => 'اخفي المبالغ';
+
+  @override
+  String get showAmounts => 'اظهر المبالغ';
+
+  @override
+  String get hideAmountsBody =>
+      'الأرقام تبان •••• لحد ما تظهرها. زرار العين في شاشة التسجيل بيغيّرها بسرعة.';
+
+  @override
+  String get lockTurnedOn => 'القفل اشتغل.';
+
+  @override
+  String get lockTurnedOff => 'وقفنا قفل التطبيق.';
+
+  @override
+  String get pinChanged => 'الرمز السري اتغيّر.';
+
+  @override
+  String biometricsTurnedOn(String method) {
+    return 'الفتح ب$method اشتغل.';
+  }
+
+  @override
+  String biometricsUnavailable(String method) {
+    return 'مش قادرين نستخدم $method دلوقتي. اتأكد إن الموبايل عليه رمز قفل وجرّب تاني.';
+  }
+
+  @override
+  String get pinChooseTitle => 'اختار رمز سري من 6 أرقام';
+
+  @override
+  String get pinChooseBody =>
+      'هتكتبه كل ما تفتح التطبيق. ماتستخدمش تاريخ ميلادك ولا رمز قفل الموبايل.';
+
+  @override
+  String get pinConfirmTitle => 'اكتبه تاني للتأكيد';
+
+  @override
+  String get pinMismatch => 'الرمزين مش زي بعض. اختار الرمز من الأول.';
+
+  @override
+  String get pinGuessable => 'الرمز ده سهل يتخمّن. اختار رمز تاني.';
+
+  @override
+  String pinOfferBiometricsTitle(String method) {
+    return 'تفتح ب$method كمان؟';
+  }
+
+  @override
+  String get pinOfferBiometricsBody =>
+      'أسرع من الرمز، والرمز يفضل شغال لو احتجته.';
+
+  @override
+  String get pinOfferYes => 'أيوه، شغّلها';
+
+  @override
+  String get pinOfferNo => 'مش دلوقتي';
 }

@@ -100,7 +100,8 @@ final class SubmitEmpty extends SubmitOutcome {
 /// sentence's own request id, so a save repeated after a lost answer is stored once. Signing out empties the
 /// outbox, and another account signing in on the phone never sends the previous one's sentences, as the web does.
 class Outbox extends AsyncNotifier<OutboxView> {
-  bool _flushing = false;
+  /// The send in progress, which every caller of [flush] shares, so sentences go out one at a time.
+  Future<void>? _flushing;
   bool _offline = false;
   int _failures = 0;
   Timer? _retry;
@@ -157,13 +158,17 @@ class Outbox extends AsyncNotifier<OutboxView> {
   /// are sent before it.
   Future<SubmitOutcome> submit(String text) async {
     final api = ref.read(ledgerApiProvider);
+    // Stored as already being sent, so a send in progress leaves it to the person who wrote it: they review it or
+    // answer for it now. Read back after a restart, it is queued again.
     final item = OutboxItem(
       id: api.newRequestId(),
       text: text,
       createdAt: clock.now(),
+      state: OutboxState.sending,
     );
     await _change((items) => [...items, item]);
-    await flush(stopBefore: item.id);
+    // Older sentences go first.
+    await flush();
     if (_offline || ref.read(connectivityProvider).value == false) {
       return _keepOffline(item);
     }
@@ -172,23 +177,23 @@ class Outbox extends AsyncNotifier<OutboxView> {
     return outcome is SubmitQueued ? _keepOffline(item) : outcome;
   }
 
-  /// Sends what waits in the outbox, oldest first, until the network fails. [stopBefore] stops at that sentence.
-  Future<void> flush({String? stopBefore}) async {
-    if (_flushing || ref.read(sessionProvider) is! SignedIn) return;
-    _flushing = true;
-    try {
-      _offline = false;
-      while (true) {
-        final ledger = await _local.snapshot();
-        final next = ledger.outbox
-            .where((item) => item.state == OutboxState.queued)
-            .firstOrNull;
-        if (next == null || next.id == stopBefore) break;
-        final outcome = await _process(next, interactive: false);
-        if (outcome is SubmitQueued) break;
-      }
-    } finally {
-      _flushing = false;
+  /// Sends what waits in the outbox, oldest first, until the network fails. A call while a send is in progress
+  /// waits for that send instead of starting a second one.
+  Future<void> flush() {
+    if (ref.read(sessionProvider) is! SignedIn) return Future.value();
+    return _flushing ??= _drain().whenComplete(() => _flushing = null);
+  }
+
+  Future<void> _drain() async {
+    _offline = false;
+    while (true) {
+      final ledger = await _local.snapshot();
+      final next = ledger.outbox
+          .where((item) => item.state == OutboxState.queued)
+          .firstOrNull;
+      if (next == null) break;
+      final outcome = await _process(next, interactive: false);
+      if (outcome is SubmitQueued) break;
     }
   }
 
@@ -320,9 +325,11 @@ class Outbox extends AsyncNotifier<OutboxView> {
     final ledger = await _local.snapshot();
     final limit = ledger.offlineLimit ?? 3;
     final waiting = ledger.outbox
-        .where((entry) => entry.state == OutboxState.queued)
+        .where(
+          (entry) => entry.state == OutboxState.queued && entry.id != item.id,
+        )
         .length;
-    if (waiting > limit) {
+    if (waiting >= limit) {
       await _remove(item.id);
       return SubmitRefused(fullAt: limit);
     }

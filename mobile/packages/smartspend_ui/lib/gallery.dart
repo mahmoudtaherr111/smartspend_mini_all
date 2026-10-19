@@ -111,6 +111,36 @@ class ComponentGallery extends StatelessWidget {
             retryLabel: 'جرّب تاني',
             onRetry: () {},
           ),
+          const SectionHeader('المبالغ مخفية'),
+          const MoneyPrivacy(
+            hidden: true,
+            child: TransactionRow(
+              icon: Icons.restaurant,
+              title: 'Talabat',
+              subtitle: 'أكل وشرب · 9:41 م',
+              amount: 185,
+              kind: AmountKind.expense,
+            ),
+          ),
+          const SectionHeader('الرمز السري'),
+          const Center(
+            child: PinDots(
+              length: 6,
+              filled: 2,
+              semanticsLabel: 'اتكتب 2 من 6',
+            ),
+          ),
+          const SizedBox(height: SmartSpendSpacing.lg),
+          PinPad(
+            onDigit: (_) {},
+            onDelete: () {},
+            deleteLabel: 'امسح رقم',
+            leading: IconButton(
+              onPressed: () {},
+              tooltip: 'افتح بالبصمة',
+              icon: const Icon(Icons.fingerprint, size: 32),
+            ),
+          ),
         ],
       ),
     );

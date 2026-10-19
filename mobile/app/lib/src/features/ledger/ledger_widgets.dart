@@ -41,20 +41,29 @@ class MonthSummaryCard extends ConsumerWidget {
               const SizedBox(height: SmartSpendSpacing.xs),
               AmountText(value.expense, style: textTheme.displaySmall),
               const SizedBox(height: SmartSpendSpacing.md),
-              Row(
+              // Wraps onto two lines on a narrow phone or with large text instead of overflowing.
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: SmartSpendSpacing.md,
+                runSpacing: SmartSpendSpacing.xs,
                 children: [
-                  Text(
-                    '${l10n.summaryIncome} ',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colors.mutedForeground,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${l10n.summaryIncome} ',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colors.mutedForeground,
+                        ),
+                      ),
+                      AmountText(
+                        value.income,
+                        kind: AmountKind.income,
+                        style: textTheme.bodyLarge,
+                      ),
+                    ],
                   ),
-                  AmountText(
-                    value.income,
-                    kind: AmountKind.income,
-                    style: textTheme.bodyLarge,
-                  ),
-                  const Spacer(),
                   Text(
                     l10n.summaryCount(value.count),
                     style: textTheme.bodyMedium?.copyWith(

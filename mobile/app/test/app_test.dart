@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:smartspend_app/src/app.dart';
 import 'package:smartspend_app/src/config/app_config.dart';
 import 'package:smartspend_app/src/core/providers.dart';
+import 'package:smartspend_app/src/features/lock/app_lock.dart';
+import 'package:smartspend_app/src/features/lock/lock_store.dart';
 
 import 'support/test_app.dart';
 
@@ -46,6 +48,8 @@ Future<_FakeBankCapture> _pumpApp(
         ),
         httpClientProvider.overrideWithValue(api.client),
         bankCaptureProvider.overrideWithValue(capture),
+        lockStoreProvider.overrideWithValue(MemoryLockStore()),
+        deviceLockProvider.overrideWithValue(FakeDeviceLock()),
       ],
       child: const SmartSpendApp(),
     ),

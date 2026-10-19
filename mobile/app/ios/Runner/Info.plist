@@ -21,6 +21,9 @@
 		<string>ar</string>
 		<string>en</string>
 	</array>
+	<!-- Shown by iOS the first time the app lock asks for Face ID (docs/decisions/0023-mobile-app-lock.md). -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>عشان تفتح SmartSpend بوشّك بدل الرمز السري.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- A debug build may reach the API on the development machine over plain HTTP. -->
