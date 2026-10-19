@@ -31,7 +31,7 @@ class _AccountCardState extends ConsumerState<AccountCard> {
       SignedIn(:final user) => user,
       _ => null,
     };
-    // A phone number reads left to right inside the Arabic line.
+    // A phone number or an email reads left to right inside the Arabic card, aligned with the rest of it.
     final contact = user?.phone ?? user?.email;
 
     return Card(
@@ -51,19 +51,19 @@ class _AccountCardState extends ConsumerState<AccountCard> {
               Text(user.name, style: textTheme.titleMedium),
               if (contact != null)
                 Text(
-                  contact,
-                  textDirection: TextDirection.ltr,
-                  textAlign: TextAlign.start,
+                  inlineName(contact),
                   style: textTheme.bodyMedium?.copyWith(
                     color: colors.mutedForeground,
                   ),
                 ),
             ],
             const SizedBox(height: SmartSpendSpacing.lg),
-            OutlinedButton.icon(
-              onPressed: _signingOut ? null : _signOut,
-              icon: const Icon(Icons.logout),
-              label: Text(l10n.signOut),
+            SmartSpendButton(
+              label: l10n.signOut,
+              variant: ButtonVariant.secondary,
+              icon: Icons.logout,
+              busy: _signingOut,
+              onPressed: _signOut,
             ),
           ],
         ),

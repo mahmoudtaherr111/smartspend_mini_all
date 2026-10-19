@@ -89,11 +89,11 @@ class _StatusBody extends ConsumerWidget {
         ),
         if (!granted) ...[
           const SizedBox(height: SmartSpendSpacing.lg),
-          FilledButton(
+          SmartSpendButton(
+            label: android
+                ? l10n.captureOpenSettings
+                : l10n.captureOpenShortcuts,
             onPressed: () => ref.read(bankCaptureProvider).openAccessSettings(),
-            child: Text(
-              android ? l10n.captureOpenSettings : l10n.captureOpenShortcuts,
-            ),
           ),
         ],
       ],

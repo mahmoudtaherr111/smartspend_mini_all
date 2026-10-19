@@ -59,34 +59,6 @@ class AuthScaffold extends StatelessWidget {
   }
 }
 
-/// A message above or below a form: an error in the danger colour, or a notice in the warning colour.
-class FormMessage extends StatelessWidget {
-  const FormMessage(this.text, {super.key, this.warning = false});
-
-  final String text;
-  final bool warning;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.smartSpendColors;
-    final color = warning ? colors.warning : colors.danger;
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        padding: const EdgeInsets.all(SmartSpendSpacing.md),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
-        ),
-        child: Text(
-          text,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color),
-        ),
-      ),
-    );
-  }
-}
-
 /// A phone number field: digits, Arabic digits accepted, written left to right like any number.
 class PhoneField extends StatelessWidget {
   const PhoneField({
@@ -172,35 +144,6 @@ class _PasswordFieldState extends State<PasswordField> {
         ),
       ),
       onSubmitted: widget.onSubmitted,
-    );
-  }
-}
-
-/// A full-width button that shows a spinner instead of its label while its action runs.
-class BusyButton extends StatelessWidget {
-  const BusyButton({
-    super.key,
-    required this.label,
-    required this.busy,
-    required this.onPressed,
-  });
-
-  final String label;
-  final bool busy;
-
-  /// Null disables the button.
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton(
-      onPressed: busy ? null : onPressed,
-      child: busy
-          ? const SizedBox.square(
-              dimension: 22,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            )
-          : Text(label),
     );
   }
 }

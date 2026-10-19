@@ -298,7 +298,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final error = _error;
     return [
       if (error != null) ...[
-        FormMessage(error),
+        InlineMessage(error),
         const SizedBox(height: SmartSpendSpacing.lg),
       ],
       AutofillGroup(
@@ -343,7 +343,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         humanCheck((token) => setState(() => _humanToken = token), _humanReset),
       ],
       const SizedBox(height: SmartSpendSpacing.xl),
-      BusyButton(label: l10n.registerButton, busy: _busy, onPressed: _submit),
+      SmartSpendButton(
+        label: l10n.registerButton,
+        busy: _busy,
+        onPressed: _submit,
+      ),
       const SizedBox(height: SmartSpendSpacing.lg),
       Wrap(
         alignment: WrapAlignment.center,
@@ -422,10 +426,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
       ),
       const SizedBox(height: SmartSpendSpacing.lg),
-      FilledButton.icon(
+      SmartSpendButton(
+        label: l10n.verifySendOnWhatsApp,
+        icon: Icons.chat_outlined,
         onPressed: () => _openWhatsApp(verification),
-        icon: const Icon(Icons.chat_outlined),
-        label: Text(l10n.verifySendOnWhatsApp),
       ),
       const SizedBox(height: SmartSpendSpacing.lg),
       Row(
@@ -447,11 +451,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
       if (verification.wrongSender) ...[
         const SizedBox(height: SmartSpendSpacing.lg),
-        FormMessage(l10n.verifyWrongSender, warning: true),
+        InlineMessage(l10n.verifyWrongSender, warning: true),
       ],
       if (notice != null) ...[
         const SizedBox(height: SmartSpendSpacing.lg),
-        FormMessage(notice, warning: true),
+        InlineMessage(notice, warning: true),
       ],
       const SizedBox(height: SmartSpendSpacing.lg),
       TextButton(onPressed: _stopVerifying, child: Text(l10n.verifyBack)),

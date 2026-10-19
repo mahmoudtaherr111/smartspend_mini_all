@@ -29,3 +29,8 @@ Why it exists and what is decided: `docs/decisions/0022-flutter-mobile-app.md`. 
 10. Formatting, analysis and the tests of every package pass. (`.github/workflows/mobile.yml`)
 11. Every tab is behind the route guard (`sessionRedirect` in `app/lib/src/routing/app_router.dart`); a new screen
     that needs no session goes under `/sign-in`. (`app/test/route_guard_test.dart`)
+12. Screens are assembled from the components of `packages/smartspend_ui` (rules and sources:
+    `docs/guides/mobile-design.md`). Money is written only by `formatMoney`, shown only by `AmountText` and read only
+    by `parseAmount`; a Latin name inside Arabic text goes through `inlineName`. A piece two screens need moves into
+    `smartspend_ui` with its tests and an entry in `lib/gallery.dart`. (component behaviour, contrast and target
+    sizes: `packages/smartspend_ui/test/`; using them in screens: unenforced)

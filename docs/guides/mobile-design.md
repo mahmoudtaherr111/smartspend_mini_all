@@ -22,8 +22,9 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
 
 ## 1. Identity
 1. **One brand interface on both platforms**, built only from the tokens in
-   `mobile/packages/smartspend_ui/lib/src/tokens.dart` and the theme in `mobile/packages/smartspend_ui/lib/src/theme.dart`.
-   A screen never hard-codes a colour, font, size or radius. (unenforced)
+   `mobile/packages/smartspend_ui/lib/src/tokens.dart`, the theme in
+   `mobile/packages/smartspend_ui/lib/src/theme.dart` and the components beside them. A screen never hard-codes a
+   colour, font, size or radius. (unenforced)
 2. **Dark first, light equally finished.** The dark theme's near-black navy lets the money and chart colours carry
    the screen, as Google's Rally finance study does; surfaces step up in tone instead of casting shadows. The light
    theme passes every rule below too: the phone chooses, as the web app does by default. (contrast: rule 6.1)
@@ -40,10 +41,13 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
    real world, or photos. (Apple, right to left)
 3. **Western digits, from one formatter.** Amounts read «1,250 ج.م» as on the web. Cairo draws its Western digits at
    one width (560 units each), so columns of amounts line up; its Arabic-Indic digits have different widths. Money
-   is formatted in one place, never by joining strings in a screen. (unenforced)
+   is written only by `formatMoney` and shown only by `AmountText`
+   (`mobile/packages/smartspend_ui/lib/src/money.dart`), never by joining strings in a screen.
+   (`mobile/packages/smartspend_ui/test/money_test.dart` holds them to the web's format; using them is unenforced)
 4. **Latin names inside Arabic stay in one piece.** Merchant and sender names from bank messages ("UBER *TRIP",
    "Talabat", "CIB") are shown as an isolated left-to-right run, so their punctuation does not jump to the other
-   end of the line. (unenforced)
+   end of the line: `inlineName` in `mobile/packages/smartspend_ui/lib/src/bidi.dart`, which `TransactionRow` and
+   `AmountText` use. (`mobile/packages/smartspend_ui/test/money_test.dart`; other screens unenforced)
 5. **Arabic needs room.** No letter spacing on Arabic; body lines at 1.5–1.7 of the font size; labels leave about a
    fifth more room than their English; no text in fixed-width boxes. (unenforced)
 6. **Align a paragraph by its own language** and keep one alignment within a list. (Apple, right to left)
@@ -95,11 +99,14 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
    loading shows a spinner, a long task shows a progress bar. (Nielsen Norman Group, skeleton screens)
 3. **Every screen is designed in five states:** loading, empty, error, offline and filled. An empty state says what
    belongs there and offers the action that fills it; "nothing here" is never shown while loading. (Nielsen Norman
-   Group, empty states) (screenshots review)
+   Group, empty states) `EmptyState`, `ErrorState`, `OfflineBanner` and `Skeleton`
+   (`mobile/packages/smartspend_ui/lib/src/states.dart`) are the first four.
+   (`mobile/packages/smartspend_ui/test/components_test.dart`; screenshots review)
 4. **Errors speak the guide's voice** and offer a way forward: the server's Arabic message, or one from
    `docs/guides/writing-app-messages.md`, with a retry. Never a code. (unenforced)
 5. **Recording feels instant.** A recorded expense appears at once, marked as waiting until the server confirms.
-   What can be undone gets an undo instead of a confirmation; only what cannot be undone asks first. (unenforced)
+   What can be undone gets an undo instead of a confirmation (`showSmartSpendNotice` with `onUndo`, which stays until
+   it is used); only what cannot be undone asks first. (`mobile/packages/smartspend_ui/test/components_test.dart`)
 6. **Fast on the phones people own:** the first screen within 2 seconds on a mid-range phone, or visible progress;
    frames within 16 ms at 60 Hz and 8 ms at 120 Hz, measured in profile mode on a low-end device. (Android core app
    quality; Flutter performance) (unenforced)
@@ -107,10 +114,11 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
 ## 8. Motion and haptics
 1. **Haptics only with their system meaning:** a selection tick when a value or tab changes, an impact for a snap,
    success, warning or error for an outcome. Never the same pattern for opposite outcomes, never on every touch,
-   and the app works the same with haptics off. (Apple, playing haptics)
-   (`mobile/packages/smartspend_ui/test/smartspend_ui_test.dart` for the tab bar)
+   and the app works the same with haptics off: `SmartSpendHaptics` has one method per meaning and one off switch.
+   (Apple, playing haptics) (`mobile/packages/smartspend_ui/test/components_test.dart`)
 2. **Motion explains a change** and stays short (150–300 ms). When the phone asks for reduced motion, animations
-   become fades or disappear (Flutter's `MediaQuery.disableAnimationsOf`). (Apple, accessibility) (unenforced)
+   become fades or disappear: durations come from `SmartSpendMotion.of`, which is zero then. (Apple, accessibility)
+   (`mobile/packages/smartspend_ui/test/components_test.dart`)
 
 ## 9. Charts and money
 1. **Bars compare categories and daily totals; lines show a trend;** bars start at zero. (Apple, charts)
@@ -120,8 +128,9 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
    scrub to be seen. (Apple, charts) (unenforced)
 
 ## 10. Forms and input
-1. **Amounts accept both kinds of digits.** The numeric keypad opens, Arabic-Indic and Western digits are both read,
-   and the amount is shown formatted as it is typed. (unenforced)
+1. **Amounts accept both kinds of digits.** The numeric keypad opens, Arabic-Indic and Western digits are both read
+   (`parseAmount`), and the amount is shown formatted as it is typed.
+   (`mobile/packages/smartspend_ui/test/money_test.dart`; the field itself is unenforced)
 2. **Autofill works** for phone numbers and passwords. (Android core app quality; Apple, privacy) (unenforced)
 3. **Mistakes are explained beside the field** in the guide's voice, and the keyboard never covers the field in
    use (`showSmartSpendSheet` lifts its content above the keyboard). (unenforced)
@@ -135,8 +144,9 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
 3. **Purpose strings say exactly how and why,** in one sentence. (Apple, privacy) (unenforced)
 
 ## 12. Accessibility
-1. **Every control has an Arabic label** for TalkBack and VoiceOver, and amounts and dates are read as words.
-   (`labeledTapTargetGuideline` in the component tests; amounts unenforced)
+1. **Every control has an Arabic label** for TalkBack and VoiceOver, and amounts and dates are read as words:
+   `AmountText` reads «مصروف 185 جنيه». (`labeledTapTargetGuideline` in the component tests,
+   `mobile/packages/smartspend_ui/test/money_test.dart`; dates unenforced)
 2. **Important messages stay until dismissed,** and every gesture has an on-screen alternative. (Apple,
    accessibility) (unenforced)
 
@@ -161,9 +171,14 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
    31 August 2026; the App Store requires building with the iOS 26 SDK since 28 April 2026. (release checklist)
 
 ## How a change is reviewed
-- **Component tests** in `mobile/packages/smartspend_ui/test/` check contrast, target sizes, labels and behaviour.
-- **Screenshots:** every screen is added to `mobile/app/integration_test/screenshots_test.dart`, so its picture in
-  both themes, on both platforms, lands in the gallery `.github/workflows/mobile-screenshots.yml` publishes.
+- **Components first.** A screen is assembled from the components of `mobile/packages/smartspend_ui`; a piece two
+  screens need goes there, with its tests, and into the component gallery
+  (`mobile/packages/smartspend_ui/lib/gallery.dart`).
+- **Component tests** in `mobile/packages/smartspend_ui/test/` check contrast, target sizes, labels and behaviour, and
+  run Flutter's accessibility guidelines over the whole component gallery in both themes.
+- **Screenshots:** every screen, and the component gallery, is in `mobile/app/integration_test/screenshots_test.dart`,
+  so its picture in both themes, on both platforms, lands in the gallery `.github/workflows/mobile-screenshots.yml`
+  publishes.
 - **Words** follow `docs/guides/writing-app-messages.md`.
 
 ## Sources

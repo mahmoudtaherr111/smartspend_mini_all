@@ -135,10 +135,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       subtitle: l10n.signInSubtitle,
       children: [
         if (error != null) ...[
-          FormMessage(error),
+          InlineMessage(error),
           const SizedBox(height: SmartSpendSpacing.lg),
         ] else if (session case SignedOut(expired: true)) ...[
-          FormMessage(l10n.sessionEnded, warning: true),
+          InlineMessage(l10n.sessionEnded, warning: true),
           const SizedBox(height: SmartSpendSpacing.lg),
         ],
         AutofillGroup(
@@ -155,7 +155,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           ),
         ),
         const SizedBox(height: SmartSpendSpacing.xl),
-        BusyButton(
+        SmartSpendButton(
           label: l10n.signInButton,
           busy: _busy,
           onPressed: wait > 0 ? null : _signInWithPhone,
@@ -188,10 +188,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             ],
           ),
           const SizedBox(height: SmartSpendSpacing.lg),
-          OutlinedButton.icon(
+          SmartSpendButton(
+            label: l10n.signInWithGoogle,
+            variant: ButtonVariant.secondary,
+            icon: Icons.account_circle_outlined,
             onPressed: _busy ? null : _signInWithGoogle,
-            icon: const Icon(Icons.account_circle_outlined),
-            label: Text(l10n.signInWithGoogle),
           ),
         ],
         const SizedBox(height: SmartSpendSpacing.xl),

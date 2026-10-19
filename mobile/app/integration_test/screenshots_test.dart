@@ -14,6 +14,9 @@ import 'package:integration_test/integration_test.dart';
 import 'package:smartspend_app/src/app.dart';
 import 'package:smartspend_app/src/config/app_config.dart';
 import 'package:smartspend_app/src/core/providers.dart';
+import 'package:smartspend_app/src/l10n/app_localizations.dart';
+import 'package:smartspend_ui/gallery.dart';
+import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../test/support/test_app.dart';
 
@@ -50,8 +53,10 @@ void main() {
     var shot = 0;
     Future<void> photograph(String theme, String slug) async {
       shot++;
+      // Two digits keep the gallery in order past the ninth picture.
+      final number = shot.toString().padLeft(2, '0');
       await binding.takeScreenshot(
-        '${Platform.operatingSystem}-$theme-$shot-$slug',
+        '${Platform.operatingSystem}-$theme-$number-$slug',
       );
     }
 
@@ -77,6 +82,26 @@ void main() {
         await tester.tap(find.text(label).last);
         await tester.pumpAndSettle();
         await photograph(theme, slug);
+      }
+
+      // The design system's components, page by page. Skeletons keep moving, so the page is drawn, not settled.
+      await tester.pumpWidget(
+        MaterialApp(
+          key: UniqueKey(),
+          debugShowCheckedModeBanner: false,
+          theme: SmartSpendTheme.light(),
+          darkTheme: SmartSpendTheme.dark(),
+          locale: const Locale('ar'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: const ComponentGallery(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      for (final page in ['gallery1', 'gallery2', 'gallery3']) {
+        await photograph(theme, page);
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -650));
+        await tester.pump(const Duration(milliseconds: 600));
       }
     }
     tester.platformDispatcher.clearPlatformBrightnessTestValue();

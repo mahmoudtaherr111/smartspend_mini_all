@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartspend_app/src/features/auth/auth_widgets.dart';
 import 'package:smartspend_app/src/features/auth/google_identity.dart';
 import 'package:smartspend_app/src/features/auth/session_controller.dart';
+import 'package:smartspend_ui/smartspend_ui.dart';
 
 import 'support/test_app.dart';
 
@@ -167,7 +167,7 @@ void main() {
 
       expect(google.requests, 1);
       expect(app.api.paths, isNot(contains('auth.signInWithGoogle')));
-      expect(find.byType(FormMessage), findsNothing);
+      expect(find.byType(InlineMessage), findsNothing);
       expect(app.session, isA<SignedOut>());
     });
 
@@ -243,7 +243,8 @@ void main() {
     await tester.tap(find.text('المزيد').last);
     await tester.pumpAndSettle();
     expect(find.text('منى'), findsOneWidget);
-    expect(find.text('01012345678'), findsOneWidget);
+    // The number reads left to right inside the Arabic card.
+    expect(find.text(inlineName('01012345678')), findsOneWidget);
 
     await tester.tap(find.text('تسجيل الخروج'));
     await tester.pumpAndSettle();
