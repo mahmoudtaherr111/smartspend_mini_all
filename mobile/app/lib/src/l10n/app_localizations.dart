@@ -578,12 +578,6 @@ abstract class AppLocalizations {
   /// **'مش لاقيين مبلغ في الجملة. اكتب المبلغ وجرّب تاني.'**
   String get nothingToSave;
 
-  /// No description provided for @offlineKeepText.
-  ///
-  /// In ar, this message translates to:
-  /// **'مش قادرين نوصل للسيرفر. الجملة لسه مكتوبة، ابعتها تاني لما النت يرجع.'**
-  String get offlineKeepText;
-
   /// No description provided for @reviewTitle.
   ///
   /// In ar, this message translates to:
@@ -649,6 +643,90 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'امسح'**
   String get deleteAction;
+
+  /// No description provided for @queuedOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'النت فاصل. حفظناها هنا وهنبعتها أول ما يرجع.'**
+  String get queuedOffline;
+
+  /// No description provided for @offlineBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'النت فاصل. اللي بتسجّله بيتحفظ هنا وهيتبعت لما يرجع.'**
+  String get offlineBanner;
+
+  /// No description provided for @offlineFull.
+  ///
+  /// In ar, this message translates to:
+  /// **'قايمة الأوفلاين مليانة ({limit, plural, =1{عملية واحدة} =2{عمليتين} few{{limit} عمليات} other{{limit} عملية}} في باقتك). وصّل النت عشان تتبعت، وبعدين سجّل تاني.'**
+  String offlineFull(int limit);
+
+  /// No description provided for @offlineTooShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجملة قصيرة. اكتب صرفت في إيه وبكام.'**
+  String get offlineTooShort;
+
+  /// No description provided for @offlineUnreadable.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش فاهمين الجملة دي. اكتب صرفت في إيه وبكام.'**
+  String get offlineUnreadable;
+
+  /// No description provided for @offlineNoAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش لاقيين مبلغ في الجملة. اكتبه بالأرقام أو بالكلام (مثلاً: 50 جنيه، خمسين مواصلات).'**
+  String get offlineNoAmount;
+
+  /// No description provided for @outboxTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه ماتسجّلتش'**
+  String get outboxTitle;
+
+  /// No description provided for @outboxQueued.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستنية النت'**
+  String get outboxQueued;
+
+  /// No description provided for @outboxSending.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتتبعت…'**
+  String get outboxSending;
+
+  /// No description provided for @outboxNeedsReview.
+  ///
+  /// In ar, this message translates to:
+  /// **'محتاجة مراجعة منك'**
+  String get outboxNeedsReview;
+
+  /// No description provided for @outboxNeedsAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'محتاجة رد منك'**
+  String get outboxNeedsAnswer;
+
+  /// No description provided for @outboxFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتبعتتش. دوس عليها عشان تبعتها تاني.'**
+  String get outboxFailed;
+
+  /// No description provided for @outboxSendNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابعتها دلوقتي'**
+  String get outboxSendNow;
+
+  /// No description provided for @outboxDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسحها'**
+  String get outboxDelete;
 }
 
 class _AppLocalizationsDelegate

@@ -23,14 +23,16 @@ class LedgerApi {
   }
 
   /// Saves [items] read from [rawText] and returns their ids. One item goes through `expense.create`, several
-  /// through `expense.batchCreate`. Every item carries a request id the server deduplicates on, so a save retried
-  /// after a lost answer is not saved twice.
+  /// through `expense.batchCreate`. Every item carries a request id the server deduplicates on (`[requestId]`, or
+  /// `[requestId]:index` for several), so a save retried after a lost answer is not saved twice; pass the same
+  /// [requestId] on every retry of one sentence.
   Future<List<int>> save(
     List<ParsedItem> items, {
     required String rawText,
     int? classificationLogId,
+    String? requestId,
   }) async {
-    final requestId = newRequestId();
+    final baseId = requestId ?? newRequestId();
     Map<String, Object?> payload(ParsedItem item, String id) => {
       'amount': item.amount,
       'type': item.type,
@@ -49,7 +51,7 @@ class LedgerApi {
     if (items.length == 1) {
       final data = await _client.mutate(
         Procedures.expense.create,
-        input: payload(items.single, requestId),
+        input: payload(items.single, baseId),
       );
       final id = _object(data)['id'];
       return id is num ? [id.toInt()] : const [];
@@ -58,7 +60,7 @@ class LedgerApi {
       Procedures.expense.batchCreate,
       input: [
         for (final (index, item) in items.indexed)
-          payload(item, '$requestId:$index'),
+          payload(item, '$baseId:$index'),
       ],
     );
     return [
@@ -97,6 +99,16 @@ class LedgerApi {
       input: {'month': month, 'salaryDay': ?salaryDay},
     );
     return MonthSummary.fromJson(_object(data));
+  }
+
+  /// How many sentences the person's plan lets wait offline (`ai.getUserLimits`, `offline.limit`).
+  Future<int?> offlineLimit() async {
+    final data = await _client.query(Procedures.ai.getUserLimits);
+    if (data is! Map<String, Object?>) return null;
+    final offline = data['offline'];
+    return offline is Map<String, Object?>
+        ? (offline['limit'] as num?)?.toInt()
+        : null;
   }
 
   /// The person's payday when their month starts on it, from the smart profile (`profile.getSmartProfile`), as

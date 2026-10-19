@@ -55,6 +55,19 @@ final class ParsedItem {
   final String? personName;
   final String? personRelationship;
 
+  /// The same keys [ParsedItem.fromJson] reads, so an item can wait in the outbox.
+  Map<String, Object?> toJson() => {
+    'amount': amount,
+    'type': type,
+    'category': category,
+    'subCategory': subCategory,
+    'description': description,
+    'date': date,
+    'direction': direction,
+    'person_mentioned': personName,
+    'person_relationship': personRelationship,
+  };
+
   /// Whether `expense.create` would accept it (`api/expense-router.ts`: a positive amount and a category).
   bool get isSavable => amount > 0 && category.trim().isNotEmpty;
 
@@ -131,6 +144,20 @@ final class ParseResult {
 
   /// A note the pipeline wants the person to read, such as an amount it was unsure of.
   final String? alertMessage;
+
+  /// The same keys [ParseResult.fromJson] reads, so a parse can wait in the outbox for the person.
+  Map<String, Object?> toJson() => {
+    'decision': switch (decision) {
+      ParseDecision.autoSave => 'auto_save',
+      ParseDecision.review => 'review',
+      ParseDecision.clarify => 'clarify',
+    },
+    'items': [for (final item in items) item.toJson()],
+    'clarificationQuestion': clarificationQuestion,
+    'clarificationId': clarificationId,
+    'classificationLogId': classificationLogId,
+    'alertMessage': alertMessage,
+  };
 }
 
 /// `expense.answerClarification`'s answer: saved, or another question.
@@ -206,6 +233,17 @@ final class LedgerEntry {
   /// When it happened, in the phone's time.
   final DateTime date;
 
+  /// The same keys [LedgerEntry.fromJson] reads, for the copy kept for offline use.
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'amount': amount,
+    'type': type,
+    'category': category,
+    'subCategory': subCategory,
+    'description': description,
+    'date': date.toUtc().toIso8601String(),
+  };
+
   /// What the row is called: the description the parser wrote, else the subcategory, else the category.
   String get title {
     for (final candidate in [description, subCategory, category]) {
@@ -232,6 +270,11 @@ final class LedgerPage {
 
   /// How many entries match in all, across every page.
   final int total;
+
+  Map<String, Object?> toJson() => {
+    'items': [for (final entry in entries) entry.toJson()],
+    'total': total,
+  };
 }
 
 /// `expense.getMonthSummary`: the month's totals from the daily rollups.
@@ -253,6 +296,12 @@ final class MonthSummary {
   final int count;
 
   num get net => income - expense;
+
+  Map<String, Object?> toJson() => {
+    'totalIncome': income,
+    'totalExpense': expense,
+    'count': count,
+  };
 }
 
 /// An amount as the API sends it: a number, or a MySQL decimal as a string ("185.00").

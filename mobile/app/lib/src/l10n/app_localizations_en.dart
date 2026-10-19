@@ -294,10 +294,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'We couldn\'t find an amount in that. Add the amount and try again.';
 
   @override
-  String get offlineKeepText =>
-      'We can\'t reach the server. Your text is still here; send it again when you\'re back online.';
-
-  @override
   String get reviewTitle => 'Check before we save';
 
   @override
@@ -329,4 +325,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAction => 'Delete';
+
+  @override
+  String get queuedOffline =>
+      'You\'re offline. We saved it here and will send it as soon as you\'re back.';
+
+  @override
+  String get offlineBanner =>
+      'You\'re offline. What you record is kept here and sent when you\'re back.';
+
+  @override
+  String offlineFull(int limit) {
+    String _temp0 = intl.Intl.pluralLogic(
+      limit,
+      locale: localeName,
+      other: '$limit entries',
+      one: '1 entry',
+    );
+    return 'The offline list is full ($_temp0 on your plan). Connect to send them, then record again.';
+  }
+
+  @override
+  String get offlineTooShort =>
+      'That is too short. Write what you spent on and how much.';
+
+  @override
+  String get offlineUnreadable =>
+      'We can\'t read that. Write what you spent on and how much.';
+
+  @override
+  String get offlineNoAmount =>
+      'We couldn\'t find an amount. Write it in numbers or words (e.g. 50 pounds, fifty transport).';
+
+  @override
+  String get outboxTitle => 'Not recorded yet';
+
+  @override
+  String get outboxQueued => 'Waiting for the internet';
+
+  @override
+  String get outboxSending => 'Sending…';
+
+  @override
+  String get outboxNeedsReview => 'Needs your review';
+
+  @override
+  String get outboxNeedsAnswer => 'Needs your answer';
+
+  @override
+  String get outboxFailed => 'Not sent. Tap it to send it again.';
+
+  @override
+  String get outboxSendNow => 'Send it now';
+
+  @override
+  String get outboxDelete => 'Delete it';
 }

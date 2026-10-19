@@ -47,7 +47,8 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           working-directory: mobile/app
-          script: mkdir -p build && flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart --dart-define-from-file=config/development.json > build/drive.log 2>&1 || (cat build/drive.log; exit 1)
+          # No touch markers in the pictures.
+          script: adb shell settings put system show_touches 0 && adb shell settings put system pointer_location 0 && mkdir -p build && flutter drive --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart --dart-define-from-file=config/development.json > build/drive.log 2>&1 || (cat build/drive.log; exit 1)
       - name: Show the end of the drive log as an annotation
         if: failure()
         run: |

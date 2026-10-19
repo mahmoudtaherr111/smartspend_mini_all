@@ -14,6 +14,9 @@ import 'package:integration_test/integration_test.dart';
 import 'package:smartspend_app/src/app.dart';
 import 'package:smartspend_app/src/config/app_config.dart';
 import 'package:smartspend_app/src/core/providers.dart';
+import 'package:smartspend_app/src/features/ledger/ledger_providers.dart';
+import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
+import 'package:smartspend_app/src/features/ledger/offline/outbox.dart';
 import 'package:smartspend_app/src/l10n/app_localizations.dart';
 import 'package:smartspend_ui/gallery.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
@@ -126,7 +129,7 @@ void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   /// The app as it opens on a phone, signed in when [token] is given, with the fake API behind it.
-  Future<void> openApp(WidgetTester tester, {String? token}) async {
+  Future<FakeApi> openApp(WidgetTester tester, {String? token}) async {
     final api = FakeApi()..answer('localAuth.me', (_) => phoneUser());
     _answerLedger(api);
     await tester.pumpWidget(
@@ -136,11 +139,15 @@ void main() {
           appConfigProvider.overrideWithValue(AppConfig.fromEnvironment()),
           sessionStoreProvider.overrideWithValue(MemorySessionStore(token)),
           httpClientProvider.overrideWithValue(api.client),
+          // A fresh outbox for every opening, and no retry timers left behind.
+          ledgerStoreProvider.overrideWithValue(MemoryLedgerStore()),
+          outboxRetryDelaysProvider.overrideWithValue(const []),
         ],
         child: const SmartSpendApp(),
       ),
     );
     await tester.pumpAndSettle();
+    return api;
   }
 
   testWidgets('sign-in, sign-up and every tab, dark and light', (tester) async {
@@ -171,7 +178,7 @@ void main() {
       await tester.pumpAndSettle();
       await photograph(theme, 'register');
 
-      await openApp(tester, token: 'screenshot-session');
+      final api = await openApp(tester, token: 'screenshot-session');
       for (final (label, slug) in _tabs) {
         await tester.tap(find.text(label).last);
         await tester.pumpAndSettle();
@@ -190,6 +197,15 @@ void main() {
       await tester.tap(find.text('الكل'));
       await tester.pumpAndSettle();
       await photograph(theme, 'transactions');
+
+      // Without internet: the banner, and the sentence waiting at the top of the record tab.
+      await tester.tap(find.text('تسجيل').last);
+      await tester.pumpAndSettle();
+      api.offline = true;
+      await tester.enterText(find.byType(TextField), 'عيش وفول 35 جنيه');
+      await tester.testTextInput.receiveAction(TextInputAction.send);
+      await tester.pumpAndSettle();
+      await photograph(theme, 'offline');
 
       // The design system's components, page by page. Skeletons keep moving, so the page is drawn, not settled.
       await tester.pumpWidget(

@@ -15,6 +15,9 @@ import 'package:smartspend_app/src/features/auth/google_identity.dart';
 import 'package:smartspend_app/src/features/auth/human_check.dart';
 import 'package:smartspend_app/src/features/auth/register_screen.dart';
 import 'package:smartspend_app/src/features/auth/session_controller.dart';
+import 'package:smartspend_app/src/features/ledger/ledger_providers.dart';
+import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
+import 'package:smartspend_app/src/features/ledger/offline/outbox.dart';
 
 /// A tRPC error the fake API answers with.
 final class TrpcFailure implements Exception {
@@ -47,6 +50,12 @@ final class FakeApi {
     );
     answer('expense.list', (_) => {'items': <Object?>[], 'total': 0});
     answer(
+      'ai.getUserLimits',
+      (_) => {
+        'offline': {'limit': 3},
+      },
+    );
+    answer(
       'expense.getMonthSummary',
       (_) => {'totalIncome': 0, 'totalExpense': 0, 'count': 0},
     );
@@ -57,6 +66,9 @@ final class FakeApi {
   /// Every call, in order, as `<path>` with the Bearer token it carried (or `-`).
   final calls = <({String path, String? token, Object? input})>[];
 
+  /// Whether the phone has lost the internet: every call then fails before reaching the server.
+  bool offline = false;
+
   void answer(String path, Object? Function(Object? input) handler) =>
       _answers[path] = handler;
 
@@ -66,6 +78,7 @@ final class FakeApi {
       calls.lastWhere((call) => call.path == path).input;
 
   late final http.Client client = MockClient((request) async {
+    if (offline) throw http.ClientException('No internet', request.url);
     final path = request.url.path.replaceFirst('/api/trpc/', '');
     final rawInput = request.method == 'GET'
         ? request.url.queryParameters['input']
@@ -222,6 +235,12 @@ final class TestApp {
        google = google ?? FakeGoogleIdentity(isAvailable: false);
 
   final MemorySessionStore store;
+
+  /// The outbox and the offline copy of the ledger.
+  final ledgerStore = MemoryLedgerStore();
+
+  /// Whether the phone has a network; send false to cut it, true to bring it back.
+  final connection = StreamController<bool>.broadcast();
   final FakeApi api;
   final FakeGoogleIdentity google;
   final HumanCheckBuilder? humanCheck;
@@ -254,6 +273,9 @@ final class TestApp {
             return linksOpen;
           }),
           bankCaptureProvider.overrideWithValue(_FakeBankCapture()),
+          ledgerStoreProvider.overrideWithValue(ledgerStore),
+          connectivityProvider.overrideWith((ref) => connection.stream),
+          outboxRetryDelaysProvider.overrideWithValue(const []),
         ],
         child: const SmartSpendApp(),
       ),

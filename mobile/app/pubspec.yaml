@@ -14,6 +14,7 @@ dependencies:
   bank_capture:
     path: ../packages/bank_capture
   clock: ^1.1.2
+  connectivity_plus: ^7.3.2
   flutter:
     sdk: flutter
   flutter_localizations:
@@ -24,6 +25,7 @@ dependencies:
   google_sign_in: ^7.2.0
   http: ^1.6.0
   intl: ^0.20.3
+  path_provider: ^2.1.6
   smartspend_api:
     path: ../packages/smartspend_api
   smartspend_ui:

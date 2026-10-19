@@ -6,6 +6,8 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 import '../../l10n/app_localizations.dart';
 import 'ledger_providers.dart';
 import 'ledger_widgets.dart';
+import 'offline/outbox.dart';
+import 'outbox_section.dart';
 import 'record_composer.dart';
 import 'transactions_screen.dart';
 
@@ -20,53 +22,63 @@ class RecordScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final recent = ref.watch(recentEntriesProvider);
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.navRecord)),
-      body: Column(
-        children: [
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                refreshLedger(ref);
-                await ref.read(monthSummaryProvider.future);
-              },
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  SmartSpendSpacing.screen,
-                  SmartSpendSpacing.sm,
-                  SmartSpendSpacing.screen,
-                  SmartSpendSpacing.xl,
-                ),
-                children: [
-                  const MonthSummaryCard(),
-                  SectionHeader(
-                    l10n.recentTitle,
-                    actionLabel: l10n.seeAll,
-                    onAction: () => context.go(TransactionsScreen.path),
+    final online = ref.watch(networkStatusProvider);
+    // Its own messenger: notices raised here show on this scaffold, above the sentence box, instead of on the tab
+    // shell's, where they would float over the box's send button.
+    return ScaffoldMessenger(
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.navRecord)),
+        body: Column(
+          children: [
+            if (!online) OfflineBanner(l10n.offlineBanner),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await ref.read(outboxProvider.notifier).flush();
+                  refreshLedger(ref);
+                  await ref.read(monthSummaryProvider.future);
+                },
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    SmartSpendSpacing.screen,
+                    SmartSpendSpacing.sm,
+                    SmartSpendSpacing.screen,
+                    SmartSpendSpacing.xl,
                   ),
-                  switch (recent) {
-                    AsyncData(:final value) when value.entries.isEmpty =>
-                      EmptyState(
-                        icon: Icons.receipt_long_outlined,
-                        title: l10n.ledgerEmptyTitle,
-                        message: l10n.ledgerEmptyBody,
+                  children: [
+                    const MonthSummaryCard(),
+                    const OutboxSection(),
+                    SectionHeader(
+                      l10n.recentTitle,
+                      actionLabel: l10n.seeAll,
+                      onAction: () => context.go(TransactionsScreen.path),
+                    ),
+                    switch (recent) {
+                      AsyncData(:final value) when value.entries.isEmpty =>
+                        EmptyState(
+                          icon: Icons.receipt_long_outlined,
+                          title: l10n.ledgerEmptyTitle,
+                          message: l10n.ledgerEmptyBody,
+                        ),
+                      AsyncData(:final value) => LedgerDayList(
+                        entries: value.entries,
                       ),
-                    AsyncData(:final value) => LedgerDayList(
-                      entries: value.entries,
-                    ),
-                    AsyncError() => ErrorState(
-                      message: l10n.ledgerLoadFailed,
-                      retryLabel: l10n.retry,
-                      onRetry: () => ref.invalidate(recentEntriesProvider),
-                    ),
-                    _ => const LedgerSkeleton(),
-                  },
-                ],
+                      AsyncError() => ErrorState(
+                        message: l10n.ledgerLoadFailed,
+                        retryLabel: l10n.retry,
+                        onRetry: () => ref.invalidate(recentEntriesProvider),
+                      ),
+                      _ => const LedgerSkeleton(),
+                    },
+                  ],
+                ),
               ),
             ),
-          ),
-          const RecordComposer(),
-        ],
+          ],
+        ),
+        // In the bottom slot, notices float above the sentence box instead of covering its send button, and the
+        // box still rises with the keyboard, which the tab shell's scaffold makes room for.
+        bottomNavigationBar: const RecordComposer(),
       ),
     );
   }

@@ -1,13 +1,41 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:smartspend_api/smartspend_api.dart';
 
 import '../../core/providers.dart';
 import 'ledger_api.dart';
 import 'ledger_models.dart';
+import 'offline/ledger_store.dart';
 
 final ledgerApiProvider = Provider<LedgerApi>(
   (ref) => LedgerApi(ref.watch(trpcClientProvider)),
 );
+
+/// Where the phone keeps the outbox and the offline copy of the ledger. Tests replace it with a [MemoryLedgerStore].
+final ledgerStoreProvider = Provider<LedgerStore>(
+  (ref) => FileLedgerStore(getApplicationSupportDirectory),
+);
+
+final localLedgerProvider = Provider<LocalLedger>(
+  (ref) => LocalLedger(ref.watch(ledgerStoreProvider)),
+);
+
+/// Whether the last call reached the server. The record tab shows an offline banner while it did not.
+final networkStatusProvider = NotifierProvider<NetworkStatus, bool>(
+  NetworkStatus.new,
+);
+
+class NetworkStatus extends Notifier<bool> {
+  @override
+  bool build() => true;
+
+  void reached() => state = true;
+
+  void unreachable() => state = false;
+}
 
 /// The person's payday when their month starts on it; null when it does not, or when the profile cannot be read
 /// (the month then runs from the 1st, as on the web without a profile).
@@ -25,16 +53,47 @@ final currentMonthProvider = FutureProvider<String>((ref) async {
   return currentMonthKey(clock.now(), salaryDay: salaryDay);
 });
 
+/// The month's totals; without a network, the last ones seen for the same month.
 final monthSummaryProvider = FutureProvider<MonthSummary>((ref) async {
   final month = await ref.watch(currentMonthProvider.future);
   final salaryDay = await ref.watch(salaryDayProvider.future);
-  return ref.watch(ledgerApiProvider).monthSummary(month, salaryDay: salaryDay);
+  final local = ref.watch(localLedgerProvider);
+  try {
+    final summary = await ref
+        .watch(ledgerApiProvider)
+        .monthSummary(month, salaryDay: salaryDay);
+    ref.read(networkStatusProvider.notifier).reached();
+    unawaited(
+      local.update(
+        (stored) => stored.copyWith(summaryMonth: month, summary: summary),
+      ),
+    );
+    return summary;
+  } on ApiNetworkException {
+    ref.read(networkStatusProvider.notifier).unreachable();
+    final stored = await local.snapshot();
+    if (stored.summaryMonth == month && stored.summary != null) {
+      return stored.summary!;
+    }
+    rethrow;
+  }
 });
 
-/// The latest transactions on the record tab.
-final recentEntriesProvider = FutureProvider<LedgerPage>(
-  (ref) => ref.watch(ledgerApiProvider).list(limit: 10),
-);
+/// The latest transactions on the record tab; without a network, the last ones seen.
+final recentEntriesProvider = FutureProvider<LedgerPage>((ref) async {
+  final local = ref.watch(localLedgerProvider);
+  try {
+    final page = await ref.watch(ledgerApiProvider).list(limit: 10);
+    ref.read(networkStatusProvider.notifier).reached();
+    unawaited(local.update((stored) => stored.copyWith(recent: page)));
+    return page;
+  } on ApiNetworkException {
+    ref.read(networkStatusProvider.notifier).unreachable();
+    final cached = (await local.snapshot()).recent;
+    if (cached != null) return cached;
+    rethrow;
+  }
+});
 
 /// Every transaction, a page at a time, for the full list.
 final allEntriesProvider = AsyncNotifierProvider<AllEntries, LedgerListState>(

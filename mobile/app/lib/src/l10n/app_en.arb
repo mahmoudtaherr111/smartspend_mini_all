@@ -80,7 +80,6 @@
   "undone": "Undone.",
   "undoFailed": "We couldn't undo it. Delete it from the list.",
   "nothingToSave": "We couldn't find an amount in that. Add the amount and try again.",
-  "offlineKeepText": "We can't reach the server. Your text is still here; send it again when you're back online.",
   "reviewTitle": "Check before we save",
   "reviewSave": "Save",
   "reviewEdit": "Edit the text",
@@ -91,5 +90,19 @@
   "transactionsTitle": "All transactions",
   "entryDeleted": "Transaction deleted.",
   "deleteFailed": "We couldn't delete it. Try again.",
-  "deleteAction": "Delete"
+  "deleteAction": "Delete",
+  "queuedOffline": "You're offline. We saved it here and will send it as soon as you're back.",
+  "offlineBanner": "You're offline. What you record is kept here and sent when you're back.",
+  "offlineFull": "The offline list is full ({limit, plural, =1{1 entry} other{{limit} entries}} on your plan). Connect to send them, then record again.",
+  "offlineTooShort": "That is too short. Write what you spent on and how much.",
+  "offlineUnreadable": "We can't read that. Write what you spent on and how much.",
+  "offlineNoAmount": "We couldn't find an amount. Write it in numbers or words (e.g. 50 pounds, fifty transport).",
+  "outboxTitle": "Not recorded yet",
+  "outboxQueued": "Waiting for the internet",
+  "outboxSending": "Sending…",
+  "outboxNeedsReview": "Needs your review",
+  "outboxNeedsAnswer": "Needs your answer",
+  "outboxFailed": "Not sent. Tap it to send it again.",
+  "outboxSendNow": "Send it now",
+  "outboxDelete": "Delete it"
 }

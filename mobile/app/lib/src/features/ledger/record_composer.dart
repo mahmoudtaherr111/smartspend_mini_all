@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
-import 'category_style.dart';
-import 'ledger_models.dart';
-import 'ledger_providers.dart';
+import 'offline/offline_rules.dart';
+import 'offline/outbox.dart';
+import 'record_flow.dart';
 
-/// Where a sentence is typed, at the bottom of the record tab within the thumb's reach (rule 3.3). It follows the
-/// web's form (`src/components/expenses/ExpenseForm.tsx`): `ai.parseExpense` reads the sentence, then what the
-/// server decided happens — saved at once, shown for review, or a question — and every save offers an undo.
+/// Where a sentence is typed, at the bottom of the record tab within the thumb's reach (rule 3.3). Every sentence
+/// goes through the outbox: read at once when the network allows — saved, shown for review, or answered — and
+/// kept on the phone to be sent later when it does not.
 class RecordComposer extends ConsumerStatefulWidget {
   const RecordComposer({super.key});
 
@@ -32,31 +31,42 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     final sentence = _text.text.trim();
     if (sentence.isEmpty || _busy) return;
     final l10n = AppLocalizations.of(context);
-    final api = ref.read(ledgerApiProvider);
-    try {
-      final result = await _working(() => api.parse(sentence));
-      if (!mounted) return;
-      switch (result.decision) {
-        case ParseDecision.autoSave:
-          await _save(result, sentence, automatic: true);
-        case ParseDecision.review:
-          final items = result.items.where((item) => item.isSavable).toList();
-          if (items.isEmpty) {
-            _tell(l10n.nothingToSave, warning: true);
-            return;
-          }
-          final confirmed = await _review(items, result.alertMessage);
-          if (confirmed && mounted) await _save(result, sentence);
-        case ParseDecision.clarify:
-          await _clarify(
-            result.clarificationQuestion ?? l10n.clarifyDefault,
-            result.clarificationId,
-          );
-      }
-    } on ApiNetworkException {
-      _tell(l10n.offlineKeepText, warning: true);
-    } on ApiException catch (error) {
-      _tell(error.message, warning: true);
+    final outbox = ref.read(outboxProvider.notifier);
+    final outcome = await _working(() async {
+      await ref.read(outboxProvider.future);
+      return outbox.submit(sentence);
+    });
+    if (!mounted) return;
+    switch (outcome) {
+      case SubmitSaved(:final items, :final ids, :final automatic):
+        _text.clear();
+        announceSaved(context, ref, items, ids, automatic: automatic);
+      case SubmitNeedsReview(:final item):
+        final saved = await reviewAndSave(context, ref, item);
+        if (saved == true) {
+          _text.clear();
+        } else {
+          // Not saved: the sentence stays in the box to be edited, and leaves the outbox.
+          await outbox.discard(item);
+        }
+      case SubmitNeedsAnswer(:final item):
+        _text.clear();
+        await answerAndSave(context, ref, item);
+      case SubmitQueued():
+        _text.clear();
+        _tell(l10n.queuedOffline);
+      case SubmitRefused(:final reason, :final fullAt):
+        _tell(switch ((reason, fullAt)) {
+          (OfflineRefusal.tooShort, _) => l10n.offlineTooShort,
+          (OfflineRefusal.unreadable, _) => l10n.offlineUnreadable,
+          (OfflineRefusal.noAmount, _) => l10n.offlineNoAmount,
+          (_, final int limit) => l10n.offlineFull(limit),
+          _ => l10n.offlineNoAmount,
+        });
+      case SubmitFailed(:final message):
+        _tell(message);
+      case SubmitEmpty():
+        _tell(l10n.nothingToSave);
     }
   }
 
@@ -71,119 +81,9 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     }
   }
 
-  Future<void> _save(
-    ParseResult result,
-    String sentence, {
-    bool automatic = false,
-  }) async {
-    final l10n = AppLocalizations.of(context);
-    final items = result.items.where((item) => item.isSavable).toList();
-    if (items.isEmpty) {
-      _tell(l10n.nothingToSave, warning: true);
-      return;
-    }
-    final ids = await _working(
-      () => ref
-          .read(ledgerApiProvider)
-          .save(
-            items,
-            rawText: sentence,
-            classificationLogId: result.classificationLogId,
-          ),
-    );
-    _saved(items, ids, automatic: automatic);
-  }
-
-  /// After a save: clear the sentence, refresh the ledger, and offer to take it back.
-  void _saved(List<ParsedItem> items, List<int> ids, {bool automatic = false}) {
+  void _tell(String message) {
     if (!mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final money = MoneyLocale.of(context);
-    _text.clear();
-    SmartSpendHaptics.success();
-    refreshLedger(ref);
-    final summary = items.length == 1
-        ? '${formatMoney(items.single.amount, locale: money)} · ${items.single.categoryLabel}'
-        : l10n.savedItemsSummary(
-            items.length,
-            formatMoney(
-              items.fold<num>(0, (sum, item) => sum + item.amount),
-              locale: money,
-            ),
-          );
-    showSmartSpendNotice(
-      context,
-      automatic ? l10n.savedAuto(summary) : l10n.savedManual(summary),
-      undoLabel: ids.isEmpty ? null : l10n.undo,
-      onUndo: ids.isEmpty ? null : () => _undo(ids),
-    );
-  }
-
-  Future<void> _undo(List<int> ids) async {
-    final l10n = AppLocalizations.of(context);
-    final api = ref.read(ledgerApiProvider);
-    try {
-      await Future.wait(ids.map(api.delete));
-      if (mounted) _tell(l10n.undone);
-    } on Object {
-      if (mounted) _tell(l10n.undoFailed, warning: true);
-    } finally {
-      if (mounted) refreshLedger(ref);
-    }
-  }
-
-  Future<bool> _review(List<ParsedItem> items, String? alert) async {
-    final l10n = AppLocalizations.of(context);
-    final confirmed = await showSmartSpendSheet<bool>(
-      context: context,
-      builder: (sheetContext) => _ReviewSheet(
-        items: items,
-        alert: alert,
-        saveLabel: l10n.reviewSave,
-        editLabel: l10n.reviewEdit,
-        title: l10n.reviewTitle,
-      ),
-    );
-    return confirmed ?? false;
-  }
-
-  /// Asks the server's question until the sentence is saved or the person leaves it for later.
-  Future<void> _clarify(String question, int? clarificationId) async {
-    final l10n = AppLocalizations.of(context);
-    var currentQuestion = question;
-    var currentId = clarificationId;
-    while (currentId != null) {
-      if (!mounted) return;
-      final answer = await showSmartSpendSheet<String>(
-        context: context,
-        builder: (sheetContext) => _ClarifySheet(
-          question: currentQuestion,
-          answerLabel: l10n.clarifyAnswerLabel,
-          sendLabel: l10n.clarifySend,
-          laterLabel: l10n.clarifyLater,
-        ),
-      );
-      if (answer == null || answer.trim().isEmpty || !mounted) return;
-      final id = currentId;
-      final result = await _working(
-        () => ref.read(ledgerApiProvider).answer(id, answer.trim()),
-      );
-      if (result.nextQuestion == null) {
-        if (result.savedIds.isNotEmpty) {
-          _saved(result.savedItems, result.savedIds);
-        }
-        return;
-      }
-      currentQuestion = result.nextQuestion!;
-      currentId = result.clarificationId ?? currentId;
-    }
-    // A question the server could not store cannot be answered here; the person can rephrase the sentence.
-    if (mounted && currentId == null) _tell(currentQuestion, warning: true);
-  }
-
-  void _tell(String message, {bool warning = false}) {
-    if (!mounted) return;
-    if (warning) SmartSpendHaptics.warning();
+    SmartSpendHaptics.warning();
     showSmartSpendNotice(context, message);
   }
 
@@ -191,6 +91,12 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = context.smartSpendColors;
+    // A sentence taken back from the outbox to be edited.
+    ref.listen(composerDraftProvider, (_, draft) {
+      if (draft == null) return;
+      _text.text = draft;
+      ref.read(composerDraftProvider.notifier).taken();
+    });
     return Material(
       color: colors.surface,
       child: SafeArea(
@@ -237,132 +143,6 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ReviewSheet extends StatelessWidget {
-  const _ReviewSheet({
-    required this.items,
-    required this.alert,
-    required this.title,
-    required this.saveLabel,
-    required this.editLabel,
-  });
-
-  final List<ParsedItem> items;
-  final String? alert;
-  final String title;
-  final String saveLabel;
-  final String editLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        SmartSpendSpacing.screen,
-        0,
-        SmartSpendSpacing.screen,
-        SmartSpendSpacing.lg,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: SmartSpendSpacing.sm),
-          if (alert case final String note when note.isNotEmpty) ...[
-            InlineMessage(note, warning: true),
-            const SizedBox(height: SmartSpendSpacing.sm),
-          ],
-          for (final item in items)
-            TransactionRow(
-              icon: categoryIcon(item.category),
-              iconColor: categoryColor(context, item.category),
-              title: item.description?.trim().isNotEmpty == true
-                  ? item.description!
-                  : item.categoryLabel,
-              subtitle: item.categoryLabel,
-              amount: item.amount,
-              kind: itemKind(item),
-            ),
-          const SizedBox(height: SmartSpendSpacing.lg),
-          SmartSpendButton(
-            label: saveLabel,
-            onPressed: () => Navigator.pop(context, true),
-          ),
-          SmartSpendButton(
-            label: editLabel,
-            variant: ButtonVariant.quiet,
-            onPressed: () => Navigator.pop(context, false),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ClarifySheet extends StatefulWidget {
-  const _ClarifySheet({
-    required this.question,
-    required this.answerLabel,
-    required this.sendLabel,
-    required this.laterLabel,
-  });
-
-  final String question;
-  final String answerLabel;
-  final String sendLabel;
-  final String laterLabel;
-
-  @override
-  State<_ClarifySheet> createState() => _ClarifySheetState();
-}
-
-class _ClarifySheetState extends State<_ClarifySheet> {
-  final _answer = TextEditingController();
-
-  @override
-  void dispose() {
-    _answer.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        SmartSpendSpacing.screen,
-        0,
-        SmartSpendSpacing.screen,
-        SmartSpendSpacing.lg,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(widget.question, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: SmartSpendSpacing.lg),
-          TextField(
-            controller: _answer,
-            autofocus: true,
-            maxLength: 200,
-            textInputAction: TextInputAction.send,
-            onSubmitted: (value) => Navigator.pop(context, value),
-            decoration: InputDecoration(labelText: widget.answerLabel),
-          ),
-          const SizedBox(height: SmartSpendSpacing.sm),
-          SmartSpendButton(
-            label: widget.sendLabel,
-            onPressed: () => Navigator.pop(context, _answer.text),
-          ),
-          SmartSpendButton(
-            label: widget.laterLabel,
-            variant: ButtonVariant.quiet,
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
       ),
     );
   }

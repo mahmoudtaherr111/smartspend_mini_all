@@ -106,7 +106,9 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
    `docs/guides/writing-app-messages.md`, with a retry. Never a code. (unenforced)
 5. **Recording feels instant.** A recorded expense appears at once, marked as waiting until the server confirms.
    What can be undone gets an undo instead of a confirmation (`showSmartSpendNotice` with `onUndo`, which stays until
-   it is used); only what cannot be undone asks first. (`mobile/packages/smartspend_ui/test/components_test.dart`)
+   it is used); only what cannot be undone asks first. A sentence shows on the record tab the moment it is sent, as
+   waiting, until the server has read it, with or without a network.
+   (`mobile/packages/smartspend_ui/test/components_test.dart`, `mobile/app/test/offline_test.dart`)
 6. **Fast on the phones people own:** the first screen within 2 seconds on a mid-range phone, or visible progress;
    frames within 16 ms at 60 Hz and 8 ms at 120 Hz, measured in profile mode on a low-end device. (Android core app
    quality; Flutter performance) (unenforced)

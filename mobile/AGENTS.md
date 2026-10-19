@@ -34,3 +34,8 @@ Why it exists and what is decided: `docs/decisions/0022-flutter-mobile-app.md`. 
     by `parseAmount`; a Latin name inside Arabic text goes through `inlineName`. A piece two screens need moves into
     `smartspend_ui` with its tests and an entry in `lib/gallery.dart`. (component behaviour, contrast and target
     sizes: `packages/smartspend_ui/test/`; using them in screens: unenforced)
+13. A sentence is recorded only through the outbox (`Outbox.submit` in
+    `app/lib/src/features/ledger/offline/outbox.dart`), never by calling `ai.parseExpense` from a screen, and every
+    save of it carries the outbox item's id as its `clientRequestId`, so a save repeated after a lost answer is stored
+    once. Signing out empties the outbox, and another account never sends the previous one's sentences.
+    (`app/test/offline_test.dart`)

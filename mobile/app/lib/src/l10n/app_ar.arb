@@ -159,7 +159,6 @@
   "undone": "اترجعت.",
   "undoFailed": "ماقدرناش نرجعها، امسحها من القايمة.",
   "nothingToSave": "مش لاقيين مبلغ في الجملة. اكتب المبلغ وجرّب تاني.",
-  "offlineKeepText": "مش قادرين نوصل للسيرفر. الجملة لسه مكتوبة، ابعتها تاني لما النت يرجع.",
   "reviewTitle": "راجع قبل ما نحفظ",
   "reviewSave": "احفظ",
   "reviewEdit": "عدّل الجملة",
@@ -170,5 +169,26 @@
   "transactionsTitle": "كل العمليات",
   "entryDeleted": "اتمسحت العملية.",
   "deleteFailed": "ماقدرناش نمسحها. جرّب تاني.",
-  "deleteAction": "امسح"
+  "deleteAction": "امسح",
+  "queuedOffline": "النت فاصل. حفظناها هنا وهنبعتها أول ما يرجع.",
+  "offlineBanner": "النت فاصل. اللي بتسجّله بيتحفظ هنا وهيتبعت لما يرجع.",
+  "offlineFull": "قايمة الأوفلاين مليانة ({limit, plural, =1{عملية واحدة} =2{عمليتين} few{{limit} عمليات} other{{limit} عملية}} في باقتك). وصّل النت عشان تتبعت، وبعدين سجّل تاني.",
+  "@offlineFull": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineTooShort": "الجملة قصيرة. اكتب صرفت في إيه وبكام.",
+  "offlineUnreadable": "مش فاهمين الجملة دي. اكتب صرفت في إيه وبكام.",
+  "offlineNoAmount": "مش لاقيين مبلغ في الجملة. اكتبه بالأرقام أو بالكلام (مثلاً: 50 جنيه، خمسين مواصلات).",
+  "outboxTitle": "لسه ماتسجّلتش",
+  "outboxQueued": "مستنية النت",
+  "outboxSending": "بتتبعت…",
+  "outboxNeedsReview": "محتاجة مراجعة منك",
+  "outboxNeedsAnswer": "محتاجة رد منك",
+  "outboxFailed": "ماتبعتتش. دوس عليها عشان تبعتها تاني.",
+  "outboxSendNow": "ابعتها دلوقتي",
+  "outboxDelete": "امسحها"
 }

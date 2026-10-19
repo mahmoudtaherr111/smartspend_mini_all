@@ -300,10 +300,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'مش لاقيين مبلغ في الجملة. اكتب المبلغ وجرّب تاني.';
 
   @override
-  String get offlineKeepText =>
-      'مش قادرين نوصل للسيرفر. الجملة لسه مكتوبة، ابعتها تاني لما النت يرجع.';
-
-  @override
   String get reviewTitle => 'راجع قبل ما نحفظ';
 
   @override
@@ -335,4 +331,59 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deleteAction => 'امسح';
+
+  @override
+  String get queuedOffline => 'النت فاصل. حفظناها هنا وهنبعتها أول ما يرجع.';
+
+  @override
+  String get offlineBanner =>
+      'النت فاصل. اللي بتسجّله بيتحفظ هنا وهيتبعت لما يرجع.';
+
+  @override
+  String offlineFull(int limit) {
+    String _temp0 = intl.Intl.pluralLogic(
+      limit,
+      locale: localeName,
+      other: '$limit عملية',
+      few: '$limit عمليات',
+      two: 'عمليتين',
+      one: 'عملية واحدة',
+    );
+    return 'قايمة الأوفلاين مليانة ($_temp0 في باقتك). وصّل النت عشان تتبعت، وبعدين سجّل تاني.';
+  }
+
+  @override
+  String get offlineTooShort => 'الجملة قصيرة. اكتب صرفت في إيه وبكام.';
+
+  @override
+  String get offlineUnreadable =>
+      'مش فاهمين الجملة دي. اكتب صرفت في إيه وبكام.';
+
+  @override
+  String get offlineNoAmount =>
+      'مش لاقيين مبلغ في الجملة. اكتبه بالأرقام أو بالكلام (مثلاً: 50 جنيه، خمسين مواصلات).';
+
+  @override
+  String get outboxTitle => 'لسه ماتسجّلتش';
+
+  @override
+  String get outboxQueued => 'مستنية النت';
+
+  @override
+  String get outboxSending => 'بتتبعت…';
+
+  @override
+  String get outboxNeedsReview => 'محتاجة مراجعة منك';
+
+  @override
+  String get outboxNeedsAnswer => 'محتاجة رد منك';
+
+  @override
+  String get outboxFailed => 'ماتبعتتش. دوس عليها عشان تبعتها تاني.';
+
+  @override
+  String get outboxSendNow => 'ابعتها دلوقتي';
+
+  @override
+  String get outboxDelete => 'امسحها';
 }

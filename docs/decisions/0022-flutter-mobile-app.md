@@ -106,8 +106,12 @@ What the code already gives a native client:
 3. The ledger (first part built): the record tab with the month's totals from `expense.getMonthSummary` and the
    latest transactions by day; recording by text through `ai.parseExpense`, saved at once, after a review sheet or
    after the server's question (`expense.answerClarification`), each save with a request id and an undo; the full
-   list a page at a time, with swipe-to-delete that waits for its undo to expire. Left: the offline store and
-   outbox, with recording that shows before the server confirms, and the app lock.
+   list a page at a time, with swipe-to-delete that waits for its undo to expire. Offline (built): every sentence
+   goes through an outbox kept on the phone, shown at once, and read and saved in order when the network returns,
+   with the web's offline rules (the sentence check and the plan's `offline.limit` from `ai.getUserLimits`); the last
+   month totals and transactions seen stay on screen offline. The outbox and that copy are one JSON file per
+   account in the app's private folder, as the web keeps its queue in one JSON list; SQLite (point 6) comes when
+   the app keeps the whole ledger offline. Left: the app lock.
 4. Android capture: the listener, queue and upload in `bank_capture`, the setup flow; retire `android-app/`.
 5. iOS capture and extras: the App Intent and automation guide, the share extension, the widget; voice calls on
    both platforms over `/api/voice/v2`.
