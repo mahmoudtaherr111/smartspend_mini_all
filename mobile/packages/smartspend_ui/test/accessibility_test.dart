@@ -2,7 +2,9 @@
 // accessibility guidelines: targets of at least 48 by 48 (Android) and 44 by 44 (iOS), a label on every target,
 // and readable text contrast.
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smartspend_ui/gallery.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 const _destinations = [
@@ -92,6 +94,30 @@ void main() {
         );
         await tester.tap(find.text('افتح'));
         await tester.pumpAndSettle();
+
+        await _meetsAllGuidelines(tester);
+        semantics.dispose();
+      },
+    );
+
+    testWidgets(
+      'every component in the gallery meets the guidelines in the $name theme',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        tester.view.physicalSize = const Size(1080, 6000);
+        tester.view.devicePixelRatio = 2.5;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            locale: const Locale('ar'),
+            supportedLocales: const [Locale('ar'), Locale('en')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: const ComponentGallery(),
+          ),
+        );
+        // Skeletons and the busy button keep moving, so the page never settles; let it draw.
+        await tester.pump(const Duration(milliseconds: 300));
 
         await _meetsAllGuidelines(tester);
         semantics.dispose();

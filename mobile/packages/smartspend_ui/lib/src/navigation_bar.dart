@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
+import 'haptics.dart';
 
 /// One tab of [SmartSpendNavigationBar].
 final class SmartSpendDestination {
@@ -33,7 +34,7 @@ class SmartSpendNavigationBar extends StatelessWidget {
     return NavigationBar(
       selectedIndex: selectedIndex,
       onDestinationSelected: (index) {
-        if (index != selectedIndex) HapticFeedback.selectionClick();
+        if (index != selectedIndex) SmartSpendHaptics.selection();
         onSelected(index);
       },
       destinations: [
