@@ -42,6 +42,16 @@ views {
     include *
   }
 
+  view router_capture of smartspend.api.trpc.capture {
+    title 'tRPC router · capture'
+    include *
+  }
+
+  view router_captureAdmin of smartspend.api.trpc.captureAdmin {
+    title 'tRPC router · captureAdmin'
+    include *
+  }
+
   view router_chat of smartspend.api.trpc.chat {
     title 'tRPC router · chat'
     include *
@@ -179,6 +189,11 @@ views {
 
   view module_billing of smartspend.api.modules.billing {
     title 'Module · Billing'
+    include *
+  }
+
+  view module_capture_catalog of smartspend.api.modules.capture-catalog {
+    title 'Module · Capture catalog'
     include *
   }
 

@@ -139,6 +139,14 @@ model {
         storageClass 'A'
       }
     }
+    capture_sources = table 'capture_sources' {
+      #classA
+      description '16 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'captureSources'
+        storageClass 'A'
+      }
+    }
     cashflow_settlements = table 'cashflow_settlements' {
       #classC #dualOwner
       description '9 columns, 3 indexes, storage class C.'
@@ -361,6 +369,14 @@ model {
       metadata {
         export 'sessions'
         storageClass 'D'
+      }
+    }
+    subscription_catalog = table 'subscription_catalog' {
+      #classA
+      description '14 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'subscriptionCatalog'
+        storageClass 'A'
       }
     }
     support_tickets = table 'support_tickets' {

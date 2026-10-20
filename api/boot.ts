@@ -44,6 +44,7 @@ import {
   checkAndTriggerSmartActivityNotifications,
 } from "./notification-engine";
 import { withScheduledJobLock } from "./services/scheduler-lock";
+import { syncCaptureSeed } from "./lib/capture/catalog";
 import { runMonthlyReportJob } from "./jobs/monthly-report-job";
 import { runMonthlyBehaviorJob } from "./jobs/monthly-behavior-job";
 import { runRollupReconciliationJob } from "./jobs/rollup-reconciliation-job";
@@ -90,6 +91,10 @@ if (cronsEnabled) {
   }).catch((err) =>
     console.error("[Boot] Failed to seed notification templates:", err),
   );
+  // The banks, wallets and subscriptions the capture catalog ships with; rows an admin edited stay as they are.
+  void withScheduledJobLock("seed-capture-catalog", async () => {
+    await syncCaptureSeed();
+  }).catch((err) => createLogger("boot").error({ err, event: "capture.seed.failed" }, "Capture catalog seed failed"));
 } else {
   console.info(
     "[Boot] Background jobs disabled; set ENABLE_CRONS=true on one or more replicas.",

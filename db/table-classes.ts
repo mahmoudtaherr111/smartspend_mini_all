@@ -80,6 +80,8 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   notification_templates: "A",
   ai_providers: "A",
   ai_models: "A",
+  capture_sources: "A",
+  subscription_catalog: "A",
 
   // Class B: Core Ledger (Forever, Never auto-deleted)
   expenses: "B",

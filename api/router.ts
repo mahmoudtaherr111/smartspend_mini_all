@@ -23,6 +23,8 @@ import { businessRouter } from "./business-router";
 import { budgetRouter } from "./budget-router";
 import { voiceRouter } from "./voice-router";
 import { coachRouter } from "./coach-router";
+import { captureRouter } from "./capture-router";
+import { captureAdminRouter } from "./capture-admin-router";
 
 export const appRouter = router({
   auth: authRouter,
@@ -49,6 +51,8 @@ export const appRouter = router({
   business: businessRouter,
   voice: voiceRouter,
   coach: coachRouter,
+  capture: captureRouter,
+  captureAdmin: captureAdminRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -62,7 +62,7 @@ model {
     api-routers = module 'tRPC routers and HTTP sub-apps' {
       description 'One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts.'
       metadata {
-        files '25'
+        files '27'
         paths 'api/*-router.ts'
       }
     }
@@ -85,6 +85,13 @@ model {
       metadata {
         files '3'
         paths 'api/lib/paymob.ts, api/lib/subscription-service.ts, api/lib/plan-catalog.ts'
+      }
+    }
+    capture-catalog = module 'Capture catalog' {
+      description 'The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name.'
+      metadata {
+        files '3'
+        paths 'api/lib/capture/**'
       }
     }
     classification = module 'Expense classification pipeline' {
@@ -205,7 +212,7 @@ model {
     contracts = module 'Shared contracts' {
       description 'Types, limits and billing plans shared by the web app and the API.'
       metadata {
-        files '13'
+        files '14'
         paths 'contracts/**'
       }
     }
@@ -222,7 +229,7 @@ model {
     web-admin = module 'Admin UI' {
       description 'Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.'
       metadata {
-        files '23'
+        files '24'
         paths 'src/components/admin/**'
       }
     }

@@ -43,6 +43,7 @@ flowchart LR
     tbl_api_key_errors[("api_key_errors")]
     tbl_auth_challenges[("auth_challenges")]
     tbl_business_categories[("business_categories")]
+    tbl_capture_sources[("capture_sources")]
     tbl_cashflow_settlements[("cashflow_settlements")]
     tbl_chat_conversations[("chat_conversations")]
     tbl_chat_messages[("chat_messages")]
@@ -69,6 +70,7 @@ flowchart LR
     tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_seo_pages[("seo_pages")]
     tbl_sessions[("sessions")]
+    tbl_subscription_catalog[("subscription_catalog")]
     tbl_support_tickets[("support_tickets")]
     tbl_system_settings[("system_settings")]
     tbl_user_analytics[("user_analytics")]
@@ -113,6 +115,7 @@ flowchart LR
   mod_api_core --> sys_accounts
   mod_api_core --> sys_ai_center
   mod_api_core --> sys_ai_platform
+  mod_api_core --> sys_bank_messages
   mod_api_core --> sys_billing
   mod_api_core --> sys_money
   mod_api_core --> sys_notifications
@@ -155,6 +158,7 @@ flowchart LR
   mod_api_routers ==> tbl_ai_summaries
   mod_api_routers ==> tbl_auth_challenges
   mod_api_routers ==> tbl_business_categories
+  mod_api_routers ==> tbl_capture_sources
   mod_api_routers ==> tbl_chat_conversations
   mod_api_routers ==> tbl_chat_messages
   mod_api_routers ==> tbl_classification_logs
@@ -174,6 +178,7 @@ flowchart LR
   mod_api_routers ==> tbl_referrals
   mod_api_routers ==> tbl_scheduled_cashflows
   mod_api_routers ==> tbl_seo_pages
+  mod_api_routers ==> tbl_subscription_catalog
   mod_api_routers ==> tbl_support_tickets
   mod_api_routers ==> tbl_system_settings
   mod_api_routers ==> tbl_user_analytics
@@ -240,8 +245,8 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
-| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 25 |
-| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 13 |
+| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 27 |
+| `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 14 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
 | `platform` — Platform services | Environment validation, Redis client (cache, shared state for one-time codes, generation counters with replay of bumps Redis missed) and cache keys, the generation watcher that tells a per-process copy of shared data to reload, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 11 |
@@ -281,6 +286,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `api_key_errors` | E | `jobs`, `platform` | `platform` |
 | `auth_challenges` | D | `api-core`, `api-routers`, `jobs` | `api-routers` |
 | `business_categories` | A | `api-routers` | `api-routers` |
+| `capture_sources` | A | `api-routers` | `api-routers` |
 | `cashflow_settlements` | C | — | `api-routers` |
 | `chat_conversations` | G | `api-routers` | `api-routers` |
 | `chat_messages` | G | `api-routers`, `jobs` | `api-routers` |
@@ -307,6 +313,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `scheduled_cashflows` | C | `api-routers` | `api-routers` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
 | `sessions` | D | — | `api-routers` |
+| `subscription_catalog` | A | `api-routers` | `api-routers` |
 | `support_tickets` | A | `api-routers` | `api-routers` |
 | `system_settings` | A | `api-routers` | `api-routers`, `platform` |
 | `user_analytics` | E | `api-routers`, `jobs` | `api-routers` |
@@ -391,7 +398,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>43 files and declarations</summary>
+<details><summary>44 files and declarations</summary>
 
 - `api/boot.ts#ALL /api/trpc/*`
 - `api/boot.ts#GET /health`
@@ -421,6 +428,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/storage/types.ts`
 - `contracts/account-deletion.ts`
 - `contracts/ai-models.ts`
+- `contracts/capture.ts`
 - `contracts/categories.ts`
 - `contracts/constants.ts`
 - `contracts/errors.ts`

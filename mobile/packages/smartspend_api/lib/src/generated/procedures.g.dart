@@ -16,6 +16,7 @@ abstract final class Procedures {
   static const auth = AuthProcedures._();
   static const budget = BudgetProcedures._();
   static const business = BusinessProcedures._();
+  static const capture = CaptureProcedures._();
   static const chat = ChatProcedures._();
   static const coach = CoachProcedures._();
   static const expense = ExpenseProcedures._();
@@ -101,6 +102,13 @@ final class BusinessProcedures {
   ApiQuery get types => const ApiQuery('business.types', builder: 'businessProcedure');
   ApiMutation get update => const ApiMutation('business.update', builder: 'businessProcedure', hasInput: true);
   ApiMutation get updateCategory => const ApiMutation('business.updateCategory', builder: 'businessProcedure', hasInput: true);
+}
+
+/// The `capture` router, `api/capture-router.ts`.
+final class CaptureProcedures {
+  const CaptureProcedures._();
+
+  ApiQuery get sources => const ApiQuery('capture.sources', builder: 'authedProcedure');
 }
 
 /// The `chat` router, `api/chat-router.ts`.

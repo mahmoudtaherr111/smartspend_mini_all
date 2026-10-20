@@ -74,7 +74,7 @@ import { ClarificationsTab } from "@/components/admin/ClarificationsTab";
 import { AdminWhatsAppTab } from "@/components/admin/AdminWhatsAppTab";
 import { AdminAdsTab } from "@/components/admin/AdminAdsTab";
 import { AdminRulesTab } from "@/components/admin/AdminRulesTab";
-import { AdminRawSmsTab } from "@/components/admin/AdminRawSmsTab";
+import { AdminCaptureTab } from "@/components/admin/capture/AdminCaptureTab";
 import { AdminAuditTab } from "@/components/admin/AdminAuditTab";
 import { AdminUserMobileCard } from "@/components/admin/AdminUserMobileCard";
 import { Label } from "@/components/ui/label";
@@ -162,8 +162,8 @@ const ADMIN_SECTIONS = [
   },
   {
     value: "raw-sms",
-    label: "سجل SMS",
-    description: "الرسائل الخام والمعالجة",
+    label: "رسايل البنوك",
+    description: "البنوك والمحافظ والاشتراكات والسجل",
     icon: FileText,
     activeClass:
       "data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700 dark:data-[state=active]:bg-violet-900/30",
@@ -1157,7 +1157,7 @@ export default function Admin() {
                 </TabsContent>
 
                 <TabsContent value="raw-sms">
-                  <AdminRawSmsTab />
+                  <AdminCaptureTab />
                 </TabsContent>
 
                 <TabsContent value="audit">

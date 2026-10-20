@@ -424,6 +424,14 @@ export const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   "فوايد القرض": { category: "أقساط وفوايد", subCategory: "فوايد قروض", confidence: 97 },
   "فايدة القرض": { category: "أقساط وفوايد", subCategory: "فوايد قروض", confidence: 97 },
   "فوائد قرض": { category: "أقساط وفوايد", subCategory: "فوايد قروض", confidence: 97 },
+  // What the bank itself charges (decision 0024).
+  "رسوم بنكية": { category: "أقساط وفوايد", subCategory: "رسوم بنكية", confidence: 95 },
+  "مصاريف بنكية": { category: "أقساط وفوايد", subCategory: "رسوم بنكية", confidence: 95 },
+  "رسوم البنك": { category: "أقساط وفوايد", subCategory: "رسوم بنكية", confidence: 94 },
+  "مصاريف البنك": { category: "أقساط وفوايد", subCategory: "رسوم بنكية", confidence: 94 },
+  "عمولة البنك": { category: "أقساط وفوايد", subCategory: "رسوم بنكية", confidence: 94 },
+  "رسوم الكارت": { category: "أقساط وفوايد", subCategory: "رسوم بنكية", confidence: 93 },
+  "رسوم انستاباي": { category: "أقساط وفوايد", subCategory: "رسوم بنكية", confidence: 95 },
 
   // ─── Income & Freelance (مرتب / عمل حر / عوائد استثمار) ───
   "قبضت المرتب": {

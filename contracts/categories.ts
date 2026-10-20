@@ -261,6 +261,8 @@ export const CATEGORIES: MainCategory[] = [
     subcategories: [
       { id: "installment", name: "Installments", name_ar: "أقساط" },
       { id: "loan_interest", name: "Loan Interest", name_ar: "فوايد قروض" },
+      // What the bank charges: card and transfer fees, an international purchase fee (decision 0024).
+      { id: "bank_fees", name: "Bank Fees", name_ar: "رسوم بنكية" },
       { id: "general_installments", name: "General", name_ar: "عام" },
     ],
   },

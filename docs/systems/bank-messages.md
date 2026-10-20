@@ -23,6 +23,7 @@ the rule parser and the model that read them, and the setup screens.
 | Filing | `api/services/sms-ledger.ts` | The category of a parsed message, the ledger write, and the suggestions kept over the monthly limit |
 | Suggestions | `profile.getSmsSuggestions`, `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion` in `api/profile-router.ts`; `src/components/bank-sync/SmsSuggestionsCard.tsx#SmsSuggestionsCard` on the Home record tab | Messages kept over the monthly limit, which the user saves or dismisses |
 | Token and log procedures | `profile.getWebhookToken`, `profile.generateWebhookToken`, `profile.getSmsLogs`, `profile.generateMagicCode` in `api/profile-router.ts` | What the setup screens call |
+| Capture catalog | `api/lib/capture/catalog.ts`, tables `capture_sources` and `subscription_catalog`; `capture.sources` in `api/capture-router.ts`; `captureAdmin.*` in `api/capture-admin-router.ts`; the console's رسايل البنوك section (`src/components/admin/capture/AdminCaptureTab.tsx#AdminCaptureTab`) | Which banks, wallets and apps are read, and which subscriptions card charges are recognised as ([decision 0024](../decisions/0024-capture-catalog.md)) |
 
 ## One message, step by step
 
@@ -133,6 +134,31 @@ A message past the plan's limit is not lost (docs/decisions/0009-bank-messages-o
   are bumped and budget alerts checked, as after an automatic save. A confirmed message does not count toward the
   limit.
 
+## Who is read: the capture catalog
+[Decision 0024](../decisions/0024-capture-catalog.md). Two shared tables with no user data:
+- `capture_sources`: every bank, wallet, payment network, fintech, telecom operator and messaging app whose
+  notifications are read: Arabic and English names, countries, Android packages, SMS sender ids, the names messages
+  use for it, notes, an order and a status. A package is listed only once Google Play shows it under the company's
+  own developer account, a sender id only once a real message shows it; the seed has no sender ids yet. One app
+  belongs to one source, and a bank's wallet app belongs to the bank.
+- `subscription_catalog`: the subscriptions recognised in a card charge's merchant name, by words compared without
+  case and never inside a longer word, the longest winning (`api/lib/capture/catalog.ts#subscriptionForMerchant`), with
+  a spending category and subcategory from the taxonomy and a renewal cycle. A store (Google Play, Apple) bills for
+  other developers.
+
+The seed (`api/lib/capture/seed-sources.ts`, `api/lib/capture/seed-subscriptions.ts`) is written at boot by the
+`seed-capture-catalog` job, under a lock, on the servers that run background jobs, and by the console's «حمّل البيانات
+الأصلية» button (`captureAdmin.syncSeed`): a missing slug is inserted and a seeded row nobody edited is updated. An
+admin's edit (`captureAdmin.saveSource`, `setSourceStatus`, `saveSubscription`, `setSubscriptionStatus`) marks the
+row, and the seed never overwrites it; `captureAdmin.restoreSeed` gives a seeded row back as shipped. A save refuses a
+slug already used and an Android package another source owns.
+
+Each server process keeps one copy (`getCaptureCatalog`), reloaded every five minutes or within ten seconds of an
+admin change on any process (the `capturecataloggen` generation). `capture.sources` gives a signed-in phone the active
+sources (slug, kind, names, packages, sender ids) and a `version`, so a phone keeps its copy until the catalog changes.
+Nothing reads the catalog yet when a message arrives: the rules parser still detects the provider with its own
+patterns (known issue 10).
+
 ## Setting up a phone
 **Android**
 1. `AndroidSetupFlow` downloads `/downloads/smartspend-sync.apk`.
@@ -171,7 +197,8 @@ statistics per provider) and `GET /api/sms/unparsed`.
 - `webhook_tokens`: one token per user, `sms_` followed by random hex.
 - `raw_sms_events`: every message received, with its status (`pending`, `processed`, `ignored`, `suggested`,
   `confirmed`, `dismissed`) and parse metadata; a suggestion is in `metadata.suggestion`.
-- Account deletion removes both (`api/services/user-purge-service.ts`). An admin procedure in `api/admin-router.ts`
+- `capture_sources` and `subscription_catalog`: the capture catalog above, shared by all users.
+- Account deletion removes `webhook_tokens` and `raw_sms_events` (`api/services/user-purge-service.ts`). An admin procedure in `api/admin-router.ts`
   lists raw messages across users.
 
 ## Where to change what
@@ -189,6 +216,8 @@ statistics per provider) and `GET /api/sms/unparsed`.
 | What happens over the limit, and saving or dismissing a suggestion | the ingest route, `api/services/sms-ledger.ts`, the suggestion procedures, `src/components/bank-sync/SmsSuggestionsCard.tsx` | `api/services/sms-ledger.test.ts` |
 | The setup screens | `src/components/bank-sync/`, `src/pages/BankSyncPage.tsx` | |
 | Building and publishing the APK | `.github/workflows/build-apk.yml`, `android-app/` | |
+| The banks, wallets, apps and subscriptions shipped with the app | `api/lib/capture/seed-sources.ts`, `api/lib/capture/seed-subscriptions.ts` (confirm every package on Google Play and every sender id from a real message) | `api/lib/capture/catalog.test.ts` |
+| Them in production, without a deploy | the console's رسايل البنوك section | `src/components/admin/capture/AdminCaptureTab.test.tsx` |
 
 ## Rules for changes here
 1. `/api/sms/ingest` is public and the webhook token is its only credential: every read and write stays scoped to
@@ -215,8 +244,10 @@ else, the server key without one, a redacted prompt, one message per call, the s
 reply checks) and the category mapping. `api/sms-router.ingest.test.ts` checks that a skipped model loses no message
 and that a declined reading is not saved from the rules. `api/services/sms-ledger.test.ts` checks the merchant
 categories, the suggestions and a confirmation saved once. `api/sms-router.pairing.test.ts` exchanges pairing codes
-once and retires an older code, and `api/lib/sms-rule-parser.sender.test.ts` reads the provider from the sender. The
-rule templates are not tested one by one.
+once and retires an older code, and `api/lib/sms-rule-parser.sender.test.ts` reads the provider from the sender.
+`api/lib/capture/catalog.test.ts` checks the seed (unique slugs, one owner per app, every licensed bank, no guessed
+sender id), the lookups by app, sender and merchant name, the admin's input rules and which rows the seed may write.
+The rule templates are not tested one by one.
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -244,6 +275,9 @@ Checked against the code; each one names where it lives.
    `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account
    digits and balances, is stored as received.
 9. **Debt.** `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
+10. **Gap.** The capture catalog is not read when a message arrives: `api/lib/sms-rule-parser.ts#detectProvider` keeps its
+   own patterns, and the Android companion its own package list, five of whose twelve finance app ids are not the apps'
+   Google Play ids ([decision 0024](../decisions/0024-capture-catalog.md)).
 
 ## Related systems
 - The Flutter app in `mobile/` (see step 1): not a system page; its rules are in `mobile/AGENTS.md`.

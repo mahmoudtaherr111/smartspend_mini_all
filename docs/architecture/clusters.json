@@ -223,6 +223,14 @@
       ]
     },
     {
+      "id": "capture-catalog",
+      "title": "Capture catalog",
+      "description": "The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name.",
+      "paths": [
+        "api/lib/capture/**"
+      ]
+    },
+    {
       "id": "receipt-parsing",
       "title": "Receipt parsing",
       "description": "Receipt parsing with a vision model.",

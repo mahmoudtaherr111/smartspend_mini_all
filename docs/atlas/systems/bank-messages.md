@@ -14,21 +14,28 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 flowchart LR
   subgraph g_screens["Screens"]
     page_BankSyncPage["BankSyncPage screen"]
+    screens_admin["Screens of Admin console, support and growth tools"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
     http__api_sms["HTTP /api/sms/… · 10 routes"]
+    job_seed_capture_catalog["Job · seed-capture-catalog"]
+    router_captureAdmin["captureAdmin API · 7 procedures"]
+    router_capture["capture API · 1 procedure"]
     router_profile["profile API · 7 procedures"]
   end
   subgraph g_modules["Code modules"]
+    mod_capture_catalog["Capture catalog"]
     mod_ingestion_parsers["Ingestion parsers"]
     mod_web_bank_sync["Bank sync UI"]
   end
   subgraph g_tables["MySQL tables"]
+    tbl_capture_sources[("capture_sources")]
     tbl_expenses[("expenses")]
     tbl_local_users[("local_users")]
     tbl_raw_sms_events[("raw_sms_events")]
+    tbl_subscription_catalog[("subscription_catalog")]
     tbl_users[("users")]
     tbl_webhook_tokens[("webhook_tokens")]
   end
@@ -50,6 +57,10 @@ flowchart LR
   http__api_sms -.-> tbl_users
   http__api_sms ==> tbl_raw_sms_events
   http__api_sms ==> tbl_webhook_tokens
+  job_seed_capture_catalog --> mod_capture_catalog
+  mod_capture_catalog --> sys_platform
+  mod_capture_catalog ==> tbl_capture_sources
+  mod_capture_catalog ==> tbl_subscription_catalog
   mod_ingestion_parsers --> ext_gemini
   mod_ingestion_parsers --> sys_accounts
   mod_ingestion_parsers --> sys_ai_platform
@@ -60,6 +71,11 @@ flowchart LR
   mod_ingestion_parsers ==> tbl_raw_sms_events
   mod_web_bank_sync --> sys_web_app
   page_BankSyncPage --> router_profile
+  router_capture --> mod_capture_catalog
+  router_captureAdmin --> mod_capture_catalog
+  router_captureAdmin --> sys_platform
+  router_captureAdmin ==> tbl_capture_sources
+  router_captureAdmin ==> tbl_subscription_catalog
   router_profile --> mod_ingestion_parsers
   router_profile --> sys_ai_center
   router_profile --> sys_expense_capture
@@ -67,7 +83,9 @@ flowchart LR
   router_profile --> sys_platform
   router_profile -.-> tbl_raw_sms_events
   router_profile ==> tbl_webhook_tokens
+  screens_admin --> router_captureAdmin
   screens_money --> router_profile
+  screens_web_app --> router_captureAdmin
   screens_web_app --> router_profile
 ```
 
@@ -75,7 +93,7 @@ flowchart LR
 
 ### a bank message forwarded from a phone
 
-The Android companion or an iOS Shortcut posts message text with the user’s webhook token. The route resolves the token, refuses a duplicate, stores the raw message and parses it with the rule parser. When the rules are not sure, a model may read it (decision 0024): only if the admin’s switch is on, the plan budget and the daily USD cap allow it, on text with cards, accounts, phones, references and names removed, through the models the admin assigned to bank messages (the server’s Gemini key until then), one message of one user per call, with the reply checked against a versioned contract. A skipped model or a discarded reply leaves the rules’ reading, or the raw message kept with its reason. Within the plan’s monthly limit it files the message (a known merchant takes its category) and writes the transaction, its rollup delta and the raw message status in one database transaction. Past the limit the rules alone read it and the raw message is kept as a suggestion the user confirms from the home screen.
+The Android companion or an iOS Shortcut posts message text with the user’s webhook token. The route resolves the token, refuses a duplicate, stores the raw message and parses it with the rule parser. When the rules are not sure, a model may read it (decision 0025): only if the admin’s switch is on, the plan budget and the daily USD cap allow it, on text with cards, accounts, phones, references and names removed, through the models the admin assigned to bank messages (the server’s Gemini key until then), one message of one user per call, with the reply checked against a versioned contract. A skipped model or a discarded reply leaves the rules’ reading, or the raw message kept with its reason. Within the plan’s monthly limit it files the message (a known merchant takes its category) and writes the transaction, its rollup delta and the raw message status in one database transaction. Past the limit the rules alone read it and the raw message is kept as a suggestion the user confirms from the home screen.
 
 ```mermaid
 sequenceDiagram
@@ -113,6 +131,7 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 
 | Module | What it does | Files |
 | --- | --- | --- |
+| `capture-catalog` — Capture catalog | The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name. | 3 |
 | `ingestion-parsers` — Ingestion parsers | Bank SMS parsing (rules first, then a model through the admin's sms routes behind a switch, the plan budget and a daily USD cap, on redacted text, with a versioned reply contract checked before use), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut. | 5 |
 | `web-bank-sync` — Bank sync UI | The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel. | 5 |
 
@@ -120,6 +139,14 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
+| `capture.sources` | query | `authedProcedure` | — | — | — |
+| `captureAdmin.catalog` | query | `adminProcedure` | `capture_sources`, `subscription_catalog` | — | `Admin`, `More` |
+| `captureAdmin.restoreSeed` | mutation | `adminProcedure` | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` | `Admin`, `More` |
+| `captureAdmin.saveSource` | mutation | `adminProcedure` | `capture_sources` | `capture_sources` | `Admin`, `More` |
+| `captureAdmin.saveSubscription` | mutation | `adminProcedure` | `subscription_catalog` | `subscription_catalog` | `Admin`, `More` |
+| `captureAdmin.setSourceStatus` | mutation | `adminProcedure` | `capture_sources` | `capture_sources` | `Admin`, `More` |
+| `captureAdmin.setSubscriptionStatus` | mutation | `adminProcedure` | `subscription_catalog` | `subscription_catalog` | `Admin`, `More` |
+| `captureAdmin.syncSeed` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `profile.confirmSmsSuggestion` | mutation | `authedProcedure` | — | — | `Home` |
 | `profile.dismissSmsSuggestion` | mutation | `authedProcedure` | — | — | `Home` |
 | `profile.generateMagicCode` | mutation | `authedProcedure` | `webhook_tokens` | — | — |
@@ -142,6 +169,7 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 | `GET /api/sms/token` | http | `api/sms-router.ts` |
 | `POST /api/sms/token/generate` | http | `api/sms-router.ts` |
 | `GET /api/sms/unparsed` | http | `api/sms-router.ts` |
+| `seed-capture-catalog` | job, once at boot | `api/boot.ts` |
 
 ## Data
 
@@ -149,9 +177,11 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
+| `capture_sources` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSource`, `captureAdmin.setSourceStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSource`, `captureAdmin.setSourceStatus` |
 | `expenses` | B | `ingestion-parsers` | — |
 | `local_users` | A | — | `POST /api/sms/ingest` |
 | `raw_sms_events` | E | `POST /api/sms/ingest`, `ingestion-parsers` | `GET /api/sms/logs`, `GET /api/sms/metrics`, `GET /api/sms/unparsed`, `POST /api/sms/ingest`, `ingestion-parsers`, `profile.getSmsLogs`, `profile.getSmsSuggestions`, `profile.getWebhookToken` |
+| `subscription_catalog` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` |
 | `users` | A | — | `POST /api/sms/ingest` |
 | `webhook_tokens` | D | `GET /api/sms/android-connect`, `POST /api/sms/token/generate`, `profile.generateWebhookToken` | `GET /api/sms/android-connect`, `GET /api/sms/shortcut-download`, `GET /api/sms/token`, `POST /api/sms/android-status`, `POST /api/sms/exchange`, `POST /api/sms/ingest`, `profile.generateMagicCode`, `profile.getWebhookToken` |
 
@@ -165,7 +195,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Admin console, support and growth tools](admin.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -177,13 +207,19 @@ Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [S
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>25 files and declarations</summary>
+<details><summary>31 files and declarations</summary>
 
 - `.github/workflows/build-apk.yml`
 - `android-app/app/build.gradle`
 - `android-app/app/src/main/AndroidManifest.xml`
 - `android-app/app/src/main/java/com/smartspend/sync/DeepLinkActivity.kt`
 - `android-app/app/src/main/java/com/smartspend/sync/SyncService.kt`
+- `api/boot.ts#job:seed-capture-catalog`
+- `api/capture-admin-router.ts`
+- `api/capture-router.ts`
+- `api/lib/capture/catalog.ts`
+- `api/lib/capture/seed-sources.ts`
+- `api/lib/capture/seed-subscriptions.ts`
 - `api/lib/shortcut-generator.ts`
 - `api/lib/sms-ai-contract.ts`
 - `api/lib/sms-ai-parser.ts`

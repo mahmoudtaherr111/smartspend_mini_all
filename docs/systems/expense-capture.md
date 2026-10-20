@@ -79,7 +79,7 @@ spends nothing.
 1. **Admissibility gate**: `api/lib/admissibility-gate.ts#checkAdmissibility` answers chatter, questions about
    spending and negated single-amount statements with a reply before anything costs money.
 2. **Result cache** (`api/lib/classification-cache.ts`, decision 0013): an in-process LRU whose key
-   (`classificationCacheKey`) holds everything the answer depends on: pipeline and calibration versions, user, plan,
+   (`classificationCacheKey`) holds everything the answer depends on: pipeline, calibration and taxonomy versions, user, plan,
    business scope, model, thresholds, normalized text, and a hash of the user's dictionary and known people, profile
    hints, business categories, settings, correction rules (loaded here, with the key, and reused below), a
    fingerprint of muscle memory (`userMemoryFingerprint`), the clarification switch and the month's totals in 10%
@@ -207,7 +207,8 @@ After a layer answers, negated clauses are dropped, and the money movements whos
 (الجمعية, سلفة, رجعلي, "اللي عليا") become transfers through
 `api/lib/direction-governed-taxonomy.ts#resolveGovernedTaxonomy`: تحويل/جمعية or تحويل/دين/سلفة, with the direction
 the verb gave (`direction`: `incoming` or `outgoing`). A bank loan's installment or interest paid ("دفعت قسط القرض",
-"دفعت فوائد القرض") is not a loan moving but spending under أقساط وفوايد. Profile
+"دفعت فوائد القرض") is not a loan moving but spending under أقساط وفوايد, and so is what the bank itself charges
+("رسوم بنكية", "عمولة البنك", "رسوم انستاباي"), under its own subcategory رسوم بنكية (decision 0024). Profile
 hints apply last (children lead to education, or to أطفال/حضانة for a nursery; running the household to
 groceries).
 
