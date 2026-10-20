@@ -197,6 +197,11 @@ views {
     include *
   }
 
+  view module_capture_reader of smartspend.api.modules.capture-reader {
+    title 'Module · Message reader'
+    include *
+  }
+
   view module_classification of smartspend.api.modules.classification {
     title 'Module · Expense classification pipeline'
     include *

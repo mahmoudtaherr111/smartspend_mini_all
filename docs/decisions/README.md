@@ -32,3 +32,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0023](0023-mobile-app-lock.md) | The mobile app lock: a 6-digit PIN checked by a phone-held key, biometrics bound to the Keystore or Keychain |
 | [0024](0024-capture-catalog.md) | The capture catalog: banks, wallets and subscriptions are confirmed data the admin edits |
 | [0025](0025-bank-message-model-through-admin-gateway.md) | Bank-message model calls go through the admin gateway, redacted, budgeted, switchable and capped in USD |
+| [0026](0026-message-reader-before-the-model.md) | Bank and wallet messages are read by code first; the model reads only what the code is unsure of |

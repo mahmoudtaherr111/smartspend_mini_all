@@ -91,7 +91,14 @@ model {
       description 'The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name.'
       metadata {
         files '3'
-        paths 'api/lib/capture/**'
+        paths 'api/lib/capture/catalog.ts, api/lib/capture/seed-sources.ts, api/lib/capture/seed-subscriptions.ts'
+      }
+    }
+    capture-reader = module 'Message reader' {
+      description 'Layer one of capture, before any model: reads a bank, wallet or payment notification into what happened, which way, how much and in what currency, with which card and with whom, when, how sure it is and why (normalization with a position map, piece finders, an Arabic and English lexicon, sentences, money roles, kind and direction, the other side, the date), plus its benchmark corpus.'
+      metadata {
+        files '12'
+        paths 'api/lib/capture/reader/**'
       }
     }
     classification = module 'Expense classification pipeline' {
