@@ -84,17 +84,18 @@
         "src/components/admin/ai-center/tabs/AiTelemetryTab.tsx": "c90405d7e803",
         "src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx": "10ff32f1e785",
         "src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx": "88d1c8cbcd39",
+        "src/components/admin/capture/AdminCaptureTab.tsx": "7583b70cb1a8",
         "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
         "src/components/admin/settings/AdminPlansTab.tsx": "8df5329e00b2",
         "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
         "src/components/admin/settings/AdminVoiceCallSection.tsx": "ae339f527cf2",
-        "src/pages/Admin.tsx": "d0445cee1a99",
+        "src/pages/Admin.tsx": "194ff4a9efa3",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-10-19 9b9acea",
-      "arabic": "edb9c761879c",
-      "arabicChecked": "2026-10-19 9b9acea"
+      "checked": "2026-10-20 cfbc7f55",
+      "arabic": "00379e42d813",
+      "arabicChecked": "2026-10-20 cfbc7f55"
     },
     "ai-center": {
       "files": {
@@ -188,6 +189,12 @@
         "android-app/app/src/main/AndroidManifest.xml": "87c8ff2d8f58",
         "android-app/app/src/main/java/com/smartspend/sync/DeepLinkActivity.kt": "d0cd83e77b4d",
         "android-app/app/src/main/java/com/smartspend/sync/SyncService.kt": "3f742c67f26e",
+        "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
+        "api/capture-admin-router.ts": "95a0417753d7",
+        "api/capture-router.ts": "75c1014b1c27",
+        "api/lib/capture/catalog.ts": "dd7c3d61d374",
+        "api/lib/capture/seed-sources.ts": "693b8813dd6c",
+        "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
         "api/lib/shortcut-generator.ts": "fbf02d8e0f5d",
         "api/lib/sms-ai-parser.ts": "1a27efcb4291",
         "api/lib/sms-rule-parser.ts": "4e68191237e2",
@@ -208,9 +215,9 @@
         "src/components/settings/SmsWebhookSettings.tsx": "c540d4df52db",
         "src/pages/BankSyncPage.tsx": "b6052297414a"
       },
-      "checked": "2026-10-18 59352bb",
-      "arabic": "8b44dcbeed90",
-      "arabicChecked": "2026-10-18 59352bb"
+      "checked": "2026-10-20 cfbc7f55",
+      "arabic": "c7a50e8c9eac",
+      "arabicChecked": "2026-10-20 cfbc7f55"
     },
     "billing": {
       "files": {
@@ -253,12 +260,12 @@
         "api/lib/arabic-number-parser.ts": "bb24f4869e05",
         "api/lib/arabic-token-match.ts": "aee089e11d1e",
         "api/lib/benchmark-taxonomy-assert.ts": "ed889341849d",
-        "api/lib/category-registry.ts": "0dcac34f44a1",
+        "api/lib/category-registry.ts": "df1f56402d4e",
         "api/lib/classification-cache.ts": "cb360106c3ed",
         "api/lib/classification-decision.ts": "edaa6fd51c1c",
         "api/lib/classification-evidence.ts": "6d6b48863bd1",
         "api/lib/classification-merge.ts": "d5c6e33cc406",
-        "api/lib/classification-prompt.ts": "26bfe0fd3958",
+        "api/lib/classification-prompt.ts": "61bbc5d67001",
         "api/lib/classifier-contract.ts": "a95889de61d2",
         "api/lib/classify-text.ts": "a8c5ef962442",
         "api/lib/clause-roles.ts": "ce48e7d9285c",
@@ -277,7 +284,7 @@
         "api/lib/lexicon/index.ts": "8613c41d8315",
         "api/lib/lexicon/merchant-catalog.ts": "53a047c8ce7c",
         "api/lib/lexicon/merchants.ts": "07362cf2a787",
-        "api/lib/lexicon/phrases.ts": "f1780894c874",
+        "api/lib/lexicon/phrases.ts": "e75ff8954644",
         "api/lib/lexicon/subcategory-words.ts": "7fe610a27403",
         "api/lib/muscle-memory.ts": "27dadacfd9ac",
         "api/lib/narrative-decomposer.ts": "4c186b732d76",
@@ -291,7 +298,7 @@
         "api/lib/refund-context.ts": "655d8c4d3225",
         "api/lib/relationship-normalizer.ts": "be8cc3a84254",
         "api/lib/rule-engine.ts": "2e45d76c66a7",
-        "api/lib/smart-pipeline.ts": "265fd1b2c349",
+        "api/lib/smart-pipeline.ts": "a17d9217e04a",
         "api/lib/stt-corrections.ts": "2becb68a8fbe",
         "api/lib/taxonomy-adapter.ts": "fd63a36d2f25",
         "api/lib/taxonomy-ssot.ts": "fb99f8118120",
@@ -304,9 +311,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-10-18 d3e45a3",
-      "arabic": "458682d3200a",
-      "arabicChecked": "2026-10-18 d3e45a3"
+      "checked": "2026-10-20 cfbc7f55",
+      "arabic": "46a52d71e244",
+      "arabicChecked": "2026-10-20 cfbc7f55"
     },
     "insights": {
       "files": {
@@ -440,11 +447,11 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "581f74534916",
+        "api/boot.ts#rest-of-file": "6f12123c1f2b",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "d43acf75679a",
         "api/lib/app-time.ts": "f53d4623a239",
-        "api/lib/cache-keys.ts": "e4adb63af12d",
+        "api/lib/cache-keys.ts": "89dc693d0c12",
         "api/lib/env.ts": "c1943bec00ee",
         "api/lib/error-logger.ts": "9cb0f25fe459",
         "api/lib/error-reporting.ts": "9891f7185094",
@@ -455,7 +462,7 @@
         "api/lib/system-settings-registry.ts": "2464e32adf53",
         "api/middleware.ts": "d2e8e2966fe6",
         "api/queries/connection.ts": "49fd2ab76893",
-        "api/router.ts": "a064070cc6e0",
+        "api/router.ts": "72e5cfa66375",
         "api/server.ts#rest-of-file": "e728f2d81677",
         "api/services/scheduler-lock.ts": "861ab6f129a3",
         "api/services/storage/avatar-service.ts": "d0562e7ea889",
@@ -465,7 +472,8 @@
         "api/services/storage/types.ts": "766de83090e8",
         "contracts/account-deletion.ts": "6fcd736f6cae",
         "contracts/ai-models.ts": "e103e23321f3",
-        "contracts/categories.ts": "1dd7c898e484",
+        "contracts/capture.ts": "9fd5ef8a1382",
+        "contracts/categories.ts": "aca28dd35f9b",
         "contracts/constants.ts": "f047c234a332",
         "contracts/errors.ts": "823cdb78cfc4",
         "contracts/expense-save.ts": "6e04603f9cbc",
@@ -477,13 +485,13 @@
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
         "db/relations.ts": "5e31c3a3a1fa",
-        "db/schema.ts": "e109c049d2de",
+        "db/schema.ts": "135369126c37",
         "db/seed.ts": "811d2a0df636",
-        "db/table-classes.ts": "e05665bec173"
+        "db/table-classes.ts": "9176eb36ddb0"
       },
-      "checked": "2026-10-19 9b9acea",
-      "arabic": "120f7c3e7657",
-      "arabicChecked": "2026-10-19 9b9acea"
+      "checked": "2026-10-20 cfbc7f55",
+      "arabic": "a35140dad9b0",
+      "arabicChecked": "2026-10-20 cfbc7f55"
     },
     "voice-calls": {
       "files": {

@@ -21,10 +21,12 @@ describe("financeCacheKey", () => {
 describe("finance semantic cache tracing", () => {
   it("records hit and miss events without exposing user identifiers", async () => {
     const { collectFinanceCacheTrace, financeCacheKey, withFinanceCache } = await import("./cache");
+    const { taxonomyVersion } = await import("../../lib/category-registry");
     const key = financeCacheKey("qa-user", "local", "summary", "today");
     const compute = vi.fn(async () => ({ total: 123 }));
 
-    expect(key).toContain("tax_v3_2026_09");
+    // The taxonomy is part of the key, so answers built on an older category list are never reused.
+    expect(key).toContain(taxonomyVersion());
 
     const first = await collectFinanceCacheTrace(() => withFinanceCache(key, 60, compute));
     const second = await collectFinanceCacheTrace(() => withFinanceCache(key, 60, compute));

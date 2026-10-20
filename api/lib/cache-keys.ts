@@ -10,6 +10,9 @@ export const CACHE_SCHEMA_VERSION = "v2";
 /** Generation of the admin's AI providers, models and prices (`api/lib/ai-gateway.ts#invalidateAiConfig`). */
 export const AI_CONFIG_GENERATION = "aiconfiggen";
 
+/** Generation of the capture sources and subscription catalog (`api/lib/capture/catalog.ts#invalidateCaptureCatalog`). */
+export const CAPTURE_CATALOG_GENERATION = "capturecataloggen";
+
 export const CacheKeys = {
   /** Session principal cache: sess:<tokenHashHex> */
   session: (tokenHashHex: string) => `sess:${tokenHashHex}`,

@@ -86,7 +86,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `Admin` — `src/pages/Admin.tsx`
 
-30 files in its import closure (not counting `src/components/ui/`).
+31 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -155,6 +155,13 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `ai.parseExpense` | useMutation | `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
+| `captureAdmin.catalog` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.restoreSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSource` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSubscription` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSourceStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSubscriptionStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.syncSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `export.allUsers` | useMutation | `src/pages/Admin.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
@@ -261,7 +268,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-61 files in its import closure (not counting `src/components/ui/`).
+62 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -338,6 +345,13 @@ _None._
 | `business.removeCategory` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.suggestCategories` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.update` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
+| `captureAdmin.catalog` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.restoreSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSource` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSubscription` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSourceStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSubscriptionStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.syncSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `coach.addCashflow` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.cancelReminder` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.endPlan` | useMutation | `src/pages/PlanPage.tsx` |

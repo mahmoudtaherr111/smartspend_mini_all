@@ -936,6 +936,77 @@ export const rawSmsEvents = mysqlTable(
   ],
 );
 
+/**
+ * Every bank, wallet, payment network, fintech, telecom operator and SMS app whose notifications SmartSpend reads:
+ * the phones' allowlist and the parser's evidence of who sent a message. Shared by all users and holds no user data.
+ * Rows come from the seed in `api/lib/capture/seed-sources.ts` (`origin: seed`) or from an admin; an admin edit sets
+ * `adminEditedAt`, and the seed never overwrites such a row again. Only facts checked against a real source belong
+ * here: an app id from Google Play, a sender id from a real message; an unknown one stays empty, never guessed.
+ */
+export const captureSources = mysqlTable(
+  "capture_sources",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    slug: varchar("slug", { length: 60 }).notNull().unique(),
+    /** bank | wallet | payment_network | fintech | telecom | sms_app */
+    kind: varchar("kind", { length: 20 }).notNull(),
+    nameAr: varchar("name_ar", { length: 120 }).notNull(),
+    nameEn: varchar("name_en", { length: 120 }).notNull(),
+    /** ISO country codes where the source operates. */
+    countries: json("countries").notNull(),
+    /** Android package names, each confirmed on Google Play. */
+    androidPackages: json("android_packages").notNull(),
+    /** SMS sender ids (alphanumeric or short codes), each confirmed from a real message. */
+    senderIds: json("sender_ids").notNull(),
+    /** Names the source goes by inside message text, matched as whole tokens. */
+    aliases: json("aliases").notNull(),
+    /** What a person should know, such as an alert threshold below which the bank sends nothing. */
+    notes: text("notes"),
+    /** Order for template work and lists; lower comes first. */
+    priority: int("priority").notNull().default(100),
+    /** active | disabled */
+    status: varchar("status", { length: 12 }).notNull().default("active"),
+    /** seed | admin */
+    origin: varchar("origin", { length: 10 }).notNull().default("admin"),
+    adminEditedAt: datetime("admin_edited_at"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [index("capture_sources_status_idx").on(t.status, t.kind)],
+);
+
+/**
+ * Subscriptions people pay by card, wallet or app store (Netflix, Shahid, Spotify, ChatGPT, Claude…), so a charge
+ * can be recognised as one. `matchTokens` are words that name the service inside a card statement's merchant name
+ * ("NETFLIX.COM", "OPENAI *CHATGPT SUBSCR"); a `store` (Google Play, Apple) bills for other developers, so its charge
+ * names the store, not the service. Categories are ids from `contracts/categories.ts`. Shared, no user data; seeded
+ * and edited like `capture_sources`.
+ */
+export const subscriptionCatalog = mysqlTable(
+  "subscription_catalog",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    slug: varchar("slug", { length: 60 }).notNull().unique(),
+    name: varchar("name", { length: 100 }).notNull(),
+    nameAr: varchar("name_ar", { length: 100 }).notNull(),
+    /** service | store */
+    kind: varchar("kind", { length: 12 }).notNull().default("service"),
+    matchTokens: json("match_tokens").notNull(),
+    categoryId: varchar("category_id", { length: 40 }).notNull(),
+    subCategoryId: varchar("sub_category_id", { length: 40 }).notNull(),
+    /** weekly | monthly | quarterly | yearly | varies */
+    cycle: varchar("cycle", { length: 12 }).notNull().default("monthly"),
+    /** active | disabled */
+    status: varchar("status", { length: 12 }).notNull().default("active"),
+    /** seed | admin */
+    origin: varchar("origin", { length: 10 }).notNull().default("admin"),
+    adminEditedAt: datetime("admin_edited_at"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [index("subscription_catalog_status_idx").on(t.status)],
+);
+
 // ─── WhatsApp OTP Codes ───
 export const whatsappOtpCodes = mysqlTable(
   "whatsapp_otp_codes",

@@ -19,9 +19,11 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/ai-router.ts` | [ai-platform](ai-platform.md): `ai.getUserLimits` · [expense-capture](expense-capture.md): `ai.learnWord`, `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText` · [insights](insights.md): `ai.compareMonths`, `ai.generateMonthlyInsights`, `ai.generateYearlyInsights`, `ai.getCachedMonthlyInsights` · rest of the file: [ai-platform](ai-platform.md), [expense-capture](expense-capture.md), [insights](insights.md) |
 | `api/analytics-router.ts` | [admin](admin.md) |
 | `api/auth-router.ts` | [accounts](accounts.md) |
-| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `GET /api/sse/otp`, `job:daily-auth-cleanup` · [ai-center](ai-center.md): `job:memory-embedding-backfill` · [billing](billing.md): `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:coaching-reminders`, `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications` · [platform](platform.md): `ALL /api/trpc/*`, `GET /health`, `job:data-retention-lifecycle` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
+| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `GET /api/sse/otp`, `job:daily-auth-cleanup` · [ai-center](ai-center.md): `job:memory-embedding-backfill` · [bank-messages](bank-messages.md): `job:seed-capture-catalog` · [billing](billing.md): `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:coaching-reminders`, `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications` · [platform](platform.md): `ALL /api/trpc/*`, `GET /health`, `job:data-retention-lifecycle` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
 | `api/budget-router.ts` | [money](money.md) |
 | `api/business-router.ts` | [money](money.md) |
+| `api/capture-admin-router.ts` | [bank-messages](bank-messages.md) |
+| `api/capture-router.ts` | [bank-messages](bank-messages.md) |
 | `api/chat-router.ts` | [ai-center](ai-center.md) |
 | `api/coach-router.ts` | [money](money.md) |
 | `api/context.ts` | [platform](platform.md) |
@@ -52,6 +54,9 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/arabic-token-match.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/benchmark-taxonomy-assert.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/cache-keys.ts` | [platform](platform.md) |
+| `api/lib/capture/catalog.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/seed-sources.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/seed-subscriptions.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/category-registry.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/classification-cache.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/classification-decision.ts` | [expense-capture](expense-capture.md) |
@@ -269,6 +274,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/webauthn-router.ts` | [accounts](accounts.md) |
 | `contracts/account-deletion.ts` | [platform](platform.md) |
 | `contracts/ai-models.ts` | [platform](platform.md) |
+| `contracts/capture.ts` | [platform](platform.md) |
 | `contracts/categories.ts` | [platform](platform.md) |
 | `contracts/constants.ts` | [platform](platform.md) |
 | `contracts/errors.ts` | [platform](platform.md) |
@@ -308,6 +314,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` | [admin](admin.md) |
 | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` | [admin](admin.md) |
 | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` | [admin](admin.md) |
+| `src/components/admin/capture/AdminCaptureTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminCodesTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminKeysTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminPlansTab.tsx` | [admin](admin.md) |

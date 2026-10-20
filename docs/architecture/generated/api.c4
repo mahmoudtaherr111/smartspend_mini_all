@@ -1101,6 +1101,98 @@ model {
         }
       }
     }
+    capture = router 'capture' {
+      description 'api/capture-router.ts — 1 procedures.'
+      metadata {
+        file 'api/capture-router.ts'
+      }
+      sources = procedure 'capture.sources' {
+        #query #authed #uncalled
+        technology 'authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
+      }
+    }
+    captureAdmin = router 'captureAdmin' {
+      description 'api/capture-admin-router.ts — 7 procedures.'
+      metadata {
+        file 'api/capture-admin-router.ts'
+      }
+      catalog = procedure 'captureAdmin.catalog' {
+        #query #admin
+        technology 'adminProcedure'
+        description 'query · adminProcedure'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      restoreSeed = procedure 'captureAdmin.restoreSeed' {
+        #mutation #admin
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      saveSource = procedure 'captureAdmin.saveSource' {
+        #mutation #admin
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      saveSubscription = procedure 'captureAdmin.saveSubscription' {
+        #mutation #admin
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      setSourceStatus = procedure 'captureAdmin.setSourceStatus' {
+        #mutation #admin
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      setSubscriptionStatus = procedure 'captureAdmin.setSubscriptionStatus' {
+        #mutation #admin
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      syncSeed = procedure 'captureAdmin.syncSeed' {
+        #mutation #admin
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+    }
     chat = router 'chat' {
       description 'api/chat-router.ts — 10 procedures.'
       metadata {
@@ -2764,6 +2856,14 @@ model {
       description 'Scheduled in api/boot.ts.'
       metadata {
         schedule '* * * * *'
+        file 'api/boot.ts'
+      }
+    }
+    seed-capture-catalog = job 'seed-capture-catalog' {
+      technology 'once at boot'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule 'once at boot'
         file 'api/boot.ts'
       }
     }

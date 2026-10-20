@@ -1,7 +1,7 @@
 import { normalizeV2 } from "./normalizer-v2";
 import { runRuleEngine, SUB_CATEGORY_MAP } from "./rule-engine";
 import { CATEGORY_DICTIONARY } from "./lexicon/dictionary";
-import { normalizeTransactionTaxonomyList } from "./category-registry";
+import { normalizeTransactionTaxonomyList, taxonomyVersion } from "./category-registry";
 import {
   executeLlmChain,
   LlmChainError,
@@ -705,7 +705,8 @@ async function classifyAdmittedEvents(
   ]);
   correctionRules = loadedRules;
   const cacheKey = classificationCacheKey({
-    version: `${SMART_PIPELINE_VERSION}+${CONFIDENCE_CALIBRATION.version}`,
+    // The taxonomy too: a cached answer chosen from an older category list is not reused.
+    version: `${SMART_PIPELINE_VERSION}+${CONFIDENCE_CALIBRATION.version}+${taxonomyVersion()}`,
     tenant: tenantScope(input.userType, input.userId),
     plan: input.userPlan,
     scope: `${input.businessMode ? "biz" : "std"}${input.businessId ?? ""}`,

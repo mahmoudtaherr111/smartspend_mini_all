@@ -183,6 +183,7 @@ model {
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.api-routers
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.billing
+  smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.capture-catalog
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.coaching
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.jobs
   smartspend.api.modules.api-core -[imports]-> smartspend.api.modules.notifications
@@ -205,6 +206,7 @@ model {
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.billing
+  smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.capture-catalog
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.coaching
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.finance-semantic-layer
@@ -226,6 +228,7 @@ model {
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.auth_challenges
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.business_categories
+  smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.capture_sources
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.cashflow_settlements
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.chat_messages
@@ -249,6 +252,7 @@ model {
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.seo_pages
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.sessions
+  smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.subscription_catalog
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.support_tickets
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.system_settings
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.user_analytics
@@ -277,6 +281,7 @@ model {
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.ai_summaries
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.business_categories
+  smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.capture_sources
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.chat_messages
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.classification_logs
@@ -296,6 +301,7 @@ model {
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.referrals
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.seo_pages
+  smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.subscription_catalog
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.support_tickets
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.system_settings
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.user_analytics
@@ -326,6 +332,12 @@ model {
   smartspend.api.modules.billing -[uses]-> paymob
   smartspend.api.modules.billing -[writes]-> smartspend.mysql.pro_subscriptions
   smartspend.api.modules.billing -[writes]-> smartspend.mysql.user_analytics
+  smartspend.api.modules.capture-catalog -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.capture-catalog -[imports]-> smartspend.shared.contracts
+  smartspend.api.modules.capture-catalog -[reads]-> smartspend.mysql.capture_sources
+  smartspend.api.modules.capture-catalog -[reads]-> smartspend.mysql.subscription_catalog
+  smartspend.api.modules.capture-catalog -[writes]-> smartspend.mysql.capture_sources
+  smartspend.api.modules.capture-catalog -[writes]-> smartspend.mysql.subscription_catalog
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.platform
@@ -507,6 +519,7 @@ model {
   smartspend.api.scheduler.monthly-report-generation -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.nightly-rollup-reconciliation -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.scheduled-notifications -[uses]-> smartspend.api.modules.notifications
+  smartspend.api.scheduler.seed-capture-catalog -[uses]-> smartspend.api.modules.capture-catalog
   smartspend.api.scheduler.seed-default-templates -[uses]-> smartspend.api.modules.notifications
   smartspend.api.scheduler.smart-activity-notifications -[uses]-> smartspend.api.modules.notifications
   smartspend.api.scheduler.taxonomy-migration -[uses]-> smartspend.api.modules.jobs
@@ -775,6 +788,30 @@ model {
   smartspend.api.trpc.business.updateCategory -[reads]-> smartspend.mysql.business_categories
   smartspend.api.trpc.business.updateCategory -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.business.updateCategory -[writes]-> smartspend.mysql.business_categories
+  smartspend.api.trpc.capture.sources -[uses]-> smartspend.api.modules.capture-catalog
+  smartspend.api.trpc.captureAdmin.catalog -[reads]-> smartspend.mysql.capture_sources
+  smartspend.api.trpc.captureAdmin.catalog -[reads]-> smartspend.mysql.subscription_catalog
+  smartspend.api.trpc.captureAdmin.catalog -[uses]-> smartspend.api.modules.capture-catalog
+  smartspend.api.trpc.captureAdmin.restoreSeed -[reads]-> smartspend.mysql.capture_sources
+  smartspend.api.trpc.captureAdmin.restoreSeed -[reads]-> smartspend.mysql.subscription_catalog
+  smartspend.api.trpc.captureAdmin.restoreSeed -[uses]-> smartspend.api.modules.capture-catalog
+  smartspend.api.trpc.captureAdmin.restoreSeed -[writes]-> smartspend.mysql.capture_sources
+  smartspend.api.trpc.captureAdmin.restoreSeed -[writes]-> smartspend.mysql.subscription_catalog
+  smartspend.api.trpc.captureAdmin.saveSource -[reads]-> smartspend.mysql.capture_sources
+  smartspend.api.trpc.captureAdmin.saveSource -[uses]-> smartspend.api.modules.capture-catalog
+  smartspend.api.trpc.captureAdmin.saveSource -[writes]-> smartspend.mysql.capture_sources
+  smartspend.api.trpc.captureAdmin.saveSubscription -[reads]-> smartspend.mysql.subscription_catalog
+  smartspend.api.trpc.captureAdmin.saveSubscription -[uses]-> smartspend.api.modules.capture-catalog
+  smartspend.api.trpc.captureAdmin.saveSubscription -[writes]-> smartspend.mysql.subscription_catalog
+  smartspend.api.trpc.captureAdmin.setSourceStatus -[reads]-> smartspend.mysql.capture_sources
+  smartspend.api.trpc.captureAdmin.setSourceStatus -[uses]-> smartspend.api.modules.capture-catalog
+  smartspend.api.trpc.captureAdmin.setSourceStatus -[uses]-> smartspend.shared.contracts
+  smartspend.api.trpc.captureAdmin.setSourceStatus -[writes]-> smartspend.mysql.capture_sources
+  smartspend.api.trpc.captureAdmin.setSubscriptionStatus -[reads]-> smartspend.mysql.subscription_catalog
+  smartspend.api.trpc.captureAdmin.setSubscriptionStatus -[uses]-> smartspend.api.modules.capture-catalog
+  smartspend.api.trpc.captureAdmin.setSubscriptionStatus -[uses]-> smartspend.shared.contracts
+  smartspend.api.trpc.captureAdmin.setSubscriptionStatus -[writes]-> smartspend.mysql.subscription_catalog
+  smartspend.api.trpc.captureAdmin.syncSeed -[uses]-> smartspend.api.modules.capture-catalog
   smartspend.api.trpc.chat.cancelAction -[uses]-> smartspend.api.modules.ai-actions
   smartspend.api.trpc.chat.clearAllMemories -[reads]-> smartspend.mysql.ai_memory_items
   smartspend.api.trpc.chat.clearAllMemories -[uses]-> smartspend.api.modules.ai-memory
@@ -1327,6 +1364,13 @@ model {
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.ai.parseExpense
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.auth.logout
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.auth.me
+  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.catalog
+  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.restoreSeed
+  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.saveSource
+  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.saveSubscription
+  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.setSourceStatus
+  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.setSubscriptionStatus
+  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.syncSeed
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.export.allUsers
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.localAuth.me
@@ -1469,6 +1513,13 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.business.removeCategory
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.business.suggestCategories
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.business.update
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.catalog
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.restoreSeed
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.saveSource
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.saveSubscription
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.setSourceStatus
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.setSubscriptionStatus
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.syncSeed
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.addCashflow
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.cancelReminder
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.endPlan

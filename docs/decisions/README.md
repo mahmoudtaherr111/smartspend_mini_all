@@ -30,3 +30,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0020](0020-optional-english-interface.md) | Optional English UI mode with Arabic source of truth and data stability |
 | [0022](0022-flutter-mobile-app.md) | One Flutter app in `mobile/` on the same API, native code only where the platform demands it |
 | [0023](0023-mobile-app-lock.md) | The mobile app lock: a 6-digit PIN checked by a phone-held key, biometrics bound to the Keystore or Keychain |
+| [0024](0024-capture-catalog.md) | The capture catalog: banks, wallets and subscriptions are confirmed data the admin edits |
