@@ -227,7 +227,7 @@ the finance caches are cleared.
 | Which typed words confirm or cancel a draft | `actionReplyKind` in `api/chat-router.ts` | the chat router tests |
 | The model, its key, limits and plans | the `chatbot_*` and `ai_kernel_enabled` system settings; the reply cap in [AI providers and usage limits](ai-platform.md) | |
 | What is remembered and how it is found | `api/services/ai-memory/memory-writer.ts`, `api/services/ai-memory/memory-retriever.ts` | `api/services/ai-memory/` tests |
-| How-to answers (written from the screens they describe: the Android companion app, the iPhone Shortcut, wallets inside the bank-link page, recording on Home, the monthly analysis, the plan page) | `api/services/site-guide/knowledge-base.ts` | `api/services/site-guide/retriever.test.ts` |
+| How-to answers (written from the screens they describe: the Android companion app, the iPhone Shortcut, the cards and wallets page, recording on Home, the monthly analysis, the plan page) | `api/services/site-guide/knowledge-base.ts` | `api/services/site-guide/retriever.test.ts` |
 | What an action does, and what undo can reverse | `api/services/action-runtime/extended-actions.ts`, `api/services/action-runtime/goal-create.ts` | `api/services/action-runtime/` tests |
 | The chat screen | `src/components/ai/AIChatbot.tsx` | `tests/ai-chatbot-resilience.test.ts` |
 

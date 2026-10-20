@@ -300,7 +300,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/Sidebar.tsx` | [web-app](web-app.md) |
 | `src/components/admin/AdminAdsTab.tsx` | [admin](admin.md) |
 | `src/components/admin/AdminAuditTab.tsx` | [admin](admin.md) |
-| `src/components/admin/AdminRawSmsTab.tsx` | [admin](admin.md) |
 | `src/components/admin/AdminRulesTab.tsx` | [admin](admin.md) |
 | `src/components/admin/AdminSettingsTab.tsx` | [admin](admin.md) |
 | `src/components/admin/AdminUserMobileCard.tsx` | [admin](admin.md) |
@@ -332,7 +331,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/auth/SignOutDialog.tsx` | [accounts](accounts.md) |
 | `src/components/auth/TurnstileWidget.tsx` | [accounts](accounts.md) |
 | `src/components/bank-sync/AndroidSetupFlow.tsx` | [bank-messages](bank-messages.md) |
-| `src/components/bank-sync/DigitalBankingSuite.tsx` | [bank-messages](bank-messages.md) |
 | `src/components/bank-sync/IosSetupFlow.tsx` | [bank-messages](bank-messages.md) |
 | `src/components/bank-sync/SmsSuggestionsCard.tsx` | [bank-messages](bank-messages.md) |
 | `src/components/budgets/BudgetsPanel.tsx` | [money](money.md) |
@@ -438,6 +436,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/voice/VoiceCallHost.tsx` | [voice-calls](voice-calls.md) |
 | `src/components/voice/VoiceCallScreen.tsx` | [voice-calls](voice-calls.md) |
 | `src/components/voice/VoiceCallTab.tsx` | [voice-calls](voice-calls.md) |
+| `src/components/wallets/DigitalBankingSuite.tsx` | [money](money.md) |
 | `src/hooks/use-mobile.ts` | [web-app](web-app.md) |
 | `src/hooks/useAdmin.ts` | [web-app](web-app.md) |
 | `src/hooks/useAds.ts` | [web-app](web-app.md) |
@@ -505,6 +504,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/pages/Support.tsx` | [admin](admin.md) |
 | `src/pages/Terms.tsx` | [web-app](web-app.md) |
 | `src/pages/UltraLounge.tsx` | [billing](billing.md) |
+| `src/pages/WalletsPage.tsx` | [money](money.md) |
 | `src/providers/BiometricLockProvider.tsx` | [web-app](web-app.md) |
 | `src/providers/trpc.ts` | [web-app](web-app.md) |
 | `src/pwa/firebase.ts` | [web-app](web-app.md) |

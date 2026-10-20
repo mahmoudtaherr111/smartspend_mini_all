@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { SEOMeta } from "@/components/seo/SEOMeta";
 import { IosSetupFlow } from "@/components/bank-sync/IosSetupFlow";
 import { AndroidSetupFlow } from "@/components/bank-sync/AndroidSetupFlow";
-import { DigitalBankingSuite } from "@/components/bank-sync/DigitalBankingSuite";
+import { DigitalBankingSuite } from "@/components/wallets/DigitalBankingSuite";
 import { trpc } from "@/providers/trpc";
 import {
   Smartphone,

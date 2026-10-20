@@ -21,12 +21,12 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 | Taxonomy migration | `api/jobs/taxonomy-migration-job.ts#runTaxonomyMigrationJob` | Moves stored rows still filed under an old category to the current taxonomy |
 | Financial month | `api/services/financial-month.ts#getFinancialMonthDayRange` | Month boundaries from a salary day, in Cairo business days |
 | Wallets, budgets, goals, business | `api/wallet-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/business-router.ts` | Their own records and rules |
+| Cards and wallets screen | `src/pages/WalletsPage.tsx`, route `/wallets`, linked from the More page and the sidebar; `src/components/wallets/DigitalBankingSuite.tsx#DigitalBankingSuite` | The user's cards and wallets through `wallet.*`: add one (name, kind, last four digits, balance), delete one, and a chosen one's transactions with its money in and out. A balance is what the user entered |
 | Commitments and plans | `api/coach-router.ts`, `api/services/coach/`, the page `src/pages/PlanPage.tsx#PlanPage` at `/plan` | Scheduled commitments and expected income, which payment paid which due date, what is free until payday, the coaching plan the user accepted, and its reminders ([below](#commitments-and-plans)) |
 | People | the contact procedures in `api/profile-router.ts` (`profile.listContacts`, `profile.addContact`, `profile.updateContact`, `profile.deleteContact`, `profile.mergeContacts`) | The people behind transfers and family spending |
 | Export | `export.myExpenses` in `api/export-router.ts`, the "نزّل مصاريفك" card of the More page (`src/components/expenses/ExportExpensesCard.tsx`) | The user's items, up to 10,000 newest first, as Excel or CSV (JSON too through the API), protected against spreadsheet formulas: each row dated by Cairo's day, named by its kind (دخل، مصروف، تحويل، استثمار، مرتجع for a refund, with its signed amount), with its subcategory and its source (`exportRow`) |
 
-Screens of other systems use these APIs: wallets in `src/components/bank-sync/DigitalBankingSuite.tsx`
-([bank messages](bank-messages.md)), people in `src/components/settings/PeopleSettingsView.tsx`, the business in
+Screens of other systems use these APIs: people in `src/components/settings/PeopleSettingsView.tsx`, the business in
 `src/components/settings/BusinessSettingsView.tsx`.
 
 ## The ledger and its daily rollups

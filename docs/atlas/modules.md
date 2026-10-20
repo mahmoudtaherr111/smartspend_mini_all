@@ -39,15 +39,15 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `storage` | File storage | 5 | — | — | `object-storage` |
 | `ai-insights` | AI insights and reports | 8 | `classification`, `contracts`, `database`, `platform` | `ai-actions`, `api-routers`, `jobs`, `voice` | `gemini` |
 | `web-shell` | Web app shell | 24 | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit`, `web-voice-call` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-insights`, `web-pages`, `web-shared`, `web-voice-call` | `capacitor`, `firebase` |
-| `web-pages` | Web pages | 17 | `contracts`, `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `web-shell` | — |
+| `web-pages` | Web pages | 18 | `contracts`, `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `web-shell` | — |
 | `web-ui-kit` | UI primitives | 55 | `web-hooks`, `web-lib` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-voice-call` | — |
-| `web-admin` | Admin UI | 24 | `contracts`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | `fireworks`, `openrouter` |
+| `web-admin` | Admin UI | 23 | `contracts`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | `fireworks`, `openrouter` |
 | `web-voice-call` | Live voice call UI | 13 | `contracts`, `web-ai`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `capacitor` |
 | `web-ai` | AI Center UI | 3 | `web-hooks`, `web-insights`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-voice-call` | — |
 | `web-capture` | Expense entry UI | 4 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
 | `web-insights` | Insights UI | 1 | `web-hooks`, `web-shell`, `web-ui-kit` | `web-ai` | — |
-| `web-finance` | Finance UI | 20 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
-| `web-bank-sync` | Bank sync UI | 5 | `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
+| `web-finance` | Finance UI | 21 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
+| `web-bank-sync` | Bank sync UI | 4 | `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
 | `web-account` | Account UI | 14 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shared`, `web-shell` | `turnstile` |
 | `web-growth` | Ads and SEO UI | 2 | `web-hooks`, `web-shell` | `web-pages`, `web-shell` | — |
 | `web-shared` | Shared web components | 5 | `contracts`, `web-account`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
@@ -607,7 +607,7 @@ Route-level page components lazy-loaded by src/App.tsx.
 | `src/pages/AICenter.tsx` | `web-ai`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit`, `web-voice-call` | — | — | — |
 | `src/pages/Admin.tsx` | `web-admin`, `web-growth`, `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/AuthCallback.tsx` | — | — | — | — |
-| `src/pages/BankSyncPage.tsx` | `web-bank-sync`, `web-growth`, `web-shell` | — | — | — |
+| `src/pages/BankSyncPage.tsx` | `web-bank-sync`, `web-finance`, `web-growth`, `web-shell` | — | — | — |
 | `src/pages/Home.tsx` | `web-account`, `web-bank-sync`, `web-capture`, `web-finance`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | — | — | — |
 | `src/pages/Landing.tsx` | `web-growth`, `web-ui-kit` | — | — | — |
 | `src/pages/Login.tsx` | `web-account`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
@@ -621,6 +621,7 @@ Route-level page components lazy-loaded by src/App.tsx.
 | `src/pages/Support.tsx` | `web-growth`, `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/Terms.tsx` | `web-growth`, `web-ui-kit` | — | — | — |
 | `src/pages/UltraLounge.tsx` | `web-growth`, `web-ui-kit` | — | — | — |
+| `src/pages/WalletsPage.tsx` | `web-finance`, `web-growth` | — | — | — |
 
 ### `web-ui-kit` — UI primitives
 
@@ -692,7 +693,6 @@ Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, 
 | --- | --- | --- | --- | --- |
 | `src/components/admin/AdminAdsTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/AdminAuditTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/admin/AdminRawSmsTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/AdminRulesTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/AdminSettingsTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/AdminUserMobileCard.tsx` | `web-ui-kit` | — | — | — |
@@ -766,7 +766,7 @@ The monthly AI insights view shown in the AI Center's analysis tab.
 
 ### `web-finance` — Finance UI
 
-Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals.
+Home dashboard (summaries, calendar, charts, search, streaks), recent expenses, goals, and the cards and wallets screen.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -790,6 +790,7 @@ Home dashboard (summaries, calendar, charts, search, streaks), recent expenses a
 | `src/components/goals/FinancialGoalsPanel.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/installments/InstallmentsPanel.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/seasons/SeasonsPanel.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/wallets/DigitalBankingSuite.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 
 ### `web-bank-sync` — Bank sync UI
 
@@ -798,7 +799,6 @@ The bank sync screens: iPhone Shortcut and Android companion setup, the digital 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `src/components/bank-sync/AndroidSetupFlow.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/bank-sync/DigitalBankingSuite.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/bank-sync/IosSetupFlow.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/bank-sync/SmsSuggestionsCard.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/settings/SmsWebhookSettings.tsx` | `web-shell`, `web-ui-kit` | — | — | — |

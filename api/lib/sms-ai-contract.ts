@@ -23,9 +23,29 @@ import { z } from "zod";
 import { CATEGORIES } from "../../contracts/categories";
 import { exactCategoryId } from "./category-registry";
 import { asciiDigits } from "./anonymizer";
-import type { SmsParseResult } from "./sms-ai-parser";
 
 export const SMS_PROMPT_VERSION = "sms-v1";
+
+/** What a read message comes to: the amount, direction and kind of money movement, in the ledger's terms. */
+export interface SmsParseResult {
+  transaction_detected: boolean;
+  amount: number | null;
+  currency: string;
+  direction: "incoming" | "outgoing" | null;
+  provider: "VodafoneCash" | "InstaPay" | "ApplePay" | "Bank" | "Unknown";
+  category:
+    | "transfer"
+    | "payment"
+    | "income"
+    | "bills"
+    | "withdrawal"
+    | "unknown";
+  fee: number | null;
+  merchant: string | null;
+  balance_after: number | null;
+  confidence: number; // 0.0 → 1.0
+  raw_extracted: Record<string, unknown>;
+}
 
 export const SMS_MESSAGE_KINDS = [
   "card_purchase",

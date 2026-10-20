@@ -30,6 +30,7 @@ import {
   Sun,
   Moon,
   Smartphone,
+  Wallet,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
@@ -252,6 +253,23 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             <Smartphone className="w-4 h-4 shrink-0 text-emerald-400" />
             <span className="text-xs font-semibold whitespace-nowrap">
               {t("more.item.bankSync")}
+            </span>
+          </Link>
+
+          <Link
+            to="/wallets"
+            onClick={onToggle}
+            className={cn(
+              "tap-target flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-xl transition-all duration-200 group relative select-none",
+              "hover:bg-white/10 active:scale-98",
+              location.pathname === "/wallets"
+                ? "bg-emerald-500/15 text-emerald-300 font-bold border-s-2 border-emerald-400 shadow-xs"
+                : "text-white/70 hover:text-white",
+            )}
+          >
+            <Wallet className="w-4 h-4 shrink-0 text-emerald-400" />
+            <span className="text-xs font-semibold whitespace-nowrap">
+              {t("more.item.wallets")}
             </span>
           </Link>
 

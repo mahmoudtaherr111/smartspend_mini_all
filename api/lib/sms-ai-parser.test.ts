@@ -260,53 +260,26 @@ describe("when the model must not be called, it is not", () => {
   });
 });
 
-describe("a reply is checked before it is believed", () => {
-  it("discards an amount that is not written in the message", async () => {
+// The checks themselves are in api/lib/sms-ai-contract.test.ts; here, what the model path does with their verdict.
+describe("what the model path does with the contract's verdict", () => {
+  it("a discarded reply is no answer", async () => {
     state.replies.push(reply({ amount: { value: 1300, currency: "EGP" } }));
     expect(await parseSmsFinancialData(PURCHASE, USER)).toEqual({ result: null, outcome: "invalid_reply", skipped: true });
   });
 
-  it("discards a currency that is not an ISO code, a category outside the list, and a direction the kind cannot take", async () => {
-    for (const bad of [
-      { amount: { value: 1250.5, currency: "POUNDS" } },
-      { category: "business_lunch" },
-      { message_kind: "salary", direction: "out" },
-      { message_kind: "not_a_kind" },
-    ]) {
-      state.replies.push(reply(bad));
-      expect((await parseSmsFinancialData(PURCHASE, USER)).outcome).toBe("invalid_reply");
-    }
+  it("a declined payment is an answer that saves nothing", async () => {
+    state.replies.push(reply({ message_kind: "declined" }));
+    const read = await parseSmsFinancialData(PURCHASE, USER);
+    expect(read.outcome).toBe("not_transaction");
+    expect(read.result?.transaction_detected).toBe(false);
   });
 
-  it("never treats a declined payment, a hold, a code or an offer as a transaction", async () => {
-    for (const kind of ["declined", "pre_auth", "otp", "promo"]) {
-      state.replies.push(reply({ message_kind: kind }));
-      const read = await parseSmsFinancialData(PURCHASE, USER);
-      expect(read.outcome).toBe("not_transaction");
-      expect(read.result?.transaction_detected).toBe(false);
-      expect(read.result?.amount).toBeNull();
-    }
-  });
-
-  it("does not save a foreign amount as pounds when the message gives no EGP equivalent", async () => {
-    const message = "Card **2201 used for USD 20.00 at OPENAI *CHATGPT SUBSCR";
+  it("a foreign amount without its EGP equivalent is not used", async () => {
     state.replies.push(
       reply({ message_kind: "international_purchase", amount: { value: 20, currency: "USD" }, balance_after: null, counterparty: { type: "merchant", name: "OPENAI" } }),
     );
-    expect((await parseSmsFinancialData(message, USER)).outcome).toBe("needs_review");
-
-    state.replies.push(
-      reply({ message_kind: "international_purchase", amount: { value: 20, currency: "USD" }, amount_egp: 1010.4, balance_after: null, counterparty: { type: "merchant", name: "OPENAI" } }),
-    );
-    const read = await parseSmsFinancialData(`${message}, equivalent EGP 1,010.40`, USER);
-    expect(read.result).toMatchObject({ amount: 1010.4, currency: "EGP", transaction_detected: true });
-  });
-
-  it("drops a merchant that is not in the text instead of trusting it", async () => {
-    state.replies.push(reply({ counterparty: { type: "merchant", name: "SPINNEYS" } }));
-    const read = await parseSmsFinancialData(PURCHASE, USER);
-    expect(read.outcome).toBe("parsed");
-    expect(read.result?.merchant).toBeNull();
+    const read = await parseSmsFinancialData("Card **2201 used for USD 20.00 at OPENAI *CHATGPT SUBSCR", USER);
+    expect(read).toEqual({ result: null, outcome: "needs_review", skipped: true });
   });
 });
 

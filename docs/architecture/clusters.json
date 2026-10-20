@@ -426,9 +426,10 @@
     {
       "id": "web-finance",
       "title": "Finance UI",
-      "description": "Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals.",
+      "description": "Home dashboard (summaries, calendar, charts, search, streaks), recent expenses, goals, and the cards and wallets screen.",
       "paths": [
         "src/components/dashboard/**",
+        "src/components/wallets/**",
         "src/components/expenses/**",
         "src/components/goals/**",
         "src/components/budgets/**",

@@ -102,6 +102,7 @@ export function MobileBottomNav() {
     "/support",
     "/pro",
     "/bank-sync",
+    "/wallets",
     "/ai",
     "/more",
   ];
@@ -116,6 +117,7 @@ export function MobileBottomNav() {
     "/support",
     "/pro",
     "/bank-sync",
+    "/wallets",
   ].some((route) => location.pathname.startsWith(route));
   const isAiPage = location.pathname.startsWith("/ai");
   const activeTab = isAiPage

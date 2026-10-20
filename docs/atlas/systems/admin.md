@@ -116,7 +116,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `web-admin` — Admin UI | Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration. | 24 |
+| `web-admin` — Admin UI | Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration. | 23 |
 
 ## API procedures
 
@@ -153,7 +153,7 @@ flowchart LR
 | `admin.getNotificationTemplates` | query | `adminProcedure` | `notification_templates` | — | `Admin`, `More` |
 | `admin.getPendingClarifications` | query | `adminProcedure` | `pending_clarifications` | — | `Admin`, `More` |
 | `admin.getPipelineVersionStats` | query | `adminProcedure` | `classification_logs` | — | — |
-| `admin.getRawSmsLogs` | query | `adminProcedure` | `local_users`, `raw_sms_events`, `users` | — | `Admin`, `More` |
+| `admin.getRawSmsLogs` | query | `adminProcedure` | `local_users`, `raw_sms_events`, `users` | — | — |
 | `admin.getSettings` | query | `adminProcedure` | — | — | `Admin`, `More` |
 | `admin.getStorageRuntimeMetrics` | query | `adminProcedure` | — | — | — |
 | `admin.getUserAiQuota` | query | `adminProcedure` | `ai_token_ledgers`, `local_users`, `users` | — | `Admin`, `More` |
@@ -192,7 +192,7 @@ flowchart LR
 | `analytics.trackEvent` | mutation | `authedProcedure` | — | `user_analytics` | `App shell` |
 | `export.allUsers` | mutation | `adminProcedure` | `local_users`, `users` | — | `Admin`, `More` |
 | `seo.delete` | mutation | `adminProcedure` | — | `seo_pages` | — |
-| `seo.getPage` | query | `publicProcedure` | `seo_pages` | — | `Admin`, `BankSyncPage`, `Landing`, `More`, `PlanPage`, `Privacy`, `Pro`, `Settings`, `Support`, `Terms`, `UltraLounge` |
+| `seo.getPage` | query | `publicProcedure` | `seo_pages` | — | `Admin`, `BankSyncPage`, `Landing`, `More`, `PlanPage`, `Privacy`, `Pro`, `Settings`, `Support`, `Terms`, `UltraLounge`, `WalletsPage` |
 | `seo.list` | query | `adminProcedure` | `seo_pages` | — | — |
 | `seo.sitemap` | query | `publicProcedure` | `seo_pages` | — | — |
 | `seo.upsert` | mutation | `adminProcedure` | `seo_pages` | `seo_pages` | — |
@@ -261,7 +261,7 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/admin.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>33 files and declarations</summary>
+<details><summary>32 files and declarations</summary>
 
 - `api/admin-router.ts`
 - `api/ads-router.ts`
@@ -272,7 +272,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/support-router.ts`
 - `src/components/admin/AdminAdsTab.tsx`
 - `src/components/admin/AdminAuditTab.tsx`
-- `src/components/admin/AdminRawSmsTab.tsx`
 - `src/components/admin/AdminRulesTab.tsx`
 - `src/components/admin/AdminSettingsTab.tsx`
 - `src/components/admin/AdminUserMobileCard.tsx`

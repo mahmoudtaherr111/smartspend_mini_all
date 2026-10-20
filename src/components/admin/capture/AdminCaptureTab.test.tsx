@@ -72,7 +72,6 @@ vi.mock("@/providers/trpc", () => ({
       setSubscriptionStatus: mutation("other"),
       restoreSeed: mutation("restoreSeed"),
     },
-    admin: { getRawSmsLogs: { useQuery: () => ({ data: { list: [], total: 0 }, isLoading: false }) } },
   },
 }));
 

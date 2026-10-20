@@ -1333,7 +1333,6 @@ model {
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getNotificationStats
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getNotificationTemplates
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getPendingClarifications
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getRawSmsLogs
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getSettings
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getUserAiQuota
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getUserSessions
@@ -1474,7 +1473,6 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getNotificationStats
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getNotificationTemplates
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getPendingClarifications
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getRawSmsLogs
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getSettings
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getUserAiQuota
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getUserSessions
@@ -1639,6 +1637,12 @@ model {
   smartspend.web.pages.Support -[calls]-> smartspend.api.trpc.support.listMine
   smartspend.web.pages.Terms -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.UltraLounge -[calls]-> smartspend.api.trpc.seo.getPage
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.profile.getWebhookToken
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.seo.getPage
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.createWallet
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.deleteWallet
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.getWalletTransactions
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.getWallets
   smartspend.web.shell -[calls]-> smartspend.api.trpc.ads.click
   smartspend.web.shell -[calls]-> smartspend.api.trpc.ads.list
   smartspend.web.shell -[calls]-> smartspend.api.trpc.analytics.trackEvent

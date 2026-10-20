@@ -177,8 +177,8 @@ patterns (known issue 10).
    instructions on the screen use it.
 4. Recent messages come from `profile.getSmsLogs`, refreshed every ten seconds.
 
-With a token in place, `BankSyncPage` shows `src/components/bank-sync/DigitalBankingSuite.tsx#DigitalBankingSuite`,
-which manages cards and wallets through the wallet procedures of [Money](money.md). Its badge says what arrived, not
+With a token in place, `BankSyncPage` shows `src/components/wallets/DigitalBankingSuite.tsx#DigitalBankingSuite`,
+the cards and wallets screen of [Money](money.md), which also has its own page at `/wallets`. Its badge says what arrived, not
 that a token exists: `profile.getWebhookToken` also returns `lastReceivedAt`, the latest stored message
 (`raw_sms_events`), and the badge reads "no message yet", the day of the last one (green within three days), or how
 many days ago it was with a prompt to check the phone (amber). A wallet's balance is what the user entered; messages
@@ -199,7 +199,7 @@ statistics per provider) and `GET /api/sms/unparsed`.
   `confirmed`, `dismissed`) and parse metadata; a suggestion is in `metadata.suggestion`.
 - `capture_sources` and `subscription_catalog`: the capture catalog above, shared by all users.
 - Account deletion removes `webhook_tokens` and `raw_sms_events` (`api/services/user-purge-service.ts`). An admin procedure in `api/admin-router.ts`
-  lists raw messages across users.
+  (`admin.getRawSmsLogs`) lists raw messages across users; no screen calls it.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -208,7 +208,7 @@ statistics per provider) and `GET /api/sms/unparsed`.
 | The bank and wallet formats the rules read | `api/lib/sms-rule-parser.ts` (provider detection, `parseDirection`, amount and balance extraction) | `tests/adversarial-challenger-2.test.ts`, plus new cases |
 | Which provider and model read messages | the AI providers screen, purpose «قراءة رسايل البنوك والمحافظ» (`sms`) | `api/lib/sms-ai-parser.test.ts` |
 | Whether the model is asked, and its daily cap | the `sms_ai_enabled` and `sms_ai_daily_cost_cap_usd` settings; the order of the checks in `api/lib/sms-ai-parser.ts` | `api/lib/sms-ai-parser.test.ts`, `api/sms-router.ingest.test.ts` |
-| What the model is asked and what is accepted back | `api/lib/sms-ai-contract.ts` (prompt, schema, checks); change `SMS_PROMPT_VERSION` with it | `api/lib/sms-ai-parser.test.ts` |
+| What the model is asked and what is accepted back | `api/lib/sms-ai-contract.ts` (prompt, schema, checks, and `SmsParseResult`, the shape a reading comes to); change `SMS_PROMPT_VERSION` with it | `api/lib/sms-ai-contract.test.ts` |
 | What is removed before a model sees the text | `api/lib/anonymizer.ts` | `api/lib/anonymizer.test.ts` |
 | The thresholds and what a skipped model leaves behind | the ingest route | `api/sms-router.ingest.test.ts` |
 | How a parsed message becomes a category | `api/lib/sms-ai-parser.ts#mapSmsToExpenseCategory`; merchants in `api/services/sms-ledger.ts#classifySmsMerchant` and the classification dictionaries | `api/lib/sms-ai-parser.test.ts`, `api/services/sms-ledger.test.ts` |
@@ -239,9 +239,11 @@ statistics per provider) and `GET /api/sms/unparsed`.
 ## Tests
 `tests/adversarial-challenger-2.test.ts` checks that condensing messages from several banks keeps their amounts,
 cards, dates and balances. `api/lib/anonymizer.test.ts` checks what redaction removes and what it keeps.
-`api/lib/sms-ai-parser.test.ts` runs the model path against a fake provider (the admin's route is used and nothing
-else, the server key without one, a redacted prompt, one message per call, the switch, the budget and the cap, the
-reply checks) and the category mapping. `api/sms-router.ingest.test.ts` checks that a skipped model loses no message
+`api/lib/sms-ai-contract.test.ts` checks the reply contract without a model (an amount, currency, category or
+direction that fails is discarded, a merchant or balance not in the text is dropped, declined and promotional kinds are
+never transactions, a foreign amount without its EGP equivalent is not used). `api/lib/sms-ai-parser.test.ts` runs the
+model path against a fake provider (the admin's route is used and nothing else, the server key without one, a redacted
+prompt, one message per call, the switch, the budget and the cap, what a rejected reply leaves) and the category mapping. `api/sms-router.ingest.test.ts` checks that a skipped model loses no message
 and that a declined reading is not saved from the rules. `api/services/sms-ledger.test.ts` checks the merchant
 categories, the suggestions and a confirmation saved once. `api/sms-router.pairing.test.ts` exchanges pairing codes
 once and retires an older code, and `api/lib/sms-rule-parser.sender.test.ts` reads the provider from the sender.
@@ -286,5 +288,5 @@ Checked against the code; each one names where it lives.
 - [Accounts, sign-in and security](accounts.md): the sessions the setup routes read.
 - [AI providers and usage limits](ai-platform.md): the admin's routes, the budget and the cost ledger the model call
   goes through.
-- [Admin console, support and growth tools](admin.md): the raw messages tab.
+- [Admin console, support and growth tools](admin.md): the capture catalog tabs.
 - [Server platform and data](platform.md): the retention job and storage classes.

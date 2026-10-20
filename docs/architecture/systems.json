@@ -112,7 +112,7 @@
       "clusters": ["ledger", "coaching", "web-finance"],
       "routers": ["expense", "wallet", "budget", "goals", "business", "coach"],
       "procedures": ["export.myExpenses", "profile.listContacts", "profile.addContact", "profile.updateContact", "profile.deleteContact", "profile.mergeContacts"],
-      "pages": ["Home", "PlanPage"],
+      "pages": ["Home", "PlanPage", "WalletsPage"],
       "jobs": ["nightly-rollup-reconciliation", "taxonomy-migration", "coaching-reminders"]
     },
     {

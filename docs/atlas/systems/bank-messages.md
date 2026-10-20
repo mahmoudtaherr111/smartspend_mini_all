@@ -133,7 +133,7 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 | --- | --- | --- |
 | `capture-catalog` — Capture catalog | The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name. | 3 |
 | `ingestion-parsers` — Ingestion parsers | Bank SMS parsing (rules first, then a model through the admin's sms routes behind a switch, the plan budget and a daily USD cap, on redacted text, with a versioned reply contract checked before use), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut. | 5 |
-| `web-bank-sync` — Bank sync UI | The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel. | 5 |
+| `web-bank-sync` — Bank sync UI | The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel. | 4 |
 
 ## API procedures
 
@@ -153,7 +153,7 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 | `profile.generateWebhookToken` | mutation | `authedProcedure` | — | `webhook_tokens` | `BankSyncPage`, `More` |
 | `profile.getSmsLogs` | query | `authedProcedure` | `raw_sms_events` | — | `BankSyncPage`, `More` |
 | `profile.getSmsSuggestions` | query | `authedProcedure` | `raw_sms_events` | — | `Home` |
-| `profile.getWebhookToken` | query | `authedProcedure` | `raw_sms_events`, `webhook_tokens` | — | `BankSyncPage`, `More` |
+| `profile.getWebhookToken` | query | `authedProcedure` | `raw_sms_events`, `webhook_tokens` | — | `BankSyncPage`, `More`, `WalletsPage` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -207,7 +207,7 @@ Used by: [Admin console, support and growth tools](admin.md), [Money: expenses, 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>31 files and declarations</summary>
+<details><summary>30 files and declarations</summary>
 
 - `.github/workflows/build-apk.yml`
 - `android-app/app/build.gradle`
@@ -235,7 +235,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/sms-ledger.ts`
 - `api/sms-router.ts`
 - `src/components/bank-sync/AndroidSetupFlow.tsx`
-- `src/components/bank-sync/DigitalBankingSuite.tsx`
 - `src/components/bank-sync/IosSetupFlow.tsx`
 - `src/components/bank-sync/SmsSuggestionsCard.tsx`
 - `src/components/settings/SmsWebhookSettings.tsx`

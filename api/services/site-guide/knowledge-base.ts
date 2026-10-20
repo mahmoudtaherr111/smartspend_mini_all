@@ -2,7 +2,7 @@ import type { SiteGuideChunk } from "./types";
 
 /**
  * The approved guide the chat and the call read steps from. Each topic is written from the screen it describes
- * (`src/components/bank-sync/AndroidSetupFlow.tsx`, `IosSetupFlow.tsx`, `DigitalBankingSuite.tsx`, the Home record tab,
+ * (`src/components/bank-sync/AndroidSetupFlow.tsx`, `IosSetupFlow.tsx`, `src/components/wallets/DigitalBankingSuite.tsx`, the Home record tab,
  * the AI Center's monthly analysis, `src/pages/PlanPage.tsx`); a change to one of those screens changes its steps here.
  * It promises nothing the app does not do.
  */
@@ -43,11 +43,11 @@ export const SITE_GUIDE_CHUNKS: SiteGuideChunk[] = [
     area: "card",
     tags: ["فيزا", "بطاقة", "كارت", "visa", "bank", "ربط", "حساب بنكي"],
     content:
-      "التطبيق مابيربطش الكارت نفسه ولا بيطلب بياناته: بيقرا رسائل أو إشعارات البنك بتاعه. ممكن تضيف محفظة باسم البنك " +
-      "وآخر أربعة أرقام من الكارت بس عشان تميزها.",
+      "التطبيق مابيربطش الكارت نفسه ولا بيطلب بياناته. ممكن تضيفه كمحفظة باسم البنك وآخر أربعة أرقام من الكارت بس " +
+      "عشان تميزه.",
     steps: [
-      "اربط رسائل البنك الأول من «الربط البنكي» (أندرويد أو آيفون).",
-      "بعد الربط، من نفس الصفحة ضيف محفظة باسم البنك وآخر أربعة أرقام.",
+      "افتح «المزيد» ثم «كروتك ومحافظك».",
+      "اضغط إضافة كارت أو محفظة، واكتب اسم البنك وآخر أربعة أرقام.",
       "أو اطلب من سمارت في الشات أو المكالمة يضيف المحفظة، وأكّد المسودة.",
     ],
   },
@@ -59,7 +59,7 @@ export const SITE_GUIDE_CHUNKS: SiteGuideChunk[] = [
     content:
       "المحفظة بتحفظ الرصيد اللي انت بتكتبه ومعاه يوم ما كتبته؛ المصاريف مابتتخصمش منه لوحدها، فحدّثه لما يتغير.",
     steps: [
-      "من «الربط البنكي» بعد الربط اضغط إضافة محفظة، أو اطلب من سمارت يضيفها وأكّد.",
+      "من «المزيد» افتح «كروتك ومحافظك» واضغط إضافة كارت أو محفظة، أو اطلب من سمارت يضيفها وأكّد.",
       "اكتب الاسم ونوعها والرصيد اللي معاك دلوقتي.",
       "حدّث الرصيد لما يتغير، عشان «الفاضل لحد القبض» في «خطتك والتزاماتك» يبقى مظبوط.",
     ],

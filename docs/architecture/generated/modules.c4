@@ -229,7 +229,7 @@ model {
     web-admin = module 'Admin UI' {
       description 'Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.'
       metadata {
-        files '24'
+        files '23'
         paths 'src/components/admin/**'
       }
     }
@@ -243,7 +243,7 @@ model {
     web-bank-sync = module 'Bank sync UI' {
       description 'The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel.'
       metadata {
-        files '5'
+        files '4'
         paths 'src/components/bank-sync/**, src/components/settings/SmsWebhookSettings.tsx'
       }
     }
@@ -255,10 +255,10 @@ model {
       }
     }
     web-finance = module 'Finance UI' {
-      description 'Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals.'
+      description 'Home dashboard (summaries, calendar, charts, search, streaks), recent expenses, goals, and the cards and wallets screen.'
       metadata {
-        files '20'
-        paths 'src/components/dashboard/**, src/components/expenses/**, src/components/goals/**, src/components/budgets/**, src/components/debts/**, src/components/installments/**, src/components/seasons/**'
+        files '21'
+        paths 'src/components/dashboard/**, src/components/wallets/**, src/components/expenses/**, src/components/goals/**, src/components/budgets/**, src/components/debts/**, src/components/installments/**, src/components/seasons/**'
       }
     }
     web-growth = module 'Ads and SEO UI' {
@@ -292,7 +292,7 @@ model {
     web-pages = module 'Web pages' {
       description 'Route-level page components lazy-loaded by src/App.tsx.'
       metadata {
-        files '17'
+        files '18'
         paths 'src/pages/**'
       }
     }

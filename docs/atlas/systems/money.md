@@ -15,6 +15,7 @@ flowchart LR
   subgraph g_screens["Screens"]
     page_Home["Home screen"]
     page_PlanPage["PlanPage screen"]
+    page_WalletsPage["WalletsPage screen"]
     screens_accounts["Screens of Accounts, sign-in and security"]
     screens_bank_messages["Screens of Bank and wallet messages"]
     screens_web_app["Screens of Web and mobile app shell"]
@@ -95,6 +96,7 @@ flowchart LR
   page_Home --> router_goals
   page_PlanPage --> router_coach
   page_PlanPage --> router_profile
+  page_WalletsPage --> router_wallet
   router_budget --> mod_ledger
   router_budget --> sys_accounts
   router_budget --> sys_ai_center
@@ -166,7 +168,7 @@ flowchart LR
 | --- | --- | --- |
 | `coaching` — Commitments and coaching plans | Scheduled commitments and expected income with their due dates (the 31st on a short month's last day), the payments linked to each due date without counting one twice, what is free until the next payday from the recorded wallets, the coaching plan the user accepted with its steps, and in-app reminders delivered once per step revision. | 3 |
 | `ledger` — Ledger aggregates | Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer). | 6 |
-| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals. | 20 |
+| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses, goals, and the cards and wallets screen. | 21 |
 
 ## API procedures
 
@@ -221,10 +223,10 @@ flowchart LR
 | `profile.listContacts` | query | `authedProcedure` | `expenses`, `user_contacts` | — | `More`, `PlanPage`, `Settings` |
 | `profile.mergeContacts` | mutation | `authedProcedure` | `expenses`, `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `More`, `Settings` |
 | `profile.updateContact` | mutation | `authedProcedure` | `user_contacts` | `user_contacts` | `More`, `Settings` |
-| `wallet.createWallet` | mutation | `authedProcedure` | — | `user_wallets` | `BankSyncPage`, `More` |
-| `wallet.deleteWallet` | mutation | `authedProcedure` | — | `expenses`, `user_wallets` | `BankSyncPage`, `More` |
-| `wallet.getWalletTransactions` | query | `authedProcedure` | `expenses` | — | `BankSyncPage`, `More` |
-| `wallet.getWallets` | query | `authedProcedure` | `user_wallets` | — | `BankSyncPage`, `More` |
+| `wallet.createWallet` | mutation | `authedProcedure` | — | `user_wallets` | `BankSyncPage`, `More`, `WalletsPage` |
+| `wallet.deleteWallet` | mutation | `authedProcedure` | — | `expenses`, `user_wallets` | `BankSyncPage`, `More`, `WalletsPage` |
+| `wallet.getWalletTransactions` | query | `authedProcedure` | `expenses` | — | `BankSyncPage`, `More`, `WalletsPage` |
+| `wallet.getWallets` | query | `authedProcedure` | `user_wallets` | — | `BankSyncPage`, `More`, `WalletsPage` |
 | `wallet.updateWallet` | mutation | `authedProcedure` | — | `user_wallets` | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
@@ -281,7 +283,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>64 files and declarations</summary>
+<details><summary>66 files and declarations</summary>
 
 - `api/boot.ts#job:coaching-reminders`
 - `api/boot.ts#job:nightly-rollup-reconciliation`
@@ -345,7 +347,9 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/goals/FinancialGoalsPanel.tsx`
 - `src/components/installments/InstallmentsPanel.tsx`
 - `src/components/seasons/SeasonsPanel.tsx`
+- `src/components/wallets/DigitalBankingSuite.tsx`
 - `src/pages/Home.tsx`
 - `src/pages/PlanPage.tsx`
+- `src/pages/WalletsPage.tsx`
 
 </details>

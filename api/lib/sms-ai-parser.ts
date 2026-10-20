@@ -33,6 +33,7 @@ import {
   parseSmsReplyText,
   validateSmsReply,
   type SmsModelReply,
+  type SmsParseResult,
 } from "./sms-ai-contract";
 
 // A bank message is someone's balance and payees: log its length, never its text (golden rule 10).
@@ -41,25 +42,7 @@ const log = createLogger("sms-ai-parser");
 // Re-export shared cleaners for external consumers
 export { condenseSmsNotification, cleanSmsText, normalizeSmsText };
 
-export interface SmsParseResult {
-  transaction_detected: boolean;
-  amount: number | null;
-  currency: string;
-  direction: "incoming" | "outgoing" | null;
-  provider: "VodafoneCash" | "InstaPay" | "ApplePay" | "Bank" | "Unknown";
-  category:
-    | "transfer"
-    | "payment"
-    | "income"
-    | "bills"
-    | "withdrawal"
-    | "unknown";
-  fee: number | null;
-  merchant: string | null;
-  balance_after: number | null;
-  confidence: number; // 0.0 → 1.0
-  raw_extracted: Record<string, unknown>;
-}
+export type { SmsParseResult };
 
 export type SmsUserContext = {
   userId?: number | null;

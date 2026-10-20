@@ -319,9 +319,9 @@ model {
         }
       }
       getRawSmsLogs = procedure 'admin.getRawSmsLogs' {
-        #query #admin
+        #query #admin #uncalled
         technology 'adminProcedure'
-        description 'query · adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-router.ts'
           builder 'adminProcedure'

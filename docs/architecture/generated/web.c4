@@ -131,5 +131,12 @@ model {
         routes '/ultra'
       }
     }
+    WalletsPage = page 'WalletsPage' {
+      description 'src/pages/WalletsPage.tsx'
+      metadata {
+        file 'src/pages/WalletsPage.tsx'
+        routes '/wallets'
+      }
+    }
   }
 }

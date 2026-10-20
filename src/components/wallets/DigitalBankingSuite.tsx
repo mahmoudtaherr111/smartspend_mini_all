@@ -5,20 +5,22 @@ import {
   CreditCard,
   Plus,
   Trash2,
-  TrendingUp,
   ArrowUpRight,
   ArrowDownLeft,
   X,
   Smartphone,
   Info,
-  DollarSign,
   History,
-  AlertCircle,
   PiggyBank,
   CheckCircle,
-  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "../../../api/router";
+
+type WalletOutputs = inferRouterOutputs<AppRouter>["wallet"];
+type Wallet = WalletOutputs["getWallets"][number];
+type WalletTransaction = WalletOutputs["getWalletTransactions"][number];
 
 interface SuiteProps {
   onShowSetupInstructions: () => void;
@@ -54,7 +56,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
       setIsAddModalOpen(false);
       resetForm();
     },
-    onError: (err: any) => {
+    onError: (err: { message: string }) => {
       toast.error(err.message || "حدث خطأ أثناء إضافة البطاقة");
     },
   });
@@ -68,7 +70,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
         setSelectedWalletId(null);
       }
     },
-    onError: (err: any) => {
+    onError: (err: { message: string }) => {
       toast.error(err.message || "حدث خطأ أثناء حذف البطاقة");
       setIsDeletingId(null);
     },
@@ -253,7 +255,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
   const getCardTotals = () => {
     let totalIn = 0;
     let totalOut = 0;
-    transactions.forEach((tx: any) => {
+    transactions.forEach((tx: WalletTransaction) => {
       const amount = parseFloat(tx.amount);
       if (tx.type === "income") {
         totalIn += amount;
@@ -274,7 +276,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
     : daysSince! <= 3
       ? { fresh: true, text: `آخر رسالة بنك وصلت ${daysSince === 0 ? "النهارده" : daysSince === 1 ? "امبارح" : `من ${daysSince} أيام`}` }
       : { fresh: false, text: `آخر رسالة بنك وصلت من ${daysSince} يوم؛ اتأكد إن الربط لسه شغال على موبايلك` };
-  const selectedWallet = wallets.find((w: any) => w.id === selectedWalletId);
+  const selectedWallet = wallets.find((w: Wallet) => w.id === selectedWalletId);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -368,7 +370,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {wallets.map((wallet: any) => {
+            {wallets.map((wallet: Wallet) => {
               const config = getProviderConfig(wallet.provider);
               const isSelected = selectedWalletId === wallet.id;
 
@@ -615,7 +617,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
               </div>
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[450px] overflow-y-auto pe-1">
-                {transactions.map((tx: any) => {
+                {transactions.map((tx: WalletTransaction) => {
                   const isIncome = tx.type === "income";
                   const dateStr = new Date(tx.date).toLocaleDateString(
                     "ar-EG",

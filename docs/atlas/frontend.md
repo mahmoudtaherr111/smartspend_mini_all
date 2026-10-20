@@ -26,6 +26,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `/support` | signed-in | `Support` | `src/pages/Support.tsx` | — |
 | `/terms` | public | `Terms` | `src/pages/Terms.tsx` | — |
 | `/ultra` | signed-in | `UltraLounge` | `src/pages/UltraLounge.tsx` | — |
+| `/wallets` | signed-in | `WalletsPage` | `src/pages/WalletsPage.tsx` | — |
 
 ## App shell (rendered around every page)
 
@@ -86,7 +87,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `Admin` — `src/pages/Admin.tsx`
 
-32 files in its import closure (not counting `src/components/ui/`).
+31 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -118,7 +119,6 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.getNotificationStats` | useQuery | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getNotificationTemplates` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getPendingClarifications` | useQuery | `src/components/admin/ClarificationsTab.tsx` |
-| `admin.getRawSmsLogs` | useQuery | `src/components/admin/AdminRawSmsTab.tsx` |
 | `admin.getSettings` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getUserAiQuota` | useQuery | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` |
 | `admin.getUserSessions` | useQuery, utils.invalidate | `src/hooks/useAdmin.ts`, `src/pages/Admin.tsx` |
@@ -186,13 +186,13 @@ _None._
 | `profile.generateWebhookToken` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getSmartProfile` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
+| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/wallets/DigitalBankingSuite.tsx`, `src/pages/BankSyncPage.tsx` |
 | `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
-| `wallet.createWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.deleteWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.getWalletTransactions` | useQuery | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.getWallets` | useQuery, utils.invalidate | `src/components/bank-sync/DigitalBankingSuite.tsx` |
+| `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletTransactions` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWallets` | useQuery, utils.invalidate | `src/components/wallets/DigitalBankingSuite.tsx` |
 
 ### `Home` — `src/pages/Home.tsx`
 
@@ -300,7 +300,6 @@ _None._
 | `admin.getNotificationStats` | useQuery | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getNotificationTemplates` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getPendingClarifications` | useQuery | `src/components/admin/ClarificationsTab.tsx` |
-| `admin.getRawSmsLogs` | useQuery | `src/components/admin/AdminRawSmsTab.tsx` |
 | `admin.getSettings` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getUserAiQuota` | useQuery | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` |
 | `admin.getUserSessions` | useQuery, utils.invalidate | `src/hooks/useAdmin.ts`, `src/pages/Admin.tsx` |
@@ -378,7 +377,7 @@ _None._
 | `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/ProfileScreen.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/DigitalBankingSuite.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/pages/BankSyncPage.tsx` |
+| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/wallets/DigitalBankingSuite.tsx`, `src/pages/BankSyncPage.tsx` |
 | `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx`, `src/pages/PlanPage.tsx` |
 | `profile.mergeContacts` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
@@ -395,10 +394,10 @@ _None._
 | `support.listMine` | useQuery | `src/pages/Support.tsx` |
 | `support.respond` | useMutation | `src/pages/Admin.tsx` |
 | `voice.adminStats` | useQuery | `src/components/admin/settings/AdminVoiceCallSection.tsx` |
-| `wallet.createWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.deleteWallet` | useMutation | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.getWalletTransactions` | useQuery | `src/components/bank-sync/DigitalBankingSuite.tsx` |
-| `wallet.getWallets` | useQuery, utils.invalidate | `src/components/bank-sync/DigitalBankingSuite.tsx` |
+| `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletTransactions` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWallets` | useQuery, utils.invalidate | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx`, `src/hooks/usePasskeyEnrolment.ts` |
 | `webauthn.deletePasskey` | useMutation | `src/components/auth/PasskeySettings.tsx` |
 | `webauthn.generateRegistrationOptions` | useMutation | `src/hooks/usePasskeyEnrolment.ts` |
@@ -527,6 +526,19 @@ _None._
 | Procedure | Calls | Files |
 | --- | --- | --- |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
+
+### `WalletsPage` — `src/pages/WalletsPage.tsx`
+
+4 files in its import closure (not counting `src/components/ui/`).
+
+| Procedure | Calls | Files |
+| --- | --- | --- |
+| `profile.getWebhookToken` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
+| `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletTransactions` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWallets` | useQuery, utils.invalidate | `src/components/wallets/DigitalBankingSuite.tsx` |
 
 ## Mutation hooks that are never invoked
 
