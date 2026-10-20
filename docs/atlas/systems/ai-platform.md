@@ -44,9 +44,9 @@ flowchart LR
   sys_voice_calls[["Live voice assistant (system)"]]
   mod_ai_governance --> sys_platform
   mod_ai_governance -.-> tbl_classification_logs
-  mod_ai_governance -.-> tbl_local_users
-  mod_ai_governance -.-> tbl_users
+  mod_ai_governance ==> tbl_local_users
   mod_ai_governance ==> tbl_user_analytics
+  mod_ai_governance ==> tbl_users
   mod_ai_providers --> ext_deepseek
   mod_ai_providers --> ext_fireworks
   mod_ai_providers --> ext_gemini
@@ -93,11 +93,11 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- | --- |
 | `ai_models` | A | — | `ai-providers` |
 | `ai_providers` | A | `ai-providers` | `ai-providers` |
-| `ai_token_ledgers` | E | `ai-providers` | — |
+| `ai_token_ledgers` | E | `ai-providers` | `ai-providers` |
 | `classification_logs` | E | — | `ai-governance` |
-| `local_users` | A | `ai-providers` | `ai-governance` |
+| `local_users` | A | `ai-governance`, `ai-providers` | `ai-governance` |
 | `user_analytics` | E | `ai-governance` | `ai-governance` |
-| `users` | A | `ai-providers` | `ai-governance` |
+| `users` | A | `ai-governance`, `ai-providers` | `ai-governance` |
 | `voice_usage` | E | — | `ai.getUserLimits` |
 
 ## Outside systems

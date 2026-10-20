@@ -1,18 +1,39 @@
 /**
- * SMS AI Parser — SmartSpend
- * Extracts structured financial data from SMS messages using Gemini.
- * This is a pure Data Extraction Engine — it does NOT respond to users.
+ * The model that reads a bank or wallet message the rules could not read with confidence (decision 0025).
+ *
+ * It goes through the providers the admin configured for the `sms` purpose (any OpenAI-compatible endpoint such as
+ * OpenRouter, or Gemini), and only through them: a bank message is never sent to a built-in provider the admin did
+ * not choose. Until the admin configures one, `GEMINI_API_KEY` with `mapModelName("flash")` answers, as before.
+ *
+ * Before any call: the admin's switch (`sms_ai_enabled`), the user's plan budget (`assertAiBudget`, channel `sms`) and
+ * the global daily cost cap in USD (`sms_ai_daily_cost_cap_usd`). The text is condensed and redacted
+ * (api/lib/anonymizer.ts), and one call carries one message of one user. The reply is checked by
+ * api/lib/sms-ai-contract.ts. When the model is skipped or its reply is discarded, the result says so and the ingest
+ * route takes the path it takes without a model: the rules' reading, or the raw message kept with its reason.
  */
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { env } from "./env";
 import { mapModelName } from "./model-mapper";
-import {
-  condenseSmsNotification,
-  cleanSmsText,
-  normalizeSmsText,
-} from "./sms-rule-parser";
+import { condenseSmsNotification, cleanSmsText, normalizeSmsText } from "./sms-rule-parser";
 import { createLogger } from "./log";
-import { recordGeminiCall } from "./ai-ledger";
+import { ledgerCostUsdSince, recordModelCalls } from "./ai-ledger";
+import { executeLlmChain, LlmChainError, type LlmRoute, type StructuredSchema } from "./llm-router";
+import { buildProviderChain } from "./llm-provider-chain";
+import { resolveAdminRoutes } from "./ai-gateway";
+import { asPlan, assertAiBudget, clampOutputTokens, estimateTokensFromText, trackAiTokens } from "./ai-usage-policy";
+import { getSystemSettings } from "./settings-cache";
+import { costAtRates, ratesFor, type ModelRates } from "./ai-pricing";
+import { businessDayRange } from "./app-time";
+import { redactSensitiveData, redactWithFindings } from "./anonymizer";
+import {
+  SMS_PROMPT_VERSION,
+  SMS_REPLY_SCHEMA,
+  SMS_SYSTEM_PROMPT,
+  buildSmsUserPrompt,
+  interpretSmsReply,
+  parseSmsReplyText,
+  validateSmsReply,
+  type SmsModelReply,
+} from "./sms-ai-contract";
 
 // A bank message is someone's balance and payees: log its length, never its text (golden rule 10).
 const log = createLogger("sms-ai-parser");
@@ -43,38 +64,65 @@ export interface SmsParseResult {
 export type SmsUserContext = {
   userId?: number | null;
   userType?: string | null;
+  /** The user's plan: which admin route serves the call, and whose budget pays for it. */
+  plan?: string | null;
+  /** The sender the phone reported, redacted before the model sees it. */
+  sender?: string | null;
+  /** The provider the rules recognised, passed through when the model's answer does not name one. */
+  providerHint?: SmsParseResult["provider"] | null;
 };
 
-// In-memory LRU cache to store parsed results partitioned by tenant
-const aiParseCache = new Map<
-  string,
-  { result: SmsParseResult; expiresAt: number }
->();
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes TTL
-const MAX_CACHE_ENTRIES = 500;
+/**
+ * What happened to the message on the model path:
+ *   - parsed / cache_hit: a checked reply, in `result` (it may still say no transaction);
+ *   - not_transaction: a checked reply that reads it as no ledger movement (declined, a hold, a code, an offer, a
+ *     statement, a balance), which the route must not save from the rules either;
+ *   - everything else: no model answer to use (`skipped`), and the route takes the no-model path.
+ */
+export type SmsModelOutcome =
+  | "parsed"
+  | "cache_hit"
+  | "not_transaction"
+  | "empty"
+  | "no_user"
+  | "disabled"
+  | "no_route"
+  | "budget"
+  | "cost_cap"
+  | "failed"
+  | "invalid_reply"
+  | "needs_review";
 
-function getCacheKey(
-  message: string,
-  userContext?: SmsUserContext,
-): string {
-  const prefix = `${userContext?.userType ?? "anon"}:${userContext?.userId ?? 0}`;
-  return `${prefix}:${message}`;
+export interface SmsModelRead {
+  result: SmsParseResult | null;
+  outcome: SmsModelOutcome;
+  /** No model answer is used: switched off, out of budget or cap, failed, discarded, or not to be saved as read. */
+  skipped: boolean;
 }
 
-function setCacheEntry(
-  key: string,
-  result: SmsParseResult,
-): void {
+/** The static instructions, counted as the parse channel counts its prompt: the per-request ceiling is about the message. */
+const STATIC_PROMPT_TOKENS = 420;
+/** The reply is one small JSON object. */
+const MAX_OUTPUT_TOKENS = 512;
+/** Gemini through the server key while the admin has configured no `sms` route (temporary, decision 0025). */
+const FALLBACK_MODEL_ALIAS = "flash";
+
+// In-memory cache of checked replies, per user and prompt version, for 15 minutes.
+const aiParseCache = new Map<string, { reply: SmsModelReply; expiresAt: number }>();
+const CACHE_TTL = 15 * 60 * 1000;
+const MAX_CACHE_ENTRIES = 500;
+
+/** Everything the answer depends on: the user, the prompt version and the exact prompt the model would see. */
+function getCacheKey(userType: string, userId: number, userPrompt: string): string {
+  return `${SMS_PROMPT_VERSION}:${userType}:${userId}:${userPrompt}`;
+}
+
+function setCacheEntry(key: string, reply: SmsModelReply): void {
   if (aiParseCache.size >= MAX_CACHE_ENTRIES) {
     const oldestKey = aiParseCache.keys().next().value;
-    if (oldestKey !== undefined) {
-      aiParseCache.delete(oldestKey);
-    }
+    if (oldestKey !== undefined) aiParseCache.delete(oldestKey);
   }
-  aiParseCache.set(key, {
-    result: structuredClone(result),
-    expiresAt: Date.now() + CACHE_TTL,
-  });
+  aiParseCache.set(key, { reply: structuredClone(reply), expiresAt: Date.now() + CACHE_TTL });
 }
 
 export function clearSmsAiCache(): void {
@@ -85,140 +133,170 @@ export function getSmsAiCacheSize(): number {
   return aiParseCache.size;
 }
 
-const SMS_RESPONSE_SCHEMA = {
-  type: SchemaType.OBJECT,
-  properties: {
-    transaction_detected: { type: SchemaType.BOOLEAN },
-    amount: { type: SchemaType.NUMBER, nullable: true },
-    currency: { type: SchemaType.STRING },
-    direction: { type: SchemaType.STRING, nullable: true },
-    provider: { type: SchemaType.STRING },
-    category: { type: SchemaType.STRING },
-    fee: { type: SchemaType.NUMBER, nullable: true },
-    merchant: { type: SchemaType.STRING, nullable: true },
-    balance_after: { type: SchemaType.NUMBER, nullable: true },
-    confidence: { type: SchemaType.NUMBER },
-  },
-  required: [
-    "transaction_detected",
-    "currency",
-    "provider",
-    "category",
-    "confidence",
-  ],
-};
+const skip = (outcome: SmsModelOutcome): SmsModelRead => ({ result: null, outcome, skipped: true });
 
-const SMS_SYSTEM_PROMPT = `أنت نظام خبير في استخراج البيانات المالية من رسائل SMS و الإشعارات البنكية والمحافظ الإلكترونية في مصر. 
-تأتي الرسائل إما باللغة العربية الفصحى أو باللغة الإنجليزية.
-مهمتك الوحيدة: استخراج البيانات بدقة متناهية وإرجاعها كـ JSON فقط بدون أي تعليق.
-
-قواعد صارمة جداً:
-1. لا ترد على المستخدم، فقط أرجع JSON.
-2. إذا كانت الرسالة ليست معاملة مالية فعلية (مثل OTP، كود تفعيل، إعلان، استعلام عن رصيد بدون حركة) → transaction_detected: false
-3. إذا كانت حركة مالية (خصم، إيداع، تحويل، دفع) → استخرج التفاصيل.
-
-كيف تحدد الـ direction (الدخل والمصروف):
-- [incoming / دخل]: "تم إيداع", "تم إضافة", "تم قيد", "استلمت", "وصلك", "تم تحويل...لك", "credited to", "received"
-- [outgoing / مصروف]: "تم خصم", "تم سحب", "تم الدفع", "قمت بتحويل", "تم تحويل...لـ", "سحبت", "دفعت", "عملية شراء", "debited from", "purchase", "paid", "withdrawal"
-
-أمثلة حاسمة:
-- "تم إيداع مبلغ 500 جنيه في حسابك..." -> incoming
-- "تم خصم مبلغ 200 جنيه من حسابك..." -> outgoing
-- "استلمت 1000 جنيه من..." -> incoming
-- "قمت بتحويل 1000 جنيه لـ..." -> outgoing
-- "CIB: Your account has been credited with EGP 1000" -> incoming
-- "CIB: Your account has been debited by EGP 1000" -> outgoing
-
-تحديد الـ category:
-- transfer (تحويل بين أشخاص)
-- payment (دفع/مشتريات/POS)
-- income (راتب/مكافأة)
-- bills (فواتير كهرباء، غاز، انترنت، شحن)
-- withdrawal (سحب نقدي من ATM)
-- deposit (إيداع نقدي أو بنكي)
-- unknown (غير معروف)
-
-تحديد الـ provider:
-- فودافون كاش / Vodafone Cash → "VodafoneCash"
-- انستاباي / InstaPay → "InstaPay"
-- أبل باي / Apple Pay → "ApplePay"
-- اسم البنك (CIB, NBE, QNB, Banque Misr, Alex Bank) → "Bank"
-- أخرى (اتصالات كاش, اورانج كاش, وي باي) → "Wallet"
-- غير محدد → "Unknown"`;
-
-export async function parseSmsFinancialData(
-  message: string,
-  userContext?: SmsUserContext,
-): Promise<SmsParseResult | null> {
-  const apiKey = env.GEMINI_API_KEY;
-  const modelName = mapModelName("flash"); // Maps dynamically to active fast model (e.g. gemini-3.1-flash-lite)
-
-  const trimmedMessage = message.trim();
-  if (!trimmedMessage) return null;
-
-  // 1. Condense the SMS to strip non-financial boilerplate and save 40–70% input tokens
-  const condensedMessage = condenseSmsNotification(trimmedMessage);
-
-  // 2. Check the tenant-isolated in-memory cache first to avoid duplicate token costs
-  const now = Date.now();
-  const rawKey = getCacheKey(trimmedMessage, userContext);
-  const condensedKey = getCacheKey(condensedMessage, userContext);
-  const cached = aiParseCache.get(rawKey) || aiParseCache.get(condensedKey);
-  if (cached && cached.expiresAt > now) {
-    log.info({ event: "sms.parse.cache_hit", length: condensedMessage.length }, "Bank message parse served from cache");
-    // A copy: the caller files and adjusts what it gets, and must not change the entry.
-    return structuredClone(cached.result);
-  }
-
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      systemInstruction: SMS_SYSTEM_PROMPT,
-      generationConfig: {
-        temperature: 0.05, // Very low — we want deterministic extraction, not creativity
-        maxOutputTokens: 512,
-        responseMimeType: "application/json",
-        responseSchema: SMS_RESPONSE_SCHEMA as any,
-      },
+/** The admin's `sms` routes, alone; or Gemini with the server key while there are none. */
+async function smsRoutes(plan: ReturnType<typeof asPlan>): Promise<{ routes: LlmRoute[]; source: "admin" | "server_key" }> {
+  const admin = await resolveAdminRoutes("sms", plan).catch((err) => {
+    log.warn({ err, event: "sms.ai.admin_routes_unavailable" }, "Admin routes for bank messages could not be read");
+    return { preferred: null, routes: [] };
+  });
+  if (admin.routes.length > 0) {
+    const lead = admin.preferred ?? admin.routes[0];
+    // No built-in keys: the chain is exactly what the admin allowed for this purpose, in their priority order.
+    const routes = buildProviderChain({
+      preferred: lead.slug,
+      preferredModel: lead.model,
+      plan,
+      keys: {},
+      dbRoutes: admin.routes.map((route) => ({
+        slug: route.slug,
+        protocol: route.protocol === "gemini" ? ("gemini" as const) : ("openai" as const),
+        baseUrl: route.baseUrl,
+        apiKey: route.apiKey,
+        model: route.model,
+        priority: route.priority,
+        providerId: route.providerId,
+        suppressReasoning: route.suppressReasoning,
+      })),
     });
-
-    const result = await model.generateContent(
-      `رسالة SMS:\n"${condensedMessage}"`,
-    );
-    if (userContext?.userId && userContext.userType) {
-      recordGeminiCall({ id: userContext.userId, type: userContext.userType }, "sms", modelName, result.response.usageMetadata);
-    }
-    const responseText = result.response.text().trim();
-
-    const parsed = JSON.parse(responseText) as SmsParseResult;
-
-    const finalResult: SmsParseResult = {
-      transaction_detected: parsed.transaction_detected ?? false,
-      amount: parsed.amount ?? null,
-      currency: parsed.currency ?? "EGP",
-      direction: parsed.direction ?? null,
-      provider: (parsed.provider as SmsParseResult["provider"]) ?? "Unknown",
-      category: (parsed.category as SmsParseResult["category"]) ?? "unknown",
-      fee: parsed.fee ?? null,
-      merchant: parsed.merchant ?? null,
-      balance_after: parsed.balance_after ?? null,
-      confidence: parsed.confidence ?? 0,
-      raw_extracted: parsed as unknown as Record<string, unknown>,
-    };
-
-    // 3. Cache the parsed result if a valid transaction is detected
-    if (finalResult.transaction_detected) {
-      setCacheEntry(rawKey, finalResult);
-      setCacheEntry(condensedKey, finalResult);
-      log.info({ event: "sms.parse.cached", length: condensedMessage.length }, "Bank message parse cached");
-    }
-
-    return finalResult;
-  } catch (error: any) {
-    log.error({ err: error, event: "sms.parse.failed" }, "Bank message parse failed");
-    return null;
+    return { routes, source: "admin" };
   }
+  if (!env.GEMINI_API_KEY) return { routes: [], source: "server_key" };
+  return {
+    routes: [{ slug: "gemini", protocol: "gemini", baseUrl: "", apiKey: env.GEMINI_API_KEY, model: mapModelName(FALLBACK_MODEL_ALIAS), priority: 0 }],
+    source: "server_key",
+  };
+}
+
+/**
+ * The daily cap holds only for calls it can price, so with a cap only priced routes are tried. Returns the routes
+ * left, or null when the cap is reached (or nothing left can be priced).
+ */
+async function withinDailyCap(
+  routes: LlmRoute[],
+  capUsd: number,
+  usage: { promptTokens: number; completionTokens: number },
+): Promise<LlmRoute[] | null> {
+  if (!(capUsd > 0)) return routes;
+  const priced: Array<{ route: LlmRoute; rates: ModelRates }> = [];
+  for (const route of routes) {
+    const rates = await ratesFor(route.slug, route.model);
+    if (rates) priced.push({ route, rates });
+  }
+  if (priced.length === 0) return null;
+  const spent = await ledgerCostUsdSince("sms", businessDayRange().start);
+  // The most this call could cost, whichever route answers.
+  const worst = Math.max(...priced.map(({ rates }) => costAtRates(rates, usage)));
+  return spent + worst > capUsd ? null : priced.map(({ route }) => route);
+}
+
+export async function parseSmsFinancialData(message: string, userContext: SmsUserContext = {}): Promise<SmsModelRead> {
+  const trimmedMessage = message.trim();
+  if (!trimmedMessage) return skip("empty");
+
+  const userId = userContext.userId;
+  const userType: "oauth" | "local" | null =
+    userContext.userType === "oauth" || userContext.userType === "local" ? userContext.userType : null;
+  // A call is paid from one user's budget; without a user there is no budget to check.
+  if (!userId || !userType) return skip("no_user");
+  const user = { id: userId, type: userType, plan: asPlan(userContext.plan ?? undefined) };
+  const logBase = { userId, userType, promptVersion: SMS_PROMPT_VERSION };
+
+  const settings = await getSystemSettings().catch(() => ({}) as Record<string, string>);
+  if (settings.sms_ai_enabled === "false") {
+    log.info({ ...logBase, event: "sms.ai.skipped", reason: "disabled" }, "Bank message model is switched off");
+    return skip("disabled");
+  }
+
+  // Condensed, then redacted: the model never sees a card, account, phone, reference or name.
+  const condensed = condenseSmsNotification(trimmedMessage);
+  const { text: redacted, findings } = redactWithFindings(condensed);
+  const userPrompt = buildSmsUserPrompt({
+    text: redacted,
+    sender: userContext.sender ? redactSensitiveData(userContext.sender.trim()) : null,
+    providerHint: userContext.providerHint,
+  });
+  const interpretContext = { providerHint: userContext.providerHint, cardLast4: findings.cardLast4 };
+
+  const cacheKey = getCacheKey(userType, userId, userPrompt);
+  const cached = aiParseCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    log.info({ ...logBase, event: "sms.parse.cache_hit", length: redacted.length }, "Bank message parse served from cache");
+    const { result } = interpretSmsReply(structuredClone(cached.reply), interpretContext);
+    return { result, outcome: "cache_hit", skipped: false };
+  }
+
+  const { routes: candidates, source } = await smsRoutes(user.plan);
+  if (candidates.length === 0) {
+    log.warn({ ...logBase, event: "sms.ai.skipped", reason: "no_route" }, "No provider can read bank messages");
+    return skip("no_route");
+  }
+
+  const estimatedInputTokens = estimateTokensFromText(userPrompt) + STATIC_PROMPT_TOKENS;
+  let maxOutputTokens: number;
+  try {
+    const budget = await assertAiBudget(user, "sms", estimatedInputTokens);
+    maxOutputTokens = Math.min(MAX_OUTPUT_TOKENS, clampOutputTokens(budget.perRequestMax, budget.remaining, estimatedInputTokens));
+  } catch {
+    log.info({ ...logBase, event: "sms.ai.skipped", reason: "budget" }, "Bank message model skipped: the plan budget refused it");
+    return skip("budget");
+  }
+
+  const capUsd = Number(settings.sms_ai_daily_cost_cap_usd) || 0;
+  const routes = await withinDailyCap(candidates, capUsd, { promptTokens: estimatedInputTokens, completionTokens: maxOutputTokens }).catch(
+    (err) => {
+      // A cap that cannot be checked is treated as reached: it exists to stop spending.
+      log.warn({ err, event: "sms.ai.cap_unreadable" }, "Bank message cost cap could not be checked");
+      return null;
+    },
+  );
+  if (!routes) {
+    log.info({ ...logBase, event: "sms.ai.skipped", reason: "cost_cap" }, "Bank message model skipped: the daily cost cap is reached");
+    return skip("cost_cap");
+  }
+
+  let llm;
+  try {
+    llm = await executeLlmChain(routes, {
+      systemPrompt: SMS_SYSTEM_PROMPT,
+      userPrompt,
+      maxOutputTokens,
+      // Thinking tokens come out of the output cap on Gemini 3; reading one message needs none.
+      lowThinking: true,
+      temperature: 0,
+      schema: SMS_REPLY_SCHEMA as unknown as StructuredSchema,
+      timeoutMs: 8_000,
+      deadlineMs: 15_000,
+    });
+  } catch (error) {
+    const attempts = error instanceof LlmChainError ? error.attempts : [];
+    recordModelCalls(user, "sms", attempts, { tokens: 0 });
+    const spent = attempts.reduce((sum, attempt) => sum + (attempt.totalTokens ?? 0), 0);
+    void trackAiTokens(user, spent, "sms", attempts[0]?.model);
+    log.error(
+      { ...logBase, event: "sms.parse.failed", source, attempts: attempts.map((a) => `${a.slug}:${a.failure ?? "ok"}`) },
+      "Bank message parse failed",
+    );
+    return skip("failed");
+  }
+
+  // What the request cost, failovers included: on the ledger at each provider's price, and on the plan budget.
+  recordModelCalls(user, "sms", llm.attempts, { model: llm.route.model, tokens: llm.attemptTotals.totalTokens, providerSlug: llm.route.slug });
+  void trackAiTokens(user, llm.attemptTotals.totalTokens || llm.totalTokens, "sms", llm.route.model);
+
+  const check = validateSmsReply(parseSmsReplyText(llm.text), redacted);
+  const served = { ...logBase, source, provider: llm.route.slug, model: llm.route.model, latencyMs: llm.latencyMs, length: redacted.length };
+  if (!check.ok) {
+    log.warn({ ...served, event: "sms.ai.reply_rejected", problems: check.rejected }, "Bank message model reply discarded");
+    return skip("invalid_reply");
+  }
+
+  const { verdict, result } = interpretSmsReply(check.reply, interpretContext);
+  log.info({ ...served, event: "sms.ai.read", verdict, repaired: check.repaired }, "Bank message read by the model");
+  if (verdict === "needs_review") return skip("needs_review");
+  if (verdict === "transaction") setCacheEntry(cacheKey, check.reply);
+  return { result, outcome: verdict === "not_transaction" ? "not_transaction" : "parsed", skipped: false };
 }
 
 /**

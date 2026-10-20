@@ -10,7 +10,7 @@
         "api/boot.ts#job:daily-auth-cleanup": "acfde0491549",
         "api/lib/access-control.ts": "cca3d73f1965",
         "api/lib/admin-safe-fields.ts": "cfb73d6bbe66",
-        "api/lib/anonymizer.ts": "5c18efa7eec1",
+        "api/lib/anonymizer.ts": "3d2ae91e313c",
         "api/lib/get-client-ip.ts": "72af77e654a4",
         "api/lib/google-id-token.ts": "008e0247eaad",
         "api/lib/http-origin-security.ts": "066096844fe2",
@@ -54,9 +54,9 @@
         "src/pages/Login.tsx": "59d76ce265d9",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-18 d3e45a3",
-      "arabic": "c14d66cffa33",
-      "arabicChecked": "2026-10-18 d3e45a3"
+      "checked": "2026-10-20 cfbc7f55",
+      "arabic": "c63b1e30db7d",
+      "arabicChecked": "2026-10-20 cfbc7f55"
     },
     "admin": {
       "files": {
@@ -79,22 +79,23 @@
         "src/components/admin/ai-center/AiCommandCenter.tsx": "aa2535884807",
         "src/components/admin/ai-center/modals/AiModelEditDialog.tsx": "42ec0771293d",
         "src/components/admin/ai-center/modals/TokenAnatomyModal.tsx": "5d1eb48a7da5",
-        "src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx": "3d4e8239e57c",
+        "src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx": "f709bf2923f7",
         "src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx": "f776695feeb5",
         "src/components/admin/ai-center/tabs/AiTelemetryTab.tsx": "c90405d7e803",
         "src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx": "10ff32f1e785",
         "src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx": "88d1c8cbcd39",
         "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
-        "src/components/admin/settings/AdminPlansTab.tsx": "8df5329e00b2",
+        "src/components/admin/settings/AdminPlansTab.tsx": "c406b05f2286",
         "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
+        "src/components/admin/settings/AdminSmsAiSection.tsx": "2bd780dd003b",
         "src/components/admin/settings/AdminVoiceCallSection.tsx": "ae339f527cf2",
         "src/pages/Admin.tsx": "d0445cee1a99",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-10-19 9b9acea",
-      "arabic": "edb9c761879c",
-      "arabicChecked": "2026-10-19 9b9acea"
+      "checked": "2026-10-20 cfbc7f55",
+      "arabic": "e96291b07833",
+      "arabicChecked": "2026-10-20 cfbc7f55"
     },
     "ai-center": {
       "files": {
@@ -160,10 +161,10 @@
         "api/ai-router.ts#ai.getUserLimits": "85e198fa737d",
         "api/ai-router.ts#rest-of-file": "50513cb36491",
         "api/lib/ai-gateway.ts": "dbf171b0d6f3",
-        "api/lib/ai-ledger.ts": "93e56a2d0714",
+        "api/lib/ai-ledger.ts": "7c1a14b9f2c1",
         "api/lib/ai-pricing.ts": "23f9d247a58d",
         "api/lib/ai-provider-registry.ts": "da1562b6acdf",
-        "api/lib/ai-usage-policy.ts": "e18edf7b3fec",
+        "api/lib/ai-usage-policy.ts": "ab1cefec5e67",
         "api/lib/deepseek-client.ts": "25b94e78c4ee",
         "api/lib/embedding-provider.ts": "72fa42725bca",
         "api/lib/fireworks-client.ts": "0ff5cda683b6",
@@ -177,9 +178,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "e3745661fa35"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "a702022959d1",
-      "arabicChecked": "2026-10-01 b5d9955"
+      "checked": "2026-10-20 cfbc7f55",
+      "arabic": "6f0e50367fd9",
+      "arabicChecked": "2026-10-20 cfbc7f55"
     },
     "bank-messages": {
       "files": {
@@ -189,7 +190,8 @@
         "android-app/app/src/main/java/com/smartspend/sync/DeepLinkActivity.kt": "d0cd83e77b4d",
         "android-app/app/src/main/java/com/smartspend/sync/SyncService.kt": "3f742c67f26e",
         "api/lib/shortcut-generator.ts": "fbf02d8e0f5d",
-        "api/lib/sms-ai-parser.ts": "1a27efcb4291",
+        "api/lib/sms-ai-contract.ts": "35fa86384893",
+        "api/lib/sms-ai-parser.ts": "8ef96a24bab1",
         "api/lib/sms-rule-parser.ts": "4e68191237e2",
         "api/profile-router.ts#profile.confirmSmsSuggestion": "a95676092729",
         "api/profile-router.ts#profile.dismissSmsSuggestion": "2aea8fd37c7d",
@@ -200,7 +202,7 @@
         "api/profile-router.ts#profile.getWebhookToken": "383d68616d9f",
         "api/profile-router.ts#rest-of-file": "01857da89415",
         "api/services/sms-ledger.ts": "079eab469b7d",
-        "api/sms-router.ts": "e0b8578ae4b4",
+        "api/sms-router.ts": "1af147f3974b",
         "src/components/bank-sync/AndroidSetupFlow.tsx": "a46afb8f98d0",
         "src/components/bank-sync/DigitalBankingSuite.tsx": "0fa4b6d4f7e6",
         "src/components/bank-sync/IosSetupFlow.tsx": "d9df23b4367c",
@@ -208,9 +210,9 @@
         "src/components/settings/SmsWebhookSettings.tsx": "c540d4df52db",
         "src/pages/BankSyncPage.tsx": "b6052297414a"
       },
-      "checked": "2026-10-18 59352bb",
-      "arabic": "8b44dcbeed90",
-      "arabicChecked": "2026-10-18 59352bb"
+      "checked": "2026-10-20 cfbc7f55",
+      "arabic": "cb8bbf414600",
+      "arabicChecked": "2026-10-20 cfbc7f55"
     },
     "billing": {
       "files": {
@@ -452,7 +454,7 @@
         "api/lib/redis-client.ts": "8b7cc1f8f3b4",
         "api/lib/settings-cache.ts": "ee7c564513f7",
         "api/lib/shared-generation.ts": "2d53bf30e567",
-        "api/lib/system-settings-registry.ts": "2464e32adf53",
+        "api/lib/system-settings-registry.ts": "0ed8a91bf64d",
         "api/middleware.ts": "d2e8e2966fe6",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "a064070cc6e0",
@@ -464,7 +466,7 @@
         "api/services/storage/s3-driver.ts": "93478c2f095d",
         "api/services/storage/types.ts": "766de83090e8",
         "contracts/account-deletion.ts": "6fcd736f6cae",
-        "contracts/ai-models.ts": "e103e23321f3",
+        "contracts/ai-models.ts": "d72afccc9964",
         "contracts/categories.ts": "1dd7c898e484",
         "contracts/constants.ts": "f047c234a332",
         "contracts/errors.ts": "823cdb78cfc4",
@@ -481,9 +483,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "e05665bec173"
       },
-      "checked": "2026-10-19 9b9acea",
-      "arabic": "120f7c3e7657",
-      "arabicChecked": "2026-10-19 9b9acea"
+      "checked": "2026-10-20 cfbc7f55",
+      "arabic": "62121a51fd2b",
+      "arabicChecked": "2026-10-20 cfbc7f55"
     },
     "voice-calls": {
       "files": {

@@ -125,7 +125,9 @@ model {
   smartspend.api.modules.ai-governance -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.ai-governance -[reads]-> smartspend.mysql.user_analytics
   smartspend.api.modules.ai-governance -[reads]-> smartspend.mysql.users
+  smartspend.api.modules.ai-governance -[writes]-> smartspend.mysql.local_users
   smartspend.api.modules.ai-governance -[writes]-> smartspend.mysql.user_analytics
+  smartspend.api.modules.ai-governance -[writes]-> smartspend.mysql.users
   smartspend.api.modules.ai-insights -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.ai-insights -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.ai-insights -[imports]-> smartspend.shared.contracts
@@ -168,6 +170,7 @@ model {
   smartspend.api.modules.ai-providers -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ai-providers -[reads]-> smartspend.mysql.ai_models
   smartspend.api.modules.ai-providers -[reads]-> smartspend.mysql.ai_providers
+  smartspend.api.modules.ai-providers -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.modules.ai-providers -[uses]-> deepseek
   smartspend.api.modules.ai-providers -[uses]-> fireworks
   smartspend.api.modules.ai-providers -[uses]-> gemini
@@ -365,11 +368,14 @@ model {
   smartspend.api.modules.finance-semantic-layer -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.modules.finance-semantic-layer -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.modules.finance-semantic-layer -[reads]-> smartspend.mysql.user_wallets
+  smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.ai-governance
   smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.security
+  smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ingestion-parsers -[reads]-> smartspend.mysql.raw_sms_events
   smartspend.api.modules.ingestion-parsers -[uses]-> gemini
   smartspend.api.modules.ingestion-parsers -[writes]-> smartspend.mysql.expenses

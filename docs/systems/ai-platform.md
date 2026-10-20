@@ -38,6 +38,12 @@ the per-plan token budget every paid call is measured against, and the two place
    For classification the requested provider is the admin's "classification" model for the plan; without one it is
    Gemini with the plan's own model (`resolveRoutingConfig`). Nothing depends on how many tokens the user has spent:
    the monthly limit is `assertAiBudget`'s, and the per-plan token-range routing (`*_routing_ranges`) is gone.
+   Bank messages are the exception to the built-in floor ([decision 0025](../decisions/0025-bank-message-model-through-admin-gateway.md)):
+   `api/lib/sms-ai-parser.ts` builds the chain from the admin's "sms" routes alone (`keys: {}`), so a message is only
+   ever sent to a provider the admin chose for it; with none, `GEMINI_API_KEY` with `mapModelName("flash")` answers,
+   for now. That call also passes the admin's switch `sms_ai_enabled` and a daily cap in USD across all users,
+   `sms_ai_daily_cost_cap_usd`, counted from the ledger (`ledgerCostUsdSince` in `api/lib/ai-ledger.ts`) at the routes'
+   prices; with a cap, an unpriced route is left out ([bank messages](bank-messages.md#3-rules-first-the-model-second)).
 3. `executeLlmChain` tries the routes in order under one deadline for the whole chain. A request with `lowThinking`
    (classification) asks a Gemini 3 model for `thinkingLevel: LOW`, since thinking tokens come out of a small output
    cap, and asks once more without it if the model refuses the setting. Gemini goes through the
@@ -122,15 +128,17 @@ refused key, and the next answers. The chat also takes its model from the admin'
   neither knows is written at zero with `metadata.priced` false and logged (`ai_ledger.unpriced_model`), never
   guessed, and a model saved with both prices at zero counts as unpriced. Thinking tokens are billed as output and
   cached input at its own rate.
-- **Who records.** Parsing writes one row per attempt of the classification chain, failovers included, each at its
-  own provider's price (`recordModelCalls`); speech-to-text, the monthly analysis (with the provider's input and
+- **Who records.** Parsing and bank messages read by the model write one row per attempt of their chain, failovers
+  included, each at its own provider's price (`recordModelCalls`, channels `parse` and `sms`); speech-to-text, the
+  monthly analysis (with the provider's input and
   output split), receipts (the vision call and the classification behind it), goal analysis, business category
-  suggestions, bank messages read by the model, the chat (the kernel returns the answer's usage,
+  suggestions, the chat (the kernel returns the answer's usage,
   `AIResponse.llmUsage`), `executeAiGateway`, the WhatsApp monthly report job and the voice call (the live session
   at its end, priced per audio and text modality; `think`, a price lookup and the post-call summary on their own
   rows) all write through it.
 - **The plan budget.** `trackTokens` in `api/ai-router.ts` still adds the tokens to `users.ai_tokens_used` and
-  records an `ai_<channel>` event, which the monthly budget reads.
+  records an `ai_<channel>` event, which the monthly budget reads; bank messages do the same through `trackAiTokens`
+  in `api/lib/ai-usage-policy.ts`, and receipts and goals through copies in their routers.
 - `recordAICostMetric` separately writes an `ai_cost_*` event into `user_analytics` with tokens, latency, route and
   fallback flags; `loadAICostOverview` aggregates it for `admin.getAICostOverview`.
 
@@ -166,7 +174,7 @@ refused key, and the next answers. The chat also takes its model from the admin'
 ## Known issues
 Checked against the code; each one names where it lives.
 1. **Debt.** `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost
-   calculation and ledger write — has one caller, the rebuilt voice call's `think` tool. Elsewhere only its route
+   calculation and ledger write — has one caller, the voice call's `think` tool. Elsewhere only its route
    resolution is used, by `api/lib/smart-pipeline.ts`.
 2. **Gap.** Two accountings remain: the `ai_cost_*` events of `recordAICostMetric` estimate tokens on their own and
    the screen that would show them is not mounted ([admin](admin.md)); the ledger is the priced one.
@@ -179,7 +187,9 @@ Checked against the code; each one names where it lives.
 5. **Debt.** The breaker is per process, so during an outage each replica learns on its own that a provider is down.
 6. **Debt.** The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and
    `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat,
-   report, SMS and voice paths do not.
+   report and voice paths do not. The running token count and its event are written by four copies of the same
+   code (`trackTokens` in `api/ai-router.ts`, `trackAiTokens` in `api/lib/ai-usage-policy.ts`, and one each in
+   `api/image-router.ts` and `api/goals-router.ts`).
 7. **Gap.** `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card —
    is only ever written by the breaker during real traffic ([admin](admin.md)).
 

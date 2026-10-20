@@ -4,7 +4,7 @@
  * admin's cost views add up the same way whichever provider served the call. A row never carries what was said.
  */
 import { randomUUID } from "crypto";
-import { sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { aiTokenLedgers } from "../../db/schema";
 import { db } from "../queries/connection";
 import { aiCallCost, type CallUsage } from "./ai-pricing";
@@ -77,6 +77,15 @@ export async function recordAiLedger(entry: AiLedgerEntry): Promise<void> {
     // Accounting must never fail the user's request.
     log.warn({ event: "ai_ledger.write_failed", channel: entry.channel, err: error }, "Ledger row not written");
   }
+}
+
+/** USD the ledger holds for one channel since an instant, across every user: what a global daily cap is checked against. */
+export async function ledgerCostUsdSince(channel: string, since: Date): Promise<number> {
+  const [row] = await db
+    .select({ usd: sql<string>`COALESCE(SUM(${aiTokenLedgers.costUsd}), 0)` })
+    .from(aiTokenLedgers)
+    .where(and(eq(aiTokenLedgers.channel, channel), gte(aiTokenLedgers.createdAt, since)));
+  return Number(row?.usd ?? 0) || 0;
 }
 
 async function egpFor(usd: number): Promise<number> {

@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of 85 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of 89 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-18 d3e45a3 | 2026-10-18 d3e45a3 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-18 59352bb | 2026-10-18 59352bb | 5 | — | — | 4 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-20 cfbc7f55 | 2026-10-20 cfbc7f55 | 7 | — | — | 7 | 2 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-19 9b9acea | 2026-10-19 9b9acea | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 7 | — | 3 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-18 719ea56 | 2026-10-18 719ea56 | 6 | — | 1 | 7 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-18 d3e45a3 | 2026-10-18 d3e45a3 | 16 | **3** | — | 8 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-20 cfbc7f55 | 2026-10-20 cfbc7f55 | 16 | **3** | — | 8 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-17 6d541cd | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 1 | **1** | 1 | 3 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-19 9b9acea | 2026-10-19 9b9acea | 4 | — | 2 | 5 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-18 2bbf17c | 2026-10-01 b5d9955 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-19 9b9acea | 2026-10-19 9b9acea | 5 | — | — | — | 7 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-20 cfbc7f55 | 2026-10-20 cfbc7f55 | 4 | — | 2 | 5 | 1 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-20 cfbc7f55 | 2026-10-20 cfbc7f55 | 8 | — | — | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-20 cfbc7f55 | 2026-10-20 cfbc7f55 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 7 | **1** | — | 2 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (85 issue(s))
+## What is waiting (89 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -66,7 +66,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.
 - Discount codes are created here but checkout never applies them ([billing](billing.md)).
 
-### Gaps (46)
+### Gaps (49)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -74,7 +74,10 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - The APK behind `/downloads/smartspend-sync.apk` is a debug build that `.github/workflows/build-apk.yml` commits when `android-app/` changes; it is signed with the runner's throwaway debug key, so a newer build cannot install over an older one until a release key is configured.
-- The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY` directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
+- A model's reading at confidence 0.6 or more is saved on its own; nothing sends it to review first. The category it proposes (`model_category` in the expense metadata) is stored but not used: filing still follows `categorizeSms`.
+- A message no model read and the rules could not read is kept as `ignored` with `model_unavailable`, and nothing reads it again when the model is back.
+- The route saves the amount without its currency (`insertSmsExpense` in `api/services/sms-ledger.ts` takes none), so a dollar amount the rules read is saved as pounds. The model path refuses a foreign amount without an EGP equivalent instead.
+- Redaction masks every name-like word after من، إلى، to or from, so a merchant written there ("from AMAZON", "من كارفور") reaches the model as `[REDACTED_NAME]`; merchants written after لدى or at are kept.
 - Only a merchant the engine knows well changes the fixed map (a card payment, or a refund from it, which is saved as a negative expense in that merchant's category): a card payment to any other merchant is `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
 - Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account digits and balances, is stored as received.
 
@@ -138,9 +141,10 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (26)
+### Debt (27)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
+- Until the admin assigns a model to the `sms` purpose, `parseSmsFinancialData` falls back to `GEMINI_API_KEY` with `mapModelName("flash")` (`smsRoutes` in `api/lib/sms-ai-parser.ts`). It is meant to go once the key is registered as a provider in the console (decision 0024).
 - `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
@@ -168,10 +172,10 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would show them, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted. The classification quality itself is shown by the command center's quality card (`admin.getClassificationQuality`).
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
-- `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost calculation and ledger write — has one caller, the rebuilt voice call's `think` tool. Elsewhere only its route resolution is used, by `api/lib/smart-pipeline.ts`.
+- `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost calculation and ledger write — has one caller, the voice call's `think` tool. Elsewhere only its route resolution is used, by `api/lib/smart-pipeline.ts`.
 - `api/lib/ai-provider-registry.ts` carries a model catalogue with tiers, purposes and prices, "last verified" in a comment, and nothing reads it: `isKnownModel`, `getModelEntry`, `listModels`, `resolveApiKey` and the per-plan defaults have no caller, and only `DEPRECATED_MODEL_MAP` is used. Model defaults live a second time in `api/lib/model-mapper.ts` and a third time in the fixed lists of `admin.getAvailableModels`.
 - The breaker is per process, so during an outage each replica learns on its own that a provider is down.
-- The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat, report, SMS and voice paths do not.
+- The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat, report and voice paths do not. The running token count and its event are written by four copies of the same code (`trackTokens` in `api/ai-router.ts`, `trackAiTokens` in `api/lib/ai-usage-policy.ts`, and one each in `api/image-router.ts` and `api/goals-router.ts`).
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
 - Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; `GROQ_API_KEY` in `api/ai-router.ts`, `GEMINI_API_KEY` in `api/lib/ai-gateway.ts` and `api/services/batch-ai-service.ts`, and `NODE_ENV` in `api/chat-router.ts`, `api/local-auth-router.ts` and `api/middleware.ts` are read directly too.

@@ -124,6 +124,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/shared-generation.ts` | [platform](platform.md) |
 | `api/lib/shortcut-generator.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/smart-pipeline.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/sms-ai-contract.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/sms-ai-parser.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/sms-rule-parser.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/stt-corrections.ts` | [expense-capture](expense-capture.md) |
@@ -312,6 +313,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/admin/settings/AdminKeysTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminPlansTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminSettingsShared.tsx` | [admin](admin.md) |
+| `src/components/admin/settings/AdminSmsAiSection.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminVoiceCallSection.tsx` | [admin](admin.md) |
 | `src/components/ads/AdBanner.tsx` | [web-app](web-app.md) |
 | `src/components/ai/AIChatbot.tsx` | [ai-center](ai-center.md) |

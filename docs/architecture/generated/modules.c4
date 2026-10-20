@@ -123,10 +123,10 @@ model {
       }
     }
     ingestion-parsers = module 'Ingestion parsers' {
-      description 'Bank SMS parsing (rules first, then an AI parser with a per-user cache), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut.'
+      description 'Bank SMS parsing (rules first, then a model through the admin’s sms routes behind a switch, the plan budget and a daily USD cap, on redacted text, with a versioned reply contract checked before use), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut.'
       metadata {
-        files '4'
-        paths 'api/lib/sms-ai-parser.ts, api/lib/sms-rule-parser.ts, api/lib/shortcut-generator.ts, api/services/sms-ledger.ts'
+        files '5'
+        paths 'api/lib/sms-ai-parser.ts, api/lib/sms-ai-contract.ts, api/lib/sms-rule-parser.ts, api/lib/shortcut-generator.ts, api/services/sms-ledger.ts'
       }
     }
     jobs = module 'Scheduled job bodies' {
@@ -222,7 +222,7 @@ model {
     web-admin = module 'Admin UI' {
       description 'Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.'
       metadata {
-        files '22'
+        files '23'
         paths 'src/components/admin/**'
       }
     }

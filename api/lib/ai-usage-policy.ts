@@ -316,6 +316,30 @@ export async function countDailyAiRequests(
   return Number(row?.count || 0);
 }
 
+/**
+ * After a paid call: the tokens go on the user's running count and an `ai_<channel>` event, which the monthly budget
+ * and the burst guard read. What the call cost is the ledger's (`recordAiLedger`). Never fails the caller.
+ */
+export async function trackAiTokens(
+  user: { id: number; type: UserType },
+  tokens: number,
+  channel: AiUsageChannel,
+  model?: string,
+): Promise<void> {
+  if (!tokens || tokens <= 0) return;
+  try {
+    const added = sql`COALESCE(ai_tokens_used, 0) + ${tokens}`;
+    if (user.type === "oauth") {
+      await db.update(users).set({ aiTokensUsed: added }).where(eq(users.id, user.id));
+    } else {
+      await db.update(localUsers).set({ aiTokensUsed: added }).where(eq(localUsers.id, user.id));
+    }
+    await recordAiUsageEvent({ userId: user.id, userType: user.type, channel, model, tokens });
+  } catch {
+    // Accounting must never fail the user's request; the ledger row is written separately.
+  }
+}
+
 export async function recordAiUsageEvent(input: {
   userId: number;
   userType: UserType;

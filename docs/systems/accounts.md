@@ -173,8 +173,11 @@ Then, per procedure:
 - **Ownership** (`assertEntityOwnership` and its batch form): a wallet, business, goal or contact id that is not the
   caller's is refused (`api/AGENTS.md`, rule 2).
 - **Uploads** (`verifyImageMagicBytes`): receipts must really be JPEG, PNG or WebP.
-- **Redaction** (`redactSensitiveData`): card numbers, phone numbers, codes and names are removed from bank messages
-  before they are stored or sent to a model.
+- **Redaction** (`redactSensitiveData`, and `redactWithFindings`, which also returns the card endings it removed):
+  card and account digits, IBANs, Egyptian phone numbers, reference numbers, e-mail addresses, one-time codes and the
+  names after من، إلى، لـ، to, from or Dear are replaced by markers; amounts, balances, dates and merchants stay. It
+  runs on a bank message before it is sent to a model and on the expense lines a report prompt quotes; the raw
+  message is stored as received ([bank messages](bank-messages.md)).
 - **Admin answers** select fields from `api/lib/admin-safe-fields.ts`, so credentials and session tokens never leave.
 
 ## Account changes and deletion

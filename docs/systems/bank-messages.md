@@ -17,7 +17,9 @@ the rule parser and the model that read them, and the setup screens.
 | Android setup | `src/components/bank-sync/AndroidSetupFlow.tsx#AndroidSetupFlow` | Downloads the companion app and hands it the token through a deep link |
 | Android companion | `android-app/app/src/main/java/com/smartspend/sync/SyncService.kt#SyncService` and `DeepLinkActivity` | Reads notifications, keeps the bank and wallet ones, posts them to the ingest route |
 | Ingest route | `POST /api/sms/ingest` in `api/sms-router.ts#smsApp` | Token check, limits, duplicate check, parsing, saving |
-| Parsers | `api/lib/sms-rule-parser.ts#parseSmsByRules`, `api/lib/sms-ai-parser.ts#parseSmsFinancialData` | Provider templates first, a Gemini call when the templates are not sure |
+| Parsers | `api/lib/sms-rule-parser.ts#parseSmsByRules`, `api/lib/sms-ai-parser.ts#parseSmsFinancialData`, `api/lib/sms-ai-contract.ts` | Provider templates first; when they are not sure, a model the admin chose for bank messages, on the redacted text, with its reply checked against a versioned contract |
+| Redaction | `api/lib/anonymizer.ts#redactWithFindings` | Removes card and account digits, IBANs, phones, references, e-mails, codes and people's names before the text leaves for a model |
+| Admin controls | the `sms` purpose in the AI providers screen (`contracts/ai-models.ts`); `sms_ai_enabled` and `sms_ai_daily_cost_cap_usd` in `src/components/admin/settings/AdminSmsAiSection.tsx` | Which provider and model read messages, the switch that stops the model, and the daily cost cap in USD |
 | Filing | `api/services/sms-ledger.ts` | The category of a parsed message, the ledger write, and the suggestions kept over the monthly limit |
 | Suggestions | `profile.getSmsSuggestions`, `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion` in `api/profile-router.ts`; `src/components/bank-sync/SmsSuggestionsCard.tsx#SmsSuggestionsCard` on the Home record tab | Messages kept over the monthly limit, which the user saves or dismisses |
 | Token and log procedures | `profile.getWebhookToken`, `profile.generateWebhookToken`, `profile.getSmsLogs`, `profile.generateMagicCode` in `api/profile-router.ts` | What the setup screens call |
@@ -62,14 +64,41 @@ the rule parser and the model that read them, and the setup screens.
   balance after the transaction. Its confidence adds up what it found: an amount, a direction, a known provider,
   how specific the matched template is, a balance.
 - A rule result with an amount and confidence of 0.85 or more is used as it is (`parsed_by: rules`).
-- Otherwise `parseSmsFinancialData` shortens the message to its financial parts
-  (`api/lib/sms-rule-parser.ts#condenseSmsNotification`), looks in a per-user cache kept in memory for 15 minutes (it stores and hands out copies),
-  and asks Gemini for a fixed JSON shape, with `GEMINI_API_KEY` and the model `mapModelName("flash")` resolves to (its
-  cost goes to the [AI cost ledger](ai-platform.md#how-a-call-is-recorded) when the user is known). An
-  answer that found a transaction with an amount at confidence 0.6 or more is used (`ai`); failing that, a rule
-  result with an amount is used (`rules_fallback`).
+- Otherwise `parseSmsFinancialData` may ask a model ([decision 0025](../decisions/0025-bank-message-model-through-admin-gateway.md)),
+  in this order, and stops at the first refusal:
+  1. the admin's switch `sms_ai_enabled` (off when it is `false`);
+  2. the text is shortened to its financial parts (`api/lib/sms-rule-parser.ts#condenseSmsNotification`) and redacted
+     (`api/lib/anonymizer.ts#redactWithFindings`): card and account digits, IBANs, Egyptian phone numbers, reference
+     numbers, e-mails, codes and the names after من، إلى، لـ، to, from or Dear become markers such as
+     `[REDACTED_CARD]`; amounts, balances, fees, dates and merchants stay. The sender is redacted the same way. The last
+     four digits of a card stay on the server;
+  3. a per-user cache kept in memory for 15 minutes, keyed by the prompt version and the exact prompt (it stores and
+     hands out copies);
+  4. the routes: the models the admin assigned to the `sms` purpose for the user's plan, in their priority order
+     ([AI platform](ai-platform.md#choosing-a-provider)), and no built-in provider behind them. With none configured,
+     `GEMINI_API_KEY` with the model `mapModelName("flash")` resolves to, as before (temporary);
+  5. the plan budget, `assertAiBudget` on the `sms` channel (the burst guard counts `ai_sms` events);
+  6. the daily cap `sms_ai_daily_cost_cap_usd` (0 means none): what the ledger holds for `sms` since Cairo midnight,
+     across all users, plus the most this call could cost at the routes' prices (`api/lib/ai-pricing.ts`). With a cap,
+     a route without a price is left out, and none left means the cap is reached.
+  Then one call carries this one message of this one user (`executeLlmChain`, with low thinking and at most 512 output
+  tokens). Its attempts go to the [AI cost ledger](ai-platform.md#how-a-call-is-recorded) at each provider's price,
+  and the tokens to the user's plan budget (`trackAiTokens`).
+- The reply is checked by `api/lib/sms-ai-contract.ts` (`SMS_PROMPT_VERSION`): the kind of message (card purchase,
+  ATM withdrawal, wallet send, salary, declined, one-time code…), direction (`in`, `out`, `internal`), amount and
+  currency, EGP equivalent, fee, balance, counterparty type, rail, category from `contracts/categories.ts`, a
+  subscription hint and a confidence per field. It is discarded when the amount is not written in the redacted text,
+  the currency is not an ISO code, the category is not in the list or the direction does not fit the kind; a fee,
+  balance, EGP equivalent or merchant not written in the text is dropped. A valid reply is mapped onto the parse result
+  the route already reads (the card's last four digits are filled in from the redaction).
+- What the route does with it: a checked reading of a declined payment, a hold, a code, an offer, a statement or a
+  balance is final, so the rules' guess is not saved either; a transaction with an amount at confidence 0.6 or more is
+  used (`ai`); a foreign amount with no EGP equivalent in the text is not used. Failing that, a rule result with an
+  amount is used (`rules_fallback`). When the model was skipped (switched off, budget, cap, failure, discarded reply),
+  the outcome is stored as `model_outcome` on the raw message and on a saved expense.
 - When nothing was found, there is no amount or the confidence is under 0.5, the message is marked `ignored` with
-  its reason (`not_financial` or `low_confidence`) and the route answers 200 with `transaction_detected: false`.
+  its reason (`not_financial`, `low_confidence`, or `model_unavailable` when no model answered and the rules found no
+  amount) and the route answers 200 with `transaction_detected: false`. The raw message stays.
 
 ### 4. Saving
 - `api/services/sms-ledger.ts#categorizeSms` files the message.
@@ -150,7 +179,11 @@ statistics per provider) and `GET /api/sms/unparsed`.
 | --- | --- | --- |
 | Which notifications the Android app forwards | `android-app/app/src/main/java/com/smartspend/sync/SyncService.kt` | a build of the app (`android-app/README.md`) |
 | The bank and wallet formats the rules read | `api/lib/sms-rule-parser.ts` (provider detection, `parseDirection`, amount and balance extraction) | `tests/adversarial-challenger-2.test.ts`, plus new cases |
-| When the model is asked and what it is asked | `api/lib/sms-ai-parser.ts` (prompt, schema, cache); the thresholds in the ingest route | |
+| Which provider and model read messages | the AI providers screen, purpose «قراءة رسايل البنوك والمحافظ» (`sms`) | `api/lib/sms-ai-parser.test.ts` |
+| Whether the model is asked, and its daily cap | the `sms_ai_enabled` and `sms_ai_daily_cost_cap_usd` settings; the order of the checks in `api/lib/sms-ai-parser.ts` | `api/lib/sms-ai-parser.test.ts`, `api/sms-router.ingest.test.ts` |
+| What the model is asked and what is accepted back | `api/lib/sms-ai-contract.ts` (prompt, schema, checks); change `SMS_PROMPT_VERSION` with it | `api/lib/sms-ai-parser.test.ts` |
+| What is removed before a model sees the text | `api/lib/anonymizer.ts` | `api/lib/anonymizer.test.ts` |
+| The thresholds and what a skipped model leaves behind | the ingest route | `api/sms-router.ingest.test.ts` |
 | How a parsed message becomes a category | `api/lib/sms-ai-parser.ts#mapSmsToExpenseCategory`; merchants in `api/services/sms-ledger.ts#classifySmsMerchant` and the classification dictionaries | `api/lib/sms-ai-parser.test.ts`, `api/services/sms-ledger.test.ts` |
 | Plan limits | the `sms_limit_<plan>` settings | |
 | What happens over the limit, and saving or dismissing a suggestion | the ingest route, `api/services/sms-ledger.ts`, the suggestion procedures, `src/components/bank-sync/SmsSuggestionsCard.tsx` | `api/services/sms-ledger.test.ts` |
@@ -164,41 +197,60 @@ statistics per provider) and `GET /api/sms/unparsed`.
    they know.
 3. A saved message is a money-moving write: one transaction with the rollup delta (`api/AGENTS.md`, rule 4).
 4. Never log message text (golden rule 10 in the root `AGENTS.md`): the route and the parser log an event with the
-   user, the type, the provider or the message's length (`sms.ingested`, `sms.parse.cache_hit`), never the text,
-   the amount or the category.
-5. The rate limit and the one-time codes are shared by every server process: Redis, through
+   user, the type, the provider, the model, the outcome or the message's length (`sms.ingested`, `sms.parse.cache_hit`,
+   `sms.ai.read`, `sms.ai.skipped`, `sms.ai.reply_rejected` with the names of the failed checks), never the text, the
+   amount or the category.
+5. Nothing reaches a model before `redactWithFindings`, and one call carries one message of one user: never batch
+   messages of different users into one prompt. A model is only the one the admin assigned to `sms` (or, until then,
+   the server's Gemini key), behind the switch, the budget and the cap.
+6. The rate limit and the one-time codes are shared by every server process: Redis, through
    `executeSlidingWindowRateLimit` and `stateSet` in `api/lib/redis-client.ts` (`api/AGENTS.md`, rule 6). The AI
    parse cache stays in one process's memory, which is harmless: an identical message is refused as a duplicate.
 
 ## Tests
 `tests/adversarial-challenger-2.test.ts` checks that condensing messages from several banks keeps their amounts,
-cards, dates and balances. `api/lib/sms-ai-parser.test.ts` checks the category mapping, and
-`api/services/sms-ledger.test.ts` the merchant categories, the suggestions and a confirmation saved once.
-`api/sms-router.pairing.test.ts` exchanges pairing codes once and retires an older code, and
-`api/lib/sms-rule-parser.sender.test.ts` reads the provider from the sender. Nothing tests the ingest route itself or
-the rule templates one by one.
+cards, dates and balances. `api/lib/anonymizer.test.ts` checks what redaction removes and what it keeps.
+`api/lib/sms-ai-parser.test.ts` runs the model path against a fake provider (the admin's route is used and nothing
+else, the server key without one, a redacted prompt, one message per call, the switch, the budget and the cap, the
+reply checks) and the category mapping. `api/sms-router.ingest.test.ts` checks that a skipped model loses no message
+and that a declined reading is not saved from the rules. `api/services/sms-ledger.test.ts` checks the merchant
+categories, the suggestions and a confirmation saved once. `api/sms-router.pairing.test.ts` exchanges pairing codes
+once and retires an older code, and `api/lib/sms-rule-parser.sender.test.ts` reads the provider from the sender. The
+rule templates are not tested one by one.
 
 ## Known issues
 Checked against the code; each one names where it lives.
 1. **Gap.** The APK behind `/downloads/smartspend-sync.apk` is a debug build that `.github/workflows/build-apk.yml` commits
    when `android-app/` changes; it is signed with the runner's throwaway debug key, so a newer build cannot install
    over an older one until a release key is configured.
-2. **Gap.** The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY`
-   directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
-3. **Gap.** Only a merchant the engine knows well changes the fixed map (a card payment, or a refund from it, which is
+2. **Debt.** Until the admin assigns a model to the `sms` purpose, `parseSmsFinancialData` falls back to `GEMINI_API_KEY`
+   with `mapModelName("flash")` (`smsRoutes` in `api/lib/sms-ai-parser.ts`). It is meant to go once the key is
+   registered as a provider in the console (decision 0025).
+3. **Gap.** A model's reading at confidence 0.6 or more is saved on its own; nothing sends it to review first. The
+   category it proposes (`model_category` in the expense metadata) is stored but not used: filing still follows
+   `categorizeSms`.
+4. **Gap.** A message no model read and the rules could not read is kept as `ignored` with `model_unavailable`, and
+   nothing reads it again when the model is back.
+5. **Gap.** The route saves the amount without its currency (`insertSmsExpense` in `api/services/sms-ledger.ts` takes
+   none), so a dollar amount the rules read is saved as pounds. The model path refuses a foreign amount without an EGP
+   equivalent instead.
+6. **Gap.** Redaction masks every name-like word after من، إلى، to or from, so a merchant written there ("from AMAZON",
+   "من كارفور") reaches the model as `[REDACTED_NAME]`; merchants written after لدى or at are kept.
+7. **Gap.** Only a merchant the engine knows well changes the fixed map (a card payment, or a refund from it, which is
    saved as a negative expense in that merchant's category): a card payment to any other merchant is
    `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not
    classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
-4. **Gap.** Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in
+8. **Gap.** Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in
    `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account
    digits and balances, is stored as received.
-5. **Debt.** `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
+9. **Debt.** `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 ## Related systems
 - The Flutter app in `mobile/` (see step 1): not a system page; its rules are in `mobile/AGENTS.md`.
 - [Money](money.md): the ledger the messages are saved into, and the wallets the digital wallet view manages.
 - [Recording spending](expense-capture.md): typed, spoken and photographed entries use a different pipeline.
 - [Accounts, sign-in and security](accounts.md): the sessions the setup routes read.
-- [AI providers and usage limits](ai-platform.md): the budgets and providers the SMS model call does not use yet.
+- [AI providers and usage limits](ai-platform.md): the admin's routes, the budget and the cost ledger the model call
+  goes through.
 - [Admin console, support and growth tools](admin.md): the raw messages tab.
 - [Server platform and data](platform.md): the retention job and storage classes.

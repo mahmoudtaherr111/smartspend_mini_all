@@ -9,6 +9,8 @@ export const AI_ROUTED_PURPOSES = [
   { id: "chat", label: "الشات" },
   { id: "report", label: "التقارير وأداة التفكير في المكالمة" },
   { id: "embedding", label: "البحث بالمعنى (Embeddings)" },
+  // Only the models assigned here read bank messages; with none, the server's Gemini key does (decision 0025).
+  { id: "sms", label: "قراءة رسايل البنوك والمحافظ" },
 ] as const;
 
 export type AiRoutedPurpose = (typeof AI_ROUTED_PURPOSES)[number]["id"];

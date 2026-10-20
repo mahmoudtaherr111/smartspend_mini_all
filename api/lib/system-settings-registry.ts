@@ -223,6 +223,12 @@ export const SETTINGS: SettingDef[] = [
   { key: "sms_limit_free", default: "5" },
   { key: "sms_limit_pro", default: "999999" },
   { key: "sms_limit_ultra", default: "999999" },
+  // The model that reads bank messages the rules cannot (api/lib/sms-ai-parser.ts, decision 0025). "false" stops
+  // every call; the messages are still read by the rules and none is lost.
+  { key: "sms_ai_enabled", default: "true" },
+  // USD a Cairo day across all users, priced from the admin's model prices; 0 means no cap. With a cap, only models
+  // with a price are called.
+  { key: "sms_ai_daily_cost_cap_usd", default: "0" },
   { key: "promo_code_discount", default: "20" },
   { key: "pipeline_version", default: "v1" },
   { key: "whatsapp_otp_enabled", default: "true" },

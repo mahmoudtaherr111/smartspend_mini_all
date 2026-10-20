@@ -20,6 +20,7 @@ import {
 import { eq, and, desc, gte } from "drizzle-orm";
 import {
   parseSmsFinancialData,
+  type SmsModelOutcome,
   type SmsParseResult,
 } from "./lib/sms-ai-parser";
 import { parseSmsByRules } from "./lib/sms-rule-parser";
@@ -327,22 +328,39 @@ smsApp.post("/ingest", async (c) => {
   // ── Step 3: Hybrid Engine Selection (Rules vs AI) ──
   let parseResult: SmsParseResult | null = null;
   let parsedBy: "rules" | "ai" | "rules_fallback" = "rules";
+  // Why the model gave no usable answer (switched off, budget, cost cap, failed, discarded…), kept on the raw row.
+  let modelOutcome: SmsModelOutcome | null = null;
+  let modelSkipped = false;
 
   // Fast path: high-confidence rule match (>= 0.85) bypasses AI call
   if (ruleResult.transaction_detected && ruleResult.confidence >= 0.85 && ruleResult.amount) {
     parseResult = ruleParseResult(ruleResult);
     parsedBy = "rules";
   } else {
-    // Fall back to Gemini AI parser with tenant-isolated user context
-    const aiResult = await parseSmsFinancialData(message, { userId, userType });
-    if (aiResult && aiResult.transaction_detected && aiResult.confidence >= 0.6 && aiResult.amount) {
+    // The admin's sms routes, behind the switch, the plan budget and the daily cap (decision 0025).
+    const read = await parseSmsFinancialData(message, {
+      userId,
+      userType,
+      plan: userPlan,
+      sender: sender ?? null,
+      providerHint: ruleParseResult(ruleResult).provider,
+    });
+    const aiResult = read.result;
+    modelOutcome = read.outcome;
+    modelSkipped = read.skipped;
+    if (read.outcome === "not_transaction" && aiResult) {
+      // A checked reading of a declined payment, a hold, a code, an offer, a statement or a balance: nothing moved,
+      // so the rules' guess is not saved either.
+      parseResult = aiResult;
+      parsedBy = "ai";
+    } else if (aiResult && aiResult.transaction_detected && aiResult.confidence >= 0.6 && aiResult.amount) {
       parseResult = aiResult;
       parsedBy = "ai";
     } else if (ruleResult.transaction_detected && ruleResult.amount) {
       // Secondary fallback to rule result if AI was inconclusive or returned null
       parseResult = {
         ...ruleParseResult(ruleResult),
-        raw_extracted: { rule_result: ruleResult, ai_result: aiResult },
+        raw_extracted: { rule_result: ruleResult, ai_outcome: read.outcome },
       };
       parsedBy = "rules_fallback";
     } else {
@@ -364,29 +382,39 @@ smsApp.post("/ingest", async (c) => {
 
   // If no financial transaction detected or invalid amount/low confidence -> ignore and return
   if (!parseResult.transaction_detected || !parseResult.amount || parseResult.confidence < 0.5) {
+    // Unread because no model answered is not the same as read and found empty: the raw message stays, with why.
+    const reason = !parseResult.transaction_detected
+      ? modelSkipped && parsedBy !== "ai"
+        ? "model_unavailable"
+        : "not_financial"
+      : "low_confidence";
     if (smsId) {
       await db
         .update(rawSmsEvents)
         .set({
           status: "ignored",
           metadata: {
-            reason: !parseResult.transaction_detected
-              ? "not_financial"
-              : "low_confidence",
+            reason,
             confidence: parseResult.confidence,
             parsed_by: parsedBy,
+            model_outcome: modelOutcome,
+            message_kind: parseResult.raw_extracted?.message_kind ?? null,
             rule_result: ruleSummary,
           },
         })
-        .where(eq(rawSmsEvents.id, smsId));
+        .where(
+          and(
+            eq(rawSmsEvents.id, smsId),
+            eq(rawSmsEvents.userId, userId),
+            eq(rawSmsEvents.userType, userType),
+          ),
+        );
     }
     return c.json(
       {
         success: true,
         transaction_detected: false,
-        reason: !parseResult.transaction_detected
-          ? "not_financial"
-          : "low_confidence",
+        reason,
         confidence: parseResult.confidence,
         rule_result: ruleSummary,
       },
@@ -420,6 +448,17 @@ smsApp.post("/ingest", async (c) => {
         fee: parsed.fee,
         balance_after: parsed.balance_after,
         parsed_by: parsedBy,
+        model_outcome: modelOutcome,
+        // What the model read, by contract version, for measuring it later; never a person's name.
+        ...(parsedBy === "ai"
+          ? {
+              prompt_version: parsed.raw_extracted.prompt_version,
+              message_kind: parsed.raw_extracted.message_kind,
+              model_category: parsed.raw_extracted.category,
+              model_sub_category: parsed.raw_extracted.sub_category,
+              subscription_hint: parsed.raw_extracted.subscription_hint,
+            }
+          : {}),
       },
     });
 

@@ -51,6 +51,7 @@ flowchart LR
   http__api_sms ==> tbl_raw_sms_events
   http__api_sms ==> tbl_webhook_tokens
   mod_ingestion_parsers --> ext_gemini
+  mod_ingestion_parsers --> sys_accounts
   mod_ingestion_parsers --> sys_ai_platform
   mod_ingestion_parsers --> sys_expense_capture
   mod_ingestion_parsers --> sys_money
@@ -74,7 +75,7 @@ flowchart LR
 
 ### a bank message forwarded from a phone
 
-The Android companion or an iOS Shortcut posts message text with the user’s webhook token. The route resolves the token, refuses a duplicate, stores the raw message and parses it with the rule parser, falling back to the AI parser. Within the plan’s monthly limit it files the message (a known merchant takes its category) and writes the transaction, its rollup delta and the raw message status in one database transaction. Past the limit the rules alone read it and the raw message is kept as a suggestion the user confirms from the home screen.
+The Android companion or an iOS Shortcut posts message text with the user’s webhook token. The route resolves the token, refuses a duplicate, stores the raw message and parses it with the rule parser. When the rules are not sure, a model may read it (decision 0024): only if the admin’s switch is on, the plan budget and the daily USD cap allow it, on text with cards, accounts, phones, references and names removed, through the models the admin assigned to bank messages (the server’s Gemini key until then), one message of one user per call, with the reply checked against a versioned contract. A skipped model or a discarded reply leaves the rules’ reading, or the raw message kept with its reason. Within the plan’s monthly limit it files the message (a known merchant takes its category) and writes the transaction, its rollup delta and the raw message status in one database transaction. Past the limit the rules alone read it and the raw message is kept as a suggestion the user confirms from the home screen.
 
 ```mermaid
 sequenceDiagram
@@ -83,19 +84,27 @@ sequenceDiagram
   participant p3 as webhook_tokens table
   participant p4 as raw_sms_events table
   participant p5 as Ingestion parsers
-  participant p6 as Google Gemini API
-  participant p7 as expenses table
-  participant p8 as Ledger aggregates
-  participant p9 as expense_daily_rollups table
+  participant p6 as AI usage and cost governance
+  participant p7 as Request security
+  participant p8 as AI provider access
+  participant p9 as OpenRouter
+  participant p10 as Google Gemini API
+  participant p11 as expenses table
+  participant p12 as Ledger aggregates
+  participant p13 as expense_daily_rollups table
   p1->>p2: POST the notification text with the webhook token
   p2->>p3: resolve the token to a user
   p2->>p4: store the raw message
-  p2->>p5: rule parser first, AI parser when the rules cannot read it, file the message
-  p5->>p6: AI parse
-  p5->>p7: insert the transaction
-  p5->>p8: rollup delta
-  p8->>p9: upsert the day
-  p2->>p4: mark it processed, or keep it as a suggestion past the monthly limit
+  p2->>p5: rule parser first, the model only when the rules are not sure, file the message
+  p5->>p6: the plan budget on the sms channel, and the tokens after the call
+  p5->>p7: remove cards, accounts, phones, references and names
+  p5->>p8: the admin’s sms routes, one message per call
+  p8->>p9: or any provider the admin assigned to bank messages
+  p8->>p10: or Gemini, with the server’s key while no sms route exists
+  p5->>p11: insert the transaction
+  p5->>p12: rollup delta
+  p12->>p13: upsert the day
+  p2->>p4: mark it processed, keep it with the reason it was not read, or keep it as a suggestion past the monthly limit
 ```
 
 Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is the view `flow_sms_ingest`.
@@ -104,7 +113,7 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `ingestion-parsers` — Ingestion parsers | Bank SMS parsing (rules first, then an AI parser with a per-user cache), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut. | 4 |
+| `ingestion-parsers` — Ingestion parsers | Bank SMS parsing (rules first, then a model through the admin's sms routes behind a switch, the plan budget and a daily USD cap, on redacted text, with a versioned reply contract checked before use), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut. | 5 |
 | `web-bank-sync` — Bank sync UI | The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel. | 5 |
 
 ## API procedures
@@ -168,7 +177,7 @@ Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [S
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>24 files and declarations</summary>
+<details><summary>25 files and declarations</summary>
 
 - `.github/workflows/build-apk.yml`
 - `android-app/app/build.gradle`
@@ -176,6 +185,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `android-app/app/src/main/java/com/smartspend/sync/DeepLinkActivity.kt`
 - `android-app/app/src/main/java/com/smartspend/sync/SyncService.kt`
 - `api/lib/shortcut-generator.ts`
+- `api/lib/sms-ai-contract.ts`
 - `api/lib/sms-ai-parser.ts`
 - `api/lib/sms-rule-parser.ts`
 - `api/profile-router.ts#profile.confirmSmsSuggestion`

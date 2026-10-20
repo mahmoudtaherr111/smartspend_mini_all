@@ -401,11 +401,6 @@
       "count": 1
     }
   },
-  "api/lib/sms-ai-parser.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "api/lib/stt-corrections.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
