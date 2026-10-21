@@ -27,6 +27,7 @@ flowchart LR
   end
   subgraph g_modules["Code modules"]
     mod_capture_catalog["Capture catalog"]
+    mod_capture_reader["Message reader"]
     mod_ingestion_parsers["Ingestion parsers"]
     mod_web_bank_sync["Bank sync UI"]
   end
@@ -61,6 +62,8 @@ flowchart LR
   mod_capture_catalog --> sys_platform
   mod_capture_catalog ==> tbl_capture_sources
   mod_capture_catalog ==> tbl_subscription_catalog
+  mod_capture_reader --> sys_expense_capture
+  mod_capture_reader --> sys_platform
   mod_ingestion_parsers --> ext_gemini
   mod_ingestion_parsers --> sys_accounts
   mod_ingestion_parsers --> sys_ai_platform
@@ -132,6 +135,7 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 | Module | What it does | Files |
 | --- | --- | --- |
 | `capture-catalog` — Capture catalog | The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name. | 3 |
+| `capture-reader` — Message reader | Layer one of capture, before any model: reads a bank, wallet or payment notification into what happened, which way, how much and in what currency, with which card and with whom, when, how sure it is and why (normalization with a position map, piece finders, an Arabic and English lexicon, sentences, money roles, kind and direction, the other side, the date), plus its benchmark corpus. | 12 |
 | `ingestion-parsers` — Ingestion parsers | Bank SMS parsing (rules first, then a model through the admin's sms routes behind a switch, the plan budget and a daily USD cap, on redacted text, with a versioned reply contract checked before use), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut. | 5 |
 | `web-bank-sync` — Bank sync UI | The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel. | 4 |
 
@@ -207,7 +211,7 @@ Used by: [Admin console, support and growth tools](admin.md), [Money: expenses, 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>30 files and declarations</summary>
+<details><summary>42 files and declarations</summary>
 
 - `.github/workflows/build-apk.yml`
 - `android-app/app/build.gradle`
@@ -218,6 +222,18 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/capture-admin-router.ts`
 - `api/capture-router.ts`
 - `api/lib/capture/catalog.ts`
+- `api/lib/capture/reader/clauses.ts`
+- `api/lib/capture/reader/counterparty.ts`
+- `api/lib/capture/reader/explain.ts`
+- `api/lib/capture/reader/fixtures.ts`
+- `api/lib/capture/reader/kind.ts`
+- `api/lib/capture/reader/lexicon.ts`
+- `api/lib/capture/reader/normalize.ts`
+- `api/lib/capture/reader/read.ts`
+- `api/lib/capture/reader/roles.ts`
+- `api/lib/capture/reader/spans.ts`
+- `api/lib/capture/reader/types.ts`
+- `api/lib/capture/reader/when.ts`
 - `api/lib/capture/seed-sources.ts`
 - `api/lib/capture/seed-subscriptions.ts`
 - `api/lib/shortcut-generator.ts`
