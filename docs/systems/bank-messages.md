@@ -159,6 +159,24 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
 Nothing reads the catalog yet when a message arrives: the rules parser still detects the provider with its own
 patterns (known issue 10).
 
+## The new message reader (not connected yet)
+[Decision 0026](../decisions/0026-message-reader-before-the-model.md). `api/lib/capture/reader/read.ts#readMessage` is
+layer one of the rebuilt capture: a pure function that reads one notification into a `Reading` (kind, direction,
+amount and currency, pound equivalent, fee, balance or available limit, minimum due, card and account suffixes, the
+other side with a merchant key or a phone tail or an InstaPay address, when, reference, a subscription hint),
+with a confidence (`certain`, `likely`, `unsure`), the fields it missed, and its evidence with positions in the
+original text. `api/lib/capture/reader/explain.ts#explainReading` turns that evidence into one Arabic sentence.
+- Steps, all in `api/lib/capture/reader/`: `api/lib/capture/reader/normalize.ts` (two views of the text with a position map) → `api/lib/capture/reader/spans.ts` (typed
+  pieces, first claim wins) and `api/lib/capture/reader/lexicon.ts` (Arabic and English words with ids) → `api/lib/capture/reader/clauses.ts` →
+  `api/lib/capture/reader/kind.ts` (non-transactions first, then the strongest money verb; equal opposing verbs make it unsure) →
+  `api/lib/capture/reader/roles.ts` (each amount's role) → `api/lib/capture/reader/counterparty.ts` → `api/lib/capture/reader/when.ts` (Cairo time, a missing year from the
+  receive date).
+- `api/lib/capture/reader/fixtures.ts` builds the benchmark corpus from bank, wallet and payment shapes, written for this public
+  repository; `api/lib/capture/reader/reader-benchmark.test.ts` fails under each field's floor or when the reader is certain and wrong
+  (`npm run bench:capture` prints the table).
+- Nothing calls it yet: the old intake above is being removed, and the new intake connects the reader first and the
+  model only for `unsure` readings.
+
 ## Setting up a phone
 **Android**
 1. `AndroidSetupFlow` downloads `/downloads/smartspend-sync.apk`.
