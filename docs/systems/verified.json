@@ -414,12 +414,12 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/components/installments/InstallmentsPanel.tsx": "a23758827f16",
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
-        "src/components/wallets/DigitalBankingSuite.tsx": "0fa4b6d4f7e6",
+        "src/components/wallets/DigitalBankingSuite.tsx": "b46ba05d3ac3",
         "src/pages/Home.tsx": "900e47a71057",
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "52f84203b034"
       },
-      "checked": "2026-10-20 5f8d99e1",
+      "checked": "2026-10-21 ec133d24",
       "arabic": "4054e602a68e",
       "arabicChecked": "2026-10-20 5f8d99e1"
     },
@@ -502,7 +502,7 @@
         "api/server.ts#ws:/api/voice/v2": "fe2eec327770",
         "api/services/entitlements/voice.ts": "29ffd71b4434",
         "api/services/voice/admin-stats.ts": "377835dae587",
-        "api/services/voice/app-calls.ts": "46e0cff857dc",
+        "api/services/voice/app-calls.ts": "c2fcafea0294",
         "api/services/voice/brain/claims.ts": "3e99516a76c8",
         "api/services/voice/brain/coach-instructions.ts": "c49809c539f8",
         "api/services/voice/brain/drafts.ts": "577f3baed851",
@@ -516,14 +516,14 @@
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
         "api/services/voice/brain/tools/app-help.ts": "14c3fd1586cf",
         "api/services/voice/brain/tools/calculate.ts": "70da29e0a57e",
-        "api/services/voice/brain/tools/coach.ts": "dcea025f2742",
+        "api/services/voice/brain/tools/coach.ts": "876b067e5c9a",
         "api/services/voice/brain/tools/market-price.ts": "5bed0aca7f26",
         "api/services/voice/brain/tools/memory.ts": "31b87da806da",
-        "api/services/voice/brain/tools/money-query.ts": "bc1fe731fac2",
+        "api/services/voice/brain/tools/money-query.ts": "e9663b127858",
         "api/services/voice/brain/tools/record.ts": "40b5704378d8",
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
         "api/services/voice/brain/tools/think.ts": "5224961b8aad",
-        "api/services/voice/brain/tools/types.ts": "7bb80b214db4",
+        "api/services/voice/brain/tools/types.ts": "57a7f0dbc491",
         "api/services/voice/brain/validator.ts": "dc280d45a1ca",
         "api/services/voice/brain/voices.ts": "7fa9ca3bf8ae",
         "api/services/voice/engine/gemini-live.ts": "73eb5ad104db",
@@ -555,9 +555,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "69cc55d954de"
       },
-      "checked": "2026-10-20 5f8d99e1",
-      "arabic": "e66510091244",
-      "arabicChecked": "2026-10-20 5f8d99e1"
+      "checked": "2026-10-21 ec133d24",
+      "arabic": "33ae81e76f2b",
+      "arabicChecked": "2026-10-21 ec133d24"
     },
     "web-app": {
       "files": {
