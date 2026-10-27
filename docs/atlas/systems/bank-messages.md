@@ -113,13 +113,8 @@ Used by: [Admin console, support and growth tools](admin.md), [Server platform a
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>25 files and declarations</summary>
+<details><summary>20 files and declarations</summary>
 
-- `.github/workflows/build-apk.yml`
-- `android-app/app/build.gradle`
-- `android-app/app/src/main/AndroidManifest.xml`
-- `android-app/app/src/main/java/com/smartspend/sync/DeepLinkActivity.kt`
-- `android-app/app/src/main/java/com/smartspend/sync/SyncService.kt`
 - `api/boot.ts#job:seed-capture-catalog`
 - `api/capture-admin-router.ts`
 - `api/capture-router.ts`

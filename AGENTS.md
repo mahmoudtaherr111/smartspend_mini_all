@@ -5,13 +5,13 @@ code, and every rule names the check that enforces it (`unenforced` means nothin
 
 ## The product
 SmartSpend AI is an Arabic-first money app for Egypt. People record spending by typing or speaking
-Egyptian Arabic, by forwarding bank and wallet notifications from their phone, or from receipts; the API
+Egyptian Arabic, or from receipts (automatic capture of bank and wallet messages is being rebuilt); the API
 turns each sentence into categorized transactions, and an AI Center answers questions about the ledger.
 
 `src/` React + Vite PWA (Capacitor shells in `android/` and `ios/`) · `api/` Hono + tRPC on Node ·
-`db/` Drizzle schema for MySQL · `contracts/` code shared by both · `android-app/` native companion that
-forwards bank and wallet notifications · `mobile/` the Flutter app for Android and iOS that will replace the
-Capacitor shells and the companion (`docs/decisions/0022-flutter-mobile-app.md`).
+`db/` Drizzle schema for MySQL · `contracts/` code shared by both · `mobile/` the Flutter app for Android and iOS that will
+replace the Capacitor shells and bring back automatic capture of bank and wallet messages
+(`docs/decisions/0022-flutter-mobile-app.md`).
 
 ## Trust order
 1. The code.

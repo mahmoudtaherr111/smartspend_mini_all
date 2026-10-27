@@ -12,8 +12,7 @@
 | `ar/` | Arabic guide for the project owner, and `ar/systems/`: the same system explanations without code | people |
 
 The apps have their own guides next to their code, not here: the Flutter app for Android and iOS in `mobile/`
-([README](../mobile/README.md), why it exists in [decision 0022](decisions/0022-flutter-mobile-app.md)) and the
-Kotlin companion that forwards bank notifications in `android-app/` ([README](../android-app/README.md)).
+([README](../mobile/README.md), why it exists in [decision 0022](decisions/0022-flutter-mobile-app.md)).
 
 Trust order: the code, then `atlas/` and `architecture/generated/`, then the rules in `AGENTS.md`, then
 `systems/` (checked against the code, and re-checked whenever that code changes), then `architecture/flows/`,

@@ -33,7 +33,6 @@ The variables the server requires at boot are listed in [docs/atlas/env.md](docs
 - `db/` Drizzle schema, relations and migrations for MySQL
 - `contracts/` code shared by the web app and the server
 - `android/`, `ios/` Capacitor shells of the web app
-- `android-app/` native companion that forwards bank and wallet notifications
 - `mobile/` Flutter app for Android and iOS ([decision 0022](docs/decisions/0022-flutter-mobile-app.md),
   [mobile/README.md](mobile/README.md))
 - `docs-site/` the documentation as a searchable site, built in CI and never published

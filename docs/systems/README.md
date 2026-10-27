@@ -32,9 +32,7 @@ Each system has three pages:
 Two pieces of code are not systems. The Flutter app in `mobile/` is described by `mobile/README.md`, its rules in
 `mobile/AGENTS.md` and its decision in [0022](../decisions/0022-flutter-mobile-app.md); the atlas does not read Dart,
 so there is nothing for a page here to be checked against. It calls the procedures the other systems own (its list is
-generated from `api/router.ts`), and where it touches one, the page says so ([bank messages](bank-messages.md)). The
-Android companion in `android-app/` belongs to [bank-messages](bank-messages.md), which lists it as an extra path of
-that system.
+generated from `api/router.ts`), and where it touches one, the page says so ([bank messages](bank-messages.md)).
 
 Before you change a file, find its systems in `docs/atlas/systems/files.md` and read their explanations. A file
 that several systems share is split there down to single procedures, routes and jobs.

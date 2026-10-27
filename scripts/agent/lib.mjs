@@ -24,7 +24,6 @@ export const KNOWLEDGE_INPUTS = [
   "AGENTS.md",
   "CLAUDE.md",
   "README.md",
-  "android-app/README.md",
   ".agents/rules",
   ".opencode/opencode.json",
   "package.json",

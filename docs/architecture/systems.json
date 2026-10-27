@@ -1,5 +1,5 @@
 {
-  "$comment": "Hand-maintained map from the code to the systems people think in. Every module (clusters.json), tRPC procedure, page, HTTP route, WebSocket and scheduled job belongs to exactly one system: a router's procedures belong to the router's system unless a procedure is listed under another system. `npm run atlas` writes one facts page per system to docs/atlas/systems/, and the knowledge rules fail on anything unassigned or assigned twice. `extraPaths` names files the TypeScript analysis cannot see, such as the Android companion, whose change also asks for a new check of the system's explanation. Each system is explained in docs/systems/<id>.md, and for people who do not read code in docs/ar/systems/<id>.md. Summaries say what the system does and were checked against the code.",
+  "$comment": "Hand-maintained map from the code to the systems people think in. Every module (clusters.json), tRPC procedure, page, HTTP route, WebSocket and scheduled job belongs to exactly one system: a router's procedures belong to the router's system unless a procedure is listed under another system. `npm run atlas` writes one facts page per system to docs/atlas/systems/, and the knowledge rules fail on anything unassigned or assigned twice. `extraPaths` names files the TypeScript analysis cannot see, whose change also asks for a new check of the system's explanation. Each system is explained in docs/systems/<id>.md, and for people who do not read code in docs/ar/systems/<id>.md. Summaries say what the system does and were checked against the code.",
   "systems": [
     {
       "id": "expense-capture",
@@ -33,13 +33,7 @@
       "summaryAr": "تسجيل رسايل البنوك والمحافظ لوحدها، وده بيتبني من جديد: قايمة البنوك والمحافظ والاشتراكات اللي الأدمن بيعدّلها، والقارئ اللي بيقرا الرسالة من غير AI، والموديل اللي الأدمن اختاره للي القارئ مش متأكد منه. لسه مفيش حاجة بتستقبل رسايل.",
       "clusters": ["capture-ai-reader", "capture-catalog", "capture-reader"],
       "routers": ["capture", "captureAdmin"],
-      "jobs": ["seed-capture-catalog"],
-      "extraPaths": [
-        "android-app/app/src/main/java/**",
-        "android-app/app/src/main/AndroidManifest.xml",
-        "android-app/app/build.gradle",
-        ".github/workflows/build-apk.yml"
-      ]
+      "jobs": ["seed-capture-catalog"]
     },
     {
       "id": "voice-calls",

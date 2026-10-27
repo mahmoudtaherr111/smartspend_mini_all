@@ -184,11 +184,6 @@
     },
     "bank-messages": {
       "files": {
-        ".github/workflows/build-apk.yml": "17a30280e6fc",
-        "android-app/app/build.gradle": "ad0b32dc51ad",
-        "android-app/app/src/main/AndroidManifest.xml": "87c8ff2d8f58",
-        "android-app/app/src/main/java/com/smartspend/sync/DeepLinkActivity.kt": "d0cd83e77b4d",
-        "android-app/app/src/main/java/com/smartspend/sync/SyncService.kt": "3f742c67f26e",
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
         "api/capture-admin-router.ts": "95a0417753d7",
         "api/capture-router.ts": "75c1014b1c27",
@@ -210,9 +205,9 @@
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
         "api/lib/sms-ai-contract.ts": "a05d2f4ea034"
       },
-      "checked": "2026-10-27 ad904d75",
+      "checked": "2026-10-27 2b137b04",
       "arabic": "c2b67ea11d23",
-      "arabicChecked": "2026-10-27 ad904d75"
+      "arabicChecked": "2026-10-27 2b137b04"
     },
     "billing": {
       "files": {

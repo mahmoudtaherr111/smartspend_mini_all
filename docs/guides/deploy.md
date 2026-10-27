@@ -27,7 +27,7 @@ has reached end of life ([Node.js release schedule](https://nodejs.org/en/about/
 `package.json` and a `node_modules` installed with `npm ci --omit=dev` — the bundle reads only Sentry, node-cron and
 native binaries from it — so it cannot run migrations (see Database) and no development package reaches it.
 The build context excludes environment files, `.agents`, Playwright reports and test results, nested `node_modules`,
-and the native projects (`android/`, `android-app/`, `ios/`), which the web and server image never uses.
+and the native projects (`android/`, `ios/`), which the web and server image never uses.
 
 Install with the checked-in lockfile. The gRPC JavaScript override in `package.json` pins `1.14.5` across Firebase's
 client and admin dependency trees to close its high-severity advisory; removing it requires rechecking
@@ -103,4 +103,3 @@ database within a few seconds.
 
 ## Mobile
 - `android/` and `ios/` are Capacitor apps around the built web app.
-- `android-app/` is the native companion that forwards bank notifications; see [its README](../../android-app/README.md).

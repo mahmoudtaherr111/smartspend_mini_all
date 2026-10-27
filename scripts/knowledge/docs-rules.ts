@@ -18,7 +18,6 @@ const FIXED_DOCS = [
   "docs/README.md",
   "docs/architecture/README.md",
   "docs/ar/README.md",
-  "android-app/README.md",
   ".agents/rules/smartspend.md",
 ];
 

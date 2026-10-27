@@ -8,11 +8,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 
 | File | Systems |
 | --- | --- |
-| `.github/workflows/build-apk.yml` | [bank-messages](bank-messages.md) |
-| `android-app/app/build.gradle` | [bank-messages](bank-messages.md) |
-| `android-app/app/src/main/AndroidManifest.xml` | [bank-messages](bank-messages.md) |
-| `android-app/app/src/main/java/com/smartspend/sync/DeepLinkActivity.kt` | [bank-messages](bank-messages.md) |
-| `android-app/app/src/main/java/com/smartspend/sync/SyncService.kt` | [bank-messages](bank-messages.md) |
 | `api/admin-router.ts` | [admin](admin.md) |
 | `api/admin-whatsapp-router.ts` | [notifications](notifications.md) |
 | `api/ads-router.ts` | [admin](admin.md) |
