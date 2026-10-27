@@ -101,7 +101,6 @@ export function MobileBottomNav() {
     "/settings",
     "/support",
     "/pro",
-    "/bank-sync",
     "/wallets",
     "/ai",
     "/more",
@@ -116,7 +115,6 @@ export function MobileBottomNav() {
     "/settings",
     "/support",
     "/pro",
-    "/bank-sync",
     "/wallets",
   ].some((route) => location.pathname.startsWith(route));
   const isAiPage = location.pathname.startsWith("/ai");

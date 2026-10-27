@@ -1947,9 +1947,9 @@ model {
         }
       }
       confirmSmsSuggestion = procedure 'profile.confirmSmsSuggestion' {
-        #mutation #authed
+        #mutation #authed #uncalled
         technology 'authedProcedure'
-        description 'mutation · authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
         metadata {
           file 'api/profile-router.ts'
           builder 'authedProcedure'
@@ -1987,9 +1987,9 @@ model {
         }
       }
       dismissSmsSuggestion = procedure 'profile.dismissSmsSuggestion' {
-        #mutation #authed
+        #mutation #authed #uncalled
         technology 'authedProcedure'
-        description 'mutation · authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
         metadata {
           file 'api/profile-router.ts'
           builder 'authedProcedure'
@@ -2007,9 +2007,9 @@ model {
         }
       }
       generateWebhookToken = procedure 'profile.generateWebhookToken' {
-        #mutation #authed
+        #mutation #authed #uncalled
         technology 'authedProcedure'
-        description 'mutation · authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
         metadata {
           file 'api/profile-router.ts'
           builder 'authedProcedure'
@@ -2067,9 +2067,9 @@ model {
         }
       }
       getSmsLogs = procedure 'profile.getSmsLogs' {
-        #query #authed
+        #query #authed #uncalled
         technology 'authedProcedure'
-        description 'query · authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
         metadata {
           file 'api/profile-router.ts'
           builder 'authedProcedure'
@@ -2077,9 +2077,9 @@ model {
         }
       }
       getSmsSuggestions = procedure 'profile.getSmsSuggestions' {
-        #query #authed
+        #query #authed #uncalled
         technology 'authedProcedure'
-        description 'query · authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
         metadata {
           file 'api/profile-router.ts'
           builder 'authedProcedure'
@@ -2087,9 +2087,9 @@ model {
         }
       }
       getWebhookToken = procedure 'profile.getWebhookToken' {
-        #query #authed
+        #query #authed #uncalled
         technology 'authedProcedure'
-        description 'query · authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
         metadata {
           file 'api/profile-router.ts'
           builder 'authedProcedure'

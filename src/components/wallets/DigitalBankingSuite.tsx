@@ -8,7 +8,6 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   X,
-  Smartphone,
   Info,
   History,
   PiggyBank,
@@ -22,11 +21,7 @@ type WalletOutputs = inferRouterOutputs<AppRouter>["wallet"];
 type Wallet = WalletOutputs["getWallets"][number];
 type WalletTransaction = WalletOutputs["getWalletTransactions"][number];
 
-interface SuiteProps {
-  onShowSetupInstructions: () => void;
-}
-
-export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
+export function DigitalBankingSuite() {
   const utils = trpc.useUtils();
   const [selectedWalletId, setSelectedWalletId] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -267,15 +262,6 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
   };
 
   const { totalIn, totalOut } = getCardTotals();
-  // The link's state from what arrived, not from a token existing: a phone set up once may have stopped forwarding.
-  const link = trpc.profile.getWebhookToken.useQuery();
-  const lastReceived = link.data?.lastReceivedAt ? new Date(link.data.lastReceivedAt) : null;
-  const daysSince = lastReceived ? Math.floor((Date.now() - lastReceived.getTime()) / 86_400_000) : null;
-  const linkState = !lastReceived
-    ? { fresh: false, text: "الربط اتعمل، ولسه مفيش رسايل بنك وصلت" }
-    : daysSince! <= 3
-      ? { fresh: true, text: `آخر رسالة بنك وصلت ${daysSince === 0 ? "النهارده" : daysSince === 1 ? "امبارح" : `من ${daysSince} أيام`}` }
-      : { fresh: false, text: `آخر رسالة بنك وصلت من ${daysSince} يوم؛ اتأكد إن الربط لسه شغال على موبايلك` };
   const selectedWallet = wallets.find((w: Wallet) => w.id === selectedWalletId);
 
   return (
@@ -287,34 +273,16 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div
-              className={
-                linkState.fresh
-                  ? "inline-flex items-center gap-2 bg-emerald-500/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-emerald-300 text-xs font-bold border border-emerald-500/30"
-                  : "inline-flex items-center gap-2 bg-amber-500/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-amber-200 text-xs font-bold border border-amber-500/30"
-              }
-            >
-              <CheckCircle className="w-3.5 h-3.5" />
-              {linkState.text}
-            </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              محفظتك الرقمية الذكية 💳
+              كروتك ومحافظك 💳
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl">
-              هنا كروتك ومحافظك. كل رسالة بنك بتوصل بتتسجل عملية، أما رصيد
-              المحفظة فهو اللي انت كاتبه، فحدّثه من هنا لما يتغير.
+              رصيد الكارت أو المحفظة هو اللي انت كاتبه، فحدّثه من هنا لما
+              يتغير.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3 shrink-0">
-            <button
-              onClick={onShowSetupInstructions}
-              className="bg-white/10 hover:bg-white/15 text-white border border-white/20 transition-all rounded-2xl px-4 py-2.5 text-xs font-bold flex items-center gap-2 btn-press"
-            >
-              <Smartphone className="w-4 h-4 text-emerald-400" />
-              تعديل إعدادات الربط / الجهاز
-            </button>
-
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs px-5 py-2.5 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center gap-2 btn-press"
@@ -610,8 +578,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                     لا توجد عمليات مسجلة لهذا الكارت بعد
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    سيتم عرض المعاملات فور ورودها عبر الرسائل التلقائية للهاتف،
-                    أو يمكنك تسجيل مصاريف يدوية وتحديد هذا الكارت.
+                    سجّل مصروف واختار الكارت ده، وهيظهر هنا.
                   </p>
                 </div>
               </div>
@@ -815,9 +782,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
               <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-2xl border border-blue-200/50 dark:border-blue-900/30 flex gap-2.5">
                 <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                 <p className="text-[10px] text-blue-800 dark:text-blue-300 leading-relaxed">
-                  تحديد اسم أو نوع البطاقة بشكل دقيق سيساعد الذكاء الاصطناعي على
-                  تصنيف رسائل الـ SMS الواردة تلقائياً وربطها بهذا الحساب فوراً
-                  لتعديل الرصيد وتتبع الإحصائيات.
+                  الرصيد مابيتغيرش لوحده مع المصاريف، فحدّثه لما يتغير.
                 </p>
               </div>
 

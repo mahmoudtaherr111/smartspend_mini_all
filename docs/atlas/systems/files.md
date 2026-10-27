@@ -342,9 +342,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/auth/PasskeySettings.tsx` | [accounts](accounts.md) |
 | `src/components/auth/SignOutDialog.tsx` | [accounts](accounts.md) |
 | `src/components/auth/TurnstileWidget.tsx` | [accounts](accounts.md) |
-| `src/components/bank-sync/AndroidSetupFlow.tsx` | [bank-messages](bank-messages.md) |
-| `src/components/bank-sync/IosSetupFlow.tsx` | [bank-messages](bank-messages.md) |
-| `src/components/bank-sync/SmsSuggestionsCard.tsx` | [bank-messages](bank-messages.md) |
 | `src/components/budgets/BudgetsPanel.tsx` | [money](money.md) |
 | `src/components/dashboard/BehaviorInsights.tsx` | [money](money.md) |
 | `src/components/dashboard/ExpenseChart.tsx` | [money](money.md) |
@@ -387,7 +384,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/settings/BusinessSettingsView.tsx` | [accounts](accounts.md) |
 | `src/components/settings/LanguageSettings.tsx` | [accounts](accounts.md) |
 | `src/components/settings/PeopleSettingsView.tsx` | [accounts](accounts.md) |
-| `src/components/settings/SmsWebhookSettings.tsx` | [bank-messages](bank-messages.md) |
 | `src/components/ui/accordion.tsx` | [web-app](web-app.md) |
 | `src/components/ui/adaptive-dialog.tsx` | [web-app](web-app.md) |
 | `src/components/ui/alert-dialog.tsx` | [web-app](web-app.md) |
@@ -502,7 +498,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/pages/AICenter.tsx` | [ai-center](ai-center.md) |
 | `src/pages/Admin.tsx` | [admin](admin.md) |
 | `src/pages/AuthCallback.tsx` | [accounts](accounts.md) |
-| `src/pages/BankSyncPage.tsx` | [bank-messages](bank-messages.md) |
 | `src/pages/Home.tsx` | [money](money.md) |
 | `src/pages/Landing.tsx` | [web-app](web-app.md) |
 | `src/pages/Login.tsx` | [accounts](accounts.md) |

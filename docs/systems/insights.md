@@ -97,7 +97,7 @@ printable HTML file that the browser downloads.
   prompts on their own line. They are never stored: `saveSmartProfile` drops them, and `storedSpendingBehavior` cuts
   the text that reads used to append to the stored behaviour, so rows that grew are cleaned on their next save.
 - **Saving** (`saveSmartProfile`): one upsert of every section. If it fails, only the older columns are saved.
-- **Editing** (`updateSmartProfile`, behind `profile.updateSmartProfile` in Settings and the bank-sync screens):
+- **Editing** (`updateSmartProfile`, behind `profile.updateSmartProfile` in Settings):
   merges the patch section by section and marks the onboarding questions whose fields are now filled as answered.
 - **Onboarding.** Three questions, defined once in `contracts/profile-fields.ts#PROFILE_FIELDS` with what each answer
   changes: the monthly income (the spending limit and warning before budgets exist), the payday (months run payday to

@@ -17,7 +17,6 @@ flowchart LR
     page_PlanPage["PlanPage screen"]
     page_WalletsPage["WalletsPage screen"]
     screens_accounts["Screens of Accounts, sign-in and security"]
-    screens_bank_messages["Screens of Bank and wallet messages"]
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
@@ -153,7 +152,6 @@ flowchart LR
   screens_accounts --> router_business
   screens_accounts --> router_expense
   screens_accounts --> router_profile
-  screens_bank_messages --> router_wallet
   screens_web_app --> router_business
   screens_web_app --> router_coach
   screens_web_app --> router_expense
@@ -223,10 +221,10 @@ flowchart LR
 | `profile.listContacts` | query | `authedProcedure` | `expenses`, `user_contacts` | — | `More`, `PlanPage`, `Settings` |
 | `profile.mergeContacts` | mutation | `authedProcedure` | `expenses`, `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `More`, `Settings` |
 | `profile.updateContact` | mutation | `authedProcedure` | `user_contacts` | `user_contacts` | `More`, `Settings` |
-| `wallet.createWallet` | mutation | `authedProcedure` | — | `user_wallets` | `BankSyncPage`, `More`, `WalletsPage` |
-| `wallet.deleteWallet` | mutation | `authedProcedure` | — | `expenses`, `user_wallets` | `BankSyncPage`, `More`, `WalletsPage` |
-| `wallet.getWalletTransactions` | query | `authedProcedure` | `expenses` | — | `BankSyncPage`, `More`, `WalletsPage` |
-| `wallet.getWallets` | query | `authedProcedure` | `user_wallets` | — | `BankSyncPage`, `More`, `WalletsPage` |
+| `wallet.createWallet` | mutation | `authedProcedure` | — | `user_wallets` | `More`, `WalletsPage` |
+| `wallet.deleteWallet` | mutation | `authedProcedure` | — | `expenses`, `user_wallets` | `More`, `WalletsPage` |
+| `wallet.getWalletTransactions` | query | `authedProcedure` | `expenses` | — | `More`, `WalletsPage` |
+| `wallet.getWallets` | query | `authedProcedure` | `user_wallets` | — | `More`, `WalletsPage` |
 | `wallet.updateWallet` | mutation | `authedProcedure` | — | `user_wallets` | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
@@ -269,7 +267,7 @@ _None._
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
 Used by: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 

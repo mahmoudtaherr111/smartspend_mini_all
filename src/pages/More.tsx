@@ -11,7 +11,6 @@ import {
   ListChecks,
   Palette,
   ShieldCheck,
-  Smartphone,
   Sparkles,
   UserRound,
   Users,
@@ -104,12 +103,6 @@ const sections: MoreSection[] = [
         icon: Wallet,
       },
       {
-        href: "/bank-sync",
-        labelKey: "more.item.bankSync",
-        descKey: "more.item.bankSyncDesc",
-        icon: Smartphone,
-      },
-      {
         href: "/support",
         labelKey: "more.item.support",
         descKey: "more.item.supportDesc",
@@ -121,7 +114,6 @@ const sections: MoreSection[] = [
 
 function preloadDestination(href: string) {
   if (href === "/admin") return import("@/pages/Admin");
-  if (href === "/bank-sync") return import("@/pages/BankSyncPage");
   if (href === "/wallets") return import("@/pages/WalletsPage");
   if (href === "/plan") return import("@/pages/PlanPage");
   if (href === "/pro") return import("@/pages/Pro");

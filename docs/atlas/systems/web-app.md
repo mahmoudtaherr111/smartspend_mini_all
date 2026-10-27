@@ -34,7 +34,6 @@ flowchart LR
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_admin[["Admin console, support and growth tools (system)"]]
   sys_ai_center[["AI Center (system)"]]
-  sys_bank_messages[["Bank and wallet messages (system)"]]
   sys_expense_capture[["Recording spending (system)"]]
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_platform[["Server platform and data (system)"]]
@@ -56,7 +55,6 @@ flowchart LR
   mod_web_pages --> sys_accounts
   mod_web_pages --> sys_admin
   mod_web_pages --> sys_ai_center
-  mod_web_pages --> sys_bank_messages
   mod_web_pages --> sys_expense_capture
   mod_web_pages --> sys_money
   mod_web_pages --> sys_platform
@@ -88,7 +86,7 @@ flowchart LR
 | `web-growth` — Ads and SEO UI | The ad banner and SEO meta tags. | 2 |
 | `web-hooks` — Web hooks | React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics. | 21 |
 | `web-lib` — Web utilities | Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/. | 11 |
-| `web-pages` — Web pages | Route-level page components lazy-loaded by src/App.tsx. | 18 |
+| `web-pages` — Web pages | Route-level page components lazy-loaded by src/App.tsx. | 17 |
 | `web-shared` — Shared web components | Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton. | 5 |
 | `web-shell` — Web app shell | Entry point, providers, layout, route guards and PWA or native integration. | 24 |
 | `web-ui-kit` — UI primitives | shadcn and Radix UI primitives in src/components/ui/. | 55 |
@@ -118,7 +116,7 @@ _None._
 
 Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md).
 
-Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Live voice assistant](voice-calls.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Live voice assistant](voice-calls.md).
 
 ## Environment variables
 

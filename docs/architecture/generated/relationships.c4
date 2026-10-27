@@ -1225,9 +1225,6 @@ model {
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-ui-kit
-  smartspend.web.modules.web-bank-sync -[imports]-> smartspend.web.modules.web-lib
-  smartspend.web.modules.web-bank-sync -[imports]-> smartspend.web.modules.web-shell
-  smartspend.web.modules.web-bank-sync -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.modules.web-capture -[imports]-> smartspend.shared.contracts
   smartspend.web.modules.web-capture -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-capture -[imports]-> smartspend.web.modules.web-lib
@@ -1253,7 +1250,6 @@ model {
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-account
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-admin
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-ai
-  smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-bank-sync
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-capture
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-finance
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-growth
@@ -1386,16 +1382,6 @@ model {
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.support.listAll
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.support.respond
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.voice.adminStats
-  smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.profile.generateWebhookToken
-  smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.profile.getSmartProfile
-  smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.profile.getSmsLogs
-  smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.profile.getWebhookToken
-  smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.profile.updateSmartProfile
-  smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.seo.getPage
-  smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.wallet.createWallet
-  smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.wallet.deleteWallet
-  smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.wallet.getWalletTransactions
-  smartspend.web.pages.BankSyncPage -[calls]-> smartspend.api.trpc.wallet.getWallets
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.ai.getUserLimits
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.ai.parseExpense
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.ai.parseVoiceExpense
@@ -1429,12 +1415,9 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.localAuth.me
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.pro.myPlan
-  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.confirmSmsSuggestion
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.dismissOnboarding
-  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.dismissSmsSuggestion
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.getNextOnboardingQuestion
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.getSmartProfile
-  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.getSmsSuggestions
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.savePushSubscription
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.submitOnboardingAnswer
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.voice.eligibility
@@ -1548,11 +1531,8 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.addContact
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.deleteContact
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.deleteMyAccount
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.generateWebhookToken
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.getNextOnboardingQuestion
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.getSmartProfile
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.getSmsLogs
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.getWebhookToken
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.listContacts
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.mergeContacts
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.savePushSubscription
@@ -1639,7 +1619,6 @@ model {
   smartspend.web.pages.Support -[calls]-> smartspend.api.trpc.support.listMine
   smartspend.web.pages.Terms -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.UltraLounge -[calls]-> smartspend.api.trpc.seo.getPage
-  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.profile.getWebhookToken
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.createWallet
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.deleteWallet

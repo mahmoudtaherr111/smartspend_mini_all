@@ -6,7 +6,7 @@ import { searchSiteGuide } from "../../../site-guide";
 import { str, type ToolContext, type VoiceTool } from "./types";
 
 /** The screen a guide topic lives on, where that is certain. */
-const ROUTES: Partial<Record<string, string>> = { sms: "/bank-sync", card: "/wallets", wallet: "/wallets", expenses: "/dashboard", plans: "/plan" };
+const ROUTES: Partial<Record<string, string>> = { card: "/wallets", wallet: "/wallets", expenses: "/dashboard", plans: "/plan" };
 
 /** What the assistant can and cannot do in a call, so it never promises a missing feature. */
 const CAN = ["يجاوب بأرقام من الدفتر", "يسجل مصروف أو دخل بعد موافقتك", "يعمل هدف أو ميزانية أو محفظة", "يفتكر ويدوّر في كلامكم القديم", "يشرح استخدام التطبيق"];
@@ -18,7 +18,7 @@ const COACH_CANNOT = ["تحويل فلوس أو دفع", "رسايل أو تذك
 export const appHelpTool: VoiceTool = {
   declaration: {
     name: "app_help",
-    description: "How to use the app (linking bank messages, wallets, goals, reports...). Describe only the steps it returns.",
+    description: "How to use the app (recording, wallets, goals, reports...). Describe only the steps it returns.",
     parameters: { type: "object", properties: { question: { type: "string" } }, required: ["question"] },
   },
   async run(args, ctx: ToolContext) {

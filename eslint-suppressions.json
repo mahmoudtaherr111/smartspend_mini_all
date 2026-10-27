@@ -908,22 +908,6 @@
       "count": 1
     }
   },
-  "src/components/bank-sync/AndroidSetupFlow.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/components/bank-sync/IosSetupFlow.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
   "src/components/dashboard/BehaviorInsights.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -1056,14 +1040,6 @@
   },
   "src/components/settings/PeopleSettingsView.tsx": {
     "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "src/components/settings/SmsWebhookSettings.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
@@ -1226,11 +1202,6 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 11
-    }
-  },
-  "src/pages/BankSyncPage.tsx": {
-    "react-refresh/only-export-components": {
-      "count": 1
     }
   },
   "src/pages/Home.tsx": {

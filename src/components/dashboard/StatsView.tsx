@@ -239,8 +239,7 @@ export const StatsView = memo(function StatsView({
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-xs text-slate-400">
-                  المعاملات التي تم تسجيلها تلقائياً عبر SmartSpend Sync من
-                  إشعارات ورسائل البنك.
+                  العمليات اللي اتسجلت لوحدها من رسايل البنك والمحفظة.
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">

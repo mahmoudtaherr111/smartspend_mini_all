@@ -16,7 +16,6 @@ flowchart LR
     page_Admin["Admin screen"]
     page_Support["Support screen"]
     screens_accounts["Screens of Accounts, sign-in and security"]
-    screens_bank_messages["Screens of Bank and wallet messages"]
     screens_billing["Screens of Plans and payments"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
@@ -101,7 +100,6 @@ flowchart LR
   router_support -.-> tbl_users
   router_support ==> tbl_support_tickets
   screens_accounts --> router_seo
-  screens_bank_messages --> router_seo
   screens_billing --> router_seo
   screens_money --> router_seo
   screens_web_app --> router_admin
@@ -192,7 +190,7 @@ flowchart LR
 | `analytics.trackEvent` | mutation | `authedProcedure` | — | `user_analytics` | `App shell` |
 | `export.allUsers` | mutation | `adminProcedure` | `local_users`, `users` | — | `Admin`, `More` |
 | `seo.delete` | mutation | `adminProcedure` | — | `seo_pages` | — |
-| `seo.getPage` | query | `publicProcedure` | `seo_pages` | — | `Admin`, `BankSyncPage`, `Landing`, `More`, `PlanPage`, `Privacy`, `Pro`, `Settings`, `Support`, `Terms`, `UltraLounge`, `WalletsPage` |
+| `seo.getPage` | query | `publicProcedure` | `seo_pages` | — | `Admin`, `Landing`, `More`, `PlanPage`, `Privacy`, `Pro`, `Settings`, `Support`, `Terms`, `UltraLounge`, `WalletsPage` |
 | `seo.list` | query | `adminProcedure` | `seo_pages` | — | — |
 | `seo.sitemap` | query | `publicProcedure` | `seo_pages` | — | — |
 | `seo.upsert` | mutation | `adminProcedure` | `seo_pages` | `seo_pages` | — |
@@ -251,7 +249,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 Depends on: [Accounts, sign-in and security](accounts.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Accounts, sign-in and security](accounts.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Web and mobile app shell](web-app.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Plans and payments](billing.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 

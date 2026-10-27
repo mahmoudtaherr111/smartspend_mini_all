@@ -73,8 +73,6 @@ export const ar = {
   "more.item.planDesc": "اللي عليك لحد القبض، والخطة اللي اتفقت عليها مع سمارت",
   "more.item.wallets": "كروتك ومحافظك",
   "more.item.walletsDesc": "الكروت والمحافظ وأرصدتها",
-  "more.item.bankSync": "الربط البنكي",
-  "more.item.bankSyncDesc": "استيراد العمليات بأمان من هاتفك",
   "more.item.support": "المساعدة والدعم",
   "more.item.supportDesc": "الأسئلة الشائعة والتواصل معنا",
 

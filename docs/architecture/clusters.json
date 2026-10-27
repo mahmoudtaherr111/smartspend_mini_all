@@ -449,15 +449,6 @@
       ]
     },
     {
-      "id": "web-bank-sync",
-      "title": "Bank sync UI",
-      "description": "The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel.",
-      "paths": [
-        "src/components/bank-sync/**",
-        "src/components/settings/SmsWebhookSettings.tsx"
-      ]
-    },
-    {
       "id": "web-account",
       "title": "Account UI",
       "description": "Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt.",
@@ -465,7 +456,6 @@
         "src/components/auth/**",
         "src/components/profile/**",
         "src/components/settings/**",
-        "src/components/bank-sync/**",
         "src/components/notifications/**"
       ]
     },

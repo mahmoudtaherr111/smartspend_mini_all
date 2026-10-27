@@ -15,7 +15,6 @@ import { BarChart3 } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { RecentExpenses } from "@/components/expenses/RecentExpenses";
-import { SmsSuggestionsCard } from "@/components/bank-sync/SmsSuggestionsCard";
 import { PendingQuestionsCard } from "@/components/expenses/PendingQuestionsCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OnboardingCard } from "@/components/OnboardingCard";
@@ -290,7 +289,6 @@ export default function Home() {
                   />
                   <div className="space-y-4">
                     <PendingQuestionsCard />
-                    <SmsSuggestionsCard />
                     <RecentExpenses
                       limit={7}
                       month={month}

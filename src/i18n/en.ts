@@ -71,8 +71,6 @@ export const en: Dictionary = {
   "more.item.planDesc": "What you owe until payday, and your agreed plan with Smart",
   "more.item.wallets": "Cards & Wallets",
   "more.item.walletsDesc": "Your cards, wallets and their balances",
-  "more.item.bankSync": "Bank Sync",
-  "more.item.bankSyncDesc": "Securely import transactions from your phone",
   "more.item.support": "Help & Support",
   "more.item.supportDesc": "Frequently asked questions and contact",
 

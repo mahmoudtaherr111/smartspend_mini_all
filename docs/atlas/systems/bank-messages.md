@@ -13,9 +13,7 @@ Solid arrows: calls and uses. Thick arrows: writes a table. Dotted arrows: reads
 ```mermaid
 flowchart LR
   subgraph g_screens["Screens"]
-    page_BankSyncPage["BankSyncPage screen"]
     screens_admin["Screens of Admin console, support and growth tools"]
-    screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
@@ -29,7 +27,6 @@ flowchart LR
     mod_capture_catalog["Capture catalog"]
     mod_capture_reader["Message reader"]
     mod_ingestion_parsers["Ingestion parsers"]
-    mod_web_bank_sync["Bank sync UI"]
   end
   subgraph g_tables["MySQL tables"]
     tbl_capture_sources[("capture_sources")]
@@ -48,7 +45,6 @@ flowchart LR
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_platform[["Server platform and data (system)"]]
-  sys_web_app[["Web and mobile app shell (system)"]]
   http__api_sms --> mod_ingestion_parsers
   http__api_sms --> sys_accounts
   http__api_sms --> sys_ai_center
@@ -72,8 +68,6 @@ flowchart LR
   mod_ingestion_parsers --> sys_platform
   mod_ingestion_parsers ==> tbl_expenses
   mod_ingestion_parsers ==> tbl_raw_sms_events
-  mod_web_bank_sync --> sys_web_app
-  page_BankSyncPage --> router_profile
   router_capture --> mod_capture_catalog
   router_captureAdmin --> mod_capture_catalog
   router_captureAdmin --> sys_platform
@@ -87,9 +81,7 @@ flowchart LR
   router_profile -.-> tbl_raw_sms_events
   router_profile ==> tbl_webhook_tokens
   screens_admin --> router_captureAdmin
-  screens_money --> router_profile
   screens_web_app --> router_captureAdmin
-  screens_web_app --> router_profile
 ```
 
 ## Journeys
@@ -137,7 +129,6 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 | `capture-catalog` — Capture catalog | The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name. | 3 |
 | `capture-reader` — Message reader | Layer one of capture, before any model: reads a bank, wallet or payment notification into what happened, which way, how much and in what currency, with which card and with whom, when, how sure it is and why (normalization with a position map, piece finders, an Arabic and English lexicon, sentences, money roles, kind and direction, the other side, the date), plus its benchmark corpus. | 12 |
 | `ingestion-parsers` — Ingestion parsers | Bank SMS parsing (rules first, then a model through the admin's sms routes behind a switch, the plan budget and a daily USD cap, on redacted text, with a versioned reply contract checked before use), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut. | 5 |
-| `web-bank-sync` — Bank sync UI | The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel. | 4 |
 
 ## API procedures
 
@@ -151,13 +142,13 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 | `captureAdmin.setSourceStatus` | mutation | `adminProcedure` | `capture_sources` | `capture_sources` | `Admin`, `More` |
 | `captureAdmin.setSubscriptionStatus` | mutation | `adminProcedure` | `subscription_catalog` | `subscription_catalog` | `Admin`, `More` |
 | `captureAdmin.syncSeed` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
-| `profile.confirmSmsSuggestion` | mutation | `authedProcedure` | — | — | `Home` |
-| `profile.dismissSmsSuggestion` | mutation | `authedProcedure` | — | — | `Home` |
+| `profile.confirmSmsSuggestion` | mutation | `authedProcedure` | — | — | — |
+| `profile.dismissSmsSuggestion` | mutation | `authedProcedure` | — | — | — |
 | `profile.generateMagicCode` | mutation | `authedProcedure` | `webhook_tokens` | — | — |
-| `profile.generateWebhookToken` | mutation | `authedProcedure` | — | `webhook_tokens` | `BankSyncPage`, `More` |
-| `profile.getSmsLogs` | query | `authedProcedure` | `raw_sms_events` | — | `BankSyncPage`, `More` |
-| `profile.getSmsSuggestions` | query | `authedProcedure` | `raw_sms_events` | — | `Home` |
-| `profile.getWebhookToken` | query | `authedProcedure` | `raw_sms_events`, `webhook_tokens` | — | `BankSyncPage`, `More`, `WalletsPage` |
+| `profile.generateWebhookToken` | mutation | `authedProcedure` | — | `webhook_tokens` | — |
+| `profile.getSmsLogs` | query | `authedProcedure` | `raw_sms_events` | — | — |
+| `profile.getSmsSuggestions` | query | `authedProcedure` | `raw_sms_events` | — | — |
+| `profile.getWebhookToken` | query | `authedProcedure` | `raw_sms_events`, `webhook_tokens` | — | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -197,9 +188,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md).
 
-Used by: [Admin console, support and growth tools](admin.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Admin console, support and growth tools](admin.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -211,7 +202,7 @@ Used by: [Admin console, support and growth tools](admin.md), [Money: expenses, 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>42 files and declarations</summary>
+<details><summary>37 files and declarations</summary>
 
 - `.github/workflows/build-apk.yml`
 - `android-app/app/build.gradle`
@@ -250,10 +241,5 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/profile-router.ts#rest-of-file`
 - `api/services/sms-ledger.ts`
 - `api/sms-router.ts`
-- `src/components/bank-sync/AndroidSetupFlow.tsx`
-- `src/components/bank-sync/IosSetupFlow.tsx`
-- `src/components/bank-sync/SmsSuggestionsCard.tsx`
-- `src/components/settings/SmsWebhookSettings.tsx`
-- `src/pages/BankSyncPage.tsx`
 
 </details>

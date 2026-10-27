@@ -3,7 +3,7 @@ import type { Artifact, DataNeed, ResolvedFact } from "../ai-kernel/types";
 export interface SiteGuideChunk {
   id: string;
   title: string;
-  area: "sms" | "wallet" | "card" | "expenses" | "goals" | "reports" | "plans";
+  area: "wallet" | "card" | "expenses" | "goals" | "reports" | "plans";
   tags: string[];
   content: string;
   steps: string[];

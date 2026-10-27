@@ -15,7 +15,6 @@ flowchart LR
   subgraph g_screens["Screens"]
     screens_accounts["Screens of Accounts, sign-in and security"]
     screens_ai_center["Screens of AI Center"]
-    screens_bank_messages["Screens of Bank and wallet messages"]
     screens_money["Screens of Money: expenses, wallets, budgets, goals and businesses"]
     screens_web_app["Screens of Web and mobile app shell"]
   end
@@ -81,7 +80,6 @@ flowchart LR
   screens_accounts --> router_profile
   screens_ai_center --> router_ai
   screens_ai_center --> router_export
-  screens_bank_messages --> router_profile
   screens_money --> router_profile
   screens_web_app --> router_profile
 ```
@@ -105,10 +103,10 @@ flowchart LR
 | `profile.dismissOnboarding` | mutation | `authedProcedure` | — | `user_profiles` | `Home` |
 | `profile.getNextOnboardingQuestion` | query | `authedProcedure` | `user_profiles` | — | `Home`, `More`, `Settings` |
 | `profile.getQuestions` | query | `authedProcedure` | `onboarding_questions` | — | — |
-| `profile.getSmartProfile` | query | `authedProcedure` | — | — | `App shell`, `BankSyncPage`, `Home`, `More`, `Settings` |
+| `profile.getSmartProfile` | query | `authedProcedure` | — | — | `App shell`, `Home`, `More`, `Settings` |
 | `profile.refreshInferences` | mutation | `authedProcedure` | `expenses` | `monthly_behavior_snapshots` | — |
 | `profile.submitOnboardingAnswer` | mutation | `authedProcedure` | — | — | `Home`, `More`, `Settings` |
-| `profile.updateSmartProfile` | mutation | `authedProcedure` | — | — | `App shell`, `BankSyncPage`, `More`, `Settings` |
+| `profile.updateSmartProfile` | mutation | `authedProcedure` | — | — | `App shell`, `More`, `Settings` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -143,7 +141,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 

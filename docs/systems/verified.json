@@ -113,7 +113,7 @@
         "api/services/ai-kernel/clarification-machine.ts": "f60b0eef67f7",
         "api/services/ai-kernel/context-packer.ts": "001bd02b4cbe",
         "api/services/ai-kernel/data-need-compiler.ts": "6cef352b4fb5",
-        "api/services/ai-kernel/index.ts": "b43d6cc1cb3b",
+        "api/services/ai-kernel/index.ts": "bda95b484015",
         "api/services/ai-kernel/intent-router.ts": "4e034212c0a2",
         "api/services/ai-kernel/response-normalizer.ts": "f377c8f16290",
         "api/services/ai-kernel/retrieval-policy.ts": "a62a9621df27",
@@ -144,17 +144,17 @@
         "api/services/finance-semantic-layer/types.ts": "d13d8332e9be",
         "api/services/site-guide/embedding.ts": "bc5457180269",
         "api/services/site-guide/index.ts": "d2416784dee1",
-        "api/services/site-guide/knowledge-base.ts": "2a91fd6d7883",
+        "api/services/site-guide/knowledge-base.ts": "25cb012efb96",
         "api/services/site-guide/retriever.ts": "e276a63d4ba1",
-        "api/services/site-guide/types.ts": "18e510c0b423",
+        "api/services/site-guide/types.ts": "9b6cd2e7198c",
         "src/components/ai/AIChatbot.tsx": "cbd3900dcd37",
         "src/components/ai/AIMemoryManager.tsx": "b2491b7f6097",
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "05db1979579d"
       },
-      "checked": "2026-10-20 5f8d99e1",
-      "arabic": "61dc02a201dc",
-      "arabicChecked": "2026-10-20 5f8d99e1"
+      "checked": "2026-10-27 d1c95984",
+      "arabic": "35ee1de94106",
+      "arabicChecked": "2026-10-27 d1c95984"
     },
     "ai-platform": {
       "files": {
@@ -176,11 +176,11 @@
         "api/lib/provider-health.ts": "56a6f6eb8217",
         "api/lib/provider-key-crypto.ts": "3c64d3f05284",
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
-        "api/services/ai-cost-policy.ts": "e3745661fa35"
+        "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-10-20 cfbc7f55",
+      "checked": "2026-10-27 d1c95984",
       "arabic": "38b9befb7e66",
-      "arabicChecked": "2026-10-20 32887d74"
+      "arabicChecked": "2026-10-27 d1c95984"
     },
     "bank-messages": {
       "files": {
@@ -220,16 +220,11 @@
         "api/profile-router.ts#profile.getWebhookToken": "383d68616d9f",
         "api/profile-router.ts#rest-of-file": "01857da89415",
         "api/services/sms-ledger.ts": "079eab469b7d",
-        "api/sms-router.ts": "bccd1a7b2ef2",
-        "src/components/bank-sync/AndroidSetupFlow.tsx": "a46afb8f98d0",
-        "src/components/bank-sync/IosSetupFlow.tsx": "d9df23b4367c",
-        "src/components/bank-sync/SmsSuggestionsCard.tsx": "23336674d769",
-        "src/components/settings/SmsWebhookSettings.tsx": "c540d4df52db",
-        "src/pages/BankSyncPage.tsx": "e85fea2dbeba"
+        "api/sms-router.ts": "bccd1a7b2ef2"
       },
-      "checked": "2026-10-20 5f8d99e1",
-      "arabic": "41ee2bdb9ca3",
-      "arabicChecked": "2026-10-20 5f8d99e1"
+      "checked": "2026-10-27 d1c95984",
+      "arabic": "b0990bdb2480",
+      "arabicChecked": "2026-10-27 d1c95984"
     },
     "billing": {
       "files": {
@@ -358,9 +353,9 @@
         "api/services/user-profile-service.ts": "19237538c3b4",
         "src/components/insights/AIInsights.tsx": "3be01c23f12c"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "8c0f59af05db",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-10-27 d1c95984",
+      "arabic": "a0f3183f20ff",
+      "arabicChecked": "2026-10-27 d1c95984"
     },
     "money": {
       "files": {
@@ -408,14 +403,14 @@
         "api/wallet-router.ts": "b650c9bb74c6",
         "src/components/budgets/BudgetsPanel.tsx": "514a88e41280",
         "src/components/dashboard/BehaviorInsights.tsx": "47729e6b7532",
-        "src/components/dashboard/ExpenseChart.tsx": "59163d319548",
+        "src/components/dashboard/ExpenseChart.tsx": "6951e8194d3d",
         "src/components/dashboard/GlobalSearch.tsx": "4bc9913b8a0a",
         "src/components/dashboard/HomeHeader.tsx": "5925ad849a4f",
         "src/components/dashboard/HomeSummaryCards.tsx": "054ebc48bc66",
         "src/components/dashboard/MonthlyCalendar.tsx": "e72b1c0e2bd7",
         "src/components/dashboard/MonthlyStats.tsx": "55ac8f2618fe",
         "src/components/dashboard/NativeTabPanels.tsx": "8d5e7d72c996",
-        "src/components/dashboard/StatsView.tsx": "b2758a9baf79",
+        "src/components/dashboard/StatsView.tsx": "45f3346ad5c3",
         "src/components/dashboard/StreakCounter.tsx": "86c3f654ff1d",
         "src/components/dashboard/UserIntelligencePanel.tsx": "c5f3963e35c8",
         "src/components/debts/DebtsPanel.tsx": "77a2bd04b79d",
@@ -426,14 +421,14 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/components/installments/InstallmentsPanel.tsx": "a23758827f16",
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
-        "src/components/wallets/DigitalBankingSuite.tsx": "b46ba05d3ac3",
-        "src/pages/Home.tsx": "900e47a71057",
+        "src/components/wallets/DigitalBankingSuite.tsx": "8d1b028fee01",
+        "src/pages/Home.tsx": "b2b5870a8509",
         "src/pages/PlanPage.tsx": "107068a002b0",
-        "src/pages/WalletsPage.tsx": "52f84203b034"
+        "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-10-21 ec133d24",
-      "arabic": "4054e602a68e",
-      "arabicChecked": "2026-10-20 5f8d99e1"
+      "checked": "2026-10-27 d1c95984",
+      "arabic": "ddce254d0870",
+      "arabicChecked": "2026-10-27 d1c95984"
     },
     "notifications": {
       "files": {
@@ -526,7 +521,7 @@
         "api/services/voice/brain/profile-questions.ts": "5a25e3ec2e4a",
         "api/services/voice/brain/snapshot.ts": "6f2f54006727",
         "api/services/voice/brain/spoken.ts": "b6da37fdc23b",
-        "api/services/voice/brain/tools/app-help.ts": "14c3fd1586cf",
+        "api/services/voice/brain/tools/app-help.ts": "61ebdc662211",
         "api/services/voice/brain/tools/calculate.ts": "70da29e0a57e",
         "api/services/voice/brain/tools/coach.ts": "876b067e5c9a",
         "api/services/voice/brain/tools/market-price.ts": "5bed0aca7f26",
@@ -567,20 +562,20 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "69cc55d954de"
       },
-      "checked": "2026-10-21 ec133d24",
+      "checked": "2026-10-27 d1c95984",
       "arabic": "33ae81e76f2b",
-      "arabicChecked": "2026-10-21 ec133d24"
+      "arabicChecked": "2026-10-27 d1c95984"
     },
     "web-app": {
       "files": {
-        "src/App.tsx": "f934a45306b5",
+        "src/App.tsx": "caff34200617",
         "src/components/NotificationBell.tsx": "ee7049e0f405",
         "src/components/OnboardingCard.tsx": "9b752f09004c",
         "src/components/PageLoadingSkeleton.tsx": "fa0fe3239b38",
         "src/components/ProductTour.tsx": "c9145b3fe557",
-        "src/components/Sidebar.tsx": "d5e55af9526f",
+        "src/components/Sidebar.tsx": "c84e5a0cbe11",
         "src/components/ads/AdBanner.tsx": "a64b7fe711e6",
-        "src/components/layout/MobileBottomNav.tsx": "3f254f7fa579",
+        "src/components/layout/MobileBottomNav.tsx": "43e36b08a564",
         "src/components/layout/PageTransition.tsx": "500656dd741d",
         "src/components/layout/mobile-nav-platform.ts": "be85b5893eb0",
         "src/components/pwa/NetworkStatusToast.tsx": "ef9a09045e3c",
@@ -668,9 +663,9 @@
         "src/hooks/useVirtualKeyboard.ts": "cd9133e4472c",
         "src/i18n/LanguagePreferenceSync.tsx": "f1a533c6da56",
         "src/i18n/LanguageProvider.tsx": "10f3c6a09aa8",
-        "src/i18n/ar.ts": "03136c667035",
+        "src/i18n/ar.ts": "a6a4f3c63cf0",
         "src/i18n/context.ts": "862082f8b940",
-        "src/i18n/en.ts": "9147514196d7",
+        "src/i18n/en.ts": "00526651cd6d",
         "src/i18n/format.ts": "99c743113c52",
         "src/i18n/language.ts": "398827de4cd9",
         "src/lib/back-button-manager.ts": "8f9f1a1d70ca",
@@ -686,7 +681,7 @@
         "src/lib/utils.ts": "fe02cb01defc",
         "src/main.tsx": "edecd8a6865f",
         "src/pages/Landing.tsx": "c618847f38a4",
-        "src/pages/More.tsx": "4533673bdcac",
+        "src/pages/More.tsx": "41f39ae20d84",
         "src/pages/NotFound.tsx": "8c62f9d22119",
         "src/pages/Privacy.tsx": "d888313990ad",
         "src/pages/Terms.tsx": "4ff361a45f01",
@@ -697,9 +692,9 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-10-20 5f8d99e1",
-      "arabic": "c2f29fafd084",
-      "arabicChecked": "2026-10-20 5f8d99e1"
+      "checked": "2026-10-27 d1c95984",
+      "arabic": "8f46bff2a055",
+      "arabicChecked": "2026-10-27 d1c95984"
     }
   }
 }

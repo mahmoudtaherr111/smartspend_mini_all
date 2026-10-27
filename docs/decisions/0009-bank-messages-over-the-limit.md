@@ -1,7 +1,7 @@
 # 0009. Bank messages over the monthly limit are kept as suggestions
 
 - Status: accepted, implemented in `api/sms-router.ts` (`POST /api/sms/ingest`), `api/services/sms-ledger.ts`, the
-  suggestion procedures in `api/profile-router.ts` and `src/components/bank-sync/SmsSuggestionsCard.tsx`.
+  suggestion procedures in `api/profile-router.ts` and the Home card `SmsSuggestionsCard` (removed with the old bank-message screens).
 - Decided and recorded: 2026-09-24.
 
 ## Context

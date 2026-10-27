@@ -13,7 +13,6 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `/admin` | admin | `Admin` | `src/pages/Admin.tsx` | — |
 | `/ai` | signed-in | `AICenter` | `src/pages/AICenter.tsx` | — |
 | `/auth/callback` | public | `AuthCallback` | `src/pages/AuthCallback.tsx` | — |
-| `/bank-sync` | signed-in | `BankSyncPage` | `src/pages/BankSyncPage.tsx` | — |
 | `/dashboard` | signed-in | `Home` | `src/pages/Home.tsx` | — |
 | `/login` | signed-out only | `Login` | `src/pages/Login.tsx` | — |
 | `/more` | signed-in | `More` | `src/pages/More.tsx` | — |
@@ -177,26 +176,9 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 _None._
 
-### `BankSyncPage` — `src/pages/BankSyncPage.tsx`
-
-6 files in its import closure (not counting `src/components/ui/`).
-
-| Procedure | Calls | Files |
-| --- | --- | --- |
-| `profile.generateWebhookToken` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getSmartProfile` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/wallets/DigitalBankingSuite.tsx`, `src/pages/BankSyncPage.tsx` |
-| `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
-| `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
-| `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
-| `wallet.getWalletTransactions` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
-| `wallet.getWallets` | useQuery, utils.invalidate | `src/components/wallets/DigitalBankingSuite.tsx` |
-
 ### `Home` — `src/pages/Home.tsx`
 
-54 files in its import closure (not counting `src/components/ui/`).
+53 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -233,12 +215,9 @@ _None._
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `pro.myPlan` | useQuery | `src/components/expenses/ExpenseForm.tsx` |
-| `profile.confirmSmsSuggestion` | useMutation | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.dismissOnboarding` | useMutation | `src/components/OnboardingCard.tsx` |
-| `profile.dismissSmsSuggestion` | useMutation | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.getNextOnboardingQuestion` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/pages/Home.tsx` |
-| `profile.getSmsSuggestions` | useQuery, utils.invalidate | `src/components/bank-sync/SmsSuggestionsCard.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | useMutation | `src/components/OnboardingCard.tsx` |
 | `voice.eligibility` | useQuery | `src/hooks/useVoiceCallEntry.ts` |
@@ -268,7 +247,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-63 files in its import closure (not counting `src/components/ui/`).
+60 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -373,17 +352,14 @@ _None._
 | `profile.addContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteMyAccount` | useMutation | `src/components/profile/ProfileScreen.tsx` |
-| `profile.generateWebhookToken` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx` |
 | `profile.getNextOnboardingQuestion` | utils.invalidate | `src/components/profile/ProfileScreen.tsx` |
-| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
-| `profile.getSmsLogs` | useQuery | `src/components/bank-sync/IosSetupFlow.tsx` |
-| `profile.getWebhookToken` | useQuery | `src/components/bank-sync/AndroidSetupFlow.tsx`, `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/wallets/DigitalBankingSuite.tsx`, `src/pages/BankSyncPage.tsx` |
+| `profile.getSmartProfile` | useQuery, utils.invalidate, utils.setData | `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.listContacts` | useQuery, utils.invalidate | `src/components/settings/PeopleSettingsView.tsx`, `src/pages/PlanPage.tsx` |
 | `profile.mergeContacts` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `profile.updateContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.updateSmartProfile` | useMutation | `src/components/bank-sync/IosSetupFlow.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
+| `profile.updateSmartProfile` | useMutation | `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | useMutation | `src/components/profile/ProfileScreen.tsx` |
 | `referral.applyCode` | useMutation | `src/pages/Pro.tsx` |
 | `referral.myCode` | useQuery | `src/pages/Pro.tsx` |
@@ -533,7 +509,6 @@ _None._
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
-| `profile.getWebhookToken` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 | `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |

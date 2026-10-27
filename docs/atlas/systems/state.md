@@ -11,18 +11,18 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-20 cfbc7f55 | 2026-10-20 cfbc7f55 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-20 5f8d99e1 | behind the English page | 9 | — | — | 8 | 2 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-21 ec133d24 | 2026-10-21 ec133d24 | 10 | — | — | 4 | 2 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-20 5f8d99e1 | 2026-10-20 5f8d99e1 | 6 | — | — | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 7 | — | 3 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-21 ec133d24 | 2026-10-20 5f8d99e1 | 6 | — | 1 | 7 | — |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 9 | — | — | 9 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 10 | — | — | 4 | 2 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | — | 2 | 2 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 7 | — | 3 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | 1 | 7 | — |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-20 cfbc7f55 | 2026-10-20 cfbc7f55 | 16 | **3** | — | 8 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-17 6d541cd | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 1 | **1** | 1 | 3 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-20 5f8d99e1 | 2026-10-20 5f8d99e1 | 4 | — | 2 | 5 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-20 cfbc7f55 | 2026-10-20 32887d74 | 8 | — | — | 3 | 4 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 8 | — | — | 3 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-20 32887d74 | 2026-10-20 32887d74 | 5 | — | — | — | 7 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-20 5f8d99e1 | 2026-10-20 5f8d99e1 | 7 | **1** | — | 2 | 2 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 7 | **1** | — | 2 | 2 |
 
 
 ## Where the risk is
@@ -66,7 +66,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.
 - Discount codes are created here but checkout never applies them ([billing](billing.md)).
 
-### Gaps (50)
+### Gaps (51)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -80,6 +80,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Redaction masks every name-like word after من، إلى، to or from, so a merchant written there ("from AMAZON", "من كارفور") reaches the model as `[REDACTED_NAME]`; merchants written after لدى or at are kept.
 - Only a merchant the engine knows well changes the fixed map (a card payment, or a refund from it, which is saved as a negative expense in that merchant's category): a card payment to any other merchant is `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
 - Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account digits and balances, is stored as received.
+- The token, log and suggestion procedures, and the setup routes, have no screen since the web setup screens were removed; they go with the server side of this system.
 - The capture catalog is not read when a message arrives: `api/lib/sms-rule-parser.ts#detectProvider` keeps its own patterns, and the Android companion its own package list, five of whose twelve finance app ids are not the apps' Google Play ids ([decision 0024](../decisions/0024-capture-catalog.md)).
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
@@ -142,11 +143,10 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (27)
+### Debt (26)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - Until the admin assigns a model to the `sms` purpose, `parseSmsFinancialData` falls back to `GEMINI_API_KEY` with `mapModelName("flash")` (`smsRoutes` in `api/lib/sms-ai-parser.ts`). It is meant to go once the key is registered as a provider in the console (decision 0025).
-- `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - **Bug (provider).** On `gemini-3.8-live-extended-thinking`, a tool call sometimes never reaches the app: the model says a line, stays IN_PROGRESS, then apologises for a "system error" with no `toolCall` message and no provider error. In matched probes the standard model called the tool in 26 of 26 attempts. On 2026-09-30 at LOW, 42 of 49 single-tool probe runs passed (86%, 95% interval 73–93%) against 26 of 26 for the standard model, the same with a minimal raw setup and with the app's; between the filler and the apology only ~62 text tokens reach the model's context, so the call is also absent in the minimal harness; its internal cause is not established (`api/services/voice/engine/gemini-live.ts`). `LostToolCallGuard` keeps the apology from the user and asks again. The rate varies with time: in one later batch of 20 the first call was lost in 13, the retries rescued 10 and 3 still failed. The extended model also takes about 4.6 seconds longer to call a tool and ~6× the tokens per turn. Ultra Thinking stays off until it is qualified.

@@ -9,13 +9,11 @@ describe("site guide retrieval phase 6", () => {
     expect(buildSiteGuideEmbedding("ازاي اربط SMS").length).toBe(SITE_GUIDE_EMBEDDING_DIMENSIONS);
   });
 
-  it("retrieves SMS setup guidance", () => {
+  it("says plainly that bank messages are not recorded on their own today", () => {
     const result = searchSiteGuide("ازاي اربط رسائل SMS عشان تسجل مصاريف البنك؟", 2);
 
-    expect(result.chunks[0]).toMatchObject({
-      area: "sms",
-    });
-    expect(result.facts[0].value).toContain("SMS");
+    expect(result.chunks[0]).toMatchObject({ id: "expenses:bank_messages" });
+    expect(result.facts[0].value).toContain("مش متاح دلوقتي");
     expect(result.artifacts[0]).toMatchObject({
       type: "text_block",
       payload: expect.objectContaining({ embeddingDimensions: 256 }),
@@ -31,17 +29,15 @@ describe("site guide retrieval phase 6", () => {
     expect(result.facts[0].label).toContain("الفيزا");
   });
 
-  it("prioritizes card and SMS guidance for bank-account phrasing", () => {
+  it("prioritizes card guidance for bank-account phrasing", () => {
     const result = searchSiteGuide("إزاي أربط حسابي البنكي أو الفيزا بالتطبيق؟", 3);
 
     expect(result.chunks[0]).toMatchObject({ area: "card" });
-    expect(result.chunks[1]).toMatchObject({ area: "sms" });
     expect(result.facts[0].value).toContain("آخر أربعة أرقام");
-    expect(result.facts[1].value).toContain("SMS");
   });
 
-  it("gives the iPhone's Shortcuts steps to an iPhone question, and the companion app's to an Android one", () => {
-    expect(searchSiteGuide("ازاي اربط رسايل البنك على الآيفون؟", 1).chunks[0]).toMatchObject({ id: "sms:iphone" });
-    expect(searchSiteGuide("ازاي اربط اشعارات البنك على الاندرويد", 1).chunks[0]).toMatchObject({ id: "sms:android" });
+  it("answers an iPhone or Android bank-message question with the same honest answer", () => {
+    expect(searchSiteGuide("ازاي اربط رسايل البنك على الآيفون؟", 1).chunks[0]).toMatchObject({ id: "expenses:bank_messages" });
+    expect(searchSiteGuide("ازاي اربط اشعارات البنك على الاندرويد", 1).chunks[0]).toMatchObject({ id: "expenses:bank_messages" });
   });
 });

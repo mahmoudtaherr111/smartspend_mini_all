@@ -2,7 +2,8 @@
 
 How a bank or wallet notification on the user's phone becomes a transaction without the user typing anything: the
 Android companion app and the iPhone Shortcut that forward messages, the public ingest route that receives them,
-the rule parser and the model that read them, and the setup screens.
+the rule parser and the model that read them. This old system is being removed: its web screens are gone, and the
+server side goes next.
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/bank-messages.md](../atlas/systems/bank-messages.md)
 - The same story for readers who do not read code: [docs/ar/systems/bank-messages.md](../ar/systems/bank-messages.md)
@@ -12,17 +13,14 @@ the rule parser and the model that read them, and the setup screens.
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Setup screen | `src/pages/BankSyncPage.tsx#BankSyncPage`, route `/bank-sync` | Picks the iPhone or Android setup from the user agent; once the user has a webhook token it shows the digital wallet view instead |
-| iPhone setup | `src/components/bank-sync/IosSetupFlow.tsx#IosSetupFlow` | Creates or rotates the token, copies the ingest address for the Shortcut, shows recent messages |
-| Android setup | `src/components/bank-sync/AndroidSetupFlow.tsx#AndroidSetupFlow` | Downloads the companion app and hands it the token through a deep link |
 | Android companion | `android-app/app/src/main/java/com/smartspend/sync/SyncService.kt#SyncService` and `DeepLinkActivity` | Reads notifications, keeps the bank and wallet ones, posts them to the ingest route |
 | Ingest route | `POST /api/sms/ingest` in `api/sms-router.ts#smsApp` | Token check, limits, duplicate check, parsing, saving |
 | Parsers | `api/lib/sms-rule-parser.ts#parseSmsByRules`, `api/lib/sms-ai-parser.ts#parseSmsFinancialData`, `api/lib/sms-ai-contract.ts` | Provider templates first; when they are not sure, a model the admin chose for bank messages, on the redacted text, with its reply checked against a versioned contract |
 | Redaction | `api/lib/anonymizer.ts#redactWithFindings` | Removes card and account digits, IBANs, phones, references, e-mails, codes and people's names before the text leaves for a model |
 | Admin controls | the `sms` purpose in the AI providers screen (`contracts/ai-models.ts`); `sms_ai_enabled` and `sms_ai_daily_cost_cap_usd` in `src/components/admin/settings/AdminSmsAiSection.tsx` | Which provider and model read messages, the switch that stops the model, and the daily cost cap in USD |
 | Filing | `api/services/sms-ledger.ts` | The category of a parsed message, the ledger write, and the suggestions kept over the monthly limit |
-| Suggestions | `profile.getSmsSuggestions`, `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion` in `api/profile-router.ts`; `src/components/bank-sync/SmsSuggestionsCard.tsx#SmsSuggestionsCard` on the Home record tab | Messages kept over the monthly limit, which the user saves or dismisses |
-| Token and log procedures | `profile.getWebhookToken`, `profile.generateWebhookToken`, `profile.getSmsLogs`, `profile.generateMagicCode` in `api/profile-router.ts` | What the setup screens call |
+| Suggestions | `profile.getSmsSuggestions`, `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion` in `api/profile-router.ts` | Messages kept over the monthly limit; no screen shows them any more |
+| Token and log procedures | `profile.getWebhookToken`, `profile.generateWebhookToken`, `profile.getSmsLogs`, `profile.generateMagicCode` in `api/profile-router.ts` | What the removed setup screens called; no caller today |
 | Capture catalog | `api/lib/capture/catalog.ts`, tables `capture_sources` and `subscription_catalog`; `capture.sources` in `api/capture-router.ts`; `captureAdmin.*` in `api/capture-admin-router.ts`; the console's رسايل البنوك section (`src/components/admin/capture/AdminCaptureTab.tsx#AdminCaptureTab`) | Which banks, wallets and apps are read, and which subscriptions card charges are recognised as ([decision 0024](../decisions/0024-capture-catalog.md)) |
 
 ## One message, step by step
@@ -126,9 +124,9 @@ A message past the plan's limit is not lost (docs/decisions/0009-bank-messages-o
   `categorizeSms`, provider, merchant, description, time); otherwise it is `ignored` with reason
   `monthly_limit_unread`;
 - the route answers 200 with `saved: false` and `suggested`, so the phone does not retry it;
-- the Home record tab shows the waiting suggestions (`SmsSuggestionsCard`, from `profile.getSmsSuggestions`). The
-  user keeps or changes the category (a list of the categories of the message's kind) and saves it
-  (`profile.confirmSmsSuggestion`), or dismisses it (`profile.dismissSmsSuggestion`, status `dismissed`);
+- `profile.getSmsSuggestions` lists the waiting suggestions (no screen shows them since the Home card was removed);
+  `profile.confirmSmsSuggestion` saves one, with the category kept or changed, and `profile.dismissSmsSuggestion`
+  dismisses it (status `dismissed`);
 - saving moves the status from `suggested` to `confirmed` in the same transaction as the expense, the day's rollup
   delta and the details, and only when it was still `suggested`, so a second tap saves nothing. The finance caches
   are bumped and budget alerts checked, as after an automatic save. A confirmed message does not count toward the
@@ -178,31 +176,12 @@ original text. `api/lib/capture/reader/explain.ts#explainReading` turns that evi
   model only for `unsure` readings.
 
 ## Setting up a phone
-**Android**
-1. `AndroidSetupFlow` downloads `/downloads/smartspend-sync.apk`.
-2. "Connect" calls `GET /api/sms/android-connect` with the browser's cookies, authenticated by the `google_session`
-   cookie, a Bearer header, or the HttpOnly `smartspend_token` cookie of a phone and password account
-   (`api/sms-router.ts#getUserFromSession`). It creates a token when the user has none and returns
-   `smartspend://connect?token=…&url=…`, which the page opens.
-3. `DeepLinkActivity` stores the token and address and leads the user to grant notification access.
-   `POST /api/sms/android-status` lets the app report that it is running.
+The web setup screens (`/bank-sync`) are gone, so no new phone can be set up. On the server, still:
+`GET /api/sms/android-connect` (the browser's session creates a token and returns
+`smartspend://connect?token=…&url=…` for the companion app, `api/sms-router.ts#getUserFromSession`) and
+`POST /api/sms/android-status`. The cards and wallets screen moved to `/wallets` ([Money](money.md)).
 
-**iPhone**
-1. `IosSetupFlow` shows the token. Creating a new one (`profile.generateWebhookToken`) deletes the old one, so a
-   phone set up with the old token stops working.
-2. "Connect iPhone" copies the ingest address with the token and opens a public iCloud Shortcut.
-3. The keyword for the automation is saved in the smart profile as `preferences.smsTriggerKeyword`; only the
-   instructions on the screen use it.
-4. Recent messages come from `profile.getSmsLogs`, refreshed every ten seconds.
-
-With a token in place, `BankSyncPage` shows `src/components/wallets/DigitalBankingSuite.tsx#DigitalBankingSuite`,
-the cards and wallets screen of [Money](money.md), which also has its own page at `/wallets`. Its badge says what arrived, not
-that a token exists: `profile.getWebhookToken` also returns `lastReceivedAt`, the latest stored message
-(`raw_sms_events`), and the badge reads "no message yet", the day of the last one (green within three days), or how
-many days ago it was with a prompt to check the phone (amber). A wallet's balance is what the user entered; messages
-are saved as transactions and do not move it.
-
-Also available, with no caller in the web app today: one-time six-character codes (`profile.generateMagicCode`,
+Also available, with no caller: one-time six-character codes (`profile.generateMagicCode`,
 kept five minutes as shared state by `api/sms-router.ts#storeMagicCode`, so any server process can exchange one; a new
 code retires the user's previous one, and the code names the user, not the token, so the token handed out is the
 user's current one) exchanged at `POST /api/sms/exchange` or
@@ -231,8 +210,7 @@ statistics per provider) and `GET /api/sms/unparsed`.
 | The thresholds and what a skipped model leaves behind | the ingest route | `api/sms-router.ingest.test.ts` |
 | How a parsed message becomes a category | `api/lib/sms-ai-parser.ts#mapSmsToExpenseCategory`; merchants in `api/services/sms-ledger.ts#classifySmsMerchant` and the classification dictionaries | `api/lib/sms-ai-parser.test.ts`, `api/services/sms-ledger.test.ts` |
 | Plan limits | the `sms_limit_<plan>` settings | |
-| What happens over the limit, and saving or dismissing a suggestion | the ingest route, `api/services/sms-ledger.ts`, the suggestion procedures, `src/components/bank-sync/SmsSuggestionsCard.tsx` | `api/services/sms-ledger.test.ts` |
-| The setup screens | `src/components/bank-sync/`, `src/pages/BankSyncPage.tsx` | |
+| What happens over the limit, and saving or dismissing a suggestion | the ingest route, `api/services/sms-ledger.ts`, the suggestion procedures | `api/services/sms-ledger.test.ts` |
 | Building and publishing the APK | `.github/workflows/build-apk.yml`, `android-app/` | |
 | The banks, wallets, apps and subscriptions shipped with the app | `api/lib/capture/seed-sources.ts`, `api/lib/capture/seed-subscriptions.ts` (confirm every package on Google Play and every sender id from a real message) | `api/lib/capture/catalog.test.ts` |
 | Them in production, without a deploy | the console's رسايل البنوك section | `src/components/admin/capture/AdminCaptureTab.test.tsx` |
@@ -294,14 +272,15 @@ Checked against the code; each one names where it lives.
 8. **Gap.** Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in
    `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account
    digits and balances, is stored as received.
-9. **Debt.** `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
+9. **Gap.** The token, log and suggestion procedures, and the setup routes, have no screen since the web setup
+   screens were removed; they go with the server side of this system.
 10. **Gap.** The capture catalog is not read when a message arrives: `api/lib/sms-rule-parser.ts#detectProvider` keeps its
    own patterns, and the Android companion its own package list, five of whose twelve finance app ids are not the apps'
    Google Play ids ([decision 0024](../decisions/0024-capture-catalog.md)).
 
 ## Related systems
 - The Flutter app in `mobile/` (see step 1): not a system page; its rules are in `mobile/AGENTS.md`.
-- [Money](money.md): the ledger the messages are saved into, and the wallets the digital wallet view manages.
+- [Money](money.md): the ledger the messages are saved into, and the cards and wallets screen.
 - [Recording spending](expense-capture.md): typed, spoken and photographed entries use a different pipeline.
 - [Accounts, sign-in and security](accounts.md): the sessions the setup routes read.
 - [AI providers and usage limits](ai-platform.md): the admin's routes, the budget and the cost ledger the model call

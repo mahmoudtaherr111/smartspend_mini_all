@@ -26,7 +26,7 @@ export default function WalletsPage() {
           <span>رجوع</span>
         </button>
       </div>
-      <DigitalBankingSuite onShowSetupInstructions={() => navigate("/bank-sync")} />
+      <DigitalBankingSuite />
     </div>
   );
 }

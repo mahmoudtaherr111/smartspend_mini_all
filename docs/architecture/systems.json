@@ -31,7 +31,7 @@
       "titleAr": "رسائل البنوك والمحافظ",
       "summary": "Receives bank and wallet notifications forwarded by the Android companion app or a personal iOS Shortcut, and parses them with rules first and a model second.",
       "summaryAr": "بيستقبل إشعارات البنوك والمحافظ اللي بيبعتها تطبيق أندرويد المساعد أو اختصار iOS الشخصي، ويفهمها بالقواعد الأول وبالموديل بعدها.",
-      "clusters": ["ingestion-parsers", "capture-catalog", "capture-reader", "web-bank-sync"],
+      "clusters": ["ingestion-parsers", "capture-catalog", "capture-reader"],
       "routers": ["capture", "captureAdmin"],
       "jobs": ["seed-capture-catalog"],
       "extraPaths": [
@@ -41,7 +41,6 @@
         ".github/workflows/build-apk.yml"
       ],
       "procedures": ["profile.generateWebhookToken", "profile.getWebhookToken", "profile.getSmsLogs", "profile.generateMagicCode", "profile.getSmsSuggestions", "profile.confirmSmsSuggestion", "profile.dismissSmsSuggestion"],
-      "pages": ["BankSyncPage"],
       "routes": [
         "GET /api/sms/android-connect",
         "POST /api/sms/android-status",

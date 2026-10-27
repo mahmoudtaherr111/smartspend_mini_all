@@ -2,39 +2,23 @@ import type { SiteGuideChunk } from "./types";
 
 /**
  * The approved guide the chat and the call read steps from. Each topic is written from the screen it describes
- * (`src/components/bank-sync/AndroidSetupFlow.tsx`, `IosSetupFlow.tsx`, `src/components/wallets/DigitalBankingSuite.tsx`, the Home record tab,
+ * (`src/components/wallets/DigitalBankingSuite.tsx`, the Home record tab,
  * the AI Center's monthly analysis, `src/pages/PlanPage.tsx`); a change to one of those screens changes its steps here.
  * It promises nothing the app does not do.
  */
 export const SITE_GUIDE_CHUNKS: SiteGuideChunk[] = [
   {
-    id: "sms:android",
-    title: "ربط رسائل وإشعارات البنك (SMS) على أندرويد",
-    area: "sms",
-    tags: ["sms", "رسائل", "إشعارات", "تلقائي", "بنك", "بنكي", "محفظة", "أندرويد", "android", "مصروف", "استخراج", "ربط"],
+    id: "expenses:bank_messages",
+    title: "تسجيل رسائل البنك والمحفظة (SMS) لوحدها",
+    area: "expenses",
+    tags: ["sms", "رسائل", "رسايل", "إشعارات", "تلقائي", "بنك", "بنكي", "محفظة", "أندرويد", "android", "آيفون", "iphone", "ربط"],
     content:
-      "على أندرويد، تطبيق صغير اسمه SmartSpend Sync بيقرا إشعارات البنك والمحفظة ورسايلهم (SMS) ويبعتها لحسابك، من غير أي بيانات بنكية. " +
-      "العمليات بتتسجل لوحدها، واللي زيادة عن حد باقتك في الشهر بتستنى موافقتك كاقتراحات.",
+      "تسجيل رسائل البنك والمحفظة (SMS) لوحدها مش متاح دلوقتي: بنبنيه من جديد في تطبيق الموبايل. " +
+      "لحد ما يرجع، سجّل العملية بالكتابة أو بالصوت أو بصورة الإيصال.",
     steps: [
-      "افتح «المزيد» ثم «الربط البنكي».",
-      "حمّل تطبيق SmartSpend Sync؛ لو ظهرت رسالة «مصادر غير معروفة» فعّلها من الإعدادات وارجع ثبّته.",
-      "اضغط زرار الربط في الصفحة: التطبيق بيفتح ويتعرف على حسابك من غير نسخ.",
-      "لما التطبيق يطلب «قراءة الإشعارات» فعّلها لـ SmartSpend Sync.",
-      "ارجع للتطبيق واتأكد إن مكتوب «متصل».",
-    ],
-  },
-  {
-    id: "sms:iphone",
-    title: "ربط رسائل البنك (SMS) على آيفون بالاختصارات",
-    area: "sms",
-    tags: ["sms", "رسائل", "آيفون", "ايفون", "iphone", "ios", "shortcuts", "اختصار", "أتمتة", "بنك", "ربط"],
-    content: "على آيفون، أتمتة في تطبيق Shortcuts بتبعت رسالة البنك لحسابك أول ما توصل.",
-    steps: [
-      "افتح «المزيد» ثم «الربط البنكي».",
-      "اضغط الزرار اللي بيجهز الاختصار: بيفتح Shortcuts، اضغط Set Up Shortcut والصق اللي اتنسخ.",
-      "اكتب الكلمة اللي بتيجي في كل رسائل البنك (زي EGP) واحفظها.",
-      "في Shortcuts افتح Automation واضغط (+) واختار Message، وفي Message Contains اكتب الكلمة، واختار Run Immediately ثم اختصار SmartSpend.",
-      "الرسائل اللي وصلت بتظهر في «سجل الرسائل الأخيرة» في نفس الصفحة.",
+      "افتح الرئيسية، تبويب التسجيل.",
+      "اكتب العملية زي ما الرسالة بتقولها («دفعت 250 بالكارت في كارفور»)، أو دوس المايك.",
+      "راجع البنود واحفظ.",
     ],
   },
   {

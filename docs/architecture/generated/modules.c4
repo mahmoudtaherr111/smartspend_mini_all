@@ -230,7 +230,7 @@ model {
       description 'Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt.'
       metadata {
         files '14'
-        paths 'src/components/auth/**, src/components/profile/**, src/components/settings/**, src/components/bank-sync/**, src/components/notifications/**'
+        paths 'src/components/auth/**, src/components/profile/**, src/components/settings/**, src/components/notifications/**'
       }
     }
     web-admin = module 'Admin UI' {
@@ -245,13 +245,6 @@ model {
       metadata {
         files '3'
         paths 'src/components/ai/**'
-      }
-    }
-    web-bank-sync = module 'Bank sync UI' {
-      description 'The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel.'
-      metadata {
-        files '4'
-        paths 'src/components/bank-sync/**, src/components/settings/SmsWebhookSettings.tsx'
       }
     }
     web-capture = module 'Expense entry UI' {
@@ -299,7 +292,7 @@ model {
     web-pages = module 'Web pages' {
       description 'Route-level page components lazy-loaded by src/App.tsx.'
       metadata {
-        files '18'
+        files '17'
         paths 'src/pages/**'
       }
     }

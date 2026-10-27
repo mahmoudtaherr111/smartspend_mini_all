@@ -297,11 +297,6 @@ views {
     include *
   }
 
-  view module_web_bank_sync of smartspend.web.modules.web-bank-sync {
-    title 'Module · Bank sync UI'
-    include *
-  }
-
   view module_web_capture of smartspend.web.modules.web-capture {
     title 'Module · Expense entry UI'
     include *

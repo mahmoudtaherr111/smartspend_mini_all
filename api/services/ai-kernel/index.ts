@@ -832,11 +832,11 @@ function buildSiteHelpContent(facts: ResolvedFact[]): string | undefined {
   const areas = new Set(guideFacts.map((fact) => String(fact.evidence?.[0]?.label ?? "")));
   const titles = guideFacts.map((fact) => `- ${fact.label}`).join("\n");
 
-  if (areas.has("card") || areas.has("sms")) {
+  if (areas.has("card")) {
     return [
-      "أيوه، الربط هنا بيتم على خطوتين أساسيتين:",
+      "التطبيق مابيربطش الكارت نفسه، بس تقدر تضيفه:",
       titles,
-      "ابدأ بإنشاء حساب/بطاقة باسم الفيزا أو البنك، وبعدها فعّل ربط SMS عشان عمليات البنك تتحول لمعاملات قابلة للمراجعة. التفاصيل الدقيقة موجودة في البطاقات تحت الرسالة.",
+      "ضيفه من «كروتك ومحافظك» باسم البنك وآخر أربعة أرقام. التفاصيل في البطاقات تحت الرسالة.",
     ].join("\n");
   }
 

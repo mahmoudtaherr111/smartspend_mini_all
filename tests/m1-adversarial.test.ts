@@ -107,7 +107,6 @@ describe("Milestone 1 Adversarial Stress Test: Route Matching Logic in src/App.t
       "/settings",
       "/support",
       "/pro",
-      "/bank-sync",
       "/wallets",
       "/plan",
       "/more",
@@ -120,7 +119,7 @@ describe("Milestone 1 Adversarial Stress Test: Route Matching Logic in src/App.t
     expect(hasBottomNav("/settings")).toBe(true);
     expect(hasBottomNav("/support")).toBe(true);
     expect(hasBottomNav("/pro")).toBe(true);
-    expect(hasBottomNav("/bank-sync")).toBe(true);
+    expect(hasBottomNav("/wallets")).toBe(true);
   });
 
   it("correctly rejects non-bottom-nav routes", () => {
@@ -140,7 +139,7 @@ describe("Milestone 1 Adversarial Stress Test: Route Matching Logic in src/App.t
     expect(hasBottomNav("/settings/security")).toBe(false);
     expect(hasBottomNav("/support/faq")).toBe(true);
     expect(hasBottomNav("/pro/checkout")).toBe(true);
-    expect(hasBottomNav("/bank-sync/manual")).toBe(true);
+    expect(hasBottomNav("/wallets/manual")).toBe(true);
     expect(hasBottomNav("/ai/chat/123")).toBe(true);
   });
 
@@ -158,7 +157,7 @@ describe("Milestone 1 Adversarial Stress Test: Route Matching Logic in src/App.t
       "/settings?section=profile&lang=ar",
       "/support?ticket=999#help",
       "/pro?plan=ultra&promo=SAVE50",
-      "/bank-sync?bank=cib#connect",
+      "/wallets?wallet=3#cards",
     ];
 
     for (const url of routesWithQueries) {
