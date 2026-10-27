@@ -112,7 +112,6 @@ export const sessionRouter = router({
           "upgrade_to_pro",
           "export_data",
           "voice_record",
-          "sms_ingest",
           "onboarding_complete",
           "budget_exceeded",
           "chat_message",

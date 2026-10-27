@@ -54,6 +54,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/arabic-token-match.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/benchmark-taxonomy-assert.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/cache-keys.ts` | [platform](platform.md) |
+| `api/lib/capture/ai-reader.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/catalog.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/clauses.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/counterparty.ts` | [bank-messages](bank-messages.md) |
@@ -139,11 +140,8 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/session-validation.ts` | [accounts](accounts.md) |
 | `api/lib/settings-cache.ts` | [platform](platform.md) |
 | `api/lib/shared-generation.ts` | [platform](platform.md) |
-| `api/lib/shortcut-generator.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/smart-pipeline.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/sms-ai-contract.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/sms-ai-parser.ts` | [bank-messages](bank-messages.md) |
-| `api/lib/sms-rule-parser.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/stt-corrections.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/subscription-service.ts` | [billing](billing.md) |
 | `api/lib/system-settings-registry.ts` | [platform](platform.md) |
@@ -157,7 +155,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/middleware.ts` | [platform](platform.md) |
 | `api/notification-engine.ts` | [notifications](notifications.md) |
 | `api/pro-router.ts` | [billing](billing.md) |
-| `api/profile-router.ts` | [accounts](accounts.md): `profile.confirmPhoneChange`, `profile.deleteMyAccount`, `profile.getMyProfile`, `profile.requestPhoneChange`, `profile.updateProfile`, `profile.updateUserInfo` · [bank-messages](bank-messages.md): `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion`, `profile.generateMagicCode`, `profile.generateWebhookToken`, `profile.getSmsLogs`, `profile.getSmsSuggestions`, `profile.getWebhookToken` · [insights](insights.md): `profile.dismissOnboarding`, `profile.getNextOnboardingQuestion`, `profile.getQuestions`, `profile.getSmartProfile`, `profile.refreshInferences`, `profile.submitOnboardingAnswer`, `profile.updateSmartProfile` · [money](money.md): `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` · [notifications](notifications.md): `profile.getInAppNotifications`, `profile.markAllInAppNotificationsRead`, `profile.markInAppNotificationRead`, `profile.savePushSubscription` · rest of the file: [accounts](accounts.md), [bank-messages](bank-messages.md), [insights](insights.md), [money](money.md), [notifications](notifications.md) |
+| `api/profile-router.ts` | [accounts](accounts.md): `profile.confirmPhoneChange`, `profile.deleteMyAccount`, `profile.getMyProfile`, `profile.requestPhoneChange`, `profile.updateProfile`, `profile.updateUserInfo` · [insights](insights.md): `profile.dismissOnboarding`, `profile.getNextOnboardingQuestion`, `profile.getQuestions`, `profile.getSmartProfile`, `profile.refreshInferences`, `profile.submitOnboardingAnswer`, `profile.updateSmartProfile` · [money](money.md): `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` · [notifications](notifications.md): `profile.getInAppNotifications`, `profile.markAllInAppNotificationsRead`, `profile.markInAppNotificationRead`, `profile.savePushSubscription` · rest of the file: [accounts](accounts.md), [insights](insights.md), [money](money.md), [notifications](notifications.md) |
 | `api/queries/connection.ts` | [platform](platform.md) |
 | `api/referral-router.ts` | [billing](billing.md) |
 | `api/router.ts` | [platform](platform.md) |
@@ -231,7 +229,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/site-guide/knowledge-base.ts` | [ai-center](ai-center.md) |
 | `api/services/site-guide/retriever.ts` | [ai-center](ai-center.md) |
 | `api/services/site-guide/types.ts` | [ai-center](ai-center.md) |
-| `api/services/sms-ledger.ts` | [bank-messages](bank-messages.md) |
 | `api/services/storage/avatar-service.ts` | [platform](platform.md) |
 | `api/services/storage/index.ts` | [platform](platform.md) |
 | `api/services/storage/local-driver.ts` | [platform](platform.md) |
@@ -280,7 +277,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice/text-model.ts` | [voice-calls](voice-calls.md) |
 | `api/services/whatsapp-service.ts` | [notifications](notifications.md) |
 | `api/session-router.ts` | [accounts](accounts.md) |
-| `api/sms-router.ts` | [bank-messages](bank-messages.md) |
 | `api/support-router.ts` | [admin](admin.md) |
 | `api/voice-router.ts` | [voice-calls](voice-calls.md) |
 | `api/wallet-router.ts` | [money](money.md) |

@@ -27,7 +27,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Router | File | Procedures | Queries | Mutations | Builders used |
 | --- | --- | --- | --- | --- | --- |
-| `admin` | `api/admin-router.ts` | 57 | 29 | 28 | `adminProcedure` |
+| `admin` | `api/admin-router.ts` | 56 | 28 | 28 | `adminProcedure` |
 | `adminWhatsapp` | `api/admin-whatsapp-router.ts` | 9 | 3 | 6 | `adminProcedure` |
 | `ads` | `api/ads-router.ts` | 7 | 2 | 5 | `adminProcedure`, `authedProcedure`, `publicProcedure` |
 | `ai` | `api/ai-router.ts` | 9 | 2 | 7 | `aiProcedure`, `authedProcedure` |
@@ -45,7 +45,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `image` | `api/image-router.ts` | 1 | 0 | 1 | `receiptsProcedure` |
 | `localAuth` | `api/local-auth-router.ts` | 12 | 5 | 7 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
 | `pro` | `api/pro-router.ts` | 6 | 3 | 3 | `adminProcedure`, `authedProcedure` |
-| `profile` | `api/profile-router.ts` | 29 | 9 | 20 | `authedProcedure` |
+| `profile` | `api/profile-router.ts` | 22 | 6 | 16 | `authedProcedure` |
 | `referral` | `api/referral-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `seo` | `api/seo-router.ts` | 5 | 3 | 2 | `adminProcedure`, `publicProcedure` |
 | `session` | `api/session-router.ts` | 5 | 3 | 2 | `adminProcedure`, `authedProcedure` |
@@ -91,7 +91,6 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `admin.getNotificationTemplates` | query | `adminProcedure` | no | `notification_templates` | — | — | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getPendingClarifications` | query | `adminProcedure` | no | `pending_clarifications` | — | — | `src/components/admin/ClarificationsTab.tsx` |
 | `admin.getPipelineVersionStats` | query | `adminProcedure` | no | `classification_logs` | — | `api/lib/smart-pipeline.ts` | — |
-| `admin.getRawSmsLogs` | query | `adminProcedure` | yes | `local_users`, `raw_sms_events`, `users` | — | — | — |
 | `admin.getSettings` | query | `adminProcedure` | no | — | — | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getStorageRuntimeMetrics` | query | `adminProcedure` | no | — | — | `api/lib/redis-client.ts` | — |
 | `admin.getUserAiQuota` | query | `adminProcedure` | yes | `ai_token_ledgers`, `local_users`, `users` | — | `api/lib/ai-gateway.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/settings-cache.ts` | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` |
@@ -333,21 +332,14 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `profile.addContact` | mutation | `authedProcedure` | yes | `user_contacts` | `user_contacts` | `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts` | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.confirmPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | `local_users` | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts` | — |
-| `profile.confirmSmsSuggestion` | mutation | `authedProcedure` | yes | — | — | `api/lib/category-registry.ts`, `api/notification-engine.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/sms-ledger.ts` | — |
 | `profile.deleteContact` | mutation | `authedProcedure` | yes | `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteMyAccount` | mutation | `authedProcedure` | yes | `local_users` | — | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts`, `api/services/user-purge-service.ts`, `contracts/account-deletion.ts` | `src/components/profile/ProfileScreen.tsx` |
 | `profile.dismissOnboarding` | mutation | `authedProcedure` | no | — | `user_profiles` | — | `src/components/OnboardingCard.tsx` |
-| `profile.dismissSmsSuggestion` | mutation | `authedProcedure` | yes | — | — | `api/services/sms-ledger.ts` | — |
-| `profile.generateMagicCode` | mutation | `authedProcedure` | no | `webhook_tokens` | — | `api/sms-router.ts` | — |
-| `profile.generateWebhookToken` | mutation | `authedProcedure` | no | — | `webhook_tokens` | — | — |
 | `profile.getInAppNotifications` | query | `authedProcedure` | no | `in_app_notifications` | — | — | `src/components/NotificationBell.tsx`, `src/components/notifications/NotificationList.tsx` |
 | `profile.getMyProfile` | query | `authedProcedure` | no | `user_profiles` | — | — | — |
 | `profile.getNextOnboardingQuestion` | query | `authedProcedure` | no | `user_profiles` | — | `api/services/adaptive-question-engine.ts`, `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/profile/ProfileScreen.tsx` |
 | `profile.getQuestions` | query | `authedProcedure` | no | `onboarding_questions` | — | `api/services/adaptive-question-engine.ts` | — |
 | `profile.getSmartProfile` | query | `authedProcedure` | no | — | — | `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/components/notifications/NotificationSettings.tsx`, `src/components/profile/ProfileScreen.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/i18n/LanguagePreferenceSync.tsx`, `src/pages/Home.tsx`, `src/pages/Settings.tsx` |
-| `profile.getSmsLogs` | query | `authedProcedure` | no | `raw_sms_events` | — | — | — |
-| `profile.getSmsSuggestions` | query | `authedProcedure` | no | `raw_sms_events` | — | — | — |
-| `profile.getWebhookToken` | query | `authedProcedure` | no | `raw_sms_events`, `webhook_tokens` | — | — | — |
 | `profile.listContacts` | query | `authedProcedure` | yes | `expenses`, `user_contacts` | — | — | `src/components/settings/PeopleSettingsView.tsx`, `src/pages/PlanPage.tsx` |
 | `profile.markAllInAppNotificationsRead` | mutation | `authedProcedure` | no | — | `in_app_notifications` | — | `src/components/notifications/NotificationList.tsx` |
 | `profile.markInAppNotificationRead` | mutation | `authedProcedure` | yes | — | `in_app_notifications` | — | `src/components/notifications/NotificationList.tsx` |
@@ -436,4 +428,4 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 These are not referenced by the web app. Some may be called by other clients (Android app, iOS shortcuts) or server-side through `createCaller`; the rest are candidates for removal.
 
-`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getRawSmsLogs`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `auth.signInWithGoogle`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `capture.sources`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.confirmSmsSuggestion`, `profile.dismissSmsSuggestion`, `profile.generateMagicCode`, `profile.generateWebhookToken`, `profile.getMyProfile`, `profile.getQuestions`, `profile.getSmsLogs`, `profile.getSmsSuggestions`, `profile.getWebhookToken`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`
+`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `auth.signInWithGoogle`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `capture.sources`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`

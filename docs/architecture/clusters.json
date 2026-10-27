@@ -211,15 +211,12 @@
       ]
     },
     {
-      "id": "ingestion-parsers",
-      "title": "Ingestion parsers",
-      "description": "Bank SMS parsing (rules first, then a model through the admin's sms routes behind a switch, the plan budget and a daily USD cap, on redacted text, with a versioned reply contract checked before use), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut.",
+      "id": "capture-ai-reader",
+      "title": "Message model reader",
+      "description": "Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server's Gemini key until then), behind the admin's switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. Nothing calls it yet.",
       "paths": [
-        "api/lib/sms-ai-parser.ts",
-        "api/lib/sms-ai-contract.ts",
-        "api/lib/sms-rule-parser.ts",
-        "api/lib/shortcut-generator.ts",
-        "api/services/sms-ledger.ts"
+        "api/lib/capture/ai-reader.ts",
+        "api/lib/sms-ai-contract.ts"
       ]
     },
     {

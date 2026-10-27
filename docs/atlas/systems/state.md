@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of 90 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of 84 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-20 cfbc7f55 | 2026-10-20 cfbc7f55 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 9 | — | — | 9 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 6 | — | — | 2 | 2 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | — | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 7 | — | 3 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | 1 | 7 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-20 cfbc7f55 | 2026-10-20 cfbc7f55 | 16 | **3** | — | 8 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-17 6d541cd | 2026-09-28 6019f83 | 1 | **1** | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-18 2bbf17c | 2026-10-18 2bbf17c | 1 | **1** | 1 | 3 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-20 5f8d99e1 | 2026-10-20 5f8d99e1 | 4 | — | 2 | 5 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-20 32887d74 | 2026-10-20 32887d74 | 5 | — | — | — | 7 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 7 | — | 3 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 6 | — | 1 | 7 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 16 | **3** | — | 8 | — |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 1 | **1** | — | 3 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 1 | **1** | 1 | 3 | 2 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 4 | — | 2 | 5 | 1 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 8 | — | — | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 7 | **1** | — | 2 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (90 issue(s))
+## What is waiting (84 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -66,22 +66,15 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.
 - Discount codes are created here but checkout never applies them ([billing](billing.md)).
 
-### Gaps (51)
+### Gaps (44)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
 - `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
-- The APK behind `/downloads/smartspend-sync.apk` is a debug build that `.github/workflows/build-apk.yml` commits when `android-app/` changes; it is signed with the runner's throwaway debug key, so a newer build cannot install over an older one until a release key is configured.
-- A model's reading at confidence 0.6 or more is saved on its own; nothing sends it to review first. The category it proposes (`model_category` in the expense metadata) is stored but not used: filing still follows `categorizeSms`.
-- A message no model read and the rules could not read is kept as `ignored` with `model_unavailable`, and nothing reads it again when the model is back.
-- The route saves the amount without its currency (`insertSmsExpense` in `api/services/sms-ledger.ts` takes none), so a dollar amount the rules read is saved as pounds. The model path refuses a foreign amount without an EGP equivalent instead.
+- No intake: nothing receives a message from a phone, and neither the reader nor the model reader is called by any route. The new intake (signals, merging and Android capture in the Flutter app) is the next step.
 - Redaction masks every name-like word after من، إلى، to or from, so a merchant written there ("from AMAZON", "من كارفور") reaches the model as `[REDACTED_NAME]`; merchants written after لدى or at are kept.
-- Only a merchant the engine knows well changes the fixed map (a card payment, or a refund from it, which is saved as a negative expense in that merchant's category): a card payment to any other merchant is `تسوق/عام`, and an outgoing transfer is saved as spending under `تحويل`, its rail as subcategory. Messages are not classified by the full pipeline, and a suggestion is not reviewed before the limit is reached.
-- Raw messages are deleted 90 days after they arrive (`RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`), a suggestion left unanswered included; until then the full text, with account digits and balances, is stored as received.
-- The token, log and suggestion procedures, and the setup routes, have no screen since the web setup screens were removed; they go with the server side of this system.
-- The capture catalog is not read when a message arrives: `api/lib/sms-rule-parser.ts#detectProvider` keeps its own patterns, and the Android companion its own package list, five of whose twelve finance app ids are not the apps' Google Play ids ([decision 0024](../decisions/0024-capture-catalog.md)).
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A call does not go on with the screen locked or the app in the background: the page keeps the microphone only in the foreground, and the call resumes if the app comes back within the hold (`src/lib/voice/call-connection.ts`). Keeping it alive needs native work in the Android and iOS shells.
@@ -103,7 +96,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP (`src/components/goals/FinancialGoalsPanel.tsx`).
 - `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger); `business.get` returns the user's first business even when it is inactive.
 - `expense.getYearlyStats` has no screen.
-- A bank message's refund nets its category only when the merchant is one the engine knows well (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative spending in a month when the purchase fell in an earlier one.
+- Refunds the old bank-message intake recorded netted their category only when the merchant was one the engine knew well; the others were saved as income under دخل آخر and keep that filing, as do rows saved before decision 0010. A category can show net negative spending in a month when the purchase fell in an earlier one.
 - Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).
 - Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
 
@@ -132,7 +125,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the browser; nothing backs up the database.
 - Answering a ticket does not notify the user, while the support page promises a reply within a day. The reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses them, and `support.assign` has no screen.
 - Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
-- Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one), `admin.getRawSmsLogs` (its tab was removed with the old bank-message system), `support.getById`, `support.assign` and every statistic of `analytics`.
+- Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one), `support.getById`, `support.assign` and every statistic of `analytics`.
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
 - Two accountings remain: the `ai_cost_*` events of `recordAICostMetric` estimate tokens on their own and the screen that would show them is not mounted ([admin](admin.md)); the ledger is the priced one.
@@ -143,10 +136,11 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (26)
+### Debt (27)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
-- Until the admin assigns a model to the `sms` purpose, `parseSmsFinancialData` falls back to `GEMINI_API_KEY` with `mapModelName("flash")` (`smsRoutes` in `api/lib/sms-ai-parser.ts`). It is meant to go once the key is registered as a provider in the console (decision 0025).
+- Until the admin assigns a model to the `sms` purpose, `readMessageWithModel` falls back to `GEMINI_API_KEY` with `mapModelName("flash")` (`smsRoutes` in `api/lib/capture/ai-reader.ts`). It is meant to go once the key is registered as a provider in the console (decision 0025).
+- `webhook_tokens` and `raw_sms_events` are still in the schema with no writer; they are dropped next.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - **Bug (provider).** On `gemini-3.8-live-extended-thinking`, a tool call sometimes never reaches the app: the model says a line, stays IN_PROGRESS, then apologises for a "system error" with no `toolCall` message and no provider error. In matched probes the standard model called the tool in 26 of 26 attempts. On 2026-09-30 at LOW, 42 of 49 single-tool probe runs passed (86%, 95% interval 73–93%) against 26 of 26 for the standard model, the same with a minimal raw setup and with the app's; between the filler and the apology only ~62 text tokens reach the model's context, so the call is also absent in the minimal harness; its internal cause is not established (`api/services/voice/engine/gemini-live.ts`). `LostToolCallGuard` keeps the apology from the user and asks again. The rate varies with time: in one later batch of 20 the first call was lost in 13, the retries rescued 10 and 3 still failed. The extended model also takes about 4.6 seconds longer to call a tool and ~6× the tokens per turn. Ultra Thinking stays off until it is qualified.

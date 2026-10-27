@@ -12,7 +12,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, the `/api/sms` sub-app, `/api/trpc/*`, `/health`, the static files and the live-call WebSocket (`/api/voice/v2`) in production, and the cron registrations |
+| Server | `api/boot.ts` | The Hono app: middleware, Google OAuth start and callback, the OTP stream, the Paymob webhook, `/api/trpc/*`, `/health`, the static files and the live-call WebSocket (`/api/voice/v2`) in production, and the cron registrations |
 | Standalone entry | `api/server.ts` | The same app served on its own, for deploying the API apart from the web app |
 | Request context | `api/context.ts` | Resolves `ctx.user` from the Bearer header, the `smartspend_token`/`local_session` cookie or the `google_session` cookie, and the client IP |
 | Builders | `api/middleware.ts` | The procedure builders, their rate limits and their role and plan checks |
@@ -68,7 +68,7 @@ storage, the contracts shared with the web app, and the retention job that prune
   table has none.
 - The retention job runs daily at 05:00 and walks `RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`, one
   policy per table (some per kind of row), each with a cut-off in days: thirty to ninety for telemetry, ad clicks,
-  notification logs, token ledgers, raw bank messages (`raw_sms_events`, unanswered suggestions included), voice
+  notification logs, token ledgers, raw bank messages left by the old intake (`raw_sms_events`), voice
   usage and live-call incidents; a year for the action audit trail and live voice calls; chat messages after ninety
   days once the conversation has a summary; expired challenges and pending actions, and answered clarifications,
   in between. Token ledgers and ad clicks are rolled up into `ai_cost_monthly` and `ad_stats_daily` before the rows
@@ -84,8 +84,7 @@ storage, the contracts shared with the web app, and the retention job that prune
   kept and replayed as soon as Redis answers again, so the entries cached before a write made during an outage are
   not served once Redis is back.
 - Shared state is not cache: `stateSet`, `stateGet`, `stateTake` (read and delete in one step) and `stateDel` keep
-  what every replica must see and nobody can recompute — the phone-change codes of [accounts](accounts.md), the
-  Shortcut pairing codes of [bank messages](bank-messages.md). Redis holds it; without Redis it stays in the process's
+  what every replica must see and nobody can recompute — the phone-change codes of [accounts](accounts.md). Redis holds it; without Redis it stays in the process's
   memory even in production, because one process without Redis is a supported deployment.
 - A per-process copy of shared data reloads on a Redis generation through `api/lib/shared-generation.ts#watchGeneration`: the settings
   (`settingsgen`), the admin's AI providers, models and prices (`aiconfiggen`), and the capture catalog of banks, wallets

@@ -5,7 +5,7 @@ notifications on the phone and forwards them to the SmartSpend API, which turns 
 
 ## How it works
 - `DeepLinkActivity` opens on a smartspend://connect link carrying a webhook token and an ingest URL, and stores both.
-  The server builds that link in GET /api/sms/android-connect (`api/sms-router.ts`).
+  The server built that link in GET /api/sms/android-connect, which was removed with the old intake.
 - `SyncService` is a notification listener. It takes notifications from the SMS and financial apps named in its package
   lists, ignores chat apps, queues them, and posts them with the token to the stored ingest URL (POST /api/sms/ingest).
 

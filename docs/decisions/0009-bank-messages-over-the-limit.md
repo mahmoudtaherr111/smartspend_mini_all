@@ -1,7 +1,9 @@
 # 0009. Bank messages over the monthly limit are kept as suggestions
 
-- Status: accepted, implemented in `api/sms-router.ts` (`POST /api/sms/ingest`), `api/services/sms-ledger.ts`, the
-  suggestion procedures in `api/profile-router.ts` and the Home card `SmsSuggestionsCard` (removed with the old bank-message screens).
+- Status: superseded on 2026-10-27. The old bank-message intake (the ingest route, the filing service, the
+  suggestion procedures and the Home card), the `sms_limit_<plan>` settings and the waiting suggestions were
+  removed to rebuild capture from scratch ([bank messages](../systems/bank-messages.md)); what the new intake does
+  with a plan's limits is decided with it.
 - Decided and recorded: 2026-09-24.
 
 ## Context

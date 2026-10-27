@@ -1,8 +1,9 @@
 # 0025. Bank-message model calls go through the admin gateway, redacted, budgeted, switchable and capped in USD
 
-- Status: accepted, implemented in `api/lib/sms-ai-parser.ts#parseSmsFinancialData`, `api/lib/sms-ai-contract.ts`,
-  `api/lib/anonymizer.ts`, `POST /api/sms/ingest` in `api/sms-router.ts`, the `sms` purpose in `contracts/ai-models.ts`
-  and `src/components/admin/settings/AdminSmsAiSection.tsx`.
+- Status: accepted, implemented in `api/lib/capture/ai-reader.ts#readMessageWithModel` (moved there from
+  the old parser on 2026-10-27, when the old ingest route `POST /api/sms/ingest` that called it was
+  removed), `api/lib/sms-ai-contract.ts`, `api/lib/anonymizer.ts`, the `sms` purpose in `contracts/ai-models.ts` and
+  `src/components/admin/settings/AdminSmsAiSection.tsx`. Nothing calls the model reader until the new intake does.
 - Decided and recorded: 2026-10-20.
 
 ## Context

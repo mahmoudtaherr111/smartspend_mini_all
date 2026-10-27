@@ -4,7 +4,7 @@
 model {
   extend smartspend.api.trpc {
     admin = router 'admin' {
-      description 'api/admin-router.ts — 57 procedures.'
+      description 'api/admin-router.ts — 56 procedures.'
       metadata {
         file 'api/admin-router.ts'
       }
@@ -309,16 +309,6 @@ model {
         }
       }
       getPipelineVersionStats = procedure 'admin.getPipelineVersionStats' {
-        #query #admin #uncalled
-        technology 'adminProcedure'
-        description 'query · adminProcedure · no caller in src/'
-        metadata {
-          file 'api/admin-router.ts'
-          builder 'adminProcedure'
-          procedureKind 'query'
-        }
-      }
-      getRawSmsLogs = procedure 'admin.getRawSmsLogs' {
         #query #admin #uncalled
         technology 'adminProcedure'
         description 'query · adminProcedure · no caller in src/'
@@ -1922,7 +1912,7 @@ model {
       }
     }
     profile = router 'profile' {
-      description 'api/profile-router.ts — 29 procedures.'
+      description 'api/profile-router.ts — 22 procedures.'
       metadata {
         file 'api/profile-router.ts'
       }
@@ -1937,16 +1927,6 @@ model {
         }
       }
       confirmPhoneChange = procedure 'profile.confirmPhoneChange' {
-        #mutation #authed #uncalled
-        technology 'authedProcedure'
-        description 'mutation · authedProcedure · no caller in src/'
-        metadata {
-          file 'api/profile-router.ts'
-          builder 'authedProcedure'
-          procedureKind 'mutation'
-        }
-      }
-      confirmSmsSuggestion = procedure 'profile.confirmSmsSuggestion' {
         #mutation #authed #uncalled
         technology 'authedProcedure'
         description 'mutation · authedProcedure · no caller in src/'
@@ -1980,36 +1960,6 @@ model {
         #mutation #authed
         technology 'authedProcedure'
         description 'mutation · authedProcedure'
-        metadata {
-          file 'api/profile-router.ts'
-          builder 'authedProcedure'
-          procedureKind 'mutation'
-        }
-      }
-      dismissSmsSuggestion = procedure 'profile.dismissSmsSuggestion' {
-        #mutation #authed #uncalled
-        technology 'authedProcedure'
-        description 'mutation · authedProcedure · no caller in src/'
-        metadata {
-          file 'api/profile-router.ts'
-          builder 'authedProcedure'
-          procedureKind 'mutation'
-        }
-      }
-      generateMagicCode = procedure 'profile.generateMagicCode' {
-        #mutation #authed #uncalled
-        technology 'authedProcedure'
-        description 'mutation · authedProcedure · no caller in src/'
-        metadata {
-          file 'api/profile-router.ts'
-          builder 'authedProcedure'
-          procedureKind 'mutation'
-        }
-      }
-      generateWebhookToken = procedure 'profile.generateWebhookToken' {
-        #mutation #authed #uncalled
-        technology 'authedProcedure'
-        description 'mutation · authedProcedure · no caller in src/'
         metadata {
           file 'api/profile-router.ts'
           builder 'authedProcedure'
@@ -2060,36 +2010,6 @@ model {
         #query #authed
         technology 'authedProcedure'
         description 'query · authedProcedure'
-        metadata {
-          file 'api/profile-router.ts'
-          builder 'authedProcedure'
-          procedureKind 'query'
-        }
-      }
-      getSmsLogs = procedure 'profile.getSmsLogs' {
-        #query #authed #uncalled
-        technology 'authedProcedure'
-        description 'query · authedProcedure · no caller in src/'
-        metadata {
-          file 'api/profile-router.ts'
-          builder 'authedProcedure'
-          procedureKind 'query'
-        }
-      }
-      getSmsSuggestions = procedure 'profile.getSmsSuggestions' {
-        #query #authed #uncalled
-        technology 'authedProcedure'
-        description 'query · authedProcedure · no caller in src/'
-        metadata {
-          file 'api/profile-router.ts'
-          builder 'authedProcedure'
-          procedureKind 'query'
-        }
-      }
-      getWebhookToken = procedure 'profile.getWebhookToken' {
-        #query #authed #uncalled
-        technology 'authedProcedure'
-        description 'query · authedProcedure · no caller in src/'
         metadata {
           file 'api/profile-router.ts'
           builder 'authedProcedure'
@@ -2658,60 +2578,6 @@ model {
         path '/health'
       }
     }
-    get_sms_android-connect = endpoint 'GET /api/sms/android-connect' {
-      #http
-      description 'Declared in api/sms-router.ts.'
-      metadata {
-        file 'api/sms-router.ts'
-        method 'GET'
-        path '/api/sms/android-connect'
-      }
-    }
-    get_sms_logs = endpoint 'GET /api/sms/logs' {
-      #http
-      description 'Declared in api/sms-router.ts.'
-      metadata {
-        file 'api/sms-router.ts'
-        method 'GET'
-        path '/api/sms/logs'
-      }
-    }
-    get_sms_metrics = endpoint 'GET /api/sms/metrics' {
-      #http
-      description 'Declared in api/sms-router.ts.'
-      metadata {
-        file 'api/sms-router.ts'
-        method 'GET'
-        path '/api/sms/metrics'
-      }
-    }
-    get_sms_shortcut-download = endpoint 'GET /api/sms/shortcut-download' {
-      #http
-      description 'Declared in api/sms-router.ts.'
-      metadata {
-        file 'api/sms-router.ts'
-        method 'GET'
-        path '/api/sms/shortcut-download'
-      }
-    }
-    get_sms_token = endpoint 'GET /api/sms/token' {
-      #http
-      description 'Declared in api/sms-router.ts.'
-      metadata {
-        file 'api/sms-router.ts'
-        method 'GET'
-        path '/api/sms/token'
-      }
-    }
-    get_sms_unparsed = endpoint 'GET /api/sms/unparsed' {
-      #http
-      description 'Declared in api/sms-router.ts.'
-      metadata {
-        file 'api/sms-router.ts'
-        method 'GET'
-        path '/api/sms/unparsed'
-      }
-    }
     get_sse_otp = endpoint 'GET /api/sse/otp' {
       #sse
       description 'Declared in api/boot.ts.'
@@ -2719,42 +2585,6 @@ model {
         file 'api/boot.ts'
         method 'GET'
         path '/api/sse/otp'
-      }
-    }
-    post_sms_android-status = endpoint 'POST /api/sms/android-status' {
-      #http
-      description 'Declared in api/sms-router.ts.'
-      metadata {
-        file 'api/sms-router.ts'
-        method 'POST'
-        path '/api/sms/android-status'
-      }
-    }
-    post_sms_exchange = endpoint 'POST /api/sms/exchange' {
-      #http
-      description 'Declared in api/sms-router.ts.'
-      metadata {
-        file 'api/sms-router.ts'
-        method 'POST'
-        path '/api/sms/exchange'
-      }
-    }
-    post_sms_ingest = endpoint 'POST /api/sms/ingest' {
-      #http
-      description 'Declared in api/sms-router.ts.'
-      metadata {
-        file 'api/sms-router.ts'
-        method 'POST'
-        path '/api/sms/ingest'
-      }
-    }
-    post_sms_token_generate = endpoint 'POST /api/sms/token/generate' {
-      #http
-      description 'Declared in api/sms-router.ts.'
-      metadata {
-        file 'api/sms-router.ts'
-        method 'POST'
-        path '/api/sms/token/generate'
       }
     }
     post_webhooks_paymob = endpoint 'POST /api/webhooks/paymob' {

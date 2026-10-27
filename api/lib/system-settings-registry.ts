@@ -220,11 +220,8 @@ export const SETTINGS: SettingDef[] = [
   { key: "rag_model", default: "" },
 
   // ── Misc ──
-  { key: "sms_limit_free", default: "5" },
-  { key: "sms_limit_pro", default: "999999" },
-  { key: "sms_limit_ultra", default: "999999" },
-  // The model that reads bank messages the rules cannot (api/lib/sms-ai-parser.ts, decision 0025). "false" stops
-  // every call; the messages are still read by the rules and none is lost.
+  // The model that reads bank messages the reader cannot (api/lib/capture/ai-reader.ts, decision 0025). "false" stops
+  // every call.
   { key: "sms_ai_enabled", default: "true" },
   // USD a Cairo day across all users, priced from the admin's model prices; 0 means no cap. With a cap, only models
   // with a price are called.

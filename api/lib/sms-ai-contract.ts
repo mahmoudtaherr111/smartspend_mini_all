@@ -12,8 +12,8 @@
  *   - the direction agrees with the kind;
  *   - declined, pre-authorised, one-time-code and promotional messages are never transactions.
  *
- * A reply that fails a check is discarded and the message takes the path it takes without a model. A valid reply is
- * mapped onto `SmsParseResult`, the shape the ingest route and api/services/sms-ledger.ts already read.
+ * A reply that fails a check is discarded (api/lib/capture/ai-reader.ts says so). A valid reply is mapped onto
+ * `SmsParseResult`, the money movement in the ledger's terms.
  *
  * Changing the prompt or the contract changes `SMS_PROMPT_VERSION`, which is part of the parse cache key and is
  * stored with every message the model read.

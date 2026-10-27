@@ -10,7 +10,6 @@ import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
 import { getClientIp } from "./lib/get-client-ip";
-import { smsApp } from "./sms-router";
 import { createHmac, timingSafeEqual } from "crypto";
 import { grantProSubscription } from "./lib/subscription-service";
 import { buildGoogleAuthorizationUrl, createOAuthState } from "./auth-router";
@@ -475,9 +474,6 @@ app.get("/api/sse/otp", async (c) => {
     }
   });
 });
-
-// SMS Ingestion endpoints
-app.route("/api/sms", smsApp);
 
 app.post("/api/webhooks/paymob", async (c) => {
   const hmacParam = c.req.query("hmac");

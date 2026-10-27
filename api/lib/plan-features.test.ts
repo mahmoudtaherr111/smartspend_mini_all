@@ -43,7 +43,7 @@ describe("plan features as admin settings", () => {
         expect(SETTING_KEYS.has(key), `${key} must be saveable`).toBe(true);
       }
       for (const key of [`${plan}_daily_limit`, `${plan}_token_limit`, `voice_limit_${plan}`,
-        `sms_limit_${plan}`, `offline_limit_${plan}`, `report_limit_${plan}`]) {
+        `offline_limit_${plan}`, `report_limit_${plan}`]) {
         expect(SETTING_KEYS.has(key), `${key} must be saveable for ${plan}`).toBe(true);
       }
     }
@@ -59,8 +59,7 @@ describe("the plans screen", () => {
     expect(value("pro", "daily_entries")).toBe("100 في اليوم");
     expect(value("free", "receipts")).toBe(false);
     expect(value("pro", "receipts")).toBe(true);
-    expect(value("free", "bank_messages")).toBe("5 رسالة في الشهر");
-    expect(value("pro", "bank_messages")).toBe("بدون حد");
+    expect(value("free", "bank_messages")).toBeUndefined();
   });
 
   it("follows an admin change", () => {

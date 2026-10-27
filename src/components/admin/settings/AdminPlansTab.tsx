@@ -320,14 +320,6 @@ function PlanAdvancedLimits({
           unit="ثانية"
         />
         <NumInput
-          label="حد رسايل البنك/شهر"
-          hint="عدد رسايل البنك اللي بتتسجل لوحدها في الشهر. اللي بعد الحد بتتحفظ اقتراحات يأكدها المستخدم بضغطة"
-          settingKey={`sms_limit_${plan}`}
-          formData={formData}
-          updateField={updateField}
-          unit="رسالة"
-        />
-        <NumInput
           label="حد العمليات أوفلاين"
           hint="أقصى عدد معاملات نصية يمكن للمستخدم تسجيلها وحفظها محلياً في وضع أوفلاين"
           settingKey={`offline_limit_${plan}`}

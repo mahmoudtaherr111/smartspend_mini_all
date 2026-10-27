@@ -2,7 +2,7 @@
 
 # Bank and wallet messages
 
-Receives bank and wallet notifications forwarded by the Android companion app or a personal iOS Shortcut, and parses them with rules first and a model second.
+Automatic capture of bank and wallet messages, being rebuilt: the catalog of banks, wallets and subscriptions the admin edits, the reader that reads a message without a model, and the admin's model for what the reader is unsure of. Nothing receives messages yet.
 
 How it works: [docs/systems/bank-messages.md](../../systems/bank-messages.md) · بالعربي: [docs/ar/systems/bank-messages.md](../../ar/systems/bank-messages.md) · [All systems](README.md)
 
@@ -17,118 +17,51 @@ flowchart LR
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
-    http__api_sms["HTTP /api/sms/… · 10 routes"]
     job_seed_capture_catalog["Job · seed-capture-catalog"]
     router_captureAdmin["captureAdmin API · 7 procedures"]
     router_capture["capture API · 1 procedure"]
-    router_profile["profile API · 7 procedures"]
   end
   subgraph g_modules["Code modules"]
+    mod_capture_ai_reader["Message model reader"]
     mod_capture_catalog["Capture catalog"]
     mod_capture_reader["Message reader"]
-    mod_ingestion_parsers["Ingestion parsers"]
   end
   subgraph g_tables["MySQL tables"]
     tbl_capture_sources[("capture_sources")]
-    tbl_expenses[("expenses")]
-    tbl_local_users[("local_users")]
-    tbl_raw_sms_events[("raw_sms_events")]
     tbl_subscription_catalog[("subscription_catalog")]
-    tbl_users[("users")]
-    tbl_webhook_tokens[("webhook_tokens")]
   end
   ext_gemini{{"Google Gemini API"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
-  sys_ai_center[["AI Center (system)"]]
   sys_ai_platform[["AI providers and usage limits (system)"]]
   sys_expense_capture[["Recording spending (system)"]]
-  sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
-  sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_platform[["Server platform and data (system)"]]
-  http__api_sms --> mod_ingestion_parsers
-  http__api_sms --> sys_accounts
-  http__api_sms --> sys_ai_center
-  http__api_sms --> sys_notifications
-  http__api_sms --> sys_platform
-  http__api_sms -.-> tbl_local_users
-  http__api_sms -.-> tbl_users
-  http__api_sms ==> tbl_raw_sms_events
-  http__api_sms ==> tbl_webhook_tokens
   job_seed_capture_catalog --> mod_capture_catalog
+  mod_capture_ai_reader --> ext_gemini
+  mod_capture_ai_reader --> sys_accounts
+  mod_capture_ai_reader --> sys_ai_platform
+  mod_capture_ai_reader --> sys_expense_capture
+  mod_capture_ai_reader --> sys_platform
   mod_capture_catalog --> sys_platform
   mod_capture_catalog ==> tbl_capture_sources
   mod_capture_catalog ==> tbl_subscription_catalog
   mod_capture_reader --> sys_expense_capture
   mod_capture_reader --> sys_platform
-  mod_ingestion_parsers --> ext_gemini
-  mod_ingestion_parsers --> sys_accounts
-  mod_ingestion_parsers --> sys_ai_platform
-  mod_ingestion_parsers --> sys_expense_capture
-  mod_ingestion_parsers --> sys_money
-  mod_ingestion_parsers --> sys_platform
-  mod_ingestion_parsers ==> tbl_expenses
-  mod_ingestion_parsers ==> tbl_raw_sms_events
   router_capture --> mod_capture_catalog
   router_captureAdmin --> mod_capture_catalog
   router_captureAdmin --> sys_platform
   router_captureAdmin ==> tbl_capture_sources
   router_captureAdmin ==> tbl_subscription_catalog
-  router_profile --> mod_ingestion_parsers
-  router_profile --> sys_ai_center
-  router_profile --> sys_expense_capture
-  router_profile --> sys_notifications
-  router_profile --> sys_platform
-  router_profile -.-> tbl_raw_sms_events
-  router_profile ==> tbl_webhook_tokens
   screens_admin --> router_captureAdmin
   screens_web_app --> router_captureAdmin
 ```
-
-## Journeys
-
-### a bank message forwarded from a phone
-
-The Android companion or an iOS Shortcut posts message text with the user’s webhook token. The route resolves the token, refuses a duplicate, stores the raw message and parses it with the rule parser. When the rules are not sure, a model may read it (decision 0025): only if the admin’s switch is on, the plan budget and the daily USD cap allow it, on text with cards, accounts, phones, references and names removed, through the models the admin assigned to bank messages (the server’s Gemini key until then), one message of one user per call, with the reply checked against a versioned contract. A skipped model or a discarded reply leaves the rules’ reading, or the raw message kept with its reason. Within the plan’s monthly limit it files the message (a known merchant takes its category) and writes the transaction, its rollup delta and the raw message status in one database transaction. Past the limit the rules alone read it and the raw message is kept as a suggestion the user confirms from the home screen.
-
-```mermaid
-sequenceDiagram
-  participant p1 as Android notification forwarder
-  participant p2 as POST /api/sms/ingest
-  participant p3 as webhook_tokens table
-  participant p4 as raw_sms_events table
-  participant p5 as Ingestion parsers
-  participant p6 as AI usage and cost governance
-  participant p7 as Request security
-  participant p8 as AI provider access
-  participant p9 as OpenRouter
-  participant p10 as Google Gemini API
-  participant p11 as expenses table
-  participant p12 as Ledger aggregates
-  participant p13 as expense_daily_rollups table
-  p1->>p2: POST the notification text with the webhook token
-  p2->>p3: resolve the token to a user
-  p2->>p4: store the raw message
-  p2->>p5: rule parser first, the model only when the rules are not sure, file the message
-  p5->>p6: the plan budget on the sms channel, and the tokens after the call
-  p5->>p7: remove cards, accounts, phones, references and names
-  p5->>p8: the admin’s sms routes, one message per call
-  p8->>p9: or any provider the admin assigned to bank messages
-  p8->>p10: or Gemini, with the server’s key while no sms route exists
-  p5->>p11: insert the transaction
-  p5->>p12: rollup delta
-  p12->>p13: upsert the day
-  p2->>p4: mark it processed, keep it with the reason it was not read, or keep it as a suggestion past the monthly limit
-```
-
-Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is the view `flow_sms_ingest`.
 
 ## Code modules
 
 | Module | What it does | Files |
 | --- | --- | --- |
+| `capture-ai-reader` — Message model reader | Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server's Gemini key until then), behind the admin's switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. Nothing calls it yet. | 2 |
 | `capture-catalog` — Capture catalog | The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name. | 3 |
 | `capture-reader` — Message reader | Layer one of capture, before any model: reads a bank, wallet or payment notification into what happened, which way, how much and in what currency, with which card and with whom, when, how sure it is and why (normalization with a position map, piece finders, an Arabic and English lexicon, sentences, money roles, kind and direction, the other side, the date), plus its benchmark corpus. | 12 |
-| `ingestion-parsers` — Ingestion parsers | Bank SMS parsing (rules first, then a model through the admin's sms routes behind a switch, the plan budget and a daily USD cap, on redacted text, with a versioned reply contract checked before use), the step that files a parsed message in the ledger (its category, the automatic save, and the suggestions kept over the monthly limit), and the generator of the personal iOS Shortcut. | 5 |
 
 ## API procedures
 
@@ -142,28 +75,11 @@ Drawn in `docs/architecture/flows/sms-ingest.c4`; in the interactive map it is t
 | `captureAdmin.setSourceStatus` | mutation | `adminProcedure` | `capture_sources` | `capture_sources` | `Admin`, `More` |
 | `captureAdmin.setSubscriptionStatus` | mutation | `adminProcedure` | `subscription_catalog` | `subscription_catalog` | `Admin`, `More` |
 | `captureAdmin.syncSeed` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
-| `profile.confirmSmsSuggestion` | mutation | `authedProcedure` | — | — | — |
-| `profile.dismissSmsSuggestion` | mutation | `authedProcedure` | — | — | — |
-| `profile.generateMagicCode` | mutation | `authedProcedure` | `webhook_tokens` | — | — |
-| `profile.generateWebhookToken` | mutation | `authedProcedure` | — | `webhook_tokens` | — |
-| `profile.getSmsLogs` | query | `authedProcedure` | `raw_sms_events` | — | — |
-| `profile.getSmsSuggestions` | query | `authedProcedure` | `raw_sms_events` | — | — |
-| `profile.getWebhookToken` | query | `authedProcedure` | `raw_sms_events`, `webhook_tokens` | — | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
 | Entry point | Kind | Declared in |
 | --- | --- | --- |
-| `GET /api/sms/android-connect` | http | `api/sms-router.ts` |
-| `POST /api/sms/android-status` | http | `api/sms-router.ts` |
-| `POST /api/sms/exchange` | http | `api/sms-router.ts` |
-| `POST /api/sms/ingest` | http | `api/sms-router.ts` |
-| `GET /api/sms/logs` | http | `api/sms-router.ts` |
-| `GET /api/sms/metrics` | http | `api/sms-router.ts` |
-| `GET /api/sms/shortcut-download` | http | `api/sms-router.ts` |
-| `GET /api/sms/token` | http | `api/sms-router.ts` |
-| `POST /api/sms/token/generate` | http | `api/sms-router.ts` |
-| `GET /api/sms/unparsed` | http | `api/sms-router.ts` |
 | `seed-capture-catalog` | job, once at boot | `api/boot.ts` |
 
 ## Data
@@ -173,22 +89,17 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `capture_sources` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSource`, `captureAdmin.setSourceStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSource`, `captureAdmin.setSourceStatus` |
-| `expenses` | B | `ingestion-parsers` | — |
-| `local_users` | A | — | `POST /api/sms/ingest` |
-| `raw_sms_events` | E | `POST /api/sms/ingest`, `ingestion-parsers` | `GET /api/sms/logs`, `GET /api/sms/metrics`, `GET /api/sms/unparsed`, `POST /api/sms/ingest`, `ingestion-parsers`, `profile.getSmsLogs`, `profile.getSmsSuggestions`, `profile.getWebhookToken` |
 | `subscription_catalog` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` |
-| `users` | A | — | `POST /api/sms/ingest` |
-| `webhook_tokens` | D | `GET /api/sms/android-connect`, `POST /api/sms/token/generate`, `profile.generateWebhookToken` | `GET /api/sms/android-connect`, `GET /api/sms/shortcut-download`, `GET /api/sms/token`, `POST /api/sms/android-status`, `POST /api/sms/exchange`, `POST /api/sms/ingest`, `profile.generateMagicCode`, `profile.getWebhookToken` |
 
 ## Outside systems
 
 | System | Kind | Modules |
 | --- | --- | --- |
-| Google Gemini API | ai-provider | `ingestion-parsers` |
+| Google Gemini API | ai-provider | `capture-ai-reader` |
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Server platform and data](platform.md).
 
 Used by: [Admin console, support and growth tools](admin.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
@@ -196,13 +107,13 @@ Used by: [Admin console, support and growth tools](admin.md), [Server platform a
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | yes | `api/lib/sms-ai-parser.ts` |
+| `GEMINI_API_KEY` | yes | `api/lib/capture/ai-reader.ts` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>37 files and declarations</summary>
+<details><summary>25 files and declarations</summary>
 
 - `.github/workflows/build-apk.yml`
 - `android-app/app/build.gradle`
@@ -212,6 +123,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/boot.ts#job:seed-capture-catalog`
 - `api/capture-admin-router.ts`
 - `api/capture-router.ts`
+- `api/lib/capture/ai-reader.ts`
 - `api/lib/capture/catalog.ts`
 - `api/lib/capture/reader/clauses.ts`
 - `api/lib/capture/reader/counterparty.ts`
@@ -227,19 +139,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/capture/reader/when.ts`
 - `api/lib/capture/seed-sources.ts`
 - `api/lib/capture/seed-subscriptions.ts`
-- `api/lib/shortcut-generator.ts`
 - `api/lib/sms-ai-contract.ts`
-- `api/lib/sms-ai-parser.ts`
-- `api/lib/sms-rule-parser.ts`
-- `api/profile-router.ts#profile.confirmSmsSuggestion`
-- `api/profile-router.ts#profile.dismissSmsSuggestion`
-- `api/profile-router.ts#profile.generateMagicCode`
-- `api/profile-router.ts#profile.generateWebhookToken`
-- `api/profile-router.ts#profile.getSmsLogs`
-- `api/profile-router.ts#profile.getSmsSuggestions`
-- `api/profile-router.ts#profile.getWebhookToken`
-- `api/profile-router.ts#rest-of-file`
-- `api/services/sms-ledger.ts`
-- `api/sms-router.ts`
 
 </details>

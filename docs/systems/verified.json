@@ -10,7 +10,7 @@
         "api/boot.ts#job:daily-auth-cleanup": "acfde0491549",
         "api/lib/access-control.ts": "cca3d73f1965",
         "api/lib/admin-safe-fields.ts": "cfb73d6bbe66",
-        "api/lib/anonymizer.ts": "3d2ae91e313c",
+        "api/lib/anonymizer.ts": "a2779010eaec",
         "api/lib/get-client-ip.ts": "72af77e654a4",
         "api/lib/google-id-token.ts": "008e0247eaad",
         "api/lib/http-origin-security.ts": "066096844fe2",
@@ -22,7 +22,7 @@
         "api/lib/security-headers.ts": "057db5e4ad04",
         "api/lib/security-logger.ts": "23e02f6971e7",
         "api/lib/session-validation.ts": "ac2005332694",
-        "api/local-auth-router.ts": "a00f2e3b5836",
+        "api/local-auth-router.ts": "409c146d7278",
         "api/local-auth-utils.ts": "099855526fd9",
         "api/profile-router.ts#profile.confirmPhoneChange": "62e243fc038d",
         "api/profile-router.ts#profile.deleteMyAccount": "1dada0eaa8c8",
@@ -30,11 +30,11 @@
         "api/profile-router.ts#profile.requestPhoneChange": "f116b8111dcf",
         "api/profile-router.ts#profile.updateProfile": "9aba6a0c3710",
         "api/profile-router.ts#profile.updateUserInfo": "fa019e07ad4a",
-        "api/profile-router.ts#rest-of-file": "01857da89415",
+        "api/profile-router.ts#rest-of-file": "b1dc9ec23cb2",
         "api/services/phone-challenge.ts": "9c5aa7cfebc9",
         "api/services/turnstile-service.ts": "89a28fc96d49",
         "api/services/user-purge-service.ts": "6479af182611",
-        "api/session-router.ts": "e255f9db4207",
+        "api/session-router.ts": "c29d8dcf4653",
         "api/webauthn-router.ts": "8a7c2294a8d1",
         "src/components/auth/BiometricLockOverlay.tsx": "b9b9b5184b56",
         "src/components/auth/BiometricOnboardingModal.tsx": "a7b3fd6a6522",
@@ -54,13 +54,13 @@
         "src/pages/Login.tsx": "59d76ce265d9",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-20 cfbc7f55",
-      "arabic": "c63b1e30db7d",
-      "arabicChecked": "2026-10-20 cfbc7f55"
+      "checked": "2026-10-27 12b1cd80",
+      "arabic": "fd84912c018e",
+      "arabicChecked": "2026-10-27 12b1cd80"
     },
     "admin": {
       "files": {
-        "api/admin-router.ts": "7a8a971cb190",
+        "api/admin-router.ts": "3e7cf2d26f24",
         "api/ads-router.ts": "14d2aff5abf9",
         "api/analytics-router.ts": "ef70b00b91a8",
         "api/export-router.ts#export.allUsers": "c142aeea8326",
@@ -86,16 +86,16 @@
         "src/components/admin/capture/AdminCaptureTab.tsx": "1e3eac6f195c",
         "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
-        "src/components/admin/settings/AdminPlansTab.tsx": "0ee2044c1d2f",
+        "src/components/admin/settings/AdminPlansTab.tsx": "97ca70bc4420",
         "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
         "src/components/admin/settings/AdminSmsAiSection.tsx": "ec8a865da902",
         "src/components/admin/settings/AdminVoiceCallSection.tsx": "ae339f527cf2",
         "src/pages/Admin.tsx": "194ff4a9efa3",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-10-20 5f8d99e1",
-      "arabic": "84f8b363fcdb",
-      "arabicChecked": "2026-10-20 5f8d99e1"
+      "checked": "2026-10-27 12b1cd80",
+      "arabic": "63eda4373d8f",
+      "arabicChecked": "2026-10-27 12b1cd80"
     },
     "ai-center": {
       "files": {
@@ -178,9 +178,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-10-27 d1c95984",
-      "arabic": "38b9befb7e66",
-      "arabicChecked": "2026-10-27 d1c95984"
+      "checked": "2026-10-27 12b1cd80",
+      "arabic": "9ec4f8d2258f",
+      "arabicChecked": "2026-10-27 12b1cd80"
     },
     "bank-messages": {
       "files": {
@@ -192,6 +192,7 @@
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
         "api/capture-admin-router.ts": "95a0417753d7",
         "api/capture-router.ts": "75c1014b1c27",
+        "api/lib/capture/ai-reader.ts": "b506b338b9f2",
         "api/lib/capture/catalog.ts": "dd7c3d61d374",
         "api/lib/capture/reader/clauses.ts": "5b86ed12ca60",
         "api/lib/capture/reader/counterparty.ts": "4560b5469773",
@@ -207,24 +208,11 @@
         "api/lib/capture/reader/when.ts": "3c9cce811dd1",
         "api/lib/capture/seed-sources.ts": "693b8813dd6c",
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
-        "api/lib/shortcut-generator.ts": "fbf02d8e0f5d",
-        "api/lib/sms-ai-contract.ts": "9fd586206db4",
-        "api/lib/sms-ai-parser.ts": "81db4d90bef3",
-        "api/lib/sms-rule-parser.ts": "4e68191237e2",
-        "api/profile-router.ts#profile.confirmSmsSuggestion": "a95676092729",
-        "api/profile-router.ts#profile.dismissSmsSuggestion": "2aea8fd37c7d",
-        "api/profile-router.ts#profile.generateMagicCode": "f4f156cf9ab7",
-        "api/profile-router.ts#profile.generateWebhookToken": "be8d7316579a",
-        "api/profile-router.ts#profile.getSmsLogs": "c25c54979dfd",
-        "api/profile-router.ts#profile.getSmsSuggestions": "e7e02adbedc1",
-        "api/profile-router.ts#profile.getWebhookToken": "383d68616d9f",
-        "api/profile-router.ts#rest-of-file": "01857da89415",
-        "api/services/sms-ledger.ts": "079eab469b7d",
-        "api/sms-router.ts": "bccd1a7b2ef2"
+        "api/lib/sms-ai-contract.ts": "a05d2f4ea034"
       },
-      "checked": "2026-10-27 d1c95984",
-      "arabic": "b0990bdb2480",
-      "arabicChecked": "2026-10-27 d1c95984"
+      "checked": "2026-10-27 12b1cd80",
+      "arabic": "4d1d62330c8d",
+      "arabicChecked": "2026-10-27 12b1cd80"
     },
     "billing": {
       "files": {
@@ -232,16 +220,16 @@
         "api/boot.ts#job:daily-subscription-expiry": "3559570d054c",
         "api/jobs/subscription-expiry-job.ts": "71595ca0d9af",
         "api/lib/paymob.ts": "a2b9e36693ee",
-        "api/lib/plan-catalog.ts": "38c562ef024d",
+        "api/lib/plan-catalog.ts": "dcf62257f309",
         "api/lib/subscription-service.ts": "f3666e029e61",
         "api/pro-router.ts": "ae4da5c10100",
         "api/referral-router.ts": "b298497fadda",
         "src/pages/Pro.tsx": "5beaa63617ea",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "checked": "2026-10-17 6d541cd",
+      "checked": "2026-10-27 12b1cd80",
       "arabic": "e197d4dd2067",
-      "arabicChecked": "2026-09-28 6019f83"
+      "arabicChecked": "2026-10-27 12b1cd80"
     },
     "expense-capture": {
       "files": {
@@ -343,7 +331,7 @@
         "api/profile-router.ts#profile.refreshInferences": "a5e6ec461dbc",
         "api/profile-router.ts#profile.submitOnboardingAnswer": "6a50afa4a2ab",
         "api/profile-router.ts#profile.updateSmartProfile": "28d67008ded5",
-        "api/profile-router.ts#rest-of-file": "01857da89415",
+        "api/profile-router.ts#rest-of-file": "b1dc9ec23cb2",
         "api/services/adaptive-question-engine.ts": "cb640c037896",
         "api/services/batch-ai-service.ts": "d0e332df353f",
         "api/services/lifestyle-inference-engine.ts": "2a6365c8cb6e",
@@ -353,9 +341,9 @@
         "api/services/user-profile-service.ts": "19237538c3b4",
         "src/components/insights/AIInsights.tsx": "3be01c23f12c"
       },
-      "checked": "2026-10-27 d1c95984",
+      "checked": "2026-10-27 12b1cd80",
       "arabic": "a0f3183f20ff",
-      "arabicChecked": "2026-10-27 d1c95984"
+      "arabicChecked": "2026-10-27 12b1cd80"
     },
     "money": {
       "files": {
@@ -391,7 +379,7 @@
         "api/profile-router.ts#profile.listContacts": "90da0645d250",
         "api/profile-router.ts#profile.mergeContacts": "14b81ff3948c",
         "api/profile-router.ts#profile.updateContact": "f2c5c45b1581",
-        "api/profile-router.ts#rest-of-file": "01857da89415",
+        "api/profile-router.ts#rest-of-file": "b1dc9ec23cb2",
         "api/services/budget-status.ts": "e6c46c341118",
         "api/services/coach/cashflows.ts": "2e8c153d9395",
         "api/services/coach/plans.ts": "443a3bd6fcc6",
@@ -426,9 +414,9 @@
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-10-27 d1c95984",
-      "arabic": "ddce254d0870",
-      "arabicChecked": "2026-10-27 d1c95984"
+      "checked": "2026-10-27 12b1cd80",
+      "arabic": "99181cc7c434",
+      "arabicChecked": "2026-10-27 12b1cd80"
     },
     "notifications": {
       "files": {
@@ -441,22 +429,22 @@
         "api/profile-router.ts#profile.markAllInAppNotificationsRead": "6a3d324697cb",
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
         "api/profile-router.ts#profile.savePushSubscription": "788ec5760eef",
-        "api/profile-router.ts#rest-of-file": "01857da89415",
+        "api/profile-router.ts#rest-of-file": "b1dc9ec23cb2",
         "api/services/firebase.ts": "3b9319b2c3a5",
         "api/services/otp-cache.ts": "f68f57b187fb",
         "api/services/whatsapp-service.ts": "1177804a1f23",
         "src/pages/Notifications.tsx": "57d9f2b4b95f"
       },
-      "checked": "2026-10-18 2bbf17c",
-      "arabic": "6ee5bb5ec0dd",
-      "arabicChecked": "2026-10-18 2bbf17c"
+      "checked": "2026-10-27 12b1cd80",
+      "arabic": "cb7a80bb3786",
+      "arabicChecked": "2026-10-27 12b1cd80"
     },
     "platform": {
       "files": {
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "6f12123c1f2b",
+        "api/boot.ts#rest-of-file": "a4f60ab09bae",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "d43acf75679a",
         "api/lib/app-time.ts": "f53d4623a239",
@@ -468,7 +456,7 @@
         "api/lib/redis-client.ts": "8b7cc1f8f3b4",
         "api/lib/settings-cache.ts": "ee7c564513f7",
         "api/lib/shared-generation.ts": "2d53bf30e567",
-        "api/lib/system-settings-registry.ts": "1addf8c1becf",
+        "api/lib/system-settings-registry.ts": "4ca2f8ea1140",
         "api/middleware.ts": "d2e8e2966fe6",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "72e5cfa66375",
@@ -498,9 +486,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "9176eb36ddb0"
       },
-      "checked": "2026-10-20 32887d74",
-      "arabic": "5ff21062581b",
-      "arabicChecked": "2026-10-20 32887d74"
+      "checked": "2026-10-27 12b1cd80",
+      "arabic": "d308d4ff853f",
+      "arabicChecked": "2026-10-27 12b1cd80"
     },
     "voice-calls": {
       "files": {

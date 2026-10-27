@@ -64,12 +64,6 @@ export function buildPlanCatalogEntry(
     value: voiceMonthly <= 0 ? "بدون حد" : `${Math.round(voiceMonthly / 60)} دقيقة في الشهر`,
   });
 
-  rows.push({
-    key: "bank_messages",
-    label: "رسايل البنك والمحافظ",
-    value: count(intSetting(settings, `sms_limit_${plan}`), "رسالة في الشهر"),
-  });
-
   const chatOn = settings[`chatbot_enabled_${plan}`] !== "false";
   rows.push({
     key: "chat",

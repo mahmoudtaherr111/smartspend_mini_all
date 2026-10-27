@@ -25,8 +25,6 @@ import {
   profileLearningEvents,
   monthlyBehaviorSnapshots,
   userDictionaries,
-  webhookTokens,
-  rawSmsEvents,
   expenseCategories,
   apiKeyErrors,
   pushSubscriptions,
@@ -1729,51 +1727,6 @@ export const adminRouter = router({
     };
     return stats;
   }),
-
-  // ─── Get Raw SMS Logs ───
-  getRawSmsLogs: adminProcedure
-    .input(
-      z.object({
-        page: z.number().default(1),
-        limit: z.number().default(50),
-        status: z.string().optional(),
-      }).optional()
-    )
-    .query(async ({ input }) => {
-      const { page = 1, limit = 50, status } = input ?? {};
-      const offset = (page - 1) * limit;
-
-      let q = db.select().from(rawSmsEvents).$dynamic();
-      if (status) {
-        q = q.where(eq(rawSmsEvents.status, status));
-      }
-
-      const list = await q.orderBy(desc(rawSmsEvents.createdAt)).limit(limit).offset(offset);
-      const total = await db.select({ count: count() }).from(rawSmsEvents);
-
-      // Map users
-      const oauthIds = [...new Set(list.filter((s) => s.userType === "oauth").map((s) => s.userId))];
-      const localIds = [...new Set(list.filter((s) => s.userType === "local").map((s) => s.userId))];
-
-      const oauthRows = oauthIds.length > 0 ? await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, oauthIds)) : [];
-      const localRows = localIds.length > 0 ? await db.select({ id: localUsers.id, name: localUsers.name }).from(localUsers).where(inArray(localUsers.id, localIds)) : [];
-
-      const nameByKey = new Map<string, string>();
-      for (const r of oauthRows) nameByKey.set(`oauth:${r.id}`, r.name);
-      for (const r of localRows) nameByKey.set(`local:${r.id}`, r.name);
-
-      const enriched = list.map((item) => ({
-        ...item,
-        userName: nameByKey.get(`${item.userType}:${item.userId}`) || "مجهول",
-      }));
-
-      return {
-        list: enriched,
-        total: total[0]?.count ?? 0,
-        page,
-        limit,
-      };
-    }),
 
   // ─── Trigger Database Backup Demo ───
   triggerBackupDemo: adminProcedure.mutation(async () => {

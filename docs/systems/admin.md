@@ -1,7 +1,7 @@
 # Admin console, support and growth tools
 
 The admin console at `/admin` (users and plans, support tickets, subscriptions, AI providers and costs,
-clarifications, WhatsApp, ads, learned rules, raw bank messages, sessions, notifications, settings), the user's
+clarifications, WhatsApp, ads, learned rules, sessions, notifications, settings), the user's
 support page, the ads shown in the app, the SEO metadata of public pages and the usage events the app records.
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/admin.md](../atlas/systems/admin.md)
@@ -50,7 +50,7 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
 | Bank messages (رسايل البنوك) | Two inner tabs (`src/components/admin/capture/AdminCaptureTab.tsx`): the banks, wallets and apps whose notifications are read and the subscriptions recognised in card charges, both editable without a deploy ([bank messages](bank-messages.md#who-is-read-the-capture-catalog)) | `captureAdmin.*` |
 | Audit | The latest sessions with the user's name, IP and device; revoke one | `admin.getActivityLog`, `admin.revokeSession` |
 | Notifications | Templates with create, edit, switch and delete; the activity check on demand; the send log and device statistics; a user search to target one person | the notification procedures of `admin`, `admin.listAllUsers` |
-| Settings | Every setting of `api/lib/system-settings-registry.ts` with secrets masked; per plan, in one tab each for Free, Pro and Ultra, the limits (tokens, daily entries, voice, bank messages saved on their own each month — later ones wait for the user as suggestions —, offline items, active goals, AI calls a minute, receipt and goal token caps, reports) and the feature switches of `contracts/plan-features.ts`; chat and voice-call limits per plan; the voice call's kill switch, models, daily cost caps, the coach call's rollout percent and test accounts, Ultra Thinking's model, thinking level and plans, the capacity caps (live calls at once per model and per user), and calls dashboard ([voice calls](voice-calls.md#in-the-admin-console)); the switch that stops the bank-message model and its daily cost cap in USD (`src/components/admin/settings/AdminSmsAiSection.tsx`, [bank messages](bank-messages.md)); a note that the parse model is chosen in the providers tab (the per-plan token-range routing editor is gone, [AI platform](ai-platform.md)); API keys with a live check; discount codes; a settings "backup" | `admin.getSettings`, `admin.updateSettings`, `admin.getAvailableModels`, `admin.validateApiKey`, `admin.getDiscountCodes`, `admin.createDiscountCode`, `admin.deleteDiscountCode`, `admin.triggerBackupDemo`, `voice.adminStats` |
+| Settings | Every setting of `api/lib/system-settings-registry.ts` with secrets masked; per plan, in one tab each for Free, Pro and Ultra, the limits (tokens, daily entries, voice, offline items, active goals, AI calls a minute, receipt and goal token caps, reports) and the feature switches of `contracts/plan-features.ts`; chat and voice-call limits per plan; the voice call's kill switch, models, daily cost caps, the coach call's rollout percent and test accounts, Ultra Thinking's model, thinking level and plans, the capacity caps (live calls at once per model and per user), and calls dashboard ([voice calls](voice-calls.md#in-the-admin-console)); the switch that stops the bank-message model and its daily cost cap in USD (`src/components/admin/settings/AdminSmsAiSection.tsx`, [bank messages](bank-messages.md)); a note that the parse model is chosen in the providers tab (the per-plan token-range routing editor is gone, [AI platform](ai-platform.md)); API keys with a live check; discount codes; a settings "backup" | `admin.getSettings`, `admin.updateSettings`, `admin.getAvailableModels`, `admin.validateApiKey`, `admin.getDiscountCodes`, `admin.createDiscountCode`, `admin.deleteDiscountCode`, `admin.triggerBackupDemo`, `voice.adminStats` |
 
 ## How the important actions work
 - **Settings.** `admin.getSettings` starts from the registry defaults, overlays the saved values and replaces
@@ -139,7 +139,7 @@ Checked against the code; each one names where it lives.
 7. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
    `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`,
    `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one),
-   `admin.getRawSmsLogs` (its tab was removed with the old bank-message system), `support.getById`, `support.assign` and every statistic of `analytics`.
+   `support.getById`, `support.assign` and every statistic of `analytics`.
 8. **Bug.** Discount codes are created here but checkout never applies them ([billing](billing.md)).
 
 ## Voice capacity and release controls

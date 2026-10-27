@@ -1,5 +1,5 @@
 /**
- * The model that reads bank messages (decision 0025), against a fake OpenAI-compatible provider: the admin's `sms`
+ * Layer two of capture, the model that reads bank messages (decision 0025), against a fake OpenAI-compatible provider: the admin's `sms`
  * route answers, the prompt carries no card, phone, reference or name, one call holds one user's message, the switch,
  * the budget and the daily cap each skip the model, and a reply that fails the contract is discarded. Every message
  * here is invented; the repository is public.
@@ -16,11 +16,11 @@ const state = vi.hoisted(() => ({
   requests: [] as Array<{ url: string; body: { model: string; messages: Array<{ role: string; content: string }> } }>,
 }));
 
-vi.mock("../queries/connection", () => ({ db: {}, getDb: () => ({}) }));
-vi.mock("./settings-cache", () => ({ getSystemSettings: async () => state.settings, invalidateSettingsCache: () => {} }));
-vi.mock("./ai-gateway", () => ({ resolveAdminRoutes: vi.fn(async () => state.adminRoutes) }));
-vi.mock("./ai-usage-policy", async (importOriginal) => {
-  const real = await importOriginal<typeof import("./ai-usage-policy")>();
+vi.mock("../../queries/connection", () => ({ db: {}, getDb: () => ({}) }));
+vi.mock("../settings-cache", () => ({ getSystemSettings: async () => state.settings, invalidateSettingsCache: () => {} }));
+vi.mock("../ai-gateway", () => ({ resolveAdminRoutes: vi.fn(async () => state.adminRoutes) }));
+vi.mock("../ai-usage-policy", async (importOriginal) => {
+  const real = await importOriginal<typeof import("../ai-usage-policy")>();
   return {
     ...real,
     assertAiBudget: vi.fn(async () => {
@@ -30,26 +30,26 @@ vi.mock("./ai-usage-policy", async (importOriginal) => {
     trackAiTokens: vi.fn(async () => {}),
   };
 });
-vi.mock("./ai-ledger", () => ({
+vi.mock("../ai-ledger", () => ({
   recordModelCalls: vi.fn(),
   ledgerCostUsdSince: vi.fn(async () => state.spentTodayUsd),
 }));
-vi.mock("./ai-pricing", () => ({
+vi.mock("../ai-pricing", () => ({
   ratesFor: vi.fn(async () => state.rates),
   costAtRates: (rates: { input: number; output: number }, usage: { promptTokens: number; completionTokens: number }) =>
     (usage.promptTokens * rates.input + usage.completionTokens * rates.output) / 1_000_000,
 }));
-vi.mock("./llm-router", async (importOriginal) => {
-  const real = await importOriginal<typeof import("./llm-router")>();
+vi.mock("../llm-router", async (importOriginal) => {
+  const real = await importOriginal<typeof import("../llm-router")>();
   return { ...real, executeLlmChain: vi.fn(real.executeLlmChain) };
 });
 
-import { mapSmsToExpenseCategory, parseSmsFinancialData, clearSmsAiCache } from "./sms-ai-parser";
-import { assertAiBudget, trackAiTokens } from "./ai-usage-policy";
-import { recordModelCalls } from "./ai-ledger";
-import { executeLlmChain, resetCircuitBreakers, type LlmRoute } from "./llm-router";
-import { mapModelName } from "./model-mapper";
-import { SMS_PROMPT_VERSION } from "./sms-ai-contract";
+import { clearAiReaderCache, condenseMessage, readMessageWithModel } from "./ai-reader";
+import { assertAiBudget, trackAiTokens } from "../ai-usage-policy";
+import { recordModelCalls } from "../ai-ledger";
+import { executeLlmChain, resetCircuitBreakers, type LlmRoute } from "../llm-router";
+import { mapModelName } from "../model-mapper";
+import { SMS_PROMPT_VERSION } from "../sms-ai-contract";
 
 const fakeFetch = vi.fn(async (url: string | URL, init?: RequestInit) => {
   state.requests.push({ url: String(url), body: JSON.parse(String(init?.body)) });
@@ -109,7 +109,7 @@ beforeEach(() => {
   state.rates = { input: 0.25, output: 1.5, cached: 0.0125, source: "admin" };
   state.replies = [];
   state.requests = [];
-  clearSmsAiCache();
+  clearAiReaderCache();
   resetCircuitBreakers();
   vi.clearAllMocks();
 });
@@ -117,7 +117,7 @@ beforeEach(() => {
 describe("the admin's route reads the message", () => {
   it("sends the redacted message to the provider the admin chose for sms, and only to it", async () => {
     state.replies.push(reply());
-    const read = await parseSmsFinancialData(PURCHASE, USER);
+    const read = await readMessageWithModel(PURCHASE, USER);
 
     expect(read.outcome).toBe("parsed");
     expect(state.requests).toHaveLength(1);
@@ -139,7 +139,7 @@ describe("the admin's route reads the message", () => {
 
   it("checks the plan budget on the sms channel before the call and records what the call cost after it", async () => {
     state.replies.push(reply());
-    await parseSmsFinancialData(PURCHASE, USER);
+    await readMessageWithModel(PURCHASE, USER);
 
     expect(assertAiBudget).toHaveBeenCalledWith(expect.objectContaining({ id: 12, type: "local", plan: "free" }), "sms", expect.any(Number));
     expect(recordModelCalls).toHaveBeenCalledWith(
@@ -170,7 +170,7 @@ describe("the admin's route reads the message", () => {
       };
     });
 
-    const read = await parseSmsFinancialData(PURCHASE, USER);
+    const read = await readMessageWithModel(PURCHASE, USER);
     expect(read.outcome).toBe("parsed");
     expect(seen[0]).toHaveLength(1);
     expect(seen[0][0]).toMatchObject({ slug: "gemini", protocol: "gemini", model: mapModelName("flash"), apiKey: "test" });
@@ -192,7 +192,7 @@ describe("what leaves the server", () => {
     );
     const message =
       "تم تحويل 500 جنيه إلى محمد أحمد علي رقم 01012345678 عبر انستاباي من حسابك رقم 100234567890123 رقم مرجعي 9F3K2201 الرصيد 2500 جنيه";
-    const read = await parseSmsFinancialData(message, { ...USER, sender: "01112223334" });
+    const read = await readMessageWithModel(message, { ...USER, sender: "01112223334" });
 
     const sent = JSON.stringify(state.requests[0].body);
     for (const secret of ["محمد", "أحمد", "01012345678", "01112223334", "100234567890123", "9F3K2201"]) {
@@ -205,8 +205,8 @@ describe("what leaves the server", () => {
 
   it("asks once per message, and a prompt holds one user's message only", async () => {
     state.replies.push(reply(), reply({ amount: { value: 75, currency: "EGP" }, balance_after: null, counterparty: { type: "merchant", name: "TALABAT" } }));
-    await parseSmsFinancialData(PURCHASE, USER);
-    await parseSmsFinancialData("Your card **9910 was charged EGP 75.00 at TALABAT", { ...USER, userId: 99, userType: "oauth" });
+    await readMessageWithModel(PURCHASE, USER);
+    await readMessageWithModel("Your card **9910 was charged EGP 75.00 at TALABAT", { ...USER, userId: 99, userType: "oauth" });
 
     expect(state.requests).toHaveLength(2);
     const [first, second] = state.requests.map((request) => request.body.messages);
@@ -221,24 +221,24 @@ describe("what leaves the server", () => {
 describe("when the model must not be called, it is not", () => {
   it("the admin's switch stops it before anything is paid or sent", async () => {
     state.settings = { sms_ai_enabled: "false" };
-    const read = await parseSmsFinancialData(PURCHASE, USER);
-    expect(read).toEqual({ result: null, outcome: "disabled", skipped: true });
+    const read = await readMessageWithModel(PURCHASE, USER);
+    expect(read).toMatchObject({ reply: null, result: null, outcome: "disabled", skipped: true });
     expect(state.requests).toHaveLength(0);
     expect(assertAiBudget).not.toHaveBeenCalled();
   });
 
   it("a spent plan budget skips it", async () => {
     state.budgetRefuses = true;
-    const read = await parseSmsFinancialData(PURCHASE, USER);
-    expect(read).toEqual({ result: null, outcome: "budget", skipped: true });
+    const read = await readMessageWithModel(PURCHASE, USER);
+    expect(read).toMatchObject({ reply: null, result: null, outcome: "budget", skipped: true });
     expect(state.requests).toHaveLength(0);
   });
 
   it("the daily cost cap skips it once today's spending would pass it", async () => {
     state.settings = { sms_ai_daily_cost_cap_usd: "0.50" };
     state.spentTodayUsd = 0.4999;
-    const read = await parseSmsFinancialData(PURCHASE, USER);
-    expect(read).toEqual({ result: null, outcome: "cost_cap", skipped: true });
+    const read = await readMessageWithModel(PURCHASE, USER);
+    expect(read).toMatchObject({ reply: null, result: null, outcome: "cost_cap", skipped: true });
     expect(state.requests).toHaveLength(0);
   });
 
@@ -246,16 +246,16 @@ describe("when the model must not be called, it is not", () => {
     state.settings = { sms_ai_daily_cost_cap_usd: "0.50" };
     state.spentTodayUsd = 0.1;
     state.replies.push(reply());
-    expect((await parseSmsFinancialData(PURCHASE, USER)).outcome).toBe("parsed");
+    expect((await readMessageWithModel(PURCHASE, USER)).outcome).toBe("parsed");
 
-    clearSmsAiCache();
+    clearAiReaderCache();
     state.rates = null;
-    expect((await parseSmsFinancialData(PURCHASE, USER)).outcome).toBe("cost_cap");
+    expect((await readMessageWithModel(PURCHASE, USER)).outcome).toBe("cost_cap");
     expect(state.requests).toHaveLength(1);
   });
 
   it("without a known user there is no budget to charge, so no call", async () => {
-    expect((await parseSmsFinancialData(PURCHASE, {})).outcome).toBe("no_user");
+    expect((await readMessageWithModel(PURCHASE, {})).outcome).toBe("no_user");
     expect(state.requests).toHaveLength(0);
   });
 });
@@ -264,12 +264,12 @@ describe("when the model must not be called, it is not", () => {
 describe("what the model path does with the contract's verdict", () => {
   it("a discarded reply is no answer", async () => {
     state.replies.push(reply({ amount: { value: 1300, currency: "EGP" } }));
-    expect(await parseSmsFinancialData(PURCHASE, USER)).toEqual({ result: null, outcome: "invalid_reply", skipped: true });
+    expect(await readMessageWithModel(PURCHASE, USER)).toMatchObject({ reply: null, result: null, outcome: "invalid_reply", skipped: true });
   });
 
   it("a declined payment is an answer that saves nothing", async () => {
     state.replies.push(reply({ message_kind: "declined" }));
-    const read = await parseSmsFinancialData(PURCHASE, USER);
+    const read = await readMessageWithModel(PURCHASE, USER);
     expect(read.outcome).toBe("not_transaction");
     expect(read.result?.transaction_detected).toBe(false);
   });
@@ -278,37 +278,31 @@ describe("what the model path does with the contract's verdict", () => {
     state.replies.push(
       reply({ message_kind: "international_purchase", amount: { value: 20, currency: "USD" }, balance_after: null, counterparty: { type: "merchant", name: "OPENAI" } }),
     );
-    const read = await parseSmsFinancialData("Card **2201 used for USD 20.00 at OPENAI *CHATGPT SUBSCR", USER);
-    expect(read).toEqual({ result: null, outcome: "needs_review", skipped: true });
+    const read = await readMessageWithModel("Card **2201 used for USD 20.00 at OPENAI *CHATGPT SUBSCR", USER);
+    expect(read).toMatchObject({ result: null, outcome: "needs_review", skipped: true, reply: { amount: { value: 20, currency: "USD" } } });
   });
 });
 
-describe("where a bank message is filed", () => {
-  it("files salary only when the message says salary", () => {
-    expect(mapSmsToExpenseCategory({ direction: "incoming", category: "income" })).toEqual({
-      category: "مرتب",
-      subCategory: "مرتب أساسي",
-      type: "income",
-    });
-    expect(mapSmsToExpenseCategory({ direction: "incoming", category: "transfer", provider: "InstaPay" })).toEqual({
-      category: "دخل آخر",
-      subCategory: "عام",
-      type: "income",
-    });
-  });
+describe("what the model is shown", () => {
+  // Shapes of real bank and wallet messages; every number and name is invented.
+  const samples = [
+    "عزيزي العميل، تم خصم مبلغ 1,250.50 جم من بطاقتك الائتمانية المنتهية بـ **4321 لدى ZARA Cairo Festival بتاريخ 2026-08-20. الرصيد المتاح هو 15,400.00 جم. لخدمة العملاء اتصل بـ 19666. تطبق الشروط والأحكام. البنك لن يطلب منك رقمك السري أبداً.",
+    "عميلنا العزيز: تم سحب نقدي بمبلغ 3000 جنيه من ماكينة الصراف الآلي NBE ATM - Nasr City بالبطاقة **9876 بتاريخ 25/08/2026 الساعة 14:30. الرصيد المتبقي: 8,500.00 جنيه. للاستفسار اتصل على 19623 أو زور موقعنا www.nbe.com.eg.",
+    "Dear Valued Customer, your QNB credit card *1122 was debited by EGP 450.00 at Buffalo Burger on 24-08-2026. Avail Bal: EGP 12,300.50. For 24/7 support call 19700. Enjoy special offers at https://qnb.com.eg.",
+    "تم تحويل مبلغ 500 جنيه بنجاح لرقم 01012345678. مصاريف الخدمة 1 جنيه. رصيدك الحالي هو 1250.00 جنيه. كود العملية 9823412. وفر أكتر مع عروض فودافون كاش وحمل تطبيق أنا فودافون.",
+    "تم تحويل 2,000.00 جم بنجاح إلى حساب أحمد محمد عبر انستاباي InstaPay من حسابك بالبنك الأهلي. الرقم المرجعي: IP993214. الرصيد المتاح 18,000.00 جم. تنبيه أمني: لا تشارك بياناتك السرية مع أي شخص.",
+  ];
 
-  it("files an ATM withdrawal as money moved, not spent", () => {
-    expect(mapSmsToExpenseCategory({ direction: "outgoing", category: "withdrawal" })).toEqual({
-      category: "تحويل",
-      subCategory: "سحب ATM",
-      type: "transfer",
-    });
-  });
-
-  it("names the rail of an outgoing transfer and keeps bills as bills", () => {
-    expect(
-      mapSmsToExpenseCategory({ direction: "outgoing", category: "transfer", provider: "Vodafone Cash" }).subCategory,
-    ).toBe("فودافون كاش");
-    expect(mapSmsToExpenseCategory({ direction: "outgoing", category: "bills" }).category).toBe("فواتير");
+  it.each(samples)("drops greetings, hotlines, links and sign-offs, and keeps every amount and card: %#", (raw) => {
+    const condensed = condenseMessage(raw);
+    expect(condensed.length).toBeLessThan(raw.length);
+    expect(condensed).not.toMatch(/19\d{3}/);
+    expect(condensed).not.toMatch(/https?:\/\/|www\./);
+    expect(condensed).not.toMatch(/عزيزي العميل|عميلنا العزيز|Dear Valued Customer/i);
+    expect(condensed).not.toMatch(/تطبق الشروط|thank you for/i);
+    for (const number of raw.match(/\d[\d,.]*\d|\d/g) ?? []) {
+      if (/^19\d{3}$/.test(number)) continue; // a hotline
+      expect(condensed).toContain(number);
+    }
   });
 });

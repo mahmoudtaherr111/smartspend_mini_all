@@ -16,7 +16,7 @@ Each system has three pages:
 | System | Start here when the task is about | Explanation | بالعربي | Facts |
 | --- | --- | --- | --- | --- |
 | Recording spending | typing, dictating or photographing an expense; categories and classification; muscle memory; clarifying questions; saving parsed items | [expense-capture.md](expense-capture.md) | [عربي](../ar/systems/expense-capture.md) | [facts](../atlas/systems/expense-capture.md) |
-| Bank and wallet messages | bank or wallet SMS and notifications; the Android companion app; the iOS Shortcut; webhook tokens | [bank-messages.md](bank-messages.md) | [عربي](../ar/systems/bank-messages.md) | [facts](../atlas/systems/bank-messages.md) |
+| Bank and wallet messages | automatic capture of bank and wallet messages, being rebuilt: the capture catalog, the message reader, the bank-message model | [bank-messages.md](bank-messages.md) | [عربي](../ar/systems/bank-messages.md) | [facts](../atlas/systems/bank-messages.md) |
 | Live voice assistant | the live voice call, Gemini Live, voice tools and the call archive | [voice-calls.md](voice-calls.md) | [عربي](../ar/systems/voice-calls.md) | [facts](../atlas/systems/voice-calls.md) |
 | AI Center | the chat assistant: turn planning, finance answers, memory, proposed actions, the site guide | [ai-center.md](ai-center.md) | [عربي](../ar/systems/ai-center.md) | [facts](../atlas/systems/ai-center.md) |
 | Reports, insights and the smart profile | monthly and yearly insights, month comparison, the Pro report, onboarding questions, the smart profile | [insights.md](insights.md) | [عربي](../ar/systems/insights.md) | [facts](../atlas/systems/insights.md) |

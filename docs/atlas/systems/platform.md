@@ -86,7 +86,6 @@ flowchart LR
     tbl_voice_call_incidents[("voice_call_incidents")]
     tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
-    tbl_webhook_tokens[("webhook_tokens")]
   end
   ext_fireworks{{"Fireworks AI"}}
   ext_gemini{{"Google Gemini API"}}
@@ -174,7 +173,6 @@ flowchart LR
   mod_api_routers ==> tbl_pending_clarifications
   mod_api_routers ==> tbl_pro_subscriptions
   mod_api_routers ==> tbl_push_subscriptions
-  mod_api_routers ==> tbl_raw_sms_events
   mod_api_routers ==> tbl_referrals
   mod_api_routers ==> tbl_scheduled_cashflows
   mod_api_routers ==> tbl_seo_pages
@@ -191,7 +189,6 @@ flowchart LR
   mod_api_routers ==> tbl_user_wallets
   mod_api_routers ==> tbl_users
   mod_api_routers ==> tbl_voice_usage
-  mod_api_routers ==> tbl_webhook_tokens
   mod_database --> ext_mysql
   mod_database --> mod_platform
   mod_jobs --> ext_fireworks
@@ -245,7 +242,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
-| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 27 |
+| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 26 |
 | `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 14 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
@@ -308,7 +305,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `pro_subscriptions` | A | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `profile_learning_events` | E | `jobs` | — |
 | `push_subscriptions` | A | `api-routers` | `api-routers` |
-| `raw_sms_events` | E | `api-routers`, `jobs` | `api-routers` |
+| `raw_sms_events` | E | `jobs` | — |
 | `referrals` | A | `api-routers` | `api-routers` |
 | `scheduled_cashflows` | C | `api-routers` | `api-routers` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
@@ -329,7 +326,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `voice_call_incidents` | E | `jobs` | — |
 | `voice_calls` | E | `jobs` | `api-routers` |
 | `voice_usage` | E | `api-routers`, `jobs` | `api-routers` |
-| `webhook_tokens` | D | `api-routers` | `api-routers` |
 
 ## Outside systems
 

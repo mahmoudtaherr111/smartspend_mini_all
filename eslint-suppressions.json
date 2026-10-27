@@ -4,7 +4,7 @@
       "count": 13
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 10
+      "count": 9
     },
     "no-console": {
       "count": 5
@@ -418,7 +418,7 @@
   },
   "api/local-auth-router.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 23
+      "count": 21
     }
   },
   "api/middleware.ts": {
@@ -640,14 +640,6 @@
       "count": 1
     },
     "prefer-const": {
-      "count": 1
-    }
-  },
-  "api/sms-router.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 10
-    },
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
@@ -1273,7 +1265,7 @@
   },
   "tests/adversarial-challenger-2.test.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 3
+      "count": 1
     }
   },
   "tests/auth-hot-path.test.ts": {

@@ -39,11 +39,11 @@ the per-plan token budget every paid call is measured against, and the two place
    Gemini with the plan's own model (`resolveRoutingConfig`). Nothing depends on how many tokens the user has spent:
    the monthly limit is `assertAiBudget`'s, and the per-plan token-range routing (`*_routing_ranges`) is gone.
    Bank messages are the exception to the built-in floor ([decision 0025](../decisions/0025-bank-message-model-through-admin-gateway.md)):
-   `api/lib/sms-ai-parser.ts` builds the chain from the admin's "sms" routes alone (`keys: {}`), so a message is only
+   `api/lib/capture/ai-reader.ts` builds the chain from the admin's "sms" routes alone (`keys: {}`), so a message is only
    ever sent to a provider the admin chose for it; with none, `GEMINI_API_KEY` with `mapModelName("flash")` answers,
    for now. That call also passes the admin's switch `sms_ai_enabled` and a daily cap in USD across all users,
    `sms_ai_daily_cost_cap_usd`, counted from the ledger (`ledgerCostUsdSince` in `api/lib/ai-ledger.ts`) at the routes'
-   prices; with a cap, an unpriced route is left out ([bank messages](bank-messages.md#3-rules-first-the-model-second)).
+   prices; with a cap, an unpriced route is left out ([bank messages](bank-messages.md#the-model-reader-not-connected-yet)).
 3. `executeLlmChain` tries the routes in order under one deadline for the whole chain. A request with `lowThinking`
    (classification) asks a Gemini 3 model for `thinkingLevel: LOW`, since thinking tokens come out of a small output
    cap, and asks once more without it if the model refuses the setting. Gemini goes through the

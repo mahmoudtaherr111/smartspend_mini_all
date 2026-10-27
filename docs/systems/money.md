@@ -42,8 +42,8 @@ Screens of other systems use these APIs: people in `src/components/settings/Peop
   (docs/decisions/0010-refunds-net-their-category.md).
 - Every write that adds, changes or removes an item runs in a transaction that applies a delta to
   `expense_daily_rollups`, one row per user, business (0 for personal) and Cairo business day
-  (`expenseToRollupDelta`, `applyExpenseRollupDelta`). Only confirmed items count; items from bank messages also
-  count as automated income or spending. A negative net-spending day can be a legitimate refund and does not raise a corruption alert. Negative non-spending totals or transaction counts request reconciliation; the log records ids and the day, never financial totals.
+  (`expenseToRollupDelta`, `applyExpenseRollupDelta`). Only confirmed items count; items recorded from bank messages
+  (source `sms`, saved by the old intake) also count as automated income or spending. A negative net-spending day can be a legitimate refund and does not raise a corruption alert. Negative non-spending totals or transaction counts request reconciliation; the log records ids and the day, never financial totals.
 - `expense.update` backs out the old row's delta and applies the new one, stores new text in the details, checks that
   a referenced wallet, business or contact belongs to the user, marks muscle memory stale (its Redis generation),
   adds a contact for a person category, and when the category changed marks the classification log as corrected and
@@ -106,7 +106,7 @@ Screens of other systems use these APIs: people in `src/components/settings/Peop
   (`api/lib/app-time.ts#parseBusinessInstant`).
 - **Business mode.** A Pro user with a business can switch the statistics and calendar to that business; the choice is
   kept in the browser.
-- **Budget alert.** After a save (typed, a bank message, a confirmed suggestion), `checkUserBudgetExceeded` in
+- **Budget alert.** After a save (typed, spoken or from a receipt), `checkUserBudgetExceeded` in
   `api/notification-engine.ts` runs. A user with budgets gets `budget_near_limit` once per cycle when a budget reaches
   its alert threshold and `budget_category_exceeded` once when it passes its limit (`checkBudgetAlerts`; the cycles
   already warned are kept in the budget's metadata). A user without budgets gets `budget_exceeded` once a month when
@@ -306,9 +306,9 @@ Checked against the code; each one names where it lives.
 4. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName` or a budget check (its cost does reach the AI cost ledger);
     `business.get` returns the user's first business even when it is inactive.
 5. **Gap.** `expense.getYearlyStats` has no screen.
-6. **Gap.** A bank message's refund nets its category only when the merchant is one the engine knows well
-    (`categorizeSms` with `readsAsSmsRefund` in `api/services/sms-ledger.ts`); any other refund arrives as an incoming
-    credit under دخل آخر, and rows saved before decision 0010 keep their income filing. A category can show net negative
+6. **Gap.** Refunds the old bank-message intake recorded netted their category only when the merchant was one the
+    engine knew well; the others were saved as income under دخل آخر and keep that filing, as do rows saved before
+    decision 0010. A category can show net negative
     spending in a month when the purchase fell in an earlier one.
 7. **Gap.** Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on
     `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).

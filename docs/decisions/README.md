@@ -16,7 +16,7 @@ A record explains why the code looks the way it does. What the code does today i
 | [0006](0006-gemini-model-chain.md) | Gemini models: a chain of served text models, and the plain Live model for calls |
 | [0007](0007-plan-limits-are-admin-settings.md) | What each plan includes is an admin setting, not code |
 | [0008](0008-money-movements-and-taxonomy.md) | Purpose before person, money movements as transfers, and one taxonomy |
-| [0009](0009-bank-messages-over-the-limit.md) | Bank messages over the monthly limit are kept as suggestions |
+| [0009](0009-bank-messages-over-the-limit.md) | Bank messages over the monthly limit are kept as suggestions (superseded) |
 | [0010](0010-refunds-net-their-category.md) | A refund is spending coming back to its category |
 | [0011](0011-embeddings-memory-not-classification.md) | Gemini embeddings serve memory search, not expense classification |
 | [0012](0012-classification-without-embeddings.md) | Expense classification has no semantic (embedding) layer |

@@ -1,6 +1,6 @@
 /**
  * Removes what identifies a person from a text before it leaves the server for a model: a bank or wallet message
- * (`api/lib/sms-ai-parser.ts`) and the expense lines a report prompt quotes (`api/ai-router.ts`). Egypt's data
+ * (`api/lib/capture/ai-reader.ts`) and the expense lines a report prompt quotes (`api/ai-router.ts`). Egypt's data
  * protection law (151/2020) treats financial data as sensitive, so these never reach a model abroad: card and account
  * digits, IBANs, Egyptian phone numbers, reference numbers, e-mail addresses, one-time codes, and the names of the
  * people money went to or came from. Amounts, balances, fees, dates and merchants stay, because the model reads them.

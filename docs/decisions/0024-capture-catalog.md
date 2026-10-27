@@ -8,14 +8,14 @@
 
 ## Context
 Which notifications are read and who sent them was code in three places that did not agree:
-- the Android companion (`android-app/app/src/main/java/com/smartspend/sync/SyncService.kt`) listed twelve finance apps and eight messaging apps.
+- the Android companion (`android-app/`, since removed) listed twelve finance apps and eight messaging apps.
   Checked against Google Play on 2026-10-20, five of the twelve ids were wrong: CIB is
   `com.cibeg.ddc1.digitalbanking.live`, not `com.cib.digital.mb`; Ana Vodafone is `com.emeint.android.myservices`,
   not `com.vodafone.vodafone`; WE Pay is `com.TE.WEWallet`, not `com.te.wepay`; BM Wallet is
   `com.emeint.android.mwallet.bm`, not `eg.com.bm.wallet`; QNB Egypt is `eg.com.qnb.eazymobile`, not
   `com.qnb.mobilebanking`. Those notifications reached the server only through the companion's substring fallback,
   which also forwarded unrelated apps.
-- `api/lib/sms-rule-parser.ts#detectProvider` knew about nineteen providers by regular expressions on the sender and
+- the rule parser (since removed) knew about nineteen providers by regular expressions on the sender and
   the text.
 - Nothing listed subscriptions; a few streaming services sat in the classification dictionaries for typed sentences.
 

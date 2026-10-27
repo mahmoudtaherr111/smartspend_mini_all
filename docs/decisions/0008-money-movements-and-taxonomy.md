@@ -2,7 +2,7 @@
 
 - Status: accepted, implemented in `contracts/categories.ts`, `api/lib/category-registry.ts`,
   `api/lib/rule-engine.ts`, `api/lib/intent-detector.ts`, `api/lib/direction-governed-taxonomy.ts`,
-  `api/lib/smart-pipeline.ts` (`applyPersonResolution`), `api/lib/sms-ai-parser.ts`, `api/expense-router.ts`
+  `api/lib/smart-pipeline.ts` (`applyPersonResolution`), `api/expense-router.ts`
   (`namedPersonOf`) and `api/jobs/taxonomy-migration-job.ts`.
 - Decided and recorded: 2026-09-24. Refines the owner's earlier choice that "the person is the category".
 

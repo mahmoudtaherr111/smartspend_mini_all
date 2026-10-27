@@ -9,8 +9,6 @@ import {
   users,
   localUsers,
   userProfiles,
-  webhookTokens,
-  rawSmsEvents,
   inAppNotifications,
   pushSubscriptions,
   userContacts,
@@ -35,13 +33,6 @@ import {
   getNextOnboardingQuestion,
 } from "./services/adaptive-question-engine";
 import { buildBehaviorSnapshot } from "./services/lifestyle-inference-engine";
-import {
-  confirmSmsSuggestion,
-  dismissSmsSuggestion,
-  type SmsCategory,
-  type SmsSuggestion,
-} from "./services/sms-ledger";
-import { normalizeTransactionTaxonomy } from "./lib/category-registry";
 import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
 import { cleanPhoneNumber, comparePassword, validatePhone } from "./local-auth-utils";
 import {
@@ -677,167 +668,6 @@ export const profileRouter = router({
         }
       }
       return { success: true };
-    }),
-
-  // ─── Webhook Token Management (for SMS Ingestion via iOS Shortcuts) ───
-  getWebhookToken: authedProcedure.query(async ({ ctx }) => {
-    const [record] = await db
-      .select()
-      .from(webhookTokens)
-      .where(
-        and(
-          eq(webhookTokens.userId, ctx.user.id as number),
-          eq(webhookTokens.userType, ctx.user.type),
-        ),
-      )
-      .limit(1);
-    // A token proves the phone was set up once, not that it still forwards: the last message that arrived does.
-    const [latest] = record
-      ? await db
-          .select({ at: sql<Date | null>`MAX(${rawSmsEvents.createdAt})` })
-          .from(rawSmsEvents)
-          .where(and(eq(rawSmsEvents.userId, ctx.user.id as number), eq(rawSmsEvents.userType, ctx.user.type)))
-      : [];
-    return {
-      token: record?.token || null,
-      hasToken: !!record,
-      createdAt: record?.createdAt || null,
-      lastReceivedAt: latest?.at ? new Date(latest.at).toISOString() : null,
-    };
-  }),
-
-  generateWebhookToken: authedProcedure.mutation(async ({ ctx }) => {
-    // Revoke any existing tokens first
-    await db
-      .delete(webhookTokens)
-      .where(
-        and(
-          eq(webhookTokens.userId, ctx.user.id as number),
-          eq(webhookTokens.userType, ctx.user.type),
-        ),
-      );
-    const newToken = `sms_${randomBytes(32).toString("hex")}`;
-    await db.insert(webhookTokens).values({
-      userId: ctx.user.id as number,
-      userType: ctx.user.type,
-      token: newToken,
-      name: "iOS Shortcut Token",
-    });
-    return { success: true, token: newToken };
-  }),
-
-  // ─── Magic Code for zero-config iOS Shortcut setup ───
-  generateMagicCode: authedProcedure.mutation(async ({ ctx }) => {
-    const [record] = await db
-      .select()
-      .from(webhookTokens)
-      .where(
-        and(
-          eq(webhookTokens.userId, ctx.user.id as number),
-          eq(webhookTokens.userType, ctx.user.type),
-        ),
-      )
-      .limit(1);
-
-    if (!record) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "يجب إنشاء رمز ربط أولاً قبل استخدام الرابط السريع",
-      });
-    }
-
-    const { storeMagicCode } = await import("./sms-router");
-    const code = await storeMagicCode(ctx.user.id as number, ctx.user.type);
-    return { code, expiresInSeconds: 300 };
-  }),
-
-  // ─── Get recent SMS logs ───
-  getSmsLogs: authedProcedure.query(async ({ ctx }) => {
-    return await db
-      .select()
-      .from(rawSmsEvents)
-      .where(
-        and(
-          eq(rawSmsEvents.userId, ctx.user.id as number),
-          eq(rawSmsEvents.userType, ctx.user.type),
-        ),
-      )
-      .orderBy(desc(rawSmsEvents.createdAt))
-      .limit(10);
-  }),
-
-  /**
-   * Bank messages that arrived over the plan's monthly limit, kept for the user to save
-   * or dismiss (docs/decisions/0009-bank-messages-over-the-limit.md).
-   */
-  getSmsSuggestions: authedProcedure.query(async ({ ctx }) => {
-    const rows = await db
-      .select({ id: rawSmsEvents.id, metadata: rawSmsEvents.metadata, createdAt: rawSmsEvents.createdAt })
-      .from(rawSmsEvents)
-      .where(
-        and(
-          eq(rawSmsEvents.userId, ctx.user.id as number),
-          eq(rawSmsEvents.userType, ctx.user.type),
-          eq(rawSmsEvents.status, "suggested"),
-        ),
-      )
-      .orderBy(desc(rawSmsEvents.createdAt))
-      .limit(50);
-    return rows.flatMap((row) => {
-      const suggestion = (row.metadata as { suggestion?: SmsSuggestion } | null)?.suggestion;
-      return suggestion ? [{ id: row.id, receivedAt: row.createdAt, ...suggestion }] : [];
-    });
-  }),
-
-  /** Saves a kept bank message, with the category the user picked when they changed it. */
-  confirmSmsSuggestion: authedProcedure
-    .input(
-      z.object({
-        id: z.number().int().positive(),
-        category: z.string().min(1).max(100).optional(),
-        subCategory: z.string().max(100).optional(),
-        type: z.enum(["income", "expense", "transfer"]).optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      let category: SmsCategory | undefined;
-      if (input.category) {
-        const normalized = normalizeTransactionTaxonomy({
-          category: input.category,
-          subCategory: input.subCategory,
-          type: input.type,
-        });
-        // Without a type, the category's own type is used; an investment is not a bank
-        // message's kind, so it is kept as spending.
-        const resolved = normalized.type as string;
-        const type = resolved === "income" || resolved === "transfer" ? resolved : "expense";
-        category = { category: normalized.category, subCategory: normalized.subCategory, type };
-      }
-      const expenseId = await confirmSmsSuggestion({
-        id: input.id,
-        userId: ctx.user.id as number,
-        userType: ctx.user.type,
-        category,
-      });
-      if (!expenseId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "الرسالة دي اتسجلت أو اتشالت قبل كده" });
-      }
-      await bumpFinanceCacheGen(ctx.user.id as number, ctx.user.type as "oauth" | "local");
-      const { checkUserBudgetExceeded } = await import("./notification-engine");
-      void checkUserBudgetExceeded(ctx.user.id as number, ctx.user.type);
-      return { success: true, expenseId };
-    }),
-
-  /** Drops a kept bank message the user does not want recorded. */
-  dismissSmsSuggestion: authedProcedure
-    .input(z.object({ id: z.number().int().positive() }))
-    .mutation(async ({ ctx, input }) => {
-      const dismissed = await dismissSmsSuggestion({
-        id: input.id,
-        userId: ctx.user.id as number,
-        userType: ctx.user.type,
-      });
-      return { success: dismissed };
     }),
 
   // ─── Save Push Subscription ───

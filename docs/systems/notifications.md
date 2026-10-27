@@ -45,7 +45,7 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 ## What sends notifications
 | Trigger | When | Who gets it |
 | --- | --- | --- |
-| `budget_near_limit`, `budget_category_exceeded`, from `checkUserBudgetExceeded` | after an item is saved, typed or from a bank message | a user with budgets: once per budget cycle when a budget reaches its alert threshold, and once when it passes its limit ([Money](money.md#budgets)) |
+| `budget_near_limit`, `budget_category_exceeded`, from `checkUserBudgetExceeded` | after an item is saved | a user with budgets: once per budget cycle when a budget reaches its alert threshold, and once when it passes its limit ([Money](money.md#budgets)) |
 | `subscription_ending`, from `runRenewalReminders` in the job `daily-subscription-expiry` | daily at 06:00 | a subscriber whose plan ends in three days, and again on its last day, unless a paid renewal runs past it ([Plans and payments](billing.md)) |
 | `budget_exceeded`, from `checkUserBudgetExceeded` | after an item is saved ([Recording spending](expense-capture.md)) | a user without budgets whose spending in this Cairo calendar month passed the monthly income in the profile; once a month |
 | `manual_scheduled` templates, from `processScheduledNotifications` in the job `scheduled-notifications` | every minute, for active templates whose send time has passed | one user, or every user filtered by plan and a minimum number of transactions; the template is then switched off |

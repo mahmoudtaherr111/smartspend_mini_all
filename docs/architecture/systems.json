@@ -29,9 +29,9 @@
       "id": "bank-messages",
       "title": "Bank and wallet messages",
       "titleAr": "رسائل البنوك والمحافظ",
-      "summary": "Receives bank and wallet notifications forwarded by the Android companion app or a personal iOS Shortcut, and parses them with rules first and a model second.",
-      "summaryAr": "بيستقبل إشعارات البنوك والمحافظ اللي بيبعتها تطبيق أندرويد المساعد أو اختصار iOS الشخصي، ويفهمها بالقواعد الأول وبالموديل بعدها.",
-      "clusters": ["ingestion-parsers", "capture-catalog", "capture-reader"],
+      "summary": "Automatic capture of bank and wallet messages, being rebuilt: the catalog of banks, wallets and subscriptions the admin edits, the reader that reads a message without a model, and the admin's model for what the reader is unsure of. Nothing receives messages yet.",
+      "summaryAr": "تسجيل رسايل البنوك والمحافظ لوحدها، وده بيتبني من جديد: قايمة البنوك والمحافظ والاشتراكات اللي الأدمن بيعدّلها، والقارئ اللي بيقرا الرسالة من غير AI، والموديل اللي الأدمن اختاره للي القارئ مش متأكد منه. لسه مفيش حاجة بتستقبل رسايل.",
+      "clusters": ["capture-ai-reader", "capture-catalog", "capture-reader"],
       "routers": ["capture", "captureAdmin"],
       "jobs": ["seed-capture-catalog"],
       "extraPaths": [
@@ -39,21 +39,7 @@
         "android-app/app/src/main/AndroidManifest.xml",
         "android-app/app/build.gradle",
         ".github/workflows/build-apk.yml"
-      ],
-      "procedures": ["profile.generateWebhookToken", "profile.getWebhookToken", "profile.getSmsLogs", "profile.generateMagicCode", "profile.getSmsSuggestions", "profile.confirmSmsSuggestion", "profile.dismissSmsSuggestion"],
-      "routes": [
-        "GET /api/sms/android-connect",
-        "POST /api/sms/android-status",
-        "POST /api/sms/exchange",
-        "POST /api/sms/ingest",
-        "GET /api/sms/logs",
-        "GET /api/sms/metrics",
-        "GET /api/sms/shortcut-download",
-        "GET /api/sms/token",
-        "POST /api/sms/token/generate",
-        "GET /api/sms/unparsed"
-      ],
-      "flows": ["flow_sms_ingest"]
+      ]
     },
     {
       "id": "voice-calls",

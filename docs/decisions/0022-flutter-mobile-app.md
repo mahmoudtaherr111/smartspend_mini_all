@@ -6,10 +6,10 @@
 
 ## Context
 SmartSpend ships one React build three ways: in the browser, installed as a PWA, and inside Capacitor shells
-(`android/`, `ios/`, app id `com.smartspend.app` in `capacitor.config.ts`). Bank and wallet messages reach the API
+(`android/`, `ios/`, app id `com.smartspend.app` in `capacitor.config.ts`). Bank and wallet messages reached the API
 from a second Android app, the Kotlin companion in `android-app/` (`com.smartspend.sync`), downloaded as a debug
-APK from the website, and from an iPhone Shortcut that posts to `/api/sms/ingest?token=…`
-([bank messages](../systems/bank-messages.md)).
+APK from the website, and from an iPhone Shortcut that posted to `/api/sms/ingest?token=…`. That old intake was
+removed on 2026-10-27 to be rebuilt ([bank messages](../systems/bank-messages.md)).
 
 That leaves three problems a web view cannot solve:
 - Two Android apps for one product, the second sideloaded. Since Android 13 a sideloaded app cannot be granted
@@ -54,8 +54,9 @@ What the code already gives a native client:
 5. **Bank and wallet messages, per platform.**
    - Android: the notification listener moves into the Flutter app's Android code (`bank_capture`), installed from
      the Play Store. It keeps its own queue and uploads from Kotlin, so capture works while Flutter is not running,
-     and it posts to the existing `POST /api/sms/ingest` with the user's webhook token, which the app fetches after
-     sign-in. The companion app is retired once this ships.
+     and it posts to the new capture intake with the app's own session. (This said the existing `POST /api/sms/ingest`
+     with a webhook token; that route and the companion app were removed on 2026-10-27, and the intake is being
+     rebuilt with the reader of [decision 0026](0026-message-reader-before-the-model.md) first.)
    - Android SMS permissions (`READ_SMS`, `RECEIVE_SMS`) are not requested. Google Play lists "SMS-based money
      management" as a possible exception, but grants it only after a declaration and review, and only when no
      other method gives the core feature; the notification listener does. Reading the SMS inbox (for example to
@@ -70,7 +71,7 @@ What the code already gives a native client:
    read it, and writes go through an outbox sent in order once the network is back. The ledger stays the server's:
    days and months are Cairo business time computed on the server (golden rule 6).
 7. **The web app stays.** The browser and PWA build keeps serving everyone without the store app. The Capacitor
-   shells and the companion app stay until the Flutter app reaches parity on their platform; the store listing then
+   shells stay until the Flutter app reaches parity on their platform (the companion app was removed on 2026-10-27); the store listing then
    moves to the Flutter build under the same id, `com.smartspend.app`. Debug builds use `com.smartspend.app.dev`,
    so they install next to a store build.
 8. **Stack.** Riverpod for state, go_router for navigation (a shell route for the bottom bar), Flutter's gen-l10n
@@ -114,7 +115,8 @@ What the code already gives a native client:
    the app keeps the whole ledger offline. The app lock (built): its own plugin, `device_lock`, instead of
    `local_auth` (point 8), as [decision 0023](0023-mobile-app-lock.md) explains. The English interface (point 8,
    decision 0020) is a phone preference, switched in More or on the sign-in screen.
-4. Android capture: the listener, queue and upload in `bank_capture`, the setup flow; retire `android-app/`.
+4. Android capture: the listener, queue and upload in `bank_capture`, the setup flow, posting to the rebuilt capture
+   intake (the old one and `android-app/` were removed on 2026-10-27).
 5. iOS capture and extras: the App Intent and automation guide, the share extension, the widget; voice calls on
    both platforms over `/api/voice/v2`.
 6. Release: signing, store listings, privacy labels and Data safety, Fastlane, staged rollout; retire the Capacitor

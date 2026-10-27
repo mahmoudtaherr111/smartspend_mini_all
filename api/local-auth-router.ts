@@ -24,8 +24,6 @@ import {
   userDictionaries,
   classificationLogs,
   voiceUsage,
-  webhookTokens,
-  rawSmsEvents,
   expenseCategories,
   financialGoals,
   userBudgets,

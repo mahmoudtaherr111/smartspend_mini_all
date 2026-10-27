@@ -8,7 +8,7 @@ system of the file you are about to change in `docs/atlas/systems/files.md` and 
 
 ## Layout
 - `boot.ts`: the Hono app (middleware, Google OAuth start and callback, WhatsApp OTP SSE, Paymob webhook,
-  the `/api/sms` sub-app, `/api/trpc`), cron registration, and the HTTP server that `npm start` runs.
+  `/api/trpc`), cron registration, and the HTTP server that `npm start` runs.
   `npm run dev` mounts the same app inside Vite.
 - `server.ts`: standalone entry for deploying the API on its own (`npm run backend:*`).
 - `context.ts`: builds `ctx.user` from the `google_session` cookie (Google users) or a local session

@@ -16,9 +16,7 @@ const PLAN_NAMES = ["free", "pro", "ultra"];
 const PURGE_SERVICE = "api/services/user-purge-service.ts";
 
 /** `*-router.ts` files that are not tRPC routers, so api/router.ts does not mount them. */
-const NOT_TRPC_ROUTERS: Record<string, string> = {
-  "api/sms-router.ts": "Hono sub-app mounted at /api/sms by api/boot.ts",
-};
+const NOT_TRPC_ROUTERS: Record<string, string> = {};
 
 /**
  * Variables read straight from process.env instead of through api/lib/env.ts. Move them into env.ts and

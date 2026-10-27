@@ -134,7 +134,7 @@ function procedureLocalId(routerKey: string, procedurePath: string): string {
   return safeId(local);
 }
 
-/** `POST /api/sms/ingest` → `post_sms_ingest`. */
+/** `POST /api/webhooks/paymob` → `post_webhooks_paymob`. */
 export function endpointId(method: string, routePath: string): string {
   const cleaned = routePath.replace(/^\/(?:api\/)?/, "").replace(/\*/g, "all");
   return safeId(`${method.toLowerCase()}_${cleaned}`);

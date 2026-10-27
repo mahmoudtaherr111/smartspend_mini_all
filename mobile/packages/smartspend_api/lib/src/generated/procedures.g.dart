@@ -227,21 +227,14 @@ final class ProfileProcedures {
 
   ApiMutation get addContact => const ApiMutation('profile.addContact', builder: 'authedProcedure', hasInput: true);
   ApiMutation get confirmPhoneChange => const ApiMutation('profile.confirmPhoneChange', builder: 'authedProcedure', hasInput: true);
-  ApiMutation get confirmSmsSuggestion => const ApiMutation('profile.confirmSmsSuggestion', builder: 'authedProcedure', hasInput: true);
   ApiMutation get deleteContact => const ApiMutation('profile.deleteContact', builder: 'authedProcedure', hasInput: true);
   ApiMutation get deleteMyAccount => const ApiMutation('profile.deleteMyAccount', builder: 'authedProcedure', hasInput: true);
   ApiMutation get dismissOnboarding => const ApiMutation('profile.dismissOnboarding', builder: 'authedProcedure');
-  ApiMutation get dismissSmsSuggestion => const ApiMutation('profile.dismissSmsSuggestion', builder: 'authedProcedure', hasInput: true);
-  ApiMutation get generateMagicCode => const ApiMutation('profile.generateMagicCode', builder: 'authedProcedure');
-  ApiMutation get generateWebhookToken => const ApiMutation('profile.generateWebhookToken', builder: 'authedProcedure');
   ApiQuery get getInAppNotifications => const ApiQuery('profile.getInAppNotifications', builder: 'authedProcedure');
   ApiQuery get getMyProfile => const ApiQuery('profile.getMyProfile', builder: 'authedProcedure');
   ApiQuery get getNextOnboardingQuestion => const ApiQuery('profile.getNextOnboardingQuestion', builder: 'authedProcedure');
   ApiQuery get getQuestions => const ApiQuery('profile.getQuestions', builder: 'authedProcedure');
   ApiQuery get getSmartProfile => const ApiQuery('profile.getSmartProfile', builder: 'authedProcedure');
-  ApiQuery get getSmsLogs => const ApiQuery('profile.getSmsLogs', builder: 'authedProcedure');
-  ApiQuery get getSmsSuggestions => const ApiQuery('profile.getSmsSuggestions', builder: 'authedProcedure');
-  ApiQuery get getWebhookToken => const ApiQuery('profile.getWebhookToken', builder: 'authedProcedure');
   ApiQuery get listContacts => const ApiQuery('profile.listContacts', builder: 'authedProcedure', hasInput: true);
   ApiMutation get markAllInAppNotificationsRead => const ApiMutation('profile.markAllInAppNotificationsRead', builder: 'authedProcedure');
   ApiMutation get markInAppNotificationRead => const ApiMutation('profile.markInAppNotificationRead', builder: 'authedProcedure', hasInput: true);
