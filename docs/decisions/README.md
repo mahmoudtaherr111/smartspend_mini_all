@@ -33,3 +33,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0024](0024-capture-catalog.md) | The capture catalog: banks, wallets and subscriptions are confirmed data the admin edits |
 | [0025](0025-bank-message-model-through-admin-gateway.md) | Bank-message model calls go through the admin gateway, redacted, budgeted, switchable and capped in USD |
 | [0026](0026-message-reader-before-the-model.md) | Bank and wallet messages are read by code first; the model reads only what the code is unsure of |
+| [0027](0027-one-ledger-writer.md) | One ledger writer: rows of `expenses` are added, changed and removed through `api/services/ledger-writer.ts` |

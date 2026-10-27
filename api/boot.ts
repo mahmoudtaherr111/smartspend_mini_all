@@ -274,7 +274,8 @@ applyOriginSecurity(app, originPolicy);
 // Error handling
 app.onError((err, c) => {
   if (err instanceof HTTPException) return err.getResponse();
-  console.error("Hono Error:", err);
+  // Through the logger, which writes an error without the values it carries (golden rule 10).
+  createLogger("http").error({ err, event: "http.unhandled_error", method: c.req.method, path: c.req.path }, "Unhandled route error");
   const isProd = env.NODE_ENV === "production";
   const message = isProd
     ? "حدث خطأ داخلي في الخادم. برجاء المحاولة لاحقاً."

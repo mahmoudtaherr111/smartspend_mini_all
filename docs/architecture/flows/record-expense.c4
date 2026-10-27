@@ -4,7 +4,7 @@
 views {
   dynamic view flow_record_expense {
     title 'Flow · record an expense from text'
-    description 'The expense form on the home screen sends the sentence to ai.parseExpense. runSmartPipeline splits it into financial events, then tries the result cache, muscle memory and the rule engine, and asks a model only to name the category of clauses it could not settle. auto_save items are saved at once, review items after the user confirms, and clarify returns a question. One item is saved with expense.create, several with expense.batchCreate; both write the daily rollup delta.'
+    description 'The expense form on the home screen sends the sentence to ai.parseExpense. runSmartPipeline splits it into financial events, then tries the result cache, muscle memory and the rule engine, and asks a model only to name the category of clauses it could not settle. auto_save items are saved at once, review items after the user confirms, and clarify returns a question. One item is saved with expense.create, several with expense.batchCreate; both write through the ledger writer, which inserts the rows with their daily rollup delta, contact counts and streak in one transaction.'
 
     user -> smartspend.web.pages.Home 'types or dictates a spending sentence' // intent: the person opens the page
     smartspend.web.pages.Home -> smartspend.api.trpc.ai.parseExpense 'parse the text'
@@ -16,9 +16,9 @@ views {
     smartspend.web.pages.Home <- smartspend.api.trpc.ai.parseExpense 'items and decision: auto_save, review or clarify'
     smartspend.web.pages.Home -> smartspend.api.trpc.expense.create 'save one item'
     smartspend.web.pages.Home -> smartspend.api.trpc.expense.batchCreate 'save several items'
-    smartspend.api.trpc.expense.create -> smartspend.mysql.expenses 'insert'
-    smartspend.api.trpc.expense.batchCreate -> smartspend.mysql.expenses 'insert all in one transaction'
-    smartspend.api.trpc.expense.create -> smartspend.api.modules.ledger 'rollup delta'
+    smartspend.api.trpc.expense.create -> smartspend.api.modules.ledger 'createLedgerEntry: one row in one transaction'
+    smartspend.api.trpc.expense.batchCreate -> smartspend.api.modules.ledger 'insertLedgerEntriesInTx: all rows in one transaction'
+    smartspend.api.modules.ledger -> smartspend.mysql.expenses 'insert'
     smartspend.api.modules.ledger -> smartspend.mysql.expense_daily_rollups 'upsert the day'
   }
 }

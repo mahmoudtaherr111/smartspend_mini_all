@@ -243,7 +243,7 @@ views {
   }
 
   view module_ledger of smartspend.api.modules.ledger {
-    title 'Module · Ledger aggregates'
+    title 'Module · Ledger writer and aggregates'
     include *
   }
 

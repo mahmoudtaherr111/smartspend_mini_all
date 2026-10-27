@@ -211,6 +211,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/financial-month.ts` | [money](money.md) |
 | `api/services/firebase.ts` | [notifications](notifications.md) |
 | `api/services/installments.ts` | [money](money.md) |
+| `api/services/ledger-writer.ts` | [money](money.md) |
 | `api/services/lifestyle-inference-engine.ts` | [insights](insights.md) |
 | `api/services/otp-cache.ts` | [notifications](notifications.md) |
 | `api/services/parser-trace.ts` | [expense-capture](expense-capture.md) |

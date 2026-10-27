@@ -16,7 +16,7 @@ when it is unsure, and the writes that put items in the ledger.
 | Voice entry point | `api/ai-router.ts#parseVoiceExpense` | Voice quota gate, speech to text, then the same pipeline |
 | Receipt entry point | `api/image-router.ts#parseReceipt` | Plans whose receipts switch is on (Pro and Ultra by default): reads a photo and saves one expense directly |
 | The pipeline | `api/lib/smart-pipeline.ts#runSmartPipeline` | A sentence in; items and a decision out: `auto_save`, `review` or `clarify` |
-| Saving | `expense.create` and `expense.batchCreate` in `api/expense-router.ts` | Writes the items, their rollup delta, contacts and streak in one transaction |
+| Saving | `expense.create` and `expense.batchCreate` in `api/expense-router.ts`, through the ledger writer (`api/services/ledger-writer.ts`) | Writes the items, their rollup delta, contacts and streak in one transaction |
 | Clarifications | `api/expense-router.ts#answerClarification` | Takes the user's answer, re-runs the pipeline and saves |
 
 ## One sentence, step by step
@@ -306,11 +306,12 @@ referenced wallets, businesses and contacts belong to the user
 (`api/lib/ownership-guard.ts#assertEntityOwnership`), and link the named person to a contact
 (`api/expense-router.ts#namedPersonOf`): the person subcategory of a person category, or the `personName` and
 `personRelationship` the form sends for a person named beside a purpose. A transfer's direction is stored in
-`parsed_metadata.direction`. In one
-transaction they insert the rows, apply the daily rollup delta
-(`api/services/expense-rollups.ts#applyExpenseRollupDelta`), count the contact's transactions and update the
-streak. Afterwards they clear muscle memory, the classification cache and the finance caches, and check budget
-alerts (`api/notification-engine.ts#checkUserBudgetExceeded`).
+`parsed_metadata.direction`. They write through the ledger writer (`api/services/ledger-writer.ts`, decision 0027):
+in one transaction it inserts the rows, applies the daily rollup delta
+(`api/services/expense-rollups.ts#applyExpenseRollupDelta`), counts the contact's transactions and updates the
+streak. Afterwards the review's correction is learned, muscle memory and the finance caches are cleared, and new
+spending is checked against the budgets (`api/notification-engine.ts#checkUserBudgetExceeded`). The classification
+cache needs no clearing: its key holds what the answer depends on.
 
 ## Voice
 `parseVoiceExpense` refuses before it spends anything: `api/lib/voice-intake-gate.ts#checkVoiceIntake` checks the
@@ -351,8 +352,9 @@ pending (`claimClarification`), so a second tap or a retry saves nothing and get
 Both modes save through `saveClarifiedItems`, as `expense.create` saves: each item on the date the sentence named,
 else the day the question was asked (`clarifiedItemDate`); with the source the sentence came in (`voice` for a
 spoken one, whose question stores `source`, else `manual`); with its contact, classification log, direction and
-signed amount (`ledgerAmount`); with the rollup delta and the streak in the same transaction. Afterwards muscle
-memory, the classification cache and the finance caches are cleared, and the saved items come back (`saved`): the
+signed amount (`ledgerAmount`); with the rollup delta and the streak in the same transaction
+(`insertLedgerEntriesInTx` and `bumpStreakInTx` of the ledger writer). Afterwards muscle memory and the finance caches
+are cleared, spending is checked against the budgets, and the saved items come back (`saved`): the
 entry form and the "محتاج ردك" card say what was saved and offer "تراجع", which deletes exactly those ids.
 
 `expense.getPendingClarifications` lists the open questions. The Home record tab shows them under "محتاج ردك"

@@ -17,6 +17,7 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 | Statistics tab | `src/components/dashboard/StatsView.tsx#StatsView`, `src/components/dashboard/ExpenseChart.tsx#ExpenseChart`, `src/components/dashboard/BehaviorInsights.tsx`, `src/components/dashboard/GlobalSearch.tsx#GlobalSearch` | Daily average, change, top category and personality; charts by category, family, electronic payments, budget and timing; search; bank-message totals; top categories |
 | Calendar tab | `src/components/dashboard/MonthlyCalendar.tsx` | Spending per day of the calendar month, and the items of a chosen day |
 | Ledger API | `api/expense-router.ts` (`expense.list`, `expense.searchTransactions`, `expense.getById`, `expense.update`, `expense.delete`, `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`) | Reads, edits and deletes items and computes the month and year figures |
+| Ledger writer | `api/services/ledger-writer.ts` | Adds, changes and removes a row with everything that moves with it (decision 0027) |
 | Daily rollups | `api/services/expense-rollups.ts`, `api/jobs/rollup-reconciliation-job.ts#runRollupReconciliationJob` | Per-day totals kept in step with every write, and repaired every night |
 | Taxonomy migration | `api/jobs/taxonomy-migration-job.ts#runTaxonomyMigrationJob` | Moves stored rows still filed under an old category to the current taxonomy |
 | Financial month | `api/services/financial-month.ts#getFinancialMonthDayRange` | Month boundaries from a salary day, in Cairo business days |
@@ -44,13 +45,21 @@ Screens of other systems use these APIs: people in `src/components/settings/Peop
   `expense_daily_rollups`, one row per user, business (0 for personal) and Cairo business day
   (`expenseToRollupDelta`, `applyExpenseRollupDelta`). Only confirmed items count; items recorded from bank messages
   (source `sms`, saved by the old intake) also count as automated income or spending. A negative net-spending day can be a legitimate refund and does not raise a corruption alert. Negative non-spending totals or transaction counts request reconciliation; the log records ids and the day, never financial totals.
-- `expense.update` backs out the old row's delta and applies the new one, stores new text in the details, checks that
-  a referenced wallet, business or contact belongs to the user, marks muscle memory stale (its Redis generation),
-  adds a contact for a person category, and when the category changed marks the classification log as corrected and
-  records a correction rule.
-- `expense.delete` locks the row, deletes it and its details, backs out its delta, lowers the contact's count and
-  marks muscle memory stale.
-- After a write, the user's cache generation is bumped (`invalidateExpenseCache`), which drops the month summaries and
+- **The ledger writer** (`api/services/ledger-writer.ts`, decision 0027) holds these steps for `expense.create`,
+  `expense.batchCreate`, `expense.update`, `expense.delete` and the clarification saves. `createLedgerEntry` inserts
+  the row with its signed amount, rollup delta, contact count and (unless the caller says the save does not count)
+  the streak in one transaction, gives back the row already saved under the same `clientRequestId` instead of
+  writing again, then runs the caller's `afterCommit` and clears the caches and checks budgets for new spending.
+  `insertLedgerEntriesInTx` and `bumpStreakInTx` are the same steps inside a caller's own transaction. The caller
+  still checks ownership, finds or creates the contact and normalizes the category.
+- `expense.update` checks that a referenced wallet, business or contact belongs to the user and normalizes the
+  category through the registry; `updateLedgerEntry` locks the row, keeps its sign in line with its kind and refund,
+  reconciles what it paid toward, backs out the old row's delta and applies the new one, and marks muscle memory stale
+  (its Redis generation). Then the procedure adds a contact for a person category, and when the category changed marks
+  the classification log as corrected and records a correction rule.
+- `expense.delete` (`deleteLedgerEntry`) locks the row, deletes it, releases what it paid toward, backs out its delta,
+  lowers the contact's count and marks muscle memory stale.
+- After a write, the user's cache generation is bumped (`invalidateLedgerCaches`), which drops the month summaries and
   statistics cached in Redis and the finance facts of the [AI Center](ai-center.md). So do deleting a wallet and
   deleting or merging a person, which change expense rows too. The classification cache needs no clearing: its key
   holds what the answer depends on (docs/decisions/0013-caching-as-one-system.md).
@@ -58,8 +67,9 @@ Screens of other systems use these APIs: people in `src/components/settings/Peop
   user with items or rollups in the last 60 days, recomputes each day from the confirmed items
   (`reconcileRollupsForRange`): missing days are inserted, wrong days rewritten, days without items deleted, and the
   caches bumped when anything changed.
-- **Streak.** Saving an item updates the user's streak in the same transaction (`updateStreak`): the same Cairo day
-  keeps it, the next day adds one, a gap restarts it.
+- **Streak.** Saving an item updates the user's streak in the same transaction (`bumpStreakInTx`): the same Cairo
+  day keeps it, the next day adds one, a gap restarts it. The writer's caller decides whether a save counts
+  (`countsForStreak`); every save the user makes does.
 - **Money movements.** A gam3eya payment or payout, a loan given, taken or repaid, and an ATM withdrawal are
   `transfer` items (تحويل/جمعية, تحويل/دين/سلفة, تحويل/سحب ATM), so they count as neither spending nor income. Which
   way the money went is in `parsed_metadata.direction` (`incoming` or `outgoing`)
@@ -262,6 +272,7 @@ A plan without the feature is told on the first screen of Settings → business 
 ## Where to change what
 | To change | Edit | Check with |
 | --- | --- | --- |
+| What moves with a saved, edited or deleted row | `api/services/ledger-writer.ts` | `tests/ledger-writer.test.ts`, `tests/expense-rollups.test.ts` (`npm run test:db`) |
 | How a write updates the daily totals | `api/services/expense-rollups.ts` | `tests/expense-rollups.test.ts` |
 | Where old categories move, and how stored rows follow | `LEGACY_TAXONOMY` in `contracts/categories.ts`; the job in `api/jobs/taxonomy-migration-job.ts` | `api/jobs/taxonomy-migration-job.test.ts`, `tests/taxonomy-migration.test.ts` (`npm run test:db`) |
 | The month summary or the statistics | `expense.getMonthSummary`, `expense.getMonthlyStats` in `api/expense-router.ts` | |
@@ -277,7 +288,8 @@ A plan without the feature is told on the first screen of Settings → business 
 
 ## Rules for changes here
 1. Every write to `expenses` runs in a transaction with its rollup delta (`api/AGENTS.md`, rule 4) and bumps the
-   cache generation afterwards; the nightly repair is a safety net, not the mechanism.
+   cache generation afterwards; the nightly repair is a safety net, not the mechanism. A new writer uses
+   `api/services/ledger-writer.ts` (decision 0027) instead of writing these steps again.
 2. Filter by `userId` and `userType`, and check referenced wallets, businesses, goals and contacts with
    `api/lib/ownership-guard.ts`.
 3. Build alternatives with `or(...)`: `and()` does not parenthesize a raw fragment, and an `OR` left bare inside it
@@ -287,7 +299,8 @@ A plan without the feature is told on the first screen of Settings → business 
 
 ## Tests
 `api/expense-router.test.ts` (including the search's user filter and the person a saved item names),
-`tests/expense-rollups.test.ts`, `tests/taxonomy-migration.test.ts` and `tests/coach-follow-up.test.ts` (partial and
+`tests/ledger-writer.test.ts` (retries, the streak choice, refunds, several rows for one contact, edits, deletes and
+the user-type pair), `tests/expense-rollups.test.ts`, `tests/taxonomy-migration.test.ts` and `tests/coach-follow-up.test.ts` (partial and
 over-allocated payments, release on delete and edit, another account's ids, one schedule per installment plan, one
 active plan, a reminder delivered once under two concurrent runs and never after it moved or was cancelled), whose
 database cases run with
@@ -313,6 +326,11 @@ Checked against the code; each one names where it lives.
 7. **Gap.** Commitments, plans and wallet balances are the personal ledger's only: `business_id` exists on
     `scheduled_cashflows` and `coaching_plans` but nothing writes or reads it yet (`api/services/coach/`).
 8. **Gap.** Reminders reach the in-app notifications only, not web push (`api/services/coach/plans.ts#deliverDueReminders`).
+9. **Debt.** Writers outside `api/expense-router.ts` still write `expenses` with their own steps instead of the ledger
+    writer: receipts (`api/image-router.ts#parseReceipt`), the AI Center's actions
+    (`api/services/action-runtime/extended-actions.ts`), business, profile and wallet changes
+    (`api/business-router.ts`, `api/profile-router.ts`, `api/wallet-router.ts`), the taxonomy migration and account
+    purge. Each moves to it as its own change (decision 0027).
 
 ## Related systems
 - [Recording spending](expense-capture.md): creates the items this system reads, and triggers the budget alert.

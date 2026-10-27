@@ -7,8 +7,6 @@ import {
   installmentPlans,
   expenseCategories,
   userDictionaries,
-  users,
-  localUsers,
   classificationLogs,
   pendingClarifications,
   userContacts,
@@ -23,21 +21,12 @@ import { parseNameAndRelationship } from "./lib/relationship-normalizer";
 import { eq, and, or, like, gte, lte, desc, sql, lt, inArray, isNull } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { ExpenseInputLimits } from "../contracts/constants";
-import { invalidateUserMemory } from "./lib/muscle-memory";
 import { recordCorrection } from "./lib/correction-rules";
-import { cacheIncr, cacheGet, withCache } from "./lib/redis-client";
+import { cacheGet, withCache } from "./lib/redis-client";
 import { CacheKeys } from "./lib/cache-keys";
-import { checkUserBudgetExceeded } from "./notification-engine";
-import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
-import {
-  applyExpenseRollupDelta,
-  expenseToRollupDelta,
-  ledgerAmount,
-  toDayString,
-} from "./services/expense-rollups";
-import { businessDateKey, businessDayRange, parseBusinessInstant } from "./lib/app-time";
+import { toDayString } from "./services/expense-rollups";
+import { businessDateKey, parseBusinessInstant } from "./lib/app-time";
 import { installmentProgress, installmentProgressFromLinked, installmentProgressFromRecorded } from "./services/installments";
-import { reconcileSettlementsOf, releaseSettlementsOf } from "./services/coach/cashflows";
 import { runRuleEngine } from "./lib/rule-engine";
 import { normalizeV2 } from "./lib/normalizer-v2";
 import { SEASON_IDS, SEASON_LABELS, latestSeasonRange, seasonRange, type SeasonRange } from "./lib/seasons";
@@ -45,34 +34,19 @@ import { assertEntityOwnership } from "./lib/ownership-guard";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
 import { CATEGORIES, normalizeCategoryName, normalizeSubCategoryName } from "./lib/category-registry";
 import { createLogger } from "./lib/log";
+import {
+  afterLedgerWrite,
+  bumpStreakInTx,
+  createLedgerEntry,
+  deleteLedgerEntry,
+  insertLedgerEntriesInTx,
+  isDuplicateEntryError,
+  ledgerEntriesByRequestId,
+  updateLedgerEntry,
+  type LedgerTx,
+} from "./services/ledger-writer";
 
 const reviewLog = createLogger("expense-review");
-
-async function invalidateExpenseCache(userId: number | string, userType: string) {
-  try {
-    await cacheIncr(CacheKeys.cacheGen(userType, userId));
-    await invalidateFinanceUserCache(userId, userType);
-  } catch (err) {
-    console.warn("Failed to invalidate expense cache", err);
-  }
-}
-
-function isDuplicateEntryError(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const errorObj = err as Record<string, unknown>;
-  const code = errorObj.code || (errorObj.cause as any)?.code;
-  const errno = errorObj.errno || (errorObj.cause as any)?.errno;
-  const sqlState = String(errorObj.sqlState || (errorObj.cause as any)?.sqlState || "");
-  const message = String(errorObj.message || (errorObj.cause as any)?.message || "");
-  return (
-    code === "ER_DUP_ENTRY" ||
-    errno === 1062 ||
-    sqlState === "23000" ||
-    message.includes("ER_DUP_ENTRY") ||
-    message.includes("Duplicate entry") ||
-    message.includes("expenses_user_client_request_unique")
-  );
-}
 
 async function loadBusinessCategoriesForUser(
   userId: number,
@@ -190,8 +164,6 @@ async function claimClarification(tx: Parameters<Parameters<typeof db.transactio
   }
 }
 
-type LedgerTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
 /** An item a clarification saves, as the pipeline or the stored question left it. */
 type ClarifiedItem = {
   amount: number;
@@ -228,7 +200,8 @@ export function clarifiedItemDate(item: { date?: string }, askedAt: Date | null 
 /**
  * Saves the items of an answered clarification the way `expense.create` saves one: its date
  * and source, the rollup delta, the contact's count and the streak, all in the caller's
- * transaction. Returns what was saved so the app can show it and offer undo.
+ * transaction (`api/services/ledger-writer.ts`). Returns what was saved so the app can show it
+ * and offer undo.
  */
 async function saveClarifiedItems(
   tx: LedgerTx,
@@ -242,6 +215,7 @@ async function saveClarifiedItems(
     classificationLogId?: number;
   },
 ): Promise<SavedEntry[]> {
+  const owner = { userId: options.userId, userType: options.userType };
   const saved: SavedEntry[] = [];
   for (const item of items) {
     const references = await resolveExpenseReferences(
@@ -249,46 +223,22 @@ async function saveClarifiedItems(
       options.userId,
       options.userType,
     );
-    const date = clarifiedItemDate(item, options.askedAt);
-    const amount = ledgerAmount(item.type, item.direction, item.amount);
-    const [insertedRow] = await tx.insert(expenses).values({
-      userId: options.userId,
-      userType: options.userType,
-      amount: amount.toString(),
-      description: item.description || options.rawText,
-      category: item.category,
-      subCategory: item.subCategory || "عام",
-      type: item.type,
-      date,
-      source: options.source,
-      rawText: options.rawText,
-      contactId: references.contactId,
-      classificationLogId: references.classificationLogId,
-      businessId: item.businessId || null,
-      parsedMetadata: item.direction ? { direction: item.direction } : null,
-    });
-    const id = Number((insertedRow as { insertId?: number })?.insertId ?? 0);
-    await applyExpenseRollupDelta(
-      tx,
-      expenseToRollupDelta(
-        {
-          userId: options.userId,
-          userType: options.userType,
-          businessId: item.businessId || null,
-          date,
-          type: item.type,
-          amount,
-          source: options.source,
-        },
-        1,
-      ),
-    );
-    if (references.contactId) {
-      await tx
-        .update(userContacts)
-        .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
-        .where(eq(userContacts.id, references.contactId));
-    }
+    const [id] = await insertLedgerEntriesInTx(tx, owner, [
+      {
+        type: item.type,
+        amount: item.amount,
+        direction: item.direction,
+        category: item.category,
+        subCategory: item.subCategory,
+        description: item.description || options.rawText,
+        rawText: options.rawText,
+        source: options.source,
+        date: clarifiedItemDate(item, options.askedAt),
+        contactId: references.contactId,
+        classificationLogId: references.classificationLogId,
+        businessId: item.businessId,
+      },
+    ]);
     saved.push({
       id,
       amount: Math.abs(item.amount),
@@ -298,7 +248,7 @@ async function saveClarifiedItems(
       direction: item.direction ?? null,
     });
   }
-  if (saved.length > 0) await updateStreak(tx, options.userId, options.userType);
+  if (saved.length > 0) await bumpStreakInTx(tx, owner);
   return saved;
 }
 
@@ -652,43 +602,6 @@ function enrichTextWithNameRelation(
   return `${text} (${name} ${relation})`;
 }
 
-async function updateStreak(
-  dbInstance: any,
-  userId: number,
-  userType: string,
-): Promise<void> {
-  const now = new Date();
-  const today = businessDayRange(now);
-  const yesterday = businessDayRange(new Date(today.start.getTime() - 1));
-
-  // Atomic SQL update — avoids the Read-Modify-Write race condition.
-  // Uses a single UPDATE with CASE expression so concurrent requests
-  // cannot read stale streak values.
-  const table = userType === "oauth" ? users : localUsers;
-  await dbInstance
-    .update(table)
-    .set({
-      currentStreak: sql`CASE
-        WHEN ${table.lastStreakAt} >= ${today.start} AND ${table.lastStreakAt} < ${today.endExclusive} THEN ${table.currentStreak}
-        WHEN ${table.lastStreakAt} >= ${yesterday.start} AND ${table.lastStreakAt} < ${today.start} THEN COALESCE(${table.currentStreak}, 0) + 1
-        ELSE 1
-      END`,
-      highestStreak: sql`GREATEST(
-        COALESCE(${table.highestStreak}, 0),
-        CASE
-          WHEN ${table.lastStreakAt} >= ${today.start} AND ${table.lastStreakAt} < ${today.endExclusive} THEN COALESCE(${table.currentStreak}, 0)
-          WHEN ${table.lastStreakAt} >= ${yesterday.start} AND ${table.lastStreakAt} < ${today.start} THEN COALESCE(${table.currentStreak}, 0) + 1
-          ELSE 1
-        END
-      )`,
-      lastStreakAt: sql`CASE
-        WHEN ${table.lastStreakAt} >= ${today.start} AND ${table.lastStreakAt} < ${today.endExclusive} THEN ${table.lastStreakAt}
-        ELSE ${now}
-      END`,
-    })
-    .where(eq(table.id, userId));
-}
-
 const statsCategoryDisplayNames: Record<string, string> = {
   food: "أكل وشرب",
   transport: "مواصلات",
@@ -760,30 +673,19 @@ export const expenseRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
       const userId = ctx.user!.id;
       const requestUserType = ctx.user!.type;
+      const owner = { userId, userType: requestUserType };
 
-      // 1. Idempotency Pre-Check: if clientRequestId already exists, return existing expense
+      // 1. Idempotency pre-check, before a contact is created for a retry: the saved row comes back.
       if (input.clientRequestId) {
-        const existing = await db
-          .select()
-          .from(expenses)
-          .where(
-            and(
-              eq(expenses.userId, userId),
-              eq(expenses.userType, requestUserType),
-              eq(expenses.clientRequestId, input.clientRequestId),
-            ),
-          )
-          .limit(1);
-
-        if (existing.length > 0) {
+        const [existing] = await ledgerEntriesByRequestId(owner, [input.clientRequestId]);
+        if (existing) {
           return {
             success: true,
-            id: existing[0].id,
+            id: existing.id,
             duplicate: true,
-            expense: existing[0],
+            expense: existing,
             newlyAddedContact: null,
           };
         }
@@ -807,99 +709,41 @@ export const expenseRouter = router({
       });
 
       const references = await resolveExpenseReferences(input, userId, requestUserType);
-      let insertId: number | undefined;
 
-      // ─── ACID Transaction: expense insert + contact count + streak ───
-      try {
-        await db.transaction(async (tx) => {
-          const metadata =
-            input.parsedMetadata ||
-            (input.direction ? { direction: input.direction } : null);
-
-          const [result] = await tx.insert(expenses).values({
-            userId,
-            userType: requestUserType,
-            type: input.type,
-            amount: ledgerAmount(input.type, input.direction, input.amount).toString(),
-            category: input.category,
-            subCategory: input.subCategory || "عام",
-            description: input.description || "",
-            rawText: input.rawText,
-            source: input.source,
-            parsedMetadata: metadata,
-            contactId: references.contactId,
-            classificationLogId: references.classificationLogId,
-            businessId: input.businessId || null,
-            walletId: input.walletId || null,
-            clientRequestId: input.clientRequestId || null,
-            date: expenseDate,
-          });
-
-          insertId = result?.insertId;
-
-          const delta = expenseToRollupDelta(
-            {
-              userId: userId as number,
-              userType: requestUserType,
-              businessId: input.businessId,
-              date: expenseDate,
-              type: input.type,
-              amount: ledgerAmount(input.type, input.direction, input.amount),
-              source: input.source,
-            },
-            1,
-          );
-          await applyExpenseRollupDelta(tx, delta);
-
-          if (references.contactId) {
-            await tx
-              .update(userContacts)
-              .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
-              .where(eq(userContacts.id, references.contactId));
-          }
-
-          // Gamification: Update Streaks (atomic, inside transaction)
-          await updateStreak(tx, userId as number, requestUserType);
-        });
-      } catch (err: unknown) {
-        if (input.clientRequestId && isDuplicateEntryError(err)) {
-          const existing = await db
-            .select()
-            .from(expenses)
-            .where(
-              and(
-                eq(expenses.userId, userId),
-                eq(expenses.userType, requestUserType),
-                eq(expenses.clientRequestId, input.clientRequestId),
-              ),
-            )
-            .limit(1);
-
-          if (existing.length > 0) {
-            return {
-              success: true,
-              id: existing[0].id,
-              duplicate: true,
-              expense: existing[0],
-              newlyAddedContact: references.newlyAddedContact,
-            };
-          }
-        }
-        throw err;
+      // The row, its rollup delta, the contact's count and the streak in one transaction; then the review's
+      // correction is learned before the caches forget (api/services/ledger-writer.ts).
+      const { id, existing } = await createLedgerEntry(
+        owner,
+        {
+          type: input.type,
+          amount: input.amount,
+          direction: input.direction,
+          category: input.category,
+          subCategory: input.subCategory,
+          description: input.description || "",
+          rawText: input.rawText,
+          source: input.source,
+          date: expenseDate,
+          contactId: references.contactId,
+          classificationLogId: references.classificationLogId,
+          businessId: input.businessId,
+          walletId: input.walletId,
+          clientRequestId: input.clientRequestId,
+          parsedMetadata: input.parsedMetadata,
+        },
+        { afterCommit: () => learnFromReview(userId, requestUserType, input.classificationLogId, input) },
+      );
+      if (existing) {
+        return {
+          success: true,
+          id: existing.id,
+          duplicate: true,
+          expense: existing,
+          newlyAddedContact: references.newlyAddedContact,
+        };
       }
 
-      // Phase 2: Non-critical side effects (outside transaction)
-      await learnFromReview(userId as number, requestUserType, input.classificationLogId, input);
-      invalidateUserMemory(userId, requestUserType);
-      await invalidateExpenseCache(userId, requestUserType);
-      
-      if (input.type === "expense") {
-        checkUserBudgetExceeded(userId as number, requestUserType).catch(err => {
-          console.error("Budget exceeded check failed:", err);
-        });
-      }
-
-      return { success: true, id: insertId, newlyAddedContact: references.newlyAddedContact };
+      return { success: true, id, newlyAddedContact: references.newlyAddedContact };
     }),
 
   batchCreate: authedProcedure
@@ -931,6 +775,7 @@ export const expenseRouter = router({
       const db = getDb();
       const userId = ctx.user!.id;
       const requestUserType = ctx.user!.type;
+      const owner = { userId, userType: requestUserType };
 
       if (input.length === 0) return { success: true, count: 0, newlyAddedContact: null };
 
@@ -951,21 +796,9 @@ export const expenseRouter = router({
         .filter((id): id is string => typeof id === "string" && id.length > 0);
 
       const existingClientMap = new Map<string, typeof expenses.$inferSelect>();
-      if (clientRequestIds.length > 0) {
-        const existingList = await db
-          .select()
-          .from(expenses)
-          .where(
-            and(
-              eq(expenses.userId, userId),
-              eq(expenses.userType, requestUserType),
-              inArray(expenses.clientRequestId, clientRequestIds),
-            ),
-          );
-        for (const row of existingList) {
-          if (row.clientRequestId) {
-            existingClientMap.set(row.clientRequestId, row);
-          }
+      for (const row of await ledgerEntriesByRequestId(owner, clientRequestIds)) {
+        if (row.clientRequestId) {
+          existingClientMap.set(row.clientRequestId, row);
         }
       }
 
@@ -985,84 +818,34 @@ export const expenseRouter = router({
 
       const references = await resolveExpenseReferences(itemsToInsert, userId, requestUserType);
 
-      const valuesToInsert = itemsToInsert.map((item, index) => ({
-        userId,
-        userType: requestUserType,
+      const entries = itemsToInsert.map((item, index) => ({
         type: item.type,
-        amount: ledgerAmount(item.type, item.direction, item.amount).toString(),
+        amount: item.amount,
+        direction: item.direction,
         category: item.category,
-        subCategory: item.subCategory || "عام",
+        subCategory: item.subCategory,
         description: item.description || "",
         rawText: item.rawText,
         source: item.source,
+        date: item.date ? new Date(item.date) : new Date(),
         contactId: references[index].contactId,
         classificationLogId: references[index].classificationLogId,
-        businessId: item.businessId || null,
-        walletId: item.walletId || null,
-        clientRequestId: item.clientRequestId || null,
-        parsedMetadata: item.direction ? { direction: item.direction } : null,
-        date: item.date ? new Date(item.date) : new Date(),
+        businessId: item.businessId,
+        walletId: item.walletId,
+        clientRequestId: item.clientRequestId,
       }));
 
-      // ─── ACID Transaction: batch insert + contact counts + streak ───
+      // ─── ACID Transaction: batch insert + rollups + contact counts + streak (api/services/ledger-writer.ts) ───
       // The ids let the app offer "undo" for exactly what it just saved.
       let insertedIds: number[] = [];
       try {
         await db.transaction(async (tx) => {
-          const [insertResult] = await tx.insert(expenses).values(valuesToInsert);
-          const rawResult: any = insertResult;
-          const firstInsertId = Number(rawResult?.insertId || rawResult?.[0]?.insertId || 0);
-
-          if (firstInsertId) {
-            insertedIds = valuesToInsert.map((_, i) => firstInsertId + i);
-          }
-
-          for (const val of valuesToInsert) {
-            const delta = expenseToRollupDelta(
-              {
-                userId: userId as number,
-                userType: requestUserType,
-                businessId: val.businessId,
-                date: val.date,
-                type: val.type,
-                amount: val.amount,
-                source: val.source,
-              },
-              1,
-            );
-            await applyExpenseRollupDelta(tx, delta);
-          }
-
-          const contactCounts = new Map<number, number>();
-          for (const ref of references) {
-            if (ref.contactId) {
-              contactCounts.set(
-                ref.contactId,
-                (contactCounts.get(ref.contactId) || 0) + 1,
-              );
-            }
-          }
-          for (const [contactId, count] of contactCounts.entries()) {
-            await tx
-              .update(userContacts)
-              .set({ transactionCount: sql`${userContacts.transactionCount} + ${count}` })
-              .where(eq(userContacts.id, contactId));
-          }
-
-          await updateStreak(tx, userId as number, requestUserType);
+          insertedIds = await insertLedgerEntriesInTx(tx, owner, entries);
+          await bumpStreakInTx(tx, owner);
         });
       } catch (err: unknown) {
         if (clientRequestIds.length > 0 && isDuplicateEntryError(err)) {
-          const allExisting = await db
-            .select()
-            .from(expenses)
-            .where(
-              and(
-                eq(expenses.userId, userId),
-                eq(expenses.userType, requestUserType),
-                inArray(expenses.clientRequestId, clientRequestIds),
-              ),
-            );
+          const allExisting = await ledgerEntriesByRequestId(owner, clientRequestIds);
           return {
             success: true,
             count: allExisting.length,
@@ -1078,19 +861,11 @@ export const expenseRouter = router({
       for (const item of itemsToInsert) {
         await learnFromReview(userId as number, requestUserType, item.classificationLogId, item);
       }
-      invalidateUserMemory(userId, requestUserType);
-      await invalidateExpenseCache(userId, requestUserType);
-      
-      const hasExpenses = input.some(item => item.type === "expense");
-      if (hasExpenses) {
-        checkUserBudgetExceeded(userId as number, requestUserType).catch(err => {
-          console.error("Budget exceeded check failed:", err);
-        });
-      }
+      await afterLedgerWrite(owner, { spending: input.some((item) => item.type === "expense") });
 
       return {
         success: true,
-        count: valuesToInsert.length + existingClientMap.size,
+        count: entries.length + existingClientMap.size,
         ids: insertedIds,
         newlyAddedContact: references.find((reference) => reference.newlyAddedContact)?.newlyAddedContact || null,
       };
@@ -1254,89 +1029,22 @@ export const expenseRouter = router({
           ? normalizeSubCategoryName(category ?? input.category ?? "", input.subCategory)
           : undefined;
 
-      const updateData: Record<string, any> = {};
-      if (input.type !== undefined) updateData.type = input.type;
-      if (category !== undefined) updateData.category = category;
-      if (subCategory !== undefined)
-        updateData.subCategory = subCategory;
-      if (input.description !== undefined)
-        updateData.description = input.description;
-      if (input.rawText !== undefined) updateData.rawText = input.rawText;
-      if (input.date !== undefined) updateData.date = new Date(input.date);
-      if (input.walletId !== undefined) updateData.walletId = input.walletId;
-      if (input.businessId !== undefined) updateData.businessId = input.businessId;
-      if (input.contactId !== undefined) updateData.contactId = input.contactId;
-
-      let originalExpense: typeof expenses.$inferSelect | undefined;
-      await db.transaction(async (tx) => {
-        const [row] = await tx
-          .select()
-          .from(expenses)
-          .where(
-            and(
-              eq(expenses.id, input.id),
-              eq(expenses.userId, userId),
-              eq(expenses.userType, userType),
-            ),
-          )
-          .limit(1)
-          .for("update");
-
-        if (!row) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
-        }
-        originalExpense = row;
-
-        // The stored sign follows the kind and whether the money came back: a refund is
-        // a negative expense, anything else is positive.
-        if (input.amount !== undefined || input.type !== undefined || input.refund !== undefined) {
-          const type = input.type ?? row.type;
-          const wasRefund = row.type === "expense" && Number(row.amount) < 0;
-          const refund = input.refund ?? wasRefund;
-          updateData.amount = ledgerAmount(
-            type,
-            refund ? "incoming" : null,
-            input.amount ?? Math.abs(Number(row.amount)),
-          ).toString();
-        }
-
-        await tx
-          .update(expenses)
-          .set(updateData)
-          .where(
-            and(
-              eq(expenses.id, input.id),
-              eq(expenses.userId, userId),
-              eq(expenses.userType, userType),
-            ),
-          );
-
-        await reconcileSettlementsOf(tx, { userId, userType }, input.id);
-
-        const oldDelta = expenseToRollupDelta(originalExpense, -1);
-        await applyExpenseRollupDelta(tx, oldDelta);
-
-        const updatedExpenseObj = {
-          ...originalExpense,
-          ...updateData,
-          amount: updateData.amount ?? originalExpense.amount,
-          date: updateData.date ?? originalExpense.date,
-          type: updateData.type ?? originalExpense.type,
-        };
-        const newDelta = expenseToRollupDelta(updatedExpenseObj, 1);
-        await applyExpenseRollupDelta(tx, newDelta);
-
+      // The row, its stored sign, what it paid toward and its rollup move in one transaction; then muscle
+      // memory and the ledger caches forget it (api/services/ledger-writer.ts). A correction has to clear every
+      // layer that could replay the old answer, not only the one that learns from it.
+      const originalExpense = await updateLedgerEntry({ userId, userType }, input.id, {
+        type: input.type,
+        amount: input.amount,
+        refund: input.refund,
+        category,
+        subCategory,
+        description: input.description,
+        rawText: input.rawText,
+        date: input.date !== undefined ? new Date(input.date) : undefined,
+        walletId: input.walletId,
+        businessId: input.businessId,
+        contactId: input.contactId,
       });
-
-      // Phase 2: Forget everything that could still serve the answer we just corrected.
-      //
-      // Only muscle memory was cleared here, and the classification cache holds results
-      // for SEVEN DAYS keyed on the normalized text. So the user fixed a category, said
-      // the same sentence again, and got the same wrong answer back from cache — which
-      // reads exactly like "I corrected it and it ignored me", the complaint this is
-      // the mechanical cause of. Correcting a classification has to invalidate every
-      // layer that can replay it, not the one that learns from it.
-      invalidateUserMemory(userId, userType);
 
       let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;
       // Phase 2.5: Auto-learn dynamic contacts from manually edited expenses
@@ -1435,58 +1143,16 @@ export const expenseRouter = router({
         }
       }
 
-      await invalidateExpenseCache(userId, userType);
       return { success: true, newlyAddedContact };
     }),
 
   delete: authedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = getDb();
-      const userId = ctx.user!.id;
-      const userType = ctx.user!.type;
-
-      // ─── ACID Transaction: fetch with lock + delete expense + decrement contact count + rollup delta ───
-      await db.transaction(async (tx) => {
-        const [expense] = await tx
-          .select()
-          .from(expenses)
-          .where(
-            and(
-              eq(expenses.id, input.id),
-              eq(expenses.userId, userId),
-              eq(expenses.userType, userType),
-            ),
-          )
-          .limit(1)
-          .for("update");
-
-        if (!expense) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
-        }
-
-        await tx
-          .delete(expenses)
-          .where(eq(expenses.id, expense.id));
-        // What it paid toward a commitment is unpaid again (api/services/coach/cashflows.ts).
-        await releaseSettlementsOf(tx, { userId, userType }, [expense.id]);
-
-        const delta = expenseToRollupDelta(expense, -1);
-        await applyExpenseRollupDelta(tx, delta);
-
-        if (expense.contactId) {
-          await tx
-            .update(userContacts)
-            .set({ transactionCount: sql`GREATEST(COALESCE(${userContacts.transactionCount}, 1) - 1, 0)` })
-            .where(eq(userContacts.id, expense.contactId));
-        }
-      });
-
-      // A deleted transaction must stop teaching. Neither cache was cleared here, so a
-      // row the user removed kept shaping future classifications from muscle memory and
-      // kept being replayed from the classification cache.
-      invalidateUserMemory(userId, userType);
-      await invalidateExpenseCache(userId, userType);
+      // Locks the row, deletes it, releases what it paid toward, backs out its rollup and lowers its contact's
+      // count; then muscle memory and the caches forget it, so a removed row stops teaching
+      // (api/services/ledger-writer.ts).
+      await deleteLedgerEntry({ userId: ctx.user!.id, userType: ctx.user!.type }, input.id);
       return { success: true };
     }),
 
@@ -2799,15 +2465,10 @@ export const expenseRouter = router({
           });
 
           newlyAddedContact = (await addMentionedContacts(itemsToSave as ClarifiedItem[], userId as number, userType as string)) ?? newlyAddedContact;
-          invalidateUserMemory(userId, userType);
-          await invalidateExpenseCache(userId as number, userType as string);
-          
-          const hasExpenses = itemsToSave.some((item: any) => item.type === "expense");
-          if (hasExpenses) {
-            checkUserBudgetExceeded(userId as number, userType as string).catch(err => {
-              console.error("Budget exceeded check failed:", err);
-            });
-          }
+          await afterLedgerWrite(
+            { userId: userId as number, userType: userType as string },
+            { spending: itemsToSave.some((item: any) => item.type === "expense") },
+          );
         } catch (err) {
           console.error("Failed to save after queue clarification:", err);
           if (err instanceof TRPCError) throw err;
@@ -2958,15 +2619,10 @@ export const expenseRouter = router({
             savedCount = saved.length;
           });
           newlyAddedContact = (await addMentionedContacts(pipeline.items as ClarifiedItem[], userId as number, userType as string)) ?? newlyAddedContact;
-          invalidateUserMemory(userId, userType);
-          await invalidateExpenseCache(userId as number, userType as string);
-          
-          const hasExpenses = pipeline.items && pipeline.items.some((item: any) => item.type === "expense");
-          if (hasExpenses) {
-            checkUserBudgetExceeded(userId as number, userType as string).catch(err => {
-              console.error("Budget exceeded check failed:", err);
-            });
-          }
+          await afterLedgerWrite(
+            { userId: userId as number, userType: userType as string },
+            { spending: pipeline.items.some((item: any) => item.type === "expense") },
+          );
         }
 
       } catch (err) {

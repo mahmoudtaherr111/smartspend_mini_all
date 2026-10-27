@@ -234,14 +234,14 @@
         "api/ai-router.ts#ai.speechToText": "b2afa75738a4",
         "api/ai-router.ts#rest-of-file": "50513cb36491",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
-        "api/expense-router.ts#expense.answerClarification": "b62008d0b1a6",
-        "api/expense-router.ts#expense.batchCreate": "5402c88e8f4c",
-        "api/expense-router.ts#expense.create": "9a71d9c6dc1a",
+        "api/expense-router.ts#expense.answerClarification": "300ac1ab436c",
+        "api/expense-router.ts#expense.batchCreate": "adc167124606",
+        "api/expense-router.ts#expense.create": "86ac3f9056a4",
         "api/expense-router.ts#expense.createCategory": "8b691f7a3e91",
         "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "ac56fb8df225",
+        "api/expense-router.ts#rest-of-file": "79a9ed6120aa",
         "api/image-router.ts": "062a7162dcfb",
         "api/lib/admissibility-gate.ts": "3b5889850057",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
@@ -301,9 +301,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-10-20 cfbc7f55",
-      "arabic": "46a52d71e244",
-      "arabicChecked": "2026-10-20 cfbc7f55"
+      "checked": "2026-10-27 03cb4c09",
+      "arabic": "a30cc387c512",
+      "arabicChecked": "2026-10-27 03cb4c09"
     },
     "insights": {
       "files": {
@@ -349,7 +349,7 @@
         "api/business-router.ts": "73613d1ac2ee",
         "api/coach-router.ts": "0873bd26929a",
         "api/expense-router.ts#expense.createInstallmentPlan": "d0e4ac52ce8b",
-        "api/expense-router.ts#expense.delete": "a9b79ea42752",
+        "api/expense-router.ts#expense.delete": "7680319b9ecd",
         "api/expense-router.ts#expense.deleteInstallmentPlan": "fc7d83b8ccfe",
         "api/expense-router.ts#expense.getById": "883d7c8c2233",
         "api/expense-router.ts#expense.getDebtBalances": "821a765233cc",
@@ -361,8 +361,8 @@
         "api/expense-router.ts#expense.listInstallmentPlans": "826717e1eefe",
         "api/expense-router.ts#expense.previewCategory": "dab97f94d0c8",
         "api/expense-router.ts#expense.searchTransactions": "9d92514f1158",
-        "api/expense-router.ts#expense.update": "b06429abb10d",
-        "api/expense-router.ts#rest-of-file": "ac56fb8df225",
+        "api/expense-router.ts#expense.update": "da26821aaae7",
+        "api/expense-router.ts#rest-of-file": "79a9ed6120aa",
         "api/export-router.ts#export.myExpenses": "ebbfe5c845ec",
         "api/export-router.ts#rest-of-file": "264f56b1884e",
         "api/goals-router.ts": "7abbe5a2ba53",
@@ -383,6 +383,7 @@
         "api/services/expense-rollups.ts": "a8980ff51e3b",
         "api/services/financial-month.ts": "50ad98190246",
         "api/services/installments.ts": "c8bdc9de1497",
+        "api/services/ledger-writer.ts": "4525253e7ac9",
         "api/wallet-router.ts": "b650c9bb74c6",
         "src/components/budgets/BudgetsPanel.tsx": "514a88e41280",
         "src/components/dashboard/BehaviorInsights.tsx": "47729e6b7532",
@@ -409,9 +410,9 @@
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-10-27 12b1cd80",
-      "arabic": "99181cc7c434",
-      "arabicChecked": "2026-10-27 12b1cd80"
+      "checked": "2026-10-27 03cb4c09",
+      "arabic": "87d83f1ef65f",
+      "arabicChecked": "2026-10-27 03cb4c09"
     },
     "notifications": {
       "files": {
@@ -439,7 +440,7 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "a4f60ab09bae",
+        "api/boot.ts#rest-of-file": "92b2d2c4712c",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "717ab6996a7d",
         "api/lib/app-time.ts": "f53d4623a239",
@@ -481,7 +482,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "c53e0d408c6d"
       },
-      "checked": "2026-10-27 ad904d75",
+      "checked": "2026-10-27 03cb4c09",
       "arabic": "86dba44560b6",
       "arabicChecked": "2026-10-27 ad904d75"
     },

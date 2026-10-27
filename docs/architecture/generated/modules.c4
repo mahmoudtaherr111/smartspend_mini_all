@@ -150,11 +150,11 @@ model {
         paths 'api/jobs/**'
       }
     }
-    ledger = module 'Ledger aggregates' {
-      description 'Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer).'
+    ledger = module 'Ledger writer and aggregates' {
+      description 'The ledger writer (adding, changing and removing an expense row in one transaction with its signed amount, rollup delta, contact count, settlements and the streak, then clearing muscle memory and the finance caches and checking budgets), daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer).'
       metadata {
-        files '6'
-        paths 'api/services/expense-rollups.ts, api/services/financial-month.ts, api/services/budget-status.ts, api/services/debt-ledger.ts, api/services/installments.ts, api/lib/seasons.ts'
+        files '7'
+        paths 'api/services/ledger-writer.ts, api/services/expense-rollups.ts, api/services/financial-month.ts, api/services/budget-status.ts, api/services/debt-ledger.ts, api/services/installments.ts, api/lib/seasons.ts'
       }
     }
     notifications = module 'Notifications' {
