@@ -33,7 +33,7 @@
         "api/profile-router.ts#rest-of-file": "b1dc9ec23cb2",
         "api/services/phone-challenge.ts": "9c5aa7cfebc9",
         "api/services/turnstile-service.ts": "89a28fc96d49",
-        "api/services/user-purge-service.ts": "6479af182611",
+        "api/services/user-purge-service.ts": "2c71bbe25c44",
         "api/session-router.ts": "c29d8dcf4653",
         "api/webauthn-router.ts": "8a7c2294a8d1",
         "src/components/auth/BiometricLockOverlay.tsx": "b9b9b5184b56",
@@ -54,9 +54,9 @@
         "src/pages/Login.tsx": "59d76ce265d9",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-27 12b1cd80",
+      "checked": "2026-10-27 ad904d75",
       "arabic": "fd84912c018e",
-      "arabicChecked": "2026-10-27 12b1cd80"
+      "arabicChecked": "2026-10-27 ad904d75"
     },
     "admin": {
       "files": {
@@ -210,9 +210,9 @@
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
         "api/lib/sms-ai-contract.ts": "a05d2f4ea034"
       },
-      "checked": "2026-10-27 12b1cd80",
-      "arabic": "4d1d62330c8d",
-      "arabicChecked": "2026-10-27 12b1cd80"
+      "checked": "2026-10-27 ad904d75",
+      "arabic": "c2b67ea11d23",
+      "arabicChecked": "2026-10-27 ad904d75"
     },
     "billing": {
       "files": {
@@ -446,7 +446,7 @@
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
         "api/boot.ts#rest-of-file": "a4f60ab09bae",
         "api/context.ts": "d2add89863df",
-        "api/jobs/data-retention-job.ts": "d43acf75679a",
+        "api/jobs/data-retention-job.ts": "717ab6996a7d",
         "api/lib/app-time.ts": "f53d4623a239",
         "api/lib/cache-keys.ts": "89dc693d0c12",
         "api/lib/env.ts": "c1943bec00ee",
@@ -481,14 +481,14 @@
         "contracts/types.ts": "191164b8f041",
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
-        "db/relations.ts": "5e31c3a3a1fa",
-        "db/schema.ts": "135369126c37",
+        "db/relations.ts": "7bc9ef75ffa6",
+        "db/schema.ts": "afc1a6af7aa8",
         "db/seed.ts": "811d2a0df636",
-        "db/table-classes.ts": "9176eb36ddb0"
+        "db/table-classes.ts": "c53e0d408c6d"
       },
-      "checked": "2026-10-27 12b1cd80",
-      "arabic": "d308d4ff853f",
-      "arabicChecked": "2026-10-27 12b1cd80"
+      "checked": "2026-10-27 ad904d75",
+      "arabic": "86dba44560b6",
+      "arabicChecked": "2026-10-27 ad904d75"
     },
     "voice-calls": {
       "files": {

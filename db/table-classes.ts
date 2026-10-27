@@ -107,7 +107,6 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   whatsapp_otp_codes: "D",
   pending_clarifications: "D",
   ai_pending_actions: "D",
-  webhook_tokens: "D",
   in_app_notifications: "D",
 
   // Class E: Telemetry / Logs (Retention pruned)
@@ -116,7 +115,6 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   user_analytics: "E",
   notification_logs: "E",
   ad_clicks: "E",
-  raw_sms_events: "E",
   voice_usage: "E",
   voice_calls: "E",
   voice_call_incidents: "E",

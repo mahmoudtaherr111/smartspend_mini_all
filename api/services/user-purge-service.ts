@@ -29,7 +29,6 @@ import {
   profileLearningEvents,
   proSubscriptions,
   pushSubscriptions,
-  rawSmsEvents,
   referrals,
   sessions,
   supportTickets,
@@ -51,7 +50,6 @@ import {
   voiceUsage,
   voiceCalls,
   voiceCallIncidents,
-  webhookTokens,
 } from "../../db/schema";
 
 export type PurgeUserType = "oauth" | "local";
@@ -127,7 +125,6 @@ export async function purgeUserData(
   await tx.delete(sessions).where(userScope(sessions, userId, userType));
   await tx.delete(userCredentials).where(userScope(userCredentials, userId, userType));
   await tx.delete(authChallenges).where(userScope(authChallenges, userId, userType));
-  await tx.delete(webhookTokens).where(userScope(webhookTokens, userId, userType));
   await tx.delete(pushSubscriptions).where(userScope(pushSubscriptions, userId, userType));
 
   await tx.delete(userProfiles).where(userScope(userProfiles, userId, userType));
@@ -142,7 +139,6 @@ export async function purgeUserData(
   await tx.delete(voiceUsage).where(userScope(voiceUsage, userId, userType));
   await tx.delete(voiceCallIncidents).where(userScope(voiceCallIncidents, userId, userType));
   await tx.delete(voiceCalls).where(userScope(voiceCalls, userId, userType));
-  await tx.delete(rawSmsEvents).where(userScope(rawSmsEvents, userId, userType));
   await tx.delete(adClicks).where(userScope(adClicks, userId, userType));
   await tx.delete(inAppNotifications).where(userScope(inAppNotifications, userId, userType));
   await tx.delete(notificationLogs).where(userScope(notificationLogs, userId, userType));

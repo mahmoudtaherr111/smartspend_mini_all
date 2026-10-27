@@ -70,7 +70,6 @@ flowchart LR
     tbl_pro_subscriptions[("pro_subscriptions")]
     tbl_profile_learning_events[("profile_learning_events")]
     tbl_push_subscriptions[("push_subscriptions")]
-    tbl_raw_sms_events[("raw_sms_events")]
     tbl_referrals[("referrals")]
     tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_sessions[("sessions")]
@@ -88,7 +87,6 @@ flowchart LR
     tbl_voice_call_incidents[("voice_call_incidents")]
     tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
-    tbl_webhook_tokens[("webhook_tokens")]
     tbl_whatsapp_otp_codes[("whatsapp_otp_codes")]
   end
   ext_google_oauth{{"Google OAuth 2.0"}}
@@ -134,7 +132,6 @@ flowchart LR
   mod_accounts ==> tbl_pro_subscriptions
   mod_accounts ==> tbl_profile_learning_events
   mod_accounts ==> tbl_push_subscriptions
-  mod_accounts ==> tbl_raw_sms_events
   mod_accounts ==> tbl_referrals
   mod_accounts ==> tbl_scheduled_cashflows
   mod_accounts ==> tbl_sessions
@@ -152,7 +149,6 @@ flowchart LR
   mod_accounts ==> tbl_voice_call_incidents
   mod_accounts ==> tbl_voice_calls
   mod_accounts ==> tbl_voice_usage
-  mod_accounts ==> tbl_webhook_tokens
   mod_auth --> ext_google_oauth
   mod_auth --> mod_security
   mod_auth --> sys_platform
@@ -311,7 +307,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `pro_subscriptions` | A | `accounts` | — |
 | `profile_learning_events` | E | `accounts` | — |
 | `push_subscriptions` | A | `accounts` | — |
-| `raw_sms_events` | E | `accounts` | — |
 | `referrals` | A | `accounts` | — |
 | `scheduled_cashflows` | C | `accounts` | — |
 | `sessions` | D | `accounts`, `auth` | `auth`, `session.listAll`, `session.listMine`, `session.stats` |
@@ -329,7 +324,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `voice_call_incidents` | E | `accounts` | — |
 | `voice_calls` | E | `accounts` | — |
 | `voice_usage` | E | `accounts` | — |
-| `webhook_tokens` | D | `accounts` | — |
 | `whatsapp_otp_codes` | D | `auth` | `auth` |
 
 ## Outside systems

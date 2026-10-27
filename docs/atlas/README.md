@@ -24,8 +24,8 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 
 | Fact | Count |
 | --- | --- |
-| Tables | 64 |
-| Tables with relations | 55 |
+| Tables | 62 |
+| Tables with relations | 53 |
 | Foreign-key constraints | 0 |
 | tRPC routers | 26 |
 | tRPC procedures | 238 |

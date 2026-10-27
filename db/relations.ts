@@ -29,14 +29,12 @@ import {
   voiceUsage,
   voiceCalls,
   voiceCallIncidents,
-  webhookTokens,
   userBudgets,
   installmentPlans,
   scheduledCashflows,
   cashflowSettlements,
   coachingPlans,
   coachingSteps,
-  rawSmsEvents,
   apiKeyErrors,
   pushSubscriptions,
   userCredentials,
@@ -76,10 +74,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   coachingPlans: many(coachingPlans),
   userCredentials: many(userCredentials),
   pushSubscriptions: many(pushSubscriptions),
-  webhookTokens: many(webhookTokens),
   userDictionaries: many(userDictionaries),
   voiceUsage: many(voiceUsage),
-  rawSmsEvents: many(rawSmsEvents),
   userAnalytics: many(userAnalytics),
   supportTickets: many(supportTickets),
   monthlyReports: many(monthlyReports),
@@ -121,10 +117,8 @@ export const localUsersRelations = relations(localUsers, ({ many }) => ({
   coachingPlans: many(coachingPlans),
   userCredentials: many(userCredentials),
   pushSubscriptions: many(pushSubscriptions),
-  webhookTokens: many(webhookTokens),
   userDictionaries: many(userDictionaries),
   voiceUsage: many(voiceUsage),
-  rawSmsEvents: many(rawSmsEvents),
   userAnalytics: many(userAnalytics),
   supportTickets: many(supportTickets),
   monthlyReports: many(monthlyReports),
@@ -348,11 +342,6 @@ export const voiceCallIncidentsRelations = relations(voiceCallIncidents, ({ one 
   call: one(voiceCalls, { fields: [voiceCallIncidents.callId], references: [voiceCalls.id] }),
 }));
 
-export const webhookTokensRelations = relations(webhookTokens, ({ one }) => ({
-  localUser: one(localUsers, { fields: [webhookTokens.userId], references: [localUsers.id] }),
-  oauthUser: one(users, { fields: [webhookTokens.userId], references: [users.id] }),
-}));
-
 export const userBudgetsRelations = relations(userBudgets, ({ one }) => ({
   localUser: one(localUsers, { fields: [userBudgets.userId], references: [localUsers.id] }),
   oauthUser: one(users, { fields: [userBudgets.userId], references: [users.id] }),
@@ -389,11 +378,6 @@ export const coachingStepsRelations = relations(coachingSteps, ({ one }) => ({
   localUser: one(localUsers, { fields: [coachingSteps.userId], references: [localUsers.id] }),
   oauthUser: one(users, { fields: [coachingSteps.userId], references: [users.id] }),
   plan: one(coachingPlans, { fields: [coachingSteps.planId], references: [coachingPlans.id] }),
-}));
-
-export const rawSmsEventsRelations = relations(rawSmsEvents, ({ one }) => ({
-  localUser: one(localUsers, { fields: [rawSmsEvents.userId], references: [localUsers.id] }),
-  oauthUser: one(users, { fields: [rawSmsEvents.userId], references: [users.id] }),
 }));
 
 export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({

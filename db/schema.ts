@@ -685,22 +685,6 @@ export const voiceUsage = mysqlTable(
   (t) => [index("voice_user_month_idx").on(t.userId, t.userType, t.month)],
 );
 
-// ─── Webhook Tokens (For External Automations like Shortcuts) ───
-export const webhookTokens = mysqlTable(
-  "webhook_tokens",
-  {
-    id: int("id").primaryKey().autoincrement(),
-    userId: int("user_id").notNull(),
-    userType: varchar("user_type", { length: 50 }).notNull(),
-    token: varchar("token", { length: 255 }).notNull().unique(),
-    name: varchar("name", { length: 100 }).default("Default Token"),
-    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-  },
-  (t) => [
-    index("webhook_tokens_user_idx").on(t.userId, t.userType),
-  ],
-);
-
 // ─── Financial Goals (Free stub + Pro AI plans) ───
 export const financialGoals = mysqlTable(
   "financial_goals",
@@ -913,26 +897,6 @@ export const coachingSteps = mysqlTable(
     index("coaching_steps_plan_idx").on(t.planId),
     index("coaching_steps_user_idx").on(t.userId, t.userType, t.status),
     index("coaching_steps_reminder_idx").on(t.reminderStatus, t.remindAt),
-  ],
-);
-
-// ─── Raw SMS Events (For Audit & Parsing Logs) ───
-export const rawSmsEvents = mysqlTable(
-  "raw_sms_events",
-  {
-    id: int("id").primaryKey().autoincrement(),
-    userId: int("user_id").notNull(),
-    userType: varchar("user_type", { length: 50 }).notNull(),
-    message: text("message").notNull(),
-    sender: varchar("sender", { length: 100 }),
-    smsTimestamp: varchar("sms_timestamp", { length: 100 }),
-    status: varchar("status", { length: 50 }).default("pending"), // pending | processed | ignored | error
-    metadata: json("metadata"),
-    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-  },
-  (t) => [
-    index("raw_sms_user_idx").on(t.userId, t.userType),
-    index("raw_sms_status_idx").on(t.status),
   ],
 );
 

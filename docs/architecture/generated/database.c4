@@ -331,14 +331,6 @@ model {
         storageClass 'A'
       }
     }
-    raw_sms_events = table 'raw_sms_events' {
-      #classE #dualOwner
-      description '9 columns, 2 indexes, storage class E.'
-      metadata {
-        export 'rawSmsEvents'
-        storageClass 'E'
-      }
-    }
     referrals = table 'referrals' {
       #classA
       description '9 columns, 2 indexes, storage class A.'
@@ -497,14 +489,6 @@ model {
       metadata {
         export 'voiceUsage'
         storageClass 'E'
-      }
-    }
-    webhook_tokens = table 'webhook_tokens' {
-      #classD #dualOwner
-      description '6 columns, 1 indexes, storage class D.'
-      metadata {
-        export 'webhookTokens'
-        storageClass 'D'
       }
     }
     whatsapp_otp_codes = table 'whatsapp_otp_codes' {

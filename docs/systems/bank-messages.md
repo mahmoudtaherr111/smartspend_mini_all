@@ -103,9 +103,9 @@ EGP equivalent in the text, which is not used as pounds.
 
 ## Data
 - `capture_sources` and `subscription_catalog`: the capture catalog above, shared by all users.
-- `webhook_tokens` and `raw_sms_events`: the old intake's tokens and raw messages. Nothing writes or reads them any
-  more except account deletion (`api/services/user-purge-service.ts`) and the 90-day retention job; they are dropped
-  next.
+- The old intake's tables, `webhook_tokens` (one token per user) and `raw_sms_events` (every message as received,
+  with account digits and balances, and the suggestions waiting over the limit), were dropped by
+  `db/migrations/0030_drop_old_bank_messages.sql`, raw messages and waiting suggestions included.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -151,7 +151,6 @@ Checked against the code; each one names where it lives.
    once the key is registered as a provider in the console (decision 0025).
 3. **Gap.** Redaction masks every name-like word after من، إلى، to or from, so a merchant written there ("from AMAZON",
    "من كارفور") reaches the model as `[REDACTED_NAME]`; merchants written after لدى or at are kept.
-4. **Debt.** `webhook_tokens` and `raw_sms_events` are still in the schema with no writer; they are dropped next.
 
 ## Related systems
 - The Flutter app in `mobile/`: not a system page; its rules are in `mobile/AGENTS.md`.

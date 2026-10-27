@@ -65,7 +65,6 @@ flowchart LR
     tbl_pro_subscriptions[("pro_subscriptions")]
     tbl_profile_learning_events[("profile_learning_events")]
     tbl_push_subscriptions[("push_subscriptions")]
-    tbl_raw_sms_events[("raw_sms_events")]
     tbl_referrals[("referrals")]
     tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_seo_pages[("seo_pages")]
@@ -221,7 +220,6 @@ flowchart LR
   mod_jobs ==> tbl_pending_clarifications
   mod_jobs ==> tbl_pro_subscriptions
   mod_jobs ==> tbl_profile_learning_events
-  mod_jobs ==> tbl_raw_sms_events
   mod_jobs ==> tbl_user_analytics
   mod_jobs ==> tbl_user_budgets
   mod_jobs ==> tbl_user_correction_rules
@@ -305,7 +303,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `pro_subscriptions` | A | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `profile_learning_events` | E | `jobs` | — |
 | `push_subscriptions` | A | `api-routers` | `api-routers` |
-| `raw_sms_events` | E | `jobs` | — |
 | `referrals` | A | `api-routers` | `api-routers` |
 | `scheduled_cashflows` | C | `api-routers` | `api-routers` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
