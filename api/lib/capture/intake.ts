@@ -36,7 +36,7 @@ const log = createLogger("capture-intake");
 export const CAPTURE_GATE: CaptureGateConfig = {
   schema: 1,
   otpWords: ["otp", "code", "passcode", "password", "verification", "كود", "رمز", "كلمة السر", "كلمة المرور", "التحقق", "التفعيل"],
-  currencyWords: ["egp", "le", "l.e", "usd", "eur", "sar", "aed", "$", "جنيه", "ج.م", "جم", "دولار", "يورو", "ريال", "درهم"],
+  currencyWords: ["egp", "l.e", "usd", "eur", "sar", "aed", "$", "جنيه", "ج.م", "جم", "دولار", "يورو", "ريال", "درهم"],
 };
 
 // ─── The server's filter ───

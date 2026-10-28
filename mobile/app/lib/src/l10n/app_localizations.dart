@@ -149,7 +149,7 @@ abstract class AppLocalizations {
   /// No description provided for @captureAndroidBody.
   ///
   /// In ar, this message translates to:
-  /// **'التطبيق بيقرا إشعارات البنك والمحفظة ويسجّل المصروف لوحده.'**
+  /// **'التطبيق بيقرا إشعارات البنك والمحفظة، وكل عملية بيسألك عنها قبل ما يسجّلها.'**
   String get captureAndroidBody;
 
   /// No description provided for @captureIosTitle.
@@ -193,6 +193,132 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'مش قادرين نعرف حالتها دلوقتي. جرّب تاني.'**
   String get captureStatusFailed;
+
+  /// Button on the More screen that starts the consent and setup of bank notification capture.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّل تسجيل رسايل البنك'**
+  String get captureStart;
+
+  /// No description provided for @captureConsentTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل ما نبدأ'**
+  String get captureConsentTitle;
+
+  /// What the person agrees to before capture starts; its version is CAPTURE_CONSENT_TEXT_VERSION on the server.
+  ///
+  /// In ar, this message translates to:
+  /// **'هنقرا إشعارات تطبيقات البنوك والمحافظ ورسايلها بس. الرسايل الشخصية والأكواد مابتخرجش من موبايلك. الرسالة اللي فيها عملية بتروح للسيرفر عشان يفهمها، وأرقامها بتتخبّى، وبتتمسح بعد 30 يوم. ومفيش عملية بتتسجل غير لما توافق عليها.'**
+  String get captureConsentBody;
+
+  /// No description provided for @captureConsentAgree.
+  ///
+  /// In ar, this message translates to:
+  /// **'موافق، كمّل'**
+  String get captureConsentAgree;
+
+  /// No description provided for @captureUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل رسايل البنك لسه مش متاح. هنقولك أول ما يبقى جاهز.'**
+  String get captureUnavailable;
+
+  /// No description provided for @captureConnectFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نشغّله دلوقتي. اتأكد من النت وجرّب تاني.'**
+  String get captureConnectFailed;
+
+  /// No description provided for @captureNeedsAccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل خطوة: افتح الإعدادات وفعّل قراية الإشعارات للتطبيق.'**
+  String get captureNeedsAccess;
+
+  /// No description provided for @captureNotificationsOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات مقفولة، فمش هنقدر نسألك عن العمليات من شريط الإشعارات. هتلاقيها هنا.'**
+  String get captureNotificationsOff;
+
+  /// How many captured notifications the phone has not sent yet.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{مفيش رسايل مستنية الإرسال.} =1{رسالة واحدة مستنية الإرسال.} =2{رسالتين مستنيين الإرسال.} few{{count} رسايل مستنية الإرسال.} other{{count} رسالة مستنية الإرسال.}}'**
+  String captureWaiting(int count);
+
+  /// No description provided for @captureOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستنيين النت عشان نبعت.'**
+  String get captureOffline;
+
+  /// No description provided for @captureRevoked.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجهاز ده اتفصل. شغّله تاني من هنا.'**
+  String get captureRevoked;
+
+  /// Link to the list of captured transactions waiting for the person's answer.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{مفيش عمليات مستنية ردك} =1{عملية واحدة مستنية ردك} =2{عمليتين مستنيين ردك} few{{count} عمليات مستنية ردك} other{{count} عملية مستنية ردك}}'**
+  String captureReviewEntry(int count);
+
+  /// No description provided for @captureReviewTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمليات البنك'**
+  String get captureReviewTitle;
+
+  /// No description provided for @captureReviewEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش عمليات مستنية ردك.'**
+  String get captureReviewEmpty;
+
+  /// No description provided for @captureReviewFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب العمليات دلوقتي. جرّب تاني.'**
+  String get captureReviewFailed;
+
+  /// No description provided for @captureRecord.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل'**
+  String get captureRecord;
+
+  /// No description provided for @captureDismiss.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش مصروف'**
+  String get captureDismiss;
+
+  /// No description provided for @captureAmountLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ بالجنيه'**
+  String get captureAmountLabel;
+
+  /// Shown on a captured transaction whose amount is in a foreign currency.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرسالة فيها مبلغ بعملة تانية. اكتب قيمته بالجنيه زي ما اتخصم.'**
+  String get captureAmountNeeded;
+
+  /// No description provided for @captureCheckAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش متأكدين من المبلغ ده، راجعه قبل ما تسجّل.'**
+  String get captureCheckAmount;
+
+  /// No description provided for @captureAnswerFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحفظ ردك. جرّب تاني.'**
+  String get captureAnswerFailed;
 
   /// No description provided for @signInTitle.
   ///

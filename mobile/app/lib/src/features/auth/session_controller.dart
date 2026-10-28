@@ -113,6 +113,13 @@ class SessionController extends Notifier<SessionState> {
       // Signing out on this phone does not wait for the network.
     }
     await ref.read(sessionStoreProvider).clear();
+    // Bank message capture stops with the account: its token, waiting messages and what it saw are forgotten, so
+    // another account on this phone never sends them (decision 0028). An expired session does not do this.
+    try {
+      await ref.read(bankCaptureProvider).disconnect();
+    } on Object {
+      // A phone without the native side (tests, other platforms) has nothing to forget.
+    }
     state = const SignedOut();
     unawaited(ref.read(googleIdentityProvider).signOut());
   }

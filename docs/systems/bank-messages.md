@@ -5,9 +5,9 @@ is being rebuilt from scratch: the old intake (the Android companion app, the iP
 the rule parser, the filing and the suggestions over the monthly limit, and the setup screens) was removed. The new
 intake's server side is built ([below](#the-intake-phones-send-the-user-confirms)): phones register for a device token
 and send notifications to `/api/capture/v1`, the reader reads them, and every transaction waits for the user to confirm
-it before the ledger is written ([decision 0028](../decisions/0028-capture-intake-from-phones.md)). **No phone sends
-anything yet**: the Android capture and the app's screens are the next step, and the admin's switch `capture_enabled`
-is off.
+it before the ledger is written ([decision 0028](../decisions/0028-capture-intake-from-phones.md)). The Flutter app's
+Android capture sends them ([below](#on-the-phone)); iPhone capture comes later. The admin's switch `capture_enabled`
+is off, so nothing is captured until the closed beta.
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/bank-messages.md](../atlas/systems/bank-messages.md)
 - The same story for readers who do not read code: [docs/ar/systems/bank-messages.md](../ar/systems/bank-messages.md)
@@ -26,7 +26,8 @@ is off.
 | Reply contract | `api/lib/sms-ai-contract.ts` | What the model is asked, the reply schema, the checks a reply must pass, and `SmsParseResult`, a reply in the ledger's terms |
 | Redaction | `api/lib/anonymizer.ts#redactWithFindings` | Removes card and account digits, IBANs, phones, references, e-mails, codes and people's names before the text leaves for a model |
 | Admin controls | the `sms` purpose in the AI providers screen (`contracts/ai-models.ts`); `sms_ai_enabled` and `sms_ai_daily_cost_cap_usd` in `src/components/admin/settings/AdminSmsAiSection.tsx`; `capture_enabled` in `system_settings` | Which provider and model read messages, the switch that stops the model, the daily cost cap in USD, and the switch that opens capture |
-| The Flutter app | `mobile/packages/bank_capture` ([decision 0022](../decisions/0022-flutter-mobile-app.md)) | Where capture on the phone will live. Today it only tells the app how the phone can capture (the notification listener on Android, a Shortcuts automation on iOS), whether the user allowed it, and opens the screen where they can; nothing is read, queued or posted |
+| Capture on Android | `mobile/packages/bank_capture` (Kotlin: `BankNotificationListener`, `CaptureGate`, `CaptureQueue`, `CaptureWork.kt`, `CaptureNotifier`, `CaptureActionReceiver`; the Pigeon contract in `mobile/packages/bank_capture/pigeons/bank_capture_api.dart`) | Reads bank, wallet and messaging-app notifications, drops codes and personal messages, keeps the rest encrypted until sent, sends them with the device token and shows the server's notice with its buttons ([below](#on-the-phone)) |
+| The app's screens | `mobile/app/lib/src/features/capture/` (`CaptureConnector`, `CaptureReviewScreen`), the card in `mobile/app/lib/src/features/more/bank_capture_card.dart` | Turning capture on (consent, a device token, the native side connected), notification access, what waits to be sent, and the transactions waiting for the person |
 
 Transactions recorded by the old intake stay in the ledger with source `sms`, and the statistics still count them as
 automated income and spending ([Money](money.md)).
@@ -92,6 +93,34 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
    answered signal keeps its answer, so a repeated tap writes one row.
 6. **`GET /api/capture/v1/config`**: whether capture is on, the user's consents, the oldest build allowed, the catalog's
    sources and version, the phone's filter lists (`CAPTURE_GATE`: words for codes and for money) and the batch limits.
+
+## On the phone
+Android only for now; the plugin is `mobile/packages/bank_capture`, and capture runs without Flutter.
+1. **Turning it on** (the More screen's card): the person reads what is read and kept and agrees (`capture.setConsent`),
+   the app registers this installation (`capture.registerDevice`, with an id kept in the phone's preferences so
+   registering again replaces the same device) and hands the token, the account (`local:12`), the API's origin and the
+   interface language to the native side (`connect`), asks to show notifications (Android 13) and opens the
+   notification access screen. Signing out calls `disconnect`, which forgets the token, the queue and what was seen;
+   an expired session does not.
+2. **The listener** (`BankNotificationListener`, its component name kept so granted access survives updates): an app
+   neither the catalog (from `/config`) nor the phone's default SMS app names is refused before its notification is
+   read; group summaries and ongoing notifications are skipped. The text is the newest message of a conversation with
+   its sender and time, else the long text, the inbox lines or the short text. The filter (`CaptureGate`, fixed code
+   fed by the `/config` lists, its cases shared with the server in `contracts/capture-fixtures/phone-gate.json`) drops
+   a person's number in a messaging app, a one-time code (a code word and four to eight digits with no currency word)
+   and a text without a digit. A notification the system posts again (the same key, time and text) is kept once.
+3. **The queue** (`CaptureQueue`, the framework's SQLite): each signal with its text and title encrypted by an AES-GCM
+   key in the Android Keystore, for the account it was captured for; a signal of another account or older than 30
+   days is dropped.
+4. **Sending** (`CaptureWork.kt`): one unique WorkManager chain, expedited when the system allows, needing a network,
+   retried with backoff, and a send every six hours as a safety net. It reads `/config` when it is six hours old, sends
+   up to five batches, deletes every signal the server answered, and shows each `review` notice (`CaptureNotifier`):
+   private on the lock screen, in the interface language, with the server's buttons. A 401 forgets the token and the
+   queue; a 403 or 503 keeps the queue and reads the config again.
+5. **The buttons** (`CaptureActionReceiver`): the notice goes at once and `ActionWorker` sends the answer to
+   `/api/capture/v1/actions` until the server has it, without opening the app.
+6. **The review screen** (`/more/capture`): the waiting transactions with their source, amount, merchant and filing;
+   "record" or "not mine", and the pounds of a foreign charge typed first.
 
 ## The message reader
 [Decision 0026](../decisions/0026-message-reader-before-the-model.md). `api/lib/capture/reader/read.ts#readMessage` is
@@ -188,6 +217,9 @@ needs a card), the filings and the notice (Arabic and English, isolated Latin, n
 `tests/capture-intake.test.ts` (`npm run test:db`) runs the routes and the answer against MySQL: a retried signal is
 kept once, repeated taps write one ledger row without the bank's text, the app's own filing and a dismissal, a Google
 account with the same id sees and answers nothing, and a revoked device, missing consent and the switch are refused.
+`api/lib/capture/phone-gate-fixtures.test.ts` keeps the phone's shared cases on the lists the server sends, and
+`CaptureGateTest` in `mobile/packages/bank_capture/android/src/test` runs them in Kotlin (the Mobile workflow).
+`mobile/app/test/capture_test.dart` checks turning capture on, the switch being off, signing out, and the review screen.
 `api/lib/capture/reader/read.test.ts` and `api/lib/capture/reader/reader-benchmark.test.ts` check the reader.
 `api/lib/sms-ai-contract.test.ts` checks the reply contract without a model (an amount, currency, category or direction
 that fails is discarded, a merchant or balance not in the text is dropped, declined and promotional kinds are never
@@ -201,9 +233,9 @@ rows the seed may write.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** No phone sends signals yet: the Android capture in `mobile/packages/bank_capture` and the app's setup and
-   review screens are the next step. The intake does not call the model reader: a reading without an amount is
-   ignored.
+1. **Gap.** iPhone capture is not built: the card on an iPhone only opens the Shortcuts app. The intake does not call
+   the model reader: a reading without an amount is ignored. The Android side was compiled and tested only in CI; it
+   has not run on a real phone yet.
 2. **Debt.** Until the admin assigns a model to the `sms` purpose, `readMessageWithModel` falls back to
    `GEMINI_API_KEY` with `mapModelName("flash")` (`smsRoutes` in `api/lib/capture/ai-reader.ts`). It is meant to go
    once the key is registered as a provider in the console (decision 0025).

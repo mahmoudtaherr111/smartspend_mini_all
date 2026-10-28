@@ -2,8 +2,9 @@
 
 - Status: accepted. The server side is built: `contracts/capture-intake.ts`, `api/capture-v1-routes.ts`,
   `api/lib/capture/{devices,consent,intake}.ts`, the `capture.*` procedures in `api/capture-router.ts` and the
-  tables `capture_devices`, `capture_consents`, `capture_signals` (migration 0031). The Android capture in
-  `mobile/packages/bank_capture` and the app's screens follow. Off until the closed beta (`capture_enabled`).
+  tables `capture_devices`, `capture_consents`, `capture_signals` (migration 0031). The Android capture is built in
+  `mobile/packages/bank_capture` with the app's screens in `mobile/app/lib/src/features/capture/`; iPhone capture
+  follows. Off until the closed beta (`capture_enabled`).
 - Decided and recorded: 2026-10-27, from the capture production plan (owner, red-team review, a consult with
   Antigravity).
 

@@ -80,6 +80,9 @@ jobs:
       - name: Debug APK
         working-directory: mobile/app
         run: flutter build apk --debug --dart-define-from-file=config/development.json
+      - name: Kotlin unit tests (the capture filter against contracts/capture-fixtures)
+        working-directory: mobile/app/android
+        run: ./gradlew :bank_capture:testDebugUnitTest
       - uses: actions/upload-artifact@v4
         with:
           name: smartspend-mobile-debug-apk

@@ -201,15 +201,44 @@ final class FakeChallengeEvents {
   void send(PhoneChallengeOutcome outcome) => _open!.complete(outcome);
 }
 
-final class _FakeBankCapture implements BankCapture {
+/// The native capture, in Dart: what it was told and what it answers.
+final class FakeBankCapture implements BankCapture {
+  CaptureAccess access = CaptureAccess.notGranted;
+  CaptureSetup? setup;
+  int disconnects = 0;
+  int settingsOpened = 0;
+  int waiting = 0;
+  String? language;
+
   @override
   Future<CaptureStatus> status() async => CaptureStatus(
     method: CaptureMethod.notificationListener,
-    access: CaptureAccess.notGranted,
+    access: access,
+    connected: setup != null,
+    notificationsAllowed: true,
+    waiting: waiting,
   );
 
   @override
-  Future<void> openAccessSettings() async {}
+  Future<void> openAccessSettings() async => settingsOpened++;
+
+  @override
+  Future<void> connect(CaptureSetup setup) async => this.setup = setup;
+
+  @override
+  Future<void> disconnect() async {
+    disconnects++;
+    setup = null;
+  }
+
+  @override
+  Future<void> setLanguage(String language) async => this.language = language;
+
+  @override
+  Future<void> sendNow() async {}
+
+  @override
+  Future<bool> requestNotificationPermission() async => true;
 }
 
 /// A phone user as `localAuth.me` answers it.
@@ -256,6 +285,9 @@ final class TestApp {
   final lockStore = MemoryLockStore();
   final deviceLock = FakeDeviceLock();
 
+  /// The native bank message capture.
+  final bankCapture = FakeBankCapture();
+
   /// The phone's own choices, such as the interface language, as bootstrap() reads them before the first frame.
   final preferences = MemoryPreferencesStore();
 
@@ -292,7 +324,7 @@ final class TestApp {
             openedLinks.add(uri);
             return linksOpen;
           }),
-          bankCaptureProvider.overrideWithValue(_FakeBankCapture()),
+          bankCaptureProvider.overrideWithValue(bankCapture),
           ledgerStoreProvider.overrideWithValue(ledgerStore),
           connectivityProvider.overrideWith((ref) => connection.stream),
           outboxRetryDelaysProvider.overrideWithValue(const []),

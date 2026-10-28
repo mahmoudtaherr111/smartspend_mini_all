@@ -3,8 +3,8 @@
  * (decision 0028). The routes live under `/api/capture/v1` and are called by native code (Kotlin, Swift) with a
  * device token, never a session, so a capture keeps working while the app is closed and after the session expires.
  *
- * Native code cannot import this file: `contracts/capture-fixtures/` holds example requests and replies that the
- * server's tests and the phones' tests both read, so the three stay in step.
+ * Native code cannot import this file: `contracts/capture-fixtures/` holds the cases both sides test against (the
+ * phone's filter with the word lists `/config` sends), so they stay in step.
  */
 import { z } from "zod";
 

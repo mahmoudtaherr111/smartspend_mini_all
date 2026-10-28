@@ -8,7 +8,7 @@
   "navMore": "More",
   "screenInProgress": "This screen is still being built in the new app.",
   "captureAndroidTitle": "Bank and wallet notifications",
-  "captureAndroidBody": "The app reads your bank and wallet notifications and records the spending for you.",
+  "captureAndroidBody": "The app reads your bank and wallet notifications and asks you about each transaction before recording it.",
   "captureIosTitle": "Bank messages from Shortcuts",
   "captureIosBody": "An automation in the Shortcuts app sends each bank message to the app as it arrives.",
   "captureOn": "On",
@@ -16,6 +16,43 @@
   "captureOpenSettings": "Open settings",
   "captureOpenShortcuts": "Open Shortcuts",
   "captureStatusFailed": "We can't tell its state right now. Try again.",
+  "captureStart": "Turn on bank message recording",
+  "captureConsentTitle": "Before we start",
+  "captureConsentBody": "We read only the notifications and messages of bank and wallet apps. Personal messages and codes never leave your phone. A message with a transaction goes to the server to be read, with its numbers hidden, and is deleted after 30 days. Nothing is recorded until you approve it.",
+  "captureConsentAgree": "I agree, continue",
+  "captureUnavailable": "Bank message recording isn't available yet. We'll let you know when it is.",
+  "captureConnectFailed": "We couldn't turn it on right now. Check your connection and try again.",
+  "captureNeedsAccess": "One step left: open Settings and let the app read notifications.",
+  "captureNotificationsOff": "Notifications are off, so we can't ask you about transactions from the notification shade. You'll find them here.",
+  "captureWaiting": "{count, plural, =0{No messages waiting to be sent.} =1{One message waiting to be sent.} other{{count} messages waiting to be sent.}}",
+  "@captureWaiting": {
+    "description": "How many captured notifications the phone has not sent yet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "captureOffline": "Waiting for a connection to send.",
+  "captureRevoked": "This device was disconnected. Turn it on again here.",
+  "captureReviewEntry": "{count, plural, =0{No transactions waiting for you} =1{One transaction waiting for you} other{{count} transactions waiting for you}}",
+  "@captureReviewEntry": {
+    "description": "Link to the list of captured transactions waiting for the person's answer.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "captureReviewTitle": "Bank transactions",
+  "captureReviewEmpty": "No transactions waiting for you.",
+  "captureReviewFailed": "We can't load the transactions right now. Try again.",
+  "captureRecord": "Record",
+  "captureDismiss": "Not mine",
+  "captureAmountLabel": "Amount in pounds",
+  "captureAmountNeeded": "The message has an amount in another currency. Type what was charged in pounds.",
+  "captureCheckAmount": "We're not sure about this amount; check it before recording.",
+  "captureAnswerFailed": "We couldn't save your answer. Try again.",
   "signInTitle": "Welcome to SmartSpend",
   "signInSubtitle": "Sign in with your phone number or your Google account.",
   "phoneLabel": "Phone number",

@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The notice that asks whether to record a captured bank transaction (Android 13 asks the user first). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application>
         <!-- Notification access for bank and wallet messages. Only the system can bind it
@@ -14,5 +16,10 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <!-- A tap on a transaction notice's "record" or "not mine" button; only this app's notices send it. -->
+        <receiver
+            android:name=".CaptureActionReceiver"
+            android:exported="false" />
     </application>
 </manifest>

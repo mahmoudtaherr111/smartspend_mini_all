@@ -206,39 +206,131 @@ enum CaptureAccess: Int, CaseIterable {
 struct CaptureStatus: Hashable, CustomStringConvertible {
   var method: CaptureMethod
   var access: CaptureAccess
+  /// The native side holds a device token for the signed-in account (decision 0028).
+  var connected: Bool
+  /// The phone may show the app's notifications (Android 13 asks for it).
+  var notificationsAllowed: Bool
+  /// Signals captured and not yet sent.
+  var waiting: Int64
+  /// When the last bank notification was captured and when the last batch reached the server (milliseconds since
+  /// the epoch).
+  var lastCaptureAt: Int64? = nil
+  var lastUploadAt: Int64? = nil
+  /// Why the last send failed, as an id ("offline", "device_revoked", "capture_disabled", "consent_required").
+  var lastError: String? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
   static func fromList(_ pigeonVar_list: [Any?]) -> CaptureStatus? {
     let method = pigeonVar_list[0] as! CaptureMethod
     let access = pigeonVar_list[1] as! CaptureAccess
+    let connected = pigeonVar_list[2] as! Bool
+    let notificationsAllowed = pigeonVar_list[3] as! Bool
+    let waiting = pigeonVar_list[4] as! Int64
+    let lastCaptureAt: Int64? = nilOrValue(pigeonVar_list[5])
+    let lastUploadAt: Int64? = nilOrValue(pigeonVar_list[6])
+    let lastError: String? = nilOrValue(pigeonVar_list[7])
 
     return CaptureStatus(
       method: method,
-      access: access
+      access: access,
+      connected: connected,
+      notificationsAllowed: notificationsAllowed,
+      waiting: waiting,
+      lastCaptureAt: lastCaptureAt,
+      lastUploadAt: lastUploadAt,
+      lastError: lastError
     )
   }
   func toList() -> [Any?] {
     return [
       method,
       access,
+      connected,
+      notificationsAllowed,
+      waiting,
+      lastCaptureAt,
+      lastUploadAt,
+      lastError,
     ]
   }
   static func == (lhs: CaptureStatus, rhs: CaptureStatus) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return BankCaptureApiPigeonInternal.deepEquals(lhs.method, rhs.method) && BankCaptureApiPigeonInternal.deepEquals(lhs.access, rhs.access)
+    return BankCaptureApiPigeonInternal.deepEquals(lhs.method, rhs.method) && BankCaptureApiPigeonInternal.deepEquals(lhs.access, rhs.access) && BankCaptureApiPigeonInternal.deepEquals(lhs.connected, rhs.connected) && BankCaptureApiPigeonInternal.deepEquals(lhs.notificationsAllowed, rhs.notificationsAllowed) && BankCaptureApiPigeonInternal.deepEquals(lhs.waiting, rhs.waiting) && BankCaptureApiPigeonInternal.deepEquals(lhs.lastCaptureAt, rhs.lastCaptureAt) && BankCaptureApiPigeonInternal.deepEquals(lhs.lastUploadAt, rhs.lastUploadAt) && BankCaptureApiPigeonInternal.deepEquals(lhs.lastError, rhs.lastError)
   }
 
   func hash(into hasher: inout Hasher) {
     hasher.combine("CaptureStatus")
     BankCaptureApiPigeonInternal.deepHash(value: method, hasher: &hasher)
     BankCaptureApiPigeonInternal.deepHash(value: access, hasher: &hasher)
+    BankCaptureApiPigeonInternal.deepHash(value: connected, hasher: &hasher)
+    BankCaptureApiPigeonInternal.deepHash(value: notificationsAllowed, hasher: &hasher)
+    BankCaptureApiPigeonInternal.deepHash(value: waiting, hasher: &hasher)
+    BankCaptureApiPigeonInternal.deepHash(value: lastCaptureAt, hasher: &hasher)
+    BankCaptureApiPigeonInternal.deepHash(value: lastUploadAt, hasher: &hasher)
+    BankCaptureApiPigeonInternal.deepHash(value: lastError, hasher: &hasher)
   }
 
   public var description: String {
-    return "CaptureStatus(method: \(String(describing: method)), access: \(String(describing: access)))"
+    return "CaptureStatus(method: \(String(describing: method)), access: \(String(describing: access)), connected: \(String(describing: connected)), notificationsAllowed: \(String(describing: notificationsAllowed)), waiting: \(String(describing: waiting)), lastCaptureAt: \(String(describing: lastCaptureAt)), lastUploadAt: \(String(describing: lastUploadAt)), lastError: \(String(describing: lastError)))"
+  }
+}
+
+/// What the native side needs to send signals on its own, while the app is closed.
+///
+/// Generated class from Pigeon that represents data sent in messages.
+struct CaptureSetup: Hashable, CustomStringConvertible {
+  /// The API's origin, without a path.
+  var baseUrl: String
+  /// From `capture.registerDevice`; kept encrypted by the native side and never given back to Dart.
+  var deviceToken: String
+  /// The account the token belongs to ("local:12"). Signals captured for another account are dropped.
+  var ownerKey: String
+  /// The interface language ("ar" or "en"), for the notices.
+  var language: String
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> CaptureSetup? {
+    let baseUrl = pigeonVar_list[0] as! String
+    let deviceToken = pigeonVar_list[1] as! String
+    let ownerKey = pigeonVar_list[2] as! String
+    let language = pigeonVar_list[3] as! String
+
+    return CaptureSetup(
+      baseUrl: baseUrl,
+      deviceToken: deviceToken,
+      ownerKey: ownerKey,
+      language: language
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      baseUrl,
+      deviceToken,
+      ownerKey,
+      language,
+    ]
+  }
+  static func == (lhs: CaptureSetup, rhs: CaptureSetup) -> Bool {
+    if Swift.type(of: lhs) != Swift.type(of: rhs) {
+      return false
+    }
+    return BankCaptureApiPigeonInternal.deepEquals(lhs.baseUrl, rhs.baseUrl) && BankCaptureApiPigeonInternal.deepEquals(lhs.deviceToken, rhs.deviceToken) && BankCaptureApiPigeonInternal.deepEquals(lhs.ownerKey, rhs.ownerKey) && BankCaptureApiPigeonInternal.deepEquals(lhs.language, rhs.language)
+  }
+
+  func hash(into hasher: inout Hasher) {
+    hasher.combine("CaptureSetup")
+    BankCaptureApiPigeonInternal.deepHash(value: baseUrl, hasher: &hasher)
+    BankCaptureApiPigeonInternal.deepHash(value: deviceToken, hasher: &hasher)
+    BankCaptureApiPigeonInternal.deepHash(value: ownerKey, hasher: &hasher)
+    BankCaptureApiPigeonInternal.deepHash(value: language, hasher: &hasher)
+  }
+
+  public var description: String {
+    return "CaptureSetup(baseUrl: \(String(describing: baseUrl)), deviceToken: \(String(describing: deviceToken)), ownerKey: \(String(describing: ownerKey)), language: \(String(describing: language)))"
   }
 }
 
@@ -259,6 +351,8 @@ private class BankCaptureApiPigeonCodecReader: FlutterStandardReader {
       return nil
     case 131:
       return CaptureStatus.fromList(self.readValue() as! [Any?])
+    case 132:
+      return CaptureSetup.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
     }
@@ -275,6 +369,9 @@ private class BankCaptureApiPigeonCodecWriter: FlutterStandardWriter {
       super.writeValue(value.rawValue)
     } else if let value = value as? CaptureStatus {
       super.writeByte(131)
+      super.writeValue(value.toList())
+    } else if let value = value as? CaptureSetup {
+      super.writeByte(132)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -296,12 +393,23 @@ class BankCaptureApiPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendabl
   static let shared = BankCaptureApiPigeonCodec(readerWriter: BankCaptureApiPigeonCodecReaderWriter())
 }
 
+
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol BankCaptureHostApi {
   func getStatus() throws -> CaptureStatus
   /// Opens where the user grants access: Android's notification access screen for this app, or the Shortcuts
   /// app on iOS.
   func openAccessSettings() throws
+  /// Starts capturing for the signed-in account with its device token.
+  func connect(setup: CaptureSetup) throws
+  /// Stops capturing and forgets the token, the waiting signals and what was seen (signing out).
+  func disconnect() throws
+  /// The interface language changed.
+  func setLanguage(language: String) throws
+  /// Sends what is waiting now.
+  func sendNow() throws
+  /// Asks for permission to show notifications (Android 13 and newer). True when the app may show them.
+  func requestNotificationPermission() async throws -> Bool
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -337,6 +445,82 @@ class BankCaptureHostApiSetup {
       }
     } else {
       openAccessSettingsChannel.setMessageHandler(nil)
+    }
+    /// Starts capturing for the signed-in account with its device token.
+    let connectChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.connect\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      connectChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let setupArg = args[0] as! CaptureSetup
+        do {
+          try api.connect(setup: setupArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      connectChannel.setMessageHandler(nil)
+    }
+    /// Stops capturing and forgets the token, the waiting signals and what was seen (signing out).
+    let disconnectChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.disconnect\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      disconnectChannel.setMessageHandler { _, reply in
+        do {
+          try api.disconnect()
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      disconnectChannel.setMessageHandler(nil)
+    }
+    /// The interface language changed.
+    let setLanguageChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.setLanguage\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setLanguageChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let languageArg = args[0] as! String
+        do {
+          try api.setLanguage(language: languageArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setLanguageChannel.setMessageHandler(nil)
+    }
+    /// Sends what is waiting now.
+    let sendNowChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.sendNow\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      sendNowChannel.setMessageHandler { _, reply in
+        do {
+          try api.sendNow()
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      sendNowChannel.setMessageHandler(nil)
+    }
+    /// Asks for permission to show notifications (Android 13 and newer). True when the app may show them.
+    let requestNotificationPermissionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.requestNotificationPermission\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      requestNotificationPermissionChannel.setMessageHandler { _, reply in
+        Task { @MainActor in
+          do {
+            let result = try await api.requestNotificationPermission()
+            reply(wrapResult(result))
+          } catch {
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      requestNotificationPermissionChannel.setMessageHandler(nil)
     }
   }
 }

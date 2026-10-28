@@ -21,6 +21,21 @@ class _FakeBankCapture implements BankCapture {
 
   @override
   Future<void> openAccessSettings() async => opened++;
+
+  @override
+  Future<void> connect(CaptureSetup setup) async {}
+
+  @override
+  Future<void> disconnect() async {}
+
+  @override
+  Future<void> setLanguage(String language) async {}
+
+  @override
+  Future<void> sendNow() async {}
+
+  @override
+  Future<bool> requestNotificationPermission() async => true;
 }
 
 /// The app with a phone account already signed in.
@@ -28,9 +43,16 @@ Future<_FakeBankCapture> _pumpApp(
   WidgetTester tester, {
   CaptureMethod method = CaptureMethod.notificationListener,
   CaptureAccess access = CaptureAccess.notGranted,
+  bool connected = false,
 }) async {
   final capture = _FakeBankCapture(
-    CaptureStatus(method: method, access: access),
+    CaptureStatus(
+      method: method,
+      access: access,
+      connected: connected,
+      notificationsAllowed: true,
+      waiting: 0,
+    ),
   );
   final api = FakeApi()..answer('localAuth.me', (_) => phoneUser());
   await tester.pumpWidget(
@@ -75,15 +97,27 @@ void main() {
     expect(find.byType(TextField), findsOneWidget);
   });
 
-  testWidgets('the More tab shows that bank notifications are off', (
+  testWidgets('the More tab offers to turn bank notifications on', (
     tester,
   ) async {
-    final capture = await _pumpApp(tester);
+    await _pumpApp(tester);
 
     await tester.tap(find.text('المزيد').last);
     await tester.pumpAndSettle();
 
     expect(find.text('إشعارات البنك والمحفظة'), findsOneWidget);
+    expect(find.text('مش شغّالة'), findsOneWidget);
+    expect(find.text('شغّل تسجيل رسايل البنك'), findsOneWidget);
+  });
+
+  testWidgets('once connected, it asks for notification access', (
+    tester,
+  ) async {
+    final capture = await _pumpApp(tester, connected: true);
+
+    await tester.tap(find.text('المزيد').last);
+    await tester.pumpAndSettle();
+
     expect(find.text('مش شغّالة'), findsOneWidget);
 
     await tester.ensureVisible(find.text('افتح الإعدادات'));

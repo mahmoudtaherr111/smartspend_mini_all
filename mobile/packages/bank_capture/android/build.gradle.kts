@@ -72,6 +72,15 @@ kotlin {
 }
 
 dependencies {
+    // Sends captured signals in the background, with retries, while the app is closed (CaptureWork.kt). Its
+    // coroutine workers also bring kotlinx-coroutines, which Pigeon's @async call runs on.
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
+    testImplementation(platform("org.junit:junit-bom:5.12.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // The real org.json for unit tests (android.jar has only stubs); the tests read the shared fixtures with it.
+    testImplementation("org.json:json:20240303")
     testImplementation("org.mockito:mockito-core:5.0.0")
 }

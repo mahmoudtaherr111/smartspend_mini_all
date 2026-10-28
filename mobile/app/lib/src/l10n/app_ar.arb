@@ -11,7 +11,7 @@
     "description": "Shown on a tab whose screen is not built yet."
   },
   "captureAndroidTitle": "إشعارات البنك والمحفظة",
-  "captureAndroidBody": "التطبيق بيقرا إشعارات البنك والمحفظة ويسجّل المصروف لوحده.",
+  "captureAndroidBody": "التطبيق بيقرا إشعارات البنك والمحفظة، وكل عملية بيسألك عنها قبل ما يسجّلها.",
   "captureIosTitle": "رسايل البنك من الاختصارات",
   "captureIosBody": "أتمتة في تطبيق الاختصارات بتبعت رسايل البنك للتطبيق أول ما توصل.",
   "captureOn": "شغّالة",
@@ -19,6 +19,52 @@
   "captureOpenSettings": "افتح الإعدادات",
   "captureOpenShortcuts": "افتح الاختصارات",
   "captureStatusFailed": "مش قادرين نعرف حالتها دلوقتي. جرّب تاني.",
+  "captureStart": "شغّل تسجيل رسايل البنك",
+  "@captureStart": {
+    "description": "Button on the More screen that starts the consent and setup of bank notification capture."
+  },
+  "captureConsentTitle": "قبل ما نبدأ",
+  "captureConsentBody": "هنقرا إشعارات تطبيقات البنوك والمحافظ ورسايلها بس. الرسايل الشخصية والأكواد مابتخرجش من موبايلك. الرسالة اللي فيها عملية بتروح للسيرفر عشان يفهمها، وأرقامها بتتخبّى، وبتتمسح بعد 30 يوم. ومفيش عملية بتتسجل غير لما توافق عليها.",
+  "@captureConsentBody": {
+    "description": "What the person agrees to before capture starts; its version is CAPTURE_CONSENT_TEXT_VERSION on the server."
+  },
+  "captureConsentAgree": "موافق، كمّل",
+  "captureUnavailable": "تسجيل رسايل البنك لسه مش متاح. هنقولك أول ما يبقى جاهز.",
+  "captureConnectFailed": "ماقدرناش نشغّله دلوقتي. اتأكد من النت وجرّب تاني.",
+  "captureNeedsAccess": "فاضل خطوة: افتح الإعدادات وفعّل قراية الإشعارات للتطبيق.",
+  "captureNotificationsOff": "الإشعارات مقفولة، فمش هنقدر نسألك عن العمليات من شريط الإشعارات. هتلاقيها هنا.",
+  "captureWaiting": "{count, plural, =0{مفيش رسايل مستنية الإرسال.} =1{رسالة واحدة مستنية الإرسال.} =2{رسالتين مستنيين الإرسال.} few{{count} رسايل مستنية الإرسال.} other{{count} رسالة مستنية الإرسال.}}",
+  "@captureWaiting": {
+    "description": "How many captured notifications the phone has not sent yet.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "captureOffline": "مستنيين النت عشان نبعت.",
+  "captureRevoked": "الجهاز ده اتفصل. شغّله تاني من هنا.",
+  "captureReviewEntry": "{count, plural, =0{مفيش عمليات مستنية ردك} =1{عملية واحدة مستنية ردك} =2{عمليتين مستنيين ردك} few{{count} عمليات مستنية ردك} other{{count} عملية مستنية ردك}}",
+  "@captureReviewEntry": {
+    "description": "Link to the list of captured transactions waiting for the person's answer.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "captureReviewTitle": "عمليات البنك",
+  "captureReviewEmpty": "مفيش عمليات مستنية ردك.",
+  "captureReviewFailed": "مش قادرين نجيب العمليات دلوقتي. جرّب تاني.",
+  "captureRecord": "سجّل",
+  "captureDismiss": "مش مصروف",
+  "captureAmountLabel": "المبلغ بالجنيه",
+  "captureAmountNeeded": "الرسالة فيها مبلغ بعملة تانية. اكتب قيمته بالجنيه زي ما اتخصم.",
+  "@captureAmountNeeded": {
+    "description": "Shown on a captured transaction whose amount is in a foreign currency."
+  },
+  "captureCheckAmount": "مش متأكدين من المبلغ ده، راجعه قبل ما تسجّل.",
+  "captureAnswerFailed": "ماقدرناش نحفظ ردك. جرّب تاني.",
   "signInTitle": "أهلاً بيك في SmartSpend",
   "signInSubtitle": "ادخل برقم تليفونك أو بحساب Google.",
   "phoneLabel": "رقم التليفون",

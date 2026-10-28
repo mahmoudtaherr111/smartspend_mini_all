@@ -13,6 +13,12 @@ import io.flutter.plugin.common.StandardMethodCodec
 import io.flutter.plugin.common.StandardMessageCodec
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 private object BankCaptureApiPigeonUtils {
 
   fun wrapResult(result: Any?): List<Any?> {
@@ -225,20 +231,46 @@ enum class CaptureAccess(val raw: Int) {
 /** Generated class from Pigeon that represents data sent in messages. */
 data class CaptureStatus (
   val method: CaptureMethod,
-  val access: CaptureAccess
+  val access: CaptureAccess,
+  /** The native side holds a device token for the signed-in account (decision 0028). */
+  val connected: Boolean,
+  /** The phone may show the app's notifications (Android 13 asks for it). */
+  val notificationsAllowed: Boolean,
+  /** Signals captured and not yet sent. */
+  val waiting: Long,
+  /**
+   * When the last bank notification was captured and when the last batch reached the server (milliseconds since
+   * the epoch).
+   */
+  val lastCaptureAt: Long? = null,
+  val lastUploadAt: Long? = null,
+  /** Why the last send failed, as an id ("offline", "device_revoked", "capture_disabled", "consent_required"). */
+  val lastError: String? = null
 )
  {
   companion object {
     fun fromList(pigeonVar_list: List<Any?>): CaptureStatus {
       val method = pigeonVar_list[0] as CaptureMethod
       val access = pigeonVar_list[1] as CaptureAccess
-      return CaptureStatus(method, access)
+      val connected = pigeonVar_list[2] as Boolean
+      val notificationsAllowed = pigeonVar_list[3] as Boolean
+      val waiting = pigeonVar_list[4] as Long
+      val lastCaptureAt = pigeonVar_list[5] as Long?
+      val lastUploadAt = pigeonVar_list[6] as Long?
+      val lastError = pigeonVar_list[7] as String?
+      return CaptureStatus(method, access, connected, notificationsAllowed, waiting, lastCaptureAt, lastUploadAt, lastError)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
       method,
       access,
+      connected,
+      notificationsAllowed,
+      waiting,
+      lastCaptureAt,
+      lastUploadAt,
+      lastError,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -249,17 +281,80 @@ data class CaptureStatus (
       return true
     }
     val other = other as CaptureStatus
-    return BankCaptureApiPigeonUtils.deepEquals(this.method, other.method) && BankCaptureApiPigeonUtils.deepEquals(this.access, other.access)
+    return BankCaptureApiPigeonUtils.deepEquals(this.method, other.method) && BankCaptureApiPigeonUtils.deepEquals(this.access, other.access) && BankCaptureApiPigeonUtils.deepEquals(this.connected, other.connected) && BankCaptureApiPigeonUtils.deepEquals(this.notificationsAllowed, other.notificationsAllowed) && BankCaptureApiPigeonUtils.deepEquals(this.waiting, other.waiting) && BankCaptureApiPigeonUtils.deepEquals(this.lastCaptureAt, other.lastCaptureAt) && BankCaptureApiPigeonUtils.deepEquals(this.lastUploadAt, other.lastUploadAt) && BankCaptureApiPigeonUtils.deepEquals(this.lastError, other.lastError)
   }
 
   override fun hashCode(): Int {
     var result = javaClass.hashCode()
     result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.method)
     result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.access)
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.connected)
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.notificationsAllowed)
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.waiting)
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.lastCaptureAt)
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.lastUploadAt)
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.lastError)
     return result
   }
   override fun toString(): String {
-    return "CaptureStatus(method=$method, access=$access)"
+    return "CaptureStatus(method=$method, access=$access, connected=$connected, notificationsAllowed=$notificationsAllowed, waiting=$waiting, lastCaptureAt=$lastCaptureAt, lastUploadAt=$lastUploadAt, lastError=$lastError)"
+  }
+}
+
+/**
+ * What the native side needs to send signals on its own, while the app is closed.
+ *
+ * Generated class from Pigeon that represents data sent in messages.
+ */
+data class CaptureSetup (
+  /** The API's origin, without a path. */
+  val baseUrl: String,
+  /** From `capture.registerDevice`; kept encrypted by the native side and never given back to Dart. */
+  val deviceToken: String,
+  /** The account the token belongs to ("local:12"). Signals captured for another account are dropped. */
+  val ownerKey: String,
+  /** The interface language ("ar" or "en"), for the notices. */
+  val language: String
+)
+ {
+  companion object {
+    fun fromList(pigeonVar_list: List<Any?>): CaptureSetup {
+      val baseUrl = pigeonVar_list[0] as String
+      val deviceToken = pigeonVar_list[1] as String
+      val ownerKey = pigeonVar_list[2] as String
+      val language = pigeonVar_list[3] as String
+      return CaptureSetup(baseUrl, deviceToken, ownerKey, language)
+    }
+  }
+  fun toList(): List<Any?> {
+    return listOf(
+      baseUrl,
+      deviceToken,
+      ownerKey,
+      language,
+    )
+  }
+  override fun equals(other: Any?): Boolean {
+    if (other == null || other.javaClass != javaClass) {
+      return false
+    }
+    if (this === other) {
+      return true
+    }
+    val other = other as CaptureSetup
+    return BankCaptureApiPigeonUtils.deepEquals(this.baseUrl, other.baseUrl) && BankCaptureApiPigeonUtils.deepEquals(this.deviceToken, other.deviceToken) && BankCaptureApiPigeonUtils.deepEquals(this.ownerKey, other.ownerKey) && BankCaptureApiPigeonUtils.deepEquals(this.language, other.language)
+  }
+
+  override fun hashCode(): Int {
+    var result = javaClass.hashCode()
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.baseUrl)
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.deviceToken)
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.ownerKey)
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.language)
+    return result
+  }
+  override fun toString(): String {
+    return "CaptureSetup(baseUrl=$baseUrl, deviceToken=$deviceToken, ownerKey=$ownerKey, language=$language)"
   }
 }
 private open class BankCaptureApiPigeonCodec : StandardMessageCodec() {
@@ -280,6 +375,11 @@ private open class BankCaptureApiPigeonCodec : StandardMessageCodec() {
           CaptureStatus.fromList(it)
         }
       }
+      132.toByte() -> {
+        return (readValue(buffer) as? List<Any?>)?.let {
+          CaptureSetup.fromList(it)
+        }
+      }
       else -> super.readValueOfType(type, buffer)
     }
   }
@@ -297,10 +397,15 @@ private open class BankCaptureApiPigeonCodec : StandardMessageCodec() {
         stream.write(131)
         writeValue(stream, value.toList())
       }
+      is CaptureSetup -> {
+        stream.write(132)
+        writeValue(stream, value.toList())
+      }
       else -> super.writeValue(stream, value)
     }
   }
 }
+
 
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface BankCaptureHostApi {
@@ -310,6 +415,16 @@ interface BankCaptureHostApi {
    * app on iOS.
    */
   fun openAccessSettings()
+  /** Starts capturing for the signed-in account with its device token. */
+  fun connect(setup: CaptureSetup)
+  /** Stops capturing and forgets the token, the waiting signals and what was seen (signing out). */
+  fun disconnect()
+  /** The interface language changed. */
+  fun setLanguage(language: String)
+  /** Sends what is waiting now. */
+  fun sendNow()
+  /** Asks for permission to show notifications (Android 13 and newer). True when the app may show them. */
+  suspend fun requestNotificationPermission(): Boolean
 
   companion object {
     /** The codec used by BankCaptureHostApi. */
@@ -346,6 +461,91 @@ interface BankCaptureHostApi {
               BankCaptureApiPigeonUtils.wrapError(exception)
             }
             reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.connect$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val setupArg = args[0] as CaptureSetup
+            val wrapped: List<Any?> = try {
+              api.connect(setupArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              BankCaptureApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.disconnect$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.disconnect()
+              listOf(null)
+            } catch (exception: Throwable) {
+              BankCaptureApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.setLanguage$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val languageArg = args[0] as String
+            val wrapped: List<Any?> = try {
+              api.setLanguage(languageArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              BankCaptureApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.sendNow$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            val wrapped: List<Any?> = try {
+              api.sendNow()
+              listOf(null)
+            } catch (exception: Throwable) {
+              BankCaptureApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.requestNotificationPermission$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            CoroutineScope(Dispatchers.Main).launch {
+              val wrapped: List<Any?> = try {
+                listOf(api.requestNotificationPermission())
+              } catch (exception: Throwable) {
+                BankCaptureApiPigeonUtils.wrapError(exception)
+              }
+              reply.reply(wrapped)
+            }
           }
         } else {
           channel.setMessageHandler(null)

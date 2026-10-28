@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+
+import 'providers.dart';
 
 /// The interface language. Arabic is the source and the default; English translates the interface only. What people
 /// type and say, the categories and the AI's answers stay Egyptian Arabic, as on the web
@@ -25,17 +28,39 @@ enum AppLanguage {
 /// Choices that belong to the phone, not to the account: they stay through signing out, so the sign-in screen
 /// already speaks the person's language.
 final class DevicePreferences {
-  const DevicePreferences({this.language = AppLanguage.arabic});
+  const DevicePreferences({
+    this.language = AppLanguage.arabic,
+    this.captureInstallationId,
+  });
 
   final AppLanguage language;
 
-  DevicePreferences copyWith({AppLanguage? language}) =>
-      DevicePreferences(language: language ?? this.language);
+  /// This installation's id for bank message capture (`capture.registerDevice`): kept through signing out, so
+  /// registering again replaces the same device instead of adding one.
+  final String? captureInstallationId;
 
-  Map<String, Object?> toJson() => {'version': 1, 'language': language.code};
+  DevicePreferences copyWith({
+    AppLanguage? language,
+    String? captureInstallationId,
+  }) => DevicePreferences(
+    language: language ?? this.language,
+    captureInstallationId: captureInstallationId ?? this.captureInstallationId,
+  );
+
+  Map<String, Object?> toJson() => {
+    'version': 1,
+    'language': language.code,
+    'captureInstallationId': ?captureInstallationId,
+  };
 
   static DevicePreferences fromJson(Map<String, Object?> json) =>
-      DevicePreferences(language: AppLanguage.fromCode(json['language']));
+      DevicePreferences(
+        language: AppLanguage.fromCode(json['language']),
+        captureInstallationId: switch (json['captureInstallationId']) {
+          final String id when id.isNotEmpty => id,
+          _ => null,
+        },
+      );
 }
 
 abstract interface class PreferencesStore {
@@ -114,6 +139,13 @@ class LanguageController extends Notifier<AppLanguage> {
 
   Future<void> choose(AppLanguage language) async {
     state = language;
+    // The bank transaction notices follow the interface language.
+    unawaited(
+      ref
+          .read(bankCaptureProvider)
+          .setLanguage(language.code)
+          .catchError((Object _) {}),
+    );
     final store = ref.read(preferencesStoreProvider);
     await store.write((await store.read()).copyWith(language: language));
   }

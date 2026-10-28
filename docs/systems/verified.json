@@ -192,7 +192,7 @@
         "api/lib/capture/catalog.ts": "dd7c3d61d374",
         "api/lib/capture/consent.ts": "ce37c795e162",
         "api/lib/capture/devices.ts": "c5ecf217a83e",
-        "api/lib/capture/intake.ts": "931bd649709c",
+        "api/lib/capture/intake.ts": "166eb894da43",
         "api/lib/capture/reader/clauses.ts": "5b86ed12ca60",
         "api/lib/capture/reader/counterparty.ts": "4560b5469773",
         "api/lib/capture/reader/explain.ts": "3455f6c511dd",
@@ -209,9 +209,9 @@
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
         "api/lib/sms-ai-contract.ts": "a05d2f4ea034"
       },
-      "checked": "2026-10-28 0c1a49aa",
-      "arabic": "49e9a4d70a14",
-      "arabicChecked": "2026-10-28 0c1a49aa"
+      "checked": "2026-10-28 17eb7391",
+      "arabic": "c94e173f0b6e",
+      "arabicChecked": "2026-10-28 17eb7391"
     },
     "billing": {
       "files": {
@@ -469,7 +469,7 @@
         "api/services/storage/types.ts": "766de83090e8",
         "contracts/account-deletion.ts": "6fcd736f6cae",
         "contracts/ai-models.ts": "7eeda8042bd8",
-        "contracts/capture-intake.ts": "7b6be3261c1e",
+        "contracts/capture-intake.ts": "52b6d93e17b4",
         "contracts/capture.ts": "9fd5ef8a1382",
         "contracts/categories.ts": "aca28dd35f9b",
         "contracts/constants.ts": "f047c234a332",
@@ -487,7 +487,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "f866630af379"
       },
-      "checked": "2026-10-28 0c1a49aa",
+      "checked": "2026-10-28 17eb7391",
       "arabic": "12725b21bdbc",
       "arabicChecked": "2026-10-28 0c1a49aa"
     },

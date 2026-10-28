@@ -1,0 +1,17 @@
+{
+  "about": "The phone's first filter (decision 0028): what it drops before sending. The word lists must equal CAPTURE_GATE in api/lib/capture/intake.ts (checked by api/lib/capture/phone-gate-fixtures.test.ts); the cases run in mobile/packages/bank_capture/android/src/test. Invented messages: the repository is public.",
+  "otpWords": ["otp", "code", "passcode", "password", "verification", "كود", "رمز", "كلمة السر", "كلمة المرور", "التحقق", "التفعيل"],
+  "currencyWords": ["egp", "l.e", "usd", "eur", "sar", "aed", "$", "جنيه", "ج.م", "جم", "دولار", "يورو", "ريال", "درهم"],
+  "cases": [
+    { "name": "a card purchase is sent", "messaging": false, "text": "تم خصم EGP 450.00 من بطاقتك رقم 1234 عند CARREFOUR", "drop": null },
+    { "name": "an Arabic one-time code is dropped", "messaging": true, "sender": "CIB", "text": "رمز التحقق 482913 لا تشاركه مع أي حد", "drop": "otp" },
+    { "name": "an English one-time code is dropped", "messaging": false, "text": "Your verification code is 5521. Do not share it", "drop": "otp" },
+    { "name": "a purchase that warns about codes is sent", "messaging": true, "sender": "CIB", "text": "تم خصم 300 جنيه من بطاقتك 1234. لا تشارك كود التحقق مع أحد", "drop": null },
+    { "name": "a code written in Arabic digits is dropped", "messaging": true, "sender": "NBE", "text": "كود التفعيل ٧٧٤٥٢١", "drop": "otp" },
+    { "name": "a person's message is dropped", "messaging": true, "sender": "+20 100 123 4567", "text": "حولتلك 500 جنيه", "drop": "personal_sender" },
+    { "name": "a short code sender is not a person", "messaging": true, "sender": "19019", "text": "تم شحن 50 جنيه", "drop": null },
+    { "name": "a bank app's own notification is never judged by a sender", "messaging": false, "sender": "01001234567", "text": "تم تحويل 200 جنيه", "drop": null },
+    { "name": "a text without digits is dropped", "messaging": false, "text": "مرحبا بك في تطبيق البنك", "drop": "no_digits" },
+    { "name": "digits in the title count", "messaging": false, "title": "خصم 120 ج.م", "text": "من بطاقتك", "drop": null }
+  ]
+}

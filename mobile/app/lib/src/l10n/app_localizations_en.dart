@@ -36,7 +36,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get captureAndroidBody =>
-      'The app reads your bank and wallet notifications and records the spending for you.';
+      'The app reads your bank and wallet notifications and asks you about each transaction before recording it.';
 
   @override
   String get captureIosTitle => 'Bank messages from Shortcuts';
@@ -60,6 +60,96 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get captureStatusFailed =>
       'We can\'t tell its state right now. Try again.';
+
+  @override
+  String get captureStart => 'Turn on bank message recording';
+
+  @override
+  String get captureConsentTitle => 'Before we start';
+
+  @override
+  String get captureConsentBody =>
+      'We read only the notifications and messages of bank and wallet apps. Personal messages and codes never leave your phone. A message with a transaction goes to the server to be read, with its numbers hidden, and is deleted after 30 days. Nothing is recorded until you approve it.';
+
+  @override
+  String get captureConsentAgree => 'I agree, continue';
+
+  @override
+  String get captureUnavailable =>
+      'Bank message recording isn\'t available yet. We\'ll let you know when it is.';
+
+  @override
+  String get captureConnectFailed =>
+      'We couldn\'t turn it on right now. Check your connection and try again.';
+
+  @override
+  String get captureNeedsAccess =>
+      'One step left: open Settings and let the app read notifications.';
+
+  @override
+  String get captureNotificationsOff =>
+      'Notifications are off, so we can\'t ask you about transactions from the notification shade. You\'ll find them here.';
+
+  @override
+  String captureWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages waiting to be sent.',
+      one: 'One message waiting to be sent.',
+      zero: 'No messages waiting to be sent.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get captureOffline => 'Waiting for a connection to send.';
+
+  @override
+  String get captureRevoked =>
+      'This device was disconnected. Turn it on again here.';
+
+  @override
+  String captureReviewEntry(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions waiting for you',
+      one: 'One transaction waiting for you',
+      zero: 'No transactions waiting for you',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get captureReviewTitle => 'Bank transactions';
+
+  @override
+  String get captureReviewEmpty => 'No transactions waiting for you.';
+
+  @override
+  String get captureReviewFailed =>
+      'We can\'t load the transactions right now. Try again.';
+
+  @override
+  String get captureRecord => 'Record';
+
+  @override
+  String get captureDismiss => 'Not mine';
+
+  @override
+  String get captureAmountLabel => 'Amount in pounds';
+
+  @override
+  String get captureAmountNeeded =>
+      'The message has an amount in another currency. Type what was charged in pounds.';
+
+  @override
+  String get captureCheckAmount =>
+      'We\'re not sure about this amount; check it before recording.';
+
+  @override
+  String get captureAnswerFailed => 'We couldn\'t save your answer. Try again.';
 
   @override
   String get signInTitle => 'Welcome to SmartSpend';

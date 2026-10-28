@@ -35,7 +35,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get captureAndroidBody =>
-      'التطبيق بيقرا إشعارات البنك والمحفظة ويسجّل المصروف لوحده.';
+      'التطبيق بيقرا إشعارات البنك والمحفظة، وكل عملية بيسألك عنها قبل ما يسجّلها.';
 
   @override
   String get captureIosTitle => 'رسايل البنك من الاختصارات';
@@ -58,6 +58,99 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get captureStatusFailed => 'مش قادرين نعرف حالتها دلوقتي. جرّب تاني.';
+
+  @override
+  String get captureStart => 'شغّل تسجيل رسايل البنك';
+
+  @override
+  String get captureConsentTitle => 'قبل ما نبدأ';
+
+  @override
+  String get captureConsentBody =>
+      'هنقرا إشعارات تطبيقات البنوك والمحافظ ورسايلها بس. الرسايل الشخصية والأكواد مابتخرجش من موبايلك. الرسالة اللي فيها عملية بتروح للسيرفر عشان يفهمها، وأرقامها بتتخبّى، وبتتمسح بعد 30 يوم. ومفيش عملية بتتسجل غير لما توافق عليها.';
+
+  @override
+  String get captureConsentAgree => 'موافق، كمّل';
+
+  @override
+  String get captureUnavailable =>
+      'تسجيل رسايل البنك لسه مش متاح. هنقولك أول ما يبقى جاهز.';
+
+  @override
+  String get captureConnectFailed =>
+      'ماقدرناش نشغّله دلوقتي. اتأكد من النت وجرّب تاني.';
+
+  @override
+  String get captureNeedsAccess =>
+      'فاضل خطوة: افتح الإعدادات وفعّل قراية الإشعارات للتطبيق.';
+
+  @override
+  String get captureNotificationsOff =>
+      'الإشعارات مقفولة، فمش هنقدر نسألك عن العمليات من شريط الإشعارات. هتلاقيها هنا.';
+
+  @override
+  String captureWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رسالة مستنية الإرسال.',
+      few: '$count رسايل مستنية الإرسال.',
+      two: 'رسالتين مستنيين الإرسال.',
+      one: 'رسالة واحدة مستنية الإرسال.',
+      zero: 'مفيش رسايل مستنية الإرسال.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get captureOffline => 'مستنيين النت عشان نبعت.';
+
+  @override
+  String get captureRevoked => 'الجهاز ده اتفصل. شغّله تاني من هنا.';
+
+  @override
+  String captureReviewEntry(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عملية مستنية ردك',
+      few: '$count عمليات مستنية ردك',
+      two: 'عمليتين مستنيين ردك',
+      one: 'عملية واحدة مستنية ردك',
+      zero: 'مفيش عمليات مستنية ردك',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get captureReviewTitle => 'عمليات البنك';
+
+  @override
+  String get captureReviewEmpty => 'مفيش عمليات مستنية ردك.';
+
+  @override
+  String get captureReviewFailed =>
+      'مش قادرين نجيب العمليات دلوقتي. جرّب تاني.';
+
+  @override
+  String get captureRecord => 'سجّل';
+
+  @override
+  String get captureDismiss => 'مش مصروف';
+
+  @override
+  String get captureAmountLabel => 'المبلغ بالجنيه';
+
+  @override
+  String get captureAmountNeeded =>
+      'الرسالة فيها مبلغ بعملة تانية. اكتب قيمته بالجنيه زي ما اتخصم.';
+
+  @override
+  String get captureCheckAmount =>
+      'مش متأكدين من المبلغ ده، راجعه قبل ما تسجّل.';
+
+  @override
+  String get captureAnswerFailed => 'ماقدرناش نحفظ ردك. جرّب تاني.';
 
   @override
   String get signInTitle => 'أهلاً بيك في SmartSpend';

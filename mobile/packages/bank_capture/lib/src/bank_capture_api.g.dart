@@ -119,14 +119,50 @@ enum CaptureAccess {
 }
 
 class CaptureStatus {
-  CaptureStatus({required this.method, required this.access});
+  CaptureStatus({
+    required this.method,
+    required this.access,
+    required this.connected,
+    required this.notificationsAllowed,
+    required this.waiting,
+    this.lastCaptureAt,
+    this.lastUploadAt,
+    this.lastError,
+  });
 
   CaptureMethod method;
 
   CaptureAccess access;
 
+  /// The native side holds a device token for the signed-in account (decision 0028).
+  bool connected;
+
+  /// The phone may show the app's notifications (Android 13 asks for it).
+  bool notificationsAllowed;
+
+  /// Signals captured and not yet sent.
+  int waiting;
+
+  /// When the last bank notification was captured and when the last batch reached the server (milliseconds since
+  /// the epoch).
+  int? lastCaptureAt;
+
+  int? lastUploadAt;
+
+  /// Why the last send failed, as an id ("offline", "device_revoked", "capture_disabled", "consent_required").
+  String? lastError;
+
   List<Object?> _toList() {
-    return <Object?>[method, access];
+    return <Object?>[
+      method,
+      access,
+      connected,
+      notificationsAllowed,
+      waiting,
+      lastCaptureAt,
+      lastUploadAt,
+      lastError,
+    ];
   }
 
   Object encode() {
@@ -138,6 +174,12 @@ class CaptureStatus {
     return CaptureStatus(
       method: result[0]! as CaptureMethod,
       access: result[1]! as CaptureAccess,
+      connected: result[2]! as bool,
+      notificationsAllowed: result[3]! as bool,
+      waiting: result[4]! as int,
+      lastCaptureAt: result[5] as int?,
+      lastUploadAt: result[6] as int?,
+      lastError: result[7] as String?,
     );
   }
 
@@ -151,7 +193,13 @@ class CaptureStatus {
       return true;
     }
     return _deepEquals(method, other.method) &&
-        _deepEquals(access, other.access);
+        _deepEquals(access, other.access) &&
+        _deepEquals(connected, other.connected) &&
+        _deepEquals(notificationsAllowed, other.notificationsAllowed) &&
+        _deepEquals(waiting, other.waiting) &&
+        _deepEquals(lastCaptureAt, other.lastCaptureAt) &&
+        _deepEquals(lastUploadAt, other.lastUploadAt) &&
+        _deepEquals(lastError, other.lastError);
   }
 
   @override
@@ -160,7 +208,71 @@ class CaptureStatus {
 
   @override
   String toString() {
-    return 'CaptureStatus(method: $method, access: $access)';
+    return 'CaptureStatus(method: $method, access: $access, connected: $connected, notificationsAllowed: $notificationsAllowed, waiting: $waiting, lastCaptureAt: $lastCaptureAt, lastUploadAt: $lastUploadAt, lastError: $lastError)';
+  }
+}
+
+/// What the native side needs to send signals on its own, while the app is closed.
+class CaptureSetup {
+  CaptureSetup({
+    required this.baseUrl,
+    required this.deviceToken,
+    required this.ownerKey,
+    required this.language,
+  });
+
+  /// The API's origin, without a path.
+  String baseUrl;
+
+  /// From `capture.registerDevice`; kept encrypted by the native side and never given back to Dart.
+  String deviceToken;
+
+  /// The account the token belongs to ("local:12"). Signals captured for another account are dropped.
+  String ownerKey;
+
+  /// The interface language ("ar" or "en"), for the notices.
+  String language;
+
+  List<Object?> _toList() {
+    return <Object?>[baseUrl, deviceToken, ownerKey, language];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static CaptureSetup decode(Object result) {
+    result as List<Object?>;
+    return CaptureSetup(
+      baseUrl: result[0]! as String,
+      deviceToken: result[1]! as String,
+      ownerKey: result[2]! as String,
+      language: result[3]! as String,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! CaptureSetup || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(baseUrl, other.baseUrl) &&
+        _deepEquals(deviceToken, other.deviceToken) &&
+        _deepEquals(ownerKey, other.ownerKey) &&
+        _deepEquals(language, other.language);
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
+
+  @override
+  String toString() {
+    return 'CaptureSetup(baseUrl: $baseUrl, deviceToken: $deviceToken, ownerKey: $ownerKey, language: $language)';
   }
 }
 
@@ -180,6 +292,9 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is CaptureStatus) {
       buffer.putUint8(131);
       writeValue(buffer, value.encode());
+    } else if (value is CaptureSetup) {
+      buffer.putUint8(132);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -196,6 +311,8 @@ class _PigeonCodec extends StandardMessageCodec {
         return value == null ? null : CaptureAccess.values[value];
       case 131:
         return CaptureStatus.decode(readValue(buffer)!);
+      case 132:
+        return CaptureSetup.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -256,5 +373,105 @@ class BankCaptureHostApi {
       pigeonVar_channelName,
       isNullValid: true,
     );
+  }
+
+  /// Starts capturing for the signed-in account with its device token.
+  Future<void> connect(CaptureSetup setup) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.bank_capture.BankCaptureHostApi.connect$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[setup],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// Stops capturing and forgets the token, the waiting signals and what was seen (signing out).
+  Future<void> disconnect() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.bank_capture.BankCaptureHostApi.disconnect$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// The interface language changed.
+  Future<void> setLanguage(String language) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.bank_capture.BankCaptureHostApi.setLanguage$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[language],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// Sends what is waiting now.
+  Future<void> sendNow() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.bank_capture.BankCaptureHostApi.sendNow$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
+
+  /// Asks for permission to show notifications (Android 13 and newer). True when the app may show them.
+  Future<bool> requestNotificationPermission() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.bank_capture.BankCaptureHostApi.requestNotificationPermission$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
   }
 }
