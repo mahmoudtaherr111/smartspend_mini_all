@@ -83,7 +83,7 @@
         "src/components/admin/ai-center/tabs/AiTelemetryTab.tsx": "c90405d7e803",
         "src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx": "10ff32f1e785",
         "src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx": "88d1c8cbcd39",
-        "src/components/admin/capture/AdminCaptureNumbers.tsx": "0c99c9a84212",
+        "src/components/admin/capture/AdminCaptureNumbers.tsx": "fc68fb7725a8",
         "src/components/admin/capture/AdminCaptureTab.tsx": "7a3d0409d074",
         "src/components/admin/settings/AdminCaptureSection.tsx": "ae07fa37dd43",
         "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
@@ -95,9 +95,9 @@
         "src/pages/Admin.tsx": "194ff4a9efa3",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-10-28 17e66339",
-      "arabic": "b3cb137c47b9",
-      "arabicChecked": "2026-10-28 17e66339"
+      "checked": "2026-10-28 70ef02d1",
+      "arabic": "391ee2b092f7",
+      "arabicChecked": "2026-10-28 70ef02d1"
     },
     "ai-center": {
       "files": {
@@ -186,25 +186,26 @@
     },
     "bank-messages": {
       "files": {
-        "api/boot.ts#job:capture-ai-sweep": "7b7d2f8d3978",
+        "api/boot.ts#job:capture-ai-sweep": "4afba3fe5c9c",
         "api/boot.ts#job:capture-breaker": "46eeeaa447e0",
         "api/boot.ts#job:capture-silent-devices": "e650646f7646",
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
-        "api/capture-admin-router.ts": "90bc9c19bc05",
+        "api/capture-admin-router.ts": "c5b97cb855be",
         "api/capture-router.ts": "7abdbc8e517a",
         "api/capture-v1-routes.ts": "db95c617e1b4",
         "api/lib/capture/access.ts": "a05bd6473e8d",
-        "api/lib/capture/ai-queue.ts": "796ebea682af",
-        "api/lib/capture/ai-reader.ts": "b506b338b9f2",
+        "api/lib/capture/ai-queue.ts": "c0a85842a78c",
+        "api/lib/capture/ai-reader.ts": "f4c382b4627b",
         "api/lib/capture/care.ts": "b2a6ac452265",
         "api/lib/capture/catalog.ts": "dd7c3d61d374",
         "api/lib/capture/consent.ts": "ce37c795e162",
         "api/lib/capture/devices.ts": "caff87cd0199",
         "api/lib/capture/events.ts": "edb833c76977",
-        "api/lib/capture/intake.ts": "850162bf7963",
+        "api/lib/capture/intake.ts": "aac0240913ba",
+        "api/lib/capture/keep-merchants.ts": "86e8880fa6e2",
         "api/lib/capture/markers.ts": "636e75d4ccb1",
         "api/lib/capture/memory.ts": "4bbf061cedd9",
-        "api/lib/capture/operations.ts": "9c83fba1e26d",
+        "api/lib/capture/operations.ts": "40f0c67beab1",
         "api/lib/capture/reader/clauses.ts": "5b86ed12ca60",
         "api/lib/capture/reader/counterparty.ts": "4560b5469773",
         "api/lib/capture/reader/explain.ts": "3455f6c511dd",
@@ -221,9 +222,9 @@
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c"
       },
-      "checked": "2026-10-28 12a32e2a",
-      "arabic": "8f5418f9be7d",
-      "arabicChecked": "2026-10-28 12a32e2a"
+      "checked": "2026-10-28 70ef02d1",
+      "arabic": "d30417cbce33",
+      "arabicChecked": "2026-10-28 70ef02d1"
     },
     "billing": {
       "files": {

@@ -25,7 +25,7 @@ import {
   subscriptionInput,
   syncCaptureSeed,
 } from "./lib/capture/catalog";
-import { BULK_UNDO_MAX, applyBulkUndo, captureFunnel, previewBulkUndo } from "./lib/capture/operations";
+import { BULK_UNDO_MAX, applyBulkUndo, captureFunnel, captureTimeline, previewBulkUndo } from "./lib/capture/operations";
 import { db } from "./queries/connection";
 
 const idInput = z.object({ id: z.number().int().positive() });
@@ -149,6 +149,11 @@ export const captureAdminRouter = router({
       await invalidateCaptureCatalog();
       return { success: true };
     }),
+
+  /** One user's capture for support: phones and their health, consents, use, latest payments and model jobs. */
+  timeline: adminProcedure
+    .input(z.object({ userType: z.enum(["local", "oauth"]), userId: z.number().int().positive() }))
+    .query(async ({ input }) => captureTimeline(input)),
 
   /** What became of the payments captured in the last days, per bank and kind, and the model's queue. */
   funnel: adminProcedure

@@ -11,7 +11,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-27 03cb4c09 | 2026-10-27 03cb4c09 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-28 12a32e2a | 2026-10-28 12a32e2a | 11 | — | — | 3 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 11 | — | — | 3 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 7 | — | 3 | 3 | 3 |
@@ -19,7 +19,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-28 17e66339 | 2026-10-28 17e66339 | 16 | **3** | — | 8 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-28 78592bbe | 2026-10-28 78592bbe | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 1 | **1** | 1 | 3 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-28 17e66339 | 2026-10-28 17e66339 | 4 | — | 2 | 5 | 1 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 8 | — | — | 3 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-28 12a32e2a | 2026-10-28 12a32e2a | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 7 | **1** | — | 2 | 2 |
@@ -74,7 +74,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - iPhone capture is not built: the card on an iPhone only opens the Shortcuts app. There is no push: a question from the model the phone did not fetch within about a minute shows only in the app. The Android side was compiled and tested only in CI; it has not run on a real phone yet.
-- Redaction masks every name-like word after من، إلى، to or from, so a merchant written there ("from AMAZON", "من كارفور") reaches the model as `[REDACTED_NAME]`; merchants written after لدى or at are kept.
+- A merchant after من، إلى، to or from is kept only when the reader named it or it looks like a business (`api/lib/capture/keep-merchants.ts`); a plain name the reader missed ("من AHMED STORES") still reaches the model as `[REDACTED_NAME]`.
 - The merge windows are guesses until real messages measure them. A hold the bank settles later is not joined to its charge (the reader reads a hold as no transaction), and a transfer that might be between the user's own accounts without both legs saying so is asked about as two payments.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)

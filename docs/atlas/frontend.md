@@ -163,6 +163,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `captureAdmin.setSourceStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.setSubscriptionStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.syncSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.timeline` | useQuery | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `export.allUsers` | useMutation | `src/pages/Admin.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
@@ -334,6 +335,7 @@ _None._
 | `captureAdmin.setSourceStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.setSubscriptionStatus` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.syncSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.timeline` | useQuery | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `coach.addCashflow` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.cancelReminder` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.endPlan` | useMutation | `src/pages/PlanPage.tsx` |

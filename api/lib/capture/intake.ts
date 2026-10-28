@@ -26,11 +26,11 @@ import { getDb } from "../../queries/connection";
 import { afterLedgerWrite, bumpStreakInTx, deleteLedgerEntry, insertLedgerEntriesInTx, type LedgerTx } from "../../services/ledger-writer";
 import { businessDateKey } from "../app-time";
 import { getSystemSettings } from "../settings-cache";
-import { redactWithFindings } from "../anonymizer";
 import { createLogger } from "../log";
 import { getCaptureCatalog, sourceForPackage, sourceForSender, subscriptionForMerchant, type CaptureCatalog, type CaptureSource } from "./catalog";
 import { captureConsentsOf } from "./consent";
 import { captureIgnoreRulesOf, isIgnored, type CaptureIgnoreRules } from "./markers";
+import { merchantNamesToKeep, redactKeeping } from "./keep-merchants";
 import type { CaptureDevice, CaptureOwner } from "./devices";
 import { matchSignal, MATCH_WINDOWS, type EventKeys, type SignalKeys } from "./events";
 import {
@@ -986,7 +986,8 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
           textHmac,
           receivedAt,
           reading,
-          textRedacted: redactWithFindings(signal.text).text,
+          // Redacted, but the merchant stays (decision 0035): the model and the user's review need it.
+          textRedacted: redactKeeping(signal.text, merchantNamesToKeep(signal.text, reading)).text,
         };
         if (toModel) {
           await queueModelReading(tx, device, placing, run.lang, now);

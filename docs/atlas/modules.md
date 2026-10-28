@@ -26,8 +26,8 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `ai-providers` | AI provider access | 14 | `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `capture-ai-reader`, `jobs` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-intake`, `capture-reader`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
-| `capture-intake` | Capture intake | 11 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | `api-core`, `api-routers`, `auth`, `ledger` | — |
-| `capture-ai-reader` | Message model reader | 2 | `ai-governance`, `ai-providers`, `classification`, `contracts`, `platform`, `security` | `capture-intake` | `gemini` |
+| `capture-intake` | Capture intake | 12 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `ledger` | — |
+| `capture-ai-reader` | Message model reader | 2 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `platform`, `security` | `capture-intake` | `gemini` |
 | `capture-catalog` | Capture catalog | 3 | `contracts`, `database`, `platform` | `api-core`, `api-routers`, `capture-intake` | — |
 | `capture-reader` | Message reader | 12 | `arabic-nlp`, `platform` | `capture-intake` | — |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
@@ -377,7 +377,7 @@ Normalizers, dictionaries, Arabic number parsing, negation detection, the words 
 
 ### `capture-intake` — Capture intake
 
-Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the rules that merge the signals of one payment into one event (decision 0029), the user's memory of where each merchant and person is filed and which banks and kinds are recorded on their own (decision 0030), the monthly limit with the payments held over it, the queue where the admin's model reads what the reader is unsure of and the questions it leaves for the phone (decision 0031), the breaker that stops a bank whose recordings are taken back, the admin's bulk undo and the numbers per bank and kind (decision 0032), who capture is open to with the oldest build, the phones per plan and the daily cap, and the cards and phrases each user asked to ignore (decision 0033), each phone's health with the notice when one stops, the wallet suggested for a card seen in messages and deleting a user's capture data (decision 0034), the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer.
+Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the rules that merge the signals of one payment into one event (decision 0029), the user's memory of where each merchant and person is filed and which banks and kinds are recorded on their own (decision 0030), the monthly limit with the payments held over it, the queue where the admin's model reads what the reader is unsure of and the questions it leaves for the phone (decision 0031), the breaker that stops a bank whose recordings are taken back, the admin's bulk undo and the numbers per bank and kind (decision 0032), who capture is open to with the oldest build, the phones per plan and the daily cap, and the cards and phrases each user asked to ignore (decision 0033), each phone's health with the notice when one stops, the wallet suggested for a card seen in messages and deleting a user's capture data (decision 0034), the redaction that keeps a message's merchant, the admins' in-app alerts and the support timeline (decision 0035), the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -388,10 +388,11 @@ Where captured bank and wallet notifications come in (decision 0028): the device
 | `api/lib/capture/consent.ts` | `database` | — | `capture_consents` | `capture_consents` |
 | `api/lib/capture/devices.ts` | `auth`, `contracts`, `database`, `platform` | — | `capture_devices` | `capture_devices` |
 | `api/lib/capture/events.ts` | — | — | — | — |
-| `api/lib/capture/intake.ts` | `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | — | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `local_users`, `user_wallets`, `users` | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `in_app_notifications`, `user_wallets` |
+| `api/lib/capture/intake.ts` | `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `local_users`, `user_wallets`, `users` | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `in_app_notifications`, `user_wallets` |
+| `api/lib/capture/keep-merchants.ts` | `security` | — | — | — |
 | `api/lib/capture/markers.ts` | `arabic-nlp`, `database`, `security` | — | `capture_markers` | `capture_markers` |
 | `api/lib/capture/memory.ts` | `contracts`, `database`, `platform` | — | `capture_memory`, `capture_user_pairs` | `capture_memory`, `capture_user_pairs` |
-| `api/lib/capture/operations.ts` | `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_events` | `system_settings` |
+| `api/lib/capture/operations.ts` | `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_consents`, `capture_devices`, `capture_events`, `capture_markers`, `capture_usage`, `local_users`, `users` | `in_app_notifications`, `system_settings` |
 
 ### `capture-ai-reader` — Message model reader
 
@@ -399,7 +400,7 @@ Layer two of capture: reads one bank or wallet message with the model the admin 
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/lib/capture/ai-reader.ts` | `ai-governance`, `ai-providers`, `platform`, `security` | — | — | — |
+| `api/lib/capture/ai-reader.ts` | `ai-governance`, `ai-providers`, `capture-intake`, `platform`, `security` | — | — | — |
 | `api/lib/sms-ai-contract.ts` | `classification`, `contracts`, `security` | `gemini` | — | — |
 
 ### `capture-catalog` — Capture catalog

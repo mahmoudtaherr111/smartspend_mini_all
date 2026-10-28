@@ -86,7 +86,7 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
    ignore (`capture.ignore`, `api/lib/capture/markers.ts`) is answered `ignored` (`user_ignored`) and nothing of it is
    kept. A balance alone (`balance_only`) from a catalog source sets the balance of the one wallet whose last digits
    it names, when the message is newer than what the wallet holds. What fails is answered `ignored` and nothing of it is stored.
-   What passes is kept in `capture_signals`: the text redacted, an HMAC of it, and the reader's fields
+   What passes is kept in `capture_signals`: the text redacted (keeping the merchant, below), an HMAC of it, and the reader's fields
    (`SignalReading`: kind, direction, confidence, amount and pound equivalent, fee, balance, card and account
    suffixes, the other side, when and whether the message gave the time, the source). Each signal is taken in a
    transaction that first locks the user's account row, so two batches of one user are matched one after the other.
@@ -113,6 +113,11 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
    or stops suggesting it (a `no_wallet` marker). `capture.deleteMyData` deletes the signals, the model's queue, the
    memory, the pairs, the markers and the waiting payments, strips answered ones to tombstones, revokes every phone and
    consent, and keeps the ledger and the month's count.
+3e. **Merchants through redaction** ([decision 0035](../decisions/0035-capture-merchants-alerts-timeline.md),
+   `api/lib/capture/keep-merchants.ts`): before the general redaction, the merchant the reader named and names that
+   look like a business (`NAME*SHOP`, a domain, an Arabic shop word with the next word) are shielded and put back, in
+   the stored text and in the model's prompt; in a transfer between people nothing is shielded unless the reader said
+   it is a merchant, and a name with four digits in a row never is.
 3c. **Running it** ([decision 0032](../decisions/0032-capture-breaker-and-bulk-undo.md),
    `api/lib/capture/operations.ts`): each event keeps its bank and reader version (`source_slug`, `reader_version`).
    Every 15 minutes the protected job `capture-breaker` adds to `capture_paused_sources` a bank with twenty or more
@@ -120,7 +125,10 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
    from the ledger); only the admin takes it out. `captureAdmin.bulkUndo` counts, then removes, the ledger rows one
    bank recorded in a period (optionally one reader version, by default only those recorded on their own) through the
    ledger writer, leaves each event `deleted` and gives the month back, at most 500 a run. `captureAdmin.funnel` gives
-   the numbers per bank and kind and the model queue's outcomes.
+   the numbers per bank and kind and the model queue's outcomes. Admins get an in-app notification (`notifyAdmins`)
+   when the breaker stops a bank and when a job has waited for the model more than five minutes (`checkModelQueue`,
+   with the sweep, once an hour). `captureAdmin.timeline` shows one user's phones and their health, consents, use, last
+   50 payments and last 20 model jobs, without message text or merchant names.
 3a. **One payment, one event** ([decision 0029](../decisions/0029-one-payment-one-event.md),
    `api/lib/capture/events.ts#matchSignal`): the signal joins an event of the last three days of the same user, or
    starts one in `capture_events`. It joins on the bank's reference (an HMAC) with the same amount within a day; on the
@@ -314,6 +322,7 @@ EGP equivalent in the text, which is not used as pounds.
 | The breaker, the bulk undo and the numbers | `api/lib/capture/operations.ts`, `captureAdmin.funnel` and `captureAdmin.bulkUndo` in `api/capture-admin-router.ts`, the console's «الأرقام» tab | `api/lib/capture/operations.test.ts`, `tests/capture-intake.test.ts`, `src/components/admin/capture/AdminCaptureNumbers.test.tsx` |
 | Who capture is open to, old builds, phones and daily signals, what a user ignores | `api/lib/capture/access.ts`, `api/lib/capture/markers.ts`, the settings in the admin's capture section and plan tabs | `api/lib/capture/access.test.ts`, `tests/capture-intake.test.ts` |
 | Phone health, the upgrade notice, wallet suggestions, deleting the user's data | `api/lib/capture/care.ts`, `releaseHeldEvents` in `api/lib/capture/intake.ts`, `CaptureHealth.kt`, `mobile/app/lib/src/features/capture/capture_settings_screen.dart` | `tests/capture-intake.test.ts`, `mobile/app/test/capture_test.dart` |
+| What redaction keeps for the model, admin alerts, the support timeline | `api/lib/capture/keep-merchants.ts`, `notifyAdmins`, `checkModelQueue` and `captureTimeline` in `api/lib/capture/operations.ts` | `api/lib/capture/keep-merchants.test.ts`, `tests/capture-intake.test.ts`, `src/components/admin/capture/AdminCaptureNumbers.test.tsx` |
 | When signals are one payment | `api/lib/capture/events.ts` (`matchSignal`, `MATCH_WINDOWS`) | `api/lib/capture/events.test.ts` |
 | What is recorded without a question, and the memory | `mayRecordAlone` in `api/lib/capture/intake.ts`, `api/lib/capture/memory.ts`; the settings in the admin's capture section | `api/lib/capture/intake.test.ts`, `tests/capture-intake.test.ts` |
 | The routes, the device token and the answer | `api/capture-v1-routes.ts`, `api/lib/capture/devices.ts`, `api/capture-router.ts` | `tests/capture-intake.test.ts` (`npm run test:db`) |
@@ -355,7 +364,8 @@ dropped; the model's reading asked once through the notices and recorded on the 
 nothing; three failures fall back to the reader's reading), the breaker stopping a bank after two of twenty were undone, and the
 bulk undo counting, removing and giving the month back, an old build refused, the beta list, two phones on the free
 plan, the daily cap, an ignored card, and a balance alone moving its wallet; a phone without access told once, a silent phone told once, an upgrade
-recording what the user agreed to with one notice, a wallet suggested, declined and added, and deleting the user's data. `api/lib/capture/ai-queue.test.ts` checks how a reply
+recording what the user agreed to with one notice, a wallet suggested, declined and added, and deleting the user's data; the merchant kept in the stored text, the stuck queue and the breaker alerting admins,
+and the timeline without text. `api/lib/capture/ai-queue.test.ts` checks how a reply
 becomes a reading.
 `api/lib/capture/phone-gate-fixtures.test.ts` keeps the phone's shared cases on the lists the server sends, and
 `CaptureGateTest` in `mobile/packages/bank_capture/android/src/test` runs them in Kotlin (the Mobile workflow).
@@ -379,8 +389,9 @@ Checked against the code; each one names where it lives.
 2. **Debt.** Until the admin assigns a model to the `sms` purpose, `readMessageWithModel` falls back to
    `GEMINI_API_KEY` with `mapModelName("flash")` (`smsRoutes` in `api/lib/capture/ai-reader.ts`). It is meant to go
    once the key is registered as a provider in the console (decision 0025).
-3. **Gap.** Redaction masks every name-like word after من، إلى، to or from, so a merchant written there ("from AMAZON",
-   "من كارفور") reaches the model as `[REDACTED_NAME]`; merchants written after لدى or at are kept.
+3. **Gap.** A merchant after من، إلى، to or from is kept only when the reader named it or it looks like a business
+   (`api/lib/capture/keep-merchants.ts`); a plain name the reader missed ("من AHMED STORES") still reaches the model as
+   `[REDACTED_NAME]`.
 
 4. **Gap.** The merge windows are guesses until real messages measure them. A hold the bank settles later is not
    joined to its charge (the reader reads a hold as no transaction), and a transfer that might be between the user's

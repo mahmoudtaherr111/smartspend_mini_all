@@ -13,7 +13,8 @@ import { deleteLedgerEntry, updateLedgerEntry } from "../api/services/ledger-wri
 import { drainCaptureModel } from "../api/lib/capture/ai-queue";
 import { autoPolicyOf, releaseHeldEvents } from "../api/lib/capture/intake";
 import { runSilentDevices } from "../api/lib/capture/care";
-import { applyBulkUndo, captureFunnel, previewBulkUndo, runCaptureBreaker } from "../api/lib/capture/operations";
+import { applyBulkUndo, captureFunnel, captureTimeline, checkModelQueue, notifyAdmins, previewBulkUndo, runCaptureBreaker } from "../api/lib/capture/operations";
+import { stateDel } from "../api/lib/redis-client";
 import { getSystemSettings } from "../api/lib/settings-cache";
 import type { AiReading } from "../api/lib/capture/ai-reader";
 
@@ -580,6 +581,53 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
       expect(kept).toMatchObject({ status: "recorded", cardSuffix: null, merchantKey: null });
       expect(await db.select().from(expenses).where(and(eq(expenses.userId, owner.userId), eq(expenses.userType, "local")))).toHaveLength(1);
       expect((await post("/api/capture/v1/signals", { signals: [purchase("signal-del-03")] })).status).toBe(403);
+    });
+  });
+
+  describe("operations for the admin", () => {
+    const admin = { userId: 88822, userType: "local" };
+    const adminNotices = () =>
+      db.select().from(inAppNotifications).where(and(eq(inAppNotifications.userId, admin.userId), eq(inAppNotifications.userType, "local")));
+    beforeEach(async () => {
+      await db.delete(inAppNotifications).where(and(eq(inAppNotifications.userId, admin.userId), eq(inAppNotifications.userType, "local")));
+      await db.delete(localUsers).where(eq(localUsers.id, admin.userId));
+      await db.insert(localUsers).values({ id: admin.userId, name: "Capture Admin", phone: "+201000088822", password: "x", role: "admin" });
+    });
+    afterAll(async () => {
+      await db.delete(inAppNotifications).where(and(eq(inAppNotifications.userId, admin.userId), eq(inAppNotifications.userType, "local")));
+      await db.delete(localUsers).where(eq(localUsers.id, admin.userId));
+    });
+
+    it("keeps the merchant in the stored text, and still removes the card", async () => {
+      const text = "تم خصم 75.00 جنيه من بطاقتك رقم 1234 من CARREFOUR MAADI";
+      await post("/api/capture/v1/signals", { signals: [{ ...purchase("signal-keep-01"), text }] });
+      const [row] = await db.select().from(captureSignals).where(eq(captureSignals.userId, owner.userId));
+      expect(row.textRedacted).toContain("CARREFOUR");
+      expect(row.textRedacted).not.toContain("1234");
+    });
+
+    it("tells the admins when the model's queue is stuck, once an hour", async () => {
+      await db.insert(captureAiJobs).values({ userId: owner.userId, userType: "local", deviceId, signalId: 999_001, nextAt: new Date(Date.now() + 3600_000), createdAt: new Date(Date.now() - 10 * 60_000) });
+      await stateDel("capture:alert:model-queue");
+      expect(await checkModelQueue()).toBe(true);
+      await checkModelQueue();
+      expect(await adminNotices()).toHaveLength(1);
+      await stateDel("capture:alert:model-queue");
+    });
+
+    it("tells the admins when the breaker stops a bank", async () => {
+      expect(await notifyAdmins("اختبار", "تنبيه")).toBeGreaterThanOrEqual(1);
+      const [note] = await adminNotices();
+      expect(note).toMatchObject({ title: "اختبار", actionUrl: "/admin" });
+    });
+
+    it("shows a user's phones, consents and payments without any message text", async () => {
+      await post("/api/capture/v1/signals", { signals: [purchase("signal-tl-01")] });
+      const timeline = await captureTimeline(owner);
+      expect(timeline.devices[0]).toMatchObject({ id: deviceId, platform: "android" });
+      expect(timeline.consents.map((consent) => consent.scope)).toContain("capture");
+      expect(timeline.events[0]).toMatchObject({ status: "review", kind: "card_purchase", sourceSlug: "cib" });
+      expect(JSON.stringify(timeline)).not.toContain("CARREFOUR");
     });
   });
 

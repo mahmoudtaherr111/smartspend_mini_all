@@ -45,7 +45,7 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 
 | Job | Schedule | Depends on | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `capture-ai-sweep` | `* * * * *` | `api/lib/capture/ai-queue.ts` | — | — |
+| `capture-ai-sweep` | `* * * * *` | `api/lib/capture/ai-queue.ts`, `api/lib/capture/operations.ts` | — | — |
 | `capture-breaker` | `*/15 * * * *` | `api/lib/capture/operations.ts` | — | — |
 | `capture-silent-devices` | `0 11 * * *` | `api/lib/capture/care.ts` | — | — |
 | `classification-log-cleanup` | `0 3 * * 0` | — | — | `classification_logs` |

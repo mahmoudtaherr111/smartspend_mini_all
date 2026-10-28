@@ -22,6 +22,7 @@ import { readMessageWithModel } from "./ai-reader";
 import { captureConsentsOf } from "./consent";
 import type { CaptureDevice } from "./devices";
 import { lockCaptureUser, placeSignal, startIntakeRun, type SignalReading } from "./intake";
+import { merchantNamesToKeep } from "./keep-merchants";
 import { merchantKey } from "./reader/counterparty";
 
 const log = createLogger("capture-ai-queue");
@@ -157,7 +158,13 @@ async function readJob(job: Job): Promise<void> {
   } else {
     const account = owner.userType === "oauth" ? users : localUsers;
     const [user] = await getDb().select({ plan: account.plan }).from(account).where(eq(account.id, owner.userId));
-    const read = await readMessageWithModel(signal.textRedacted ?? "", { userId: owner.userId, userType: owner.userType, plan: user?.plan ?? null });
+    const text = signal.textRedacted ?? "";
+    const read = await readMessageWithModel(text, {
+      userId: owner.userId,
+      userType: owner.userType,
+      plan: user?.plan ?? null,
+      keepNames: merchantNamesToKeep(text, stored),
+    });
     if (read.outcome === "failed" && job.attempts < MODEL_ATTEMPTS) return releaseForRetry(job, new Date());
     outcome = read.outcome;
     if (read.verdict === "not_transaction") return finish(job, "not_transaction");

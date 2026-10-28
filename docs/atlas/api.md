@@ -36,7 +36,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `budget` | `api/budget-router.ts` | 4 | 1 | 3 | `authedProcedure` |
 | `business` | `api/business-router.ts` | 10 | 2 | 8 | `businessAiProcedure`, `businessProcedure` |
 | `capture` | `api/capture-router.ts` | 16 | 7 | 9 | `authedProcedure` |
-| `captureAdmin` | `api/capture-admin-router.ts` | 9 | 2 | 7 | `adminProcedure` |
+| `captureAdmin` | `api/capture-admin-router.ts` | 10 | 3 | 7 | `adminProcedure` |
 | `chat` | `api/chat-router.ts` | 10 | 4 | 6 | `aiProcedure`, `authedProcedure` |
 | `coach` | `api/coach-router.ts` | 10 | 2 | 8 | `authedProcedure` |
 | `expense` | `api/expense-router.ts` | 21 | 12 | 9 | `authedProcedure` |
@@ -234,6 +234,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `captureAdmin.setSourceStatus` | mutation | `adminProcedure` | yes | `capture_sources` | `capture_sources` | `api/lib/capture/catalog.ts`, `contracts/capture.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.setSubscriptionStatus` | mutation | `adminProcedure` | yes | `subscription_catalog` | `subscription_catalog` | `api/lib/capture/catalog.ts`, `contracts/capture.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.syncSeed` | mutation | `adminProcedure` | no | — | — | `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.timeline` | query | `adminProcedure` | yes | — | — | `api/lib/capture/operations.ts` | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 
 ### `chat` — `api/chat-router.ts`
 

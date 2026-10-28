@@ -1258,7 +1258,7 @@ model {
       }
     }
     captureAdmin = router 'captureAdmin' {
-      description 'api/capture-admin-router.ts — 9 procedures.'
+      description 'api/capture-admin-router.ts — 10 procedures.'
       metadata {
         file 'api/capture-admin-router.ts'
       }
@@ -1350,6 +1350,16 @@ model {
           file 'api/capture-admin-router.ts'
           builder 'adminProcedure'
           procedureKind 'mutation'
+        }
+      }
+      timeline = procedure 'captureAdmin.timeline' {
+        #query #admin
+        technology 'adminProcedure'
+        description 'query · adminProcedure'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
         }
       }
     }

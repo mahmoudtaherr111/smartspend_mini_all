@@ -125,7 +125,94 @@ export function AdminCaptureNumbers() {
       </Card>
 
       <BulkUndoCard />
+      <TimelineCard />
     </div>
+  );
+}
+
+/** "local:12" or "oauth:7" as the timeline's input, or null. */
+const ownerOf = (text: string) => {
+  const match = /^(local|oauth):(\d+)$/.exec(text.trim().toLowerCase());
+  return match ? { userType: match[1] as "local" | "oauth", userId: Number(match[2]) } : null;
+};
+
+const when = (value: string | Date | null | undefined) => (value ? new Date(value).toLocaleString("ar-EG") : "—");
+
+/** One user's capture for support: phones and their health, consents, use, and the latest payments and model jobs. */
+function TimelineCard() {
+  const [text, setText] = useState("");
+  const owner = ownerOf(text);
+  const timeline = trpc.captureAdmin.timeline.useQuery(owner ?? { userType: "local", userId: 1 }, { enabled: owner !== null });
+  const data = owner ? timeline.data : undefined;
+  return (
+    <Card className={cardClass}>
+      <CardHeader>
+        <CardTitle>تتبّع مستخدم</CardTitle>
+        <CardDescription>موبايلاته وحالتها، وموافقاته، واستهلاكه، وآخر عملياته وقراية الذكاء الاصطناعي. من غير أي نص رسالة.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        <div className="space-y-2 max-w-xs">
+          <Label htmlFor="timeline-user">المستخدم (local:12 أو oauth:7)</Label>
+          <Input id="timeline-user" dir="ltr" className="font-mono" value={text} onChange={(e) => setText(e.target.value)} />
+        </div>
+        {data && (
+          <div className="space-y-3">
+            <div>
+              <p className="font-bold">الموبايلات</p>
+              {data.devices.length === 0 ? (
+                <p className="text-slate-500">مفيش.</p>
+              ) : (
+                <ul className="space-y-1">
+                  {data.devices.map((device) => {
+                    const health = device.health as { access?: boolean; waiting?: number } | null;
+                    return (
+                      <li key={device.id} className="font-mono">
+                        #{device.id} {device.platform} {device.appVersion ?? ""} · آخر تقرير {when(device.lastHeartbeatAt)} · صلاحية{" "}
+                        {health?.access === false ? "مقفولة" : health?.access ? "شغالة" : "—"} · مستني {health?.waiting ?? "—"}
+                        {device.revokedAt ? " · موقوف" : ""}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+            <div>
+              <p className="font-bold">الموافقات</p>
+              <ul>
+                {data.consents.map((consent) => (
+                  <li key={`${consent.scope}:${String(consent.grantedAt)}`} className="font-mono">
+                    {consent.scope} {consent.textVersion} · {when(consent.grantedAt)}
+                    {consent.revokedAt ? ` · اترجع فيها ${when(consent.revokedAt)}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold">آخر العمليات</p>
+              <ul className="max-h-64 overflow-y-auto">
+                {data.events.map((event) => (
+                  <li key={event.id} className="font-mono">
+                    {when(event.createdAt)} · {event.status} · {event.kind} · {event.sourceSlug ?? "—"} · {event.readerVersion ?? ""}
+                    {event.autoRecorded ? " · لوحدها" : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold">قراية الذكاء الاصطناعي</p>
+              <ul>
+                {data.jobs.map((job) => (
+                  <li key={job.id} className="font-mono">
+                    {when(job.createdAt)} · {job.status} · {job.outcome ?? "—"} · {job.attempts} محاولة
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <p>كروت وجمل بيتجاهلها: {data.ignored}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

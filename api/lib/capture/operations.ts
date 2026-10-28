@@ -5,11 +5,23 @@
  * version after the signals are gone) and `capture_ai_jobs`; signals the server ignored are not stored, so they are
  * not counted here.
  */
-import { and, count, desc, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
-import { captureAiJobs, captureEvents, systemSettings } from "../../../db/schema";
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
+import {
+  captureAiJobs,
+  captureConsents,
+  captureDevices,
+  captureEvents,
+  captureMarkers,
+  captureUsage,
+  inAppNotifications,
+  localUsers,
+  systemSettings,
+  users,
+} from "../../../db/schema";
 import { getDb } from "../../queries/connection";
 import { deleteLedgerEntry } from "../../services/ledger-writer";
 import { createLogger } from "../log";
+import { stateGet, stateSet } from "../redis-client";
 import { getSystemSettings, invalidateSettingsCache } from "../settings-cache";
 import { autoPolicyOf, releaseQuota } from "./intake";
 
@@ -57,7 +69,111 @@ export async function runCaptureBreaker(now = new Date()): Promise<string[]> {
   await getDb().insert(systemSettings).values({ key: "capture_paused_sources", value }).onDuplicateKeyUpdate({ set: { value } });
   invalidateSettingsCache();
   log.warn({ event: "capture.breaker.tripped", sources: trips }, "Capture stopped recording these banks on their own");
+  await notifyAdmins(
+    "بنك وقف عن التسجيل لوحده",
+    `عمليات ${trips.join("، ")} اللي اتسجلت لوحدها اترجع فيها كتير في آخر يوم، فبقت بتتسأل تاني. شوف «الأرقام» في رسايل البنوك، ولما تتصلح شيله من البنوك الموقفة في الإعدادات.`,
+  );
   return trips;
+}
+
+/**
+ * Tells every admin, in the app (decision 0035). There is no other alert channel yet; `dedupeKey` keeps the same alert
+ * to once an hour across replicas.
+ */
+export async function notifyAdmins(title: string, body: string, dedupeKey?: string): Promise<number> {
+  if (dedupeKey) {
+    const key = `capture:alert:${dedupeKey}`;
+    if (await stateGet(key)) return 0;
+    await stateSet(key, 3600, "1");
+  }
+  const db = getDb();
+  const admins = [
+    ...(await db.select({ userId: users.id }).from(users).where(eq(users.role, "admin"))).map((row) => ({ userId: row.userId, userType: "oauth" })),
+    ...(await db.select({ userId: localUsers.id }).from(localUsers).where(eq(localUsers.role, "admin"))).map((row) => ({ userId: row.userId, userType: "local" })),
+  ];
+  if (admins.length > 0) await db.insert(inAppNotifications).values(admins.map((admin) => ({ ...admin, title, body, actionUrl: "/admin" })));
+  return admins.length;
+}
+
+/** The model's queue has a job waiting longer than this: the worker or the provider is stuck. */
+export const QUEUE_STALL_MS = 5 * 60 * 1000;
+
+/** Alerts the admins when the oldest job waiting for the model is older than five minutes (once an hour). */
+export async function checkModelQueue(now = new Date()): Promise<boolean> {
+  const [oldest] = await getDb()
+    .select({ at: sql<Date | null>`MIN(${captureAiJobs.createdAt})` })
+    .from(captureAiJobs)
+    .where(eq(captureAiJobs.status, "queued"));
+  if (!oldest?.at || now.getTime() - new Date(oldest.at).getTime() < QUEUE_STALL_MS) return false;
+  await notifyAdmins(
+    "قراية الذكاء الاصطناعي متأخرة",
+    "فيه رسايل بنك مستنية الموديل أكتر من 5 دقايق. شوف مزود «قراءة رسايل البنوك والمحافظ» وسقف التكلفة.",
+    "model-queue",
+  );
+  log.warn({ event: "capture.ai.queue_stalled" }, "Capture model queue is stalled");
+  return true;
+}
+
+/**
+ * One user's capture for support (decision 0035): phones with their health, consents, monthly use, the latest
+ * payments and model jobs, and how many cards and phrases they ignore. No message text and no merchant names.
+ */
+export async function captureTimeline(owner: { userId: number; userType: string }) {
+  const db = getDb();
+  const mine = <T extends { userId: unknown; userType: unknown }>(table: T) =>
+    and(eq(table.userId as never, owner.userId), eq(table.userType as never, owner.userType));
+  const [devices, consents, usage, events, jobs, [{ ignored }]] = await Promise.all([
+    db
+      .select({
+        id: captureDevices.id,
+        platform: captureDevices.platform,
+        appVersion: captureDevices.appVersion,
+        createdAt: captureDevices.createdAt,
+        lastSeenAt: captureDevices.lastSeenAt,
+        lastSignalAt: captureDevices.lastSignalAt,
+        lastHeartbeatAt: captureDevices.lastHeartbeatAt,
+        health: captureDevices.health,
+        revokedAt: captureDevices.revokedAt,
+      })
+      .from(captureDevices)
+      .where(mine(captureDevices))
+      .orderBy(asc(captureDevices.createdAt)),
+    db
+      .select({ scope: captureConsents.scope, textVersion: captureConsents.textVersion, grantedAt: captureConsents.grantedAt, revokedAt: captureConsents.revokedAt })
+      .from(captureConsents)
+      .where(mine(captureConsents)),
+    db
+      .select({ period: captureUsage.period, reserved: captureUsage.reserved, held: captureUsage.held, signalDay: captureUsage.signalDay, signals: captureUsage.signals })
+      .from(captureUsage)
+      .where(mine(captureUsage))
+      .orderBy(desc(captureUsage.period))
+      .limit(3),
+    db
+      .select({
+        id: captureEvents.id,
+        createdAt: captureEvents.createdAt,
+        status: captureEvents.status,
+        kind: captureEvents.kind,
+        sourceSlug: captureEvents.sourceSlug,
+        readerVersion: captureEvents.readerVersion,
+        autoRecorded: captureEvents.autoRecorded,
+        channels: captureEvents.channels,
+        quotaPeriod: captureEvents.quotaPeriod,
+      })
+      .from(captureEvents)
+      .where(mine(captureEvents))
+      .orderBy(desc(captureEvents.id))
+      .limit(50),
+    db
+      .select({ id: captureAiJobs.id, createdAt: captureAiJobs.createdAt, status: captureAiJobs.status, outcome: captureAiJobs.outcome, attempts: captureAiJobs.attempts })
+      .from(captureAiJobs)
+      .where(mine(captureAiJobs))
+      .orderBy(desc(captureAiJobs.id))
+      .limit(20),
+    db.select({ ignored: count() }).from(captureMarkers).where(and(mine(captureMarkers), inArray(captureMarkers.kind, ["ignore_card", "ignore_phrase"]))),
+  ]);
+  // The channel keys name the device and the source, never the message: they stay.
+  return { devices, consents, usage, events, jobs, ignored: Number(ignored) };
 }
 
 export interface BulkUndoInput {

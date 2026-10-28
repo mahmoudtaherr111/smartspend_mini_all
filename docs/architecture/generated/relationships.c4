@@ -314,6 +314,7 @@ model {
   smartspend.api.modules.billing -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.modules.capture-ai-reader -[imports]-> smartspend.api.modules.ai-governance
   smartspend.api.modules.capture-ai-reader -[imports]-> smartspend.api.modules.ai-providers
+  smartspend.api.modules.capture-ai-reader -[imports]-> smartspend.api.modules.capture-intake
   smartspend.api.modules.capture-ai-reader -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.capture-ai-reader -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.capture-ai-reader -[imports]-> smartspend.api.modules.security
@@ -860,6 +861,7 @@ model {
   smartspend.api.trpc.captureAdmin.setSubscriptionStatus -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.captureAdmin.setSubscriptionStatus -[writes]-> smartspend.mysql.subscription_catalog
   smartspend.api.trpc.captureAdmin.syncSeed -[uses]-> smartspend.api.modules.capture-catalog
+  smartspend.api.trpc.captureAdmin.timeline -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.chat.cancelAction -[uses]-> smartspend.api.modules.ai-actions
   smartspend.api.trpc.chat.clearAllMemories -[reads]-> smartspend.mysql.ai_memory_items
   smartspend.api.trpc.chat.clearAllMemories -[uses]-> smartspend.api.modules.ai-memory
@@ -1370,6 +1372,7 @@ model {
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.setSourceStatus
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.setSubscriptionStatus
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.syncSeed
+  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.captureAdmin.timeline
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.export.allUsers
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.localAuth.me
@@ -1507,6 +1510,7 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.setSourceStatus
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.setSubscriptionStatus
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.syncSeed
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.timeline
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.addCashflow
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.cancelReminder
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.coach.endPlan

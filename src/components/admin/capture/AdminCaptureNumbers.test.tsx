@@ -21,6 +21,21 @@ vi.mock("@/providers/trpc", () => ({
     useUtils: () => ({ captureAdmin: { funnel: { invalidate: () => undefined } } }),
     captureAdmin: {
       funnel: { useQuery: () => ({ data: funnel, isLoading: false }) },
+      timeline: {
+        useQuery: (input: unknown, options: { enabled: boolean }) => ({
+          data: options.enabled
+            ? {
+                devices: [{ id: 3, platform: "android", appVersion: "1.0.0", lastHeartbeatAt: null, health: { access: false, waiting: 2 }, revokedAt: null }],
+                consents: [{ scope: "capture", textVersion: "2026-10-27", grantedAt: "2026-10-27T10:00:00Z", revokedAt: null }],
+                usage: [],
+                events: [{ id: 9, createdAt: "2026-10-28T10:00:00Z", status: "recorded", kind: "card_purchase", sourceSlug: "cib", readerVersion: "reader-v1", autoRecorded: true }],
+                jobs: [],
+                ignored: 1,
+                input,
+              }
+            : undefined,
+        }),
+      },
       bulkUndo: {
         useMutation: () => ({
           isPending: false,
@@ -63,5 +78,13 @@ describe("AdminCaptureNumbers", () => {
     fireEvent.click(screen.getByRole("button", { name: "شيل الصفوف دي" }));
     fireEvent.click(screen.getByRole("button", { name: "أيوه، شيلهم" }));
     expect(calls.bulkUndo[1]).toMatchObject({ sourceSlug: "cib", apply: true });
+  });
+
+  it("shows one user's phones and payments once a user is named", () => {
+    render(<AdminCaptureNumbers />);
+    expect(screen.queryByText("الموبايلات")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("المستخدم (local:12 أو oauth:7)"), { target: { value: "local:12" } });
+    expect(screen.getByText(/صلاحية\s+مقفولة/)).toBeInTheDocument();
+    expect(screen.getByText(/recorded · card_purchase · cib/)).toBeInTheDocument();
   });
 });

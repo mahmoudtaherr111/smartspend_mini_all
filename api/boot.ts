@@ -144,6 +144,8 @@ scheduleProtectedJob("*/5 * * * *", "coaching-reminders", async () => {
 scheduleProtectedJob("* * * * *", "capture-ai-sweep", async () => {
   const { drainCaptureModel } = await import("./lib/capture/ai-queue");
   await drainCaptureModel(100);
+  const { checkModelQueue } = await import("./lib/capture/operations");
+  await checkModelQueue();
 });
 
 // A phone that stopped reporting for two days: its user is told once, in the app (decision 0034).

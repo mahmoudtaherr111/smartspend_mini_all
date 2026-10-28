@@ -23,6 +23,7 @@ import { getSystemSettings } from "../settings-cache";
 import { costAtRates, ratesFor, type ModelRates } from "../ai-pricing";
 import { businessDayRange } from "../app-time";
 import { redactSensitiveData, redactWithFindings } from "../anonymizer";
+import { redactKeeping } from "./keep-merchants";
 import {
   SMS_PROMPT_VERSION,
   SMS_REPLY_SCHEMA,
@@ -48,6 +49,8 @@ export type AiReaderUser = {
   sender?: string | null;
   /** The provider already recognised, passed through when the model's answer does not name one. */
   providerHint?: SmsParseResult["provider"] | null;
+  /** Merchant names to keep through redaction (api/lib/capture/keep-merchants.ts, decision 0035). */
+  keepNames?: string[];
 };
 
 /**
@@ -270,7 +273,8 @@ export async function readMessageWithModel(message: string, user: AiReaderUser =
   }
 
   // Condensed, then redacted: the model never sees a card, account, phone, reference or name.
-  const { text: redacted, findings } = redactWithFindings(condenseMessage(trimmed));
+  const condensed = condenseMessage(trimmed);
+  const { text: redacted, findings } = user.keepNames?.length ? redactKeeping(condensed, user.keepNames) : redactWithFindings(condensed);
   const userPrompt = buildSmsUserPrompt({
     text: redacted,
     sender: user.sender ? redactSensitiveData(user.sender.trim()) : null,
