@@ -27,6 +27,7 @@ import {
   SectionHeader,
 } from "./AdminSettingsShared";
 import { AdminVoiceCallSection } from "./AdminVoiceCallSection";
+import { AdminCaptureSection } from "./AdminCaptureSection";
 import { AdminSmsAiSection } from "./AdminSmsAiSection";
 import {
   PLAN_FEATURE_DEFAULTS,
@@ -825,6 +826,7 @@ export function AdminPlansTab({
 
       {/* The model that reads bank messages: its switch and daily cost cap (decision 0025) */}
       <AdminSmsAiSection formData={formData} updateField={updateField} />
+      <AdminCaptureSection formData={formData} updateField={updateField} />
 
       {/* AI Chatbot Settings */}
       <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden border-t-4 border-t-indigo-500">

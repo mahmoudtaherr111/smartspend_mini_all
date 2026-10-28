@@ -51,6 +51,8 @@ import {
   captureSignals,
   captureEvents,
   captureUsage,
+  captureMemory,
+  captureUserPairs,
   captureConsents,
   captureDevices,
   voiceCalls,
@@ -109,6 +111,8 @@ export async function purgeUserData(
   await tx.delete(captureSignals).where(userScope(captureSignals, userId, userType));
   await tx.delete(captureEvents).where(userScope(captureEvents, userId, userType));
   await tx.delete(captureUsage).where(userScope(captureUsage, userId, userType));
+  await tx.delete(captureMemory).where(userScope(captureMemory, userId, userType));
+  await tx.delete(captureUserPairs).where(userScope(captureUserPairs, userId, userType));
   await tx.delete(captureConsents).where(userScope(captureConsents, userId, userType));
   await tx.delete(captureDevices).where(userScope(captureDevices, userId, userType));
 

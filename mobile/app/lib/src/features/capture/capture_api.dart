@@ -102,6 +102,31 @@ final class PendingCapture {
   }
 }
 
+/// A bank and kind of message the person recorded as read three times in a row: the app offers to record them on
+/// their own (`capture.autoOffers`, decision 0030).
+final class AutoOffer {
+  const AutoOffer({required this.sourceSlug, required this.kind, this.source});
+
+  final String sourceSlug;
+  final String kind;
+
+  /// The bank's Arabic name, as the catalog gives it.
+  final String? source;
+
+  static AutoOffer? fromJson(Object? data) {
+    if (data is! Map<String, Object?>) return null;
+    final slug = data['sourceSlug'];
+    final kind = data['kind'];
+    if (slug is! String || kind is! String) return null;
+    final name = data['sourceName'];
+    return AutoOffer(
+      sourceSlug: slug,
+      kind: kind,
+      source: name is Map<String, Object?> ? name['ar'] as String? : null,
+    );
+  }
+}
+
 /// The capture procedures the app calls (`api/capture-router.ts`, decision 0028).
 class CaptureApi {
   CaptureApi(this._client);
@@ -160,6 +185,25 @@ class CaptureApi {
         ?PendingCapture.fromJson(item),
     ];
   }
+
+  Future<List<AutoOffer>> autoOffers() async {
+    final data = await _client.query(Procedures.capture.autoOffers);
+    return [
+      for (final item in data is List<Object?> ? data : const <Object?>[])
+        ?AutoOffer.fromJson(item),
+    ];
+  }
+
+  /// The person's answer to an offer: record this bank and kind on their own, or keep asking.
+  Future<void> setAuto(AutoOffer offer, {required bool enabled}) =>
+      _client.mutate(
+        Procedures.capture.setAuto,
+        input: {
+          'sourceSlug': offer.sourceSlug,
+          'kind': offer.kind,
+          'enabled': enabled,
+        },
+      );
 
   /// Records the transaction (with [amountEgp] when only a foreign amount was known) or dismisses it.
   Future<void> answer(int eventId, {required bool record, double? amountEgp}) =>

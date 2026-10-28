@@ -115,6 +115,21 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
    does not bring it back.
 6. **`GET /api/capture/v1/config`**: whether capture is on, the user's consents, the oldest build allowed, the catalog's
    sources and version, the phone's filter lists (`CAPTURE_GATE`: words for codes and for money) and the batch limits.
+8. **Memory and recording on its own** ([decision 0030](../decisions/0030-capture-memory-and-recording-alone.md),
+   `api/lib/capture/memory.ts`). The filing comes from the user's own memory first (`capture_memory`: a merchant by its
+   key, a person by an HMAC of their address or name), learned from the user's answer and from an edit of a recorded
+   row's category (`updateLedgerEntry` teaches it in the edit's transaction); then the subscription catalog; then the
+   kind's default (`suggestLedgerEntry`, which says where its filing came from). A new payment is recorded in the
+   intake's own transaction, without the streak, when `mayRecordAlone` allows it: a certain reading in pounds, not a
+   possible duplicate, from a source not in `capture_paused_sources`, of a pair the admin lists in
+   `capture_auto_pairs` (`cib:card_purchase`, `*:card_purchase`) or the user agreed to, and not a transfer to or from a
+   person at or above `capture_p2p_ask_above`. Its answer is `recorded` with a notice "اتسجلت …" (marked when the filing
+   is only the kind's default) and an `undo` button; `undo` from that device deletes the row through the ledger writer,
+   gives the month's count back and turns the pair back to asking. Recording a payment as it was read (no amount typed)
+   counts one more for its pair in `capture_user_pairs`; after three in a row `capture.autoOffers` lists the pair and
+   `capture.setAuto` records the user's answer. A payment that waits for an answer is a notification only for the first
+   `capture_daily_question_notices` (2) of the Cairo day; the rest are answered `review` without a notice and wait in
+   the app. The admin edits these in the settings' capture section (`src/components/admin/settings/AdminCaptureSection.tsx`).
 
 7. **The monthly limit** (the owner's decision, decision 0028): `capture_monthly_limit_<plan>` (`contracts/plan-features.ts`,
    50 on Free, none on Pro and Ultra, edited in the admin's plans tab) counts the new payments of a Cairo month in
@@ -151,10 +166,12 @@ Android only for now; the plugin is `mobile/packages/bank_capture`, and capture 
    up to five batches, deletes every signal the server answered, and shows each `review` notice (`CaptureNotifier`):
    private on the lock screen, in the interface language, with the server's buttons. A 401 forgets the token and the
    queue; a 403 or 503 keeps the queue and reads the config again.
-5. **The buttons** (`CaptureActionReceiver`): the notice goes at once and `ActionWorker` sends the answer to
-   `/api/capture/v1/actions` until the server has it, without opening the app.
-6. **The review screen** (`/more/capture`): the waiting transactions with their source, amount, merchant and filing;
-   "record" or "not mine", and the pounds of a foreign charge typed first.
+5. **The buttons** (`CaptureActionReceiver`): "record", "not mine" or, on a payment recorded on its own, "undo"; the
+   notice goes at once and `ActionWorker` sends the answer to `/api/capture/v1/actions` until the server has it, without
+   opening the app.
+6. **The review screen** (`/more/capture`): the offer to record a bank and kind on their own when there is one, then
+   the waiting transactions with their source, amount, merchant and filing; "record" or "not mine", and the pounds of a
+   foreign charge typed first.
 
 ## The message reader
 [Decision 0026](../decisions/0026-message-reader-before-the-model.md). `api/lib/capture/reader/read.ts#readMessage` is
@@ -221,6 +238,9 @@ EGP equivalent in the text, which is not used as pounds.
   after 400.
 - `capture_usage` (one row per user and Cairo month: the payments counted against the limit, the held ones, whether
   the user was told, and the day's questions): migration `db/migrations/0034_capture_usage.sql`.
+- `capture_memory` (one row per user and merchant or person: where the user files it) and `capture_user_pairs` (one
+  row per user, bank and kind: the confirmations in a row, whether the offer was made and taken), and
+  `capture_events.auto_recorded`: migration `db/migrations/0035_capture_memory.sql`.
 - The old intake's tables, `webhook_tokens` (one token per user) and `raw_sms_events` (every message as received,
   with account digits and balances, and the suggestions waiting over the limit), were dropped by
   `db/migrations/0030_drop_old_bank_messages.sql`, raw messages and waiting suggestions included.
@@ -230,6 +250,7 @@ EGP equivalent in the text, which is not used as pounds.
 | --- | --- | --- |
 | What is kept, ignored or refused, and the notice | `api/lib/capture/intake.ts` | `api/lib/capture/intake.test.ts` |
 | When signals are one payment | `api/lib/capture/events.ts` (`matchSignal`, `MATCH_WINDOWS`) | `api/lib/capture/events.test.ts` |
+| What is recorded without a question, and the memory | `mayRecordAlone` in `api/lib/capture/intake.ts`, `api/lib/capture/memory.ts`; the settings in the admin's capture section | `api/lib/capture/intake.test.ts`, `tests/capture-intake.test.ts` |
 | The routes, the device token and the answer | `api/capture-v1-routes.ts`, `api/lib/capture/devices.ts`, `api/capture-router.ts` | `tests/capture-intake.test.ts` (`npm run test:db`) |
 | How a message is read without a model | `api/lib/capture/reader/` | `api/lib/capture/reader/read.test.ts`, `api/lib/capture/reader/reader-benchmark.test.ts`, `npm run bench:capture` |
 | Which provider and model read messages | the AI providers screen, purpose «قراءة رسايل البنوك والمحافظ» (`sms`) | `api/lib/capture/ai-reader.test.ts` |

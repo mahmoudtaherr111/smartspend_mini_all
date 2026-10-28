@@ -154,6 +154,21 @@ class AppLocalizationsAr extends AppLocalizations {
       'ممكن تكون نفس العملية اللي قبلها. لو دفعت مرتين دوس «سجّل»، ولو هي نفسها دوس «مش مصروف».';
 
   @override
+  String captureAutoOffer(String source) {
+    return 'نسجّل عمليات «$source» دي لوحدها بعد كده؟';
+  }
+
+  @override
+  String get captureAutoOfferBody =>
+      'أكّدت آخر 3 عمليات زي ما اتقرت. لو وافقت، بنسجّلها من غير ما نسألك، ويجيلك إشعار فيه «تراجع».';
+
+  @override
+  String get captureAutoYes => 'أيوه';
+
+  @override
+  String get captureAutoNo => 'لا، اسألني';
+
+  @override
   String captureUsage(int used, int limit) {
     return 'اتسجل $used من $limit الشهر ده.';
   }

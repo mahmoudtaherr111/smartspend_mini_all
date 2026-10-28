@@ -56,6 +56,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/devices.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/events.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/intake.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/memory.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/clauses.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/counterparty.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/explain.ts` | [bank-messages](bank-messages.md) |
@@ -325,6 +326,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` | [admin](admin.md) |
 | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` | [admin](admin.md) |
 | `src/components/admin/capture/AdminCaptureTab.tsx` | [admin](admin.md) |
+| `src/components/admin/settings/AdminCaptureSection.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminCodesTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminKeysTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminPlansTab.tsx` | [admin](admin.md) |

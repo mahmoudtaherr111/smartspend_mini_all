@@ -36,3 +36,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0027](0027-one-ledger-writer.md) | One ledger writer: rows of `expenses` are added, changed and removed through `api/services/ledger-writer.ts` |
 | [0028](0028-capture-intake-from-phones.md) | Phones send captured notifications with a device token to `/api/capture/v1`, and the user confirms each one first |
 | [0029](0029-one-payment-one-event.md) | One payment, one event: captured signals are merged by rules that never merge on a guess |
+| [0030](0030-capture-memory-and-recording-alone.md) | Captured payments are recorded on their own only for pairs the admin opens or the user agrees to, filed from the user's own memory |

@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { captureConsents, captureDevices, captureEvents, captureSignals, captureUsage, expenseDailyRollups, expenses, localUsers, systemSettings, userWallets } from "../db/schema";
+import { captureConsents, captureDevices, captureEvents, captureMemory, captureSignals, captureUsage, captureUserPairs, expenseDailyRollups, expenses, localUsers, systemSettings, userWallets } from "../db/schema";
 import { db } from "../api/queries/connection";
 import { registerCaptureRoutes } from "../api/capture-v1-routes";
 import { captureRouter } from "../api/capture-router";
@@ -9,7 +9,7 @@ import { invalidateCaptureCatalog, syncCaptureSeed } from "../api/lib/capture/ca
 import { CAPTURE_CONSENT_TEXT_VERSION, setCaptureConsent } from "../api/lib/capture/consent";
 import { registerCaptureDevice, revokeCaptureDevice } from "../api/lib/capture/devices";
 import { invalidateSettingsCache } from "../api/lib/settings-cache";
-import { deleteLedgerEntry } from "../api/services/ledger-writer";
+import { deleteLedgerEntry, updateLedgerEntry } from "../api/services/ledger-writer";
 
 // Needs a migrated MySQL database: npm run test:db (docs/guides/testing.md).
 const describeWithDatabase = describe.runIf(process.env.RUN_DB_INTEGRATION === "1");
@@ -53,6 +53,8 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
       await db.delete(captureEvents).where(mine(captureEvents));
       await db.delete(userWallets).where(mine(userWallets));
       await db.delete(captureUsage).where(mine(captureUsage));
+      await db.delete(captureMemory).where(mine(captureMemory));
+      await db.delete(captureUserPairs).where(mine(captureUserPairs));
       await db.delete(captureConsents).where(mine(captureConsents));
       await db.delete(captureDevices).where(mine(captureDevices));
       await db.delete(expenseDailyRollups).where(mine(expenseDailyRollups));
@@ -74,7 +76,9 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
   });
   afterAll(async () => {
     await cleanUp();
-    await db.delete(systemSettings).where(eq(systemSettings.key, "capture_monthly_limit_free"));
+    for (const key of ["capture_monthly_limit_free", "capture_auto_pairs", "capture_daily_question_notices"]) {
+      await db.delete(systemSettings).where(eq(systemSettings.key, key));
+    }
     await db.delete(systemSettings).where(eq(systemSettings.key, "capture_enabled"));
     invalidateSettingsCache();
   });
@@ -212,6 +216,75 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
     const pending = await upgraded.pending();
     expect(pending).toHaveLength(4);
     expect((await upgraded.status()).usage).toMatchObject({ limit: 0, held: 0 });
+
+    await db.delete(systemSettings).where(eq(systemSettings.key, "capture_monthly_limit_free"));
+    invalidateSettingsCache();
+  });
+
+  const setting = async (key: string, value: string) => {
+    await db.insert(systemSettings).values({ key, value }).onDuplicateKeyUpdate({ set: { value } });
+    invalidateSettingsCache();
+  };
+  const clearSetting = async (key: string) => {
+    await db.delete(systemSettings).where(eq(systemSettings.key, key));
+    invalidateSettingsCache();
+  };
+  const streakOf = async () => (await db.select({ streak: localUsers.currentStreak }).from(localUsers).where(eq(localUsers.id, owner.userId)))[0]?.streak ?? 0;
+
+  it("remembers where the user filed a merchant, from an answer and from an edit of the row", async () => {
+    const first = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-mem-01", "60.00", "BIM MARKET")] })).json();
+    const { expenseId } = await caller.answer({ eventId: first.results[0].eventId, action: "record", categoryId: "food", subCategoryId: "groceries" });
+
+    await post("/api/capture/v1/signals", { signals: [purchase("signal-mem-02", "75.00", "BIM MARKET")] });
+    const [next] = await caller.pending();
+    expect(next.suggestion).toMatchObject({ categoryId: "food", subCategoryId: "groceries", from: "memory" });
+
+    await updateLedgerEntry(owner, expenseId!, { category: "تسوق", subCategory: "عام" });
+    const [after] = await caller.pending();
+    expect(after.suggestion).toMatchObject({ categoryId: "shopping", from: "memory" });
+  });
+
+  it("records an opened pair on its own without the streak, and takes it back on undo", async () => {
+    await setting("capture_auto_pairs", "cib:card_purchase");
+    const { results } = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-auto-01")] })).json();
+    await clearSetting("capture_auto_pairs");
+
+    expect(results[0]).toMatchObject({ result: "recorded" });
+    expect(results[0].notice.actions).toEqual(["undo"]);
+    expect(results[0].notice.title).toContain("اتسجلت");
+    const [row] = await db.select().from(expenses).where(and(eq(expenses.userId, owner.userId), eq(expenses.userType, "local")));
+    expect((row.parsedMetadata as { capture: { auto: boolean } }).capture.auto).toBe(true);
+    expect(await streakOf()).toBe(0);
+
+    const undo = await (await post("/api/capture/v1/actions", { actionId: "action-undo-1", eventId: results[0].eventId, action: "undo" })).json();
+    expect(undo.result).toBe("dismissed");
+    expect(await db.select().from(expenses).where(and(eq(expenses.userId, owner.userId), eq(expenses.userType, "local")))).toHaveLength(0);
+    expect((await caller.status()).usage.used).toBe(0);
+  });
+
+  it("offers a bank and kind after three confirmed in a row, and records it on its own once the user agrees", async () => {
+    for (const [index, amount] of ["11.00", "12.00", "13.00"].entries()) {
+      const { results } = await (await post("/api/capture/v1/signals", { signals: [purchase(`signal-pair-0${index}`, amount)] })).json();
+      await caller.answer({ eventId: results[0].eventId, action: "record" });
+    }
+    const offers = await caller.autoOffers();
+    expect(offers).toMatchObject([{ sourceSlug: "cib", kind: "card_purchase" }]);
+
+    await caller.setAuto({ sourceSlug: "cib", kind: "card_purchase", enabled: true });
+    expect(await caller.autoOffers()).toHaveLength(0);
+    const { results } = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-pair-04", "14.00")] })).json();
+    expect(results[0].result).toBe("recorded");
+  });
+
+  it("sends only the day's number of question notifications; the rest wait in the app", async () => {
+    await setting("capture_daily_question_notices", "1");
+    const { results } = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-q-01", "21.00"), purchase("signal-q-02", "22.00")] })).json();
+    await clearSetting("capture_daily_question_notices");
+
+    expect(results[0].notice).toBeDefined();
+    expect(results[1]).toMatchObject({ result: "review" });
+    expect(results[1].notice).toBeUndefined();
+    expect(await caller.pending()).toHaveLength(2);
   });
 
   it("never lets a Google account with the same id answer, and stops a revoked phone", async () => {

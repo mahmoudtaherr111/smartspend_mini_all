@@ -33,8 +33,10 @@ model {
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_consents
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_devices
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_events
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_memory
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_signals
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_usage
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_user_pairs
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.cashflow_settlements
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.chat_messages
@@ -331,8 +333,10 @@ model {
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_consents
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_devices
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_events
+  smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_memory
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_signals
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_usage
+  smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_user_pairs
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.user_wallets
@@ -340,8 +344,10 @@ model {
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_consents
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_devices
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_events
+  smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_memory
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_signals
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_usage
+  smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_user_pairs
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.user_wallets
   smartspend.api.modules.capture-reader -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.capture-reader -[imports]-> smartspend.api.modules.platform
@@ -433,11 +439,13 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_call_incidents
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_calls
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_usage
+  smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.capture-intake
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.coaching
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.notifications
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.ledger -[reads]-> smartspend.mysql.capture_events
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.user_budgets
@@ -793,11 +801,14 @@ model {
   smartspend.api.trpc.business.updateCategory -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.business.updateCategory -[writes]-> smartspend.mysql.business_categories
   smartspend.api.trpc.capture.answer -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.trpc.capture.autoOffers -[uses]-> smartspend.api.modules.capture-catalog
+  smartspend.api.trpc.capture.autoOffers -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.devices -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.pending -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.registerDevice -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.registerDevice -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.capture.revokeDevice -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.trpc.capture.setAuto -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.setConsent -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.setConsent -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.capture.sources -[uses]-> smartspend.api.modules.capture-catalog

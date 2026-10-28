@@ -320,6 +320,30 @@ abstract class AppLocalizations {
   /// **'ممكن تكون نفس العملية اللي قبلها. لو دفعت مرتين دوس «سجّل»، ولو هي نفسها دوس «مش مصروف».'**
   String get captureMaybeDuplicate;
 
+  /// Offer to record a bank's transactions of one kind without asking, after three confirmations.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسجّل عمليات «{source}» دي لوحدها بعد كده؟'**
+  String captureAutoOffer(String source);
+
+  /// No description provided for @captureAutoOfferBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكّدت آخر 3 عمليات زي ما اتقرت. لو وافقت، بنسجّلها من غير ما نسألك، ويجيلك إشعار فيه «تراجع».'**
+  String get captureAutoOfferBody;
+
+  /// No description provided for @captureAutoYes.
+  ///
+  /// In ar, this message translates to:
+  /// **'أيوه'**
+  String get captureAutoYes;
+
+  /// No description provided for @captureAutoNo.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا، اسألني'**
+  String get captureAutoNo;
+
   /// The month's captured transactions against the free plan's limit.
   ///
   /// In ar, this message translates to:

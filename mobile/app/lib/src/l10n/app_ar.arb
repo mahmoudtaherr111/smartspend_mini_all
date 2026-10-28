@@ -65,6 +65,19 @@
   },
   "captureCheckAmount": "مش متأكدين من المبلغ ده، راجعه قبل ما تسجّل.",
   "captureMaybeDuplicate": "ممكن تكون نفس العملية اللي قبلها. لو دفعت مرتين دوس «سجّل»، ولو هي نفسها دوس «مش مصروف».",
+  "captureAutoOffer": "نسجّل عمليات «{source}» دي لوحدها بعد كده؟",
+  "@captureAutoOffer": {
+    "description": "Offer to record a bank's transactions of one kind without asking, after three confirmations.",
+    "placeholders": {
+      "source": {
+        "type": "String",
+        "example": "البنك التجاري الدولي"
+      }
+    }
+  },
+  "captureAutoOfferBody": "أكّدت آخر 3 عمليات زي ما اتقرت. لو وافقت، بنسجّلها من غير ما نسألك، ويجيلك إشعار فيه «تراجع».",
+  "captureAutoYes": "أيوه",
+  "captureAutoNo": "لا، اسألني",
   "captureUsage": "اتسجل {used} من {limit} الشهر ده.",
   "@captureUsage": {
     "description": "The month's captured transactions against the free plan's limit.",

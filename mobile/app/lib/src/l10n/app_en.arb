@@ -53,6 +53,19 @@
   "captureAmountNeeded": "The message has an amount in another currency. Type what was charged in pounds.",
   "captureCheckAmount": "We're not sure about this amount; check it before recording.",
   "captureMaybeDuplicate": "This may be the same payment as the one before. If you paid twice, tap \"Record\"; if it is the same one, tap \"Not mine\".",
+  "captureAutoOffer": "Record these «{source}» transactions on their own from now on?",
+  "@captureAutoOffer": {
+    "description": "Offer to record a bank's transactions of one kind without asking, after three confirmations.",
+    "placeholders": {
+      "source": {
+        "type": "String",
+        "example": "البنك التجاري الدولي"
+      }
+    }
+  },
+  "captureAutoOfferBody": "You confirmed the last 3 as they were read. If you agree, we record them without asking and send a notification with \"Undo\".",
+  "captureAutoYes": "Yes",
+  "captureAutoNo": "No, ask me",
   "captureUsage": "{used} of {limit} recorded this month.",
   "@captureUsage": {
     "description": "The month's captured transactions against the free plan's limit.",

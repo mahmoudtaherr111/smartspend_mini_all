@@ -13,7 +13,7 @@ class CaptureActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val eventId = intent.getLongExtra(EXTRA_EVENT, 0)
         val action = intent.getStringExtra(EXTRA_ACTION) ?: return
-        if (eventId <= 0 || (action != "record" && action != "dismiss")) return
+        if (eventId <= 0 || action !in setOf("record", "dismiss", "undo")) return
         CaptureNotifier.cancelReview(context, eventId)
         CaptureScheduler.answer(context, eventId, action)
     }
@@ -28,7 +28,7 @@ class CaptureActionReceiver : BroadcastReceiver() {
                 .putExtra(EXTRA_EVENT, eventId)
                 .putExtra(EXTRA_ACTION, action)
             // One request code per signal and button, so each button keeps its own extras.
-            val requestCode = (eventId * 2 + if (action == "record") 0 else 1).toInt()
+            val requestCode = (eventId * 3 + when (action) { "record" -> 0; "dismiss" -> 1; else -> 2 }).toInt()
             return PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         }
     }

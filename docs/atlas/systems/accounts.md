@@ -53,8 +53,10 @@ flowchart LR
     tbl_capture_consents[("capture_consents")]
     tbl_capture_devices[("capture_devices")]
     tbl_capture_events[("capture_events")]
+    tbl_capture_memory[("capture_memory")]
     tbl_capture_signals[("capture_signals")]
     tbl_capture_usage[("capture_usage")]
+    tbl_capture_user_pairs[("capture_user_pairs")]
     tbl_cashflow_settlements[("cashflow_settlements")]
     tbl_chat_conversations[("chat_conversations")]
     tbl_chat_messages[("chat_messages")]
@@ -121,8 +123,10 @@ flowchart LR
   mod_accounts ==> tbl_capture_consents
   mod_accounts ==> tbl_capture_devices
   mod_accounts ==> tbl_capture_events
+  mod_accounts ==> tbl_capture_memory
   mod_accounts ==> tbl_capture_signals
   mod_accounts ==> tbl_capture_usage
+  mod_accounts ==> tbl_capture_user_pairs
   mod_accounts ==> tbl_cashflow_settlements
   mod_accounts ==> tbl_chat_conversations
   mod_accounts ==> tbl_chat_messages
@@ -302,8 +306,10 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `capture_consents` | A | `accounts` | — |
 | `capture_devices` | A | `accounts` | — |
 | `capture_events` | E | `accounts` | — |
+| `capture_memory` | A | `accounts` | — |
 | `capture_signals` | E | `accounts` | — |
 | `capture_usage` | C | `accounts` | — |
+| `capture_user_pairs` | A | `accounts` | — |
 | `cashflow_settlements` | C | `accounts` | — |
 | `chat_conversations` | G | `accounts` | `accounts` |
 | `chat_messages` | G | `accounts` | — |

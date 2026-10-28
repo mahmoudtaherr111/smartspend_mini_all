@@ -109,10 +109,12 @@ final class CaptureProcedures {
   const CaptureProcedures._();
 
   ApiMutation get answer => const ApiMutation('capture.answer', builder: 'authedProcedure', hasInput: true);
+  ApiQuery get autoOffers => const ApiQuery('capture.autoOffers', builder: 'authedProcedure');
   ApiQuery get devices => const ApiQuery('capture.devices', builder: 'authedProcedure');
   ApiQuery get pending => const ApiQuery('capture.pending', builder: 'authedProcedure');
   ApiMutation get registerDevice => const ApiMutation('capture.registerDevice', builder: 'authedProcedure', hasInput: true);
   ApiMutation get revokeDevice => const ApiMutation('capture.revokeDevice', builder: 'authedProcedure', hasInput: true);
+  ApiMutation get setAuto => const ApiMutation('capture.setAuto', builder: 'authedProcedure', hasInput: true);
   ApiMutation get setConsent => const ApiMutation('capture.setConsent', builder: 'authedProcedure', hasInput: true);
   ApiQuery get sources => const ApiQuery('capture.sources', builder: 'authedProcedure');
   ApiQuery get status => const ApiQuery('capture.status', builder: 'authedProcedure');

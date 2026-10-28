@@ -50,6 +50,8 @@ Screens of other systems use these APIs: people in `src/components/settings/Peop
   the row with its signed amount, rollup delta, contact count and (unless the caller says the save does not count)
   the streak in one transaction, gives back the row already saved under the same `clientRequestId` instead of
   writing again, then runs the caller's `afterCommit` and clears the caches and checks budgets for new spending.
+  Changing the category of a row recorded from a bank message also teaches the user's capture memory where that
+  merchant goes ([bank and wallet messages](bank-messages.md)).
   `insertLedgerEntriesInTx` and `bumpStreakInTx` are the same steps inside a caller's own transaction. The caller
   still checks ownership, finds or creates the contact and normalizes the category.
 - `expense.update` checks that a referenced wallet, business or contact belongs to the user and normalizes the

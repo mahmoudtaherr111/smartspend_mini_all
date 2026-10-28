@@ -18,24 +18,29 @@ class CaptureReviewScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final pending = ref.watch(capturePendingProvider);
+    final offers = ref.watch(captureAutoOffersProvider).value ?? const [];
     return Scaffold(
       appBar: AppBar(title: Text(l10n.captureReviewTitle)),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(capturePendingProvider.future),
         child: switch (pending) {
-          AsyncData(:final value) when value.isEmpty => ListView(
-            padding: const EdgeInsets.all(SmartSpendSpacing.screen),
-            children: [Center(child: Text(l10n.captureReviewEmpty))],
-          ),
-          AsyncData(:final value) => ListView.separated(
-            padding: const EdgeInsets.all(SmartSpendSpacing.screen),
-            itemCount: value.length,
-            separatorBuilder: (_, _) =>
-                const SizedBox(height: SmartSpendSpacing.lg),
-            itemBuilder: (context, index) => _PendingCard(
-              key: ValueKey(value[index].eventId),
-              item: value[index],
+          AsyncData(:final value) when value.isEmpty && offers.isEmpty =>
+            ListView(
+              padding: const EdgeInsets.all(SmartSpendSpacing.screen),
+              children: [Center(child: Text(l10n.captureReviewEmpty))],
             ),
+          AsyncData(:final value) => ListView(
+            padding: const EdgeInsets.all(SmartSpendSpacing.screen),
+            children: [
+              for (final offer in offers) ...[
+                _AutoOfferCard(offer: offer),
+                const SizedBox(height: SmartSpendSpacing.lg),
+              ],
+              for (final item in value) ...[
+                _PendingCard(key: ValueKey(item.eventId), item: item),
+                const SizedBox(height: SmartSpendSpacing.lg),
+              ],
+            ],
           ),
           AsyncError() => ListView(
             padding: const EdgeInsets.all(SmartSpendSpacing.screen),
@@ -43,6 +48,77 @@ class CaptureReviewScreen extends ConsumerWidget {
           ),
           _ => const Center(child: CircularProgressIndicator()),
         },
+      ),
+    );
+  }
+}
+
+/// Asks once whether a bank and kind the person keeps confirming may be recorded on their own (decision 0030).
+class _AutoOfferCard extends ConsumerStatefulWidget {
+  const _AutoOfferCard({required this.offer});
+
+  final AutoOffer offer;
+
+  @override
+  ConsumerState<_AutoOfferCard> createState() => _AutoOfferCardState();
+}
+
+class _AutoOfferCardState extends ConsumerState<_AutoOfferCard> {
+  bool _busy = false;
+
+  Future<void> _answer(bool enabled) async {
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(captureApiProvider)
+          .setAuto(widget.offer, enabled: enabled);
+    } on Object {
+      // The offer stays; it is asked again next time.
+    }
+    ref.invalidate(captureAutoOffersProvider);
+    if (mounted) setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(SmartSpendSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.captureAutoOffer(
+                widget.offer.source ?? l10n.captureReviewTitle,
+              ),
+              style: textTheme.titleMedium,
+            ),
+            const SizedBox(height: SmartSpendSpacing.sm),
+            Text(l10n.captureAutoOfferBody, style: textTheme.bodyMedium),
+            const SizedBox(height: SmartSpendSpacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: SmartSpendButton(
+                    label: l10n.captureAutoYes,
+                    busy: _busy,
+                    onPressed: () => _answer(true),
+                  ),
+                ),
+                const SizedBox(width: SmartSpendSpacing.md),
+                Expanded(
+                  child: SmartSpendButton(
+                    label: l10n.captureAutoNo,
+                    variant: ButtonVariant.secondary,
+                    onPressed: _busy ? null : () => _answer(false),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

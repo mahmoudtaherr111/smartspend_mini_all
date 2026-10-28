@@ -8,7 +8,6 @@
  * nothing of it is stored. A kept signal holds the text redacted and the reader's fields, read before redaction, for
  * 30 days (`api/jobs/data-retention-job.ts`).
  */
-import { createHmac } from "node:crypto";
 import { and, count, desc, eq, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { captureEvents, captureSignals, captureUsage, expenses, localUsers, userWallets, users } from "../../../db/schema";
@@ -24,15 +23,24 @@ import {
   type CaptureSignalsRequest,
 } from "../../../contracts/capture-intake";
 import { getDb } from "../../queries/connection";
-import { afterLedgerWrite, bumpStreakInTx, insertLedgerEntriesInTx, type LedgerTx } from "../../services/ledger-writer";
+import { afterLedgerWrite, bumpStreakInTx, deleteLedgerEntry, insertLedgerEntriesInTx, type LedgerTx } from "../../services/ledger-writer";
 import { businessDateKey } from "../app-time";
 import { getSystemSettings } from "../settings-cache";
 import { redactWithFindings } from "../anonymizer";
-import { env } from "../env";
 import { createLogger } from "../log";
 import { getCaptureCatalog, sourceForPackage, sourceForSender, subscriptionForMerchant, type CaptureCatalog, type CaptureSource } from "./catalog";
 import type { CaptureDevice, CaptureOwner } from "./devices";
 import { matchSignal, MATCH_WINDOWS, type EventKeys, type SignalKeys } from "./events";
+import {
+  captureHmac,
+  memoryFor,
+  memoryKeyOf,
+  notePairConfirmed,
+  pairAutoEnabled,
+  rememberFiling,
+  resetPair,
+  type Filing,
+} from "./memory";
 import { readMessage } from "./reader/read";
 import type { Reading } from "./reader/types";
 
@@ -161,12 +169,16 @@ export interface LedgerSuggestion {
   subCategoryId: string;
   /** The amount in pounds, or null when only a foreign amount is known (the user types it). */
   amountEgp: number | null;
+  /** Where the filing comes from: the user's own memory, the subscription catalog, or the kind's default. */
+  from: "memory" | "catalog" | "default";
 }
+
+type KindFiling = Omit<LedgerSuggestion, "amountEgp" | "from">;
 
 const PURCHASES = new Set(["card_purchase", "online_purchase", "international_purchase"]);
 
 /** Where each kind of message is filed when nothing better is known. */
-function kindDefault(reading: SignalReading): Omit<LedgerSuggestion, "amountEgp"> {
+function kindDefault(reading: SignalReading): KindFiling {
   const out = reading.direction === "out" || (reading.direction === "internal" && ["atm_withdrawal", "cash_out", "transfer_out", "wallet_send", "card_payment"].includes(reading.kind));
   const transfer = (subCategoryId: string) => ({
     type: "transfer" as const,
@@ -214,20 +226,117 @@ function kindDefault(reading: SignalReading): Omit<LedgerSuggestion, "amountEgp"
   }
 }
 
-export function suggestLedgerEntry(reading: SignalReading, catalog: CaptureCatalog): LedgerSuggestion {
+/**
+ * Where a captured payment would be filed: the user's own memory of this merchant or person first (decision 0030),
+ * then the subscription catalog, then the kind's default.
+ */
+export function suggestLedgerEntry(reading: SignalReading, catalog: CaptureCatalog, memory?: Map<string, Filing>): LedgerSuggestion {
+  const amountEgp =
+    reading.amount?.currency === "EGP" ? reading.amount.value : reading.amountEgp?.currency === "EGP" ? reading.amountEgp.value : null;
   let filing = kindDefault(reading);
+  const key = memoryKeyOf(reading.counterparty);
+  const remembered = key ? memory?.get(key) : undefined;
+  if (remembered && CATEGORIES.some((item) => item.id === remembered.categoryId)) {
+    const categoryType = CATEGORIES.find((item) => item.id === remembered.categoryId)?.type;
+    const type = categoryType === "income" || categoryType === "transfer" ? categoryType : "expense";
+    const direction = type === "transfer" ? (filing.direction ?? (reading.direction === "in" ? "incoming" : "outgoing")) : null;
+    return { type, direction, ...remembered, amountEgp, from: "memory" };
+  }
+  let from: LedgerSuggestion["from"] = "default";
   const merchant = reading.counterparty?.type === "merchant" ? reading.counterparty.name : null;
   if (PURCHASES.has(reading.kind) || reading.kind === "other") {
     const subscription = merchant ? subscriptionForMerchant(catalog, merchant) : null;
+    if (subscription) from = "catalog";
     filing = subscription
       ? { type: "expense", direction: null, categoryId: subscription.categoryId, subCategoryId: subscription.subCategoryId }
       : reading.direction === "in"
         ? filing
         : { type: "expense", direction: null, categoryId: "miscellaneous", subCategoryId: "general" };
   }
-  const amountEgp =
-    reading.amount?.currency === "EGP" ? reading.amount.value : reading.amountEgp?.currency === "EGP" ? reading.amountEgp.value : null;
-  return { ...filing, amountEgp };
+  return { ...filing, amountEgp, from };
+}
+
+// ─── Recording on its own (decision 0030) ───
+
+export interface AutoPolicy {
+  /** "<source>:<kind>" or "*:<kind>" pairs the admin opened for everyone. */
+  pairs: Set<string>;
+  /** Sources never recorded on their own (a bank that changed its messages). */
+  paused: Set<string>;
+  /** A transfer to a person from this many pounds is always asked about. */
+  personTransferAskAbove: number;
+  /** Question notifications a user gets a Cairo day. */
+  dailyQuestions: number;
+}
+
+const list = (value: string | undefined) =>
+  new Set(
+    (value ?? "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+
+export function autoPolicyOf(settings: Record<string, string | undefined>): AutoPolicy {
+  const number = (value: string | undefined, fallback: number) => {
+    const parsed = Number.parseInt(value ?? "", 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+  };
+  return {
+    pairs: list(settings.capture_auto_pairs),
+    paused: list(settings.capture_paused_sources),
+    personTransferAskAbove: number(settings.capture_p2p_ask_above, 1000),
+    dailyQuestions: number(settings.capture_daily_question_notices, 2),
+  };
+}
+
+const PERSON_TRANSFERS = new Set(["transfer_out", "wallet_send", "transfer_in", "wallet_receive"]);
+
+/**
+ * Whether a new payment is recorded without a question. Only a reading the reader is certain of, in pounds, that is
+ * not a possible duplicate, from a source that is not paused, of a pair the admin opened or the user agreed to; a
+ * transfer to or from a person at or over the threshold is always asked about.
+ */
+export function mayRecordAlone(input: {
+  policy: AutoPolicy;
+  reading: SignalReading;
+  suggestion: LedgerSuggestion;
+  possibleDuplicate: boolean;
+  userAgreed: boolean;
+}): boolean {
+  const { policy, reading, suggestion } = input;
+  const source = reading.sourceSlug;
+  if (!source || reading.confidence !== "certain" || suggestion.amountEgp === null || input.possibleDuplicate) return false;
+  if (policy.paused.has(source)) return false;
+  const opened = policy.pairs.has(`${source}:${reading.kind}`) || policy.pairs.has(`*:${reading.kind}`);
+  if (!opened && !input.userAgreed) return false;
+  if (PERSON_TRANSFERS.has(reading.kind) && reading.counterparty?.type === "person" && suggestion.amountEgp >= policy.personTransferAskAbove) {
+    return false;
+  }
+  return true;
+}
+
+/** The notice of a payment recorded on its own: what was recorded, where, and the "undo" button. */
+export function recordedNotice(reading: SignalReading, suggestion: LedgerSuggestion, lang: "ar" | "en"): CaptureNotice {
+  const label = KIND_LABELS[reading.kind] ?? { ar: "عملية", en: "Transaction" };
+  const party = reading.counterparty?.name ?? (reading.counterparty?.phoneTail ? `••${reading.counterparty.phoneTail}` : null);
+  const pounds = suggestion.amountEgp ?? 0;
+  const { category } = taxonomyNames(suggestion.categoryId, suggestion.subCategoryId);
+  const provisional = suggestion.from === "default";
+  if (lang === "en") {
+    const what = `${label.en} ${isolate(`EGP ${formatAmount(pounds)}`)}${party ? ` · ${isolate(party)}` : ""}`;
+    return {
+      title: `Recorded · ${reading.sourceName?.en ?? "Bank message"}`,
+      body: `${what} — ${category}${provisional ? " (change it in the app if it's wrong)" : ""}.`,
+      actions: ["undo"],
+    };
+  }
+  const what = `${label.ar} ${isolate(`${formatAmount(pounds)} ج.م`)}${party ? ` · ${isolate(party)}` : ""}`;
+  return {
+    title: `اتسجلت · ${reading.sourceName?.ar ?? "رسالة بنك"}`,
+    body: `${what} — ${category}${provisional ? " (غيّرها من التطبيق لو مش صح)" : ""}.`,
+    actions: ["undo"],
+  };
 }
 
 /** The Arabic names the ledger stores for a category and subcategory id. */
@@ -407,11 +516,6 @@ const MAX_AGE_MS = CAPTURE_SIGNAL_MAX_AGE_DAYS * 24 * 3600 * 1000;
 const MAX_AHEAD_MS = 3600 * 1000;
 const ANSWER_FROM_NOTICE_MS = 48 * 3600 * 1000;
 
-/** An HMAC with the server's secret: equal values can be matched without the value being kept. */
-function captureHmac(purpose: string, value: string): string {
-  return createHmac("sha256", env.JWT_SECRET).update(`capture:${purpose}:${value}`).digest("hex");
-}
-
 /** The words of a message, the same however its spaces and case came. */
 function textHmacOf(signal: CaptureSignal): string {
   return captureHmac("text", `${signal.title ?? ""}\n${signal.text}`.replace(/\s+/g, " ").trim().toLowerCase());
@@ -449,15 +553,35 @@ function joinedResult(id: string, event: { id: number; status: string }): Captur
 }
 
 /**
+ * Counts one question for today and says whether it may still be a notification: past the day's number, the payment
+ * waits in the app without one.
+ */
+async function mayNotifyQuestion(tx: LedgerTx, owner: CaptureOwner, period: string, day: string, perDay: number): Promise<boolean> {
+  await tx.insert(captureUsage).ignore().values({ userId: owner.userId, userType: owner.userType, period });
+  await tx
+    .update(captureUsage)
+    .set({
+      questions: sql`CASE WHEN ${captureUsage.questionDay} = ${day} THEN ${captureUsage.questions} + 1 ELSE 1 END`,
+      questionDay: day,
+    })
+    .where(usageOf(owner, period));
+  const [row] = await tx.select({ questions: captureUsage.questions }).from(captureUsage).where(usageOf(owner, period));
+  return (row?.questions ?? 0) <= perDay;
+}
+
+/**
  * Takes one batch from one device. Consent and the admin's switch are checked by the route before this runs.
  *
  * Each signal is taken in its own transaction that first locks the user's account row, so two batches of the same
  * user (two phones, or the SMS and the app's notification sent at once) are matched one after the other and never
  * both start an event for one payment. A signal the user's account already has (the same phone id) answers with what
- * became of it, and nothing is stored twice.
+ * became of it, and nothing is stored twice. A new payment the policy allows is recorded in the same transaction
+ * (decision 0030); any other waits for the user's answer.
  */
 export async function ingestSignals(device: CaptureDevice, request: CaptureSignalsRequest, now = new Date()): Promise<CaptureSignalResult[]> {
   const catalog = await getCaptureCatalog();
+  const settings = await getSystemSettings();
+  const policy = autoPolicyOf(settings);
   const results: CaptureSignalResult[] = [];
   const counts: Record<string, number> = {};
   const mineSignals = and(eq(captureSignals.userId, device.userId), eq(captureSignals.userType, device.userType));
@@ -468,10 +592,13 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
     .from(userWallets)
     .where(and(eq(userWallets.userId, device.userId), eq(userWallets.userType, device.userType)));
   const [user] = await getDb().select({ plan: account.plan }).from(account).where(eq(account.id, device.userId));
-  const limit = await captureLimitOf(user?.plan);
+  const limit = planNumber(settings, user?.plan, "capture_monthly_limit");
   // An upgrade (or an admin lifting the limit) releases what was held; this is the first request after it.
   if (limit === 0) await releaseHeldEvents(device, now);
   const period = capturePeriod(now);
+  const day = businessDateKey(now);
+  let recordedAny = false;
+  let spentAny = false;
 
   for (const signal of request.signals) {
     const result = await (async (): Promise<CaptureSignalResult> => {
@@ -601,8 +728,7 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
 
           // A foreign charge that now has its pound value can be answered from the notice: ask again.
           if (match.rule === "pound_posting" && event.status === "review") {
-            const [primary] = await tx.select({ reading: captureSignals.reading }).from(captureSignals).where(eq(captureSignals.id, event.primarySignalId));
-            const primaryReading = (primary?.reading ?? reading) as SignalReading;
+            const primaryReading = (event.reading ?? reading) as SignalReading;
             const suggestion = { ...suggestLedgerEntry(primaryReading, catalog), amountEgp: keys.amount };
             return { id: signal.id, result: "review" as const, eventId: event.id, notice: buildNotice({ ...primaryReading, confidence: "certain" }, suggestion, request.lang) };
           }
@@ -644,10 +770,27 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
             ? { id: signal.id, result: "held" as const, eventId, notice: limitNotice(limit, request.lang) }
             : { id: signal.id, result: "held" as const, eventId };
         }
-        const notice = buildNotice(reading, suggestLedgerEntry(reading, catalog), request.lang, {
-          possibleDuplicate: match.type === "possible_duplicate",
-        });
-        if (limit > 0 && reservedNow === Math.ceil(limit * 0.8)) notice.body += nearLimitLine(limit - reservedNow, request.lang);
+
+        const memoryKey = memoryKeyOf(reading.counterparty);
+        const suggestion = suggestLedgerEntry(reading, catalog, await memoryFor(tx, device, memoryKey ? [memoryKey] : []));
+        const userAgreed = reading.sourceSlug ? await pairAutoEnabled(tx, device, reading.sourceSlug, reading.kind) : false;
+        const nearLimit =
+          limit > 0 && reservedNow === Math.ceil(limit * 0.8) && limit - reservedNow > 0 ? nearLimitLine(limit - reservedNow, request.lang) : "";
+
+        if (mayRecordAlone({ policy, reading, suggestion, possibleDuplicate: match.type === "possible_duplicate", userAgreed })) {
+          const [event] = await tx.select().from(captureEvents).where(eq(captureEvents.id, eventId)).limit(1);
+          const recorded = await recordEventInTx(tx, device, event, reading, catalog, {}, { auto: true });
+          recordedAny = true;
+          spentAny ||= recorded.spending;
+          const notice = recordedNotice(reading, recorded.suggestion, request.lang);
+          notice.body += nearLimit;
+          return { id: signal.id, result: "recorded" as const, eventId, notice };
+        }
+
+        const notice = buildNotice(reading, suggestion, request.lang, { possibleDuplicate: match.type === "possible_duplicate" });
+        notice.body += nearLimit;
+        // A few question notifications a day; the rest wait in the app's list.
+        if (!(await mayNotifyQuestion(tx, device, period, day, policy.dailyQuestions))) return { id: signal.id, result: "review" as const, eventId };
         return { id: signal.id, result: "review" as const, eventId, notice };
       });
     })();
@@ -656,8 +799,137 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
     results.push(result);
   }
 
+  if (recordedAny) await afterLedgerWrite(device, { spending: spentAny });
   log.info({ event: "capture.signals", userId: device.userId, deviceId: device.deviceId, count: request.signals.length, outcomes: counts }, "Signals taken in");
   return results;
+}
+
+// ─── Recording an event ───
+
+/** Where an event would be filed: its first signal's reading, with what other signals added and the user's memory. */
+function eventSuggestion(event: typeof captureEvents.$inferSelect, reading: SignalReading, catalog: CaptureCatalog, memory?: Map<string, Filing>): LedgerSuggestion {
+  if (event.direction === "internal") {
+    return { type: "transfer", direction: "outgoing", categoryId: "transfer", subCategoryId: "bank_transfer", amountEgp: money(event.amountEgp), from: "default" };
+  }
+  const suggestion = suggestLedgerEntry(reading, catalog, memory);
+  return { ...suggestion, amountEgp: suggestion.amountEgp ?? money(event.amountEgp) };
+}
+
+/**
+ * Writes an event's ledger row in the caller's transaction and marks the event recorded: source `sms`,
+ * `clientRequestId` `cap:e<event>`, the amount in pounds, the date the message gives, the event's wallet, a description
+ * made of the other side and the source's name, no `raw_text`. A refund whose purchase was recorded from a message in
+ * the 90 days before is filed in that purchase's category (decision 0010); the wallet's balance follows the message
+ * when it is newer. A row the user recorded counts for the streak; one recorded on its own does not.
+ */
+async function recordEventInTx(
+  tx: LedgerTx,
+  owner: CaptureOwner,
+  event: typeof captureEvents.$inferSelect,
+  reading: SignalReading,
+  catalog: CaptureCatalog,
+  choice: { categoryId?: string; subCategoryId?: string; amountEgp?: number },
+  options: { auto: boolean },
+): Promise<{ expenseId: number; spending: boolean; suggestion: LedgerSuggestion; filing: Filing | null }> {
+  const mine = and(eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType));
+  const memoryKey = memoryKeyOf(reading.counterparty);
+  const suggestion = eventSuggestion(event, reading, catalog, await memoryFor(tx, owner, memoryKey ? [memoryKey] : []));
+  const amount = choice.amountEgp ?? suggestion.amountEgp;
+  if (amount === null || !(amount > 0)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "اكتب المبلغ بالجنيه الأول" });
+  }
+
+  // A refund goes back where its purchase was filed, when the purchase was recorded from a message too.
+  let refundOf: { eventId: number; category: string; subCategory: string } | null = null;
+  if (reading.kind === "refund" && event.merchantKey && !choice.categoryId) {
+    const [purchase] = await tx
+      .select({ eventId: captureEvents.id, category: expenses.category, subCategory: expenses.subCategory })
+      .from(captureEvents)
+      .innerJoin(expenses, eq(expenses.id, captureEvents.expenseId))
+      .where(
+        and(
+          mine,
+          eq(captureEvents.status, "recorded"),
+          eq(captureEvents.merchantKey, event.merchantKey),
+          gte(captureEvents.occurredAt, new Date(event.occurredAt.getTime() - 90 * 24 * 3600 * 1000)),
+          // Not after the refund: times are kept to the second, and both may carry the same one.
+          lte(captureEvents.occurredAt, event.occurredAt),
+          gte(captureEvents.amount, event.amount),
+        ),
+      )
+      .orderBy(desc(captureEvents.occurredAt))
+      .limit(1);
+    if (purchase) refundOf = { eventId: purchase.eventId, category: purchase.category, subCategory: purchase.subCategory ?? "عام" };
+  }
+
+  const categoryId = choice.categoryId ?? suggestion.categoryId;
+  if (!refundOf && !CATEGORIES.some((item) => item.id === categoryId)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "الفئة دي مش موجودة" });
+  }
+  const categoryType = CATEGORIES.find((item) => item.id === categoryId)?.type;
+  const type = refundOf ? "expense" : categoryType === "income" || categoryType === "transfer" ? categoryType : "expense";
+  const subCategoryId = choice.subCategoryId ?? (choice.categoryId ? "" : suggestion.subCategoryId);
+  const names = refundOf ? { category: refundOf.category, subCategory: refundOf.subCategory } : taxonomyNames(categoryId, subCategoryId);
+  const direction = refundOf ? "incoming" : type === "transfer" ? suggestion.direction : null;
+  const party = reading.counterparty?.name ?? (reading.counterparty?.phoneTail ? `••${reading.counterparty.phoneTail}` : null);
+  const description = [party, reading.sourceName?.ar].filter(Boolean).join(" · ") || names.category;
+
+  const [expenseId] = await insertLedgerEntriesInTx(tx, owner, [
+    {
+      type,
+      amount,
+      direction,
+      category: names.category,
+      subCategory: names.subCategory,
+      // The bank's text never goes into the ledger: it stays, redacted, with the signals for 30 days.
+      description,
+      rawText: null,
+      source: "sms",
+      date: new Date(reading.occurredAt),
+      walletId: event.walletId,
+      clientRequestId: `cap:e${event.id}`,
+      parsedMetadata: {
+        ...(direction ? { direction } : {}),
+        capture: {
+          eventId: event.id,
+          source: reading.sourceSlug,
+          kind: reading.kind,
+          readerVersion: reading.readerVersion,
+          ...(options.auto ? { auto: true, provisional: suggestion.from === "default" } : {}),
+        },
+      },
+    },
+  ]);
+  // A row the user recorded counts for their streak; one recorded on its own does not (the owner's decision).
+  if (!options.auto) await bumpStreakInTx(tx, owner);
+  await tx
+    .update(captureEvents)
+    .set({ status: "recorded", expenseId, autoRecorded: options.auto, linkedEventId: refundOf?.eventId ?? null, reading: null, resolvedAt: new Date() })
+    .where(and(eq(captureEvents.id, event.id), mine));
+
+  // The wallet's balance follows the bank's message when the message is newer than what the wallet holds.
+  if (event.walletId && event.balanceAfter !== null) {
+    const occurredAt = new Date(reading.occurredAt);
+    await tx
+      .update(userWallets)
+      .set({ balance: event.balanceAfter, balanceObservedAt: occurredAt, balanceSource: "bank_message" })
+      .where(
+        and(
+          eq(userWallets.id, event.walletId),
+          eq(userWallets.userId, owner.userId),
+          eq(userWallets.userType, owner.userType),
+          or(isNull(userWallets.balanceObservedAt), lt(userWallets.balanceObservedAt, occurredAt)),
+        ),
+      );
+  }
+  const filing = refundOf ? null : { categoryId, subCategoryId: subCategoryId || (taxonomyIdsOf(categoryId, names.subCategory) ?? "") };
+  return { expenseId, spending: type === "expense", suggestion, filing: filing && filing.subCategoryId ? filing : null };
+}
+
+/** The subcategory id a category's Arabic subcategory name stands for. */
+function taxonomyIdsOf(categoryId: string, subCategory: string): string | null {
+  const category = CATEGORIES.find((item) => item.id === categoryId);
+  return category?.subcategories.find((item) => item.name_ar === subCategory)?.id ?? null;
 }
 
 // ─── The user's answer ───
@@ -681,15 +953,6 @@ export interface PendingEvent {
   suggestion: LedgerSuggestion & { category: string; subCategory: string };
 }
 
-/** Where an event would be filed: its first signal's reading, with what other signals added. */
-function eventSuggestion(event: typeof captureEvents.$inferSelect, reading: SignalReading, catalog: CaptureCatalog): LedgerSuggestion {
-  if (event.direction === "internal") {
-    return { type: "transfer", direction: "outgoing", categoryId: "transfer", subCategoryId: "bank_transfer", amountEgp: money(event.amountEgp) };
-  }
-  const suggestion = suggestLedgerEntry(reading, catalog);
-  return { ...suggestion, amountEgp: suggestion.amountEgp ?? money(event.amountEgp) };
-}
-
 export async function pendingEvents(owner: CaptureOwner, limit = 50): Promise<PendingEvent[]> {
   const catalog = await getCaptureCatalog();
   const rows = await getDb()
@@ -699,10 +962,19 @@ export async function pendingEvents(owner: CaptureOwner, limit = 50): Promise<Pe
     .where(and(eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType), eq(captureEvents.status, "review")))
     .orderBy(desc(captureEvents.createdAt))
     .limit(limit);
-  return rows.flatMap(({ event, reading }) => {
-    const kept = (event.reading ?? reading) as SignalReading | null;
+  const readings = rows.map(({ event, reading }) => (event.reading ?? reading) as SignalReading | null);
+  const memory = await memoryFor(
+    getDb(),
+    owner,
+    readings.flatMap((reading) => {
+      const key = reading ? memoryKeyOf(reading.counterparty) : null;
+      return key ? [key] : [];
+    }),
+  );
+  return rows.flatMap(({ event }, index) => {
+    const kept = readings[index];
     if (!kept) return [];
-    const suggestion = eventSuggestion(event, kept, catalog);
+    const suggestion = eventSuggestion(event, kept, catalog, memory);
     return {
       eventId: event.id,
       createdAt: event.createdAt,
@@ -714,14 +986,12 @@ export async function pendingEvents(owner: CaptureOwner, limit = 50): Promise<Pe
 }
 
 /**
- * Answers one event: "record" writes the ledger row (source `sms`, `clientRequestId` `cap:e<event>`) and marks the
- * event in the same transaction, so the row is written once whoever answers and however often; "dismiss" only marks
- * it. An event already answered keeps its answer. `fromDevice` limits a notification's button to the events that
- * device started in the last 48 hours.
- *
- * A refund is filed where the purchase it returns was filed (decision 0010) when an earlier recorded event of the same
- * merchant can be found; a payment from a card the user keeps as a wallet is recorded on that wallet, and the wallet's
- * balance follows the message when it is newer than what the wallet holds.
+ * Answers one event. "record" writes its ledger row and marks it recorded in one transaction, so the row is written
+ * once whoever answers and however often; the filing is remembered for the merchant or person, and a reading the user
+ * recorded as it was read counts toward offering its pair on its own. "dismiss" only marks it and gives its count
+ * back. "undo" takes back a payment recorded on its own: its row is deleted, its count given back, and its pair asked
+ * about again. An event already answered keeps its answer. `fromDevice` limits a notification's button to the events
+ * that device started in the last 48 hours.
  */
 export async function answerEvent(
   owner: CaptureOwner,
@@ -735,11 +1005,21 @@ export async function answerEvent(
   let outcome: { result: "recorded" | "dismissed"; expenseId?: number } | null = null;
   let spending = false;
   let wrote = false;
+  let undo: { expenseId: number; sourceSlug: string | null; kind: string; quotaPeriod: string | null } | null = null;
 
   await getDb().transaction(async (tx) => {
     const [event] = await tx.select().from(captureEvents).where(own).limit(1).for("update");
     if (!event || (fromDevice !== undefined && (event.deviceId !== fromDevice || Date.now() - event.createdAt.getTime() > ANSWER_FROM_NOTICE_MS))) {
       throw new TRPCError({ code: "NOT_FOUND", message: "العملية دي مش موجودة" });
+    }
+    if (answer.action === "undo") {
+      if (event.status !== "recorded" || !event.autoRecorded || !event.expenseId) {
+        outcome = { result: event.status === "recorded" ? "recorded" : "dismissed", expenseId: event.expenseId ?? undefined };
+        return;
+      }
+      const [signal] = await tx.select({ sourceSlug: captureSignals.sourceSlug }).from(captureSignals).where(eq(captureSignals.id, event.primarySignalId));
+      undo = { expenseId: event.expenseId, sourceSlug: signal?.sourceSlug ?? null, kind: event.kind, quotaPeriod: event.quotaPeriod };
+      return;
     }
     if (event.status !== "review") {
       outcome = { result: event.status === "recorded" ? "recorded" : "dismissed", expenseId: event.expenseId ?? undefined };
@@ -756,96 +1036,42 @@ export async function answerEvent(
     const [primary] = await tx.select({ reading: captureSignals.reading }).from(captureSignals).where(eq(captureSignals.id, event.primarySignalId));
     const reading = (event.reading ?? primary?.reading ?? null) as SignalReading | null;
     if (!reading) throw new TRPCError({ code: "NOT_FOUND", message: "العملية دي مش موجودة" });
-    const suggestion = eventSuggestion(event, reading, catalog);
-    const amount = answer.amountEgp ?? suggestion.amountEgp;
-    if (amount === null || !(amount > 0)) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: "اكتب المبلغ بالجنيه الأول" });
+    // An unsure reading counts against the month only now, when the user says it is a payment.
+    if (!event.quotaPeriod && reading.confidence === "unsure") {
+      const [user] = await tx
+        .select({ plan: owner.userType === "oauth" ? users.plan : localUsers.plan })
+        .from(owner.userType === "oauth" ? users : localUsers)
+        .where(eq(owner.userType === "oauth" ? users.id : localUsers.id, owner.userId));
+      const period = capturePeriod(new Date());
+      if ((await reserveQuota(tx, owner, period, await captureLimitOf(user?.plan))) !== null) {
+        await tx.update(captureEvents).set({ quotaPeriod: period }).where(own);
+      }
     }
 
-    // A refund goes back where its purchase was filed, when the purchase was recorded from a message too.
-    let refundOf: { eventId: number; category: string; subCategory: string } | null = null;
-    if (reading.kind === "refund" && event.merchantKey && !answer.categoryId) {
-      const [purchase] = await tx
-        .select({ eventId: captureEvents.id, category: expenses.category, subCategory: expenses.subCategory })
-        .from(captureEvents)
-        .innerJoin(expenses, eq(expenses.id, captureEvents.expenseId))
-        .where(
-          and(
-            mine,
-            eq(captureEvents.status, "recorded"),
-            eq(captureEvents.merchantKey, event.merchantKey),
-            gte(captureEvents.occurredAt, new Date(event.occurredAt.getTime() - 90 * 24 * 3600 * 1000)),
-            // Not after the refund: times are kept to the second, and both may carry the same one.
-            lte(captureEvents.occurredAt, event.occurredAt),
-            gte(captureEvents.amount, event.amount),
-          ),
-        )
-        .orderBy(desc(captureEvents.occurredAt))
-        .limit(1);
-      if (purchase) refundOf = { eventId: purchase.eventId, category: purchase.category, subCategory: purchase.subCategory ?? "عام" };
+    const recorded = await recordEventInTx(tx, owner, event, reading, catalog, answer, { auto: false });
+    const memoryKey = memoryKeyOf(reading.counterparty);
+    if (memoryKey && recorded.filing) await rememberFiling(tx, owner, memoryKey, recorded.filing);
+    // Recorded as it was read (no amount typed): one more toward offering this bank and kind on its own.
+    if (reading.sourceSlug && reading.confidence === "certain" && answer.amountEgp === undefined) {
+      await notePairConfirmed(tx, owner, reading.sourceSlug, reading.kind);
     }
-
-    const categoryId = answer.categoryId ?? suggestion.categoryId;
-    if (!refundOf && !CATEGORIES.some((item) => item.id === categoryId)) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: "الفئة دي مش موجودة" });
-    }
-    const categoryType = CATEGORIES.find((item) => item.id === categoryId)?.type;
-    const type = refundOf ? "expense" : categoryType === "income" || categoryType === "transfer" ? categoryType : "expense";
-    const names = refundOf
-      ? { category: refundOf.category, subCategory: refundOf.subCategory }
-      : taxonomyNames(categoryId, answer.subCategoryId ?? (answer.categoryId ? "" : suggestion.subCategoryId));
-    const direction = refundOf ? "incoming" : type === "transfer" ? suggestion.direction : null;
-    const party = reading.counterparty?.name ?? (reading.counterparty?.phoneTail ? `••${reading.counterparty.phoneTail}` : null);
-    const description = [party, reading.sourceName?.ar].filter(Boolean).join(" · ") || names.category;
-
-    const [expenseId] = await insertLedgerEntriesInTx(tx, owner, [
-      {
-        type,
-        amount,
-        direction,
-        category: names.category,
-        subCategory: names.subCategory,
-        // The bank's text never goes into the ledger: it stays, redacted, with the signals for 30 days.
-        description,
-        rawText: null,
-        source: "sms",
-        date: new Date(reading.occurredAt),
-        walletId: event.walletId,
-        clientRequestId: `cap:e${event.id}`,
-        parsedMetadata: {
-          ...(direction ? { direction } : {}),
-          capture: { eventId: event.id, source: reading.sourceSlug, kind: reading.kind, readerVersion: reading.readerVersion },
-        },
-      },
-    ]);
-    // The user tapped to record it, so it counts for their streak.
-    await bumpStreakInTx(tx, owner);
-    await tx
-      .update(captureEvents)
-      .set({ status: "recorded", expenseId, linkedEventId: refundOf?.eventId ?? null, reading: null, resolvedAt: new Date() })
-      .where(own);
-
-    // The wallet's balance follows the bank's message when the message is newer than what the wallet holds.
-    if (event.walletId && event.balanceAfter !== null) {
-      const occurredAt = new Date(reading.occurredAt);
-      await tx
-        .update(userWallets)
-        .set({ balance: event.balanceAfter, balanceObservedAt: occurredAt, balanceSource: "bank_message" })
-        .where(
-          and(
-            eq(userWallets.id, event.walletId),
-            eq(userWallets.userId, owner.userId),
-            eq(userWallets.userType, owner.userType),
-            or(isNull(userWallets.balanceObservedAt), lt(userWallets.balanceObservedAt, occurredAt)),
-          ),
-        );
-    }
-    outcome = { result: "recorded", expenseId };
-    spending = type === "expense";
+    outcome = { result: "recorded", expenseId: recorded.expenseId };
+    spending = recorded.spending;
     wrote = true;
   });
 
+  if (undo) {
+    const taken = undo as { expenseId: number; sourceSlug: string | null; kind: string; quotaPeriod: string | null };
+    // The ledger writer deletes the row with everything that moves with it and marks the event deleted.
+    await deleteLedgerEntry(owner, taken.expenseId);
+    await getDb().transaction(async (tx) => {
+      await tx.update(captureEvents).set({ status: "dismissed", resolvedAt: new Date() }).where(own);
+      if (taken.quotaPeriod) await releaseQuota(tx, owner, taken.quotaPeriod);
+      if (taken.sourceSlug) await resetPair(tx, owner, taken.sourceSlug, taken.kind);
+    });
+    outcome = { result: "dismissed" };
+  }
   if (wrote) await afterLedgerWrite(owner, { spending });
-  log.info({ event: "capture.answer", userId: owner.userId, eventId, result: outcome!.result }, "Event answered");
+  log.info({ event: "capture.answer", userId: owner.userId, eventId, action: answer.action, result: outcome!.result }, "Event answered");
   return outcome!;
 }

@@ -86,7 +86,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `Admin` — `src/pages/Admin.tsx`
 
-31 files in its import closure (not counting `src/components/ui/`).
+32 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -247,7 +247,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-60 files in its import closure (not counting `src/components/ui/`).
+61 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |

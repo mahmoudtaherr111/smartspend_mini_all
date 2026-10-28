@@ -14,6 +14,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { captureEvents, expenses, localUsers, userContacts, users } from "../../db/schema";
+import { idsOfNames, rememberFiling } from "../lib/capture/memory";
 import { businessDayRange } from "../lib/app-time";
 import { CacheKeys } from "../lib/cache-keys";
 import { createLogger } from "../lib/log";
@@ -306,6 +307,18 @@ export async function updateLedgerEntry(
       type: set.type ?? row.type,
     };
     await applyExpenseRollupDelta(tx, expenseToRollupDelta(after, 1));
+
+    // A row recorded from a bank message that the user files elsewhere teaches where that merchant goes next time
+    // (decision 0030).
+    const captured = (row.parsedMetadata as { capture?: { eventId?: unknown } } | null)?.capture?.eventId;
+    if (typeof captured === "number" && set.category !== undefined && set.category !== row.category) {
+      const [event] = await tx
+        .select({ merchantKey: captureEvents.merchantKey })
+        .from(captureEvents)
+        .where(and(eq(captureEvents.id, captured), eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType)));
+      const filing = idsOfNames(set.category, set.subCategory ?? null);
+      if (event?.merchantKey && filing) await rememberFiling(tx, owner, `m:${event.merchantKey}`.slice(0, 140), filing);
+    }
   });
 
   await options.afterCommit?.(before!);

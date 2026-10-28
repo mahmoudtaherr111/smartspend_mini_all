@@ -1092,7 +1092,7 @@ model {
       }
     }
     capture = router 'capture' {
-      description 'api/capture-router.ts — 8 procedures.'
+      description 'api/capture-router.ts — 10 procedures.'
       metadata {
         file 'api/capture-router.ts'
       }
@@ -1104,6 +1104,16 @@ model {
           file 'api/capture-router.ts'
           builder 'authedProcedure'
           procedureKind 'mutation'
+        }
+      }
+      autoOffers = procedure 'capture.autoOffers' {
+        #query #authed #uncalled
+        technology 'authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
         }
       }
       devices = procedure 'capture.devices' {
@@ -1137,6 +1147,16 @@ model {
         }
       }
       revokeDevice = procedure 'capture.revokeDevice' {
+        #mutation #authed #uncalled
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      setAuto = procedure 'capture.setAuto' {
         #mutation #authed #uncalled
         technology 'authedProcedure'
         description 'mutation · authedProcedure · no caller in src/'

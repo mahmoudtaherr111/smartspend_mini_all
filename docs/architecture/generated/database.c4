@@ -157,10 +157,18 @@ model {
     }
     capture_events = table 'capture_events' {
       #classE #dualOwner
-      description '28 columns, 4 indexes, storage class E.'
+      description '29 columns, 4 indexes, storage class E.'
       metadata {
         export 'captureEvents'
         storageClass 'E'
+      }
+    }
+    capture_memory = table 'capture_memory' {
+      #classA #dualOwner
+      description '8 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'captureMemory'
+        storageClass 'A'
       }
     }
     capture_signals = table 'capture_signals' {
@@ -185,6 +193,14 @@ model {
       metadata {
         export 'captureUsage'
         storageClass 'C'
+      }
+    }
+    capture_user_pairs = table 'capture_user_pairs' {
+      #classA #dualOwner
+      description '9 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'captureUserPairs'
+        storageClass 'A'
       }
     }
     cashflow_settlements = table 'cashflow_settlements' {

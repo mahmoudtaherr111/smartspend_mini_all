@@ -229,6 +229,15 @@ export const SETTINGS: SettingDef[] = [
   // Capture from phones (/api/capture/v1, decision 0028). "false" refuses every signal and tells phones to stop; off
   // until the closed beta.
   { key: "capture_enabled", default: "false" },
+  // Pairs recorded without a question for everyone (decision 0030), "<source>:<kind>" or "*:<kind>", comma separated;
+  // empty until the closed beta has measured them.
+  { key: "capture_auto_pairs", default: "" },
+  // Sources whose payments are never recorded on their own (a bank that changed its messages), comma separated slugs.
+  { key: "capture_paused_sources", default: "" },
+  // A transfer to a person from this many pounds is always asked about before it is recorded.
+  { key: "capture_p2p_ask_above", default: "1000" },
+  // Question notifications a user gets a Cairo day; the rest wait in the app.
+  { key: "capture_daily_question_notices", default: "2" },
   { key: "promo_code_discount", default: "20" },
   { key: "pipeline_version", default: "v1" },
   { key: "whatsapp_otp_enabled", default: "true" },

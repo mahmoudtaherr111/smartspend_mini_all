@@ -24,6 +24,11 @@ final capturePendingProvider = FutureProvider<List<PendingCapture>>(
   (ref) => ref.watch(captureApiProvider).pending(),
 );
 
+/// The banks and kinds the person may now let record on their own.
+final captureAutoOffersProvider = FutureProvider<List<AutoOffer>>(
+  (ref) => ref.watch(captureApiProvider).autoOffers(),
+);
+
 enum CaptureConnectOutcome {
   connected,
 

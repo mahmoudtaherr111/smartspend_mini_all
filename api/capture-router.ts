@@ -16,6 +16,7 @@ import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
 import { CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf, setCaptureConsent } from "./lib/capture/consent";
 import { listCaptureDevices, registerCaptureDevice, revokeCaptureDevice } from "./lib/capture/devices";
 import { answerEvent, captureLimitOf, captureUsageOf, pendingEvents, releaseHeldEvents } from "./lib/capture/intake";
+import { autoOffers, setPairAuto } from "./lib/capture/memory";
 import { createRateLimiter } from "./lib/rate-limit";
 import { getSystemSettings } from "./lib/settings-cache";
 
@@ -85,6 +86,29 @@ export const captureRouter = router({
     if ((await captureLimitOf(ctx.user!.plan)) === 0) await releaseHeldEvents(ownerOf(ctx));
     return pendingEvents(ownerOf(ctx));
   }),
+
+  /**
+   * The banks and kinds of message the user recorded as read three times in a row and was not asked about yet: the
+   * app offers to record them on their own (decision 0030).
+   */
+  autoOffers: authedProcedure.query(async ({ ctx }) => {
+    const catalog = await getCaptureCatalog();
+    const offers = await autoOffers(ownerOf(ctx));
+    return offers.map((offer) => {
+      const source = catalog.sources.find((item) => item.slug === offer.sourceSlug);
+      return { ...offer, sourceName: source ? { ar: source.nameAr, en: source.nameEn } : null };
+    });
+  }),
+
+  /** The user's answer to an offer: record this bank and kind on their own from now on, or keep asking. */
+  setAuto: authedProcedure
+    .input(z.object({ sourceSlug: z.string().min(1).max(64), kind: z.string().min(1).max(32), enabled: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!(await setPairAuto(ownerOf(ctx), input.sourceSlug, input.kind, input.enabled))) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "مفيش عرض بالشكل ده" });
+      }
+      return { success: true };
+    }),
 
   answer: authedProcedure
     .input(

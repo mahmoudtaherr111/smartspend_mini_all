@@ -61,8 +61,8 @@ export type CaptureSignalsRequest = z.infer<typeof captureSignalsRequestSchema>;
 export const CAPTURE_RESULTS = ["review", "merged", "held", "recorded", "dismissed", "ignored", "rejected"] as const;
 export type CaptureResult = (typeof CAPTURE_RESULTS)[number];
 
-/** What the user can answer from the notification without opening the app. */
-export const CAPTURE_ACTIONS = ["record", "dismiss"] as const;
+/** What the user can answer from the notification without opening the app; "undo" takes back one recorded on its own. */
+export const CAPTURE_ACTIONS = ["record", "dismiss", "undo"] as const;
 export type CaptureAction = (typeof CAPTURE_ACTIONS)[number];
 
 /** The local notification the phone shows for a signal, written by the server in the phone's language. */

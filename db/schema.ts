@@ -1074,6 +1074,8 @@ export const captureEvents = mysqlTable(
     reading: json("reading"),
     /** The Cairo month ("2026-10") whose limit this event counts in; null when it counts in none. */
     quotaPeriod: varchar("quota_period", { length: 7 }),
+    /** Recorded without a question, under an allowed pair (decision 0030); its notice offers "undo". */
+    autoRecorded: boolean("auto_recorded").notNull().default(false),
     /** One entry per device and channel the payment arrived through ("12:sms:CIB"). */
     channels: json("channels").notNull(),
     primarySignalId: int("primary_signal_id").notNull(),
@@ -1110,6 +1112,42 @@ export const captureUsage = mysqlTable(
     updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
   },
   (t) => [uniqueIndex("capture_usage_user_period_idx").on(t.userId, t.userType, t.period)],
+);
+
+// What a user filed a merchant or a person under, from their own answers and edits (decision 0030): the first place
+// a captured payment's filing comes from. The key is "m:<merchant key>" or "p:<HMAC of the person's number, address
+// or name>", never the name itself.
+export const captureMemory = mysqlTable(
+  "capture_memory",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    memoryKey: varchar("memory_key", { length: 140 }).notNull(),
+    categoryId: varchar("category_id", { length: 60 }).notNull(),
+    subCategoryId: varchar("sub_category_id", { length: 60 }).notNull(),
+    uses: int("uses").notNull().default(1),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [uniqueIndex("capture_memory_user_key_idx").on(t.userId, t.userType, t.memoryKey)],
+);
+
+// One user's record per bank and kind of message (decision 0030): how many captured payments in a row they recorded
+// as read, whether they were offered recording on its own, and whether they took it.
+export const captureUserPairs = mysqlTable(
+  "capture_user_pairs",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    sourceSlug: varchar("source_slug", { length: 64 }).notNull(),
+    kind: varchar("kind", { length: 32 }).notNull(),
+    streak: int("streak").notNull().default(0),
+    autoEnabled: boolean("auto_enabled").notNull().default(false),
+    askedAt: datetime("asked_at"),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [uniqueIndex("capture_user_pairs_user_pair_idx").on(t.userId, t.userType, t.sourceSlug, t.kind)],
 );
 
 // ─── WhatsApp OTP Codes ───

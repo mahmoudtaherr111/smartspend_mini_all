@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CaptureSignal } from "../../../contracts/capture-intake";
 import type { CaptureCatalog, CaptureSource } from "./catalog";
-import { buildNotice, canAnswerFromNotice, gateSignal, isPersonalSender, keepReading, suggestLedgerEntry, taxonomyNames } from "./intake";
+import { autoPolicyOf, buildNotice, canAnswerFromNotice, gateSignal, isPersonalSender, keepReading, mayRecordAlone, suggestLedgerEntry, taxonomyNames } from "./intake";
 
 // Invented messages in the shapes banks send: the repository is public.
 const source = (slug: string, kind: CaptureSource["kind"], packages: string[], senderIds: string[] = []): CaptureSource => ({
@@ -161,5 +161,35 @@ describe("the notice the phone shows", () => {
     const notice = buildNotice(reading, suggestion, "en");
     expect(notice.body).toContain("EGP 450");
     expect(notice.body).toContain("متنوعات");
+  });
+});
+
+describe("what is recorded without a question", () => {
+  const kept = accepted(gateSignal(signal({}), catalog, receivedAt));
+  const reading = keepReading(kept.reading, kept.source);
+  const suggestion = suggestLedgerEntry(reading, catalog);
+  const opened = autoPolicyOf({ capture_auto_pairs: "cib:card_purchase" });
+
+  it("records an opened pair, or one the user agreed to, and nothing else", () => {
+    expect(mayRecordAlone({ policy: opened, reading, suggestion, possibleDuplicate: false, userAgreed: false })).toBe(true);
+    expect(mayRecordAlone({ policy: autoPolicyOf({}), reading, suggestion, possibleDuplicate: false, userAgreed: true })).toBe(true);
+    expect(mayRecordAlone({ policy: autoPolicyOf({}), reading, suggestion, possibleDuplicate: false, userAgreed: false })).toBe(false);
+    expect(mayRecordAlone({ policy: autoPolicyOf({ capture_auto_pairs: "*:card_purchase" }), reading, suggestion, possibleDuplicate: false, userAgreed: false })).toBe(true);
+  });
+
+  it("never records a possible duplicate, an unsure reading, a foreign amount or a paused bank", () => {
+    const base = { policy: opened, reading, suggestion, possibleDuplicate: false, userAgreed: true };
+    expect(mayRecordAlone({ ...base, possibleDuplicate: true })).toBe(false);
+    expect(mayRecordAlone({ ...base, reading: { ...reading, confidence: "likely" } })).toBe(false);
+    expect(mayRecordAlone({ ...base, suggestion: { ...suggestion, amountEgp: null } })).toBe(false);
+    expect(mayRecordAlone({ ...base, policy: autoPolicyOf({ capture_auto_pairs: "cib:card_purchase", capture_paused_sources: "cib" }) })).toBe(false);
+  });
+
+  it("asks about a transfer to a person from the threshold up", () => {
+    const transfer = { ...reading, kind: "transfer_out" as const, counterparty: { type: "person", name: "محمد علي", merchantKey: null, phoneTail: null, ipa: null } };
+    const policy = autoPolicyOf({ capture_auto_pairs: "cib:transfer_out", capture_p2p_ask_above: "1000" });
+    const small = { ...suggestion, amountEgp: 999 };
+    expect(mayRecordAlone({ policy, reading: transfer, suggestion: small, possibleDuplicate: false, userAgreed: false })).toBe(true);
+    expect(mayRecordAlone({ policy, reading: transfer, suggestion: { ...small, amountEgp: 1000 }, possibleDuplicate: false, userAgreed: false })).toBe(false);
   });
 });

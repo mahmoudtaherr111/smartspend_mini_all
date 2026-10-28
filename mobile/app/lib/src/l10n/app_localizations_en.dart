@@ -153,6 +153,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'This may be the same payment as the one before. If you paid twice, tap \"Record\"; if it is the same one, tap \"Not mine\".';
 
   @override
+  String captureAutoOffer(String source) {
+    return 'Record these «$source» transactions on their own from now on?';
+  }
+
+  @override
+  String get captureAutoOfferBody =>
+      'You confirmed the last 3 as they were read. If you agree, we record them without asking and send a notification with \"Undo\".';
+
+  @override
+  String get captureAutoYes => 'Yes';
+
+  @override
+  String get captureAutoNo => 'No, ask me';
+
+  @override
   String captureUsage(int used, int limit) {
     return '$used of $limit recorded this month.';
   }

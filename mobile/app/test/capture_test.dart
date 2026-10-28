@@ -1,6 +1,7 @@
 import 'package:bank_capture/bank_capture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smartspend_app/src/features/capture/capture_controller.dart';
 import 'package:smartspend_app/src/features/capture/capture_review_screen.dart';
 import 'package:smartspend_app/src/routing/app_router.dart';
 
@@ -218,6 +219,40 @@ void main() {
       });
       expect(find.text('مفيش عمليات مستنية ردك.'), findsOneWidget);
     });
+
+    testWidgets(
+      'offers a bank the person keeps confirming, and sends the answer',
+      (tester) async {
+        final (app, api) = await openReview(tester, () => []);
+        api
+          ..answer(
+            'capture.autoOffers',
+            (_) => [
+              {
+                'sourceSlug': 'cib',
+                'kind': 'card_purchase',
+                'streak': 3,
+                'sourceName': {'ar': 'البنك التجاري الدولي', 'en': 'CIB'},
+              },
+            ],
+          )
+          ..answer('capture.setAuto', (_) => {'success': true});
+        app.container.invalidate(captureAutoOffersProvider);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('نسجّل عمليات «البنك التجاري الدولي» دي لوحدها بعد كده؟'),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('أيوه'));
+        await tester.pumpAndSettle();
+        expect(api.lastInput('capture.setAuto'), {
+          'sourceSlug': 'cib',
+          'kind': 'card_purchase',
+          'enabled': true,
+        });
+      },
+    );
 
     testWidgets('warns when it may be the same payment as the one before', (
       tester,

@@ -79,6 +79,7 @@ internal object CaptureNotifier {
             val label = when (action) {
                 "record" -> if (arabic) "سجّل" else "Record"
                 "dismiss" -> if (arabic) "مش مصروف" else "Not mine"
+                "undo" -> if (arabic) "تراجع" else "Undo"
                 else -> continue
             }
             notification.addAction(Notification.Action.Builder(null, label, CaptureActionReceiver.intent(context, eventId, action)).build())
