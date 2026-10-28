@@ -54,6 +54,7 @@ import {
   captureMemory,
   captureUserPairs,
   captureAiJobs,
+  captureMarkers,
   captureConsents,
   captureDevices,
   voiceCalls,
@@ -110,6 +111,7 @@ export async function purgeUserData(
 
   // Capture: the notifications waiting for an answer, the consents and the phones (decision 0028).
   await tx.delete(captureAiJobs).where(userScope(captureAiJobs, userId, userType));
+  await tx.delete(captureMarkers).where(userScope(captureMarkers, userId, userType));
   await tx.delete(captureSignals).where(userScope(captureSignals, userId, userType));
   await tx.delete(captureEvents).where(userScope(captureEvents, userId, userType));
   await tx.delete(captureUsage).where(userScope(captureUsage, userId, userType));

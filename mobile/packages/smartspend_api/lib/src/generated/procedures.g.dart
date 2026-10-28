@@ -111,6 +111,8 @@ final class CaptureProcedures {
   ApiMutation get answer => const ApiMutation('capture.answer', builder: 'authedProcedure', hasInput: true);
   ApiQuery get autoOffers => const ApiQuery('capture.autoOffers', builder: 'authedProcedure');
   ApiQuery get devices => const ApiQuery('capture.devices', builder: 'authedProcedure');
+  ApiMutation get ignore => const ApiMutation('capture.ignore', builder: 'authedProcedure', hasInput: true);
+  ApiQuery get ignored => const ApiQuery('capture.ignored', builder: 'authedProcedure');
   ApiQuery get pending => const ApiQuery('capture.pending', builder: 'authedProcedure');
   ApiMutation get registerDevice => const ApiMutation('capture.registerDevice', builder: 'authedProcedure', hasInput: true);
   ApiMutation get revokeDevice => const ApiMutation('capture.revokeDevice', builder: 'authedProcedure', hasInput: true);
@@ -118,6 +120,7 @@ final class CaptureProcedures {
   ApiMutation get setConsent => const ApiMutation('capture.setConsent', builder: 'authedProcedure', hasInput: true);
   ApiQuery get sources => const ApiQuery('capture.sources', builder: 'authedProcedure');
   ApiQuery get status => const ApiQuery('capture.status', builder: 'authedProcedure');
+  ApiMutation get unignore => const ApiMutation('capture.unignore', builder: 'authedProcedure', hasInput: true);
 }
 
 /// The `chat` router, `api/chat-router.ts`.

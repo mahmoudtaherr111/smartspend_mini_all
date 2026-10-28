@@ -171,6 +171,14 @@ model {
         storageClass 'E'
       }
     }
+    capture_markers = table 'capture_markers' {
+      #classA #dualOwner
+      description '6 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'captureMarkers'
+        storageClass 'A'
+      }
+    }
     capture_memory = table 'capture_memory' {
       #classA #dualOwner
       description '8 columns, 1 indexes, storage class A.'
@@ -197,7 +205,7 @@ model {
     }
     capture_usage = table 'capture_usage' {
       #classC #dualOwner
-      description '10 columns, 1 indexes, storage class C.'
+      description '12 columns, 1 indexes, storage class C.'
       metadata {
         export 'captureUsage'
         storageClass 'C'

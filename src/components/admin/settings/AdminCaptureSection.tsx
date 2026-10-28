@@ -38,6 +38,41 @@ export function AdminCaptureSection({ formData, updateField }: Props) {
           </div>
         </div>
         <div className="space-y-2">
+          <FieldLabel hint="فاضي = مفتوح لكل المستخدمين. للتجربة المقفولة اكتب المستخدمين بالشكل local:12 أو oauth:7، ومفصولين بفاصلة.">
+            مستخدمين التجربة
+          </FieldLabel>
+          <Input
+            aria-label="مستخدمين التجربة"
+            value={formData.capture_beta_users ?? ""}
+            onChange={(e) => updateField("capture_beta_users", e.target.value)}
+            className="h-8 font-mono bg-slate-50 dark:bg-slate-900"
+            dir="ltr"
+          />
+        </div>
+        <div className="space-y-2">
+          <FieldLabel hint="الأنظمة اللي الاستلام مفتوح ليها: android أو ios أو الاتنين، مفصولين بفاصلة.">الأنظمة</FieldLabel>
+          <Input
+            aria-label="الأنظمة"
+            value={formData.capture_platforms ?? "android,ios"}
+            onChange={(e) => updateField("capture_platforms", e.target.value)}
+            className="h-8 font-mono bg-slate-50 dark:bg-slate-900"
+            dir="ltr"
+          />
+        </div>
+        <div className="space-y-2">
+          <FieldLabel hint="أقصى عدد رسايل موبايلات المستخدم تبعتها في اليوم (بتوقيت القاهرة). بعده الموبايل بيستنى لنص الليل. 0 = بدون حد.">
+            رسايل في اليوم لكل مستخدم
+          </FieldLabel>
+          <Input
+            type="number"
+            min="0"
+            aria-label="رسايل في اليوم لكل مستخدم"
+            value={formData.capture_daily_signal_limit ?? "1000"}
+            onChange={(e) => updateField("capture_daily_signal_limit", e.target.value)}
+            className="h-8 font-mono bg-slate-50 dark:bg-slate-900 max-w-[12rem]"
+          />
+        </div>
+        <div className="space-y-2">
           <FieldLabel hint="بنك ونوع رسالة بيتسجلوا لوحدهم للكل، بعد ما الدقة على رسايل حقيقية تثبت. بالشكل cib:card_purchase، أو *:card_purchase لكل البنوك، ومفصولين بفاصلة. فاضي = كل حاجة بتتسأل (إلا اللي المستخدم وافق عليه بنفسه).">
             الأنواع اللي بتتسجل لوحدها
           </FieldLabel>

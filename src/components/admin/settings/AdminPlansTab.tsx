@@ -345,6 +345,14 @@ function PlanAdvancedLimits({
           unit="عملية"
         />
         <NumInput
+          label="موبايلات بتبعت رسايل البنك"
+          hint="أقصى عدد موبايلات للمستخدم بتبعت رسايل البنك في نفس الوقت. 0 = بدون حد"
+          settingKey={planNumberKey("capture_devices", plan as PlanId)}
+          formData={formData}
+          updateField={updateField}
+          unit="موبايل"
+        />
+        <NumInput
           label="طلبات AI في الدقيقة"
           hint="حماية من الإساءة: أقصى عدد طلبات ذكاء اصطناعي في الدقيقة لكل قناة"
           settingKey={planNumberKey("burst_limit_per_minute", plan as PlanId)}

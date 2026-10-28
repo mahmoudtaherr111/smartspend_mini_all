@@ -114,6 +114,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get captureAiReadingFailed => 'ماقدرناش نحفظ اختيارك. جرّب تاني.';
 
   @override
+  String get captureUpdateRequired =>
+      'نسخة التطبيق دي قديمة على تسجيل رسايل البنك. حدّث التطبيق، والرسايل المستنية هتتبعت بعدها.';
+
+  @override
   String get captureOffline => 'مستنيين النت عشان نبعت.';
 
   @override

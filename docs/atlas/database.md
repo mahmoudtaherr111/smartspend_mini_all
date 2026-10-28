@@ -12,7 +12,7 @@ Foreign-key constraints declared in the schema: **0**. Every relationship below 
 
 | Class | Name | Lifetime | Storage rule | Tables |
 | --- | --- | --- | --- | --- |
-| `A` | Identity & Config | Forever | MySQL; small; cached aggressively in Redis with explicit invalidation | 27 |
+| `A` | Identity & Config | Forever | MySQL; small; cached aggressively in Redis with explicit invalidation | 28 |
 | `B` | Core Ledger | Forever | MySQL; narrow hot table; covering indexes; never auto-deleted | 1 |
 | `C` | Derived / Rollup | Forever (cheap) | MySQL; tiny; rebuildable from B at any time | 14 |
 | `D` | Operational / Ephemeral | Minutes -> days | Redis primary, MySQL as durable fallback/audit | 7 |
@@ -34,6 +34,7 @@ Users, credentials, settings, providers, templates, categories
 | `business_categories` | `businessCategories` | 12 | 1 | — | `business → user_businesses` | `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts` | `api/business-router.ts`, `api/services/user-purge-service.ts` |
 | `capture_consents` | `captureConsents` | 7 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/consent.ts` | `api/lib/capture/consent.ts`, `api/services/user-purge-service.ts` |
 | `capture_devices` | `captureDevices` | 13 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/devices.ts` | `api/lib/capture/devices.ts`, `api/services/user-purge-service.ts` |
+| `capture_markers` | `captureMarkers` | 6 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/markers.ts` | `api/lib/capture/markers.ts`, `api/services/user-purge-service.ts` |
 | `capture_memory` | `captureMemory` | 8 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/memory.ts` | `api/lib/capture/memory.ts`, `api/services/user-purge-service.ts` |
 | `capture_sources` | `captureSources` | 16 | 1 | — | — | `api/capture-admin-router.ts`, `api/lib/capture/catalog.ts` | `api/capture-admin-router.ts`, `api/lib/capture/catalog.ts` |
 | `capture_user_pairs` | `captureUserPairs` | 9 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/memory.ts` | `api/lib/capture/memory.ts`, `api/services/user-purge-service.ts` |
@@ -73,7 +74,7 @@ Pre-aggregated facts computed from B; rebuildable at any time
 | `ad_stats_daily` | `adStatsDaily` | 5 | 1 | — | — | — | `api/jobs/data-retention-job.ts` |
 | `ai_cost_monthly` | `aiCostMonthly` | 12 | 1 | `user_id` + `user_type` | — | — | `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts` |
 | `ai_summaries` | `aiSummaries` | 8 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/ai-router.ts`, `api/services/voice/brain/tools/reports.ts` | `api/ai-router.ts`, `api/services/user-purge-service.ts` |
-| `capture_usage` | `captureUsage` | 10 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/intake.ts` | `api/lib/capture/intake.ts`, `api/services/user-purge-service.ts` |
+| `capture_usage` | `captureUsage` | 12 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/intake.ts` | `api/lib/capture/access.ts`, `api/lib/capture/intake.ts`, `api/services/user-purge-service.ts` |
 | `cashflow_settlements` | `cashflowSettlements` | 9 | 3 | `user_id` + `user_type` | `cashflow → scheduled_cashflows`, `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/expense-router.ts`, `api/services/coach/cashflows.ts` | `api/services/coach/cashflows.ts`, `api/services/user-purge-service.ts` |
 | `coaching_plans` | `coachingPlans` | 16 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users`, `steps → coaching_steps` | `api/services/coach/plans.ts` | `api/services/coach/plans.ts`, `api/services/user-purge-service.ts` |
 | `coaching_steps` | `coachingSteps` | 17 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users`, `plan → coaching_plans` | `api/services/coach/plans.ts` | `api/services/coach/plans.ts`, `api/services/user-purge-service.ts` |
@@ -194,6 +195,8 @@ chat_messages and conversation threads
 | `capture_events` | `expense` | one | `expenses` | `expense_id` |
 | `capture_events` | `localUser` | one | `local_users` | `user_id` |
 | `capture_events` | `oauthUser` | one | `users` | `user_id` |
+| `capture_markers` | `localUser` | one | `local_users` | `user_id` |
+| `capture_markers` | `oauthUser` | one | `users` | `user_id` |
 | `capture_memory` | `localUser` | one | `local_users` | `user_id` |
 | `capture_memory` | `oauthUser` | one | `users` | `user_id` |
 | `capture_signals` | `device` | one | `capture_devices` | `device_id` |

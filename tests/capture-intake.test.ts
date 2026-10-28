@@ -1,7 +1,7 @@
 import { and, eq, inArray, lte } from "drizzle-orm";
 import { Hono } from "hono";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { captureAiJobs, captureConsents, captureDevices, captureEvents, captureMemory, captureSignals, captureUsage, captureUserPairs, expenseDailyRollups, expenses, localUsers, systemSettings, userWallets } from "../db/schema";
+import { captureAiJobs, captureConsents, captureMarkers, captureDevices, captureEvents, captureMemory, captureSignals, captureUsage, captureUserPairs, expenseDailyRollups, expenses, localUsers, systemSettings, userWallets } from "../db/schema";
 import { db } from "../api/queries/connection";
 import { registerCaptureRoutes } from "../api/capture-v1-routes";
 import { captureRouter } from "../api/capture-router";
@@ -85,6 +85,7 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
       const mine = <T extends { userId: unknown; userType: unknown }>(table: T) =>
         and(eq(table.userId as never, owner.userId), eq(table.userType as never, userType));
       await db.delete(captureAiJobs).where(mine(captureAiJobs));
+      await db.delete(captureMarkers).where(mine(captureMarkers));
       await db.delete(captureSignals).where(mine(captureSignals));
       await db.delete(captureEvents).where(mine(captureEvents));
       await db.delete(userWallets).where(mine(userWallets));
@@ -113,7 +114,7 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
   });
   afterAll(async () => {
     await cleanUp();
-    for (const key of ["capture_monthly_limit_free", "capture_auto_pairs", "capture_daily_question_notices", "capture_paused_sources"]) {
+    for (const key of ["capture_monthly_limit_free", "capture_auto_pairs", "capture_daily_question_notices", "capture_paused_sources", "capture_beta_users", "capture_daily_signal_limit"]) {
       await db.delete(systemSettings).where(eq(systemSettings.key, key));
     }
     await db.delete(systemSettings).where(eq(systemSettings.key, "capture_enabled"));
@@ -438,6 +439,75 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
       expect((await caller.status()).usage.used).toBe(0);
       const events = await db.select({ status: captureEvents.status }).from(captureEvents).where(eq(captureEvents.userId, owner.userId));
       expect(events.map((event) => event.status)).toEqual(["deleted", "deleted", "deleted"]);
+    });
+  });
+
+  describe("who may send, and how much", () => {
+    const wallet = () => db.select().from(userWallets).where(and(eq(userWallets.userId, owner.userId), eq(userWallets.userType, "local")));
+
+    it("refuses a build older than the oldest allowed", async () => {
+      const old = await app.request("/api/capture/v1/signals", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-capture-device": token, "x-client-version": "0.1.0" },
+        body: JSON.stringify({ signals: [purchase("signal-old-01")] }),
+      });
+      expect(old.status).toBe(426);
+      expect(await old.json()).toEqual({ error: "update_required" });
+    });
+
+    it("is closed to a user outside the beta list, and opens again when the list is empty", async () => {
+      await setting("capture_beta_users", "local:1");
+      try {
+        expect((await post("/api/capture/v1/signals", { signals: [purchase("signal-beta-01")] })).status).toBe(503);
+        expect((await caller.status()).enabled).toBe(false);
+        await expect(caller.registerDevice({ platform: "android", installationId: "install-beta-01" })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+      } finally {
+        await clearSetting("capture_beta_users");
+      }
+      expect((await post("/api/capture/v1/signals", { signals: [purchase("signal-beta-02")] })).status).toBe(200);
+    });
+
+    it("lets a free user register two phones", async () => {
+      await caller.registerDevice({ platform: "android", installationId: "install-0002" });
+      await expect(caller.registerDevice({ platform: "android", installationId: "install-0003" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("stops a user's phones for the day past the daily cap, and tells them when to come back", async () => {
+      await setting("capture_daily_signal_limit", "3");
+      try {
+        expect((await post("/api/capture/v1/signals", { signals: [purchase("signal-day-01"), purchase("signal-day-02", "20.00")] })).status).toBe(200);
+        const over = await post("/api/capture/v1/signals", { signals: [purchase("signal-day-03", "30.00"), purchase("signal-day-04", "40.00")] });
+        expect(over.status).toBe(429);
+        expect(Number(over.headers.get("retry-after"))).toBeGreaterThan(0);
+        expect((await post("/api/capture/v1/signals", { signals: [purchase("signal-day-05", "50.00")] })).status).toBe(200);
+      } finally {
+        await clearSetting("capture_daily_signal_limit");
+      }
+    });
+
+    it("drops the messages of a card the user ignores, and keeps nothing of them", async () => {
+      const marker = await caller.ignore({ kind: "ignore_card", value: "1234" });
+      expect(marker.value).toBe("234");
+      await expect(caller.ignore({ kind: "ignore_phrase", value: "EGP" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      const { results } = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-ign-01")] })).json();
+      expect(results[0]).toMatchObject({ result: "ignored", reason: "user_ignored" });
+      expect(await db.select().from(captureSignals).where(eq(captureSignals.userId, owner.userId))).toHaveLength(0);
+
+      await caller.unignore({ id: marker.id });
+      expect(await caller.ignored()).toHaveLength(0);
+      const again = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-ign-02")] })).json();
+      expect(again.results[0].result).toBe("review");
+    });
+
+    it("moves a card's wallet to the balance a balance-only message gives, and keeps nothing else", async () => {
+      await db.insert(userWallets).values({ userId: owner.userId, userType: "local", name: "CIB Visa", provider: "Visa", lastFourDigits: "1234", balance: "100.00" });
+      const balance = { ...purchase("signal-bal-01"), text: "Your available balance on card **1234 is EGP 3,200.50" };
+      const { results } = await (await post("/api/capture/v1/signals", { signals: [balance] })).json();
+      expect(results[0]).toMatchObject({ result: "ignored", reason: "balance_only" });
+      const [row] = await wallet();
+      expect(Number(row.balance)).toBe(3200.5);
+      expect(row.balanceSource).toBe("bank_message");
+      expect(await db.select().from(captureEvents).where(eq(captureEvents.userId, owner.userId))).toHaveLength(0);
     });
   });
 

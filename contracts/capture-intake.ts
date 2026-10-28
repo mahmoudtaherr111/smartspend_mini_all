@@ -147,6 +147,8 @@ export const CAPTURE_ERRORS = [
   "invalid_request",
   "rate_limited",
   "not_found",
+  // The build is older than `minClientVersion`: the phone stops sending and asks for an update (HTTP 426).
+  "update_required",
 ] as const;
 export type CaptureError = (typeof CAPTURE_ERRORS)[number];
 

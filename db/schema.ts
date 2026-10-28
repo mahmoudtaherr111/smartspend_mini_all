@@ -1113,6 +1113,9 @@ export const captureUsage = mysqlTable(
     limitNoticed: boolean("limit_noticed").notNull().default(false),
     questionDay: varchar("question_day", { length: 10 }),
     questions: int("questions").notNull().default(0),
+    /** The Cairo day and how many signals the user's phones sent on it, against the daily cap. */
+    signalDay: varchar("signal_day", { length: 10 }),
+    signals: int("signals").notNull().default(0),
     updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
   },
   (t) => [uniqueIndex("capture_usage_user_period_idx").on(t.userId, t.userType, t.period)],
@@ -1152,6 +1155,22 @@ export const captureUserPairs = mysqlTable(
     updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
   },
   (t) => [uniqueIndex("capture_user_pairs_user_pair_idx").on(t.userId, t.userType, t.sourceSlug, t.kind)],
+);
+
+// What a user asked capture to ignore (decision 0033): a card or account by its last digits (a family member's or a
+// work card), or a phrase. Matching messages are dropped before anything is kept.
+export const captureMarkers = mysqlTable(
+  "capture_markers",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    /** ignore_card or ignore_phrase. */
+    kind: varchar("kind", { length: 16 }).notNull(),
+    value: varchar("value", { length: 120 }).notNull(),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [uniqueIndex("capture_markers_user_value_idx").on(t.userId, t.userType, t.kind, t.value)],
 );
 
 // A captured message the reader was unsure of, waiting for the admin's model (decision 0031): one row per signal,

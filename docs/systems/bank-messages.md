@@ -66,6 +66,14 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
    deletes them (`api/services/user-purge-service.ts`).
 2. **Consent.** `capture.setConsent` records `capture` or `ai_reading` with the version of the text the user read
    (`CAPTURE_CONSENT_TEXT_VERSION`) and refuses an older text; taking it back keeps the row with `revoked_at`.
+2a. **Who and how much** ([decision 0033](../decisions/0033-capture-access-and-ignore-lists.md),
+   `api/lib/capture/access.ts`): capture is open when `capture_enabled` is on, the device's platform is in
+   `capture_platforms`, and the user is on `capture_beta_users` when that list is not empty (otherwise 503, and
+   `capture.status` says closed, `capture.registerDevice` refuses). Phones per user come from the plan number
+   `capture_devices` (2 free, 5 Pro and Ultra). A phone sends `X-Client-Version`; older than
+   `CAPTURE_MIN_CLIENT_VERSION` is answered 426 `update_required` on signals and actions. The signals of one user's
+   phones a Cairo day are capped by `capture_daily_signal_limit` (1,000), counted in `capture_usage`; past it, 429 with
+   `Retry-After` until midnight.
 3. **`POST /api/capture/v1/signals`**: up to 20 signals (the phone's id, the channel, the app, the SMS sender, title,
    text, when it arrived) in 64 KB, six batches a minute per device. Without a valid token 401, switched off 503, a bad
    body 400, without the `capture` consent 403. Each signal: older than 30 days or more than an hour ahead is
@@ -74,7 +82,10 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
    through any messaging app but not from a person's number (`personal_sender`), an SMS sender the catalog does not
    know needs a card, an account or a balance in the text (`unknown_sender`), and the reader must read money that
    moved (its `not_transaction` reasons, `no_amount`; a message without an amount from a catalog source the reader is
-   unsure of is kept for the model). What fails is answered `ignored` and nothing of it is stored.
+   unsure of is kept for the model). A card or account the user ignores (by its last three digits) or a phrase they
+   ignore (`capture.ignore`, `api/lib/capture/markers.ts`) is answered `ignored` (`user_ignored`) and nothing of it is
+   kept. A balance alone (`balance_only`) from a catalog source sets the balance of the one wallet whose last digits
+   it names, when the message is newer than what the wallet holds. What fails is answered `ignored` and nothing of it is stored.
    What passes is kept in `capture_signals`: the text redacted, an HMAC of it, and the reader's fields
    (`SignalReading`: kind, direction, confidence, amount and pound equivalent, fee, balance, card and account
    suffixes, the other side, when and whether the message gave the time, the source). Each signal is taken in a
@@ -268,6 +279,8 @@ EGP equivalent in the text, which is not used as pounds.
   row per user, bank and kind: the confirmations in a row, whether the offer was made and taken), and
   `capture_events.auto_recorded`: migration `db/migrations/0035_capture_memory.sql`. `capture_events.source_slug` and
   `reader_version`: migration `db/migrations/0037_capture_events_source.sql`.
+- `capture_markers` (the cards and phrases a user ignores) and `capture_usage.signal_day` and `signals` (the day's
+  signals against the cap): migration `db/migrations/0038_capture_markers.sql`.
 - `capture_ai_jobs` (one row per signal waiting for the model: its status, attempts, lease, outcome, the event it
   became and the notice the phone has not taken yet), deleted after seven days: migration
   `db/migrations/0036_capture_ai_jobs.sql`.
@@ -281,6 +294,7 @@ EGP equivalent in the text, which is not used as pounds.
 | What is kept, ignored or refused, and the notice | `api/lib/capture/intake.ts` | `api/lib/capture/intake.test.ts` |
 | What the model reads, retries and leaves for the phone | `api/lib/capture/ai-queue.ts`; the route in `api/capture-v1-routes.ts`; `NoticeWorker` in `CaptureWork.kt` | `api/lib/capture/ai-queue.test.ts`, `tests/capture-intake.test.ts` |
 | The breaker, the bulk undo and the numbers | `api/lib/capture/operations.ts`, `captureAdmin.funnel` and `captureAdmin.bulkUndo` in `api/capture-admin-router.ts`, the console's «الأرقام» tab | `api/lib/capture/operations.test.ts`, `tests/capture-intake.test.ts`, `src/components/admin/capture/AdminCaptureNumbers.test.tsx` |
+| Who capture is open to, old builds, phones and daily signals, what a user ignores | `api/lib/capture/access.ts`, `api/lib/capture/markers.ts`, the settings in the admin's capture section and plan tabs | `api/lib/capture/access.test.ts`, `tests/capture-intake.test.ts` |
 | When signals are one payment | `api/lib/capture/events.ts` (`matchSignal`, `MATCH_WINDOWS`) | `api/lib/capture/events.test.ts` |
 | What is recorded without a question, and the memory | `mayRecordAlone` in `api/lib/capture/intake.ts`, `api/lib/capture/memory.ts`; the settings in the admin's capture section | `api/lib/capture/intake.test.ts`, `tests/capture-intake.test.ts` |
 | The routes, the device token and the answer | `api/capture-v1-routes.ts`, `api/lib/capture/devices.ts`, `api/capture-router.ts` | `tests/capture-intake.test.ts` (`npm run test:db`) |
@@ -320,7 +334,8 @@ refund in its purchase's category, the wallet and its balance, a Google account 
 nothing, a revoked device, missing consent and the switch refused, and the model's queue (no amount and no consent is
 dropped; the model's reading asked once through the notices and recorded on the answer; a reading of no money keeps
 nothing; three failures fall back to the reader's reading), the breaker stopping a bank after two of twenty were undone, and the
-bulk undo counting, removing and giving the month back. `api/lib/capture/ai-queue.test.ts` checks how a reply
+bulk undo counting, removing and giving the month back, an old build refused, the beta list, two phones on the free
+plan, the daily cap, an ignored card, and a balance alone moving its wallet. `api/lib/capture/ai-queue.test.ts` checks how a reply
 becomes a reading.
 `api/lib/capture/phone-gate-fixtures.test.ts` keeps the phone's shared cases on the lists the server sends, and
 `CaptureGateTest` in `mobile/packages/bank_capture/android/src/test` runs them in Kotlin (the Mobile workflow).

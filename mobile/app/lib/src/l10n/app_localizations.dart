@@ -266,6 +266,12 @@ abstract class AppLocalizations {
   /// **'ماقدرناش نحفظ اختيارك. جرّب تاني.'**
   String get captureAiReadingFailed;
 
+  /// No description provided for @captureUpdateRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة التطبيق دي قديمة على تسجيل رسايل البنك. حدّث التطبيق، والرسايل المستنية هتتبعت بعدها.'**
+  String get captureUpdateRequired;
+
   /// No description provided for @captureOffline.
   ///
   /// In ar, this message translates to:

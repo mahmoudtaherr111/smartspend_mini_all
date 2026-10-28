@@ -4,7 +4,8 @@
  * button) and `GET /api/capture/v1/notices` (the questions the model's readings left, decision 0031). They are plain HTTP, not tRPC, because native code calls them while the app is closed: real status codes,
  * `Retry-After`, a body limit and a contract (`contracts/capture-intake.ts`) Kotlin and Swift test against.
  *
- * Every request must send `Content-Type: application/json`: the CSRF check refuses a POST without it.
+ * Every request must send `Content-Type: application/json`: the CSRF check refuses a POST without it. A phone sends its
+ * build in `X-Client-Version`; one older than `CAPTURE_MIN_CLIENT_VERSION` is answered 426 (decision 0033).
  */
 import type { Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -19,6 +20,7 @@ import {
   type CaptureConfig,
   type CaptureError,
 } from "../contracts/capture-intake";
+import { captureOpenFor, olderThan, secondsToNextBusinessDay, takeDailySignals } from "./lib/capture/access";
 import { takeCaptureNotices, wakeCaptureModel } from "./lib/capture/ai-queue";
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
 import { captureConsentsOf } from "./lib/capture/consent";
@@ -39,14 +41,21 @@ const actionTaps = createRateLimiter(30, 60_000);
 // The phone asks a few times after a batch with queued signals.
 const noticeReads = createRateLimiter(20, 60_000);
 
-const fail = (c: Context, status: 400 | 401 | 403 | 404 | 413 | 429 | 503, error: CaptureError) => c.json({ error }, status);
+const fail = (c: Context, status: 400 | 401 | 403 | 404 | 413 | 426 | 429 | 503, error: CaptureError) => c.json({ error }, status);
 
-async function captureEnabled(): Promise<boolean> {
-  return (await getSystemSettings()).capture_enabled === "true";
+/** Open to this device's user and platform: the switch, the platforms and the beta list (decision 0033). */
+async function captureOpen(device: CaptureDevice): Promise<boolean> {
+  return captureOpenFor(await getSystemSettings(), device, device.platform);
 }
 
 async function deviceOf(c: Context): Promise<CaptureDevice | null> {
   return resolveCaptureDevice(c.req.header(CAPTURE_DEVICE_HEADER));
+}
+
+/** A build older than the oldest allowed; a phone that sends no version is not refused. */
+function tooOld(c: Context): boolean {
+  const version = c.req.header("x-client-version");
+  return Boolean(version && olderThan(version, CAPTURE_MIN_CLIENT_VERSION));
 }
 
 async function readJson(c: Context): Promise<unknown> {
@@ -72,7 +81,8 @@ export function registerCaptureRoutes(app: Hono): void {
   app.post("/api/capture/v1/signals", limit, async (c) => {
     const device = await deviceOf(c);
     if (!device) return fail(c, 401, "invalid_device");
-    if (!(await captureEnabled())) return fail(c, 503, "capture_disabled");
+    if (tooOld(c)) return fail(c, 426, "update_required");
+    if (!(await captureOpen(device))) return fail(c, 503, "capture_disabled");
     if (!(await underLimit(signalBatches, `capture:signals:${device.deviceId}`))) {
       c.header("Retry-After", "15");
       return fail(c, 429, "rate_limited");
@@ -80,6 +90,12 @@ export function registerCaptureRoutes(app: Hono): void {
     const parsed = captureSignalsRequestSchema.safeParse(await readJson(c));
     if (!parsed.success) return fail(c, 400, "invalid_request");
     if (!(await captureConsentsOf(device)).capture) return fail(c, 403, "consent_required");
+    // The day's signals of all the user's phones: past the cap, the batch waits until Cairo midnight.
+    const dailyLimit = Number.parseInt((await getSystemSettings()).capture_daily_signal_limit ?? "1000", 10) || 0;
+    if (!(await takeDailySignals(device, parsed.data.signals.length, dailyLimit))) {
+      c.header("Retry-After", String(secondsToNextBusinessDay()));
+      return fail(c, 429, "rate_limited");
+    }
 
     const results = await ingestSignals(device, parsed.data);
     await touchCaptureDevice(device.deviceId, true);
@@ -100,7 +116,7 @@ export function registerCaptureRoutes(app: Hono): void {
   app.get("/api/capture/v1/config", async (c) => {
     const device = await deviceOf(c);
     if (!device) return fail(c, 401, "invalid_device");
-    const [enabled, consent, catalog] = await Promise.all([captureEnabled(), captureConsentsOf(device), getCaptureCatalog()]);
+    const [enabled, consent, catalog] = await Promise.all([captureOpen(device), captureConsentsOf(device), getCaptureCatalog()]);
     await touchCaptureDevice(device.deviceId, false);
     const config: CaptureConfig = {
       apiVersion: CAPTURE_API_VERSION,
@@ -119,6 +135,7 @@ export function registerCaptureRoutes(app: Hono): void {
   app.post("/api/capture/v1/actions", limit, async (c) => {
     const device = await deviceOf(c);
     if (!device) return fail(c, 401, "invalid_device");
+    if (tooOld(c)) return fail(c, 426, "update_required");
     if (!(await underLimit(actionTaps, `capture:actions:${device.deviceId}`))) {
       c.header("Retry-After", "15");
       return fail(c, 429, "rate_limited");

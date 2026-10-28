@@ -96,7 +96,7 @@ internal class UploadWorker(context: Context, params: WorkerParameters) : Corout
         val baseUrl = settings.baseUrl
         val owner = settings.ownerKey
         if (token == null || baseUrl == null || owner == null) return@withContext Result.success()
-        val api = CaptureApi(baseUrl, token)
+        val api = CaptureApi(baseUrl, token, appVersion(context))
         val queue = CaptureQueue(context)
         try {
             if (System.currentTimeMillis() - settings.configAt > CONFIG_MAX_AGE_MS || settings.config == null) {
@@ -119,6 +119,11 @@ internal class UploadWorker(context: Context, params: WorkerParameters) : Corout
                 when (reply.code) {
                     200 -> handle(reply.body, batch, queue, settings)
                     401 -> return@withContext stopForDevice(settings, queue)
+                    426 -> {
+                        // This build is too old: keep the queue for the updated app, and say so on the card.
+                        settings.lastError = "update_required"
+                        return@withContext Result.success()
+                    }
                     403, 503 -> {
                         // Consent taken back or capture switched off: keep the queue, and read the config again.
                         settings.lastError = reply.error ?: "capture_disabled"
@@ -209,7 +214,7 @@ internal class ActionWorker(context: Context, params: WorkerParameters) : Corout
         val actionId = inputData.getString("actionId") ?: return@withContext Result.success()
         if (eventId <= 0) return@withContext Result.success()
         try {
-            val reply = CaptureApi(baseUrl, token).action(
+            val reply = CaptureApi(baseUrl, token, appVersion(applicationContext)).action(
                 JSONObject().put("actionId", actionId).put("eventId", eventId).put("action", action),
             )
             when {
@@ -246,7 +251,7 @@ internal class NoticeWorker(context: Context, params: WorkerParameters) : Corout
         val token = settings.token ?: return@withContext Result.success()
         val baseUrl = settings.baseUrl ?: return@withContext Result.success()
         try {
-            val reply = CaptureApi(baseUrl, token).notices()
+            val reply = CaptureApi(baseUrl, token, appVersion(applicationContext)).notices()
             if (reply.code == 429 || reply.code >= 500) return@withContext retryOrStop()
             if (reply.code != 200) return@withContext Result.success()
             val notices = reply.body?.optJSONArray("notices")
@@ -266,6 +271,10 @@ internal class NoticeWorker(context: Context, params: WorkerParameters) : Corout
         const val MAX_TRIES = 5
     }
 }
+
+/** This app's version name ("1.4.0"), sent so the server can refuse a build too old to talk to it. */
+internal fun appVersion(context: Context): String? =
+    runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull()
 
 /** An instant as the server reads it: ISO 8601 in UTC. */
 internal fun isoInstant(millis: Long): String {

@@ -9,6 +9,7 @@ import {
   captureMemory,
   captureUserPairs,
   captureAiJobs,
+  captureMarkers,
   localUsers,
   expenses,
   expenseCategories,
@@ -667,6 +668,17 @@ export const captureAiJobsRelations = relations(captureAiJobs, ({ one }) => ({
   }),
   oauthUser: one(users, {
     fields: [captureAiJobs.userId],
+    references: [users.id],
+  }),
+}));
+
+export const captureMarkersRelations = relations(captureMarkers, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureMarkers.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureMarkers.userId],
     references: [users.id],
   }),
 }));

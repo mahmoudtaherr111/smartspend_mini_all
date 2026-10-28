@@ -24,9 +24,11 @@ export interface CaptureOwner {
 
 export interface CaptureDevice extends CaptureOwner {
   deviceId: number;
+  /** android or ios; absent on an entry cached before it was kept. */
+  platform?: string;
 }
 
-/** Active installations one user may have at a time. */
+/** Active installations one user may have at a time when the caller gives no plan limit. */
 export const CAPTURE_DEVICES_MAX = 5;
 const CACHE_SECONDS = 300;
 const cacheKey = (hash: string) => `capdev:${hash}`;
@@ -51,7 +53,11 @@ export interface RegisterDeviceInput {
  * Registers an installation, or gives it a new token when it registered before (the old token stops working).
  * Returns the token; it is never shown again.
  */
-export async function registerCaptureDevice(owner: CaptureOwner, input: RegisterDeviceInput): Promise<{ deviceId: number; token: string }> {
+export async function registerCaptureDevice(
+  owner: CaptureOwner,
+  input: RegisterDeviceInput,
+  maxDevices = CAPTURE_DEVICES_MAX,
+): Promise<{ deviceId: number; token: string }> {
   const db = getDb();
   const token = newDeviceToken();
   const tokenHash = hashDeviceToken(token);
@@ -65,8 +71,9 @@ export async function registerCaptureDevice(owner: CaptureOwner, input: Register
 
   if (!existing) {
     const [{ active }] = await db.select({ active: count() }).from(captureDevices).where(and(mine, isNull(captureDevices.revokedAt)));
-    if (active >= CAPTURE_DEVICES_MAX) {
-      throw new TRPCError({ code: "FORBIDDEN", message: `وصلت لأقصى عدد أجهزة (${CAPTURE_DEVICES_MAX}). شيل جهاز قديم الأول.` });
+    // 0 means no limit (a plan number, contracts/plan-features.ts).
+    if (maxDevices > 0 && active >= maxDevices) {
+      throw new TRPCError({ code: "FORBIDDEN", message: `وصلت لأقصى عدد أجهزة في باقتك (${maxDevices}). شيل جهاز قديم الأول.` });
     }
   }
 
@@ -98,7 +105,7 @@ export async function resolveCaptureDevice(token: string | null | undefined): Pr
     try {
       const entry = JSON.parse(cached) as CaptureDevice & { authver: number };
       if (entry.authver === (await getAuthVersion(entry.userType, entry.userId))) {
-        return { deviceId: entry.deviceId, userId: entry.userId, userType: entry.userType };
+        return { deviceId: entry.deviceId, userId: entry.userId, userType: entry.userType, platform: entry.platform };
       }
     } catch {
       // A cache entry that does not parse is read again from the database.
@@ -106,7 +113,7 @@ export async function resolveCaptureDevice(token: string | null | undefined): Pr
   }
 
   const [row] = await getDb()
-    .select({ id: captureDevices.id, userId: captureDevices.userId, userType: captureDevices.userType })
+    .select({ id: captureDevices.id, userId: captureDevices.userId, userType: captureDevices.userType, platform: captureDevices.platform })
     .from(captureDevices)
     .where(and(eq(captureDevices.tokenHash, hash), isNull(captureDevices.revokedAt)))
     .limit(1);
@@ -114,7 +121,7 @@ export async function resolveCaptureDevice(token: string | null | undefined): Pr
     await cacheDel(cacheKey(hash));
     return null;
   }
-  const device = { deviceId: row.id, userId: row.userId, userType: row.userType };
+  const device = { deviceId: row.id, userId: row.userId, userType: row.userType, platform: row.platform };
   const authver = await getAuthVersion(row.userType, row.userId);
   await cacheSet(cacheKey(hash), CACHE_SECONDS, JSON.stringify({ ...device, authver }));
   return device;

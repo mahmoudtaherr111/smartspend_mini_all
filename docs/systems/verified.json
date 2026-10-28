@@ -33,7 +33,7 @@
         "api/profile-router.ts#rest-of-file": "b1dc9ec23cb2",
         "api/services/phone-challenge.ts": "9c5aa7cfebc9",
         "api/services/turnstile-service.ts": "89a28fc96d49",
-        "api/services/user-purge-service.ts": "18b0f47dae02",
+        "api/services/user-purge-service.ts": "324da37aea89",
         "api/session-router.ts": "c29d8dcf4653",
         "api/webauthn-router.ts": "8a7c2294a8d1",
         "src/components/auth/BiometricLockOverlay.tsx": "b9b9b5184b56",
@@ -54,9 +54,9 @@
         "src/pages/Login.tsx": "59d76ce265d9",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-28 3c42165c",
-      "arabic": "0e07b08e457f",
-      "arabicChecked": "2026-10-28 3c42165c"
+      "checked": "2026-10-28 17e66339",
+      "arabic": "d522c75f8d9c",
+      "arabicChecked": "2026-10-28 17e66339"
     },
     "admin": {
       "files": {
@@ -85,19 +85,19 @@
         "src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx": "88d1c8cbcd39",
         "src/components/admin/capture/AdminCaptureNumbers.tsx": "0c99c9a84212",
         "src/components/admin/capture/AdminCaptureTab.tsx": "7a3d0409d074",
-        "src/components/admin/settings/AdminCaptureSection.tsx": "77c79631dcc4",
+        "src/components/admin/settings/AdminCaptureSection.tsx": "ae07fa37dd43",
         "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
-        "src/components/admin/settings/AdminPlansTab.tsx": "5c4d6b39693f",
+        "src/components/admin/settings/AdminPlansTab.tsx": "e4df73fd3d47",
         "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
         "src/components/admin/settings/AdminSmsAiSection.tsx": "ec8a865da902",
         "src/components/admin/settings/AdminVoiceCallSection.tsx": "ae339f527cf2",
         "src/pages/Admin.tsx": "194ff4a9efa3",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-10-28 261847dc",
-      "arabic": "0895ddac3615",
-      "arabicChecked": "2026-10-28 261847dc"
+      "checked": "2026-10-28 17e66339",
+      "arabic": "b3cb137c47b9",
+      "arabicChecked": "2026-10-28 17e66339"
     },
     "ai-center": {
       "files": {
@@ -190,15 +190,17 @@
         "api/boot.ts#job:capture-breaker": "46eeeaa447e0",
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
         "api/capture-admin-router.ts": "90bc9c19bc05",
-        "api/capture-router.ts": "ae5e60cf19db",
-        "api/capture-v1-routes.ts": "b4cea6b09b4c",
+        "api/capture-router.ts": "217f070484bc",
+        "api/capture-v1-routes.ts": "8563d83531b3",
+        "api/lib/capture/access.ts": "a05bd6473e8d",
         "api/lib/capture/ai-queue.ts": "796ebea682af",
         "api/lib/capture/ai-reader.ts": "b506b338b9f2",
         "api/lib/capture/catalog.ts": "dd7c3d61d374",
         "api/lib/capture/consent.ts": "ce37c795e162",
-        "api/lib/capture/devices.ts": "c5ecf217a83e",
+        "api/lib/capture/devices.ts": "f076610a1858",
         "api/lib/capture/events.ts": "edb833c76977",
-        "api/lib/capture/intake.ts": "5bb69dbcdd8e",
+        "api/lib/capture/intake.ts": "5893b8e37554",
+        "api/lib/capture/markers.ts": "636e75d4ccb1",
         "api/lib/capture/memory.ts": "4bbf061cedd9",
         "api/lib/capture/operations.ts": "9c83fba1e26d",
         "api/lib/capture/reader/clauses.ts": "5b86ed12ca60",
@@ -217,9 +219,9 @@
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c"
       },
-      "checked": "2026-10-28 261847dc",
-      "arabic": "c375f4a56573",
-      "arabicChecked": "2026-10-28 261847dc"
+      "checked": "2026-10-28 17e66339",
+      "arabic": "a1405e5885a6",
+      "arabicChecked": "2026-10-28 17e66339"
     },
     "billing": {
       "files": {
@@ -464,7 +466,7 @@
         "api/lib/redis-client.ts": "b71ec9e1729f",
         "api/lib/settings-cache.ts": "ee7c564513f7",
         "api/lib/shared-generation.ts": "2d53bf30e567",
-        "api/lib/system-settings-registry.ts": "14226e88b25f",
+        "api/lib/system-settings-registry.ts": "0f0c45df28f1",
         "api/middleware.ts": "d2e8e2966fe6",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "72e5cfa66375",
@@ -477,27 +479,27 @@
         "api/services/storage/types.ts": "766de83090e8",
         "contracts/account-deletion.ts": "6fcd736f6cae",
         "contracts/ai-models.ts": "7eeda8042bd8",
-        "contracts/capture-intake.ts": "0fc8f48274b4",
+        "contracts/capture-intake.ts": "c503e9d22cac",
         "contracts/capture.ts": "9fd5ef8a1382",
         "contracts/categories.ts": "aca28dd35f9b",
         "contracts/constants.ts": "f047c234a332",
         "contracts/errors.ts": "823cdb78cfc4",
         "contracts/expense-save.ts": "6e04603f9cbc",
         "contracts/notification-types.ts": "796e38e868ce",
-        "contracts/plan-features.ts": "d3519195809f",
+        "contracts/plan-features.ts": "bfe2ce4533ca",
         "contracts/plans.ts": "371c028a6907",
         "contracts/profile-fields.ts": "5bf4f78b90e6",
         "contracts/types.ts": "191164b8f041",
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
-        "db/relations.ts": "af03f4285080",
-        "db/schema.ts": "0e74dabccf0b",
+        "db/relations.ts": "86fa5979e7cb",
+        "db/schema.ts": "2f3c32e648a3",
         "db/seed.ts": "811d2a0df636",
-        "db/table-classes.ts": "d6148e18058a"
+        "db/table-classes.ts": "2837060826f4"
       },
-      "checked": "2026-10-28 261847dc",
+      "checked": "2026-10-28 17e66339",
       "arabic": "0a25855b54e8",
-      "arabicChecked": "2026-10-28 261847dc"
+      "arabicChecked": "2026-10-28 17e66339"
     },
     "voice-calls": {
       "files": {

@@ -114,6 +114,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'We couldn\'t save your choice. Try again.';
 
   @override
+  String get captureUpdateRequired =>
+      'This version of the app is too old for bank message capture. Update the app, and waiting messages will be sent after.';
+
+  @override
   String get captureOffline => 'Waiting for a connection to send.';
 
   @override

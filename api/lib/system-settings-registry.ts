@@ -229,6 +229,12 @@ export const SETTINGS: SettingDef[] = [
   // Capture from phones (/api/capture/v1, decision 0028). "false" refuses every signal and tells phones to stop; off
   // until the closed beta.
   { key: "capture_enabled", default: "false" },
+  // Who capture is open to while capture_enabled is on (decision 0033): the platforms ("android,ios"), and when not
+  // empty, only these users ("local:12,oauth:7") for a closed beta.
+  { key: "capture_platforms", default: "android,ios" },
+  { key: "capture_beta_users", default: "" },
+  // Signals one user's phones may send a Cairo day; past it the phone is told to wait until midnight. 0 means none.
+  { key: "capture_daily_signal_limit", default: "1000" },
   // Pairs recorded without a question for everyone (decision 0030), "<source>:<kind>" or "*:<kind>", comma separated;
   // empty until the closed beta has measured them.
   { key: "capture_auto_pairs", default: "" },

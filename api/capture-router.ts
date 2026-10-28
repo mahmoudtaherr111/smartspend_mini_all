@@ -6,7 +6,7 @@
  * The rest sets capture up and answers it: `registerDevice` gives the installation the device token its native code
  * sends signals with (`/api/capture/v1`, api/capture-v1-routes.ts), `setConsent` records what the user agreed to,
  * `pending` lists the transactions waiting for the user, and `answer` records or dismisses one through the ledger
- * writer.
+ * writer. `ignored`, `ignore` and `unignore` keep the cards and phrases the user asked capture to ignore (decision 0033).
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -17,6 +17,9 @@ import { CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf, setCaptureConsent } fr
 import { listCaptureDevices, registerCaptureDevice, revokeCaptureDevice } from "./lib/capture/devices";
 import { answerEvent, captureLimitOf, captureUsageOf, pendingEvents, releaseHeldEvents } from "./lib/capture/intake";
 import { autoOffers, setPairAuto } from "./lib/capture/memory";
+import { captureOpenFor } from "./lib/capture/access";
+import { CAPTURE_IGNORE_KINDS, addCaptureMarker, listCaptureMarkers, removeCaptureMarker } from "./lib/capture/markers";
+import { planNumber } from "../contracts/plan-features";
 import { createRateLimiter } from "./lib/rate-limit";
 import { getSystemSettings } from "./lib/settings-cache";
 
@@ -38,7 +41,7 @@ export const captureRouter = router({
       captureConsentsOf(ownerOf(ctx)),
       captureUsageOf(ownerOf(ctx), ctx.user!.plan),
     ]);
-    return { enabled: settings.capture_enabled === "true", consent, consentTextVersion: CAPTURE_CONSENT_TEXT_VERSION, usage };
+    return { enabled: captureOpenFor(settings, ownerOf(ctx)), consent, consentTextVersion: CAPTURE_CONSENT_TEXT_VERSION, usage };
   }),
 
   /** The device token for this installation, shown once; registering the same installation again replaces it. */
@@ -54,14 +57,28 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const owner = ownerOf(ctx);
-      if ((await getSystemSettings()).capture_enabled !== "true") {
+      const settings = await getSystemSettings();
+      if (!captureOpenFor(settings, owner, input.platform)) {
         throw new TRPCError({ code: "PRECONDITION_FAILED", message: "تسجيل رسايل البنك مش متاح دلوقتي" });
       }
       await deviceRegistrations.hit(`capture:register:${owner.userType}:${owner.userId}`);
-      return registerCaptureDevice(owner, input);
+      return registerCaptureDevice(owner, input, planNumber(settings, ctx.user!.plan, "capture_devices"));
     }),
 
   devices: authedProcedure.query(async ({ ctx }) => listCaptureDevices(ownerOf(ctx))),
+
+  /** The cards and phrases the user asked capture to ignore. */
+  ignored: authedProcedure.query(async ({ ctx }) => listCaptureMarkers(ownerOf(ctx))),
+
+  /** Ignores a card or account by its last digits, or a phrase: matching messages are dropped from now on. */
+  ignore: authedProcedure
+    .input(z.object({ kind: z.enum(CAPTURE_IGNORE_KINDS), value: z.string().trim().min(1).max(120) }))
+    .mutation(async ({ ctx, input }) => addCaptureMarker(ownerOf(ctx), input.kind, input.value)),
+
+  unignore: authedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    await removeCaptureMarker(ownerOf(ctx), input.id);
+    return { success: true };
+  }),
 
   revokeDevice: authedProcedure.input(z.object({ deviceId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
     if (!(await revokeCaptureDevice(ownerOf(ctx), input.deviceId))) {

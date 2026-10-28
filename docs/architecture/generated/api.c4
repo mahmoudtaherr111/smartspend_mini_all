@@ -1092,7 +1092,7 @@ model {
       }
     }
     capture = router 'capture' {
-      description 'api/capture-router.ts — 10 procedures.'
+      description 'api/capture-router.ts — 13 procedures.'
       metadata {
         file 'api/capture-router.ts'
       }
@@ -1117,6 +1117,26 @@ model {
         }
       }
       devices = procedure 'capture.devices' {
+        #query #authed #uncalled
+        technology 'authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
+      }
+      ignore = procedure 'capture.ignore' {
+        #mutation #authed #uncalled
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      ignored = procedure 'capture.ignored' {
         #query #authed #uncalled
         technology 'authedProcedure'
         description 'query · authedProcedure · no caller in src/'
@@ -1194,6 +1214,16 @@ model {
           file 'api/capture-router.ts'
           builder 'authedProcedure'
           procedureKind 'query'
+        }
+      }
+      unignore = procedure 'capture.unignore' {
+        #mutation #authed #uncalled
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
         }
       }
     }

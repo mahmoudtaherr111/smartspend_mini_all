@@ -30,6 +30,7 @@ import { redactWithFindings } from "../anonymizer";
 import { createLogger } from "../log";
 import { getCaptureCatalog, sourceForPackage, sourceForSender, subscriptionForMerchant, type CaptureCatalog, type CaptureSource } from "./catalog";
 import { captureConsentsOf } from "./consent";
+import { captureIgnoreRulesOf, isIgnored, type CaptureIgnoreRules } from "./markers";
 import type { CaptureDevice, CaptureOwner } from "./devices";
 import { matchSignal, MATCH_WINDOWS, type EventKeys, type SignalKeys } from "./events";
 import {
@@ -66,7 +67,7 @@ export function isPersonalSender(sender: string | null | undefined): boolean {
 
 export type GateOutcome =
   | { accept: true; source: CaptureSource | null; reading: Reading }
-  | { accept: false; result: "ignored" | "rejected"; reason: string };
+  | { accept: false; result: "ignored" | "rejected"; reason: string; source?: CaptureSource | null; reading?: Reading };
 
 /**
  * Whether a signal is kept for the user's answer. The phone only drops what is clearly not a bank's (codes, personal
@@ -94,7 +95,8 @@ export function gateSignal(signal: CaptureSignal, catalog: CaptureCatalog, recei
     receivedAt,
   });
   if (reading.status === "not_transaction") {
-    return { accept: false, result: "ignored", reason: reading.reasons[0] ?? reading.kind };
+    // The reading goes back with it: a balance alone still moves the card's wallet (decision 0033).
+    return { accept: false, result: "ignored", reason: reading.reasons[0] ?? reading.kind, source, reading };
   }
   // A message the reader could not read an amount from is kept only when a bank of the catalog sent it and the reader
   // says it is unsure (not "not a transaction"): the model may read it (decision 0031).
@@ -597,6 +599,7 @@ export interface IntakeRun {
   period: string;
   day: string;
   wallets: Array<{ id: number; lastFourDigits: string | null }>;
+  ignore: CaptureIgnoreRules;
   lang: "ar" | "en";
   recordedAny: boolean;
   spentAny: boolean;
@@ -619,6 +622,7 @@ export async function startIntakeRun(device: CaptureDevice, lang: "ar" | "en", n
     period: capturePeriod(now),
     day: businessDateKey(now),
     wallets,
+    ignore: await captureIgnoreRulesOf(device),
     lang,
     recordedAny: false,
     spentAny: false,
@@ -830,6 +834,29 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
 }
 
 /**
+ * A message that only gives a balance moves the balance of the one wallet whose last digits it names, when the message
+ * is newer than what the wallet holds (decision 0033). Nothing of the message is kept.
+ */
+async function noteWalletBalance(run: IntakeRun, reading: SignalReading): Promise<void> {
+  const suffix = reading.cardSuffix ?? reading.accountSuffix;
+  if (!suffix || !reading.balanceAfter || reading.balanceAfter.currency !== "EGP") return;
+  const matches = run.wallets.filter((wallet) => wallet.lastFourDigits && wallet.lastFourDigits.slice(-3) === suffix.slice(-3));
+  if (matches.length !== 1) return;
+  const observedAt = new Date(reading.occurredAt);
+  await getDb()
+    .update(userWallets)
+    .set({ balance: String(reading.balanceAfter.value), balanceObservedAt: observedAt, balanceSource: "bank_message" })
+    .where(
+      and(
+        eq(userWallets.id, matches[0].id),
+        eq(userWallets.userId, run.device.userId),
+        eq(userWallets.userType, run.device.userType),
+        or(isNull(userWallets.balanceObservedAt), lt(userWallets.balanceObservedAt, observedAt)),
+      ),
+    );
+}
+
+/**
  * Keeps a signal the reader was unsure of for the admin's model (decision 0031): the row with its redacted text and
  * the reader's fields, and a job the model worker (`api/lib/capture/ai-queue.ts`) claims. Nothing counts against the
  * month until the model says it is a payment.
@@ -877,8 +904,16 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
       if (age < -MAX_AHEAD_MS) return { id: signal.id, result: "rejected", reason: "in_future" };
 
       const gate = gateSignal(signal, run.catalog, receivedAt);
-      if (!gate.accept) return { id: signal.id, result: gate.result, reason: gate.reason };
+      if (!gate.accept) {
+        if (gate.reading?.kind === "balance_only" && gate.source) {
+          const balance = keepReading(gate.reading, gate.source);
+          if (!isIgnored(run.ignore, balance, signal.text)) await noteWalletBalance(run, balance);
+        }
+        return { id: signal.id, result: gate.result, reason: gate.reason };
+      }
       const reading = keepReading(gate.reading, gate.source);
+      // A card or phrase the user asked to ignore (a family member's card): nothing of it is kept.
+      if (isIgnored(run.ignore, reading, signal.text)) return { id: signal.id, result: "ignored", reason: "user_ignored" };
       const toModel = modelReads && reading.confidence === "unsure";
       // Without the model, a message with no amount the reader could read gives the user nothing to answer.
       if (!reading.amount && !toModel) return { id: signal.id, result: "ignored", reason: "no_amount" };

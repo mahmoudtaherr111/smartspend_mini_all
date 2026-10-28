@@ -12,9 +12,10 @@ internal class CaptureReply(val code: Int, val body: JSONObject?) {
 
 /**
  * Calls the capture routes with the device token (`contracts/capture-intake.ts`). Always JSON, because the server's
- * CSRF check refuses a POST without it. A network failure throws [IOException] and the caller retries later.
+ * CSRF check refuses a POST without it, and with this build's version, so the server can refuse a build too old (426).
+ * A network failure throws [IOException] and the caller retries later.
  */
-internal class CaptureApi(private val baseUrl: String, private val token: String) {
+internal class CaptureApi(private val baseUrl: String, private val token: String, private val clientVersion: String? = null) {
     fun config(): CaptureReply = call("GET", "/api/capture/v1/config", null)
 
     fun signals(body: JSONObject): CaptureReply = call("POST", "/api/capture/v1/signals", body)
@@ -32,6 +33,7 @@ internal class CaptureApi(private val baseUrl: String, private val token: String
             connection.useCaches = false
             connection.setRequestProperty("Accept", "application/json")
             connection.setRequestProperty("X-Capture-Device", token)
+            if (clientVersion != null) connection.setRequestProperty("X-Client-Version", clientVersion)
             if (body != null) {
                 connection.doOutput = true
                 connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")

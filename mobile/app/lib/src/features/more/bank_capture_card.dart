@@ -179,6 +179,11 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
           const _AiReadingSwitch(),
           if (status.lastError == 'offline')
             Text(l10n.captureOffline, style: muted),
+          if (status.lastError == 'update_required')
+            Text(
+              l10n.captureUpdateRequired,
+              style: textTheme.bodyMedium?.copyWith(color: colors.warning),
+            ),
           if (!status.notificationsAllowed)
             Text(l10n.captureNotificationsOff, style: muted),
           const SizedBox(height: SmartSpendSpacing.sm),

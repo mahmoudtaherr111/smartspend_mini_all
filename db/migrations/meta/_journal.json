@@ -267,6 +267,13 @@
       "when": 1793190367179,
       "tag": "0037_capture_events_source",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1793210211680,
+      "tag": "0038_capture_markers",
+      "breakpoints": true
     }
   ]
 }

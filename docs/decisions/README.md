@@ -39,3 +39,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0030](0030-capture-memory-and-recording-alone.md) | Captured payments are recorded on their own only for pairs the admin opens or the user agrees to, filed from the user's own memory |
 | [0031](0031-capture-model-queue.md) | The model reads captured messages the reader is unsure of, from a queue, with the user's consent, and only asks |
 | [0032](0032-capture-breaker-and-bulk-undo.md) | A bank whose recordings are taken back stops recording on its own, and the admin can undo a bank's recordings in bulk |
+| [0033](0033-capture-access-and-ignore-lists.md) | Capture opens per platform and beta list, refuses old builds, caps phones and daily signals, and honours what the user ignores |
