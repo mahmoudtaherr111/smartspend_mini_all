@@ -21,7 +21,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 1 | **1** | 1 | 3 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-28 3f613544 | 2026-10-28 3f613544 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-28 3f613544 | 2026-10-28 3f613544 | 5 | — | — | — | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-28 a4556cfa | 2026-10-28 a4556cfa | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 7 | **1** | — | 2 | 2 |
 
 

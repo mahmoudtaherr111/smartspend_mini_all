@@ -565,16 +565,18 @@ export async function deleteCacheByPattern(pattern: string): Promise<number> {
 
   try {
     let redisDeleted = 0;
-    for await (const key of client.scanIterator({
+    // node-redis 5+ yields one SCAN page at a time, and a page may hold no match at all: `DEL` with no key is an
+    // error, so an empty page would end the whole invalidation.
+    for await (const keys of client.scanIterator({
       MATCH: pattern,
       COUNT: 100,
     })) {
-      await client.del(key);
-      redisDeleted++;
+      if (keys.length === 0) continue;
+      redisDeleted += await client.del(keys);
     }
     return memoryDeleted + redisDeleted;
   } catch (err) {
-    console.warn(`Redis delete pattern error for ${pattern}:`, err);
+    log.warn({ event: "redis.delete_pattern_failed", pattern, err }, "A pattern delete did not finish in Redis");
     return memoryDeleted;
   }
 }

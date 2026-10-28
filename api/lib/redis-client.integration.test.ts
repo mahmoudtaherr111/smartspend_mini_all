@@ -84,6 +84,26 @@ describeRedisIntegration("redis-client real Redis integration", () => {
     }
   });
 
+  it("deletes every match even when SCAN pages hold none of them", async () => {
+    const module = await loadRedisClientForIntegration();
+    const client = await module.getRedisClient();
+    if (!client) throw new Error(`Redis integration requires a running Redis server at REDIS_URL=${redisUrl}.`);
+    const run = `smartspend:test:scan:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    // Many other keys and few matches: most SCAN pages of 100 come back with no match, as on a busy server.
+    const others = Array.from({ length: 2000 }, (_, i) => `${run}:other:${i}`);
+    const matches = Array.from({ length: 3 }, (_, i) => `${run}:match:${i}`);
+    try {
+      await client.mSet([...others, ...matches].map((key) => [key, "1"] as [string, string]));
+      expect(await module.deleteCacheByPattern(`${run}:match:*`)).toBe(3);
+      expect(await client.exists(matches)).toBe(0);
+      expect(await client.exists(others)).toBe(others.length);
+    } finally {
+      for (let i = 0; i < others.length; i += 500) await client.del(others.slice(i, i + 500)).catch(() => undefined);
+      await client.del(matches).catch(() => undefined);
+      if ("destroy" in client && typeof client.destroy === "function") client.destroy();
+    }
+  });
+
   it("shares a one-time value between two processes and hands it out once", async () => {
     const closeClient = async (module: RedisClientModule) => {
       const client = await module.getRedisClient();

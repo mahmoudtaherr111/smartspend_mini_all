@@ -456,7 +456,7 @@
         "api/lib/error-logger.ts": "9cb0f25fe459",
         "api/lib/error-reporting.ts": "9891f7185094",
         "api/lib/log.ts": "65a6302d6f7d",
-        "api/lib/redis-client.ts": "8b7cc1f8f3b4",
+        "api/lib/redis-client.ts": "b71ec9e1729f",
         "api/lib/settings-cache.ts": "ee7c564513f7",
         "api/lib/shared-generation.ts": "2d53bf30e567",
         "api/lib/system-settings-registry.ts": "14226e88b25f",
@@ -490,9 +490,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "9d601fa32ada"
       },
-      "checked": "2026-10-28 3f613544",
-      "arabic": "b012302d67f8",
-      "arabicChecked": "2026-10-28 3f613544"
+      "checked": "2026-10-28 a4556cfa",
+      "arabic": "9341f8df2e1f",
+      "arabicChecked": "2026-10-28 a4556cfa"
     },
     "voice-calls": {
       "files": {

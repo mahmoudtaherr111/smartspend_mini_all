@@ -86,6 +86,8 @@ storage, the contracts shared with the web app, and the retention job that prune
 - A generation bump (`cacheIncr`) that a configured Redis misses, because it was down or refused the command, is
   kept and replayed as soon as Redis answers again, so the entries cached before a write made during an outage are
   not served once Redis is back.
+- `deleteCacheByPattern` deletes every key matching a pattern, one SCAN page at a time; a page with no match is
+  skipped (before, an empty page made the whole delete fail on a busy server, and the cached entries stayed).
 - Shared state is not cache: `stateSet`, `stateGet`, `stateTake` (read and delete in one step) and `stateDel` keep
   what every replica must see and nobody can recompute — the phone-change codes of [accounts](accounts.md). Redis holds it; without Redis it stays in the process's
   memory even in production, because one process without Redis is a supported deployment.
