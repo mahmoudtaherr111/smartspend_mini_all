@@ -336,6 +336,14 @@ function PlanAdvancedLimits({
           unit="هدف"
         />
         <NumInput
+          label="عمليات من رسايل البنك في الشهر"
+          hint="العمليات الجديدة اللي بتتسجل من رسايل البنك في شهر القاهرة. اللي فوق الحد بتتحفظ شهرين وتتسجل لو اشترك. 0 = بدون حد"
+          settingKey={planNumberKey("capture_monthly_limit", plan as PlanId)}
+          formData={formData}
+          updateField={updateField}
+          unit="عملية"
+        />
+        <NumInput
           label="طلبات AI في الدقيقة"
           hint="حماية من الإساءة: أقصى عدد طلبات ذكاء اصطناعي في الدقيقة لكل قناة"
           settingKey={planNumberKey("burst_limit_per_minute", plan as PlanId)}

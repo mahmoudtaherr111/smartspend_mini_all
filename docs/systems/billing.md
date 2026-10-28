@@ -16,7 +16,10 @@ job that ends subscriptions, referral codes, and the Ultra members page.
   plan (`feature_<feature>_<plan>`), and the numbers that had no setting — active goals, the per-minute AI burst
   guard, chat, receipt and goal token caps, the offline queue — are `<name>_<plan>` settings. Both are declared once,
   with their defaults, in `contracts/plan-features.ts`; the defaults are the values that used to be hard-coded
-  (these features for Pro and Ultra, the WhatsApp report for Pro, three active goals on Free).
+  (these features for Pro and Ultra, the WhatsApp report for Pro, three active goals on Free). The monthly number of
+  payments recorded from bank messages (`capture_monthly_limit_<plan>`, 50 on Free, none on Pro and Ultra) is one of
+  them; while bank-message capture is open the plans screen lists it, and for no limit says that what was missed in
+  the last two months is recorded on subscribing ([bank and wallet messages](bank-messages.md)).
 - The server gates those features with one builder per feature from `api/middleware.ts` (`businessProcedure`,
   `businessAiProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`), which read the switch
   for the caller's plan; an admin always passes. `proProcedure` and `ultraProcedure` remain for plan checks without a

@@ -34,6 +34,7 @@ model {
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_devices
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_events
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_signals
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_usage
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.cashflow_settlements
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.chat_messages
@@ -331,6 +332,7 @@ model {
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_devices
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_events
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_signals
+  smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_usage
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.user_wallets
@@ -339,6 +341,7 @@ model {
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_devices
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_events
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_signals
+  smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_usage
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.user_wallets
   smartspend.api.modules.capture-reader -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.capture-reader -[imports]-> smartspend.api.modules.platform

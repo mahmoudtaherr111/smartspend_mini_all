@@ -33,7 +33,7 @@
         "api/profile-router.ts#rest-of-file": "b1dc9ec23cb2",
         "api/services/phone-challenge.ts": "9c5aa7cfebc9",
         "api/services/turnstile-service.ts": "89a28fc96d49",
-        "api/services/user-purge-service.ts": "0eff5bea034a",
+        "api/services/user-purge-service.ts": "afed922a535c",
         "api/session-router.ts": "c29d8dcf4653",
         "api/webauthn-router.ts": "8a7c2294a8d1",
         "src/components/auth/BiometricLockOverlay.tsx": "b9b9b5184b56",
@@ -54,9 +54,9 @@
         "src/pages/Login.tsx": "59d76ce265d9",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-28 32400fa3",
-      "arabic": "92fdd9178dda",
-      "arabicChecked": "2026-10-28 32400fa3"
+      "checked": "2026-10-28 78592bbe",
+      "arabic": "bb5a92b52048",
+      "arabicChecked": "2026-10-28 78592bbe"
     },
     "admin": {
       "files": {
@@ -86,16 +86,16 @@
         "src/components/admin/capture/AdminCaptureTab.tsx": "1e3eac6f195c",
         "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
-        "src/components/admin/settings/AdminPlansTab.tsx": "97ca70bc4420",
+        "src/components/admin/settings/AdminPlansTab.tsx": "7511155c2009",
         "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
         "src/components/admin/settings/AdminSmsAiSection.tsx": "ec8a865da902",
         "src/components/admin/settings/AdminVoiceCallSection.tsx": "ae339f527cf2",
         "src/pages/Admin.tsx": "194ff4a9efa3",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-10-27 12b1cd80",
-      "arabic": "63eda4373d8f",
-      "arabicChecked": "2026-10-27 12b1cd80"
+      "checked": "2026-10-28 78592bbe",
+      "arabic": "67e50f625516",
+      "arabicChecked": "2026-10-28 78592bbe"
     },
     "ai-center": {
       "files": {
@@ -186,14 +186,14 @@
       "files": {
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
         "api/capture-admin-router.ts": "95a0417753d7",
-        "api/capture-router.ts": "1b2f6ab5bd8b",
+        "api/capture-router.ts": "1916210a3def",
         "api/capture-v1-routes.ts": "921fd7476bf9",
         "api/lib/capture/ai-reader.ts": "b506b338b9f2",
         "api/lib/capture/catalog.ts": "dd7c3d61d374",
         "api/lib/capture/consent.ts": "ce37c795e162",
         "api/lib/capture/devices.ts": "c5ecf217a83e",
         "api/lib/capture/events.ts": "edb833c76977",
-        "api/lib/capture/intake.ts": "adcb51a4dd04",
+        "api/lib/capture/intake.ts": "186ee73d6035",
         "api/lib/capture/reader/clauses.ts": "5b86ed12ca60",
         "api/lib/capture/reader/counterparty.ts": "4560b5469773",
         "api/lib/capture/reader/explain.ts": "3455f6c511dd",
@@ -210,9 +210,9 @@
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
         "api/lib/sms-ai-contract.ts": "a05d2f4ea034"
       },
-      "checked": "2026-10-28 32400fa3",
-      "arabic": "4383842df88d",
-      "arabicChecked": "2026-10-28 32400fa3"
+      "checked": "2026-10-28 78592bbe",
+      "arabic": "9e73fd3fb306",
+      "arabicChecked": "2026-10-28 78592bbe"
     },
     "billing": {
       "files": {
@@ -220,16 +220,16 @@
         "api/boot.ts#job:daily-subscription-expiry": "3559570d054c",
         "api/jobs/subscription-expiry-job.ts": "71595ca0d9af",
         "api/lib/paymob.ts": "a2b9e36693ee",
-        "api/lib/plan-catalog.ts": "dcf62257f309",
+        "api/lib/plan-catalog.ts": "63caf39384d3",
         "api/lib/subscription-service.ts": "f3666e029e61",
         "api/pro-router.ts": "ae4da5c10100",
         "api/referral-router.ts": "b298497fadda",
         "src/pages/Pro.tsx": "5beaa63617ea",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "checked": "2026-10-27 12b1cd80",
-      "arabic": "e197d4dd2067",
-      "arabicChecked": "2026-10-27 12b1cd80"
+      "checked": "2026-10-28 78592bbe",
+      "arabic": "e6726d29d224",
+      "arabicChecked": "2026-10-28 78592bbe"
     },
     "expense-capture": {
       "files": {
@@ -447,7 +447,7 @@
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
         "api/boot.ts#rest-of-file": "47891c386561",
         "api/context.ts": "d2add89863df",
-        "api/jobs/data-retention-job.ts": "ca3162c08430",
+        "api/jobs/data-retention-job.ts": "65a7e946cfb6",
         "api/lib/app-time.ts": "f53d4623a239",
         "api/lib/cache-keys.ts": "89dc693d0c12",
         "api/lib/env.ts": "c1943bec00ee",
@@ -470,27 +470,27 @@
         "api/services/storage/types.ts": "766de83090e8",
         "contracts/account-deletion.ts": "6fcd736f6cae",
         "contracts/ai-models.ts": "7eeda8042bd8",
-        "contracts/capture-intake.ts": "39b035136af3",
+        "contracts/capture-intake.ts": "bc507a9b219f",
         "contracts/capture.ts": "9fd5ef8a1382",
         "contracts/categories.ts": "aca28dd35f9b",
         "contracts/constants.ts": "f047c234a332",
         "contracts/errors.ts": "823cdb78cfc4",
         "contracts/expense-save.ts": "6e04603f9cbc",
         "contracts/notification-types.ts": "796e38e868ce",
-        "contracts/plan-features.ts": "43c7d10a5b9c",
+        "contracts/plan-features.ts": "d3519195809f",
         "contracts/plans.ts": "371c028a6907",
         "contracts/profile-fields.ts": "5bf4f78b90e6",
         "contracts/types.ts": "191164b8f041",
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
-        "db/relations.ts": "e60069df47bc",
-        "db/schema.ts": "599962a061e4",
+        "db/relations.ts": "f71a42a173a5",
+        "db/schema.ts": "74dcc2b3bf8c",
         "db/seed.ts": "811d2a0df636",
-        "db/table-classes.ts": "dcc6257143bc"
+        "db/table-classes.ts": "61ef482f39ba"
       },
-      "checked": "2026-10-28 32400fa3",
-      "arabic": "0d3f119a1699",
-      "arabicChecked": "2026-10-28 32400fa3"
+      "checked": "2026-10-28 78592bbe",
+      "arabic": "b012302d67f8",
+      "arabicChecked": "2026-10-28 78592bbe"
     },
     "voice-calls": {
       "files": {

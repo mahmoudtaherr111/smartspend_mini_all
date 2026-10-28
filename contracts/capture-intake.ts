@@ -53,11 +53,12 @@ export type CaptureSignalsRequest = z.infer<typeof captureSignalsRequestSchema>;
  * treated the same way.
  * - review: a transaction waiting for the user to confirm it (the notice asks).
  * - merged: another signal of the same payment is already waiting for the user's answer (decision 0029).
+ * - held: over the plan's monthly limit: kept two months without a question, recorded if the user upgrades.
  * - recorded / dismissed: the payment was already answered (a retry, or a late signal of an answered payment).
  * - ignored: not a transaction (a code, an offer, a balance, a personal message): nothing is stored.
  * - rejected: the signal is not acceptable (too old, an app the catalog does not list).
  */
-export const CAPTURE_RESULTS = ["review", "merged", "recorded", "dismissed", "ignored", "rejected"] as const;
+export const CAPTURE_RESULTS = ["review", "merged", "held", "recorded", "dismissed", "ignored", "rejected"] as const;
 export type CaptureResult = (typeof CAPTURE_RESULTS)[number];
 
 /** What the user can answer from the notification without opening the app. */

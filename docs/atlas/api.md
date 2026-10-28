@@ -211,7 +211,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `capture.revokeDevice` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/devices.ts` | — |
 | `capture.setConsent` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/consent.ts`, `contracts/capture-intake.ts` | — |
 | `capture.sources` | query | `authedProcedure` | no | — | — | `api/lib/capture/catalog.ts` | — |
-| `capture.status` | query | `authedProcedure` | no | — | — | `api/lib/capture/consent.ts`, `api/lib/settings-cache.ts` | — |
+| `capture.status` | query | `authedProcedure` | no | — | — | `api/lib/capture/consent.ts`, `api/lib/capture/intake.ts`, `api/lib/settings-cache.ts` | — |
 
 ### `captureAdmin` — `api/capture-admin-router.ts`
 

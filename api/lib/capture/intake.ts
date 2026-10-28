@@ -9,9 +9,10 @@
  * 30 days (`api/jobs/data-retention-job.ts`).
  */
 import { createHmac } from "node:crypto";
-import { and, desc, eq, gte, isNull, lt, lte, or } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { captureEvents, captureSignals, expenses, localUsers, userWallets, users } from "../../../db/schema";
+import { captureEvents, captureSignals, captureUsage, expenses, localUsers, userWallets, users } from "../../../db/schema";
+import { planNumber } from "../../../contracts/plan-features";
 import { CATEGORIES } from "../../../contracts/categories";
 import {
   CAPTURE_SIGNAL_MAX_AGE_DAYS,
@@ -23,7 +24,9 @@ import {
   type CaptureSignalsRequest,
 } from "../../../contracts/capture-intake";
 import { getDb } from "../../queries/connection";
-import { afterLedgerWrite, bumpStreakInTx, insertLedgerEntriesInTx } from "../../services/ledger-writer";
+import { afterLedgerWrite, bumpStreakInTx, insertLedgerEntriesInTx, type LedgerTx } from "../../services/ledger-writer";
+import { businessDateKey } from "../app-time";
+import { getSystemSettings } from "../settings-cache";
 import { redactWithFindings } from "../anonymizer";
 import { env } from "../env";
 import { createLogger } from "../log";
@@ -297,6 +300,107 @@ export function buildNotice(
   return { title, body: `${again}${what} — ${ask}`, actions };
 }
 
+// ─── The monthly limit (decision 0028) ───
+
+/** Held payments one user may have at a time; past it a new one is not kept. */
+export const HELD_MAX = 200;
+const HELD_DAYS = 60;
+
+/** The Cairo month a payment taken in now counts in ("2026-10"). */
+export function capturePeriod(at: Date): string {
+  return businessDateKey(at).slice(0, 7);
+}
+
+const affected = (result: unknown) => Number((result as { affectedRows?: number } | undefined)?.affectedRows ?? 0);
+
+function usageOf(owner: CaptureOwner, period: string) {
+  return and(eq(captureUsage.userId, owner.userId), eq(captureUsage.userType, owner.userType), eq(captureUsage.period, period));
+}
+
+/**
+ * Counts one new payment against the month's limit (0 = none), under the caller's lock. Returns how many the month
+ * holds now, or null when the limit is reached.
+ */
+async function reserveQuota(tx: LedgerTx, owner: CaptureOwner, period: string, limit: number): Promise<number | null> {
+  await tx.insert(captureUsage).ignore().values({ userId: owner.userId, userType: owner.userType, period });
+  const [result] = await tx
+    .update(captureUsage)
+    .set({ reserved: sql`${captureUsage.reserved} + 1` })
+    .where(and(usageOf(owner, period), limit > 0 ? lt(captureUsage.reserved, limit) : undefined));
+  if (affected(result) !== 1) return null;
+  const [row] = await tx.select({ reserved: captureUsage.reserved }).from(captureUsage).where(usageOf(owner, period));
+  return row?.reserved ?? 0;
+}
+
+/** Notes a payment held over the limit. True the first time this month, when the user is told. */
+async function noteHeld(tx: LedgerTx, owner: CaptureOwner, period: string): Promise<boolean> {
+  await tx.update(captureUsage).set({ held: sql`${captureUsage.held} + 1` }).where(usageOf(owner, period));
+  const [result] = await tx.update(captureUsage).set({ limitNoticed: true }).where(and(usageOf(owner, period), eq(captureUsage.limitNoticed, false)));
+  return affected(result) === 1;
+}
+
+/** Gives back what a dismissed payment counted. */
+async function releaseQuota(tx: LedgerTx, owner: CaptureOwner, period: string): Promise<void> {
+  await tx.update(captureUsage).set({ reserved: sql`GREATEST(${captureUsage.reserved} - 1, 0)` }).where(usageOf(owner, period));
+}
+
+/** The user's plan limit for new payments a month (0 = none). */
+export async function captureLimitOf(plan: string | null | undefined): Promise<number> {
+  return planNumber(await getSystemSettings(), plan, "capture_monthly_limit");
+}
+
+/**
+ * When the user's plan has no limit, the payments held over the old one in the last two months come back as payments
+ * waiting for an answer (the owner's decision: an upgrade records what was missed). Returns how many.
+ */
+export async function releaseHeldEvents(owner: CaptureOwner, now = new Date()): Promise<number> {
+  const [result] = await getDb()
+    .update(captureEvents)
+    .set({ status: "review" })
+    .where(
+      and(
+        eq(captureEvents.userId, owner.userId),
+        eq(captureEvents.userType, owner.userType),
+        eq(captureEvents.status, "held"),
+        gte(captureEvents.createdAt, new Date(now.getTime() - HELD_DAYS * 24 * 3600 * 1000)),
+      ),
+    );
+  return affected(result);
+}
+
+/** This month's use against the limit, and the payments held, for the app. */
+export async function captureUsageOf(owner: CaptureOwner, plan: string | null | undefined, now = new Date()) {
+  const period = capturePeriod(now);
+  const limit = await captureLimitOf(plan);
+  if (limit === 0) await releaseHeldEvents(owner, now);
+  const [row] = await getDb().select({ reserved: captureUsage.reserved }).from(captureUsage).where(usageOf(owner, period));
+  const [{ held }] = await getDb()
+    .select({ held: count() })
+    .from(captureEvents)
+    .where(and(eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType), eq(captureEvents.status, "held")));
+  return { period, limit, used: row?.reserved ?? 0, held };
+}
+
+/** The notice of the first payment held in a month. */
+export function limitNotice(limit: number, lang: "ar" | "en"): CaptureNotice {
+  return lang === "en"
+    ? {
+        title: "Free limit reached",
+        body: `You reached this month's ${limit} free transactions. We keep saving your bank payments without recording them; subscribe to Pro and they are all recorded.`,
+        actions: [],
+      }
+    : {
+        title: "وصلت لحد الشهر",
+        body: `وصلت لحد الـ ${limit} عملية المجانية الشهر ده. هنفضل نحفظ عمليات البنك من غير ما نسجّلها، ولو اشتركت في Pro بتتسجل كلها.`,
+        actions: [],
+      };
+}
+
+/** A line added to a notice when the month's use reaches 80% of the limit. */
+function nearLimitLine(left: number, lang: "ar" | "en"): string {
+  return lang === "en" ? ` ${left} free transactions left this month.` : ` فاضل لك ${left} عملية مجانية الشهر ده.`;
+}
+
 // ─── Taking signals in ───
 
 const MAX_AGE_MS = CAPTURE_SIGNAL_MAX_AGE_DAYS * 24 * 3600 * 1000;
@@ -363,6 +467,11 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
     .select({ id: userWallets.id, lastFourDigits: userWallets.lastFourDigits })
     .from(userWallets)
     .where(and(eq(userWallets.userId, device.userId), eq(userWallets.userType, device.userType)));
+  const [user] = await getDb().select({ plan: account.plan }).from(account).where(eq(account.id, device.userId));
+  const limit = await captureLimitOf(user?.plan);
+  // An upgrade (or an admin lifting the limit) releases what was held; this is the first request after it.
+  if (limit === 0) await releaseHeldEvents(device, now);
+  const period = capturePeriod(now);
 
   for (const signal of request.signals) {
     const result = await (async (): Promise<CaptureSignalResult> => {
@@ -443,6 +552,20 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
           }));
 
         const match = matchSignal(keys, candidates, sameText);
+
+        // A new payment counts against the month's limit; over it, it is held (no question, no ledger). A reading the
+        // reader is unsure of counts only when the user records it.
+        let reservedNow: number | null = null;
+        let held = false;
+        if (match.type !== "merge" && reading.confidence !== "unsure") {
+          reservedNow = await reserveQuota(tx, device, period, limit);
+          if (reservedNow === null) {
+            const [{ heldCount }] = await tx.select({ heldCount: count() }).from(captureEvents).where(and(mineEvents, eq(captureEvents.status, "held")));
+            if (heldCount >= HELD_MAX) return { id: signal.id, result: "ignored" as const, reason: "held_full" };
+            held = true;
+          }
+        }
+
         const [inserted] = await tx.insert(captureSignals).values({
           userId: device.userId,
           userType: device.userType,
@@ -491,7 +614,7 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
         const [created] = await tx.insert(captureEvents).values({
           userId: device.userId,
           userType: device.userType,
-          status: "review",
+          status: held ? "held" : "review",
           kind: reading.kind,
           direction: reading.direction,
           amount: String(keys.amount),
@@ -505,6 +628,8 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
           referenceHmac: keys.referenceHmac,
           balanceAfter: keys.balanceAfter === null ? null : String(keys.balanceAfter),
           ownAccount: keys.ownAccount,
+          reading,
+          quotaPeriod: reservedNow === null ? null : period,
           channels: [channelKey],
           primarySignalId: signalId,
           possibleDuplicateOf: match.type === "possible_duplicate" ? match.eventId : null,
@@ -513,9 +638,16 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
         });
         const eventId = Number((created as { insertId?: number }).insertId);
         await tx.update(captureSignals).set({ eventId }).where(eq(captureSignals.id, signalId));
+        if (held) {
+          const first = await noteHeld(tx, device, period);
+          return first
+            ? { id: signal.id, result: "held" as const, eventId, notice: limitNotice(limit, request.lang) }
+            : { id: signal.id, result: "held" as const, eventId };
+        }
         const notice = buildNotice(reading, suggestLedgerEntry(reading, catalog), request.lang, {
           possibleDuplicate: match.type === "possible_duplicate",
         });
+        if (limit > 0 && reservedNow === Math.ceil(limit * 0.8)) notice.body += nearLimitLine(limit - reservedNow, request.lang);
         return { id: signal.id, result: "review" as const, eventId, notice };
       });
     })();
@@ -563,12 +695,13 @@ export async function pendingEvents(owner: CaptureOwner, limit = 50): Promise<Pe
   const rows = await getDb()
     .select({ event: captureEvents, reading: captureSignals.reading })
     .from(captureEvents)
-    .innerJoin(captureSignals, eq(captureSignals.id, captureEvents.primarySignalId))
+    .leftJoin(captureSignals, eq(captureSignals.id, captureEvents.primarySignalId))
     .where(and(eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType), eq(captureEvents.status, "review")))
     .orderBy(desc(captureEvents.createdAt))
     .limit(limit);
-  return rows.map(({ event, reading }) => {
-    const kept = reading as SignalReading;
+  return rows.flatMap(({ event, reading }) => {
+    const kept = (event.reading ?? reading) as SignalReading | null;
+    if (!kept) return [];
     const suggestion = eventSuggestion(event, kept, catalog);
     return {
       eventId: event.id,
@@ -613,14 +746,16 @@ export async function answerEvent(
       return;
     }
     if (answer.action === "dismiss") {
-      await tx.update(captureEvents).set({ status: "dismissed", resolvedAt: new Date() }).where(own);
+      await tx.update(captureEvents).set({ status: "dismissed", reading: null, resolvedAt: new Date() }).where(own);
+      // Not a payment of the user's: it does not count against the month.
+      if (event.quotaPeriod) await releaseQuota(tx, owner, event.quotaPeriod);
       outcome = { result: "dismissed" };
       return;
     }
 
     const [primary] = await tx.select({ reading: captureSignals.reading }).from(captureSignals).where(eq(captureSignals.id, event.primarySignalId));
-    if (!primary) throw new TRPCError({ code: "NOT_FOUND", message: "العملية دي مش موجودة" });
-    const reading = primary.reading as SignalReading;
+    const reading = (event.reading ?? primary?.reading ?? null) as SignalReading | null;
+    if (!reading) throw new TRPCError({ code: "NOT_FOUND", message: "العملية دي مش موجودة" });
     const suggestion = eventSuggestion(event, reading, catalog);
     const amount = answer.amountEgp ?? suggestion.amountEgp;
     if (amount === null || !(amount > 0)) {
@@ -687,7 +822,7 @@ export async function answerEvent(
     await bumpStreakInTx(tx, owner);
     await tx
       .update(captureEvents)
-      .set({ status: "recorded", expenseId, linkedEventId: refundOf?.eventId ?? null, resolvedAt: new Date() })
+      .set({ status: "recorded", expenseId, linkedEventId: refundOf?.eventId ?? null, reading: null, resolvedAt: new Date() })
       .where(own);
 
     // The wallet's balance follows the bank's message when the message is newer than what the wallet holds.

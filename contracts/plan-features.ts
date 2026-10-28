@@ -38,6 +38,8 @@ export const PLAN_NUMBER_DEFAULTS = {
   image_max_tokens: { free: 0, pro: 1500, ultra: 2500 },
   goal_max_tokens: { free: 300, pro: 1800, ultra: 3500 },
   offline_limit: { free: 3, pro: 30, ultra: 30 },
+  // New payments recorded from bank messages in a Cairo month (decision 0028); over it they are held until an upgrade.
+  capture_monthly_limit: { free: 50, pro: 0, ultra: 0 },
 } as const satisfies Record<string, Record<PlanId, number>>;
 
 export type PlanNumber = keyof typeof PLAN_NUMBER_DEFAULTS;

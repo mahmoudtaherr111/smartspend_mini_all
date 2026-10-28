@@ -33,6 +33,7 @@ flowchart LR
     tbl_capture_events[("capture_events")]
     tbl_capture_signals[("capture_signals")]
     tbl_capture_sources[("capture_sources")]
+    tbl_capture_usage[("capture_usage")]
     tbl_expenses[("expenses")]
     tbl_local_users[("local_users")]
     tbl_subscription_catalog[("subscription_catalog")]
@@ -66,6 +67,7 @@ flowchart LR
   mod_capture_intake ==> tbl_capture_devices
   mod_capture_intake ==> tbl_capture_events
   mod_capture_intake ==> tbl_capture_signals
+  mod_capture_intake ==> tbl_capture_usage
   mod_capture_intake ==> tbl_user_wallets
   mod_capture_reader --> sys_expense_capture
   mod_capture_reader --> sys_platform
@@ -126,6 +128,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `capture_events` | E | `capture-intake` | `capture-intake` |
 | `capture_signals` | E | `capture-intake` | `capture-intake` |
 | `capture_sources` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSource`, `captureAdmin.setSourceStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSource`, `captureAdmin.setSourceStatus` |
+| `capture_usage` | C | `capture-intake` | `capture-intake` |
 | `expenses` | B | — | `capture-intake` |
 | `local_users` | A | — | `capture-intake` |
 | `subscription_catalog` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` |

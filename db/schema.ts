@@ -1067,6 +1067,13 @@ export const captureEvents = mysqlTable(
     referenceHmac: varchar("reference_hmac", { length: 64 }),
     balanceAfter: decimal("balance_after", { precision: 14, scale: 2 }),
     ownAccount: boolean("own_account").notNull().default(false),
+    /**
+     * The first signal's reader fields, while the event waits for an answer or is held: a held event outlives its
+     * signals (60 days against 30). Cleared when the event is answered.
+     */
+    reading: json("reading"),
+    /** The Cairo month ("2026-10") whose limit this event counts in; null when it counts in none. */
+    quotaPeriod: varchar("quota_period", { length: 7 }),
     /** One entry per device and channel the payment arrived through ("12:sms:CIB"). */
     channels: json("channels").notNull(),
     primarySignalId: int("primary_signal_id").notNull(),
@@ -1084,6 +1091,25 @@ export const captureEvents = mysqlTable(
     index("capture_events_user_reference_idx").on(t.userId, t.userType, t.referenceHmac),
     index("capture_events_created_idx").on(t.createdAt),
   ],
+);
+
+// How many new payments a user's capture took in one Cairo month, against the plan's limit (decision 0028), how
+// many were held over it, whether the user was told the limit was reached, and how many questions were sent today.
+export const captureUsage = mysqlTable(
+  "capture_usage",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    period: varchar("period", { length: 7 }).notNull(),
+    reserved: int("reserved").notNull().default(0),
+    held: int("held").notNull().default(0),
+    limitNoticed: boolean("limit_noticed").notNull().default(false),
+    questionDay: varchar("question_day", { length: 10 }),
+    questions: int("questions").notNull().default(0),
+    updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [uniqueIndex("capture_usage_user_period_idx").on(t.userId, t.userType, t.period)],
 );
 
 // ─── WhatsApp OTP Codes ───

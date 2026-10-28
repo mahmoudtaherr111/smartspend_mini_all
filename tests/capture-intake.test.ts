@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { captureConsents, captureDevices, captureEvents, captureSignals, expenseDailyRollups, expenses, localUsers, systemSettings, userWallets } from "../db/schema";
+import { captureConsents, captureDevices, captureEvents, captureSignals, captureUsage, expenseDailyRollups, expenses, localUsers, systemSettings, userWallets } from "../db/schema";
 import { db } from "../api/queries/connection";
 import { registerCaptureRoutes } from "../api/capture-v1-routes";
 import { captureRouter } from "../api/capture-router";
@@ -52,6 +52,7 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
       await db.delete(captureSignals).where(mine(captureSignals));
       await db.delete(captureEvents).where(mine(captureEvents));
       await db.delete(userWallets).where(mine(userWallets));
+      await db.delete(captureUsage).where(mine(captureUsage));
       await db.delete(captureConsents).where(mine(captureConsents));
       await db.delete(captureDevices).where(mine(captureDevices));
       await db.delete(expenseDailyRollups).where(mine(expenseDailyRollups));
@@ -73,6 +74,7 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
   });
   afterAll(async () => {
     await cleanUp();
+    await db.delete(systemSettings).where(eq(systemSettings.key, "capture_monthly_limit_free"));
     await db.delete(systemSettings).where(eq(systemSettings.key, "capture_enabled"));
     invalidateSettingsCache();
   });
@@ -182,6 +184,34 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
     expect(row.walletId).toBe(wallet.id);
     expect(Number(wallet.balance)).toBe(4500.75);
     expect(wallet.balanceSource).toBe("bank_message");
+  });
+
+  it("holds what is over the free limit, says so once, gives a dismissed one back, and releases it all on an upgrade", async () => {
+    await db.insert(systemSettings).values({ key: "capture_monthly_limit_free", value: "2" }).onDuplicateKeyUpdate({ set: { value: "2" } });
+    invalidateSettingsCache();
+    const buy = (id: string, amount: string) => post("/api/capture/v1/signals", { signals: [purchase(id, amount)] }).then((reply) => reply.json());
+
+    const first = await buy("signal-lim-01", "101.00");
+    await buy("signal-lim-02", "102.00");
+    const third = await buy("signal-lim-03", "103.00");
+    const fourth = await buy("signal-lim-04", "104.00");
+    expect(first.results[0].result).toBe("review");
+    expect(third.results[0]).toMatchObject({ result: "held" });
+    expect(third.results[0].notice.title).toBe("وصلت لحد الشهر");
+    expect(fourth.results[0]).toMatchObject({ result: "held" });
+    expect(fourth.results[0].notice).toBeUndefined();
+    expect((await caller.status()).usage).toMatchObject({ limit: 2, used: 2, held: 2 });
+
+    // "Not mine" does not count: the next payment fits again.
+    await caller.answer({ eventId: first.results[0].eventId, action: "dismiss" });
+    expect((await buy("signal-lim-05", "105.00")).results[0].result).toBe("review");
+    expect(await caller.pending()).toHaveLength(2);
+
+    await db.update(localUsers).set({ plan: "pro" }).where(eq(localUsers.id, owner.userId));
+    const upgraded = captureRouter.createCaller({ user: { id: owner.userId, type: "local", role: "user", plan: "pro", name: "Capture Test" } } as never);
+    const pending = await upgraded.pending();
+    expect(pending).toHaveLength(4);
+    expect((await upgraded.status()).usage).toMatchObject({ limit: 0, held: 0 });
   });
 
   it("never lets a Google account with the same id answer, and stops a revoked phone", async () => {

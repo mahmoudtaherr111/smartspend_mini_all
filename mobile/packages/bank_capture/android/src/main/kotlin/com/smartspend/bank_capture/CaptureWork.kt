@@ -156,7 +156,8 @@ internal class UploadWorker(context: Context, params: WorkerParameters) : Corout
             // Every result is final, including one this build does not know.
             val notice = result.optJSONObject("notice")
             val eventId = result.optLong("eventId", 0)
-            if (result.optString("result") == "review" && notice != null && eventId > 0) {
+            // A notice comes with a payment to answer, or once a month with the first one held over the limit.
+            if (notice != null && eventId > 0) {
                 val actions = notice.optJSONArray("actions")
                 CaptureNotifier.showReview(
                     applicationContext,

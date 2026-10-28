@@ -174,6 +174,7 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
         ] else ...[
           const SizedBox(height: SmartSpendSpacing.sm),
           Text(l10n.captureWaiting(status.waiting), style: muted),
+          const _UsageLines(),
           if (status.lastError == 'offline')
             Text(l10n.captureOffline, style: muted),
           if (!status.notificationsAllowed)
@@ -181,6 +182,34 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
           const SizedBox(height: SmartSpendSpacing.sm),
           const _PendingLink(),
         ],
+      ],
+    );
+  }
+}
+
+/// The month's use against the plan's limit, and what is held over it.
+class _UsageLines extends ConsumerWidget {
+  const _UsageLines();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final colors = context.smartSpendColors;
+    final textTheme = Theme.of(context).textTheme;
+    final server = ref.watch(captureServerStatusProvider).value;
+    if (server == null || server.limit == 0) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l10n.captureUsage(server.used, server.limit),
+          style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+        ),
+        if (server.held > 0)
+          Text(
+            l10n.captureHeld(server.held),
+            style: textTheme.bodyMedium?.copyWith(color: colors.warning),
+          ),
       ],
     );
   }

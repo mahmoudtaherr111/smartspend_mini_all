@@ -53,6 +53,27 @@
   "captureAmountNeeded": "The message has an amount in another currency. Type what was charged in pounds.",
   "captureCheckAmount": "We're not sure about this amount; check it before recording.",
   "captureMaybeDuplicate": "This may be the same payment as the one before. If you paid twice, tap \"Record\"; if it is the same one, tap \"Not mine\".",
+  "captureUsage": "{used} of {limit} recorded this month.",
+  "@captureUsage": {
+    "description": "The month's captured transactions against the free plan's limit.",
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "captureHeld": "{count, plural, =1{One transaction saved; it is recorded if you subscribe to Pro.} other{{count} transactions saved; they are recorded if you subscribe to Pro.}}",
+  "@captureHeld": {
+    "description": "Captured transactions held over the monthly limit, recorded on an upgrade.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "captureAnswerFailed": "We couldn't save your answer. Try again.",
   "signInTitle": "Welcome to SmartSpend",
   "signInSubtitle": "Sign in with your phone number or your Google account.",

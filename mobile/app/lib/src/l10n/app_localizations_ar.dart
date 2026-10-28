@@ -154,6 +154,24 @@ class AppLocalizationsAr extends AppLocalizations {
       'ممكن تكون نفس العملية اللي قبلها. لو دفعت مرتين دوس «سجّل»، ولو هي نفسها دوس «مش مصروف».';
 
   @override
+  String captureUsage(int used, int limit) {
+    return 'اتسجل $used من $limit الشهر ده.';
+  }
+
+  @override
+  String captureHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عملية محفوظة، بتتسجل لو اشتركت في Pro.',
+      few: '$count عمليات محفوظة، بتتسجل لو اشتركت في Pro.',
+      two: 'عمليتين محفوظين، بيتسجلوا لو اشتركت في Pro.',
+      one: 'عملية واحدة محفوظة، بتتسجل لو اشتركت في Pro.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get captureAnswerFailed => 'ماقدرناش نحفظ ردك. جرّب تاني.';
 
   @override

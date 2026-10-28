@@ -239,6 +239,13 @@
       "when": 1793149106070,
       "tag": "0033_capture_signals_drop_review",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1793153718041,
+      "tag": "0034_capture_usage",
+      "breakpoints": true
     }
   ]
 }

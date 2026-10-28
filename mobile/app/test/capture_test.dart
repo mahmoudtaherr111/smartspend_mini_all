@@ -137,6 +137,39 @@ void main() {
     expect(app.bankCapture.setup, isNull);
   });
 
+  testWidgets('shows the month against the free limit and what is held', (
+    tester,
+  ) async {
+    _phoneScreen(tester);
+    final api = _api()
+      ..answer(
+        'capture.status',
+        (_) => {
+          'enabled': true,
+          'consent': {'capture': true, 'aiReading': false},
+          'consentTextVersion': '2026-10-27',
+          'usage': {'period': '2026-10', 'limit': 50, 'used': 50, 'held': 3},
+        },
+      );
+    final app = TestApp(token: 'session-token', api: api);
+    app.bankCapture
+      ..access = CaptureAccess.granted
+      ..setup = CaptureSetup(
+        baseUrl: 'http://localhost:3000',
+        deviceToken: 'cap_device-token',
+        ownerKey: 'local:42',
+        language: 'ar',
+      );
+    await app.pump(tester);
+    await _openMore(tester);
+
+    expect(find.text('اتسجل 50 من 50 الشهر ده.'), findsOneWidget);
+    expect(
+      find.text('3 عمليات محفوظة، بتتسجل لو اشتركت في Pro.'),
+      findsOneWidget,
+    );
+  });
+
   group('the transactions waiting for the person', () {
     Future<(TestApp, FakeApi)> openReview(
       WidgetTester tester,

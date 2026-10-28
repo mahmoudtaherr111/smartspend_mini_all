@@ -165,6 +165,14 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
   {
     tableName: "capture_events",
     class: "E",
+    retainDays: 60,
+    dateColumn: "created_at",
+    whereClause: "status = 'held'",
+    description: "A payment held over the free monthly limit and not released by an upgrade within two months (decision 0028).",
+  },
+  {
+    tableName: "capture_events",
+    class: "E",
     retainDays: 400,
     dateColumn: "created_at",
     description: "Answered captured payments: the keys refunds and late signals are matched on, no message text (decision 0029).",

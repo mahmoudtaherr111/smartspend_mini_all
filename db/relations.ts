@@ -5,6 +5,7 @@ import {
   captureConsents,
   captureSignals,
   captureEvents,
+  captureUsage,
   localUsers,
   expenses,
   expenseCategories,
@@ -620,5 +621,16 @@ export const captureEventsRelations = relations(captureEvents, ({ one }) => ({
   expense: one(expenses, {
     fields: [captureEvents.expenseId],
     references: [expenses.id],
+  }),
+}));
+
+export const captureUsageRelations = relations(captureUsage, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureUsage.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureUsage.userId],
+    references: [users.id],
   }),
 }));

@@ -153,6 +153,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'This may be the same payment as the one before. If you paid twice, tap \"Record\"; if it is the same one, tap \"Not mine\".';
 
   @override
+  String captureUsage(int used, int limit) {
+    return '$used of $limit recorded this month.';
+  }
+
+  @override
+  String captureHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count transactions saved; they are recorded if you subscribe to Pro.',
+      one: 'One transaction saved; it is recorded if you subscribe to Pro.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get captureAnswerFailed => 'We couldn\'t save your answer. Try again.';
 
   @override

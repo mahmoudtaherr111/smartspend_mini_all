@@ -15,7 +15,7 @@ import { CAPTURE_CONSENT_SCOPES } from "../contracts/capture-intake";
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
 import { CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf, setCaptureConsent } from "./lib/capture/consent";
 import { listCaptureDevices, registerCaptureDevice, revokeCaptureDevice } from "./lib/capture/devices";
-import { answerEvent, pendingEvents } from "./lib/capture/intake";
+import { answerEvent, captureLimitOf, captureUsageOf, pendingEvents, releaseHeldEvents } from "./lib/capture/intake";
 import { createRateLimiter } from "./lib/rate-limit";
 import { getSystemSettings } from "./lib/settings-cache";
 
@@ -32,8 +32,12 @@ export const captureRouter = router({
 
   /** Whether capture is open, what the user agreed to, and the consent text version the app must show. */
   status: authedProcedure.query(async ({ ctx }) => {
-    const [settings, consent] = await Promise.all([getSystemSettings(), captureConsentsOf(ownerOf(ctx))]);
-    return { enabled: settings.capture_enabled === "true", consent, consentTextVersion: CAPTURE_CONSENT_TEXT_VERSION };
+    const [settings, consent, usage] = await Promise.all([
+      getSystemSettings(),
+      captureConsentsOf(ownerOf(ctx)),
+      captureUsageOf(ownerOf(ctx), ctx.user!.plan),
+    ]);
+    return { enabled: settings.capture_enabled === "true", consent, consentTextVersion: CAPTURE_CONSENT_TEXT_VERSION, usage };
   }),
 
   /** The device token for this installation, shown once; registering the same installation again replaces it. */
@@ -76,7 +80,11 @@ export const captureRouter = router({
     }),
 
   /** The captured transactions waiting for the user, newest first, with where each would be filed. */
-  pending: authedProcedure.query(async ({ ctx }) => pendingEvents(ownerOf(ctx))),
+  pending: authedProcedure.query(async ({ ctx }) => {
+    // After an upgrade, what was held comes back here first.
+    if ((await captureLimitOf(ctx.user!.plan)) === 0) await releaseHeldEvents(ownerOf(ctx));
+    return pendingEvents(ownerOf(ctx));
+  }),
 
   answer: authedProcedure
     .input(

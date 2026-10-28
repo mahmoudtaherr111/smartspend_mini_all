@@ -320,6 +320,18 @@ abstract class AppLocalizations {
   /// **'ممكن تكون نفس العملية اللي قبلها. لو دفعت مرتين دوس «سجّل»، ولو هي نفسها دوس «مش مصروف».'**
   String get captureMaybeDuplicate;
 
+  /// The month's captured transactions against the free plan's limit.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتسجل {used} من {limit} الشهر ده.'**
+  String captureUsage(int used, int limit);
+
+  /// Captured transactions held over the monthly limit, recorded on an upgrade.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{عملية واحدة محفوظة، بتتسجل لو اشتركت في Pro.} =2{عمليتين محفوظين، بيتسجلوا لو اشتركت في Pro.} few{{count} عمليات محفوظة، بتتسجل لو اشتركت في Pro.} other{{count} عملية محفوظة، بتتسجل لو اشتركت في Pro.}}'**
+  String captureHeld(int count);
+
   /// No description provided for @captureAnswerFailed.
   ///
   /// In ar, this message translates to:

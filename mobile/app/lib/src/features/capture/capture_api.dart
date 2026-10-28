@@ -7,11 +7,21 @@ final class CaptureServerStatus {
     required this.enabled,
     required this.consented,
     required this.consentTextVersion,
+    this.used = 0,
+    this.limit = 0,
+    this.held = 0,
   });
 
   final bool enabled;
   final bool consented;
   final String consentTextVersion;
+
+  /// New payments counted this month against the plan's limit, and the limit (0 = none).
+  final int used;
+  final int limit;
+
+  /// Payments held over the limit, recorded if the person subscribes (decision 0028).
+  final int held;
 }
 
 /// A captured payment waiting for the person's answer (`capture.pending`): one per payment, however many messages
@@ -102,10 +112,17 @@ class CaptureApi {
     final data = await _client.query(Procedures.capture.status);
     final map = data is Map<String, Object?> ? data : const <String, Object?>{};
     final consent = map['consent'];
+    final usage = map['usage'];
+    int number(String key) => usage is Map<String, Object?> && usage[key] is num
+        ? (usage[key] as num).toInt()
+        : 0;
     return CaptureServerStatus(
       enabled: map['enabled'] == true,
       consented: consent is Map<String, Object?> && consent['capture'] == true,
       consentTextVersion: map['consentTextVersion'] as String? ?? '',
+      used: number('used'),
+      limit: number('limit'),
+      held: number('held'),
     );
   }
 

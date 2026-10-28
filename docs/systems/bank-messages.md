@@ -116,6 +116,18 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
 6. **`GET /api/capture/v1/config`**: whether capture is on, the user's consents, the oldest build allowed, the catalog's
    sources and version, the phone's filter lists (`CAPTURE_GATE`: words for codes and for money) and the batch limits.
 
+7. **The monthly limit** (the owner's decision, decision 0028): `capture_monthly_limit_<plan>` (`contracts/plan-features.ts`,
+   50 on Free, none on Pro and Ultra, edited in the admin's plans tab) counts the new payments of a Cairo month in
+   `capture_usage`. A new event the reader is sure or fairly sure of reserves one under the user's lock (an unsure
+   one counts only if the user records it); over the limit it is `held`: kept with its reading, no notice, no ledger,
+   up to 200 at a time and for 60 days. The first held payment of a month is answered `held` with a notice saying so
+   ("وصلت لحد الشهر…"); the payment that reaches 80% of the limit adds how many are left to its notice. Dismissing a
+   payment gives its count back. When the user's plan has no limit, the held payments of the last two months come back
+   as payments waiting for an answer at the next request (`releaseHeldEvents`, called by the intake, `capture.status`
+   and `capture.pending`). `capture.status` returns the month's use, the limit and the held count. The plans page shows
+   the limit (`pro.planCatalog`, the row `bank_messages`, only while capture is open), and for no limit that what was
+   missed in the last two months is recorded on subscribing.
+
 ## On the phone
 Android only for now; the plugin is `mobile/packages/bank_capture`, and capture runs without Flutter.
 1. **Turning it on** (the More screen's card): the person reads what is read and kept and agrees (`capture.setConsent`),
@@ -203,9 +215,12 @@ EGP equivalent in the text, which is not used as pounds.
   row per grant, kept after it is taken back) and `capture_signals` (a kept signal with its event, deleted after 30
   days by the retention job): migration `db/migrations/0031_capture_intake.sql`.
 - `capture_events` (one payment: its status, the keys signals are matched on, its channels, wallet, ledger row and the
-  refund's purchase; no message text): migrations `db/migrations/0032_capture_events.sql` and
-  `db/migrations/0033_capture_signals_drop_review.sql`. One never answered goes after 30 days, an answered one after
-  400.
+  refund's purchase; the first signal's reading while it waits or is held, cleared on the answer): migrations
+  `db/migrations/0032_capture_events.sql`, `db/migrations/0033_capture_signals_drop_review.sql` and
+  `db/migrations/0034_capture_usage.sql`. One never answered goes after 30 days, a held one after 60, an answered one
+  after 400.
+- `capture_usage` (one row per user and Cairo month: the payments counted against the limit, the held ones, whether
+  the user was told, and the day's questions): migration `db/migrations/0034_capture_usage.sql`.
 - The old intake's tables, `webhook_tokens` (one token per user) and `raw_sms_events` (every message as received,
   with account digits and balances, and the suggestions waiting over the limit), were dropped by
   `db/migrations/0030_drop_old_bank_messages.sql`, raw messages and waiting suggestions included.

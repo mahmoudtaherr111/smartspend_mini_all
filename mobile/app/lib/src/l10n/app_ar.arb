@@ -65,6 +65,27 @@
   },
   "captureCheckAmount": "مش متأكدين من المبلغ ده، راجعه قبل ما تسجّل.",
   "captureMaybeDuplicate": "ممكن تكون نفس العملية اللي قبلها. لو دفعت مرتين دوس «سجّل»، ولو هي نفسها دوس «مش مصروف».",
+  "captureUsage": "اتسجل {used} من {limit} الشهر ده.",
+  "@captureUsage": {
+    "description": "The month's captured transactions against the free plan's limit.",
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "captureHeld": "{count, plural, =1{عملية واحدة محفوظة، بتتسجل لو اشتركت في Pro.} =2{عمليتين محفوظين، بيتسجلوا لو اشتركت في Pro.} few{{count} عمليات محفوظة، بتتسجل لو اشتركت في Pro.} other{{count} عملية محفوظة، بتتسجل لو اشتركت في Pro.}}",
+  "@captureHeld": {
+    "description": "Captured transactions held over the monthly limit, recorded on an upgrade.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "captureAnswerFailed": "ماقدرناش نحفظ ردك. جرّب تاني.",
   "signInTitle": "أهلاً بيك في SmartSpend",
   "signInSubtitle": "ادخل برقم تليفونك أو بحساب Google.",
