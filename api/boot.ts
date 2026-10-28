@@ -44,6 +44,7 @@ import {
 } from "./notification-engine";
 import { withScheduledJobLock } from "./services/scheduler-lock";
 import { syncCaptureSeed } from "./lib/capture/catalog";
+import { registerCaptureRoutes } from "./capture-v1-routes";
 import { runMonthlyReportJob } from "./jobs/monthly-report-job";
 import { runMonthlyBehaviorJob } from "./jobs/monthly-behavior-job";
 import { runRollupReconciliationJob } from "./jobs/rollup-reconciliation-job";
@@ -475,6 +476,9 @@ app.get("/api/sse/otp", async (c) => {
     }
   });
 });
+
+// ─── Captured bank and wallet notifications from phones, with a device token (decision 0028) ───
+registerCaptureRoutes(app);
 
 app.post("/api/webhooks/paymob", async (c) => {
   const hmacParam = c.req.query("hmac");

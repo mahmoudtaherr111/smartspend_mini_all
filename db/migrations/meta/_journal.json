@@ -218,6 +218,13 @@
       "when": 1793074724782,
       "tag": "0030_drop_old_bank_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1793144517122,
+      "tag": "0031_capture_intake",
+      "breakpoints": true
     }
   ]
 }

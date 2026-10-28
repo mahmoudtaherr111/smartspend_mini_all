@@ -1,6 +1,9 @@
 import { relations } from "drizzle-orm";
 import {
   users,
+  captureDevices,
+  captureConsents,
+  captureSignals,
   localUsers,
   expenses,
   expenseCategories,
@@ -560,5 +563,46 @@ export const userCorrectionRulesRelations = relations(userCorrectionRules, ({ on
   sourceLog: one(classificationLogs, {
     fields: [userCorrectionRules.sourceLogId],
     references: [classificationLogs.id],
+  }),
+}));
+
+export const captureDevicesRelations = relations(captureDevices, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureDevices.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureDevices.userId],
+    references: [users.id],
+  }),
+}));
+
+export const captureConsentsRelations = relations(captureConsents, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureConsents.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureConsents.userId],
+    references: [users.id],
+  }),
+}));
+
+export const captureSignalsRelations = relations(captureSignals, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureSignals.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureSignals.userId],
+    references: [users.id],
+  }),
+  device: one(captureDevices, {
+    fields: [captureSignals.deviceId],
+    references: [captureDevices.id],
+  }),
+  expense: one(expenses, {
+    fields: [captureSignals.expenseId],
+    references: [expenses.id],
   }),
 }));

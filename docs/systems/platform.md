@@ -69,7 +69,8 @@ storage, the contracts shared with the web app, and the retention job that prune
 - The retention job runs daily at 05:00 and walks `RETENTION_POLICIES` in `api/jobs/data-retention-job.ts`, one
   policy per table (some per kind of row), each with a cut-off in days: thirty to ninety for telemetry, ad clicks,
   notification logs, token ledgers, voice
-  usage and live-call incidents; a year for the action audit trail and live voice calls; chat messages after ninety
+  usage and live-call incidents, and captured bank notifications (`capture_signals`); a year for the action audit
+  trail and live voice calls; chat messages after ninety
   days once the conversation has a summary; expired challenges and pending actions, and answered clarifications,
   in between. Token ledgers and ad clicks are rolled up into `ai_cost_monthly` and `ad_stats_daily` before the rows
   go, and deletes run in chunks with a pause between them. Read the list in the file for each table's days.

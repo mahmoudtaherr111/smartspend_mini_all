@@ -226,6 +226,9 @@ export const SETTINGS: SettingDef[] = [
   // USD a Cairo day across all users, priced from the admin's model prices; 0 means no cap. With a cap, only models
   // with a price are called.
   { key: "sms_ai_daily_cost_cap_usd", default: "0" },
+  // Capture from phones (/api/capture/v1, decision 0028). "false" refuses every signal and tells phones to stop; off
+  // until the closed beta.
+  { key: "capture_enabled", default: "false" },
   { key: "promo_code_discount", default: "20" },
   { key: "pipeline_version", default: "v1" },
   { key: "whatsapp_otp_enabled", default: "true" },

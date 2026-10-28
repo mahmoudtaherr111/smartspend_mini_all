@@ -1092,11 +1092,81 @@ model {
       }
     }
     capture = router 'capture' {
-      description 'api/capture-router.ts — 1 procedures.'
+      description 'api/capture-router.ts — 8 procedures.'
       metadata {
         file 'api/capture-router.ts'
       }
+      answer = procedure 'capture.answer' {
+        #mutation #authed #uncalled
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      devices = procedure 'capture.devices' {
+        #query #authed #uncalled
+        technology 'authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
+      }
+      pending = procedure 'capture.pending' {
+        #query #authed #uncalled
+        technology 'authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
+      }
+      registerDevice = procedure 'capture.registerDevice' {
+        #mutation #authed #uncalled
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      revokeDevice = procedure 'capture.revokeDevice' {
+        #mutation #authed #uncalled
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      setConsent = procedure 'capture.setConsent' {
+        #mutation #authed #uncalled
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
       sources = procedure 'capture.sources' {
+        #query #authed #uncalled
+        technology 'authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
+      }
+      status = procedure 'capture.status' {
         #query #authed #uncalled
         technology 'authedProcedure'
         description 'query · authedProcedure · no caller in src/'

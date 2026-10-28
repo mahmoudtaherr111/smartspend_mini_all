@@ -88,7 +88,7 @@ model {
       }
     }
     capture-ai-reader = module 'Message model reader' {
-      description 'Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server’s Gemini key until then), behind the admin’s switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. Nothing calls it yet.'
+      description 'Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server’s Gemini key until then), behind the admin’s switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. Nothing calls it yet: the intake reads with the reader only.'
       metadata {
         files '2'
         paths 'api/lib/capture/ai-reader.ts, api/lib/sms-ai-contract.ts'
@@ -99,6 +99,13 @@ model {
       metadata {
         files '3'
         paths 'api/lib/capture/catalog.ts, api/lib/capture/seed-sources.ts, api/lib/capture/seed-subscriptions.ts'
+      }
+    }
+    capture-intake = module 'Capture intake' {
+      description 'Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user’s consents with their text version, the /api/capture/v1 routes (signals, config, a notification’s button), the server’s filter that keeps only what the reader reads as money that moved, the notice written in the phone’s language, where each kind would be filed, and the user’s answer, which writes the ledger through the ledger writer.'
+      metadata {
+        files '4'
+        paths 'api/capture-v1-routes.ts, api/lib/capture/intake.ts, api/lib/capture/devices.ts, api/lib/capture/consent.ts'
       }
     }
     capture-reader = module 'Message reader' {
@@ -219,7 +226,7 @@ model {
     contracts = module 'Shared contracts' {
       description 'Types, limits and billing plans shared by the web app and the API.'
       metadata {
-        files '14'
+        files '15'
         paths 'contracts/**'
       }
     }

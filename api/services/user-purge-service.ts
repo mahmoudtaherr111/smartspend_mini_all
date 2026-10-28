@@ -48,6 +48,9 @@ import {
   userWallets,
   users,
   voiceUsage,
+  captureSignals,
+  captureConsents,
+  captureDevices,
   voiceCalls,
   voiceCallIncidents,
 } from "../../db/schema";
@@ -99,6 +102,11 @@ export async function purgeUserData(
   await tx.delete(aiPendingActions).where(userScope(aiPendingActions, userId, userType));
   await tx.delete(aiActionMemory).where(userScope(aiActionMemory, userId, userType));
   await tx.delete(pendingClarifications).where(userScope(pendingClarifications, userId, userType));
+
+  // Capture: the notifications waiting for an answer, the consents and the phones (decision 0028).
+  await tx.delete(captureSignals).where(userScope(captureSignals, userId, userType));
+  await tx.delete(captureConsents).where(userScope(captureConsents, userId, userType));
+  await tx.delete(captureDevices).where(userScope(captureDevices, userId, userType));
 
   await tx.delete(expenses).where(userScope(expenses, userId, userType));
   await tx.delete(expenseDailyRollups).where(userScope(expenseDailyRollups, userId, userType));

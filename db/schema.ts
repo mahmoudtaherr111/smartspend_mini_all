@@ -971,6 +971,77 @@ export const subscriptionCatalog = mysqlTable(
   (t) => [index("subscription_catalog_status_idx").on(t.status)],
 );
 
+// ─── Capture: the phones that send bank and wallet notifications (decision 0028) ───
+// One row per app installation. The device token is shown once and stored only as its SHA-256; a revoked device
+// stops at its next request.
+export const captureDevices = mysqlTable(
+  "capture_devices",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    platform: varchar("platform", { length: 10 }).notNull(), // android | ios
+    installationId: varchar("installation_id", { length: 64 }).notNull(),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+    label: varchar("label", { length: 80 }),
+    appVersion: varchar("app_version", { length: 32 }),
+    osVersion: varchar("os_version", { length: 32 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    lastSeenAt: datetime("last_seen_at"),
+    lastSignalAt: datetime("last_signal_at"),
+    revokedAt: datetime("revoked_at"),
+  },
+  (t) => [
+    index("capture_devices_user_idx").on(t.userId, t.userType),
+    uniqueIndex("capture_devices_token_idx").on(t.tokenHash),
+    uniqueIndex("capture_devices_installation_idx").on(t.userId, t.userType, t.installationId),
+  ],
+);
+
+// What the user agreed to for capture, one row per grant: the scope, the version of the text they read, and when
+// they took it back. Kept as a record of consent (Law 151/2020).
+export const captureConsents = mysqlTable(
+  "capture_consents",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    scope: varchar("scope", { length: 20 }).notNull(), // capture | ai_reading
+    textVersion: varchar("text_version", { length: 20 }).notNull(),
+    grantedAt: datetime("granted_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    revokedAt: datetime("revoked_at"),
+  },
+  (t) => [index("capture_consents_user_scope_idx").on(t.userId, t.userType, t.scope)],
+);
+
+// A notification a phone sent that reads as a transaction, waiting for the user's answer or answered. Kept 30 days:
+// the text is redacted, and nothing that is not a transaction is stored at all.
+export const captureSignals = mysqlTable(
+  "capture_signals",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    deviceId: int("device_id").notNull(),
+    clientSignalId: varchar("client_signal_id", { length: 64 }).notNull(),
+    channel: varchar("channel", { length: 16 }).notNull(),
+    sourceSlug: varchar("source_slug", { length: 64 }),
+    textRedacted: text("text_redacted"),
+    /** The reader's fields (`api/lib/capture/intake.ts#SignalReading`), read before anything was redacted. */
+    reading: json("reading").notNull(),
+    status: varchar("status", { length: 16 }).notNull().default("review"), // review | recorded | dismissed
+    expenseId: int("expense_id"),
+    receivedAt: datetime("received_at").notNull(),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    resolvedAt: datetime("resolved_at"),
+  },
+  (t) => [
+    uniqueIndex("capture_signals_client_idx").on(t.userId, t.userType, t.clientSignalId),
+    index("capture_signals_user_status_idx").on(t.userId, t.userType, t.status, t.createdAt),
+    index("capture_signals_created_idx").on(t.createdAt),
+  ],
+);
+
 // ─── WhatsApp OTP Codes ───
 export const whatsappOtpCodes = mysqlTable(
   "whatsapp_otp_codes",

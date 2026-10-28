@@ -20,6 +20,7 @@ type Writer = Pick<typeof db, "update">;
 import { CacheKeys } from "./cache-keys";
 import { cacheDel } from "./redis-client";
 import { bumpAuthVersion, hashSessionToken, type SessionUserType } from "./session-validation";
+import { revokeAllCaptureDevices } from "./capture/devices";
 
 export type UserRole = "user" | "moderator" | "admin";
 export type UserPlan = "free" | "pro" | "ultra";
@@ -119,6 +120,9 @@ export async function revokeSession(input: {
 
 /** Ends every session of one user: account deletion, a password change, "sign out everywhere". */
 export async function revokeAllSessions(userType: SessionUserType, userId: number): Promise<number> {
+  // The phones that send captured notifications stop too; the auth version bumped below makes their cached tokens
+  // be read again (api/lib/capture/devices.ts).
+  await revokeAllCaptureDevices({ userId, userType });
   const rows = await db.query.sessions.findMany({
     where: and(eq(sessions.userId, userId), eq(sessions.userType, userType)),
   });

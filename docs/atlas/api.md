@@ -35,7 +35,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `auth` | `api/auth-router.ts` | 5 | 2 | 3 | `authedProcedure`, `publicProcedure`, `strictPublicProcedure` |
 | `budget` | `api/budget-router.ts` | 4 | 1 | 3 | `authedProcedure` |
 | `business` | `api/business-router.ts` | 10 | 2 | 8 | `businessAiProcedure`, `businessProcedure` |
-| `capture` | `api/capture-router.ts` | 1 | 1 | 0 | `authedProcedure` |
+| `capture` | `api/capture-router.ts` | 8 | 4 | 4 | `authedProcedure` |
 | `captureAdmin` | `api/capture-admin-router.ts` | 7 | 1 | 6 | `adminProcedure` |
 | `chat` | `api/chat-router.ts` | 10 | 4 | 6 | `aiProcedure`, `authedProcedure` |
 | `coach` | `api/coach-router.ts` | 10 | 2 | 8 | `authedProcedure` |
@@ -204,7 +204,14 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| `capture.answer` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/intake.ts` | — |
+| `capture.devices` | query | `authedProcedure` | no | — | — | `api/lib/capture/devices.ts` | — |
+| `capture.pending` | query | `authedProcedure` | no | — | — | `api/lib/capture/intake.ts` | — |
+| `capture.registerDevice` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/devices.ts`, `api/lib/settings-cache.ts` | — |
+| `capture.revokeDevice` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/devices.ts` | — |
+| `capture.setConsent` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/consent.ts`, `contracts/capture-intake.ts` | — |
 | `capture.sources` | query | `authedProcedure` | no | — | — | `api/lib/capture/catalog.ts` | — |
+| `capture.status` | query | `authedProcedure` | no | — | — | `api/lib/capture/consent.ts`, `api/lib/settings-cache.ts` | — |
 
 ### `captureAdmin` — `api/capture-admin-router.ts`
 
@@ -428,4 +435,4 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 These are not referenced by the web app. Some may be called by other clients (Android app, iOS shortcuts) or server-side through `createCaller`; the rest are candidates for removal.
 
-`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `auth.signInWithGoogle`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `capture.sources`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`
+`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `auth.signInWithGoogle`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `capture.answer`, `capture.devices`, `capture.pending`, `capture.registerDevice`, `capture.revokeDevice`, `capture.setConsent`, `capture.sources`, `capture.status`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`

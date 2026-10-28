@@ -19,14 +19,18 @@ flowchart LR
   subgraph g_api["API, routes and jobs"]
     job_seed_capture_catalog["Job · seed-capture-catalog"]
     router_captureAdmin["captureAdmin API · 7 procedures"]
-    router_capture["capture API · 1 procedure"]
+    router_capture["capture API · 8 procedures"]
   end
   subgraph g_modules["Code modules"]
     mod_capture_ai_reader["Message model reader"]
     mod_capture_catalog["Capture catalog"]
+    mod_capture_intake["Capture intake"]
     mod_capture_reader["Message reader"]
   end
   subgraph g_tables["MySQL tables"]
+    tbl_capture_consents[("capture_consents")]
+    tbl_capture_devices[("capture_devices")]
+    tbl_capture_signals[("capture_signals")]
     tbl_capture_sources[("capture_sources")]
     tbl_subscription_catalog[("subscription_catalog")]
   end
@@ -34,6 +38,7 @@ flowchart LR
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_ai_platform[["AI providers and usage limits (system)"]]
   sys_expense_capture[["Recording spending (system)"]]
+  sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_platform[["Server platform and data (system)"]]
   job_seed_capture_catalog --> mod_capture_catalog
   mod_capture_ai_reader --> ext_gemini
@@ -44,9 +49,19 @@ flowchart LR
   mod_capture_catalog --> sys_platform
   mod_capture_catalog ==> tbl_capture_sources
   mod_capture_catalog ==> tbl_subscription_catalog
+  mod_capture_intake --> mod_capture_catalog
+  mod_capture_intake --> mod_capture_reader
+  mod_capture_intake --> sys_accounts
+  mod_capture_intake --> sys_money
+  mod_capture_intake --> sys_platform
+  mod_capture_intake ==> tbl_capture_consents
+  mod_capture_intake ==> tbl_capture_devices
+  mod_capture_intake ==> tbl_capture_signals
   mod_capture_reader --> sys_expense_capture
   mod_capture_reader --> sys_platform
   router_capture --> mod_capture_catalog
+  router_capture --> mod_capture_intake
+  router_capture --> sys_platform
   router_captureAdmin --> mod_capture_catalog
   router_captureAdmin --> sys_platform
   router_captureAdmin ==> tbl_capture_sources
@@ -59,15 +74,23 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `capture-ai-reader` — Message model reader | Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server's Gemini key until then), behind the admin's switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. Nothing calls it yet. | 2 |
+| `capture-ai-reader` — Message model reader | Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server's Gemini key until then), behind the admin's switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. Nothing calls it yet: the intake reads with the reader only. | 2 |
 | `capture-catalog` — Capture catalog | The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name. | 3 |
+| `capture-intake` — Capture intake | Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer. | 4 |
 | `capture-reader` — Message reader | Layer one of capture, before any model: reads a bank, wallet or payment notification into what happened, which way, how much and in what currency, with which card and with whom, when, how sure it is and why (normalization with a position map, piece finders, an Arabic and English lexicon, sentences, money roles, kind and direction, the other side, the date), plus its benchmark corpus. | 12 |
 
 ## API procedures
 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
+| `capture.answer` | mutation | `authedProcedure` | — | — | — |
+| `capture.devices` | query | `authedProcedure` | — | — | — |
+| `capture.pending` | query | `authedProcedure` | — | — | — |
+| `capture.registerDevice` | mutation | `authedProcedure` | — | — | — |
+| `capture.revokeDevice` | mutation | `authedProcedure` | — | — | — |
+| `capture.setConsent` | mutation | `authedProcedure` | — | — | — |
 | `capture.sources` | query | `authedProcedure` | — | — | — |
+| `capture.status` | query | `authedProcedure` | — | — | — |
 | `captureAdmin.catalog` | query | `adminProcedure` | `capture_sources`, `subscription_catalog` | — | `Admin`, `More` |
 | `captureAdmin.restoreSeed` | mutation | `adminProcedure` | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` | `Admin`, `More` |
 | `captureAdmin.saveSource` | mutation | `adminProcedure` | `capture_sources` | `capture_sources` | `Admin`, `More` |
@@ -88,6 +111,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
+| `capture_consents` | A | `capture-intake` | `capture-intake` |
+| `capture_devices` | A | `capture-intake` | `capture-intake` |
+| `capture_signals` | E | `capture-intake` | `capture-intake` |
 | `capture_sources` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSource`, `captureAdmin.setSourceStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSource`, `captureAdmin.setSourceStatus` |
 | `subscription_catalog` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` |
 
@@ -99,9 +125,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Server platform and data](platform.md).
+Depends on: [Accounts, sign-in and security](accounts.md), [AI providers and usage limits](ai-platform.md), [Recording spending](expense-capture.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md).
 
-Used by: [Admin console, support and growth tools](admin.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -113,13 +139,17 @@ Used by: [Admin console, support and growth tools](admin.md), [Server platform a
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>20 files and declarations</summary>
+<details><summary>24 files and declarations</summary>
 
 - `api/boot.ts#job:seed-capture-catalog`
 - `api/capture-admin-router.ts`
 - `api/capture-router.ts`
+- `api/capture-v1-routes.ts`
 - `api/lib/capture/ai-reader.ts`
 - `api/lib/capture/catalog.ts`
+- `api/lib/capture/consent.ts`
+- `api/lib/capture/devices.ts`
+- `api/lib/capture/intake.ts`
 - `api/lib/capture/reader/clauses.ts`
 - `api/lib/capture/reader/counterparty.ts`
 - `api/lib/capture/reader/explain.ts`

@@ -12,11 +12,11 @@ Foreign-key constraints declared in the schema: **0**. Every relationship below 
 
 | Class | Name | Lifetime | Storage rule | Tables |
 | --- | --- | --- | --- | --- |
-| `A` | Identity & Config | Forever | MySQL; small; cached aggressively in Redis with explicit invalidation | 23 |
+| `A` | Identity & Config | Forever | MySQL; small; cached aggressively in Redis with explicit invalidation | 25 |
 | `B` | Core Ledger | Forever | MySQL; narrow hot table; covering indexes; never auto-deleted | 1 |
 | `C` | Derived / Rollup | Forever (cheap) | MySQL; tiny; rebuildable from B at any time | 13 |
 | `D` | Operational / Ephemeral | Minutes -> days | Redis primary, MySQL as durable fallback/audit | 6 |
-| `E` | Telemetry / Logs | 30–365 days | MySQL; chunk-pruned on a schedule, rolled up before deletion | 11 |
+| `E` | Telemetry / Logs | 30–365 days | MySQL; chunk-pruned on a schedule, rolled up before deletion | 12 |
 | `F` | AI Memory | Forever (items), rebuildable (vectors) | Text/metadata in MySQL; vectors in vector store or quantized binary | 6 |
 | `G` | Conversation | 90 days raw | MySQL raw for a window, then summarized and pruned | 2 |
 
@@ -32,6 +32,8 @@ Users, credentials, settings, providers, templates, categories
 | `ai_models` | `aiModels` | 18 | 3 | — | `provider → ai_providers` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-pricing.ts` | `api/admin-router.ts` |
 | `ai_providers` | `aiProviders` | 13 | 2 | — | `ledgers → ai_token_ledgers`, `models → ai_models` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/ai-pricing.ts` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/provider-health.ts` |
 | `business_categories` | `businessCategories` | 12 | 1 | — | `business → user_businesses` | `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts` | `api/business-router.ts`, `api/services/user-purge-service.ts` |
+| `capture_consents` | `captureConsents` | 7 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/consent.ts` | `api/lib/capture/consent.ts`, `api/services/user-purge-service.ts` |
+| `capture_devices` | `captureDevices` | 13 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/devices.ts` | `api/lib/capture/devices.ts`, `api/services/user-purge-service.ts` |
 | `capture_sources` | `captureSources` | 16 | 1 | — | — | `api/capture-admin-router.ts`, `api/lib/capture/catalog.ts` | `api/capture-admin-router.ts`, `api/lib/capture/catalog.ts` |
 | `discount_codes` | `discountCodes` | 9 | 1 | — | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/referral-router.ts` | `api/admin-router.ts` |
 | `expense_categories` | `expenseCategories` | 8 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/expense-router.ts` | `api/expense-router.ts`, `api/services/user-purge-service.ts` |
@@ -103,6 +105,7 @@ Classification logs, token ledgers, analytics, notification logs
 | `ai_action_audit_logs` | `aiActionAuditLogs` | 9 | 3 | `user_id` + `user_type` | `action → ai_pending_actions`, `localUser → local_users`, `oauthUser → users` | — | `api/jobs/data-retention-job.ts`, `api/services/action-runtime/index.ts`, `api/services/user-purge-service.ts` |
 | `ai_token_ledgers` | `aiTokenLedgers` | 28 | 4 | `user_id` + `user_type` | `classificationLog → classification_logs`, `conversation → chat_conversations`, `localUser → local_users`, `oauthUser → users`, `provider → ai_providers` | `api/admin-router.ts`, `api/jobs/data-retention-job.ts`, `api/lib/ai-ledger.ts` | `api/jobs/data-retention-job.ts`, `api/lib/ai-ledger.ts`, `api/services/user-purge-service.ts` |
 | `api_key_errors` | `apiKeyErrors` | 10 | 5 | — | `localUser → local_users`, `oauthUser → users` | `api/lib/error-logger.ts` | `api/jobs/data-retention-job.ts`, `api/lib/error-logger.ts` |
+| `capture_signals` | `captureSignals` | 14 | 3 | `user_id` + `user_type` | `device → capture_devices`, `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/lib/capture/intake.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/intake.ts`, `api/services/user-purge-service.ts` |
 | `classification_logs` | `classificationLogs` | 22 | 3 | `user_id` + `user_type` | `expenses → expenses`, `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/expense-router.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/resolvers.ts` | `api/ai-router.ts`, `api/boot.ts`, `api/expense-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts` |
 | `notification_logs` | `notificationLogs` | 8 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users`, `template → notification_templates` | `api/admin-router.ts`, `api/notification-engine.ts` | `api/jobs/data-retention-job.ts`, `api/notification-engine.ts`, `api/services/user-purge-service.ts` |
 | `profile_learning_events` | `profileLearningEvents` | 9 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/services/user-profile-service.ts` | `api/jobs/data-retention-job.ts`, `api/services/user-profile-service.ts`, `api/services/user-purge-service.ts` |
@@ -177,6 +180,14 @@ chat_messages and conversation threads
 | `auth_challenges` | `localUser` | one | `local_users` | `user_id` |
 | `auth_challenges` | `oauthUser` | one | `users` | `user_id` |
 | `business_categories` | `business` | one | `user_businesses` | `business_id` |
+| `capture_consents` | `localUser` | one | `local_users` | `user_id` |
+| `capture_consents` | `oauthUser` | one | `users` | `user_id` |
+| `capture_devices` | `localUser` | one | `local_users` | `user_id` |
+| `capture_devices` | `oauthUser` | one | `users` | `user_id` |
+| `capture_signals` | `device` | one | `capture_devices` | `device_id` |
+| `capture_signals` | `expense` | one | `expenses` | `expense_id` |
+| `capture_signals` | `localUser` | one | `local_users` | `user_id` |
+| `capture_signals` | `oauthUser` | one | `users` | `user_id` |
 | `cashflow_settlements` | `cashflow` | one | `scheduled_cashflows` | `cashflow_id` |
 | `cashflow_settlements` | `expense` | one | `expenses` | `expense_id` |
 | `cashflow_settlements` | `localUser` | one | `local_users` | `user_id` |

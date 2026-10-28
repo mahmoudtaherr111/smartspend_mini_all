@@ -139,6 +139,30 @@ model {
         storageClass 'A'
       }
     }
+    capture_consents = table 'capture_consents' {
+      #classA #dualOwner
+      description '7 columns, 1 indexes, storage class A.'
+      metadata {
+        export 'captureConsents'
+        storageClass 'A'
+      }
+    }
+    capture_devices = table 'capture_devices' {
+      #classA #dualOwner
+      description '13 columns, 3 indexes, storage class A.'
+      metadata {
+        export 'captureDevices'
+        storageClass 'A'
+      }
+    }
+    capture_signals = table 'capture_signals' {
+      #classE #dualOwner
+      description '14 columns, 3 indexes, storage class E.'
+      metadata {
+        export 'captureSignals'
+        storageClass 'E'
+      }
+    }
     capture_sources = table 'capture_sources' {
       #classA
       description '16 columns, 1 indexes, storage class A.'

@@ -147,6 +147,14 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
     },
   },
   {
+    tableName: "capture_signals",
+    class: "E",
+    retainDays: 30,
+    dateColumn: "created_at",
+    description:
+      "Bank and wallet notifications read as transactions (redacted text and the reader's fields). A recorded one lives on in the ledger; one never answered is forgotten (decision 0028).",
+  },
+  {
     tableName: "user_analytics",
     class: "E",
     retainDays: 30,

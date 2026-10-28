@@ -133,6 +133,9 @@ ending the attempt.
   row must exist and be unexpired (`validateActiveSessionToken`), and the role and plan are read from the user table.
 - **Revocation.** Logout deletes the session row and its cached copy and clears the cookies. Bumping the auth version
   (`bumpAuthVersion`) drops every cached session of a user at once; phone changes and `session.revokeMine` do it.
+  Revoking every session (`revokeAllSessions`: sign-out everywhere, a password change) also revokes the device tokens
+  phones send captured bank notifications with ([bank and wallet messages](bank-messages.md),
+  `api/lib/capture/devices.ts#revokeAllCaptureDevices`).
 - **Cleanup.** `daily-auth-cleanup` deletes expired sessions, passkey challenges and phone challenges every night at midnight
   on replicas with `ENABLE_CRONS=true`.
 - **In the browser** (`src/hooks/useAuth.ts`): both `auth.me` and `localAuth.me` are asked; a short offline snapshot
@@ -187,7 +190,8 @@ Then, per procedure:
   replica; `profile.confirmPhoneChange` checks it, saves the number, bumps the auth version and returns a one-time
   grant that `profile.updateUserInfo` also accepts for fifteen minutes.
 - `purgeUserData` first locks the identity row, which delayed memory writers also lock; it deletes, inside the caller's transaction, every user-owned row (conversations and memory, the ledger,
-  goals, contacts, sessions, passkeys, the profile, logs, voice usage and live calls with their incidents, and referrals)
+  goals, contacts, sessions, passkeys, the profile, logs, voice usage and live calls with their incidents, the capture
+  devices, consents and signals, and referrals)
   and then the identity row. `admin.deleteUser`, `localAuth.deleteUser` and `profile.deleteMyAccount` call it, then
   drop the cached principal (`invalidatePrincipal`), so a session resolved before the deletion stops answering at once;
   `tests/knowledge/architecture.test.ts` fails when a user-owned table is left out.

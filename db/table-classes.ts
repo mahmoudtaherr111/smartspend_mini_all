@@ -82,6 +82,8 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   ai_models: "A",
   capture_sources: "A",
   subscription_catalog: "A",
+  capture_devices: "A",
+  capture_consents: "A",
 
   // Class B: Core Ledger (Forever, Never auto-deleted)
   expenses: "B",
@@ -112,6 +114,7 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   // Class E: Telemetry / Logs (Retention pruned)
   classification_logs: "E",
   ai_token_ledgers: "E",
+  capture_signals: "E",
   user_analytics: "E",
   notification_logs: "E",
   ad_clicks: "E",

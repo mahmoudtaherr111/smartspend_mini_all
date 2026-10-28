@@ -31,7 +31,7 @@
       "titleAr": "رسائل البنوك والمحافظ",
       "summary": "Automatic capture of bank and wallet messages, being rebuilt: the catalog of banks, wallets and subscriptions the admin edits, the reader that reads a message without a model, and the admin's model for what the reader is unsure of. Nothing receives messages yet.",
       "summaryAr": "تسجيل رسايل البنوك والمحافظ لوحدها، وده بيتبني من جديد: قايمة البنوك والمحافظ والاشتراكات اللي الأدمن بيعدّلها، والقارئ اللي بيقرا الرسالة من غير AI، والموديل اللي الأدمن اختاره للي القارئ مش متأكد منه. لسه مفيش حاجة بتستقبل رسايل.",
-      "clusters": ["capture-ai-reader", "capture-catalog", "capture-reader"],
+      "clusters": ["capture-ai-reader", "capture-catalog", "capture-intake", "capture-reader"],
       "routers": ["capture", "captureAdmin"],
       "jobs": ["seed-capture-catalog"]
     },

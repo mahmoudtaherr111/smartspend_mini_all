@@ -50,6 +50,9 @@ flowchart LR
     tbl_ai_token_ledgers[("ai_token_ledgers")]
     tbl_auth_challenges[("auth_challenges")]
     tbl_business_categories[("business_categories")]
+    tbl_capture_consents[("capture_consents")]
+    tbl_capture_devices[("capture_devices")]
+    tbl_capture_signals[("capture_signals")]
     tbl_cashflow_settlements[("cashflow_settlements")]
     tbl_chat_conversations[("chat_conversations")]
     tbl_chat_messages[("chat_messages")]
@@ -91,6 +94,7 @@ flowchart LR
   end
   ext_google_oauth{{"Google OAuth 2.0"}}
   ext_turnstile{{"Cloudflare Turnstile"}}
+  sys_bank_messages[["Bank and wallet messages (system)"]]
   sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
@@ -112,6 +116,9 @@ flowchart LR
   mod_accounts ==> tbl_ai_token_ledgers
   mod_accounts ==> tbl_auth_challenges
   mod_accounts ==> tbl_business_categories
+  mod_accounts ==> tbl_capture_consents
+  mod_accounts ==> tbl_capture_devices
+  mod_accounts ==> tbl_capture_signals
   mod_accounts ==> tbl_cashflow_settlements
   mod_accounts ==> tbl_chat_conversations
   mod_accounts ==> tbl_chat_messages
@@ -151,6 +158,7 @@ flowchart LR
   mod_accounts ==> tbl_voice_usage
   mod_auth --> ext_google_oauth
   mod_auth --> mod_security
+  mod_auth --> sys_bank_messages
   mod_auth --> sys_platform
   mod_auth ==> tbl_local_users
   mod_auth ==> tbl_sessions
@@ -287,6 +295,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_token_ledgers` | E | `accounts` | — |
 | `auth_challenges` | D | `accounts`, `daily-auth-cleanup`, `webauthn.generateAuthenticationOptions`, `webauthn.generateRegistrationOptions`, `webauthn.verifyAuthentication`, `webauthn.verifyRegistration` | `webauthn.verifyAuthentication`, `webauthn.verifyRegistration` |
 | `business_categories` | A | `accounts` | — |
+| `capture_consents` | A | `accounts` | — |
+| `capture_devices` | A | `accounts` | — |
+| `capture_signals` | E | `accounts` | — |
 | `cashflow_settlements` | C | `accounts` | — |
 | `chat_conversations` | G | `accounts` | `accounts` |
 | `chat_messages` | G | `accounts` | — |
@@ -335,7 +346,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Admin console, support and growth tools](admin.md), [AI providers and usage limits](ai-platform.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Depends on: [Admin console, support and growth tools](admin.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 

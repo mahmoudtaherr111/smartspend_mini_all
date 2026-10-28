@@ -202,6 +202,11 @@ views {
     include *
   }
 
+  view module_capture_intake of smartspend.api.modules.capture-intake {
+    title 'Module · Capture intake'
+    include *
+  }
+
   view module_capture_reader of smartspend.api.modules.capture-reader {
     title 'Module · Message reader'
     include *

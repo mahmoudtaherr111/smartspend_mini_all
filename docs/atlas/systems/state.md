@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of 84 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of 85 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-27 03cb4c09 | 2026-10-27 03cb4c09 | 18 | — | — | 2 | — |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-27 2b137b04 | 2026-10-27 2b137b04 | 6 | — | — | 2 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-28 0c1a49aa | 2026-10-28 0c1a49aa | 8 | — | — | 3 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 7 | — | 3 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-27 03cb4c09 | 2026-10-27 03cb4c09 | 7 | — | 1 | 7 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-27 ad904d75 | 2026-10-27 ad904d75 | 16 | **3** | — | 8 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-28 0c1a49aa | 2026-10-28 0c1a49aa | 16 | **3** | — | 8 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 1 | **1** | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 1 | **1** | 1 | 3 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-27 03cb4c09 | 2026-10-27 ad904d75 | 5 | — | — | — | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-28 0c1a49aa | 2026-10-28 0c1a49aa | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 7 | **1** | — | 2 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (84 issue(s))
+## What is waiting (85 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -66,15 +66,16 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.
 - Discount codes are created here but checkout never applies them ([billing](billing.md)).
 
-### Gaps (44)
+### Gaps (45)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
 - `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
-- No intake: nothing receives a message from a phone, and neither the reader nor the model reader is called by any route. The new intake (signals, merging and Android capture in the Flutter app) is the next step.
+- No phone sends signals yet: the Android capture in `mobile/packages/bank_capture` and the app's setup and review screens are the next step. The intake does not call the model reader: a reading without an amount is ignored.
 - Redaction masks every name-like word after من، إلى، to or from, so a merchant written there ("from AMAZON", "من كارفور") reaches the model as `[REDACTED_NAME]`; merchants written after لدى or at are kept.
+- One payment can arrive as several signals (the bank's SMS and its app's notification); each is kept and asked about on its own until merging is built.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A call does not go on with the screen locked or the app in the background: the page keeps the microphone only in the foreground, and the call resumes if the app comes back within the hold (`src/lib/voice/call-connection.ts`). Keeping it alive needs native work in the Android and iOS shells.

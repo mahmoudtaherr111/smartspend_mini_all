@@ -19,6 +19,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/business-router.ts` | [money](money.md) |
 | `api/capture-admin-router.ts` | [bank-messages](bank-messages.md) |
 | `api/capture-router.ts` | [bank-messages](bank-messages.md) |
+| `api/capture-v1-routes.ts` | [bank-messages](bank-messages.md) |
 | `api/chat-router.ts` | [ai-center](ai-center.md) |
 | `api/coach-router.ts` | [money](money.md) |
 | `api/context.ts` | [platform](platform.md) |
@@ -51,6 +52,9 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/cache-keys.ts` | [platform](platform.md) |
 | `api/lib/capture/ai-reader.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/catalog.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/consent.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/devices.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/intake.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/clauses.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/counterparty.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/explain.ts` | [bank-messages](bank-messages.md) |
@@ -279,6 +283,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/webauthn-router.ts` | [accounts](accounts.md) |
 | `contracts/account-deletion.ts` | [platform](platform.md) |
 | `contracts/ai-models.ts` | [platform](platform.md) |
+| `contracts/capture-intake.ts` | [platform](platform.md) |
 | `contracts/capture.ts` | [platform](platform.md) |
 | `contracts/categories.ts` | [platform](platform.md) |
 | `contracts/constants.ts` | [platform](platform.md) |
