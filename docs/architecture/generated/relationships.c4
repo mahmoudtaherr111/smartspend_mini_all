@@ -356,6 +356,7 @@ model {
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_signals
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_usage
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_user_pairs
+  smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.in_app_notifications
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.system_settings
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.user_wallets
   smartspend.api.modules.capture-reader -[imports]-> smartspend.api.modules.arabic-nlp
@@ -535,6 +536,7 @@ model {
   smartspend.api.modules.whatsapp -[uses]-> whatsapp
   smartspend.api.scheduler.capture-ai-sweep -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.scheduler.capture-breaker -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.scheduler.capture-silent-devices -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.scheduler.classification-log-cleanup -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.scheduler.coaching-reminders -[uses]-> smartspend.api.modules.coaching
   smartspend.api.scheduler.daily-auth-cleanup -[uses]-> smartspend.api.modules.auth
@@ -813,8 +815,10 @@ model {
   smartspend.api.trpc.business.updateCategory -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.business.updateCategory -[writes]-> smartspend.mysql.business_categories
   smartspend.api.trpc.capture.answer -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.trpc.capture.answerWalletOffer -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.autoOffers -[uses]-> smartspend.api.modules.capture-catalog
   smartspend.api.trpc.capture.autoOffers -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.trpc.capture.deleteMyData -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.devices -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.ignore -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.ignored -[uses]-> smartspend.api.modules.capture-intake
@@ -830,6 +834,7 @@ model {
   smartspend.api.trpc.capture.status -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.status -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.capture.unignore -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.trpc.capture.walletOffers -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.captureAdmin.bulkUndo -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.captureAdmin.catalog -[reads]-> smartspend.mysql.capture_sources
   smartspend.api.trpc.captureAdmin.catalog -[reads]-> smartspend.mysql.subscription_catalog

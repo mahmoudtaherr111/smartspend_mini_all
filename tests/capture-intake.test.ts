@@ -1,7 +1,7 @@
 import { and, eq, inArray, lte } from "drizzle-orm";
 import { Hono } from "hono";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { captureAiJobs, captureConsents, captureMarkers, captureDevices, captureEvents, captureMemory, captureSignals, captureUsage, captureUserPairs, expenseDailyRollups, expenses, localUsers, systemSettings, userWallets } from "../db/schema";
+import { captureAiJobs, captureConsents, captureMarkers, inAppNotifications, captureDevices, captureEvents, captureMemory, captureSignals, captureUsage, captureUserPairs, expenseDailyRollups, expenses, localUsers, systemSettings, userWallets } from "../db/schema";
 import { db } from "../api/queries/connection";
 import { registerCaptureRoutes } from "../api/capture-v1-routes";
 import { captureRouter } from "../api/capture-router";
@@ -11,7 +11,8 @@ import { registerCaptureDevice, revokeCaptureDevice } from "../api/lib/capture/d
 import { invalidateSettingsCache } from "../api/lib/settings-cache";
 import { deleteLedgerEntry, updateLedgerEntry } from "../api/services/ledger-writer";
 import { drainCaptureModel } from "../api/lib/capture/ai-queue";
-import { autoPolicyOf } from "../api/lib/capture/intake";
+import { autoPolicyOf, releaseHeldEvents } from "../api/lib/capture/intake";
+import { runSilentDevices } from "../api/lib/capture/care";
 import { applyBulkUndo, captureFunnel, previewBulkUndo, runCaptureBreaker } from "../api/lib/capture/operations";
 import { getSystemSettings } from "../api/lib/settings-cache";
 import type { AiReading } from "../api/lib/capture/ai-reader";
@@ -86,6 +87,7 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
         and(eq(table.userId as never, owner.userId), eq(table.userType as never, userType));
       await db.delete(captureAiJobs).where(mine(captureAiJobs));
       await db.delete(captureMarkers).where(mine(captureMarkers));
+      await db.delete(inAppNotifications).where(mine(inAppNotifications));
       await db.delete(captureSignals).where(mine(captureSignals));
       await db.delete(captureEvents).where(mine(captureEvents));
       await db.delete(userWallets).where(mine(userWallets));
@@ -508,6 +510,76 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
       expect(Number(row.balance)).toBe(3200.5);
       expect(row.balanceSource).toBe("bank_message");
       expect(await db.select().from(captureEvents).where(eq(captureEvents.userId, owner.userId))).toHaveLength(0);
+    });
+  });
+
+  describe("looking after the user's capture", () => {
+    const notices = () =>
+      db.select().from(inAppNotifications).where(and(eq(inAppNotifications.userId, owner.userId), eq(inAppNotifications.userType, "local")));
+    const beat = (access: boolean) =>
+      post("/api/capture/v1/heartbeat", { access, notifications: true, waiting: 0, lastCaptureAt: null, appVersion: "1.0.0" });
+
+    it("tells the user once when a phone loses notification access, and again only after it came back", async () => {
+      expect((await beat(false)).status).toBe(200);
+      expect((await beat(false)).status).toBe(200);
+      expect(await notices()).toHaveLength(1);
+      await beat(true);
+      await beat(false);
+      expect(await notices()).toHaveLength(2);
+      const [device] = await db.select().from(captureDevices).where(eq(captureDevices.id, deviceId));
+      expect(device.health).toMatchObject({ access: false, waiting: 0 });
+    });
+
+    it("tells the user once about a phone silent for two days", async () => {
+      await db.update(captureDevices).set({ lastHeartbeatAt: new Date(Date.now() - 3 * 24 * 3600_000), lastSeenAt: null, createdAt: new Date(Date.now() - 5 * 24 * 3600_000) }).where(eq(captureDevices.id, deviceId));
+      await runSilentDevices();
+      await runSilentDevices();
+      expect(await notices()).toHaveLength(1);
+    });
+
+    it("records what the user agreed to on upgrade, leaves the rest waiting, and says so once", async () => {
+      await setting("capture_monthly_limit_free", "1");
+      try {
+        await post("/api/capture/v1/signals", { signals: [purchase("signal-up-01", "10.00", "SHOP A MAADI"), purchase("signal-up-02", "20.00", "SHOP B MAADI"), purchase("signal-up-03", "30.00", "SHOP C MAADI")] });
+        const status = await caller.status();
+        expect(status.usage.held).toBe(2);
+        expect(new Date(status.usage.heldUntil!).getTime()).toBeGreaterThan(Date.now() + 59 * 24 * 3600_000);
+      } finally {
+        await clearSetting("capture_monthly_limit_free");
+      }
+      await db.insert(captureUserPairs).values({ userId: owner.userId, userType: "local", sourceSlug: "cib", kind: "card_purchase", streak: 3, autoEnabled: true });
+      const released = await releaseHeldEvents(owner);
+      expect(released).toEqual({ released: 2, recorded: 2 });
+      const [note] = await notices();
+      expect(note.body).toContain("سجلنا 2");
+      expect(await releaseHeldEvents(owner)).toEqual({ released: 0, recorded: 0 });
+    });
+
+    it("suggests a wallet for a card seen twice, adds it, and stops suggesting a declined one", async () => {
+      await post("/api/capture/v1/signals", { signals: [purchase("signal-wo-01", "10.00", "SHOP A MAADI"), purchase("signal-wo-02", "20.00", "SHOP B MAADI")] });
+      const [offer] = await caller.walletOffers();
+      expect(offer).toMatchObject({ sourceSlug: "cib", suffix: "234", payments: 2 });
+      await caller.answerWalletOffer({ sourceSlug: "cib", suffix: "234", accept: false });
+      expect(await caller.walletOffers()).toHaveLength(0);
+      await db.delete(captureMarkers).where(eq(captureMarkers.userId, owner.userId));
+      const added = await caller.answerWalletOffer({ sourceSlug: "cib", suffix: "234", accept: true });
+      const [wallet] = await db.select().from(userWallets).where(eq(userWallets.id, added.walletId!));
+      expect(wallet.lastFourDigits).toBe("234");
+      expect(await caller.walletOffers()).toHaveLength(0);
+    });
+
+    it("deletes what capture keeps, stops every phone, and keeps the ledger", async () => {
+      const { results } = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-del-01"), purchase("signal-del-02", "30.00", "SHOP B MAADI")] })).json();
+      await caller.answer({ eventId: results[0].eventId, action: "record" });
+      await caller.ignore({ kind: "ignore_phrase", value: "SHELL MAADI" });
+
+      expect(await caller.deleteMyData()).toEqual({ signals: 2, waiting: 1 });
+      expect(await db.select().from(captureSignals).where(eq(captureSignals.userId, owner.userId))).toHaveLength(0);
+      expect(await caller.ignored()).toHaveLength(0);
+      const [kept] = await db.select().from(captureEvents).where(eq(captureEvents.userId, owner.userId));
+      expect(kept).toMatchObject({ status: "recorded", cardSuffix: null, merchantKey: null });
+      expect(await db.select().from(expenses).where(and(eq(expenses.userId, owner.userId), eq(expenses.userType, "local")))).toHaveLength(1);
+      expect((await post("/api/capture/v1/signals", { signals: [purchase("signal-del-03")] })).status).toBe(403);
     });
   });
 

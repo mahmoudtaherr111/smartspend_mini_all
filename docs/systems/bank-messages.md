@@ -101,6 +101,18 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
    its notice has both buttons. When the model is not used the reader's reading is asked about if it has an amount, else
    the signal is dropped; a reading of no money moved keeps nothing. The notice waits on the job until the phone takes it
    from `GET /api/capture/v1/notices` (each once, with how many still wait).
+3d. **Looking after the user** ([decision 0034](../decisions/0034-capture-care-for-the-user.md),
+   `api/lib/capture/care.ts`): `POST /api/capture/v1/heartbeat` (twelve an hour at most) keeps what a phone reports
+   (notification access, whether notifications may show, what waits, when it last captured, its version) in
+   `capture_devices.health`; a report without access puts one notice in `in_app_notifications`, again only after a
+   report with access. The job `capture-silent-devices` (11:00) tells the user once about an Android phone silent two
+   days while the consent stands. On an upgrade `releaseHeldEvents` releases held payments oldest first, records those
+   `mayRecordAlone` allows, leaves the rest for an answer and writes one notice with both numbers; `capture.status`
+   gives `heldUntil`, when the first held payment is forgotten. `capture.walletOffers` lists a card or account seen in
+   two payments of 60 days with no wallet of those digits (at most three); `capture.answerWalletOffer` adds the wallet
+   or stops suggesting it (a `no_wallet` marker). `capture.deleteMyData` deletes the signals, the model's queue, the
+   memory, the pairs, the markers and the waiting payments, strips answered ones to tombstones, revokes every phone and
+   consent, and keeps the ledger and the month's count.
 3c. **Running it** ([decision 0032](../decisions/0032-capture-breaker-and-bulk-undo.md),
    `api/lib/capture/operations.ts`): each event keeps its bank and reader version (`source_slug`, `reader_version`).
    Every 15 minutes the protected job `capture-breaker` adds to `capture_paused_sources` a bank with twenty or more
@@ -198,12 +210,16 @@ Android only for now; the plugin is `mobile/packages/bank_capture`, and capture 
    private on the lock screen, in the interface language, with the server's buttons. A 401 forgets the token and the
    queue; a 403 or 503 keeps the queue and reads the config again. After a batch with a `queued` result,
    `NoticeWorker` fetches `/notices` ten seconds later and shows each one, asking again while some still wait (five
-   tries).
+   tries). Every twelve hours the run reports the phone's health (`CaptureHealth.kt`), and while notification access
+   is gone the phone shows its own notice once a day. A 426 keeps the queue and the card asks for an update.
 5. **The buttons** (`CaptureActionReceiver`): "record", "not mine" or, on a payment recorded on its own, "undo"; the
    notice goes at once and `ActionWorker` sends the answer to `/api/capture/v1/actions` until the server has it, without
    opening the app.
 6. **The card** also holds the switch for `ai_reading` (letting the admin's model read unclear messages), on or off at
-   any time.
+   any time, until when held payments are kept, and the way to the settings screen (`/more/capture-settings`): the
+   phones with a stop button each (stopping this phone also disconnects it), the ignored cards to add and remove, and
+   deleting the user's capture data after one confirmation. The review screen also suggests wallets and offers to
+   ignore the card of a waiting payment (it is dismissed too).
 7. **The review screen** (`/more/capture`): the offer to record a bank and kind on their own when there is one, then
    the waiting transactions with their source, amount, merchant and filing; "record" or "not mine", and the pounds of a
    foreign charge typed first.
@@ -281,6 +297,8 @@ EGP equivalent in the text, which is not used as pounds.
   `reader_version`: migration `db/migrations/0037_capture_events_source.sql`.
 - `capture_markers` (the cards and phrases a user ignores) and `capture_usage.signal_day` and `signals` (the day's
   signals against the cap): migration `db/migrations/0038_capture_markers.sql`.
+- `capture_devices.last_heartbeat_at`, `health` and `silent_notice_at`: migration
+  `db/migrations/0039_capture_device_health.sql`.
 - `capture_ai_jobs` (one row per signal waiting for the model: its status, attempts, lease, outcome, the event it
   became and the notice the phone has not taken yet), deleted after seven days: migration
   `db/migrations/0036_capture_ai_jobs.sql`.
@@ -295,6 +313,7 @@ EGP equivalent in the text, which is not used as pounds.
 | What the model reads, retries and leaves for the phone | `api/lib/capture/ai-queue.ts`; the route in `api/capture-v1-routes.ts`; `NoticeWorker` in `CaptureWork.kt` | `api/lib/capture/ai-queue.test.ts`, `tests/capture-intake.test.ts` |
 | The breaker, the bulk undo and the numbers | `api/lib/capture/operations.ts`, `captureAdmin.funnel` and `captureAdmin.bulkUndo` in `api/capture-admin-router.ts`, the console's «الأرقام» tab | `api/lib/capture/operations.test.ts`, `tests/capture-intake.test.ts`, `src/components/admin/capture/AdminCaptureNumbers.test.tsx` |
 | Who capture is open to, old builds, phones and daily signals, what a user ignores | `api/lib/capture/access.ts`, `api/lib/capture/markers.ts`, the settings in the admin's capture section and plan tabs | `api/lib/capture/access.test.ts`, `tests/capture-intake.test.ts` |
+| Phone health, the upgrade notice, wallet suggestions, deleting the user's data | `api/lib/capture/care.ts`, `releaseHeldEvents` in `api/lib/capture/intake.ts`, `CaptureHealth.kt`, `mobile/app/lib/src/features/capture/capture_settings_screen.dart` | `tests/capture-intake.test.ts`, `mobile/app/test/capture_test.dart` |
 | When signals are one payment | `api/lib/capture/events.ts` (`matchSignal`, `MATCH_WINDOWS`) | `api/lib/capture/events.test.ts` |
 | What is recorded without a question, and the memory | `mayRecordAlone` in `api/lib/capture/intake.ts`, `api/lib/capture/memory.ts`; the settings in the admin's capture section | `api/lib/capture/intake.test.ts`, `tests/capture-intake.test.ts` |
 | The routes, the device token and the answer | `api/capture-v1-routes.ts`, `api/lib/capture/devices.ts`, `api/capture-router.ts` | `tests/capture-intake.test.ts` (`npm run test:db`) |
@@ -335,7 +354,8 @@ nothing, a revoked device, missing consent and the switch refused, and the model
 dropped; the model's reading asked once through the notices and recorded on the answer; a reading of no money keeps
 nothing; three failures fall back to the reader's reading), the breaker stopping a bank after two of twenty were undone, and the
 bulk undo counting, removing and giving the month back, an old build refused, the beta list, two phones on the free
-plan, the daily cap, an ignored card, and a balance alone moving its wallet. `api/lib/capture/ai-queue.test.ts` checks how a reply
+plan, the daily cap, an ignored card, and a balance alone moving its wallet; a phone without access told once, a silent phone told once, an upgrade
+recording what the user agreed to with one notice, a wallet suggested, declined and added, and deleting the user's data. `api/lib/capture/ai-queue.test.ts` checks how a reply
 becomes a reading.
 `api/lib/capture/phone-gate-fixtures.test.ts` keeps the phone's shared cases on the lists the server sends, and
 `CaptureGateTest` in `mobile/packages/bank_capture/android/src/test` runs them in Kotlin (the Mobile workflow).

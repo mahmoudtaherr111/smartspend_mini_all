@@ -89,6 +89,20 @@ export interface CaptureSignalsResponse {
   results: CaptureSignalResult[];
 }
 
+/** `POST /api/capture/v1/heartbeat`: a phone's health, a few times a day (decision 0034). No message content. */
+export const captureHeartbeatSchema = z.object({
+  /** The app may still read notifications. */
+  access: z.boolean(),
+  /** The app may show notifications (its questions). */
+  notifications: z.boolean(),
+  /** Signals waiting on the phone to be sent. */
+  waiting: z.number().int().min(0).max(100_000),
+  /** When the phone last captured a message, if ever. */
+  lastCaptureAt: z.string().datetime({ offset: true }).nullable().optional(),
+  appVersion: z.string().max(32).optional(),
+});
+export type CaptureHeartbeat = z.infer<typeof captureHeartbeatSchema>;
+
 /** `GET /api/capture/v1/notices`: the notices of this phone's queued signals read since it last asked. */
 export interface CaptureNoticesResponse {
   notices: Array<{ eventId: number; notice: CaptureNotice }>;

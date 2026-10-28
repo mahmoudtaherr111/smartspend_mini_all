@@ -6,7 +6,8 @@
  * The rest sets capture up and answers it: `registerDevice` gives the installation the device token its native code
  * sends signals with (`/api/capture/v1`, api/capture-v1-routes.ts), `setConsent` records what the user agreed to,
  * `pending` lists the transactions waiting for the user, and `answer` records or dismisses one through the ledger
- * writer. `ignored`, `ignore` and `unignore` keep the cards and phrases the user asked capture to ignore (decision 0033).
+ * writer. `ignored`, `ignore` and `unignore` keep the cards and phrases the user asked capture to ignore (decision 0033);
+ * `walletOffers` suggests a wallet for a card seen in messages, and `deleteMyData` forgets what capture keeps (0034).
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -18,6 +19,7 @@ import { listCaptureDevices, registerCaptureDevice, revokeCaptureDevice } from "
 import { answerEvent, captureLimitOf, captureUsageOf, pendingEvents, releaseHeldEvents } from "./lib/capture/intake";
 import { autoOffers, setPairAuto } from "./lib/capture/memory";
 import { captureOpenFor } from "./lib/capture/access";
+import { acceptWalletOffer, declineWalletOffer, deleteMyCaptureData, walletOffers } from "./lib/capture/care";
 import { CAPTURE_IGNORE_KINDS, addCaptureMarker, listCaptureMarkers, removeCaptureMarker } from "./lib/capture/markers";
 import { planNumber } from "../contracts/plan-features";
 import { createRateLimiter } from "./lib/rate-limit";
@@ -66,6 +68,25 @@ export const captureRouter = router({
     }),
 
   devices: authedProcedure.query(async ({ ctx }) => listCaptureDevices(ownerOf(ctx))),
+
+  /** Cards and accounts seen in the user's messages with no wallet yet. */
+  walletOffers: authedProcedure.query(async ({ ctx }) => walletOffers(ownerOf(ctx))),
+
+  /** Adds the suggested wallet, or stops suggesting it. */
+  answerWalletOffer: authedProcedure
+    .input(z.object({ sourceSlug: z.string().min(1).max(64), suffix: z.string().regex(/^\d{3}$/), accept: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!input.accept) {
+        await declineWalletOffer(ownerOf(ctx), input.sourceSlug, input.suffix);
+        return { walletId: null };
+      }
+      const added = await acceptWalletOffer(ownerOf(ctx), input.sourceSlug, input.suffix);
+      if (!added) throw new TRPCError({ code: "NOT_FOUND", message: "الاقتراح ده مش موجود" });
+      return added;
+    }),
+
+  /** Forgets what capture keeps about the user and stops it on every phone; the ledger stays. */
+  deleteMyData: authedProcedure.mutation(async ({ ctx }) => deleteMyCaptureData(ownerOf(ctx))),
 
   /** The cards and phrases the user asked capture to ignore. */
   ignored: authedProcedure.query(async ({ ctx }) => listCaptureMarkers(ownerOf(ctx))),

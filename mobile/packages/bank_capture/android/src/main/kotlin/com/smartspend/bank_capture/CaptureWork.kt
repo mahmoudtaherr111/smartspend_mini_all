@@ -108,6 +108,7 @@ internal class UploadWorker(context: Context, params: WorkerParameters) : Corout
                 }
             }
             queue.prune(owner)
+            CaptureHealth.reportIfDue(context, api, settings, queue.count())
             val batchMax = settings.config?.batchMax ?: 20
             repeat(MAX_BATCHES) {
                 val batch = queue.oldest(owner, batchMax)

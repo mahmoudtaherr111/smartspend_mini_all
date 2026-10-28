@@ -109,7 +109,9 @@ final class CaptureProcedures {
   const CaptureProcedures._();
 
   ApiMutation get answer => const ApiMutation('capture.answer', builder: 'authedProcedure', hasInput: true);
+  ApiMutation get answerWalletOffer => const ApiMutation('capture.answerWalletOffer', builder: 'authedProcedure', hasInput: true);
   ApiQuery get autoOffers => const ApiQuery('capture.autoOffers', builder: 'authedProcedure');
+  ApiMutation get deleteMyData => const ApiMutation('capture.deleteMyData', builder: 'authedProcedure');
   ApiQuery get devices => const ApiQuery('capture.devices', builder: 'authedProcedure');
   ApiMutation get ignore => const ApiMutation('capture.ignore', builder: 'authedProcedure', hasInput: true);
   ApiQuery get ignored => const ApiQuery('capture.ignored', builder: 'authedProcedure');
@@ -121,6 +123,7 @@ final class CaptureProcedures {
   ApiQuery get sources => const ApiQuery('capture.sources', builder: 'authedProcedure');
   ApiQuery get status => const ApiQuery('capture.status', builder: 'authedProcedure');
   ApiMutation get unignore => const ApiMutation('capture.unignore', builder: 'authedProcedure', hasInput: true);
+  ApiQuery get walletOffers => const ApiQuery('capture.walletOffers', builder: 'authedProcedure');
 }
 
 /// The `chat` router, `api/chat-router.ts`.

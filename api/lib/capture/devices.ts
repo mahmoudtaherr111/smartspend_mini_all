@@ -133,6 +133,8 @@ export async function listCaptureDevices(owner: CaptureOwner) {
     .select({
       id: captureDevices.id,
       platform: captureDevices.platform,
+      // The app's own id for its installation, so it can tell which row is this phone.
+      installationId: captureDevices.installationId,
       label: captureDevices.label,
       appVersion: captureDevices.appVersion,
       createdAt: captureDevices.createdAt,

@@ -106,8 +106,8 @@ the job, so every replica may register it and one runs it (golden rule 7). The h
 schedules each job in `APP_TIMEZONE`, not the server's clock. The list, with each schedule, is in
 [docs/atlas/entrypoints.md](../atlas/entrypoints.md). In short: session, challenge and phone-code cleanup
 (daily), classification logs (Sundays), scheduled notifications (every minute) and the smart activity check
-(20:00), coaching reminders (every five minutes), the captured messages left for the model (every minute) and the
-capture breaker (every fifteen; see [bank messages](bank-messages.md)), the taxonomy migration (every thirty), the memory embedding
+(20:00), coaching reminders (every five minutes), the captured messages left for the model (every minute), the
+capture breaker (every fifteen) and the silent capture phones (11:00; see [bank messages](bank-messages.md)), the taxonomy migration (every thirty), the memory embedding
 backfill (every twenty), the live calls' memory (every ten; see [voice calls](voice-calls.md)), the monthly
 behaviour snapshot (1st at 01:00) and report (1st at 02:00), the rollup reconciliation (04:00), data retention
 (05:00), and subscription expiry with renewal reminders (06:00). With crons on, boot also seeds the default

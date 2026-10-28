@@ -24,6 +24,8 @@ internal class CaptureApi(private val baseUrl: String, private val token: String
 
     fun notices(): CaptureReply = call("GET", "/api/capture/v1/notices", null)
 
+    fun heartbeat(body: JSONObject): CaptureReply = call("POST", "/api/capture/v1/heartbeat", body)
+
     private fun call(method: String, path: String, body: JSONObject?): CaptureReply {
         val connection = URL(baseUrl.trimEnd('/') + path).openConnection() as HttpURLConnection
         try {

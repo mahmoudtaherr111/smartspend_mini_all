@@ -10,7 +10,7 @@
  */
 import { and, count, desc, eq, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { captureAiJobs, captureEvents, captureSignals, captureUsage, expenses, localUsers, userWallets, users } from "../../../db/schema";
+import { captureAiJobs, captureEvents, captureSignals, captureUsage, expenses, inAppNotifications, localUsers, userWallets, users } from "../../../db/schema";
 import { planNumber } from "../../../contracts/plan-features";
 import { CATEGORIES } from "../../../contracts/categories";
 import {
@@ -474,19 +474,59 @@ export async function captureLimitOf(plan: string | null | undefined): Promise<n
  * When the user's plan has no limit, the payments held over the old one in the last two months come back as payments
  * waiting for an answer (the owner's decision: an upgrade records what was missed). Returns how many.
  */
-export async function releaseHeldEvents(owner: CaptureOwner, now = new Date()): Promise<number> {
-  const [result] = await getDb()
-    .update(captureEvents)
-    .set({ status: "review" })
-    .where(
-      and(
-        eq(captureEvents.userId, owner.userId),
-        eq(captureEvents.userType, owner.userType),
-        eq(captureEvents.status, "held"),
-        gte(captureEvents.createdAt, new Date(now.getTime() - HELD_DAYS * 24 * 3600 * 1000)),
-      ),
-    );
-  return affected(result);
+export async function releaseHeldEvents(owner: CaptureOwner, now = new Date()): Promise<{ released: number; recorded: number }> {
+  const mine = and(eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType));
+  const held = await getDb()
+    .select({ id: captureEvents.id })
+    .from(captureEvents)
+    .where(and(mine, eq(captureEvents.status, "held"), gte(captureEvents.createdAt, new Date(now.getTime() - HELD_DAYS * 24 * 3600 * 1000))))
+    .orderBy(captureEvents.id)
+    .limit(HELD_MAX);
+  if (held.length === 0) return { released: 0, recorded: 0 };
+
+  const catalog = await getCaptureCatalog();
+  const policy = autoPolicyOf(await getSystemSettings());
+  let released = 0;
+  let recorded = 0;
+  let spending = false;
+  for (const { id } of held) {
+    await getDb().transaction(async (tx) => {
+      await lockCaptureUser(tx, owner);
+      const [event] = await tx.select().from(captureEvents).where(and(eq(captureEvents.id, id), mine, eq(captureEvents.status, "held"))).limit(1).for("update");
+      if (!event) return;
+      await tx.update(captureEvents).set({ status: "review" }).where(eq(captureEvents.id, id));
+      released++;
+      // What the user or the admin let record on its own is recorded now; the rest waits for an answer.
+      const reading = event.reading as SignalReading | null;
+      if (!reading) return;
+      const memoryKey = memoryKeyOf(reading.counterparty);
+      const suggestion = eventSuggestion(event, reading, catalog, await memoryFor(tx, owner, memoryKey ? [memoryKey] : []));
+      const userAgreed = reading.sourceSlug ? await pairAutoEnabled(tx, owner, reading.sourceSlug, reading.kind) : false;
+      if (mayRecordAlone({ policy, reading, suggestion, possibleDuplicate: event.possibleDuplicateOf !== null, userAgreed })) {
+        const done = await recordEventInTx(tx, owner, { ...event, status: "review" }, reading, catalog, {}, { auto: true });
+        recorded++;
+        spending ||= done.spending;
+      }
+    });
+  }
+  if (recorded > 0) await afterLedgerWrite(owner, { spending });
+  if (released > 0) {
+    const waiting = released - recorded;
+    // One notice for all of them, in the app (the phone fetches nothing for this).
+    await getDb()
+      .insert(inAppNotifications)
+      .values({
+        userId: owner.userId,
+        userType: owner.userType,
+        title: "العمليات اللي فاتتك رجعت",
+        body:
+          recorded > 0
+            ? `سجلنا ${recorded} عملية من رسايل البنك فاتتك${waiting > 0 ? `، و${waiting} مستنيين ردك` : ""}.`
+            : `${waiting} عملية من رسايل البنك فاتتك مستنية ردك.`,
+      });
+  }
+  log.info({ event: "capture.held_released", userId: owner.userId, released, recorded }, "Held payments released after an upgrade");
+  return { released, recorded };
 }
 
 /** This month's use against the limit, and the payments held, for the app. */
@@ -495,11 +535,13 @@ export async function captureUsageOf(owner: CaptureOwner, plan: string | null | 
   const limit = await captureLimitOf(plan);
   if (limit === 0) await releaseHeldEvents(owner, now);
   const [row] = await getDb().select({ reserved: captureUsage.reserved }).from(captureUsage).where(usageOf(owner, period));
-  const [{ held }] = await getDb()
-    .select({ held: count() })
+  const [{ held, oldest }] = await getDb()
+    .select({ held: count(), oldest: sql<Date | null>`MIN(${captureEvents.createdAt})` })
     .from(captureEvents)
     .where(and(eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType), eq(captureEvents.status, "held")));
-  return { period, limit, used: row?.reserved ?? 0, held };
+  // The first held payment to be forgotten, for "kept until …" (decision 3 of the plan: the count and the days).
+  const heldUntil = oldest ? new Date(new Date(oldest).getTime() + HELD_DAYS * 24 * 3600 * 1000) : null;
+  return { period, limit, used: row?.reserved ?? 0, held, heldUntil };
 }
 
 /** The notice of the first payment held in a month. */

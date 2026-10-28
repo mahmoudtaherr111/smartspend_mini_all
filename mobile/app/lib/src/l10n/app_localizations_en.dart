@@ -118,6 +118,103 @@ class AppLocalizationsEn extends AppLocalizations {
       'This version of the app is too old for bank message capture. Update the app, and waiting messages will be sent after.';
 
   @override
+  String get captureSettingsTitle => 'Bank message settings';
+
+  @override
+  String get captureSettingsFailed => 'We couldn\'t save that. Try again.';
+
+  @override
+  String get captureDevicesTitle => 'Phones that send';
+
+  @override
+  String get captureDevicesEmpty => 'No phone is connected.';
+
+  @override
+  String get captureThisPhone => 'This phone';
+
+  @override
+  String get captureOtherPhone => 'Another phone';
+
+  @override
+  String get captureDeviceStop => 'Stop';
+
+  @override
+  String get captureIgnoredTitle => 'Cards we ignore';
+
+  @override
+  String get captureIgnoredBody =>
+      'These cards\' messages are never kept, like a family member\'s card or a work card.';
+
+  @override
+  String get captureIgnoredRemove => 'Stop ignoring';
+
+  @override
+  String get captureIgnoreDigitsLabel => 'Last 3 or 4 digits';
+
+  @override
+  String get captureIgnoreDigitsNeeded =>
+      'Type the last 3 or 4 digits of the card.';
+
+  @override
+  String get captureIgnoreAdd => 'Ignore';
+
+  @override
+  String get captureDeleteTitle => 'Delete bank message data';
+
+  @override
+  String get captureDeleteBody =>
+      'We delete the messages we keep and everything learned from them, and stop capture on all your phones. The transactions in your ledger stay as they are.';
+
+  @override
+  String get captureDeleteButton => 'Delete my data';
+
+  @override
+  String get captureDeleteConfirmTitle => 'Delete bank message data?';
+
+  @override
+  String get captureDeleteConfirmBody =>
+      'You can\'t get it back, and capture stops until you turn it on again.';
+
+  @override
+  String get captureDeleteCancel => 'Back';
+
+  @override
+  String get captureDeleteConfirm => 'Delete';
+
+  @override
+  String get captureDeleted => 'Bank message data deleted.';
+
+  @override
+  String get captureWalletOfferBody =>
+      'Its payments will be recorded on it, and its balance will follow the bank messages.';
+
+  @override
+  String get captureWalletAdd => 'Add it';
+
+  @override
+  String get captureWalletNo => 'No';
+
+  @override
+  String captureIgnoredCard(String digits) {
+    return 'Card ending $digits';
+  }
+
+  @override
+  String captureIgnoreThisCard(String digits) {
+    return 'Ignore card ending $digits';
+  }
+
+  @override
+  String captureHeldUntil(String date) {
+    return 'The first of them is kept until $date.';
+  }
+
+  @override
+  String captureWalletOffer(String bank, String digits) {
+    return 'We found a $bank card ending $digits. Add it to your wallets?';
+  }
+
+  @override
   String get captureOffline => 'Waiting for a connection to send.';
 
   @override

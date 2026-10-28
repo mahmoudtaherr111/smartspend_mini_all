@@ -1,8 +1,10 @@
 import 'package:bank_capture/bank_capture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smartspend_app/src/core/preferences.dart';
 import 'package:smartspend_app/src/features/capture/capture_controller.dart';
 import 'package:smartspend_app/src/features/capture/capture_review_screen.dart';
+import 'package:smartspend_app/src/features/capture/capture_settings_screen.dart';
 import 'package:smartspend_app/src/routing/app_router.dart';
 
 import 'support/test_app.dart';
@@ -336,6 +338,164 @@ void main() {
         'action': 'record',
         'amountEgp': 1010.5,
       });
+    });
+  });
+
+  group('the person controls capture', () {
+    Future<(TestApp, FakeApi)> open(
+      WidgetTester tester,
+      String path,
+      FakeApi Function(FakeApi) setup,
+    ) async {
+      _phoneScreen(tester);
+      final api = setup(_api());
+      final app = TestApp(token: 'session-token', api: api);
+      await app.preferences.write(
+        const DevicePreferences(captureInstallationId: 'install-here-0001'),
+      );
+      app.bankCapture
+        ..access = CaptureAccess.granted
+        ..setup = CaptureSetup(
+          baseUrl: 'http://localhost:3000',
+          deviceToken: 'cap_device-token',
+          ownerKey: 'local:42',
+          language: 'ar',
+        );
+      await app.pump(tester);
+      app.container.read(routerProvider).go(path);
+      await tester.pumpAndSettle();
+      return (app, api);
+    }
+
+    testWidgets('suggests a wallet for a card seen in messages', (
+      tester,
+    ) async {
+      final (_, api) = await open(
+        tester,
+        CaptureReviewScreen.path,
+        (api) => api
+          ..answer(
+            'capture.walletOffers',
+            (_) => [
+              {
+                'sourceSlug': 'cib',
+                'suffix': '234',
+                'payments': 4,
+                'sourceName': {'ar': 'البنك التجاري الدولي', 'en': 'CIB'},
+              },
+            ],
+          )
+          ..answer('capture.answerWalletOffer', (_) => {'walletId': 9}),
+      );
+      expect(
+        find.text('لقينا كارت البنك التجاري الدولي آخره 234. نضيفه لمحافظك؟'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('ضيفها'));
+      await tester.pumpAndSettle();
+      expect(api.lastInput('capture.answerWalletOffer'), {
+        'sourceSlug': 'cib',
+        'suffix': '234',
+        'accept': true,
+      });
+    });
+
+    testWidgets('ignores the card of a waiting payment and dismisses it', (
+      tester,
+    ) async {
+      var left = [
+        {
+          ..._pending(41),
+          'reading': {
+            ...(_pending(41)['reading']! as Map<String, Object?>),
+            'cardSuffix': '1234',
+          },
+        },
+      ];
+      final (_, api) = await open(
+        tester,
+        CaptureReviewScreen.path,
+        (api) => api
+          ..answer('capture.pending', (_) => left)
+          ..answer('capture.ignore', (_) => {'id': 5, 'value': '234'})
+          ..answer('capture.answer', (_) {
+            left = [];
+            return {'result': 'dismissed'};
+          }),
+      );
+      final ignore = find.text('تجاهل كارت آخره 1234');
+      await tester.ensureVisible(ignore);
+      await tester.pumpAndSettle();
+      await tester.tap(ignore);
+      await tester.pumpAndSettle();
+      expect(api.lastInput('capture.ignore'), {
+        'kind': 'ignore_card',
+        'value': '1234',
+      });
+      expect(api.lastInput('capture.answer'), {
+        'eventId': 41,
+        'action': 'dismiss',
+      });
+    });
+
+    testWidgets('stops this phone, and deletes the data after asking once', (
+      tester,
+    ) async {
+      final (app, api) = await open(
+        tester,
+        CaptureSettingsScreen.path,
+        (api) => api
+          ..answer(
+            'capture.devices',
+            (_) => [
+              {
+                'id': 3,
+                'platform': 'android',
+                'installationId': 'install-here-0001',
+                'revokedAt': null,
+              },
+              {
+                'id': 4,
+                'platform': 'android',
+                'installationId': 'install-other-001',
+                'label': 'Old phone',
+                'revokedAt': null,
+              },
+            ],
+          )
+          ..answer('capture.ignored', (_) => <Object?>[])
+          ..answer('capture.revokeDevice', (_) => {'success': true})
+          ..answer('capture.deleteMyData', (_) => {'signals': 3, 'waiting': 1}),
+      );
+      expect(find.text('الموبايل ده'), findsOneWidget);
+      expect(find.text('Old phone'), findsOneWidget);
+
+      await tester.tap(find.text('وقّف').first);
+      await tester.pumpAndSettle();
+      expect(api.lastInput('capture.revokeDevice'), {'deviceId': 3});
+      expect(app.bankCapture.disconnects, 1);
+
+      final delete = find.text('امسح بياناتي');
+      await tester.scrollUntilVisible(
+        delete,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(delete);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('امسح'));
+      await tester.pumpAndSettle();
+      expect(
+        api.paths.where((path) => path == 'capture.deleteMyData'),
+        hasLength(1),
+      );
+      expect(app.bankCapture.disconnects, 2);
     });
   });
 }

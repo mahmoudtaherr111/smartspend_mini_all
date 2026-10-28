@@ -1,7 +1,8 @@
 /**
  * The routes phones call with a device token to send captured bank and wallet notifications (decision 0028):
  * `POST /api/capture/v1/signals`, `GET /api/capture/v1/config`, `POST /api/capture/v1/actions` (a notification's
- * button) and `GET /api/capture/v1/notices` (the questions the model's readings left, decision 0031). They are plain HTTP, not tRPC, because native code calls them while the app is closed: real status codes,
+ * button), `GET /api/capture/v1/notices` (the questions the model's readings left, decision 0031) and
+ * `POST /api/capture/v1/heartbeat` (the phone's health, decision 0034). They are plain HTTP, not tRPC, because native code calls them while the app is closed: real status codes,
  * `Retry-After`, a body limit and a contract (`contracts/capture-intake.ts`) Kotlin and Swift test against.
  *
  * Every request must send `Content-Type: application/json`: the CSRF check refuses a POST without it. A phone sends its
@@ -16,12 +17,14 @@ import {
   CAPTURE_DEVICE_HEADER,
   CAPTURE_TEXT_MAX,
   captureActionRequestSchema,
+  captureHeartbeatSchema,
   captureSignalsRequestSchema,
   type CaptureConfig,
   type CaptureError,
 } from "../contracts/capture-intake";
 import { captureOpenFor, olderThan, secondsToNextBusinessDay, takeDailySignals } from "./lib/capture/access";
 import { takeCaptureNotices, wakeCaptureModel } from "./lib/capture/ai-queue";
+import { recordHeartbeat } from "./lib/capture/care";
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
 import { captureConsentsOf } from "./lib/capture/consent";
 import { resolveCaptureDevice, touchCaptureDevice, type CaptureDevice } from "./lib/capture/devices";
@@ -40,6 +43,8 @@ const signalBatches = createRateLimiter(6, 60_000);
 const actionTaps = createRateLimiter(30, 60_000);
 // The phone asks a few times after a batch with queued signals.
 const noticeReads = createRateLimiter(20, 60_000);
+// A phone reports its health every few hours.
+const heartbeats = createRateLimiter(12, 3_600_000);
 
 const fail = (c: Context, status: 400 | 401 | 403 | 404 | 413 | 426 | 429 | 503, error: CaptureError) => c.json({ error }, status);
 
@@ -101,6 +106,19 @@ export function registerCaptureRoutes(app: Hono): void {
     await touchCaptureDevice(device.deviceId, true);
     if (results.some((result) => result.result === "queued")) wakeCaptureModel();
     return c.json({ results });
+  });
+
+  app.post("/api/capture/v1/heartbeat", limit, async (c) => {
+    const device = await deviceOf(c);
+    if (!device) return fail(c, 401, "invalid_device");
+    if (!(await underLimit(heartbeats, `capture:heartbeat:${device.deviceId}`))) {
+      c.header("Retry-After", "3600");
+      return fail(c, 429, "rate_limited");
+    }
+    const parsed = captureHeartbeatSchema.safeParse(await readJson(c));
+    if (!parsed.success) return fail(c, 400, "invalid_request");
+    await recordHeartbeat(device, parsed.data);
+    return c.json({ ok: true });
   });
 
   app.get("/api/capture/v1/notices", async (c) => {

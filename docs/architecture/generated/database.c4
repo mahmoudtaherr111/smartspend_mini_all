@@ -157,7 +157,7 @@ model {
     }
     capture_devices = table 'capture_devices' {
       #classA #dualOwner
-      description '13 columns, 3 indexes, storage class A.'
+      description '16 columns, 3 indexes, storage class A.'
       metadata {
         export 'captureDevices'
         storageClass 'A'

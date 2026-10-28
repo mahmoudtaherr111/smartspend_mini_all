@@ -19,6 +19,7 @@ internal object CaptureNotifier {
     private const val REVIEW_CHANNEL = "smartspend_capture_review"
     private const val SYNC_CHANNEL = "smartspend_capture_sync"
     const val SYNC_NOTIFICATION_ID = 7_400_001
+    private const val STOPPED_NOTIFICATION_ID = 7_400_002
 
     private fun manager(context: Context) = context.getSystemService(NotificationManager::class.java)
 
@@ -88,6 +89,26 @@ internal object CaptureNotifier {
     }
 
     fun cancelReview(context: Context, eventId: Long) = manager(context).cancel(notificationId(eventId))
+
+    /** Says capture stopped because the app may no longer read notifications; opening it leads back to the card. */
+    fun showStopped(context: Context, language: String) {
+        if (!canNotify(context)) return
+        val arabic = language != "en"
+        ensureChannels(context, arabic)
+        val body = if (arabic) {
+            "مش بنقدر نقرا إشعارات البنك. افتح التطبيق ورجّع الصلاحية من كارت رسايل البنك."
+        } else {
+            "We can't read bank notifications anymore. Open the app and turn access back on from the bank messages card."
+        }
+        val notification = builder(context, REVIEW_CHANNEL)
+            .setSmallIcon(smallIcon(context))
+            .setContentTitle(if (arabic) "تسجيل رسايل البنك واقف" else "Bank message capture stopped")
+            .setContentText(body)
+            .setStyle(Notification.BigTextStyle().bigText(body))
+            .setAutoCancel(true)
+            .setContentIntent(openApp(context))
+        manager(context).notify(STOPPED_NOTIFICATION_ID, notification.build())
+    }
 
     /** The quiet notification of a send running in the foreground (expedited work on Android 11 and older). */
     fun syncNotification(context: Context, language: String): Notification {

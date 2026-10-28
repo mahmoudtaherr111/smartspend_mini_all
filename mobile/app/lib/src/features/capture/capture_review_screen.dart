@@ -19,12 +19,14 @@ class CaptureReviewScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final pending = ref.watch(capturePendingProvider);
     final offers = ref.watch(captureAutoOffersProvider).value ?? const [];
+    final wallets = ref.watch(captureWalletOffersProvider).value ?? const [];
     return Scaffold(
       appBar: AppBar(title: Text(l10n.captureReviewTitle)),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(capturePendingProvider.future),
         child: switch (pending) {
-          AsyncData(:final value) when value.isEmpty && offers.isEmpty =>
+          AsyncData(:final value)
+              when value.isEmpty && offers.isEmpty && wallets.isEmpty =>
             ListView(
               padding: const EdgeInsets.all(SmartSpendSpacing.screen),
               children: [Center(child: Text(l10n.captureReviewEmpty))],
@@ -34,6 +36,10 @@ class CaptureReviewScreen extends ConsumerWidget {
             children: [
               for (final offer in offers) ...[
                 _AutoOfferCard(offer: offer),
+                const SizedBox(height: SmartSpendSpacing.lg),
+              ],
+              for (final offer in wallets) ...[
+                _WalletOfferCard(offer: offer),
                 const SizedBox(height: SmartSpendSpacing.lg),
               ],
               for (final item in value) ...[
@@ -124,6 +130,75 @@ class _AutoOfferCardState extends ConsumerState<_AutoOfferCard> {
   }
 }
 
+/// Suggests a wallet for a card seen in the person's messages, so its payments and balance land on it (0034).
+class _WalletOfferCard extends ConsumerStatefulWidget {
+  const _WalletOfferCard({required this.offer});
+
+  final WalletOffer offer;
+
+  @override
+  ConsumerState<_WalletOfferCard> createState() => _WalletOfferCardState();
+}
+
+class _WalletOfferCardState extends ConsumerState<_WalletOfferCard> {
+  bool _busy = false;
+
+  Future<void> _answer(bool accept) async {
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(captureApiProvider)
+          .answerWalletOffer(widget.offer, accept: accept);
+    } on Object {
+      // The suggestion stays; it is shown again next time.
+    }
+    ref.invalidate(captureWalletOffersProvider);
+    if (mounted) setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(SmartSpendSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.captureWalletOffer(widget.offer.source, widget.offer.suffix),
+              style: textTheme.titleMedium,
+            ),
+            const SizedBox(height: SmartSpendSpacing.sm),
+            Text(l10n.captureWalletOfferBody, style: textTheme.bodyMedium),
+            const SizedBox(height: SmartSpendSpacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: SmartSpendButton(
+                    label: l10n.captureWalletAdd,
+                    busy: _busy,
+                    onPressed: () => _answer(true),
+                  ),
+                ),
+                const SizedBox(width: SmartSpendSpacing.md),
+                Expanded(
+                  child: SmartSpendButton(
+                    label: l10n.captureWalletNo,
+                    variant: ButtonVariant.secondary,
+                    onPressed: _busy ? null : () => _answer(false),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _PendingCard extends ConsumerStatefulWidget {
   const _PendingCard({super.key, required this.item});
 
@@ -176,6 +251,26 @@ class _PendingCardState extends ConsumerState<_PendingCard> {
         });
       }
     }
+  }
+
+  /// Ignores this card's messages from now on (a family member's or a work card), and dismisses this one.
+  Future<void> _ignoreCard() async {
+    final l10n = AppLocalizations.of(context);
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final api = ref.read(captureApiProvider);
+      await api.ignoreCard(widget.item.card!);
+      await api.answer(widget.item.eventId, record: false);
+      ref
+        ..invalidate(capturePendingProvider)
+        ..invalidate(captureIgnoredProvider);
+    } on Object {
+      if (mounted) setState(() => _error = l10n.captureAnswerFailed);
+    }
+    if (mounted) setState(() => _busy = false);
   }
 
   @override
@@ -270,6 +365,11 @@ class _PendingCardState extends ConsumerState<_PendingCard> {
                 ),
               ],
             ),
+            if (item.card != null)
+              TextButton(
+                onPressed: _busy ? null : _ignoreCard,
+                child: Text(l10n.captureIgnoreThisCard(item.card!)),
+              ),
           ],
         ),
       ),

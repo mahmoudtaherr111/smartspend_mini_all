@@ -188,18 +188,20 @@
       "files": {
         "api/boot.ts#job:capture-ai-sweep": "7b7d2f8d3978",
         "api/boot.ts#job:capture-breaker": "46eeeaa447e0",
+        "api/boot.ts#job:capture-silent-devices": "e650646f7646",
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
         "api/capture-admin-router.ts": "90bc9c19bc05",
-        "api/capture-router.ts": "217f070484bc",
-        "api/capture-v1-routes.ts": "8563d83531b3",
+        "api/capture-router.ts": "7abdbc8e517a",
+        "api/capture-v1-routes.ts": "db95c617e1b4",
         "api/lib/capture/access.ts": "a05bd6473e8d",
         "api/lib/capture/ai-queue.ts": "796ebea682af",
         "api/lib/capture/ai-reader.ts": "b506b338b9f2",
+        "api/lib/capture/care.ts": "b2a6ac452265",
         "api/lib/capture/catalog.ts": "dd7c3d61d374",
         "api/lib/capture/consent.ts": "ce37c795e162",
-        "api/lib/capture/devices.ts": "f076610a1858",
+        "api/lib/capture/devices.ts": "caff87cd0199",
         "api/lib/capture/events.ts": "edb833c76977",
-        "api/lib/capture/intake.ts": "5893b8e37554",
+        "api/lib/capture/intake.ts": "850162bf7963",
         "api/lib/capture/markers.ts": "636e75d4ccb1",
         "api/lib/capture/memory.ts": "4bbf061cedd9",
         "api/lib/capture/operations.ts": "9c83fba1e26d",
@@ -219,9 +221,9 @@
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c"
       },
-      "checked": "2026-10-28 17e66339",
-      "arabic": "a1405e5885a6",
-      "arabicChecked": "2026-10-28 17e66339"
+      "checked": "2026-10-28 12a32e2a",
+      "arabic": "8f5418f9be7d",
+      "arabicChecked": "2026-10-28 12a32e2a"
     },
     "billing": {
       "files": {
@@ -454,7 +456,7 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "b489de22e259",
+        "api/boot.ts#rest-of-file": "3d19f3c8fca9",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "9eb0b19897a9",
         "api/lib/app-time.ts": "f53d4623a239",
@@ -479,7 +481,7 @@
         "api/services/storage/types.ts": "766de83090e8",
         "contracts/account-deletion.ts": "6fcd736f6cae",
         "contracts/ai-models.ts": "7eeda8042bd8",
-        "contracts/capture-intake.ts": "c503e9d22cac",
+        "contracts/capture-intake.ts": "c0e7ef0a9de1",
         "contracts/capture.ts": "9fd5ef8a1382",
         "contracts/categories.ts": "aca28dd35f9b",
         "contracts/constants.ts": "f047c234a332",
@@ -493,13 +495,13 @@
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
         "db/relations.ts": "86fa5979e7cb",
-        "db/schema.ts": "2f3c32e648a3",
+        "db/schema.ts": "2c0e343c28c0",
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "2837060826f4"
       },
-      "checked": "2026-10-28 17e66339",
-      "arabic": "0a25855b54e8",
-      "arabicChecked": "2026-10-28 17e66339"
+      "checked": "2026-10-28 12a32e2a",
+      "arabic": "d0e35d32d288",
+      "arabicChecked": "2026-10-28 12a32e2a"
     },
     "voice-calls": {
       "files": {

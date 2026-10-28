@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../capture/capture_api.dart';
 import '../capture/capture_controller.dart';
 import '../capture/capture_review_screen.dart';
+import '../capture/capture_settings_screen.dart';
 
 /// Bank and wallet message capture on this phone (decision 0028): turning it on (consent, a device token, the
 /// native side connected), the notification access it still needs, and once it runs, what waits to be sent and the
@@ -188,6 +189,12 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
             Text(l10n.captureNotificationsOff, style: muted),
           const SizedBox(height: SmartSpendSpacing.sm),
           const _PendingLink(),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l10n.captureSettingsTitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go(CaptureSettingsScreen.path),
+          ),
         ],
       ],
     );
@@ -216,6 +223,14 @@ class _UsageLines extends ConsumerWidget {
           Text(
             l10n.captureHeld(server.held),
             style: textTheme.bodyMedium?.copyWith(color: colors.warning),
+          ),
+        if (server.held > 0 && server.heldUntil != null)
+          Text(
+            l10n.captureHeldUntil(
+              MaterialLocalizations.of(context)
+                  .formatMediumDate(server.heldUntil!.toLocal()),
+            ),
+            style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
           ),
       ],
     );

@@ -272,6 +272,174 @@ abstract class AppLocalizations {
   /// **'نسخة التطبيق دي قديمة على تسجيل رسايل البنك. حدّث التطبيق، والرسايل المستنية هتتبعت بعدها.'**
   String get captureUpdateRequired;
 
+  /// No description provided for @captureSettingsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعدادات رسايل البنك'**
+  String get captureSettingsTitle;
+
+  /// No description provided for @captureSettingsFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحفظ ده. جرّب تاني.'**
+  String get captureSettingsFailed;
+
+  /// No description provided for @captureDevicesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايلات اللي بتبعت'**
+  String get captureDevicesTitle;
+
+  /// No description provided for @captureDevicesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش موبايل متوصل.'**
+  String get captureDevicesEmpty;
+
+  /// No description provided for @captureThisPhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايل ده'**
+  String get captureThisPhone;
+
+  /// No description provided for @captureOtherPhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'موبايل تاني'**
+  String get captureOtherPhone;
+
+  /// No description provided for @captureDeviceStop.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقّف'**
+  String get captureDeviceStop;
+
+  /// No description provided for @captureIgnoredTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كروت بنتجاهلها'**
+  String get captureIgnoredTitle;
+
+  /// No description provided for @captureIgnoredBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسايل الكروت دي مابتتحفظش خالص، زي كارت حد من أهلك أو كارت الشغل.'**
+  String get captureIgnoredBody;
+
+  /// No description provided for @captureIgnoredRemove.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطّل تتجاهله'**
+  String get captureIgnoredRemove;
+
+  /// No description provided for @captureIgnoreDigitsLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر 3 أو 4 أرقام'**
+  String get captureIgnoreDigitsLabel;
+
+  /// No description provided for @captureIgnoreDigitsNeeded.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب آخر 3 أو 4 أرقام من الكارت.'**
+  String get captureIgnoreDigitsNeeded;
+
+  /// No description provided for @captureIgnoreAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاهله'**
+  String get captureIgnoreAdd;
+
+  /// No description provided for @captureDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح بيانات رسايل البنك'**
+  String get captureDeleteTitle;
+
+  /// No description provided for @captureDeleteBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنمسح الرسايل اللي عندنا وكل اللي اتعلمناه منها، وبنوقف التسجيل على كل موبايلاتك. العمليات اللي في دفترك بتفضل زي ما هي.'**
+  String get captureDeleteBody;
+
+  /// No description provided for @captureDeleteButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح بياناتي'**
+  String get captureDeleteButton;
+
+  /// No description provided for @captureDeleteConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمسح بيانات رسايل البنك؟'**
+  String get captureDeleteConfirmTitle;
+
+  /// No description provided for @captureDeleteConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش هتقدر ترجّعها، والتسجيل هيقف لحد ما تشغّله تاني.'**
+  String get captureDeleteConfirmBody;
+
+  /// No description provided for @captureDeleteCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get captureDeleteCancel;
+
+  /// No description provided for @captureDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح'**
+  String get captureDeleteConfirm;
+
+  /// No description provided for @captureDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتمسحت بيانات رسايل البنك.'**
+  String get captureDeleted;
+
+  /// No description provided for @captureWalletOfferBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'هنسجّل عملياته عليها، ورصيدها هيتحدّث من رسايل البنك.'**
+  String get captureWalletOfferBody;
+
+  /// No description provided for @captureWalletAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيفها'**
+  String get captureWalletAdd;
+
+  /// No description provided for @captureWalletNo.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا'**
+  String get captureWalletNo;
+
+  /// No description provided for @captureIgnoredCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'كارت آخره {digits}'**
+  String captureIgnoredCard(String digits);
+
+  /// No description provided for @captureIgnoreThisCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاهل كارت آخره {digits}'**
+  String captureIgnoreThisCard(String digits);
+
+  /// No description provided for @captureHeldUntil.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول عملية منهم محفوظة لحد {date}.'**
+  String captureHeldUntil(String date);
+
+  /// No description provided for @captureWalletOffer.
+  ///
+  /// In ar, this message translates to:
+  /// **'لقينا كارت {bank} آخره {digits}. نضيفه لمحافظك؟'**
+  String captureWalletOffer(String bank, String digits);
+
   /// No description provided for @captureOffline.
   ///
   /// In ar, this message translates to:

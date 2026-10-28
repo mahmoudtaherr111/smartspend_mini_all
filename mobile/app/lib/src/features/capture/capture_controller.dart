@@ -29,6 +29,21 @@ final captureAutoOffersProvider = FutureProvider<List<AutoOffer>>(
   (ref) => ref.watch(captureApiProvider).autoOffers(),
 );
 
+/// Cards and accounts seen in messages with no wallet yet.
+final captureWalletOffersProvider = FutureProvider<List<WalletOffer>>(
+  (ref) => ref.watch(captureApiProvider).walletOffers(),
+);
+
+/// The cards and phrases the person asked capture to ignore.
+final captureIgnoredProvider = FutureProvider<List<IgnoredMarker>>(
+  (ref) => ref.watch(captureApiProvider).ignored(),
+);
+
+/// The phones registered to send the person's bank messages.
+final captureDevicesProvider = FutureProvider<List<CaptureDeviceRow>>(
+  (ref) => ref.watch(captureApiProvider).devices(),
+);
+
 enum CaptureConnectOutcome {
   connected,
 
@@ -76,6 +91,37 @@ class CaptureConnector {
       ..invalidate(captureServerStatusProvider)
       ..invalidate(captureStatusProvider);
     return CaptureConnectOutcome.connected;
+  }
+
+  /// Whether [device] is this phone's own registration.
+  Future<bool> isThisPhone(CaptureDeviceRow device) async {
+    final preferences = await _ref.read(preferencesStoreProvider).read();
+    return device.installationId.isNotEmpty &&
+        device.installationId == preferences.captureInstallationId;
+  }
+
+  /// Revokes [device]; when it is this phone, the native side also forgets its token and queue.
+  Future<void> revoke(CaptureDeviceRow device) async {
+    final here = await isThisPhone(device);
+    await _ref.read(captureApiProvider).revokeDevice(device.id);
+    if (here) await _ref.read(bankCaptureProvider).disconnect();
+    _refresh();
+  }
+
+  /// Deletes the person's capture data on the server and stops capture on this phone.
+  Future<void> deleteMyData() async {
+    await _ref.read(captureApiProvider).deleteMyData();
+    await _ref.read(bankCaptureProvider).disconnect();
+    _refresh();
+  }
+
+  void _refresh() {
+    _ref
+      ..invalidate(captureDevicesProvider)
+      ..invalidate(captureIgnoredProvider)
+      ..invalidate(capturePendingProvider)
+      ..invalidate(captureServerStatusProvider)
+      ..invalidate(captureStatusProvider);
   }
 
   /// The account a device token belongs to, as the server names the pair (golden rule 1).

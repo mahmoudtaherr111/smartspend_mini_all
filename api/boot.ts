@@ -146,6 +146,12 @@ scheduleProtectedJob("* * * * *", "capture-ai-sweep", async () => {
   await drainCaptureModel(100);
 });
 
+// A phone that stopped reporting for two days: its user is told once, in the app (decision 0034).
+scheduleProtectedJob("0 11 * * *", "capture-silent-devices", async () => {
+  const { runSilentDevices } = await import("./lib/capture/care");
+  await runSilentDevices();
+});
+
 // A bank whose recordings on their own are taken back too often is asked about again (decision 0032).
 scheduleProtectedJob("*/15 * * * *", "capture-breaker", async () => {
   const { runCaptureBreaker } = await import("./lib/capture/operations");

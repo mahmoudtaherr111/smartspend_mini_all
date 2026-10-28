@@ -50,6 +50,15 @@ internal class CaptureSettings(context: Context) {
         get() = prefs.getString(KEY_LAST_ERROR, null)
         set(value) = prefs.edit().putString(KEY_LAST_ERROR, value).apply()
 
+    /** When the phone last reported its health, and last said capture stopped. */
+    var heartbeatAt: Long
+        get() = prefs.getLong(KEY_HEARTBEAT_AT, 0)
+        set(value) = prefs.edit().putLong(KEY_HEARTBEAT_AT, value).apply()
+
+    var stoppedNoticeAt: Long
+        get() = prefs.getLong(KEY_STOPPED_NOTICE_AT, 0)
+        set(value) = prefs.edit().putLong(KEY_STOPPED_NOTICE_AT, value).apply()
+
     val connected: Boolean get() = token != null && baseUrl != null && ownerKey != null
 
     fun clear() = prefs.edit().clear().apply()
@@ -65,6 +74,8 @@ internal class CaptureSettings(context: Context) {
         const val KEY_LAST_CAPTURE = "last_capture_at"
         const val KEY_LAST_UPLOAD = "last_upload_at"
         const val KEY_LAST_ERROR = "last_error"
+        const val KEY_HEARTBEAT_AT = "heartbeat_at"
+        const val KEY_STOPPED_NOTICE_AT = "stopped_notice_at"
     }
 }
 

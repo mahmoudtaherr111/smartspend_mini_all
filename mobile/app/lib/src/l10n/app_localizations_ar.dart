@@ -118,6 +118,102 @@ class AppLocalizationsAr extends AppLocalizations {
       'نسخة التطبيق دي قديمة على تسجيل رسايل البنك. حدّث التطبيق، والرسايل المستنية هتتبعت بعدها.';
 
   @override
+  String get captureSettingsTitle => 'إعدادات رسايل البنك';
+
+  @override
+  String get captureSettingsFailed => 'ماقدرناش نحفظ ده. جرّب تاني.';
+
+  @override
+  String get captureDevicesTitle => 'الموبايلات اللي بتبعت';
+
+  @override
+  String get captureDevicesEmpty => 'مفيش موبايل متوصل.';
+
+  @override
+  String get captureThisPhone => 'الموبايل ده';
+
+  @override
+  String get captureOtherPhone => 'موبايل تاني';
+
+  @override
+  String get captureDeviceStop => 'وقّف';
+
+  @override
+  String get captureIgnoredTitle => 'كروت بنتجاهلها';
+
+  @override
+  String get captureIgnoredBody =>
+      'رسايل الكروت دي مابتتحفظش خالص، زي كارت حد من أهلك أو كارت الشغل.';
+
+  @override
+  String get captureIgnoredRemove => 'بطّل تتجاهله';
+
+  @override
+  String get captureIgnoreDigitsLabel => 'آخر 3 أو 4 أرقام';
+
+  @override
+  String get captureIgnoreDigitsNeeded => 'اكتب آخر 3 أو 4 أرقام من الكارت.';
+
+  @override
+  String get captureIgnoreAdd => 'تجاهله';
+
+  @override
+  String get captureDeleteTitle => 'امسح بيانات رسايل البنك';
+
+  @override
+  String get captureDeleteBody =>
+      'بنمسح الرسايل اللي عندنا وكل اللي اتعلمناه منها، وبنوقف التسجيل على كل موبايلاتك. العمليات اللي في دفترك بتفضل زي ما هي.';
+
+  @override
+  String get captureDeleteButton => 'امسح بياناتي';
+
+  @override
+  String get captureDeleteConfirmTitle => 'تمسح بيانات رسايل البنك؟';
+
+  @override
+  String get captureDeleteConfirmBody =>
+      'مش هتقدر ترجّعها، والتسجيل هيقف لحد ما تشغّله تاني.';
+
+  @override
+  String get captureDeleteCancel => 'رجوع';
+
+  @override
+  String get captureDeleteConfirm => 'امسح';
+
+  @override
+  String get captureDeleted => 'اتمسحت بيانات رسايل البنك.';
+
+  @override
+  String get captureWalletOfferBody =>
+      'هنسجّل عملياته عليها، ورصيدها هيتحدّث من رسايل البنك.';
+
+  @override
+  String get captureWalletAdd => 'ضيفها';
+
+  @override
+  String get captureWalletNo => 'لا';
+
+  @override
+  String captureIgnoredCard(String digits) {
+    return 'كارت آخره $digits';
+  }
+
+  @override
+  String captureIgnoreThisCard(String digits) {
+    return 'تجاهل كارت آخره $digits';
+  }
+
+  @override
+  String captureHeldUntil(String date) {
+    return 'أول عملية منهم محفوظة لحد $date.';
+  }
+
+  @override
+  String captureWalletOffer(String bank, String digits) {
+    return 'لقينا كارت $bank آخره $digits. نضيفه لمحافظك؟';
+  }
+
+  @override
   String get captureOffline => 'مستنيين النت عشان نبعت.';
 
   @override

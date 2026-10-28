@@ -989,6 +989,11 @@ export const captureDevices = mysqlTable(
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     lastSeenAt: datetime("last_seen_at"),
     lastSignalAt: datetime("last_signal_at"),
+    /** The phone's last health report (decision 0034): whether it may still read notifications, what waits to be sent. */
+    lastHeartbeatAt: datetime("last_heartbeat_at"),
+    health: json("health"),
+    /** When the user was last told this phone stopped capturing; told again only after it reports once more. */
+    silentNoticeAt: datetime("silent_notice_at"),
     revokedAt: datetime("revoked_at"),
   },
   (t) => [

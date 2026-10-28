@@ -1,7 +1,6 @@
 package com.smartspend.bank_capture
 
 import android.app.Activity
-import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -61,7 +60,7 @@ class BankCapturePlugin : FlutterPlugin, ActivityAware, BankCaptureHostApi, Plug
         }
         return CaptureStatus(
             method = CaptureMethod.NOTIFICATION_LISTENER,
-            access = if (isListenerGranted(context)) CaptureAccess.GRANTED else CaptureAccess.NOT_GRANTED,
+            access = if (listenerGranted(context)) CaptureAccess.GRANTED else CaptureAccess.NOT_GRANTED,
             connected = settings.connected,
             notificationsAllowed = CaptureNotifier.canNotify(context),
             waiting = waiting,
@@ -156,17 +155,6 @@ class BankCapturePlugin : FlutterPlugin, ActivityAware, BankCaptureHostApi, Plug
 
     private fun listenerComponent(context: Context) =
         ComponentName(context, BankNotificationListener::class.java)
-
-    private fun isListenerGranted(context: Context): Boolean {
-        val component = listenerComponent(context)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            val manager = context.getSystemService(NotificationManager::class.java)
-            return manager.isNotificationListenerAccessGranted(component)
-        }
-        val enabled = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
-            ?: return false
-        return enabled.split(':').any { ComponentName.unflattenFromString(it) == component }
-    }
 
     private companion object {
         const val PERMISSION_REQUEST = 7_401
