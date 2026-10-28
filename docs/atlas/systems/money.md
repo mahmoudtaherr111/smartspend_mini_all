@@ -39,6 +39,7 @@ flowchart LR
   end
   subgraph g_tables["MySQL tables"]
     tbl_business_categories[("business_categories")]
+    tbl_capture_events[("capture_events")]
     tbl_cashflow_settlements[("cashflow_settlements")]
     tbl_classification_logs[("classification_logs")]
     tbl_coaching_plans[("coaching_plans")]
@@ -87,6 +88,7 @@ flowchart LR
   mod_ledger --> sys_expense_capture
   mod_ledger --> sys_notifications
   mod_ledger --> sys_platform
+  mod_ledger ==> tbl_capture_events
   mod_ledger ==> tbl_expense_daily_rollups
   mod_ledger ==> tbl_expenses
   mod_ledger ==> tbl_local_users
@@ -245,6 +247,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `business_categories` | A | `business.addCategory`, `business.create`, `business.delete`, `business.removeCategory`, `business.updateCategory` | `business.get`, `business.removeCategory`, `business.updateCategory` |
+| `capture_events` | E | `ledger` | — |
 | `cashflow_settlements` | C | `coaching` | `coaching`, `expense.listInstallmentPlans` |
 | `classification_logs` | E | `expense.update` | `expense.update` |
 | `coaching_plans` | C | `coaching` | `coaching` |

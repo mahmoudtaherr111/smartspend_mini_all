@@ -13,7 +13,7 @@
  */
 import { TRPCError } from "@trpc/server";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { expenses, localUsers, userContacts, users } from "../../db/schema";
+import { captureEvents, expenses, localUsers, userContacts, users } from "../../db/schema";
 import { businessDayRange } from "../lib/app-time";
 import { CacheKeys } from "../lib/cache-keys";
 import { createLogger } from "../lib/log";
@@ -331,6 +331,15 @@ export async function deleteLedgerEntry(
     removed = row;
 
     await tx.delete(expenses).where(own);
+    // A row recorded from a bank message leaves its event as a tombstone, so a late signal of the same payment does
+    // not bring it back (decision 0029).
+    const captured = (row.parsedMetadata as { capture?: { eventId?: unknown } } | null)?.capture?.eventId;
+    if (typeof captured === "number") {
+      await tx
+        .update(captureEvents)
+        .set({ status: "deleted", expenseId: null, resolvedAt: new Date() })
+        .where(and(eq(captureEvents.id, captured), eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType)));
+    }
     // What it paid toward a commitment is unpaid again (api/services/coach/cashflows.ts).
     await releaseSettlementsOf(tx, owner, [row.id]);
     await applyExpenseRollupDelta(tx, expenseToRollupDelta(row, -1));

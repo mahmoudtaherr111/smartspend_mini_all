@@ -45,10 +45,10 @@ internal object CaptureScheduler {
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(PERIODIC, ExistingPeriodicWorkPolicy.KEEP, request)
     }
 
-    fun answer(context: Context, signalId: Long, action: String) {
+    fun answer(context: Context, eventId: Long, action: String) {
         val request = OneTimeWorkRequestBuilder<ActionWorker>()
             .setConstraints(online)
-            .setInputData(workDataOf("signalId" to signalId, "action" to action, "actionId" to UUID.randomUUID().toString().replace("-", "")))
+            .setInputData(workDataOf("eventId" to eventId, "action" to action, "actionId" to UUID.randomUUID().toString().replace("-", "")))
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .build()
         WorkManager.getInstance(context).enqueue(request)
@@ -155,12 +155,12 @@ internal class UploadWorker(context: Context, params: WorkerParameters) : Corout
             answered.add(id)
             // Every result is final, including one this build does not know.
             val notice = result.optJSONObject("notice")
-            val signalId = result.optLong("signalId", 0)
-            if (result.optString("result") == "review" && notice != null && signalId > 0) {
+            val eventId = result.optLong("eventId", 0)
+            if (result.optString("result") == "review" && notice != null && eventId > 0) {
                 val actions = notice.optJSONArray("actions")
                 CaptureNotifier.showReview(
                     applicationContext,
-                    signalId,
+                    eventId,
                     notice.optString("title"),
                     notice.optString("body"),
                     (0 until (actions?.length() ?: 0)).map { actions!!.getString(it) },
@@ -196,13 +196,13 @@ internal class ActionWorker(context: Context, params: WorkerParameters) : Corout
         val settings = CaptureSettings(applicationContext)
         val token = settings.token ?: return@withContext Result.success()
         val baseUrl = settings.baseUrl ?: return@withContext Result.success()
-        val signalId = inputData.getLong("signalId", 0)
+        val eventId = inputData.getLong("eventId", 0)
         val action = inputData.getString("action") ?: return@withContext Result.success()
         val actionId = inputData.getString("actionId") ?: return@withContext Result.success()
-        if (signalId <= 0) return@withContext Result.success()
+        if (eventId <= 0) return@withContext Result.success()
         try {
             val reply = CaptureApi(baseUrl, token).action(
-                JSONObject().put("actionId", actionId).put("signalId", signalId).put("action", action),
+                JSONObject().put("actionId", actionId).put("eventId", eventId).put("action", action),
             )
             when {
                 reply.code == 429 || reply.code >= 500 -> Result.retry()

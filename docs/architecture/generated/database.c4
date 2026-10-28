@@ -155,9 +155,17 @@ model {
         storageClass 'A'
       }
     }
+    capture_events = table 'capture_events' {
+      #classE #dualOwner
+      description '26 columns, 4 indexes, storage class E.'
+      metadata {
+        export 'captureEvents'
+        storageClass 'E'
+      }
+    }
     capture_signals = table 'capture_signals' {
       #classE #dualOwner
-      description '14 columns, 3 indexes, storage class E.'
+      description '13 columns, 4 indexes, storage class E.'
       metadata {
         export 'captureSignals'
         storageClass 'E'

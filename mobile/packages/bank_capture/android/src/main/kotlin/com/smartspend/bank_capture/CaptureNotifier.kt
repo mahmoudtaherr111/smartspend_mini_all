@@ -58,7 +58,7 @@ internal object CaptureNotifier {
     private fun smallIcon(context: Context): Int = context.applicationInfo.icon
 
     /** Asks about one captured transaction. [actions] are the buttons the server allowed ("record", "dismiss"). */
-    fun showReview(context: Context, signalId: Long, title: String, body: String, actions: List<String>, language: String) {
+    fun showReview(context: Context, eventId: Long, title: String, body: String, actions: List<String>, language: String) {
         if (!canNotify(context)) return
         val arabic = language != "en"
         ensureChannels(context, arabic)
@@ -81,12 +81,12 @@ internal object CaptureNotifier {
                 "dismiss" -> if (arabic) "مش مصروف" else "Not mine"
                 else -> continue
             }
-            notification.addAction(Notification.Action.Builder(null, label, CaptureActionReceiver.intent(context, signalId, action)).build())
+            notification.addAction(Notification.Action.Builder(null, label, CaptureActionReceiver.intent(context, eventId, action)).build())
         }
-        manager(context).notify(notificationId(signalId), notification.build())
+        manager(context).notify(notificationId(eventId), notification.build())
     }
 
-    fun cancelReview(context: Context, signalId: Long) = manager(context).cancel(notificationId(signalId))
+    fun cancelReview(context: Context, eventId: Long) = manager(context).cancel(notificationId(eventId))
 
     /** The quiet notification of a send running in the foreground (expedited work on Android 11 and older). */
     fun syncNotification(context: Context, language: String): Notification {
@@ -99,6 +99,6 @@ internal object CaptureNotifier {
             .build()
     }
 
-    /** A signal's server id keeps its notification one, so a repeated answer replaces it instead of adding one. */
-    private fun notificationId(signalId: Long): Int = (signalId % Int.MAX_VALUE).toInt()
+    /** A payment's id keeps its notification one, so a repeated answer replaces it instead of adding one. */
+    private fun notificationId(eventId: Long): Int = (eventId % Int.MAX_VALUE).toInt()
 }

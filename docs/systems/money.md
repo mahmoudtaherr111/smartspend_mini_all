@@ -58,7 +58,8 @@ Screens of other systems use these APIs: people in `src/components/settings/Peop
   (its Redis generation). Then the procedure adds a contact for a person category, and when the category changed marks
   the classification log as corrected and records a correction rule.
 - `expense.delete` (`deleteLedgerEntry`) locks the row, deletes it, releases what it paid toward, backs out its delta,
-  lowers the contact's count and marks muscle memory stale.
+  lowers the contact's count and marks muscle memory stale. A row recorded from a bank message also marks its capture
+  event deleted in the same transaction, so a late message of the same payment does not bring it back.
 - After a write, the user's cache generation is bumped (`invalidateLedgerCaches`), which drops the month summaries and
   statistics cached in Redis and the finance facts of the [AI Center](ai-center.md). So do deleting a wallet and
   deleting or merging a person, which change expense rows too. The classification cache needs no clearing: its key
@@ -127,9 +128,10 @@ Screens of other systems use these APIs: people in `src/components/settings/Peop
 thousands separators read, anything else refused by `walletBalanceSchema`), `wallet.updateWallet` and
 `wallet.deleteWallet`, which detaches the wallet from the user's items in the same transaction.
 `wallet.getWalletTransactions` pages through the items of one wallet. The [AI Center](ai-center.md) can also create and
-change wallets through confirmed actions. A balance is what the user entered, not a running total (no write moves it):
-each one given is stamped with when and by what (`balance_observed_at`, `balance_source`: `user` from these
-procedures, `assistant` from a confirmed action); balances saved before this was kept have an unknown age and are said
+change wallets through confirmed actions. A balance is what the user entered or a bank message said, not a running
+total (no saved item moves it): each one given is stamped with when and by what (`balance_observed_at`,
+`balance_source`: `user` from these procedures, `assistant` from a confirmed action, `bank_message` when a captured
+payment on the wallet is recorded and its message is newer, [bank and wallet messages](bank-messages.md)); balances saved before this was kept have an unknown age and are said
 so, never taken for today's.
 
 ## Budgets

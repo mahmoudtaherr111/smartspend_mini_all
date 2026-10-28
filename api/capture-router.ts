@@ -15,7 +15,7 @@ import { CAPTURE_CONSENT_SCOPES } from "../contracts/capture-intake";
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
 import { CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf, setCaptureConsent } from "./lib/capture/consent";
 import { listCaptureDevices, registerCaptureDevice, revokeCaptureDevice } from "./lib/capture/devices";
-import { answerSignal, pendingSignals } from "./lib/capture/intake";
+import { answerEvent, pendingEvents } from "./lib/capture/intake";
 import { createRateLimiter } from "./lib/rate-limit";
 import { getSystemSettings } from "./lib/settings-cache";
 
@@ -76,12 +76,12 @@ export const captureRouter = router({
     }),
 
   /** The captured transactions waiting for the user, newest first, with where each would be filed. */
-  pending: authedProcedure.query(async ({ ctx }) => pendingSignals(ownerOf(ctx))),
+  pending: authedProcedure.query(async ({ ctx }) => pendingEvents(ownerOf(ctx))),
 
   answer: authedProcedure
     .input(
       z.object({
-        signalId: z.number().int().positive(),
+        eventId: z.number().int().positive(),
         action: z.enum(["record", "dismiss"]),
         categoryId: z.string().max(60).optional(),
         subCategoryId: z.string().max(60).optional(),
@@ -89,7 +89,7 @@ export const captureRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { signalId, ...answer } = input;
-      return answerSignal(ownerOf(ctx), signalId, answer);
+      const { eventId, ...answer } = input;
+      return answerEvent(ownerOf(ctx), eventId, answer);
     }),
 });

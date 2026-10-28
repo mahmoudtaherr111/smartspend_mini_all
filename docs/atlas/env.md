@@ -33,7 +33,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `GOOGLE_IOS_CLIENT_IDS` | no | — | — |
 | `GOOGLE_REDIRECT_URI` | no | `http://localhost:3000/api/auth/google/callback` | `api/auth-router.ts` |
 | `GROQ_API_KEY` | no | — | `api/ai-router.ts` |
-| `JWT_SECRET` | yes | — | `api/lib/login-protection.ts`, `api/lib/provider-key-crypto.ts`, `api/lib/session-validation.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` |
+| `JWT_SECRET` | yes | — | `api/lib/capture/intake.ts`, `api/lib/login-protection.ts`, `api/lib/provider-key-crypto.ts`, `api/lib/session-validation.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` |
 | `LOGIN_ACCOUNT_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOGIN_IP_BURST_MAX_FAILURES` | no | `10` | `api/lib/login-protection.ts` |
 | `LOGIN_IP_MAX_FAILURES` | no | `50` | `api/lib/login-protection.ts` |

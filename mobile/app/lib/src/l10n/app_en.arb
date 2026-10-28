@@ -52,6 +52,7 @@
   "captureAmountLabel": "Amount in pounds",
   "captureAmountNeeded": "The message has an amount in another currency. Type what was charged in pounds.",
   "captureCheckAmount": "We're not sure about this amount; check it before recording.",
+  "captureMaybeDuplicate": "This may be the same payment as the one before. If you paid twice, tap \"Record\"; if it is the same one, tap \"Not mine\".",
   "captureAnswerFailed": "We couldn't save your answer. Try again.",
   "signInTitle": "Welcome to SmartSpend",
   "signInSubtitle": "Sign in with your phone number or your Google account.",

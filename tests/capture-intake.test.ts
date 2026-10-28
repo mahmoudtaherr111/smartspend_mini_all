@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { captureConsents, captureDevices, captureSignals, expenseDailyRollups, expenses, localUsers, systemSettings } from "../db/schema";
+import { captureConsents, captureDevices, captureEvents, captureSignals, expenseDailyRollups, expenses, localUsers, systemSettings, userWallets } from "../db/schema";
 import { db } from "../api/queries/connection";
 import { registerCaptureRoutes } from "../api/capture-v1-routes";
 import { captureRouter } from "../api/capture-router";
@@ -9,6 +9,7 @@ import { invalidateCaptureCatalog, syncCaptureSeed } from "../api/lib/capture/ca
 import { CAPTURE_CONSENT_TEXT_VERSION, setCaptureConsent } from "../api/lib/capture/consent";
 import { registerCaptureDevice, revokeCaptureDevice } from "../api/lib/capture/devices";
 import { invalidateSettingsCache } from "../api/lib/settings-cache";
+import { deleteLedgerEntry } from "../api/services/ledger-writer";
 
 // Needs a migrated MySQL database: npm run test:db (docs/guides/testing.md).
 const describeWithDatabase = describe.runIf(process.env.RUN_DB_INTEGRATION === "1");
@@ -24,11 +25,20 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
 
   const post = (path: string, body: unknown, deviceToken = token) =>
     app.request(path, { method: "POST", headers: { "content-type": "application/json", "x-capture-device": deviceToken }, body: JSON.stringify(body) });
-  const purchase = (id: string, amount = "450.00") => ({
+  const purchase = (id: string, amount = "450.00", merchant = "CARREFOUR MAADI") => ({
     id,
     channel: "notification",
     app: CIB_APP,
-    text: `تم خصم EGP ${amount} من بطاقتك رقم 1234 عند CARREFOUR MAADI المتاح EGP 4,500.75`,
+    text: `تم خصم EGP ${amount} من بطاقتك رقم 1234 عند ${merchant} المتاح EGP 4,500.75`,
+    postedAt: new Date().toISOString(),
+  });
+  // A message through the phone's messaging app, from the bank's sender: another channel than the bank's app.
+  const sms = (id: string, text: string) => ({
+    id,
+    channel: "sms",
+    app: "com.google.android.apps.messaging",
+    sender: "CIB",
+    text,
     postedAt: new Date().toISOString(),
   });
   const setEnabled = async (on: boolean) => {
@@ -40,6 +50,8 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
       const mine = <T extends { userId: unknown; userType: unknown }>(table: T) =>
         and(eq(table.userId as never, owner.userId), eq(table.userType as never, userType));
       await db.delete(captureSignals).where(mine(captureSignals));
+      await db.delete(captureEvents).where(mine(captureEvents));
+      await db.delete(userWallets).where(mine(userWallets));
       await db.delete(captureConsents).where(mine(captureConsents));
       await db.delete(captureDevices).where(mine(captureDevices));
       await db.delete(expenseDailyRollups).where(mine(expenseDailyRollups));
@@ -73,7 +85,7 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
     expect(first.results[1]).toMatchObject({ id: "signal-otp-01", result: "ignored" });
 
     const retry = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-buy-01")] })).json();
-    expect(retry.results[0]).toMatchObject({ result: "review", signalId: first.results[0].signalId });
+    expect(retry.results[0]).toMatchObject({ result: "merged", eventId: first.results[0].eventId });
 
     const rows = await db.select().from(captureSignals).where(eq(captureSignals.userId, owner.userId));
     expect(rows).toHaveLength(1);
@@ -82,17 +94,17 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
 
   it("records exactly one ledger row from the notification's button, however often it is tapped", async () => {
     const { results } = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-buy-02")] })).json();
-    const signalId = results[0].signalId;
-    const tap = (actionId: string) => post("/api/capture/v1/actions", { actionId, signalId, action: "record" });
+    const eventId = results[0].eventId;
+    const tap = (actionId: string) => post("/api/capture/v1/actions", { actionId, eventId, action: "record" });
 
     const answered = await (await tap("action-0001")).json();
     expect(answered.result).toBe("recorded");
     expect((await (await tap("action-0002")).json()).expenseId).toBe(answered.expenseId);
-    expect((await caller.answer({ signalId, action: "record" })).expenseId).toBe(answered.expenseId);
+    expect((await caller.answer({ eventId, action: "record" })).expenseId).toBe(answered.expenseId);
 
     const ledger = await db.select().from(expenses).where(and(eq(expenses.userId, owner.userId), eq(expenses.userType, "local")));
     expect(ledger).toHaveLength(1);
-    expect(ledger[0]).toMatchObject({ source: "sms", clientRequestId: `cap:${signalId}`, type: "expense", category: "متنوعات" });
+    expect(ledger[0]).toMatchObject({ source: "sms", clientRequestId: `cap:e${eventId}`, type: "expense", category: "متنوعات" });
     expect(Number(ledger[0].amount)).toBe(450);
     expect(ledger[0].rawText).toBeNull();
     expect(ledger[0].description).not.toContain("1234");
@@ -104,8 +116,8 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
     expect(pending).toHaveLength(2);
     const [newest, oldest] = pending;
 
-    await caller.answer({ signalId: newest.signalId, action: "record", categoryId: "food", subCategoryId: "groceries" });
-    await caller.answer({ signalId: oldest.signalId, action: "dismiss" });
+    await caller.answer({ eventId: newest.eventId, action: "record", categoryId: "food", subCategoryId: "groceries" });
+    await caller.answer({ eventId: oldest.eventId, action: "dismiss" });
 
     const ledger = await db.select().from(expenses).where(eq(expenses.userId, owner.userId));
     expect(ledger).toHaveLength(1);
@@ -113,10 +125,69 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
     expect(await caller.pending()).toHaveLength(0);
   });
 
+  it("asks once about a payment that arrives as the bank's SMS and its app's notification", async () => {
+    const text = "تم خصم EGP 450.00 من بطاقتك رقم 1234 عند CARREFOUR MAADI المتاح EGP 4,500.75";
+    const first = await (await post("/api/capture/v1/signals", { signals: [sms("signal-sms-01", text)] })).json();
+    const second = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-app-01")] })).json();
+
+    expect(first.results[0]).toMatchObject({ result: "review" });
+    expect(second.results[0]).toMatchObject({ result: "merged", eventId: first.results[0].eventId });
+    expect(await caller.pending()).toHaveLength(1);
+  });
+
+  it("keeps the same words twice from one channel as two, and asks whether it is the same payment", async () => {
+    const text = "تم خصم 50 جنيه من بطاقتك رقم 1234 عند COSTA";
+    const { results } = await (await post("/api/capture/v1/signals", { signals: [sms("signal-cof-01", text), sms("signal-cof-02", text)] })).json();
+
+    expect(results.map((item: { result: string }) => item.result)).toEqual(["review", "review"]);
+    expect(results[1].notice.body).toContain("ممكن تكون نفس العملية");
+    const pending = await caller.pending();
+    expect(pending).toHaveLength(2);
+    expect(pending.filter((item) => item.possibleDuplicate)).toHaveLength(1);
+  });
+
+  it("does not bring back a recorded payment the user deleted when a late signal of it arrives", async () => {
+    const text = "تم خصم EGP 450.00 من بطاقتك رقم 1234 عند CARREFOUR MAADI المتاح EGP 4,500.75";
+    const { results } = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-del-01")] })).json();
+    const { expenseId } = await caller.answer({ eventId: results[0].eventId, action: "record" });
+    await deleteLedgerEntry(owner, expenseId!);
+
+    const late = await (await post("/api/capture/v1/signals", { signals: [sms("signal-del-02", text)] })).json();
+    expect(late.results[0]).toMatchObject({ result: "dismissed", eventId: results[0].eventId });
+    expect(await caller.pending()).toHaveLength(0);
+  });
+
+  it("files a refund where its purchase was filed, as a negative row", async () => {
+    const bought = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-ref-01", "300.00", "ZARA CITY STARS")] })).json();
+    await caller.answer({ eventId: bought.results[0].eventId, action: "record", categoryId: "shopping", subCategoryId: "clothes" });
+
+    const refund = sms("signal-ref-02", "تم استرداد مبلغ 300.00 جنيه من ZARA CITY STARS إلى بطاقتك رقم 1234");
+    const returned = await (await post("/api/capture/v1/signals", { signals: [refund] })).json();
+    expect(returned.results[0]).toMatchObject({ result: "review" });
+    await caller.answer({ eventId: returned.results[0].eventId, action: "record" });
+
+    const rows = await db.select().from(expenses).where(and(eq(expenses.userId, owner.userId), eq(expenses.userType, "local")));
+    const negative = rows.find((row) => Number(row.amount) < 0);
+    expect(negative).toMatchObject({ category: "تسوق", subCategory: "ملابس", type: "expense" });
+    expect(Number(negative!.amount)).toBe(-300);
+  });
+
+  it("records on the card's wallet and moves its balance to the message's", async () => {
+    await db.insert(userWallets).values({ userId: owner.userId, userType: "local", name: "CIB Visa", provider: "Visa", lastFourDigits: "1234", balance: "100.00" });
+    const { results } = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-wal-01")] })).json();
+    const { expenseId } = await caller.answer({ eventId: results[0].eventId, action: "record" });
+
+    const [wallet] = await db.select().from(userWallets).where(and(eq(userWallets.userId, owner.userId), eq(userWallets.userType, "local")));
+    const [row] = await db.select().from(expenses).where(eq(expenses.id, expenseId!));
+    expect(row.walletId).toBe(wallet.id);
+    expect(Number(wallet.balance)).toBe(4500.75);
+    expect(wallet.balanceSource).toBe("bank_message");
+  });
+
   it("never lets a Google account with the same id answer, and stops a revoked phone", async () => {
     const { results } = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-buy-05")] })).json();
     const sameIdOtherKind = captureRouter.createCaller({ user: { id: owner.userId, type: "oauth", role: "user", plan: "free", name: "Other" } } as never);
-    await expect(sameIdOtherKind.answer({ signalId: results[0].signalId, action: "record" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(sameIdOtherKind.answer({ eventId: results[0].eventId, action: "record" })).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(await sameIdOtherKind.pending()).toHaveLength(0);
 
     await revokeCaptureDevice(owner, deviceId);

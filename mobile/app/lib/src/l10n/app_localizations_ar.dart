@@ -150,6 +150,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'مش متأكدين من المبلغ ده، راجعه قبل ما تسجّل.';
 
   @override
+  String get captureMaybeDuplicate =>
+      'ممكن تكون نفس العملية اللي قبلها. لو دفعت مرتين دوس «سجّل»، ولو هي نفسها دوس «مش مصروف».';
+
+  @override
   String get captureAnswerFailed => 'ماقدرناش نحفظ ردك. جرّب تاني.';
 
   @override

@@ -54,6 +54,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/catalog.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/consent.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/devices.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/events.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/intake.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/clauses.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/counterparty.ts` | [bank-messages](bank-messages.md) |

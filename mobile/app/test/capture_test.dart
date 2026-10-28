@@ -8,13 +8,13 @@ import 'support/test_app.dart';
 
 /// What `capture.pending` answers for one captured purchase (decision 0028).
 Map<String, Object?> _pending(
-  int signalId, {
+  int eventId, {
   num amount = 450,
   String currency = 'EGP',
   num? amountEgp = 450,
   String confidence = 'certain',
 }) => {
-  'signalId': signalId,
+  'eventId': eventId,
   'createdAt': '2026-10-27T10:00:00.000Z',
   'reading': {
     'kind': 'card_purchase',
@@ -172,7 +172,7 @@ void main() {
       await tester.tap(find.text('سجّل').first);
       await tester.pumpAndSettle();
       expect(api.lastInput('capture.answer'), {
-        'signalId': 11,
+        'eventId': 11,
         'action': 'record',
       });
 
@@ -180,10 +180,23 @@ void main() {
       await tester.tap(find.text('مش مصروف').first);
       await tester.pumpAndSettle();
       expect(api.lastInput('capture.answer'), {
-        'signalId': 12,
+        'eventId': 12,
         'action': 'dismiss',
       });
       expect(find.text('مفيش عمليات مستنية ردك.'), findsOneWidget);
+    });
+
+    testWidgets('warns when it may be the same payment as the one before', (
+      tester,
+    ) async {
+      await openReview(
+        tester,
+        () => [
+          {..._pending(31), 'possibleDuplicate': true},
+        ],
+      );
+
+      expect(find.textContaining('ممكن تكون نفس العملية'), findsOneWidget);
     });
 
     testWidgets('asks for the pounds of a foreign charge before recording it', (
@@ -201,7 +214,7 @@ void main() {
       await tester.tap(find.text('سجّل'));
       await tester.pumpAndSettle();
       expect(api.lastInput('capture.answer'), {
-        'signalId': 21,
+        'eventId': 21,
         'action': 'record',
         'amountEgp': 1010.5,
       });

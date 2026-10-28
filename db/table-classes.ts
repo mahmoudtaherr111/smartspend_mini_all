@@ -115,6 +115,7 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   classification_logs: "E",
   ai_token_ledgers: "E",
   capture_signals: "E",
+  capture_events: "E",
   user_analytics: "E",
   notification_logs: "E",
   ad_clicks: "E",

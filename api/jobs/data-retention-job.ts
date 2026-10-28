@@ -155,6 +155,21 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
       "Bank and wallet notifications read as transactions (redacted text and the reader's fields). A recorded one lives on in the ledger; one never answered is forgotten (decision 0028).",
   },
   {
+    tableName: "capture_events",
+    class: "E",
+    retainDays: 30,
+    dateColumn: "created_at",
+    whereClause: "status = 'review'",
+    description: "A captured payment nobody answered in 30 days: its signals are gone, so it is forgotten too (decision 0029).",
+  },
+  {
+    tableName: "capture_events",
+    class: "E",
+    retainDays: 400,
+    dateColumn: "created_at",
+    description: "Answered captured payments: the keys refunds and late signals are matched on, no message text (decision 0029).",
+  },
+  {
     tableName: "user_analytics",
     class: "E",
     retainDays: 30,

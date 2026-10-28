@@ -22,7 +22,7 @@ import {
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
 import { captureConsentsOf } from "./lib/capture/consent";
 import { resolveCaptureDevice, touchCaptureDevice, type CaptureDevice } from "./lib/capture/devices";
-import { CAPTURE_GATE, answerSignal, ingestSignals } from "./lib/capture/intake";
+import { CAPTURE_GATE, answerEvent, ingestSignals } from "./lib/capture/intake";
 import { createLogger } from "./lib/log";
 import { createRateLimiter } from "./lib/rate-limit";
 import { getSystemSettings } from "./lib/settings-cache";
@@ -112,7 +112,7 @@ export function registerCaptureRoutes(app: Hono): void {
     const parsed = captureActionRequestSchema.safeParse(await readJson(c));
     if (!parsed.success) return fail(c, 400, "invalid_request");
     try {
-      const outcome = await answerSignal(device, parsed.data.signalId, { action: parsed.data.action }, device.deviceId);
+      const outcome = await answerEvent(device, parsed.data.eventId, { action: parsed.data.action }, device.deviceId);
       return c.json(outcome);
     } catch (err) {
       const code = (err as { code?: string }).code;

@@ -33,7 +33,7 @@ class CaptureReviewScreen extends ConsumerWidget {
             separatorBuilder: (_, _) =>
                 const SizedBox(height: SmartSpendSpacing.lg),
             itemBuilder: (context, index) => _PendingCard(
-              key: ValueKey(value[index].signalId),
+              key: ValueKey(value[index].eventId),
               item: value[index],
             ),
           ),
@@ -87,7 +87,7 @@ class _PendingCardState extends ConsumerState<_PendingCard> {
     try {
       await ref
           .read(captureApiProvider)
-          .answer(item.signalId, record: record, amountEgp: amountEgp);
+          .answer(item.eventId, record: record, amountEgp: amountEgp);
       ref.invalidate(capturePendingProvider);
       // A recorded transaction changes the ledger's lists and totals.
       if (record) refreshLedger(ref);
@@ -141,6 +141,13 @@ class _PendingCardState extends ConsumerState<_PendingCard> {
                 color: colors.mutedForeground,
               ),
             ),
+            if (item.possibleDuplicate) ...[
+              const SizedBox(height: SmartSpendSpacing.sm),
+              Text(
+                l10n.captureMaybeDuplicate,
+                style: textTheme.bodySmall?.copyWith(color: colors.warning),
+              ),
+            ],
             if (!item.certain && !foreign) ...[
               const SizedBox(height: SmartSpendSpacing.sm),
               Text(

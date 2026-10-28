@@ -4,6 +4,7 @@ import {
   captureDevices,
   captureConsents,
   captureSignals,
+  captureEvents,
   localUsers,
   expenses,
   expenseCategories,
@@ -601,8 +602,23 @@ export const captureSignalsRelations = relations(captureSignals, ({ one }) => ({
     fields: [captureSignals.deviceId],
     references: [captureDevices.id],
   }),
+  event: one(captureEvents, {
+    fields: [captureSignals.eventId],
+    references: [captureEvents.id],
+  }),
+}));
+
+export const captureEventsRelations = relations(captureEvents, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [captureEvents.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [captureEvents.userId],
+    references: [users.id],
+  }),
   expense: one(expenses, {
-    fields: [captureSignals.expenseId],
+    fields: [captureEvents.expenseId],
     references: [expenses.id],
   }),
 }));

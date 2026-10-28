@@ -11,24 +11,24 @@ import android.content.Intent
  */
 class CaptureActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val signalId = intent.getLongExtra(EXTRA_SIGNAL, 0)
+        val eventId = intent.getLongExtra(EXTRA_EVENT, 0)
         val action = intent.getStringExtra(EXTRA_ACTION) ?: return
-        if (signalId <= 0 || (action != "record" && action != "dismiss")) return
-        CaptureNotifier.cancelReview(context, signalId)
-        CaptureScheduler.answer(context, signalId, action)
+        if (eventId <= 0 || (action != "record" && action != "dismiss")) return
+        CaptureNotifier.cancelReview(context, eventId)
+        CaptureScheduler.answer(context, eventId, action)
     }
 
     companion object {
-        private const val EXTRA_SIGNAL = "signalId"
+        private const val EXTRA_EVENT = "eventId"
         private const val EXTRA_ACTION = "action"
 
-        internal fun intent(context: Context, signalId: Long, action: String): PendingIntent {
+        internal fun intent(context: Context, eventId: Long, action: String): PendingIntent {
             val intent = Intent(context, CaptureActionReceiver::class.java)
                 .setAction("com.smartspend.bank_capture.ANSWER.$action")
-                .putExtra(EXTRA_SIGNAL, signalId)
+                .putExtra(EXTRA_EVENT, eventId)
                 .putExtra(EXTRA_ACTION, action)
             // One request code per signal and button, so each button keeps its own extras.
-            val requestCode = (signalId * 2 + if (action == "record") 0 else 1).toInt()
+            val requestCode = (eventId * 2 + if (action == "record") 0 else 1).toInt()
             return PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         }
     }

@@ -14,10 +14,11 @@ final class CaptureServerStatus {
   final String consentTextVersion;
 }
 
-/// A captured transaction waiting for the person's answer (`capture.pending`).
+/// A captured payment waiting for the person's answer (`capture.pending`): one per payment, however many messages
+/// it arrived in (decision 0029).
 final class PendingCapture {
   const PendingCapture({
-    required this.signalId,
+    required this.eventId,
     required this.kind,
     required this.amount,
     required this.currency,
@@ -27,9 +28,10 @@ final class PendingCapture {
     required this.category,
     required this.subCategory,
     required this.certain,
+    this.possibleDuplicate = false,
   });
 
-  final int signalId;
+  final int eventId;
 
   /// The reader's kind ("card_purchase", "atm_withdrawal"…).
   final String kind;
@@ -52,11 +54,14 @@ final class PendingCapture {
   /// The reader was sure of the amount and the kind.
   final bool certain;
 
+  /// It says exactly what an earlier one said minutes before: the person decides whether it is a second payment.
+  final bool possibleDuplicate;
+
   static PendingCapture? fromJson(Object? data) {
     if (data is! Map<String, Object?>) return null;
     final reading = data['reading'];
     final suggestion = data['suggestion'];
-    final id = data['signalId'];
+    final id = data['eventId'];
     if (reading is! Map<String, Object?> ||
         suggestion is! Map<String, Object?> ||
         id is! int) {
@@ -67,7 +72,7 @@ final class PendingCapture {
     final party = reading['counterparty'];
     final source = reading['sourceName'];
     return PendingCapture(
-      signalId: id,
+      eventId: id,
       kind: reading['kind'] as String? ?? 'other',
       amount: (money['value'] as num).toDouble(),
       currency: money['currency'] as String? ?? 'EGP',
@@ -82,6 +87,7 @@ final class PendingCapture {
       category: suggestion['category'] as String? ?? '',
       subCategory: suggestion['subCategory'] as String? ?? '',
       certain: reading['confidence'] == 'certain',
+      possibleDuplicate: data['possibleDuplicate'] == true,
     );
   }
 }
@@ -139,16 +145,13 @@ class CaptureApi {
   }
 
   /// Records the transaction (with [amountEgp] when only a foreign amount was known) or dismisses it.
-  Future<void> answer(
-    int signalId, {
-    required bool record,
-    double? amountEgp,
-  }) => _client.mutate(
-    Procedures.capture.answer,
-    input: {
-      'signalId': signalId,
-      'action': record ? 'record' : 'dismiss',
-      'amountEgp': ?amountEgp,
-    },
-  );
+  Future<void> answer(int eventId, {required bool record, double? amountEgp}) =>
+      _client.mutate(
+        Procedures.capture.answer,
+        input: {
+          'eventId': eventId,
+          'action': record ? 'record' : 'dismiss',
+          'amountEgp': ?amountEgp,
+        },
+      );
 }

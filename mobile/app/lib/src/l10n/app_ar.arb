@@ -64,6 +64,7 @@
     "description": "Shown on a captured transaction whose amount is in a foreign currency."
   },
   "captureCheckAmount": "مش متأكدين من المبلغ ده، راجعه قبل ما تسجّل.",
+  "captureMaybeDuplicate": "ممكن تكون نفس العملية اللي قبلها. لو دفعت مرتين دوس «سجّل»، ولو هي نفسها دوس «مش مصروف».",
   "captureAnswerFailed": "ماقدرناش نحفظ ردك. جرّب تاني.",
   "signInTitle": "أهلاً بيك في SmartSpend",
   "signInSubtitle": "ادخل برقم تليفونك أو بحساب Google.",

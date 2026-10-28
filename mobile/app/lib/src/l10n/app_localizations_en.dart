@@ -149,6 +149,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'We\'re not sure about this amount; check it before recording.';
 
   @override
+  String get captureMaybeDuplicate =>
+      'This may be the same payment as the one before. If you paid twice, tap \"Record\"; if it is the same one, tap \"Not mine\".';
+
+  @override
   String get captureAnswerFailed => 'We couldn\'t save your answer. Try again.';
 
   @override

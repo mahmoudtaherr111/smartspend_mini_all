@@ -30,9 +30,14 @@ flowchart LR
   subgraph g_tables["MySQL tables"]
     tbl_capture_consents[("capture_consents")]
     tbl_capture_devices[("capture_devices")]
+    tbl_capture_events[("capture_events")]
     tbl_capture_signals[("capture_signals")]
     tbl_capture_sources[("capture_sources")]
+    tbl_expenses[("expenses")]
+    tbl_local_users[("local_users")]
     tbl_subscription_catalog[("subscription_catalog")]
+    tbl_user_wallets[("user_wallets")]
+    tbl_users[("users")]
   end
   ext_gemini{{"Google Gemini API"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
@@ -54,9 +59,14 @@ flowchart LR
   mod_capture_intake --> sys_accounts
   mod_capture_intake --> sys_money
   mod_capture_intake --> sys_platform
+  mod_capture_intake -.-> tbl_expenses
+  mod_capture_intake -.-> tbl_local_users
+  mod_capture_intake -.-> tbl_users
   mod_capture_intake ==> tbl_capture_consents
   mod_capture_intake ==> tbl_capture_devices
+  mod_capture_intake ==> tbl_capture_events
   mod_capture_intake ==> tbl_capture_signals
+  mod_capture_intake ==> tbl_user_wallets
   mod_capture_reader --> sys_expense_capture
   mod_capture_reader --> sys_platform
   router_capture --> mod_capture_catalog
@@ -76,7 +86,7 @@ flowchart LR
 | --- | --- | --- |
 | `capture-ai-reader` — Message model reader | Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server's Gemini key until then), behind the admin's switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. Nothing calls it yet: the intake reads with the reader only. | 2 |
 | `capture-catalog` — Capture catalog | The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name. | 3 |
-| `capture-intake` — Capture intake | Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer. | 4 |
+| `capture-intake` — Capture intake | Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the rules that merge the signals of one payment into one event (decision 0029), the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer. | 5 |
 | `capture-reader` — Message reader | Layer one of capture, before any model: reads a bank, wallet or payment notification into what happened, which way, how much and in what currency, with which card and with whom, when, how sure it is and why (normalization with a position map, piece finders, an Arabic and English lexicon, sentences, money roles, kind and direction, the other side, the date), plus its benchmark corpus. | 12 |
 
 ## API procedures
@@ -113,9 +123,14 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- | --- |
 | `capture_consents` | A | `capture-intake` | `capture-intake` |
 | `capture_devices` | A | `capture-intake` | `capture-intake` |
+| `capture_events` | E | `capture-intake` | `capture-intake` |
 | `capture_signals` | E | `capture-intake` | `capture-intake` |
 | `capture_sources` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSource`, `captureAdmin.setSourceStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSource`, `captureAdmin.setSourceStatus` |
+| `expenses` | B | — | `capture-intake` |
+| `local_users` | A | — | `capture-intake` |
 | `subscription_catalog` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` |
+| `user_wallets` | A | `capture-intake` | `capture-intake` |
+| `users` | A | — | `capture-intake` |
 
 ## Outside systems
 
@@ -134,12 +149,13 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
 | `GEMINI_API_KEY` | yes | `api/lib/capture/ai-reader.ts` |
+| `JWT_SECRET` | yes | `api/lib/capture/intake.ts` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>24 files and declarations</summary>
+<details><summary>25 files and declarations</summary>
 
 - `api/boot.ts#job:seed-capture-catalog`
 - `api/capture-admin-router.ts`
@@ -149,6 +165,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/capture/catalog.ts`
 - `api/lib/capture/consent.ts`
 - `api/lib/capture/devices.ts`
+- `api/lib/capture/events.ts`
 - `api/lib/capture/intake.ts`
 - `api/lib/capture/reader/clauses.ts`
 - `api/lib/capture/reader/counterparty.ts`

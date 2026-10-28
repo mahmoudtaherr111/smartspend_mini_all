@@ -1014,8 +1014,9 @@ export const captureConsents = mysqlTable(
   (t) => [index("capture_consents_user_scope_idx").on(t.userId, t.userType, t.scope)],
 );
 
-// A notification a phone sent that reads as a transaction, waiting for the user's answer or answered. Kept 30 days:
-// the text is redacted, and nothing that is not a transaction is stored at all.
+// A notification a phone sent that reads as a transaction. Kept 30 days: the text is redacted, and nothing that is
+// not a transaction is stored at all. Every signal belongs to one event (one payment); several signals of the same
+// payment (the bank's SMS and its app's notification) share it.
 export const captureSignals = mysqlTable(
   "capture_signals",
   {
@@ -1026,19 +1027,62 @@ export const captureSignals = mysqlTable(
     clientSignalId: varchar("client_signal_id", { length: 64 }).notNull(),
     channel: varchar("channel", { length: 16 }).notNull(),
     sourceSlug: varchar("source_slug", { length: 64 }),
+    eventId: int("event_id"),
+    /** HMAC of the text, to recognise the same message sent twice without keeping it. */
+    textHmac: varchar("text_hmac", { length: 64 }).notNull(),
     textRedacted: text("text_redacted"),
     /** The reader's fields (`api/lib/capture/intake.ts#SignalReading`), read before anything was redacted. */
     reading: json("reading").notNull(),
-    status: varchar("status", { length: 16 }).notNull().default("review"), // review | recorded | dismissed
-    expenseId: int("expense_id"),
     receivedAt: datetime("received_at").notNull(),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("capture_signals_client_idx").on(t.userId, t.userType, t.clientSignalId),
+    index("capture_signals_user_text_idx").on(t.userId, t.userType, t.textHmac, t.receivedAt),
+    index("capture_signals_event_idx").on(t.eventId),
+    index("capture_signals_created_idx").on(t.createdAt),
+  ],
+);
+
+// One payment as capture understands it (decision 0029): the keys its signals are matched on, whether it waits for
+// the user, was recorded, dismissed or deleted from the ledger, and its ledger row. No message text: a deleted one
+// stays as a tombstone so a late signal of the same payment never brings it back.
+export const captureEvents = mysqlTable(
+  "capture_events",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    status: varchar("status", { length: 16 }).notNull().default("review"), // review | recorded | dismissed | deleted
+    kind: varchar("kind", { length: 32 }).notNull(),
+    direction: varchar("direction", { length: 10 }),
+    amount: decimal("amount", { precision: 14, scale: 2 }).notNull(),
+    currency: varchar("currency", { length: 3 }).notNull(),
+    amountEgp: decimal("amount_egp", { precision: 14, scale: 2 }),
+    occurredAt: datetime("occurred_at").notNull(),
+    firstReceivedAt: datetime("first_received_at").notNull(),
+    cardSuffix: varchar("card_suffix", { length: 4 }),
+    accountSuffix: varchar("account_suffix", { length: 8 }),
+    merchantKey: varchar("merchant_key", { length: 120 }),
+    referenceHmac: varchar("reference_hmac", { length: 64 }),
+    balanceAfter: decimal("balance_after", { precision: 14, scale: 2 }),
+    ownAccount: boolean("own_account").notNull().default(false),
+    /** One entry per device and channel the payment arrived through ("12:sms:CIB"). */
+    channels: json("channels").notNull(),
+    primarySignalId: int("primary_signal_id").notNull(),
+    possibleDuplicateOf: int("possible_duplicate_of"),
+    linkedEventId: int("linked_event_id"),
+    walletId: int("wallet_id"),
+    expenseId: int("expense_id"),
+    deviceId: int("device_id").notNull(),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     resolvedAt: datetime("resolved_at"),
   },
   (t) => [
-    uniqueIndex("capture_signals_client_idx").on(t.userId, t.userType, t.clientSignalId),
-    index("capture_signals_user_status_idx").on(t.userId, t.userType, t.status, t.createdAt),
-    index("capture_signals_created_idx").on(t.createdAt),
+    index("capture_events_user_status_idx").on(t.userId, t.userType, t.status, t.createdAt),
+    index("capture_events_user_received_idx").on(t.userId, t.userType, t.firstReceivedAt),
+    index("capture_events_user_reference_idx").on(t.userId, t.userType, t.referenceHmac),
+    index("capture_events_created_idx").on(t.createdAt),
   ],
 );
 

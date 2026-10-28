@@ -74,23 +74,45 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
    through any messaging app but not from a person's number (`personal_sender`), an SMS sender the catalog does not
    know needs a card, an account or a balance in the text (`unknown_sender`), and the reader must read money that
    moved (its `not_transaction` reasons, `no_amount`). What fails is answered `ignored` and nothing of it is stored.
-   What passes is kept in `capture_signals` as `review`: the text redacted and the reader's fields (`SignalReading`:
-   kind, direction, confidence, amount and pound equivalent, fee, balance, card and account suffixes, the other side,
-   when, the source), and the answer carries a notice in the phone's language: the source's name, the kind, the amount
-   and the merchant (isolated so Latin keeps its direction) and the filing, with the buttons "record" and "dismiss"
-   only when the reading is certain and in pounds; otherwise the notice asks to open the app.
+   What passes is kept in `capture_signals`: the text redacted, an HMAC of it, and the reader's fields
+   (`SignalReading`: kind, direction, confidence, amount and pound equivalent, fee, balance, card and account
+   suffixes, the other side, when and whether the message gave the time, the source). Each signal is taken in a
+   transaction that first locks the user's account row, so two batches of one user are matched one after the other.
+3a. **One payment, one event** ([decision 0029](../decisions/0029-one-payment-one-event.md),
+   `api/lib/capture/events.ts#matchSignal`): the signal joins an event of the last three days of the same user, or
+   starts one in `capture_events`. It joins on the bank's reference (an HMAC) with the same amount within a day; on the
+   same words from another of the user's phones within ten minutes; from another channel (device, channel and source)
+   with the same money, both directions known and no conflicting card (last three digits), merchant or balance of the
+   same account within five minutes (fifteen when both messages give the same minute), when that channel is not on the
+   event yet; as the pound posting of a foreign charge with the same card and merchant within three days; or as the
+   other leg of a transfer between the user's own accounts when both legs say so. The same words from the same channel
+   within five minutes start their own event marked as a possible duplicate, and the user is asked. A joining signal
+   fills what the event lacked (card, merchant, reference, balance, the pound amount). A new event is answered
+   `review` with a notice in the phone's language: the source's name, the kind, the amount and the merchant (isolated so
+   Latin keeps its direction), the filing, a line saying it may be the payment before when it is a possible duplicate,
+   and the buttons "record" and "dismiss" only when the reading is certain and in pounds; otherwise the notice asks to
+   open the app. A signal that joins an event waiting for an answer is answered `merged`, or `review` again when it
+   brought a foreign charge's pound amount; one that joins an answered event gets that answer (`recorded`, or
+   `dismissed` for a dismissed or deleted one). A card or account suffix matching exactly one of the user's wallets
+   puts the event on that wallet.
 4. **Where it would be filed** (`suggestLedgerEntry`): a purchase whose merchant the subscription catalog knows goes
    where the catalog says, any other purchase to متنوعات; a bill to فواتير, a recharge to شحن رصيد, a fee to رسوم
    بنكية, an installment to أقساط, a salary to مرتب, interest and cashback to their income, a refund to مرتجعات
    واسترداد (decision 0010, until the purchase can be found), and ATM withdrawals, deposits, transfers and card
    payments to تحويل with their direction.
-5. **The answer** (`answerSignal`): from the notification's button (`POST /api/capture/v1/actions`, only for signals
-   that device sent in the last 48 hours) or from the app (`capture.answer`, which may choose another category or give
-   the pound amount of a foreign charge). "record" writes the ledger row through the ledger writer in the same
-   transaction that marks the signal `recorded`: source `sms`, `clientRequestId` `cap:<signal>`, the amount in pounds,
-   the date the message gives, a description made of the other side and the source's name, no `raw_text`, and the
-   capture's ids in `parsed_metadata.capture`; the streak counts it, since the user tapped. "dismiss" marks it. An
-   answered signal keeps its answer, so a repeated tap writes one row.
+5. **The answer** (`answerEvent`): from the notification's button (`POST /api/capture/v1/actions` with the event's
+   id, only for events that device started in the last 48 hours) or from the app (`capture.answer`, which may choose
+   another category or give the pound amount of a foreign charge). "record" writes the ledger row through the ledger
+   writer in the same transaction that marks the event `recorded`: source `sms`, `clientRequestId` `cap:e<event>`, the
+   amount in pounds, the date the message gives, the event's wallet, a description made of the other side and the
+   source's name, no `raw_text`, and the capture's ids in `parsed_metadata.capture`; the streak counts it, since the
+   user tapped. A refund whose merchant has a recorded event in the 90 days before, of at least its amount, is a
+   negative expense in that purchase's category (decision 0010) and links to it. When the event has a wallet and a
+   balance, the wallet's balance becomes the message's if the message is newer than what the wallet holds
+   (`balance_source = 'bank_message'`). A transfer between the user's own accounts is one transfer row. "dismiss"
+   marks the event. An answered event keeps its answer, so a repeated tap writes one row. Deleting the ledger row
+   marks its event `deleted` (`api/services/ledger-writer.ts#deleteLedgerEntry`), so a late signal of the same payment
+   does not bring it back.
 6. **`GET /api/capture/v1/config`**: whether capture is on, the user's consents, the oldest build allowed, the catalog's
    sources and version, the phone's filter lists (`CAPTURE_GATE`: words for codes and for money) and the batch limits.
 
@@ -178,8 +200,12 @@ EGP equivalent in the text, which is not used as pounds.
 ## Data
 - `capture_sources` and `subscription_catalog`: the capture catalog above, shared by all users.
 - `capture_devices` (one row per installation: the token's hash, labels, last seen, revoked), `capture_consents` (one
-  row per grant, kept after it is taken back) and `capture_signals` (a signal waiting for an answer or answered,
-  deleted after 30 days by the retention job): migration `db/migrations/0031_capture_intake.sql`.
+  row per grant, kept after it is taken back) and `capture_signals` (a kept signal with its event, deleted after 30
+  days by the retention job): migration `db/migrations/0031_capture_intake.sql`.
+- `capture_events` (one payment: its status, the keys signals are matched on, its channels, wallet, ledger row and the
+  refund's purchase; no message text): migrations `db/migrations/0032_capture_events.sql` and
+  `db/migrations/0033_capture_signals_drop_review.sql`. One never answered goes after 30 days, an answered one after
+  400.
 - The old intake's tables, `webhook_tokens` (one token per user) and `raw_sms_events` (every message as received,
   with account digits and balances, and the suggestions waiting over the limit), were dropped by
   `db/migrations/0030_drop_old_bank_messages.sql`, raw messages and waiting suggestions included.
@@ -188,6 +214,7 @@ EGP equivalent in the text, which is not used as pounds.
 | To change | Edit | Check with |
 | --- | --- | --- |
 | What is kept, ignored or refused, and the notice | `api/lib/capture/intake.ts` | `api/lib/capture/intake.test.ts` |
+| When signals are one payment | `api/lib/capture/events.ts` (`matchSignal`, `MATCH_WINDOWS`) | `api/lib/capture/events.test.ts` |
 | The routes, the device token and the answer | `api/capture-v1-routes.ts`, `api/lib/capture/devices.ts`, `api/capture-router.ts` | `tests/capture-intake.test.ts` (`npm run test:db`) |
 | How a message is read without a model | `api/lib/capture/reader/` | `api/lib/capture/reader/read.test.ts`, `api/lib/capture/reader/reader-benchmark.test.ts`, `npm run bench:capture` |
 | Which provider and model read messages | the AI providers screen, purpose «قراءة رسايل البنوك والمحافظ» (`sms`) | `api/lib/capture/ai-reader.test.ts` |
@@ -214,9 +241,15 @@ EGP equivalent in the text, which is not used as pounds.
 `api/lib/capture/intake.test.ts` checks the filter (a purchase is kept with its card and merchant, a code is ignored,
 an unlisted app is refused, a person's SMS is ignored, any messaging app is taken for a known bank, an unknown sender
 needs a card), the filings and the notice (Arabic and English, isolated Latin, no buttons for a foreign amount).
+`api/lib/capture/events.test.ts` checks every merge rule (the SMS and the app's notification join, two coffees from
+one channel stay two, the same words twice are asked about, another phone's copy joins, a card, merchant or balance
+conflict keeps them apart, three and four digit cards, the reference, the same-minute window, the pound posting, a
+transfer between the user's own accounts and only then).
 `tests/capture-intake.test.ts` (`npm run test:db`) runs the routes and the answer against MySQL: a retried signal is
-kept once, repeated taps write one ledger row without the bank's text, the app's own filing and a dismissal, a Google
-account with the same id sees and answers nothing, and a revoked device, missing consent and the switch are refused.
+kept once, repeated taps write one ledger row without the bank's text, the app's own filing and a dismissal, the SMS
+and the app's notification asked about once, the same words twice asked about, a deleted row not brought back, a
+refund in its purchase's category, the wallet and its balance, a Google account with the same id seeing and answering
+nothing, and a revoked device, missing consent and the switch refused.
 `api/lib/capture/phone-gate-fixtures.test.ts` keeps the phone's shared cases on the lists the server sends, and
 `CaptureGateTest` in `mobile/packages/bank_capture/android/src/test` runs them in Kotlin (the Mobile workflow).
 `mobile/app/test/capture_test.dart` checks turning capture on, the switch being off, signing out, and the review screen.
@@ -242,8 +275,9 @@ Checked against the code; each one names where it lives.
 3. **Gap.** Redaction masks every name-like word after من، إلى، to or from, so a merchant written there ("from AMAZON",
    "من كارفور") reaches the model as `[REDACTED_NAME]`; merchants written after لدى or at are kept.
 
-4. **Gap.** One payment can arrive as several signals (the bank's SMS and its app's notification); each is kept and
-   asked about on its own until merging is built.
+4. **Gap.** The merge windows are guesses until real messages measure them. A hold the bank settles later is not
+   joined to its charge (the reader reads a hold as no transaction), and a transfer that might be between the user's
+   own accounts without both legs saying so is asked about as two payments.
 
 ## Related systems
 - The Flutter app in `mobile/`: not a system page; its rules are in `mobile/AGENTS.md`.

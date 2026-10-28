@@ -52,6 +52,7 @@ flowchart LR
     tbl_business_categories[("business_categories")]
     tbl_capture_consents[("capture_consents")]
     tbl_capture_devices[("capture_devices")]
+    tbl_capture_events[("capture_events")]
     tbl_capture_signals[("capture_signals")]
     tbl_cashflow_settlements[("cashflow_settlements")]
     tbl_chat_conversations[("chat_conversations")]
@@ -118,6 +119,7 @@ flowchart LR
   mod_accounts ==> tbl_business_categories
   mod_accounts ==> tbl_capture_consents
   mod_accounts ==> tbl_capture_devices
+  mod_accounts ==> tbl_capture_events
   mod_accounts ==> tbl_capture_signals
   mod_accounts ==> tbl_cashflow_settlements
   mod_accounts ==> tbl_chat_conversations
@@ -297,6 +299,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `business_categories` | A | `accounts` | — |
 | `capture_consents` | A | `accounts` | — |
 | `capture_devices` | A | `accounts` | — |
+| `capture_events` | E | `accounts` | — |
 | `capture_signals` | E | `accounts` | — |
 | `cashflow_settlements` | C | `accounts` | — |
 | `chat_conversations` | G | `accounts` | `accounts` |

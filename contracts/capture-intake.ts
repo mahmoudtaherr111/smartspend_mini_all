@@ -52,11 +52,12 @@ export type CaptureSignalsRequest = z.infer<typeof captureSignalsRequestSchema>;
  * What became of one signal. Every result is final: the phone deletes the text, and a result it does not know is
  * treated the same way.
  * - review: a transaction waiting for the user to confirm it (the notice asks).
- * - recorded / dismissed: the user already answered (a retry of a signal that was answered).
+ * - merged: another signal of the same payment is already waiting for the user's answer (decision 0029).
+ * - recorded / dismissed: the payment was already answered (a retry, or a late signal of an answered payment).
  * - ignored: not a transaction (a code, an offer, a balance, a personal message): nothing is stored.
  * - rejected: the signal is not acceptable (too old, an app the catalog does not list).
  */
-export const CAPTURE_RESULTS = ["review", "recorded", "dismissed", "ignored", "rejected"] as const;
+export const CAPTURE_RESULTS = ["review", "merged", "recorded", "dismissed", "ignored", "rejected"] as const;
 export type CaptureResult = (typeof CAPTURE_RESULTS)[number];
 
 /** What the user can answer from the notification without opening the app. */
@@ -74,8 +75,8 @@ export interface CaptureNotice {
 export interface CaptureSignalResult {
   id: string;
   result: CaptureResult;
-  /** The server's id, for the notification's buttons. */
-  signalId?: number;
+  /** The payment's id (one per payment, whatever number of signals), for the notification's buttons and its id. */
+  eventId?: number;
   /** Why it was ignored or rejected, as an id ("otp", "personal_sender", "too_old"). */
   reason?: string;
   notice?: CaptureNotice;
@@ -88,7 +89,7 @@ export interface CaptureSignalsResponse {
 export const captureActionRequestSchema = z.object({
   /** The phone's id for this tap: repeating it changes nothing. */
   actionId: signalId,
-  signalId: z.number().int().positive(),
+  eventId: z.number().int().positive(),
   action: z.enum(CAPTURE_ACTIONS),
 });
 export type CaptureActionRequest = z.infer<typeof captureActionRequestSchema>;

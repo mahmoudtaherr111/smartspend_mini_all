@@ -314,6 +314,12 @@ abstract class AppLocalizations {
   /// **'مش متأكدين من المبلغ ده، راجعه قبل ما تسجّل.'**
   String get captureCheckAmount;
 
+  /// No description provided for @captureMaybeDuplicate.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممكن تكون نفس العملية اللي قبلها. لو دفعت مرتين دوس «سجّل»، ولو هي نفسها دوس «مش مصروف».'**
+  String get captureMaybeDuplicate;
+
   /// No description provided for @captureAnswerFailed.
   ///
   /// In ar, this message translates to:
