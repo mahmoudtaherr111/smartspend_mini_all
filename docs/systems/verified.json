@@ -83,7 +83,8 @@
         "src/components/admin/ai-center/tabs/AiTelemetryTab.tsx": "c90405d7e803",
         "src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx": "10ff32f1e785",
         "src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx": "88d1c8cbcd39",
-        "src/components/admin/capture/AdminCaptureTab.tsx": "1e3eac6f195c",
+        "src/components/admin/capture/AdminCaptureNumbers.tsx": "0c99c9a84212",
+        "src/components/admin/capture/AdminCaptureTab.tsx": "7a3d0409d074",
         "src/components/admin/settings/AdminCaptureSection.tsx": "77c79631dcc4",
         "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
@@ -94,9 +95,9 @@
         "src/pages/Admin.tsx": "194ff4a9efa3",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-10-28 3f613544",
-      "arabic": "82236c3a144d",
-      "arabicChecked": "2026-10-28 3f613544"
+      "checked": "2026-10-28 261847dc",
+      "arabic": "0895ddac3615",
+      "arabicChecked": "2026-10-28 261847dc"
     },
     "ai-center": {
       "files": {
@@ -186,8 +187,9 @@
     "bank-messages": {
       "files": {
         "api/boot.ts#job:capture-ai-sweep": "7b7d2f8d3978",
+        "api/boot.ts#job:capture-breaker": "46eeeaa447e0",
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
-        "api/capture-admin-router.ts": "95a0417753d7",
+        "api/capture-admin-router.ts": "90bc9c19bc05",
         "api/capture-router.ts": "ae5e60cf19db",
         "api/capture-v1-routes.ts": "b4cea6b09b4c",
         "api/lib/capture/ai-queue.ts": "796ebea682af",
@@ -196,8 +198,9 @@
         "api/lib/capture/consent.ts": "ce37c795e162",
         "api/lib/capture/devices.ts": "c5ecf217a83e",
         "api/lib/capture/events.ts": "edb833c76977",
-        "api/lib/capture/intake.ts": "3869974cd465",
+        "api/lib/capture/intake.ts": "5bb69dbcdd8e",
         "api/lib/capture/memory.ts": "4bbf061cedd9",
+        "api/lib/capture/operations.ts": "9c83fba1e26d",
         "api/lib/capture/reader/clauses.ts": "5b86ed12ca60",
         "api/lib/capture/reader/counterparty.ts": "4560b5469773",
         "api/lib/capture/reader/explain.ts": "3455f6c511dd",
@@ -214,9 +217,9 @@
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c"
       },
-      "checked": "2026-10-28 3c42165c",
-      "arabic": "113ea88f80fc",
-      "arabicChecked": "2026-10-28 3c42165c"
+      "checked": "2026-10-28 261847dc",
+      "arabic": "c375f4a56573",
+      "arabicChecked": "2026-10-28 261847dc"
     },
     "billing": {
       "files": {
@@ -449,7 +452,7 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "3974882bc8a4",
+        "api/boot.ts#rest-of-file": "b489de22e259",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "9eb0b19897a9",
         "api/lib/app-time.ts": "f53d4623a239",
@@ -488,13 +491,13 @@
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
         "db/relations.ts": "af03f4285080",
-        "db/schema.ts": "ed2d4c56144e",
+        "db/schema.ts": "0e74dabccf0b",
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "d6148e18058a"
       },
-      "checked": "2026-10-28 3c42165c",
-      "arabic": "e16d2f616ccb",
-      "arabicChecked": "2026-10-28 3c42165c"
+      "checked": "2026-10-28 261847dc",
+      "arabic": "0a25855b54e8",
+      "arabicChecked": "2026-10-28 261847dc"
     },
     "voice-calls": {
       "files": {

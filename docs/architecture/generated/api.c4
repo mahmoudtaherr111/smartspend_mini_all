@@ -1198,11 +1198,31 @@ model {
       }
     }
     captureAdmin = router 'captureAdmin' {
-      description 'api/capture-admin-router.ts — 7 procedures.'
+      description 'api/capture-admin-router.ts — 9 procedures.'
       metadata {
         file 'api/capture-admin-router.ts'
       }
+      bulkUndo = procedure 'captureAdmin.bulkUndo' {
+        #mutation #admin
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
       catalog = procedure 'captureAdmin.catalog' {
+        #query #admin
+        technology 'adminProcedure'
+        description 'query · adminProcedure'
+        metadata {
+          file 'api/capture-admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      funnel = procedure 'captureAdmin.funnel' {
         #query #admin
         technology 'adminProcedure'
         description 'query · adminProcedure'
@@ -2704,6 +2724,14 @@ model {
       description 'Scheduled in api/boot.ts.'
       metadata {
         schedule '* * * * *'
+        file 'api/boot.ts'
+      }
+    }
+    capture-breaker = job 'capture-breaker' {
+      technology 'cron */15 * * * *'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule '*/15 * * * *'
         file 'api/boot.ts'
       }
     }

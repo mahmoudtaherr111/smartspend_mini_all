@@ -459,7 +459,7 @@ async function noteHeld(tx: LedgerTx, owner: CaptureOwner, period: string): Prom
 }
 
 /** Gives back what a dismissed payment counted. */
-async function releaseQuota(tx: LedgerTx, owner: CaptureOwner, period: string): Promise<void> {
+export async function releaseQuota(tx: LedgerTx, owner: CaptureOwner, period: string): Promise<void> {
   await tx.update(captureUsage).set({ reserved: sql`GREATEST(${captureUsage.reserved} - 1, 0)` }).where(usageOf(owner, period));
 }
 
@@ -792,6 +792,8 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
     possibleDuplicateOf: match.type === "possible_duplicate" ? match.eventId : null,
     walletId: walletMatches.length === 1 ? walletMatches[0].id : null,
     deviceId: device.deviceId,
+    sourceSlug: input.sourceSlug,
+    readerVersion: reading.readerVersion.slice(0, 32),
   });
   const eventId = Number((created as { insertId?: number }).insertId);
   await tx.update(captureSignals).set({ eventId }).where(eq(captureSignals.id, signalId));

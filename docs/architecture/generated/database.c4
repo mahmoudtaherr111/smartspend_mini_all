@@ -165,7 +165,7 @@ model {
     }
     capture_events = table 'capture_events' {
       #classE #dualOwner
-      description '29 columns, 4 indexes, storage class E.'
+      description '31 columns, 5 indexes, storage class E.'
       metadata {
         export 'captureEvents'
         storageClass 'E'

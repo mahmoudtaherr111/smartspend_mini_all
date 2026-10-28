@@ -260,6 +260,13 @@
       "when": 1793163695918,
       "tag": "0036_capture_ai_jobs",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1793190367179,
+      "tag": "0037_capture_events_source",
+      "breakpoints": true
     }
   ]
 }

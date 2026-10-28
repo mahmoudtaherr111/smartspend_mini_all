@@ -146,6 +146,12 @@ scheduleProtectedJob("* * * * *", "capture-ai-sweep", async () => {
   await drainCaptureModel(100);
 });
 
+// A bank whose recordings on their own are taken back too often is asked about again (decision 0032).
+scheduleProtectedJob("*/15 * * * *", "capture-breaker", async () => {
+  const { runCaptureBreaker } = await import("./lib/capture/operations");
+  await runCaptureBreaker();
+});
+
 // Stored rows move to the current category taxonomy in bounded batches; once every row is
 // current a run finds nothing (docs/decisions/0008-money-movements-and-taxonomy.md).
 scheduleProtectedJob("*/30 * * * *", "taxonomy-migration", async () => {

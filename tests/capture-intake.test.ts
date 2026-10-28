@@ -11,6 +11,9 @@ import { registerCaptureDevice, revokeCaptureDevice } from "../api/lib/capture/d
 import { invalidateSettingsCache } from "../api/lib/settings-cache";
 import { deleteLedgerEntry, updateLedgerEntry } from "../api/services/ledger-writer";
 import { drainCaptureModel } from "../api/lib/capture/ai-queue";
+import { autoPolicyOf } from "../api/lib/capture/intake";
+import { applyBulkUndo, captureFunnel, previewBulkUndo, runCaptureBreaker } from "../api/lib/capture/operations";
+import { getSystemSettings } from "../api/lib/settings-cache";
 import type { AiReading } from "../api/lib/capture/ai-reader";
 
 // The admin's model, answered here: no network. Each test sets what it says.
@@ -110,7 +113,7 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
   });
   afterAll(async () => {
     await cleanUp();
-    for (const key of ["capture_monthly_limit_free", "capture_auto_pairs", "capture_daily_question_notices"]) {
+    for (const key of ["capture_monthly_limit_free", "capture_auto_pairs", "capture_daily_question_notices", "capture_paused_sources"]) {
       await db.delete(systemSettings).where(eq(systemSettings.key, key));
     }
     await db.delete(systemSettings).where(eq(systemSettings.key, "capture_enabled"));
@@ -393,6 +396,48 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
       const [event] = await db.select().from(captureEvents).where(eq(captureEvents.id, job.eventId!));
       // The reader's unsure reading counts against the month only when the user records it.
       expect(event).toMatchObject({ status: "review", amount: "250.00", quotaPeriod: null });
+    });
+  });
+
+  describe("running capture", () => {
+    const recordAlone = async (count: number) => {
+      await setting("capture_auto_pairs", "cib:card_purchase");
+      const signals = Array.from({ length: count }, (_, i) => purchase(`signal-ops-${String(i).padStart(2, "0")}`, `${100 + i}.00`, `SHOP ${i} MAADI`));
+      const { results } = await (await post("/api/capture/v1/signals", { signals })).json();
+      await clearSetting("capture_auto_pairs");
+      expect(results.every((result: { result: string }) => result.result === "recorded")).toBe(true);
+      return results as Array<{ eventId: number }>;
+    };
+    const ledger = () => db.select().from(expenses).where(and(eq(expenses.userId, owner.userId), eq(expenses.userType, "local")));
+
+    it("stops recording a bank on its own when too many of its recordings are taken back", async () => {
+      const results = await recordAlone(20);
+      for (const [i, { eventId }] of results.slice(0, 2).entries()) {
+        await post("/api/capture/v1/actions", { actionId: `action-ops-undo-${i}`, eventId, action: "undo" });
+      }
+      try {
+        expect(await runCaptureBreaker()).toEqual(["cib"]);
+        expect(autoPolicyOf(await getSystemSettings()).paused.has("cib")).toBe(true);
+        expect(await runCaptureBreaker()).toEqual([]);
+        const funnel = await captureFunnel(1);
+        expect(funnel.rows.find((row) => row.sourceSlug === "cib" && row.kind === "card_purchase")).toMatchObject({ auto: 20, autoUndone: 2, recorded: 18 });
+      } finally {
+        await clearSetting("capture_paused_sources");
+      }
+    });
+
+    it("takes back one bank's recordings in a period, counting first, and gives the month back", async () => {
+      await recordAlone(3);
+      const range = { sourceSlug: "cib", from: new Date(Date.now() - 3600_000), to: new Date(Date.now() + 3600_000), onlyAuto: true };
+      expect(await previewBulkUndo(range)).toMatchObject({ rows: 3 });
+      expect(await previewBulkUndo({ ...range, readerVersion: "reader-v0" })).toMatchObject({ rows: 0 });
+      expect(await ledger()).toHaveLength(3);
+
+      expect(await applyBulkUndo(range)).toBe(3);
+      expect(await ledger()).toHaveLength(0);
+      expect((await caller.status()).usage.used).toBe(0);
+      const events = await db.select({ status: captureEvents.status }).from(captureEvents).where(eq(captureEvents.userId, owner.userId));
+      expect(events.map((event) => event.status)).toEqual(["deleted", "deleted", "deleted"]);
     });
   });
 

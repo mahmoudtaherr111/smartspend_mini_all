@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { AdminCaptureNumbers } from "./AdminCaptureNumbers";
 
 type Catalog = inferRouterOutputs<AppRouter>["captureAdmin"]["catalog"];
 type Source = Catalog["sources"][number];
@@ -40,7 +41,7 @@ const cardClass = "border-white/40 dark:border-slate-800 bg-white/70 dark:bg-sla
 
 /**
  * Bank messages in the admin console: the sources whose notifications are read, the subscriptions recognised in card
- * charges (both the capture catalog, `captureAdmin.*`).
+ * charges (both the capture catalog, `captureAdmin.*`), and the numbers of what capture did with the bulk undo.
  */
 export function AdminCaptureTab() {
   return (
@@ -48,12 +49,16 @@ export function AdminCaptureTab() {
       <TabsList>
         <TabsTrigger value="sources">البنوك والمحافظ</TabsTrigger>
         <TabsTrigger value="subscriptions">الاشتراكات المعروفة</TabsTrigger>
+        <TabsTrigger value="numbers">الأرقام</TabsTrigger>
       </TabsList>
       <TabsContent value="sources">
         <SourcesPanel />
       </TabsContent>
       <TabsContent value="subscriptions">
         <SubscriptionsPanel />
+      </TabsContent>
+      <TabsContent value="numbers">
+        <AdminCaptureNumbers />
       </TabsContent>
     </Tabs>
   );

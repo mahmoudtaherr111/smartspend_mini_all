@@ -3,6 +3,7 @@
  * fintech, telecom and messaging app whose notifications are read, and the subscriptions recognised in card charges.
  * A change reaches every server process within ten seconds and phones at their next check, without a deploy. Editing
  * a seeded row marks it, so the shipped seed never overwrites the admin's version; `restoreSeed` gives it back.
+ * Also the numbers of what capture did per bank and kind, and the bulk undo of one bank's recordings (decision 0032).
  */
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
@@ -24,6 +25,7 @@ import {
   subscriptionInput,
   syncCaptureSeed,
 } from "./lib/capture/catalog";
+import { BULK_UNDO_MAX, applyBulkUndo, captureFunnel, previewBulkUndo } from "./lib/capture/operations";
 import { db } from "./queries/connection";
 
 const idInput = z.object({ id: z.number().int().positive() });
@@ -146,5 +148,33 @@ export const captureAdminRouter = router({
       }
       await invalidateCaptureCatalog();
       return { success: true };
+    }),
+
+  /** What became of the payments captured in the last days, per bank and kind, and the model's queue. */
+  funnel: adminProcedure
+    .input(z.object({ days: z.number().int().min(1).max(30).default(7) }))
+    .query(async ({ input }) => captureFunnel(input.days)),
+
+  /**
+   * Takes back the ledger rows one bank's messages recorded in a period (a reader version that read them wrong):
+   * without `apply` it only counts them.
+   */
+  bulkUndo: adminProcedure
+    .input(
+      z.object({
+        sourceSlug: z.string().trim().min(1).max(64),
+        readerVersion: z.string().trim().min(1).max(32).optional(),
+        from: z.string().datetime(),
+        to: z.string().datetime(),
+        onlyAuto: z.boolean().default(true),
+        apply: z.boolean().default(false),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const range = { ...input, from: new Date(input.from), to: new Date(input.to) };
+      if (range.from > range.to) throw new TRPCError({ code: "BAD_REQUEST", message: "بداية الفترة بعد نهايتها." });
+      const preview = await previewBulkUndo(range);
+      if (!input.apply) return { ...preview, removed: 0, max: BULK_UNDO_MAX };
+      return { ...preview, removed: await applyBulkUndo(range), max: BULK_UNDO_MAX };
     }),
 });

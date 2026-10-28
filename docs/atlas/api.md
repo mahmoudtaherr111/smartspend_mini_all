@@ -36,7 +36,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `budget` | `api/budget-router.ts` | 4 | 1 | 3 | `authedProcedure` |
 | `business` | `api/business-router.ts` | 10 | 2 | 8 | `businessAiProcedure`, `businessProcedure` |
 | `capture` | `api/capture-router.ts` | 10 | 5 | 5 | `authedProcedure` |
-| `captureAdmin` | `api/capture-admin-router.ts` | 7 | 1 | 6 | `adminProcedure` |
+| `captureAdmin` | `api/capture-admin-router.ts` | 9 | 2 | 7 | `adminProcedure` |
 | `chat` | `api/chat-router.ts` | 10 | 4 | 6 | `aiProcedure`, `authedProcedure` |
 | `coach` | `api/coach-router.ts` | 10 | 2 | 8 | `authedProcedure` |
 | `expense` | `api/expense-router.ts` | 21 | 12 | 9 | `authedProcedure` |
@@ -219,7 +219,9 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| `captureAdmin.bulkUndo` | mutation | `adminProcedure` | yes | — | — | `api/lib/capture/operations.ts` | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `captureAdmin.catalog` | query | `adminProcedure` | no | `capture_sources`, `subscription_catalog` | — | `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.funnel` | query | `adminProcedure` | yes | — | — | `api/lib/capture/operations.ts` | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `captureAdmin.restoreSeed` | mutation | `adminProcedure` | yes | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` | `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.saveSource` | mutation | `adminProcedure` | yes | `capture_sources` | `capture_sources` | `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.saveSubscription` | mutation | `adminProcedure` | yes | `subscription_catalog` | `subscription_catalog` | `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |

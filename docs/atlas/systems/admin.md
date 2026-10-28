@@ -114,7 +114,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `web-admin` — Admin UI | Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration. | 24 |
+| `web-admin` — Admin UI | Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration. | 25 |
 
 ## API procedures
 
@@ -257,7 +257,7 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/admin.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>33 files and declarations</summary>
+<details><summary>34 files and declarations</summary>
 
 - `api/admin-router.ts`
 - `api/ads-router.ts`
@@ -282,6 +282,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx`
 - `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx`
 - `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx`
+- `src/components/admin/capture/AdminCaptureNumbers.tsx`
 - `src/components/admin/capture/AdminCaptureTab.tsx`
 - `src/components/admin/settings/AdminCaptureSection.tsx`
 - `src/components/admin/settings/AdminCodesTab.tsx`

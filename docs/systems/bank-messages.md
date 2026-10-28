@@ -90,6 +90,14 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
    its notice has both buttons. When the model is not used the reader's reading is asked about if it has an amount, else
    the signal is dropped; a reading of no money moved keeps nothing. The notice waits on the job until the phone takes it
    from `GET /api/capture/v1/notices` (each once, with how many still wait).
+3c. **Running it** ([decision 0032](../decisions/0032-capture-breaker-and-bulk-undo.md),
+   `api/lib/capture/operations.ts`): each event keeps its bank and reader version (`source_slug`, `reader_version`).
+   Every 15 minutes the protected job `capture-breaker` adds to `capture_paused_sources` a bank with twenty or more
+   payments recorded on their own in the last day of which more than one in twenty were taken back (undone or deleted
+   from the ledger); only the admin takes it out. `captureAdmin.bulkUndo` counts, then removes, the ledger rows one
+   bank recorded in a period (optionally one reader version, by default only those recorded on their own) through the
+   ledger writer, leaves each event `deleted` and gives the month back, at most 500 a run. `captureAdmin.funnel` gives
+   the numbers per bank and kind and the model queue's outcomes.
 3a. **One payment, one event** ([decision 0029](../decisions/0029-one-payment-one-event.md),
    `api/lib/capture/events.ts#matchSignal`): the signal joins an event of the last three days of the same user, or
    starts one in `capture_events`. It joins on the bank's reference (an HMAC) with the same amount within a day; on the
@@ -258,7 +266,8 @@ EGP equivalent in the text, which is not used as pounds.
   the user was told, and the day's questions): migration `db/migrations/0034_capture_usage.sql`.
 - `capture_memory` (one row per user and merchant or person: where the user files it) and `capture_user_pairs` (one
   row per user, bank and kind: the confirmations in a row, whether the offer was made and taken), and
-  `capture_events.auto_recorded`: migration `db/migrations/0035_capture_memory.sql`.
+  `capture_events.auto_recorded`: migration `db/migrations/0035_capture_memory.sql`. `capture_events.source_slug` and
+  `reader_version`: migration `db/migrations/0037_capture_events_source.sql`.
 - `capture_ai_jobs` (one row per signal waiting for the model: its status, attempts, lease, outcome, the event it
   became and the notice the phone has not taken yet), deleted after seven days: migration
   `db/migrations/0036_capture_ai_jobs.sql`.
@@ -271,6 +280,7 @@ EGP equivalent in the text, which is not used as pounds.
 | --- | --- | --- |
 | What is kept, ignored or refused, and the notice | `api/lib/capture/intake.ts` | `api/lib/capture/intake.test.ts` |
 | What the model reads, retries and leaves for the phone | `api/lib/capture/ai-queue.ts`; the route in `api/capture-v1-routes.ts`; `NoticeWorker` in `CaptureWork.kt` | `api/lib/capture/ai-queue.test.ts`, `tests/capture-intake.test.ts` |
+| The breaker, the bulk undo and the numbers | `api/lib/capture/operations.ts`, `captureAdmin.funnel` and `captureAdmin.bulkUndo` in `api/capture-admin-router.ts`, the console's «الأرقام» tab | `api/lib/capture/operations.test.ts`, `tests/capture-intake.test.ts`, `src/components/admin/capture/AdminCaptureNumbers.test.tsx` |
 | When signals are one payment | `api/lib/capture/events.ts` (`matchSignal`, `MATCH_WINDOWS`) | `api/lib/capture/events.test.ts` |
 | What is recorded without a question, and the memory | `mayRecordAlone` in `api/lib/capture/intake.ts`, `api/lib/capture/memory.ts`; the settings in the admin's capture section | `api/lib/capture/intake.test.ts`, `tests/capture-intake.test.ts` |
 | The routes, the device token and the answer | `api/capture-v1-routes.ts`, `api/lib/capture/devices.ts`, `api/capture-router.ts` | `tests/capture-intake.test.ts` (`npm run test:db`) |
@@ -309,7 +319,8 @@ and the app's notification asked about once, the same words twice asked about, a
 refund in its purchase's category, the wallet and its balance, a Google account with the same id seeing and answering
 nothing, a revoked device, missing consent and the switch refused, and the model's queue (no amount and no consent is
 dropped; the model's reading asked once through the notices and recorded on the answer; a reading of no money keeps
-nothing; three failures fall back to the reader's reading). `api/lib/capture/ai-queue.test.ts` checks how a reply
+nothing; three failures fall back to the reader's reading), the breaker stopping a bank after two of twenty were undone, and the
+bulk undo counting, removing and giving the month back. `api/lib/capture/ai-queue.test.ts` checks how a reply
 becomes a reading.
 `api/lib/capture/phone-gate-fixtures.test.ts` keeps the phone's shared cases on the lists the server sends, and
 `CaptureGateTest` in `mobile/packages/bank_capture/android/src/test` runs them in Kotlin (the Mobile workflow).

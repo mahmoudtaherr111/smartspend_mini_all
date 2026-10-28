@@ -86,7 +86,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `Admin` — `src/pages/Admin.tsx`
 
-32 files in its import closure (not counting `src/components/ui/`).
+33 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -154,7 +154,9 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `ai.parseExpense` | useMutation | `src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
+| `captureAdmin.bulkUndo` | useMutation | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `captureAdmin.catalog` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.funnel` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `captureAdmin.restoreSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.saveSource` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.saveSubscription` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
@@ -247,7 +249,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-61 files in its import closure (not counting `src/components/ui/`).
+62 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -323,7 +325,9 @@ _None._
 | `business.removeCategory` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.suggestCategories` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.update` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
+| `captureAdmin.bulkUndo` | useMutation | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `captureAdmin.catalog` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.funnel` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `captureAdmin.restoreSeed` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.saveSource` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.saveSubscription` | useMutation | `src/components/admin/capture/AdminCaptureTab.tsx` |

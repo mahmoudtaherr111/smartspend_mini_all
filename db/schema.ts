@@ -1076,6 +1076,9 @@ export const captureEvents = mysqlTable(
     quotaPeriod: varchar("quota_period", { length: 7 }),
     /** Recorded without a question, under an allowed pair (decision 0030); its notice offers "undo". */
     autoRecorded: boolean("auto_recorded").notNull().default(false),
+    /** The catalog source and the reader (or model prompt) version of its first signal, kept after the signals go. */
+    sourceSlug: varchar("source_slug", { length: 64 }),
+    readerVersion: varchar("reader_version", { length: 32 }),
     /** One entry per device and channel the payment arrived through ("12:sms:CIB"). */
     channels: json("channels").notNull(),
     primarySignalId: int("primary_signal_id").notNull(),
@@ -1092,6 +1095,7 @@ export const captureEvents = mysqlTable(
     index("capture_events_user_received_idx").on(t.userId, t.userType, t.firstReceivedAt),
     index("capture_events_user_reference_idx").on(t.userId, t.userType, t.referenceHmac),
     index("capture_events_created_idx").on(t.createdAt),
+    index("capture_events_source_created_idx").on(t.sourceSlug, t.createdAt),
   ],
 );
 

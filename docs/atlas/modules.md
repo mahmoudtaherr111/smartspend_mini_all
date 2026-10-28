@@ -26,7 +26,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `ai-providers` | AI provider access | 14 | `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `capture-ai-reader`, `jobs` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-reader`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
-| `capture-intake` | Capture intake | 7 | `auth`, `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | `api-core`, `api-routers`, `auth`, `ledger` | — |
+| `capture-intake` | Capture intake | 8 | `auth`, `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | `api-core`, `api-routers`, `auth`, `ledger` | — |
 | `capture-ai-reader` | Message model reader | 2 | `ai-governance`, `ai-providers`, `classification`, `contracts`, `platform`, `security` | `capture-intake` | `gemini` |
 | `capture-catalog` | Capture catalog | 3 | `contracts`, `database`, `platform` | `api-core`, `api-routers`, `capture-intake` | — |
 | `capture-reader` | Message reader | 12 | `arabic-nlp`, `platform` | `capture-intake` | — |
@@ -43,7 +43,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `web-shell` | Web app shell | 24 | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit`, `web-voice-call` | `web-account`, `web-admin`, `web-ai`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-insights`, `web-pages`, `web-shared`, `web-voice-call` | `capacitor`, `firebase` |
 | `web-pages` | Web pages | 17 | `contracts`, `web-account`, `web-admin`, `web-ai`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `web-shell` | — |
 | `web-ui-kit` | UI primitives | 55 | `web-hooks`, `web-lib` | `web-account`, `web-admin`, `web-ai`, `web-capture`, `web-finance`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-voice-call` | — |
-| `web-admin` | Admin UI | 24 | `contracts`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | `fireworks`, `openrouter` |
+| `web-admin` | Admin UI | 25 | `contracts`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | `fireworks`, `openrouter` |
 | `web-voice-call` | Live voice call UI | 13 | `contracts`, `web-ai`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | `capacitor` |
 | `web-ai` | AI Center UI | 3 | `web-hooks`, `web-insights`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-voice-call` | — |
 | `web-capture` | Expense entry UI | 4 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
@@ -106,7 +106,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/auth-router.ts` | `api-core`, `auth`, `database`, `platform` | `google-oauth` | `users` | `users` |
 | `api/budget-router.ts` | `api-core`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `security` | — | `user_budgets` | `user_budgets` |
 | `api/business-router.ts` | `ai-providers`, `api-core`, `classification`, `database`, `finance-semantic-layer`, `ledger`, `platform` | `gemini` | `business_categories`, `user_businesses`, `user_contacts` | `business_categories`, `expenses`, `user_businesses`, `user_contacts` |
-| `api/capture-admin-router.ts` | `api-core`, `capture-catalog`, `contracts`, `database` | — | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` |
+| `api/capture-admin-router.ts` | `api-core`, `capture-catalog`, `capture-intake`, `contracts`, `database` | — | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` |
 | `api/capture-router.ts` | `api-core`, `capture-catalog`, `capture-intake`, `contracts`, `platform`, `security` | — | — | — |
 | `api/chat-router.ts` | `ai-actions`, `ai-governance`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `classification`, `database`, `finance-semantic-layer`, `platform`, `voice` | `fireworks`, `gemini` | `ai_memory_items`, `ai_pending_actions`, `chat_conversations`, `chat_messages` | `ai_conversation_summaries`, `ai_memory_embeddings`, `ai_memory_items`, `chat_conversations`, `chat_messages`, `local_users`, `users` |
 | `api/coach-router.ts` | `api-core`, `coaching`, `contracts`, `platform` | — | — | — |
@@ -377,7 +377,7 @@ Normalizers, dictionaries, Arabic number parsing, negation detection, the words 
 
 ### `capture-intake` — Capture intake
 
-Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the rules that merge the signals of one payment into one event (decision 0029), the user's memory of where each merchant and person is filed and which banks and kinds are recorded on their own (decision 0030), the monthly limit with the payments held over it, the queue where the admin's model reads what the reader is unsure of and the questions it leaves for the phone (decision 0031), the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer.
+Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the rules that merge the signals of one payment into one event (decision 0029), the user's memory of where each merchant and person is filed and which banks and kinds are recorded on their own (decision 0030), the monthly limit with the payments held over it, the queue where the admin's model reads what the reader is unsure of and the questions it leaves for the phone (decision 0031), the breaker that stops a bank whose recordings are taken back, the admin's bulk undo and the numbers per bank and kind (decision 0032), the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -388,6 +388,7 @@ Where captured bank and wallet notifications come in (decision 0028): the device
 | `api/lib/capture/events.ts` | — | — | — | — |
 | `api/lib/capture/intake.ts` | `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | — | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `local_users`, `user_wallets`, `users` | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `user_wallets` |
 | `api/lib/capture/memory.ts` | `contracts`, `database`, `platform` | — | `capture_memory`, `capture_user_pairs` | `capture_memory`, `capture_user_pairs` |
+| `api/lib/capture/operations.ts` | `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_events` | `system_settings` |
 
 ### `capture-ai-reader` — Message model reader
 
@@ -738,6 +739,7 @@ Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, 
 | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/admin/capture/AdminCaptureNumbers.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/capture/AdminCaptureTab.tsx` | `contracts`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/admin/settings/AdminCaptureSection.tsx` | `web-ui-kit` | — | — | — |
 | `src/components/admin/settings/AdminCodesTab.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
