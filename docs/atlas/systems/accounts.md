@@ -50,6 +50,7 @@ flowchart LR
     tbl_ai_token_ledgers[("ai_token_ledgers")]
     tbl_auth_challenges[("auth_challenges")]
     tbl_business_categories[("business_categories")]
+    tbl_capture_ai_jobs[("capture_ai_jobs")]
     tbl_capture_consents[("capture_consents")]
     tbl_capture_devices[("capture_devices")]
     tbl_capture_events[("capture_events")]
@@ -120,6 +121,7 @@ flowchart LR
   mod_accounts ==> tbl_ai_token_ledgers
   mod_accounts ==> tbl_auth_challenges
   mod_accounts ==> tbl_business_categories
+  mod_accounts ==> tbl_capture_ai_jobs
   mod_accounts ==> tbl_capture_consents
   mod_accounts ==> tbl_capture_devices
   mod_accounts ==> tbl_capture_events
@@ -303,6 +305,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ai_token_ledgers` | E | `accounts` | — |
 | `auth_challenges` | D | `accounts`, `daily-auth-cleanup`, `webauthn.generateAuthenticationOptions`, `webauthn.generateRegistrationOptions`, `webauthn.verifyAuthentication`, `webauthn.verifyRegistration` | `webauthn.verifyAuthentication`, `webauthn.verifyRegistration` |
 | `business_categories` | A | `accounts` | — |
+| `capture_ai_jobs` | D | `accounts` | — |
 | `capture_consents` | A | `accounts` | — |
 | `capture_devices` | A | `accounts` | — |
 | `capture_events` | E | `accounts` | — |

@@ -2699,6 +2699,14 @@ model {
   }
 
   extend smartspend.api.scheduler {
+    capture-ai-sweep = job 'capture-ai-sweep' {
+      technology 'cron * * * * *'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule '* * * * *'
+        file 'api/boot.ts'
+      }
+    }
     classification-log-cleanup = job 'classification-log-cleanup' {
       technology 'cron 0 3 * * 0'
       description 'Scheduled in api/boot.ts.'

@@ -248,6 +248,24 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{مفيش رسايل مستنية الإرسال.} =1{رسالة واحدة مستنية الإرسال.} =2{رسالتين مستنيين الإرسال.} few{{count} رسايل مستنية الإرسال.} other{{count} رسالة مستنية الإرسال.}}'**
   String captureWaiting(int count);
 
+  /// No description provided for @captureAiReadingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّي الذكاء الاصطناعي يقرا الرسايل المش واضحة'**
+  String get captureAiReadingTitle;
+
+  /// No description provided for @captureAiReadingBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو رسالة بنك ماعرفناش نقرا مبلغها أو نوعها، بنبعتها متخبّي منها أرقامك للذكاء الاصطناعي، وبنسألك قبل ما نسجّل حاجة.'**
+  String get captureAiReadingBody;
+
+  /// No description provided for @captureAiReadingFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحفظ اختيارك. جرّب تاني.'**
+  String get captureAiReadingFailed;
+
   /// No description provided for @captureOffline.
   ///
   /// In ar, this message translates to:

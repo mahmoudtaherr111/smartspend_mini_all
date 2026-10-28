@@ -29,11 +29,11 @@
       "id": "bank-messages",
       "title": "Bank and wallet messages",
       "titleAr": "رسائل البنوك والمحافظ",
-      "summary": "Automatic capture of bank and wallet messages, being rebuilt: the catalog of banks, wallets and subscriptions the admin edits, the reader that reads a message without a model, and the admin's model for what the reader is unsure of. Nothing receives messages yet.",
-      "summaryAr": "تسجيل رسايل البنوك والمحافظ لوحدها، وده بيتبني من جديد: قايمة البنوك والمحافظ والاشتراكات اللي الأدمن بيعدّلها، والقارئ اللي بيقرا الرسالة من غير AI، والموديل اللي الأدمن اختاره للي القارئ مش متأكد منه. لسه مفيش حاجة بتستقبل رسايل.",
+      "summary": "Automatic capture of bank and wallet messages from phones: the catalog of banks, wallets and subscriptions the admin edits, the reader that reads a message without a model, the admin's model for what the reader is unsure of, the intake that merges signals into payments, and the user's answer that writes the ledger.",
+      "summaryAr": "تسجيل رسايل البنوك والمحافظ من الموبايل: قايمة البنوك والمحافظ والاشتراكات اللي الأدمن بيعدّلها، والقارئ اللي بيقرا الرسالة من غير AI، والموديل اللي الأدمن اختاره للي القارئ مش متأكد منه، والاستلام اللي بيجمع الرسايل في عمليات، وإجابة المستخدم اللي بتكتب في الدفتر.",
       "clusters": ["capture-ai-reader", "capture-catalog", "capture-intake", "capture-reader"],
       "routers": ["capture", "captureAdmin"],
-      "jobs": ["seed-capture-catalog"]
+      "jobs": ["seed-capture-catalog", "capture-ai-sweep"]
     },
     {
       "id": "voice-calls",

@@ -103,6 +103,17 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get captureAiReadingTitle =>
+      'خلّي الذكاء الاصطناعي يقرا الرسايل المش واضحة';
+
+  @override
+  String get captureAiReadingBody =>
+      'لو رسالة بنك ماعرفناش نقرا مبلغها أو نوعها، بنبعتها متخبّي منها أرقامك للذكاء الاصطناعي، وبنسألك قبل ما نسجّل حاجة.';
+
+  @override
+  String get captureAiReadingFailed => 'ماقدرناش نحفظ اختيارك. جرّب تاني.';
+
+  @override
   String get captureOffline => 'مستنيين النت عشان نبعت.';
 
   @override

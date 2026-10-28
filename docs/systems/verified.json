@@ -33,7 +33,7 @@
         "api/profile-router.ts#rest-of-file": "b1dc9ec23cb2",
         "api/services/phone-challenge.ts": "9c5aa7cfebc9",
         "api/services/turnstile-service.ts": "89a28fc96d49",
-        "api/services/user-purge-service.ts": "1a7489cdc556",
+        "api/services/user-purge-service.ts": "18b0f47dae02",
         "api/session-router.ts": "c29d8dcf4653",
         "api/webauthn-router.ts": "8a7c2294a8d1",
         "src/components/auth/BiometricLockOverlay.tsx": "b9b9b5184b56",
@@ -54,9 +54,9 @@
         "src/pages/Login.tsx": "59d76ce265d9",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-28 3f613544",
-      "arabic": "8df6694176dd",
-      "arabicChecked": "2026-10-28 3f613544"
+      "checked": "2026-10-28 3c42165c",
+      "arabic": "0e07b08e457f",
+      "arabicChecked": "2026-10-28 3c42165c"
     },
     "admin": {
       "files": {
@@ -185,16 +185,18 @@
     },
     "bank-messages": {
       "files": {
+        "api/boot.ts#job:capture-ai-sweep": "7b7d2f8d3978",
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
         "api/capture-admin-router.ts": "95a0417753d7",
         "api/capture-router.ts": "ae5e60cf19db",
-        "api/capture-v1-routes.ts": "921fd7476bf9",
+        "api/capture-v1-routes.ts": "b4cea6b09b4c",
+        "api/lib/capture/ai-queue.ts": "796ebea682af",
         "api/lib/capture/ai-reader.ts": "b506b338b9f2",
         "api/lib/capture/catalog.ts": "dd7c3d61d374",
         "api/lib/capture/consent.ts": "ce37c795e162",
         "api/lib/capture/devices.ts": "c5ecf217a83e",
         "api/lib/capture/events.ts": "edb833c76977",
-        "api/lib/capture/intake.ts": "52570ee716ac",
+        "api/lib/capture/intake.ts": "3869974cd465",
         "api/lib/capture/memory.ts": "4bbf061cedd9",
         "api/lib/capture/reader/clauses.ts": "5b86ed12ca60",
         "api/lib/capture/reader/counterparty.ts": "4560b5469773",
@@ -210,11 +212,11 @@
         "api/lib/capture/reader/when.ts": "3c9cce811dd1",
         "api/lib/capture/seed-sources.ts": "693b8813dd6c",
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
-        "api/lib/sms-ai-contract.ts": "a05d2f4ea034"
+        "api/lib/sms-ai-contract.ts": "34562a4b9e0c"
       },
-      "checked": "2026-10-28 3f613544",
-      "arabic": "fe0235238d0d",
-      "arabicChecked": "2026-10-28 3f613544"
+      "checked": "2026-10-28 3c42165c",
+      "arabic": "113ea88f80fc",
+      "arabicChecked": "2026-10-28 3c42165c"
     },
     "billing": {
       "files": {
@@ -447,9 +449,9 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "47891c386561",
+        "api/boot.ts#rest-of-file": "3974882bc8a4",
         "api/context.ts": "d2add89863df",
-        "api/jobs/data-retention-job.ts": "65a7e946cfb6",
+        "api/jobs/data-retention-job.ts": "9eb0b19897a9",
         "api/lib/app-time.ts": "f53d4623a239",
         "api/lib/cache-keys.ts": "89dc693d0c12",
         "api/lib/env.ts": "c1943bec00ee",
@@ -472,7 +474,7 @@
         "api/services/storage/types.ts": "766de83090e8",
         "contracts/account-deletion.ts": "6fcd736f6cae",
         "contracts/ai-models.ts": "7eeda8042bd8",
-        "contracts/capture-intake.ts": "b916f9c5d808",
+        "contracts/capture-intake.ts": "0fc8f48274b4",
         "contracts/capture.ts": "9fd5ef8a1382",
         "contracts/categories.ts": "aca28dd35f9b",
         "contracts/constants.ts": "f047c234a332",
@@ -485,14 +487,14 @@
         "contracts/types.ts": "191164b8f041",
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
-        "db/relations.ts": "5110d3a15f68",
-        "db/schema.ts": "b2f2d974c7f8",
+        "db/relations.ts": "af03f4285080",
+        "db/schema.ts": "ed2d4c56144e",
         "db/seed.ts": "811d2a0df636",
-        "db/table-classes.ts": "9d601fa32ada"
+        "db/table-classes.ts": "d6148e18058a"
       },
-      "checked": "2026-10-28 a4556cfa",
-      "arabic": "9341f8df2e1f",
-      "arabicChecked": "2026-10-28 a4556cfa"
+      "checked": "2026-10-28 3c42165c",
+      "arabic": "e16d2f616ccb",
+      "arabicChecked": "2026-10-28 3c42165c"
     },
     "voice-calls": {
       "files": {

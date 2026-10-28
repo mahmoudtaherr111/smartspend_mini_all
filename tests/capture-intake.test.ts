@@ -1,7 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, lte } from "drizzle-orm";
 import { Hono } from "hono";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { captureConsents, captureDevices, captureEvents, captureMemory, captureSignals, captureUsage, captureUserPairs, expenseDailyRollups, expenses, localUsers, systemSettings, userWallets } from "../db/schema";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { captureAiJobs, captureConsents, captureDevices, captureEvents, captureMemory, captureSignals, captureUsage, captureUserPairs, expenseDailyRollups, expenses, localUsers, systemSettings, userWallets } from "../db/schema";
 import { db } from "../api/queries/connection";
 import { registerCaptureRoutes } from "../api/capture-v1-routes";
 import { captureRouter } from "../api/capture-router";
@@ -10,6 +10,38 @@ import { CAPTURE_CONSENT_TEXT_VERSION, setCaptureConsent } from "../api/lib/capt
 import { registerCaptureDevice, revokeCaptureDevice } from "../api/lib/capture/devices";
 import { invalidateSettingsCache } from "../api/lib/settings-cache";
 import { deleteLedgerEntry, updateLedgerEntry } from "../api/services/ledger-writer";
+import { drainCaptureModel } from "../api/lib/capture/ai-queue";
+import type { AiReading } from "../api/lib/capture/ai-reader";
+
+// The admin's model, answered here: no network. Each test sets what it says.
+const model = vi.hoisted(() => ({ next: [] as Array<Partial<AiReading>> }));
+vi.mock("../api/lib/capture/ai-reader", () => ({
+  readMessageWithModel: vi.fn(async () => {
+    const answer = model.next.shift();
+    return { reply: null, result: null, verdict: null, outcome: "disabled", skipped: true, ...answer };
+  }),
+}));
+const modelPurchase = {
+  outcome: "parsed" as const,
+  verdict: "transaction" as const,
+  skipped: false,
+  reply: {
+    isFinancial: true,
+    kind: "card_purchase" as const,
+    direction: "out" as const,
+    amount: { value: 450, currency: "EGP" },
+    amountEgp: null,
+    fee: null,
+    balanceAfter: null,
+    counterparty: { type: "merchant" as const, name: "CARREFOUR MAADI" },
+    rail: "card" as const,
+    occurredAt: null,
+    category: null,
+    subCategory: null,
+    subscriptionHint: false,
+    confidence: { kind: 0.9, amount: 0.9, direction: 0.9, category: 0.4 },
+  },
+};
 
 // Needs a migrated MySQL database: npm run test:db (docs/guides/testing.md).
 const describeWithDatabase = describe.runIf(process.env.RUN_DB_INTEGRATION === "1");
@@ -49,6 +81,7 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
     for (const userType of ["local", "oauth"]) {
       const mine = <T extends { userId: unknown; userType: unknown }>(table: T) =>
         and(eq(table.userId as never, owner.userId), eq(table.userType as never, userType));
+      await db.delete(captureAiJobs).where(mine(captureAiJobs));
       await db.delete(captureSignals).where(mine(captureSignals));
       await db.delete(captureEvents).where(mine(captureEvents));
       await db.delete(userWallets).where(mine(userWallets));
@@ -73,6 +106,7 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
     await setEnabled(true);
     ({ token, deviceId } = await registerCaptureDevice(owner, { platform: "android", installationId: "install-0001" }));
     await setCaptureConsent(owner, "capture", true, CAPTURE_CONSENT_TEXT_VERSION);
+    model.next = [];
   });
   afterAll(async () => {
     await cleanUp();
@@ -285,6 +319,81 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
     expect(results[1]).toMatchObject({ result: "review" });
     expect(results[1].notice).toBeUndefined();
     expect(await caller.pending()).toHaveLength(2);
+  });
+
+  describe("a message the reader is unsure of", () => {
+    const unread = (id: string) => ({ ...purchase(id), text: "تم خصم مبلغ من بطاقتكم رقم ****1234 لدى CARREFOUR MAADI" });
+    const twoAmounts = (id: string) => ({ ...purchase(id), text: "CIB: Your card **1234 was charged EGP 250.00 and EGP 30.00 at CARREFOUR" });
+    const notices = async () => (await app.request("/api/capture/v1/notices", { headers: { "x-capture-device": token } })).json();
+    const later = (minutes: number) => () => new Date(Date.now() + minutes * 60_000);
+    // The route also wakes the reader in this process, and a row it is claiming is skipped here: wait until no job of
+    // this user is due or being read.
+    const drain = async (max = 5, now: () => Date = () => new Date()) => {
+      for (let i = 0; i < 100; i++) {
+        await drainCaptureModel(max, now);
+        const busy = await db
+          .select({ id: captureAiJobs.id })
+          .from(captureAiJobs)
+          .where(and(eq(captureAiJobs.userId, owner.userId), inArray(captureAiJobs.status, ["queued", "running"]), lte(captureAiJobs.nextAt, now())));
+        if (busy.length === 0) return;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+    };
+
+    it("is dropped without the user's consent to the model when it has no amount", async () => {
+      const { results } = await (await post("/api/capture/v1/signals", { signals: [unread("signal-ai-01")] })).json();
+      expect(results[0]).toMatchObject({ result: "ignored", reason: "no_amount" });
+    });
+
+    it("is read by the model, asked once through the phone's notices, and recorded on the user's answer", async () => {
+      await setCaptureConsent(owner, "ai_reading", true, CAPTURE_CONSENT_TEXT_VERSION);
+      model.next = [modelPurchase];
+      const { results } = await (await post("/api/capture/v1/signals", { signals: [unread("signal-ai-02")] })).json();
+      expect(results[0]).toEqual({ id: "signal-ai-02", result: "queued" });
+      await drain();
+
+      const first = await notices();
+      expect(first.pending).toBe(0);
+      expect(first.notices).toHaveLength(1);
+      expect(first.notices[0].notice.actions).toEqual(["record", "dismiss"]);
+      expect((await notices()).notices).toHaveLength(0);
+
+      const eventId = first.notices[0].eventId;
+      const [event] = await db.select().from(captureEvents).where(eq(captureEvents.id, eventId));
+      expect(event).toMatchObject({ status: "review", amount: "450.00", cardSuffix: "1234", autoRecorded: false });
+      expect(event.quotaPeriod).not.toBeNull();
+
+      const answered = await (await post("/api/capture/v1/actions", { actionId: "action-ai-02", eventId, action: "record" })).json();
+      expect(answered.result).toBe("recorded");
+      const retry = await (await post("/api/capture/v1/signals", { signals: [unread("signal-ai-02")] })).json();
+      expect(retry.results[0]).toMatchObject({ result: "recorded", eventId });
+    });
+
+    it("keeps nothing the model reads as no money moved", async () => {
+      await setCaptureConsent(owner, "ai_reading", true, CAPTURE_CONSENT_TEXT_VERSION);
+      model.next = [{ outcome: "not_transaction", verdict: "not_transaction", skipped: false }];
+      await post("/api/capture/v1/signals", { signals: [unread("signal-ai-03")] });
+      await drain();
+      expect(await db.select().from(captureEvents).where(eq(captureEvents.userId, owner.userId))).toHaveLength(0);
+      const [job] = await db.select().from(captureAiJobs).where(eq(captureAiJobs.userId, owner.userId));
+      expect(job).toMatchObject({ status: "done", outcome: "not_transaction" });
+      expect(await notices()).toEqual({ notices: [], pending: 0 });
+    });
+
+    it("tries a failing model three times, then asks with the reader's own reading", async () => {
+      await setCaptureConsent(owner, "ai_reading", true, CAPTURE_CONSENT_TEXT_VERSION);
+      model.next = [{ outcome: "failed" }, { outcome: "failed" }, { outcome: "failed" }];
+      await post("/api/capture/v1/signals", { signals: [twoAmounts("signal-ai-04")] });
+      await drain();
+      expect((await notices()).pending).toBe(1);
+      await drain(5, later(1));
+      await drain(5, later(5));
+      const [job] = await db.select().from(captureAiJobs).where(eq(captureAiJobs.userId, owner.userId));
+      expect(job).toMatchObject({ status: "done", outcome: "failed", attempts: 3 });
+      const [event] = await db.select().from(captureEvents).where(eq(captureEvents.id, job.eventId!));
+      // The reader's unsure reading counts against the month only when the user records it.
+      expect(event).toMatchObject({ status: "review", amount: "250.00", quotaPeriod: null });
+    });
   });
 
   it("never lets a Google account with the same id answer, and stops a revoked phone", async () => {

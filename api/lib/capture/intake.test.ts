@@ -95,6 +95,19 @@ describe("which signals the server keeps", () => {
     expect(gateSignal(withCard, catalog, receivedAt).accept).toBe(true);
   });
 
+  it("keeps a bank's message the reader is unsure of for the model, even without an amount", () => {
+    const kept = accepted(gateSignal(signal({ text: "تم خصم مبلغ من بطاقتكم رقم ****1234 لدى CARREFOUR" }), catalog, receivedAt));
+    expect(kept.reading.confidence).toBe("unsure");
+    expect(kept.reading.amount).toBeNull();
+    // From a sender the catalog does not know, a message with no amount stays out.
+    const unknown = gateSignal(
+      signal({ channel: "sms", app: "com.google.android.apps.messaging", sender: "BANKX", text: "تم خصم مبلغ من بطاقتكم رقم ****1234 لدى CARREFOUR" }),
+      catalog,
+      receivedAt,
+    );
+    expect(unknown).toMatchObject({ accept: false, reason: "no_amount" });
+  });
+
   it("reads a sender as a person only when it is a long number", () => {
     expect(isPersonalSender("01001234567")).toBe(true);
     expect(isPersonalSender("19019")).toBe(false);
@@ -155,6 +168,13 @@ describe("the notice the phone shows", () => {
 
   it("keeps a Latin merchant in its own direction inside Arabic text", () => {
     expect(buildNotice(reading, suggestion, "ar").body).toMatch(/⁨CARREFOUR[^⁩]*⁩/);
+  });
+
+  it("asks with both buttons for the model's reading, never for the reader's unsure one", () => {
+    const reading = keepReading(accepted(gateSignal(signal({}), catalog, receivedAt)).reading, catalog.sources[0]);
+    const suggestion = suggestLedgerEntry(reading, catalog);
+    expect(canAnswerFromNotice({ ...reading, confidence: "likely", readBy: "model" }, suggestion)).toBe(true);
+    expect(canAnswerFromNotice({ ...reading, confidence: "unsure" }, suggestion)).toBe(false);
   });
 
   it("speaks English for an English interface and keeps the category's name", () => {

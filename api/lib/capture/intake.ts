@@ -10,7 +10,7 @@
  */
 import { and, count, desc, eq, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { captureEvents, captureSignals, captureUsage, expenses, localUsers, userWallets, users } from "../../../db/schema";
+import { captureAiJobs, captureEvents, captureSignals, captureUsage, expenses, localUsers, userWallets, users } from "../../../db/schema";
 import { planNumber } from "../../../contracts/plan-features";
 import { CATEGORIES } from "../../../contracts/categories";
 import {
@@ -29,6 +29,7 @@ import { getSystemSettings } from "../settings-cache";
 import { redactWithFindings } from "../anonymizer";
 import { createLogger } from "../log";
 import { getCaptureCatalog, sourceForPackage, sourceForSender, subscriptionForMerchant, type CaptureCatalog, type CaptureSource } from "./catalog";
+import { captureConsentsOf } from "./consent";
 import type { CaptureDevice, CaptureOwner } from "./devices";
 import { matchSignal, MATCH_WINDOWS, type EventKeys, type SignalKeys } from "./events";
 import {
@@ -95,7 +96,9 @@ export function gateSignal(signal: CaptureSignal, catalog: CaptureCatalog, recei
   if (reading.status === "not_transaction") {
     return { accept: false, result: "ignored", reason: reading.reasons[0] ?? reading.kind };
   }
-  if (!reading.amount) return { accept: false, result: "ignored", reason: "no_amount" };
+  // A message the reader could not read an amount from is kept only when a bank of the catalog sent it and the reader
+  // says it is unsure (not "not a transaction"): the model may read it (decision 0031).
+  if (!reading.amount && !(reading.status === "unsure" && source)) return { accept: false, result: "ignored", reason: "no_amount" };
   // A messaging app's sender the catalog does not know must show it is the user's account: a card, an account or a
   // balance. Anyone can send an SMS that says "تم خصم".
   if (fromMessagingApp && !source && !reading.card && !reading.account && !reading.balanceAfter) {
@@ -131,6 +134,10 @@ export interface SignalReading {
   missing: string[];
   sourceSlug: string | null;
   sourceName: { ar: string; en: string } | null;
+  /** HMAC of the message's reference number, taken before the text was redacted (absent on older rows). */
+  referenceHmac?: string | null;
+  /** Who read it: the reader, or the admin's model when the reader was unsure (decision 0031). Absent means the reader. */
+  readBy?: "reader" | "model";
 }
 
 const kept = (money: Reading["amount"]): KeptMoney | null => (money ? { value: money.value, currency: money.currency } : null);
@@ -157,6 +164,8 @@ export function keepReading(reading: Reading, source: CaptureSource | null): Sig
     missing: reading.missing,
     sourceSlug: source?.slug ?? null,
     sourceName: source ? { ar: source.nameAr, en: source.nameEn } : null,
+    referenceHmac: reading.reference ? captureHmac("reference", reading.reference) : null,
+    readBy: "reader",
   };
 }
 
@@ -378,7 +387,8 @@ const KIND_LABELS: Record<string, { ar: string; en: string }> = {
 
 /** Whether the user can answer from the notification, or has to open the app first. */
 export function canAnswerFromNotice(reading: SignalReading, suggestion: LedgerSuggestion): boolean {
-  return reading.confidence === "certain" && suggestion.amountEgp !== null;
+  // The model's reading is never recorded on its own, but its question can be answered from the notification.
+  return (reading.confidence === "certain" || reading.readBy === "model") && suggestion.amountEgp !== null;
 }
 
 export function buildNotice(
@@ -578,27 +588,284 @@ async function mayNotifyQuestion(tx: LedgerTx, owner: CaptureOwner, period: stri
  * became of it, and nothing is stored twice. A new payment the policy allows is recorded in the same transaction
  * (decision 0030); any other waits for the user's answer.
  */
-export async function ingestSignals(device: CaptureDevice, request: CaptureSignalsRequest, now = new Date()): Promise<CaptureSignalResult[]> {
+/** What one request, or one reading the model finished, shares while it places signals. */
+export interface IntakeRun {
+  device: CaptureDevice;
+  catalog: CaptureCatalog;
+  policy: AutoPolicy;
+  limit: number;
+  period: string;
+  day: string;
+  wallets: Array<{ id: number; lastFourDigits: string | null }>;
+  lang: "ar" | "en";
+  recordedAny: boolean;
+  spentAny: boolean;
+}
+
+export async function startIntakeRun(device: CaptureDevice, lang: "ar" | "en", now = new Date()): Promise<IntakeRun> {
   const catalog = await getCaptureCatalog();
   const settings = await getSystemSettings();
-  const policy = autoPolicyOf(settings);
-  const results: CaptureSignalResult[] = [];
-  const counts: Record<string, number> = {};
-  const mineSignals = and(eq(captureSignals.userId, device.userId), eq(captureSignals.userType, device.userType));
-  const mineEvents = and(eq(captureEvents.userId, device.userId), eq(captureEvents.userType, device.userType));
   const account = device.userType === "oauth" ? users : localUsers;
   const wallets = await getDb()
     .select({ id: userWallets.id, lastFourDigits: userWallets.lastFourDigits })
     .from(userWallets)
     .where(and(eq(userWallets.userId, device.userId), eq(userWallets.userType, device.userType)));
   const [user] = await getDb().select({ plan: account.plan }).from(account).where(eq(account.id, device.userId));
-  const limit = planNumber(settings, user?.plan, "capture_monthly_limit");
+  return {
+    device,
+    catalog,
+    policy: autoPolicyOf(settings),
+    limit: planNumber(settings, user?.plan, "capture_monthly_limit"),
+    period: capturePeriod(now),
+    day: businessDateKey(now),
+    wallets,
+    lang,
+    recordedAny: false,
+    spentAny: false,
+  };
+}
+
+/** One signal to place: a new one from the phone, or one whose row exists and the model has just read. */
+export interface SignalToPlace {
+  clientSignalId: string;
+  channel: string;
+  sourceSlug: string | null;
+  textHmac: string;
+  receivedAt: Date;
+  reading: SignalReading;
+  /** The row already written (a queued signal); without it the row is written here with this text. */
+  signalId?: number;
+  textRedacted?: string;
+}
+
+/** Locks the user for the rest of the transaction: the account row (the streak and account deletion take it too). */
+export async function lockCaptureUser(tx: LedgerTx, owner: CaptureOwner): Promise<void> {
+  const account = owner.userType === "oauth" ? users : localUsers;
+  await tx.select({ id: account.id }).from(account).where(eq(account.id, owner.userId)).for("update");
+}
+
+/**
+ * Matches a read signal with the user's events, counts it against the month, and either joins it to a payment, holds
+ * it, records it on its own, or keeps it for the user's answer. Runs inside the caller's transaction, after
+ * `lockCaptureUser`.
+ */
+export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToPlace): Promise<CaptureSignalResult> {
+  const { device, catalog } = run;
+  const { reading, receivedAt } = input;
+  const mineSignals = and(eq(captureSignals.userId, device.userId), eq(captureSignals.userType, device.userType));
+  const mineEvents = and(eq(captureEvents.userId, device.userId), eq(captureEvents.userType, device.userType));
+  // Built from what the signal row keeps (its source), so a stored signal gives the same key back.
+  const channelKey = channelKeyOf(device.deviceId, input.channel, input.sourceSlug);
+  const keys: SignalKeys = {
+    channelKey,
+    deviceId: device.deviceId,
+    receivedAt,
+    textHmac: input.textHmac,
+    direction: reading.direction,
+    amount: reading.amount!.value,
+    currency: reading.amount!.currency,
+    amountEgp: reading.amount!.currency === "EGP" ? reading.amount!.value : (reading.amountEgp?.value ?? null),
+    timeFromMessage: reading.timeFromMessage,
+    occurredAt: new Date(reading.occurredAt),
+    cardSuffix: reading.cardSuffix,
+    accountSuffix: reading.accountSuffix,
+    merchantKey: reading.counterparty?.merchantKey ?? null,
+    referenceHmac: reading.referenceHmac ?? null,
+    balanceAfter: reading.balanceAfter?.value ?? null,
+    ownAccount: reading.counterparty?.type === "own_account",
+  };
+
+  const since = new Date(receivedAt.getTime() - MATCH_WINDOWS.poundPosting);
+  const candidates = (
+    await tx
+      .select()
+      .from(captureEvents)
+      .where(and(mineEvents, gte(captureEvents.firstReceivedAt, since), lte(captureEvents.firstReceivedAt, new Date(receivedAt.getTime() + MATCH_WINDOWS.reference))))
+      .orderBy(captureEvents.firstReceivedAt)
+      .limit(300)
+  ).map(eventKeysOf);
+  const sameTextRows = await tx
+    .select({ eventId: captureSignals.eventId, deviceId: captureSignals.deviceId, channel: captureSignals.channel, sourceSlug: captureSignals.sourceSlug, receivedAt: captureSignals.receivedAt })
+    .from(captureSignals)
+    .where(
+      and(
+        mineSignals,
+        eq(captureSignals.textHmac, input.textHmac),
+        gte(captureSignals.receivedAt, new Date(receivedAt.getTime() - MATCH_WINDOWS.sameTextOtherDevice)),
+        lte(captureSignals.receivedAt, new Date(receivedAt.getTime() + MATCH_WINDOWS.sameTextOtherDevice)),
+      ),
+    );
+  const sameText = sameTextRows
+    .filter((row) => row.eventId !== null)
+    .map((row) => ({
+      eventId: row.eventId!,
+      deviceId: row.deviceId,
+      channelKey: channelKeyOf(row.deviceId, row.channel, row.sourceSlug),
+      receivedAt: row.receivedAt,
+    }));
+
+  const match = matchSignal(keys, candidates, sameText);
+
+  // A new payment counts against the month's limit; over it, it is held (no question, no ledger). A reading the
+  // reader is unsure of counts only when the user records it.
+  let reservedNow: number | null = null;
+  let held = false;
+  if (match.type !== "merge" && reading.confidence !== "unsure") {
+    reservedNow = await reserveQuota(tx, device, run.period, run.limit);
+    if (reservedNow === null) {
+      const [{ heldCount }] = await tx.select({ heldCount: count() }).from(captureEvents).where(and(mineEvents, eq(captureEvents.status, "held")));
+      if (heldCount >= HELD_MAX) return { id: input.clientSignalId, result: "ignored" as const, reason: "held_full" };
+      held = true;
+    }
+  }
+
+  let signalId = input.signalId;
+  if (signalId === undefined) {
+    const [inserted] = await tx.insert(captureSignals).values({
+      userId: device.userId,
+      userType: device.userType,
+      deviceId: device.deviceId,
+      clientSignalId: input.clientSignalId,
+      channel: input.channel,
+      sourceSlug: input.sourceSlug,
+      textHmac: input.textHmac,
+      textRedacted: input.textRedacted ?? null,
+      reading,
+      receivedAt,
+    });
+    signalId = Number((inserted as { insertId?: number }).insertId);
+  } else {
+    await tx.update(captureSignals).set({ reading }).where(eq(captureSignals.id, signalId));
+  }
+
+  if (match.type === "merge") {
+    const [event] = await tx.select().from(captureEvents).where(and(eq(captureEvents.id, match.eventId), mineEvents)).limit(1);
+    const channels = Array.isArray(event.channels) ? (event.channels as string[]) : [];
+    await tx
+      .update(captureEvents)
+      .set({
+        channels: channels.includes(channelKey) ? channels : [...channels, channelKey],
+        // A field one signal lacked and the other gave is kept.
+        cardSuffix: event.cardSuffix ?? keys.cardSuffix,
+        accountSuffix: event.accountSuffix ?? keys.accountSuffix,
+        merchantKey: event.merchantKey ?? keys.merchantKey,
+        referenceHmac: event.referenceHmac ?? keys.referenceHmac,
+        balanceAfter: event.balanceAfter ?? (keys.balanceAfter === null ? null : String(keys.balanceAfter)),
+        amountEgp: match.rule === "pound_posting" ? String(keys.amount) : (event.amountEgp ?? (keys.amountEgp === null ? null : String(keys.amountEgp))),
+        direction: match.rule === "own_transfer" ? "internal" : event.direction,
+      })
+      .where(eq(captureEvents.id, event.id));
+    await tx.update(captureSignals).set({ eventId: event.id }).where(eq(captureSignals.id, signalId));
+
+    // A foreign charge that now has its pound value can be answered from the notice: ask again.
+    if (match.rule === "pound_posting" && event.status === "review") {
+      const primaryReading = (event.reading ?? reading) as SignalReading;
+      const suggestion = { ...suggestLedgerEntry(primaryReading, catalog), amountEgp: keys.amount };
+      return { id: input.clientSignalId, result: "review" as const, eventId: event.id, notice: buildNotice({ ...primaryReading, confidence: "certain" }, suggestion, run.lang) };
+    }
+    return joinedResult(input.clientSignalId, event);
+  }
+
+  const card = keys.cardSuffix ?? keys.accountSuffix;
+  const walletMatches = card ? run.wallets.filter((wallet) => wallet.lastFourDigits && wallet.lastFourDigits.slice(-3) === card.slice(-3)) : [];
+  const [created] = await tx.insert(captureEvents).values({
+    userId: device.userId,
+    userType: device.userType,
+    status: held ? "held" : "review",
+    kind: reading.kind,
+    direction: reading.direction,
+    amount: String(keys.amount),
+    currency: keys.currency,
+    amountEgp: keys.amountEgp === null ? null : String(keys.amountEgp),
+    occurredAt: keys.occurredAt,
+    firstReceivedAt: receivedAt,
+    cardSuffix: keys.cardSuffix,
+    accountSuffix: keys.accountSuffix,
+    merchantKey: keys.merchantKey,
+    referenceHmac: keys.referenceHmac,
+    balanceAfter: keys.balanceAfter === null ? null : String(keys.balanceAfter),
+    ownAccount: keys.ownAccount,
+    reading,
+    quotaPeriod: reservedNow === null ? null : run.period,
+    channels: [channelKey],
+    primarySignalId: signalId,
+    possibleDuplicateOf: match.type === "possible_duplicate" ? match.eventId : null,
+    walletId: walletMatches.length === 1 ? walletMatches[0].id : null,
+    deviceId: device.deviceId,
+  });
+  const eventId = Number((created as { insertId?: number }).insertId);
+  await tx.update(captureSignals).set({ eventId }).where(eq(captureSignals.id, signalId));
+  if (held) {
+    const first = await noteHeld(tx, device, run.period);
+    return first
+      ? { id: input.clientSignalId, result: "held" as const, eventId, notice: limitNotice(run.limit, run.lang) }
+      : { id: input.clientSignalId, result: "held" as const, eventId };
+  }
+
+  const memoryKey = memoryKeyOf(reading.counterparty);
+  const suggestion = suggestLedgerEntry(reading, catalog, await memoryFor(tx, device, memoryKey ? [memoryKey] : []));
+  const userAgreed = reading.sourceSlug ? await pairAutoEnabled(tx, device, reading.sourceSlug, reading.kind) : false;
+  const nearLimit =
+    run.limit > 0 && reservedNow === Math.ceil(run.limit * 0.8) && run.limit - reservedNow > 0 ? nearLimitLine(run.limit - reservedNow, run.lang) : "";
+
+  if (mayRecordAlone({ policy: run.policy, reading, suggestion, possibleDuplicate: match.type === "possible_duplicate", userAgreed })) {
+    const [event] = await tx.select().from(captureEvents).where(eq(captureEvents.id, eventId)).limit(1);
+    const recorded = await recordEventInTx(tx, device, event, reading, catalog, {}, { auto: true });
+    run.recordedAny = true;
+    run.spentAny ||= recorded.spending;
+    const notice = recordedNotice(reading, recorded.suggestion, run.lang);
+    notice.body += nearLimit;
+    return { id: input.clientSignalId, result: "recorded" as const, eventId, notice };
+  }
+
+  const notice = buildNotice(reading, suggestion, run.lang, { possibleDuplicate: match.type === "possible_duplicate" });
+  notice.body += nearLimit;
+  // A few question notifications a day; the rest wait in the app's list.
+  if (!(await mayNotifyQuestion(tx, device, run.period, run.day, run.policy.dailyQuestions))) {
+    return { id: input.clientSignalId, result: "review" as const, eventId };
+  }
+  return { id: input.clientSignalId, result: "review" as const, eventId, notice };
+}
+
+/**
+ * Keeps a signal the reader was unsure of for the admin's model (decision 0031): the row with its redacted text and
+ * the reader's fields, and a job the model worker (`api/lib/capture/ai-queue.ts`) claims. Nothing counts against the
+ * month until the model says it is a payment.
+ */
+async function queueModelReading(tx: LedgerTx, device: CaptureDevice, input: SignalToPlace, lang: "ar" | "en", now: Date): Promise<void> {
+  const [inserted] = await tx.insert(captureSignals).values({
+    userId: device.userId,
+    userType: device.userType,
+    deviceId: device.deviceId,
+    clientSignalId: input.clientSignalId,
+    channel: input.channel,
+    sourceSlug: input.sourceSlug,
+    textHmac: input.textHmac,
+    textRedacted: input.textRedacted ?? null,
+    reading: input.reading,
+    receivedAt: input.receivedAt,
+  });
+  await tx.insert(captureAiJobs).values({
+    userId: device.userId,
+    userType: device.userType,
+    deviceId: device.deviceId,
+    signalId: Number((inserted as { insertId?: number }).insertId),
+    // DATETIME rounds to the nearest second: rounded down, the job is due at once rather than half a second late.
+    nextAt: new Date(Math.floor(now.getTime() / 1000) * 1000),
+    lang,
+  });
+}
+
+export async function ingestSignals(device: CaptureDevice, request: CaptureSignalsRequest, now = new Date()): Promise<CaptureSignalResult[]> {
+  const run = await startIntakeRun(device, request.lang, now);
+  const settings = await getSystemSettings();
+  // A message the reader is unsure of goes to the admin's model only with the user's consent and the model switched on.
+  const modelReads = settings.sms_ai_enabled !== "false" && (await captureConsentsOf(device)).aiReading;
+  const results: CaptureSignalResult[] = [];
+  const counts: Record<string, number> = {};
+  const mineSignals = and(eq(captureSignals.userId, device.userId), eq(captureSignals.userType, device.userType));
   // An upgrade (or an admin lifting the limit) releases what was held; this is the first request after it.
-  if (limit === 0) await releaseHeldEvents(device, now);
-  const period = capturePeriod(now);
-  const day = businessDateKey(now);
-  let recordedAny = false;
-  let spentAny = false;
+  if (run.limit === 0) await releaseHeldEvents(device, now);
 
   for (const signal of request.signals) {
     const result = await (async (): Promise<CaptureSignalResult> => {
@@ -607,19 +874,19 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
       if (age > MAX_AGE_MS) return { id: signal.id, result: "rejected", reason: "too_old" };
       if (age < -MAX_AHEAD_MS) return { id: signal.id, result: "rejected", reason: "in_future" };
 
-      const gate = gateSignal(signal, catalog, receivedAt);
+      const gate = gateSignal(signal, run.catalog, receivedAt);
       if (!gate.accept) return { id: signal.id, result: gate.result, reason: gate.reason };
       const reading = keepReading(gate.reading, gate.source);
+      const toModel = modelReads && reading.confidence === "unsure";
+      // Without the model, a message with no amount the reader could read gives the user nothing to answer.
+      if (!reading.amount && !toModel) return { id: signal.id, result: "ignored", reason: "no_amount" };
       const textHmac = textHmacOf(signal);
-      // Built from what the signal row keeps (its source), so a stored signal gives the same key back.
-      const channelKey = channelKeyOf(device.deviceId, signal.channel, gate.source?.slug);
 
       return getDb().transaction(async (tx) => {
-        // One user at a time from here: the account row is the lock (the streak and account deletion take it too).
-        await tx.select({ id: account.id }).from(account).where(eq(account.id, device.userId)).for("update");
+        await lockCaptureUser(tx, device);
 
         const [known] = await tx
-          .select({ eventId: captureSignals.eventId })
+          .select({ id: captureSignals.id, eventId: captureSignals.eventId })
           .from(captureSignals)
           .where(and(mineSignals, eq(captureSignals.clientSignalId, signal.id)))
           .limit(1);
@@ -627,171 +894,26 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
           const [event] = known.eventId
             ? await tx.select({ id: captureEvents.id, status: captureEvents.status }).from(captureEvents).where(eq(captureEvents.id, known.eventId))
             : [];
-          return event ? joinedResult(signal.id, event) : { id: signal.id, result: "rejected" as const, reason: "conflict" };
+          if (event) return joinedResult(signal.id, event);
+          const [job] = await tx.select({ status: captureAiJobs.status }).from(captureAiJobs).where(eq(captureAiJobs.signalId, known.id));
+          if (!job) return { id: signal.id, result: "rejected" as const, reason: "conflict" };
+          return job.status === "done" ? { id: signal.id, result: "ignored" as const, reason: "model_read" } : { id: signal.id, result: "queued" as const };
         }
 
-        const keys: SignalKeys = {
-          channelKey,
-          deviceId: device.deviceId,
-          receivedAt,
-          textHmac,
-          direction: reading.direction,
-          amount: reading.amount!.value,
-          currency: reading.amount!.currency,
-          amountEgp: reading.amount!.currency === "EGP" ? reading.amount!.value : (reading.amountEgp?.value ?? null),
-          timeFromMessage: reading.timeFromMessage,
-          occurredAt: new Date(reading.occurredAt),
-          cardSuffix: reading.cardSuffix,
-          accountSuffix: reading.accountSuffix,
-          merchantKey: reading.counterparty?.merchantKey ?? null,
-          referenceHmac: gate.reading.reference ? captureHmac("reference", gate.reading.reference) : null,
-          balanceAfter: reading.balanceAfter?.value ?? null,
-          ownAccount: reading.counterparty?.type === "own_account",
-        };
-
-        const since = new Date(receivedAt.getTime() - MATCH_WINDOWS.poundPosting);
-        const candidates = (
-          await tx
-            .select()
-            .from(captureEvents)
-            .where(and(mineEvents, gte(captureEvents.firstReceivedAt, since), lte(captureEvents.firstReceivedAt, new Date(receivedAt.getTime() + MATCH_WINDOWS.reference))))
-            .orderBy(captureEvents.firstReceivedAt)
-            .limit(300)
-        ).map(eventKeysOf);
-        const sameTextRows = await tx
-          .select({ eventId: captureSignals.eventId, deviceId: captureSignals.deviceId, channel: captureSignals.channel, sourceSlug: captureSignals.sourceSlug, receivedAt: captureSignals.receivedAt })
-          .from(captureSignals)
-          .where(
-            and(
-              mineSignals,
-              eq(captureSignals.textHmac, textHmac),
-              gte(captureSignals.receivedAt, new Date(receivedAt.getTime() - MATCH_WINDOWS.sameTextOtherDevice)),
-              lte(captureSignals.receivedAt, new Date(receivedAt.getTime() + MATCH_WINDOWS.sameTextOtherDevice)),
-            ),
-          );
-        const sameText = sameTextRows
-          .filter((row) => row.eventId !== null)
-          .map((row) => ({
-            eventId: row.eventId!,
-            deviceId: row.deviceId,
-            channelKey: channelKeyOf(row.deviceId, row.channel, row.sourceSlug),
-            receivedAt: row.receivedAt,
-          }));
-
-        const match = matchSignal(keys, candidates, sameText);
-
-        // A new payment counts against the month's limit; over it, it is held (no question, no ledger). A reading the
-        // reader is unsure of counts only when the user records it.
-        let reservedNow: number | null = null;
-        let held = false;
-        if (match.type !== "merge" && reading.confidence !== "unsure") {
-          reservedNow = await reserveQuota(tx, device, period, limit);
-          if (reservedNow === null) {
-            const [{ heldCount }] = await tx.select({ heldCount: count() }).from(captureEvents).where(and(mineEvents, eq(captureEvents.status, "held")));
-            if (heldCount >= HELD_MAX) return { id: signal.id, result: "ignored" as const, reason: "held_full" };
-            held = true;
-          }
-        }
-
-        const [inserted] = await tx.insert(captureSignals).values({
-          userId: device.userId,
-          userType: device.userType,
-          deviceId: device.deviceId,
+        const placing: SignalToPlace = {
           clientSignalId: signal.id,
           channel: signal.channel,
           sourceSlug: gate.source?.slug ?? null,
           textHmac,
-          textRedacted: redactWithFindings(signal.text).text,
-          reading,
           receivedAt,
-        });
-        const signalId = Number((inserted as { insertId?: number }).insertId);
-
-        if (match.type === "merge") {
-          const [event] = await tx.select().from(captureEvents).where(and(eq(captureEvents.id, match.eventId), mineEvents)).limit(1);
-          const channels = Array.isArray(event.channels) ? (event.channels as string[]) : [];
-          await tx
-            .update(captureEvents)
-            .set({
-              channels: channels.includes(channelKey) ? channels : [...channels, channelKey],
-              // A field one signal lacked and the other gave is kept.
-              cardSuffix: event.cardSuffix ?? keys.cardSuffix,
-              accountSuffix: event.accountSuffix ?? keys.accountSuffix,
-              merchantKey: event.merchantKey ?? keys.merchantKey,
-              referenceHmac: event.referenceHmac ?? keys.referenceHmac,
-              balanceAfter: event.balanceAfter ?? (keys.balanceAfter === null ? null : String(keys.balanceAfter)),
-              amountEgp: match.rule === "pound_posting" ? String(keys.amount) : (event.amountEgp ?? (keys.amountEgp === null ? null : String(keys.amountEgp))),
-              direction: match.rule === "own_transfer" ? "internal" : event.direction,
-            })
-            .where(eq(captureEvents.id, event.id));
-          await tx.update(captureSignals).set({ eventId: event.id }).where(eq(captureSignals.id, signalId));
-
-          // A foreign charge that now has its pound value can be answered from the notice: ask again.
-          if (match.rule === "pound_posting" && event.status === "review") {
-            const primaryReading = (event.reading ?? reading) as SignalReading;
-            const suggestion = { ...suggestLedgerEntry(primaryReading, catalog), amountEgp: keys.amount };
-            return { id: signal.id, result: "review" as const, eventId: event.id, notice: buildNotice({ ...primaryReading, confidence: "certain" }, suggestion, request.lang) };
-          }
-          return joinedResult(signal.id, event);
-        }
-
-        const card = keys.cardSuffix ?? keys.accountSuffix;
-        const walletMatches = card ? wallets.filter((wallet) => wallet.lastFourDigits && wallet.lastFourDigits.slice(-3) === card.slice(-3)) : [];
-        const [created] = await tx.insert(captureEvents).values({
-          userId: device.userId,
-          userType: device.userType,
-          status: held ? "held" : "review",
-          kind: reading.kind,
-          direction: reading.direction,
-          amount: String(keys.amount),
-          currency: keys.currency,
-          amountEgp: keys.amountEgp === null ? null : String(keys.amountEgp),
-          occurredAt: keys.occurredAt,
-          firstReceivedAt: receivedAt,
-          cardSuffix: keys.cardSuffix,
-          accountSuffix: keys.accountSuffix,
-          merchantKey: keys.merchantKey,
-          referenceHmac: keys.referenceHmac,
-          balanceAfter: keys.balanceAfter === null ? null : String(keys.balanceAfter),
-          ownAccount: keys.ownAccount,
           reading,
-          quotaPeriod: reservedNow === null ? null : period,
-          channels: [channelKey],
-          primarySignalId: signalId,
-          possibleDuplicateOf: match.type === "possible_duplicate" ? match.eventId : null,
-          walletId: walletMatches.length === 1 ? walletMatches[0].id : null,
-          deviceId: device.deviceId,
-        });
-        const eventId = Number((created as { insertId?: number }).insertId);
-        await tx.update(captureSignals).set({ eventId }).where(eq(captureSignals.id, signalId));
-        if (held) {
-          const first = await noteHeld(tx, device, period);
-          return first
-            ? { id: signal.id, result: "held" as const, eventId, notice: limitNotice(limit, request.lang) }
-            : { id: signal.id, result: "held" as const, eventId };
+          textRedacted: redactWithFindings(signal.text).text,
+        };
+        if (toModel) {
+          await queueModelReading(tx, device, placing, run.lang, now);
+          return { id: signal.id, result: "queued" as const };
         }
-
-        const memoryKey = memoryKeyOf(reading.counterparty);
-        const suggestion = suggestLedgerEntry(reading, catalog, await memoryFor(tx, device, memoryKey ? [memoryKey] : []));
-        const userAgreed = reading.sourceSlug ? await pairAutoEnabled(tx, device, reading.sourceSlug, reading.kind) : false;
-        const nearLimit =
-          limit > 0 && reservedNow === Math.ceil(limit * 0.8) && limit - reservedNow > 0 ? nearLimitLine(limit - reservedNow, request.lang) : "";
-
-        if (mayRecordAlone({ policy, reading, suggestion, possibleDuplicate: match.type === "possible_duplicate", userAgreed })) {
-          const [event] = await tx.select().from(captureEvents).where(eq(captureEvents.id, eventId)).limit(1);
-          const recorded = await recordEventInTx(tx, device, event, reading, catalog, {}, { auto: true });
-          recordedAny = true;
-          spentAny ||= recorded.spending;
-          const notice = recordedNotice(reading, recorded.suggestion, request.lang);
-          notice.body += nearLimit;
-          return { id: signal.id, result: "recorded" as const, eventId, notice };
-        }
-
-        const notice = buildNotice(reading, suggestion, request.lang, { possibleDuplicate: match.type === "possible_duplicate" });
-        notice.body += nearLimit;
-        // A few question notifications a day; the rest wait in the app's list.
-        if (!(await mayNotifyQuestion(tx, device, period, day, policy.dailyQuestions))) return { id: signal.id, result: "review" as const, eventId };
-        return { id: signal.id, result: "review" as const, eventId, notice };
+        return placeSignal(tx, run, placing);
       });
     })();
     const outcome = result.reason ?? result.result;
@@ -799,7 +921,7 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
     results.push(result);
   }
 
-  if (recordedAny) await afterLedgerWrite(device, { spending: spentAny });
+  if (run.recordedAny) await afterLedgerWrite(device, { spending: run.spentAny });
   log.info({ event: "capture.signals", userId: device.userId, deviceId: device.deviceId, count: request.signals.length, outcomes: counts }, "Signals taken in");
   return results;
 }

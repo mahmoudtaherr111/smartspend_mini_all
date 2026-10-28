@@ -7,6 +7,7 @@ final class CaptureServerStatus {
     required this.enabled,
     required this.consented,
     required this.consentTextVersion,
+    this.aiReading = false,
     this.used = 0,
     this.limit = 0,
     this.held = 0,
@@ -15,6 +16,9 @@ final class CaptureServerStatus {
   final bool enabled;
   final bool consented;
   final String consentTextVersion;
+
+  /// The person lets the admin's model read the messages the code could not read with confidence (decision 0031).
+  final bool aiReading;
 
   /// New payments counted this month against the plan's limit, and the limit (0 = none).
   final int used;
@@ -145,6 +149,8 @@ class CaptureApi {
       enabled: map['enabled'] == true,
       consented: consent is Map<String, Object?> && consent['capture'] == true,
       consentTextVersion: map['consentTextVersion'] as String? ?? '',
+      aiReading:
+          consent is Map<String, Object?> && consent['aiReading'] == true,
       used: number('used'),
       limit: number('limit'),
       held: number('held'),
@@ -155,6 +161,16 @@ class CaptureApi {
   Future<void> consent(String textVersion) => _client.mutate(
     Procedures.capture.setConsent,
     input: {'scope': 'capture', 'granted': true, 'textVersion': textVersion},
+  );
+
+  /// Gives or takes back the consent to let the admin's model read unclear messages.
+  Future<void> setAiReading(bool granted, String textVersion) => _client.mutate(
+    Procedures.capture.setConsent,
+    input: {
+      'scope': 'ai_reading',
+      'granted': granted,
+      'textVersion': textVersion,
+    },
   );
 
   /// The device token for this installation; the server shows it once.

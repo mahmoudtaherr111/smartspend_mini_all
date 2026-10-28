@@ -73,11 +73,23 @@ sources (slug, kind, names, packages, sender ids) and a `version`, so a phone ke
    (`gateSignal`): an app's notification must come from an app the catalog lists (`unknown_app`), an SMS may come
    through any messaging app but not from a person's number (`personal_sender`), an SMS sender the catalog does not
    know needs a card, an account or a balance in the text (`unknown_sender`), and the reader must read money that
-   moved (its `not_transaction` reasons, `no_amount`). What fails is answered `ignored` and nothing of it is stored.
+   moved (its `not_transaction` reasons, `no_amount`; a message without an amount from a catalog source the reader is
+   unsure of is kept for the model). What fails is answered `ignored` and nothing of it is stored.
    What passes is kept in `capture_signals`: the text redacted, an HMAC of it, and the reader's fields
    (`SignalReading`: kind, direction, confidence, amount and pound equivalent, fee, balance, card and account
    suffixes, the other side, when and whether the message gave the time, the source). Each signal is taken in a
    transaction that first locks the user's account row, so two batches of one user are matched one after the other.
+3b. **The model's queue** ([decision 0031](../decisions/0031-capture-model-queue.md), `api/lib/capture/ai-queue.ts`):
+   when the reader is unsure and the user agreed to `ai_reading` (with `sms_ai_enabled` on), the signal is kept with a
+   job in `capture_ai_jobs` and answered `queued`; without that consent a reading with no amount is `ignored`. The
+   request wakes a worker in its process (three at a time), and the protected job `capture-ai-sweep` reads every minute
+   what was left. The worker claims a due job with `FOR UPDATE SKIP LOCKED` and a one-minute lease, asks the model
+   outside any transaction (a failure is tried again after 30 seconds and two minutes, three calls in all), then places
+   the signal as below under the user's lock (`placeSignal`). The model's reading (`readingFromModel`: kind, direction
+   and amounts from the model, card, balance and reference from the reader) is `likely`, never recorded on its own, and
+   its notice has both buttons. When the model is not used the reader's reading is asked about if it has an amount, else
+   the signal is dropped; a reading of no money moved keeps nothing. The notice waits on the job until the phone takes it
+   from `GET /api/capture/v1/notices` (each once, with how many still wait).
 3a. **One payment, one event** ([decision 0029](../decisions/0029-one-payment-one-event.md),
    `api/lib/capture/events.ts#matchSignal`): the signal joins an event of the last three days of the same user, or
    starts one in `capture_events`. It joins on the bank's reference (an HMAC) with the same amount within a day; on the
@@ -165,11 +177,15 @@ Android only for now; the plugin is `mobile/packages/bank_capture`, and capture 
    retried with backoff, and a send every six hours as a safety net. It reads `/config` when it is six hours old, sends
    up to five batches, deletes every signal the server answered, and shows each `review` notice (`CaptureNotifier`):
    private on the lock screen, in the interface language, with the server's buttons. A 401 forgets the token and the
-   queue; a 403 or 503 keeps the queue and reads the config again.
+   queue; a 403 or 503 keeps the queue and reads the config again. After a batch with a `queued` result,
+   `NoticeWorker` fetches `/notices` ten seconds later and shows each one, asking again while some still wait (five
+   tries).
 5. **The buttons** (`CaptureActionReceiver`): "record", "not mine" or, on a payment recorded on its own, "undo"; the
    notice goes at once and `ActionWorker` sends the answer to `/api/capture/v1/actions` until the server has it, without
    opening the app.
-6. **The review screen** (`/more/capture`): the offer to record a bank and kind on their own when there is one, then
+6. **The card** also holds the switch for `ai_reading` (letting the admin's model read unclear messages), on or off at
+   any time.
+7. **The review screen** (`/more/capture`): the offer to record a bank and kind on their own when there is one, then
    the waiting transactions with their source, amount, merchant and filing; "record" or "not mine", and the pounds of a
    foreign charge typed first.
 
@@ -188,10 +204,11 @@ original text. `api/lib/capture/reader/explain.ts#explainReading` turns that evi
 - `api/lib/capture/reader/fixtures.ts` builds the benchmark corpus from bank, wallet and payment shapes, written for this public
   repository; `api/lib/capture/reader/reader-benchmark.test.ts` fails under each field's floor or when the reader is certain and wrong
   (`npm run bench:capture` prints the table).
-- The intake calls it for every signal (`api/lib/capture/intake.ts#gateSignal`); the model is not called yet.
+- The intake calls it for every signal (`api/lib/capture/intake.ts#gateSignal`); what it is unsure of goes to the
+  model's queue when the user agreed.
 
-## The model reader (not connected yet)
-`api/lib/capture/ai-reader.ts#readMessageWithModel` takes one message and the user (id, type, plan, the sender, a
+## The model reader
+`api/lib/capture/ai-reader.ts#readMessageWithModel` is called by the queue's worker. It takes one message and the user (id, type, plan, the sender, a
 provider already recognised) and returns the reply that passed the contract, that reply in the ledger's terms, and an
 outcome; when the model was not asked or its reply is not used, the outcome says why ([decision 0025](../decisions/0025-bank-message-model-through-admin-gateway.md)).
 It checks, in this order, and stops at the first refusal:
@@ -217,7 +234,8 @@ Then one call carries this one message of this one user (`executeLlmChain`, with
 tokens). Its attempts go to the [AI cost ledger](ai-platform.md#how-a-call-is-recorded) at each provider's price, and
 the tokens to the user's plan budget (`trackAiTokens`); a call that fails is recorded too (`failed`).
 
-The reply is checked by `api/lib/sms-ai-contract.ts` (`SMS_PROMPT_VERSION`): the kind of message (card purchase, ATM
+The message reaches the model as one JSON string (`sms-v2`), so nothing inside it can end it. The reply is checked by
+`api/lib/sms-ai-contract.ts` (`SMS_PROMPT_VERSION`): the kind of message (card purchase, ATM
 withdrawal, wallet send, salary, declined, one-time code…), direction (`in`, `out`, `internal`), amount and currency,
 EGP equivalent, fee, balance, counterparty type, rail, category from `contracts/categories.ts`, a subscription hint and a
 confidence per field. It is discarded (`invalid_reply`) when the amount is not written in the redacted text, the
@@ -241,6 +259,9 @@ EGP equivalent in the text, which is not used as pounds.
 - `capture_memory` (one row per user and merchant or person: where the user files it) and `capture_user_pairs` (one
   row per user, bank and kind: the confirmations in a row, whether the offer was made and taken), and
   `capture_events.auto_recorded`: migration `db/migrations/0035_capture_memory.sql`.
+- `capture_ai_jobs` (one row per signal waiting for the model: its status, attempts, lease, outcome, the event it
+  became and the notice the phone has not taken yet), deleted after seven days: migration
+  `db/migrations/0036_capture_ai_jobs.sql`.
 - The old intake's tables, `webhook_tokens` (one token per user) and `raw_sms_events` (every message as received,
   with account digits and balances, and the suggestions waiting over the limit), were dropped by
   `db/migrations/0030_drop_old_bank_messages.sql`, raw messages and waiting suggestions included.
@@ -249,6 +270,7 @@ EGP equivalent in the text, which is not used as pounds.
 | To change | Edit | Check with |
 | --- | --- | --- |
 | What is kept, ignored or refused, and the notice | `api/lib/capture/intake.ts` | `api/lib/capture/intake.test.ts` |
+| What the model reads, retries and leaves for the phone | `api/lib/capture/ai-queue.ts`; the route in `api/capture-v1-routes.ts`; `NoticeWorker` in `CaptureWork.kt` | `api/lib/capture/ai-queue.test.ts`, `tests/capture-intake.test.ts` |
 | When signals are one payment | `api/lib/capture/events.ts` (`matchSignal`, `MATCH_WINDOWS`) | `api/lib/capture/events.test.ts` |
 | What is recorded without a question, and the memory | `mayRecordAlone` in `api/lib/capture/intake.ts`, `api/lib/capture/memory.ts`; the settings in the admin's capture section | `api/lib/capture/intake.test.ts`, `tests/capture-intake.test.ts` |
 | The routes, the device token and the answer | `api/capture-v1-routes.ts`, `api/lib/capture/devices.ts`, `api/capture-router.ts` | `tests/capture-intake.test.ts` (`npm run test:db`) |
@@ -285,7 +307,10 @@ transfer between the user's own accounts and only then).
 kept once, repeated taps write one ledger row without the bank's text, the app's own filing and a dismissal, the SMS
 and the app's notification asked about once, the same words twice asked about, a deleted row not brought back, a
 refund in its purchase's category, the wallet and its balance, a Google account with the same id seeing and answering
-nothing, and a revoked device, missing consent and the switch refused.
+nothing, a revoked device, missing consent and the switch refused, and the model's queue (no amount and no consent is
+dropped; the model's reading asked once through the notices and recorded on the answer; a reading of no money keeps
+nothing; three failures fall back to the reader's reading). `api/lib/capture/ai-queue.test.ts` checks how a reply
+becomes a reading.
 `api/lib/capture/phone-gate-fixtures.test.ts` keeps the phone's shared cases on the lists the server sends, and
 `CaptureGateTest` in `mobile/packages/bank_capture/android/src/test` runs them in Kotlin (the Mobile workflow).
 `mobile/app/test/capture_test.dart` checks turning capture on, the switch being off, signing out, and the review screen.
@@ -302,8 +327,8 @@ rows the seed may write.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** iPhone capture is not built: the card on an iPhone only opens the Shortcuts app. The intake does not call
-   the model reader: a reading without an amount is ignored. The Android side was compiled and tested only in CI; it
+1. **Gap.** iPhone capture is not built: the card on an iPhone only opens the Shortcuts app. There is no push: a
+   question from the model the phone did not fetch within about a minute shows only in the app. The Android side was compiled and tested only in CI; it
    has not run on a real phone yet.
 2. **Debt.** Until the admin assigns a model to the `sms` purpose, `readMessageWithModel` falls back to
    `GEMINI_API_KEY` with `mapModelName("flash")` (`smsRoutes` in `api/lib/capture/ai-reader.ts`). It is meant to go

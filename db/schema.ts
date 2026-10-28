@@ -1150,6 +1150,37 @@ export const captureUserPairs = mysqlTable(
   (t) => [uniqueIndex("capture_user_pairs_user_pair_idx").on(t.userId, t.userType, t.sourceSlug, t.kind)],
 );
 
+// A captured message the reader was unsure of, waiting for the admin's model (decision 0031): one row per signal,
+// claimed with a lease so one replica reads it; the notice the reading produced waits here until the phone fetches it.
+export const captureAiJobs = mysqlTable(
+  "capture_ai_jobs",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    deviceId: int("device_id").notNull(),
+    signalId: int("signal_id").notNull(),
+    /** queued, running, done. */
+    status: varchar("status", { length: 16 }).notNull().default("queued"),
+    attempts: int("attempts").notNull().default(0),
+    nextAt: datetime("next_at").notNull(),
+    leaseUntil: datetime("lease_until"),
+    /** How it ended: read, not_transaction, or why the model was not used (an id, never message content). */
+    outcome: varchar("outcome", { length: 32 }),
+    eventId: int("event_id"),
+    lang: varchar("lang", { length: 2 }).notNull().default("ar"),
+    notice: json("notice"),
+    noticeDeliveredAt: datetime("notice_delivered_at"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("capture_ai_jobs_signal_idx").on(t.signalId),
+    index("capture_ai_jobs_due_idx").on(t.status, t.nextAt),
+    index("capture_ai_jobs_user_device_idx").on(t.userId, t.userType, t.deviceId, t.noticeDeliveredAt),
+    index("capture_ai_jobs_created_idx").on(t.createdAt),
+  ],
+);
+
 // ─── WhatsApp OTP Codes ───
 export const whatsappOtpCodes = mysqlTable(
   "whatsapp_otp_codes",

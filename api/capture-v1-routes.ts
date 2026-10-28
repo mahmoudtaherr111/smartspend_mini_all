@@ -1,7 +1,7 @@
 /**
  * The routes phones call with a device token to send captured bank and wallet notifications (decision 0028):
- * `POST /api/capture/v1/signals`, `GET /api/capture/v1/config` and `POST /api/capture/v1/actions` (a notification's
- * button). They are plain HTTP, not tRPC, because native code calls them while the app is closed: real status codes,
+ * `POST /api/capture/v1/signals`, `GET /api/capture/v1/config`, `POST /api/capture/v1/actions` (a notification's
+ * button) and `GET /api/capture/v1/notices` (the questions the model's readings left, decision 0031). They are plain HTTP, not tRPC, because native code calls them while the app is closed: real status codes,
  * `Retry-After`, a body limit and a contract (`contracts/capture-intake.ts`) Kotlin and Swift test against.
  *
  * Every request must send `Content-Type: application/json`: the CSRF check refuses a POST without it.
@@ -19,6 +19,7 @@ import {
   type CaptureConfig,
   type CaptureError,
 } from "../contracts/capture-intake";
+import { takeCaptureNotices, wakeCaptureModel } from "./lib/capture/ai-queue";
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
 import { captureConsentsOf } from "./lib/capture/consent";
 import { resolveCaptureDevice, touchCaptureDevice, type CaptureDevice } from "./lib/capture/devices";
@@ -35,6 +36,8 @@ export const CAPTURE_MIN_CLIENT_VERSION = "1.0.0";
 // A phone sends a batch when it comes back online and a few a minute at most; a notification's button is one tap.
 const signalBatches = createRateLimiter(6, 60_000);
 const actionTaps = createRateLimiter(30, 60_000);
+// The phone asks a few times after a batch with queued signals.
+const noticeReads = createRateLimiter(20, 60_000);
 
 const fail = (c: Context, status: 400 | 401 | 403 | 404 | 413 | 429 | 503, error: CaptureError) => c.json({ error }, status);
 
@@ -80,7 +83,18 @@ export function registerCaptureRoutes(app: Hono): void {
 
     const results = await ingestSignals(device, parsed.data);
     await touchCaptureDevice(device.deviceId, true);
+    if (results.some((result) => result.result === "queued")) wakeCaptureModel();
     return c.json({ results });
+  });
+
+  app.get("/api/capture/v1/notices", async (c) => {
+    const device = await deviceOf(c);
+    if (!device) return fail(c, 401, "invalid_device");
+    if (!(await underLimit(noticeReads, `capture:notices:${device.deviceId}`))) {
+      c.header("Retry-After", "15");
+      return fail(c, 429, "rate_limited");
+    }
+    return c.json(await takeCaptureNotices(device));
   });
 
   app.get("/api/capture/v1/config", async (c) => {

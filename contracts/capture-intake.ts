@@ -57,8 +57,10 @@ export type CaptureSignalsRequest = z.infer<typeof captureSignalsRequestSchema>;
  * - recorded / dismissed: the payment was already answered (a retry, or a late signal of an answered payment).
  * - ignored: not a transaction (a code, an offer, a balance, a personal message): nothing is stored.
  * - rejected: the signal is not acceptable (too old, an app the catalog does not list).
+ * - queued: the reader was unsure, and the admin's model reads it next (decision 0031); its question, if any, comes
+ *   from `GET /api/capture/v1/notices` a few seconds later.
  */
-export const CAPTURE_RESULTS = ["review", "merged", "held", "recorded", "dismissed", "ignored", "rejected"] as const;
+export const CAPTURE_RESULTS = ["review", "merged", "held", "recorded", "dismissed", "ignored", "rejected", "queued"] as const;
 export type CaptureResult = (typeof CAPTURE_RESULTS)[number];
 
 /** What the user can answer from the notification without opening the app; "undo" takes back one recorded on its own. */
@@ -85,6 +87,13 @@ export interface CaptureSignalResult {
 
 export interface CaptureSignalsResponse {
   results: CaptureSignalResult[];
+}
+
+/** `GET /api/capture/v1/notices`: the notices of this phone's queued signals read since it last asked. */
+export interface CaptureNoticesResponse {
+  notices: Array<{ eventId: number; notice: CaptureNotice }>;
+  /** This phone's signals still waiting for the model: ask again later when it is more than zero. */
+  pending: number;
 }
 
 export const captureActionRequestSchema = z.object({

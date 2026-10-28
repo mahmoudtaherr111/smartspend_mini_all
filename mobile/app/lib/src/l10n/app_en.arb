@@ -33,6 +33,9 @@
       }
     }
   },
+  "captureAiReadingTitle": "Let AI read unclear messages",
+  "captureAiReadingBody": "When we can't read a bank message's amount or kind, we send it to AI with your numbers hidden, and ask you before recording anything.",
+  "captureAiReadingFailed": "We couldn't save your choice. Try again.",
   "captureOffline": "Waiting for a connection to send.",
   "captureRevoked": "This device was disconnected. Turn it on again here.",
   "captureReviewEntry": "{count, plural, =0{No transactions waiting for you} =1{One transaction waiting for you} other{{count} transactions waiting for you}}",

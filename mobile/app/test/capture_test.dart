@@ -171,6 +171,56 @@ void main() {
     );
   });
 
+  testWidgets('lets the person allow the model to read unclear messages', (
+    tester,
+  ) async {
+    _phoneScreen(tester);
+    var aiReading = false;
+    final api = _api()
+      ..answer(
+        'capture.status',
+        (_) => {
+          'enabled': true,
+          'consent': {'capture': true, 'aiReading': aiReading},
+          'consentTextVersion': '2026-10-27',
+          'usage': {'period': '2026-10', 'limit': 50, 'used': 3, 'held': 0},
+        },
+      )
+      ..answer('capture.setConsent', (_) {
+        aiReading = true;
+        return {'success': true};
+      });
+    final app = TestApp(token: 'session-token', api: api);
+    app.bankCapture
+      ..access = CaptureAccess.granted
+      ..setup = CaptureSetup(
+        baseUrl: 'http://localhost:3000',
+        deviceToken: 'cap_device-token',
+        ownerKey: 'local:42',
+        language: 'ar',
+      );
+    await app.pump(tester);
+    await _openMore(tester);
+
+    final toggle = find.widgetWithText(
+      SwitchListTile,
+      'خلّي الذكاء الاصطناعي يقرا الرسايل المش واضحة',
+    );
+    await tester.ensureVisible(toggle);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    await tester.tap(
+      find.descendant(of: toggle, matching: find.byType(Switch)),
+    );
+    await tester.pumpAndSettle();
+    expect(api.lastInput('capture.setConsent'), {
+      'scope': 'ai_reading',
+      'granted': true,
+      'textVersion': '2026-10-27',
+    });
+    expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+  });
+
   group('the transactions waiting for the person', () {
     Future<(TestApp, FakeApi)> openReview(
       WidgetTester tester,

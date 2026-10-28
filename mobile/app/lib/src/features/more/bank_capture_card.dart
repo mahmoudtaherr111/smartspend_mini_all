@@ -6,6 +6,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../core/providers.dart';
 import '../../l10n/app_localizations.dart';
+import '../capture/capture_api.dart';
 import '../capture/capture_controller.dart';
 import '../capture/capture_review_screen.dart';
 
@@ -175,6 +176,7 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
           const SizedBox(height: SmartSpendSpacing.sm),
           Text(l10n.captureWaiting(status.waiting), style: muted),
           const _UsageLines(),
+          const _AiReadingSwitch(),
           if (status.lastError == 'offline')
             Text(l10n.captureOffline, style: muted),
           if (!status.notificationsAllowed)
@@ -211,6 +213,50 @@ class _UsageLines extends ConsumerWidget {
             style: textTheme.bodyMedium?.copyWith(color: colors.warning),
           ),
       ],
+    );
+  }
+}
+
+/// The consent to let the admin's model read messages the code could not read with confidence (decision 0031).
+class _AiReadingSwitch extends ConsumerStatefulWidget {
+  const _AiReadingSwitch();
+
+  @override
+  ConsumerState<_AiReadingSwitch> createState() => _AiReadingSwitchState();
+}
+
+class _AiReadingSwitchState extends ConsumerState<_AiReadingSwitch> {
+  bool _busy = false;
+
+  Future<void> _set(CaptureServerStatus server, bool granted) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(captureApiProvider)
+          .setAiReading(granted, server.consentTextVersion);
+      ref.invalidate(captureServerStatusProvider);
+    } on Object {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.captureAiReadingFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final server = ref.watch(captureServerStatusProvider).value;
+    if (server == null) return const SizedBox.shrink();
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(l10n.captureAiReadingTitle),
+      subtitle: Text(l10n.captureAiReadingBody),
+      value: server.aiReading,
+      onChanged: _busy ? null : (granted) => _set(server, granted),
     );
   }
 }

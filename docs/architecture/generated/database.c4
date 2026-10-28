@@ -139,6 +139,14 @@ model {
         storageClass 'A'
       }
     }
+    capture_ai_jobs = table 'capture_ai_jobs' {
+      #classD #dualOwner
+      description '15 columns, 4 indexes, storage class D.'
+      metadata {
+        export 'captureAiJobs'
+        storageClass 'D'
+      }
+    }
     capture_consents = table 'capture_consents' {
       #classA #dualOwner
       description '7 columns, 1 indexes, storage class A.'

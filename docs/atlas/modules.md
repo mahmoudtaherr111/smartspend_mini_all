@@ -26,8 +26,8 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `ai-providers` | AI provider access | 14 | `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `capture-ai-reader`, `jobs` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-reader`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
-| `capture-intake` | Capture intake | 6 | `auth`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | `api-core`, `api-routers`, `auth`, `ledger` | — |
-| `capture-ai-reader` | Message model reader | 2 | `ai-governance`, `ai-providers`, `classification`, `contracts`, `platform`, `security` | — | `gemini` |
+| `capture-intake` | Capture intake | 7 | `auth`, `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | `api-core`, `api-routers`, `auth`, `ledger` | — |
+| `capture-ai-reader` | Message model reader | 2 | `ai-governance`, `ai-providers`, `classification`, `contracts`, `platform`, `security` | `capture-intake` | `gemini` |
 | `capture-catalog` | Capture catalog | 3 | `contracts`, `database`, `platform` | `api-core`, `api-routers`, `capture-intake` | — |
 | `capture-reader` | Message reader | 12 | `arabic-nlp`, `platform` | `capture-intake` | — |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
@@ -248,7 +248,7 @@ Account deletion: purgeUserData removes every row a user owns, inside the caller
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/services/user-purge-service.ts` | `database` | — | `chat_conversations`, `local_users`, `user_businesses`, `users` | `ad_clicks`, `ai_action_audit_logs`, `ai_action_memory`, `ai_conversation_summaries`, `ai_cost_monthly`, `ai_memory_embeddings`, `ai_memory_items`, `ai_pending_actions`, `ai_summaries`, `ai_token_ledgers`, `auth_challenges`, `business_categories`, `capture_consents`, `capture_devices`, `capture_events`, `capture_memory`, `capture_signals`, `capture_usage`, `capture_user_pairs`, `cashflow_settlements`, `chat_conversations`, `chat_messages`, `classification_logs`, `coaching_plans`, `coaching_steps`, `expense_categories`, `expense_daily_rollups`, `expenses`, `financial_goals`, `in_app_notifications`, `installment_plans`, `local_users`, `monthly_behavior_snapshots`, `monthly_reports`, `notification_logs`, `pending_clarifications`, `pro_subscriptions`, `profile_learning_events`, `push_subscriptions`, `referrals`, `scheduled_cashflows`, `sessions`, `support_tickets`, `user_analytics`, `user_budgets`, `user_businesses`, `user_contacts`, `user_correction_rules`, `user_credentials`, `user_dictionaries`, `user_profiles`, `user_wallets`, `users`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
+| `api/services/user-purge-service.ts` | `database` | — | `chat_conversations`, `local_users`, `user_businesses`, `users` | `ad_clicks`, `ai_action_audit_logs`, `ai_action_memory`, `ai_conversation_summaries`, `ai_cost_monthly`, `ai_memory_embeddings`, `ai_memory_items`, `ai_pending_actions`, `ai_summaries`, `ai_token_ledgers`, `auth_challenges`, `business_categories`, `capture_ai_jobs`, `capture_consents`, `capture_devices`, `capture_events`, `capture_memory`, `capture_signals`, `capture_usage`, `capture_user_pairs`, `cashflow_settlements`, `chat_conversations`, `chat_messages`, `classification_logs`, `coaching_plans`, `coaching_steps`, `expense_categories`, `expense_daily_rollups`, `expenses`, `financial_goals`, `in_app_notifications`, `installment_plans`, `local_users`, `monthly_behavior_snapshots`, `monthly_reports`, `notification_logs`, `pending_clarifications`, `pro_subscriptions`, `profile_learning_events`, `push_subscriptions`, `referrals`, `scheduled_cashflows`, `sessions`, `support_tickets`, `user_analytics`, `user_budgets`, `user_businesses`, `user_contacts`, `user_correction_rules`, `user_credentials`, `user_dictionaries`, `user_profiles`, `user_wallets`, `users`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
 
 ### `jobs` — Scheduled job bodies
 
@@ -256,7 +256,7 @@ Job implementations scheduled from api/boot.ts.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_events`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
+| `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_ai_jobs`, `capture_events`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
 | `api/jobs/monthly-behavior-job.ts` | `api-routers`, `database` | — | `expenses`, `user_profiles` | — |
 | `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
 | `api/jobs/rollup-reconciliation-job.ts` | `database`, `ledger`, `platform` | — | `expense_daily_rollups`, `expenses` | — |
@@ -377,15 +377,16 @@ Normalizers, dictionaries, Arabic number parsing, negation detection, the words 
 
 ### `capture-intake` — Capture intake
 
-Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the rules that merge the signals of one payment into one event (decision 0029), the user's memory of where each merchant and person is filed and which banks and kinds are recorded on their own (decision 0030), the monthly limit with the payments held over it, the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer.
+Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the rules that merge the signals of one payment into one event (decision 0029), the user's memory of where each merchant and person is filed and which banks and kinds are recorded on their own (decision 0030), the monthly limit with the payments held over it, the queue where the admin's model reads what the reader is unsure of and the questions it leaves for the phone (decision 0031), the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/capture-v1-routes.ts` | `capture-catalog`, `contracts`, `platform`, `security` | — | — | — |
+| `api/lib/capture/ai-queue.ts` | `capture-ai-reader`, `capture-reader`, `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_signals`, `local_users`, `users` | `capture_ai_jobs` |
 | `api/lib/capture/consent.ts` | `database` | — | `capture_consents` | `capture_consents` |
 | `api/lib/capture/devices.ts` | `auth`, `contracts`, `database`, `platform` | — | `capture_devices` | `capture_devices` |
 | `api/lib/capture/events.ts` | — | — | — | — |
-| `api/lib/capture/intake.ts` | `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | — | `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `local_users`, `user_wallets`, `users` | `capture_events`, `capture_signals`, `capture_usage`, `user_wallets` |
+| `api/lib/capture/intake.ts` | `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | — | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `local_users`, `user_wallets`, `users` | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `user_wallets` |
 | `api/lib/capture/memory.ts` | `contracts`, `database`, `platform` | — | `capture_memory`, `capture_user_pairs` | `capture_memory`, `capture_user_pairs` |
 
 ### `capture-ai-reader` — Message model reader

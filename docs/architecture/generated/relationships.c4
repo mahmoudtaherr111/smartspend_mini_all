@@ -30,6 +30,7 @@ model {
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.business_categories
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_ai_jobs
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_consents
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_devices
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_events
@@ -324,12 +325,14 @@ model {
   smartspend.api.modules.capture-catalog -[writes]-> smartspend.mysql.capture_sources
   smartspend.api.modules.capture-catalog -[writes]-> smartspend.mysql.subscription_catalog
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.auth
+  smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.capture-ai-reader
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.capture-catalog
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.capture-reader
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.security
   smartspend.api.modules.capture-intake -[imports]-> smartspend.shared.contracts
+  smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_ai_jobs
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_consents
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_devices
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_events
@@ -341,6 +344,7 @@ model {
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.users
+  smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_ai_jobs
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_consents
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_devices
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_events
@@ -422,6 +426,7 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.api_key_errors
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.auth_challenges
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_ai_jobs
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_events
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_signals
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.chat_messages
@@ -523,6 +528,7 @@ model {
   smartspend.api.modules.whatsapp -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.whatsapp -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.whatsapp -[uses]-> whatsapp
+  smartspend.api.scheduler.capture-ai-sweep -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.scheduler.classification-log-cleanup -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.scheduler.coaching-reminders -[uses]-> smartspend.api.modules.coaching
   smartspend.api.scheduler.daily-auth-cleanup -[uses]-> smartspend.api.modules.auth

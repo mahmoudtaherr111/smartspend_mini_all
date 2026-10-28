@@ -45,11 +45,12 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 
 | Job | Schedule | Depends on | Reads | Writes |
 | --- | --- | --- | --- | --- |
+| `capture-ai-sweep` | `* * * * *` | `api/lib/capture/ai-queue.ts` | — | — |
 | `classification-log-cleanup` | `0 3 * * 0` | — | — | `classification_logs` |
 | `coaching-reminders` | `*/5 * * * *` | `api/services/coach/plans.ts` | — | — |
 | `daily-auth-cleanup` | `0 0 * * *` | `api/lib/access-control.ts`, `api/services/phone-challenge.ts` | — | `auth_challenges` |
 | `daily-subscription-expiry` | `0 6 * * *` | `api/jobs/subscription-expiry-job.ts` | `pro_subscriptions` | `pro_subscriptions` |
-| `data-retention-lifecycle` | `0 5 * * *` | `api/jobs/data-retention-job.ts` | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_events`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
+| `data-retention-lifecycle` | `0 5 * * *` | `api/jobs/data-retention-job.ts` | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_ai_jobs`, `capture_events`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage` |
 | `memory-embedding-backfill` | `*/20 * * * *` | `api/services/ai-memory/index.ts` | — | — |
 | `monthly-behavior-snapshots` | `0 1 1 * *` | `api/jobs/monthly-behavior-job.ts` | `expenses`, `user_profiles` | — |
 | `monthly-report-generation` | `0 2 1 * *` | `api/jobs/monthly-report-job.ts` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |

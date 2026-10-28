@@ -103,6 +103,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get captureAiReadingTitle => 'Let AI read unclear messages';
+
+  @override
+  String get captureAiReadingBody =>
+      'When we can\'t read a bank message\'s amount or kind, we send it to AI with your numbers hidden, and ask you before recording anything.';
+
+  @override
+  String get captureAiReadingFailed =>
+      'We couldn\'t save your choice. Try again.';
+
+  @override
   String get captureOffline => 'Waiting for a connection to send.';
 
   @override

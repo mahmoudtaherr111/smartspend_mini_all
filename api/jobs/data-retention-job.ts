@@ -155,6 +155,13 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
       "Bank and wallet notifications read as transactions (redacted text and the reader's fields). A recorded one lives on in the ledger; one never answered is forgotten (decision 0028).",
   },
   {
+    tableName: "capture_ai_jobs",
+    class: "D",
+    retainDays: 7,
+    dateColumn: "created_at",
+    description: "Captured messages the model read (or could not) and the notice it left for the phone (decision 0031).",
+  },
+  {
     tableName: "capture_events",
     class: "E",
     retainDays: 30,

@@ -139,6 +139,13 @@ scheduleProtectedJob("*/5 * * * *", "coaching-reminders", async () => {
   await deliverDueReminders();
 });
 
+// Captured messages waiting for the model that no request's wake picked up: a restart, or a lease that ran out
+// (decision 0031). The request that queued one normally reads it within seconds.
+scheduleProtectedJob("* * * * *", "capture-ai-sweep", async () => {
+  const { drainCaptureModel } = await import("./lib/capture/ai-queue");
+  await drainCaptureModel(100);
+});
+
 // Stored rows move to the current category taxonomy in bounded batches; once every row is
 // current a run finds nothing (docs/decisions/0008-money-movements-and-taxonomy.md).
 scheduleProtectedJob("*/30 * * * *", "taxonomy-migration", async () => {
