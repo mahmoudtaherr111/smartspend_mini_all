@@ -228,10 +228,10 @@
     },
     "billing": {
       "files": {
-        "api/boot.ts#POST /api/webhooks/paymob": "963235ae5bce",
+        "api/boot.ts#POST /api/webhooks/paymob": "aba41c93e38f",
         "api/boot.ts#job:daily-subscription-expiry": "3559570d054c",
         "api/jobs/subscription-expiry-job.ts": "71595ca0d9af",
-        "api/lib/paymob.ts": "a2b9e36693ee",
+        "api/lib/paymob.ts": "026fedc0cf46",
         "api/lib/plan-catalog.ts": "63caf39384d3",
         "api/lib/subscription-service.ts": "f3666e029e61",
         "api/pro-router.ts": "ae4da5c10100",
@@ -239,9 +239,9 @@
         "src/pages/Pro.tsx": "5beaa63617ea",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "checked": "2026-10-28 78592bbe",
-      "arabic": "e6726d29d224",
-      "arabicChecked": "2026-10-28 78592bbe"
+      "checked": "2026-10-29 c0f01c72",
+      "arabic": "5aa03fba03e8",
+      "arabicChecked": "2026-10-29 c0f01c72"
     },
     "expense-capture": {
       "files": {
@@ -457,7 +457,7 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "3d19f3c8fca9",
+        "api/boot.ts#rest-of-file": "78a6f5066dbb",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "9eb0b19897a9",
         "api/lib/app-time.ts": "f53d4623a239",
@@ -500,7 +500,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "2837060826f4"
       },
-      "checked": "2026-10-28 12a32e2a",
+      "checked": "2026-10-29 c0f01c72",
       "arabic": "d0e35d32d288",
       "arabicChecked": "2026-10-28 12a32e2a"
     },

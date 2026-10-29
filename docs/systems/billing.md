@@ -53,8 +53,9 @@ job that ends subscriptions, referral codes, and the Ultra members page.
 4. Paymob calls `POST /api/webhooks/paymob`:
    - the log gets the transaction id, its success and pending flags, the amount and whether it was signed — never
      the payload, which carries the payer's card metadata and billing details (golden rule 10);
-   - in production without `PAYMOB_HMAC_SECRET` the callback is refused;
-   - with the secret, the `hmac` query value must equal the HMAC-SHA512 of Paymob's transaction fields, compared in
+   - without `PAYMOB_HMAC_SECRET` every callback is refused with 503, in every environment, so no callback is believed
+     unless its signature can be checked;
+   - the `hmac` query value must equal the HMAC-SHA512 of Paymob's transaction fields, compared in
      constant time;
    - a successful transaction that is not pending must carry a valid user and plan in its extras and exactly the plan's
      amount, or it is refused; other callbacks are acknowledged and ignored.
@@ -88,7 +89,7 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
 | Prices, durations and what a plan grants | `contracts/plans.ts` | `api/lib/billing-plans.test.ts` |
 | The plans screen | `src/pages/Pro.tsx` | |
 | Checkout | `api/lib/paymob.ts`, `pro.createCheckoutSession` in `api/pro-router.ts` | |
-| Webhook verification | the Paymob route in `api/boot.ts` | |
+| Webhook verification | the Paymob route in `api/boot.ts` | `tests/security/paymob-webhook.test.ts` |
 | What a payment grants | `api/lib/subscription-service.ts` | |
 | When plans end | `api/jobs/subscription-expiry-job.ts` and its schedule in `api/boot.ts` | |
 | Which plan gets a feature, or a plan's limit | the admin console (Settings → plans), no code | `api/lib/plan-features.test.ts` |
@@ -104,7 +105,9 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
    row no longer has (`tests/knowledge/architecture.test.ts`).
 
 ## Tests
-`api/lib/billing-plans.test.ts` covers the plan contract.
+`api/lib/billing-plans.test.ts` covers the plan contract. `tests/security/paymob-webhook.test.ts` posts callbacks to the
+webhook: refused without the secret, unsigned, signed with another secret, changed after signing or with another
+amount; granted only when correctly signed, settled and of the plan's amount (the grant itself is mocked).
 
 ## Known issues
 Checked against the code; each one names where it lives.
@@ -118,10 +121,9 @@ Checked against the code; each one names where it lives.
    (`src/pages/Pro.tsx`) offers the same plan in one tap (`pro.createCheckoutSession` with the current plan), and the
    paid period starts where the current one ends. Charging a stored card needs Paymob's recurring flow. `pro.cancel` only changes the status the plans screen shows, and there is no
    refund path.
-4. **Security.** Outside production without `PAYMOB_HMAC_SECRET`, the webhook accepts unsigned callbacks and grants plans
-   from them.
-5. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
-6. **Debt.** No test covers the webhook's verification, the grant, the expiry job or referrals.
+4. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
+5. **Debt.** No test covers the grant's transaction (`grantProSubscription` against a database), the expiry job or
+   referrals.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): the user rows that carry the plan, and the auth version.

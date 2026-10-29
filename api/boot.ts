@@ -18,7 +18,6 @@ import {
   hasExactPlanAmount,
   isBillingPlan,
 } from "../contracts/plans";
-import { isPaymobWebhookVerificationConfigured } from "./lib/paymob";
 import cron from "node-cron";
 import { createOriginPolicy } from "./lib/origin-policy";
 import { applyOriginSecurity } from "./lib/http-origin-security";
@@ -524,75 +523,71 @@ app.post("/api/webhooks/paymob", async (c) => {
     "Paymob callback received",
   );
 
+  // A callback is believed only when this server can check its signature, in every environment: an unsigned one
+  // would grant whatever plan its body names. Without the secret nothing can be checked, so nothing is accepted.
   const secret = env.PAYMOB_HMAC_SECRET;
-  if (
-    env.NODE_ENV === "production" &&
-    !isPaymobWebhookVerificationConfigured()
-  ) {
+  if (!secret) {
     paymobLog.error(
       { event: "paymob.webhook.unconfigured" },
       "Paymob callback rejected: PAYMOB_HMAC_SECRET is not configured",
     );
     return c.json({ error: "Webhook verification is unavailable" }, 503);
   }
-  if (secret) {
-    if (!hmacParam) {
-      paymobLog.warn({ event: "paymob.webhook.unsigned" }, "Paymob callback rejected: no signature");
-      return c.json({ error: "Missing signature" }, 401);
-    }
-    const obj = parsed.obj;
-    if (!obj) {
-      return c.json({ error: "Invalid payload: obj missing" }, 400);
-    }
+  if (!hmacParam) {
+    paymobLog.warn({ event: "paymob.webhook.unsigned" }, "Paymob callback rejected: no signature");
+    return c.json({ error: "Missing signature" }, 401);
+  }
+  const obj = parsed.obj;
+  if (!obj) {
+    return c.json({ error: "Invalid payload: obj missing" }, 400);
+  }
 
-    // Concatenate standard Paymob HMAC fields in exact order
-    const fields = [
-      obj.amount_cents,
-      obj.created_at,
-      obj.currency,
-      obj.error_occured,
-      obj.has_parent_transaction,
-      obj.id,
-      obj.integration_id,
-      obj.is_3d_secure,
-      obj.is_auth,
-      obj.is_capture,
-      obj.is_voided,
-      obj.is_refunded,
-      obj.owner,
-      obj.pending,
-      obj.source_data?.pan,
-      obj.source_data?.sub_type,
-      obj.source_data?.type,
-      obj.success,
-    ];
+  // Concatenate standard Paymob HMAC fields in exact order
+  const fields = [
+    obj.amount_cents,
+    obj.created_at,
+    obj.currency,
+    obj.error_occured,
+    obj.has_parent_transaction,
+    obj.id,
+    obj.integration_id,
+    obj.is_3d_secure,
+    obj.is_auth,
+    obj.is_capture,
+    obj.is_voided,
+    obj.is_refunded,
+    obj.owner,
+    obj.pending,
+    obj.source_data?.pan,
+    obj.source_data?.sub_type,
+    obj.source_data?.type,
+    obj.success,
+  ];
 
-    // Convert values to strings matching Paymob's serialization
-    const hmacSource = fields
-      .map((val) => {
-        if (val === undefined || val === null) return "";
-        if (typeof val === "boolean") return val ? "true" : "false";
-        return String(val);
-      })
-      .join("");
+  // Convert values to strings matching Paymob's serialization
+  const hmacSource = fields
+    .map((val) => {
+      if (val === undefined || val === null) return "";
+      if (typeof val === "boolean") return val ? "true" : "false";
+      return String(val);
+    })
+    .join("");
 
-    const calculatedHmac = createHmac("sha512", secret)
-      .update(hmacSource)
-      .digest("hex");
-    const calculatedBuffer = Buffer.from(calculatedHmac, "hex");
-    const receivedBuffer = Buffer.from(hmacParam, "hex");
-    if (
-      calculatedBuffer.length !== receivedBuffer.length ||
-      !timingSafeEqual(calculatedBuffer, receivedBuffer)
-    ) {
-      paymobLog.warn({ event: "paymob.webhook.bad_signature" }, "Paymob callback rejected: signature mismatch");
-      return c.json({ error: "Invalid signature" }, 401);
-    }
+  const calculatedHmac = createHmac("sha512", secret)
+    .update(hmacSource)
+    .digest("hex");
+  const calculatedBuffer = Buffer.from(calculatedHmac, "hex");
+  const receivedBuffer = Buffer.from(hmacParam, "hex");
+  if (
+    calculatedBuffer.length !== receivedBuffer.length ||
+    !timingSafeEqual(calculatedBuffer, receivedBuffer)
+  ) {
+    paymobLog.warn({ event: "paymob.webhook.bad_signature" }, "Paymob callback rejected: signature mismatch");
+    return c.json({ error: "Invalid signature" }, 401);
   }
 
   // Handle successful transaction
-  const obj = parsed.obj;
-  if (obj && obj.success === true && !obj.pending) {
+  if (obj.success === true && !obj.pending) {
     const extraData =
       obj.payment_key_claims?.extra?.extras ||
       obj.payment_key_claims?.extra ||

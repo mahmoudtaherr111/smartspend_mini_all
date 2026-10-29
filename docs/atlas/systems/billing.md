@@ -153,7 +153,6 @@ Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [S
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
 | `PAYMOB_API_KEY` | yes | `api/lib/paymob.ts` |
-| `PAYMOB_HMAC_SECRET` | yes | `api/lib/paymob.ts` |
 | `PAYMOB_IFRAME_ID` | yes | `api/lib/paymob.ts` |
 | `PAYMOB_INTEGRATION_ID` | yes | `api/lib/paymob.ts` |
 

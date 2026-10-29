@@ -4,7 +4,7 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of 85 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (12 of 84 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
@@ -17,11 +17,11 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 7 | — | 3 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-28 3f613544 | 2026-10-28 3f613544 | 7 | — | 1 | 7 | 1 |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-28 17e66339 | 2026-10-28 17e66339 | 16 | **3** | — | 8 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-28 78592bbe | 2026-10-28 78592bbe | 1 | **1** | — | 3 | 2 |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-29 c0f01c72 | 2026-10-29 c0f01c72 | 2 | — | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 1 | **1** | 1 | 3 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-28 12a32e2a | 2026-10-28 12a32e2a | 5 | — | — | — | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-29 c0f01c72 | 2026-10-28 12a32e2a | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 7 | **1** | — | 2 | 2 |
 
 
@@ -29,19 +29,16 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (13 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (85 issue(s))
+## What is waiting (84 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
-### Security (6)
+### Security (5)
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read it (`src/AGENTS.md`, rule 4). In production the content security policy runs no inline script it does not know by hash, which narrows that risk without removing it.
 - The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the same storage.
 - `auth.signInWithGoogle` asks for no nonce: an ID token issued to the app signs in whoever presents it until it expires, about an hour after Google issued it.
-
-**Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
-- Outside production without `PAYMOB_HMAC_SECRET`, the webhook accepts unsigned callbacks and grants plans from them.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing checks that recipients agreed.
@@ -160,7 +157,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
 - In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
-- No test covers the webhook's verification, the grant, the expiry job or referrals.
+- No test covers the grant's transaction (`grantProSubscription` against a database), the expiry job or referrals.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - Nothing tests notification delivery, the templates, the activity checks or the WhatsApp connection and its sending.

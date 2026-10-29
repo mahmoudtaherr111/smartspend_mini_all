@@ -27,7 +27,7 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 | GET | `/api/auth/google/start` | http | `api/boot.ts` | `api/auth-router.ts`, `api/lib/env.ts` | — | — |
 | GET | `/api/sse/otp` | sse | `api/boot.ts` | `api/lib/get-client-ip.ts`, `api/services/phone-challenge.ts`, `api/services/whatsapp-service.ts` | — | — |
 | ALL | `/api/trpc/*` | trpc | `api/boot.ts` | `api/router.ts` | — | — |
-| POST | `/api/webhooks/paymob` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/paymob.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` | — | — |
+| POST | `/api/webhooks/paymob` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` | — | — |
 | GET | `/health` | http | `api/boot.ts` | — | — | — |
 
 ## WebSocket upgrades

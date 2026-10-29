@@ -43,7 +43,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `NVIDIA_API_KEY` | no | — | `api/ai-router.ts` |
 | `OWNER_EMAIL` | no | — | — |
 | `PAYMOB_API_KEY` | no | — | `api/lib/paymob.ts` |
-| `PAYMOB_HMAC_SECRET` | no | — | `api/boot.ts`, `api/lib/paymob.ts` |
+| `PAYMOB_HMAC_SECRET` | no | — | `api/boot.ts` |
 | `PAYMOB_IFRAME_ID` | no | — | `api/lib/paymob.ts` |
 | `PAYMOB_INTEGRATION_ID` | no | — | `api/lib/paymob.ts` |
 | `PORT` | no | `3000` | `api/boot.ts`, `api/lib/origin-policy.ts`, `api/server.ts` |
