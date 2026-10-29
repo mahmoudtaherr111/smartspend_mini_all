@@ -22,8 +22,8 @@
         "api/lib/security-headers.ts": "057db5e4ad04",
         "api/lib/security-logger.ts": "23e02f6971e7",
         "api/lib/session-validation.ts": "ac2005332694",
-        "api/local-auth-router.ts": "409c146d7278",
-        "api/local-auth-utils.ts": "099855526fd9",
+        "api/local-auth-router.ts": "a3f04c492470",
+        "api/local-auth-utils.ts": "9cc975515b2d",
         "api/profile-router.ts#profile.confirmPhoneChange": "62e243fc038d",
         "api/profile-router.ts#profile.deleteMyAccount": "1dada0eaa8c8",
         "api/profile-router.ts#profile.getMyProfile": "f179af96f735",
@@ -35,7 +35,7 @@
         "api/services/turnstile-service.ts": "89a28fc96d49",
         "api/services/user-purge-service.ts": "324da37aea89",
         "api/session-router.ts": "c29d8dcf4653",
-        "api/webauthn-router.ts": "8a7c2294a8d1",
+        "api/webauthn-router.ts": "30c264b63011",
         "src/components/auth/BiometricLockOverlay.tsx": "b9b9b5184b56",
         "src/components/auth/BiometricOnboardingModal.tsx": "a7b3fd6a6522",
         "src/components/auth/PasskeySettings.tsx": "7c1091c7f5d5",
@@ -51,12 +51,12 @@
         "src/components/settings/LanguageSettings.tsx": "2e84329609e6",
         "src/components/settings/PeopleSettingsView.tsx": "fe994df04b34",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
-        "src/pages/Login.tsx": "59d76ce265d9",
+        "src/pages/Login.tsx": "7271e3fdadc3",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-29 2618b97e",
-      "arabic": "a608a6ec7b0f",
-      "arabicChecked": "2026-10-29 972925b1"
+      "checked": "2026-10-29 753851e1",
+      "arabic": "9cb5ce27c17f",
+      "arabicChecked": "2026-10-29 753851e1"
     },
     "admin": {
       "files": {
@@ -646,7 +646,7 @@
         "src/hooks/useAdmin.ts": "15baa7e78ff1",
         "src/hooks/useAds.ts": "b08bb3b71bf5",
         "src/hooks/useAppResume.ts": "b626940d2e71",
-        "src/hooks/useAuth.ts": "d4dfa51fd4da",
+        "src/hooks/useAuth.ts": "c5cb2da2da66",
         "src/hooks/useBiometricOnboarding.ts": "8f122a8e13d0",
         "src/hooks/useHaptics.ts": "ab20cb714dfe",
         "src/hooks/useHistoryBound.ts": "ceffbe90aeae",
@@ -688,15 +688,15 @@
         "src/pages/Privacy.tsx": "d888313990ad",
         "src/pages/Terms.tsx": "4ff361a45f01",
         "src/providers/BiometricLockProvider.tsx": "07ec0e555ded",
-        "src/providers/trpc.ts": "c92d5a8cea8f",
+        "src/providers/trpc.ts": "7b1ebf3ea425",
         "src/pwa/firebase.ts": "3543ebd77700",
         "src/pwa/install-platform.ts": "fb566145f9a7",
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-10-27 d1c95984",
-      "arabic": "8f46bff2a055",
-      "arabicChecked": "2026-10-27 d1c95984"
+      "checked": "2026-10-29 753851e1",
+      "arabic": "481ef23d86d8",
+      "arabicChecked": "2026-10-29 753851e1"
     }
   }
 }

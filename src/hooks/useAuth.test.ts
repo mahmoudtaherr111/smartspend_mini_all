@@ -56,7 +56,6 @@ describe("useAuth Multi-Tab Authentication Synchronization", () => {
     it("broadcasts custom auth events with timestamp", () => {
       const event: AuthBroadcastEvent = {
         type: "AUTH_LOGIN",
-        token: "jwt_token_123",
       };
 
       broadcastAuthEvent(event);
@@ -64,7 +63,7 @@ describe("useAuth Multi-Tab Authentication Synchronization", () => {
       expect(broadcastMessages).toHaveLength(1);
       expect(broadcastMessages[0].channel).toBe("smartspend_auth");
       expect(broadcastMessages[0].data.type).toBe("AUTH_LOGIN");
-      expect(broadcastMessages[0].data.token).toBe("jwt_token_123");
+      expect(broadcastMessages[0].data).not.toHaveProperty("token");
       expect(typeof broadcastMessages[0].data.timestamp).toBe("number");
     });
 
@@ -78,11 +77,11 @@ describe("useAuth Multi-Tab Authentication Synchronization", () => {
         type: "local" as const,
       };
 
-      broadcastLogin("token_abc", user);
+      broadcastLogin(user);
 
       expect(broadcastMessages).toHaveLength(1);
       expect(broadcastMessages[0].data.type).toBe("AUTH_LOGIN");
-      expect(broadcastMessages[0].data.token).toBe("token_abc");
+      expect(broadcastMessages[0].data).not.toHaveProperty("token");
       expect(broadcastMessages[0].data.user).toEqual(user);
     });
 
@@ -100,21 +99,21 @@ describe("useAuth Multi-Tab Authentication Synchronization", () => {
       expect(broadcastMessages[0].data.type).toBe("SESSION_EXPIRED");
     });
 
-    it("broadcastTokenRefresh sends TOKEN_REFRESH event with new token", () => {
-      broadcastTokenRefresh("refreshed_jwt_999");
+    it("broadcastTokenRefresh sends TOKEN_REFRESH without any token", () => {
+      broadcastTokenRefresh();
 
       expect(broadcastMessages).toHaveLength(1);
       expect(broadcastMessages[0].data.type).toBe("TOKEN_REFRESH");
-      expect(broadcastMessages[0].data.token).toBe("refreshed_jwt_999");
+      expect(broadcastMessages[0].data).not.toHaveProperty("token");
     });
 
     it("gracefully handles environments without BroadcastChannel without throwing", () => {
       delete (globalThis as any).BroadcastChannel;
 
-      expect(() => broadcastLogin("token_123")).not.toThrow();
+      expect(() => broadcastLogin()).not.toThrow();
       expect(() => broadcastLogout()).not.toThrow();
       expect(() => broadcastSessionExpired()).not.toThrow();
-      expect(() => broadcastTokenRefresh("token_123")).not.toThrow();
+      expect(() => broadcastTokenRefresh()).not.toThrow();
     });
   });
 });

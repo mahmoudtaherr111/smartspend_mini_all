@@ -39,7 +39,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `LOGIN_IP_MAX_FAILURES` | no | `50` | `api/lib/login-protection.ts` |
 | `LOGIN_PAIR_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOG_SLOW_QUERIES` | no | `true` | `api/queries/connection.ts` |
-| `NODE_ENV` | no | `development` | `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
+| `NODE_ENV` | no | `development` | `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-utils.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
 | `NVIDIA_API_KEY` | no | — | `api/ai-router.ts` |
 | `OWNER_EMAIL` | no | — | — |
 | `PAYMOB_API_KEY` | no | — | `api/lib/paymob.ts` |

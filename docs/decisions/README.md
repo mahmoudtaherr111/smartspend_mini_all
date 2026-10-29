@@ -43,3 +43,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0034](0034-capture-care-for-the-user.md) | Capture looks after the user: phone health, the upgrade notice, wallet suggestions and deleting their data |
 | [0035](0035-capture-merchants-alerts-timeline.md) | Captured messages keep their merchant through redaction, admins are alerted in the app, and support sees a user's capture |
 | [0036](0036-google-sign-in-nonce.md) | Google sign-in from the app is bound to one sign-in by a nonce the app makes and the server spends once |
+| [0037](0037-website-session-cookie-only.md) | The website's session is the HttpOnly cookie alone: the website never stores, reads or sends a token |

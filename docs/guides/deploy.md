@@ -99,7 +99,8 @@ database within a few seconds.
   WebSocket, and does not serve the web app. Add the web app's origin to `FRONTEND_URL` or `ALLOWED_ORIGINS`.
 - Web app: copy `.env.frontend.example` to `.env.local`, set `VITE_API_URL` to the API origin, and run
   `npm run frontend:build`; upload `dist/public` to any static host. `npm run frontend:dev` runs Vite on port 5173 and proxies
-  /api to `VITE_API_URL`.
+  /api to `VITE_API_URL`. The website's session is a `SameSite=Lax` cookie, so the API must be on the same site as the web
+  app (for example `app.example.com` and `api.example.com`); a browser does not send it to another site.
 
 ## Mobile
 - `android/` and `ios/` are Capacitor apps around the built web app.

@@ -646,7 +646,7 @@ Route-level page components lazy-loaded by src/App.tsx.
 | `src/pages/AuthCallback.tsx` | — | — | — | — |
 | `src/pages/Home.tsx` | `web-account`, `web-capture`, `web-finance`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | — | — | — |
 | `src/pages/Landing.tsx` | `web-growth`, `web-ui-kit` | — | — | — |
-| `src/pages/Login.tsx` | `web-account`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
+| `src/pages/Login.tsx` | `web-account`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/More.tsx` | `web-account`, `web-finance`, `web-hooks`, `web-shell` | — | — | — |
 | `src/pages/NotFound.tsx` | `web-ui-kit` | — | — | — |
 | `src/pages/Notifications.tsx` | `web-account`, `web-shell` | — | — | — |

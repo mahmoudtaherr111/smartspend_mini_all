@@ -36,14 +36,38 @@ export async function comparePassword(
   return bcrypt.compare(password, hash);
 }
 
+/** How long a session lives: the token's `exp`, the session row and the browser's cookie end together. */
+const SESSION_SECONDS = 60 * 60 * 24 * 7;
+
 export async function generateToken(
   userId: number,
   userType: "oauth" | "local",
 ): Promise<string> {
   return sign(
-    { userId, userType, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 },
+    { userId, userType, exp: Math.floor(Date.now() / 1000) + SESSION_SECONDS },
     env.JWT_SECRET,
   );
+}
+
+/** Whether the request reached us over https, directly or through a proxy that says so. */
+function arrivedOverHttps(req: SessionRequest): boolean {
+  if (getIncomingHeader(req, "x-forwarded-proto")?.split(",")[0]?.trim() === "https") return true;
+  try {
+    return new URL(req.url).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The website's session: an HttpOnly cookie, so no script on the page can read the token (the website never stores
+ * it). `SameSite=Lax` and the origin check in `api/lib/http-origin-security.ts` keep other sites from using it;
+ * `Secure` in production and whenever the request came over https. The mobile app keeps the token from the answer in
+ * the Keychain or Keystore and sends it as a Bearer header instead.
+ */
+export function sessionCookie(token: string, req: SessionRequest): string {
+  const secure = env.NODE_ENV === "production" || arrivedOverHttps(req) ? "; Secure" : "";
+  return `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_SECONDS}${secure}`;
 }
 
 export async function createSession(

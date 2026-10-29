@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/providers/trpc";
+import { broadcastLogin } from "@/hooks/useAuth";
 import { SIGN_UP_SESSION_KEY } from "@/lib/biometricAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,8 +87,8 @@ export default function Login() {
   const [turnstileReset, setTurnstileReset] = useState(0);
 
   const loginMutation = trpc.localAuth.login.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("local_auth_token", data.token);
+    onSuccess: () => {
+      broadcastLogin();
       toast.success("تم تسجيل الدخول بنجاح! 🎉");
       window.location.href = "/dashboard";
     },
@@ -113,8 +114,8 @@ export default function Login() {
   }, [loginRetrySeconds]);
 
   const registerMutation = trpc.localAuth.register.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("local_auth_token", data.token);
+    onSuccess: () => {
+      broadcastLogin();
       try {
         // The first visit after creating an account is never interrupted by the fingerprint suggestion.
         sessionStorage.setItem(SIGN_UP_SESSION_KEY, "1");
@@ -132,8 +133,8 @@ export default function Login() {
   const authOptionsMutation =
     trpc.webauthn.generateAuthenticationOptions.useMutation();
   const verifyAuthMutation = trpc.webauthn.verifyAuthentication.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("local_auth_token", data.token);
+    onSuccess: () => {
+      broadcastLogin();
       try {
         localStorage.setItem("smartspend_has_passkey", "1");
       } catch (e) {}

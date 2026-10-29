@@ -13,7 +13,7 @@ public pages (landing, privacy, terms and the not-found page).
 | --- | --- | --- |
 | Entry | `src/main.tsx` | Mounts React, registers the service worker, consumes a launch event before the first render, and marks a standalone PWA |
 | Shell | `src/App.tsx` | The providers, the route table and its guards, the layout, the error boundary, the per-account query cache, and, for signed-in users, the host of the live [voice call](voice-calls.md) (`src/components/voice/VoiceCallHost.tsx`), so a call keeps going, shrunk to a bar, on every page |
-| API client | `src/providers/trpc.ts` | The typed tRPC client, the Bearer header, cookies, form-draft preservation and what happens on a 401 |
+| API client | `src/providers/trpc.ts` | The typed tRPC client, the session cookie, form-draft preservation and what happens on a 401 |
 | Identity | `src/hooks/useAuth.ts` | The device's identity snapshot, the verified session, the role and plan helpers, and logout |
 | Offline cache | `src/lib/queryPersister.ts` | The answers kept in IndexedDB per account, and the identity snapshot |
 | Navigation | `src/components/Sidebar.tsx`, `src/components/layout/MobileBottomNav.tsx`, `src/components/layout/PageTransition.tsx` | The desktop sidebar, the phone tab bar (it carries a month only when the user picked one) and the transition between screens |
@@ -60,9 +60,12 @@ away: the identity snapshot replayed from the device carries a name, avatar and 
 
 ## Talking to the API
 - One `httpBatchLink` to `/api/trpc`, or to `VITE_API_URL` when the API is deployed separately, always with
-  cookies. A token in `localStorage` is also sent as a Bearer header.
-- A 401 — as a status or inside a batched answer — on a device that was signed in (`deviceHadSession`: a phone token or
-  the offline identity in `localStorage`) preserves every registered form draft in `sessionStorage`, tells the other
+  cookies. The session is the HttpOnly `smartspend_token` (phone accounts and passkeys) or `google_session` cookie:
+  no script on the page can read it, and the website never stores, reads or sends a token itself, nor passes one
+  between tabs ([decision 0037](../decisions/0037-website-session-cookie-only.md); `tests/security/web-session-cookie.test.ts`).
+  A token older builds left in `localStorage` is removed when the app starts.
+- A 401 — as a status or inside a batched answer — on a device that was signed in (`deviceHadSession`: the offline
+  identity in `localStorage` that every sign-in leaves) preserves every registered form draft in `sessionStorage`, tells the other
   tabs through a `BroadcastChannel`, and shows one Arabic message instead of dropping the user's typing. Without a
   session it says nothing: a first visit, or a sign-up refused with 401, used to be told the session had ended. So a
   procedure refuses a wrong password inside a session with `BAD_REQUEST`, never `UNAUTHORIZED`.
@@ -131,8 +134,9 @@ Checked against the code; each one names where it lives.
 1. **Gap.** `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page
    itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in
    `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
-2. **Security.** The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the
-   API also accepts ([accounts](accounts.md)).
+2. **Gap.** The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another
+   site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the
+   token. The Flutter app replaces them (decision 0022); until they are retired they only reach the sign-in screen.
 3. **Debt.** `src/components/ProductTour.tsx` is never mounted, and `src/lib/backButtonManager.ts` only re-exports
    `src/lib/back-button-manager.ts` for an importer that no longer exists.
 4. **Debt.** The list of routes that show the tab bar lives in `BOTTOM_NAV_ROUTES` next to the route table, so a new

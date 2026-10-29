@@ -172,18 +172,15 @@ export function preserveActiveFormDrafts(): void {
 }
 
 /**
- * Whether this device believed it was signed in: a phone account's token, or the identity any sign-in leaves for
- * offline starts. Only then does a 401 mean a session ended. A first visit, or a sign-up refused with 401, used to
- * greet people with "the session ended, sign in again".
+ * Whether this device believed it was signed in: the identity every sign-in leaves for offline starts. Only then does
+ * a 401 mean a session ended. A first visit, or a sign-up refused with 401, used to greet people with "the session
+ * ended, sign in again".
  */
 export function deviceHadSession(): boolean {
   try {
     return (
       typeof localStorage !== "undefined" &&
-      Boolean(
-        localStorage.getItem("local_auth_token") ||
-          localStorage.getItem("smartspend_offline_identity_v1"),
-      )
+      Boolean(localStorage.getItem("smartspend_offline_identity_v1"))
     );
   } catch {
     return false;
@@ -273,16 +270,6 @@ const _viteMeta = (import.meta as any)?.env as
 const _viteApiUrl = _viteMeta?.["VITE_API_URL"];
 const API_BASE_URL = _viteApiUrl ? `${_viteApiUrl}/api/trpc` : "/api/trpc";
 
-export function getTrpcHeaders(): Record<string, string> {
-  const token =
-    typeof localStorage !== "undefined"
-      ? localStorage.getItem("local_auth_token")
-      : null;
-  return {
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
 export const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
@@ -357,9 +344,6 @@ export const trpcClient = trpc.createClient({
           }
           throw new Error("وصل رد غير متوقع من الخادم. حاول تحديث الصفحة.");
         }
-      },
-      headers() {
-        return getTrpcHeaders();
       },
     }),
   ],

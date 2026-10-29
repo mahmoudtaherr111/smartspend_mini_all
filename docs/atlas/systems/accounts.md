@@ -247,8 +247,8 @@ flowchart LR
 | --- | --- | --- | --- | --- | --- |
 | `auth.googleCallback` | mutation | `strictPublicProcedure` | `users` | `users` | — |
 | `auth.googleUrl` | query | `publicProcedure` | — | — | `Login` |
-| `auth.logout` | mutation | `authedProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
-| `auth.me` | query | `publicProcedure` | `users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
+| `auth.logout` | mutation | `authedProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support` |
+| `auth.me` | query | `publicProcedure` | `users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support` |
 | `auth.signInWithGoogle` | mutation | `strictPublicProcedure` | `users` | `users` | — |
 | `localAuth.deleteUser` | mutation | `adminProcedure` | — | — | — |
 | `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | — | — | `Login` |
@@ -257,8 +257,8 @@ flowchart LR
 | `localAuth.getVerificationSettings` | query | `publicProcedure` | — | — | `Login` |
 | `localAuth.listUsers` | query | `adminProcedure` | `expenses`, `local_users` | — | — |
 | `localAuth.login` | mutation | `publicProcedure` | `local_users` | `local_users` | `Login` |
-| `localAuth.logout` | mutation | `publicProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
-| `localAuth.me` | query | `publicProcedure` | `local_users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
+| `localAuth.logout` | mutation | `publicProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support` |
+| `localAuth.me` | query | `publicProcedure` | `local_users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support` |
 | `localAuth.register` | mutation | `strictPublicProcedure` | `local_users` | `local_users` | `Login` |
 | `localAuth.updateRole` | mutation | `adminProcedure` | — | — | — |
 | `localAuth.verifyOtp` | mutation | `strictPublicProcedure` | `local_users` | — | — |
@@ -380,7 +380,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 | `LOGIN_IP_BURST_MAX_FAILURES` | yes | `api/lib/login-protection.ts` |
 | `LOGIN_IP_MAX_FAILURES` | yes | `api/lib/login-protection.ts` |
 | `LOGIN_PAIR_MAX_FAILURES` | yes | `api/lib/login-protection.ts` |
-| `NODE_ENV` | yes | `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/security-logger.ts`, `api/services/turnstile-service.ts` |
+| `NODE_ENV` | yes | `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/security-logger.ts`, `api/local-auth-utils.ts`, `api/services/turnstile-service.ts` |
 | `PORT` | yes | `api/lib/origin-policy.ts` |
 | `RATE_LIMIT_KEY_SECRET` | yes | `api/lib/login-protection.ts` |
 | `TRUSTED_PROXY_HEADER` | yes | `api/lib/get-client-ip.ts` |

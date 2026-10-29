@@ -41,6 +41,7 @@ import {
   generateReferralCode,
   cleanPhoneNumber,
   getSessionMetadata,
+  sessionCookie,
   invalidateSession,
 } from "./local-auth-utils";
 import { getIncomingHeader } from "./lib/get-client-ip";
@@ -183,14 +184,7 @@ export const localAuthRouter = router({
         getSessionMetadata(ctx.req, ctx.ip),
       );
 
-      if (ctx.resHeaders) {
-        const isProd = process.env.NODE_ENV === "production";
-        const secureFlag = isProd ? "; Secure" : "";
-        ctx.resHeaders.append(
-          "Set-Cookie",
-          `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secureFlag}`,
-        );
-      }
+      if (ctx.resHeaders) ctx.resHeaders.append("Set-Cookie", sessionCookie(token, ctx.req));
 
       return {
         success: true,
@@ -324,14 +318,7 @@ export const localAuthRouter = router({
           getSessionMetadata(ctx.req, ctx.ip),
         );
 
-        if (ctx.resHeaders) {
-          const isProd = process.env.NODE_ENV === "production";
-          const secureFlag = isProd ? "; Secure" : "";
-          ctx.resHeaders.append(
-            "Set-Cookie",
-            `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secureFlag}`,
-          );
-        }
+        if (ctx.resHeaders) ctx.resHeaders.append("Set-Cookie", sessionCookie(token, ctx.req));
 
         return {
           success: true,
@@ -386,14 +373,7 @@ export const localAuthRouter = router({
         getSessionMetadata(ctx.req, ctx.ip),
       );
 
-      if (ctx.resHeaders) {
-        const isProd = process.env.NODE_ENV === "production";
-        const secureFlag = isProd ? "; Secure" : "";
-        ctx.resHeaders.append(
-          "Set-Cookie",
-          `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secureFlag}`,
-        );
-      }
+      if (ctx.resHeaders) ctx.resHeaders.append("Set-Cookie", sessionCookie(token, ctx.req));
 
       return {
         success: true,

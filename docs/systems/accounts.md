@@ -81,8 +81,11 @@ The app shows the Google button only when the build has `GOOGLE_SERVER_CLIENT_ID
   spent in the transaction that creates the account (see WhatsApp verification).
 - **Login** (`localAuth.login`): the attempt passes login protection first; an unknown number is compared with a fixed
   hash, so it fails with the same message and takes as long as a wrong password.
-- Both create a session, set the `smartspend_token` cookie (HttpOnly, seven days) and return the token, which the web
-  app also keeps in `localStorage` and sends as a Bearer header.
+- Both create a session, set the `smartspend_token` cookie (`sessionCookie` in `api/local-auth-utils.ts`: HttpOnly,
+  `SameSite=Lax`, seven days, `Secure` in production or over https) and return the token. The website signs in with the
+  cookie alone and never stores, reads or sends the token; the mobile app keeps it in the Keychain or Keystore and
+  sends it as a Bearer header ([decision 0037](../decisions/0037-website-session-cookie-only.md)). A passkey sign-in
+  (`webauthn.verifyAuthentication`) and a WhatsApp code sign-in set the same cookie.
 
 ### WhatsApp verification
 Reverse verification: the user proves the number by sending a code to the bot from it, so the message is the proof
@@ -261,19 +264,16 @@ Checked against the code; each one names where it lives.
 3. **Gap.** Changing a phone number has no screen, and with verification off its code is never sent; the profile shows the
    number read-only.
 4. **Gap.** Users cannot see or end their sessions: `session.listMine` and `session.revokeMine` have no screen.
-5. **Security.** The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read
-   it (`src/AGENTS.md`, rule 4). In production the content security policy runs no inline script it does not know by
-   hash, which narrows that risk without removing it.
-6. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
-7. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
+5. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
+6. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
    same storage.
-8. **Gap.** Google sign-in in the mobile app is off until it is configured on both sides: `GOOGLE_ANDROID_CLIENT_IDS` or
+7. **Gap.** Google sign-in in the mobile app is off until it is configured on both sides: `GOOGLE_ANDROID_CLIENT_IDS` or
    `GOOGLE_IOS_CLIENT_IDS` on the server, `GOOGLE_SERVER_CLIENT_ID` (and on iOS `GOOGLE_IOS_CLIENT_ID` with the reversed id
    in `GoogleSignIn.xcconfig`) in the app build. None of these values is set yet, so the app hides the button.
-9. **Gap.** In the mobile app Turnstile runs in a web view loaded as the API's origin, so the site key must list the
+8. **Gap.** In the mobile app Turnstile runs in a web view loaded as the API's origin, so the site key must list the
    API's host. A build without `TURNSTILE_SITE_KEY` sends no token, and a production server with verification on then
    refuses its sign-ups, as known issue 2 says for the web.
-10. **Gap.** The mobile app has no passkey sign-in, and neither the app nor the web's Login screen offers WhatsApp
+9. **Gap.** The mobile app has no passkey sign-in, and neither the app nor the web's Login screen offers WhatsApp
     sign-in (`localAuth.verifyOtp`).
 
 ## Related systems

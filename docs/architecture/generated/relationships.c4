@@ -1424,10 +1424,14 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.voice.eligibility
   smartspend.web.pages.Landing -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.auth.googleUrl
+  smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.auth.logout
+  smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.auth.me
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.generateVerificationCode
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.getBotPhoneNumber
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.getVerificationSettings
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.login
+  smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.logout
+  smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.me
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.register
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.webauthn.generateAuthenticationOptions
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.webauthn.verifyAuthentication

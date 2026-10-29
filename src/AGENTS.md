@@ -22,8 +22,8 @@ is `docs/systems/web-app.md`. Find the system of a file in `docs/atlas/systems/f
    (`docs/decisions/0020-optional-english-interface.md`): use logical utilities (`ms-`, `me-`, `ps-`, `pe-`,
    `start-`, `end-`) instead of left and right ones. (unenforced)
 3. After a mutation, invalidate the queries it changes through `trpc.useUtils()`.
-4. Do not add new reads of the session token from `localStorage`; the API also accepts the HttpOnly
-   `smartspend_token` cookie. (unenforced)
+4. The session is the HttpOnly `smartspend_token` or `google_session` cookie the server sets: never store, read or send a
+   session token from the website, nor pass one between tabs. (`tests/security/web-session-cookie.test.ts`)
 5. Prices come from `contracts/plans.ts`. What a plan includes and its limits come from the server (`pro.myPlan`,
    `pro.planCatalog`, `ai.getUserLimits`), which reads the admin's settings (`contracts/plan-features.ts`,
    `docs/decisions/0007-plan-limits-are-admin-settings.md`); a screen never hard-codes them.

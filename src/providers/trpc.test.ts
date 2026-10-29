@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import {
-  getTrpcHeaders,
   friendlyHttpError,
   saveFormDraft,
   getFormDraft,
@@ -72,70 +71,12 @@ describe("tRPC Client Headers & Tunnel Bypass Removal", () => {
   // =========================================================================
   // 2. RUNTIME HEADERS BEHAVIOR
   // =========================================================================
-  describe("2. Runtime Headers Generation", () => {
-    it("returns Authorization Bearer header when local_auth_token exists", () => {
-      const mockStorage = {
-        getItem: vi.fn((key: string) => {
-          if (key === "local_auth_token") return "test_jwt_token_xyz123";
-          return null;
-        }),
-      };
-      Object.defineProperty(globalThis, "localStorage", {
-        value: mockStorage,
-        writable: true,
-        configurable: true,
-      });
-
-      const headers = getTrpcHeaders();
-
-      expect(headers).toEqual({
-        Authorization: "Bearer test_jwt_token_xyz123",
-      });
-      expect(headers).not.toHaveProperty("bypass-tunnel-reminder");
-      expect(headers).not.toHaveProperty("ngrok-skip-browser-warning");
-    });
-
-    it("returns empty object when no token is present", () => {
-      const mockStorage = {
-        getItem: vi.fn(() => null),
-      };
-      Object.defineProperty(globalThis, "localStorage", {
-        value: mockStorage,
-        writable: true,
-        configurable: true,
-      });
-
-      const headers = getTrpcHeaders();
-
-      expect(headers).toEqual({});
-      expect(Object.keys(headers)).toHaveLength(0);
-    });
-
-    it("returns empty object when token is empty string", () => {
-      const mockStorage = {
-        getItem: vi.fn(() => ""),
-      };
-      Object.defineProperty(globalThis, "localStorage", {
-        value: mockStorage,
-        writable: true,
-        configurable: true,
-      });
-
-      const headers = getTrpcHeaders();
-
-      expect(headers).toEqual({});
-    });
-
-    it("handles undefined localStorage safely without throwing", () => {
-      Object.defineProperty(globalThis, "localStorage", {
-        value: undefined,
-        writable: true,
-        configurable: true,
-      });
-
-      expect(() => getTrpcHeaders()).not.toThrow();
-      const headers = getTrpcHeaders();
-      expect(headers).toEqual({});
+  describe("2. The session travels in the HttpOnly cookie", () => {
+    it("adds no Authorization header, even when an older build left a token in storage", () => {
+      // The cookie is sent by the browser on its own; the client must not read storage for a token.
+      const sourceCode = fs.readFileSync(path.resolve(process.cwd(), "src/providers/trpc.ts"), "utf-8");
+      expect(sourceCode).not.toContain("local_auth_token");
+      expect(sourceCode).not.toMatch(/Authorization/);
     });
   });
 
@@ -314,8 +255,9 @@ describe("tRPC Client Headers & Tunnel Bypass Removal", () => {
       store.set("smartspend_offline_identity_v1", "{}");
       expect(deviceHadSession()).toBe(true);
       store.clear();
+      // A token older builds kept is not a session: only the identity a sign-in leaves counts.
       store.set("local_auth_token", "t");
-      expect(deviceHadSession()).toBe(true);
+      expect(deviceHadSession()).toBe(false);
     });
   });
 });

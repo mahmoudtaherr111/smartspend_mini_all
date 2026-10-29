@@ -52,6 +52,7 @@ vi.mock("./local-auth-utils", () => ({
   generateReferralCode: vi.fn(() => "SSTEST"),
   cleanPhoneNumber: vi.fn((phone: string) => phone.replace(/\D/g, "")),
   getSessionMetadata: vi.fn((_req, ip: string) => ({ ipAddress: ip })),
+  sessionCookie: vi.fn((token: string) => `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/`),
   invalidateSession: vi.fn(),
 }));
 

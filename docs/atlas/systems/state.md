@@ -4,7 +4,7 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (10 of 82 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (8 of 81 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
@@ -16,34 +16,30 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (10 of
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-29 2618b97e | 2026-10-29 e8d275c8 | 9 | — | 2 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-29 2618b97e | 2026-10-28 3f613544 | 7 | — | 1 | 7 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-29 2618b97e | 2026-10-29 972925b1 | 16 | **2** | — | 8 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-29 753851e1 | 2026-10-29 753851e1 | 16 | **1** | — | 8 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-29 c0f01c72 | 2026-10-29 c0f01c72 | 2 | — | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-29 2618b97e | 2026-10-27 12b1cd80 | 1 | **1** | 1 | 3 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 4 | — | 2 | 5 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-29 2618b97e | 2026-10-27 12b1cd80 | 8 | — | — | 3 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-29 e8d275c8 | 2026-10-29 6c1b1486 | 5 | — | — | — | 7 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 7 | **1** | — | 2 | 2 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-29 753851e1 | 2026-10-29 753851e1 | 7 | — | — | 3 | 2 |
 
 
 ## Where the risk is
 
 Every system's explanation names at least one test.
 
-## What is waiting (82 issue(s))
+## What is waiting (81 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
-### Security (4)
+### Security (2)
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
-- The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read it (`src/AGENTS.md`, rule 4). In production the content security policy runs no inline script it does not know by hash, which narrows that risk without removing it.
 - The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the same storage.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing checks that recipients agreed.
-
-**Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
-- The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
 ### Bugs (6)
 
@@ -61,7 +57,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.
 - Discount codes are created here but checkout never applies them ([billing](billing.md)).
 
-### Gaps (45)
+### Gaps (46)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -130,6 +126,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
+- The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the token. The Flutter app replaces them (decision 0022); until they are retired they only reach the sign-in screen.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
 ### Debt (27)

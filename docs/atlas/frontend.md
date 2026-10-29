@@ -235,15 +235,19 @@ _None._
 
 ### `Login` — `src/pages/Login.tsx`
 
-5 files in its import closure (not counting `src/components/ui/`).
+8 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
 | `auth.googleUrl` | useQuery | `src/pages/Login.tsx` |
+| `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
+| `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `localAuth.generateVerificationCode` | useMutation | `src/pages/Login.tsx` |
 | `localAuth.getBotPhoneNumber` | useQuery | `src/pages/Login.tsx` |
 | `localAuth.getVerificationSettings` | useQuery | `src/pages/Login.tsx` |
 | `localAuth.login` | useMutation | `src/pages/Login.tsx` |
+| `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
+| `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `localAuth.register` | useMutation | `src/pages/Login.tsx` |
 | `webauthn.generateAuthenticationOptions` | useMutation | `src/pages/Login.tsx` |
 | `webauthn.verifyAuthentication` | useMutation | `src/pages/Login.tsx` |
