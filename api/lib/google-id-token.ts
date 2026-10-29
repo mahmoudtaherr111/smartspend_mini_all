@@ -12,7 +12,12 @@
  *     the audience asked for itself.
  * A token is native when that party is one of `GOOGLE_ANDROID_CLIENT_IDS` or `GOOGLE_IOS_CLIENT_IDS`. A token the
  * website obtained for itself (party = web client) is refused here: the website signs in through the redirect.
+ *
+ * A token is also bound to one sign-in: the app makes a random value for it, gives Google only its SHA-256 (the
+ * token's `nonce` claim), and sends the value itself with the token. A token that leaked without that value signs
+ * no one in, and the caller spends each value once (`auth.signInWithGoogle`).
  */
+import { createHash, timingSafeEqual } from "node:crypto";
 import { createRemoteJWKSet, errors, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from "jose";
 import { env } from "./env";
 
@@ -46,7 +51,8 @@ export type GoogleIdTokenRejection =
   | "audience"
   | "client"
   | "claims"
-  | "email";
+  | "email"
+  | "nonce";
 
 export class GoogleIdTokenRejected extends Error {
   constructor(readonly reason: GoogleIdTokenRejection) {
@@ -117,8 +123,20 @@ function audiencesOf(payload: JWTPayload): string[] {
   return payload.aud ? [payload.aud] : [];
 }
 
+/** The token's `nonce` claim for the value the app made for one sign-in: its SHA-256, in lowercase hex. */
+export function googleNonceHash(nonce: string): string {
+  return createHash("sha256").update(nonce, "utf8").digest("hex");
+}
+
+function sameText(a: string, b: string): boolean {
+  const left = Buffer.from(a, "utf8");
+  const right = Buffer.from(b, "utf8");
+  return left.length === right.length && timingSafeEqual(left, right);
+}
+
 /**
- * Checks a Google ID token and returns who it names.
+ * Checks a Google ID token and returns who it names. `options.nonce` is the value the app made for this sign-in;
+ * the token must carry its hash.
  *
  * Throws {@link GoogleIdTokenRejected} for a token that is not good, and {@link GoogleKeysUnavailable} when Google's
  * keys cannot be fetched.
@@ -126,7 +144,7 @@ function audiencesOf(payload: JWTPayload): string[] {
 export async function verifyGoogleIdToken(
   idToken: string,
   clients: GoogleClientIds,
-  options: { keys?: JWTVerifyGetKey; currentDate?: Date } = {},
+  options: { nonce: string; keys?: JWTVerifyGetKey; currentDate?: Date },
 ): Promise<GoogleIdentity> {
   const natives = [...clients.android, ...clients.ios];
   if (natives.length === 0) throw new GoogleIdTokenRejected("client");
@@ -150,6 +168,9 @@ export async function verifyGoogleIdToken(
   const audiences = audiencesOf(payload);
   const party = typeof payload.azp === "string" ? payload.azp : audiences.length === 1 ? audiences[0] : undefined;
   if (!party || !natives.includes(party)) throw new GoogleIdTokenRejected("client");
+  if (!sameText(typeof payload.nonce === "string" ? payload.nonce : "", googleNonceHash(options.nonce))) {
+    throw new GoogleIdTokenRejected("nonce");
+  }
 
   const { sub, email, email_verified: emailVerified, name, picture } = payload as JWTPayload & {
     email?: unknown;

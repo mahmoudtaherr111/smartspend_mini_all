@@ -152,6 +152,7 @@ void main() {
 
       expect(api.lastInput('auth.signInWithGoogle'), {
         'idToken': 'google-id-token',
+        'nonce': 'nonce-made-for-this-sign-in-0123456789abcdef',
       });
       expect(app.store.token, 'google-session');
       expect(find.byType(NavigationBar), findsOneWidget);

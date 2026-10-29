@@ -169,11 +169,15 @@ final class AuthApi {
     throw _malformed(Procedures.localAuth.generateVerificationCode);
   }
 
-  /// Exchanges the ID token of the phone's Google sign-in for a session (`auth.signInWithGoogle`).
-  Future<SignedInAnswer> signInWithGoogle(String idToken) async {
+  /// Exchanges the phone's Google sign-in for a session (`auth.signInWithGoogle`). [nonce] is the value made for
+  /// this sign-in, whose hash Google put in [idToken].
+  Future<SignedInAnswer> signInWithGoogle({
+    required String idToken,
+    required String nonce,
+  }) async {
     final data = await _client.mutate(
       Procedures.auth.signInWithGoogle,
-      input: {'idToken': idToken},
+      input: {'idToken': idToken, 'nonce': nonce},
     );
     return _signedIn(data, AccountKind.google);
   }

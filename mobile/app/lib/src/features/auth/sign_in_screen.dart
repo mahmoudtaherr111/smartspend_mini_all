@@ -72,14 +72,19 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (_busy) return;
     final failed = AppLocalizations.of(context).googleFailed;
     await _run(() async {
-      final String? idToken;
+      final GoogleCredential? credential;
       try {
-        idToken = await ref.read(googleIdentityProvider).requestIdToken();
+        credential = await ref.read(googleIdentityProvider).requestCredential();
       } on GoogleIdentityFailure {
         throw _Shown(failed);
       }
-      if (idToken == null) return null;
-      return ref.read(authApiProvider).signInWithGoogle(idToken);
+      if (credential == null) return null;
+      return ref
+          .read(authApiProvider)
+          .signInWithGoogle(
+            idToken: credential.idToken,
+            nonce: credential.nonce,
+          );
     });
   }
 

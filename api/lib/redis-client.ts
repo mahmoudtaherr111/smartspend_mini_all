@@ -450,6 +450,26 @@ export async function stateTake(key: string): Promise<string | null> {
   return value;
 }
 
+/**
+ * Marks `key` as used for `ttlSeconds` and says whether this call was the first: a value that may be spent once is
+ * spent once, even by two racing replicas (Redis `SET NX`). A mark kept in this process during a Redis outage still
+ * counts.
+ */
+export async function stateClaim(key: string, ttlSeconds: number): Promise<boolean> {
+  if (memoryStateGet(key) !== null) return false;
+  const client = await getRedisClient();
+  if (client) {
+    try {
+      const stored = await client.set(key, "1", { expiration: { type: "EX", value: ttlSeconds }, condition: "NX" });
+      return stored === "OK";
+    } catch (err) {
+      log.warn({ event: "redis.stateClaim_failed", err }, "Redis refused a shared-state command");
+    }
+  }
+  memoryStateSet(key, ttlSeconds, "1");
+  return true;
+}
+
 /** Removes shared state everywhere it may be kept. */
 export async function stateDel(key: string): Promise<void> {
   memoryState.delete(key);

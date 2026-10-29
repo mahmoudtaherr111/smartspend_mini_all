@@ -174,7 +174,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `auth.googleUrl` | query | `publicProcedure` | no | — | — | `api/lib/env.ts` | `src/pages/Login.tsx` |
 | `auth.logout` | mutation | `authedProcedure` | no | — | — | `api/local-auth-utils.ts` | `src/hooks/useAuth.ts` |
 | `auth.me` | query | `publicProcedure` | no | `users` | — | — | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
-| `auth.signInWithGoogle` | mutation | `strictPublicProcedure` | yes | `users` | `users` | `api/lib/google-id-token.ts`, `api/local-auth-utils.ts` | — |
+| `auth.signInWithGoogle` | mutation | `strictPublicProcedure` | yes | `users` | `users` | `api/lib/google-id-token.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts` | — |
 
 ### `budget` — `api/budget-router.ts`
 

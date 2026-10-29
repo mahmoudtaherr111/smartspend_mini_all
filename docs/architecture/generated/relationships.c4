@@ -768,6 +768,7 @@ model {
   smartspend.api.trpc.auth.me -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.auth.signInWithGoogle -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.auth.signInWithGoogle -[uses]-> smartspend.api.modules.auth
+  smartspend.api.trpc.auth.signInWithGoogle -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.auth.signInWithGoogle -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.budget.create -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.budget.create -[uses]-> smartspend.api.modules.finance-semantic-layer

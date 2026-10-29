@@ -65,9 +65,15 @@ void main() {
       },
     );
 
-    final answer = await api.signInWithGoogle('id-token');
+    final answer = await api.signInWithGoogle(
+      idToken: 'id-token',
+      nonce: 'the-sign-in-nonce',
+    );
 
-    expect(server.lastInput('auth.signInWithGoogle'), {'idToken': 'id-token'});
+    expect(server.lastInput('auth.signInWithGoogle'), {
+      'idToken': 'id-token',
+      'nonce': 'the-sign-in-nonce',
+    });
     expect(answer.user.kind, AccountKind.google);
     expect(answer.user.avatarUrl, 'https://lh3.googleusercontent.com/a/photo');
     expect(answer.user.plan, 'pro');

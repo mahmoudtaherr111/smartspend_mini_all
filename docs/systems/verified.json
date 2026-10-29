@@ -3,7 +3,7 @@
   "systems": {
     "accounts": {
       "files": {
-        "api/auth-router.ts": "e2a342a9e3ce",
+        "api/auth-router.ts": "bf8ddd1b118f",
         "api/boot.ts#GET /api/auth/google/callback": "4aa70d89b69f",
         "api/boot.ts#GET /api/auth/google/start": "30860aaa6f6e",
         "api/boot.ts#GET /api/sse/otp": "17c9d19750db",
@@ -12,7 +12,7 @@
         "api/lib/admin-safe-fields.ts": "cfb73d6bbe66",
         "api/lib/anonymizer.ts": "a2779010eaec",
         "api/lib/get-client-ip.ts": "72af77e654a4",
-        "api/lib/google-id-token.ts": "008e0247eaad",
+        "api/lib/google-id-token.ts": "219f290d6998",
         "api/lib/http-origin-security.ts": "066096844fe2",
         "api/lib/image-magic-bytes.ts": "4e8c26a07b43",
         "api/lib/login-protection.ts": "2e7377afad07",
@@ -54,9 +54,9 @@
         "src/pages/Login.tsx": "59d76ce265d9",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-28 17e66339",
-      "arabic": "d522c75f8d9c",
-      "arabicChecked": "2026-10-28 17e66339"
+      "checked": "2026-10-29 972925b1",
+      "arabic": "a608a6ec7b0f",
+      "arabicChecked": "2026-10-29 972925b1"
     },
     "admin": {
       "files": {
@@ -466,7 +466,7 @@
         "api/lib/error-logger.ts": "9cb0f25fe459",
         "api/lib/error-reporting.ts": "9891f7185094",
         "api/lib/log.ts": "65a6302d6f7d",
-        "api/lib/redis-client.ts": "b71ec9e1729f",
+        "api/lib/redis-client.ts": "b5bd5c4ff3ad",
         "api/lib/settings-cache.ts": "ee7c564513f7",
         "api/lib/shared-generation.ts": "2d53bf30e567",
         "api/lib/system-settings-registry.ts": "0f0c45df28f1",
@@ -500,7 +500,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "2837060826f4"
       },
-      "checked": "2026-10-29 c0f01c72",
+      "checked": "2026-10-29 972925b1",
       "arabic": "d0e35d32d288",
       "arabicChecked": "2026-10-28 12a32e2a"
     },

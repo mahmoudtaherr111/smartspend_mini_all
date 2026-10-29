@@ -22,12 +22,17 @@ import {
   GoogleIdTokenRejected,
   GoogleKeysUnavailable,
   googleClientIdsFromEnv,
+  googleNonceHash,
   nativeGoogleSignInConfigured,
   verifyGoogleIdToken,
 } from "./lib/google-id-token";
+import { stateClaim } from "./lib/redis-client";
 import type { Context } from "./context";
 
 const log = createLogger("auth");
+
+/** Google ID tokens expire an hour after they are issued; a minute more covers the clock tolerance of the check. */
+const GOOGLE_NONCE_TTL_SECONDS = 3_660;
 
 export function buildGoogleAuthorizationUrl(
   state: string,
@@ -263,7 +268,13 @@ export const authRouter = router({
    * The token comes back in the answer, as `localAuth.login` does; no cookie is set.
    */
   signInWithGoogle: strictPublicProcedure
-    .input(z.object({ idToken: z.string().min(1).max(8_192) }))
+    .input(
+      z.object({
+        idToken: z.string().min(1).max(8_192),
+        // The value the app made for this sign-in; Google holds only its hash, in the token (google-id-token.ts).
+        nonce: z.string().min(32).max(128),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const clients = googleClientIdsFromEnv();
       if (!nativeGoogleSignInConfigured(clients)) {
@@ -276,7 +287,7 @@ export const authRouter = router({
 
       let identity;
       try {
-        identity = await verifyGoogleIdToken(input.idToken, clients);
+        identity = await verifyGoogleIdToken(input.idToken, clients, { nonce: input.nonce });
       } catch (error) {
         if (error instanceof GoogleIdTokenRejected) {
           log.warn({ event: "auth.google_id_token.rejected", reason: error.reason }, "Google ID token refused");
@@ -293,6 +304,15 @@ export const authRouter = router({
           });
         }
         throw error;
+      }
+
+      // Each value signs in once. A token lives an hour, so the mark outlives every token that can carry it.
+      if (!(await stateClaim(`google-nonce:${googleNonceHash(input.nonce)}`, GOOGLE_NONCE_TTL_SECONDS))) {
+        log.warn({ event: "auth.google_id_token.rejected", reason: "replayed" }, "Google ID token refused");
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "ماقدرناش نتأكد من حساب Google. جرّب تاني.",
+        });
       }
 
       const { user, created } = await findOrCreateGoogleUser(identity);

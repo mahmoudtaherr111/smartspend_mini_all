@@ -122,4 +122,24 @@ describeRedisIntegration("redis-client real Redis integration", () => {
       await closeClient(reader);
     }
   });
+
+  it("lets only the first of two processes claim a one-time value", async () => {
+    const closeClient = async (module: RedisClientModule) => {
+      const client = await module.getRedisClient();
+      if (client && "destroy" in client && typeof client.destroy === "function") client.destroy();
+    };
+    const key = `smartspend:test:claim:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    const first = await loadRedisClientForIntegration();
+    const second = await loadRedisClientForIntegration();
+    try {
+      const claims = await Promise.all([first.stateClaim(key, 30), second.stateClaim(key, 30)]);
+      expect(claims.filter(Boolean)).toHaveLength(1);
+      expect(await first.stateClaim(key, 30)).toBe(false);
+    } finally {
+      const client = await first.getRedisClient();
+      await client?.del(key).catch(() => undefined);
+      await closeClient(first);
+      await closeClient(second);
+    }
+  });
 });

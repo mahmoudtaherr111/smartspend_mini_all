@@ -164,16 +164,20 @@ final class FakeGoogleIdentity implements GoogleIdentity {
 
   /// What the account picker returns; null is the person closing it.
   String? idToken = 'google-id-token';
+  String nonce = 'nonce-made-for-this-sign-in-0123456789abcdef';
   Object? failure;
   int requests = 0;
   int signOuts = 0;
 
   @override
-  Future<String?> requestIdToken() async {
+  Future<GoogleCredential?> requestCredential() async {
     requests++;
     final failure = this.failure;
     if (failure != null) throw failure;
-    return idToken;
+    final idToken = this.idToken;
+    return idToken == null
+        ? null
+        : GoogleCredential(idToken: idToken, nonce: nonce);
   }
 
   @override

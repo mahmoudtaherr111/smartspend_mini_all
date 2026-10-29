@@ -51,7 +51,7 @@ account of the same person.
 ### Google, in the mobile app
 A native app has no cookie to receive, so it signs in with the phone's own Google SDK (`google_sign_in`: Credential
 Manager on Android, the Google Sign-In SDK on iOS) and sends the ID token it gets to `auth.signInWithGoogle`
-(`strictPublicProcedure`, input `{ idToken }`).
+(`strictPublicProcedure`, input `{ idToken, nonce }`).
 1. `verifyGoogleIdToken` (`api/lib/google-id-token.ts`) checks the RS256 signature against Google's published keys
    (fetched with `jose` and cached; an unknown key id fetches them again), the issuer `accounts.google.com`, the expiry
    with a minute of tolerance, and a verified email.
@@ -59,10 +59,16 @@ Manager on Android, the Google Sign-In SDK on iOS) and sends the ID token it get
    client `GOOGLE_CLIENT_ID`, or the iOS client when the iOS SDK signs in on its own; its authorized party (`azp`, or
    the audience when absent) must be one of `GOOGLE_ANDROID_CLIENT_IDS` or `GOOGLE_IOS_CLIENT_IDS` (comma-separated,
    for the store and dev builds). A token the website obtained for itself is refused.
-3. With neither variable set the procedure answers `SERVICE_UNAVAILABLE`; a token that fails a check answers
-   `UNAUTHORIZED`, and Google's keys being unreachable `SERVICE_UNAVAILABLE`. It logs `auth.google_id_token.*` with the
+3. It checks that the token belongs to this sign-in. For each sign-in the app makes a random value (32 bytes,
+   base64url, `newGoogleNonce` in `mobile/app/lib/src/features/auth/google_identity.dart`), gives Google only its
+   SHA-256 in hex, and sends the value itself as `nonce` (32 to 128 characters). The token's `nonce` claim must equal
+   that hash (`googleNonceHash`), so a token that leaked without the value signs no one in. After the checks the
+   procedure marks the hash as used for an hour and a minute (`stateClaim` in `api/lib/redis-client.ts`, `SET NX`), so
+   the same token and value sent again are refused as `replayed`, on any replica ([decision 0036](../decisions/0036-google-sign-in-nonce.md)).
+4. With neither variable set the procedure answers `SERVICE_UNAVAILABLE`; a token that fails a check, or a value used
+   before, answers `UNAUTHORIZED`, and Google's keys being unreachable `SERVICE_UNAVAILABLE`. It logs `auth.google_id_token.*` with the
    reason or the user id, never the token or the email.
-4. The account and session are made as in the redirect flow, and the token comes back in the answer; no cookie is set.
+5. The account and session are made as in the redirect flow, and the token comes back in the answer; no cookie is set.
 
 The app shows the Google button only when the build has `GOOGLE_SERVER_CLIENT_ID` (the web client id) and, on iOS,
 `GOOGLE_IOS_CLIENT_ID` with its reversed form in `mobile/app/ios/Flutter/GoogleSignIn.xcconfig`.
@@ -267,9 +273,7 @@ Checked against the code; each one names where it lives.
 9. **Gap.** In the mobile app Turnstile runs in a web view loaded as the API's origin, so the site key must list the
    API's host. A build without `TURNSTILE_SITE_KEY` sends no token, and a production server with verification on then
    refuses its sign-ups, as known issue 2 says for the web.
-10. **Security.** `auth.signInWithGoogle` asks for no nonce: an ID token issued to the app signs in whoever presents it
-    until it expires, about an hour after Google issued it.
-11. **Gap.** The mobile app has no passkey sign-in, and neither the app nor the web's Login screen offers WhatsApp
+10. **Gap.** The mobile app has no passkey sign-in, and neither the app nor the web's Login screen offers WhatsApp
     sign-in (`localAuth.verifyOtp`).
 
 ## Related systems

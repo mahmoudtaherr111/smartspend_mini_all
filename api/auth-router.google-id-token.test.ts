@@ -1,13 +1,14 @@
 /**
  * Google sign-in from the mobile app (`auth.signInWithGoogle`, decision 0022). Once the token passes its check
- * (`api/lib/google-id-token.test.ts`), the procedure finds or creates the account the redirect flow would and
- * returns a session token, under the strict sign-in limit, logging an event and ids only.
+ * (`api/lib/google-id-token.test.ts`), the procedure spends the sign-in's nonce once, finds or creates the account
+ * the redirect flow would and returns a session token, under the strict sign-in limit, logging an event and ids only.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Context } from "./context";
 import { GoogleIdTokenRejected, GoogleKeysUnavailable } from "./lib/google-id-token";
 
 const ANDROID = "android-client.apps.googleusercontent.com";
+const NONCE = "q5Jr0dTzYxW1n8Kc3vB6mP2sA9eH4uLg7fZoXi_Rk-M";
 
 const mocks = vi.hoisted(() => ({
   verify: vi.fn(),
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   inserted: [] as Record<string, unknown>[],
   updated: [] as Record<string, unknown>[],
   createSession: vi.fn(),
+  claimed: new Set<string>(),
   logged: [] as unknown[][],
   clients: {
     web: "web-client.apps.googleusercontent.com",
@@ -66,7 +68,14 @@ vi.mock("./lib/log", () => {
   };
 });
 
-vi.mock("./lib/redis-client", () => ({ executeSlidingWindowRateLimit: vi.fn(async () => ({ allowed: true })) }));
+vi.mock("./lib/redis-client", () => ({
+  executeSlidingWindowRateLimit: vi.fn(async () => ({ allowed: true })),
+  stateClaim: vi.fn(async (key: string) => {
+    if (mocks.claimed.has(key)) return false;
+    mocks.claimed.add(key);
+    return true;
+  }),
+}));
 
 import { authRouter } from "./auth-router";
 
@@ -103,6 +112,7 @@ beforeEach(() => {
   mocks.inserted.length = 0;
   mocks.updated.length = 0;
   mocks.logged.length = 0;
+  mocks.claimed.clear();
   mocks.clients.android = [ANDROID];
   mocks.clients.ios = [];
   mocks.verify.mockResolvedValue(identity);
@@ -112,9 +122,9 @@ describe("auth.signInWithGoogle", () => {
   it("creates the account the redirect flow would, and returns a session token", async () => {
     mocks.findUser.mockResolvedValueOnce(undefined).mockResolvedValueOnce(storedUser());
 
-    const answer = await caller().signInWithGoogle({ idToken: "header.payload.signature" });
+    const answer = await caller().signInWithGoogle({ idToken: "header.payload.signature", nonce: NONCE });
 
-    expect(mocks.verify).toHaveBeenCalledWith("header.payload.signature", mocks.clients);
+    expect(mocks.verify).toHaveBeenCalledWith("header.payload.signature", mocks.clients, { nonce: NONCE });
     expect(mocks.inserted).toEqual([
       expect.objectContaining({
         unionId: identity.sub,
@@ -142,7 +152,7 @@ describe("auth.signInWithGoogle", () => {
   it("signs an existing account in by its Google id and records the sign-in", async () => {
     mocks.findUser.mockResolvedValueOnce(storedUser({ plan: "pro" }));
 
-    const answer = await caller().signInWithGoogle({ idToken: "header.payload.signature" });
+    const answer = await caller().signInWithGoogle({ idToken: "header.payload.signature", nonce: NONCE });
 
     expect(mocks.inserted).toHaveLength(0);
     expect(mocks.updated).toEqual([{ lastSignInAt: expect.any(Date) }]);
@@ -153,7 +163,7 @@ describe("auth.signInWithGoogle", () => {
     mocks.verify.mockResolvedValue({ sub: "1", email: "sara.ali@example.com" });
     mocks.findUser.mockResolvedValueOnce(undefined).mockResolvedValueOnce(storedUser({ id: 78 }));
 
-    await caller().signInWithGoogle({ idToken: "header.payload.signature" });
+    await caller().signInWithGoogle({ idToken: "header.payload.signature", nonce: NONCE });
 
     expect(mocks.inserted[0]).toMatchObject({ name: "sara.ali" });
   });
@@ -161,7 +171,7 @@ describe("auth.signInWithGoogle", () => {
   it("refuses a token that fails the check, writes nothing and logs only why", async () => {
     mocks.verify.mockRejectedValue(new GoogleIdTokenRejected("audience"));
 
-    await expect(caller().signInWithGoogle({ idToken: "header.payload.signature" })).rejects.toMatchObject({
+    await expect(caller().signInWithGoogle({ idToken: "header.payload.signature", nonce: NONCE })).rejects.toMatchObject({
       code: "UNAUTHORIZED",
       message: "ماقدرناش نتأكد من حساب Google. جرّب تاني.",
     });
@@ -175,7 +185,7 @@ describe("auth.signInWithGoogle", () => {
   it("says Google is unreachable when its keys cannot be fetched", async () => {
     mocks.verify.mockRejectedValue(new GoogleKeysUnavailable(new TypeError("fetch failed")));
 
-    await expect(caller().signInWithGoogle({ idToken: "header.payload.signature" })).rejects.toMatchObject({
+    await expect(caller().signInWithGoogle({ idToken: "header.payload.signature", nonce: NONCE })).rejects.toMatchObject({
       code: "SERVICE_UNAVAILABLE",
     });
     expect(mocks.createSession).not.toHaveBeenCalled();
@@ -184,7 +194,7 @@ describe("auth.signInWithGoogle", () => {
   it("is off until a mobile client id is configured", async () => {
     mocks.clients.android = [];
 
-    await expect(caller().signInWithGoogle({ idToken: "header.payload.signature" })).rejects.toMatchObject({
+    await expect(caller().signInWithGoogle({ idToken: "header.payload.signature", nonce: NONCE })).rejects.toMatchObject({
       code: "SERVICE_UNAVAILABLE",
     });
     expect(mocks.verify).not.toHaveBeenCalled();
@@ -193,7 +203,7 @@ describe("auth.signInWithGoogle", () => {
   it("never logs the token, the email or the name", async () => {
     mocks.findUser.mockResolvedValueOnce(undefined).mockResolvedValueOnce(storedUser());
 
-    await caller().signInWithGoogle({ idToken: "header.payload.signature" });
+    await caller().signInWithGoogle({ idToken: "header.payload.signature", nonce: NONCE });
 
     expect(mocks.logged).toEqual([
       ["info", { event: "auth.google_id_token.signed_in", userId: 77, created: true }, expect.any(String)],
@@ -205,20 +215,52 @@ describe("auth.signInWithGoogle", () => {
   });
 
   it("validates its input", async () => {
-    await expect(caller().signInWithGoogle({ idToken: "" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(caller().signInWithGoogle({ idToken: "x".repeat(8_193) })).rejects.toMatchObject({
+    await expect(caller().signInWithGoogle({ idToken: "", nonce: NONCE })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(caller().signInWithGoogle({ idToken: "x".repeat(8_193), nonce: NONCE })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
     expect(mocks.verify).not.toHaveBeenCalled();
+  });
+
+  it("asks for the sign-in's nonce, of a length no guess reaches", async () => {
+    const input = { idToken: "header.payload.signature" } as { idToken: string; nonce: string };
+    await expect(caller().signInWithGoogle(input)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(caller().signInWithGoogle({ ...input, nonce: "short" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mocks.verify).not.toHaveBeenCalled();
+  });
+
+  it("signs in once per nonce: the same token and value sent again are refused", async () => {
+    mocks.findUser.mockResolvedValue(storedUser());
+    await caller().signInWithGoogle({ idToken: "header.payload.signature", nonce: NONCE });
+    mocks.createSession.mockClear();
+
+    await expect(
+      caller().signInWithGoogle({ idToken: "header.payload.signature", nonce: NONCE }),
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED", message: "ماقدرناش نتأكد من حساب Google. جرّب تاني." });
+    expect(mocks.createSession).not.toHaveBeenCalled();
+    expect(mocks.logged).toContainEqual([
+      "warn",
+      { event: "auth.google_id_token.rejected", reason: "replayed" },
+      expect.any(String),
+    ]);
+    expect(JSON.stringify(mocks.logged)).not.toContain(NONCE);
+  });
+
+  it("spends no nonce on a token that fails its check", async () => {
+    mocks.verify.mockRejectedValueOnce(new GoogleIdTokenRejected("signature"));
+    await expect(caller().signInWithGoogle({ idToken: "a.b.c", nonce: NONCE })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    expect(mocks.claimed.size).toBe(0);
   });
 
   it("shares the strict sign-in limit: 25 attempts per address in 15 minutes", async () => {
     mocks.verify.mockRejectedValue(new GoogleIdTokenRejected("signature"));
     const ip = "197.38.9.9";
     for (let attempt = 0; attempt < 25; attempt++) {
-      await expect(caller(ip).signInWithGoogle({ idToken: "a.b.c" })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+      await expect(caller(ip).signInWithGoogle({ idToken: "a.b.c", nonce: NONCE })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     }
-    await expect(caller(ip).signInWithGoogle({ idToken: "a.b.c" })).rejects.toMatchObject({
+    await expect(caller(ip).signInWithGoogle({ idToken: "a.b.c", nonce: NONCE })).rejects.toMatchObject({
       code: "TOO_MANY_REQUESTS",
     });
   });

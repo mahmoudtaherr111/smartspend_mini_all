@@ -1,7 +1,8 @@
 /**
  * The check behind `auth.signInWithGoogle` (decision 0022): a Google ID token from the phone's Google SDK is
- * accepted only when Google signed it, it has not expired, and it was issued to one of the mobile app's own clients.
- * Tokens are signed here with a key pair standing in for Google's.
+ * accepted only when Google signed it, it has not expired, it was issued to one of the mobile app's own clients, and
+ * it carries the hash of the value the app made for this sign-in. Tokens are signed here with a key pair standing in
+ * for Google's.
  */
 import { exportJWK, generateKeyPair, createLocalJWKSet, SignJWT, type JWTPayload } from "jose";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -9,6 +10,7 @@ import {
   GoogleIdTokenRejected,
   GoogleKeysUnavailable,
   googleClientIdsFromEnv,
+  googleNonceHash,
   verifyGoogleIdToken,
   type GoogleClientIds,
 } from "./google-id-token";
@@ -17,6 +19,8 @@ const WEB = "web-client.apps.googleusercontent.com";
 const ANDROID = "android-client.apps.googleusercontent.com";
 const IOS = "ios-client.apps.googleusercontent.com";
 const clients: GoogleClientIds = { web: WEB, android: [ANDROID], ios: [IOS] };
+/** The value the app made for this sign-in; Google puts its hash in the token. */
+const NONCE = "q5Jr0dTzYxW1n8Kc3vB6mP2sA9eH4uLg7fZoXi_Rk-M";
 
 let keys: ReturnType<typeof createLocalJWKSet>;
 let signingKey: CryptoKey;
@@ -42,6 +46,7 @@ async function idToken(overrides: JWTPayload = {}, options: { key?: CryptoKey; k
     email_verified: true,
     name: "Mona",
     picture: "https://lh3.googleusercontent.com/a/photo",
+    nonce: googleNonceHash(NONCE),
     iat: nowSeconds() - 10,
     exp: nowSeconds() + 3_600,
     ...overrides,
@@ -52,7 +57,8 @@ async function idToken(overrides: JWTPayload = {}, options: { key?: CryptoKey; k
     .sign(options.key ?? signingKey);
 }
 
-const verify = (token: string, ids: GoogleClientIds = clients) => verifyGoogleIdToken(token, ids, { keys });
+const verify = (token: string, ids: GoogleClientIds = clients, nonce = NONCE) =>
+  verifyGoogleIdToken(token, ids, { keys, nonce });
 
 async function rejection(promise: Promise<unknown>) {
   const error = await promise.then(
@@ -138,9 +144,25 @@ describe("checking a Google ID token", () => {
     const offline = async () => {
       throw new TypeError("fetch failed");
     };
-    await expect(verifyGoogleIdToken(await idToken(), clients, { keys: offline })).rejects.toBeInstanceOf(
+    await expect(verifyGoogleIdToken(await idToken(), clients, { keys: offline, nonce: NONCE })).rejects.toBeInstanceOf(
       GoogleKeysUnavailable,
     );
+  });
+
+  it("refuses a token without the hash of this sign-in's value", async () => {
+    expect(await rejection(verify(await idToken({ nonce: undefined })))).toBe("nonce");
+    expect(await rejection(verify(await idToken({ nonce: googleNonceHash("another sign-in's value, 32 chars") })))).toBe(
+      "nonce",
+    );
+    // The hash itself is not the value: a token that leaked carries the hash, never what the app sent.
+    expect(await rejection(verify(await idToken(), clients, googleNonceHash(NONCE)))).toBe("nonce");
+    expect(await rejection(verify(await idToken({ nonce: NONCE })))).toBe("nonce");
+  });
+});
+
+describe("the nonce hash", () => {
+  it("is SHA-256 in lowercase hex, as the app computes it", () => {
+    expect(googleNonceHash("abc")).toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
   });
 });
 
