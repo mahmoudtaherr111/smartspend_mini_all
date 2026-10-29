@@ -10,17 +10,17 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (10 of
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-29 e8d275c8 | 2026-10-27 03cb4c09 | 18 | — | — | 2 | — |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-29 2618b97e | 2026-10-27 03cb4c09 | 18 | — | — | 2 | — |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 11 | — | — | 3 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | — | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-29 e8d275c8 | 2026-10-29 e8d275c8 | 9 | — | 2 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-29 e8d275c8 | 2026-10-28 3f613544 | 7 | — | 1 | 7 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-29 e8d275c8 | 2026-10-29 972925b1 | 16 | **2** | — | 8 | — |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-29 2618b97e | 2026-10-29 e8d275c8 | 9 | — | 2 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-29 2618b97e | 2026-10-28 3f613544 | 7 | — | 1 | 7 | 1 |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-29 2618b97e | 2026-10-29 972925b1 | 16 | **2** | — | 8 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-29 c0f01c72 | 2026-10-29 c0f01c72 | 2 | — | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-29 e8d275c8 | 2026-10-27 12b1cd80 | 1 | **1** | 1 | 3 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-29 2618b97e | 2026-10-27 12b1cd80 | 1 | **1** | 1 | 3 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 4 | — | 2 | 5 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-29 e8d275c8 | 2026-10-27 12b1cd80 | 8 | — | — | 3 | 4 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-29 2618b97e | 2026-10-27 12b1cd80 | 8 | — | — | 3 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-29 e8d275c8 | 2026-10-29 6c1b1486 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 7 | **1** | — | 2 | 2 |
 
