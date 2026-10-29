@@ -14,7 +14,8 @@ import {
   userContacts,
   scheduledCashflows,
 } from "../db/schema";
-import { eq, and, gte, lte, desc, sql, isNotNull } from "drizzle-orm";
+import { eq, and, gte, lt, desc, sql, isNotNull } from "drizzle-orm";
+import { businessMonthKeyRange, shiftMonthKey } from "./lib/app-time";
 
 import { randomBytes, randomInt } from "crypto";
 import {
@@ -145,12 +146,6 @@ export const smartProfilePatchSchema = z.object({
   profileCompleted: z.boolean().optional(),
 });
 
-function monthRange(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const start = new Date(year, monthNumber - 1, 1);
-  const end = new Date(year, monthNumber, 0, 23, 59, 59, 999);
-  return { start, end };
-}
 
 export async function refreshMonthlyInferences(
   userId: number,
@@ -158,10 +153,8 @@ export async function refreshMonthlyInferences(
   month: string,
 ) {
   const profile = await getSmartProfile(userId, userType);
-  const currentRange = monthRange(month);
-  const [year, monthNumber] = month.split("-").map(Number);
-  const prevMonth = `${monthNumber === 1 ? year - 1 : year}-${String(monthNumber === 1 ? 12 : monthNumber - 1).padStart(2, "0")}`;
-  const previousRange = monthRange(prevMonth);
+  const currentRange = businessMonthKeyRange(month);
+  const previousRange = businessMonthKeyRange(shiftMonthKey(month, -1));
 
   const [items, previousItems] = await Promise.all([
     db
@@ -172,7 +165,7 @@ export async function refreshMonthlyInferences(
           eq(expenses.userId, userId),
           eq(expenses.userType, userType),
           gte(expenses.date, currentRange.start),
-          lte(expenses.date, currentRange.end),
+          lt(expenses.date, currentRange.endExclusive),
         ),
       ),
     db
@@ -183,7 +176,7 @@ export async function refreshMonthlyInferences(
           eq(expenses.userId, userId),
           eq(expenses.userType, userType),
           gte(expenses.date, previousRange.start),
-          lte(expenses.date, previousRange.end),
+          lt(expenses.date, previousRange.endExclusive),
         ),
       ),
   ]);

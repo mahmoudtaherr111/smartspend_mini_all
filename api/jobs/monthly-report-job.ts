@@ -1,4 +1,4 @@
-import { businessDateKey } from "../lib/app-time";
+import { previousBusinessMonth } from "../lib/app-time";
 import { and, eq, inArray } from "drizzle-orm";
 import { getDb } from "../queries/connection";
 import { users, localUsers, systemSettings, monthlyReports } from "../../db/schema";
@@ -138,10 +138,6 @@ function parseReportText(raw: string): string {
  * through function calls, then sends the final report via WhatsApp.
  */
 /**
- * The month a scheduled report describes: the Cairo month that ended before `now`. The job
- * runs early on the 1st, when the current month has barely begun.
- */
-/**
  * The switch "إرسال التقرير عبر الواتساب" in Settings. It is on until the user turns it off, as the switch shows it,
  * and the job used to send the report whatever it said.
  */
@@ -149,10 +145,12 @@ export function wantsWhatsappReport(preferences: Record<string, unknown> | null 
   return preferences?.whatsappReportsEnabled !== false;
 }
 
+/**
+ * The month a scheduled report describes: the Cairo month that ended before `now`. The job
+ * runs early on the 1st, when the current month has barely begun.
+ */
 export function reportMonthFor(now = new Date()): string {
-  const [year, month] = businessDateKey(now).split("-").map(Number);
-  const previous = new Date(Date.UTC(year, month - 2, 1));
-  return `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, "0")}`;
+  return previousBusinessMonth(now);
 }
 
 export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJobOptions) {

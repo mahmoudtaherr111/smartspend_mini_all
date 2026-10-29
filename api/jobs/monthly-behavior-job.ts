@@ -1,6 +1,7 @@
 import { db } from "../queries/connection";
 import { sql } from "drizzle-orm";
 import { refreshMonthlyInferences } from "../profile-router";
+import { previousBusinessMonth } from "../lib/app-time";
 
 export interface MonthlyBehaviorJobResult {
   month: string;
@@ -19,14 +20,7 @@ export async function runMonthlyBehaviorJob(options: {
 } = {}): Promise<MonthlyBehaviorJobResult> {
   const startTime = performance.now();
 
-  let targetMonth = options.month;
-  if (!targetMonth) {
-    const now = new Date();
-    const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const y = prevDate.getFullYear();
-    const m = String(prevDate.getMonth() + 1).padStart(2, "0");
-    targetMonth = `${y}-${m}`;
-  }
+  const targetMonth = options.month ?? previousBusinessMonth();
 
   console.log(
     `[MonthlyBehaviorJob] Generating monthly behavior snapshots for month: ${targetMonth}...`,

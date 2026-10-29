@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (11 of 83 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (10 of 82 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-27 03cb4c09 | 2026-10-27 03cb4c09 | 18 | — | — | 2 | — |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-29 e8d275c8 | 2026-10-27 03cb4c09 | 18 | — | — | 2 | — |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 11 | — | — | 3 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | — | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 7 | — | 3 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-28 3f613544 | 2026-10-28 3f613544 | 7 | — | 1 | 7 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-29 972925b1 | 2026-10-29 972925b1 | 16 | **2** | — | 8 | — |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-29 e8d275c8 | 2026-10-29 e8d275c8 | 9 | — | 2 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-29 e8d275c8 | 2026-10-28 3f613544 | 7 | — | 1 | 7 | 1 |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-29 e8d275c8 | 2026-10-29 972925b1 | 16 | **2** | — | 8 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-29 c0f01c72 | 2026-10-29 c0f01c72 | 2 | — | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 1 | **1** | 1 | 3 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-29 e8d275c8 | 2026-10-27 12b1cd80 | 1 | **1** | 1 | 3 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 4 | — | 2 | 5 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-27 12b1cd80 | 2026-10-27 12b1cd80 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-29 972925b1 | 2026-10-29 6c1b1486 | 5 | — | — | — | 7 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-29 e8d275c8 | 2026-10-27 12b1cd80 | 8 | — | — | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-29 e8d275c8 | 2026-10-29 6c1b1486 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 7 | **1** | — | 2 | 2 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (11 of
 
 Every system's explanation names at least one test.
 
-## What is waiting (83 issue(s))
+## What is waiting (82 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -45,12 +45,11 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
 
-### Bugs (7)
+### Bugs (6)
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the financial month only.
 - Numbers in a model-written report are measured against the facts but not enforced: unlike the chat, a report with unsupported numbers is shown as it is.
-- Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is ahead of UTC; snapshot days are grouped by UTC date.
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.

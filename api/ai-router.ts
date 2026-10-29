@@ -25,10 +25,11 @@ import {
 } from "../db/schema";
 import { reportWaitDays, reportWaitMessage } from "./lib/report-wait";
 import { getSystemSettings } from "./lib/settings-cache";
-import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
+import { eq, sql, desc, count, and, gte, lt, sum } from "drizzle-orm";
 import { env } from "./lib/env";
 import { recordAiLedger, recordModelCalls } from "./lib/ai-ledger";
 import { businessDateKey, businessMonthRange } from "./lib/app-time";
+import { reportPeriod } from "./services/financial-month";
 import { voiceMonth } from "./services/entitlements/voice";
 import { runSmartPipeline, SMART_PIPELINE_VERSION } from "./lib/smart-pipeline";
 import { CATEGORIES } from "./lib/category-registry";
@@ -1786,36 +1787,13 @@ export const aiRouter = router({
         return null;
       });
 
-      let startDate: Date;
-      let endDate: Date;
-      let prevStart: Date;
-      let prevEnd: Date;
-      let daysInMonth: number;
-
-      if (salaryDay > 1) {
-        const { getFinancialMonthDates } = await import("./services/financial-month");
-        const currentDates = getFinancialMonthDates(input.month, salaryDay);
-        startDate = currentDates.startDate;
-        endDate = currentDates.endDate;
-
-        // Calculate previous month string
-        const [y, m] = input.month.split("-").map(Number);
-        const prevMonthDate = new Date(y, m - 2, 1);
-        const prevMonthStr = prevMonthDate.toISOString().slice(0, 7);
-        const prevDates = getFinancialMonthDates(prevMonthStr, salaryDay);
-        prevStart = prevDates.startDate;
-        prevEnd = prevDates.endDate;
-
-        daysInMonth = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      } else {
-        const [year, month] = input.month.split("-");
-        startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-        endDate = new Date(parseInt(year), parseInt(month), 0);
-        daysInMonth = endDate.getDate();
-
-        prevStart = new Date(parseInt(year), parseInt(month) - 2, 1);
-        prevEnd = new Date(parseInt(year), parseInt(month) - 1, 0);
-      }
+      // The month and the one before it as Cairo days, from payday to payday when there is one (golden rule 6).
+      const period = reportPeriod(input.month, salaryDay);
+      const startDate = period.current.startUtc;
+      const endDate = period.current.endUtc;
+      const prevStart = period.previous.startUtc;
+      const prevEnd = period.previous.endUtc;
+      const daysInMonth = period.days;
 
       // Current month expenses
       const userExpenses = await db
@@ -1826,7 +1804,7 @@ export const aiRouter = router({
             eq(expenses.userId, ctx.user.id),
             eq(expenses.userType, ctx.user.type),
             gte(expenses.date, startDate),
-            lte(expenses.date, endDate),
+            lt(expenses.date, endDate),
           ),
         );
 
@@ -1853,7 +1831,7 @@ export const aiRouter = router({
             eq(expenses.userId, ctx.user.id),
             eq(expenses.userType, ctx.user.type),
             gte(expenses.date, prevStart),
-            lte(expenses.date, prevEnd),
+            lt(expenses.date, prevEnd),
           ),
         );
 
@@ -2056,12 +2034,12 @@ export const aiRouter = router({
       // Financial Forecasting
       const today = new Date();
       let forecast = "";
-      // Only forecast if looking at current month
-      if (
-        today.getMonth() === endDate.getMonth() &&
-        today.getFullYear() === endDate.getFullYear()
-      ) {
-        const currentDay = Math.max(1, today.getDate());
+      // Only forecast while the month is running: today's Cairo day counted from the month's first day (payday).
+      if (today >= startDate && today < endDate) {
+        const currentDay = Math.max(
+          1,
+          (Date.parse(`${businessDateKey(today)}T00:00:00Z`) - Date.parse(`${period.current.startDay}T00:00:00Z`)) / 86_400_000 + 1,
+        );
         const runRate = Math.round((totalExpense / currentDay) * daysInMonth);
         if (comparisonIncome > 0) {
           if (runRate > comparisonIncome) {

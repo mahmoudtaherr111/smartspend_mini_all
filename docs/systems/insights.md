@@ -31,13 +31,14 @@ spending, and the people they deal with. Classification prompts read the same pr
 3. **Facts.** The salary day comes from the smart profile. `buildMonthlyReportFactsPack` resolves the period's
    income, spending, net flow, transaction count, daily average, top categories and active goals, plus a category
    chart; it is cached for ten minutes unless the call is a refresh. The procedure also loads the month's and the
-   previous period's rows: financial months from `api/services/financial-month.ts` when the salary day is after the
-   1st, calendar months otherwise. A month without rows returns a fixed "nothing recorded yet" answer that is not saved.
+   previous period's rows, both as Cairo days from `reportPeriod` in `api/services/financial-month.ts` (golden rule
+   6): from payday to the day before the next payday when the salary day is after the 1st, the calendar month
+   otherwise. A month without rows returns a fixed "nothing recorded yet" answer that is not saved.
 4. **Server-side analysis.** From the rows it computes the behaviour snapshot, category and subcategory totals and
    their change from the previous period, a personality (balanced, impulsive, conservative or stressed, from the share
    of discretionary categories, `DISCRETIONARY_CATEGORIES` in `contracts/categories.ts`, and the monthly change), alerts (one dominant category, a large rise or fall, spending close
-   to or far below income), bills that were paid last period but not yet this one, and a month-end forecast for the
-   current month.
+   to or far below income), bills that were paid last period but not yet this one, and a month-end forecast while the
+   period is still running, from the Cairo days that passed since it began.
 5. **Model settings.** `getAiClient("report", plan)` in `api/ai-router.ts` refuses the request when
    `<plan>_ai_analysis` is `false` (checked from the settings too when no client can be built), and picks the provider and model (`report_provider_<plan>`,
    `report_model_<plan>`, through `mapModelName`; Ultra uses Pro's settings), the target words and the plan's token
@@ -111,8 +112,10 @@ printable HTML file that the browser downloads.
   none yet). The work question offers its quick answers in both forms (مهندس / مهندسة …), since the form is how the call
   knows how to address the user. The profile screen
   (`src/components/profile/ProfileScreen.tsx`) shows and edits the same fields with the same control.
-- **Inferences.** On the 1st at 01:00, `monthly-behavior-snapshots` runs `refreshMonthlyInferences` for the previous
-  month for every user with spending that month or a profile: it builds the behaviour snapshot, saves the inferred
+- **Inferences.** On the 1st at 01:00, `monthly-behavior-snapshots` runs `refreshMonthlyInferences` for the Cairo month
+  that just ended (`previousBusinessMonth` in `api/lib/app-time.ts`) for every user with spending that month or a
+  profile. It reads that month and the one before it as Cairo months (`businessMonthKeyRange`), groups days and
+  weekdays by the Cairo date (`businessDateKey`, `businessWeekday`), builds the behaviour snapshot, saves the inferred
   attributes (stability, spending behaviour, top categories and days, spikes, change, income ratio) into the profile,
   upserts `monthly_behavior_snapshots` and records a learning event.
 - **Contacts.** `addDynamicContact` cleans a name and relationship taken from a message and adds or updates the
@@ -149,8 +152,9 @@ printable HTML file that the browser downloads.
    to the contact, never its name.
 
 ## Tests
-`api/ai-router.monthly-report-guard.test.ts`, `api/jobs/monthly-report-job.test.ts`,
-`api/services/adaptive-question-engine.test.ts`, `api/services/lifestyle-inference-engine.test.ts`,
+`api/ai-router.monthly-report-guard.test.ts`, `api/jobs/monthly-report-job.test.ts`, `api/jobs/report-month.test.ts`,
+`api/services/financial-month.report-period.test.ts` (the report's Cairo periods),
+`api/services/adaptive-question-engine.test.ts`, `api/services/lifestyle-inference-engine.test.ts` (Cairo days of a snapshot),
 `api/services/user-profile-service.test.ts`, `api/lib/report-wait.test.ts` and `api/profile-router.schema.test.ts`.
 
 ## Known issues
@@ -169,15 +173,12 @@ Checked against the code; each one names where it lives.
    unsupported numbers is shown as it is.
 5. **Gap.** No `assertAiBudget` check runs before either report model call, and the WhatsApp job records no tokens for the
    user (`api/AGENTS.md`, rule 5).
-6. **Bug.** Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period
-   is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is
-   ahead of UTC; snapshot days are grouped by UTC date.
-7. **Debt.** `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns
+6. **Debt.** `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns
    with `ALTER TABLE` when a read fails, outside the migrations in `db/`.
-8. **Debt.** The behaviour snapshots are written but not read: `getProactiveInsights` in
+7. **Debt.** The behaviour snapshots are written but not read: `getProactiveInsights` in
    `api/services/finance-semantic-layer/proactive-insights.ts` has no caller, and no caller asks the facts pack to
    prefer a snapshot.
-9. **Debt.** Unused code: `api/services/batch-ai-service.ts` only simulates a Gemini batch job; `buildProReportPrompt` and
+8. **Debt.** Unused code: `api/services/batch-ai-service.ts` only simulates a Gemini batch job; `buildProReportPrompt` and
    `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are
    not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called
    only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.

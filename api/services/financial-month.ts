@@ -188,31 +188,17 @@ export function buildFinancialMonthPrompt(
   return lines.join("\n");
 }
 
-import { startOfBusinessDay } from "../lib/app-time";
+import { shiftMonthKey, startOfBusinessDay } from "../lib/app-time";
 
 /**
- * Get the date range for expenses query based on financial month.
- * Returns { startDate, endDate } that can be used in SQL WHERE clauses.
+ * A report's month and the one before it, as Cairo days: payday to the day before the next payday with a salary day,
+ * the calendar month without one. `days` counts the month's Cairo days, for the daily average.
  */
-export function getFinancialMonthDates(
-  calendarMonth: string,
-  salaryDay: number | null | undefined,
-): { startDate: Date; endDate: Date } {
-  if (!salaryDay || salaryDay <= 1) {
-    // No salary day or day 1 = normal calendar month
-    const start = new Date(calendarMonth + "-01");
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + 1);
-    return { startDate: start, endDate: end };
-  }
-
-  const range = getFinancialMonthRange(calendarMonth, salaryDay);
-  // endDate should be exclusive (day after the end date) for SQL queries
-  const endDate = new Date(range.end);
-  endDate.setDate(endDate.getDate() + 1);
-  endDate.setHours(0, 0, 0, 0);
-
-  return { startDate: range.start, endDate };
+export function reportPeriod(calendarMonth: string, salaryDay: number | null | undefined) {
+  const current = getFinancialMonthDayRange(calendarMonth, salaryDay);
+  const previous = getFinancialMonthDayRange(shiftMonthKey(calendarMonth, -1), salaryDay);
+  const days = (Date.parse(`${current.endDay}T00:00:00Z`) - Date.parse(`${current.startDay}T00:00:00Z`)) / 86_400_000 + 1;
+  return { current, previous, days };
 }
 
 export interface FinancialMonthDayRange {

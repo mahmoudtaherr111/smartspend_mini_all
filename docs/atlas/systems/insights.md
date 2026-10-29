@@ -73,6 +73,7 @@ flowchart LR
   router_ai ==> tbl_users
   router_export --> mod_ai_insights
   router_profile --> mod_ai_insights
+  router_profile --> sys_platform
   router_profile -.-> tbl_expenses
   router_profile -.-> tbl_onboarding_questions
   router_profile ==> tbl_monthly_behavior_snapshots

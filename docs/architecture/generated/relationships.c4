@@ -1112,6 +1112,7 @@ model {
   smartspend.api.trpc.profile.mergeContacts -[writes]-> smartspend.mysql.user_profiles
   smartspend.api.trpc.profile.refreshInferences -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.profile.refreshInferences -[uses]-> smartspend.api.modules.ai-insights
+  smartspend.api.trpc.profile.refreshInferences -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.profile.refreshInferences -[writes]-> smartspend.mysql.monthly_behavior_snapshots
   smartspend.api.trpc.profile.requestPhoneChange -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.profile.requestPhoneChange -[uses]-> smartspend.api.modules.auth

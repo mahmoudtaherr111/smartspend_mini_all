@@ -78,6 +78,31 @@ export function businessMonthRange(value = new Date(), timeZone = env.APP_TIMEZO
   return { start, endExclusive: nextStart };
 }
 
+/** The Gregorian month "YYYY-MM" in the business timezone, as a range of instants. */
+export function businessMonthKeyRange(month: string, timeZone = env.APP_TIMEZONE) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  // The 15th at noon UTC is inside that month in every configured deployment timezone.
+  return businessMonthRange(new Date(Date.UTC(year, monthNumber - 1, 15, 12)), timeZone);
+}
+
+/** "YYYY-MM" moved by `delta` months: plain calendar arithmetic, no clock or zone involved. */
+export function shiftMonthKey(month: string, delta: number): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const shifted = new Date(Date.UTC(year, monthNumber - 1 + delta, 1));
+  return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+/** "YYYY-MM" of the business month before the one `value` falls in: on the 1st at 01:00 Cairo, the month that just ended. */
+export function previousBusinessMonth(value = new Date(), timeZone = env.APP_TIMEZONE): string {
+  return shiftMonthKey(businessDateKey(value, timeZone).slice(0, 7), -1);
+}
+
+/** The day of the week in the business timezone, Sunday = 0 as `Date#getDay`. */
+export function businessWeekday(value = new Date(), timeZone = env.APP_TIMEZONE): number {
+  const [year, month, day] = businessDateKey(value, timeZone).split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
 const WALL_CLOCK = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/;
 
 /**
