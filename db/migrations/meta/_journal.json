@@ -281,6 +281,13 @@
       "when": 1793211027794,
       "tag": "0039_capture_device_health",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1793241199380,
+      "tag": "0040_whatsapp_cloud",
+      "breakpoints": true
     }
   ]
 }

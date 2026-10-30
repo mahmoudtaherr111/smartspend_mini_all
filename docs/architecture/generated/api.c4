@@ -2767,6 +2767,15 @@ model {
         path '/api/sse/otp'
       }
     }
+    get_webhooks_whatsapp = endpoint 'GET /api/webhooks/whatsapp' {
+      #webhook
+      description 'Declared in api/boot.ts.'
+      metadata {
+        file 'api/boot.ts'
+        method 'GET'
+        path '/api/webhooks/whatsapp'
+      }
+    }
     post_webhooks_paymob = endpoint 'POST /api/webhooks/paymob' {
       #webhook
       description 'Declared in api/boot.ts.'
@@ -2774,6 +2783,15 @@ model {
         file 'api/boot.ts'
         method 'POST'
         path '/api/webhooks/paymob'
+      }
+    }
+    post_webhooks_whatsapp = endpoint 'POST /api/webhooks/whatsapp' {
+      #webhook
+      description 'Declared in api/boot.ts.'
+      metadata {
+        file 'api/boot.ts'
+        method 'POST'
+        path '/api/webhooks/whatsapp'
       }
     }
   }
@@ -2930,6 +2948,14 @@ model {
       description 'Scheduled in api/boot.ts.'
       metadata {
         schedule '*/10 * * * *'
+        file 'api/boot.ts'
+      }
+    }
+    whatsapp-outbox = job 'whatsapp-outbox' {
+      technology 'cron * * * * *'
+      description 'Scheduled in api/boot.ts.'
+      metadata {
+        schedule '* * * * *'
         file 'api/boot.ts'
       }
     }

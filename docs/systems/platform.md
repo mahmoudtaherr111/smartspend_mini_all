@@ -70,7 +70,8 @@ storage, the contracts shared with the web app, and the retention job that prune
   policy per table (some per kind of row), each with a cut-off in days: thirty to ninety for telemetry, ad clicks,
   notification logs, token ledgers, voice
   usage and live-call incidents, and captured bank notifications (`capture_signals`, and a captured payment nobody answered); seven days for
-  the model's queue of captured messages (`capture_ai_jobs`); 60 days for a
+  the model's queue of captured messages (`capture_ai_jobs`); 90 days for WhatsApp messages we sent (`whatsapp_messages`,
+  whose recipient number is cleared after 30); 60 days for a
   captured payment held over the free monthly limit; 400 days for an
   answered captured payment's keys (`capture_events`); a year for the action audit
   trail and live voice calls; chat messages after ninety

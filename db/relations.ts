@@ -9,6 +9,8 @@ import {
   captureMemory,
   captureUserPairs,
   captureAiJobs,
+  whatsappMessages,
+  whatsappContacts,
   captureMarkers,
   localUsers,
   expenses,
@@ -657,6 +659,28 @@ export const captureUserPairsRelations = relations(captureUserPairs, ({ one }) =
   }),
   oauthUser: one(users, {
     fields: [captureUserPairs.userId],
+    references: [users.id],
+  }),
+}));
+
+export const whatsappMessagesRelations = relations(whatsappMessages, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [whatsappMessages.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [whatsappMessages.userId],
+    references: [users.id],
+  }),
+}));
+
+export const whatsappContactsRelations = relations(whatsappContacts, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [whatsappContacts.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [whatsappContacts.userId],
     references: [users.id],
   }),
 }));

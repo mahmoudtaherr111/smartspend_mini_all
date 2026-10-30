@@ -91,6 +91,15 @@ const envSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_SUBJECT: z.string().default("mailto:contact@smartspend.com"),
 
+  // WhatsApp Business Platform, Meta's Cloud API (decision 0038). Without the token and the phone number id nothing is
+  // sent; without the app secret and the verify token the webhook refuses everything.
+  WHATSAPP_CLOUD_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_CLOUD_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_CLOUD_WABA_ID: z.string().optional(),
+  WHATSAPP_CLOUD_APP_SECRET: z.string().optional(),
+  WHATSAPP_CLOUD_VERIFY_TOKEN: z.string().optional(),
+  WHATSAPP_CLOUD_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v23.0"),
+
   // Firebase FCM
   FIREBASE_PROJECT_ID: z.string().optional(),
   FIREBASE_CLIENT_EMAIL: z.string().optional(),

@@ -11,6 +11,7 @@ import { createContext } from "./context";
 import { env } from "./lib/env";
 import { getClientIp } from "./lib/get-client-ip";
 import { createHmac, timingSafeEqual } from "crypto";
+import { hasValidSignature, parseWebhook, subscriptionChallenge } from "./lib/whatsapp/webhook";
 import { grantProSubscription } from "./lib/subscription-service";
 import { buildGoogleAuthorizationUrl, createOAuthState } from "./auth-router";
 import {
@@ -63,6 +64,7 @@ function directPeerAddress(c: HonoContext): string | undefined {
 initErrorReporting();
 
 const paymobLog = createLogger("paymob-webhook");
+const whatsappWebhookLog = createLogger("whatsapp-webhook");
 
 const cronsEnabled = env.ENABLE_CRONS === "true";
 
@@ -140,6 +142,13 @@ scheduleProtectedJob("*/5 * * * *", "coaching-reminders", async () => {
 
 // Captured messages waiting for the model that no request's wake picked up: a restart, or a lease that ran out
 // (decision 0031). The request that queued one normally reads it within seconds.
+// WhatsApp messages queued in whatsapp_messages: sent, retried or given up (decision 0038). Nothing to do until the
+// owner sets the Cloud API token and number.
+scheduleProtectedJob("* * * * *", "whatsapp-outbox", async () => {
+  const { processOutbox } = await import("./lib/whatsapp/outbox");
+  await processOutbox();
+});
+
 scheduleProtectedJob("* * * * *", "capture-ai-sweep", async () => {
   const { drainCaptureModel } = await import("./lib/capture/ai-queue");
   await drainCaptureModel(100);
@@ -642,6 +651,33 @@ app.post("/api/webhooks/paymob", async (c) => {
     }
   }
 
+  return c.json({ ok: true });
+});
+
+// ─── WhatsApp Business Platform webhooks (decision 0038) ───
+// Meta subscribes the address once with our verify token, then signs every event with the app secret.
+app.get("/api/webhooks/whatsapp", (c) => {
+  const challenge = subscriptionChallenge(
+    { mode: c.req.query("hub.mode"), token: c.req.query("hub.verify_token"), challenge: c.req.query("hub.challenge") },
+    env.WHATSAPP_CLOUD_VERIFY_TOKEN,
+  );
+  return challenge === null ? c.text("Forbidden", 403) : c.text(challenge, 200);
+});
+
+app.post("/api/webhooks/whatsapp", async (c) => {
+  const raw = await c.req.text();
+  if (!hasValidSignature(raw, c.req.header("x-hub-signature-256"), env.WHATSAPP_CLOUD_APP_SECRET)) {
+    whatsappWebhookLog.warn({ event: "whatsapp.webhook.bad_signature" }, "WhatsApp webhook refused: signature");
+    return c.json({ error: "Invalid signature" }, 401);
+  }
+  let body: unknown;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    return c.json({ error: "Invalid JSON" }, 400);
+  }
+  const { handleWebhookEvents } = await import("./lib/whatsapp/outbox");
+  await handleWebhookEvents(parseWebhook(body));
   return c.json({ ok: true });
 });
 

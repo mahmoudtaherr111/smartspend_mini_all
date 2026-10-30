@@ -214,10 +214,10 @@ model {
       }
     }
     whatsapp = module 'WhatsApp' {
-      description 'Baileys WhatsApp client and its in-process sender blocklist; the phone codes themselves are shared state (`phone-challenge.ts`, `redis-client.ts`).'
+      description 'WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp), and, until it is removed, the Baileys client with its in-process sender blocklist; the phone codes themselves are shared state (`phone-challenge.ts`).'
       metadata {
-        files '2'
-        paths 'api/services/whatsapp-service.ts, api/services/otp-cache.ts'
+        files '6'
+        paths 'api/services/whatsapp-service.ts, api/services/otp-cache.ts, api/lib/whatsapp/**'
       }
     }
   }

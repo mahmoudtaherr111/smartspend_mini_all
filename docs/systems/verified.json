@@ -33,7 +33,7 @@
         "api/profile-router.ts#rest-of-file": "e5e0790a83d3",
         "api/services/phone-challenge.ts": "9c5aa7cfebc9",
         "api/services/turnstile-service.ts": "89a28fc96d49",
-        "api/services/user-purge-service.ts": "324da37aea89",
+        "api/services/user-purge-service.ts": "fbf2e1ad3e9c",
         "api/session-router.ts": "c29d8dcf4653",
         "api/webauthn-router.ts": "30c264b63011",
         "src/components/auth/BiometricLockOverlay.tsx": "b9b9b5184b56",
@@ -54,9 +54,9 @@
         "src/pages/Login.tsx": "7271e3fdadc3",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-29 753851e1",
-      "arabic": "9cb5ce27c17f",
-      "arabicChecked": "2026-10-29 753851e1"
+      "checked": "2026-10-29 f9202812",
+      "arabic": "8b34141508db",
+      "arabicChecked": "2026-10-29 f9202812"
     },
     "admin": {
       "files": {
@@ -434,9 +434,16 @@
     "notifications": {
       "files": {
         "api/admin-whatsapp-router.ts": "10816041799e",
+        "api/boot.ts#GET /api/webhooks/whatsapp": "c171594c3cb6",
+        "api/boot.ts#POST /api/webhooks/whatsapp": "f0578aa36095",
         "api/boot.ts#job:scheduled-notifications": "6ea4c4d1ef31",
         "api/boot.ts#job:seed-default-templates": "d552cda74417",
         "api/boot.ts#job:smart-activity-notifications": "f8e2642a5b89",
+        "api/boot.ts#job:whatsapp-outbox": "3a669c15b3e3",
+        "api/lib/whatsapp/client.ts": "79d775fa54b8",
+        "api/lib/whatsapp/outbox.ts": "fa1a13932afc",
+        "api/lib/whatsapp/templates.ts": "d2b4604d1a60",
+        "api/lib/whatsapp/webhook.ts": "b53832f7a45f",
         "api/notification-engine.ts": "bacf9829cd91",
         "api/profile-router.ts#profile.getInAppNotifications": "ff2aee79554d",
         "api/profile-router.ts#profile.markAllInAppNotificationsRead": "6a3d324697cb",
@@ -448,21 +455,21 @@
         "api/services/whatsapp-service.ts": "1177804a1f23",
         "src/pages/Notifications.tsx": "57d9f2b4b95f"
       },
-      "checked": "2026-10-29 2618b97e",
-      "arabic": "cb7a80bb3786",
-      "arabicChecked": "2026-10-27 12b1cd80"
+      "checked": "2026-10-30 f9202812",
+      "arabic": "4b76d706e1c9",
+      "arabicChecked": "2026-10-30 f9202812"
     },
     "platform": {
       "files": {
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "78a6f5066dbb",
+        "api/boot.ts#rest-of-file": "77f1a62677dd",
         "api/context.ts": "d2add89863df",
-        "api/jobs/data-retention-job.ts": "9eb0b19897a9",
+        "api/jobs/data-retention-job.ts": "f25bdcf5392f",
         "api/lib/app-time.ts": "7eaf4ab8fae6",
         "api/lib/cache-keys.ts": "89dc693d0c12",
-        "api/lib/env.ts": "c1943bec00ee",
+        "api/lib/env.ts": "6023d8de8159",
         "api/lib/error-logger.ts": "9cb0f25fe459",
         "api/lib/error-reporting.ts": "9891f7185094",
         "api/lib/log.ts": "65a6302d6f7d",
@@ -495,14 +502,14 @@
         "contracts/types.ts": "191164b8f041",
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
-        "db/relations.ts": "86fa5979e7cb",
-        "db/schema.ts": "2c0e343c28c0",
+        "db/relations.ts": "9503ef3e9f42",
+        "db/schema.ts": "69e25fe3cf31",
         "db/seed.ts": "811d2a0df636",
-        "db/table-classes.ts": "2837060826f4"
+        "db/table-classes.ts": "a49f3b277518"
       },
-      "checked": "2026-10-29 e8d275c8",
-      "arabic": "4d8e833295ad",
-      "arabicChecked": "2026-10-29 6c1b1486"
+      "checked": "2026-10-29 f9202812",
+      "arabic": "bb1e7f50462d",
+      "arabicChecked": "2026-10-29 f9202812"
     },
     "voice-calls": {
       "files": {

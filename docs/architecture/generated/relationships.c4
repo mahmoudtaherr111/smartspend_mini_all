@@ -11,9 +11,13 @@ model {
   smartspend.api.http.get_sse_otp -[uses]-> smartspend.api.modules.auth
   smartspend.api.http.get_sse_otp -[uses]-> smartspend.api.modules.security
   smartspend.api.http.get_sse_otp -[uses]-> smartspend.api.modules.whatsapp
+  smartspend.api.http.get_webhooks_whatsapp -[uses]-> smartspend.api.modules.platform
+  smartspend.api.http.get_webhooks_whatsapp -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.http.post_webhooks_paymob -[uses]-> smartspend.api.modules.billing
   smartspend.api.http.post_webhooks_paymob -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.post_webhooks_paymob -[uses]-> smartspend.shared.contracts
+  smartspend.api.http.post_webhooks_whatsapp -[uses]-> smartspend.api.modules.platform
+  smartspend.api.http.post_webhooks_whatsapp -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.user_businesses
@@ -76,6 +80,8 @@ model {
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.voice_call_incidents
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.voice_calls
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.voice_usage
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.whatsapp_contacts
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.whatsapp_messages
   smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.ai-governance
   smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.ai-insights
   smartspend.api.modules.ai-actions -[imports]-> smartspend.api.modules.ai-memory
@@ -451,6 +457,7 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_call_incidents
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_calls
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_usage
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.whatsapp_messages
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.capture-intake
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.coaching
@@ -534,7 +541,12 @@ model {
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.voice_calls
   smartspend.api.modules.whatsapp -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.whatsapp -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.whatsapp -[reads]-> smartspend.mysql.local_users
+  smartspend.api.modules.whatsapp -[reads]-> smartspend.mysql.whatsapp_contacts
+  smartspend.api.modules.whatsapp -[reads]-> smartspend.mysql.whatsapp_messages
   smartspend.api.modules.whatsapp -[uses]-> whatsapp
+  smartspend.api.modules.whatsapp -[writes]-> smartspend.mysql.whatsapp_contacts
+  smartspend.api.modules.whatsapp -[writes]-> smartspend.mysql.whatsapp_messages
   smartspend.api.scheduler.capture-ai-sweep -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.scheduler.capture-breaker -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.scheduler.capture-silent-devices -[uses]-> smartspend.api.modules.capture-intake
@@ -554,6 +566,7 @@ model {
   smartspend.api.scheduler.smart-activity-notifications -[uses]-> smartspend.api.modules.notifications
   smartspend.api.scheduler.taxonomy-migration -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.voice-call-memory -[uses]-> smartspend.api.modules.voice
+  smartspend.api.scheduler.whatsapp-outbox -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.trpc.admin.addAiProvider -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.admin.addAiProvider -[writes]-> smartspend.mysql.ai_providers
   smartspend.api.trpc.admin.checkProviderHealth -[reads]-> smartspend.mysql.ai_providers

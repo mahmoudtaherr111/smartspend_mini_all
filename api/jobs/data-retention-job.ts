@@ -201,6 +201,23 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
     description: "AI cost events (recordAICostMetric), kept as long as the token ledger they sit beside.",
   },
   {
+    tableName: "whatsapp_messages",
+    class: "E",
+    retainDays: 90,
+    dateColumn: "created_at",
+    description: "WhatsApp messages we sent and what happened to them (decision 0038); the recipient's number is cleared after 30 days.",
+    customCleanup: async (dryRun: boolean) => {
+      if (dryRun) return 0;
+      const cutoff30 = new Date(Date.now() - 30 * 24 * 3600 * 1000);
+      await db.execute(sql`
+        UPDATE whatsapp_messages SET recipient = NULL
+        WHERE created_at < ${cutoff30} AND recipient IS NOT NULL
+        LIMIT 5000
+      `);
+      return 0;
+    },
+  },
+  {
     tableName: "notification_logs",
     class: "E",
     retainDays: 90,

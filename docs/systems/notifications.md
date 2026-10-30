@@ -17,7 +17,8 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 | Destinations | `contracts/notification-types.ts#NOTIFICATION_TYPES`, `resolveNotificationTarget` | Each type and the page it opens; old stored destinations repaired |
 | Notification center | `src/components/NotificationBell.tsx`, `src/components/notifications/NotificationList.tsx`, `src/pages/Notifications.tsx`, `profile.getInAppNotifications`, `profile.markInAppNotificationRead`, `profile.markAllInAppNotificationsRead` | The bell with the unread count, the list in a sheet and on `/notifications`, marking one or all read |
 | Settings | `src/components/notifications/NotificationSettings.tsx` | This device's push state and the budget-alerts switch |
-| WhatsApp service | `api/services/whatsapp-service.ts#whatsappService` | A WhatsApp Web client (Baileys) with its session on disk; sends messages and reads verification codes |
+| WhatsApp service | `api/services/whatsapp-service.ts#whatsappService` | A WhatsApp Web client (Baileys) with its session on disk; sends messages and reads verification codes, until the Cloud API below replaces it |
+| WhatsApp Cloud API | `api/lib/whatsapp/` | Meta's official API: the client, the templates we submit, the signed webhook, and the outbox every message goes through ([decision 0038](../decisions/0038-whatsapp-cloud-api.md)) |
 | Verification state | `api/services/otp-cache.ts` | The blocklist of senders who sent codes that were not theirs, in the WhatsApp service's process |
 | WhatsApp admin | `api/admin-whatsapp-router.ts`, `src/components/admin/AdminWhatsAppTab.tsx` | Status and QR code, start and stop, direct messages, broadcasts, the verification switch |
 | Templates admin | the notification procedures of `api/admin-router.ts`, `src/components/admin/NotificationsTab.tsx` | Creating, scheduling and switching templates, running the activity check at once, logs and device statistics; see [admin](admin.md) |
@@ -96,6 +97,34 @@ runs; a stored template still holding the previous default title and body is upd
   one at a time, with a random pause of two to four minutes and a random choice between the `{a|b}` alternatives written
   in the text.
 
+## WhatsApp on Meta's Cloud API (being built)
+The owner chose Meta's official WhatsApp Business Platform ([decision 0038](../decisions/0038-whatsapp-cloud-api.md)).
+Its foundation is in place and does nothing until the owner sets the keys; the senders above still use Baileys.
+- **Configuration** (`api/lib/env.ts`): `WHATSAPP_CLOUD_ACCESS_TOKEN` and `WHATSAPP_CLOUD_PHONE_NUMBER_ID` to send,
+  `WHATSAPP_CLOUD_WABA_ID` for templates, `WHATSAPP_CLOUD_APP_SECRET` and `WHATSAPP_CLOUD_VERIFY_TOKEN` for the webhook,
+  `WHATSAPP_CLOUD_API_VERSION` (default `v23.0`). `whatsAppConfig()` is null until the first two are set.
+- **Client** (`api/lib/whatsapp/client.ts`): `sendTemplate` (the only message allowed outside the 24-hour window after
+  the person last wrote to us), `sendText` inside that window, `businessNumber` (display number, name, quality rating,
+  messaging limit), `listTemplates` and `createTemplate`. Numbers go out as international digits (`toWhatsAppNumber`).
+  A refusal is a `WhatsAppApiError` that says whether it may pass later (throttling, Meta's own outages) or never will
+  (a bad token, a number without WhatsApp, a missing template).
+- **Templates** (`api/lib/whatsapp/templates.ts`): `smartspend_verification` (authentication: Meta's own text, a copy
+  button, ten minutes), `smartspend_monthly_report` and `smartspend_payment_reminder` (utility), in Arabic. Marketing
+  templates will be written by admins in the console.
+- **Webhook** (`GET` and `POST /api/webhooks/whatsapp` in `api/boot.ts`): the GET echoes `hub.challenge` only for our
+  verify token; a POST is handled only when `X-Hub-Signature-256` is the app secret's HMAC-SHA256 of the raw body, and
+  without a secret nothing is. `parseWebhook` reads statuses (with Meta's failure code and pricing category) and
+  messages people send, by Meta's business-scoped user id when the person hides their number behind a username.
+- **Outbox** (`api/lib/whatsapp/outbox.ts`, table `whatsapp_messages`): every message we send is a row with its
+  purpose, template, non-secret parameters and status — never its text or a verification code. `sendMessageNow` sends a
+  code in the request that asks for it; `enqueueMessage` queues the rest for the protected job `whatsapp-outbox`
+  (every minute), which claims each row, sends it, and retries what may pass after 1, 5, 30, 120 and 720 minutes before
+  giving up. Status webhooks move a row forward only (sent, delivered, read) and end one that failed before delivery.
+- **People who write to us** (`recordInbound`, table `whatsapp_contacts`): found by Meta's user id or a phone account's
+  number; the time opens the 24-hour window, and a stop word alone («إيقاف», «STOP», «إلغاء الاشتراك» …) withdraws
+  marketing consent and is answered once inside the window. The text is never stored. The same row will hold the
+  report, reminder and marketing consents with when and where they were given (Law 151 of 2020).
+
 ## Where to change what
 | To change | Edit | Check with |
 | --- | --- | --- |
@@ -106,6 +135,7 @@ runs; a stored template still holding the previous default title and body is upd
 | The bell | `src/components/NotificationBell.tsx` | |
 | The WhatsApp connection and sending | `api/services/whatsapp-service.ts` | |
 | Broadcasts | `api/admin-whatsapp-router.ts` | |
+| The Cloud API, its templates, webhook and outbox | `api/lib/whatsapp/` | `api/lib/whatsapp/*.test.ts`, `tests/security/whatsapp-webhook.test.ts` |
 
 ## Rules for changes here
 1. Send through a template with `triggerEventNotification` or the batch sender, so the notification reaches the bell,
@@ -117,8 +147,10 @@ runs; a stored template still holding the previous default title and body is upd
 4. The WhatsApp session belongs to one process: never start it on more than one replica.
 
 ## Tests
-`api/services/whatsapp-service.receive.test.ts` covers the handling of incoming verification codes; nothing else in
-this system has a test.
+`api/services/whatsapp-service.receive.test.ts` covers the handling of incoming verification codes on Baileys.
+`api/lib/whatsapp/client.test.ts` (requests, numbers, which refusals are retried),
+`api/lib/whatsapp/webhook.test.ts` (subscription, signature, statuses, messages with and without a visible number,
+stop words), `api/lib/whatsapp/outbox.test.ts` (retry delays, status order) and `tests/security/whatsapp-webhook.test.ts` (the route refuses anything unsigned) cover the Cloud API.
 
 ## Known issues
 Checked against the code; each one names where it lives.

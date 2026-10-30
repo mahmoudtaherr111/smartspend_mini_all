@@ -88,6 +88,7 @@ flowchart LR
     tbl_voice_call_incidents[("voice_call_incidents")]
     tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
+    tbl_whatsapp_messages[("whatsapp_messages")]
   end
   ext_fireworks{{"Fireworks AI"}}
   ext_gemini{{"Google Gemini API"}}
@@ -233,6 +234,7 @@ flowchart LR
   mod_jobs ==> tbl_voice_call_incidents
   mod_jobs ==> tbl_voice_calls
   mod_jobs ==> tbl_voice_usage
+  mod_jobs ==> tbl_whatsapp_messages
   mod_platform --> ext_redis
   mod_platform --> ext_sentry
   mod_platform --> mod_contracts
@@ -332,6 +334,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `voice_call_incidents` | E | `jobs` | — |
 | `voice_calls` | E | `jobs` | `api-routers` |
 | `voice_usage` | E | `api-routers`, `jobs` | `api-routers` |
+| `whatsapp_messages` | E | `jobs` | — |
 
 ## Outside systems
 
@@ -395,6 +398,8 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `STORAGE_DRIVER` | no | `api/services/storage/index.ts` |
 | `STORAGE_PUBLIC_URL` | no | `api/services/storage/s3-driver.ts` |
 | `TRUST_PROXY` | yes | `api/boot.ts` |
+| `WHATSAPP_CLOUD_APP_SECRET` | yes | `api/boot.ts` |
+| `WHATSAPP_CLOUD_VERIFY_TOKEN` | yes | `api/boot.ts` |
 
 ## Source its explanation describes
 

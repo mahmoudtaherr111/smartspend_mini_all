@@ -121,6 +121,8 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   capture_user_pairs: "A",
   capture_ai_jobs: "D",
   capture_markers: "A",
+  whatsapp_messages: "E",
+  whatsapp_contacts: "A",
   user_analytics: "E",
   notification_logs: "E",
   ad_clicks: "E",

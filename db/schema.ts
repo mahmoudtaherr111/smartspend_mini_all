@@ -1225,6 +1225,80 @@ export const whatsappOtpCodes = mysqlTable(
   ]
 );
 
+// ─── WhatsApp Business Platform (decision 0038) ───
+/**
+ * One message we send through Meta's Cloud API, from the moment it is queued until Meta reports it read or failed.
+ * Never its text or a verification code: only the template, its non-secret parameters and what happened to it.
+ */
+export const whatsappMessages = mysqlTable(
+  "whatsapp_messages",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    /** The person it is for, when it is for an account (a verification code may precede the account). */
+    userId: int("user_id"),
+    userType: varchar("user_type", { length: 50 }),
+    /** International digits ("2010…"); cleared by the retention job after 30 days. */
+    recipient: varchar("recipient", { length: 20 }),
+    /** verification, report, reminder, admin_direct, broadcast. */
+    purpose: varchar("purpose", { length: 32 }).notNull(),
+    templateName: varchar("template_name", { length: 128 }),
+    language: varchar("language", { length: 10 }),
+    /** Template parameters; a verification code is never stored here. */
+    params: json("params"),
+    /** queued, sending, sent, delivered, read, failed, cancelled. */
+    status: varchar("status", { length: 16 }).notNull().default("queued"),
+    /** Meta's message id (wamid), which status webhooks name. */
+    metaMessageId: varchar("meta_message_id", { length: 128 }),
+    errorCode: int("error_code"),
+    attempts: int("attempts").notNull().default(0),
+    nextAttemptAt: datetime("next_attempt_at"),
+    broadcastId: int("broadcast_id"),
+    /** What Meta billed it as (authentication, utility, marketing, service), from the status webhook. */
+    pricingCategory: varchar("pricing_category", { length: 32 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    sentAt: datetime("sent_at"),
+    deliveredAt: datetime("delivered_at"),
+    readAt: datetime("read_at"),
+    failedAt: datetime("failed_at"),
+  },
+  (t) => [
+    uniqueIndex("whatsapp_messages_meta_idx").on(t.metaMessageId),
+    index("whatsapp_messages_user_idx").on(t.userId, t.userType, t.createdAt),
+    index("whatsapp_messages_due_idx").on(t.status, t.nextAttemptAt),
+    index("whatsapp_messages_broadcast_idx").on(t.broadcastId),
+    index("whatsapp_messages_created_idx").on(t.createdAt),
+  ],
+);
+
+/**
+ * What one account agreed to receive on WhatsApp, and when it last wrote to us (the 24-hour window in which a free
+ * reply is allowed). Consent is recorded with its time and where it was given (Law 151 of 2020).
+ */
+export const whatsappContacts = mysqlTable(
+  "whatsapp_contacts",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    /** Meta's business-scoped user id, which webhooks carry even when the person hides their number. */
+    bsuid: varchar("bsuid", { length: 160 }),
+    reportsConsent: boolean("reports_consent").notNull().default(false),
+    remindersConsent: boolean("reminders_consent").notNull().default(false),
+    marketingConsent: boolean("marketing_consent").notNull().default(false),
+    marketingConsentAt: datetime("marketing_consent_at"),
+    /** Where marketing consent was given or withdrawn: settings, sign_up, reply. */
+    marketingConsentSource: varchar("marketing_consent_source", { length: 32 }),
+    optedOutAt: datetime("opted_out_at"),
+    lastInboundAt: datetime("last_inbound_at"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("whatsapp_contacts_user_idx").on(t.userId, t.userType),
+    index("whatsapp_contacts_bsuid_idx").on(t.bsuid),
+  ],
+);
+
 // ─── API Key Error Logs (Admin Monitoring) ───
 export const apiKeyErrors = mysqlTable(
   "api_key_errors",

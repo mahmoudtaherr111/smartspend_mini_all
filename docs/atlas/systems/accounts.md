@@ -96,6 +96,8 @@ flowchart LR
     tbl_voice_call_incidents[("voice_call_incidents")]
     tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
+    tbl_whatsapp_contacts[("whatsapp_contacts")]
+    tbl_whatsapp_messages[("whatsapp_messages")]
     tbl_whatsapp_otp_codes[("whatsapp_otp_codes")]
   end
   ext_google_oauth{{"Google OAuth 2.0"}}
@@ -168,6 +170,8 @@ flowchart LR
   mod_accounts ==> tbl_voice_call_incidents
   mod_accounts ==> tbl_voice_calls
   mod_accounts ==> tbl_voice_usage
+  mod_accounts ==> tbl_whatsapp_contacts
+  mod_accounts ==> tbl_whatsapp_messages
   mod_auth --> ext_google_oauth
   mod_auth --> mod_security
   mod_auth --> sys_bank_messages
@@ -353,6 +357,8 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `voice_call_incidents` | E | `accounts` | — |
 | `voice_calls` | E | `accounts` | — |
 | `voice_usage` | E | `accounts` | — |
+| `whatsapp_contacts` | A | `accounts` | — |
+| `whatsapp_messages` | E | `accounts` | — |
 | `whatsapp_otp_codes` | D | `auth` | `auth` |
 
 ## Outside systems

@@ -563,6 +563,22 @@ model {
         storageClass 'E'
       }
     }
+    whatsapp_contacts = table 'whatsapp_contacts' {
+      #classA #dualOwner
+      description '13 columns, 2 indexes, storage class A.'
+      metadata {
+        export 'whatsappContacts'
+        storageClass 'A'
+      }
+    }
+    whatsapp_messages = table 'whatsapp_messages' {
+      #classE #dualOwner
+      description '20 columns, 5 indexes, storage class E.'
+      metadata {
+        export 'whatsappMessages'
+        storageClass 'E'
+      }
+    }
     whatsapp_otp_codes = table 'whatsapp_otp_codes' {
       #classD
       description '6 columns, 1 indexes, storage class D.'

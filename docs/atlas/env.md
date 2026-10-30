@@ -59,6 +59,12 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `VAPID_PRIVATE_KEY` | no | — | `api/notification-engine.ts` |
 | `VAPID_PUBLIC_KEY` | no | — | `api/notification-engine.ts` |
 | `VAPID_SUBJECT` | no | `mailto:contact@smartspend.com` | `api/notification-engine.ts` |
+| `WHATSAPP_CLOUD_ACCESS_TOKEN` | no | — | — |
+| `WHATSAPP_CLOUD_API_VERSION` | no | `v23.0` | — |
+| `WHATSAPP_CLOUD_APP_SECRET` | no | — | `api/boot.ts` |
+| `WHATSAPP_CLOUD_PHONE_NUMBER_ID` | no | — | — |
+| `WHATSAPP_CLOUD_VERIFY_TOKEN` | no | — | `api/boot.ts` |
+| `WHATSAPP_CLOUD_WABA_ID` | no | — | — |
 
 ## Read directly from process.env (not validated)
 
@@ -80,7 +86,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 
 ## Declared but never read outside the schema
 
-`GOOGLE_ANDROID_CLIENT_IDS`, `GOOGLE_IOS_CLIENT_IDS`, `OWNER_EMAIL`
+`GOOGLE_ANDROID_CLIENT_IDS`, `GOOGLE_IOS_CLIENT_IDS`, `OWNER_EMAIL`, `WHATSAPP_CLOUD_ACCESS_TOKEN`, `WHATSAPP_CLOUD_API_VERSION`, `WHATSAPP_CLOUD_PHONE_NUMBER_ID`, `WHATSAPP_CLOUD_WABA_ID`
 
 ## Frontend (Vite)
 
