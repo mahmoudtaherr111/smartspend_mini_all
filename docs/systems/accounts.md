@@ -23,7 +23,7 @@ account of the same person.
 | Client session | `src/hooks/useAuth.ts`, `src/providers/trpc.ts` | Who is signed in, the offline identity, tab sync, logout; the token header on every call |
 | Google sign-in | the `/api/auth/google/start` and `/api/auth/google/callback` routes in `api/boot.ts`, `api/auth-router.ts` | OAuth with a state cookie, account creation, the `google_session` cookie |
 | Google sign-in from the mobile app | `auth.signInWithGoogle` in `api/auth-router.ts`, `api/lib/google-id-token.ts` | Checks the ID token of the phone's Google SDK and answers a session token |
-| Mobile app sign-in | `mobile/app/lib/src/features/auth/`, `PhoneChallengeEvents` in `mobile/packages/smartspend_api` | Phone login, sign-up with WhatsApp verification and Google in the Flutter app; the token in the Keychain or Keystore; the route guard |
+| Mobile app sign-in | `mobile/app/lib/src/features/auth/` | Phone login, sign-up with WhatsApp verification and Google in the Flutter app; the token in the Keychain or Keystore; the route guard |
 | Phone accounts | `api/local-auth-router.ts`, `api/local-auth-utils.ts` | Register, login, WhatsApp verification codes, logout |
 | Passkeys | `api/webauthn-router.ts` | Register a passkey while signed in, sign in with it |
 | Sessions | `api/context.ts#createContext`, `api/lib/session-validation.ts`, `api/session-router.ts` | Resolving the caller from a token, the Redis cache, revocation |
@@ -77,7 +77,7 @@ The app shows the Google button only when the build has `GOOGLE_SERVER_CLIENT_ID
 - **Register** (`localAuth.register`): an Egyptian mobile number starting with 010, 011, 012 or 015
   (`api/local-auth-utils.ts#validatePhone`, Arabic digits accepted) that is not registered yet; a password of at least
   six characters, hashed with bcrypt; an optional referral code of another phone user. When `whatsapp_otp_enabled` is
-  `true`, the request must carry the ticket of a challenge the bot verified for this very number, and the challenge is
+  `true`, the request must carry the ticket of a challenge verified for this very number, and the challenge is
   spent in the transaction that creates the account (see WhatsApp verification).
 - **Login** (`localAuth.login`): the attempt passes login protection first; an unknown number is compared with a fixed
   hash, so it fails with the same message and takes as long as a wrong password.
@@ -88,30 +88,31 @@ The app shows the Google button only when the build has `GOOGLE_SERVER_CLIENT_ID
   (`webauthn.verifyAuthentication`) and a WhatsApp code sign-in set the same cookie.
 
 ### WhatsApp verification
-Reverse verification: the user proves the number by sending a code to the bot from it, so the message is the proof
-and the code only a label (`api/services/phone-challenge.ts`).
+We send a six-digit code to the number's WhatsApp and the person types it back (`api/services/phone-challenge.ts`,
+[decision 0038](../decisions/0038-whatsapp-cloud-api.md)). Delivery to that WhatsApp account proves the number, also
+when the person hides it behind a WhatsApp username.
 1. `localAuth.generateVerificationCode` passes the Turnstile check (`api/services/turnstile-service.ts`: in production
-   only a token Cloudflare accepts, and nothing at all without `TURNSTILE_SECRET_KEY`), then limits counted across
-   replicas: five codes per address in ten minutes, one per number a minute. It opens a challenge in
-   `whatsapp_otp_codes`, valid for ten minutes, and returns its code (`SS-` and six digits), a `ticket` and a `watch`
-   token, both HMACs of the row under a key derived from `JWT_SECRET`.
-2. The Login screen shows the code with a WhatsApp link that sends it to the bot, and follows the challenge on
-   `/api/sse/otp?challenge=<watch>`. The form shows the Turnstile widget when the build has `VITE_TURNSTILE_SITE_KEY`.
-3. The bot (`receiveVerificationCode` in `api/services/whatsapp-service.ts`) finds the open challenge with that code
-   and marks it verified only when the sender is the challenge's own number or its WhatsApp LID. A code from any
-   other number is refused and counted, and three block the sender for 15 minutes. The page hears `verified`,
-   `wrong_sender` or `expired`, never a phone number: at once when its stream reached the bot's process, and from the
-   database within three seconds on any other replica.
-4. On `verified` the page calls `localAuth.register` with the ticket; `localAuth.verifyOtp` does the same for an
-   existing account and returns a session. Both spend the challenge with a conditional delete, so a ticket works
-   once. Challenges nobody finished are deleted by the nightly `daily-auth-cleanup`.
+   only a token Cloudflare accepts, and nothing at all without `TURNSTILE_SECRET_KEY`). With WhatsApp not set up
+   (`whatsAppConfig()` null) it refuses with `SERVICE_UNAVAILABLE` before anything else, so nobody waits for a code
+   that cannot come. Then limits counted across replicas: five codes per address in ten minutes, one per number a
+   minute.
+2. It opens a challenge in `whatsapp_otp_codes`, valid for ten minutes, holding only an HMAC of the code under a key
+   derived from `JWT_SECRET`, and sends the code in the `smartspend_verification` authentication template
+   (`sendMessageNow`, recorded in `whatsapp_messages` without the code). The answer is the `ticket` (an HMAC of the row),
+   the ten minutes and `resendInSeconds` (60), never the code. A number without WhatsApp (Meta's 131026) answers
+   «الرقم ده مش عليه واتساب»; any other refusal asks to try again later.
+3. `localAuth.confirmVerificationCode` takes the ticket and six digits (Arabic-Indic digits read as the same code)
+   and marks the challenge verified. A wrong code is counted in the same statement that checks the limit, so five wrong
+   codes close the challenge even when guessed in parallel; the answer says how many tries are left, then asks for a
+   new code.
+4. `localAuth.register` then takes the ticket; `localAuth.verifyOtp` does the same for an existing account and returns
+   a session. Both spend the challenge with a conditional delete, so a ticket works once. Challenges nobody finished
+   are deleted by the nightly `daily-auth-cleanup`.
 
-The mobile app's sign-up (`RegisterScreen`) runs the same steps. It shows the Turnstile widget in a web view loaded as
-the API's origin when the build has `TURNSTILE_SITE_KEY`, opens the `wa.me` link with url_launcher, and follows the
-stream through `PhoneChallengeEvents`. The person leaves for WhatsApp in the middle, so `ChallengeFollower` opens the
-stream again when the app returns to the foreground and after a dropped connection (2 to 30 seconds apart, a minute
-after a 429), and stops at the challenge's deadline. A `wrong_sender` keeps it waiting for the right number instead of
-ending the attempt.
+The Login screen shows a six-box code field (`autocomplete="one-time-code"`) that confirms itself when full, the time
+left and a resend button after the wait. The mobile app's sign-up (`RegisterScreen`) runs the same steps with a code
+field the keyboard fills (`AutofillHints.oneTimeCode`; Android suggests WhatsApp's authentication codes), and shows the
+Turnstile widget again before a resend when the build has `TURNSTILE_SITE_KEY`.
 
 ### Passkeys
 - In Settings, a signed-in user registers a passkey: `webauthn.generateRegistrationOptions` stores a five-minute
@@ -218,7 +219,7 @@ Then, per procedure:
 | Google sign-in from the mobile app | `api/lib/google-id-token.ts`, `auth.signInWithGoogle` in `api/auth-router.ts`, the `GOOGLE_*_CLIENT_IDS` variables in `api/lib/env.ts`, `mobile/app/lib/src/features/auth/google_identity.dart` | `api/lib/google-id-token.test.ts`, `api/auth-router.google-id-token.test.ts`, `mobile/app/test/sign_in_screen_test.dart` |
 | The mobile app's sign-in, sign-up and route guard | `mobile/app/lib/src/features/auth/`, `mobile/app/lib/src/routing/app_router.dart` | the tests in `mobile/app/test/` (`flutter test`) |
 | Phone registration and login | `api/local-auth-router.ts`, `api/local-auth-utils.ts`, `src/pages/Login.tsx` | `api/local-auth-router.security.test.ts` |
-| Proving a phone number | `api/services/phone-challenge.ts`, `receiveVerificationCode` in `api/services/whatsapp-service.ts`, `/api/sse/otp` in `api/boot.ts`, `src/pages/Login.tsx` | `api/local-auth-router.phone.test.ts`, `api/services/whatsapp-service.receive.test.ts`, `tests/phone-challenge.test.ts` (database) |
+| Proving a phone number | `api/services/phone-challenge.ts`, `generateVerificationCode` and `confirmVerificationCode` in `api/local-auth-router.ts`, `src/pages/Login.tsx`, `mobile/app/lib/src/features/auth/register_screen.dart` | `api/local-auth-router.phone.test.ts`, `tests/phone-challenge.test.ts` (database), `mobile/app/test/register_screen_test.dart` |
 | The robot check | `api/services/turnstile-service.ts`, `src/components/auth/TurnstileWidget.tsx` | `tests/security/r3-turnstile-defense.test.ts` |
 | Login limits | `api/lib/login-protection.ts` and the `LOGIN_*` variables in `api/lib/env.ts` | `api/lib/login-protection.test.ts`, `api/lib/login-protection.integration.test.ts` |
 | Passkeys | `api/webauthn-router.ts`, `src/components/auth/PasskeySettings.tsx` | |
@@ -240,8 +241,8 @@ Then, per procedure:
    may write `role` or `plan` or delete a session (`tests/knowledge/architecture.test.ts`).
 5. A new user-owned table is added to `purgeUserData`.
 6. Never log tokens, codes or phone numbers (golden rule 10).
-7. A phone number is proved only through `api/services/phone-challenge.ts`: the bot marks the challenge verified, and
-   the ticket of the browser that started it spends it once. Never accept a phone number and a code from the client
+7. A phone number is proved only through `api/services/phone-challenge.ts`: the code we sent on WhatsApp, typed back,
+   marks the challenge verified, and the ticket of the screen that started it spends it once. Never accept a phone number and a code from the client
    as proof.
 
 ## Tests
@@ -278,7 +279,7 @@ Checked against the code; each one names where it lives.
     sign-in (`localAuth.verifyOtp`).
 
 ## Related systems
-- [Notifications and WhatsApp](notifications.md): the WhatsApp bot that receives the codes, and push subscriptions.
+- [Notifications and WhatsApp](notifications.md): the WhatsApp Cloud API that sends the codes, and push subscriptions.
 - [Server platform and data](platform.md): the Hono app, the order of its middleware, Redis.
 - [Admin console, support and growth tools](admin.md): user management, roles and deletion.
 - [Plans and payments](billing.md): the plan stored on the user.

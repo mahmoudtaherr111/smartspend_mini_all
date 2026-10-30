@@ -23,7 +23,6 @@ flowchart LR
   end
   subgraph g_api["API, routes and jobs"]
     http__api_auth["HTTP /api/auth/… · 2 routes"]
-    http__api_sse["GET /api/sse/otp"]
     job_daily_auth_cleanup["Job · daily-auth-cleanup"]
     router_auth["auth API · 5 procedures"]
     router_localAuth["localAuth API · 12 procedures"]
@@ -107,9 +106,6 @@ flowchart LR
   sys_platform[["Server platform and data (system)"]]
   sys_web_app[["Web and mobile app shell (system)"]]
   http__api_auth --> sys_platform
-  http__api_sse --> mod_auth
-  http__api_sse --> mod_security
-  http__api_sse --> sys_notifications
   job_daily_auth_cleanup --> mod_auth
   job_daily_auth_cleanup ==> tbl_auth_challenges
   mod_accounts ==> tbl_ad_clicks
@@ -254,9 +250,9 @@ flowchart LR
 | `auth.logout` | mutation | `authedProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support` |
 | `auth.me` | query | `publicProcedure` | `users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support` |
 | `auth.signInWithGoogle` | mutation | `strictPublicProcedure` | `users` | `users` | — |
+| `localAuth.confirmVerificationCode` | mutation | `strictPublicProcedure` | — | — | `Login` |
 | `localAuth.deleteUser` | mutation | `adminProcedure` | — | — | — |
 | `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | — | — | `Login` |
-| `localAuth.getBotPhoneNumber` | query | `publicProcedure` | — | — | `Login` |
 | `localAuth.getStats` | query | `adminProcedure` | `expenses`, `local_users` | — | — |
 | `localAuth.getVerificationSettings` | query | `publicProcedure` | — | — | `Login` |
 | `localAuth.listUsers` | query | `adminProcedure` | `expenses`, `local_users` | — | — |
@@ -290,7 +286,6 @@ flowchart LR
 | --- | --- | --- |
 | `GET /api/auth/google/callback` | http | `api/boot.ts` |
 | `GET /api/auth/google/start` | http | `api/boot.ts` |
-| `GET /api/sse/otp` | sse | `api/boot.ts` |
 | `daily-auth-cleanup` | job, `0 0 * * *` | `api/boot.ts` |
 
 ## Data
@@ -372,7 +367,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 Depends on: [Admin console, support and growth tools](admin.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -398,12 +393,11 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/accounts.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>50 files and declarations</summary>
+<details><summary>49 files and declarations</summary>
 
 - `api/auth-router.ts`
 - `api/boot.ts#GET /api/auth/google/callback`
 - `api/boot.ts#GET /api/auth/google/start`
-- `api/boot.ts#GET /api/sse/otp`
 - `api/boot.ts#job:daily-auth-cleanup`
 - `api/lib/access-control.ts`
 - `api/lib/admin-safe-fields.ts`

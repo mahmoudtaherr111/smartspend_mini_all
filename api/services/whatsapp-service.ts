@@ -9,118 +9,14 @@ import pino from "pino";
 import QRCode from "qrcode";
 import fs from "fs";
 import path from "path";
-import { EventEmitter } from "events";
-import { isSenderBlocked, recordWrongAttempt } from "./otp-cache";
-import { markPhoneChallengeVerified, openChallengesWithCode } from "./phone-challenge";
-import { createLogger, phoneTail } from "../lib/log";
+import { createLogger } from "../lib/log";
 
-// Codes, message text and phone numbers never reach a log line from here (golden rule 10); a number is
-// written as its last four digits.
+/**
+ * The WhatsApp Web client (Baileys) that still sends the monthly report, the phone-change code and admin messages
+ * until they move to Meta's Cloud API (decision 0038). Verification codes no longer come through here: they are sent
+ * by template (`api/lib/whatsapp/`). Message text and phone numbers never reach a log line (golden rule 10).
+ */
 const log = createLogger("whatsapp");
-
-/**
- * `challenge:<id>` events for `/api/sse/otp` in this process: instant when the page's stream reached the process
- * that holds WhatsApp. A stream on another replica learns the same from the database a few seconds later.
- */
-export const otpEvents = new EventEmitter();
-
-/**
- * A code arrived on WhatsApp from `senderPhone` (already normalised to `01…` where it was a `20…` number).
- *
- * The challenges live in MySQL (`api/services/phone-challenge.ts`), so a sign-up started on any replica is
- * verified here. The sender must be the challenge's own number, or its WhatsApp LID: the message is the proof,
- * the code only says which challenge it answers.
- */
-export async function receiveVerificationCode(
-  code: string,
-  senderPhone: string,
-): Promise<"verified" | "wrong_sender" | "unknown" | "blocked" | "error"> {
-  if (isSenderBlocked(senderPhone)) {
-    log.warn({ event: "whatsapp.otp.blocked_sender", phone: phoneTail(senderPhone) }, "Ignored a code from a blocked sender");
-    return "blocked";
-  }
-  try {
-    const candidates = await openChallengesWithCode(code);
-    const challenge = candidates.find((candidate) => matchPhoneNumber(candidate.phone, senderPhone));
-
-    if (challenge) {
-      if (await markPhoneChallengeVerified(challenge.id)) {
-        log.info({ event: "whatsapp.otp.verified", phone: phoneTail(senderPhone) }, "A number proved it sent its code");
-        otpEvents.emit(`challenge:${challenge.id}`, { status: "verified" });
-      }
-      return "verified";
-    }
-    recordWrongAttempt(senderPhone);
-    if (candidates.length === 0) {
-      log.warn({ event: "whatsapp.otp.unknown_code", phone: phoneTail(senderPhone) }, "An unknown or expired code arrived");
-      return "unknown";
-    }
-    log.warn(
-      { event: "whatsapp.otp.wrong_sender", expected: phoneTail(candidates[0].phone), sender: phoneTail(senderPhone) },
-      "A code arrived from a number other than the one it was issued for",
-    );
-    // Neither number goes to the page: whoever watches a challenge learns only that it failed.
-    for (const candidate of candidates) otpEvents.emit(`challenge:${candidate.id}`, { status: "wrong_sender" });
-    return "wrong_sender";
-  } catch (err) {
-    log.error({ err, event: "whatsapp.otp.lookup_failed" }, "Could not check an incoming code");
-    return "error";
-  }
-}
-
-function matchPhoneNumber(expectedPhone: string, senderPhone: string): boolean {
-  const expectedClean = expectedPhone.replace(/\D/g, ""); // e.g. "010XXXXXXXX"
-  const senderClean = senderPhone.replace(/\D/g, "");     // e.g. a 14-digit LID
-  
-  if (expectedClean === senderClean) return true;
-  
-  // Format as 20xxxxxxxxx
-  let internationalPhone = expectedClean;
-  if (expectedClean.startsWith("0")) {
-    internationalPhone = "2" + expectedClean.substring(1); // "2010XXXXXXXX"
-  } else if (!expectedClean.startsWith("2")) {
-    internationalPhone = "20" + expectedClean;
-  }
-  
-  // Check LID mapping in whatsapp_auth_info
-  try {
-    const lidFile = path.join(process.cwd(), "whatsapp_auth_info", `lid-mapping-${internationalPhone}.json`);
-    if (fs.existsSync(lidFile)) {
-      const content = fs.readFileSync(lidFile, "utf-8").trim();
-      const mappedLid = JSON.parse(content); // e.g. a 14-digit LID
-      if (mappedLid.replace(/\D/g, "") === senderClean) {
-        log.info({ event: "whatsapp.lid.matched", phone: phoneTail(internationalPhone) }, "Sender matched through its LID");
-        return true;
-      }
-    }
-  } catch (e) {
-    log.error({ err: e, event: "whatsapp.lid.read_failed" }, "Could not read a LID mapping");
-  }
-  
-  // Also try reverse LID file
-  try {
-    const reverseLidFile = path.join(process.cwd(), "whatsapp_auth_info", `lid-mapping-${senderClean}_reverse.json`);
-    if (fs.existsSync(reverseLidFile)) {
-      const content = fs.readFileSync(reverseLidFile, "utf-8").trim();
-      const mappedJid = JSON.parse(content); // e.g. "2010XXXXXXXX@s.whatsapp.net"
-      const mappedPhone = mappedJid.split("@")[0].replace(/\D/g, "");
-      
-      let mappedClean = mappedPhone;
-      if (mappedPhone.startsWith("20") && mappedPhone.length === 12) {
-        mappedClean = "0" + mappedPhone.substring(2);
-      }
-      
-      if (mappedClean === expectedClean) {
-        log.info({ event: "whatsapp.lid.reverse_matched", phone: phoneTail(expectedClean) }, "Sender matched through a reverse LID");
-        return true;
-      }
-    }
-  } catch (e) {
-    log.error({ err: e, event: "whatsapp.lid.reverse_read_failed" }, "Could not read a reverse LID mapping");
-  }
-
-  return false;
-}
 
 type WhatsAppStatus = "disconnected" | "connecting" | "qr" | "connected";
 
@@ -225,69 +121,6 @@ class WhatsAppService {
         log.info({ event: "whatsapp.connection.open" }, "WhatsApp connected");
         this.status = "connected";
         this.qrCode = null; // No longer need QR
-      }
-    });
-
-    // Save LID mappings automatically when Baileys detects contacts
-    this.sock.ev.on("contacts.upsert", (contacts) => {
-      for (const contact of contacts) {
-        if (contact.id && contact.lid) {
-          const phoneClean = contact.id.split("@")[0].replace(/\D/g, "");
-          const lidClean = contact.lid.split("@")[0].replace(/\D/g, "");
-          try {
-            const lidFile = path.join(this.sessionDir, `lid-mapping-${phoneClean}.json`);
-            fs.writeFileSync(lidFile, JSON.stringify(lidClean));
-            const reverseLidFile = path.join(this.sessionDir, `lid-mapping-${lidClean}_reverse.json`);
-            fs.writeFileSync(reverseLidFile, JSON.stringify(contact.id));
-            log.info({ event: "whatsapp.lid.saved", phone: phoneTail(phoneClean) }, "Saved a LID mapping");
-          } catch (e) {
-            log.error({ err: e, event: "whatsapp.lid.save_failed" }, "Could not save a LID mapping");
-          }
-        }
-      }
-    });
-
-    // Listen to incoming messages for the reverse-verification feature (Click to chat)
-    this.sock.ev.on("messages.upsert", async (m) => {
-      if (m.type === "notify") {
-        for (const msg of m.messages) {
-          if (!msg.key.fromMe && msg.message) {
-            const text =
-              msg.message.conversation ||
-              msg.message.extendedTextMessage?.text;
-
-            let code = null;
-            if (text) {
-              const match = text.match(/SS-\d{6}/);
-              if (match) {
-                code = match[0];
-              } else if (text.trim().startsWith("SS-")) {
-                code = text.trim();
-              }
-            }
-
-            if (!code) continue;
-
-              const remoteJid = msg.key.remoteJid;
-              if (!remoteJid) continue;
-
-              // Clean up the sender's JID to extract the pure phone number
-              // If it's a group, the sender is msg.key.participant, otherwise it's remoteJid
-              const senderJid = msg.key.participant || remoteJid;
-              let senderPhone = senderJid.split("@")[0];
-              // If the JID contains a colon (like in multi-device), split it
-              if (senderPhone.includes(":")) {
-                senderPhone = senderPhone.split(":")[0];
-              }
-
-              // Convert 201xxxxxxxxx to 01xxxxxxxxx to match our database format
-              if (senderPhone.startsWith("20") && senderPhone.length === 12) {
-                senderPhone = "0" + senderPhone.substring(2);
-              }
-
-              await receiveVerificationCode(code, senderPhone);
-          }
-        }
       }
     });
   }

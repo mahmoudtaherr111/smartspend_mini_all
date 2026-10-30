@@ -48,7 +48,6 @@ flowchart LR
   ext_firebase{{"Firebase"}}
   ext_web_push{{"Web Push"}}
   ext_whatsapp{{"WhatsApp through Baileys"}}
-  sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_platform[["Server platform and data (system)"]]
   http__api_webhooks --> mod_whatsapp
@@ -70,7 +69,6 @@ flowchart LR
   mod_notifications ==> tbl_notification_templates
   mod_notifications ==> tbl_push_subscriptions
   mod_whatsapp --> ext_whatsapp
-  mod_whatsapp --> sys_accounts
   mod_whatsapp --> sys_platform
   mod_whatsapp -.-> tbl_local_users
   mod_whatsapp ==> tbl_whatsapp_contacts
@@ -95,7 +93,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `notifications` — Notifications | Web push (VAPID) and Firebase Cloud Messaging delivery, scheduled and event-triggered notifications, budget alerts, activity nudges and the default templates. | 2 |
-| `whatsapp` — WhatsApp | WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp), and, until it is removed, the Baileys client with its in-process sender blocklist; the phone codes themselves are shared state (`phone-challenge.ts`). | 6 |
+| `whatsapp` — WhatsApp | WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp), and, until it is removed, the Baileys client that still sends reports, phone-change codes and admin messages; verification codes are challenges in MySQL (`phone-challenge.ts`). | 5 |
 
 ## API procedures
 
@@ -154,7 +152,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Other systems
 
-Depends on: [Accounts, sign-in and security](accounts.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md).
+Depends on: [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md).
 
 Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
@@ -174,7 +172,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/notifications.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>21 files and declarations</summary>
+<details><summary>20 files and declarations</summary>
 
 - `api/admin-whatsapp-router.ts`
 - `api/boot.ts#GET /api/webhooks/whatsapp`
@@ -194,7 +192,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/profile-router.ts#profile.savePushSubscription`
 - `api/profile-router.ts#rest-of-file`
 - `api/services/firebase.ts`
-- `api/services/otp-cache.ts`
 - `api/services/whatsapp-service.ts`
 - `src/pages/Notifications.tsx`
 

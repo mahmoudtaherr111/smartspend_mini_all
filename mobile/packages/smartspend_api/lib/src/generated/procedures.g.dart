@@ -215,8 +215,8 @@ final class ImageProcedures {
 final class LocalAuthProcedures {
   const LocalAuthProcedures._();
 
+  ApiMutation get confirmVerificationCode => const ApiMutation('localAuth.confirmVerificationCode', builder: 'strictPublicProcedure', hasInput: true);
   ApiMutation get generateVerificationCode => const ApiMutation('localAuth.generateVerificationCode', builder: 'strictPublicProcedure', hasInput: true);
-  ApiQuery get getBotPhoneNumber => const ApiQuery('localAuth.getBotPhoneNumber', builder: 'publicProcedure');
   ApiQuery get getVerificationSettings => const ApiQuery('localAuth.getVerificationSettings', builder: 'publicProcedure');
   ApiMutation get login => const ApiMutation('localAuth.login', builder: 'publicProcedure', hasInput: true);
   ApiMutation get logout => const ApiMutation('localAuth.logout', builder: 'publicProcedure');

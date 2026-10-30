@@ -104,7 +104,7 @@
       "routers": ["auth", "localAuth", "session", "webauthn"],
       "procedures": ["profile.getMyProfile", "profile.updateProfile", "profile.updateUserInfo", "profile.requestPhoneChange", "profile.confirmPhoneChange", "profile.deleteMyAccount"],
       "pages": ["Login", "AuthCallback", "Settings"],
-      "routes": ["GET /api/auth/google/start", "GET /api/auth/google/callback", "GET /api/sse/otp"],
+      "routes": ["GET /api/auth/google/start", "GET /api/auth/google/callback"],
       "jobs": ["daily-auth-cleanup"]
     },
     {

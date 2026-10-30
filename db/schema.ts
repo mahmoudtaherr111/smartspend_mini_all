@@ -1215,7 +1215,10 @@ export const whatsappOtpCodes = mysqlTable(
   {
     id: int("id").primaryKey().autoincrement(),
     phone: varchar("phone", { length: 20 }).notNull(),
-    code: varchar("code", { length: 20 }).notNull(),
+    /** HMAC of the six-digit code we sent on WhatsApp (decision 0038); the code itself is never stored. */
+    codeHash: varchar("code_hash", { length: 64 }).notNull(),
+    /** Wrong codes typed for this challenge; five close it. */
+    attempts: int("attempts").notNull().default(0),
     verified: boolean("verified").notNull().default(false),
     expiresAt: datetime("expires_at").notNull(),
     createdAt: timestamp("created_at").defaultNow(),

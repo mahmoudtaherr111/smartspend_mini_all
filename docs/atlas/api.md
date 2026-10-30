@@ -43,7 +43,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `export` | `api/export-router.ts` | 3 | 0 | 3 | `adminProcedure`, `authedProcedure`, `proReportProcedure` |
 | `goals` | `api/goals-router.ts` | 5 | 1 | 4 | `authedProcedure`, `goalAnalysisProcedure` |
 | `image` | `api/image-router.ts` | 1 | 0 | 1 | `receiptsProcedure` |
-| `localAuth` | `api/local-auth-router.ts` | 12 | 5 | 7 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
+| `localAuth` | `api/local-auth-router.ts` | 12 | 4 | 8 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
 | `pro` | `api/pro-router.ts` | 6 | 3 | 3 | `adminProcedure`, `authedProcedure` |
 | `profile` | `api/profile-router.ts` | 22 | 6 | 16 | `authedProcedure` |
 | `referral` | `api/referral-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
@@ -320,9 +320,9 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| `localAuth.confirmVerificationCode` | mutation | `strictPublicProcedure` | yes | — | — | `api/services/phone-challenge.ts` | `src/pages/Login.tsx` |
 | `localAuth.deleteUser` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/services/user-purge-service.ts` | — |
-| `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | yes | — | — | `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts`, `api/services/turnstile-service.ts` | `src/pages/Login.tsx` |
-| `localAuth.getBotPhoneNumber` | query | `publicProcedure` | no | — | — | `api/services/whatsapp-service.ts` | `src/pages/Login.tsx` |
+| `localAuth.generateVerificationCode` | mutation | `strictPublicProcedure` | yes | — | — | `api/lib/settings-cache.ts`, `api/lib/whatsapp/client.ts`, `api/lib/whatsapp/outbox.ts`, `api/lib/whatsapp/templates.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts`, `api/services/turnstile-service.ts` | `src/pages/Login.tsx` |
 | `localAuth.getStats` | query | `adminProcedure` | no | `expenses`, `local_users` | — | — | — |
 | `localAuth.getVerificationSettings` | query | `publicProcedure` | no | — | — | `api/lib/settings-cache.ts` | `src/pages/Login.tsx` |
 | `localAuth.listUsers` | query | `adminProcedure` | no | `expenses`, `local_users` | — | — | — |

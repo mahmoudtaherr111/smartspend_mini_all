@@ -84,21 +84,33 @@ void main() {
       'localAuth.generateVerificationCode',
       (_) => {
         'success': true,
-        'code': 'SS-482913',
         'ticket': '12.4f2a',
-        'watch': '12.9bc1',
         'expiresInSeconds': 600,
+        'resendInSeconds': 60,
       },
     );
 
     final challenge = await api.startPhoneChallenge(phone: '01012345678');
 
-    expect(challenge.code, 'SS-482913');
     expect(challenge.ticket, '12.4f2a');
-    expect(challenge.watch, '12.9bc1');
     expect(challenge.expiresIn, const Duration(minutes: 10));
+    expect(challenge.resendIn, const Duration(minutes: 1));
     expect(server.lastInput('localAuth.generateVerificationCode'), {
       'phone': '01012345678',
+    });
+  });
+
+  test('localAuth.confirmVerificationCode', () async {
+    server.answer(
+      'localAuth.confirmVerificationCode',
+      (_) => {'verified': true},
+    );
+
+    await api.confirmPhoneCode(ticket: '12.4f2a', code: '482913');
+
+    expect(server.lastInput('localAuth.confirmVerificationCode'), {
+      'verificationTicket': '12.4f2a',
+      'code': '482913',
     });
   });
 
@@ -115,17 +127,6 @@ void main() {
     );
     expect(await api.phoneVerificationRequired(), isFalse);
   });
-
-  test(
-    'localAuth.getBotPhoneNumber, and its placeholder while offline',
-    () async {
-      server.answer('localAuth.getBotPhoneNumber', (_) => '201555000111');
-      expect(await api.verificationBotNumber(), '201555000111');
-
-      server.answer('localAuth.getBotPhoneNumber', (_) => '201000000000');
-      expect(await api.verificationBotNumber(), isNull);
-    },
-  );
 
   test('auth.me and localAuth.me: whichever knows the token answers', () async {
     expect(await api.me(), isNull);

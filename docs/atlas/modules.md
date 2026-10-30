@@ -10,7 +10,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | --- | --- | --- | --- | --- | --- |
 | `api-core` | API server core | 5 | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `coaching`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | — |
 | `api-routers` | tRPC routers and HTTP sub-apps | 26 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq` |
-| `auth` | Authentication and sessions | 6 | `capture-intake`, `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `capture-intake`, `jobs`, `whatsapp` | `google-oauth` |
+| `auth` | Authentication and sessions | 6 | `capture-intake`, `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `capture-intake`, `jobs` | `google-oauth` |
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `capture-intake` | `turnstile` |
 | `platform` | Platform services | 11 | `contracts`, `database` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `capture-reader`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `mysql` |
@@ -21,7 +21,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
 | `jobs` | Scheduled job bodies | 6 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `contracts`, `database`, `ledger`, `platform` | `ai-actions`, `api-core`, `api-routers`, `jobs`, `ledger` | `firebase`, `web-push` |
-| `whatsapp` | WhatsApp | 6 | `auth`, `database`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
+| `whatsapp` | WhatsApp | 5 | `database`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 39 | `ai-actions`, `ai-insights`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 14 | `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `capture-ai-reader`, `jobs` | — |
@@ -274,7 +274,7 @@ Web push (VAPID) and Firebase Cloud Messaging delivery, scheduled and event-trig
 
 ### `whatsapp` — WhatsApp
 
-WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp), and, until it is removed, the Baileys client with its in-process sender blocklist; the phone codes themselves are shared state (`phone-challenge.ts`).
+WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp), and, until it is removed, the Baileys client that still sends reports, phone-change codes and admin messages; verification codes are challenges in MySQL (`phone-challenge.ts`).
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -282,8 +282,7 @@ WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the t
 | `api/lib/whatsapp/outbox.ts` | `database`, `platform` | — | `local_users`, `whatsapp_contacts`, `whatsapp_messages` | `whatsapp_contacts`, `whatsapp_messages` |
 | `api/lib/whatsapp/templates.ts` | — | — | — | — |
 | `api/lib/whatsapp/webhook.ts` | — | — | — | — |
-| `api/services/otp-cache.ts` | `platform` | — | — | — |
-| `api/services/whatsapp-service.ts` | `auth`, `platform` | `whatsapp` | — | — |
+| `api/services/whatsapp-service.ts` | `platform` | `whatsapp` | — | — |
 
 ### `voice` — Voice
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_app/src/features/auth/session_controller.dart';
 
 import 'support/test_app.dart';
@@ -41,12 +40,14 @@ Future<void> _tapRegister(WidgetTester tester) async {
   await tester.tap(_registerButton);
 }
 
-/// Pumps a few frames: the verification panel spins while it waits, so it never settles.
+/// Pumps a few frames: the panel's countdown ticks every second, so it never settles.
 Future<void> _frames(WidgetTester tester) async {
   for (var i = 0; i < 5; i++) {
     await tester.pump(const Duration(milliseconds: 50));
   }
 }
+
+Finder get _codeField => _field('كود التأكيد');
 
 FakeApi _verifyingApi() => FakeApi()
   ..answer('localAuth.getVerificationSettings', (_) => {'enabled': true})
@@ -54,12 +55,12 @@ FakeApi _verifyingApi() => FakeApi()
     'localAuth.generateVerificationCode',
     (_) => {
       'success': true,
-      'code': 'SS-123456',
       'ticket': '9.ticket',
-      'watch': '9.watch',
       'expiresInSeconds': 600,
+      'resendInSeconds': 60,
     },
   )
+  ..answer('localAuth.confirmVerificationCode', (_) => {'verified': true})
   ..answer('localAuth.register', (_) => _created())
   ..answer('localAuth.me', (_) => phoneUser());
 
@@ -123,7 +124,7 @@ void main() {
   });
 
   group('with WhatsApp verification on', () {
-    testWidgets('the account is created once the bot sees the code', (
+    testWidgets('the code sent on WhatsApp, typed back, creates the account', (
       tester,
     ) async {
       final api = _verifyingApi();
@@ -136,25 +137,22 @@ void main() {
       expect(api.lastInput('localAuth.generateVerificationCode'), {
         'phone': '01012345678',
       });
-      expect(find.text('أكّد رقمك من واتساب'), findsOneWidget);
-      expect(find.text('SS-123456'), findsOneWidget);
-      expect(find.text('فاضل 10:00'), findsOneWidget);
-      expect(app.challenges.watches, ['9.watch']);
+      expect(find.text('أكّد رقمك'), findsOneWidget);
+      expect(find.text('الكود صالح لمدة 10:00'), findsOneWidget);
+      expect(find.text('ابعت كود جديد بعد 60 ثانية'), findsOneWidget);
       expect(api.paths, isNot(contains('localAuth.register')));
 
-      await tester.tap(find.text('ابعته من واتساب'));
-      await _frames(tester);
-      expect(
-        app.openedLinks.single.toString(),
-        'https://wa.me/201555000111?text=${Uri.encodeComponent('تفعيل حسابي: SS-123456')}',
-      );
-
       await tester.pump(const Duration(seconds: 2));
-      expect(find.text('فاضل 9:58'), findsOneWidget);
+      expect(find.text('الكود صالح لمدة 9:58'), findsOneWidget);
 
-      app.challenges.send(PhoneChallengeOutcome.verified);
+      // Six digits confirm on their own; Arabic-Indic digits are read as the same code.
+      await tester.enterText(_codeField, '٤٨٢٩١٣');
       await tester.pumpAndSettle();
 
+      expect(api.lastInput('localAuth.confirmVerificationCode'), {
+        'verificationTicket': '9.ticket',
+        'code': '482913',
+      });
       expect(api.lastInput('localAuth.register'), {
         'name': 'منى',
         'phone': '01012345678',
@@ -166,7 +164,33 @@ void main() {
       expect(find.byType(NavigationBar), findsOneWidget);
     });
 
-    testWidgets('a code from another number warns and keeps waiting', (
+    testWidgets('a wrong code shows the server message and clears the field', (
+      tester,
+    ) async {
+      final api = _verifyingApi()
+        ..answer(
+          'localAuth.confirmVerificationCode',
+          (_) => throw const TrpcFailure(
+            'BAD_REQUEST',
+            400,
+            'الكود غلط. فاضل 4 محاولات.',
+          ),
+        );
+      final app = TestApp(api: api);
+      await _fillForm(tester, app);
+      await _tapRegister(tester);
+      await _frames(tester);
+
+      await tester.enterText(_codeField, '111111');
+      await _frames(tester);
+
+      expect(find.text('الكود غلط. فاضل 4 محاولات.'), findsOneWidget);
+      expect(tester.widget<TextField>(_codeField).controller!.text, isEmpty);
+      expect(api.paths, isNot(contains('localAuth.register')));
+      expect(app.session, isA<SignedOut>());
+    });
+
+    testWidgets('confirming fewer than six digits asks for the whole code', (
       tester,
     ) async {
       final app = TestApp(api: _verifyingApi());
@@ -174,35 +198,43 @@ void main() {
       await _tapRegister(tester);
       await _frames(tester);
 
-      app.challenges.send(PhoneChallengeOutcome.wrongSender);
+      await tester.enterText(_codeField, '4829');
+      await tester.tap(find.widgetWithText(FilledButton, 'تأكيد'));
       await _frames(tester);
 
+      expect(find.text('الكود 6 أرقام.'), findsOneWidget);
       expect(
-        find.text(
-          'الكود وصل من رقم واتساب غير الرقم اللي بتسجّل بيه. ابعته من نفس الرقم.',
-        ),
-        findsOneWidget,
+        app.api.paths,
+        isNot(contains('localAuth.confirmVerificationCode')),
       );
-      expect(app.challenges.watches, ['9.watch', '9.watch']);
-      expect(app.challenges.connected, isTrue);
-      expect(app.session, isA<SignedOut>());
     });
 
-    testWidgets('an expired challenge goes back to the form', (tester) async {
-      final app = TestApp(api: _verifyingApi());
+    testWidgets('a new code can be asked for after the wait', (tester) async {
+      final api = _verifyingApi();
+      final app = TestApp(api: api);
       await _fillForm(tester, app);
       await _tapRegister(tester);
       await _frames(tester);
+      int sends() => api.paths
+          .where((path) => path == 'localAuth.generateVerificationCode')
+          .length;
+      expect(sends(), 1);
 
-      app.challenges.send(PhoneChallengeOutcome.expired);
-      await tester.pumpAndSettle();
+      await tester.tap(find.text('ابعت كود جديد بعد 60 ثانية'));
+      await _frames(tester);
+      expect(sends(), 1);
 
-      expect(find.text('وقت التأكيد خلص. اطلب كود جديد.'), findsOneWidget);
-      expect(_registerButton, findsOneWidget);
-      expect(app.api.paths, isNot(contains('localAuth.register')));
+      await tester.pump(const Duration(seconds: 60));
+      await tester.tap(find.text('ابعت كود جديد'));
+      await _frames(tester);
+
+      expect(sends(), 2);
+      expect(find.text('بعتنالك كود جديد.'), findsOneWidget);
     });
 
-    testWidgets('the countdown running out ends the wait too', (tester) async {
+    testWidgets('the countdown running out goes back to the form', (
+      tester,
+    ) async {
       final app = TestApp(api: _verifyingApi());
       await _fillForm(tester, app);
       await _tapRegister(tester);
@@ -211,48 +243,45 @@ void main() {
       await tester.pump(const Duration(minutes: 10));
       await tester.pumpAndSettle();
 
-      expect(find.text('وقت التأكيد خلص. اطلب كود جديد.'), findsOneWidget);
+      expect(find.text('الكود انتهى. اطلب كود جديد.'), findsOneWidget);
+      expect(_registerButton, findsOneWidget);
+      expect(app.api.paths, isNot(contains('localAuth.register')));
     });
 
-    testWidgets('coming back from WhatsApp opens a fresh connection', (
+    testWidgets('a number without WhatsApp says so on the form', (
       tester,
     ) async {
-      final app = TestApp(api: _verifyingApi());
+      final api = _verifyingApi()
+        ..answer(
+          'localAuth.generateVerificationCode',
+          (_) => throw const TrpcFailure(
+            'BAD_REQUEST',
+            400,
+            'الرقم ده مش عليه واتساب. اتأكد من الرقم وجرّب تاني.',
+          ),
+        );
+      final app = TestApp(api: api);
       await _fillForm(tester, app);
       await _tapRegister(tester);
-      await _frames(tester);
-      expect(app.challenges.watches, hasLength(1));
-
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-      await _frames(tester);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await _frames(tester);
-
-      expect(app.challenges.watches, hasLength(2));
-      expect(app.challenges.connected, isTrue);
-
-      app.challenges.send(PhoneChallengeOutcome.verified);
       await tester.pumpAndSettle();
-      expect(find.byType(NavigationBar), findsOneWidget);
+
+      expect(
+        find.text('الرقم ده مش عليه واتساب. اتأكد من الرقم وجرّب تاني.'),
+        findsOneWidget,
+      );
+      expect(_registerButton, findsOneWidget);
     });
 
-    testWidgets('back from the code returns to the form and stops waiting', (
-      tester,
-    ) async {
+    testWidgets('changing the number returns to the form', (tester) async {
       final app = TestApp(api: _verifyingApi());
       await _fillForm(tester, app);
       await _tapRegister(tester);
       await _frames(tester);
 
-      await tester.tap(find.text('رجوع وتعديل'));
+      await tester.tap(find.text('تعديل الرقم'));
       await tester.pumpAndSettle();
 
       expect(_registerButton, findsOneWidget);
-      expect(app.challenges.connected, isFalse);
     });
 
     testWidgets('the robot check must pass first, and its token is sent once', (
@@ -287,32 +316,12 @@ void main() {
         'turnstileToken': 'turnstile-token',
       });
       // Back on the form, the check is asked for a fresh token, and the spent one is not sent again.
-      await tester.tap(find.text('رجوع وتعديل'));
+      await tester.tap(find.text('تعديل الرقم'));
       await tester.pumpAndSettle();
       expect(resets.last, 1);
       await _tapRegister(tester);
       await tester.pumpAndSettle();
       expect(find.text('استنى لحظة لحد ما التحقق يخلص.'), findsOneWidget);
-    });
-
-    testWidgets('without a connected bot the button says so', (tester) async {
-      final api = _verifyingApi()
-        ..answer('localAuth.getBotPhoneNumber', (_) => '201000000000');
-      final app = TestApp(api: api);
-      await _fillForm(tester, app);
-      await _tapRegister(tester);
-      await _frames(tester);
-
-      await tester.tap(find.text('ابعته من واتساب'));
-      await _frames(tester);
-
-      expect(app.openedLinks, isEmpty);
-      expect(
-        find.text(
-          'بوت الواتساب مش شغّال دلوقتي. جرّب كمان شوية، أو ادخل بطريقة تانية.',
-        ),
-        findsOneWidget,
-      );
     });
   });
 }

@@ -177,14 +177,27 @@
   "@humanCheckPending": {
     "description": "The Cloudflare Turnstile check has not produced a token yet."
   },
-  "verifyTitle": "أكّد رقمك من واتساب",
-  "verifyBody": "ابعت الكود ده لبوت SmartSpend من واتساب الرقم اللي كتبته. أول ما يوصل هنكمّل إنشاء حسابك.",
-  "verifyCodeLabel": "كود التأكيد",
-  "verifySendOnWhatsApp": "ابعته من واتساب",
-  "verifyCopyCode": "انسخ الكود",
-  "verifyCodeCopied": "الكود اتنسخ.",
-  "verifyWaiting": "مستنيين رسالتك…",
-  "verifyTimeLeft": "فاضل {time}",
+  "verifyTitle": "أكّد رقمك",
+  "verifyBody": "بعتنا كود من 6 أرقام على واتساب الرقم اللي كتبته. اكتبه هنا.",
+  "verifyCodeField": "كود التأكيد",
+  "@verifyCodeField": {
+    "description": "Label of the field where the six-digit WhatsApp code is typed; the keyboard can suggest it."
+  },
+  "verifyConfirm": "تأكيد",
+  "verifyCodeIncomplete": "الكود 6 أرقام.",
+  "verifyResend": "ابعت كود جديد",
+  "verifyResendIn": "ابعت كود جديد بعد {seconds} ثانية",
+  "@verifyResendIn": {
+    "description": "The resend button while it waits before another code may be asked for.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "42"
+      }
+    }
+  },
+  "verifyResent": "بعتنالك كود جديد.",
+  "verifyTimeLeft": "الكود صالح لمدة {time}",
   "@verifyTimeLeft": {
     "description": "Time left before the confirmation code expires, as minutes:seconds.",
     "placeholders": {
@@ -194,22 +207,9 @@
       }
     }
   },
-  "verifyWrongSender": "الكود وصل من رقم واتساب غير الرقم اللي بتسجّل بيه. ابعته من نفس الرقم.",
-  "verifyExpired": "وقت التأكيد خلص. اطلب كود جديد.",
+  "verifyExpired": "الكود انتهى. اطلب كود جديد.",
   "verifyDone": "الرقم اتأكد. بنجهّز حسابك…",
-  "verifyBack": "رجوع وتعديل",
-  "verifyBotUnavailable": "بوت الواتساب مش شغّال دلوقتي. جرّب كمان شوية، أو ادخل بطريقة تانية.",
-  "verifyWhatsAppText": "تفعيل حسابي: {code}",
-  "@verifyWhatsAppText": {
-    "description": "The WhatsApp message the person sends to the bot. The bot reads the code from it.",
-    "placeholders": {
-      "code": {
-        "type": "String",
-        "example": "SS-123456"
-      }
-    }
-  },
-  "whatsappNotOpened": "مش قادرين نفتح واتساب. انسخ الكود وابعته للبوت بنفسك.",
+  "verifyBack": "تعديل الرقم",
   "accountTitle": "حسابك",
   "signOut": "تسجيل الخروج",
   "summarySpentIn": "صرفت في {month}",

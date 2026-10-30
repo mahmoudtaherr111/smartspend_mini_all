@@ -71,20 +71,21 @@ final class SignedInAnswer {
   final AppUser user;
 }
 
-/// A WhatsApp phone challenge (`localAuth.generateVerificationCode`): the code the user sends to the bot, the
-/// ticket that later proves the number to `localAuth.register`, and the watch token that follows it.
+/// A WhatsApp phone challenge (`localAuth.generateVerificationCode`): the server sent a code to the number's
+/// WhatsApp; the ticket, once `localAuth.confirmVerificationCode` accepted that code, proves the number to
+/// `localAuth.register`. The code itself reaches the person only through WhatsApp.
 final class PhoneChallenge {
   const PhoneChallenge({
-    required this.code,
     required this.ticket,
-    required this.watch,
     required this.expiresIn,
+    required this.resendIn,
   });
 
-  final String code;
   final String ticket;
-  final String watch;
   final Duration expiresIn;
+
+  /// How long before another code may be asked for the same number.
+  final Duration resendIn;
 }
 
 /// The sign-in procedures of `api/local-auth-router.ts` and `api/auth-router.ts`, with their answers read into
@@ -106,7 +107,7 @@ final class AuthApi {
   }
 
   /// Creates a phone account. With WhatsApp verification on, [verificationTicket] must be the ticket of a
-  /// challenge the bot verified for this very number.
+  /// challenge whose code was confirmed for this very number.
   Future<SignedInAnswer> register({
     required String name,
     required String phone,
@@ -136,15 +137,6 @@ final class AuthApi {
     return data is Map<String, Object?> && data['enabled'] == true;
   }
 
-  /// The WhatsApp number of the bot the code is sent to, digits only with the country code, or null while the bot
-  /// is not connected (the server then answers a placeholder).
-  Future<String?> verificationBotNumber() async {
-    final data = await _client.query(Procedures.localAuth.getBotPhoneNumber);
-    if (data is! String) return null;
-    final digits = data.replaceAll(RegExp(r'\D'), '');
-    return digits.isEmpty || digits == _botNumberPlaceholder ? null : digits;
-  }
-
   Future<PhoneChallenge> startPhoneChallenge({
     required String phone,
     String? turnstileToken,
@@ -154,19 +146,29 @@ final class AuthApi {
       input: {'phone': phone, 'turnstileToken': ?turnstileToken},
     );
     if (data case {
-      'code': final String code,
       'ticket': final String ticket,
-      'watch': final String watch,
       'expiresInSeconds': final num seconds,
+      'resendInSeconds': final num resend,
     }) {
       return PhoneChallenge(
-        code: code,
         ticket: ticket,
-        watch: watch,
         expiresIn: Duration(seconds: seconds.round()),
+        resendIn: Duration(seconds: resend.round()),
       );
     }
     throw _malformed(Procedures.localAuth.generateVerificationCode);
+  }
+
+  /// The six digits the person received on WhatsApp. A wrong, expired or exhausted code arrives as an
+  /// [ApiException] with the server's message.
+  Future<void> confirmPhoneCode({
+    required String ticket,
+    required String code,
+  }) async {
+    await _client.mutate(
+      Procedures.localAuth.confirmVerificationCode,
+      input: {'verificationTicket': ticket, 'code': code},
+    );
   }
 
   /// Exchanges the phone's Google sign-in for a session (`auth.signInWithGoogle`). [nonce] is the value made for
@@ -205,9 +207,6 @@ final class AuthApi {
   Future<void> signOut() async {
     await _client.mutate(Procedures.localAuth.logout);
   }
-
-  /// What `localAuth.getBotPhoneNumber` answers while the bot has no number.
-  static const _botNumberPlaceholder = '201000000000';
 
   static SignedInAnswer _signedIn(Object? data, AccountKind kind) {
     if (data

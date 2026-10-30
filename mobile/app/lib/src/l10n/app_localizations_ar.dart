@@ -392,57 +392,45 @@ class AppLocalizationsAr extends AppLocalizations {
   String get humanCheckPending => 'استنى لحظة لحد ما التحقق يخلص.';
 
   @override
-  String get verifyTitle => 'أكّد رقمك من واتساب';
+  String get verifyTitle => 'أكّد رقمك';
 
   @override
   String get verifyBody =>
-      'ابعت الكود ده لبوت SmartSpend من واتساب الرقم اللي كتبته. أول ما يوصل هنكمّل إنشاء حسابك.';
+      'بعتنا كود من 6 أرقام على واتساب الرقم اللي كتبته. اكتبه هنا.';
 
   @override
-  String get verifyCodeLabel => 'كود التأكيد';
+  String get verifyCodeField => 'كود التأكيد';
 
   @override
-  String get verifySendOnWhatsApp => 'ابعته من واتساب';
+  String get verifyConfirm => 'تأكيد';
 
   @override
-  String get verifyCopyCode => 'انسخ الكود';
+  String get verifyCodeIncomplete => 'الكود 6 أرقام.';
 
   @override
-  String get verifyCodeCopied => 'الكود اتنسخ.';
+  String get verifyResend => 'ابعت كود جديد';
 
   @override
-  String get verifyWaiting => 'مستنيين رسالتك…';
-
-  @override
-  String verifyTimeLeft(String time) {
-    return 'فاضل $time';
+  String verifyResendIn(int seconds) {
+    return 'ابعت كود جديد بعد $seconds ثانية';
   }
 
   @override
-  String get verifyWrongSender =>
-      'الكود وصل من رقم واتساب غير الرقم اللي بتسجّل بيه. ابعته من نفس الرقم.';
+  String get verifyResent => 'بعتنالك كود جديد.';
 
   @override
-  String get verifyExpired => 'وقت التأكيد خلص. اطلب كود جديد.';
+  String verifyTimeLeft(String time) {
+    return 'الكود صالح لمدة $time';
+  }
+
+  @override
+  String get verifyExpired => 'الكود انتهى. اطلب كود جديد.';
 
   @override
   String get verifyDone => 'الرقم اتأكد. بنجهّز حسابك…';
 
   @override
-  String get verifyBack => 'رجوع وتعديل';
-
-  @override
-  String get verifyBotUnavailable =>
-      'بوت الواتساب مش شغّال دلوقتي. جرّب كمان شوية، أو ادخل بطريقة تانية.';
-
-  @override
-  String verifyWhatsAppText(String code) {
-    return 'تفعيل حسابي: $code';
-  }
-
-  @override
-  String get whatsappNotOpened =>
-      'مش قادرين نفتح واتساب. انسخ الكود وابعته للبوت بنفسك.';
+  String get verifyBack => 'تعديل الرقم';
 
   @override
   String get accountTitle => 'حسابك';

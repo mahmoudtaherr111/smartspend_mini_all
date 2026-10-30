@@ -16,7 +16,15 @@ export interface WhatsAppCloudConfig {
 }
 
 /** The sending configuration, or null while the owner has not set the token and the number id. */
-export function whatsAppConfig(source: Pick<typeof env, `WHATSAPP_CLOUD_${string}`> = env): WhatsAppCloudConfig | null {
+/** The settings it reads, named so tests can pass their own. */
+type WhatsAppEnv = {
+  WHATSAPP_CLOUD_ACCESS_TOKEN?: string;
+  WHATSAPP_CLOUD_PHONE_NUMBER_ID?: string;
+  WHATSAPP_CLOUD_WABA_ID?: string;
+  WHATSAPP_CLOUD_API_VERSION?: string;
+};
+
+export function whatsAppConfig(source: WhatsAppEnv = env): WhatsAppCloudConfig | null {
   const accessToken = source.WHATSAPP_CLOUD_ACCESS_TOKEN?.trim();
   const phoneNumberId = source.WHATSAPP_CLOUD_PHONE_NUMBER_ID?.trim();
   if (!accessToken || !phoneNumberId) return null;

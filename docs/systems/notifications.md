@@ -17,9 +17,8 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 | Destinations | `contracts/notification-types.ts#NOTIFICATION_TYPES`, `resolveNotificationTarget` | Each type and the page it opens; old stored destinations repaired |
 | Notification center | `src/components/NotificationBell.tsx`, `src/components/notifications/NotificationList.tsx`, `src/pages/Notifications.tsx`, `profile.getInAppNotifications`, `profile.markInAppNotificationRead`, `profile.markAllInAppNotificationsRead` | The bell with the unread count, the list in a sheet and on `/notifications`, marking one or all read |
 | Settings | `src/components/notifications/NotificationSettings.tsx` | This device's push state and the budget-alerts switch |
-| WhatsApp service | `api/services/whatsapp-service.ts#whatsappService` | A WhatsApp Web client (Baileys) with its session on disk; sends messages and reads verification codes, until the Cloud API below replaces it |
+| WhatsApp service | `api/services/whatsapp-service.ts#whatsappService` | A WhatsApp Web client (Baileys) with its session on disk; still sends the monthly report, the phone-change code and admin messages until the Cloud API below replaces it |
 | WhatsApp Cloud API | `api/lib/whatsapp/` | Meta's official API: the client, the templates we submit, the signed webhook, and the outbox every message goes through ([decision 0038](../decisions/0038-whatsapp-cloud-api.md)) |
-| Verification state | `api/services/otp-cache.ts` | The blocklist of senders who sent codes that were not theirs, in the WhatsApp service's process |
 | WhatsApp admin | `api/admin-whatsapp-router.ts`, `src/components/admin/AdminWhatsAppTab.tsx` | Status and QR code, start and stop, direct messages, broadcasts, the verification switch |
 | Templates admin | the notification procedures of `api/admin-router.ts`, `src/components/admin/NotificationsTab.tsx` | Creating, scheduling and switching templates, running the activity check at once, logs and device statistics; see [admin](admin.md) |
 
@@ -87,12 +86,8 @@ runs; a stored template still holding the previous default title and body is upd
 - `sendMessage` refuses when the service is not connected or the number has no WhatsApp, shows typing for a moment, and
   sends. The WhatsApp monthly report of [insights](insights.md), the phone-change codes of [accounts](accounts.md) and
   admin messages go through it.
-- An incoming message that contains a code (`SS-` and six digits) goes to `receiveVerificationCode`: the open challenges
-  with that code are read from `whatsapp_otp_codes` (`api/services/phone-challenge.ts`), and the one whose number, or
-  saved WhatsApp LID, is the sender's is marked verified, with a `challenge:<id>` event for the `/api/sse/otp` stream in
-  this process. A code from any other number verifies nothing, tells the watching page `wrong_sender` without either
-  number, and is counted: three block the sender for 15 minutes, in memory, since the service runs in one process. The
-  sign-up flow around it is in [accounts](accounts.md).
+- Verification codes no longer go through it: they are sent in Meta's authentication template and typed back
+  ([accounts](accounts.md), [decision 0038](../decisions/0038-whatsapp-cloud-api.md)); it ignores incoming messages.
 - Admin broadcasts (`adminWhatsapp.broadcastMessage`) queue one message per phone user in process memory and send them
   one at a time, with a random pause of two to four minutes and a random choice between the `{a|b}` alternatives written
   in the text.
@@ -147,7 +142,6 @@ Its foundation is in place and does nothing until the owner sets the keys; the s
 4. The WhatsApp session belongs to one process: never start it on more than one replica.
 
 ## Tests
-`api/services/whatsapp-service.receive.test.ts` covers the handling of incoming verification codes on Baileys.
 `api/lib/whatsapp/client.test.ts` (requests, numbers, which refusals are retried),
 `api/lib/whatsapp/webhook.test.ts` (subscription, signature, statuses, messages with and without a visible number,
 stop words), `api/lib/whatsapp/outbox.test.ts` (retry delays, status order) and `tests/security/whatsapp-webhook.test.ts` (the route refuses anything unsigned) cover the Cloud API.

@@ -392,57 +392,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get humanCheckPending => 'One moment while the check finishes.';
 
   @override
-  String get verifyTitle => 'Confirm your number on WhatsApp';
+  String get verifyTitle => 'Confirm your number';
 
   @override
   String get verifyBody =>
-      'Send this code to the SmartSpend bot from the WhatsApp of the number you entered. As soon as it arrives we finish creating your account.';
+      'We sent a 6-digit code to the WhatsApp of the number you entered. Type it here.';
 
   @override
-  String get verifyCodeLabel => 'Confirmation code';
+  String get verifyCodeField => 'Confirmation code';
 
   @override
-  String get verifySendOnWhatsApp => 'Send it on WhatsApp';
+  String get verifyConfirm => 'Confirm';
 
   @override
-  String get verifyCopyCode => 'Copy the code';
+  String get verifyCodeIncomplete => 'The code is 6 digits.';
 
   @override
-  String get verifyCodeCopied => 'Code copied.';
+  String get verifyResend => 'Send a new code';
 
   @override
-  String get verifyWaiting => 'Waiting for your message…';
-
-  @override
-  String verifyTimeLeft(String time) {
-    return '$time left';
+  String verifyResendIn(int seconds) {
+    return 'Send a new code in $seconds s';
   }
 
   @override
-  String get verifyWrongSender =>
-      'The code came from a different WhatsApp number than the one you\'re signing up with. Send it from that number.';
+  String get verifyResent => 'We sent you a new code.';
 
   @override
-  String get verifyExpired => 'Time to confirm ran out. Ask for a new code.';
+  String verifyTimeLeft(String time) {
+    return 'The code is valid for $time';
+  }
+
+  @override
+  String get verifyExpired => 'The code expired. Ask for a new one.';
 
   @override
   String get verifyDone => 'Number confirmed. Setting up your account…';
 
   @override
-  String get verifyBack => 'Back to edit';
-
-  @override
-  String get verifyBotUnavailable =>
-      'The WhatsApp bot isn\'t running right now. Try again shortly, or sign in another way.';
-
-  @override
-  String verifyWhatsAppText(String code) {
-    return 'Activate my account: $code';
-  }
-
-  @override
-  String get whatsappNotOpened =>
-      'We couldn\'t open WhatsApp. Copy the code and send it to the bot yourself.';
+  String get verifyBack => 'Change the number';
 
   @override
   String get accountTitle => 'Your account';

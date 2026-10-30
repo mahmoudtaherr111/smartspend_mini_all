@@ -9,7 +9,6 @@ import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
-import { getClientIp } from "./lib/get-client-ip";
 import { createHmac, timingSafeEqual } from "crypto";
 import { hasValidSignature, parseWebhook, subscriptionChallenge } from "./lib/whatsapp/webhook";
 import { grantProSubscription } from "./lib/subscription-service";
@@ -22,15 +21,12 @@ import {
 import cron from "node-cron";
 import { createOriginPolicy } from "./lib/origin-policy";
 import { applyOriginSecurity } from "./lib/http-origin-security";
-import { streamSSE } from "hono/streaming";
-import { otpEvents } from "./services/whatsapp-service";
 import { db } from "./queries/connection";
 import { classificationLogs, authChallenges } from "../db/schema";
 import { lt } from "drizzle-orm";
 import { installProviderHealthReporter } from "./lib/provider-health";
 import { refreshGatewayCache } from "./lib/ai-gateway";
-import { purgeExpiredPhoneChallenges, readPhoneChallenge } from "./services/phone-challenge";
-import { createRateLimiter } from "./lib/rate-limit";
+import { purgeExpiredPhoneChallenges } from "./services/phone-challenge";
 import { purgeExpiredSessions } from "./lib/access-control";
 import { createLogger } from "./lib/log";
 import { initErrorReporting } from "./lib/error-reporting";
@@ -451,60 +447,6 @@ app.use(
       createContext({ ...opts, directIp: directPeerAddress(c) }),
   }),
 );
-
-// Counted in Redis across replicas; the per-address map this replaces was never pruned.
-const otpStreamsPerIp = createRateLimiter(5, 5 * 60 * 1000);
-const CHALLENGE_POLL_MS = 3_000;
-const STREAM_PING_MS = 15_000;
-
-// ─── The sign-up page follows its phone challenge here ───
-// By challenge, never by phone number: the stream used to answer for any number and to put the sender's number
-// in its "fraud" event. The watch token can follow one challenge and do nothing else; the ticket that spends it
-// never appears in a URL (api/services/phone-challenge.ts). The bot's event arrives at once when this stream
-// reached the process that holds WhatsApp; on any other replica the database says the same a few seconds later.
-app.get("/api/sse/otp", async (c) => {
-  const watch = c.req.query("challenge") ?? "";
-  const challenge = watch ? await readPhoneChallenge(watch, "watch") : null;
-  if (!challenge) return c.text("Unknown or expired challenge", 404);
-
-  const clientIp = getClientIp(c.req.raw, directPeerAddress(c)) || "unknown";
-  try {
-    await otpStreamsPerIp.hit(`otp-sse:${clientIp}`);
-  } catch {
-    return c.text("Too many SSE connections", 429);
-  }
-
-  return streamSSE(c, async (stream) => {
-    let finished = false;
-    const finish = async (status: "verified" | "wrong_sender" | "expired") => {
-      if (finished) return;
-      finished = true;
-      await stream.writeSSE({ data: JSON.stringify({ status }) });
-    };
-    const eventName = `challenge:${challenge.id}`;
-    const listener = (event: { status: "verified" | "wrong_sender" }) => void finish(event.status);
-    otpEvents.on(eventName, listener);
-
-    try {
-      if (challenge.verified) await finish("verified");
-      let lastPing = Date.now();
-      while (!finished && !c.req.raw.signal.aborted) {
-        await stream.sleep(CHALLENGE_POLL_MS);
-        if (finished || c.req.raw.signal.aborted) break;
-        // Gone means expired or already spent; either way this page has nothing left to wait for.
-        const current = await readPhoneChallenge(watch, "watch");
-        if (!current) await finish("expired");
-        else if (current.verified) await finish("verified");
-        else if (Date.now() - lastPing >= STREAM_PING_MS) {
-          lastPing = Date.now();
-          await stream.writeSSE({ event: "ping", data: "ping" });
-        }
-      }
-    } finally {
-      otpEvents.off(eventName, listener);
-    }
-  });
-});
 
 // ─── Captured bank and wallet notifications from phones, with a device token (decision 0028) ───
 registerCaptureRoutes(app);

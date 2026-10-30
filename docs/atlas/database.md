@@ -99,7 +99,7 @@ Sessions, challenges, OTPs, pending actions
 | `in_app_notifications` | `inAppNotifications` | 8 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/profile-router.ts` | `api/lib/capture/care.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/operations.ts`, `api/notification-engine.ts`, `api/profile-router.ts`, `api/services/coach/plans.ts`, `api/services/user-purge-service.ts` |
 | `pending_clarifications` | `pendingClarifications` | 9 | 3 | `user_id` + `user_type` | `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/ai-router.ts`, `api/expense-router.ts`, `api/services/voice/app-calls.ts`, `api/services/voice/brain/tools/reports.ts` | `api/admin-router.ts`, `api/ai-router.ts`, `api/expense-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts`, `api/services/voice/app-calls.ts` |
 | `sessions` | `sessions` | 9 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/lib/access-control.ts`, `api/lib/session-validation.ts`, `api/session-router.ts` | `api/lib/access-control.ts`, `api/local-auth-utils.ts`, `api/services/user-purge-service.ts` |
-| `whatsapp_otp_codes` | `whatsappOtpCodes` | 6 | 1 | — | — | `api/services/phone-challenge.ts` | `api/services/phone-challenge.ts` |
+| `whatsapp_otp_codes` | `whatsappOtpCodes` | 7 | 1 | — | — | `api/services/phone-challenge.ts` | `api/services/phone-challenge.ts` |
 
 ### Class E — Telemetry / Logs
 

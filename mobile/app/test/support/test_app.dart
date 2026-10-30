@@ -9,7 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_app/src/app.dart';
 import 'package:smartspend_app/src/config/app_config.dart';
 import 'package:smartspend_app/src/core/preferences.dart';
@@ -17,7 +16,6 @@ import 'package:smartspend_app/src/core/providers.dart';
 import 'package:smartspend_app/src/core/session_store.dart';
 import 'package:smartspend_app/src/features/auth/google_identity.dart';
 import 'package:smartspend_app/src/features/auth/human_check.dart';
-import 'package:smartspend_app/src/features/auth/register_screen.dart';
 import 'package:smartspend_app/src/features/auth/session_controller.dart';
 import 'package:smartspend_app/src/features/ledger/ledger_providers.dart';
 import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
@@ -184,27 +182,6 @@ final class FakeGoogleIdentity implements GoogleIdentity {
   Future<void> signOut() async => signOuts++;
 }
 
-/// `/api/sse/otp`, scripted: every connection waits until the test sends an outcome or the app cancels it.
-final class FakeChallengeEvents {
-  final watches = <String>[];
-  Completer<PhoneChallengeOutcome?>? _open;
-
-  Future<PhoneChallengeOutcome?> next(String watch, {Future<void>? cancel}) {
-    watches.add(watch);
-    final open = _open = Completer<PhoneChallengeOutcome?>();
-    unawaited(
-      cancel?.then((_) {
-        if (!open.isCompleted) open.complete(null);
-      }),
-    );
-    return open.future;
-  }
-
-  bool get connected => _open != null && !_open!.isCompleted;
-
-  void send(PhoneChallengeOutcome outcome) => _open!.complete(outcome);
-}
-
 /// The native capture, in Dart: what it was told and what it answers.
 final class FakeBankCapture implements BankCapture {
   CaptureAccess access = CaptureAccess.notGranted;
@@ -300,9 +277,6 @@ final class TestApp {
   final FakeApi api;
   final FakeGoogleIdentity google;
   final HumanCheckBuilder? humanCheck;
-  final challenges = FakeChallengeEvents();
-  final openedLinks = <Uri>[];
-  bool linksOpen = true;
 
   late ProviderContainer container;
 
@@ -323,11 +297,6 @@ final class TestApp {
           httpClientProvider.overrideWithValue(api.client),
           googleIdentityProvider.overrideWithValue(google),
           humanCheckProvider.overrideWithValue(humanCheck),
-          nextChallengeOutcomeProvider.overrideWithValue(challenges.next),
-          externalLinkOpenerProvider.overrideWithValue((uri) async {
-            openedLinks.add(uri);
-            return linksOpen;
-          }),
           bankCaptureProvider.overrideWithValue(bankCapture),
           ledgerStoreProvider.overrideWithValue(ledgerStore),
           connectivityProvider.overrideWith((ref) => connection.stream),

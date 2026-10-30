@@ -1904,6 +1904,16 @@ model {
       metadata {
         file 'api/local-auth-router.ts'
       }
+      confirmVerificationCode = procedure 'localAuth.confirmVerificationCode' {
+        #mutation #strictPublic
+        technology 'strictPublicProcedure'
+        description 'mutation · strictPublicProcedure'
+        metadata {
+          file 'api/local-auth-router.ts'
+          builder 'strictPublicProcedure'
+          procedureKind 'mutation'
+        }
+      }
       deleteUser = procedure 'localAuth.deleteUser' {
         #mutation #admin #uncalled
         technology 'adminProcedure'
@@ -1922,16 +1932,6 @@ model {
           file 'api/local-auth-router.ts'
           builder 'strictPublicProcedure'
           procedureKind 'mutation'
-        }
-      }
-      getBotPhoneNumber = procedure 'localAuth.getBotPhoneNumber' {
-        #query #public
-        technology 'publicProcedure'
-        description 'query · publicProcedure'
-        metadata {
-          file 'api/local-auth-router.ts'
-          builder 'publicProcedure'
-          procedureKind 'query'
         }
       }
       getStats = procedure 'localAuth.getStats' {
@@ -2756,15 +2756,6 @@ model {
         file 'api/boot.ts'
         method 'GET'
         path '/health'
-      }
-    }
-    get_sse_otp = endpoint 'GET /api/sse/otp' {
-      #sse
-      description 'Declared in api/boot.ts.'
-      metadata {
-        file 'api/boot.ts'
-        method 'GET'
-        path '/api/sse/otp'
       }
     }
     get_webhooks_whatsapp = endpoint 'GET /api/webhooks/whatsapp' {

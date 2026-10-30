@@ -581,7 +581,7 @@ model {
     }
     whatsapp_otp_codes = table 'whatsapp_otp_codes' {
       #classD
-      description '6 columns, 1 indexes, storage class D.'
+      description '7 columns, 1 indexes, storage class D.'
       metadata {
         export 'whatsappOtpCodes'
         storageClass 'D'

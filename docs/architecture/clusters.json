@@ -147,10 +147,9 @@
     {
       "id": "whatsapp",
       "title": "WhatsApp",
-      "description": "WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp), and, until it is removed, the Baileys client with its in-process sender blocklist; the phone codes themselves are shared state (`phone-challenge.ts`).",
+      "description": "WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp), and, until it is removed, the Baileys client that still sends reports, phone-change codes and admin messages; verification codes are challenges in MySQL (`phone-challenge.ts`).",
       "paths": [
         "api/services/whatsapp-service.ts",
-        "api/services/otp-cache.ts",
         "api/lib/whatsapp/**"
       ]
     },

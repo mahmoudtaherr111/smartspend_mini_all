@@ -34,7 +34,6 @@ dependencies:
     path: ../packages/smartspend_api
   smartspend_ui:
     path: ../packages/smartspend_ui
-  url_launcher: ^6.3.3
   webview_flutter: ^4.14.1
 
 dev_dependencies:

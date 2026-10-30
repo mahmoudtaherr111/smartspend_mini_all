@@ -288,6 +288,20 @@
       "when": 1793241199380,
       "tag": "0040_whatsapp_cloud",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1793328464091,
+      "tag": "0041_whatsapp_otp_drop_plain_code",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1793328466311,
+      "tag": "0042_whatsapp_otp_hashed_code",
+      "breakpoints": true
     }
   ]
 }

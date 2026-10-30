@@ -35,16 +35,6 @@ final trpcClientProvider = Provider<TrpcClient>((ref) {
   );
 });
 
-/// Follows WhatsApp phone challenges on `/api/sse/otp`.
-final phoneChallengeEventsProvider = Provider<PhoneChallengeEvents>((ref) {
-  final config = ref.watch(appConfigProvider);
-  return PhoneChallengeEvents(
-    baseUri: config.apiBaseUri,
-    httpClient: ref.watch(httpClientProvider),
-    userAgent: config.userAgent,
-  );
-});
-
 final bankCaptureProvider = Provider<BankCapture>((ref) => BankCapture());
 
 /// How this phone captures bank messages and whether the user allowed it. Invalidate it when the app returns

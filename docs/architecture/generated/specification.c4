@@ -22,7 +22,6 @@ specification {
   tag public
   tag query
   tag receipts
-  tag sse
   tag strictPublic
   tag trpc
   tag uncalled

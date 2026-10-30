@@ -6,7 +6,6 @@
         "api/auth-router.ts": "bf8ddd1b118f",
         "api/boot.ts#GET /api/auth/google/callback": "4aa70d89b69f",
         "api/boot.ts#GET /api/auth/google/start": "30860aaa6f6e",
-        "api/boot.ts#GET /api/sse/otp": "17c9d19750db",
         "api/boot.ts#job:daily-auth-cleanup": "acfde0491549",
         "api/lib/access-control.ts": "b8d1ac566010",
         "api/lib/admin-safe-fields.ts": "cfb73d6bbe66",
@@ -22,7 +21,7 @@
         "api/lib/security-headers.ts": "057db5e4ad04",
         "api/lib/security-logger.ts": "23e02f6971e7",
         "api/lib/session-validation.ts": "ac2005332694",
-        "api/local-auth-router.ts": "a3f04c492470",
+        "api/local-auth-router.ts": "766617dc5b56",
         "api/local-auth-utils.ts": "9cc975515b2d",
         "api/profile-router.ts#profile.confirmPhoneChange": "62e243fc038d",
         "api/profile-router.ts#profile.deleteMyAccount": "1dada0eaa8c8",
@@ -31,7 +30,7 @@
         "api/profile-router.ts#profile.updateProfile": "9aba6a0c3710",
         "api/profile-router.ts#profile.updateUserInfo": "fa019e07ad4a",
         "api/profile-router.ts#rest-of-file": "e5e0790a83d3",
-        "api/services/phone-challenge.ts": "9c5aa7cfebc9",
+        "api/services/phone-challenge.ts": "11f2c4fe8637",
         "api/services/turnstile-service.ts": "89a28fc96d49",
         "api/services/user-purge-service.ts": "fbf2e1ad3e9c",
         "api/session-router.ts": "c29d8dcf4653",
@@ -51,12 +50,12 @@
         "src/components/settings/LanguageSettings.tsx": "2e84329609e6",
         "src/components/settings/PeopleSettingsView.tsx": "fe994df04b34",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
-        "src/pages/Login.tsx": "7271e3fdadc3",
+        "src/pages/Login.tsx": "17db05b6b3eb",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-10-29 f9202812",
-      "arabic": "8b34141508db",
-      "arabicChecked": "2026-10-29 f9202812"
+      "checked": "2026-10-30 d3bc8a2b",
+      "arabic": "a7c80f4ee054",
+      "arabicChecked": "2026-10-30 d3bc8a2b"
     },
     "admin": {
       "files": {
@@ -440,7 +439,7 @@
         "api/boot.ts#job:seed-default-templates": "d552cda74417",
         "api/boot.ts#job:smart-activity-notifications": "f8e2642a5b89",
         "api/boot.ts#job:whatsapp-outbox": "3a669c15b3e3",
-        "api/lib/whatsapp/client.ts": "79d775fa54b8",
+        "api/lib/whatsapp/client.ts": "2c2cd3da0c26",
         "api/lib/whatsapp/outbox.ts": "fa1a13932afc",
         "api/lib/whatsapp/templates.ts": "d2b4604d1a60",
         "api/lib/whatsapp/webhook.ts": "b53832f7a45f",
@@ -451,20 +450,19 @@
         "api/profile-router.ts#profile.savePushSubscription": "788ec5760eef",
         "api/profile-router.ts#rest-of-file": "e5e0790a83d3",
         "api/services/firebase.ts": "3b9319b2c3a5",
-        "api/services/otp-cache.ts": "f68f57b187fb",
-        "api/services/whatsapp-service.ts": "1177804a1f23",
+        "api/services/whatsapp-service.ts": "7f60b8746412",
         "src/pages/Notifications.tsx": "57d9f2b4b95f"
       },
-      "checked": "2026-10-30 f9202812",
-      "arabic": "4b76d706e1c9",
-      "arabicChecked": "2026-10-30 f9202812"
+      "checked": "2026-10-30 d3bc8a2b",
+      "arabic": "4787fb9114bc",
+      "arabicChecked": "2026-10-30 d3bc8a2b"
     },
     "platform": {
       "files": {
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "77f1a62677dd",
+        "api/boot.ts#rest-of-file": "1a272851931e",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "f25bdcf5392f",
         "api/lib/app-time.ts": "7eaf4ab8fae6",
@@ -503,13 +501,13 @@
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
         "db/relations.ts": "9503ef3e9f42",
-        "db/schema.ts": "69e25fe3cf31",
+        "db/schema.ts": "dd5b78efab76",
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "a49f3b277518"
       },
-      "checked": "2026-10-29 f9202812",
+      "checked": "2026-10-30 d3bc8a2b",
       "arabic": "bb1e7f50462d",
-      "arabicChecked": "2026-10-29 f9202812"
+      "arabicChecked": "2026-10-30 d3bc8a2b"
     },
     "voice-calls": {
       "files": {

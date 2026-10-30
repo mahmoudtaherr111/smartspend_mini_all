@@ -242,8 +242,8 @@ _None._
 | `auth.googleUrl` | useQuery | `src/pages/Login.tsx` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
+| `localAuth.confirmVerificationCode` | useMutation | `src/pages/Login.tsx` |
 | `localAuth.generateVerificationCode` | useMutation | `src/pages/Login.tsx` |
-| `localAuth.getBotPhoneNumber` | useQuery | `src/pages/Login.tsx` |
 | `localAuth.getVerificationSettings` | useQuery | `src/pages/Login.tsx` |
 | `localAuth.login` | useMutation | `src/pages/Login.tsx` |
 | `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |

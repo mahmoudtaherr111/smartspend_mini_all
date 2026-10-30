@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import {
   LogIn,
   UserPlus,
@@ -80,9 +81,10 @@ export default function Login() {
   // and is what the server turns into an account once the bot has seen the message; the watch token only lets
   // this page follow the challenge.
   const [verificationCode, setVerificationCode] = useState("");
-  const [challenge, setChallenge] = useState<{ ticket: string; watch: string } | null>(null);
+  const [challenge, setChallenge] = useState<{ ticket: string } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
+  const [resendIn, setResendIn] = useState(0);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileReset, setTurnstileReset] = useState(0);
 
@@ -153,9 +155,10 @@ export default function Login() {
   const generateCodeMutation =
     trpc.localAuth.generateVerificationCode.useMutation({
       onSuccess: (data) => {
-        setVerificationCode(data.code);
-        setChallenge({ ticket: data.ticket, watch: data.watch });
+        setVerificationCode("");
+        setChallenge({ ticket: data.ticket });
         setTimeLeft(data.expiresInSeconds);
+        setResendIn(data.resendInSeconds);
         setIsVerifying(true);
       },
       onError: (err) => {
@@ -171,67 +174,47 @@ export default function Login() {
     setChallenge(null);
   };
 
-  // Removed checkVerificationQuery (Polling replaced with SSE)
+  // The code arrived on WhatsApp and was typed here: the same ticket then creates the account, once.
+  const confirmCodeMutation = trpc.localAuth.confirmVerificationCode.useMutation({
+    onSuccess: () => {
+      const ticket = challenge?.ticket;
+      if (!ticket) return;
+      stopVerifying();
+      registerMutation.mutate({
+        name: regName,
+        phone: regPhone,
+        email: regEmail || undefined,
+        password: regPassword,
+        referralCode: regReferral || undefined,
+        verificationTicket: ticket,
+      });
+    },
+    onError: (err) => {
+      setVerificationCode("");
+      toast.error(err.message);
+    },
+  });
+
+  const confirmCode = (code: string) => {
+    if (!challenge || code.length !== 6 || confirmCodeMutation.isPending) return;
+    confirmCodeMutation.mutate({ verificationTicket: challenge.ticket, code });
+  };
 
   useEffect(() => {
-    if (isVerifying && timeLeft > 0) {
-      const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-      return () => clearInterval(timer);
-    } else if (timeLeft === 0 && isVerifying) {
+    if (!isVerifying) return;
+    if (timeLeft <= 0) {
       stopVerifying();
-      toast.error("انتهى وقت التوثيق، برجاء المحاولة مرة أخرى");
+      toast.error("الكود انتهى. اطلب كود جديد.");
+      return;
     }
+    const timer = setTimeout(() => {
+      setTimeLeft((prev) => prev - 1);
+      setResendIn((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [isVerifying, timeLeft]);
 
-  useEffect(() => {
-    if (!isVerifying || !challenge || !isWhatsAppVerificationEnabled) return;
-
-    // The stream follows this tab's challenge, not a phone number; EventSource reconnects on its own.
-    const eventSource = new EventSource(
-      `/api/sse/otp?challenge=${encodeURIComponent(challenge.watch)}`,
-    );
-
-    eventSource.onmessage = (event) => {
-      let data: { status?: string };
-      try {
-        data = JSON.parse(event.data);
-      } catch {
-        return;
-      }
-
-      if (data.status === "verified") {
-        toast.success("تم توثيق الرقم بنجاح! جاري إنشاء الحساب...");
-        eventSource.close();
-        const ticket = challenge.ticket;
-        stopVerifying();
-        registerMutation.mutate({
-          name: regName,
-          phone: regPhone,
-          email: regEmail || undefined,
-          password: regPassword,
-          referralCode: regReferral || undefined,
-          verificationTicket: ticket,
-        });
-      } else if (data.status === "wrong_sender") {
-        eventSource.close();
-        stopVerifying();
-        toast.error(
-          "الكود وصل من رقم واتساب غير الرقم اللي بتسجل بيه. ابعته من نفس الرقم.",
-        );
-      } else if (data.status === "expired") {
-        eventSource.close();
-        stopVerifying();
-        toast.error("انتهى وقت التوثيق، برجاء المحاولة مرة أخرى");
-      }
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [isVerifying, challenge]);
-
   const { data: googleUrl } = trpc.auth.googleUrl.useQuery();
-  const { data: botPhoneNumber } = trpc.localAuth.getBotPhoneNumber.useQuery();
   const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
 
   const handlePasskeyLogin = async (isManual = false) => {
@@ -492,58 +475,71 @@ export default function Login() {
 
                   <div className="space-y-1.5">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white">
-                      توثيق رقم التليفون
+                      اكتب الكود اللي وصلك على واتساب
                     </h3>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      اضغط على الزر لإرسال كود التفعيل إلى البوت عبر واتساب
-                      لإتمام التسجيل.
+                      بعتنا كود من 6 أرقام لرقم{" "}
+                      <bdi dir="ltr" className="font-medium">
+                        {regPhone}
+                      </bdi>{" "}
+                      على واتساب.
                     </p>
                   </div>
 
-                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                    <p className="text-xs font-medium mb-1.5 text-slate-600 dark:text-slate-300">
-                      كود التفعيل الخاص بك:
-                    </p>
-                    <p className="text-2xl font-black tracking-widest text-emerald-600 dark:text-emerald-400 font-mono bg-white dark:bg-slate-900 py-2.5 rounded-lg shadow-xs">
-                      {verificationCode}
-                    </p>
+                  <div className="flex justify-center" dir="ltr">
+                    <InputOTP
+                      maxLength={6}
+                      value={verificationCode}
+                      onChange={(value) => setVerificationCode(value.replace(/\D/g, ""))}
+                      onComplete={confirmCode}
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      autoFocus
+                      disabled={confirmCodeMutation.isPending || registerMutation.isPending}
+                      aria-label="كود التحقق"
+                    >
+                      <InputOTPGroup>
+                        {[0, 1, 2, 3, 4, 5].map((index) => (
+                          <InputOTPSlot key={index} index={index} />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
                   </div>
 
                   <Button
-                    onClick={() => {
-                      if (
-                        !botPhoneNumber ||
-                        botPhoneNumber === "201000000000"
-                      ) {
-                        toast.error(
-                          "بوت الواتساب مش شغال دلوقتي. جرّب كمان شوية، أو ادخل بطريقة تانية.",
-                        );
-                        return;
-                      }
-                      const text = encodeURIComponent(
-                        `تفعيل حسابي: ${verificationCode}`,
-                      );
-                      window.open(
-                        `https://wa.me/${botPhoneNumber}?text=${text}`,
-                        "_blank",
-                      );
-                    }}
-                    className="w-full h-12 text-base bg-[#25D366] hover:bg-[#128C7E] text-white shadow-md hover:shadow-lg transition-all duration-200 rounded-xl font-bold"
+                    type="button"
+                    onClick={() => confirmCode(verificationCode)}
+                    disabled={verificationCode.length !== 6 || confirmCodeMutation.isPending || registerMutation.isPending}
+                    className="w-full h-12 text-base rounded-xl font-bold"
                   >
-                    <MessageCircle className="w-5 h-5 me-2" />
-                    إرسال الكود عبر واتساب
+                    {confirmCodeMutation.isPending || registerMutation.isPending ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      "تأكيد"
+                    )}
                   </Button>
 
-                  <div className="flex flex-col items-center justify-center gap-2 mt-4">
-                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-3.5 py-1.5 rounded-full text-xs font-medium">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      في انتظار استلام رسالتك...
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="text-[11px] font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-md">
+                      الكود صالح لمدة{" "}
+                      <bdi dir="ltr">
+                        {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
+                      </bdi>
                     </div>
-
-                    <div className="text-[11px] font-mono font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-md">
-                      ينتهي الكود خلال: {Math.floor(timeLeft / 60)}:
-                      {(timeLeft % 60).toString().padStart(2, "0")}
-                    </div>
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="text-xs h-9"
+                      disabled={resendIn > 0 || generateCodeMutation.isPending}
+                      onClick={() =>
+                        generateCodeMutation.mutate({
+                          phone: regPhone,
+                          turnstileToken: turnstileToken ?? undefined,
+                        })
+                      }
+                    >
+                      {resendIn > 0 ? `ابعت كود جديد بعد ${resendIn} ثانية` : "ابعت كود جديد"}
+                    </Button>
                   </div>
 
                   {/* No "skip": with verification on, the server creates the account only for a verified number. */}
@@ -553,7 +549,7 @@ export default function Login() {
                       className="flex-1 text-xs text-muted-foreground h-9 rounded-xl"
                       onClick={stopVerifying}
                     >
-                      إلغاء وتعديل
+                      تعديل الرقم
                     </Button>
                   </div>
                 </div>

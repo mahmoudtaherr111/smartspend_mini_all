@@ -8,9 +8,6 @@ model {
   smartspend.api.http.get_auth_google_callback -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_auth_google_start -[uses]-> smartspend.api.modules.api-routers
   smartspend.api.http.get_auth_google_start -[uses]-> smartspend.api.modules.platform
-  smartspend.api.http.get_sse_otp -[uses]-> smartspend.api.modules.auth
-  smartspend.api.http.get_sse_otp -[uses]-> smartspend.api.modules.security
-  smartspend.api.http.get_sse_otp -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.http.get_webhooks_whatsapp -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_webhooks_whatsapp -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.http.post_webhooks_paymob -[uses]-> smartspend.api.modules.billing
@@ -539,7 +536,6 @@ model {
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.user_profiles
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.voice_call_incidents
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.voice_calls
-  smartspend.api.modules.whatsapp -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.whatsapp -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.whatsapp -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.whatsapp -[reads]-> smartspend.mysql.whatsapp_contacts
@@ -1038,12 +1034,13 @@ model {
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.users
+  smartspend.api.trpc.localAuth.confirmVerificationCode -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.localAuth.deleteUser -[uses]-> smartspend.api.modules.accounts
   smartspend.api.trpc.localAuth.deleteUser -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.localAuth.generateVerificationCode -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.localAuth.generateVerificationCode -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.localAuth.generateVerificationCode -[uses]-> smartspend.api.modules.security
-  smartspend.api.trpc.localAuth.getBotPhoneNumber -[uses]-> smartspend.api.modules.whatsapp
+  smartspend.api.trpc.localAuth.generateVerificationCode -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.trpc.localAuth.getStats -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.localAuth.getStats -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.localAuth.getVerificationSettings -[uses]-> smartspend.api.modules.platform
@@ -1439,8 +1436,8 @@ model {
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.auth.googleUrl
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.auth.logout
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.auth.me
+  smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.confirmVerificationCode
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.generateVerificationCode
-  smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.getBotPhoneNumber
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.getVerificationSettings
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.login
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.localAuth.logout

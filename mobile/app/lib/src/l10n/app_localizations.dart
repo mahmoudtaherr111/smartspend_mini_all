@@ -719,61 +719,61 @@ abstract class AppLocalizations {
   /// No description provided for @verifyTitle.
   ///
   /// In ar, this message translates to:
-  /// **'أكّد رقمك من واتساب'**
+  /// **'أكّد رقمك'**
   String get verifyTitle;
 
   /// No description provided for @verifyBody.
   ///
   /// In ar, this message translates to:
-  /// **'ابعت الكود ده لبوت SmartSpend من واتساب الرقم اللي كتبته. أول ما يوصل هنكمّل إنشاء حسابك.'**
+  /// **'بعتنا كود من 6 أرقام على واتساب الرقم اللي كتبته. اكتبه هنا.'**
   String get verifyBody;
 
-  /// No description provided for @verifyCodeLabel.
+  /// Label of the field where the six-digit WhatsApp code is typed; the keyboard can suggest it.
   ///
   /// In ar, this message translates to:
   /// **'كود التأكيد'**
-  String get verifyCodeLabel;
+  String get verifyCodeField;
 
-  /// No description provided for @verifySendOnWhatsApp.
+  /// No description provided for @verifyConfirm.
   ///
   /// In ar, this message translates to:
-  /// **'ابعته من واتساب'**
-  String get verifySendOnWhatsApp;
+  /// **'تأكيد'**
+  String get verifyConfirm;
 
-  /// No description provided for @verifyCopyCode.
+  /// No description provided for @verifyCodeIncomplete.
   ///
   /// In ar, this message translates to:
-  /// **'انسخ الكود'**
-  String get verifyCopyCode;
+  /// **'الكود 6 أرقام.'**
+  String get verifyCodeIncomplete;
 
-  /// No description provided for @verifyCodeCopied.
+  /// No description provided for @verifyResend.
   ///
   /// In ar, this message translates to:
-  /// **'الكود اتنسخ.'**
-  String get verifyCodeCopied;
+  /// **'ابعت كود جديد'**
+  String get verifyResend;
 
-  /// No description provided for @verifyWaiting.
+  /// The resend button while it waits before another code may be asked for.
   ///
   /// In ar, this message translates to:
-  /// **'مستنيين رسالتك…'**
-  String get verifyWaiting;
+  /// **'ابعت كود جديد بعد {seconds} ثانية'**
+  String verifyResendIn(int seconds);
+
+  /// No description provided for @verifyResent.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعتنالك كود جديد.'**
+  String get verifyResent;
 
   /// Time left before the confirmation code expires, as minutes:seconds.
   ///
   /// In ar, this message translates to:
-  /// **'فاضل {time}'**
+  /// **'الكود صالح لمدة {time}'**
   String verifyTimeLeft(String time);
-
-  /// No description provided for @verifyWrongSender.
-  ///
-  /// In ar, this message translates to:
-  /// **'الكود وصل من رقم واتساب غير الرقم اللي بتسجّل بيه. ابعته من نفس الرقم.'**
-  String get verifyWrongSender;
 
   /// No description provided for @verifyExpired.
   ///
   /// In ar, this message translates to:
-  /// **'وقت التأكيد خلص. اطلب كود جديد.'**
+  /// **'الكود انتهى. اطلب كود جديد.'**
   String get verifyExpired;
 
   /// No description provided for @verifyDone.
@@ -785,26 +785,8 @@ abstract class AppLocalizations {
   /// No description provided for @verifyBack.
   ///
   /// In ar, this message translates to:
-  /// **'رجوع وتعديل'**
+  /// **'تعديل الرقم'**
   String get verifyBack;
-
-  /// No description provided for @verifyBotUnavailable.
-  ///
-  /// In ar, this message translates to:
-  /// **'بوت الواتساب مش شغّال دلوقتي. جرّب كمان شوية، أو ادخل بطريقة تانية.'**
-  String get verifyBotUnavailable;
-
-  /// The WhatsApp message the person sends to the bot. The bot reads the code from it.
-  ///
-  /// In ar, this message translates to:
-  /// **'تفعيل حسابي: {code}'**
-  String verifyWhatsAppText(String code);
-
-  /// No description provided for @whatsappNotOpened.
-  ///
-  /// In ar, this message translates to:
-  /// **'مش قادرين نفتح واتساب. انسخ الكود وابعته للبوت بنفسك.'**
-  String get whatsappNotOpened;
 
   /// No description provided for @accountTitle.
   ///
