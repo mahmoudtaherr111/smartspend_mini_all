@@ -21,6 +21,8 @@ final class SmartSpendColors {
     required this.warning,
     required this.danger,
     required this.info,
+    required this.washStart,
+    required this.washEnd,
   });
 
   final Brightness brightness;
@@ -56,12 +58,28 @@ final class SmartSpendColors {
 
   final Color info;
 
+  /// The brand wash behind a hero figure (emerald towards indigo, the logo's colours), already faint: it sits under
+  /// text and never carries meaning (design brief §2).
+  final Color washStart;
+  final Color washEnd;
+
+  /// The wash as a gradient, from the start edge of the reading direction.
+  LinearGradient wash(TextDirection direction) => LinearGradient(
+    begin: direction == TextDirection.rtl
+        ? Alignment.topRight
+        : Alignment.topLeft,
+    end: direction == TextDirection.rtl
+        ? Alignment.bottomLeft
+        : Alignment.bottomRight,
+    colors: [washStart, washEnd],
+  );
+
   static const dark = SmartSpendColors(
     brightness: Brightness.dark,
     background: Color(0xFF090D16),
-    surface: Color(0xFF0F1521),
-    surfaceRaised: Color(0xFF172030),
-    border: Color(0xFF242C3B),
+    surface: Color(0xFF111827),
+    surfaceRaised: Color(0xFF1A2333),
+    border: Color(0xFF243042),
     foreground: Color(0xFFFAFAFA),
     mutedForeground: Color(0xFFA1A1AA),
     accent: Color(0xFF10B981),
@@ -71,11 +89,13 @@ final class SmartSpendColors {
     warning: Color(0xFFF59E0B),
     danger: Color(0xFFFB7185),
     info: Color(0xFF38BDF8),
+    washStart: Color(0xFF0E2A24),
+    washEnd: Color(0xFF161B36),
   );
 
   static const light = SmartSpendColors(
     brightness: Brightness.light,
-    background: Color(0xFFF7F8FA),
+    background: Color(0xFFF3F5F8),
     surface: Color(0xFFFFFFFF),
     surfaceRaised: Color(0xFFF1F3F6),
     border: Color(0xFFE4E4E7),
@@ -88,6 +108,8 @@ final class SmartSpendColors {
     warning: Color(0xFFB45309),
     danger: Color(0xFFBE123C),
     info: Color(0xFF0369A1),
+    washStart: Color(0xFFEDF9F3),
+    washEnd: Color(0xFFF3F4FD),
   );
 }
 

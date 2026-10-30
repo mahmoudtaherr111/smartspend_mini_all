@@ -104,7 +104,8 @@ void main() {
       'every component in the gallery meets the guidelines in the $name theme',
       (tester) async {
         final semantics = tester.ensureSemantics();
-        tester.view.physicalSize = const Size(1080, 6000);
+        // Tall enough for the whole gallery: text cut by the bottom edge would be measured against nothing.
+        tester.view.physicalSize = const Size(1080, 9000);
         tester.view.devicePixelRatio = 2.5;
         addTearDown(tester.view.reset);
         await tester.pumpWidget(

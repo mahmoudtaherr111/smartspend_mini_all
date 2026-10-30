@@ -70,6 +70,39 @@ void answerSampleMonth(FakeApi api) {
     )
     ..answer('expense.list', (_) => {'items': entries, 'total': entries.length})
     ..answer(
+      'expense.getMonthlyStats',
+      (_) => {
+        'totalExpense': 4250.5,
+        'totalIncome': 15000,
+        'dailyAverage': 152,
+        'totalTxnCount': 23,
+        'categoryBreakdown': [
+          {'name': 'أكل وشرب', 'value': 1680, 'count': 11},
+          {'name': 'فواتير', 'value': 1250, 'count': 2},
+          {'name': 'مواصلات', 'value': 540, 'count': 6},
+          {'name': 'تسوق', 'value': 320, 'count': 1},
+          {'name': 'اشتراكات', 'value': 260, 'count': 2},
+          {'name': 'ترفيه', 'value': 200.5, 'count': 1},
+        ],
+        'comparativeAnalysis': {
+          'previousMonth': {'totalExpense': 4830, 'totalIncome': 15000},
+        },
+        'behavioralInsights': {
+          'expenseChangePercent': -12,
+          'comparisonType': 'monthly',
+          'topSpendingDay': {
+            'date': DateTime(
+              now.year,
+              now.month,
+              now.day - 1,
+            ).toIso8601String(),
+            'amount': 1250,
+          },
+          'mostRecurringExpense': {'name': 'قهوة وكافيه', 'count': 9},
+        },
+      },
+    )
+    ..answer(
       'ai.parseExpense',
       (_) => {
         'decision': 'review',

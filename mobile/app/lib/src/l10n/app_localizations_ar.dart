@@ -826,4 +826,84 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get languageNote =>
       'التسجيل والتصنيفات بيفضلوا بالعربي: اكتب واتكلم بالعامية زي ما انت.';
+
+  @override
+  String statsLessThanLastMonth(String percent) {
+    return 'أقل من الشهر اللي فات بـ $percent.';
+  }
+
+  @override
+  String statsMoreThanLastMonth(String percent) {
+    return 'أكتر من الشهر اللي فات بـ $percent.';
+  }
+
+  @override
+  String get statsSameAsLastMonth => 'زي الشهر اللي فات بالظبط.';
+
+  @override
+  String statsLessThanLastWeek(String percent) {
+    return 'الأسبوع ده أقل من نفس الأسبوع الشهر اللي فات بـ $percent.';
+  }
+
+  @override
+  String statsMoreThanLastWeek(String percent) {
+    return 'الأسبوع ده أكتر من نفس الأسبوع الشهر اللي فات بـ $percent.';
+  }
+
+  @override
+  String get statsNoComparison => 'لسه مفيش شهر قبله نقارن بيه.';
+
+  @override
+  String get statsDailyAverage => 'متوسط يومي';
+
+  @override
+  String get statsLastMonth => 'الشهر اللي فات';
+
+  @override
+  String get statsByCategory => 'صرفت على إيه';
+
+  @override
+  String get statsOther => 'حاجات تانية';
+
+  @override
+  String get statsHabits => 'عاداتك في الشهر';
+
+  @override
+  String statsTopDay(String day, String amount) {
+    return 'أكتر يوم صرفت فيه: $day، $amount.';
+  }
+
+  @override
+  String statsMostRecurring(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مرة',
+      few: '$count مرات',
+      two: 'مرتين',
+      one: 'مرة واحدة',
+    );
+    return 'أكتر حاجة بتتكرر: $name، $_temp0.';
+  }
+
+  @override
+  String statsEmptyTitle(String month) {
+    return 'مفيش مصاريف في $month';
+  }
+
+  @override
+  String get statsEmptyBody =>
+      'سجّل مصاريفك من تبويب التسجيل، وهنا هتشوف صرفت على إيه وإزاي بيتغيّر من شهر لشهر.';
+
+  @override
+  String get statsEmptyAction => 'سجّل مصروف';
+
+  @override
+  String get statsLoadFailed => 'مش قادرين نجيب إحصائيات الشهر دلوقتي.';
+
+  @override
+  String get statsPreviousMonth => 'الشهر اللي قبله';
+
+  @override
+  String get statsNextMonth => 'الشهر اللي بعده';
 }

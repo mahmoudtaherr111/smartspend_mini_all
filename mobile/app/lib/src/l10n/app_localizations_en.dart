@@ -820,4 +820,83 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get languageNote =>
       'Recording and categories stay in Arabic: keep typing and speaking in Egyptian Arabic.';
+
+  @override
+  String statsLessThanLastMonth(String percent) {
+    return '$percent less than last month.';
+  }
+
+  @override
+  String statsMoreThanLastMonth(String percent) {
+    return '$percent more than last month.';
+  }
+
+  @override
+  String get statsSameAsLastMonth => 'The same as last month.';
+
+  @override
+  String statsLessThanLastWeek(String percent) {
+    return 'This week is $percent less than the same week last month.';
+  }
+
+  @override
+  String statsMoreThanLastWeek(String percent) {
+    return 'This week is $percent more than the same week last month.';
+  }
+
+  @override
+  String get statsNoComparison => 'No earlier month to compare with yet.';
+
+  @override
+  String get statsDailyAverage => 'Daily average';
+
+  @override
+  String get statsLastMonth => 'Last month';
+
+  @override
+  String get statsByCategory => 'Where it went';
+
+  @override
+  String get statsOther => 'Other';
+
+  @override
+  String get statsHabits => 'Your month';
+
+  @override
+  String statsTopDay(String day, String amount) {
+    return 'Your biggest day: $day, $amount.';
+  }
+
+  @override
+  String statsMostRecurring(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count times',
+      one: 'once',
+    );
+    return 'Most repeated: $name, $_temp0.';
+  }
+
+  @override
+  String statsEmptyTitle(String month) {
+    return 'No spending in $month';
+  }
+
+  @override
+  String get statsEmptyBody =>
+      'Record your spending on the Record tab, and here you\'ll see where it went and how it changes month to month.';
+
+  @override
+  String get statsEmptyAction => 'Record an expense';
+
+  @override
+  String get statsLoadFailed =>
+      'We can\'t load this month\'s statistics right now.';
+
+  @override
+  String get statsPreviousMonth => 'Previous month';
+
+  @override
+  String get statsNextMonth => 'Next month';
 }

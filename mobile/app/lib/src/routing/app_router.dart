@@ -13,6 +13,7 @@ import '../features/ledger/record_screen.dart';
 import '../features/ledger/transactions_screen.dart';
 import '../features/lock/security_screen.dart';
 import '../features/more/more_screen.dart';
+import '../features/stats/stats_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'app_shell.dart';
 
@@ -56,8 +57,7 @@ final appTabs = <AppTab>[
     icon: Icons.bar_chart_outlined,
     selectedIcon: Icons.bar_chart,
     label: (l10n) => l10n.navStats,
-    screen: (context) =>
-        InProgressScreen(title: AppLocalizations.of(context).navStats),
+    screen: (context) => const StatsScreen(),
   ),
   AppTab(
     path: '/ai',

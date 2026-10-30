@@ -25,6 +25,9 @@ void main() {
         'background': c.background,
         'surface': c.surface,
         'surfaceRaised': c.surfaceRaised,
+        // Both ends of the hero wash, which text sits on.
+        'washStart': c.washStart,
+        'washEnd': c.washEnd,
       };
       final texts = {
         'foreground': c.foreground,

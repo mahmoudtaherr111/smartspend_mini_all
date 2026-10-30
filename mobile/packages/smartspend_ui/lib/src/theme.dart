@@ -48,13 +48,13 @@ abstract final class SmartSpendTheme {
       fontFamily: SmartSpendTypography.fontFamily,
       textTheme: SmartSpendTypography.textTheme(c.foreground),
       dividerTheme: DividerThemeData(color: c.border, thickness: 1),
+      // Depth from tone, not lines (design brief §2): a card is a step lighter than what it sits on.
       cardTheme: CardThemeData(
         color: c.surface,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-          side: BorderSide(color: c.border),
+          borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
         ),
       ),
       appBarTheme: AppBarTheme(

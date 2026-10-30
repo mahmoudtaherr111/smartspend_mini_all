@@ -42,6 +42,69 @@ class ComponentGallery extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: SmartSpendSpacing.lg),
+          MonthSwitcher(
+            label: 'أكتوبر 2026',
+            previousTooltip: 'الشهر اللي قبله',
+            nextTooltip: 'الشهر اللي بعده',
+            onPrevious: () {},
+            onNext: null,
+          ),
+          const HeroFigure(
+            label: 'صرفت في أكتوبر',
+            amount: 4251,
+            story: 'أقل من الشهر اللي فات بـ 12%.',
+            // Without the wash here: the gradient fools the text contrast guideline, which samples it as text and
+            // background. Its colours are held to 4.5:1 against every text colour in test/contrast_test.dart.
+          ),
+          const SizedBox(height: SmartSpendSpacing.lg),
+          const StatTileRow(
+            children: [
+              StatTile(label: 'متوسط يومي', amount: 152),
+              StatTile(label: 'دخل', amount: 15000, kind: AmountKind.income),
+            ],
+          ),
+          const SizedBox(height: SmartSpendSpacing.lg),
+          const GroupedCard(
+            title: 'صرفت على إيه',
+            child: ProportionBar(
+              otherLabel: 'حاجات تانية',
+              parts: [
+                ProportionPart(
+                  label: 'أكل وشرب',
+                  amount: 1680,
+                  color: Color(0xFFF97316),
+                ),
+                ProportionPart(
+                  label: 'فواتير',
+                  amount: 1250,
+                  color: Color(0xFFEAB308),
+                ),
+                ProportionPart(
+                  label: 'مواصلات',
+                  amount: 540,
+                  color: Color(0xFF3B82F6),
+                ),
+              ],
+            ),
+          ),
+          GroupedSection(
+            title: 'الحساب',
+            children: [
+              GroupedRow(
+                icon: Icons.shield_outlined,
+                title: 'الأمان والخصوصية',
+                subtitle: 'القفل والبصمة وإخفاء المبالغ',
+                onTap: () {},
+              ),
+              GroupedRow(
+                icon: Icons.logout_rounded,
+                title: 'تسجيل الخروج',
+                destructive: true,
+                onTap: () {},
+              ),
+            ],
+          ),
           SectionHeader('النهارده', actionLabel: 'الكل', onAction: () {}),
           const TransactionRow(
             icon: Icons.restaurant,

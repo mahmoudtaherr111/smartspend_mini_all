@@ -429,5 +429,36 @@
   "languageTitle": "لغة التطبيق",
   "languageArabic": "العربية",
   "languageEnglish": "English",
-  "languageNote": "التسجيل والتصنيفات بيفضلوا بالعربي: اكتب واتكلم بالعامية زي ما انت."
+  "languageNote": "التسجيل والتصنيفات بيفضلوا بالعربي: اكتب واتكلم بالعامية زي ما انت.",
+  "statsLessThanLastMonth": "أقل من الشهر اللي فات بـ {percent}.",
+  "@statsLessThanLastMonth": { "description": "The percentage, already written with its sign (12%).", "placeholders": { "percent": { "type": "String", "example": "12%" } } },
+  "statsMoreThanLastMonth": "أكتر من الشهر اللي فات بـ {percent}.",
+  "@statsMoreThanLastMonth": { "description": "The percentage, already written with its sign (12%).", "placeholders": { "percent": { "type": "String", "example": "12%" } } },
+  "statsSameAsLastMonth": "زي الشهر اللي فات بالظبط.",
+  "statsLessThanLastWeek": "الأسبوع ده أقل من نفس الأسبوع الشهر اللي فات بـ {percent}.",
+  "@statsLessThanLastWeek": { "description": "The percentage, already written with its sign (12%).", "placeholders": { "percent": { "type": "String", "example": "8%" } } },
+  "statsMoreThanLastWeek": "الأسبوع ده أكتر من نفس الأسبوع الشهر اللي فات بـ {percent}.",
+  "@statsMoreThanLastWeek": { "description": "The percentage, already written with its sign (12%).", "placeholders": { "percent": { "type": "String", "example": "8%" } } },
+  "statsNoComparison": "لسه مفيش شهر قبله نقارن بيه.",
+  "statsDailyAverage": "متوسط يومي",
+  "statsLastMonth": "الشهر اللي فات",
+  "statsByCategory": "صرفت على إيه",
+  "statsOther": "حاجات تانية",
+  "statsHabits": "عاداتك في الشهر",
+  "statsTopDay": "أكتر يوم صرفت فيه: {day}، {amount}.",
+  "@statsTopDay": {
+    "description": "The day with the most spending and its amount, already written.",
+    "placeholders": { "day": { "type": "String", "example": "الخميس 16 أكتوبر" }, "amount": { "type": "String", "example": "1,250 ج.م" } }
+  },
+  "statsMostRecurring": "أكتر حاجة بتتكرر: {name}، {count, plural, =1{مرة واحدة} =2{مرتين} few{{count} مرات} other{{count} مرة}}.",
+  "@statsMostRecurring": {
+    "placeholders": { "name": { "type": "String", "example": "قهوة وكافيه" }, "count": { "type": "int", "example": "9" } }
+  },
+  "statsEmptyTitle": "مفيش مصاريف في {month}",
+  "@statsEmptyTitle": { "placeholders": { "month": { "type": "String", "example": "أكتوبر" } } },
+  "statsEmptyBody": "سجّل مصاريفك من تبويب التسجيل، وهنا هتشوف صرفت على إيه وإزاي بيتغيّر من شهر لشهر.",
+  "statsEmptyAction": "سجّل مصروف",
+  "statsLoadFailed": "مش قادرين نجيب إحصائيات الشهر دلوقتي.",
+  "statsPreviousMonth": "الشهر اللي قبله",
+  "statsNextMonth": "الشهر اللي بعده"
 }

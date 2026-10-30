@@ -1405,6 +1405,120 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'التسجيل والتصنيفات بيفضلوا بالعربي: اكتب واتكلم بالعامية زي ما انت.'**
   String get languageNote;
+
+  /// The percentage, already written with its sign (12%).
+  ///
+  /// In ar, this message translates to:
+  /// **'أقل من الشهر اللي فات بـ {percent}.'**
+  String statsLessThanLastMonth(String percent);
+
+  /// The percentage, already written with its sign (12%).
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتر من الشهر اللي فات بـ {percent}.'**
+  String statsMoreThanLastMonth(String percent);
+
+  /// No description provided for @statsSameAsLastMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي الشهر اللي فات بالظبط.'**
+  String get statsSameAsLastMonth;
+
+  /// The percentage, already written with its sign (12%).
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسبوع ده أقل من نفس الأسبوع الشهر اللي فات بـ {percent}.'**
+  String statsLessThanLastWeek(String percent);
+
+  /// The percentage, already written with its sign (12%).
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسبوع ده أكتر من نفس الأسبوع الشهر اللي فات بـ {percent}.'**
+  String statsMoreThanLastWeek(String percent);
+
+  /// No description provided for @statsNoComparison.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش شهر قبله نقارن بيه.'**
+  String get statsNoComparison;
+
+  /// No description provided for @statsDailyAverage.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط يومي'**
+  String get statsDailyAverage;
+
+  /// No description provided for @statsLastMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشهر اللي فات'**
+  String get statsLastMonth;
+
+  /// No description provided for @statsByCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت على إيه'**
+  String get statsByCategory;
+
+  /// No description provided for @statsOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاجات تانية'**
+  String get statsOther;
+
+  /// No description provided for @statsHabits.
+  ///
+  /// In ar, this message translates to:
+  /// **'عاداتك في الشهر'**
+  String get statsHabits;
+
+  /// The day with the most spending and its amount, already written.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتر يوم صرفت فيه: {day}، {amount}.'**
+  String statsTopDay(String day, String amount);
+
+  /// No description provided for @statsMostRecurring.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتر حاجة بتتكرر: {name}، {count, plural, =1{مرة واحدة} =2{مرتين} few{{count} مرات} other{{count} مرة}}.'**
+  String statsMostRecurring(String name, int count);
+
+  /// No description provided for @statsEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مصاريف في {month}'**
+  String statsEmptyTitle(String month);
+
+  /// No description provided for @statsEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصاريفك من تبويب التسجيل، وهنا هتشوف صرفت على إيه وإزاي بيتغيّر من شهر لشهر.'**
+  String get statsEmptyBody;
+
+  /// No description provided for @statsEmptyAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصروف'**
+  String get statsEmptyAction;
+
+  /// No description provided for @statsLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب إحصائيات الشهر دلوقتي.'**
+  String get statsLoadFailed;
+
+  /// No description provided for @statsPreviousMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشهر اللي قبله'**
+  String get statsPreviousMonth;
+
+  /// No description provided for @statsNextMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشهر اللي بعده'**
+  String get statsNextMonth;
 }
 
 class _AppLocalizationsDelegate
