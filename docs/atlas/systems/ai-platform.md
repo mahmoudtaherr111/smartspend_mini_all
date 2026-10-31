@@ -53,6 +53,7 @@ flowchart LR
   mod_ai_providers --> ext_groq
   mod_ai_providers --> ext_nvidia
   mod_ai_providers --> ext_openrouter
+  mod_ai_providers --> mod_ai_governance
   mod_ai_providers --> sys_platform
   mod_ai_providers -.-> tbl_ai_models
   mod_ai_providers ==> tbl_ai_providers

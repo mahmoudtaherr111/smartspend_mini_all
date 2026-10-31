@@ -24,6 +24,7 @@ import { watchGeneration } from "./shared-generation";
 import { recordAiLedger } from "./ai-ledger";
 import { keyRing, needsReseal, openProviderKey, sealProviderKey, type OpenedKey } from "./provider-key-crypto";
 import { defaultGeminiModelForPlan, geminiFallbackChain, mapModelName } from "./model-mapper";
+import { estimateTokensFromText } from "./ai-usage-policy";
 
 const log = createLogger("ai-gateway");
 
@@ -178,11 +179,7 @@ function reportKeyProblems(providers: StoredProvider[], opened: Map<number, Open
 // ─── Token Estimator ────────────────────────────────────────────────
 
 export function estimateTokens(text: string | undefined | null): number {
-  const clean = String(text || "").trim();
-  if (!clean) return 0;
-  const arabicChars = (clean.match(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
-  const otherChars = clean.length - arabicChars;
-  return Math.ceil(arabicChars * 0.65) + Math.ceil(otherChars / 4) + Math.ceil(clean.split(/\s+/).length * 0.35);
+  return estimateTokensFromText(text || "");
 }
 
 export function computePromptAnatomy(params: {

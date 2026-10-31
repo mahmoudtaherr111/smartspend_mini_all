@@ -23,8 +23,8 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `notifications` | Notifications | 2 | `contracts`, `database`, `ledger`, `platform` | `ai-actions`, `api-core`, `api-routers`, `jobs`, `ledger` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 5 | `database`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 39 | `ai-actions`, `ai-insights`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `site-guide` | `api-core`, `api-routers` | `gemini` |
-| `ai-providers` | AI provider access | 14 | `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
-| `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `capture-ai-reader`, `jobs` | — |
+| `ai-providers` | AI provider access | 14 | `ai-governance`, `contracts`, `database`, `platform` | `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
+| `ai-governance` | AI usage and cost governance | 3 | `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-routers`, `capture-ai-reader`, `jobs` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-intake`, `capture-reader`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
 | `capture-intake` | Capture intake | 12 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `ledger` | — |
 | `capture-ai-reader` | Message model reader | 2 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `platform`, `security` | `capture-intake` | `gemini` |
@@ -336,7 +336,7 @@ Provider clients, the provider registry, model name mapping, routing and fallbac
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/lib/ai-gateway.ts` | `database`, `platform` | `gemini` | `ai_models`, `ai_providers` | `ai_providers`, `local_users`, `users` |
+| `api/lib/ai-gateway.ts` | `ai-governance`, `database`, `platform` | `gemini` | `ai_models`, `ai_providers` | `ai_providers`, `local_users`, `users` |
 | `api/lib/ai-ledger.ts` | `database`, `platform` | — | `ai_token_ledgers` | `ai_token_ledgers` |
 | `api/lib/ai-pricing.ts` | `contracts`, `database`, `platform` | — | `ai_models`, `ai_providers` | — |
 | `api/lib/ai-provider-registry.ts` | — | — | — | — |

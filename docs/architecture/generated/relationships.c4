@@ -147,6 +147,7 @@ model {
   smartspend.api.modules.ai-memory -[writes]-> smartspend.mysql.ai_memory_embeddings
   smartspend.api.modules.ai-memory -[writes]-> smartspend.mysql.ai_memory_items
   smartspend.api.modules.ai-memory -[writes]-> smartspend.mysql.chat_conversations
+  smartspend.api.modules.ai-providers -[imports]-> smartspend.api.modules.ai-governance
   smartspend.api.modules.ai-providers -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.ai-providers -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ai-providers -[reads]-> smartspend.mysql.ai_models
