@@ -439,3 +439,23 @@ Future<SearchResult> _searchOfflineCache(Ref ref, String query) async {
 
   return SearchResult(query: query, entries: matches, isOffline: true);
 }
+
+/// Asks `expense.previewCategory` to hint which category a sentence belongs to (REC-10).
+/// Returns null when text has no digits, is too short, or when offline.
+final categoryPreviewProvider =
+    FutureProvider.autoDispose.family<CategoryPreview?, String>((ref, text) async {
+  final trimmed = text.trim();
+  if (!RegExp(r'[0-9٠-٩]').hasMatch(trimmed) || trimmed.length < 2) {
+    return null;
+  }
+  final online = ref.watch(networkStatusProvider);
+  if (!online) return null;
+
+  final api = ref.watch(ledgerApiProvider);
+  try {
+    return await api.previewCategory(trimmed);
+  } catch (_) {
+    // Silent fallback: never fail or disrupt typing
+    return null;
+  }
+});

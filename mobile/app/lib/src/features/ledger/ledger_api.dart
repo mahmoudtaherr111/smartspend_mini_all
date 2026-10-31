@@ -29,6 +29,15 @@ class LedgerApi {
     return ParseResult.fromJson(_object(data));
   }
 
+  /// Hints which category a sentence belongs to while typing: `expense.previewCategory`.
+  Future<CategoryPreview?> previewCategory(String text) async {
+    final data = await _client.query(
+      Procedures.expense.previewCategory,
+      input: {'text': text},
+    );
+    return data is Map<String, Object?> ? CategoryPreview.fromJson(data) : null;
+  }
+
   /// Saves [items] read from [rawText] and returns their ids. One item goes through `expense.create`, several
   /// through `expense.batchCreate`. Every item carries a request id the server deduplicates on (`[requestId]`, or
   /// `[requestId]:index` for several), so a save retried after a lost answer is not saved twice; pass the same

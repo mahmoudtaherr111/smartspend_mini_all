@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import 'category_style.dart';
+import 'ledger_providers.dart';
 import 'manual_record_sheet.dart';
 import 'offline/offline_rules.dart';
 import 'offline/outbox.dart';
@@ -20,15 +24,48 @@ class RecordComposer extends ConsumerStatefulWidget {
 
 class _RecordComposerState extends ConsumerState<RecordComposer> {
   final _text = TextEditingController();
+  Timer? _debounceTimer;
+  String _debouncedQuery = '';
   bool _busy = false;
 
   @override
+  void initState() {
+    super.initState();
+    _text.addListener(_onTextChanged);
+  }
+
+  @override
   void dispose() {
+    _debounceTimer?.cancel();
+    _text.removeListener(_onTextChanged);
     _text.dispose();
     super.dispose();
   }
 
+  void _onTextChanged() {
+    _debounceTimer?.cancel();
+    final raw = _text.text.trim();
+    if (!RegExp(r'[0-9٠-٩]').hasMatch(raw) || raw.length < 2) {
+      if (_debouncedQuery.isNotEmpty) {
+        setState(() => _debouncedQuery = '');
+      }
+      return;
+    }
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        final current = _text.text.trim();
+        if (current != _debouncedQuery) {
+          setState(() => _debouncedQuery = current);
+        }
+      }
+    });
+  }
+
   Future<void> _submit() async {
+    _debounceTimer?.cancel();
+    if (_debouncedQuery.isNotEmpty) {
+      setState(() => _debouncedQuery = '');
+    }
     final sentence = _text.text.trim();
     if (sentence.isEmpty || _busy) return;
     final l10n = AppLocalizations.of(context);
@@ -98,6 +135,12 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
       _text.text = draft;
       ref.read(composerDraftProvider.notifier).taken();
     });
+
+    final previewAsync = _debouncedQuery.isNotEmpty
+        ? ref.watch(categoryPreviewProvider(_debouncedQuery))
+        : null;
+    final preview = previewAsync?.asData?.value;
+
     return Material(
       color: colors.surface,
       child: SafeArea(
@@ -109,44 +152,104 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
             SmartSpendSpacing.lg,
             SmartSpendSpacing.sm,
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _text,
-                  minLines: 1,
-                  maxLines: 4,
-                  enabled: !_busy,
-                  textInputAction: TextInputAction.send,
-                  keyboardType: TextInputType.text,
-                  onSubmitted: (_) => _submit(),
-                  decoration: InputDecoration(
-                    hintText: l10n.composerHint,
-                    prefixIcon: IconButton(
-                      tooltip: l10n.manualRecordTitle,
-                      icon: const Icon(Icons.dialpad_rounded),
-                      onPressed: () => showManualRecordSheet(context),
+              if (preview != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: SmartSpendSpacing.xs),
+                  child: ExcludeSemantics(
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Container(
+                        key: const Key('category-hint'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: SmartSpendSpacing.sm,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.accent.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: colors.accent.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              categoryIcon(preview.category),
+                              size: 14,
+                              color: colors.accent,
+                            ),
+                            const SizedBox(width: SmartSpendSpacing.xs),
+                            Text(
+                              preview.subCategory.isNotEmpty &&
+                                      preview.subCategory != 'عام'
+                                  ? '${preview.category} / ${preview.subCategory}'
+                                  : preview.category,
+                              style: SmartSpendTypography.style(
+                                12,
+                                FontWeight.w600,
+                              ).copyWith(color: colors.accent),
+                            ),
+                            if (preview.amount > 0) ...[
+                              const SizedBox(width: SmartSpendSpacing.xs),
+                              Text(
+                                '· ${formatMoney(preview.amount)}',
+                                style: SmartSpendTypography.style(
+                                  12,
+                                  FontWeight.w500,
+                                ).copyWith(color: colors.mutedForeground),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: SmartSpendSpacing.sm),
-              SizedBox.square(
-                dimension: 52,
-                child: IconButton.filled(
-                  tooltip: l10n.composerSend,
-                  onPressed: _busy ? null : _submit,
-                  icon: _busy
-                      ? SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: colors.foreground,
-                          ),
-                        )
-                      : const Icon(Icons.arrow_upward),
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _text,
+                      minLines: 1,
+                      maxLines: 4,
+                      enabled: !_busy,
+                      textInputAction: TextInputAction.send,
+                      keyboardType: TextInputType.text,
+                      onSubmitted: (_) => _submit(),
+                      decoration: InputDecoration(
+                        hintText: l10n.composerHint,
+                        prefixIcon: IconButton(
+                          tooltip: l10n.manualRecordTitle,
+                          icon: const Icon(Icons.dialpad_rounded),
+                          onPressed: () => showManualRecordSheet(context),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: SmartSpendSpacing.sm),
+                  SizedBox.square(
+                    dimension: 52,
+                    child: IconButton.filled(
+                      tooltip: l10n.composerSend,
+                      onPressed: _busy ? null : _submit,
+                      icon: _busy
+                          ? SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: colors.foreground,
+                              ),
+                            )
+                          : const Icon(Icons.arrow_upward),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

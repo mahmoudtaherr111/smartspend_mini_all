@@ -387,3 +387,25 @@ num? readAmount(Object? value) => switch (value) {
   final String text => num.tryParse(text),
   _ => null,
 };
+
+/// What `expense.previewCategory` answered for a sentence being typed.
+final class CategoryPreview {
+  const CategoryPreview({
+    required this.amount,
+    required this.category,
+    required this.subCategory,
+    this.itemCount = 1,
+  });
+
+  factory CategoryPreview.fromJson(Map<String, Object?> json) => CategoryPreview(
+    amount: readAmount(json['amount']) ?? 0,
+    category: json['category'] as String? ?? '',
+    subCategory: json['subCategory'] as String? ?? 'عام',
+    itemCount: (json['itemCount'] as num?)?.toInt() ?? 1,
+  );
+
+  final num amount;
+  final String category;
+  final String subCategory;
+  final int itemCount;
+}
