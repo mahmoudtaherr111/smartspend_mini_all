@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../budgets/budgets_screen.dart';
 import '../contacts/contacts_screen.dart';
 import '../lock/security_screen.dart';
 import '../wallets/wallets_screen.dart';
@@ -39,6 +40,12 @@ class MoreScreen extends StatelessWidget {
                 title: 'الناس والديون',
                 subtitle: 'مين ليك عنده ومين عليك ليه',
                 onTap: () => context.go(ContactsScreen.path),
+              ),
+              GroupedRow(
+                icon: Icons.savings_outlined,
+                title: 'الميزانيات الشهرية',
+                subtitle: 'حدد سقف لمصاريفك وتابع اللي باقي لك أول بأول',
+                onTap: () => context.go(BudgetsScreen.path),
               ),
             ],
           ),

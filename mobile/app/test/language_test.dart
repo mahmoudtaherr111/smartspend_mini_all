@@ -39,6 +39,8 @@ void main() {
 
       await tester.tap(find.text('المزيد').last);
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('لغة التطبيق'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('لغة التطبيق'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('English'));

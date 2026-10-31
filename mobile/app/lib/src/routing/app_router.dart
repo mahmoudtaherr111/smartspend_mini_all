@@ -6,6 +6,7 @@ import '../features/auth/register_screen.dart';
 import '../features/auth/session_controller.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/auth/starting_screen.dart';
+import '../features/budgets/budgets_screen.dart';
 import '../features/capture/capture_review_screen.dart';
 import '../features/capture/capture_settings_screen.dart';
 import '../features/contacts/contacts_screen.dart';
@@ -120,6 +121,10 @@ final appTabs = <AppTab>[
       GoRoute(
         path: ContactsScreen.path.substring('/more/'.length),
         builder: (context, state) => const ContactsScreen(),
+      ),
+      GoRoute(
+        path: BudgetsScreen.path.substring('/more/'.length),
+        builder: (context, state) => const BudgetsScreen(),
       ),
       GoRoute(
         path: SecurityScreen.path.substring('/more/'.length),
