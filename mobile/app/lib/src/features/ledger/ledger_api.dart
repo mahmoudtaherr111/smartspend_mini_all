@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:smartspend_api/smartspend_api.dart';
 
 import 'ledger_models.dart';
+import 'receipts/receipt_models.dart';
 
 /// Sentinel for an optional nullable field (`walletId`, `contactId`) left untouched in [LedgerApi.update].
 const Object unchangedField = _UnchangedField();
@@ -46,6 +47,25 @@ class LedgerApi {
       },
     );
     return ParseResult.fromJson(_object(data));
+  }
+
+  /// Parses a photographed receipt: `image.parseReceipt` (REC-06).
+  Future<ReceiptData> parseReceipt({
+    required String imageBase64,
+    String mimeType = 'image/jpeg',
+    String? ocrTextHint,
+    bool saveExpense = false,
+  }) async {
+    final data = await _client.mutate(
+      Procedures.image.parseReceipt,
+      input: {
+        'imageBase64': imageBase64,
+        'mimeType': mimeType,
+        'saveExpense': saveExpense,
+        'ocrTextHint': ?ocrTextHint,
+      },
+    );
+    return ReceiptData.fromJson(_object(data));
   }
 
   /// Hints which category a sentence belongs to while typing: `expense.previewCategory`.

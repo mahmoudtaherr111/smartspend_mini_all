@@ -253,9 +253,12 @@ final class TestApp {
     FakeApi? api,
     FakeGoogleIdentity? google,
     this.humanCheck,
+    this.overrides = const [],
   }) : store = MemorySessionStore(token),
        api = api ?? FakeApi(),
        google = google ?? FakeGoogleIdentity(isAvailable: false);
+
+  final List overrides;
 
   final MemorySessionStore store;
 
@@ -305,6 +308,7 @@ final class TestApp {
           deviceLockProvider.overrideWithValue(deviceLock),
           preferencesStoreProvider.overrideWithValue(preferences),
           initialPreferencesProvider.overrideWithValue(preferences.preferences),
+          ...overrides,
         ],
         child: const SmartSpendApp(),
       ),

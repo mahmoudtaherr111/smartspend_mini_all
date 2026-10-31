@@ -314,7 +314,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `image.parseReceipt` | mutation | `receiptsProcedure` | yes | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/category-registry.ts`, `api/lib/env.ts`, `api/lib/image-magic-bytes.ts`, `api/lib/model-mapper.ts`, `api/lib/muscle-memory.ts`, `api/lib/receipt-image-parser.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx` |
+| `image.parseReceipt` | mutation | `receiptsProcedure` | yes | `expenses`, `user_dictionaries` | `local_users`, `users` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/category-registry.ts`, `api/lib/env.ts`, `api/lib/image-magic-bytes.ts`, `api/lib/model-mapper.ts`, `api/lib/receipt-image-parser.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx` |
 
 ### `localAuth` — `api/local-auth-router.ts`
 

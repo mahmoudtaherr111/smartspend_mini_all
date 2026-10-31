@@ -188,17 +188,12 @@ export const imageRouter = router({
 
       let expenseId: number | null = null;
       if (input.saveExpense) {
-        const {
-          applyExpenseRollupDelta,
-          expenseToRollupDelta,
-        } = await import("./services/expense-rollups");
-
-        await db.transaction(async (tx) => {
-          const [createdExpense] = await tx.insert(expenses).values({
-            userId: ctx.user.id,
-            userType: ctx.user.type,
+        const { createLedgerExpense } = await import("./services/ledger-writer");
+        const created = await createLedgerExpense(
+          { userId: ctx.user.id, userType: ctx.user.type },
+          {
             type: normalized.type,
-            amount: parsed.amount.toString(),
+            amount: parsed.amount,
             category: normalized.category,
             subCategory: normalized.subCategory,
             description: parsed.description,
@@ -210,25 +205,9 @@ export const imageRouter = router({
               merchant: parsed.merchant,
               confidence: parsed.confidence,
             },
-          }).$returningId();
-          expenseId = createdExpense.id;
-
-          const delta = expenseToRollupDelta(
-            {
-              userId: ctx.user.id,
-              userType: ctx.user.type,
-              date: new Date(),
-              type: normalized.type,
-              amount: parsed.amount,
-              source: "image",
-            },
-            1,
-          );
-          await applyExpenseRollupDelta(tx, delta);
-        });
-
-        invalidateUserMemory(ctx.user.id, ctx.user.type);
-        await bumpFinanceCacheGen(ctx.user.id, ctx.user.type);
+          },
+        );
+        expenseId = created.id;
       }
 
       return {

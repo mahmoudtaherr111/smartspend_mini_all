@@ -1027,12 +1027,10 @@ model {
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.classification
-  smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.receipt-parsing
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.security
-  smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.localAuth.confirmVerificationCode -[uses]-> smartspend.api.modules.auth

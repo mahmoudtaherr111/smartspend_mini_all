@@ -98,13 +98,12 @@ flowchart LR
   router_image --> mod_classification
   router_image --> mod_receipt_parsing
   router_image --> sys_accounts
-  router_image --> sys_ai_center
   router_image --> sys_ai_platform
   router_image --> sys_insights
   router_image --> sys_money
   router_image --> sys_platform
+  router_image -.-> tbl_expenses
   router_image -.-> tbl_user_dictionaries
-  router_image ==> tbl_expenses
   router_image ==> tbl_local_users
   router_image ==> tbl_users
   screens_admin --> router_ai
@@ -178,7 +177,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `expense.dismissClarification` | mutation | `authedProcedure` | — | `pending_clarifications` | `Home` |
 | `expense.getCategoryList` | query | `authedProcedure` | `expense_categories` | — | — |
 | `expense.getPendingClarifications` | query | `authedProcedure` | `pending_clarifications` | — | `Home` |
-| `image.parseReceipt` | mutation | `receiptsProcedure` | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` | `Home` |
+| `image.parseReceipt` | mutation | `receiptsProcedure` | `expenses`, `user_dictionaries` | `local_users`, `users` | `Home` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -195,7 +194,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `business_categories` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` |
 | `classification_logs` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `classification-log-cleanup`, `expense.batchCreate`, `expense.create` | `classification`, `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
 | `expense_categories` | A | `expense.createCategory` | `expense.getCategoryList` |
-| `expenses` | B | `image.parseReceipt` | `classification`, `image.parseReceipt` |
+| `expenses` | B | — | `classification`, `image.parseReceipt` |
 | `local_users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `image.parseReceipt` | — |
 | `pending_clarifications` | D | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.dismissClarification` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.getPendingClarifications` |
 | `user_businesses` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` |

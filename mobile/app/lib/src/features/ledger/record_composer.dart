@@ -14,6 +14,7 @@ import 'manual_record_sheet.dart';
 import 'offline/ledger_store.dart';
 import 'offline/offline_rules.dart';
 import 'offline/outbox.dart';
+import 'receipts/receipt_flow.dart';
 import 'record_flow.dart';
 import 'voice/voice_permission_sheet.dart';
 import 'voice/voice_providers.dart';
@@ -135,6 +136,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
   }
 
   Future<void> _stopAndProcessVoice() async {
+    // ignore: avoid_print
     if (!_isRecording) return;
     _recordTimer?.cancel();
     final duration = _recordingSeconds;
@@ -429,10 +431,42 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                             ),
                     ),
                     const SizedBox(width: SmartSpendSpacing.xs),
-                    if (!_isRecording) ...[
-                      _buildMicButton(colors, isTapToRecord),
-                      const SizedBox(width: SmartSpendSpacing.xs),
-                      SizedBox.square(
+                    Visibility(
+                      visible: !_isRecording,
+                      maintainSize: true,
+                      maintainAnimation: true,
+                      maintainState: true,
+                      child: SizedBox.square(
+                        dimension: 44,
+                        child: IconButton(
+                          tooltip: 'تصوير فاتورة',
+                          onPressed: _busy
+                              ? null
+                              : () => startReceiptIntake(
+                                    context: context,
+                                    ref: ref,
+                                  ),
+                          icon: Icon(
+                            Icons.camera_alt_outlined,
+                            color: colors.foreground,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: SmartSpendSpacing.xs),
+                    _buildMicButton(
+                      colors,
+                      isTapToRecord,
+                      isRecording: _isRecording,
+                    ),
+                    const SizedBox(width: SmartSpendSpacing.xs),
+                    Visibility(
+                      visible: !_isRecording,
+                      maintainSize: true,
+                      maintainAnimation: true,
+                      maintainState: true,
+                      child: SizedBox.square(
                         dimension: 48,
                         child: IconButton.filled(
                           tooltip: l10n.composerSend,
@@ -448,12 +482,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                               : const Icon(Icons.arrow_upward),
                         ),
                       ),
-                    ] else
-                      _buildMicButton(
-                        colors,
-                        isTapToRecord,
-                        isRecording: true,
-                      ),
+                    ),
                   ],
                 ),
             ],
@@ -570,8 +599,29 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                     'اضغط مطولاً على المايك للتسجيل',
                   );
                 },
-          onLongPressStart: isTapToRecord ? null : (_) => unawaited(_startVoiceRecording()),
-          onLongPressEnd: isTapToRecord ? null : (_) => unawaited(_stopAndProcessVoice()),
+          onLongPressStart: isTapToRecord
+              ? null
+              : (details) {
+                  // ignore: avoid_print
+                  unawaited(_startVoiceRecording());
+                },
+          onLongPressEnd: isTapToRecord
+              ? null
+              : (details) {
+                  // ignore: avoid_print
+                  unawaited(_stopAndProcessVoice());
+                },
+          onLongPressUp: isTapToRecord
+              ? null
+              : () {
+                  // ignore: avoid_print
+                  unawaited(_stopAndProcessVoice());
+                },
+          onLongPressCancel: isTapToRecord
+              ? null
+              : () {
+                  // ignore: avoid_print
+                  },
           onLongPressMoveUpdate: isTapToRecord
               ? null
               : (details) {
