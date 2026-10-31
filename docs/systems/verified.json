@@ -165,7 +165,7 @@
         "api/lib/ai-ledger.ts": "7c1a14b9f2c1",
         "api/lib/ai-pricing.ts": "23f9d247a58d",
         "api/lib/ai-provider-registry.ts": "da1562b6acdf",
-        "api/lib/ai-usage-policy.ts": "ab1cefec5e67",
+        "api/lib/ai-usage-policy.ts": "8958b2949e6c",
         "api/lib/deepseek-client.ts": "25b94e78c4ee",
         "api/lib/embedding-provider.ts": "72fa42725bca",
         "api/lib/fireworks-client.ts": "0ff5cda683b6",
@@ -179,9 +179,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-10-29 2618b97e",
+      "checked": "2026-10-31 68ae7cc5",
       "arabic": "9ec4f8d2258f",
-      "arabicChecked": "2026-10-27 12b1cd80"
+      "arabicChecked": "2026-10-31 68ae7cc5"
     },
     "bank-messages": {
       "files": {
@@ -257,8 +257,8 @@
         "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "042ee4fc583f",
-        "api/image-router.ts": "7de42b8cb141",
+        "api/expense-router.ts#rest-of-file": "3a89a1e65eff",
+        "api/image-router.ts": "a2f7234f231e",
         "api/lib/admissibility-gate.ts": "3b5889850057",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
         "api/lib/amount-linker.ts": "23fb47c27442",
@@ -317,9 +317,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-10-31 ea2514f5",
+      "checked": "2026-10-31 68ae7cc5",
       "arabic": "9a163d2be1c3",
-      "arabicChecked": "2026-10-31 ea2514f5"
+      "arabicChecked": "2026-10-31 68ae7cc5"
     },
     "insights": {
       "files": {
@@ -335,6 +335,7 @@
         "api/jobs/monthly-behavior-job.ts": "09dbf0046bb6",
         "api/jobs/monthly-report-job.ts": "35b6222e452d",
         "api/lib/report-wait.ts": "67ab20e868a4",
+        "api/lib/spending-behavior.ts": "7b10f3b7fc2f",
         "api/profile-router.ts#profile.dismissOnboarding": "4c7744ab992d",
         "api/profile-router.ts#profile.getNextOnboardingQuestion": "45b300c9691a",
         "api/profile-router.ts#profile.getQuestions": "ec6916cf9c0c",
@@ -344,17 +345,16 @@
         "api/profile-router.ts#profile.updateSmartProfile": "28d67008ded5",
         "api/profile-router.ts#rest-of-file": "e5e0790a83d3",
         "api/services/adaptive-question-engine.ts": "cb640c037896",
-        "api/services/batch-ai-service.ts": "d0e332df353f",
-        "api/services/lifestyle-inference-engine.ts": "88678cae6a0a",
+        "api/services/lifestyle-inference-engine.ts": "bd27b467fde8",
         "api/services/personal-context-builder.ts": "1e5742c3811f",
         "api/services/pro-report-engine.ts": "dddbf8f0da83",
         "api/services/report-personalization-engine.ts": "003d11c89295",
-        "api/services/user-profile-service.ts": "19237538c3b4",
+        "api/services/user-profile-service.ts": "620d598615c2",
         "src/components/insights/AIInsights.tsx": "3be01c23f12c"
       },
-      "checked": "2026-10-29 2618b97e",
-      "arabic": "078ed0133f51",
-      "arabicChecked": "2026-10-29 e8d275c8"
+      "checked": "2026-10-31 68ae7cc5",
+      "arabic": "51f46949da70",
+      "arabicChecked": "2026-10-31 68ae7cc5"
     },
     "money": {
       "files": {
@@ -362,23 +362,23 @@
         "api/boot.ts#job:nightly-rollup-reconciliation": "7a5700744f08",
         "api/boot.ts#job:taxonomy-migration": "5864e301b433",
         "api/budget-router.ts": "106bf2ec3b6c",
-        "api/business-router.ts": "73613d1ac2ee",
-        "api/coach-router.ts": "0873bd26929a",
+        "api/business-router.ts": "170890339339",
+        "api/coach-router.ts": "d4bc2f825796",
         "api/expense-router.ts#expense.createInstallmentPlan": "d0e4ac52ce8b",
         "api/expense-router.ts#expense.delete": "7680319b9ecd",
         "api/expense-router.ts#expense.deleteInstallmentPlan": "fc7d83b8ccfe",
         "api/expense-router.ts#expense.getById": "883d7c8c2233",
         "api/expense-router.ts#expense.getDebtBalances": "821a765233cc",
         "api/expense-router.ts#expense.getMonthSummary": "dced3e0b75b4",
-        "api/expense-router.ts#expense.getMonthlyStats": "37b98d9f48e2",
+        "api/expense-router.ts#expense.getMonthlyStats": "8f29a7f539db",
         "api/expense-router.ts#expense.getSeasonSpending": "987735f845cc",
-        "api/expense-router.ts#expense.getYearlyStats": "92336d3f59dd",
+        "api/expense-router.ts#expense.getYearlyStats": "6d543ca15ce5",
         "api/expense-router.ts#expense.list": "cd0a841edd6c",
         "api/expense-router.ts#expense.listInstallmentPlans": "826717e1eefe",
         "api/expense-router.ts#expense.previewCategory": "dab97f94d0c8",
         "api/expense-router.ts#expense.searchTransactions": "2e8fa55eefed",
         "api/expense-router.ts#expense.update": "da26821aaae7",
-        "api/expense-router.ts#rest-of-file": "042ee4fc583f",
+        "api/expense-router.ts#rest-of-file": "3a89a1e65eff",
         "api/export-router.ts#export.myExpenses": "ebbfe5c845ec",
         "api/export-router.ts#rest-of-file": "264f56b1884e",
         "api/goals-router.ts": "7abbe5a2ba53",
@@ -392,7 +392,7 @@
         "api/profile-router.ts#profile.updateContact": "f2c5c45b1581",
         "api/profile-router.ts#rest-of-file": "e5e0790a83d3",
         "api/services/budget-status.ts": "e6c46c341118",
-        "api/services/coach/cashflows.ts": "2e8c153d9395",
+        "api/services/coach/cashflows.ts": "aa64069937b1",
         "api/services/coach/plans.ts": "443a3bd6fcc6",
         "api/services/coach/schedule.ts": "953b1adf18cf",
         "api/services/debt-ledger.ts": "c2098504a1e4",
@@ -410,7 +410,7 @@
         "src/components/dashboard/MonthlyCalendar.tsx": "e72b1c0e2bd7",
         "src/components/dashboard/MonthlyStats.tsx": "55ac8f2618fe",
         "src/components/dashboard/NativeTabPanels.tsx": "8d5e7d72c996",
-        "src/components/dashboard/StatsView.tsx": "45f3346ad5c3",
+        "src/components/dashboard/StatsView.tsx": "6c954801497e",
         "src/components/dashboard/StreakCounter.tsx": "86c3f654ff1d",
         "src/components/dashboard/UserIntelligencePanel.tsx": "c5f3963e35c8",
         "src/components/debts/DebtsPanel.tsx": "77a2bd04b79d",
@@ -426,9 +426,9 @@
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-10-31 1886a71d",
+      "checked": "2026-10-31 68ae7cc5",
       "arabic": "3269a08c3424",
-      "arabicChecked": "2026-10-31 6c9445bc"
+      "arabicChecked": "2026-10-31 68ae7cc5"
     },
     "notifications": {
       "files": {
@@ -505,9 +505,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "a49f3b277518"
       },
-      "checked": "2026-10-30 d3bc8a2b",
-      "arabic": "bb1e7f50462d",
-      "arabicChecked": "2026-10-30 d3bc8a2b"
+      "checked": "2026-10-31 68ae7cc5",
+      "arabic": "0d1400877465",
+      "arabicChecked": "2026-10-31 68ae7cc5"
     },
     "voice-calls": {
       "files": {

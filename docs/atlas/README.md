@@ -47,4 +47,4 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 
 Gaps the generator found between the code and the hand-maintained maps in `docs/architecture/`, or code patterns it cannot read.
 
-- Unclustered file — add a rule to docs/architecture/clusters.json: api/lib/spending-behavior.ts
+None.

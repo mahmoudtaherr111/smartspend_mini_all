@@ -178,7 +178,7 @@ Checked against the code; each one names where it lives.
 7. **Debt.** The behaviour snapshots are written but not read: `getProactiveInsights` in
    `api/services/finance-semantic-layer/proactive-insights.ts` has no caller, and no caller asks the facts pack to
    prefer a snapshot.
-8. **Debt.** Unused code: `api/services/batch-ai-service.ts` only simulates a Gemini batch job; `buildProReportPrompt` and
+8. **Debt.** Unused code: `buildProReportPrompt` and
    `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are
    not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called
    only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.

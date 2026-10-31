@@ -149,6 +149,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/shared-generation.ts` | [platform](platform.md) |
 | `api/lib/smart-pipeline.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/sms-ai-contract.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/spending-behavior.ts` | [insights](insights.md) |
 | `api/lib/stt-corrections.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/subscription-service.ts` | [billing](billing.md) |
 | `api/lib/system-settings-registry.ts` | [platform](platform.md) |

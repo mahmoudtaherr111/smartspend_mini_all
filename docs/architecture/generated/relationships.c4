@@ -963,6 +963,7 @@ model {
   smartspend.api.trpc.expense.getMonthSummary -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.getMonthlyStats -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.trpc.expense.getMonthlyStats -[reads]-> smartspend.mysql.expenses
+  smartspend.api.trpc.expense.getMonthlyStats -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.expense.getMonthlyStats -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.getMonthlyStats -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.expense.getMonthlyStats -[uses]-> smartspend.shared.contracts

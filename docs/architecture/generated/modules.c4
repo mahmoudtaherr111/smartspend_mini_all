@@ -25,10 +25,10 @@ model {
       }
     }
     ai-insights = module 'AI insights and reports' {
-      description 'The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, the printable Pro report, and the wait each plan has between two AI reports. The Gemini batch service only simulates its calls.'
+      description 'The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, spending behavior SSOT calculation, the personal context added to classification and report prompts, the printable Pro report, and the wait each plan has between two AI reports.'
       metadata {
-        files '7'
-        paths 'api/services/adaptive-question-engine.ts, api/services/lifestyle-inference-engine.ts, api/services/personal-context-builder.ts, api/services/pro-report-engine.ts, api/services/report-personalization-engine.ts, api/services/user-profile-service.ts, api/services/batch-ai-service.ts, api/lib/report-wait.ts'
+        files '8'
+        paths 'api/services/adaptive-question-engine.ts, api/services/lifestyle-inference-engine.ts, api/services/personal-context-builder.ts, api/services/pro-report-engine.ts, api/services/report-personalization-engine.ts, api/services/user-profile-service.ts, api/lib/spending-behavior.ts, api/lib/report-wait.ts'
       }
     }
     ai-kernel = module 'AI Center kernel' {

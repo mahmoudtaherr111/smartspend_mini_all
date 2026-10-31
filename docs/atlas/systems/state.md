@@ -10,18 +10,18 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (8 of 
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-31 ea2514f5 | 2026-10-31 ea2514f5 | 18 | — | — | 1 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-31 68ae7cc5 | 2026-10-31 68ae7cc5 | 18 | — | — | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 11 | — | — | 3 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | — | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-29 2618b97e | 2026-10-29 e8d275c8 | 9 | — | 2 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-31 1886a71d | 2026-10-31 6c9445bc | 7 | — | 1 | 7 | 1 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-31 68ae7cc5 | 2026-10-31 68ae7cc5 | 9 | — | 2 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-31 68ae7cc5 | 2026-10-31 68ae7cc5 | 7 | — | 1 | 7 | 1 |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-30 d3bc8a2b | 2026-10-30 d3bc8a2b | 16 | **1** | — | 8 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-29 c0f01c72 | 2026-10-29 c0f01c72 | 2 | — | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-30 d3bc8a2b | 2026-10-30 d3bc8a2b | 4 | **1** | 1 | 3 | 2 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 4 | — | 2 | 5 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-29 2618b97e | 2026-10-27 12b1cd80 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-30 d3bc8a2b | 2026-10-30 d3bc8a2b | 5 | — | — | — | 7 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-31 68ae7cc5 | 2026-10-31 68ae7cc5 | 8 | — | — | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-31 68ae7cc5 | 2026-10-31 68ae7cc5 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-29 753851e1 | 2026-10-29 753851e1 | 7 | — | — | 3 | 2 |
 
 
@@ -147,7 +147,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns with `ALTER TABLE` when a read fails, outside the migrations in `db/`.
 - The behaviour snapshots are written but not read: `getProactiveInsights` in `api/services/finance-semantic-layer/proactive-insights.ts` has no caller, and no caller asks the facts pack to prefer a snapshot.
-- Unused code: `api/services/batch-ai-service.ts` only simulates a Gemini batch job; `buildProReportPrompt` and `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.
+- Unused code: `buildProReportPrompt` and `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - Writers outside `api/expense-router.ts` still write `expenses` with their own steps instead of the ledger writer: receipts (`api/image-router.ts#parseReceipt`), the AI Center's actions (`api/services/action-runtime/extended-actions.ts`), business, profile and wallet changes (`api/business-router.ts`, `api/profile-router.ts`, `api/wallet-router.ts`), the taxonomy migration and account purge. Each moves to it as its own change (decision 0027).
@@ -170,7 +170,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat, report and voice paths do not. The running token count and its event are written by four copies of the same code (`trackTokens` in `api/ai-router.ts`, `trackAiTokens` in `api/lib/ai-usage-policy.ts`, and one each in `api/image-router.ts` and `api/goals-router.ts`).
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
-- Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; `GROQ_API_KEY` in `api/ai-router.ts`, `GEMINI_API_KEY` in `api/lib/ai-gateway.ts` and `api/services/batch-ai-service.ts`, and `NODE_ENV` in `api/chat-router.ts`, `api/local-auth-router.ts` and `api/middleware.ts` are read directly too.
+- Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; `GROQ_API_KEY` in `api/ai-router.ts`, `GEMINI_API_KEY` in `api/lib/ai-gateway.ts`, and `NODE_ENV` in `api/chat-router.ts`, `api/local-auth-router.ts` and `api/middleware.ts` are read directly too.
 - `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the history the admin screens show ends where the ninety-day pruning starts.
 - `db/seed.ts` is an empty stub that nothing runs: no npm script calls it.
 - `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library update can silently turn into zeroes.

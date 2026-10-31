@@ -148,8 +148,7 @@ the rule checks in `tests/knowledge/`.
 Checked against the code; each one names where it lives.
 1. **Debt.** Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8):
    `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and
-   public URL; `GROQ_API_KEY` in `api/ai-router.ts`, `GEMINI_API_KEY` in `api/lib/ai-gateway.ts` and
-   `api/services/batch-ai-service.ts`, and `NODE_ENV` in `api/chat-router.ts`, `api/local-auth-router.ts` and
+   public URL; `GROQ_API_KEY` in `api/ai-router.ts`, `GEMINI_API_KEY` in `api/lib/ai-gateway.ts`, and `NODE_ENV` in `api/chat-router.ts`, `api/local-auth-router.ts` and
    `api/middleware.ts` are read directly too.
 2. **Debt.** `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the
    history the admin screens show ends where the ninety-day pruning starts.
