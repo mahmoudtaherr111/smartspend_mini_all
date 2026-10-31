@@ -2106,6 +2106,7 @@ export const expenseRouter = router({
         let count = 0;
 
         const monthMap: Record<string, Decimal> = {};
+        const monthsWithData = new Set<string>();
         for (let i = 1; i <= 12; i++) {
           monthMap[`${input.year}-${String(i).padStart(2, "0")}`] = new Decimal(0);
         }
@@ -2113,13 +2114,17 @@ export const expenseRouter = router({
         for (const row of rollups) {
           const exp = new Decimal(row.expense || 0);
           const inc = new Decimal(row.income || 0);
+          const txns = Number(row.txnCount || 0);
           totalExpense = totalExpense.plus(exp);
           totalIncome = totalIncome.plus(inc);
-          count += Number(row.txnCount || 0);
+          count += txns;
 
           const mKey = String(row.day).slice(0, 7);
           if (monthMap[mKey]) {
             monthMap[mKey] = monthMap[mKey].plus(exp);
+          }
+          if (txns > 0 || !exp.isZero() || !inc.isZero()) {
+            monthsWithData.add(mKey);
           }
         }
 
@@ -2141,7 +2146,13 @@ export const expenseRouter = router({
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([month, amount]) => {
             const monthIdx = parseInt(month.split("-")[1]) - 1;
-            return { month: monthNames[monthIdx], amount: amount.toNumber() };
+            const hasData = monthsWithData.has(month);
+            return {
+              month: monthNames[monthIdx],
+              monthKey: month,
+              amount: amount.toNumber(),
+              hasData,
+            };
           });
 
         return {
