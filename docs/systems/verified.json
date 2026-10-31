@@ -101,7 +101,7 @@
     "ai-center": {
       "files": {
         "api/boot.ts#job:memory-embedding-backfill": "85d55cd9dc11",
-        "api/chat-router.ts": "5288da1033f8",
+        "api/chat-router.ts": "1585fa33ef30",
         "api/services/action-runtime/artifacts.ts": "5292dfe6dc80",
         "api/services/action-runtime/confirmation-phrases.ts": "ecf79bb5cfe7",
         "api/services/action-runtime/extended-actions.ts": "eb22b727d1a2",
@@ -140,9 +140,9 @@
         "api/services/finance-semantic-layer/monthly-report-facts.ts": "3f971c8a47ab",
         "api/services/finance-semantic-layer/period-resolver.ts": "6ebc06ee9807",
         "api/services/finance-semantic-layer/proactive-insights.ts": "4673f997eb5c",
-        "api/services/finance-semantic-layer/resolvers.ts": "271e3a0624f4",
+        "api/services/finance-semantic-layer/resolvers.ts": "da8c55cd0489",
         "api/services/finance-semantic-layer/row-aggregators.ts": "46f6753eac39",
-        "api/services/finance-semantic-layer/types.ts": "d13d8332e9be",
+        "api/services/finance-semantic-layer/types.ts": "37504cacb25f",
         "api/services/site-guide/embedding.ts": "bc5457180269",
         "api/services/site-guide/index.ts": "d2416784dee1",
         "api/services/site-guide/knowledge-base.ts": "25cb012efb96",
@@ -153,19 +153,19 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "05db1979579d"
       },
-      "checked": "2026-10-27 d1c95984",
+      "checked": "2026-10-31 95337661",
       "arabic": "35ee1de94106",
-      "arabicChecked": "2026-10-27 d1c95984"
+      "arabicChecked": "2026-10-31 95337661"
     },
     "ai-platform": {
       "files": {
         "api/ai-router.ts#ai.getUserLimits": "85e198fa737d",
         "api/ai-router.ts#rest-of-file": "797aaba83569",
-        "api/lib/ai-gateway.ts": "dbf171b0d6f3",
+        "api/lib/ai-gateway.ts": "db17fb645f84",
         "api/lib/ai-ledger.ts": "7c1a14b9f2c1",
         "api/lib/ai-pricing.ts": "23f9d247a58d",
         "api/lib/ai-provider-registry.ts": "da1562b6acdf",
-        "api/lib/ai-usage-policy.ts": "8958b2949e6c",
+        "api/lib/ai-usage-policy.ts": "ceb216e31b34",
         "api/lib/deepseek-client.ts": "25b94e78c4ee",
         "api/lib/embedding-provider.ts": "72fa42725bca",
         "api/lib/fireworks-client.ts": "0ff5cda683b6",
@@ -179,9 +179,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-10-31 68ae7cc5",
+      "checked": "2026-10-31 95337661",
       "arabic": "9ec4f8d2258f",
-      "arabicChecked": "2026-10-31 68ae7cc5"
+      "arabicChecked": "2026-10-31 95337661"
     },
     "bank-messages": {
       "files": {
@@ -324,7 +324,7 @@
     "insights": {
       "files": {
         "api/ai-router.ts#ai.compareMonths": "c66fc3390521",
-        "api/ai-router.ts#ai.generateMonthlyInsights": "6bb827b5c3e1",
+        "api/ai-router.ts#ai.generateMonthlyInsights": "ea8702721470",
         "api/ai-router.ts#ai.generateYearlyInsights": "935b893e6244",
         "api/ai-router.ts#ai.getCachedMonthlyInsights": "95b28ed6f694",
         "api/ai-router.ts#rest-of-file": "797aaba83569",
@@ -333,7 +333,7 @@
         "api/export-router.ts#export.monthlyReportHtml": "335e0925b0ca",
         "api/export-router.ts#rest-of-file": "264f56b1884e",
         "api/jobs/monthly-behavior-job.ts": "09dbf0046bb6",
-        "api/jobs/monthly-report-job.ts": "35b6222e452d",
+        "api/jobs/monthly-report-job.ts": "3930df3c5af6",
         "api/lib/report-wait.ts": "67ab20e868a4",
         "api/lib/spending-behavior.ts": "7b10f3b7fc2f",
         "api/profile-router.ts#profile.dismissOnboarding": "4c7744ab992d",
@@ -352,9 +352,9 @@
         "api/services/user-profile-service.ts": "620d598615c2",
         "src/components/insights/AIInsights.tsx": "3be01c23f12c"
       },
-      "checked": "2026-10-31 68ae7cc5",
+      "checked": "2026-10-31 95337661",
       "arabic": "51f46949da70",
-      "arabicChecked": "2026-10-31 68ae7cc5"
+      "arabicChecked": "2026-10-31 95337661"
     },
     "money": {
       "files": {
@@ -534,7 +534,7 @@
         "api/services/voice/brain/tools/market-price.ts": "5bed0aca7f26",
         "api/services/voice/brain/tools/memory.ts": "31b87da806da",
         "api/services/voice/brain/tools/money-query.ts": "e9663b127858",
-        "api/services/voice/brain/tools/record.ts": "40b5704378d8",
+        "api/services/voice/brain/tools/record.ts": "1fe8b2349305",
         "api/services/voice/brain/tools/reports.ts": "21e3a9911b60",
         "api/services/voice/brain/tools/think.ts": "5224961b8aad",
         "api/services/voice/brain/tools/types.ts": "57a7f0dbc491",
@@ -569,9 +569,9 @@
         "src/lib/voice/pcm-player.ts": "dec5be50ba1a",
         "src/lib/voice/speech-detector.ts": "69cc55d954de"
       },
-      "checked": "2026-10-27 d1c95984",
+      "checked": "2026-10-31 95337661",
       "arabic": "33ae81e76f2b",
-      "arabicChecked": "2026-10-27 d1c95984"
+      "arabicChecked": "2026-10-31 95337661"
     },
     "web-app": {
       "files": {
