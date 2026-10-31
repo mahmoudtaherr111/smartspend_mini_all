@@ -11,6 +11,7 @@ export 'src/debt_badge.dart';
 export 'src/figures.dart';
 export 'src/grouped.dart';
 export 'src/haptics.dart';
+export 'src/milestone_celebration.dart';
 export 'src/money.dart';
 export 'src/motion.dart';
 export 'src/navigation_bar.dart';

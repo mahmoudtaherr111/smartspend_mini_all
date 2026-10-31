@@ -5,6 +5,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 import '../../l10n/app_localizations.dart';
 import '../budgets/budgets_screen.dart';
 import '../contacts/contacts_screen.dart';
+import '../goals/goals_screen.dart';
 import '../lock/security_screen.dart';
 import '../wallets/wallets_screen.dart';
 import 'account_card.dart';
@@ -46,6 +47,12 @@ class MoreScreen extends StatelessWidget {
                 title: 'الميزانيات الشهرية',
                 subtitle: 'حدد سقف لمصاريفك وتابع اللي باقي لك أول بأول',
                 onTap: () => context.go(BudgetsScreen.path),
+              ),
+              GroupedRow(
+                icon: Icons.flag_outlined,
+                title: 'أهداف التوفير',
+                subtitle: 'خطط لمستقبلك وتابع وصولك لأهدافك بالذكاء الاصطناعي',
+                onTap: () => context.go(GoalsScreen.path),
               ),
             ],
           ),
