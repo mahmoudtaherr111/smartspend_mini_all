@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../capture/shared_text_receiver.dart';
 import '../installments/installments_quick_card.dart';
 import '../lock/app_lock.dart';
 import '../streak/streak_badge.dart';
@@ -34,6 +35,11 @@ class RecordScreen extends ConsumerWidget {
     final hidden = ref.watch(
       appLockProvider.select((lock) => lock.hideAmounts),
     );
+
+    // Check for text shared into the app via Android share target / iOS extension (CAP-05).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(sharedTextReceiverProvider).checkAndSubmitSharedText();
+    });
     // Its own messenger: notices raised here show on this scaffold, above the sentence box, instead of on the tab
     // shell's, where they would float over the box's send button.
     return ScaffoldMessenger(
