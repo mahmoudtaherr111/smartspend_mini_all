@@ -11,6 +11,7 @@ import {
   clampOutputTokens,
   estimateTokensFromText,
   recordAiUsageEvent,
+  trackAiTokens,
   asPlan,
 } from "./lib/ai-usage-policy";
 import { MAX_IMAGE_BASE64_CHARS, parseReceiptImage, stripDataUri } from "./lib/receipt-image-parser";
@@ -32,25 +33,7 @@ async function trackImageTokens(
   tokens: number,
   model?: string,
 ) {
-  if (!tokens) return;
-  if (userType === "oauth") {
-    await db
-      .update(users)
-      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-      .where(eq(users.id, userId));
-  } else {
-    await db
-      .update(localUsers)
-      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-      .where(eq(localUsers.id, userId));
-  }
-  await recordAiUsageEvent({
-    userId,
-    userType,
-    channel: "image",
-    model,
-    tokens,
-  });
+  await trackAiTokens({ id: userId, type: userType }, tokens, "image", model);
 }
 
 export const imageRouter = router({

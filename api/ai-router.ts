@@ -80,6 +80,7 @@ import {
   estimateTokensFromText,
   getAiBudget,
   recordAiUsageEvent,
+  trackAiTokens,
   type AiUsageChannel,
 } from "./lib/ai-usage-policy";
 import {
@@ -288,32 +289,12 @@ async function trackTokens(
   channel: AiUsageChannel = "parse",
   model?: string,
 ) {
-  if (!tokens || tokens <= 0) return;
-  try {
-    // 1. Legacy running-sum counter (backward compat)
-    if (userType === "oauth") {
-      await db
-        .update(users)
-        .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-        .where(eq(users.id, userId));
-    } else {
-      await db
-        .update(localUsers)
-        .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-        .where(eq(localUsers.id, userId));
-    }
-
-    // 2. Legacy usage event
-    await recordAiUsageEvent({
-      userId,
-      userType: userType as "oauth" | "local",
-      channel,
-      model,
-      tokens,
-    });
-  } catch (err) {
-    console.error("Failed to track tokens:", err);
-  }
+  await trackAiTokens(
+    { id: userId, type: userType as "oauth" | "local" },
+    tokens,
+    channel,
+    model,
+  );
 }
 
 
@@ -2460,7 +2441,6 @@ ${personalizedSummaryForAI}
             } else {
               recordModelCalls(ctx.user, "report", undefined, { model: modelName, tokens, providerSlug: reportSlug });
             }
-            const estimatedInputTokens = estimateTokensFromText(prompt);
             reportEstimatedInputTokens = estimatedInputTokens;
             reportTotalTokens = tokens;
             reportLlmCalls = tokens > 0 ? 1 : 0;

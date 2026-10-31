@@ -10,7 +10,7 @@ import { callFireworksAPI } from "../lib/fireworks-client";
 import { createLogger, phoneTail } from "../lib/log";
 import { PLAN_IDS, isPlanFeatureEnabled } from "../../contracts/plan-features";
 import { providerSlugForBaseUrl, recordAiLedger } from "../lib/ai-ledger";
-import { assertAiBudget, estimateTokensFromText } from "../lib/ai-usage-policy";
+import { assertAiBudget, estimateTokensFromText, trackAiTokens } from "../lib/ai-usage-policy";
 import { mapModelName } from "../lib/model-mapper";
 
 const log = createLogger("monthly-report");
@@ -320,17 +320,12 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
               });
 
               if (aiResult.tokensUsed > 0) {
-                if (userType === "oauth") {
-                  await db
-                    .update(users)
-                    .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${aiResult.tokensUsed}` })
-                    .where(eq(users.id, u.id));
-                } else {
-                  await db
-                    .update(localUsers)
-                    .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${aiResult.tokensUsed}` })
-                    .where(eq(localUsers.id, u.id));
-                }
+                await trackAiTokens(
+                  { id: u.id, type: userType },
+                  aiResult.tokensUsed,
+                  "report",
+                  modelToUse,
+                );
               }
 
               void recordAICostMetric({

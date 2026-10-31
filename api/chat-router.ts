@@ -94,7 +94,7 @@ import { providerSlugForBaseUrl, recordAiLedger } from "./lib/ai-ledger";
 import { resolveAdminRoutes } from "./lib/ai-gateway";
 import { env } from "./lib/env";
 import { defaultGeminiModelForPlan, mapModelName } from "./lib/model-mapper";
-import { assertAiBudget, estimateTokensFromText } from "./lib/ai-usage-policy";
+import { assertAiBudget, estimateTokensFromText, trackAiTokens } from "./lib/ai-usage-policy";
 
 const log = createLogger("chat");
 
@@ -1324,22 +1324,15 @@ export const chatRouter = router({
           ),
         );
 
-      // 9. Update user's AI tokens used
+      // 9. Update user's AI tokens used and record event for burst guard (DEBT-18)
       const tokensToAdd = result.tokensUsed;
-      if (user.type === "oauth") {
-        await db
-          .update(users)
-          .set({
-            aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokensToAdd}`,
-          })
-          .where(eq(users.id, user.id));
-      } else {
-        await db
-          .update(localUsers)
-          .set({
-            aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokensToAdd}`,
-          })
-          .where(eq(localUsers.id, user.id));
+      if (tokensToAdd > 0) {
+        await trackAiTokens(
+          { id: user.id, type: user.type },
+          tokensToAdd,
+          "parse",
+          result.model,
+        );
       }
 
       return {

@@ -1,4 +1,5 @@
 import 'dart:convert' as convert;
+import 'dart:io' show Platform;
 
 import 'package:smartspend_api/smartspend_api.dart';
 
@@ -20,7 +21,7 @@ final class AiApi {
       Procedures.chat.sendMessage,
       input: {
         'message': message,
-        ?'conversationId': conversationId,
+        'conversationId': ?conversationId,
         if (devQaBypassDailyLimit == true)
           'devQaBypassDailyLimit': devQaBypassDailyLimit,
       },
@@ -80,7 +81,7 @@ final class AiApi {
       Procedures.chat.confirmAction,
       input: {
         'actionId': actionId,
-        ?'confirmationPhrase': confirmationPhrase,
+        'confirmationPhrase': ?confirmationPhrase,
       },
     );
     if (res is Map<String, Object?>) {
@@ -268,9 +269,10 @@ final class AiApi {
 
   /// Initiates a live voice call session (AI-09).
   Future<Map<String, Object?>> startVoiceCall() async {
+    final clientType = Platform.isIOS ? 'ios' : 'android';
     final res = await _client.mutate(
       Procedures.voice.startCall,
-      input: {'client': 'flutter-app'},
+      input: {'client': clientType},
     );
     if (res is Map<String, Object?>) {
       return res;
@@ -281,6 +283,13 @@ final class AiApi {
   /// Lists past voice calls (AI-10).
   Future<List<VoiceCallItem>> listVoiceCalls() async {
     final res = await _client.query(Procedures.voice.listCalls);
+    if (res is Map<String, Object?>) {
+      final list = res['calls'] as List<Object?>? ?? const [];
+      return [
+        for (final item in list)
+          if (item is Map<String, Object?>) VoiceCallItem.fromJson(item),
+      ];
+    }
     if (res is List<Object?>) {
       return [
         for (final item in res)

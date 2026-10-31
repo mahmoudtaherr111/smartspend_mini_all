@@ -410,13 +410,17 @@ final class VoiceCallItem {
 
     return VoiceCallItem(
       id: (json['id'] as num?)?.toInt() ?? 0,
-      callId: (json['callId'] as String?) ?? 'vc_0',
+      callId: (json['callId'] as String?) ??
+          (json['id'] != null ? 'vc_${json['id']}' : 'vc_0'),
       startedAt: startedAt ?? DateTime.now(),
-      durationSeconds: (json['durationSeconds'] as num?)?.toInt() ??
+      durationSeconds: (json['billedSeconds'] as num?)?.toInt() ??
+          (json['durationSeconds'] as num?)?.toInt() ??
           (json['duration'] as num?)?.toInt() ??
           0,
       endedAt: endedAt,
-      status: (json['status'] as String?) ?? 'completed',
+      status: (json['endReason'] as String?) ??
+          (json['status'] as String?) ??
+          'completed',
     );
   }
 

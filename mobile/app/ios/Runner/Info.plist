@@ -24,6 +24,13 @@
 	<!-- Shown by iOS the first time the app lock asks for Face ID (docs/decisions/0023-mobile-app-lock.md). -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>عشان تفتح SmartSpend بوشّك بدل الرمز السري.</string>
+	<!-- Shown by iOS when the live voice call asks for microphone access (AI-09, GAP-06). -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>عشان تتكلم بالصوت مع المساعد الذكي في المكالمة المباشرة.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- A debug build may reach the API on the development machine over plain HTTP. -->

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform, WebSocket;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers.dart';
 import 'voice_call_models.dart';
 
 /// Abstract socket interface allowing mock sockets in tests and real WebSockets in production.
@@ -10,6 +12,25 @@ abstract class VoiceSocketClient {
   Stream<dynamic> get messages;
   void send(String message);
   void close();
+}
+
+/// Real WebSocket implementation for production live voice calls.
+class IoVoiceSocketClient implements VoiceSocketClient {
+  IoVoiceSocketClient(this._socket);
+  final WebSocket _socket;
+
+  @override
+  Stream<dynamic> get messages => _socket;
+
+  @override
+  void send(String message) {
+    _socket.add(message);
+  }
+
+  @override
+  void close() {
+    _socket.close();
+  }
 }
 
 /// Fake socket client harness for testing the protocol end-to-end without physical hardware.
@@ -43,6 +64,7 @@ class FakeVoiceSocketClient implements VoiceSocketClient {
 class VoiceCallController extends Notifier<LiveCallState> {
   VoiceSocketClient? _socket;
   Timer? _durationTimer;
+  Timer? _pingTimer;
   StreamSubscription<dynamic>? _subscription;
 
   @override
@@ -55,18 +77,38 @@ class VoiceCallController extends Notifier<LiveCallState> {
   }) async {
     state = state.copyWith(status: VoiceCallStatus.connecting);
 
-    _socket = socketOverride;
-    if (_socket != null) {
-      _setupSocketListener();
-      // Send protocol v2 hello
-      _socket!.send(jsonEncode({
-        'type': 'hello',
-        'v': 2,
-        'ticket': ticket,
-        'codecs': ['pcm16'],
-        'client': 'android',
-      }));
+    if (socketOverride != null) {
+      _socket = socketOverride;
+    } else {
+      try {
+        final apiUri = ref.read(appConfigProvider).apiBaseUri;
+        final isSecure = apiUri.scheme == 'https';
+        final wsUri = apiUri.replace(
+          scheme: isSecure ? 'wss' : 'ws',
+          path: '/api/voice/v2',
+        );
+        final ws = await WebSocket.connect(wsUri.toString());
+        _socket = IoVoiceSocketClient(ws);
+      } catch (e) {
+        state = state.copyWith(
+          status: VoiceCallStatus.ended,
+          errorMessage: 'فشل الاتصال بالخادم الصوتي: $e',
+        );
+        return;
+      }
     }
+
+    _setupSocketListener();
+    _startPingTimer();
+
+    final clientPlatform = Platform.isIOS ? 'ios' : 'android';
+    _socket?.send(jsonEncode({
+      'type': 'hello',
+      'v': 2,
+      'ticket': ticket,
+      'codecs': ['pcm16'],
+      'client': clientPlatform,
+    }));
   }
 
   void _setupSocketListener() {
@@ -134,6 +176,7 @@ class VoiceCallController extends Notifier<LiveCallState> {
       case 'error':
         final errorMsg = (message['message'] as String?) ?? 'حدث خطأ في المكالمة';
         state = state.copyWith(errorMessage: errorMsg);
+      case 'ended':
       case 'end':
         endCall();
     }
@@ -143,6 +186,18 @@ class VoiceCallController extends Notifier<LiveCallState> {
     _durationTimer?.cancel();
     _durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       state = state.copyWith(durationSeconds: state.durationSeconds + 1);
+    });
+  }
+
+  void _startPingTimer() {
+    _pingTimer?.cancel();
+    _pingTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      try {
+        _socket?.send(jsonEncode({
+          'type': 'ping',
+          't': DateTime.now().millisecondsSinceEpoch,
+        }));
+      } catch (_) {}
     });
   }
 
@@ -184,6 +239,8 @@ class VoiceCallController extends Notifier<LiveCallState> {
   void endCall() {
     _durationTimer?.cancel();
     _durationTimer = null;
+    _pingTimer?.cancel();
+    _pingTimer = null;
     try {
       _socket?.send(jsonEncode({'type': 'end'}));
     } catch (_) {}

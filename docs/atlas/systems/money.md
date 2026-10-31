@@ -143,9 +143,7 @@ flowchart LR
   router_goals --> sys_platform
   router_goals -.-> tbl_expenses
   router_goals ==> tbl_financial_goals
-  router_goals ==> tbl_local_users
   router_goals ==> tbl_user_budgets
-  router_goals ==> tbl_users
   router_profile --> sys_accounts
   router_profile --> sys_ai_center
   router_profile --> sys_expense_capture
@@ -220,7 +218,7 @@ flowchart LR
 | `expense.searchTransactions` | query | `authedProcedure` | `expenses` | — | `Home` |
 | `expense.update` | mutation | `authedProcedure` | `classification_logs` | `classification_logs` | `Home` |
 | `export.myExpenses` | mutation | `authedProcedure` | `expenses` | — | `More` |
-| `goals.analyze` | mutation | `goalAnalysisProcedure` | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `users` | `Home` |
+| `goals.analyze` | mutation | `goalAnalysisProcedure` | `expenses`, `financial_goals` | `financial_goals` | `Home` |
 | `goals.create` | mutation | `authedProcedure` | `financial_goals` | `financial_goals` | `Home` |
 | `goals.delete` | mutation | `authedProcedure` | — | `financial_goals`, `user_budgets` | — |
 | `goals.list` | query | `authedProcedure` | `financial_goals` | — | `Home` |
@@ -262,7 +260,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `financial_goals` | C | `goals.analyze`, `goals.create`, `goals.delete`, `goals.setStatus` | `goals.analyze`, `goals.create`, `goals.list` |
 | `in_app_notifications` | D | `coaching` | — |
 | `installment_plans` | C | `expense.createInstallmentPlan`, `expense.deleteInstallmentPlan` | `coaching`, `expense.listInstallmentPlans` |
-| `local_users` | A | `goals.analyze`, `ledger` | — |
+| `local_users` | A | `ledger` | — |
 | `scheduled_cashflows` | C | `coaching`, `profile.deleteContact`, `profile.mergeContacts` | `coaching`, `expense.listInstallmentPlans` |
 | `user_budgets` | C | `budget.create`, `budget.delete`, `budget.update`, `goals.delete`, `ledger` | `budget.delete`, `budget.update`, `ledger` |
 | `user_businesses` | A | `business.create`, `business.delete`, `business.update` | `business.addCategory`, `business.create`, `business.delete`, `business.get`, `business.linkContact`, `business.removeCategory`, `business.update`, `business.updateCategory` |
@@ -270,7 +268,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_dictionaries` | F | — | `expense.previewCategory` |
 | `user_profiles` | A | `profile.deleteContact`, `profile.mergeContacts` | `profile.deleteContact`, `profile.mergeContacts` |
 | `user_wallets` | A | `wallet.createWallet`, `wallet.deleteWallet`, `wallet.updateWallet` | `coaching`, `wallet.getWallets` |
-| `users` | A | `goals.analyze`, `ledger` | — |
+| `users` | A | `ledger` | — |
 
 ## Outside systems
 

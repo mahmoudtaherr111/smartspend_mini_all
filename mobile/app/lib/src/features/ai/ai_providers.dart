@@ -167,16 +167,18 @@ class ChatMessagesNotifier
       return true;
     } on ApiException catch (e) {
       ref.read(isAssistantTypingProvider.notifier).set(false);
+      // Roll back optimistic user bubble so no stuck bubble or duplicate send occurs
+      state = AsyncValue.data(currentMessages);
+      ref.read(chatDraftProvider.notifier).set(cleanText);
       if (e.code == 'TOO_MANY_REQUESTS') {
         // Daily limit reached: keep draft and show server's message + upgrade path
-        ref.read(chatDraftProvider.notifier).set(cleanText);
         ref.read(dailyLimitErrorProvider.notifier).set(e.message);
-      } else {
-        ref.read(chatDraftProvider.notifier).set(cleanText);
       }
       return false;
     } catch (_) {
       ref.read(isAssistantTypingProvider.notifier).set(false);
+      // Roll back optimistic user bubble
+      state = AsyncValue.data(currentMessages);
       ref.read(chatDraftProvider.notifier).set(cleanText);
       return false;
     }

@@ -35,13 +35,11 @@ flowchart LR
     tbl_classification_logs[("classification_logs")]
     tbl_expense_categories[("expense_categories")]
     tbl_expenses[("expenses")]
-    tbl_local_users[("local_users")]
     tbl_pending_clarifications[("pending_clarifications")]
     tbl_user_businesses[("user_businesses")]
     tbl_user_contacts[("user_contacts")]
     tbl_user_correction_rules[("user_correction_rules")]
     tbl_user_dictionaries[("user_dictionaries")]
-    tbl_users[("users")]
     tbl_voice_usage[("voice_usage")]
   end
   ext_gemini{{"Google Gemini API"}}
@@ -78,10 +76,8 @@ flowchart LR
   router_ai -.-> tbl_business_categories
   router_ai -.-> tbl_user_businesses
   router_ai ==> tbl_classification_logs
-  router_ai ==> tbl_local_users
   router_ai ==> tbl_pending_clarifications
   router_ai ==> tbl_user_dictionaries
-  router_ai ==> tbl_users
   router_ai ==> tbl_voice_usage
   router_expense --> mod_classification
   router_expense --> sys_accounts
@@ -104,8 +100,6 @@ flowchart LR
   router_image --> sys_platform
   router_image -.-> tbl_expenses
   router_image -.-> tbl_user_dictionaries
-  router_image ==> tbl_local_users
-  router_image ==> tbl_users
   screens_admin --> router_ai
   screens_money --> router_ai
   screens_money --> router_expense
@@ -167,9 +161,9 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
 | `ai.learnWord` | mutation | `authedProcedure` | — | `user_dictionaries` | — |
-| `ai.parseExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries` | `classification_logs`, `local_users`, `pending_clarifications`, `users` | `Admin`, `Home`, `More` |
-| `ai.parseVoiceExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `voice_usage` | `classification_logs`, `local_users`, `pending_clarifications`, `users`, `voice_usage` | `Home` |
-| `ai.speechToText` | mutation | `aiProcedure` | `voice_usage` | `local_users`, `users`, `voice_usage` | — |
+| `ai.parseExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries` | `classification_logs`, `pending_clarifications` | `Admin`, `Home`, `More` |
+| `ai.parseVoiceExpense` | mutation | `aiProcedure` | `business_categories`, `pending_clarifications`, `user_businesses`, `user_dictionaries`, `voice_usage` | `classification_logs`, `pending_clarifications`, `voice_usage` | `Home` |
+| `ai.speechToText` | mutation | `aiProcedure` | `voice_usage` | `voice_usage` | — |
 | `expense.answerClarification` | mutation | `authedProcedure` | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `pending_clarifications` | `Home` |
 | `expense.batchCreate` | mutation | `authedProcedure` | `classification_logs`, `user_contacts` | `classification_logs` | `Home` |
 | `expense.create` | mutation | `authedProcedure` | `classification_logs`, `user_contacts` | `classification_logs` | `Home` |
@@ -177,7 +171,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `expense.dismissClarification` | mutation | `authedProcedure` | — | `pending_clarifications` | `Home` |
 | `expense.getCategoryList` | query | `authedProcedure` | `expense_categories` | — | — |
 | `expense.getPendingClarifications` | query | `authedProcedure` | `pending_clarifications` | — | `Home` |
-| `image.parseReceipt` | mutation | `receiptsProcedure` | `expenses`, `user_dictionaries` | `local_users`, `users` | `Home` |
+| `image.parseReceipt` | mutation | `receiptsProcedure` | `expenses`, `user_dictionaries` | — | `Home` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -195,13 +189,11 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `classification_logs` | E | `ai.parseExpense`, `ai.parseVoiceExpense`, `classification-log-cleanup`, `expense.batchCreate`, `expense.create` | `classification`, `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
 | `expense_categories` | A | `expense.createCategory` | `expense.getCategoryList` |
 | `expenses` | B | — | `classification`, `image.parseReceipt` |
-| `local_users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `image.parseReceipt` | — |
 | `pending_clarifications` | D | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.dismissClarification` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `expense.getPendingClarifications` |
 | `user_businesses` | A | — | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification` |
 | `user_contacts` | A | — | `expense.answerClarification`, `expense.batchCreate`, `expense.create` |
 | `user_correction_rules` | F | `classification` | `classification` |
 | `user_dictionaries` | F | `ai.learnWord` | `ai.parseExpense`, `ai.parseVoiceExpense`, `expense.answerClarification`, `image.parseReceipt` |
-| `users` | A | `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText`, `image.parseReceipt` | — |
 | `voice_usage` | E | `ai.parseVoiceExpense`, `ai.speechToText` | `ai.parseVoiceExpense`, `ai.speechToText` |
 
 ## Outside systems

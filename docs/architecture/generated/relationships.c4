@@ -442,7 +442,6 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.chat_messages
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.expenses
-  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.local_users
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.monthly_reports
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.notification_logs
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.pending_clarifications
@@ -452,7 +451,6 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_budgets
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_correction_rules
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_dictionaries
-  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.users
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_call_incidents
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_calls
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_usage
@@ -707,9 +705,7 @@ model {
   smartspend.api.trpc.ai.generateMonthlyInsights -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.ai.generateMonthlyInsights -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.ai_summaries
-  smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.monthly_behavior_snapshots
-  smartspend.api.trpc.ai.generateMonthlyInsights -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.ai.generateYearlyInsights -[uses]-> smartspend.api.modules.ai-governance
   smartspend.api.trpc.ai.generateYearlyInsights -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.ai.generateYearlyInsights -[uses]-> smartspend.api.modules.finance-semantic-layer
@@ -732,9 +728,7 @@ model {
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.ai.parseExpense -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.classification_logs
-  smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.pending_clarifications
-  smartspend.api.trpc.ai.parseExpense -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.ai.parseVoiceExpense -[reads]-> smartspend.mysql.business_categories
   smartspend.api.trpc.ai.parseVoiceExpense -[reads]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.ai.parseVoiceExpense -[reads]-> smartspend.mysql.user_businesses
@@ -748,9 +742,7 @@ model {
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.ai.parseVoiceExpense -[uses]-> smartspend.api.modules.voice
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.classification_logs
-  smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.pending_clarifications
-  smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.ai.parseVoiceExpense -[writes]-> smartspend.mysql.voice_usage
   smartspend.api.trpc.ai.speechToText -[reads]-> smartspend.mysql.voice_usage
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.ai-governance
@@ -758,8 +750,6 @@ model {
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.ai.speechToText -[uses]-> smartspend.api.modules.voice
-  smartspend.api.trpc.ai.speechToText -[writes]-> smartspend.mysql.local_users
-  smartspend.api.trpc.ai.speechToText -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.ai.speechToText -[writes]-> smartspend.mysql.voice_usage
   smartspend.api.trpc.analytics.getAllUserStats -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.analytics.getAllUserStats -[reads]-> smartspend.mysql.local_users
@@ -1010,8 +1000,6 @@ model {
   smartspend.api.trpc.goals.analyze -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.goals.analyze -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.goals.analyze -[writes]-> smartspend.mysql.financial_goals
-  smartspend.api.trpc.goals.analyze -[writes]-> smartspend.mysql.local_users
-  smartspend.api.trpc.goals.analyze -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.goals.create -[reads]-> smartspend.mysql.financial_goals
   smartspend.api.trpc.goals.create -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.goals.create -[uses]-> smartspend.api.modules.platform
@@ -1035,8 +1023,6 @@ model {
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.receipt-parsing
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.security
-  smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.local_users
-  smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.localAuth.confirmVerificationCode -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.localAuth.deleteUser -[uses]-> smartspend.api.modules.accounts
   smartspend.api.trpc.localAuth.deleteUser -[uses]-> smartspend.api.modules.auth

@@ -65,10 +65,10 @@ flowchart LR
   router_ai --> sys_money
   router_ai --> sys_platform
   router_ai -.-> tbl_expenses
+  router_ai -.-> tbl_local_users
+  router_ai -.-> tbl_users
   router_ai ==> tbl_ai_summaries
-  router_ai ==> tbl_local_users
   router_ai ==> tbl_monthly_behavior_snapshots
-  router_ai ==> tbl_users
   router_export --> mod_ai_insights
   router_profile --> mod_ai_insights
   router_profile --> sys_platform
@@ -95,7 +95,7 @@ flowchart LR
 | Procedure | Kind | Builder | Reads | Writes | Screens that call it |
 | --- | --- | --- | --- | --- | --- |
 | `ai.compareMonths` | mutation | `aiProcedure` | — | — | `AICenter` |
-| `ai.generateMonthlyInsights` | mutation | `aiProcedure` | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `local_users`, `monthly_behavior_snapshots`, `users` | `AICenter` |
+| `ai.generateMonthlyInsights` | mutation | `aiProcedure` | `ai_summaries`, `expenses`, `local_users`, `users` | `ai_summaries`, `monthly_behavior_snapshots` | `AICenter` |
 | `ai.generateYearlyInsights` | mutation | `aiProcedure` | — | — | — |
 | `ai.getCachedMonthlyInsights` | query | `authedProcedure` | `ai_summaries` | — | `AICenter` |
 | `export.monthlyReportHtml` | mutation | `proReportProcedure` | — | — | `AICenter` |
@@ -122,13 +122,13 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- | --- |
 | `ai_summaries` | C | `ai.generateMonthlyInsights` | `ai.generateMonthlyInsights`, `ai.getCachedMonthlyInsights` |
 | `expenses` | B | — | `ai-insights`, `ai.generateMonthlyInsights`, `profile.refreshInferences` |
-| `local_users` | A | `ai.generateMonthlyInsights` | `ai-insights`, `ai.generateMonthlyInsights` |
+| `local_users` | A | — | `ai-insights`, `ai.generateMonthlyInsights` |
 | `monthly_behavior_snapshots` | C | `ai.generateMonthlyInsights`, `profile.refreshInferences` | — |
 | `onboarding_questions` | A | — | `profile.getQuestions` |
 | `profile_learning_events` | E | `ai-insights` | `ai-insights` |
 | `user_contacts` | A | `ai-insights` | `ai-insights` |
 | `user_profiles` | A | `ai-insights`, `profile.dismissOnboarding` | `ai-insights`, `profile.getNextOnboardingQuestion` |
-| `users` | A | `ai.generateMonthlyInsights` | `ai-insights`, `ai.generateMonthlyInsights` |
+| `users` | A | — | `ai-insights`, `ai.generateMonthlyInsights` |
 
 ## Outside systems
 

@@ -311,7 +311,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: report.dataTable.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final row = report.dataTable[index];
                   final cat = (row['category'] as String?) ?? 'عام';

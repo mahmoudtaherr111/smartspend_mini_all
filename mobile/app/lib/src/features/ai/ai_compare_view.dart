@@ -77,7 +77,7 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
                     const Text('الشهر الأول:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: _firstMonth,
+                      initialValue: _firstMonth,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -101,7 +101,7 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
                     const Text('الشهر الثاني:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      value: _secondMonth,
+                      initialValue: _secondMonth,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -221,7 +221,7 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: comparison.changes.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final change = comparison.changes[index];
                 final cat = (change['category'] as String?) ?? 'فئة';

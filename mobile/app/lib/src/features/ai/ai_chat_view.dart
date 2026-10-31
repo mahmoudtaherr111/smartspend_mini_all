@@ -275,7 +275,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           const SizedBox(height: 8),
           questionsAsync.when(
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (err, stack) => const SizedBox.shrink(),
             data: (questions) => Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -382,14 +382,101 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     );
   }
 
-  /// Formats message text ensuring Latin text isolation and clean Arabic layout (AI-01).
+  /// Formats message text ensuring Latin text isolation, amount styling, lists, bolding and copying (AI-01).
   Widget _renderFormattedText(String text, bool isUser) {
-    return Text(
-      text,
+    final lines = text.split('\n');
+    return SelectionArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (int i = 0; i < lines.length; i++) ...[
+            if (i > 0) const SizedBox(height: 4),
+            _buildFormattedLine(lines[i], isUser),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormattedLine(String line, bool isUser) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty) return const SizedBox(height: 6);
+
+    // List item (bullet)
+    final isBullet = trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ');
+    final content = isBullet ? trimmed.substring(2).trim() : trimmed;
+
+    final spans = _parseSpans(content, isUser);
+
+    if (isBullet) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          textDirection: TextDirection.rtl,
+          children: [
+            Text(
+              '• ',
+              style: TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.bold,
+                color: isUser ? Colors.white70 : Colors.teal.shade700,
+              ),
+            ),
+            Expanded(
+              child: Text.rich(
+                TextSpan(children: spans),
+                textDirection: TextDirection.rtl,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Text.rich(
+      TextSpan(children: spans),
       textDirection: TextDirection.rtl,
+    );
+  }
+
+  List<InlineSpan> _parseSpans(String text, bool isUser) {
+    final spans = <InlineSpan>[];
+    // Split by markdown bold **...**
+    final boldRegex = RegExp(r'\*\*(.+?)\*\*');
+    int lastMatchEnd = 0;
+
+    for (final match in boldRegex.allMatches(text)) {
+      if (match.start > lastMatchEnd) {
+        final preceding = text.substring(lastMatchEnd, match.start);
+        spans.add(_buildSpan(_isolateLatin(preceding), isUser, isBold: false));
+      }
+      final boldContent = match.group(1) ?? '';
+      spans.add(_buildSpan(_isolateLatin(boldContent), isUser, isBold: true));
+      lastMatchEnd = match.end;
+    }
+
+    if (lastMatchEnd < text.length) {
+      final remaining = text.substring(lastMatchEnd);
+      spans.add(_buildSpan(_isolateLatin(remaining), isUser, isBold: false));
+    }
+
+    return spans;
+  }
+
+  String _isolateLatin(String text) {
+    return text.replaceAllMapped(RegExp(r'[A-Za-z][A-Za-z0-9_.\-]*'), (match) {
+      return inlineName(match.group(0)!);
+    });
+  }
+
+  InlineSpan _buildSpan(String text, bool isUser, {required bool isBold}) {
+    return TextSpan(
+      text: text,
       style: TextStyle(
         fontSize: 14.5,
         height: 1.45,
+        fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
         color: isUser ? Colors.white : Colors.black87,
       ),
     );

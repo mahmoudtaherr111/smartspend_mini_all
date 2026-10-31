@@ -12,6 +12,7 @@ import {
   estimateTokensFromText,
   loadSystemConfig,
   recordAiUsageEvent,
+  trackAiTokens,
   asPlan,
   capRequestOutputTokens,
 } from "./lib/ai-usage-policy";
@@ -62,25 +63,7 @@ async function trackGoalTokens(
   tokens: number,
   model?: string,
 ) {
-  if (!tokens) return;
-  if (userType === "oauth") {
-    await db
-      .update(users)
-      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-      .where(eq(users.id, userId));
-  } else {
-    await db
-      .update(localUsers)
-      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
-      .where(eq(localUsers.id, userId));
-  }
-  await recordAiUsageEvent({
-    userId,
-    userType,
-    channel: "goal",
-    tokens,
-    model,
-  });
+  await trackAiTokens({ id: userId, type: userType }, tokens, "goal", model);
 }
 
 export const goalsRouter = router({

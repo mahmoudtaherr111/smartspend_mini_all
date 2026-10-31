@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- The API. Flutter's template grants it only to debug and profile builds. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Voice call audio recording and foreground service keeping call alive when screen is locked (AI-09, GAP-06) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
 
     <application
         android:label="${appLabel}"

@@ -110,7 +110,7 @@ class AiConversationsSheet extends ConsumerWidget {
                   return ListView.separated(
                     controller: scrollController,
                     itemCount: conversations.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (context, index) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final conv = conversations[index];
                       final isSelected = conv.id == activeId;

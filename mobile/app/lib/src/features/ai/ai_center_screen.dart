@@ -83,7 +83,7 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(sheetCtx).colorScheme.primaryContainer.withOpacity(0.4),
+                    color: Theme.of(sheetCtx).colorScheme.primaryContainer.withValues(alpha: 0.4),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

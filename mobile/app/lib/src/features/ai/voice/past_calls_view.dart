@@ -64,7 +64,7 @@ class PastCallsView extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.4),
+                            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.4),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -106,7 +106,7 @@ class PastCallsView extends ConsumerWidget {
             return ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: calls.length + 1,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (context, index) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return Padding(
@@ -123,11 +123,11 @@ class PastCallsView extends ConsumerWidget {
 
                 return Card(
                   elevation: 0,
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.4),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.4),
+                      color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
                     ),
                   ),
                   child: ListTile(
@@ -196,10 +196,10 @@ class PastCallsView extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
