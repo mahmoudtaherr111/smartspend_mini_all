@@ -45,3 +45,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0036](0036-google-sign-in-nonce.md) | Google sign-in from the app is bound to one sign-in by a nonce the app makes and the server spends once |
 | [0037](0037-website-session-cookie-only.md) | The website's session is the HttpOnly cookie alone: the website never stores, reads or sends a token |
 | [0038](0038-whatsapp-cloud-api.md) | WhatsApp goes through Meta's official Cloud API, every message through a persistent outbox |
+| [0039](0039-clarifications-confirmation-vs-immediate-save.md) | Clarifications use optimistic immediate save with undo banner instead of blocking confirmation modals |

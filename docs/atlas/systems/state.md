@@ -10,7 +10,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (8 of 
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-29 2618b97e | 2026-10-27 03cb4c09 | 18 | — | — | 2 | — |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-31 fa3a344b | 2026-10-31 fa3a344b | 18 | — | — | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 11 | — | — | 3 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | — | 2 | 2 |
@@ -57,10 +57,9 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.
 - Discount codes are created here but checkout never applies them ([billing](billing.md)).
 
-### Gaps (46)
+### Gaps (45)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
-- A clarification saves as soon as it is answered; the saved items are shown afterwards with "تراجع" rather than for confirmation first. Questions stored before the source was kept save a spoken sentence as `manual`.
 - `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
@@ -129,7 +128,10 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the token. The Flutter app replaces them (decision 0022); until they are retired they only reach the sign-in screen.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (27)
+### Debt (28)
+
+**Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
+- **Clarifications save immediately with undo (Decision 0039).** A clarification saves as soon as it is answered; the saved items are shown afterwards with an immediate "تراجع" (Undo) banner rather than requiring a blocking confirmation modal. This design eliminates friction during frequent Egyptian micro-transaction and voice recording; undo and post-save edits remain instant and safe. Questions stored before the source was kept save a spoken sentence as `manual`.
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - Until the admin assigns a model to the `sms` purpose, `readMessageWithModel` falls back to `GEMINI_API_KEY` with `mapModelName("flash")` (`smsRoutes` in `api/lib/capture/ai-reader.ts`). It is meant to go once the key is registered as a provider in the console (decision 0025).
