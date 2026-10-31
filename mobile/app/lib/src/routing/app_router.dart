@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/ai/ai_center_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/session_controller.dart';
 import '../features/auth/sign_in_screen.dart';
@@ -14,7 +15,6 @@ import '../features/capture/capture_settings_screen.dart';
 import '../features/contacts/contacts_screen.dart';
 import '../features/export/export_screen.dart';
 import '../features/goals/goals_screen.dart';
-import '../features/in_progress_screen.dart';
 import '../features/installments/installments_screen.dart';
 import '../features/ledger/record_screen.dart';
 import '../features/ledger/transaction_detail_screen.dart';
@@ -86,8 +86,7 @@ final appTabs = <AppTab>[
     icon: Icons.auto_awesome_outlined,
     selectedIcon: Icons.auto_awesome,
     label: (l10n) => l10n.navAi,
-    screen: (context) =>
-        InProgressScreen(title: AppLocalizations.of(context).navAi),
+    screen: (context) => const AiCenterScreen(),
   ),
   AppTab(
     path: '/calendar',
