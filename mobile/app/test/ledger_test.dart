@@ -425,5 +425,89 @@ void main() {
 
       expect(api.lastInput('expense.delete'), {'id': 3});
     });
+
+    testWidgets(
+      'a server error on record screen pull-to-refresh keeps summary and shows a notice',
+      (tester) async {
+        final api = FakeApi()
+          ..answer(
+            'expense.getMonthSummary',
+            (_) => {'totalIncome': 5000, 'totalExpense': 1200, 'count': 4},
+          )
+          ..answer(
+            'expense.list',
+            (_) => {
+              'items': [_entry(3, '185.00', 'أكل وشرب', description: 'Talabat')],
+              'total': 1,
+            },
+          );
+        await _signedIn(tester, api);
+        expect(find.text('صرفت في أكتوبر'), findsOneWidget);
+
+        api.answer(
+          'expense.getMonthSummary',
+          (_) => throw const ApiException(
+            code: 'INTERNAL_SERVER_ERROR',
+            httpStatus: 500,
+            message: 'Internal error',
+          ),
+        );
+        await tester.fling(
+          find.byType(ListView).first,
+          const Offset(0, 500),
+          1500,
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('صرفت في أكتوبر'), findsOneWidget);
+        expect(
+          find.text(
+            'ماقدرناش نحدّث البيانات دلوقتي. البيانات المعروضة هي آخر نسخة محفوظة.',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'a server error on transactions screen pull-to-refresh keeps transactions and shows a notice',
+      (tester) async {
+        final api = FakeApi()
+          ..answer(
+            'expense.list',
+            (_) => {
+              'items': [_entry(3, '185.00', 'أكل وشرب', description: 'Talabat')],
+              'total': 1,
+            },
+          );
+        final app = await _signedIn(tester, api);
+        app.container.read(routerProvider).go(TransactionsScreen.path);
+        await tester.pumpAndSettle();
+        expect(find.text('\u2066Talabat\u2069'), findsOneWidget);
+
+        api.answer(
+          'expense.list',
+          (_) => throw const ApiException(
+            code: 'INTERNAL_SERVER_ERROR',
+            httpStatus: 500,
+            message: 'Internal error',
+          ),
+        );
+        await tester.fling(
+          find.byType(ListView).first,
+          const Offset(0, 500),
+          1500,
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('\u2066Talabat\u2069'), findsOneWidget);
+        expect(
+          find.text(
+            'ماقدرناش نحدّث البيانات دلوقتي. البيانات المعروضة هي آخر نسخة محفوظة.',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

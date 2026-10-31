@@ -64,6 +64,14 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
   bool _saving = false;
   bool _dateChanged = false;
 
+  late final _EditKind _initialKind;
+  late final String _initialAmount;
+  late final String _initialNote;
+  late final String _initialCategory;
+  late final String _initialSubCategory;
+  late final int? _initialWalletId;
+  late final int? _initialContactId;
+
   @override
   void initState() {
     super.initState();
@@ -96,10 +104,59 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
     _date = entry.date;
     _walletId = entry.walletId;
     _contactId = entry.contactId;
+
+    _initialKind = _kind;
+    _initialAmount = initialAmount;
+    _initialNote = (entry.description ?? '').trim();
+    _initialCategory = _category;
+    _initialSubCategory = _subCategory;
+    _initialWalletId = entry.walletId;
+    _initialContactId = entry.contactId;
+
+    _amountController.addListener(_onFieldChanged);
+    _noteController.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    if (mounted) setState(() {});
+  }
+
+  bool get _isDirty =>
+      _kind != _initialKind ||
+      _amountController.text.trim() != _initialAmount ||
+      _noteController.text.trim() != _initialNote ||
+      _category != _initialCategory ||
+      _subCategory != _initialSubCategory ||
+      _dateChanged ||
+      _walletId != _initialWalletId ||
+      _contactId != _initialContactId;
+
+  Future<bool> _confirmDiscard(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.discardChangesTitle),
+        content: Text(l10n.discardChangesBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.discardChangesCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.discardChangesConfirm),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
   }
 
   @override
   void dispose() {
+    _amountController.removeListener(_onFieldChanged);
+    _noteController.removeListener(_onFieldChanged);
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
@@ -310,18 +367,27 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
         ),
     ];
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-        SmartSpendSpacing.screen,
-        0,
-        SmartSpendSpacing.screen,
-        SmartSpendSpacing.xl + MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(l10n.editTransactionTitle, style: textTheme.titleLarge),
+    return PopScope(
+      canPop: !_isDirty || _saving,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final discard = await _confirmDiscard(context);
+        if (discard && context.mounted) {
+          Navigator.of(context).pop(false);
+        }
+      },
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          SmartSpendSpacing.screen,
+          0,
+          SmartSpendSpacing.screen,
+          SmartSpendSpacing.xl + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(l10n.editTransactionTitle, style: textTheme.titleLarge),
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(
             l10n.editTransactionSubtitle,
@@ -501,10 +567,12 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
           SmartSpendButton(
             label: l10n.editCancel,
             variant: ButtonVariant.quiet,
-            onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+            onPressed:
+                _saving ? null : () => Navigator.of(context).maybePop(false),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

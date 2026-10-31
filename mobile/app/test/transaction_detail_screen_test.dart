@@ -1,6 +1,8 @@
 // Transaction detail screen (REC-08, MON-03): single entry forensic view, hero wash,
 // Cairo date, wallet/person linking, missing entity fallback, offline handling, and delete-with-undo.
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_app/src/features/ledger/ledger_providers.dart';
 import 'package:smartspend_app/src/features/ledger/transaction_detail_screen.dart';
 import 'package:smartspend_app/src/features/wallets/wallet_detail_screen.dart';
@@ -218,6 +220,41 @@ void main() {
 
       // expense.delete should NOT have been called
       expect(deletedId, 0);
+    },
+  );
+
+  testWidgets(
+    'a server error on refresh keeps transaction detail and shows a notice',
+    (tester) async {
+      final api = FakeApi();
+      answerSampleMonth(api);
+      final app = await _openAppWithSample(tester, api);
+      await _openTransactionDetail(tester, app, 9);
+      expect(find.text('${ltrIsolate('-185')} ج.م'), findsOneWidget);
+
+      api.answer(
+        'expense.getById',
+        (_) => throw const ApiException(
+          code: 'INTERNAL_SERVER_ERROR',
+          httpStatus: 500,
+          message: 'Internal error',
+        ),
+      );
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, 500),
+        1500,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('${ltrIsolate('-185')} ج.م'), findsOneWidget);
+      expect(find.byType(ErrorState), findsNothing);
+      expect(
+        find.text(
+          'ماقدرناش نحدّث البيانات دلوقتي. البيانات المعروضة هي آخر نسخة محفوظة.',
+        ),
+        findsOneWidget,
+      );
     },
   );
 }

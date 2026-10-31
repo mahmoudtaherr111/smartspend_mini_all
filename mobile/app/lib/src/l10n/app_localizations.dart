@@ -2203,6 +2203,42 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'استنى'**
   String get signOutCancel;
+
+  /// No description provided for @refreshFailedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحدّث البيانات دلوقتي. البيانات المعروضة هي آخر نسخة محفوظة.'**
+  String get refreshFailedNotice;
+
+  /// No description provided for @discardChangesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاهل التعديلات؟'**
+  String get discardChangesTitle;
+
+  /// No description provided for @discardChangesBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو رجعت دلوقتي، التعديلات اللي كتبتها مش هتتحفظ.'**
+  String get discardChangesBody;
+
+  /// No description provided for @discardChangesConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجاهل'**
+  String get discardChangesConfirm;
+
+  /// No description provided for @discardChangesCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمّل تعديل'**
+  String get discardChangesCancel;
+
+  /// No description provided for @walletOfflinePartial.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعاملات وملخص الشهر مش متوفرين أوفلاين.'**
+  String get walletOfflinePartial;
 }
 
 class _AppLocalizationsDelegate

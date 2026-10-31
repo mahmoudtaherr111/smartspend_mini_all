@@ -3,6 +3,7 @@
 // stats, and every state.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_app/src/features/ledger/ledger_api.dart';
 import 'package:smartspend_app/src/features/stats/stats_models.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
@@ -254,6 +255,81 @@ void main() {
       }
       tester.platformDispatcher.clearPlatformBrightnessTestValue();
       semantics.dispose();
+    },
+  );
+
+  testWidgets(
+    'a server error on pull-to-refresh keeps monthly stats and shows a notice',
+    (tester) async {
+      final api = FakeApi();
+      answerSampleMonth(api);
+      await _openStats(tester, api);
+      expect(find.text('أكل وشرب'), findsOneWidget);
+
+      api.answer(
+        'expense.getMonthlyStats',
+        (_) => throw const ApiException(
+          code: 'INTERNAL_SERVER_ERROR',
+          httpStatus: 500,
+          message: 'Internal error',
+        ),
+      );
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, 500),
+        1500,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('أكل وشرب'), findsOneWidget);
+      expect(find.byType(ErrorState), findsNothing);
+      expect(
+        find.text(
+          'ماقدرناش نحدّث البيانات دلوقتي. البيانات المعروضة هي آخر نسخة محفوظة.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'a server error on category transactions refresh keeps list and shows a notice',
+    (tester) async {
+      final api = FakeApi();
+      answerSampleMonth(api);
+      await _openStats(tester, api);
+
+      final row = find.text('أكل وشرب');
+      await tester.ensureVisible(row);
+      await tester.pumpAndSettle();
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+
+      expect(find.text(inlineName('Talabat')), findsOneWidget);
+
+      api.answer(
+        'expense.list',
+        (_) => throw const ApiException(
+          code: 'INTERNAL_SERVER_ERROR',
+          httpStatus: 500,
+          message: 'Internal error',
+        ),
+      );
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, 500),
+        1500,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(inlineName('Talabat')), findsOneWidget);
+      expect(find.byType(ErrorState), findsNothing);
+      expect(
+        find.text(
+          'ماقدرناش نحدّث البيانات دلوقتي. البيانات المعروضة هي آخر نسخة محفوظة.',
+        ),
+        findsOneWidget,
+      );
     },
   );
 

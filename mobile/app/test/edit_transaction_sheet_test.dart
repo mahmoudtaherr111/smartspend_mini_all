@@ -189,4 +189,58 @@ void main() {
       expect(find.text('شخص غير معروف'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'dirty edit sheet prompts confirmation on dismissal to protect against accidental edit loss',
+    (tester) async {
+      final api = FakeApi();
+      answerSampleMonth(api);
+      await _openAppWithSample(tester, api);
+
+      final context = tester.element(find.byType(Scaffold).first);
+      unawaited(showEditTransactionSheet(context, entry: _sampleEntry()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('تعديل العملية'), findsOneWidget);
+
+      // Change amount to make it dirty
+      await tester.enterText(find.widgetWithText(TextField, 'المبلغ'), '350');
+      await tester.pumpAndSettle();
+
+      // Trigger pop via cancel button ('رجوع')
+      await tester.ensureVisible(find.text('رجوع'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('رجوع'));
+      await tester.pumpAndSettle();
+
+      // Confirmation dialog is shown
+      expect(find.text('تجاهل التعديلات؟'), findsOneWidget);
+      expect(
+        find.text('لو رجعت دلوقتي، التعديلات اللي كتبتها مش هتتحفظ.'),
+        findsOneWidget,
+      );
+
+      // Cancel discard (continue editing)
+      await tester.tap(find.text('كمّل تعديل'));
+      await tester.pumpAndSettle();
+
+      // Dialog is gone, sheet is still open with changes preserved
+      expect(find.text('تجاهل التعديلات؟'), findsNothing);
+      expect(find.text('تعديل العملية'), findsOneWidget);
+      expect(find.text('350'), findsOneWidget);
+
+      // Trigger pop again and confirm discard
+      await tester.ensureVisible(find.text('رجوع'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('رجوع'));
+      await tester.pumpAndSettle();
+      expect(find.text('تجاهل التعديلات؟'), findsOneWidget);
+
+      await tester.tap(find.text('تجاهل'));
+      await tester.pumpAndSettle();
+
+      // Sheet is closed
+      expect(find.text('تعديل العملية'), findsNothing);
+    },
+  );
 }

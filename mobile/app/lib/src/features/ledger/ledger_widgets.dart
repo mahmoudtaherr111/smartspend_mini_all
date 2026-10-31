@@ -30,64 +30,69 @@ class MonthSummaryCard extends ConsumerWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(SmartSpendSpacing.lg),
-        child: switch (summary) {
-          AsyncData(:final value) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.summarySpentIn(monthName),
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colors.mutedForeground,
+        child: () {
+          final MonthSummary? value = summary.value;
+          if (value != null) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.summarySpentIn(monthName),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
                 ),
-              ),
-              const SizedBox(height: SmartSpendSpacing.xs),
-              AmountText(value.expense, style: textTheme.displaySmall),
-              const SizedBox(height: SmartSpendSpacing.md),
-              // Wraps onto two lines on a narrow phone or with large text instead of overflowing.
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: SmartSpendSpacing.md,
-                runSpacing: SmartSpendSpacing.xs,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${l10n.summaryIncome} ',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colors.mutedForeground,
+                const SizedBox(height: SmartSpendSpacing.xs),
+                AmountText(value.expense, style: textTheme.displaySmall),
+                const SizedBox(height: SmartSpendSpacing.md),
+                // Wraps onto two lines on a narrow phone or with large text instead of overflowing.
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: SmartSpendSpacing.md,
+                  runSpacing: SmartSpendSpacing.xs,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${l10n.summaryIncome} ',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colors.mutedForeground,
+                          ),
                         ),
-                      ),
-                      AmountText(
-                        value.income,
-                        kind: AmountKind.income,
-                        style: textTheme.bodyLarge,
-                      ),
-                    ],
-                  ),
-                  Text(
-                    l10n.summaryCount(value.count),
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colors.mutedForeground,
+                        AmountText(
+                          value.income,
+                          kind: AmountKind.income,
+                          style: textTheme.bodyLarge,
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          AsyncError() => Row(
-            children: [
-              Expanded(child: Text(l10n.summaryLoadFailed)),
-              SmartSpendButton(
-                label: l10n.retry,
-                variant: ButtonVariant.quiet,
-                expand: false,
-                onPressed: () => ref.invalidate(monthSummaryProvider),
-              ),
-            ],
-          ),
-          _ => const Column(
+                    Text(
+                      l10n.summaryCount(value.count),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          }
+          if (summary.hasError) {
+            return Row(
+              children: [
+                Expanded(child: Text(l10n.summaryLoadFailed)),
+                SmartSpendButton(
+                  label: l10n.retry,
+                  variant: ButtonVariant.quiet,
+                  expand: false,
+                  onPressed: () => ref.invalidate(monthSummaryProvider),
+                ),
+              ],
+            );
+          }
+          return const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Skeleton(width: 110),
@@ -96,8 +101,8 @@ class MonthSummaryCard extends ConsumerWidget {
               SizedBox(height: SmartSpendSpacing.md),
               Skeleton(width: 220),
             ],
-          ),
-        },
+          );
+        }(),
       ),
     );
   }

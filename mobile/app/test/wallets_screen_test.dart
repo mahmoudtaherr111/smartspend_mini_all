@@ -2,6 +2,7 @@
 // editing and deleting, offline cached list, and every state.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
 import 'package:smartspend_app/src/features/wallets/wallet_models.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
@@ -331,6 +332,154 @@ void main() {
       }
       tester.platformDispatcher.clearPlatformBrightnessTestValue();
       semantics.dispose();
+    },
+  );
+
+  testWidgets(
+    'a server error on pull-to-refresh keeps cached wallets and shows a notice',
+    (tester) async {
+      final api = FakeApi();
+      answerSampleMonth(api);
+      await _openWallets(tester, api);
+      expect(find.text('كارت CIB'), findsOneWidget);
+
+      api.answer(
+        'wallet.getWallets',
+        (_) => throw const ApiException(
+          code: 'INTERNAL_SERVER_ERROR',
+          httpStatus: 500,
+          message: 'Internal error',
+        ),
+      );
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, 500),
+        1500,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('كارت CIB'), findsOneWidget);
+      expect(find.byType(ErrorState), findsNothing);
+      expect(
+        find.text(
+          'ماقدرناش نحدّث البيانات دلوقتي. البيانات المعروضة هي آخر نسخة محفوظة.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'a server error on wallet detail refresh keeps detail and shows a notice',
+    (tester) async {
+      final api = FakeApi();
+      answerSampleMonth(api);
+      await _openCib(tester, api);
+      expect(find.text('كارت CIB'), findsOneWidget);
+
+      api.answer(
+        'wallet.getWalletMonth',
+        (_) => throw const ApiException(
+          code: 'INTERNAL_SERVER_ERROR',
+          httpStatus: 500,
+          message: 'Internal error',
+        ),
+      );
+      await tester.fling(
+        find.byType(ListView).first,
+        const Offset(0, 500),
+        1500,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('كارت CIB'), findsOneWidget);
+      expect(find.byType(ErrorState), findsNothing);
+      expect(
+        find.text(
+          'ماقدرناش نحدّث البيانات دلوقتي. البيانات المعروضة هي آخر نسخة محفوظة.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'wallet detail offline with cached balance shows partial state naming missing items',
+    (tester) async {
+      final onlineApi = FakeApi();
+      answerSampleMonth(onlineApi);
+      final first = await _openWallets(tester, onlineApi);
+      expect(find.text('كارت CIB'), findsOneWidget);
+
+      final offlineApi = FakeApi()..offline = true;
+      final second = TestApp(token: 'stored-token', api: offlineApi);
+      second.ledgerStore.ledger = first.ledgerStore.ledger;
+      await second.pump(tester);
+      await tester.tap(find.text('المزيد').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('المحافظ والكروت'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('كارت CIB'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ErrorState), findsNothing);
+      expect(find.text('كارت CIB'), findsOneWidget);
+      expect(find.text(_money('24,350')), findsOneWidget);
+      expect(
+        find.text('المعاملات وملخص الشهر مش متوفرين أوفلاين.'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'dirty wallet form asks for confirmation before discarding changes',
+    (tester) async {
+      final api = FakeApi();
+      answerSampleMonth(api);
+      await _openWallets(tester, api);
+
+      await tester.tap(find.text('ضيف محفظة أو كارت'));
+      await tester.pumpAndSettle();
+      expect(find.text('محفظة أو كارت جديد'), findsOneWidget);
+
+      // Enter a name to make the form dirty
+      await tester.enterText(
+        find.widgetWithText(TextField, 'الاسم'),
+        'كارت جديد',
+      );
+      await tester.pumpAndSettle();
+
+      // Attempt to dismiss by popping
+      final nav = Navigator.of(tester.element(find.text('محفظة أو كارت جديد')));
+      nav.maybePop();
+      await tester.pumpAndSettle();
+
+      // Discard dialog is shown
+      expect(find.text('تجاهل التعديلات؟'), findsOneWidget);
+      expect(
+        find.text('لو رجعت دلوقتي، التعديلات اللي كتبتها مش هتتحفظ.'),
+        findsOneWidget,
+      );
+
+      // Cancel discard
+      await tester.tap(find.text('كمّل تعديل'));
+      await tester.pumpAndSettle();
+      expect(find.text('تجاهل التعديلات؟'), findsNothing);
+      expect(find.text('محفظة أو كارت جديد'), findsOneWidget);
+
+      // Pop again and confirm discard
+      final nav2 = Navigator.of(tester.element(find.text('محفظة أو كارت جديد')));
+      nav2.maybePop();
+      await tester.pumpAndSettle();
+      expect(find.text('تجاهل التعديلات؟'), findsOneWidget);
+
+      await tester.tap(find.text('تجاهل'));
+      await tester.pumpAndSettle();
+
+      // Form is dismissed
+      expect(find.text('محفظة أو كارت جديد'), findsNothing);
     },
   );
 

@@ -63,16 +63,39 @@ class TransactionDetailScreen extends ConsumerWidget {
     final hiddenIds = ref.watch(hiddenEntryIdsProvider);
 
     Future<void> refresh() async {
-      ref.invalidate(transactionDetailProvider(entryId));
-      await ref
-          .read(transactionDetailProvider(entryId).future)
-          .then((_) {}, onError: (Object _) {});
+      try {
+        ref.invalidate(transactionDetailProvider(entryId));
+        await ref.read(transactionDetailProvider(entryId).future);
+      } catch (_) {
+        if (context.mounted) {
+          showSmartSpendNotice(context, l10n.refreshFailedNotice);
+        }
+      }
     }
 
-    final Widget body = switch (detail) {
-      AsyncData(:final value)
-          when value == null || hiddenIds.contains(entryId) =>
-        _Scrolling(
+    final Widget body = () {
+      final LedgerEntry? entry =
+          detail.value ?? (!online ? initialEntry : null);
+      if (entry != null) {
+        if (hiddenIds.contains(entryId)) {
+          return _Scrolling(
+            children: [
+              EmptyState(
+                icon: Icons.receipt_long_rounded,
+                title: l10n.transactionNotFoundTitle,
+                message: l10n.transactionNotFoundBody,
+                actionLabel: l10n.transactionBack,
+                onAction: () => _goBack(context),
+              ),
+            ],
+          );
+        }
+        return _Scrolling(
+          children: [_Filled(entry: entry, online: online, heroTag: heroTag)],
+        );
+      }
+      if (detail.hasValue && detail.value == null) {
+        return _Scrolling(
           children: [
             EmptyState(
               icon: Icons.receipt_long_rounded,
@@ -82,34 +105,32 @@ class TransactionDetailScreen extends ConsumerWidget {
               onAction: () => _goBack(context),
             ),
           ],
-        ),
-      AsyncData(value: final LedgerEntry entry) => _Scrolling(
-        children: [_Filled(entry: entry, online: online, heroTag: heroTag)],
-      ),
-      AsyncError() when !online && initialEntry != null => _Scrolling(
-        children: [
-          _Filled(entry: initialEntry!, online: false, heroTag: heroTag),
-        ],
-      ),
-      AsyncError(:final error) => _Scrolling(
-        children: [
-          ErrorState(
-            message: switch (error) {
-              ApiException(:final message) when message.isNotEmpty => message,
-              _ => l10n.transactionLoadFailed,
-            },
-            retryLabel: l10n.retry,
-            onRetry: () => ref.invalidate(transactionDetailProvider(entryId)),
-          ),
-        ],
-      ),
-      _ when initialEntry != null => _Scrolling(
-        children: [
-          _Filled(entry: initialEntry!, online: online, heroTag: heroTag),
-        ],
-      ),
-      _ => const _Loading(),
-    };
+        );
+      }
+      if (detail.hasError) {
+        return _Scrolling(
+          children: [
+            ErrorState(
+              message: switch (detail.error) {
+                ApiException(:final message) when message.isNotEmpty => message,
+                _ => l10n.transactionLoadFailed,
+              },
+              retryLabel: l10n.retry,
+              onRetry: () =>
+                  ref.invalidate(transactionDetailProvider(entryId)),
+            ),
+          ],
+        );
+      }
+      if (initialEntry != null) {
+        return _Scrolling(
+          children: [
+            _Filled(entry: initialEntry!, online: online, heroTag: heroTag),
+          ],
+        );
+      }
+      return const _Loading();
+    }();
 
     return Scaffold(
       appBar: AppBar(

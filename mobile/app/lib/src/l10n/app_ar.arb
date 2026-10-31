@@ -592,5 +592,11 @@
     }
   },
   "signOutConfirmAnyway": "اخرج على أي حال",
-  "signOutCancel": "استنى"
+  "signOutCancel": "استنى",
+  "refreshFailedNotice": "ماقدرناش نحدّث البيانات دلوقتي. البيانات المعروضة هي آخر نسخة محفوظة.",
+  "discardChangesTitle": "تجاهل التعديلات؟",
+  "discardChangesBody": "لو رجعت دلوقتي، التعديلات اللي كتبتها مش هتتحفظ.",
+  "discardChangesConfirm": "تجاهل",
+  "discardChangesCancel": "كمّل تعديل",
+  "walletOfflinePartial": "المعاملات وملخص الشهر مش متوفرين أوفلاين."
 }

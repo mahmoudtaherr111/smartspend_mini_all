@@ -5,6 +5,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../lock/app_lock.dart';
+import 'ledger_models.dart';
 import 'ledger_providers.dart';
 import 'ledger_widgets.dart';
 import 'offline/outbox.dart';
@@ -55,9 +56,15 @@ class RecordScreen extends ConsumerWidget {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
-                  await ref.read(outboxProvider.notifier).flush();
-                  refreshLedger(ref);
-                  await ref.read(monthSummaryProvider.future);
+                  try {
+                    await ref.read(outboxProvider.notifier).flush();
+                    refreshLedger(ref);
+                    await ref.read(monthSummaryProvider.future);
+                  } catch (_) {
+                    if (context.mounted) {
+                      showSmartSpendNotice(context, l10n.refreshFailedNotice);
+                    }
+                  }
                 },
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -84,27 +91,33 @@ class RecordScreen extends ConsumerWidget {
                               onAction: () =>
                                   context.go(TransactionsScreen.path),
                             ),
-                            switch (recent) {
-                              AsyncData(:final value)
-                                  when value.entries
-                                      .where((e) => !hiddenIds.contains(e.id))
-                                      .isEmpty =>
-                                EmptyState(
-                                  icon: Icons.receipt_long_rounded,
-                                  title: l10n.ledgerEmptyTitle,
-                                  message: l10n.ledgerEmptyBody,
-                                ),
-                              AsyncData(:final value) => LedgerDayList(
-                                entries: value.entries,
-                              ),
-                              AsyncError() => ErrorState(
-                                message: l10n.ledgerLoadFailed,
-                                retryLabel: l10n.retry,
-                                onRetry: () =>
-                                    ref.invalidate(recentEntriesProvider),
-                              ),
-                              _ => const LedgerSkeleton(),
-                            },
+                            () {
+                              final LedgerPage? value = recent.value;
+                              if (value != null) {
+                                if (value.entries
+                                    .where((LedgerEntry e) =>
+                                        !hiddenIds.contains(e.id))
+                                    .isEmpty) {
+                                  return EmptyState(
+                                    icon: Icons.receipt_long_rounded,
+                                    title: l10n.ledgerEmptyTitle,
+                                    message: l10n.ledgerEmptyBody,
+                                  );
+                                }
+                                return LedgerDayList(
+                                  entries: value.entries,
+                                );
+                              }
+                              if (recent.hasError) {
+                                return ErrorState(
+                                  message: l10n.ledgerLoadFailed,
+                                  retryLabel: l10n.retry,
+                                  onRetry: () =>
+                                      ref.invalidate(recentEntriesProvider),
+                                );
+                              }
+                              return const LedgerSkeleton();
+                            }(),
                           ],
                         ),
                       ],

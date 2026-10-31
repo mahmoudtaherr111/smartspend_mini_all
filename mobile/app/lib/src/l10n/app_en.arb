@@ -394,5 +394,11 @@
   "transactionPersonUnknown": "Unknown person",
   "signOutPendingOutboxWarning": "{count, plural, =1{You have 1 transaction recorded offline that hasn't synced yet. If you sign out now, it will be lost.} other{You have {count} transactions recorded offline that haven't synced yet. If you sign out now, they will be lost.}}",
   "signOutConfirmAnyway": "Sign out anyway",
-  "signOutCancel": "Stay"
+  "signOutCancel": "Stay",
+  "refreshFailedNotice": "Could not refresh right now. Showing your last saved data.",
+  "discardChangesTitle": "Discard changes?",
+  "discardChangesBody": "If you go back now, your unsaved changes will be lost.",
+  "discardChangesConfirm": "Discard",
+  "discardChangesCancel": "Keep editing",
+  "walletOfflinePartial": "Transactions and month summary are unavailable offline."
 }

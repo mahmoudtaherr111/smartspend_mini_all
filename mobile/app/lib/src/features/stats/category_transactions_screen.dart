@@ -109,12 +109,16 @@ class _CategoryTransactionsScreenState
     final monthLabel = words.month(resolvedMonth);
 
     Future<void> refresh() async {
-      ref
-        ..invalidate(monthStatsByMonthProvider(resolvedMonth))
-        ..invalidate(categoryTransactionsProvider(query));
-      await ref
-          .read(categoryTransactionsProvider(query).future)
-          .then((_) {}, onError: (Object _) {});
+      try {
+        ref
+          ..invalidate(monthStatsByMonthProvider(resolvedMonth))
+          ..invalidate(categoryTransactionsProvider(query));
+        await ref.read(categoryTransactionsProvider(query).future);
+      } catch (_) {
+        if (context.mounted) {
+          showSmartSpendNotice(context, l10n.refreshFailedNotice);
+        }
+      }
     }
 
     return Scaffold(
@@ -134,49 +138,58 @@ class _CategoryTransactionsScreenState
                   }
                   return false;
                 },
-                child: switch (list) {
-                  AsyncData(:final value) when value.entries.isEmpty =>
-                    _Scrolling(
+                child: () {
+                  final LedgerListState? value = list.value;
+                  if (value != null) {
+                    if (value.entries.isEmpty) {
+                      return _Scrolling(
+                        children: [
+                          EmptyState(
+                            icon: categoryIcon(widget.category),
+                            title: l10n.statsCategoryEmptyTitle,
+                            message: l10n.statsCategoryEmptyBody(
+                              widget.category,
+                              monthLabel,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return _Scrolling(
                       children: [
-                        EmptyState(
-                          icon: categoryIcon(widget.category),
-                          title: l10n.statsCategoryEmptyTitle,
-                          message: l10n.statsCategoryEmptyBody(
-                            widget.category,
-                            monthLabel,
+                        StaggeredReveal(
+                          children: [
+                            _buildHero(l10n, monthLabel, value, fromStats),
+                            LedgerDayList(
+                              entries: value.entries,
+                              onDelete: (entry) =>
+                                  _delete(context, query, entry),
+                            ),
+                            if (value.loadingMore)
+                              const LedgerSkeleton(rows: 2),
+                          ],
+                        ),
+                      ],
+                    );
+                  }
+                  if (list.hasError) {
+                    return _Scrolling(
+                      children: [
+                        ErrorState(
+                          message: switch (list.error) {
+                            ApiException(:final message) => message,
+                            _ => l10n.ledgerLoadFailed,
+                          },
+                          retryLabel: l10n.retry,
+                          onRetry: () => ref.invalidate(
+                            categoryTransactionsProvider(query),
                           ),
                         ),
                       ],
-                    ),
-                  AsyncData(:final value) => _Scrolling(
-                    children: [
-                      StaggeredReveal(
-                        children: [
-                          _buildHero(l10n, monthLabel, value, fromStats),
-                          LedgerDayList(
-                            entries: value.entries,
-                            onDelete: (entry) => _delete(context, query, entry),
-                          ),
-                          if (value.loadingMore) const LedgerSkeleton(rows: 2),
-                        ],
-                      ),
-                    ],
-                  ),
-                  AsyncError(:final error) => _Scrolling(
-                    children: [
-                      ErrorState(
-                        message: switch (error) {
-                          ApiException(:final message) => message,
-                          _ => l10n.ledgerLoadFailed,
-                        },
-                        retryLabel: l10n.retry,
-                        onRetry: () =>
-                            ref.invalidate(categoryTransactionsProvider(query)),
-                      ),
-                    ],
-                  ),
-                  _ => const _Loading(),
-                },
+                    );
+                  }
+                  return const _Loading();
+                }(),
               ),
             ),
           ),

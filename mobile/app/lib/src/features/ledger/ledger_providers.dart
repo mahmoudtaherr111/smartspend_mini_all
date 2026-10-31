@@ -276,8 +276,16 @@ class AllEntries extends AsyncNotifier<LedgerListState> {
 
   @override
   Future<LedgerListState> build() async {
-    final page = await ref.watch(ledgerApiProvider).list(limit: pageSize);
-    return LedgerListState(entries: page.entries, total: page.total);
+    try {
+      final page = await ref.watch(ledgerApiProvider).list(limit: pageSize);
+      return LedgerListState(entries: page.entries, total: page.total);
+    } on ApiNetworkException {
+      final cached = (await ref.read(localLedgerProvider).snapshot()).recent;
+      if (cached != null && cached.entries.isNotEmpty) {
+        return LedgerListState(entries: cached.entries, total: cached.total);
+      }
+      rethrow;
+    }
   }
 
   /// Loads the next page after the last entry shown.

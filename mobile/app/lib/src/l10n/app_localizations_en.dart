@@ -1284,4 +1284,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signOutCancel => 'Stay';
+
+  @override
+  String get refreshFailedNotice =>
+      'Could not refresh right now. Showing your last saved data.';
+
+  @override
+  String get discardChangesTitle => 'Discard changes?';
+
+  @override
+  String get discardChangesBody =>
+      'If you go back now, your unsaved changes will be lost.';
+
+  @override
+  String get discardChangesConfirm => 'Discard';
+
+  @override
+  String get discardChangesCancel => 'Keep editing';
+
+  @override
+  String get walletOfflinePartial =>
+      'Transactions and month summary are unavailable offline.';
 }

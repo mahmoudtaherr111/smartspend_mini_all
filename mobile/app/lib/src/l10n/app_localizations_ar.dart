@@ -1287,4 +1287,25 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get signOutCancel => 'استنى';
+
+  @override
+  String get refreshFailedNotice =>
+      'ماقدرناش نحدّث البيانات دلوقتي. البيانات المعروضة هي آخر نسخة محفوظة.';
+
+  @override
+  String get discardChangesTitle => 'تجاهل التعديلات؟';
+
+  @override
+  String get discardChangesBody =>
+      'لو رجعت دلوقتي، التعديلات اللي كتبتها مش هتتحفظ.';
+
+  @override
+  String get discardChangesConfirm => 'تجاهل';
+
+  @override
+  String get discardChangesCancel => 'كمّل تعديل';
+
+  @override
+  String get walletOfflinePartial =>
+      'المعاملات وملخص الشهر مش متوفرين أوفلاين.';
 }

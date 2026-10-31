@@ -36,10 +36,15 @@ class WalletDetailScreen extends ConsumerWidget {
     final name = detail.value?.wallet.name;
 
     Future<void> refresh() async {
-      ref.invalidate(walletsProvider);
-      await ref
-          .read(walletDetailProvider(walletId).future)
-          .then((_) {}, onError: (Object _) {});
+      try {
+        ref.invalidate(walletsProvider);
+        ref.invalidate(walletDetailProvider(walletId));
+        await ref.read(walletDetailProvider(walletId).future);
+      } catch (_) {
+        if (context.mounted) {
+          showSmartSpendNotice(context, l10n.refreshFailedNotice);
+        }
+      }
     }
 
     return Scaffold(
@@ -52,35 +57,42 @@ class WalletDetailScreen extends ConsumerWidget {
           Expanded(
             child: RefreshIndicator(
               onRefresh: refresh,
-              child: switch (detail) {
-                AsyncData(value: null) => WalletsScrolling(
-                  children: [
-                    EmptyState(
-                      icon: Icons.account_balance_wallet_outlined,
-                      title: l10n.walletNotFound,
-                      message: l10n.walletNotFoundBody,
-                      actionLabel: l10n.walletsBack,
-                      onAction: () => context.go(WalletsScreen.path),
-                    ),
-                  ],
-                ),
-                AsyncData(value: final WalletDetail value) => WalletsScrolling(
-                  children: [_Filled(detail: value)],
-                ),
-                AsyncError(:final error) => WalletsScrolling(
-                  children: [
-                    ErrorState(
-                      message: switch (error) {
-                        ApiException(:final message) => message,
-                        _ => l10n.walletsLoadFailed,
-                      },
-                      retryLabel: l10n.retry,
-                      onRetry: () => ref.invalidate(walletsProvider),
-                    ),
-                  ],
-                ),
-                _ => const _Loading(),
-              },
+              child: () {
+                final WalletDetail? value = detail.value;
+                if (detail.hasValue) {
+                  if (value == null) {
+                    return WalletsScrolling(
+                      children: [
+                        EmptyState(
+                          icon: Icons.account_balance_wallet_outlined,
+                          title: l10n.walletNotFound,
+                          message: l10n.walletNotFoundBody,
+                          actionLabel: l10n.walletsBack,
+                          onAction: () => context.go(WalletsScreen.path),
+                        ),
+                      ],
+                    );
+                  }
+                  return WalletsScrolling(
+                    children: [_Filled(detail: value)],
+                  );
+                }
+                if (detail.hasError) {
+                  return WalletsScrolling(
+                    children: [
+                      ErrorState(
+                        message: switch (detail.error) {
+                          ApiException(:final message) => message,
+                          _ => l10n.walletsLoadFailed,
+                        },
+                        retryLabel: l10n.retry,
+                        onRetry: () => ref.invalidate(walletsProvider),
+                      ),
+                    ],
+                  );
+                }
+                return const _Loading();
+              }(),
             ),
           ),
         ],
@@ -127,16 +139,21 @@ class _Filled extends StatelessWidget {
               : l10n.walletBalanceStory(when),
           wash: true,
         ),
-        StatTileRow(
-          children: [
-            StatTile(
-              label: l10n.walletMonthIn,
-              amount: detail.month.moneyIn,
-              kind: AmountKind.income,
-            ),
-            StatTile(label: l10n.walletMonthOut, amount: detail.month.moneyOut),
-          ],
-        ),
+        if (detail.isPartial) ...[
+          const SizedBox(height: SmartSpendSpacing.sm),
+          InlineMessage(l10n.walletOfflinePartial),
+          const SizedBox(height: SmartSpendSpacing.sm),
+        ] else
+          StatTileRow(
+            children: [
+              StatTile(
+                label: l10n.walletMonthIn,
+                amount: detail.month.moneyIn,
+                kind: AmountKind.income,
+              ),
+              StatTile(label: l10n.walletMonthOut, amount: detail.month.moneyOut),
+            ],
+          ),
         GroupedSection(
           children: [
             GroupedRow(

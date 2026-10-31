@@ -103,7 +103,8 @@ Session 1 established the canonical patterns that all subsequent mobile sessions
 ### 1. Repository & Caching Pattern (FND-06)
 - **Account-Scoped Cache**: Repositories cache their last good response in `StoredLedger` / `LocalLedger` scoped to the current user key (`${user.kind.name}:${user.id}`).
 - **Stale-While-Revalidate**: Cached answers display immediately while network requests refresh in the background, eliminating blank screen flashes.
-- **Graceful Offline Fallback**: On `ApiNetworkException`, `networkStatusProvider.unreachable()` flags the offline state, and the repository serves cached data instead of blowing up.
+- **Refresh Error Retention (FND-06)**: Pull-to-refresh (`RefreshIndicator`) never wipes the screen when the server returns a 500 or network error. Screens inspect `asyncValue.value`: if cached data exists, it continues rendering the content instead of switching to `ErrorState`. The refresh handler catches the error and surfaces `showSmartSpendNotice(context, l10n.refreshFailedNotice)` ("ماقدرناش نحدّث البيانات دلوقتي. البيانات المعروضة هي آخر نسخة محفوظة."). Initial loads with no cached data still present `ErrorState` with a retry button.
+- **Graceful Offline Fallback & Partial States (MON-03)**: On `ApiNetworkException`, `networkStatusProvider.unreachable()` flags the offline state, and the repository serves cached data instead of blowing up. When opening detailed views (such as a wallet) offline without cached transactions, known figures (like balance and sync date) are shown with a partial notice (`l10n.walletOfflinePartial`) naming what is missing rather than a generic error.
 - **Multi-Tenant Isolation**: Signing out (`SessionController.signOut()`) or switching accounts completely wipes the local store (`localLedger.wipe()`), app lock credentials (`appLock.wipe()`), and outbox to prevent data leakage between different users on the same phone.
 - **Single Offline Banner**: A screen shows one top-level banner when offline via `networkStatusProvider`, never an offline indicator per card.
 
@@ -117,3 +118,6 @@ Session 1 established the canonical patterns that all subsequent mobile sessions
 - **Shared-Element Transitions**: Transaction rows open `TransactionDetailScreen` with a Hero animation of both category icon and amount using `smartSpendHeroShuttle` on transparent Material.
 - **Session-Scoped Staggered Reveal**: `StaggeredReveal` animates card entrances only once per session (`sessionKey`) to prevent repetitive motion on every tab switch, and collapses to instant display under reduced motion (`SmartSpendMotion.enabledOf(context)`).
 - **Predictive Back**: Android predictive back (`enableOnBackInvokedCallback="true"`) and Cupertino edge-swipe are configured to dismiss sheets and navigate cleanly.
+
+### 4. Sheet & Form Pattern (FND-09)
+- **Draft & Edit Protection**: Modal sheets and creation forms (such as `_EditTransactionSheet` and `_WalletForm`) track their dirty state by attaching listeners to text controllers and comparing against initial values. If the user attempts to swipe down, press Android back, or tap cancel while dirty, `PopScope` intercepts the dismissal and presents a confirmation dialog (`l10n.discardChangesTitle` / `l10n.discardChangesBody`), preventing silent loss of edits.

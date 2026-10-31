@@ -27,10 +27,14 @@ class WalletsScreen extends ConsumerWidget {
     final wallets = ref.watch(walletsProvider);
 
     Future<void> refresh() async {
-      ref.invalidate(walletsProvider);
-      await ref
-          .read(walletsProvider.future)
-          .then((_) {}, onError: (Object _) {});
+      try {
+        ref.invalidate(walletsProvider);
+        await ref.read(walletsProvider.future);
+      } catch (_) {
+        if (context.mounted) {
+          showSmartSpendNotice(context, l10n.refreshFailedNotice);
+        }
+      }
     }
 
     Future<void> add() async {
@@ -48,61 +52,68 @@ class WalletsScreen extends ConsumerWidget {
           Expanded(
             child: RefreshIndicator(
               onRefresh: refresh,
-              child: switch (wallets) {
-                AsyncData(:final value) when value.isEmpty => WalletsScrolling(
-                  children: [
-                    EmptyState(
-                      icon: Icons.account_balance_wallet_rounded,
-                      title: l10n.walletsEmptyTitle,
-                      message: l10n.walletsEmptyBody,
-                      actionLabel: l10n.walletsAdd,
-                      onAction: add,
-                    ),
-                  ],
-                ),
-                AsyncData(:final value) => WalletsScrolling(
-                  children: [
-                    StaggeredReveal(
+              child: () {
+                final List<Wallet>? list = wallets.value;
+                if (list != null) {
+                  if (list.isEmpty) {
+                    return WalletsScrolling(
                       children: [
-                        HeroFigure(
-                          label: l10n.walletsTotal,
-                          amount: value.fold<num>(
-                            0,
-                            (sum, wallet) => sum + wallet.balance,
-                          ),
-                          story: l10n.walletsTotalStory,
-                          wash: true,
-                        ),
-                        GroupedSection(
-                          children: [
-                            for (final wallet in value)
-                              _WalletRow(wallet: wallet),
-                            GroupedRow(
-                              icon: Icons.add_rounded,
-                              title: l10n.walletsAdd,
-                              trailing: const SizedBox.shrink(),
-                              onTap: add,
-                            ),
-                          ],
+                        EmptyState(
+                          icon: Icons.account_balance_wallet_rounded,
+                          title: l10n.walletsEmptyTitle,
+                          message: l10n.walletsEmptyBody,
+                          actionLabel: l10n.walletsAdd,
+                          onAction: add,
                         ),
                       ],
-                    ),
-                  ],
-                ),
-                AsyncError(:final error) => WalletsScrolling(
-                  children: [
-                    ErrorState(
-                      message: switch (error) {
-                        ApiException(:final message) => message,
-                        _ => l10n.walletsLoadFailed,
-                      },
-                      retryLabel: l10n.retry,
-                      onRetry: () => ref.invalidate(walletsProvider),
-                    ),
-                  ],
-                ),
-                _ => const _Loading(),
-              },
+                    );
+                  }
+                  return WalletsScrolling(
+                    children: [
+                      StaggeredReveal(
+                        children: [
+                          HeroFigure(
+                            label: l10n.walletsTotal,
+                            amount: list.fold<num>(
+                              0,
+                              (num sum, Wallet wallet) => sum + wallet.balance,
+                            ),
+                            story: l10n.walletsTotalStory,
+                            wash: true,
+                          ),
+                          GroupedSection(
+                            children: [
+                              for (final wallet in list)
+                                _WalletRow(wallet: wallet),
+                              GroupedRow(
+                                icon: Icons.add_rounded,
+                                title: l10n.walletsAdd,
+                                trailing: const SizedBox.shrink(),
+                                onTap: add,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+                if (wallets.hasError) {
+                  return WalletsScrolling(
+                    children: [
+                      ErrorState(
+                        message: switch (wallets.error) {
+                          ApiException(:final message) => message,
+                          _ => l10n.walletsLoadFailed,
+                        },
+                        retryLabel: l10n.retry,
+                        onRetry: () => ref.invalidate(walletsProvider),
+                      ),
+                    ],
+                  );
+                }
+                return const _Loading();
+              }(),
             ),
           ),
         ],

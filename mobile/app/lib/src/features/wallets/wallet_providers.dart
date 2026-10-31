@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' hide AsyncError;
 import 'package:smartspend_api/smartspend_api.dart';
 
 import '../../core/providers.dart';
@@ -140,11 +140,13 @@ final class WalletDetail {
     required this.wallet,
     required this.month,
     required this.transactions,
+    this.isPartial = false,
   });
 
   final Wallet wallet;
   final WalletMonth month;
   final List<LedgerEntry> transactions;
+  final bool isPartial;
 }
 
 final walletDetailProvider = FutureProvider.family<WalletDetail?, int>((
@@ -168,8 +170,24 @@ final walletDetailProvider = FutureProvider.family<WalletDetail?, int>((
       month: month,
       transactions: transactions,
     );
-  } on ApiNetworkException {
-    ref.read(networkStatusProvider.notifier).unreachable();
+  } on Object catch (e) {
+    var isServerError = e is ApiException;
+    if (e case ParallelWaitError(errors: (final AsyncError? err1, final AsyncError? err2))) {
+      isServerError = err1?.error is ApiException || err2?.error is ApiException;
+    }
+    if (!isServerError && (e is ApiNetworkException || e is ParallelWaitError)) {
+      ref.read(networkStatusProvider.notifier).unreachable();
+      final stored = await ref.read(localLedgerProvider).snapshot();
+      final cachedEntries =
+          stored.recent?.entries.where((e) => e.walletId == id).toList() ??
+          const [];
+      return WalletDetail(
+        wallet: wallet,
+        month: WalletMonth.fromJson(const {}),
+        transactions: cachedEntries,
+        isPartial: true,
+      );
+    }
     rethrow;
   }
 });

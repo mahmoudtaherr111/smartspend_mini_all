@@ -42,12 +42,61 @@ class _WalletFormState extends ConsumerState<_WalletForm> {
   String? _balanceError;
   String? _error;
 
+  late final String _initialName = (widget.wallet?.name ?? '').trim();
+  late final String _initialLastFour = (widget.wallet?.lastFour ?? '').trim();
+  late final String _initialBalance =
+      widget.wallet == null ? '' : _plain(widget.wallet!.balance).trim();
+  late final WalletKind _initialKind = widget.wallet?.kind ?? WalletKind.card;
+
+  bool get _isDirty =>
+      _name.text.trim() != _initialName ||
+      _lastFour.text.trim() != _initialLastFour ||
+      _balance.text.trim() != _initialBalance ||
+      _kind != _initialKind;
+
+  Future<bool> _confirmDiscard(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.discardChangesTitle),
+        content: Text(l10n.discardChangesBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.discardChangesCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.discardChangesConfirm),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
   static String _plain(num value) => value == value.roundToDouble()
       ? value.round().toString()
       : value.toStringAsFixed(2);
 
   @override
+  void initState() {
+    super.initState();
+    _name.addListener(_onFieldChanged);
+    _lastFour.addListener(_onFieldChanged);
+    _balance.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    _name.removeListener(_onFieldChanged);
+    _lastFour.removeListener(_onFieldChanged);
+    _balance.removeListener(_onFieldChanged);
     _name.dispose();
     _lastFour.dispose();
     _balance.dispose();
@@ -117,100 +166,110 @@ class _WalletFormState extends ConsumerState<_WalletForm> {
     final textTheme = Theme.of(context).textTheme;
     final editing = widget.wallet != null;
     final error = _error;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        SmartSpendSpacing.screen,
-        0,
-        SmartSpendSpacing.screen,
-        SmartSpendSpacing.xl,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            editing
-                ? l10n.walletFormEditTitle(widget.wallet!.name)
-                : l10n.walletFormAddTitle,
-            style: textTheme.titleLarge,
-          ),
-          const SizedBox(height: SmartSpendSpacing.lg),
-          if (error != null) ...[
-            InlineMessage(error),
-            const SizedBox(height: SmartSpendSpacing.md),
-          ],
-          if (!editing) ...[
-            Text(l10n.walletKindLabel, style: textTheme.labelLarge),
-            const SizedBox(height: SmartSpendSpacing.sm),
-            Wrap(
-              spacing: SmartSpendSpacing.sm,
-              runSpacing: SmartSpendSpacing.sm,
-              children: [
-                for (final kind in WalletKind.values)
-                  ChoiceChip(
-                    avatar: Icon(
-                      kind.icon,
-                      size: 18,
-                      color: walletKindColor(context, kind),
-                    ),
-                    label: Text(walletKindName(l10n, kind)),
-                    selected: _kind == kind,
-                    onSelected: (_) {
-                      unawaited(SmartSpendHaptics.selection());
-                      setState(() => _kind = kind);
-                    },
-                  ),
-              ],
+    return PopScope(
+      canPop: !_isDirty || _busy,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final discard = await _confirmDiscard(context);
+        if (discard && context.mounted) {
+          Navigator.of(context).pop(false);
+        }
+      },
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          SmartSpendSpacing.screen,
+          0,
+          SmartSpendSpacing.screen,
+          SmartSpendSpacing.xl,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              editing
+                  ? l10n.walletFormEditTitle(widget.wallet!.name)
+                  : l10n.walletFormAddTitle,
+              style: textTheme.titleLarge,
             ),
             const SizedBox(height: SmartSpendSpacing.lg),
-          ],
-          TextField(
-            controller: _name,
-            textInputAction: TextInputAction.next,
-            maxLength: 100,
-            decoration: InputDecoration(
-              labelText: l10n.walletNameLabel,
-              hintText: l10n.walletNameHint,
-              errorText: _nameError,
-              counterText: '',
-            ),
-          ),
-          const SizedBox(height: SmartSpendSpacing.md),
-          TextField(
-            controller: _lastFour,
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.next,
-            maxLength: 4,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp('[0-9٠-٩]')),
+            if (error != null) ...[
+              InlineMessage(error),
+              const SizedBox(height: SmartSpendSpacing.md),
             ],
-            decoration: InputDecoration(
-              labelText: l10n.walletLastFourLabel,
-              errorText: _lastFourError,
-              counterText: '',
+            if (!editing) ...[
+              Text(l10n.walletKindLabel, style: textTheme.labelLarge),
+              const SizedBox(height: SmartSpendSpacing.sm),
+              Wrap(
+                spacing: SmartSpendSpacing.sm,
+                runSpacing: SmartSpendSpacing.sm,
+                children: [
+                  for (final kind in WalletKind.values)
+                    ChoiceChip(
+                      avatar: Icon(
+                        kind.icon,
+                        size: 18,
+                        color: walletKindColor(context, kind),
+                      ),
+                      label: Text(walletKindName(l10n, kind)),
+                      selected: _kind == kind,
+                      onSelected: (_) {
+                        unawaited(SmartSpendHaptics.selection());
+                        setState(() => _kind = kind);
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: SmartSpendSpacing.lg),
+            ],
+            TextField(
+              controller: _name,
+              textInputAction: TextInputAction.next,
+              maxLength: 100,
+              decoration: InputDecoration(
+                labelText: l10n.walletNameLabel,
+                hintText: l10n.walletNameHint,
+                errorText: _nameError,
+                counterText: '',
+              ),
             ),
-          ),
-          const SizedBox(height: SmartSpendSpacing.md),
-          TextField(
-            controller: _balance,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-              signed: true,
+            const SizedBox(height: SmartSpendSpacing.md),
+            TextField(
+              controller: _lastFour,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.next,
+              maxLength: 4,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp('[0-9٠-٩]')),
+              ],
+              decoration: InputDecoration(
+                labelText: l10n.walletLastFourLabel,
+                errorText: _lastFourError,
+                counterText: '',
+              ),
             ),
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _save(),
-            decoration: InputDecoration(
-              labelText: l10n.walletBalanceLabel,
-              errorText: _balanceError,
-              suffixText: MoneyLocale.of(context).symbol,
+            const SizedBox(height: SmartSpendSpacing.md),
+            TextField(
+              controller: _balance,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _save(),
+              decoration: InputDecoration(
+                labelText: l10n.walletBalanceLabel,
+                errorText: _balanceError,
+                suffixText: MoneyLocale.of(context).symbol,
+              ),
             ),
-          ),
-          const SizedBox(height: SmartSpendSpacing.xl),
-          SmartSpendButton(
-            label: l10n.walletSave,
-            busy: _busy,
-            onPressed: _save,
-          ),
-        ],
+            const SizedBox(height: SmartSpendSpacing.xl),
+            SmartSpendButton(
+              label: l10n.walletSave,
+              busy: _busy,
+              onPressed: _save,
+            ),
+          ],
+        ),
       ),
     );
   }

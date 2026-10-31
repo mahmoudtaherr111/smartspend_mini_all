@@ -34,14 +34,17 @@ class StatsScreen extends ConsumerWidget {
     final words = DateWords.of(context);
 
     Future<void> refresh() async {
-      if (month != null) {
-        ref.invalidate(monthStatsByMonthProvider(month));
+      try {
+        if (month != null) {
+          ref.invalidate(monthStatsByMonthProvider(month));
+        }
+        ref.invalidate(monthStatsProvider);
+        await ref.read(monthStatsProvider.future);
+      } catch (_) {
+        if (context.mounted) {
+          showSmartSpendNotice(context, l10n.refreshFailedNotice);
+        }
       }
-      ref.invalidate(monthStatsProvider);
-      // A failed refresh shows its error state; the indicator only waits for the answer.
-      await ref
-          .read(monthStatsProvider.future)
-          .then((_) {}, onError: (Object _) {});
     }
 
     return Scaffold(
@@ -67,42 +70,49 @@ class StatsScreen extends ConsumerWidget {
           Expanded(
             child: RefreshIndicator(
               onRefresh: refresh,
-              child: switch (stats) {
-                AsyncData(:final value) when value.isEmpty => _Scrolling(
-                  children: [
-                    EmptyState(
-                      icon: Icons.insights_rounded,
-                      title: l10n.statsEmptyTitle(
-                        month == null ? '' : words.monthName(month),
+              child: () {
+                final MonthStats? value = stats.value;
+                if (value != null) {
+                  if (value.isEmpty) {
+                    return _Scrolling(
+                      children: [
+                        EmptyState(
+                          icon: Icons.insights_rounded,
+                          title: l10n.statsEmptyTitle(
+                            month == null ? '' : words.monthName(month),
+                          ),
+                          message: l10n.statsEmptyBody,
+                          actionLabel: l10n.statsEmptyAction,
+                          onAction: () => context.go(RecordScreen.path),
+                        ),
+                      ],
+                    );
+                  }
+                  return _Scrolling(
+                    children: _filled(context, l10n, value, month),
+                  );
+                }
+                if (stats.hasError) {
+                  return _Scrolling(
+                    children: [
+                      ErrorState(
+                        message: switch (stats.error) {
+                          ApiException(:final message) => message,
+                          _ => l10n.statsLoadFailed,
+                        },
+                        retryLabel: l10n.retry,
+                        onRetry: () {
+                          if (month != null) {
+                            ref.invalidate(monthStatsByMonthProvider(month));
+                          }
+                          ref.invalidate(monthStatsProvider);
+                        },
                       ),
-                      message: l10n.statsEmptyBody,
-                      actionLabel: l10n.statsEmptyAction,
-                      onAction: () => context.go(RecordScreen.path),
-                    ),
-                  ],
-                ),
-                AsyncData(:final value) => _Scrolling(
-                  children: _filled(context, l10n, value, month),
-                ),
-                AsyncError(:final error) => _Scrolling(
-                  children: [
-                    ErrorState(
-                      message: switch (error) {
-                        ApiException(:final message) => message,
-                        _ => l10n.statsLoadFailed,
-                      },
-                      retryLabel: l10n.retry,
-                      onRetry: () {
-                        if (month != null) {
-                          ref.invalidate(monthStatsByMonthProvider(month));
-                        }
-                        ref.invalidate(monthStatsProvider);
-                      },
-                    ),
-                  ],
-                ),
-                _ => const _Loading(),
-              },
+                    ],
+                  );
+                }
+                return const _Loading();
+              }(),
             ),
           ),
         ],

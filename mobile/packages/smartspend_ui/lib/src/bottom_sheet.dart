@@ -6,6 +6,10 @@ import 'package:flutter/material.dart';
 /// Set [isDismissible] to false for a sheet that must end in a choice, such as a confirmation that deletes data;
 /// it then also refuses the swipe.
 ///
+/// Sheets that accept input (such as edit sheets and forms) track dirty state and wrap their contents in
+/// [PopScope] with `canPop: !isDirty` to intercept accidental dismissal, swipe down, or back gestures, asking
+/// for confirmation before discarding unsaved edits (FND-09).
+///
 /// The sheet opens on the root navigator, so it covers the tab bar instead of sliding up behind it.
 Future<T?> showSmartSpendSheet<T>({
   required BuildContext context,
