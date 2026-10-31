@@ -8,6 +8,7 @@ import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../contacts/person_transactions_sheet.dart';
 import '../wallets/wallet_detail_screen.dart';
 import '../wallets/wallet_models.dart';
 import '../wallets/wallet_providers.dart';
@@ -16,7 +17,6 @@ import 'category_style.dart';
 import 'edit_transaction_sheet.dart';
 import 'ledger_models.dart';
 import 'ledger_providers.dart';
-import 'ledger_widgets.dart';
 import 'record_screen.dart';
 
 /// Optional launch context passed via `GoRouter`'s `extra` when tapping a [TransactionRow]: carries the preloaded
@@ -232,7 +232,7 @@ class _Filled extends ConsumerWidget {
   void _openPerson(BuildContext context, ContactSummary contact) {
     showSmartSpendSheet<void>(
       context: context,
-      builder: (_) => _PersonTransactionsSheet(contact: contact),
+      builder: (_) => PersonTransactionsSheet.fromContact(contact),
     );
   }
 
@@ -376,80 +376,6 @@ class _Filled extends ConsumerWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-class _PersonTransactionsSheet extends ConsumerWidget {
-  const _PersonTransactionsSheet({required this.contact});
-
-  final ContactSummary contact;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final colors = context.smartSpendColors;
-    final textTheme = Theme.of(context).textTheme;
-    final query = (contactId: contact.id, name: contact.name);
-    final entries = ref.watch(personTransactionsProvider(query));
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        SmartSpendSpacing.screen,
-        0,
-        SmartSpendSpacing.screen,
-        SmartSpendSpacing.xl,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            l10n.personTransactionsTitle(inlineName(contact.name)),
-            style: textTheme.titleLarge,
-          ),
-          if (contact.relation case final String relation
-              when relation.trim().isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              relation.trim(),
-              style: textTheme.bodySmall?.copyWith(
-                color: colors.mutedForeground,
-              ),
-            ),
-          ],
-          const SizedBox(height: SmartSpendSpacing.md),
-          switch (entries) {
-            AsyncData(:final value) when value.isEmpty => Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: SmartSpendSpacing.lg,
-              ),
-              child: Text(
-                l10n.personTransactionsEmpty,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colors.mutedForeground,
-                ),
-              ),
-            ),
-            AsyncData(:final value) => LedgerDayList(
-              entries: value,
-              onEntryTap: (tapped, tag) {
-                Navigator.of(context).pop();
-                context.push(
-                  TransactionDetailScreen.pathFor(tapped.id),
-                  extra: TransactionDetailLaunch(entry: tapped, heroTag: tag),
-                );
-              },
-            ),
-            AsyncError() => ErrorState(
-              message: l10n.ledgerLoadFailed,
-              retryLabel: l10n.retry,
-              onRetry: () => ref.invalidate(personTransactionsProvider(query)),
-            ),
-            _ => const LedgerSkeleton(rows: 3),
-          },
-        ],
-      ),
     );
   }
 }

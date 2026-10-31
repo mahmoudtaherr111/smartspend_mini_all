@@ -8,6 +8,7 @@ import '../features/auth/sign_in_screen.dart';
 import '../features/auth/starting_screen.dart';
 import '../features/capture/capture_review_screen.dart';
 import '../features/capture/capture_settings_screen.dart';
+import '../features/contacts/contacts_screen.dart';
 import '../features/in_progress_screen.dart';
 import '../features/ledger/record_screen.dart';
 import '../features/ledger/transaction_detail_screen.dart';
@@ -115,6 +116,10 @@ final appTabs = <AppTab>[
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: ContactsScreen.path.substring('/more/'.length),
+        builder: (context, state) => const ContactsScreen(),
       ),
       GoRoute(
         path: SecurityScreen.path.substring('/more/'.length),

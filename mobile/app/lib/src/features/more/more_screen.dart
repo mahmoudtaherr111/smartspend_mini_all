@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../contacts/contacts_screen.dart';
 import '../lock/security_screen.dart';
 import '../wallets/wallets_screen.dart';
 import 'account_card.dart';
@@ -32,6 +33,12 @@ class MoreScreen extends StatelessWidget {
                 title: l10n.walletsTitle,
                 subtitle: l10n.walletsEntry,
                 onTap: () => context.go(WalletsScreen.path),
+              ),
+              GroupedRow(
+                icon: Icons.people_outline_rounded,
+                title: 'الناس والديون',
+                subtitle: 'مين ليك عنده ومين عليك ليه',
+                onTap: () => context.go(ContactsScreen.path),
               ),
             ],
           ),

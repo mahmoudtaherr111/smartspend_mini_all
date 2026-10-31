@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:device_lock/device_lock.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/src/internals.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -253,12 +254,12 @@ final class TestApp {
     FakeApi? api,
     FakeGoogleIdentity? google,
     this.humanCheck,
-    this.overrides = const [],
+    this.overrides = const <Override>[],
   }) : store = MemorySessionStore(token),
        api = api ?? FakeApi(),
        google = google ?? FakeGoogleIdentity(isAvailable: false);
 
-  final List overrides;
+  final List<Override> overrides;
 
   final MemorySessionStore store;
 
