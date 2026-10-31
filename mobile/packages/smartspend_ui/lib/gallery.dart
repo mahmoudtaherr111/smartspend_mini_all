@@ -88,6 +88,71 @@ class ComponentGallery extends StatelessWidget {
               ],
             ),
           ),
+          const SectionHeader('الرسوم البيانية (FND-04)'),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(SmartSpendSpacing.md),
+              child: SmartSpendBarChart(
+                title: 'صرف الأسبوع: 2,450 ج.م',
+                spokenSummary: 'رسم بياني يوضح صرف أيام الأسبوع. أعلى صرف كان يوم الخميس 800 ج.م.',
+                data: [
+                  BarDataPoint(label: 'س', value: 300),
+                  BarDataPoint(label: 'ح', value: 150),
+                  BarDataPoint(label: 'ن', value: 450),
+                  BarDataPoint(label: 'ث', value: 200),
+                  BarDataPoint(label: 'ر', value: 350),
+                  BarDataPoint(label: 'خ', value: 800, isHighlighted: true),
+                  BarDataPoint(label: 'ج', value: 200),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: SmartSpendSpacing.md),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(SmartSpendSpacing.md),
+              child: SmartSpendLineChart(
+                title: 'تطور الصرف عبر الشهور',
+                spokenSummary:
+                    'رسم بياني لتطور الصرف الشهري، أغسطس بدون بيانات',
+                data: [
+                  LineDataPoint(label: 'مايو', value: 4200),
+                  LineDataPoint(label: 'يونيو', value: 3900),
+                  LineDataPoint(label: 'يوليو', value: 5100),
+                  LineDataPoint(label: 'أغسطس', value: null),
+                  LineDataPoint(label: 'سبتمبر', value: 4600),
+                  LineDataPoint(label: 'أكتوبر', value: 4250),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: SmartSpendSpacing.md),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(SmartSpendSpacing.md),
+              child: SmartSpendProportionChart(
+                title: 'التوزيع بالنسبة المئوية',
+                parts: [
+                  ProportionPart(
+                    label: 'أكل وشرب',
+                    amount: 1680,
+                    color: Color(0xFF10B981),
+                  ),
+                  ProportionPart(
+                    label: 'سكن وفواتير',
+                    amount: 1250,
+                    color: Color(0xFFEAB308),
+                  ),
+                  ProportionPart(
+                    label: 'مواصلات',
+                    amount: 540,
+                    color: Color(0xFF3B82F6),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: SmartSpendSpacing.lg),
           const SectionHeader('التصنيفات'),
           const Wrap(
             spacing: SmartSpendSpacing.md,
