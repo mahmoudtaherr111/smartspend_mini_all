@@ -56,7 +56,7 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 | `data-retention-lifecycle` | `0 5 * * *` | `api/jobs/data-retention-job.ts` | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_ai_jobs`, `capture_events`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `whatsapp_messages` |
 | `memory-embedding-backfill` | `*/20 * * * *` | `api/services/ai-memory/index.ts` | — | — |
 | `monthly-behavior-snapshots` | `0 1 1 * *` | `api/jobs/monthly-behavior-job.ts` | `expenses`, `user_profiles` | — |
-| `monthly-report-generation` | `0 2 1 * *` | `api/jobs/monthly-report-job.ts` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
+| `monthly-report-generation` | `0 2 1 * *` | `api/jobs/monthly-report-job.ts` | `local_users`, `monthly_reports`, `users` | `local_users`, `monthly_reports`, `users` |
 | `nightly-rollup-reconciliation` | `0 4 * * *` | `api/jobs/rollup-reconciliation-job.ts` | `expense_daily_rollups`, `expenses` | — |
 | `scheduled-notifications` | `* * * * *` | `api/notification-engine.ts` | — | — |
 | `seed-capture-catalog` | once at boot | `api/lib/capture/catalog.ts` | — | — |

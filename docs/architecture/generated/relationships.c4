@@ -441,6 +441,7 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.chat_messages
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.expenses
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.local_users
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.monthly_reports
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.notification_logs
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.pending_clarifications
@@ -450,6 +451,7 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_budgets
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_correction_rules
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_dictionaries
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.users
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_call_incidents
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_calls
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_usage

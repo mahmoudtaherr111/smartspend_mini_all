@@ -258,7 +258,7 @@ Job implementations scheduled from api/boot.ts.
 | --- | --- | --- | --- | --- |
 | `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_ai_jobs`, `capture_events`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `whatsapp_messages` |
 | `api/jobs/monthly-behavior-job.ts` | `api-routers`, `database`, `platform` | — | `expenses`, `user_profiles` | — |
-| `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
+| `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users` | `local_users`, `monthly_reports`, `users` |
 | `api/jobs/rollup-reconciliation-job.ts` | `database`, `ledger`, `platform` | — | `expense_daily_rollups`, `expenses` | — |
 | `api/jobs/subscription-expiry-job.ts` | `auth`, `database`, `notifications`, `platform` | — | `pro_subscriptions` | `pro_subscriptions` |
 | `api/jobs/taxonomy-migration-job.ts` | `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform` | — | `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` | `expenses`, `user_budgets`, `user_correction_rules`, `user_dictionaries` |

@@ -403,7 +403,8 @@ export async function getPersonTotal(
 
   const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "person_total_v2"), period.key, contact.id);
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
-    const rows = (await loadRowsForPeriod(ctx, period)).filter((row) => row.contactId === contact.id);
+    const loaded = await loadRowsForPeriod(ctx, period);
+    const rows = loaded.filter((row) => row.contactId === contact.id);
     const spent = rows.filter((row) => row.type === "expense");
     const received = rows.filter((row) => row.type === "income");
     return {
@@ -416,6 +417,7 @@ export async function getPersonTotal(
       expenseCount: spent.length,
       incomeCount: received.length,
       transactionCount: spent.length + received.length,
+      ...(loaded.length >= ROW_LIMIT ? { partial: true as const } : {}),
     };
   });
 }
@@ -1111,6 +1113,7 @@ export async function getTransactionLookup(
       description: latest.description,
       placeHint: latest.placeHint,
       date: dateString(latest.date),
+      ...(rows.length >= ROW_LIMIT ? { partial: true } : {}),
     };
   }
 

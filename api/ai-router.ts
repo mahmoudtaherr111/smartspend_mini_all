@@ -2108,11 +2108,17 @@ export const aiRouter = router({
           reportTopItemsLimit = 0;
           aiResponseLength = "short";
           aiFocus = "statistics";
-          aiSystemPrompt =
-            "أنت مستشار مالي مصري ذكي. اكتب تقريرا شهريا مختصرا ودقيقا من الحقائق المرسلة فقط، ولا تخترع أي رقم.";
-          aiAdvancedInstructions =
+          const factPromptSuffix =
+            "\nاكتب تقريرا شهريا مختصرا ودقيقا من الحقائق المرسلة فقط، ولا تخترع أي رقم.";
+          aiSystemPrompt = (settings.ai_system_prompt || aiSystemPrompt) + factPromptSuffix;
+          const factInstructions =
             "- استخدم SEMANTIC_REPORT_FACTS فقط كمصدر للأرقام.\n- لا تقرب الأرقام المالية؛ انسخ القيم العشرية كما هي مثل 2337.5.\n- لا تطلب أدوات ولا بيانات إضافية.\n- اكتب توصيات عملية قصيرة مبنية على أعلى الفئات والصافي والأهداف إن وجدت.";
-          aiReportStructureOverride = "";
+          aiAdvancedInstructions = settings.ai_advanced_instructions
+            ? `${settings.ai_advanced_instructions}\n${factInstructions}`
+            : factInstructions;
+          if (!settings.ai_report_structure_override) {
+            aiReportStructureOverride = "";
+          }
         }
 
         // Check token limit
@@ -2235,6 +2241,8 @@ ${prevTotal > 0 ? `تغير إجمالي المصاريف عن الشهر الس
         `user_name: ${userProfile.basicInfo.name || ctx.user.name || "SmartSpend user"}`,
         salaryDay > 0 ? `salary_day: ${salaryDay}` : "",
         financialMonthContext ? `financial_month: ${financialMonthContext.slice(0, 280)}` : "",
+        familyReportContext ? `family_context: ${familyReportContext.slice(0, 300)}` : "",
+        reportPersonalizationContext ? `personalization: ${reportPersonalizationContext.slice(0, 300)}` : "",
       ]
         .filter(Boolean)
         .join("\n");
@@ -2354,6 +2362,14 @@ ${personalizedSummaryForAI}
   "personality_flag": "${personality}",
   "data_table": []
 }`;
+
+            const estimatedInputTokens = estimateTokensFromText(prompt);
+            await assertAiBudget(
+              { id: ctx.user.id, type: ctx.user.type, plan: ctx.user.plan },
+              "report",
+              estimatedInputTokens,
+              await getSystemSettings(),
+            );
 
             let raw = "";
             let tokens = 0;
@@ -2581,6 +2597,23 @@ ${personalizedSummaryForAI}
           ? validateNumbersAgainstFacts(reportText, validationFacts)
           : { accuracy: 1, numbers: [], supported: [], missing: [] };
         const hallucination = reportHallucinationRisk(numericAccuracy.missing, reportLlmCalls);
+
+        if (reportLlmCalls > 0 && numericAccuracy.missing.length > 0) {
+          // BUG-02: Enforce accuracy. Do NOT show model-written report with unsupported numbers as is.
+          const fallbackDailyAvg = semanticNumber("daily_average_expense") ?? dailyAvg;
+          const fallbackTotalExpense = semanticNumber("total_expense") ?? totalExpense;
+          let safeText = "💡 (ملاحظة: تم استخدام الأرقام المؤكدة فقط لحماية دقة التقرير المالي)\n\n";
+          safeText += `إجمالي المصاريف المؤكدة لشهر ${input.month}: ${fallbackTotalExpense} ج.م بمتوسط يومي ${fallbackDailyAvg} ج.م.\n\n`;
+          if (topCategory) {
+            safeText += `أعلى بند إنفاق: ${topCategory[0]} بنسبة ${topCategoryPercent}% (${topCategory[1]} ج.م).\n\n`;
+          }
+          if (monthlyChange !== 0 && prevTotal > 0) {
+            safeText += `مقارنة بالشهر السابق: المصاريف ${monthlyChange > 0 ? "زادت" : "قلت"} بنسبة ${Math.abs(monthlyChange)}%.\n\n`;
+          }
+          safeText += "التوصية: تم إخفاء الأرقام غير المؤكدة حفاظاً على دقة تحليلاتك المالية. راجع تفاصيل العمليات من تبويب الإحصائيات.";
+          responseJson.response_text = safeText;
+          responseJson.hallucination_blocked = true;
+        }
         responseJson.semantic_facts = {
           source: semanticReportFacts?.source ?? "unavailable",
           factCount: semanticReportFacts?.facts.length ?? 0,

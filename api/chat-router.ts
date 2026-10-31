@@ -93,7 +93,8 @@ import { createLogger } from "./lib/log";
 import { providerSlugForBaseUrl, recordAiLedger } from "./lib/ai-ledger";
 import { resolveAdminRoutes } from "./lib/ai-gateway";
 import { env } from "./lib/env";
-import { defaultGeminiModelForPlan } from "./lib/model-mapper";
+import { defaultGeminiModelForPlan, mapModelName } from "./lib/model-mapper";
+import { assertAiBudget, estimateTokensFromText } from "./lib/ai-usage-policy";
 
 const log = createLogger("chat");
 
@@ -123,14 +124,14 @@ async function chatModels(
     .map((route) => ({
       apiKey: route.apiKey,
       baseUrl: route.protocol === "gemini" ? GEMINI_OPENAI_BASE : route.baseUrl,
-      model: route.model.replace(/^models\//, ""),
+      model: mapModelName(route.model.replace(/^models\//, "")),
     }));
   const chatbotKey = s.chatbot_api_key || s.fireworks_api_key || "";
   if (chatbotKey) {
     models.push({
       apiKey: chatbotKey,
       baseUrl: s.chatbot_base_url || "https://api.fireworks.ai/inference/v1",
-      model: s.chatbot_model || "accounts/fireworks/models/deepseek-v4-flash",
+      model: mapModelName(s.chatbot_model || "accounts/fireworks/models/deepseek-v4-flash"),
     });
   }
   const geminiKey = s.ai_api_key || env.GEMINI_API_KEY || "";
@@ -138,7 +139,7 @@ async function chatModels(
     models.push({
       apiKey: geminiKey,
       baseUrl: GEMINI_OPENAI_BASE,
-      model: defaultGeminiModelForPlan(tier),
+      model: mapModelName(defaultGeminiModelForPlan(tier)),
     });
   return models;
 }
@@ -668,12 +669,10 @@ export const chatRouter = router({
         process.env.NODE_ENV !== "production";
 
       if (!devQaBypassDailyLimit && todayCount >= dailyLimit) {
-        const now = new Date();
-        const midnight = new Date(now);
-        midnight.setHours(24, 0, 0, 0);
+        const today = businessDayRange();
         const retryAfterSeconds = Math.max(
           60,
-          Math.floor((midnight.getTime() - now.getTime()) / 1000),
+          Math.floor((today.endExclusive.getTime() - Date.now()) / 1000),
         );
 
         throw new TRPCError({
@@ -997,14 +996,28 @@ export const chatRouter = router({
         };
       }
 
+      if (!devQaBypassDailyLimit) {
+        const promptTokensEstimate = estimateTokensFromText(input.message);
+        await assertAiBudget(
+          { id: user.id, type: user.type, plan: user.plan },
+          "parse",
+          promptTokensEstimate,
+          config.settings,
+        );
+      }
+
       let kernelFailed = false;
+      const effectiveMaxTokens = Math.min(
+        chatPolicy.maxOutputTokens,
+        config.maxTokens[plan] || chatPolicy.maxOutputTokens,
+      );
       const kernelPrimary = aiKernelActive
         ? await runAIKernelActive(kernelRequest, {
             apiKey: config.apiKey,
             baseUrl: config.baseUrl,
             model: config.model,
             fallbacks: config.fallbacks,
-            maxTokens: chatPolicy.maxOutputTokens,
+            maxTokens: effectiveMaxTokens,
           }).catch((error: unknown) => {
             log.warn(
               { err: error, event: "chat.kernel.failed" },

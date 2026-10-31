@@ -1,5 +1,5 @@
 import { previousBusinessMonth } from "../lib/app-time";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { getDb } from "../queries/connection";
 import { users, localUsers, systemSettings, monthlyReports } from "../../db/schema";
 import { whatsappService } from "../services/whatsapp-service";
@@ -10,6 +10,8 @@ import { callFireworksAPI } from "../lib/fireworks-client";
 import { createLogger, phoneTail } from "../lib/log";
 import { PLAN_IDS, isPlanFeatureEnabled } from "../../contracts/plan-features";
 import { providerSlugForBaseUrl, recordAiLedger } from "../lib/ai-ledger";
+import { assertAiBudget, estimateTokensFromText } from "../lib/ai-usage-policy";
+import { mapModelName } from "../lib/model-mapper";
 
 const log = createLogger("monthly-report");
 
@@ -280,53 +282,83 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
               'Output JSON فقط: {"response_text":"..."}',
             ].join("\n");
 
-            const aiResult = await callFireworksAPI(
-              aiConfig.apiKey,
-              aiConfig.model,
-              systemPrompt,
-              userPrompt,
-              aiConfig.maxTokens,
-            );
-            reportContent = parseReportText(aiResult.text);
-            reportSource = "monthly_report_semantic_llm";
-            void recordAiLedger({
-              userId: u.id,
-              userType,
-              channel: "report",
-              providerSlug: providerSlugForBaseUrl(aiConfig.baseUrl),
-              modelId: aiConfig.model,
-              promptTokens: aiResult.promptTokens ?? aiResult.tokensUsed,
-              completionTokens: aiResult.completionTokens ?? 0,
-              cachedTokens: aiResult.cachedTokens ?? 0,
-              metadata: { job: "monthly_report" },
-            });
+            const estimatedInputTokens = estimateTokensFromText(systemPrompt + "\n" + userPrompt);
+            let budgetAllowed = false;
+            try {
+              await assertAiBudget(
+                { id: u.id, type: userType, plan: (u as any).plan || "pro" },
+                "report",
+                estimatedInputTokens,
+                s,
+              );
+              budgetAllowed = true;
+            } catch (budgetErr: any) {
+              console.warn(`[MonthlyReportJob] Budget exceeded for user ${u.id}: ${budgetErr.message}`);
+            }
 
-            const estimatedInputTokens = Math.ceil((systemPrompt.length + userPrompt.length) / 3.5);
-            void recordAICostMetric({
-              userId: u.id,
-              userType,
-              channel: "report",
-              plan: "pro",
-              intentKind: "report_request",
-              model: aiConfig.model,
-              inputTokens: estimatedInputTokens,
-              outputTokens: Math.max(0, aiResult.tokensUsed - estimatedInputTokens),
-              totalTokens: aiResult.tokensUsed,
-              llmCalls: 1,
-              toolCalls: 0,
-              latencyMs: Date.now() - reportStartedAt,
-              metadata: {
-                month,
-                source: reportSource,
-                factsSource: factsPack.source,
-                factsCacheKey: factsPack.cacheKey,
-                maxOutputTokens: aiConfig.maxTokens,
-                cacheVersion: MONTHLY_REPORT_CACHE_VERSION,
-                forceRefresh,
-                cachedPromptTokens: aiResult.cachedTokens ?? 0,
-              },
-            });
-            console.log(`[MonthlyReportJob] Used ${aiResult.tokensUsed} tokens for user ${u.id}.`);
+            if (budgetAllowed) {
+              const modelToUse = mapModelName(aiConfig.model);
+              const aiResult = await callFireworksAPI(
+                aiConfig.apiKey,
+                modelToUse,
+                systemPrompt,
+                userPrompt,
+                aiConfig.maxTokens,
+              );
+              reportContent = parseReportText(aiResult.text);
+              reportSource = "monthly_report_semantic_llm";
+              void recordAiLedger({
+                userId: u.id,
+                userType,
+                channel: "report",
+                providerSlug: providerSlugForBaseUrl(aiConfig.baseUrl),
+                modelId: modelToUse,
+                promptTokens: aiResult.promptTokens ?? aiResult.tokensUsed,
+                completionTokens: aiResult.completionTokens ?? 0,
+                cachedTokens: aiResult.cachedTokens ?? 0,
+                metadata: { job: "monthly_report" },
+              });
+
+              if (aiResult.tokensUsed > 0) {
+                if (userType === "oauth") {
+                  await db
+                    .update(users)
+                    .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${aiResult.tokensUsed}` })
+                    .where(eq(users.id, u.id));
+                } else {
+                  await db
+                    .update(localUsers)
+                    .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${aiResult.tokensUsed}` })
+                    .where(eq(localUsers.id, u.id));
+                }
+              }
+
+              void recordAICostMetric({
+                userId: u.id,
+                userType,
+                channel: "report",
+                plan: "pro",
+                intentKind: "report_request",
+                model: modelToUse,
+                inputTokens: estimatedInputTokens,
+                outputTokens: Math.max(0, aiResult.tokensUsed - estimatedInputTokens),
+                totalTokens: aiResult.tokensUsed,
+                llmCalls: 1,
+                toolCalls: 0,
+                latencyMs: Date.now() - reportStartedAt,
+                metadata: {
+                  month,
+                  source: reportSource,
+                  factsSource: factsPack.source,
+                  factsCacheKey: factsPack.cacheKey,
+                  maxOutputTokens: aiConfig.maxTokens,
+                  cacheVersion: MONTHLY_REPORT_CACHE_VERSION,
+                  forceRefresh,
+                  cachedPromptTokens: aiResult.cachedTokens ?? 0,
+                },
+              });
+              console.log(`[MonthlyReportJob] Used ${aiResult.tokensUsed} tokens for user ${u.id}.`);
+            }
           }
 
           if (!reportContent) {

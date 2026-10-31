@@ -94,6 +94,8 @@ export interface FinancePersonTotal {
   expenseCount: number;
   incomeCount: number;
   transactionCount: number;
+  /** The period held more entries than one read takes (ROW_LIMIT): only the newest were counted. */
+  partial?: boolean;
 }
 
 /** Spending whose shop, description or words hold a text ("طلبات"), over the whole period. */
@@ -143,6 +145,8 @@ export interface FinanceTransactionFact {
   paymentMethod?: string | null;
   placeHint?: string | null;
   date: string;
+  /** The period held more rows than one read takes (ROW_LIMIT): older matches may be missing. */
+  partial?: boolean;
 }
 
 export interface FinanceWalletSummary {
