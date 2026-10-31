@@ -7,6 +7,7 @@ import '../features/auth/session_controller.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/auth/starting_screen.dart';
 import '../features/budgets/budgets_screen.dart';
+import '../features/calendar/calendar_screen.dart';
 import '../features/capture/capture_review_screen.dart';
 import '../features/capture/capture_settings_screen.dart';
 import '../features/contacts/contacts_screen.dart';
@@ -92,8 +93,7 @@ final appTabs = <AppTab>[
     icon: Icons.calendar_month_outlined,
     selectedIcon: Icons.calendar_month,
     label: (l10n) => l10n.navCalendar,
-    screen: (context) =>
-        InProgressScreen(title: AppLocalizations.of(context).navCalendar),
+    screen: (context) => const CalendarScreen(),
   ),
   AppTab(
     path: '/more',

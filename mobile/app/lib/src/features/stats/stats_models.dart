@@ -19,6 +19,30 @@ final class CategoryAmount {
   };
 }
 
+/// A day's spending and income in the month (CAL-01).
+final class DayTrendPoint {
+  const DayTrendPoint({
+    required this.date,
+    required this.amount,
+    this.income = 0,
+  });
+
+  final String date;
+  final num amount;
+  final num income;
+}
+
+/// A weekday's spending rollup (STA-03).
+final class WeekdayTrendPoint {
+  const WeekdayTrendPoint({
+    required this.name,
+    required this.amount,
+  });
+
+  final String name;
+  final num amount;
+}
+
 /// How this month's spending compares with the last: by whole month near its end, by the same week before that
 /// (the server decides, `behavioralInsights.comparisonType`).
 enum Comparison { monthly, weekly }
@@ -39,6 +63,14 @@ final class MonthStats {
     this.topDayAmount,
     this.mostRecurring,
     this.mostRecurringCount,
+    this.dayTrend = const [],
+    this.dayOfWeekTrend = const [],
+    this.spendingBehavior,
+    this.spendingBehaviorLabelAr,
+    this.spendingBehaviorLabelEn,
+    this.automatedExpense = 0,
+    this.automatedIncome = 0,
+    this.netFlow = 0,
   });
 
   factory MonthStats.fromJson(Map<String, Object?> json) {
@@ -56,6 +88,23 @@ final class MonthStats {
             name: name,
             amount: readAmount(value) ?? 0,
             count: (raw['count'] as num?)?.toInt() ?? 0,
+          ),
+    ];
+    final dayTrend = [
+      for (final raw in (json['dayTrend'] as List<Object?>? ?? const []))
+        if (raw is Map<String, Object?> && raw['date'] != null)
+          DayTrendPoint(
+            date: raw['date'] as String,
+            amount: readAmount(raw['amount']) ?? 0,
+            income: readAmount(raw['income']) ?? 0,
+          ),
+    ];
+    final dayOfWeekTrend = [
+      for (final raw in (json['dayOfWeekTrend'] as List<Object?>? ?? const []))
+        if (raw is Map<String, Object?> && raw['name'] != null)
+          WeekdayTrendPoint(
+            name: raw['name'] as String,
+            amount: readAmount(raw['amount']) ?? 0,
           ),
     ];
     return MonthStats(
@@ -79,6 +128,14 @@ final class MonthStats {
       topDayAmount: readAmount(topDay['amount']),
       mostRecurring: recurring['name'] as String?,
       mostRecurringCount: (recurring['count'] as num?)?.toInt(),
+      dayTrend: dayTrend,
+      dayOfWeekTrend: dayOfWeekTrend,
+      spendingBehavior: insights['spendingBehavior'] as String?,
+      spendingBehaviorLabelAr: insights['spendingBehaviorLabelAr'] as String?,
+      spendingBehaviorLabelEn: insights['spendingBehaviorLabelEn'] as String?,
+      automatedExpense: readAmount(json['automatedExpense']) ?? 0,
+      automatedIncome: readAmount(json['automatedIncome']) ?? 0,
+      netFlow: readAmount(json['netFlow']) ?? 0,
     );
   }
 
@@ -96,6 +153,14 @@ final class MonthStats {
   final num? topDayAmount;
   final String? mostRecurring;
   final int? mostRecurringCount;
+  final List<DayTrendPoint> dayTrend;
+  final List<WeekdayTrendPoint> dayOfWeekTrend;
+  final String? spendingBehavior;
+  final String? spendingBehaviorLabelAr;
+  final String? spendingBehaviorLabelEn;
+  final num automatedExpense;
+  final num automatedIncome;
+  final num netFlow;
 
   /// Nothing recorded in the month.
   bool get isEmpty => count == 0 && expense == 0 && income == 0;
