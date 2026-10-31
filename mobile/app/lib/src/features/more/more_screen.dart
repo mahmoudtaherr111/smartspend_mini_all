@@ -5,9 +5,12 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 import '../../l10n/app_localizations.dart';
 import '../budgets/budgets_screen.dart';
 import '../contacts/contacts_screen.dart';
+import '../export/export_screen.dart';
 import '../goals/goals_screen.dart';
 import '../installments/installments_screen.dart';
+import '../limits/limits_card.dart';
 import '../lock/security_screen.dart';
+import '../seasons/seasons_screen.dart';
 import '../wallets/wallets_screen.dart';
 import 'account_card.dart';
 import 'bank_capture_card.dart';
@@ -19,6 +22,8 @@ import 'language_card.dart';
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
 
+  static const path = '/more';
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -28,6 +33,8 @@ class MoreScreen extends StatelessWidget {
         padding: const EdgeInsets.all(SmartSpendSpacing.screen),
         children: [
           const AccountCard(),
+          const LimitsCard(),
+          const SizedBox(height: SmartSpendSpacing.md),
           GroupedSection(
             title: l10n.moreMoneySection,
             children: [
@@ -61,6 +68,12 @@ class MoreScreen extends StatelessWidget {
                 subtitle: 'متابعة الأقساط الشهرية والباقي منها',
                 onTap: () => context.go(InstallmentsScreen.path),
               ),
+              GroupedRow(
+                icon: Icons.wb_sunny_outlined,
+                title: 'مواسم المصاريف',
+                subtitle: 'رمضان، الأعياد، المدارس ومصاريف الصيف',
+                onTap: () => context.go(SeasonsScreen.path),
+              ),
             ],
           ),
           GroupedSection(
@@ -71,6 +84,12 @@ class MoreScreen extends StatelessWidget {
                 title: l10n.securityTitle,
                 subtitle: l10n.securityEntryBody,
                 onTap: () => context.go(SecurityScreen.path),
+              ),
+              GroupedRow(
+                icon: Icons.file_download_outlined,
+                title: 'تصدير البيانات',
+                subtitle: 'نزّل نسخة من كل معاملاتك المالية',
+                onTap: () => context.go(ExportScreen.path),
               ),
               const LanguageRow(),
             ],

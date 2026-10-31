@@ -10,6 +10,7 @@ import '../features/budgets/budgets_screen.dart';
 import '../features/capture/capture_review_screen.dart';
 import '../features/capture/capture_settings_screen.dart';
 import '../features/contacts/contacts_screen.dart';
+import '../features/export/export_screen.dart';
 import '../features/goals/goals_screen.dart';
 import '../features/in_progress_screen.dart';
 import '../features/installments/installments_screen.dart';
@@ -19,6 +20,7 @@ import '../features/ledger/transaction_search_screen.dart';
 import '../features/ledger/transactions_screen.dart';
 import '../features/lock/security_screen.dart';
 import '../features/more/more_screen.dart';
+import '../features/seasons/seasons_screen.dart';
 import '../features/stats/category_transactions_screen.dart';
 import '../features/stats/stats_screen.dart';
 import '../features/wallets/wallet_detail_screen.dart';
@@ -135,6 +137,14 @@ final appTabs = <AppTab>[
       GoRoute(
         path: InstallmentsScreen.path.substring('/more/'.length),
         builder: (context, state) => const InstallmentsScreen(),
+      ),
+      GoRoute(
+        path: SeasonsScreen.path.substring('/more/'.length),
+        builder: (context, state) => const SeasonsScreen(),
+      ),
+      GoRoute(
+        path: ExportScreen.path.substring('/more/'.length),
+        builder: (context, state) => const ExportScreen(),
       ),
       GoRoute(
         path: SecurityScreen.path.substring('/more/'.length),

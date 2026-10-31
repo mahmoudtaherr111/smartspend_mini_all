@@ -6,6 +6,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 import '../../l10n/app_localizations.dart';
 import '../installments/installments_quick_card.dart';
 import '../lock/app_lock.dart';
+import '../streak/streak_badge.dart';
 import 'ledger_models.dart';
 import 'ledger_providers.dart';
 import 'ledger_widgets.dart';
@@ -38,7 +39,14 @@ class RecordScreen extends ConsumerWidget {
     return ScaffoldMessenger(
       child: Scaffold(
         appBar: AppBar(
-          title: Text(l10n.navRecord),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l10n.navRecord),
+              const SizedBox(width: SmartSpendSpacing.sm),
+              const StreakBadge(),
+            ],
+          ),
           actions: [
             // Record by hand (REC-12)
             IconButton(
