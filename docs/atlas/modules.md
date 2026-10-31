@@ -122,7 +122,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/session-router.ts` | `api-core`, `auth`, `database`, `security` | — | `sessions` | `user_analytics` |
 | `api/support-router.ts` | `api-core`, `database` | — | `local_users`, `support_tickets`, `users` | `support_tickets` |
 | `api/voice-router.ts` | `api-core`, `database`, `voice` | — | `voice_calls` | — |
-| `api/wallet-router.ts` | `api-core`, `database`, `finance-semantic-layer` | — | `expenses`, `user_wallets` | `expenses`, `user_wallets` |
+| `api/wallet-router.ts` | `api-core`, `database`, `finance-semantic-layer`, `ledger`, `platform` | — | `expenses`, `user_wallets` | `expenses`, `user_wallets` |
 | `api/webauthn-router.ts` | `api-core`, `auth`, `database`, `platform`, `security` | — | `auth_challenges`, `local_users`, `user_credentials`, `users` | `auth_challenges`, `user_credentials` |
 
 ### `auth` — Authentication and sessions

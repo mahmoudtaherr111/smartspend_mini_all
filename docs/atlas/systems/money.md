@@ -30,7 +30,7 @@ flowchart LR
     router_export["export API · 1 procedure"]
     router_goals["goals API · 5 procedures"]
     router_profile["profile API · 5 procedures"]
-    router_wallet["wallet API · 5 procedures"]
+    router_wallet["wallet API · 6 procedures"]
   end
   subgraph g_modules["Code modules"]
     mod_coaching["Commitments and coaching plans"]
@@ -153,7 +153,9 @@ flowchart LR
   router_profile ==> tbl_scheduled_cashflows
   router_profile ==> tbl_user_contacts
   router_profile ==> tbl_user_profiles
+  router_wallet --> mod_ledger
   router_wallet --> sys_ai_center
+  router_wallet --> sys_platform
   router_wallet ==> tbl_expenses
   router_wallet ==> tbl_user_wallets
   screens_accounts --> router_business
@@ -230,6 +232,7 @@ flowchart LR
 | `profile.updateContact` | mutation | `authedProcedure` | `user_contacts` | `user_contacts` | `More`, `Settings` |
 | `wallet.createWallet` | mutation | `authedProcedure` | — | `user_wallets` | `More`, `WalletsPage` |
 | `wallet.deleteWallet` | mutation | `authedProcedure` | — | `expenses`, `user_wallets` | `More`, `WalletsPage` |
+| `wallet.getWalletMonth` | query | `authedProcedure` | `expenses` | — | `More`, `WalletsPage` |
 | `wallet.getWalletTransactions` | query | `authedProcedure` | `expenses` | — | `More`, `WalletsPage` |
 | `wallet.getWallets` | query | `authedProcedure` | `user_wallets` | — | `More`, `WalletsPage` |
 | `wallet.updateWallet` | mutation | `authedProcedure` | — | `user_wallets` | — |
@@ -255,7 +258,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `coaching_plans` | C | `coaching` | `coaching` |
 | `coaching_steps` | C | `coaching` | `coaching` |
 | `expense_daily_rollups` | C | `ledger` | `expense.getMonthSummary`, `expense.getMonthlyStats`, `expense.getYearlyStats`, `ledger` |
-| `expenses` | B | `business.delete`, `ledger`, `profile.deleteContact`, `profile.mergeContacts`, `wallet.deleteWallet` | `coaching`, `expense.getById`, `expense.getMonthlyStats`, `expense.getSeasonSpending`, `expense.list`, `expense.listInstallmentPlans`, `expense.searchTransactions`, `export.myExpenses`, `goals.analyze`, `ledger`, `profile.listContacts`, `profile.mergeContacts`, `wallet.getWalletTransactions` |
+| `expenses` | B | `business.delete`, `ledger`, `profile.deleteContact`, `profile.mergeContacts`, `wallet.deleteWallet` | `coaching`, `expense.getById`, `expense.getMonthlyStats`, `expense.getSeasonSpending`, `expense.list`, `expense.listInstallmentPlans`, `expense.searchTransactions`, `export.myExpenses`, `goals.analyze`, `ledger`, `profile.listContacts`, `profile.mergeContacts`, `wallet.getWalletMonth`, `wallet.getWalletTransactions` |
 | `financial_goals` | C | `goals.analyze`, `goals.create`, `goals.delete`, `goals.setStatus` | `goals.analyze`, `goals.create`, `goals.list` |
 | `in_app_notifications` | D | `coaching` | — |
 | `installment_plans` | C | `expense.createInstallmentPlan`, `expense.deleteInstallmentPlan` | `coaching`, `expense.listInstallmentPlans` |

@@ -906,4 +906,172 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get statsNextMonth => 'الشهر اللي بعده';
+
+  @override
+  String get moreMoneySection => 'فلوسك';
+
+  @override
+  String get moreAppSection => 'التطبيق';
+
+  @override
+  String get walletsTitle => 'المحافظ والكروت';
+
+  @override
+  String get walletsEntry => 'الأرصدة واللي داخل وخارج كل شهر';
+
+  @override
+  String get walletsTotal => 'فلوسك في المحافظ والكروت';
+
+  @override
+  String get walletsTotalStory => 'مجموع الأرصدة اللي إنت كاتبها.';
+
+  @override
+  String get walletsEmptyTitle => 'مفيش محافظ ولا كروت لسه';
+
+  @override
+  String get walletsEmptyBody =>
+      'ضيف كارتك أو محفظتك علشان تعرف رصيدها واللي داخل وخارج منها كل شهر.';
+
+  @override
+  String get walletsAdd => 'ضيف محفظة أو كارت';
+
+  @override
+  String get walletsLoadFailed => 'مش قادرين نجيب المحافظ دلوقتي.';
+
+  @override
+  String walletUpdated(String date) {
+    return 'اتحدّث $date';
+  }
+
+  @override
+  String get walletUpdatedUnknown => 'مش معروف اتحدّث إمتى';
+
+  @override
+  String walletBalanceStory(String date) {
+    return 'ده الرصيد اللي كتبته $date. حدّثه لما يتغيّر.';
+  }
+
+  @override
+  String get walletBalanceStoryUnknown =>
+      'ده الرصيد اللي كتبته، ومش معروف إمتى. حدّثه علشان يبقى مظبوط.';
+
+  @override
+  String get walletMonthIn => 'دخل الشهر ده';
+
+  @override
+  String get walletMonthOut => 'خرج الشهر ده';
+
+  @override
+  String get walletRecent => 'آخر العمليات';
+
+  @override
+  String get walletNoTransactions =>
+      'مفيش عمليات على المحفظة دي لسه. لما تسجّل مصروف وتقول دفعته منها، هيظهر هنا.';
+
+  @override
+  String get walletEdit => 'تعديل الرصيد والاسم';
+
+  @override
+  String get walletDelete => 'مسح المحفظة';
+
+  @override
+  String walletDeleteTitle(String name) {
+    return 'تمسح $name؟';
+  }
+
+  @override
+  String get walletDeleteBody =>
+      'المحفظة هتتمسح. العمليات اللي كانت عليها هتفضل في سجلك من غير محفظة. المسح مابيترجعش.';
+
+  @override
+  String get walletDeleteConfirm => 'امسحها';
+
+  @override
+  String get walletDeleteKeep => 'لأ، سيبها';
+
+  @override
+  String get walletDeleted => 'المحفظة اتمسحت.';
+
+  @override
+  String get walletFormAddTitle => 'محفظة أو كارت جديد';
+
+  @override
+  String walletFormEditTitle(String name) {
+    return 'تعديل $name';
+  }
+
+  @override
+  String get walletKindLabel => 'النوع';
+
+  @override
+  String get walletNameLabel => 'الاسم';
+
+  @override
+  String get walletNameHint => 'زي: كارت CIB أو فودافون كاش بتاعي';
+
+  @override
+  String get walletNameRequired => 'اكتب اسم للمحفظة.';
+
+  @override
+  String get walletLastFourLabel => 'آخر 4 أرقام (لو كارت)';
+
+  @override
+  String get walletLastFourInvalid => 'اكتب آخر 4 أرقام بالظبط.';
+
+  @override
+  String get walletBalanceLabel => 'الرصيد دلوقتي';
+
+  @override
+  String get walletBalanceInvalid =>
+      'الرصيد لازم يكون رقم، زي 1500 أو 1500.50.';
+
+  @override
+  String get walletSave => 'حفظ';
+
+  @override
+  String get walletSaved => 'اتحفظ.';
+
+  @override
+  String get walletNotFound => 'المحفظة دي مش موجودة';
+
+  @override
+  String get walletKindCard => 'كارت بنكي';
+
+  @override
+  String get walletKindVodafoneCash => 'فودافون كاش';
+
+  @override
+  String get walletKindInstaPay => 'إنستاباي';
+
+  @override
+  String get walletKindCib => 'البنك التجاري الدولي';
+
+  @override
+  String get walletKindNbe => 'البنك الأهلي';
+
+  @override
+  String get walletKindBanqueMisr => 'بنك مصر';
+
+  @override
+  String get walletKindQnb => 'QNB';
+
+  @override
+  String get walletKindFawry => 'فوري';
+
+  @override
+  String get walletKindOrangeCash => 'أورنج كاش';
+
+  @override
+  String get walletKindEtisalatCash => 'اتصالات كاش';
+
+  @override
+  String get walletNotFoundBody => 'يمكن اتمسحت من جهاز تاني أو من الموقع.';
+
+  @override
+  String get walletsBack => 'ارجع للمحافظ';
+
+  @override
+  String walletsLastFour(String digits) {
+    return 'آخره $digits';
+  }
 }

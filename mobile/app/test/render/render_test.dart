@@ -74,7 +74,28 @@ final _screens = <(String, bool, Reach)>[
       await tester.pumpAndSettle();
     },
   ),
+  ('wallets', true, _openWallets),
+  (
+    'wallet',
+    true,
+    (tester, language) async {
+      await _openWallets(tester, language);
+      await tester.tap(find.text('كارت CIB'));
+      await tester.pumpAndSettle();
+    },
+  ),
 ];
+
+Future<void> _openWallets(WidgetTester tester, AppLanguage language) async {
+  final english = language == AppLanguage.english;
+  await tester.tap(find.text(english ? 'More' : 'المزيد').last);
+  await tester.pumpAndSettle();
+  final entry = find.text(english ? 'Wallets and cards' : 'المحافظ والكروت');
+  await tester.ensureVisible(entry);
+  await tester.pumpAndSettle();
+  await tester.tap(entry);
+  await tester.pumpAndSettle();
+}
 
 Future<void> _loadFonts() async {
   final cairo = FontLoader('packages/smartspend_ui/Cairo')

@@ -153,6 +153,48 @@ void main() {
     },
   );
 
+  testWidgets(
+    'the value of a row sits before the chevron, and under the title at twice the text size',
+    (tester) async {
+      Widget row() => GroupedSection(
+        children: [
+          GroupedRow(
+            icon: Icons.credit_card_rounded,
+            title: 'كارت البنك التجاري الدولي',
+            subtitle: 'آخره 4821 · اتحدّث النهارده',
+            value: const AmountText(1250000),
+            onTap: () {},
+          ),
+        ],
+      );
+      final title = find.text('كارت البنك التجاري الدولي');
+      final value = find.byType(AmountText);
+
+      await tester.pumpWidget(_app(row()));
+      expect(
+        tester.getCenter(value).dy,
+        moreOrLessEquals(
+          tester.getCenter(find.byType(GroupedRow)).dy,
+          epsilon: 1,
+        ),
+      );
+
+      await tester.pumpWidget(_app(row(), textScale: 2));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getTopLeft(value).dy,
+        greaterThan(tester.getBottomLeft(title).dy),
+      );
+      // The title keeps most of the row instead of a narrow column beside the value.
+      expect(
+        tester.getSize(title).width,
+        greaterThan(tester.getSize(find.byType(GroupedRow)).width * 0.6),
+      );
+      expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+    },
+  );
+
   testWidgets('the month switcher cannot go past the current month', (
     tester,
   ) async {

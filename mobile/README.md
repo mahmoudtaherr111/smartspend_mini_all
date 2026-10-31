@@ -94,5 +94,4 @@ final data = await client.query(Procedures.expense.list, input: {'limit': 20});
 when there was no answer. A call that carried the session token and is refused as `UNAUTHORIZED` ends the session
 (`onSessionRejected`, wired in `app/lib/src/core/providers.dart`): the token is forgotten and the router shows sign-in.
 
-The one route outside tRPC the app calls is `/api/sse/otp`, the stream that reports a WhatsApp phone challenge,
-through `PhoneChallengeEvents` in `smartspend_api`.
+The app calls no route outside tRPC except the capture routes under `/api/capture/v1`, used by native code.

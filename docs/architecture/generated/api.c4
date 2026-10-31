@@ -2598,7 +2598,7 @@ model {
       }
     }
     wallet = router 'wallet' {
-      description 'api/wallet-router.ts — 5 procedures.'
+      description 'api/wallet-router.ts — 6 procedures.'
       metadata {
         file 'api/wallet-router.ts'
       }
@@ -2620,6 +2620,16 @@ model {
           file 'api/wallet-router.ts'
           builder 'authedProcedure'
           procedureKind 'mutation'
+        }
+      }
+      getWalletMonth = procedure 'wallet.getWalletMonth' {
+        #query #authed
+        technology 'authedProcedure'
+        description 'query · authedProcedure'
+        metadata {
+          file 'api/wallet-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
         }
       }
       getWalletTransactions = procedure 'wallet.getWalletTransactions' {

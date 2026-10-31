@@ -22,7 +22,7 @@ deals with, and the expense export. Saving a new item belongs to [Recording spen
 | Taxonomy migration | `api/jobs/taxonomy-migration-job.ts#runTaxonomyMigrationJob` | Moves stored rows still filed under an old category to the current taxonomy |
 | Financial month | `api/services/financial-month.ts#getFinancialMonthDayRange` | Month boundaries from a salary day, in Cairo business days |
 | Wallets, budgets, goals, business | `api/wallet-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/business-router.ts` | Their own records and rules |
-| Cards and wallets screen | `src/pages/WalletsPage.tsx`, route `/wallets`, linked from the More page and the sidebar; `src/components/wallets/DigitalBankingSuite.tsx#DigitalBankingSuite` | The user's cards and wallets through `wallet.*`: add one (name, kind, last four digits, balance), delete one, and a chosen one's transactions with its money in and out. A balance is what the user entered |
+| Cards and wallets screen | `src/pages/WalletsPage.tsx`, route `/wallets`, linked from the More page and the sidebar; `src/components/wallets/DigitalBankingSuite.tsx#DigitalBankingSuite` | The user's cards and wallets through `wallet.*`: add one (name, kind, last four digits, balance), delete one, and a chosen one's transactions with its money in and out (`wallet.getWalletMonth`). A balance is what the user entered |
 | Commitments and plans | `api/coach-router.ts`, `api/services/coach/`, the page `src/pages/PlanPage.tsx#PlanPage` at `/plan` | Scheduled commitments and expected income, which payment paid which due date, what is free until payday, the coaching plan the user accepted, and its reminders ([below](#commitments-and-plans)) |
 | People | the contact procedures in `api/profile-router.ts` (`profile.listContacts`, `profile.addContact`, `profile.updateContact`, `profile.deleteContact`, `profile.mergeContacts`) | The people behind transfers and family spending |
 | Export | `export.myExpenses` in `api/export-router.ts`, the "نزّل مصاريفك" card of the More page (`src/components/expenses/ExportExpensesCard.tsx`) | The user's items, up to 10,000 newest first, as Excel or CSV (JSON too through the API), protected against spreadsheet formulas: each row dated by Cairo's day, named by its kind (دخل، مصروف، تحويل، استثمار، مرتجع for a refund, with its signed amount), with its subcategory and its source (`exportRow`) |
@@ -129,7 +129,10 @@ Screens of other systems use these APIs: people in `src/components/settings/Peop
 `wallet.getWallets`, `wallet.createWallet` (name, provider, last four digits, balance: an amount, Arabic digits and
 thousands separators read, anything else refused by `walletBalanceSchema`), `wallet.updateWallet` and
 `wallet.deleteWallet`, which detaches the wallet from the user's items in the same transaction.
-`wallet.getWalletTransactions` pages through the items of one wallet. The [AI Center](ai-center.md) can also create and
+`wallet.getWalletTransactions` pages through the items of one wallet. `wallet.getWalletMonth` sums a wallet's money in
+and out over one Cairo month (from payday when the caller passes a salary day): income and refunds are money in,
+spending is money out, transfers count in neither, and items waiting for confirmation are left out. The web card and the
+mobile wallet screen both show this sum, over every row of the month rather than a page of them. The [AI Center](ai-center.md) can also create and
 change wallets through confirmed actions. A balance is what the user entered or a bank message said, not a running
 total (no saved item moves it): each one given is stamped with when and by what (`balance_observed_at`,
 `balance_source`: `user` from these procedures, `assistant` from a confirmed action, `bank_message` when a captured

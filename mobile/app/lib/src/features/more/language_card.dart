@@ -14,25 +14,24 @@ String languageName(AppLocalizations l10n, AppLanguage language) =>
       AppLanguage.english => l10n.languageEnglish,
     };
 
-/// The interface language, in More: a sheet with the two languages and a reminder that recording stays Arabic.
-class LanguageCard extends ConsumerWidget {
-  const LanguageCard({super.key});
+/// The interface language, a row of More's app section: it opens a sheet with the two languages and a reminder that
+/// recording stays Arabic.
+class LanguageRow extends ConsumerWidget {
+  const LanguageRow({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final language = ref.watch(languageProvider);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        leading: const Icon(Icons.translate),
-        title: Text(l10n.languageTitle),
-        subtitle: Text(languageName(l10n, language)),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => showSmartSpendSheet<void>(
-          context: context,
-          builder: (_) => const _LanguageSheet(),
-        ),
+    return GroupedRow(
+      icon: Icons.translate_rounded,
+      title: l10n.languageTitle,
+      subtitle: languageName(l10n, language),
+      // It opens a sheet over this screen, not another screen.
+      trailing: const SizedBox.shrink(),
+      onTap: () => showSmartSpendSheet<void>(
+        context: context,
+        builder: (_) => const _LanguageSheet(),
       ),
     );
   }

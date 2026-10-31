@@ -103,6 +103,61 @@ void answerSampleMonth(FakeApi api) {
       },
     )
     ..answer(
+      'wallet.getWallets',
+      (_) => [
+        {
+          'id': 1,
+          'name': 'كارت CIB',
+          'provider': 'CIB',
+          'balance': '24350.00',
+          'lastFourDigits': '4821',
+          'balanceObservedAt': DateTime(
+            now.year,
+            now.month,
+            now.day,
+            9,
+          ).toUtc().toIso8601String(),
+        },
+        {
+          'id': 2,
+          'name': 'فودافون كاش',
+          'provider': 'VodafoneCash',
+          'balance': '1820.50',
+          'lastFourDigits': null,
+          'balanceObservedAt': DateTime(
+            now.year,
+            now.month,
+            now.day - 3,
+            18,
+          ).toUtc().toIso8601String(),
+        },
+        {
+          'id': 3,
+          'name': 'InstaPay',
+          'provider': 'InstaPay',
+          'balance': '6200.00',
+          'lastFourDigits': null,
+          'balanceObservedAt': null,
+        },
+      ],
+    )
+    ..answer(
+      'wallet.getWalletMonth',
+      (_) => {
+        'month': '${now.year}-${now.month.toString().padLeft(2, '0')}',
+        'moneyIn': 15000,
+        'moneyOut': 3120.5,
+        'count': 14,
+      },
+    )
+    ..answer(
+      'wallet.getWalletTransactions',
+      (_) => [
+        for (final row in entries)
+          if (row['type'] != 'transfer') {...row, 'walletId': 1},
+      ],
+    )
+    ..answer(
       'ai.parseExpense',
       (_) => {
         'decision': 'review',

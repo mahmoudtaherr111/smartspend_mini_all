@@ -38,6 +38,25 @@ void main() {
     for (final typed in ['', 'abc', '0', '-5', '12.345', '1.2.3', '١٢ج']) {
       test('«$typed» is not an amount', () => expect(parseAmount(typed), null));
     }
+
+    for (final (typed, amount) in [
+      ('0', 0),
+      ('-5', -5),
+      ('−١٬٢٥٠', -1250),
+      ('١٢٥٠٫٥', 1250.5),
+    ]) {
+      test(
+        '«$typed» is the balance $amount',
+        () => expect(parseAmount(typed, signed: true), amount),
+      );
+    }
+
+    for (final typed in ['', '-', '--5', '5-', '12.345']) {
+      test(
+        '«$typed» is not a balance',
+        () => expect(parseAmount(typed, signed: true), null),
+      );
+    }
   });
 
   test('normalizeDigits keeps everything that is not a digit', () {

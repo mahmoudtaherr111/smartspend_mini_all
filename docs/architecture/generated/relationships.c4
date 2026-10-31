@@ -1190,6 +1190,9 @@ model {
   smartspend.api.trpc.wallet.deleteWallet -[uses]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.trpc.wallet.deleteWallet -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.wallet.deleteWallet -[writes]-> smartspend.mysql.user_wallets
+  smartspend.api.trpc.wallet.getWalletMonth -[reads]-> smartspend.mysql.expenses
+  smartspend.api.trpc.wallet.getWalletMonth -[uses]-> smartspend.api.modules.ledger
+  smartspend.api.trpc.wallet.getWalletMonth -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.wallet.getWalletTransactions -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.wallet.getWallets -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.trpc.wallet.updateWallet -[writes]-> smartspend.mysql.user_wallets
@@ -1569,6 +1572,7 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.voice.adminStats
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.createWallet
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.deleteWallet
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.getWalletMonth
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.getWalletTransactions
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.getWallets
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.webauthn.checkHasPasskey
@@ -1640,6 +1644,7 @@ model {
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.createWallet
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.deleteWallet
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.getWalletMonth
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.getWalletTransactions
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.getWallets
   smartspend.web.shell -[calls]-> smartspend.api.trpc.ads.click

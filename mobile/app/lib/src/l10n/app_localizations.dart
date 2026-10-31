@@ -1519,6 +1519,312 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الشهر اللي بعده'**
   String get statsNextMonth;
+
+  /// No description provided for @moreMoneySection.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوسك'**
+  String get moreMoneySection;
+
+  /// No description provided for @moreAppSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'التطبيق'**
+  String get moreAppSection;
+
+  /// No description provided for @walletsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحافظ والكروت'**
+  String get walletsTitle;
+
+  /// No description provided for @walletsEntry.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرصدة واللي داخل وخارج كل شهر'**
+  String get walletsEntry;
+
+  /// No description provided for @walletsTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوسك في المحافظ والكروت'**
+  String get walletsTotal;
+
+  /// No description provided for @walletsTotalStory.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجموع الأرصدة اللي إنت كاتبها.'**
+  String get walletsTotalStory;
+
+  /// No description provided for @walletsEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش محافظ ولا كروت لسه'**
+  String get walletsEmptyTitle;
+
+  /// No description provided for @walletsEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف كارتك أو محفظتك علشان تعرف رصيدها واللي داخل وخارج منها كل شهر.'**
+  String get walletsEmptyBody;
+
+  /// No description provided for @walletsAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف محفظة أو كارت'**
+  String get walletsAdd;
+
+  /// No description provided for @walletsLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب المحافظ دلوقتي.'**
+  String get walletsLoadFailed;
+
+  /// When the balance was given, already written (النهارده، امبارح، الخميس 16 أكتوبر).
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحدّث {date}'**
+  String walletUpdated(String date);
+
+  /// No description provided for @walletUpdatedUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش معروف اتحدّث إمتى'**
+  String get walletUpdatedUnknown;
+
+  /// When the balance was given, already written (النهارده، امبارح، الخميس 16 أكتوبر).
+  ///
+  /// In ar, this message translates to:
+  /// **'ده الرصيد اللي كتبته {date}. حدّثه لما يتغيّر.'**
+  String walletBalanceStory(String date);
+
+  /// No description provided for @walletBalanceStoryUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده الرصيد اللي كتبته، ومش معروف إمتى. حدّثه علشان يبقى مظبوط.'**
+  String get walletBalanceStoryUnknown;
+
+  /// No description provided for @walletMonthIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'دخل الشهر ده'**
+  String get walletMonthIn;
+
+  /// No description provided for @walletMonthOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'خرج الشهر ده'**
+  String get walletMonthOut;
+
+  /// No description provided for @walletRecent.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر العمليات'**
+  String get walletRecent;
+
+  /// No description provided for @walletNoTransactions.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش عمليات على المحفظة دي لسه. لما تسجّل مصروف وتقول دفعته منها، هيظهر هنا.'**
+  String get walletNoTransactions;
+
+  /// No description provided for @walletEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الرصيد والاسم'**
+  String get walletEdit;
+
+  /// No description provided for @walletDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح المحفظة'**
+  String get walletDelete;
+
+  /// No description provided for @walletDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمسح {name}؟'**
+  String walletDeleteTitle(String name);
+
+  /// No description provided for @walletDeleteBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحفظة هتتمسح. العمليات اللي كانت عليها هتفضل في سجلك من غير محفظة. المسح مابيترجعش.'**
+  String get walletDeleteBody;
+
+  /// No description provided for @walletDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسحها'**
+  String get walletDeleteConfirm;
+
+  /// No description provided for @walletDeleteKeep.
+  ///
+  /// In ar, this message translates to:
+  /// **'لأ، سيبها'**
+  String get walletDeleteKeep;
+
+  /// No description provided for @walletDeleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحفظة اتمسحت.'**
+  String get walletDeleted;
+
+  /// No description provided for @walletFormAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'محفظة أو كارت جديد'**
+  String get walletFormAddTitle;
+
+  /// No description provided for @walletFormEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل {name}'**
+  String walletFormEditTitle(String name);
+
+  /// No description provided for @walletKindLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع'**
+  String get walletKindLabel;
+
+  /// No description provided for @walletNameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get walletNameLabel;
+
+  /// No description provided for @walletNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: كارت CIB أو فودافون كاش بتاعي'**
+  String get walletNameHint;
+
+  /// No description provided for @walletNameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسم للمحفظة.'**
+  String get walletNameRequired;
+
+  /// No description provided for @walletLastFourLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر 4 أرقام (لو كارت)'**
+  String get walletLastFourLabel;
+
+  /// No description provided for @walletLastFourInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب آخر 4 أرقام بالظبط.'**
+  String get walletLastFourInvalid;
+
+  /// No description provided for @walletBalanceLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد دلوقتي'**
+  String get walletBalanceLabel;
+
+  /// No description provided for @walletBalanceInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد لازم يكون رقم، زي 1500 أو 1500.50.'**
+  String get walletBalanceInvalid;
+
+  /// No description provided for @walletSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get walletSave;
+
+  /// No description provided for @walletSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحفظ.'**
+  String get walletSaved;
+
+  /// No description provided for @walletNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحفظة دي مش موجودة'**
+  String get walletNotFound;
+
+  /// No description provided for @walletKindCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'كارت بنكي'**
+  String get walletKindCard;
+
+  /// No description provided for @walletKindVodafoneCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'فودافون كاش'**
+  String get walletKindVodafoneCash;
+
+  /// No description provided for @walletKindInstaPay.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنستاباي'**
+  String get walletKindInstaPay;
+
+  /// No description provided for @walletKindCib.
+  ///
+  /// In ar, this message translates to:
+  /// **'البنك التجاري الدولي'**
+  String get walletKindCib;
+
+  /// No description provided for @walletKindNbe.
+  ///
+  /// In ar, this message translates to:
+  /// **'البنك الأهلي'**
+  String get walletKindNbe;
+
+  /// No description provided for @walletKindBanqueMisr.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنك مصر'**
+  String get walletKindBanqueMisr;
+
+  /// No description provided for @walletKindQnb.
+  ///
+  /// In ar, this message translates to:
+  /// **'QNB'**
+  String get walletKindQnb;
+
+  /// No description provided for @walletKindFawry.
+  ///
+  /// In ar, this message translates to:
+  /// **'فوري'**
+  String get walletKindFawry;
+
+  /// No description provided for @walletKindOrangeCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'أورنج كاش'**
+  String get walletKindOrangeCash;
+
+  /// No description provided for @walletKindEtisalatCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصالات كاش'**
+  String get walletKindEtisalatCash;
+
+  /// No description provided for @walletNotFoundBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكن اتمسحت من جهاز تاني أو من الموقع.'**
+  String get walletNotFoundBody;
+
+  /// No description provided for @walletsBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارجع للمحافظ'**
+  String get walletsBack;
+
+  /// The last four digits of a card, already isolated left to right.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخره {digits}'**
+  String walletsLastFour(String digits);
 }
 
 class _AppLocalizationsDelegate

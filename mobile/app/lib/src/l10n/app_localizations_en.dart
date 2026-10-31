@@ -899,4 +899,174 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statsNextMonth => 'Next month';
+
+  @override
+  String get moreMoneySection => 'Your money';
+
+  @override
+  String get moreAppSection => 'App';
+
+  @override
+  String get walletsTitle => 'Wallets and cards';
+
+  @override
+  String get walletsEntry =>
+      'Balances, and what comes in and goes out each month';
+
+  @override
+  String get walletsTotal => 'Your money in wallets and cards';
+
+  @override
+  String get walletsTotalStory => 'The sum of the balances you entered.';
+
+  @override
+  String get walletsEmptyTitle => 'No wallets or cards yet';
+
+  @override
+  String get walletsEmptyBody =>
+      'Add your card or wallet to see its balance and what comes in and goes out each month.';
+
+  @override
+  String get walletsAdd => 'Add a wallet or card';
+
+  @override
+  String get walletsLoadFailed => 'We can\'t load your wallets right now.';
+
+  @override
+  String walletUpdated(String date) {
+    return 'Updated $date';
+  }
+
+  @override
+  String get walletUpdatedUnknown => 'Not known when it was updated';
+
+  @override
+  String walletBalanceStory(String date) {
+    return 'The balance you entered $date. Update it when it changes.';
+  }
+
+  @override
+  String get walletBalanceStoryUnknown =>
+      'The balance you entered, at a time we don\'t know. Update it to keep it right.';
+
+  @override
+  String get walletMonthIn => 'In this month';
+
+  @override
+  String get walletMonthOut => 'Out this month';
+
+  @override
+  String get walletRecent => 'Latest transactions';
+
+  @override
+  String get walletNoTransactions =>
+      'No transactions on this wallet yet. When you record something you paid from it, it shows here.';
+
+  @override
+  String get walletEdit => 'Edit balance and name';
+
+  @override
+  String get walletDelete => 'Delete wallet';
+
+  @override
+  String walletDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get walletDeleteBody =>
+      'The wallet is deleted. Its transactions stay in your records without a wallet. This can\'t be undone.';
+
+  @override
+  String get walletDeleteConfirm => 'Delete it';
+
+  @override
+  String get walletDeleteKeep => 'No, keep it';
+
+  @override
+  String get walletDeleted => 'Wallet deleted.';
+
+  @override
+  String get walletFormAddTitle => 'New wallet or card';
+
+  @override
+  String walletFormEditTitle(String name) {
+    return 'Edit $name';
+  }
+
+  @override
+  String get walletKindLabel => 'Kind';
+
+  @override
+  String get walletNameLabel => 'Name';
+
+  @override
+  String get walletNameHint => 'e.g. My CIB card or my Vodafone Cash';
+
+  @override
+  String get walletNameRequired => 'Give the wallet a name.';
+
+  @override
+  String get walletLastFourLabel => 'Last 4 digits (for a card)';
+
+  @override
+  String get walletLastFourInvalid => 'Enter exactly the last 4 digits.';
+
+  @override
+  String get walletBalanceLabel => 'Balance now';
+
+  @override
+  String get walletBalanceInvalid =>
+      'The balance must be a number, like 1500 or 1500.50.';
+
+  @override
+  String get walletSave => 'Save';
+
+  @override
+  String get walletSaved => 'Saved.';
+
+  @override
+  String get walletNotFound => 'This wallet isn\'t here';
+
+  @override
+  String get walletKindCard => 'Bank card';
+
+  @override
+  String get walletKindVodafoneCash => 'Vodafone Cash';
+
+  @override
+  String get walletKindInstaPay => 'InstaPay';
+
+  @override
+  String get walletKindCib => 'CIB';
+
+  @override
+  String get walletKindNbe => 'National Bank of Egypt';
+
+  @override
+  String get walletKindBanqueMisr => 'Banque Misr';
+
+  @override
+  String get walletKindQnb => 'QNB';
+
+  @override
+  String get walletKindFawry => 'Fawry';
+
+  @override
+  String get walletKindOrangeCash => 'Orange Cash';
+
+  @override
+  String get walletKindEtisalatCash => 'e& cash';
+
+  @override
+  String get walletNotFoundBody =>
+      'It may have been deleted on another device or on the website.';
+
+  @override
+  String get walletsBack => 'Back to wallets';
+
+  @override
+  String walletsLastFour(String digits) {
+    return 'ending $digits';
+  }
 }

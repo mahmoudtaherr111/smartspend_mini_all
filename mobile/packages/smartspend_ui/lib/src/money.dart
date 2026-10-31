@@ -122,11 +122,16 @@ String normalizeDigits(String text) {
 
 /// Reads an amount typed by a person, in either kind of digit, with or without thousands separators:
 /// «١٬٢٥٠» , "1,250", "1250.5". Returns null when it is not a positive amount.
-num? parseAmount(String text) {
-  final cleaned = normalizeDigits(text).replaceAll(RegExp(r'[,\s]'), '');
-  if (!RegExp(r'^\d+(\.\d{1,2})?$').hasMatch(cleaned)) return null;
+///
+/// With [signed], zero and a leading minus are read too, for a balance: a card can be empty or owe money.
+num? parseAmount(String text, {bool signed = false}) {
+  final cleaned = normalizeDigits(text)
+      .replaceAll(RegExp(r'[,،\s]'), '')
+      .replaceAll('−', '-');
+  final pattern = signed ? r'^-?\d+(\.\d{1,2})?$' : r'^\d+(\.\d{1,2})?$';
+  if (!RegExp(pattern).hasMatch(cleaned)) return null;
   final value = num.parse(cleaned);
-  return value > 0 ? value : null;
+  return signed || value > 0 ? value : null;
 }
 
 /// What an amount means, which decides its sign, its colour and what a screen reader says

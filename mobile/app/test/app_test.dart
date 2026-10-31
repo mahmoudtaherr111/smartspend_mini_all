@@ -45,6 +45,11 @@ Future<_FakeBankCapture> _pumpApp(
   CaptureAccess access = CaptureAccess.notGranted,
   bool connected = false,
 }) async {
+  // A tall phone, so the whole More tab, with the capture card at its end, is built without scrolling.
+  tester.view
+    ..physicalSize = const Size(1080, 3900)
+    ..devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
   final capture = _FakeBankCapture(
     CaptureStatus(
       method: method,

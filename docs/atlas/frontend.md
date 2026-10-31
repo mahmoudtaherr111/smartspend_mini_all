@@ -382,6 +382,7 @@ _None._
 | `voice.adminStats` | useQuery | `src/components/admin/settings/AdminVoiceCallSection.tsx` |
 | `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletMonth` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.getWalletTransactions` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.getWallets` | useQuery, utils.invalidate | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `webauthn.checkHasPasskey` | useQuery, utils.invalidate | `src/components/auth/PasskeySettings.tsx`, `src/hooks/usePasskeyEnrolment.ts` |
@@ -522,6 +523,7 @@ _None._
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 | `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletMonth` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.getWalletTransactions` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.getWallets` | useQuery, utils.invalidate | `src/components/wallets/DigitalBankingSuite.tsx` |
 

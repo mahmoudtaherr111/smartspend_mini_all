@@ -92,7 +92,8 @@ class GroupedCard extends StatelessWidget {
 }
 
 /// One row of a [GroupedSection]: a tinted icon tile, a title and an optional detail, and what is at the far end
-/// (a value, a switch, or a chevron when it opens a screen).
+/// (a switch, or a chevron when it opens a screen). A [value] such as a balance sits before the chevron, and moves
+/// under the title when the text is large, so the title keeps the row's width.
 class GroupedRow extends StatelessWidget {
   const GroupedRow({
     super.key,
@@ -100,6 +101,7 @@ class GroupedRow extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.tint,
+    this.value,
     this.trailing,
     this.onTap,
     this.destructive = false,
@@ -111,6 +113,9 @@ class GroupedRow extends StatelessWidget {
 
   /// The icon's colour, and its tile's at low strength; the accent by default.
   final Color? tint;
+
+  /// A figure that belongs to the row, such as a wallet's balance.
+  final Widget? value;
   final Widget? trailing;
   final VoidCallback? onTap;
 
@@ -122,6 +127,9 @@ class GroupedRow extends StatelessWidget {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
     final color = destructive ? colors.danger : (tint ?? colors.accent);
+    // The same threshold as StatTileRow: from about 1.5 times the text size, the value goes under the title.
+    final large = MediaQuery.textScalerOf(context).scale(10) > 15;
+    final value = this.value;
     final end =
         trailing ??
         (onTap != null && !destructive
@@ -171,9 +179,20 @@ class GroupedRow extends StatelessWidget {
                             color: colors.mutedForeground,
                           ),
                         ),
+                      if (value != null && large)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: SmartSpendSpacing.xs,
+                          ),
+                          child: value,
+                        ),
                     ],
                   ),
                 ),
+                if (value != null && !large) ...[
+                  const SizedBox(width: SmartSpendSpacing.sm),
+                  value,
+                ],
                 if (end != null) ...[
                   const SizedBox(width: SmartSpendSpacing.sm),
                   end,

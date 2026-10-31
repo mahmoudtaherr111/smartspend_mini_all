@@ -3,7 +3,9 @@ import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
 import { router, authedProcedure } from "./middleware";
 import { db } from "./queries/connection";
 import { userWallets, expenses } from "../db/schema";
-import { eq, and, desc, or, like, sql } from "drizzle-orm";
+import { eq, and, desc, gte, lt, sql } from "drizzle-orm";
+import { businessDateKey } from "./lib/app-time";
+import { reportPeriod } from "./services/financial-month";
 
 /**
  * A balance as the client typed it, stored in a decimal(12,2) column. Arabic digits and thousands separators are
@@ -55,6 +57,48 @@ export const walletRouter = router({
         .offset(input.offset);
 
       return walletExpenses;
+    }),
+
+  /**
+   * A wallet's money in and out over one month, summed on the server in Cairo days (from payday with one), over every
+   * row of the month rather than a page of them. `month` defaults to the current Cairo calendar month. Money in is
+   * income and refunds; money out is spending; transfers move money between the person's own accounts and count in
+   * neither.
+   */
+  getWalletMonth: authedProcedure
+    .input(
+      z.object({
+        walletId: z.number().int().positive(),
+        month: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+        salaryDay: z.number().int().min(1).max(31).nullable().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const month = input.month ?? businessDateKey().slice(0, 7);
+      const { current } = reportPeriod(month, input.salaryDay);
+      const [row] = await db
+        .select({
+          moneyIn: sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = 'income' THEN ABS(${expenses.amount}) WHEN ${expenses.type} = 'expense' AND ${expenses.amount} < 0 THEN -${expenses.amount} ELSE 0 END), 0)`,
+          moneyOut: sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = 'expense' AND ${expenses.amount} > 0 THEN ${expenses.amount} ELSE 0 END), 0)`,
+          count: sql<number>`COUNT(*)`,
+        })
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.userId, ctx.user.id as number),
+            eq(expenses.userType, ctx.user.type),
+            eq(expenses.walletId, input.walletId),
+            gte(expenses.date, current.startUtc),
+            lt(expenses.date, current.endUtc),
+            sql`(${expenses.status} IS NULL OR ${expenses.status} = 'confirmed')`,
+          ),
+        );
+      return {
+        month,
+        moneyIn: Number(row?.moneyIn ?? 0),
+        moneyOut: Number(row?.moneyOut ?? 0),
+        count: Number(row?.count ?? 0),
+      };
     }),
 
   createWallet: authedProcedure

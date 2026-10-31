@@ -400,7 +400,7 @@
         "api/services/financial-month.ts": "b9b532b0dd06",
         "api/services/installments.ts": "c8bdc9de1497",
         "api/services/ledger-writer.ts": "ab49c20f5aaf",
-        "api/wallet-router.ts": "b650c9bb74c6",
+        "api/wallet-router.ts": "8d46072bea5c",
         "src/components/budgets/BudgetsPanel.tsx": "514a88e41280",
         "src/components/dashboard/BehaviorInsights.tsx": "47729e6b7532",
         "src/components/dashboard/ExpenseChart.tsx": "6951e8194d3d",
@@ -421,14 +421,14 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/components/installments/InstallmentsPanel.tsx": "a23758827f16",
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
-        "src/components/wallets/DigitalBankingSuite.tsx": "8d1b028fee01",
+        "src/components/wallets/DigitalBankingSuite.tsx": "99acb2c19bd2",
         "src/pages/Home.tsx": "b2b5870a8509",
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-10-29 2618b97e",
-      "arabic": "e1fd75c59b6c",
-      "arabicChecked": "2026-10-28 3f613544"
+      "checked": "2026-10-31 6c9445bc",
+      "arabic": "3269a08c3424",
+      "arabicChecked": "2026-10-31 6c9445bc"
     },
     "notifications": {
       "files": {

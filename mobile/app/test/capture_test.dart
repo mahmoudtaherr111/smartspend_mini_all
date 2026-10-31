@@ -67,9 +67,10 @@ Future<void> _turnOn(WidgetTester tester) async {
 }
 
 /// A tall phone, so the More screen's capture card is not hidden behind the navigation bar.
+/// A tall phone, so the whole More tab, with the capture card at its end, is built without scrolling.
 void _phoneScreen(WidgetTester tester) {
   tester.view
-    ..physicalSize = const Size(1080, 2400)
+    ..physicalSize = const Size(1080, 3900)
     ..devicePixelRatio = 3;
   addTearDown(tester.view.reset);
 }

@@ -89,6 +89,19 @@ class ComponentGallery extends StatelessWidget {
             ),
           ),
           GroupedSection(
+            title: 'المحافظ',
+            children: [
+              GroupedRow(
+                icon: Icons.account_balance_rounded,
+                tint: const Color(0xFF3B82F6),
+                title: 'كارت CIB',
+                subtitle: 'آخره 4821 · اتحدّث النهارده',
+                value: const AmountText(24350),
+                onTap: () {},
+              ),
+            ],
+          ),
+          GroupedSection(
             title: 'الحساب',
             children: [
               GroupedRow(

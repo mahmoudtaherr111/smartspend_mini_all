@@ -51,7 +51,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `session` | `api/session-router.ts` | 5 | 3 | 2 | `adminProcedure`, `authedProcedure` |
 | `support` | `api/support-router.ts` | 7 | 3 | 4 | `adminProcedure`, `authedProcedure` |
 | `voice` | `api/voice-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
-| `wallet` | `api/wallet-router.ts` | 5 | 2 | 3 | `authedProcedure` |
+| `wallet` | `api/wallet-router.ts` | 6 | 3 | 3 | `authedProcedure` |
 | `webauthn` | `api/webauthn-router.ts` | 6 | 1 | 5 | `authedProcedure`, `strictPublicProcedure` |
 
 ## Procedures by router
@@ -427,6 +427,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `wallet.createWallet` | mutation | `authedProcedure` | yes | — | `user_wallets` | — | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.deleteWallet` | mutation | `authedProcedure` | yes | — | `expenses`, `user_wallets` | `api/services/finance-semantic-layer/index.ts` | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletMonth` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `api/services/financial-month.ts` | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.getWalletTransactions` | query | `authedProcedure` | yes | `expenses` | — | — | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.getWallets` | query | `authedProcedure` | no | `user_wallets` | — | — | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.updateWallet` | mutation | `authedProcedure` | yes | — | `user_wallets` | — | — |

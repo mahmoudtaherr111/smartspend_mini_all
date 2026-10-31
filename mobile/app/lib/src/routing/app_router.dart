@@ -14,6 +14,8 @@ import '../features/ledger/transactions_screen.dart';
 import '../features/lock/security_screen.dart';
 import '../features/more/more_screen.dart';
 import '../features/stats/stats_screen.dart';
+import '../features/wallets/wallet_detail_screen.dart';
+import '../features/wallets/wallets_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'app_shell.dart';
 
@@ -89,6 +91,18 @@ final appTabs = <AppTab>[
       GoRoute(
         path: CaptureSettingsScreen.path.substring('/more/'.length),
         builder: (context, state) => const CaptureSettingsScreen(),
+      ),
+      GoRoute(
+        path: WalletsScreen.path.substring('/more/'.length),
+        builder: (context, state) => const WalletsScreen(),
+        routes: [
+          GoRoute(
+            path: WalletDetailScreen.path,
+            builder: (context, state) => WalletDetailScreen(
+              walletId: int.tryParse(state.pathParameters['walletId']!) ?? 0,
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: SecurityScreen.path.substring('/more/'.length),

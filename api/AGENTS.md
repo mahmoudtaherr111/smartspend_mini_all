@@ -7,7 +7,7 @@ What the code here does end to end, with its known issues: the system pages in `
 system of the file you are about to change in `docs/atlas/systems/files.md` and read it before editing.
 
 ## Layout
-- `boot.ts`: the Hono app (middleware, Google OAuth start and callback, WhatsApp OTP SSE, Paymob webhook,
+- `boot.ts`: the Hono app (middleware, Google OAuth start and callback, WhatsApp and Paymob webhooks,
   `/api/trpc`), cron registration, and the HTTP server that `npm start` runs.
   `npm run dev` mounts the same app inside Vite.
 - `server.ts`: standalone entry for deploying the API on its own (`npm run backend:*`).

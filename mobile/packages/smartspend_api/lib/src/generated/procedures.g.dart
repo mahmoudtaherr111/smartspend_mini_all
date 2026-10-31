@@ -315,6 +315,7 @@ final class WalletProcedures {
 
   ApiMutation get createWallet => const ApiMutation('wallet.createWallet', builder: 'authedProcedure', hasInput: true);
   ApiMutation get deleteWallet => const ApiMutation('wallet.deleteWallet', builder: 'authedProcedure', hasInput: true);
+  ApiQuery get getWalletMonth => const ApiQuery('wallet.getWalletMonth', builder: 'authedProcedure', hasInput: true);
   ApiQuery get getWalletTransactions => const ApiQuery('wallet.getWalletTransactions', builder: 'authedProcedure', hasInput: true);
   ApiQuery get getWallets => const ApiQuery('wallet.getWallets', builder: 'authedProcedure');
   ApiMutation get updateWallet => const ApiMutation('wallet.updateWallet', builder: 'authedProcedure', hasInput: true);

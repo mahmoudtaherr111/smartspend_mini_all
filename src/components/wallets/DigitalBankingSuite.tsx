@@ -246,22 +246,14 @@ export function DigitalBankingSuite() {
     }
   };
 
-  // Calculate card totals based on fetched transactions
-  const getCardTotals = () => {
-    let totalIn = 0;
-    let totalOut = 0;
-    transactions.forEach((tx: WalletTransaction) => {
-      const amount = parseFloat(tx.amount);
-      if (tx.type === "income") {
-        totalIn += amount;
-      } else {
-        totalOut += amount;
-      }
-    });
-    return { totalIn, totalOut };
-  };
-
-  const { totalIn, totalOut } = getCardTotals();
+  // This month's money in and out, summed on the server over every row of the month (it used to add up only the
+  // latest 50 transactions, and counted transfers and refunds as spending).
+  const { data: walletMonth } = trpc.wallet.getWalletMonth.useQuery(
+    { walletId: selectedWalletId || 0 },
+    { enabled: !!selectedWalletId },
+  );
+  const totalIn = walletMonth?.moneyIn ?? 0;
+  const totalOut = walletMonth?.moneyOut ?? 0;
   const selectedWallet = wallets.find((w: Wallet) => w.id === selectedWalletId);
 
   return (
