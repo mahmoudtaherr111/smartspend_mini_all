@@ -1308,4 +1308,77 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get walletOfflinePartial =>
       'المعاملات وملخص الشهر مش متوفرين أوفلاين.';
+
+  @override
+  String get manualRecordTitle => 'تسجيل يدوي';
+
+  @override
+  String get manualRecordAmountHint => '٠';
+
+  @override
+  String get manualRecordTypeExpense => 'مصروف';
+
+  @override
+  String get manualRecordTypeIncome => 'دخل';
+
+  @override
+  String get manualRecordTypeTransfer => 'تحويل';
+
+  @override
+  String get manualRecordCategory => 'التصنيف';
+
+  @override
+  String get manualRecordSelectCategory => 'اختر التصنيف';
+
+  @override
+  String get manualRecordDate => 'التاريخ';
+
+  @override
+  String get manualRecordWallet => 'المحفظة (اختياري)';
+
+  @override
+  String get manualRecordNoWallet => 'بدون محفظة';
+
+  @override
+  String get manualRecordNote => 'ملاحظة (اختياري)';
+
+  @override
+  String get manualRecordNoteHint => 'تفاصيل إضافية...';
+
+  @override
+  String get manualRecordSave => 'حفظ العملية';
+
+  @override
+  String get manualRecordAmountRequired => 'اكتب المبلغ الأول';
+
+  @override
+  String get manualRecordCategoryRequired => 'اختر تصنيف للعملية';
+
+  @override
+  String get manualRecordSavedNotice => 'اتسجلت العملية بنجاح';
+
+  @override
+  String get manualRecordQueuedNotice =>
+      'اتحفظت على الموبايل وهتتبعت أول ما النت يرجع';
+
+  @override
+  String get searchTitle => 'بحث في العمليات';
+
+  @override
+  String get searchHint => 'ابحث بالاسم، الفئة أو المحل...';
+
+  @override
+  String searchEmptyTitle(String query) {
+    return 'مفيش نتائج لـ \"$query\"';
+  }
+
+  @override
+  String get searchEmptyBody => 'جرّب تبحث بكلمة تانية أو اتأكد من الحروف.';
+
+  @override
+  String get searchOfflineNotice =>
+      'البحث دلوقتي شغال على العمليات المحفوظة على جهازك بس.';
+
+  @override
+  String get searchNoTransactions => 'لسه مفيش معاملات تبحث فيها.';
 }

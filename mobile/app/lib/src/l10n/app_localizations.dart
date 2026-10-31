@@ -2239,6 +2239,144 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'المعاملات وملخص الشهر مش متوفرين أوفلاين.'**
   String get walletOfflinePartial;
+
+  /// No description provided for @manualRecordTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل يدوي'**
+  String get manualRecordTitle;
+
+  /// No description provided for @manualRecordAmountHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'٠'**
+  String get manualRecordAmountHint;
+
+  /// No description provided for @manualRecordTypeExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروف'**
+  String get manualRecordTypeExpense;
+
+  /// No description provided for @manualRecordTypeIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'دخل'**
+  String get manualRecordTypeIncome;
+
+  /// No description provided for @manualRecordTypeTransfer.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحويل'**
+  String get manualRecordTypeTransfer;
+
+  /// No description provided for @manualRecordCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف'**
+  String get manualRecordCategory;
+
+  /// No description provided for @manualRecordSelectCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر التصنيف'**
+  String get manualRecordSelectCategory;
+
+  /// No description provided for @manualRecordDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get manualRecordDate;
+
+  /// No description provided for @manualRecordWallet.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحفظة (اختياري)'**
+  String get manualRecordWallet;
+
+  /// No description provided for @manualRecordNoWallet.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون محفظة'**
+  String get manualRecordNoWallet;
+
+  /// No description provided for @manualRecordNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة (اختياري)'**
+  String get manualRecordNote;
+
+  /// No description provided for @manualRecordNoteHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل إضافية...'**
+  String get manualRecordNoteHint;
+
+  /// No description provided for @manualRecordSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ العملية'**
+  String get manualRecordSave;
+
+  /// No description provided for @manualRecordAmountRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب المبلغ الأول'**
+  String get manualRecordAmountRequired;
+
+  /// No description provided for @manualRecordCategoryRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر تصنيف للعملية'**
+  String get manualRecordCategoryRequired;
+
+  /// No description provided for @manualRecordSavedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتسجلت العملية بنجاح'**
+  String get manualRecordSavedNotice;
+
+  /// No description provided for @manualRecordQueuedNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحفظت على الموبايل وهتتبعت أول ما النت يرجع'**
+  String get manualRecordQueuedNotice;
+
+  /// No description provided for @searchTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث في العمليات'**
+  String get searchTitle;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث بالاسم، الفئة أو المحل...'**
+  String get searchHint;
+
+  /// No description provided for @searchEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش نتائج لـ \"{query}\"'**
+  String searchEmptyTitle(String query);
+
+  /// No description provided for @searchEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تبحث بكلمة تانية أو اتأكد من الحروف.'**
+  String get searchEmptyBody;
+
+  /// No description provided for @searchOfflineNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'البحث دلوقتي شغال على العمليات المحفوظة على جهازك بس.'**
+  String get searchOfflineNotice;
+
+  /// No description provided for @searchNoTransactions.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش معاملات تبحث فيها.'**
+  String get searchNoTransactions;
 }
 
 class _AppLocalizationsDelegate

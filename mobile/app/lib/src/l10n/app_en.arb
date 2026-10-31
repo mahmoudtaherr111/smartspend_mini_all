@@ -400,5 +400,36 @@
   "discardChangesBody": "If you go back now, your unsaved changes will be lost.",
   "discardChangesConfirm": "Discard",
   "discardChangesCancel": "Keep editing",
-  "walletOfflinePartial": "Transactions and month summary are unavailable offline."
+  "walletOfflinePartial": "Transactions and month summary are unavailable offline.",
+  "manualRecordTitle": "Manual Record",
+  "manualRecordAmountHint": "0",
+  "manualRecordTypeExpense": "Expense",
+  "manualRecordTypeIncome": "Income",
+  "manualRecordTypeTransfer": "Transfer",
+  "manualRecordCategory": "Category",
+  "manualRecordSelectCategory": "Select category",
+  "manualRecordDate": "Date",
+  "manualRecordWallet": "Wallet (optional)",
+  "manualRecordNoWallet": "No wallet",
+  "manualRecordNote": "Note (optional)",
+  "manualRecordNoteHint": "Additional details...",
+  "manualRecordSave": "Save transaction",
+  "manualRecordAmountRequired": "Enter an amount first",
+  "manualRecordCategoryRequired": "Select a category",
+  "manualRecordSavedNotice": "Transaction saved successfully",
+  "manualRecordQueuedNotice": "Saved to phone, will send when online",
+  "searchTitle": "Search transactions",
+  "searchHint": "Search by name, category, or note...",
+  "searchEmptyTitle": "No results for \"{query}\"",
+  "@searchEmptyTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "Uber"
+      }
+    }
+  },
+  "searchEmptyBody": "Try searching with a different word or check spelling.",
+  "searchOfflineNotice": "Searching only transactions saved on this device.",
+  "searchNoTransactions": "No transactions to search yet."
 }

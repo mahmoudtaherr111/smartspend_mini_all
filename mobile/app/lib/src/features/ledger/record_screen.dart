@@ -8,6 +8,7 @@ import '../lock/app_lock.dart';
 import 'ledger_models.dart';
 import 'ledger_providers.dart';
 import 'ledger_widgets.dart';
+import 'manual_record_sheet.dart';
 import 'offline/outbox.dart';
 import 'outbox_section.dart';
 import 'pending_questions_card.dart';
@@ -37,6 +38,12 @@ class RecordScreen extends ConsumerWidget {
         appBar: AppBar(
           title: Text(l10n.navRecord),
           actions: [
+            // Record by hand (REC-12)
+            IconButton(
+              tooltip: l10n.manualRecordTitle,
+              icon: const Icon(Icons.add_rounded),
+              onPressed: () => showManualRecordSheet(context),
+            ),
             // Amounts out of sight in one tap, for a phone someone else can see.
             IconButton(
               tooltip: hidden ? l10n.showAmounts : l10n.hideAmounts,

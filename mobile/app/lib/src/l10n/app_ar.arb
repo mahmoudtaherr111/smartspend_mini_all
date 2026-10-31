@@ -598,5 +598,36 @@
   "discardChangesBody": "لو رجعت دلوقتي، التعديلات اللي كتبتها مش هتتحفظ.",
   "discardChangesConfirm": "تجاهل",
   "discardChangesCancel": "كمّل تعديل",
-  "walletOfflinePartial": "المعاملات وملخص الشهر مش متوفرين أوفلاين."
+  "walletOfflinePartial": "المعاملات وملخص الشهر مش متوفرين أوفلاين.",
+  "manualRecordTitle": "تسجيل يدوي",
+  "manualRecordAmountHint": "٠",
+  "manualRecordTypeExpense": "مصروف",
+  "manualRecordTypeIncome": "دخل",
+  "manualRecordTypeTransfer": "تحويل",
+  "manualRecordCategory": "التصنيف",
+  "manualRecordSelectCategory": "اختر التصنيف",
+  "manualRecordDate": "التاريخ",
+  "manualRecordWallet": "المحفظة (اختياري)",
+  "manualRecordNoWallet": "بدون محفظة",
+  "manualRecordNote": "ملاحظة (اختياري)",
+  "manualRecordNoteHint": "تفاصيل إضافية...",
+  "manualRecordSave": "حفظ العملية",
+  "manualRecordAmountRequired": "اكتب المبلغ الأول",
+  "manualRecordCategoryRequired": "اختر تصنيف للعملية",
+  "manualRecordSavedNotice": "اتسجلت العملية بنجاح",
+  "manualRecordQueuedNotice": "اتحفظت على الموبايل وهتتبعت أول ما النت يرجع",
+  "searchTitle": "بحث في العمليات",
+  "searchHint": "ابحث بالاسم، الفئة أو المحل...",
+  "searchEmptyTitle": "مفيش نتائج لـ \"{query}\"",
+  "@searchEmptyTitle": {
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "أوبر"
+      }
+    }
+  },
+  "searchEmptyBody": "جرّب تبحث بكلمة تانية أو اتأكد من الحروف.",
+  "searchOfflineNotice": "البحث دلوقتي شغال على العمليات المحفوظة على جهازك بس.",
+  "searchNoTransactions": "لسه مفيش معاملات تبحث فيها."
 }

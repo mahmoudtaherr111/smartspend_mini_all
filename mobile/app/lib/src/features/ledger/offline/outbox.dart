@@ -177,6 +177,59 @@ class Outbox extends AsyncNotifier<OutboxView> {
     return outcome is SubmitQueued ? _keepOffline(item) : outcome;
   }
 
+  /// Records a manual transaction directly with known values (REC-12).
+  /// Saves immediately when online, or queues into the outbox when offline.
+  Future<SubmitOutcome> submitManual({
+    required double amount,
+    required String type,
+    required String category,
+    String? subCategory,
+    String? description,
+    DateTime? date,
+    int? walletId,
+  }) async {
+    final api = ref.read(ledgerApiProvider);
+    final rawText = (description ?? '').trim().isNotEmpty
+        ? description!.trim()
+        : '$category ${amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2)}';
+    final dateIso = date != null
+        ? '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}T12:00:00.000Z'
+        : null;
+    final item = OutboxItem(
+      id: api.newRequestId(),
+      text: rawText,
+      createdAt: clock.now(),
+      state: OutboxState.sending,
+      parse: ParseResult(
+        decision: ParseDecision.autoSave,
+        items: [
+          ParsedItem(
+            amount: amount,
+            type: type,
+            category: category,
+            subCategory: subCategory,
+            description: description,
+            date: dateIso,
+            walletId: walletId,
+            source: 'manual',
+          ),
+        ],
+      ),
+    );
+    await _change((items) => [...items, item]);
+    await flush();
+    if (_offline || ref.read(connectivityProvider).value == false) {
+      await _replace(item.copyWith(state: OutboxState.queued));
+      return const SubmitQueued();
+    }
+    final outcome = await _process(item, interactive: true);
+    if (outcome is SubmitQueued) {
+      await _replace(item.copyWith(state: OutboxState.queued));
+      return const SubmitQueued();
+    }
+    return outcome;
+  }
+
   /// Sends what waits in the outbox, oldest first, until the network fails. A call while a send is in progress
   /// waits for that send instead of starting a second one.
   Future<void> flush() {
@@ -261,7 +314,7 @@ class Outbox extends AsyncNotifier<OutboxView> {
     final api = ref.read(ledgerApiProvider);
     await _replace(item.copyWith(state: OutboxState.sending));
     try {
-      final parse = await api.parse(item.text);
+      final parse = item.parse ?? await api.parse(item.text);
       _online();
       switch (parse.decision) {
         case ParseDecision.autoSave:

@@ -155,6 +155,16 @@ final _screens = <(String, bool, PrepareApi?, Reach)>[
       await tester.pumpAndSettle();
     },
   ),
+  (
+    'manual-record',
+    true,
+    null,
+    (tester, _) async {
+      final btn = find.byIcon(Icons.add_rounded);
+      await tester.tap(btn);
+      await tester.pumpAndSettle();
+    },
+  ),
 ];
 
 Future<void> _openWallets(WidgetTester tester, AppLanguage language) async {

@@ -1305,4 +1305,78 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get walletOfflinePartial =>
       'Transactions and month summary are unavailable offline.';
+
+  @override
+  String get manualRecordTitle => 'Manual Record';
+
+  @override
+  String get manualRecordAmountHint => '0';
+
+  @override
+  String get manualRecordTypeExpense => 'Expense';
+
+  @override
+  String get manualRecordTypeIncome => 'Income';
+
+  @override
+  String get manualRecordTypeTransfer => 'Transfer';
+
+  @override
+  String get manualRecordCategory => 'Category';
+
+  @override
+  String get manualRecordSelectCategory => 'Select category';
+
+  @override
+  String get manualRecordDate => 'Date';
+
+  @override
+  String get manualRecordWallet => 'Wallet (optional)';
+
+  @override
+  String get manualRecordNoWallet => 'No wallet';
+
+  @override
+  String get manualRecordNote => 'Note (optional)';
+
+  @override
+  String get manualRecordNoteHint => 'Additional details...';
+
+  @override
+  String get manualRecordSave => 'Save transaction';
+
+  @override
+  String get manualRecordAmountRequired => 'Enter an amount first';
+
+  @override
+  String get manualRecordCategoryRequired => 'Select a category';
+
+  @override
+  String get manualRecordSavedNotice => 'Transaction saved successfully';
+
+  @override
+  String get manualRecordQueuedNotice =>
+      'Saved to phone, will send when online';
+
+  @override
+  String get searchTitle => 'Search transactions';
+
+  @override
+  String get searchHint => 'Search by name, category, or note...';
+
+  @override
+  String searchEmptyTitle(String query) {
+    return 'No results for \"$query\"';
+  }
+
+  @override
+  String get searchEmptyBody =>
+      'Try searching with a different word or check spelling.';
+
+  @override
+  String get searchOfflineNotice =>
+      'Searching only transactions saved on this device.';
+
+  @override
+  String get searchNoTransactions => 'No transactions to search yet.';
 }

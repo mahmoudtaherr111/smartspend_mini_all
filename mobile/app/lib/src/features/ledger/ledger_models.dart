@@ -27,6 +27,8 @@ final class ParsedItem {
     this.direction,
     this.personName,
     this.personRelationship,
+    this.walletId,
+    this.source,
   });
 
   factory ParsedItem.fromJson(Map<String, Object?> json) => ParsedItem(
@@ -39,6 +41,8 @@ final class ParsedItem {
     direction: json['direction'] as String?,
     personName: json['person_mentioned'] as String?,
     personRelationship: json['person_relationship'] as String?,
+    walletId: (json['walletId'] as num?)?.toInt(),
+    source: json['source'] as String?,
   );
 
   final num amount;
@@ -54,6 +58,8 @@ final class ParsedItem {
   final String? direction;
   final String? personName;
   final String? personRelationship;
+  final int? walletId;
+  final String? source;
 
   /// The same keys [ParsedItem.fromJson] reads, so an item can wait in the outbox.
   Map<String, Object?> toJson() => {
@@ -66,6 +72,8 @@ final class ParsedItem {
     'direction': direction,
     'person_mentioned': personName,
     'person_relationship': personRelationship,
+    'walletId': walletId,
+    'source': source,
   };
 
   /// Whether `expense.create` would accept it (`api/expense-router.ts`: a positive amount and a category).

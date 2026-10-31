@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import 'manual_record_sheet.dart';
 import 'offline/offline_rules.dart';
 import 'offline/outbox.dart';
 import 'record_flow.dart';
@@ -120,7 +121,14 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                   textInputAction: TextInputAction.send,
                   keyboardType: TextInputType.text,
                   onSubmitted: (_) => _submit(),
-                  decoration: InputDecoration(hintText: l10n.composerHint),
+                  decoration: InputDecoration(
+                    hintText: l10n.composerHint,
+                    prefixIcon: IconButton(
+                      tooltip: l10n.manualRecordTitle,
+                      icon: const Icon(Icons.dialpad_rounded),
+                      onPressed: () => showManualRecordSheet(context),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: SmartSpendSpacing.sm),
