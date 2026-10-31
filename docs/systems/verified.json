@@ -258,7 +258,7 @@
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
         "api/expense-router.ts#rest-of-file": "042ee4fc583f",
-        "api/image-router.ts": "062a7162dcfb",
+        "api/image-router.ts": "7de42b8cb141",
         "api/lib/admissibility-gate.ts": "3b5889850057",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
         "api/lib/amount-linker.ts": "23fb47c27442",
@@ -317,9 +317,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-10-31 1886a71d",
-      "arabic": "813b6a5893fe",
-      "arabicChecked": "2026-10-31 fa3a344b"
+      "checked": "2026-10-31 ea2514f5",
+      "arabic": "9a163d2be1c3",
+      "arabicChecked": "2026-10-31 ea2514f5"
     },
     "insights": {
       "files": {

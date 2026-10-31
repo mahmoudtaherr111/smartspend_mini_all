@@ -14,7 +14,7 @@ when it is unsure, and the writes that put items in the ledger.
 | Entry form | `src/components/expenses/ExpenseForm.tsx#ExpenseForm`, on the Home screen | Text box, microphone and camera; the review and clarification steps; a queue for text typed offline |
 | Text entry point | `api/ai-router.ts#parseExpense` | Plan and budget checks, loads the user's context, runs the pipeline, stores the trace, opens a clarification |
 | Voice entry point | `api/ai-router.ts#parseVoiceExpense` | Voice quota gate, speech to text, then the same pipeline |
-| Receipt entry point | `api/image-router.ts#parseReceipt` | Plans whose receipts switch is on (Pro and Ultra by default): reads a photo and saves one expense directly |
+| Receipt entry point | `api/image-router.ts#parseReceipt` | Plans whose receipts switch is on: reads a photo and saves through the ledger writer (`api/services/ledger-writer.ts`) |
 | The pipeline | `api/lib/smart-pipeline.ts#runSmartPipeline` | A sentence in; items and a decision out: `auto_save`, `review` or `clarify` |
 | Saving | `expense.create` and `expense.batchCreate` in `api/expense-router.ts`, through the ledger writer (`api/services/ledger-writer.ts`) | Writes the items, their rollup delta, contacts and streak in one transaction |
 | Clarifications | `api/expense-router.ts#answerClarification` | Takes the user's answer, re-runs the pipeline and saves |
