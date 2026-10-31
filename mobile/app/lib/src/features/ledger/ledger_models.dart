@@ -195,7 +195,7 @@ final class ClarificationResult {
   final int? clarificationId;
 }
 
-/// A saved transaction, a row of `expenses` as `expense.list` returns it.
+/// A saved transaction, a row of `expenses` as `expense.list` or `expense.getById` returns it.
 final class LedgerEntry {
   const LedgerEntry({
     required this.id,
@@ -205,6 +205,10 @@ final class LedgerEntry {
     required this.date,
     this.subCategory,
     this.description,
+    this.rawText,
+    this.source,
+    this.walletId,
+    this.contactId,
   });
 
   factory LedgerEntry.fromJson(Map<String, Object?> json) => LedgerEntry(
@@ -214,6 +218,10 @@ final class LedgerEntry {
     category: json['category'] as String? ?? '',
     subCategory: json['subCategory'] as String?,
     description: json['description'] as String?,
+    rawText: json['rawText'] as String?,
+    source: json['source'] as String?,
+    walletId: (json['walletId'] as num?)?.toInt(),
+    contactId: (json['contactId'] as num?)?.toInt(),
     date:
         DateTime.tryParse(
           json['date'] as String? ?? json['createdAt'] as String? ?? '',
@@ -229,9 +237,18 @@ final class LedgerEntry {
   final String category;
   final String? subCategory;
   final String? description;
+  final String? rawText;
+
+  /// How it was recorded: `ai_parsed`, `manual`, `voice`, `sms` or `image`.
+  final String? source;
+  final int? walletId;
+  final int? contactId;
 
   /// When it happened, in the phone's time.
   final DateTime date;
+
+  /// Money returned to an expense category (`type == 'expense'` with a negative amount).
+  bool get isRefund => type == 'expense' && amount < 0;
 
   /// The same keys [LedgerEntry.fromJson] reads, for the copy kept for offline use.
   Map<String, Object?> toJson() => {
@@ -241,6 +258,10 @@ final class LedgerEntry {
     'category': category,
     'subCategory': subCategory,
     'description': description,
+    'rawText': rawText,
+    'source': source,
+    'walletId': walletId,
+    'contactId': contactId,
     'date': date.toUtc().toIso8601String(),
   };
 
@@ -252,6 +273,54 @@ final class LedgerEntry {
     }
     return category;
   }
+}
+
+/// A person from `profile.listContacts`, linked to transactions by `contactId`.
+final class ContactSummary {
+  const ContactSummary({
+    required this.id,
+    required this.name,
+    this.relation,
+    this.transactionCount = 0,
+  });
+
+  factory ContactSummary.fromJson(Map<String, Object?> json) => ContactSummary(
+    id: (json['id'] as num).toInt(),
+    name: json['name'] as String? ?? '',
+    relation: json['relation'] as String?,
+    transactionCount: (json['transactionCount'] as num?)?.toInt() ?? 0,
+  );
+
+  final int id;
+  final String name;
+  final String? relation;
+  final int transactionCount;
+}
+
+/// A sentence waiting on the server for an answer (`expense.getPendingClarifications`).
+final class PendingClarification {
+  const PendingClarification({
+    required this.id,
+    required this.originalText,
+    required this.question,
+    this.createdAt,
+  });
+
+  factory PendingClarification.fromJson(Map<String, Object?> json) =>
+      PendingClarification(
+        id: (json['id'] as num).toInt(),
+        originalText: json['originalText'] as String? ?? '',
+        question: json['question'] as String? ?? '',
+        createdAt: switch (json['createdAt']) {
+          final String value => DateTime.tryParse(value)?.toLocal(),
+          _ => null,
+        },
+      );
+
+  final int id;
+  final String originalText;
+  final String question;
+  final DateTime? createdAt;
 }
 
 /// A page of `expense.list`.

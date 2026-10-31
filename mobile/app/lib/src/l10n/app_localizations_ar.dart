@@ -1095,4 +1095,196 @@ class AppLocalizationsAr extends AppLocalizations {
   String statsCategoryEmptyBody(String category, String month) {
     return 'مفيش مصاريف متسجّلة تحت «$category» في $month.';
   }
+
+  @override
+  String get transactionTitle => 'تفاصيل العملية';
+
+  @override
+  String get transactionKindExpense => 'مصروف';
+
+  @override
+  String get transactionKindRefund => 'مرتجع';
+
+  @override
+  String get transactionKindIncome => 'دخل';
+
+  @override
+  String get transactionKindTransfer => 'تحويل';
+
+  @override
+  String get transactionKindInvestment => 'استثمار';
+
+  @override
+  String get transactionDetailsSection => 'التفاصيل';
+
+  @override
+  String get transactionCategoryLabel => 'التصنيف';
+
+  @override
+  String get transactionDateLabel => 'التاريخ والوقت';
+
+  @override
+  String get transactionWalletLabel => 'المحفظة أو الكارت';
+
+  @override
+  String get transactionPersonLabel => 'الشخص';
+
+  @override
+  String get transactionNoteLabel => 'ملاحظة';
+
+  @override
+  String get transactionSourceLabel => 'اتسجّلت إزاي';
+
+  @override
+  String get transactionSourceTyped => 'بجملة كتبتها';
+
+  @override
+  String get transactionSourceManual => 'بإيدك';
+
+  @override
+  String get transactionSourceVoice => 'بالصوت';
+
+  @override
+  String get transactionSourceSms => 'رسالة بنك أو محفظة';
+
+  @override
+  String get transactionSourceImage => 'صورة فاتورة';
+
+  @override
+  String get transactionSentenceLabel => 'الجملة الأصلية';
+
+  @override
+  String get transactionEditAction => 'تعديل العملية';
+
+  @override
+  String get transactionEditOffline => 'وصّل النت عشان تعدّل العملية.';
+
+  @override
+  String get transactionDeleteAction => 'مسح العملية';
+
+  @override
+  String get transactionDeleteOffline => 'وصّل النت عشان تمسح العملية.';
+
+  @override
+  String get transactionLoadFailed =>
+      'مش قادرين نجيب تفاصيل العملية دلوقتي. اتأكد من النت وجرّب تاني.';
+
+  @override
+  String get transactionNotFoundTitle => 'العملية دي مش موجودة';
+
+  @override
+  String get transactionNotFoundBody =>
+      'يمكن اتمسحت من جهاز تاني أو من الموقع.';
+
+  @override
+  String get transactionBack => 'ارجع';
+
+  @override
+  String personTransactionsTitle(String name) {
+    return 'عمليات $name';
+  }
+
+  @override
+  String get personTransactionsEmpty => 'مفيش عمليات معروضة للشخص ده دلوقتي.';
+
+  @override
+  String get editTransactionTitle => 'تعديل العملية';
+
+  @override
+  String get editTransactionSubtitle =>
+      'لو غيّرت التصنيف، التطبيق هيفتكر اختيارك للجمل اللي شبهها.';
+
+  @override
+  String get editKindLabel => 'النوع';
+
+  @override
+  String get editAmountLabel => 'المبلغ';
+
+  @override
+  String get editAmountInvalid => 'اكتب مبلغ أكبر من صفر، زي 150 أو 150.50.';
+
+  @override
+  String get editCategoryLabel => 'التصنيف';
+
+  @override
+  String get editSubCategoryLabel => 'التصنيف الفرعي';
+
+  @override
+  String get editDateLabel => 'التاريخ';
+
+  @override
+  String get editNoteLabel => 'ملاحظة';
+
+  @override
+  String get editWalletLabel => 'المحفظة أو الكارت';
+
+  @override
+  String get editWalletNone => 'من غير محفظة';
+
+  @override
+  String get editPersonLabel => 'الشخص';
+
+  @override
+  String get editPersonNone => 'من غير شخص';
+
+  @override
+  String get editSave => 'احفظ التعديل';
+
+  @override
+  String get editCancel => 'رجوع';
+
+  @override
+  String get editSaved => 'اتعدّلت العملية.';
+
+  @override
+  String get editFailed => 'ماقدرناش نحفظ التعديل. جرّب تاني.';
+
+  @override
+  String get pendingQuestionsTitle => 'محتاج ردّك';
+
+  @override
+  String get pendingQuestionsSubtitle => 'جمل وقفت عند سؤال ولسه ماتسجّلتش.';
+
+  @override
+  String get pendingQuestionsReply => 'رد';
+
+  @override
+  String get pendingQuestionsDismiss => 'شيلها';
+
+  @override
+  String get pendingQuestionsNext => 'تمام، فاضل سؤال كمان.';
+
+  @override
+  String get pendingQuestionDismissed => 'اتشال السؤال.';
+
+  @override
+  String get pendingQuestionsFailed => 'ماقدرناش نسجّلها دلوقتي. جرّب تاني.';
+
+  @override
+  String get transactionWalletUnknown => 'محفظة غير معروفة';
+
+  @override
+  String get transactionPersonUnknown => 'شخص غير معروف';
+
+  @override
+  String signOutPendingOutboxWarning(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'عندك $count عملية متسجلة بدون نت ولسه ماتحفظتش. لو خرجت دلوقتي هيروحوا.',
+      many:
+          'عندك $count عملية متسجلة بدون نت ولسه ماتحفظتش. لو خرجت دلوقتي هيروحوا.',
+      few:
+          'عندك $count عمليات متسجلة بدون نت ولسه ماتحفظتش. لو خرجت دلوقتي هيروحوا.',
+      one: 'عندك عملية واحدة متسجلة بدون نت ولسه ماتحفظتش. لو خرجت دلوقتي هتروح.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get signOutConfirmAnyway => 'اخرج على أي حال';
+
+  @override
+  String get signOutCancel => 'استنى';
 }

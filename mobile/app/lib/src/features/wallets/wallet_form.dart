@@ -9,26 +9,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 import '../../l10n/app_localizations.dart';
 import 'wallet_models.dart';
 import 'wallet_providers.dart';
-
-/// The name a person reads for a wallet kind.
-String walletKindName(AppLocalizations l10n, WalletKind kind) => switch (kind) {
-  WalletKind.card => l10n.walletKindCard,
-  WalletKind.vodafoneCash => l10n.walletKindVodafoneCash,
-  WalletKind.instaPay => l10n.walletKindInstaPay,
-  WalletKind.cib => l10n.walletKindCib,
-  WalletKind.nbe => l10n.walletKindNbe,
-  WalletKind.banqueMisr => l10n.walletKindBanqueMisr,
-  WalletKind.qnb => l10n.walletKindQnb,
-  WalletKind.fawry => l10n.walletKindFawry,
-  WalletKind.orangeCash => l10n.walletKindOrangeCash,
-  WalletKind.etisalatCash => l10n.walletKindEtisalatCash,
-};
-
-/// The kind's colour, darkened on the light theme so it reads on white.
-Color walletKindColor(BuildContext context, WalletKind kind) =>
-    context.smartSpendColors.brightness == Brightness.light
-    ? Color.lerp(kind.color, Colors.black, 0.2)!
-    : kind.color;
+import 'wallet_style.dart';
 
 /// Opens the sheet that adds a wallet, or edits [wallet]'s name, last digits and balance. Returns true when saved.
 Future<bool> showWalletForm(BuildContext context, {Wallet? wallet}) async {

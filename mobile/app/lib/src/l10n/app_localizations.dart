@@ -1855,6 +1855,354 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'مفيش مصاريف متسجّلة تحت «{category}» في {month}.'**
   String statsCategoryEmptyBody(String category, String month);
+
+  /// No description provided for @transactionTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل العملية'**
+  String get transactionTitle;
+
+  /// No description provided for @transactionKindExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروف'**
+  String get transactionKindExpense;
+
+  /// No description provided for @transactionKindRefund.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع'**
+  String get transactionKindRefund;
+
+  /// No description provided for @transactionKindIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'دخل'**
+  String get transactionKindIncome;
+
+  /// No description provided for @transactionKindTransfer.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحويل'**
+  String get transactionKindTransfer;
+
+  /// No description provided for @transactionKindInvestment.
+  ///
+  /// In ar, this message translates to:
+  /// **'استثمار'**
+  String get transactionKindInvestment;
+
+  /// No description provided for @transactionDetailsSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'التفاصيل'**
+  String get transactionDetailsSection;
+
+  /// No description provided for @transactionCategoryLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف'**
+  String get transactionCategoryLabel;
+
+  /// No description provided for @transactionDateLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ والوقت'**
+  String get transactionDateLabel;
+
+  /// No description provided for @transactionWalletLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحفظة أو الكارت'**
+  String get transactionWalletLabel;
+
+  /// No description provided for @transactionPersonLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشخص'**
+  String get transactionPersonLabel;
+
+  /// No description provided for @transactionNoteLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة'**
+  String get transactionNoteLabel;
+
+  /// No description provided for @transactionSourceLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتسجّلت إزاي'**
+  String get transactionSourceLabel;
+
+  /// No description provided for @transactionSourceTyped.
+  ///
+  /// In ar, this message translates to:
+  /// **'بجملة كتبتها'**
+  String get transactionSourceTyped;
+
+  /// No description provided for @transactionSourceManual.
+  ///
+  /// In ar, this message translates to:
+  /// **'بإيدك'**
+  String get transactionSourceManual;
+
+  /// No description provided for @transactionSourceVoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'بالصوت'**
+  String get transactionSourceVoice;
+
+  /// No description provided for @transactionSourceSms.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسالة بنك أو محفظة'**
+  String get transactionSourceSms;
+
+  /// No description provided for @transactionSourceImage.
+  ///
+  /// In ar, this message translates to:
+  /// **'صورة فاتورة'**
+  String get transactionSourceImage;
+
+  /// No description provided for @transactionSentenceLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجملة الأصلية'**
+  String get transactionSentenceLabel;
+
+  /// No description provided for @transactionEditAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل العملية'**
+  String get transactionEditAction;
+
+  /// No description provided for @transactionEditOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصّل النت عشان تعدّل العملية.'**
+  String get transactionEditOffline;
+
+  /// No description provided for @transactionDeleteAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح العملية'**
+  String get transactionDeleteAction;
+
+  /// No description provided for @transactionDeleteOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصّل النت عشان تمسح العملية.'**
+  String get transactionDeleteOffline;
+
+  /// No description provided for @transactionLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب تفاصيل العملية دلوقتي. اتأكد من النت وجرّب تاني.'**
+  String get transactionLoadFailed;
+
+  /// No description provided for @transactionNotFoundTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملية دي مش موجودة'**
+  String get transactionNotFoundTitle;
+
+  /// No description provided for @transactionNotFoundBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكن اتمسحت من جهاز تاني أو من الموقع.'**
+  String get transactionNotFoundBody;
+
+  /// No description provided for @transactionBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارجع'**
+  String get transactionBack;
+
+  /// No description provided for @personTransactionsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمليات {name}'**
+  String personTransactionsTitle(String name);
+
+  /// No description provided for @personTransactionsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش عمليات معروضة للشخص ده دلوقتي.'**
+  String get personTransactionsEmpty;
+
+  /// No description provided for @editTransactionTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل العملية'**
+  String get editTransactionTitle;
+
+  /// No description provided for @editTransactionSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو غيّرت التصنيف، التطبيق هيفتكر اختيارك للجمل اللي شبهها.'**
+  String get editTransactionSubtitle;
+
+  /// No description provided for @editKindLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع'**
+  String get editKindLabel;
+
+  /// No description provided for @editAmountLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get editAmountLabel;
+
+  /// No description provided for @editAmountInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب مبلغ أكبر من صفر، زي 150 أو 150.50.'**
+  String get editAmountInvalid;
+
+  /// No description provided for @editCategoryLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف'**
+  String get editCategoryLabel;
+
+  /// No description provided for @editSubCategoryLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف الفرعي'**
+  String get editSubCategoryLabel;
+
+  /// No description provided for @editDateLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get editDateLabel;
+
+  /// No description provided for @editNoteLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة'**
+  String get editNoteLabel;
+
+  /// No description provided for @editWalletLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحفظة أو الكارت'**
+  String get editWalletLabel;
+
+  /// No description provided for @editWalletNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير محفظة'**
+  String get editWalletNone;
+
+  /// No description provided for @editPersonLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشخص'**
+  String get editPersonLabel;
+
+  /// No description provided for @editPersonNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير شخص'**
+  String get editPersonNone;
+
+  /// No description provided for @editSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ التعديل'**
+  String get editSave;
+
+  /// No description provided for @editCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get editCancel;
+
+  /// No description provided for @editSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتعدّلت العملية.'**
+  String get editSaved;
+
+  /// No description provided for @editFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحفظ التعديل. جرّب تاني.'**
+  String get editFailed;
+
+  /// No description provided for @pendingQuestionsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'محتاج ردّك'**
+  String get pendingQuestionsTitle;
+
+  /// No description provided for @pendingQuestionsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'جمل وقفت عند سؤال ولسه ماتسجّلتش.'**
+  String get pendingQuestionsSubtitle;
+
+  /// No description provided for @pendingQuestionsReply.
+  ///
+  /// In ar, this message translates to:
+  /// **'رد'**
+  String get pendingQuestionsReply;
+
+  /// No description provided for @pendingQuestionsDismiss.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيلها'**
+  String get pendingQuestionsDismiss;
+
+  /// No description provided for @pendingQuestionsNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام، فاضل سؤال كمان.'**
+  String get pendingQuestionsNext;
+
+  /// No description provided for @pendingQuestionDismissed.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتشال السؤال.'**
+  String get pendingQuestionDismissed;
+
+  /// No description provided for @pendingQuestionsFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نسجّلها دلوقتي. جرّب تاني.'**
+  String get pendingQuestionsFailed;
+
+  /// No description provided for @transactionWalletUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'محفظة غير معروفة'**
+  String get transactionWalletUnknown;
+
+  /// No description provided for @transactionPersonUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'شخص غير معروف'**
+  String get transactionPersonUnknown;
+
+  /// Warning shown before sign-out when unsynced transactions are waiting in the offline outbox.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{عندك عملية واحدة متسجلة بدون نت ولسه ماتحفظتش. لو خرجت دلوقتي هتروح.} few{عندك {count} عمليات متسجلة بدون نت ولسه ماتحفظتش. لو خرجت دلوقتي هيروحوا.} many{عندك {count} عملية متسجلة بدون نت ولسه ماتحفظتش. لو خرجت دلوقتي هيروحوا.} other{عندك {count} عملية متسجلة بدون نت ولسه ماتحفظتش. لو خرجت دلوقتي هيروحوا.}}'**
+  String signOutPendingOutboxWarning(int count);
+
+  /// No description provided for @signOutConfirmAnyway.
+  ///
+  /// In ar, this message translates to:
+  /// **'اخرج على أي حال'**
+  String get signOutConfirmAnyway;
+
+  /// No description provided for @signOutCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'استنى'**
+  String get signOutCancel;
 }
 
 class _AppLocalizationsDelegate

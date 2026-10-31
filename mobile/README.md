@@ -95,3 +95,25 @@ when there was no answer. A call that carried the session token and is refused a
 (`onSessionRejected`, wired in `app/lib/src/core/providers.dart`): the token is forgotten and the router shows sign-in.
 
 The app calls no route outside tRPC except the capture routes under `/api/capture/v1`, used by native code.
+
+## Architecture Patterns (Repositories, Caching, and UI)
+
+Session 1 established the canonical patterns that all subsequent mobile sessions follow:
+
+### 1. Repository & Caching Pattern (FND-06)
+- **Account-Scoped Cache**: Repositories cache their last good response in `StoredLedger` / `LocalLedger` scoped to the current user key (`${user.kind.name}:${user.id}`).
+- **Stale-While-Revalidate**: Cached answers display immediately while network requests refresh in the background, eliminating blank screen flashes.
+- **Graceful Offline Fallback**: On `ApiNetworkException`, `networkStatusProvider.unreachable()` flags the offline state, and the repository serves cached data instead of blowing up.
+- **Multi-Tenant Isolation**: Signing out (`SessionController.signOut()`) or switching accounts completely wipes the local store (`localLedger.wipe()`), app lock credentials (`appLock.wipe()`), and outbox to prevent data leakage between different users on the same phone.
+- **Single Offline Banner**: A screen shows one top-level banner when offline via `networkStatusProvider`, never an offline indicator per card.
+
+### 2. Mutation & Invalidation Pattern (REC-07, REC-08)
+- **Coordinated Refresh**: After any ledger write (create, edit, delete, undo), calling `refreshLedger(ref)` or `invalidateLedgerContainer(container)` invalidates all dependent providers across tabs (month summary, recent entries, paginated list, stats, and wallet summaries) without full page reload.
+- **Offline Edit Safety**: Edits (`showEditTransactionSheet`) require connectivity and are disabled when offline with a clear explanation (`l10n.transactionEditOffline`), because edits are not queued in the outbox.
+- **Timezone Consistency**: Editing dates uses UTC noon (`DateTime.utc(year, month, day, 12, 0, 0)`) so that transactions near midnight never cross Cairo business calendar day boundaries (golden rule 6). Unchanged dates omit the date field to preserve exact server timestamps.
+- **Friendly Fallbacks**: Missing entities (such as a deleted wallet or unlinked contact) always show localized labels (`l10n.transactionWalletUnknown`, `l10n.transactionPersonUnknown`), never raw database IDs (`#id`).
+
+### 3. Motion & Screen Navigation (FND-05, FND-09)
+- **Shared-Element Transitions**: Transaction rows open `TransactionDetailScreen` with a Hero animation of both category icon and amount using `smartSpendHeroShuttle` on transparent Material.
+- **Session-Scoped Staggered Reveal**: `StaggeredReveal` animates card entrances only once per session (`sessionKey`) to prevent repetitive motion on every tab switch, and collapses to instant display under reduced motion (`SmartSpendMotion.enabledOf(context)`).
+- **Predictive Back**: Android predictive back (`enableOnBackInvokedCallback="true"`) and Cupertino edge-swipe are configured to dismiss sheets and navigate cleanly.

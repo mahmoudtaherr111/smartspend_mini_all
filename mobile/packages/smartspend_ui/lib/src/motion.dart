@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import 'tokens.dart';
 
@@ -11,7 +11,7 @@ abstract final class SmartSpendMotion {
   /// A card appearing, a sheet's content changing.
   static const medium = Duration(milliseconds: 250);
 
-  /// A screen-sized change.
+  /// A screen-sized change, and the ceiling of a tab's first reveal (FND-05: <= 300 ms total).
   static const long = Duration(milliseconds: 300);
 
   static const curve = Curves.easeOutCubic;
@@ -22,19 +22,52 @@ abstract final class SmartSpendMotion {
       MediaQuery.maybeDisableAnimationsOf(context) ?? false
       ? Duration.zero
       : duration;
+
+  /// Whether animations are allowed around [context].
+  static bool enabledOf(BuildContext context) =>
+      !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
 }
 
-/// A column whose children rise into place one after another the first time it is built (design brief §7): the
-/// hero first, then its cards, 40 ms apart. Nothing moves under reduced motion, and a rebuild does not replay it.
+/// Keeps a [Hero] carrying text on a transparent [Material] while it flies between routes, so its font style stays
+/// intact without yellow fallback underlines.
+Widget smartSpendHeroShuttle(
+  BuildContext flightContext,
+  Animation<double> animation,
+  HeroFlightDirection flightDirection,
+  BuildContext fromHeroContext,
+  BuildContext toHeroContext,
+) {
+  final target = flightDirection == HeroFlightDirection.push
+      ? toHeroContext.widget
+      : fromHeroContext.widget;
+  return Material(
+    type: MaterialType.transparency,
+    child: target is Hero ? target.child : target,
+  );
+}
+
+/// A column whose children rise into place one after another the first time it is shown (FND-05, design brief §7):
+/// the hero appears first, and the cards follow within 300 ms total. With [sessionKey], a tab's reveal runs once per
+/// session instead of repeating on every visit. Nothing moves under reduced motion.
 class StaggeredReveal extends StatefulWidget {
   const StaggeredReveal({
     super.key,
     required this.children,
     this.spacing = SmartSpendSpacing.lg,
+    this.sessionKey,
   });
 
   final List<Widget> children;
   final double spacing;
+
+  /// Names a tab or screen whose reveal should play only on its first visit in the current session.
+  final String? sessionKey;
+
+  static final Set<String> _revealedKeys = <String>{};
+
+  /// Clears the session memory of which tabs already played their first reveal (for example on sign-out, or in
+  /// tests).
+  static void resetSession() => _revealedKeys.clear();
 
   @override
   State<StaggeredReveal> createState() => _StaggeredRevealState();
@@ -42,19 +75,25 @@ class StaggeredReveal extends StatefulWidget {
 
 class _StaggeredRevealState extends State<StaggeredReveal>
     with SingleTickerProviderStateMixin {
-  static const _step = Duration(milliseconds: 40);
   late final AnimationController _controller = AnimationController(vsync: this);
+  bool _started = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_controller.isAnimating || _controller.value > 0) return;
-    final each = SmartSpendMotion.of(context, SmartSpendMotion.medium);
-    if (each == Duration.zero) {
+    if (_started) return;
+    _started = true;
+    final key = widget.sessionKey;
+    final alreadyRevealed =
+        key != null && !StaggeredReveal._revealedKeys.add(key);
+    final budget = SmartSpendMotion.of(context, SmartSpendMotion.long);
+    if (alreadyRevealed || budget == Duration.zero || widget.children.isEmpty) {
       _controller.value = 1;
       return;
     }
-    _controller.duration = each + _step * (widget.children.length - 1);
+    _controller.duration = widget.children.length == 1
+        ? SmartSpendMotion.medium
+        : SmartSpendMotion.long;
     _controller.forward();
   }
 
@@ -66,8 +105,7 @@ class _StaggeredRevealState extends State<StaggeredReveal>
 
   @override
   Widget build(BuildContext context) {
-    final total = _controller.duration?.inMilliseconds ?? 1;
-    final each = SmartSpendMotion.medium.inMilliseconds;
+    final count = widget.children.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -77,14 +115,33 @@ class _StaggeredRevealState extends State<StaggeredReveal>
             animation: _controller,
             child: child,
             builder: (context, child) {
-              final start = (index * _step.inMilliseconds / total).clamp(
-                0.0,
-                1.0,
-              );
-              final end = ((index * _step.inMilliseconds + each) / total).clamp(
-                start,
-                1.0,
-              );
+              if (_controller.value >= 1 || count <= 1) {
+                final t = SmartSpendMotion.curve.transform(_controller.value);
+                return Opacity(
+                  opacity: t,
+                  child: Transform.translate(
+                    offset: Offset(0, (1 - t) * 12),
+                    child: child,
+                  ),
+                );
+              }
+              // Child 0 (the hero) leads from 0.0 to 0.60; the remaining cards stagger evenly inside 0.16..1.0 so
+              // the entire sequence finishes within SmartSpendMotion.long (300 ms).
+              final double start;
+              final double end;
+              if (index == 0) {
+                start = 0.0;
+                end = 0.60;
+              } else {
+                final cards = count - 1;
+                final span = 0.60;
+                final offsetWindow = 1.0 - span - 0.16;
+                start =
+                    0.16 +
+                    (cards <= 1 ? 0.0 : (index - 1) / (cards - 1)) *
+                        offsetWindow;
+                end = (start + span).clamp(start, 1.0);
+              }
               final t = Interval(
                 start,
                 end,

@@ -22,6 +22,7 @@ import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
 import 'package:smartspend_app/src/features/ledger/offline/outbox.dart';
 import 'package:smartspend_app/src/features/lock/app_lock.dart';
 import 'package:smartspend_app/src/features/lock/lock_store.dart';
+import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../support/sample_month.dart';
 import '../support/test_app.dart';
@@ -41,12 +42,32 @@ typedef Reach = Future<void> Function(
   AppLanguage language,
 );
 
-final _screens = <(String, bool, Reach)>[
-  ('sign-in', false, (tester, _) async {}),
-  ('record', true, (tester, _) async {}),
+typedef PrepareApi = void Function(FakeApi api);
+
+final _screens = <(String, bool, PrepareApi?, Reach)>[
+  ('sign-in', false, null, (tester, _) async {}),
+  ('record', true, null, (tester, _) async {}),
+  (
+    'pending-questions',
+    true,
+    (api) {
+      api.answer(
+        'expense.getPendingClarifications',
+        (_) => [
+          {
+            'id': 51,
+            'originalText': 'دفعت 400 جنيه لمحمد امبارح',
+            'question': 'الـ 400 جنيه لمحمد كانت سلفة ولا مصروف على إيه؟',
+          },
+        ],
+      );
+    },
+    (tester, _) async {},
+  ),
   (
     'transactions',
     true,
+    null,
     (tester, language) async {
       await tester.tap(
         find.text(language == AppLanguage.english ? 'See all' : 'الكل'),
@@ -55,8 +76,40 @@ final _screens = <(String, bool, Reach)>[
     },
   ),
   (
+    'transaction',
+    true,
+    null,
+    (tester, _) async {
+      final row = find.text(inlineName('Talabat')).first;
+      await tester.ensureVisible(row);
+      await tester.pumpAndSettle();
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+    },
+  ),
+  (
+    'edit-transaction',
+    true,
+    null,
+    (tester, language) async {
+      final row = find.text(inlineName('Talabat')).first;
+      await tester.ensureVisible(row);
+      await tester.pumpAndSettle();
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+      final editRow = find.text(
+        language == AppLanguage.english ? 'Edit transaction' : 'تعديل العملية',
+      );
+      await tester.ensureVisible(editRow);
+      await tester.pumpAndSettle();
+      await tester.tap(editRow);
+      await tester.pumpAndSettle();
+    },
+  ),
+  (
     'stats',
     true,
+    null,
     (tester, language) async {
       await tester.tap(
         find.text(language == AppLanguage.english ? 'Stats' : 'إحصائيات').last,
@@ -67,6 +120,7 @@ final _screens = <(String, bool, Reach)>[
   (
     'category',
     true,
+    null,
     (tester, language) async {
       await tester.tap(
         find.text(language == AppLanguage.english ? 'Stats' : 'إحصائيات').last,
@@ -82,6 +136,7 @@ final _screens = <(String, bool, Reach)>[
   (
     'more',
     true,
+    null,
     (tester, language) async {
       await tester.tap(
         find.text(language == AppLanguage.english ? 'More' : 'المزيد').last,
@@ -89,10 +144,11 @@ final _screens = <(String, bool, Reach)>[
       await tester.pumpAndSettle();
     },
   ),
-  ('wallets', true, _openWallets),
+  ('wallets', true, null, _openWallets),
   (
     'wallet',
     true,
+    null,
     (tester, language) async {
       await _openWallets(tester, language);
       await tester.tap(find.text('كارت CIB'));
@@ -139,9 +195,12 @@ Future<void> _open(
   WidgetTester tester, {
   required bool signedIn,
   required AppLanguage language,
+  PrepareApi? prepareApi,
 }) async {
+  StaggeredReveal.resetSession();
   final api = FakeApi()..answer('localAuth.me', (_) => phoneUser());
   answerSampleMonth(api);
+  prepareApi?.call(api);
   await tester.pumpWidget(
     RepaintBoundary(
       key: _frame,
@@ -193,7 +252,7 @@ void main() {
     if (_outDir != null) await _loadFonts();
   });
 
-  for (final (screen, signedIn, reach) in _screens) {
+  for (final (screen, signedIn, prepareApi, reach) in _screens) {
     final only = _only;
     if (only != null && !only.split(',').contains(screen)) continue;
     testWidgets('renders $screen', skip: _outDir == null, (tester) async {
@@ -207,7 +266,12 @@ void main() {
               tester.platformDispatcher
                 ..platformBrightnessTestValue = brightness
                 ..textScaleFactorTestValue = scale;
-              await _open(tester, signedIn: signedIn, language: language);
+              await _open(
+                tester,
+                signedIn: signedIn,
+                language: language,
+                prepareApi: prepareApi,
+              );
               await reach(tester, language);
               await _save(
                 tester,

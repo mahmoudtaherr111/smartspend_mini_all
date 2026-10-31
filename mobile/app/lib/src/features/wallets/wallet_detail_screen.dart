@@ -13,6 +13,7 @@ import '../ledger/ledger_widgets.dart';
 import 'wallet_form.dart';
 import 'wallet_models.dart';
 import 'wallet_providers.dart';
+import 'wallet_style.dart';
 import 'wallets_screen.dart';
 
 /// One wallet or card (MON-02, MON-03 in .agents/mobile-program/features.json): its balance as the hero with when it

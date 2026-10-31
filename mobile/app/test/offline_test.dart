@@ -327,6 +327,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('تسجيل الخروج'));
       await tester.pumpAndSettle();
+      if (find.text('اخرج على أي حال').evaluate().isNotEmpty) {
+        await tester.tap(find.text('اخرج على أي حال'));
+        await tester.pumpAndSettle();
+      }
 
       expect(app.ledgerStore.ledger.outbox, isEmpty);
     });

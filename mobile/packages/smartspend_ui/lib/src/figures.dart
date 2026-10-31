@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'haptics.dart';
 import 'money.dart';
+import 'motion.dart';
 import 'theme.dart';
 import 'tokens.dart';
 import 'typography.dart';
@@ -18,7 +19,9 @@ class HeroFigure extends StatelessWidget {
     this.kind = AmountKind.neutral,
     this.story,
     this.wash = false,
+    this.leading,
     this.trailing,
+    this.amountHeroTag,
   });
 
   final String label;
@@ -31,8 +34,14 @@ class HeroFigure extends StatelessWidget {
   /// Draws the brand wash behind it.
   final bool wash;
 
+  /// At the start of the header row, such as a category's icon tile arriving from a transaction row.
+  final Widget? leading;
+
   /// Beside the label at the other end, for example the month switcher's button.
   final Widget? trailing;
+
+  /// Connects the hero amount to the [TransactionRow] that opened this screen (FND-05).
+  final Object? amountHeroTag;
 
   @override
   Widget build(BuildContext context) {
@@ -40,11 +49,34 @@ class HeroFigure extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     // Twice the text size still fits a seven-digit amount on one line of a small phone.
     final scaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.6);
+    Widget amountBox = MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: scaler),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: AlignmentDirectional.centerStart,
+        child: AmountText(
+          amount,
+          kind: kind,
+          style: SmartSpendTypography.style(40, FontWeight.w800, height: 1.15),
+        ),
+      ),
+    );
+    if (amountHeroTag != null && SmartSpendMotion.enabledOf(context)) {
+      amountBox = Hero(
+        tag: amountHeroTag!,
+        flightShuttleBuilder: smartSpendHeroShuttle,
+        child: amountBox,
+      );
+    }
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
+            if (leading != null) ...[
+              leading!,
+              const SizedBox(width: SmartSpendSpacing.md),
+            ],
             Expanded(
               child: Text(
                 label,
@@ -57,22 +89,7 @@ class HeroFigure extends StatelessWidget {
           ],
         ),
         const SizedBox(height: SmartSpendSpacing.xs),
-        MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: scaler),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: AlignmentDirectional.centerStart,
-            child: AmountText(
-              amount,
-              kind: kind,
-              style: SmartSpendTypography.style(
-                40,
-                FontWeight.w800,
-                height: 1.15,
-              ),
-            ),
-          ),
-        ),
+        amountBox,
         if (story != null) ...[
           const SizedBox(height: SmartSpendSpacing.sm),
           Text(

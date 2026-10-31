@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'bidi.dart';
 import 'haptics.dart';
 import 'money.dart';
+import 'motion.dart';
 import 'theme.dart';
 import 'tokens.dart';
 
@@ -51,7 +52,8 @@ class SectionHeader extends StatelessWidget {
 
 /// One transaction in a list: what it was, its category and time, and the amount at the far end. A merchant or
 /// sender name in Latin letters stays readable inside the Arabic line (rule 2.4), and at large text sizes the amount
-/// moves under the subtitle so the row grows in height instead of truncating (design brief §3).
+/// moves under the subtitle so the row grows in height instead of truncating (design brief §3). With [heroTag],
+/// opening the transaction carries its icon and amount into the detail screen (FND-05).
 class TransactionRow extends StatelessWidget {
   const TransactionRow({
     super.key,
@@ -61,6 +63,7 @@ class TransactionRow extends StatelessWidget {
     required this.amount,
     this.kind = AmountKind.expense,
     this.iconColor,
+    this.heroTag,
     this.onTap,
   });
 
@@ -78,6 +81,9 @@ class TransactionRow extends StatelessWidget {
 
   /// The category's colour; the accent by default.
   final Color? iconColor;
+
+  /// Connects this row's icon (`(heroTag, 'icon')`) and amount (`(heroTag, 'amount')`) to its detail screen.
+  final Object? heroTag;
   final VoidCallback? onTap;
 
   @override
@@ -86,7 +92,25 @@ class TransactionRow extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final tint = iconColor ?? colors.accent;
     final large = MediaQuery.textScalerOf(context).scale(10) > 15;
-    final figure = AmountText(amount, kind: kind);
+    final animateHero = heroTag != null && SmartSpendMotion.enabledOf(context);
+    Widget iconTile = Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
+      ),
+      child: Icon(icon, color: tint, size: 22),
+    );
+    Widget figure = AmountText(amount, kind: kind);
+    if (animateHero) {
+      iconTile = Hero(tag: (heroTag!, 'icon'), child: iconTile);
+      figure = Hero(
+        tag: (heroTag!, 'amount'),
+        flightShuttleBuilder: smartSpendHeroShuttle,
+        child: figure,
+      );
+    }
     return MergeSemantics(
       child: InkWell(
         onTap: onTap == null
@@ -105,15 +129,7 @@ class TransactionRow extends StatelessWidget {
                   ? CrossAxisAlignment.start
                   : CrossAxisAlignment.center,
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: tint.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
-                  ),
-                  child: Icon(icon, color: tint, size: 22),
-                ),
+                iconTile,
                 const SizedBox(width: SmartSpendSpacing.md),
                 Expanded(
                   child: Column(

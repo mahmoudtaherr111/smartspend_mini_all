@@ -11,6 +11,7 @@ import 'wallet_detail_screen.dart';
 import 'wallet_form.dart';
 import 'wallet_models.dart';
 import 'wallet_providers.dart';
+import 'wallet_style.dart';
 
 /// The wallets and cards (MON-01 in .agents/mobile-program/features.json): what is in them together as the hero,
 /// then each one with its balance and when that balance was given. A row opens the wallet; the last row adds one.

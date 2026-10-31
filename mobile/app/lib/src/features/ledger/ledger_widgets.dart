@@ -2,12 +2,14 @@ import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import 'category_style.dart';
 import 'ledger_models.dart';
 import 'ledger_providers.dart';
+import 'transaction_detail_screen.dart';
 
 /// The month at a glance: what was spent, what came in, and how many transactions, from
 /// `expense.getMonthSummary`.
@@ -101,28 +103,62 @@ class MonthSummaryCard extends ConsumerWidget {
   }
 }
 
-/// Transactions under a heading for each day: «النهارده», «امبارح», «الخميس 15 أكتوبر». With [onDelete], a row can
-/// be swiped toward the start of the line (to the right in Arabic, the mirror of a list's left swipe on iOS), or
-/// deleted through the screen reader's actions menu (rule 12.2: every gesture has another way).
-class LedgerDayList extends StatelessWidget {
-  const LedgerDayList({super.key, required this.entries, this.onDelete});
+/// Transactions under a heading for each day: «النهارده», «امبارح», «الخميس 15 أكتوبر». Tapping any row opens its
+/// detail screen with a shared-element flight (REC-08, MON-03, FND-05). With [onDelete], a row can be swiped toward
+/// the start of the line (to the right in Arabic, the mirror of a list's left swipe on iOS), or deleted through the
+/// screen reader's actions menu (rule 12.2: every gesture has another way).
+class LedgerDayList extends ConsumerStatefulWidget {
+  const LedgerDayList({
+    super.key,
+    required this.entries,
+    this.onDelete,
+    this.onEntryTap,
+  });
 
   final List<LedgerEntry> entries;
   final void Function(LedgerEntry entry)? onDelete;
+  final void Function(LedgerEntry entry, Object heroTag)? onEntryTap;
+
+  @override
+  ConsumerState<LedgerDayList> createState() => _LedgerDayListState();
+}
+
+class _LedgerDayListState extends ConsumerState<LedgerDayList> {
+  final Object _heroScope = Object();
 
   @override
   Widget build(BuildContext context) {
+    final hiddenIds = ref.watch(hiddenEntryIdsProvider);
     final words = DateWords.of(context);
     final now = clock.now();
     final children = <Widget>[];
     String? currentDay;
-    for (final entry in entries) {
+    for (final entry in widget.entries) {
+      if (hiddenIds.contains(entry.id)) continue;
       final day = words.day(entry.date, now: now);
       if (day != currentDay) {
         currentDay = day;
         children.add(SectionHeader(day));
       }
-      children.add(_EntryRow(entry: entry, onDelete: onDelete));
+      final heroTag = (_heroScope, entry.id);
+      children.add(
+        _EntryRow(
+          entry: entry,
+          heroTag: heroTag,
+          onDelete: widget.onDelete,
+          onTap: () {
+            final custom = widget.onEntryTap;
+            if (custom != null) {
+              custom(entry, heroTag);
+              return;
+            }
+            context.push(
+              TransactionDetailScreen.pathFor(entry.id),
+              extra: TransactionDetailLaunch(entry: entry, heroTag: heroTag),
+            );
+          },
+        ),
+      );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -132,9 +168,16 @@ class LedgerDayList extends StatelessWidget {
 }
 
 class _EntryRow extends StatelessWidget {
-  const _EntryRow({required this.entry, this.onDelete});
+  const _EntryRow({
+    required this.entry,
+    required this.heroTag,
+    required this.onTap,
+    this.onDelete,
+  });
 
   final LedgerEntry entry;
+  final Object heroTag;
+  final VoidCallback onTap;
   final void Function(LedgerEntry entry)? onDelete;
 
   @override
@@ -148,6 +191,8 @@ class _EntryRow extends StatelessWidget {
       subtitle: '${entry.category} · ${inlineName(words.clock(entry.date))}',
       amount: entry.amount.abs(),
       kind: entryKind(entry),
+      heroTag: heroTag,
+      onTap: onTap,
     );
     final delete = onDelete;
     if (delete == null) return row;
@@ -168,7 +213,7 @@ class _EntryRow extends StatelessWidget {
             color: colors.danger.withValues(alpha: 0.16),
             borderRadius: BorderRadius.circular(SmartSpendRadii.md),
           ),
-          child: Icon(Icons.delete_outline, color: colors.danger),
+          child: Icon(Icons.delete_outline_rounded, color: colors.danger),
         ),
         child: row,
       ),

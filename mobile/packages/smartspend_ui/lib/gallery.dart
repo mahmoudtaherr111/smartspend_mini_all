@@ -88,6 +88,18 @@ class ComponentGallery extends StatelessWidget {
               ],
             ),
           ),
+          const SectionHeader('التصنيفات'),
+          const Wrap(
+            spacing: SmartSpendSpacing.md,
+            runSpacing: SmartSpendSpacing.sm,
+            children: [
+              CategoryTile(category: 'أكل وشرب', showLabel: true),
+              CategoryTile(category: 'مواصلات', showLabel: true),
+              CategoryTile(category: 'فواتير', showLabel: true),
+              CategoryTile(category: 'مرتب', showLabel: true),
+              CategoryTile(category: 'تصنيف خاص', showLabel: true),
+            ],
+          ),
           GroupedSection(
             title: 'المحافظ',
             children: [
@@ -120,20 +132,20 @@ class ComponentGallery extends StatelessWidget {
           ),
           SectionHeader('النهارده', actionLabel: 'الكل', onAction: () {}),
           const TransactionRow(
-            icon: Icons.restaurant,
+            icon: Icons.restaurant_rounded,
             title: 'Talabat',
             subtitle: 'أكل وشرب · 9:41 م',
             amount: 185,
           ),
           const TransactionRow(
-            icon: Icons.local_taxi_outlined,
+            icon: Icons.directions_car_rounded,
             title: 'UBER *TRIP',
             subtitle: 'مواصلات · لسه بيتسجّل',
             amount: 96,
             kind: AmountKind.pending,
           ),
           const TransactionRow(
-            icon: Icons.payments_outlined,
+            icon: Icons.payments_rounded,
             title: 'مرتب',
             subtitle: 'دخل · CIB',
             amount: 15000,
@@ -175,7 +187,7 @@ class ComponentGallery extends StatelessWidget {
           const _SkeletonRow(),
           const SectionHeader('فاضي'),
           EmptyState(
-            icon: Icons.receipt_long_outlined,
+            icon: Icons.receipt_long_rounded,
             title: 'لسه مفيش مصاريف',
             message: 'اكتب أول مصروف بالعامية وهنصنّفه لوحدنا.',
             actionLabel: 'سجّل مصروف',
@@ -191,7 +203,7 @@ class ComponentGallery extends StatelessWidget {
           const MoneyPrivacy(
             hidden: true,
             child: TransactionRow(
-              icon: Icons.restaurant,
+              icon: Icons.restaurant_rounded,
               title: 'Talabat',
               subtitle: 'أكل وشرب · 9:41 م',
               amount: 185,

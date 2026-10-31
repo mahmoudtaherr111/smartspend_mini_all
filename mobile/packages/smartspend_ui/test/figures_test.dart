@@ -1,4 +1,5 @@
-// The hero figure, stat tiles, the proportion bar, grouped rows and the month switcher (design brief §9).
+// The hero figure, stat tiles, the proportion bar, grouped rows, category tiles, signature motion and the month
+// switcher (design brief §6, §7 and §9).
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +25,8 @@ Widget _app(Widget child, {double textScale = 1}) => MaterialApp(
 );
 
 void main() {
+  setUp(StaggeredReveal.resetSession);
+
   testWidgets('the hero reads its amount as words and tells its story', (
     tester,
   ) async {
@@ -235,6 +238,101 @@ void main() {
   });
 
   testWidgets(
+    'every server category maps to its rounded icon, and unknown categories get the neutral icon',
+    (tester) async {
+      const canonical = [
+        'أكل وشرب',
+        'مواصلات',
+        'فواتير',
+        'سكن',
+        'تسوق',
+        'عناية شخصية',
+        'صحة',
+        'أطفال',
+        'تعليم',
+        'ترفيه',
+        'اشتراكات',
+        'تدخين',
+        'هدايا وصدقات',
+        'أقساط وفوايد',
+        'خدمات حكومية',
+        'عمل',
+        'حيوانات أليفة',
+        'العائلة',
+        'أصدقاء',
+        'موظفين',
+        'متنوعات',
+        'مرتب',
+        'عمل حر',
+        'عوائد استثمار',
+        'هدايا وعيديات',
+        'دخل آخر',
+        'تحويل',
+        'استثمار',
+      ];
+      for (final name in canonical) {
+        expect(
+          categoryStyleIcon(name),
+          isNot(neutralCategoryIcon),
+          reason: name,
+        );
+      }
+      expect(categoryStyleIcon('تصنيف مخصص'), neutralCategoryIcon);
+
+      await tester.pumpWidget(
+        _app(const CategoryTile(category: 'أكل وشرب', showLabel: true)),
+      );
+      expect(find.text('أكل وشرب'), findsOneWidget);
+      expect(find.byIcon(Icons.restaurant_rounded), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'the staggered reveal leads with the hero, finishes within 300 ms, and never repeats in the same session',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StaggeredReveal(
+            key: UniqueKey(),
+            sessionKey: 'stats',
+            children: const [Text('أ'), Text('ب'), Text('ج'), Text('د')],
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 80));
+      final midOpacities = tester
+          .widgetList<Opacity>(find.byType(Opacity))
+          .map((o) => o.opacity)
+          .toList();
+      // The hero leads the cards.
+      expect(midOpacities.first, greaterThan(midOpacities.last));
+
+      // Everything settles by the 300 ms ceiling.
+      await tester.pump(const Duration(milliseconds: 220));
+      final endOpacities = tester
+          .widgetList<Opacity>(find.byType(Opacity))
+          .map((o) => o.opacity);
+      expect(endOpacities, everyElement(1.0));
+
+      // Leaving and returning to the same tab in the session does not replay the animation.
+      await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StaggeredReveal(
+            key: UniqueKey(),
+            sessionKey: 'stats',
+            children: const [Text('أ'), Text('ب')],
+          ),
+        ),
+      );
+      final revisitOpacities = tester
+          .widgetList<Opacity>(find.byType(Opacity))
+          .map((o) => o.opacity);
+      expect(revisitOpacities, everyElement(1.0));
+    },
+  );
+
+  testWidgets(
     'the staggered reveal shows everything at once under reduced motion',
     (tester) async {
       await tester.pumpWidget(
@@ -249,6 +347,40 @@ void main() {
           .widgetList<Opacity>(find.byType(Opacity))
           .map((o) => o.opacity);
       expect(opacities, everyElement(1.0));
+    },
+  );
+
+  testWidgets(
+    'a transaction row carries its icon and amount via Hero, and creates no Hero under reduced motion',
+    (tester) async {
+      await tester.pumpWidget(
+        _app(
+          const TransactionRow(
+            icon: Icons.restaurant_rounded,
+            title: 'Talabat',
+            subtitle: 'أكل وشرب · 9:41 م',
+            amount: 185,
+            heroTag: 'txn-9',
+          ),
+        ),
+      );
+      expect(find.byType(Hero), findsNWidgets(2));
+
+      await tester.pumpWidget(
+        _app(
+          const MediaQuery(
+            data: MediaQueryData(disableAnimations: true),
+            child: TransactionRow(
+              icon: Icons.restaurant_rounded,
+              title: 'Talabat',
+              subtitle: 'أكل وشرب · 9:41 م',
+              amount: 185,
+              heroTag: 'txn-9',
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(Hero), findsNothing);
     },
   );
 }

@@ -148,18 +148,18 @@ class AppLock extends Notifier<LockView> {
   Future<void> _follow(SessionState? previous, SessionState next) async {
     switch (next) {
       case SignedOut(expired: false):
-        await _wipe();
+        await wipe();
       case SignedIn(:final user):
         if (previous is SignedOut) {
           // A sign-in just proved who this is.
-          if (state.record.damaged) await _wipe();
+          if (state.record.damaged) await wipe();
           _unlock();
         }
         if (user == null) return;
         final key = '${user.kind.name}:${user.id}';
         final owner = state.record.accountKey;
         if (owner != null && owner != key) {
-          await _wipe();
+          await wipe();
           _unlock();
         }
         if (state.record.accountKey != key && !state.record.damaged) {
@@ -347,7 +347,8 @@ class AppLock extends Notifier<LockView> {
     await _store.write(record);
   }
 
-  Future<void> _wipe() async {
+  /// Forgets every lock key, setting and stored record: on sign-out.
+  Future<void> wipe() async {
     await _forgetKeys();
     await _cover(false);
     await _store.clear();

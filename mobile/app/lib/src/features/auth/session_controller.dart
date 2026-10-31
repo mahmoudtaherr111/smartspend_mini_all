@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_api/smartspend_api.dart';
+import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../core/providers.dart';
+import '../ledger/ledger_providers.dart';
+import '../lock/app_lock.dart';
 import 'auth_api.dart';
 import 'google_identity.dart';
 
@@ -88,6 +91,7 @@ class SessionController extends Notifier<SessionState> {
 
   /// Keeps the token of a session the server just opened.
   Future<void> signIn(SignedInAnswer answer) async {
+    StaggeredReveal.resetSession();
     await ref.read(sessionStoreProvider).writeToken(answer.token);
     state = SignedIn(answer.user);
     // A sign-in answer leaves out some fields (email, photo); `me` has them all.
@@ -97,6 +101,7 @@ class SessionController extends Notifier<SessionState> {
   /// The server no longer accepts the stored token: forget it and show sign-in.
   Future<void> expire() async {
     if (state is! SignedIn) return;
+    StaggeredReveal.resetSession();
     state = const SignedOut(expired: true);
     await ref.read(sessionStoreProvider).clear();
   }
@@ -120,6 +125,17 @@ class SessionController extends Notifier<SessionState> {
     } on Object {
       // A phone without the native side (tests, other platforms) has nothing to forget.
     }
+    try {
+      await ref.read(localLedgerProvider).wipe();
+    } on Object {
+      // Best-effort local wipe.
+    }
+    try {
+      await ref.read(appLockProvider.notifier).wipe();
+    } on Object {
+      // Best-effort lock wipe.
+    }
+    StaggeredReveal.resetSession();
     state = const SignedOut();
     unawaited(ref.read(googleIdentityProvider).signOut());
   }

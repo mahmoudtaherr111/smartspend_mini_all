@@ -50,6 +50,7 @@ class TransactionsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final list = ref.watch(allEntriesProvider);
+    final hiddenIds = ref.watch(hiddenEntryIdsProvider);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.transactionsTitle)),
       body: RefreshIndicator(
@@ -70,9 +71,12 @@ class TransactionsScreen extends ConsumerWidget {
             ),
             children: [
               switch (list) {
-                AsyncData(:final value) when value.entries.isEmpty =>
+                AsyncData(:final value)
+                    when value.entries
+                        .where((e) => !hiddenIds.contains(e.id))
+                        .isEmpty =>
                   EmptyState(
-                    icon: Icons.receipt_long_outlined,
+                    icon: Icons.receipt_long_rounded,
                     title: l10n.ledgerEmptyTitle,
                     message: l10n.ledgerEmptyBody,
                   ),

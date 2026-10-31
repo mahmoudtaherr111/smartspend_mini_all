@@ -1,6 +1,7 @@
 import 'test_app.dart';
 
-/// A month as an Egyptian user might have it, so the record tab and the full list show real content.
+/// A month as an Egyptian user might have it, so the record tab, the full list and transaction detail show real
+/// content.
 void answerSampleMonth(FakeApi api) {
   final now = DateTime.now();
   Map<String, Object?> entry(
@@ -10,6 +11,10 @@ void answerSampleMonth(FakeApi api) {
     String type = 'expense',
     String? description,
     String? sub,
+    String? rawText,
+    String source = 'ai_parsed',
+    int? walletId,
+    int? contactId,
     int daysAgo = 0,
     int hour = 13,
   }) => {
@@ -19,6 +24,10 @@ void answerSampleMonth(FakeApi api) {
     'category': category,
     'subCategory': sub,
     'description': description,
+    'rawText': rawText,
+    'source': source,
+    'walletId': walletId,
+    'contactId': contactId,
     'date': DateTime(
       now.year,
       now.month,
@@ -28,33 +37,79 @@ void answerSampleMonth(FakeApi api) {
     ).toUtc().toIso8601String(),
   };
   final entries = [
-    entry(9, '185.00', 'أكل وشرب', description: 'Talabat', hour: 21),
+    entry(
+      9,
+      '185.00',
+      'أكل وشرب',
+      sub: 'دليفري',
+      description: 'Talabat',
+      rawText: 'طلبت عشاء من طلبات مع أحمد بـ 185 من كارت CIB',
+      source: 'ai_parsed',
+      walletId: 1,
+      contactId: 11,
+      hour: 21,
+    ),
     entry(
       8,
       '96.00',
       'مواصلات',
       description: 'UBER *TRIP',
       sub: 'أوبر/كريم',
+      rawText: 'خصم 96.00 ج.م من بطاقة CIB لدى UBER *TRIP',
+      source: 'sms',
+      walletId: 1,
       hour: 9,
     ),
-    entry(7, '50.00', 'أكل وشرب', sub: 'قهوة وكافيه', hour: 8),
+    entry(
+      7,
+      '50.00',
+      'أكل وشرب',
+      sub: 'قهوة وكافيه',
+      rawText: 'قهوة 50 جنيه',
+      source: 'voice',
+      hour: 8,
+    ),
     entry(
       6,
       '15000.00',
       'مرتب',
       type: 'income',
       sub: 'مرتب أساسي',
+      rawText: 'المرتب نزل 15000 على كارت CIB',
+      walletId: 1,
       daysAgo: 1,
       hour: 10,
     ),
-    entry(5, '1250.00', 'فواتير', sub: 'كهرباء', daysAgo: 1, hour: 18),
-    entry(4, '320.00', 'تسوق', description: 'Carrefour', daysAgo: 2, hour: 19),
+    entry(
+      5,
+      '1250.00',
+      'فواتير',
+      sub: 'كهرباء',
+      rawText: 'فاتورة الكهرباء 1250 من فودافون كاش',
+      walletId: 2,
+      daysAgo: 1,
+      hour: 18,
+    ),
+    entry(
+      4,
+      '320.00',
+      'تسوق',
+      description: 'Carrefour',
+      rawText: 'كارفور 320 جنيه',
+      source: 'image',
+      walletId: 1,
+      daysAgo: 2,
+      hour: 19,
+    ),
     entry(
       3,
       '500.00',
       'تحويل',
       type: 'transfer',
       sub: 'انستاباي',
+      rawText: 'حولت لأحمد 500 انستاباي',
+      walletId: 3,
+      contactId: 11,
       daysAgo: 3,
       hour: 12,
     ),
@@ -80,6 +135,49 @@ void answerSampleMonth(FakeApi api) {
       ];
       return {'items': filtered, 'total': filtered.length};
     })
+    ..answer('expense.getById', (input) {
+      final map = input is Map ? input : const <Object?, Object?>{};
+      final id = map['id'];
+      return entries.where((row) => row['id'] == id).firstOrNull;
+    })
+    ..answer('expense.getCategoryList', (_) => const <Object?>[])
+    ..answer('expense.getPendingClarifications', (_) => const <Object?>[])
+    ..answer('expense.searchTransactions', (input) {
+      final map = input is Map ? input : const <Object?, Object?>{};
+      final query = (map['query'] as String? ?? '').trim().toLowerCase();
+      if (query.isEmpty) return const <Object?>[];
+      return [
+        for (final row in entries)
+          if ([
+            row['category'],
+            row['subCategory'],
+            row['description'],
+            row['rawText'],
+          ].any(
+            (field) => field is String && field.toLowerCase().contains(query),
+          ))
+            row,
+      ];
+    })
+    ..answer(
+      'profile.listContacts',
+      (_) => {
+        'contacts': [
+          {
+            'id': 11,
+            'name': 'أحمد',
+            'relation': 'صاحبي',
+            'transactionCount': 4,
+          },
+          {
+            'id': 12,
+            'name': 'ماما',
+            'relation': 'والدتي',
+            'transactionCount': 6,
+          },
+        ],
+      },
+    )
     ..answer(
       'expense.getMonthlyStats',
       (_) => {
@@ -187,6 +285,14 @@ void answerSampleMonth(FakeApi api) {
             'subCategory': 'أوبر/كريم',
             'description': 'أوبر',
           },
+        ],
+      },
+    )
+    ..answer(
+      'profile.listContacts',
+      (_) => {
+        'contacts': [
+          {'id': 11, 'name': 'أحمد', 'relation': 'صديق', 'transactionCount': 5},
         ],
       },
     );

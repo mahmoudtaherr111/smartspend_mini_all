@@ -151,6 +151,9 @@ void main() {
       await tester.tap(find.text('الكل'));
       await tester.pumpAndSettle();
       await photograph(theme, 'transactions');
+      await tester.tap(find.text(inlineName('Talabat')).last);
+      await tester.pumpAndSettle();
+      await photograph(theme, 'transaction');
 
       // Without internet: the banner, and the sentence waiting at the top of the record tab. A fresh app, so no
       // draft from the review above is left in the box.

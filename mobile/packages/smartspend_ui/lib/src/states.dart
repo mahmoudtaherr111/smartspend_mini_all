@@ -33,7 +33,9 @@ class InlineMessage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(
-              warning ? Icons.info_outline : Icons.error_outline,
+              warning
+                  ? Icons.info_outline_rounded
+                  : Icons.error_outline_rounded,
               color: color,
               size: 20,
             ),
@@ -52,8 +54,8 @@ class InlineMessage extends StatelessWidget {
   }
 }
 
-/// Nothing to show yet, said as an invitation: what belongs here and the action that fills it (Nielsen Norman
-/// Group, empty states). Only shown after loading has finished.
+/// Nothing to show yet, said as an invitation: a brand-washed glyph circle, what belongs here and the action that
+/// fills it (FND-03, design brief §6). Only shown after loading has finished.
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
@@ -79,14 +81,19 @@ class EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: colors.accent.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
+          ExcludeSemantics(
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                gradient: colors.wash(Directionality.of(context)),
+                border: Border.all(
+                  color: colors.accent.withValues(alpha: 0.22),
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 34, color: colors.accent),
             ),
-            child: Icon(icon, size: 34, color: colors.accent),
           ),
           const SizedBox(height: SmartSpendSpacing.lg),
           Text(title, style: textTheme.titleLarge, textAlign: TextAlign.center),
@@ -130,7 +137,7 @@ class ErrorState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.cloud_off_outlined,
+            Icons.cloud_off_rounded,
             size: 40,
             color: colors.mutedForeground,
           ),
@@ -148,7 +155,7 @@ class ErrorState extends StatelessWidget {
             label: retryLabel,
             onPressed: onRetry,
             variant: ButtonVariant.secondary,
-            icon: Icons.refresh,
+            icon: Icons.refresh_rounded,
             expand: false,
           ),
         ],
@@ -177,7 +184,7 @@ class OfflineBanner extends StatelessWidget {
         color: colors.surfaceRaised,
         child: Row(
           children: [
-            Icon(Icons.wifi_off, size: 18, color: colors.warning),
+            Icon(Icons.wifi_off_rounded, size: 18, color: colors.warning),
             const SizedBox(width: SmartSpendSpacing.sm),
             Expanded(
               child: Text(

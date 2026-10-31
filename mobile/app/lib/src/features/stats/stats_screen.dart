@@ -149,6 +149,7 @@ class StatsScreen extends ConsumerWidget {
 
     return [
       StaggeredReveal(
+        sessionKey: 'tab-stats',
         children: [
           HeroFigure(
             label: l10n.summarySpentIn(

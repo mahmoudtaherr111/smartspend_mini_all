@@ -9,11 +9,12 @@ import 'ledger_providers.dart';
 import 'ledger_widgets.dart';
 import 'offline/outbox.dart';
 import 'outbox_section.dart';
+import 'pending_questions_card.dart';
 import 'record_composer.dart';
 import 'transactions_screen.dart';
 
-/// The record tab, the app's home: the month at a glance, the latest transactions by day, and the sentence box at
-/// the bottom. Pulling down reloads it.
+/// The record tab, the app's home: the month at a glance, waiting questions (REC-09), the outbox, the latest
+/// transactions by day, and the sentence box at the bottom. Pulling down reloads it.
 class RecordScreen extends ConsumerWidget {
   const RecordScreen({super.key});
 
@@ -23,6 +24,7 @@ class RecordScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final recent = ref.watch(recentEntriesProvider);
+    final hiddenIds = ref.watch(hiddenEntryIdsProvider);
     final online = ref.watch(networkStatusProvider);
     final hidden = ref.watch(
       appLockProvider.select((lock) => lock.hideAmounts),
@@ -58,6 +60,7 @@ class RecordScreen extends ConsumerWidget {
                   await ref.read(monthSummaryProvider.future);
                 },
                 child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
                     SmartSpendSpacing.screen,
                     SmartSpendSpacing.sm,
@@ -65,30 +68,47 @@ class RecordScreen extends ConsumerWidget {
                     SmartSpendSpacing.xl,
                   ),
                   children: [
-                    const MonthSummaryCard(),
-                    const OutboxSection(),
-                    SectionHeader(
-                      l10n.recentTitle,
-                      actionLabel: l10n.seeAll,
-                      onAction: () => context.go(TransactionsScreen.path),
-                    ),
-                    switch (recent) {
-                      AsyncData(:final value) when value.entries.isEmpty =>
-                        EmptyState(
-                          icon: Icons.receipt_long_outlined,
-                          title: l10n.ledgerEmptyTitle,
-                          message: l10n.ledgerEmptyBody,
+                    StaggeredReveal(
+                      sessionKey: 'tab-record',
+                      spacing: 0,
+                      children: [
+                        const MonthSummaryCard(),
+                        const PendingQuestionsCard(),
+                        const OutboxSection(),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SectionHeader(
+                              l10n.recentTitle,
+                              actionLabel: l10n.seeAll,
+                              onAction: () =>
+                                  context.go(TransactionsScreen.path),
+                            ),
+                            switch (recent) {
+                              AsyncData(:final value)
+                                  when value.entries
+                                      .where((e) => !hiddenIds.contains(e.id))
+                                      .isEmpty =>
+                                EmptyState(
+                                  icon: Icons.receipt_long_rounded,
+                                  title: l10n.ledgerEmptyTitle,
+                                  message: l10n.ledgerEmptyBody,
+                                ),
+                              AsyncData(:final value) => LedgerDayList(
+                                entries: value.entries,
+                              ),
+                              AsyncError() => ErrorState(
+                                message: l10n.ledgerLoadFailed,
+                                retryLabel: l10n.retry,
+                                onRetry: () =>
+                                    ref.invalidate(recentEntriesProvider),
+                              ),
+                              _ => const LedgerSkeleton(),
+                            },
+                          ],
                         ),
-                      AsyncData(:final value) => LedgerDayList(
-                        entries: value.entries,
-                      ),
-                      AsyncError() => ErrorState(
-                        message: l10n.ledgerLoadFailed,
-                        retryLabel: l10n.retry,
-                        onRetry: () => ref.invalidate(recentEntriesProvider),
-                      ),
-                      _ => const LedgerSkeleton(),
-                    },
+                      ],
+                    ),
                   ],
                 ),
               ),

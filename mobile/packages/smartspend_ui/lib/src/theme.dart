@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'tokens.dart';
@@ -48,6 +49,12 @@ abstract final class SmartSpendTheme {
       fontFamily: SmartSpendTypography.fontFamily,
       textTheme: SmartSpendTypography.textTheme(c.foreground),
       dividerTheme: DividerThemeData(color: c.border, thickness: 1),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       // Depth from tone, not lines (design brief §2): a card is a step lighter than what it sits on.
       cardTheme: CardThemeData(
         color: c.surface,

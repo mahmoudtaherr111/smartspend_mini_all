@@ -4,8 +4,15 @@ import 'package:smartspend_api/smartspend_api.dart';
 
 import 'ledger_models.dart';
 
-/// The ledger procedures the app calls, as `src/components/expenses/ExpenseForm.tsx`, `RecentExpenses.tsx` and
-/// `src/pages/Home.tsx` call them on the web, so a sentence is read, saved and undone the same way on both.
+/// Sentinel for an optional nullable field (`walletId`, `contactId`) left untouched in [LedgerApi.update].
+const Object unchangedField = _UnchangedField();
+
+final class _UnchangedField {
+  const _UnchangedField();
+}
+
+/// The ledger procedures the app calls, as `src/components/expenses/ExpenseForm.tsx`, `RecentExpenses.tsx`,
+/// `EditExpenseDialog.tsx`, `PendingQuestionsCard.tsx` and `src/pages/Home.tsx` call them on the web.
 class LedgerApi {
   LedgerApi(this._client, {Random? random})
     : _random = random ?? Random.secure();
@@ -78,6 +85,61 @@ class LedgerApi {
     return ClarificationResult.fromJson(_object(data));
   }
 
+  /// Sentences waiting on the server for an answer: `expense.getPendingClarifications`.
+  Future<List<PendingClarification>> pendingClarifications() async {
+    final data = await _client.query(
+      Procedures.expense.getPendingClarifications,
+    );
+    return [
+      for (final item in data as List<Object?>? ?? const [])
+        if (item is Map<String, Object?>) PendingClarification.fromJson(item),
+    ];
+  }
+
+  /// Dismisses a pending question without recording the sentence: `expense.dismissClarification`.
+  Future<void> dismissClarification(int clarificationId) => _client.mutate(
+    Procedures.expense.dismissClarification,
+    input: {'clarificationId': clarificationId},
+  );
+
+  /// Reads one saved transaction by [id], or null when it no longer exists: `expense.getById`.
+  Future<LedgerEntry?> getById(int id) async {
+    final data = await _client.query(
+      Procedures.expense.getById,
+      input: {'id': id},
+    );
+    return data is Map<String, Object?> ? LedgerEntry.fromJson(data) : null;
+  }
+
+  /// Edits a saved transaction: `expense.update`. Passing `null` to [walletId] or [contactId] unlinks it; leaving it
+  /// at [unchangedField] keeps whatever the server already has.
+  Future<void> update({
+    required int id,
+    num? amount,
+    String? type,
+    bool? refund,
+    String? category,
+    String? subCategory,
+    String? description,
+    String? date,
+    Object? walletId = unchangedField,
+    Object? contactId = unchangedField,
+  }) async {
+    final input = <String, Object?>{
+      'id': id,
+      'amount': ?amount,
+      'type': ?type,
+      'refund': ?refund,
+      'category': ?category,
+      'subCategory': ?subCategory,
+      'description': ?description,
+      'date': ?date,
+      if (!identical(walletId, unchangedField)) 'walletId': walletId as int?,
+      if (!identical(contactId, unchangedField)) 'contactId': contactId as int?,
+    };
+    await _client.mutate(Procedures.expense.update, input: input);
+  }
+
   /// Removes a saved transaction: `expense.delete`.
   Future<void> delete(int id) =>
       _client.mutate(Procedures.expense.delete, input: {'id': id});
@@ -104,6 +166,46 @@ class LedgerApi {
       },
     );
     return LedgerPage.fromJson(_object(data));
+  }
+
+  /// Searches transactions across category, subcategory, description and original sentence:
+  /// `expense.searchTransactions` (`query` must be 2–100 characters).
+  Future<List<LedgerEntry>> searchTransactions(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.length < 2) return const [];
+    final safe = trimmed.length > 100 ? trimmed.substring(0, 100) : trimmed;
+    final data = await _client.query(
+      Procedures.expense.searchTransactions,
+      input: {'query': safe},
+    );
+    return [
+      for (final item in data as List<Object?>? ?? const [])
+        if (item is Map<String, Object?>) LedgerEntry.fromJson(item),
+    ];
+  }
+
+  /// The person's custom categories: `expense.getCategoryList`.
+  Future<List<String>> customCategories() async {
+    final data = await _client.query(Procedures.expense.getCategoryList);
+    return [
+      for (final item in data as List<Object?>? ?? const [])
+        if (item is Map<String, Object?>)
+          if (item['name'] case final String name when name.trim().isNotEmpty)
+            name.trim(),
+    ];
+  }
+
+  /// The people saved on this account: `profile.listContacts`.
+  Future<List<ContactSummary>> contacts() async {
+    final data = await _client.query(
+      Procedures.profile.listContacts,
+      input: const {'filter': 'all'},
+    );
+    final raw = _object(data)['contacts'];
+    return [
+      for (final item in raw as List<Object?>? ?? const [])
+        if (item is Map<String, Object?>) ContactSummary.fromJson(item),
+    ];
   }
 
   /// The totals of [month] ("2026-10"), counted from [salaryDay] when the person's month starts on payday:

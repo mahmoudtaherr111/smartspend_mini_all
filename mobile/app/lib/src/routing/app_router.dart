@@ -10,6 +10,7 @@ import '../features/capture/capture_review_screen.dart';
 import '../features/capture/capture_settings_screen.dart';
 import '../features/in_progress_screen.dart';
 import '../features/ledger/record_screen.dart';
+import '../features/ledger/transaction_detail_screen.dart';
 import '../features/ledger/transactions_screen.dart';
 import '../features/lock/security_screen.dart';
 import '../features/more/more_screen.dart';
@@ -145,9 +146,9 @@ String? sessionRedirect(SessionState session, String location) {
   };
 }
 
-/// The app's routes: the sign-in screens, and one branch per tab, each keeping its own back stack while the user
-/// moves between tabs. The router follows the session: signing in, out, or a session the server ended moves the
-/// user at once.
+/// The app's routes: the sign-in screens, one branch per tab (each keeping its own back stack while the user moves
+/// between tabs), and shared detail routes reachable from any tab. The router follows the session: signing in, out,
+/// or a session the server ended moves the user at once.
 final routerProvider = Provider<GoRouter>((ref) {
   final session = ValueNotifier<SessionState>(ref.read(sessionProvider));
   ref.listen(sessionProvider, (_, next) => session.value = next);
@@ -170,6 +171,20 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const RegisterScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: TransactionDetailScreen.path,
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['entryId'] ?? '') ?? 0;
+          final launch = state.extra is TransactionDetailLaunch
+              ? state.extra! as TransactionDetailLaunch
+              : null;
+          return TransactionDetailScreen(
+            entryId: id,
+            initialEntry: launch?.entry,
+            heroTag: launch?.heroTag,
+          );
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

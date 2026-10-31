@@ -76,17 +76,22 @@ jobs:
       - name: Boot an iPhone simulator
         id: simulator
         run: |
+          xcrun simctl shutdown all 2>/dev/null || true
           devices=$(xcrun simctl list devices available --json)
           pick() { echo "$devices" | jq -r "[.devices | to_entries[] | select(.key | contains(\"iOS\")) | .value[] | select(.name | test(\"$1\"))] | first | .udid // empty"; }
           udid=$(pick '^iPhone [0-9]+ Pro$')
           [ -n "$udid" ] || udid=$(pick '^iPhone')
           [ -n "$udid" ] || { echo "::error::No iPhone simulator is available on this runner."; exit 1; }
+          xcrun simctl erase "$udid" 2>/dev/null || true
           xcrun simctl boot "$udid"
           xcrun simctl bootstatus "$udid" -b
+          # Ensure SpringBoard and IPC services are responsive before drive attaches
+          xcrun simctl launch "$udid" com.apple.springboard 2>/dev/null || true
+          sleep 3
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
       - name: Screenshots
         working-directory: mobile/app
-        timeout-minutes: 30
+        timeout-minutes: 15
         run: |
           mkdir -p build
           flutter drive -d "${{ steps.simulator.outputs.udid }}" --driver=test_driver/integration_test.dart --target=integration_test/screenshots_test.dart --dart-define-from-file=config/development.json > build/drive.log 2>&1 || { cat build/drive.log; exit 1; }

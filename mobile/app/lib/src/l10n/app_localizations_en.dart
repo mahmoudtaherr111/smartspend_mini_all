@@ -1090,4 +1090,198 @@ class AppLocalizationsEn extends AppLocalizations {
   String statsCategoryEmptyBody(String category, String month) {
     return 'Nothing recorded under «$category» in $month.';
   }
+
+  @override
+  String get transactionTitle => 'Transaction';
+
+  @override
+  String get transactionKindExpense => 'Expense';
+
+  @override
+  String get transactionKindRefund => 'Refund';
+
+  @override
+  String get transactionKindIncome => 'Income';
+
+  @override
+  String get transactionKindTransfer => 'Transfer';
+
+  @override
+  String get transactionKindInvestment => 'Investment';
+
+  @override
+  String get transactionDetailsSection => 'Details';
+
+  @override
+  String get transactionCategoryLabel => 'Category';
+
+  @override
+  String get transactionDateLabel => 'Date and time';
+
+  @override
+  String get transactionWalletLabel => 'Wallet or card';
+
+  @override
+  String get transactionPersonLabel => 'Person';
+
+  @override
+  String get transactionNoteLabel => 'Note';
+
+  @override
+  String get transactionSourceLabel => 'Recorded from';
+
+  @override
+  String get transactionSourceTyped => 'Typed sentence';
+
+  @override
+  String get transactionSourceManual => 'Entered by hand';
+
+  @override
+  String get transactionSourceVoice => 'Voice';
+
+  @override
+  String get transactionSourceSms => 'Bank or wallet message';
+
+  @override
+  String get transactionSourceImage => 'Receipt photo';
+
+  @override
+  String get transactionSentenceLabel => 'Original text';
+
+  @override
+  String get transactionEditAction => 'Edit transaction';
+
+  @override
+  String get transactionEditOffline =>
+      'Connect to the internet to edit this transaction.';
+
+  @override
+  String get transactionDeleteAction => 'Delete transaction';
+
+  @override
+  String get transactionDeleteOffline =>
+      'Connect to the internet to delete this transaction.';
+
+  @override
+  String get transactionLoadFailed =>
+      'We can\'t load this transaction right now. Check your connection and try again.';
+
+  @override
+  String get transactionNotFoundTitle => 'This transaction isn\'t here';
+
+  @override
+  String get transactionNotFoundBody =>
+      'It may have been deleted on another device or on the website.';
+
+  @override
+  String get transactionBack => 'Go back';
+
+  @override
+  String personTransactionsTitle(String name) {
+    return 'Transactions with $name';
+  }
+
+  @override
+  String get personTransactionsEmpty =>
+      'No transactions shown for this person right now.';
+
+  @override
+  String get editTransactionTitle => 'Edit transaction';
+
+  @override
+  String get editTransactionSubtitle =>
+      'If you change the category, the app remembers your choice for similar sentences.';
+
+  @override
+  String get editKindLabel => 'Kind';
+
+  @override
+  String get editAmountLabel => 'Amount';
+
+  @override
+  String get editAmountInvalid =>
+      'Enter an amount above zero, like 150 or 150.50.';
+
+  @override
+  String get editCategoryLabel => 'Category';
+
+  @override
+  String get editSubCategoryLabel => 'Subcategory';
+
+  @override
+  String get editDateLabel => 'Date';
+
+  @override
+  String get editNoteLabel => 'Note';
+
+  @override
+  String get editWalletLabel => 'Wallet or card';
+
+  @override
+  String get editWalletNone => 'No wallet';
+
+  @override
+  String get editPersonLabel => 'Person';
+
+  @override
+  String get editPersonNone => 'No person';
+
+  @override
+  String get editSave => 'Save changes';
+
+  @override
+  String get editCancel => 'Back';
+
+  @override
+  String get editSaved => 'Transaction updated.';
+
+  @override
+  String get editFailed => 'We couldn\'t save your changes. Try again.';
+
+  @override
+  String get pendingQuestionsTitle => 'Waiting for your answer';
+
+  @override
+  String get pendingQuestionsSubtitle =>
+      'Sentences that stopped at a question and aren\'t recorded yet.';
+
+  @override
+  String get pendingQuestionsReply => 'Reply';
+
+  @override
+  String get pendingQuestionsDismiss => 'Dismiss';
+
+  @override
+  String get pendingQuestionsNext => 'Got it, one more question left.';
+
+  @override
+  String get pendingQuestionDismissed => 'Question dismissed.';
+
+  @override
+  String get pendingQuestionsFailed =>
+      'We couldn\'t record it right now. Try again.';
+
+  @override
+  String get transactionWalletUnknown => 'Unknown wallet';
+
+  @override
+  String get transactionPersonUnknown => 'Unknown person';
+
+  @override
+  String signOutPendingOutboxWarning(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'You have $count transactions recorded offline that haven\'t synced yet. If you sign out now, they will be lost.',
+      one: 'You have 1 transaction recorded offline that hasn\'t synced yet. If you sign out now, it will be lost.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get signOutConfirmAnyway => 'Sign out anyway';
+
+  @override
+  String get signOutCancel => 'Stay';
 }
