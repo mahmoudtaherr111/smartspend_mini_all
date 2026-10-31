@@ -654,9 +654,6 @@
   "api/wallet-router.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
     }
   },
   "api/webauthn-router.ts": {

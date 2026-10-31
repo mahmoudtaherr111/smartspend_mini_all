@@ -39,22 +39,27 @@ final class Wallet {
     required this.balance,
     this.lastFour,
     this.balanceObservedAt,
-  });
+    String? provider,
+  }) : provider = provider ?? '';
 
-  factory Wallet.fromJson(Map<String, Object?> json) => Wallet(
-    id: (json['id'] as num).toInt(),
-    name: json['name'] as String? ?? '',
-    kind: WalletKind.of(json['provider'] as String? ?? ''),
-    balance: readAmount(json['balance']) ?? 0,
-    lastFour: switch (json['lastFourDigits']) {
-      final String digits when digits.isNotEmpty => digits,
-      _ => null,
-    },
-    balanceObservedAt: switch (json['balanceObservedAt']) {
-      final String at => DateTime.tryParse(at)?.toLocal(),
-      _ => null,
-    },
-  );
+  factory Wallet.fromJson(Map<String, Object?> json) {
+    final provider = json['provider'] as String? ?? '';
+    return Wallet(
+      id: (json['id'] as num).toInt(),
+      name: json['name'] as String? ?? '',
+      kind: WalletKind.of(provider),
+      balance: readAmount(json['balance']) ?? 0,
+      lastFour: switch (json['lastFourDigits']) {
+        final String digits when digits.isNotEmpty => digits,
+        _ => null,
+      },
+      balanceObservedAt: switch (json['balanceObservedAt']) {
+        final String at => DateTime.tryParse(at)?.toLocal(),
+        _ => null,
+      },
+      provider: provider,
+    );
+  }
 
   final int id;
   final String name;
@@ -62,6 +67,16 @@ final class Wallet {
   final num balance;
   final String? lastFour;
   final DateTime? balanceObservedAt;
+  final String provider;
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'provider': provider.isEmpty ? kind.provider : provider,
+    'balance': balance,
+    'lastFourDigits': lastFour,
+    'balanceObservedAt': balanceObservedAt?.toUtc().toIso8601String(),
+  };
 }
 
 /// A wallet's money in and out over one month (`wallet.getWalletMonth`), summed by the server.

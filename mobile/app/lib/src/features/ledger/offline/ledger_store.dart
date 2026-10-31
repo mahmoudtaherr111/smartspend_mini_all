@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../../wallets/wallet_models.dart';
 import '../ledger_models.dart';
 
 /// What a sentence waiting in the outbox is doing.
@@ -82,7 +83,7 @@ final class OutboxItem {
 }
 
 /// Everything the app keeps on the phone for one signed-in account: the outbox, and the last answers it showed,
-/// so the record tab has something to show without a network.
+/// so the record tab and wallets list have something to show without a network.
 final class StoredLedger {
   const StoredLedger({
     this.accountKey,
@@ -90,6 +91,7 @@ final class StoredLedger {
     this.recent,
     this.summaryMonth,
     this.summary,
+    this.wallets,
     this.offlineLimit,
   });
 
@@ -108,6 +110,13 @@ final class StoredLedger {
       final Map<String, Object?> summary => MonthSummary.fromJson(summary),
       _ => null,
     },
+    wallets: switch (json['wallets']) {
+      final List<Object?> rows => [
+        for (final row in rows)
+          if (row is Map<String, Object?>) Wallet.fromJson(row),
+      ],
+      _ => null,
+    },
     offlineLimit: (json['offlineLimit'] as num?)?.toInt(),
   );
 
@@ -117,6 +126,7 @@ final class StoredLedger {
   final LedgerPage? recent;
   final String? summaryMonth;
   final MonthSummary? summary;
+  final List<Wallet>? wallets;
 
   /// How many sentences the plan lets wait offline (`ai.getUserLimits`); the web's 3 when unknown.
   final int? offlineLimit;
@@ -127,6 +137,7 @@ final class StoredLedger {
     LedgerPage? recent,
     String? summaryMonth,
     MonthSummary? summary,
+    List<Wallet>? wallets,
     int? offlineLimit,
   }) => StoredLedger(
     accountKey: accountKey ?? this.accountKey,
@@ -134,6 +145,7 @@ final class StoredLedger {
     recent: recent ?? this.recent,
     summaryMonth: summaryMonth ?? this.summaryMonth,
     summary: summary ?? this.summary,
+    wallets: wallets ?? this.wallets,
     offlineLimit: offlineLimit ?? this.offlineLimit,
   );
 
@@ -144,6 +156,10 @@ final class StoredLedger {
     'recent': recent?.toJson(),
     'summaryMonth': summaryMonth,
     'summary': summary?.toJson(),
+    'wallets': switch (wallets) {
+      final List<Wallet> rows => [for (final wallet in rows) wallet.toJson()],
+      null => null,
+    },
     'offlineLimit': offlineLimit,
   };
 }

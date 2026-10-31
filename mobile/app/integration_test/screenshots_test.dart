@@ -120,6 +120,17 @@ void main() {
         await photograph(theme, slug);
       }
 
+      // Wallets and one wallet, reached from the More tab where the loop ended.
+      final walletsRow = find.text('المحافظ والكروت');
+      await tester.ensureVisible(walletsRow);
+      await tester.pumpAndSettle();
+      await tester.tap(walletsRow);
+      await tester.pumpAndSettle();
+      await photograph(theme, 'wallets');
+      await tester.tap(find.text('كارت CIB'));
+      await tester.pumpAndSettle();
+      await photograph(theme, 'wallet');
+
       // A sentence to review, then every transaction.
       await tester.tap(find.text('تسجيل').last);
       await tester.pumpAndSettle();

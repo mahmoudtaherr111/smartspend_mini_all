@@ -1,16 +1,21 @@
 // Wallets and cards (MON-01..03): the list, one wallet with this month's money as the server sums it, adding,
-// editing and deleting, in every state.
+// editing and deleting, offline cached list, and every state.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
 import 'package:smartspend_app/src/features/wallets/wallet_models.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import 'support/sample_month.dart';
 import 'support/test_app.dart';
 
-Future<TestApp> _openWallets(WidgetTester tester, FakeApi api) async {
+Future<TestApp> _openWallets(
+  WidgetTester tester,
+  FakeApi api, {
+  TestApp? existing,
+}) async {
   api.answer('localAuth.me', (_) => phoneUser());
-  final app = TestApp(token: 'stored-token', api: api);
+  final app = existing ?? TestApp(token: 'stored-token', api: api);
   await app.pump(tester);
   await tester.tap(find.text('المزيد').last);
   await tester.pumpAndSettle();
@@ -70,6 +75,80 @@ void main() {
     await tester.tap(find.text('ضيف محفظة أو كارت'));
     await tester.pumpAndSettle();
     expect(find.text('محفظة أو كارت جديد'), findsOneWidget);
+  });
+
+  testWidgets('offline shows the last cached wallets with the offline banner', (
+    tester,
+  ) async {
+    final onlineApi = FakeApi();
+    answerSampleMonth(onlineApi);
+    final first = await _openWallets(tester, onlineApi);
+    expect(find.text('كارت CIB'), findsOneWidget);
+
+    // Cold-starting offline with the saved ledger store shows the cached wallets and the offline banner.
+    final offlineApi = FakeApi()..offline = true;
+    final second = TestApp(token: 'stored-token', api: offlineApi);
+    second.ledgerStore.ledger = first.ledgerStore.ledger;
+    await second.pump(tester);
+    await tester.tap(find.text('المزيد').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('المحافظ والكروت'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OfflineBanner), findsOneWidget);
+    expect(find.text('كارت CIB'), findsOneWidget);
+    expect(find.text(_money('32,371')), findsOneWidget);
+  });
+
+  testWidgets('offline without a cached list shows an error and retries', (
+    tester,
+  ) async {
+    final api = FakeApi()..answer('localAuth.me', (_) => phoneUser());
+    answerSampleMonth(api);
+    final app = TestApp(token: 'stored-token', api: api);
+    await app.pump(tester);
+
+    api.offline = true;
+    await tester.tap(find.text('المزيد').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('المحافظ والكروت'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OfflineBanner), findsOneWidget);
+    expect(find.byType(ErrorState), findsOneWidget);
+
+    api.offline = false;
+    await tester.tap(find.text('جرّب تاني'));
+    await tester.pumpAndSettle();
+    expect(find.text('كارت CIB'), findsOneWidget);
+  });
+
+  testWidgets('cached wallets from one account never appear for another', (
+    tester,
+  ) async {
+    final api = FakeApi()
+      ..answer('localAuth.me', (_) => {...phoneUser(), 'id': 99});
+    final app = TestApp(token: 'other-user-token', api: api);
+    app.ledgerStore.ledger = StoredLedger(
+      accountKey: 'phone:42',
+      wallets: [
+        Wallet.fromJson(const {
+          'id': 1,
+          'name': 'كارت منى الخاص',
+          'provider': 'CIB',
+          'balance': '9000',
+        }),
+      ],
+    );
+    await app.pump(tester);
+    api.offline = true;
+    await tester.tap(find.text('المزيد').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('المحافظ والكروت'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('كارت منى الخاص'), findsNothing);
+    expect(find.byType(ErrorState), findsOneWidget);
   });
 
   testWidgets('adding a wallet checks what was typed, then saves it', (
@@ -255,19 +334,28 @@ void main() {
     },
   );
 
-  test('reads the server rows, tolerating what is missing', () {
+  test('reads and round-trips server rows, tolerating what is missing', () {
     final wallet = Wallet.fromJson(const {
       'id': 4,
       'name': 'Old card',
       'provider': 'SomethingNew',
       'balance': '-150.25',
       'lastFourDigits': '',
+      'balanceObservedAt': '2026-10-30T10:15:00.000Z',
     });
     expect(wallet.kind, WalletKind.card);
     expect(wallet.balance, -150.25);
     expect(wallet.lastFour, isNull);
-    expect(wallet.balanceObservedAt, isNull);
+    expect(wallet.balanceObservedAt, isNotNull);
     expect(WalletKind.of('VodafoneCash'), WalletKind.vodafoneCash);
+
+    final stored = StoredLedger.fromJson(
+      StoredLedger(accountKey: 'phone:42', wallets: [wallet]).toJson(),
+    );
+    expect(stored.wallets, hasLength(1));
+    expect(stored.wallets!.single.id, 4);
+    expect(stored.wallets!.single.toJson()['provider'], 'SomethingNew');
+    expect(stored.wallets!.single.balance, -150.25);
 
     final month = WalletMonth.fromJson(const {'moneyIn': '12.50'});
     expect(month.moneyIn, 12.5);

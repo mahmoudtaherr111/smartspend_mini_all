@@ -145,7 +145,7 @@ class _EntryRow extends StatelessWidget {
       icon: categoryIcon(entry.category),
       iconColor: categoryColor(context, entry.category),
       title: entry.title,
-      subtitle: '${entry.category} · ${words.clock(entry.date)}',
+      subtitle: '${entry.category} · ${inlineName(words.clock(entry.date))}',
       amount: entry.amount.abs(),
       kind: entryKind(entry),
     );

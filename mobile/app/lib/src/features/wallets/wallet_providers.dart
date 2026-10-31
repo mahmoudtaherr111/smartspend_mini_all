@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 
 import '../../core/providers.dart';
+import '../auth/session_controller.dart';
 import '../ledger/ledger_models.dart';
 import '../ledger/ledger_providers.dart';
 import 'wallet_models.dart';
@@ -90,9 +91,48 @@ final walletsRepositoryProvider = Provider<WalletsRepository>(
   (ref) => WalletsRepository(ref.watch(trpcClientProvider)),
 );
 
-final walletsProvider = FutureProvider<List<Wallet>>(
-  (ref) => ref.watch(walletsRepositoryProvider).list(),
-);
+/// Who owns cached wallet answers right now: signing out or switching to another account resets any provider that
+/// watches it, while `me` filling in extra profile fields for the same account does not re-fetch.
+final _walletSessionScopeProvider =
+    Provider<({bool signedIn, String? accountKey})>(
+      (ref) => switch (ref.watch(sessionProvider)) {
+        SignedIn(:final user?) => (
+          signedIn: true,
+          accountKey: '${user.kind.name}:${user.id}',
+        ),
+        SignedIn() => (signedIn: true, accountKey: null),
+        _ => (signedIn: false, accountKey: null),
+      },
+    );
+
+/// The person's wallets and cards; without a network, the last list seen for this account.
+final walletsProvider = FutureProvider<List<Wallet>>((ref) async {
+  final scope = ref.watch(_walletSessionScopeProvider);
+  if (!scope.signedIn) return const [];
+  final local = ref.watch(localLedgerProvider);
+  try {
+    final wallets = await ref.watch(walletsRepositoryProvider).list();
+    ref.read(networkStatusProvider.notifier).reached();
+    unawaited(
+      local.update(
+        (stored) => stored.copyWith(
+          accountKey: scope.accountKey ?? stored.accountKey,
+          wallets: wallets,
+        ),
+      ),
+    );
+    return wallets;
+  } on ApiNetworkException {
+    ref.read(networkStatusProvider.notifier).unreachable();
+    final stored = await local.snapshot();
+    final sameAccount =
+        scope.accountKey == null ||
+        stored.accountKey == null ||
+        stored.accountKey == scope.accountKey;
+    if (sameAccount && stored.wallets != null) return stored.wallets!;
+    rethrow;
+  }
+});
 
 /// A wallet's detail: its row from the list, this month's money in and out, and its latest transactions.
 final class WalletDetail {
@@ -117,9 +157,19 @@ final walletDetailProvider = FutureProvider.family<WalletDetail?, int>((
   final repository = ref.watch(walletsRepositoryProvider);
   final monthKey = await ref.watch(currentMonthProvider.future);
   final salaryDay = await ref.watch(salaryDayProvider.future);
-  final (month, transactions) = await (
-    repository.month(id, monthKey, salaryDay: salaryDay),
-    repository.transactions(id),
-  ).wait;
-  return WalletDetail(wallet: wallet, month: month, transactions: transactions);
+  try {
+    final (month, transactions) = await (
+      repository.month(id, monthKey, salaryDay: salaryDay),
+      repository.transactions(id),
+    ).wait;
+    ref.read(networkStatusProvider.notifier).reached();
+    return WalletDetail(
+      wallet: wallet,
+      month: month,
+      transactions: transactions,
+    );
+  } on ApiNetworkException {
+    ref.read(networkStatusProvider.notifier).unreachable();
+    rethrow;
+  }
 });
