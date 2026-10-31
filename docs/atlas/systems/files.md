@@ -206,7 +206,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/ai-memory/text-utils.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-memory/types.ts` | [ai-center](ai-center.md) |
 | `api/services/ai-memory/vector-store.ts` | [ai-center](ai-center.md) |
-| `api/services/batch-ai-service.ts` | [insights](insights.md) |
 | `api/services/budget-status.ts` | [money](money.md) |
 | `api/services/coach/cashflows.ts` | [money](money.md) |
 | `api/services/coach/plans.ts` | [money](money.md) |

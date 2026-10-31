@@ -18,7 +18,8 @@ export type AiUsageChannel =
   | "report"
   | "image"
   | "sms"
-  | "goal";
+  | "goal"
+  | "business";
 
 export interface AiUsageUser {
   id: number;
@@ -45,6 +46,7 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
     image: 2_500,
     sms: 800,
     goal: 500,
+    business: 0,
   },
   pro: {
     parse: 6_000,
@@ -53,6 +55,7 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
     image: 2_500,
     sms: 1_500,
     goal: 3_500,
+    business: 3_000,
   },
   ultra: {
     parse: 8_000,
@@ -61,6 +64,7 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
     image: 3_500,
     sms: 2_000,
     goal: 5_000,
+    business: 4_000,
   },
 };
 
@@ -159,6 +163,14 @@ export function resolvePlanMaxPerRequest(
       ultra: 3_500,
     };
     return parseSafeInt(cfg[`goal_max_tokens_${plan}`], defaults[plan]);
+  }
+  if (channel === "business") {
+    const defaults: Record<PlanId, number> = {
+      free: 0,
+      pro: 2_048,
+      ultra: 4_096,
+    };
+    return parseSafeInt(cfg[`business_max_tokens_${plan}`], defaults[plan]);
   }
   const defaults: Record<PlanId, number> = {
     free: 384,

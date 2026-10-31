@@ -40,7 +40,6 @@ flowchart LR
     tbl_user_profiles[("user_profiles")]
     tbl_users[("users")]
   end
-  ext_gemini{{"Google Gemini API"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_ai_center[["AI Center (system)"]]
   sys_ai_platform[["AI providers and usage limits (system)"]]
@@ -50,7 +49,6 @@ flowchart LR
   sys_web_app[["Web and mobile app shell (system)"]]
   job_monthly_behavior_snapshots --> sys_platform
   job_monthly_report_generation --> sys_platform
-  mod_ai_insights --> ext_gemini
   mod_ai_insights --> sys_expense_capture
   mod_ai_insights --> sys_platform
   mod_ai_insights -.-> tbl_expenses
@@ -89,7 +87,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `ai-insights` — AI insights and reports | The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, the printable Pro report, and the wait each plan has between two AI reports. The Gemini batch service only simulates its calls. | 8 |
+| `ai-insights` — AI insights and reports | The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, the printable Pro report, and the wait each plan has between two AI reports. The Gemini batch service only simulates its calls. | 7 |
 | `web-insights` — Insights UI | The monthly AI insights view shown in the AI Center's analysis tab. | 1 |
 
 ## API procedures
@@ -134,9 +132,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 ## Outside systems
 
-| System | Kind | Modules |
-| --- | --- | --- |
-| Google Gemini API | ai-provider | `ai-insights` |
+_None._
 
 ## Other systems
 
@@ -148,14 +144,13 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | yes | `api/services/batch-ai-service.ts` |
 | `DEV` | frontend | `src/components/insights/AIInsights.tsx` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/insights.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>28 files and declarations</summary>
+<details><summary>27 files and declarations</summary>
 
 - `api/ai-router.ts#ai.compareMonths`
 - `api/ai-router.ts#ai.generateMonthlyInsights`
@@ -178,7 +173,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/profile-router.ts#profile.updateSmartProfile`
 - `api/profile-router.ts#rest-of-file`
 - `api/services/adaptive-question-engine.ts`
-- `api/services/batch-ai-service.ts`
 - `api/services/lifestyle-inference-engine.ts`
 - `api/services/personal-context-builder.ts`
 - `api/services/pro-report-engine.ts`

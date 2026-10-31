@@ -15,6 +15,8 @@ import { invalidateUserMemory } from "./lib/muscle-memory";
 import { getSystemSettings } from "./lib/settings-cache";
 import { env } from "./lib/env";
 import { recordGeminiCall } from "./lib/ai-ledger";
+import { mapModelName } from "./lib/model-mapper";
+import { assertAiBudget } from "./lib/ai-usage-policy";
 
 const BUSINESS_TYPES = [
   { id: "restaurant", label: "مطاعم ومأكولات", icon: "🍤" },
@@ -52,6 +54,7 @@ export const businessRouter = router({
         .where(and(
           eq(userBusinesses.userId, ctx.user.id),
           eq(userBusinesses.userType, ctx.user.type),
+          eq(userBusinesses.isActive, true),
         ));
 
       if (businesses.length === 0) {
@@ -115,9 +118,11 @@ export const businessRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "مفتاح AI غير متاح" });
       }
 
+      await assertAiBudget(ctx.user, "business", 500);
+      const modelName = mapModelName("flash");
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: "gemini-3.1-flash-lite",
+        model: modelName,
         systemInstruction: SUGGESTION_PROMPT,
         generationConfig: {
           temperature: 0.3,
@@ -138,7 +143,7 @@ export const businessRouter = router({
 
       try {
         const result = await model.generateContent(userPrompt);
-        recordGeminiCall(ctx.user, "business", "gemini-3.1-flash-lite", result.response.usageMetadata);
+        recordGeminiCall(ctx.user, "business", modelName, result.response.usageMetadata);
         const text = result.response.text();
         const parsed = JSON.parse(text);
 

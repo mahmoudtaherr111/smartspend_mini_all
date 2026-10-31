@@ -195,7 +195,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `business.get` | query | `businessProcedure` | yes | `business_categories`, `user_businesses`, `user_contacts` | — | — | `src/components/settings/BusinessSettingsView.tsx`, `src/pages/Home.tsx` |
 | `business.linkContact` | mutation | `businessProcedure` | yes | `user_businesses`, `user_contacts` | `user_contacts` | — | — |
 | `business.removeCategory` | mutation | `businessProcedure` | yes | `business_categories`, `user_businesses` | `business_categories` | — | `src/components/settings/BusinessSettingsView.tsx` |
-| `business.suggestCategories` | mutation | `businessAiProcedure` | yes | — | — | `api/lib/ai-ledger.ts`, `api/lib/env.ts`, `api/lib/settings-cache.ts` | `src/components/settings/BusinessSettingsView.tsx` |
+| `business.suggestCategories` | mutation | `businessAiProcedure` | yes | — | — | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/lib/settings-cache.ts` | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.types` | query | `businessProcedure` | no | — | — | — | — |
 | `business.update` | mutation | `businessProcedure` | yes | `user_businesses` | `user_businesses` | — | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.updateCategory` | mutation | `businessProcedure` | yes | `business_categories`, `user_businesses` | `business_categories` | — | — |
@@ -282,7 +282,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `expense.getCategoryList` | query | `authedProcedure` | no | `expense_categories` | — | — | — |
 | `expense.getDebtBalances` | query | `authedProcedure` | no | — | — | `api/services/debt-ledger.ts` | `src/components/debts/DebtsPanel.tsx` |
 | `expense.getMonthSummary` | query | `authedProcedure` | yes | `expense_daily_rollups` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/services/financial-month.ts` | `src/pages/Home.tsx` |
-| `expense.getMonthlyStats` | query | `authedProcedure` | yes | `expense_daily_rollups`, `expenses` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/services/expense-rollups.ts`, `api/services/financial-month.ts`, `contracts/categories.ts` | `src/components/settings/BusinessSettingsView.tsx`, `src/pages/Home.tsx` |
+| `expense.getMonthlyStats` | query | `authedProcedure` | yes | `expense_daily_rollups`, `expenses` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/lib/spending-behavior.ts`, `api/services/expense-rollups.ts`, `api/services/financial-month.ts`, `contracts/categories.ts` | `src/components/settings/BusinessSettingsView.tsx`, `src/pages/Home.tsx` |
 | `expense.getPendingClarifications` | query | `authedProcedure` | no | `pending_clarifications` | — | — | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.getSeasonSpending` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/seasons.ts` | `src/components/seasons/SeasonsPanel.tsx` |
 | `expense.getYearlyStats` | query | `authedProcedure` | yes | `expense_daily_rollups` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts` | — |

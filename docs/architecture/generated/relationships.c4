@@ -119,7 +119,6 @@ model {
   smartspend.api.modules.ai-insights -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.modules.ai-insights -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.modules.ai-insights -[reads]-> smartspend.mysql.users
-  smartspend.api.modules.ai-insights -[uses]-> gemini
   smartspend.api.modules.ai-insights -[writes]-> smartspend.mysql.profile_learning_events
   smartspend.api.modules.ai-insights -[writes]-> smartspend.mysql.user_contacts
   smartspend.api.modules.ai-insights -[writes]-> smartspend.mysql.user_profiles
@@ -818,6 +817,7 @@ model {
   smartspend.api.trpc.business.removeCategory -[reads]-> smartspend.mysql.business_categories
   smartspend.api.trpc.business.removeCategory -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.business.removeCategory -[writes]-> smartspend.mysql.business_categories
+  smartspend.api.trpc.business.suggestCategories -[uses]-> smartspend.api.modules.ai-governance
   smartspend.api.trpc.business.suggestCategories -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.business.suggestCategories -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.business.update -[reads]-> smartspend.mysql.user_businesses

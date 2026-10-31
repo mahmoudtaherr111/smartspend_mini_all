@@ -188,8 +188,8 @@ export const imageRouter = router({
 
       let expenseId: number | null = null;
       if (input.saveExpense) {
-        const { createLedgerExpense } = await import("./services/ledger-writer");
-        const created = await createLedgerExpense(
+        const { createLedgerEntry } = await import("./services/ledger-writer");
+        const created = await createLedgerEntry(
           { userId: ctx.user.id, userType: ctx.user.type },
           {
             type: normalized.type,
@@ -207,7 +207,7 @@ export const imageRouter = router({
             },
           },
         );
-        expenseId = created.id;
+        expenseId = created.id ?? null;
       }
 
       return {

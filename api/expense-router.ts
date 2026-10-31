@@ -34,6 +34,7 @@ import { SEASON_IDS, SEASON_LABELS, latestSeasonRange, seasonRange, type SeasonR
 import { assertEntityOwnership } from "./lib/ownership-guard";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
 import { CATEGORIES, normalizeCategoryName, normalizeSubCategoryName } from "./lib/category-registry";
+import { calculateSpendingBehavior } from "./lib/spending-behavior";
 import { createLogger } from "./lib/log";
 import {
   afterLedgerWrite,
@@ -1983,18 +1984,14 @@ export const expenseRouter = router({
         (d) => d.amount > Math.max(500, dailyAverageSpike * 2.5),
       );
 
-      let spendingBehavior = "planned";
-      if (hasSpike || flexPercent > 45) spendingBehavior = "spiky";
-      if (flexPercent > 55) spendingBehavior = "emotional";
-      if (sortedCategories.length <= 2 && totalExpense > 0)
-        spendingBehavior = "concentrated";
-
-      const expenseIncomeRatio =
-        totalIncome > 0 ? (totalExpense / totalIncome) * 100 : null;
-      if (expenseIncomeRatio !== null) {
-        if (expenseIncomeRatio > 95) spendingBehavior = "impulsive";
-        if (expenseIncomeRatio < 40) spendingBehavior = "conservative";
-      }
+      const behaviorResult = calculateSpendingBehavior({
+        totalExpense,
+        totalIncome,
+        flexPercent,
+        hasSpike,
+        categoryCount: sortedCategories.length,
+      });
+      const spendingBehavior = behaviorResult.behavior;
 
       return {
         structuredMonthlyBreakdown: {
@@ -2044,6 +2041,8 @@ export const expenseRouter = router({
           spendingIncreased:
             expenseChangePercent === null ? null : expenseChangePercent > 0,
           spendingBehavior,
+          spendingBehaviorLabelAr: behaviorResult.labelAr,
+          spendingBehaviorLabelEn: behaviorResult.labelEn,
           comparisonType,
           weekNumber,
         },

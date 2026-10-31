@@ -166,16 +166,20 @@ export const StatsView = memo(function StatsView({
             الشخصية المالية
           </p>
           <p className="text-base font-bold text-violet-700 dark:text-violet-300">
-            {stats?.behavioralInsights?.spendingBehavior === "emotional"
-              ? "صرف عاطفي"
-              : stats?.behavioralInsights?.spendingBehavior === "impulsive"
-                ? "مندفع"
-                : stats?.behavioralInsights?.spendingBehavior === "planned"
-                  ? "مخطط"
-                  : stats?.behavioralInsights?.spendingBehavior ===
-                      "conservative"
-                    ? "محافظ"
-                    : "متوازن"}
+            {(stats?.behavioralInsights as any)?.spendingBehaviorLabelAr ||
+              (stats?.behavioralInsights?.spendingBehavior === "emotional"
+                ? "صرف عاطفي"
+                : stats?.behavioralInsights?.spendingBehavior === "impulsive"
+                  ? "مندفع"
+                  : stats?.behavioralInsights?.spendingBehavior === "planned"
+                    ? "مخطط"
+                    : stats?.behavioralInsights?.spendingBehavior === "conservative"
+                      ? "محافظ"
+                      : stats?.behavioralInsights?.spendingBehavior === "spiky"
+                        ? "صرف فجائي"
+                        : stats?.behavioralInsights?.spendingBehavior === "concentrated"
+                          ? "صرف مركز"
+                          : "متوازن")}
           </p>
           <p className="text-[10px] text-violet-500">بناءً على السلوك الشهري</p>
         </div>

@@ -5,6 +5,7 @@ import { expenses, monthlyBehaviorSnapshots } from "../../db/schema";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { DISCRETIONARY_CATEGORIES } from "../../contracts/categories";
 import { businessDateKey, businessWeekday } from "../lib/app-time";
+import { calculateSpendingBehavior } from "../lib/spending-behavior";
 
 export interface TransactionLike {
   amount: string | number;
@@ -146,11 +147,14 @@ export function buildBehaviorSnapshot(
       ? Math.round((totalExpense / incomeBaseline) * 100)
       : null;
 
-  let spendingBehavior = "planned";
-  if (spikeDays.length > 0 || flexPercent > 45) spendingBehavior = "spiky";
-  if (flexPercent > 55) spendingBehavior = "emotional";
-  if (topCategories.length <= 2 && totalExpense > 0)
-    spendingBehavior = "concentrated";
+  const behaviorResult = calculateSpendingBehavior({
+    totalExpense,
+    totalIncome: incomeBaseline,
+    flexPercent,
+    hasSpike: spikeDays.length > 0,
+    categoryCount: topCategories.length,
+  });
+  const spendingBehavior = behaviorResult.behavior;
 
   let financialStability = "unknown";
   if (expenseIncomeRatio !== null) {
