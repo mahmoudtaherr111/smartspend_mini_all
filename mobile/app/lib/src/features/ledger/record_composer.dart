@@ -1,20 +1,25 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import 'category_style.dart';
+import 'ledger_models.dart';
 import 'ledger_providers.dart';
 import 'manual_record_sheet.dart';
+import 'offline/ledger_store.dart';
 import 'offline/offline_rules.dart';
 import 'offline/outbox.dart';
 import 'record_flow.dart';
+import 'voice/voice_permission_sheet.dart';
+import 'voice/voice_providers.dart';
 
-/// Where a sentence is typed, at the bottom of the record tab within the thumb's reach (rule 3.3). Every sentence
-/// goes through the outbox: read at once when the network allows — saved, shown for review, or answered — and
-/// kept on the phone to be sent later when it does not.
+/// Where a sentence is typed or recorded, at the bottom of the record tab within thumb's reach (rule 3.3).
+/// Supports text, quick manual record, and hold-to-record / tap-to-record voice entry (REC-05).
 class RecordComposer extends ConsumerStatefulWidget {
   const RecordComposer({super.key});
 
@@ -28,6 +33,13 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
   String _debouncedQuery = '';
   bool _busy = false;
 
+  // Voice recording state
+  bool _isRecording = false;
+  int _recordingSeconds = 0;
+  double _currentAmplitude = 0.0;
+  StreamSubscription<double>? _amplitudeSub;
+  Timer? _recordTimer;
+
   @override
   void initState() {
     super.initState();
@@ -37,12 +49,15 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _recordTimer?.cancel();
+    unawaited(_amplitudeSub?.cancel());
     _text.removeListener(_onTextChanged);
     _text.dispose();
     super.dispose();
   }
 
   void _onTextChanged() {
+    setState(() {});
     _debounceTimer?.cancel();
     final raw = _text.text.trim();
     if (!RegExp(r'[0-9٠-٩]').hasMatch(raw) || raw.length < 2) {
@@ -59,6 +74,165 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
         }
       }
     });
+  }
+
+  Future<void> _startVoiceRecording() async {
+    if (_busy || _isRecording) return;
+    final isOnline = ref.read(networkStatusProvider);
+    if (!isOnline) {
+      _tell('التسجيل بالصوت محتاج نت، تقدر تكتب الجملة يدوي دلوقتي');
+      return;
+    }
+
+    final recorder = ref.read(audioRecorderServiceProvider);
+    final hasPerm = await recorder.hasPermission();
+    if (!hasPerm) {
+      if (!mounted) return;
+      final allowed = await showVoicePermissionSheet(context);
+      if (!allowed || !mounted) return;
+      final granted = await recorder.requestPermission();
+      if (!granted || !mounted) {
+        _tell('محتاجين إذن الميكروفون عشان تسجل بالصوت');
+        return;
+      }
+    }
+
+    try {
+      await recorder.startRecording();
+      await _amplitudeSub?.cancel();
+      _amplitudeSub = recorder.amplitudeStream.listen((amp) {
+        if (mounted) setState(() => _currentAmplitude = amp);
+      });
+      _recordingSeconds = 0;
+      _recordTimer?.cancel();
+      _recordTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (mounted) setState(() => _recordingSeconds = timer.tick);
+      });
+      unawaited(SmartSpendHaptics.selection());
+      setState(() {
+        _isRecording = true;
+      });
+    } catch (_) {
+      _tell('تعذر بدء التسجيل، حاول مرة ثانية');
+    }
+  }
+
+  Future<void> _cancelVoiceRecording() async {
+    if (!_isRecording) return;
+    _recordTimer?.cancel();
+    setState(() {
+      _isRecording = false;
+      _recordingSeconds = 0;
+      _currentAmplitude = 0.0;
+    });
+    unawaited(_amplitudeSub?.cancel());
+    final recorder = ref.read(audioRecorderServiceProvider);
+    await recorder.cancelRecording();
+    unawaited(SmartSpendHaptics.warning());
+    if (mounted) {
+      showSmartSpendNotice(context, 'تم إلغاء التسجيل');
+    }
+  }
+
+  Future<void> _stopAndProcessVoice() async {
+    if (!_isRecording) return;
+    _recordTimer?.cancel();
+    final duration = _recordingSeconds;
+    setState(() {
+      _isRecording = false;
+      _recordingSeconds = 0;
+      _currentAmplitude = 0.0;
+    });
+    unawaited(_amplitudeSub?.cancel());
+
+    final recorder = ref.read(audioRecorderServiceProvider);
+    final result = await recorder.stopRecording();
+    if (result == null || result.audioBase64.trim().isEmpty) return;
+
+    final effectiveDuration =
+        duration > 0 ? duration : result.durationSeconds;
+
+    UpgradeLimitReason? upgradeReason;
+    String? errorMessage;
+    ParseResult? parse;
+
+    await _working(() async {
+      try {
+        final api = ref.read(ledgerApiProvider);
+        parse = await api.parseVoice(
+          audioBase64: result.audioBase64,
+          mimeType: result.mimeType,
+          durationSeconds: effectiveDuration,
+        );
+      } on ApiException catch (e) {
+        final msg = e.message.toLowerCase();
+        if (e.code == 'FORBIDDEN' ||
+            msg.contains('voice') ||
+            msg.contains('رصيد') ||
+            msg.contains('ثواني') ||
+            msg.contains('باقة')) {
+          upgradeReason = UpgradeLimitReason.voiceSeconds;
+        } else {
+          errorMessage = e.message;
+        }
+      } catch (e) {
+        final msg = e.toString().toLowerCase();
+        if (msg.contains('voice') || msg.contains('رصيد') || msg.contains('ثواني')) {
+          upgradeReason = UpgradeLimitReason.voiceSeconds;
+        } else {
+          errorMessage = 'حصل خطأ في معالجة التسجيل، جرّب مرة تانية';
+        }
+      }
+    });
+
+    if (!mounted) return;
+
+    if (upgradeReason != null) {
+      await showUpgradePromptSheet(
+        context: context,
+        reason: upgradeReason!,
+      );
+      return;
+    }
+
+    if (errorMessage != null) {
+      _tell(errorMessage!);
+      return;
+    }
+
+    if (parse == null || parse!.items.isEmpty) {
+      _tell('لم نتمكن من سماع شيء أو استخراج مصاريف');
+      return;
+    }
+
+    final p = parse!;
+    if (p.decision == ParseDecision.autoSave) {
+      final api = ref.read(ledgerApiProvider);
+      final ids = await api.save(
+        p.items,
+        rawText: 'تسجيل صوتي',
+        classificationLogId: p.classificationLogId,
+      );
+      if (!mounted) return;
+      announceSaved(context, ref, p.items, ids, automatic: true);
+      refreshLedger(ref);
+    } else {
+      final api = ref.read(ledgerApiProvider);
+      final outboxItem = OutboxItem(
+        id: api.newRequestId(),
+        text: 'تسجيل صوتي',
+        createdAt: clock.now(),
+        parse: p,
+      );
+      if (p.decision == ParseDecision.review) {
+        final saved = await reviewAndSave(context, ref, outboxItem);
+        if (saved == true && mounted) {
+          refreshLedger(ref);
+        }
+      } else if (p.decision == ParseDecision.clarify) {
+        await answerAndSave(context, ref, outboxItem);
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -84,7 +258,6 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
         if (saved == true) {
           _text.clear();
         } else {
-          // Not saved: the sentence stays in the box to be edited, and leaves the outbox.
           await outbox.discard(item);
         }
       case SubmitNeedsAnswer(:final item):
@@ -108,8 +281,6 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     }
   }
 
-  /// Shows the send button spinning while [task] talks to the server, and only then: not while a sheet waits for
-  /// the person.
   Future<T> _working<T>(Future<T> Function() task) async {
     setState(() => _busy = true);
     try {
@@ -129,7 +300,8 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = context.smartSpendColors;
-    // A sentence taken back from the outbox to be edited.
+    final isTapToRecord = ref.watch(tapToRecordModeProvider);
+
     ref.listen(composerDraftProvider, (_, draft) {
       if (draft == null) return;
       _text.text = draft;
@@ -156,7 +328,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (preview != null)
+              if (preview != null && !_isRecording)
                 Padding(
                   padding: const EdgeInsets.only(bottom: SmartSpendSpacing.xs),
                   child: ExcludeSemantics(
@@ -210,48 +382,221 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                     ),
                   ),
                 ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _text,
-                      minLines: 1,
-                      maxLines: 4,
-                      enabled: !_busy,
-                      textInputAction: TextInputAction.send,
-                      keyboardType: TextInputType.text,
-                      onSubmitted: (_) => _submit(),
-                      decoration: InputDecoration(
-                        hintText: l10n.composerHint,
-                        prefixIcon: IconButton(
-                          tooltip: l10n.manualRecordTitle,
-                          icon: const Icon(Icons.dialpad_rounded),
-                          onPressed: () => showManualRecordSheet(context),
+              if (_busy && _text.text.isEmpty && !_isRecording)
+                _buildProcessingBar(colors)
+              else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: _isRecording
+                          ? _buildRecordingStatus(colors, isTapToRecord)
+                          : TextField(
+                              controller: _text,
+                              minLines: 1,
+                              maxLines: 4,
+                              enabled: !_busy,
+                              textInputAction: TextInputAction.send,
+                              keyboardType: TextInputType.text,
+                              onSubmitted: (_) => _submit(),
+                              decoration: InputDecoration(
+                                hintText: l10n.composerHint,
+                                prefixIcon: IconButton(
+                                  tooltip: l10n.manualRecordTitle,
+                                  icon: const Icon(Icons.dialpad_rounded),
+                                  onPressed: () => showManualRecordSheet(context),
+                                ),
+                                suffixIcon: IconButton(
+                                  tooltip: isTapToRecord
+                                      ? 'الوضع: ضغطة واحدة'
+                                      : 'الوضع: ضغط مطول',
+                                  icon: Icon(
+                                    isTapToRecord
+                                        ? Icons.touch_app_rounded
+                                        : Icons.gesture_rounded,
+                                    size: 20,
+                                    color: colors.mutedForeground,
+                                  ),
+                                  onPressed: () {
+                                    ref
+                                        .read(
+                                          tapToRecordModeProvider.notifier,
+                                        )
+                                        .toggle();
+                                  },
+                                ),
+                              ),
+                            ),
+                    ),
+                    const SizedBox(width: SmartSpendSpacing.xs),
+                    if (!_isRecording) ...[
+                      _buildMicButton(colors, isTapToRecord),
+                      const SizedBox(width: SmartSpendSpacing.xs),
+                      SizedBox.square(
+                        dimension: 48,
+                        child: IconButton.filled(
+                          tooltip: l10n.composerSend,
+                          onPressed: _busy ? null : _submit,
+                          icon: _busy
+                              ? SizedBox.square(
+                                  dimension: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: colors.foreground,
+                                  ),
+                                )
+                              : const Icon(Icons.arrow_upward),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: SmartSpendSpacing.sm),
-                  SizedBox.square(
-                    dimension: 52,
-                    child: IconButton.filled(
-                      tooltip: l10n.composerSend,
-                      onPressed: _busy ? null : _submit,
-                      icon: _busy
-                          ? SizedBox.square(
-                              dimension: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: colors.foreground,
-                              ),
-                            )
-                          : const Icon(Icons.arrow_upward),
-                    ),
-                  ),
-                ],
-              ),
+                    ] else
+                      _buildMicButton(
+                        colors,
+                        isTapToRecord,
+                        isRecording: true,
+                      ),
+                  ],
+                ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecordingStatus(SmartSpendColors colors, bool isTapToRecord) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.md),
+      decoration: BoxDecoration(
+        color: colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: colors.accent.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: const BoxDecoration(
+              color: Color(0xFFEF4444),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: SmartSpendSpacing.sm),
+          Text(
+            '00:${_recordingSeconds.toString().padLeft(2, '0')}',
+            style: SmartSpendTypography.style(14, FontWeight.w600)
+                .copyWith(color: colors.foreground),
+          ),
+          const SizedBox(width: SmartSpendSpacing.md),
+          Expanded(
+            child: Center(
+              child: VoiceLevelMeter(level: _currentAmplitude),
+            ),
+          ),
+          Text(
+            isTapToRecord ? 'إلغاء' : 'اسحب للإلغاء',
+            style: SmartSpendTypography.style(12, FontWeight.w400)
+                .copyWith(color: colors.mutedForeground),
+          ),
+          const SizedBox(width: SmartSpendSpacing.xs),
+          IconButton(
+            key: const Key('voice-cancel-button'),
+            icon: const Icon(Icons.close_rounded, size: 20),
+            tooltip: 'إلغاء التسجيل',
+            onPressed: () => unawaited(_cancelVoiceRecording()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProcessingBar(SmartSpendColors colors) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.lg),
+      decoration: BoxDecoration(
+        color: colors.surfaceRaised,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: colors.accent,
+            ),
+          ),
+          const SizedBox(width: SmartSpendSpacing.md),
+          Text(
+            'بنسمع التسجيل...',
+            style: SmartSpendTypography.style(14, FontWeight.w500)
+                .copyWith(color: colors.mutedForeground),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMicButton(
+    SmartSpendColors colors,
+    bool isTapToRecord, {
+    bool isRecording = false,
+  }) {
+    final keyName = isRecording && isTapToRecord
+        ? 'voice-stop-button'
+        : 'voice-mic-button';
+
+    return SizedBox.square(
+      dimension: 48,
+      child: Tooltip(
+        message: isTapToRecord
+            ? (isRecording ? 'إيقاف التسجيل' : 'تسجيل بالصوت (ضغطة للبدء)')
+            : 'تسجيل بالصوت (اضغط مطولاً)',
+        child: GestureDetector(
+          key: Key(keyName),
+          behavior: HitTestBehavior.opaque,
+          onTap: isTapToRecord
+              ? (isRecording
+                    ? () => unawaited(_stopAndProcessVoice())
+                    : () => unawaited(_startVoiceRecording()))
+              : () {
+                  SmartSpendHaptics.selection();
+                  showSmartSpendNotice(
+                    context,
+                    'اضغط مطولاً على المايك للتسجيل',
+                  );
+                },
+          onLongPressStart: isTapToRecord ? null : (_) => unawaited(_startVoiceRecording()),
+          onLongPressEnd: isTapToRecord ? null : (_) => unawaited(_stopAndProcessVoice()),
+          onLongPressMoveUpdate: isTapToRecord
+              ? null
+              : (details) {
+                  if (details.offsetFromOrigin.dx.abs() > 60 ||
+                      details.offsetFromOrigin.dy < -50) {
+                    unawaited(_cancelVoiceRecording());
+                  }
+                },
+          child: Container(
+            decoration: BoxDecoration(
+              color: isRecording ? colors.danger : colors.surfaceRaised,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isRecording ? colors.danger : colors.border,
+              ),
+            ),
+            child: Center(
+              child: Icon(
+                isRecording && isTapToRecord
+                    ? Icons.stop_rounded
+                    : Icons.mic_rounded,
+                color: isRecording ? colors.onAccent : colors.accent,
+                size: 22,
+              ),
+            ),
           ),
         ),
       ),

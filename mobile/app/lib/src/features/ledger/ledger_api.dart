@@ -29,6 +29,25 @@ class LedgerApi {
     return ParseResult.fromJson(_object(data));
   }
 
+  /// Transcribes and parses a spoken sentence: `ai.parseVoiceExpense` (REC-05).
+  Future<ParseResult> parseVoice({
+    required String audioBase64,
+    String mimeType = 'audio/m4a',
+    int durationSeconds = 0,
+    bool? businessMode,
+  }) async {
+    final data = await _client.mutate(
+      Procedures.ai.parseVoiceExpense,
+      input: {
+        'audioBase64': audioBase64,
+        'mimeType': mimeType,
+        'durationSeconds': durationSeconds,
+        'businessMode': ?businessMode,
+      },
+    );
+    return ParseResult.fromJson(_object(data));
+  }
+
   /// Hints which category a sentence belongs to while typing: `expense.previewCategory`.
   Future<CategoryPreview?> previewCategory(String text) async {
     final data = await _client.query(
