@@ -40,21 +40,27 @@ class LimitsCard extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.speed_rounded,
-                        size: 20,
-                        color: anyLow ? colors.warning : colors.accent,
-                      ),
-                      const SizedBox(width: SmartSpendSpacing.sm),
-                      Text(
-                        'استهلاك باقتك الشهرية',
-                        style: SmartSpendTypography.style(14, FontWeight.w700).copyWith(color: colors.foreground),
-                      ),
-                    ],
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.speed_rounded,
+                          size: 20,
+                          color: anyLow ? colors.warning : colors.accent,
+                        ),
+                        const SizedBox(width: SmartSpendSpacing.sm),
+                        Flexible(
+                          child: Text(
+                            'استهلاك باقتك الشهرية',
+                            style: SmartSpendTypography.style(14, FontWeight.w700).copyWith(color: colors.foreground),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  if (anyLow || anyExhausted)
+                  if (anyLow || anyExhausted) ...[
+                    const SizedBox(width: SmartSpendSpacing.xs),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
@@ -68,6 +74,7 @@ class LimitsCard extends ConsumerWidget {
                         ),
                       ),
                     ),
+                  ],
                 ],
               ),
               const SizedBox(height: SmartSpendSpacing.md),
@@ -136,16 +143,22 @@ class _QuotaRow extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(icon, size: 16, color: colors.mutedForeground),
-                const SizedBox(width: SmartSpendSpacing.xs),
-                Text(
-                  label,
-                  style: SmartSpendTypography.style(13, FontWeight.w600).copyWith(color: colors.foreground),
-                ),
-              ],
+            Expanded(
+              child: Row(
+                children: [
+                  Icon(icon, size: 16, color: colors.mutedForeground),
+                  const SizedBox(width: SmartSpendSpacing.xs),
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: SmartSpendTypography.style(13, FontWeight.w600).copyWith(color: colors.foreground),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(width: SmartSpendSpacing.xs),
             Text(
               detail,
               style: SmartSpendTypography.style(12, FontWeight.w500).copyWith(

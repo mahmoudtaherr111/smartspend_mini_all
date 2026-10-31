@@ -39,14 +39,7 @@ class RecordScreen extends ConsumerWidget {
     return ScaffoldMessenger(
       child: Scaffold(
         appBar: AppBar(
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l10n.navRecord),
-              const SizedBox(width: SmartSpendSpacing.sm),
-              const StreakBadge(),
-            ],
-          ),
+          title: Text(l10n.navRecord),
           actions: [
             // Record by hand (REC-12)
             IconButton(
@@ -102,6 +95,13 @@ class RecordScreen extends ConsumerWidget {
                       sessionKey: 'tab-record',
                       spacing: 0,
                       children: [
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: SmartSpendSpacing.sm),
+                          child: Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: StreakBadge(),
+                          ),
+                        ),
                         const MonthSummaryCard(),
                         const PendingQuestionsCard(),
                         const OutboxSection(),

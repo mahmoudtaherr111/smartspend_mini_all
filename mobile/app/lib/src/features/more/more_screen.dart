@@ -33,6 +33,8 @@ class MoreScreen extends StatelessWidget {
         padding: const EdgeInsets.all(SmartSpendSpacing.screen),
         children: [
           const AccountCard(),
+          const SizedBox(height: SmartSpendSpacing.md),
+          const BankCaptureCard(),
           const LimitsCard(),
           const SizedBox(height: SmartSpendSpacing.md),
           GroupedSection(
@@ -94,8 +96,6 @@ class MoreScreen extends StatelessWidget {
               const LanguageRow(),
             ],
           ),
-          const SizedBox(height: SmartSpendSpacing.lg),
-          const BankCaptureCard(),
         ],
       ),
     );
