@@ -20,3 +20,4 @@ export 'src/states.dart';
 export 'src/theme.dart';
 export 'src/tokens.dart';
 export 'src/typography.dart';
+export 'src/upgrade_prompt.dart';
