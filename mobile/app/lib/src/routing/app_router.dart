@@ -11,6 +11,7 @@ import '../features/capture/capture_settings_screen.dart';
 import '../features/in_progress_screen.dart';
 import '../features/ledger/record_screen.dart';
 import '../features/ledger/transaction_detail_screen.dart';
+import '../features/ledger/transaction_search_screen.dart';
 import '../features/ledger/transactions_screen.dart';
 import '../features/lock/security_screen.dart';
 import '../features/more/more_screen.dart';
@@ -171,6 +172,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const RegisterScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: TransactionSearchScreen.path,
+        builder: (context, state) => const TransactionSearchScreen(),
       ),
       GoRoute(
         path: TransactionDetailScreen.path,

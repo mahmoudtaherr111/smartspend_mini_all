@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { MySqlDialect } from "drizzle-orm/mysql-core";
 import type { SQL } from "drizzle-orm";
 import { clarifiedItemDate, expenseRouter, namedPersonOf, reviewCorrection } from "./expense-router";
+import { expandArabicSearchVariants } from "./lib/unified-normalizer";
 import { db } from "./queries/connection";
 import { expenses } from "../db/schema";
 
@@ -89,6 +90,20 @@ describe("Expense Router", () => {
       /^\(`expenses`\.`user_id` = \? and `expenses`\.`user_type` = \? and \(.+ or .+\)\)$/,
     );
     expect(query.params.slice(0, 2)).toEqual([7, "local"]);
+  });
+
+  it("expands Arabic letter variants so alternative spellings match", () => {
+    const variants = expandArabicSearchVariants("اوبر");
+    expect(variants).toContain("اوبر");
+    expect(variants).toContain("أوبر");
+
+    const haTaVariants = expandArabicSearchVariants("صيدليه");
+    expect(haTaVariants).toContain("صيدليه");
+    expect(haTaVariants).toContain("صيدلية");
+
+    const yaVariants = expandArabicSearchVariants("على");
+    expect(yaVariants).toContain("على");
+    expect(yaVariants).toContain("علي");
   });
 });
 

@@ -289,7 +289,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `expense.list` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `contracts/constants.ts` | `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
 | `expense.listInstallmentPlans` | query | `authedProcedure` | no | `cashflow_settlements`, `expenses`, `installment_plans`, `scheduled_cashflows` | — | `api/lib/normalizer-v2.ts`, `api/services/installments.ts` | `src/components/installments/InstallmentsPanel.tsx` |
 | `expense.previewCategory` | query | `authedProcedure` | yes | `user_dictionaries` | — | `api/lib/normalizer-v2.ts`, `api/lib/rule-engine.ts`, `contracts/constants.ts` | `src/components/expenses/ExpenseForm.tsx` |
-| `expense.searchTransactions` | query | `authedProcedure` | yes | `expenses` | — | — | `src/components/dashboard/GlobalSearch.tsx` |
+| `expense.searchTransactions` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/unified-normalizer.ts` | `src/components/dashboard/GlobalSearch.tsx` |
 | `expense.update` | mutation | `authedProcedure` | yes | `classification_logs` | `classification_logs` | `api/lib/category-registry.ts`, `api/lib/correction-rules.ts`, `api/lib/ownership-guard.ts`, `api/lib/relationship-normalizer.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts` | `src/components/expenses/EditExpenseDialog.tsx` |
 
 ### `export` — `api/export-router.ts`

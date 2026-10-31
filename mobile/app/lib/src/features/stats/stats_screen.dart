@@ -11,6 +11,7 @@ import '../../l10n/app_localizations.dart';
 import '../ledger/category_style.dart';
 import '../ledger/ledger_providers.dart';
 import '../ledger/record_screen.dart';
+import '../ledger/transaction_search_screen.dart';
 import 'category_transactions_screen.dart';
 import 'stats_models.dart';
 import 'stats_providers.dart';
@@ -48,7 +49,16 @@ class StatsScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.navStats)),
+      appBar: AppBar(
+        title: Text(l10n.navStats),
+        actions: [
+          IconButton(
+            tooltip: l10n.searchTitle,
+            icon: const Icon(Icons.search_rounded),
+            onPressed: () => context.push(TransactionSearchScreen.path),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           if (!online) OfflineBanner(l10n.offlineBanner),

@@ -12,6 +12,7 @@ import '../wallets/wallet_providers.dart';
 import 'ledger_api.dart';
 import 'ledger_models.dart';
 import 'offline/ledger_store.dart';
+import 'offline/offline_rules.dart';
 
 final ledgerApiProvider = Provider<LedgerApi>(
   (ref) => LedgerApi(ref.watch(trpcClientProvider)),
@@ -371,4 +372,70 @@ void invalidateLedgerContainer(ProviderContainer container) {
     ..invalidate(categoryTransactionsProvider)
     ..invalidate(walletsProvider)
     ..invalidate(walletDetailProvider);
+}
+
+/// Search result containing the matching entries and whether they came from the offline cache.
+final class SearchResult {
+  const SearchResult({
+    required this.query,
+    required this.entries,
+    required this.isOffline,
+  });
+
+  final String query;
+  final List<LedgerEntry> entries;
+  final bool isOffline;
+}
+
+/// Searches transactions across category, subcategory, description and notes (REC-11).
+/// Online: calls `expense.searchTransactions`. Offline or network failure: searches cached entries locally with Arabic normalization.
+final transactionSearchResultsProvider =
+    FutureProvider.family<SearchResult, String>((ref, query) async {
+  final trimmed = query.trim();
+  if (trimmed.length < 2) {
+    return SearchResult(query: trimmed, entries: const [], isOffline: false);
+  }
+
+  final online = ref.watch(networkStatusProvider);
+  if (!online) {
+    return _searchOfflineCache(ref, trimmed);
+  }
+
+  try {
+    final api = ref.watch(ledgerApiProvider);
+    final entries = await api.searchTransactions(trimmed);
+    ref.read(networkStatusProvider.notifier).reached();
+    return SearchResult(query: trimmed, entries: entries, isOffline: false);
+  } on ApiNetworkException {
+    ref.read(networkStatusProvider.notifier).unreachable();
+    return _searchOfflineCache(ref, trimmed);
+  }
+});
+
+Future<SearchResult> _searchOfflineCache(Ref ref, String query) async {
+  final local = ref.watch(localLedgerProvider);
+  final stored = await local.snapshot();
+  final cachedEntries = [
+    if (stored.recent != null) ...stored.recent!.entries,
+  ];
+
+  final seen = <int>{};
+  final unique = <LedgerEntry>[];
+  for (final e in cachedEntries) {
+    if (seen.add(e.id)) unique.add(e);
+  }
+
+  final normalizedQ = normalizeArabic(query);
+  final matches = unique.where((entry) {
+    final cat = normalizeArabic(entry.category);
+    final sub = entry.subCategory != null ? normalizeArabic(entry.subCategory!) : '';
+    final desc = entry.description != null ? normalizeArabic(entry.description!) : '';
+    final raw = entry.rawText != null ? normalizeArabic(entry.rawText!) : '';
+    return cat.contains(normalizedQ) ||
+        sub.contains(normalizedQ) ||
+        desc.contains(normalizedQ) ||
+        raw.contains(normalizedQ);
+  }).toList();
+
+  return SearchResult(query: query, entries: matches, isOffline: true);
 }

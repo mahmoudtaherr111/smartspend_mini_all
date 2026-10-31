@@ -13,6 +13,7 @@ import 'offline/outbox.dart';
 import 'outbox_section.dart';
 import 'pending_questions_card.dart';
 import 'record_composer.dart';
+import 'transaction_search_screen.dart';
 import 'transactions_screen.dart';
 
 /// The record tab, the app's home: the month at a glance, waiting questions (REC-09), the outbox, the latest
@@ -43,6 +44,12 @@ class RecordScreen extends ConsumerWidget {
               tooltip: l10n.manualRecordTitle,
               icon: const Icon(Icons.add_rounded),
               onPressed: () => showManualRecordSheet(context),
+            ),
+            // Search transactions (REC-11)
+            IconButton(
+              tooltip: l10n.searchTitle,
+              icon: const Icon(Icons.search_rounded),
+              onPressed: () => context.push(TransactionSearchScreen.path),
             ),
             // Amounts out of sight in one tap, for a phone someone else can see.
             IconButton(

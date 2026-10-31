@@ -29,6 +29,7 @@ import { businessDateKey, parseBusinessInstant } from "./lib/app-time";
 import { installmentProgress, installmentProgressFromLinked, installmentProgressFromRecorded } from "./services/installments";
 import { runRuleEngine } from "./lib/rule-engine";
 import { normalizeV2 } from "./lib/normalizer-v2";
+import { expandArabicSearchVariants } from "./lib/unified-normalizer";
 import { SEASON_IDS, SEASON_LABELS, latestSeasonRange, seasonRange, type SeasonRange } from "./lib/seasons";
 import { assertEntityOwnership } from "./lib/ownership-guard";
 import { DISCRETIONARY_CATEGORIES } from "../contracts/categories";
@@ -941,16 +942,20 @@ export const expenseRouter = router({
       // The text matches go through or(), which parenthesizes them. and() does not wrap a
       // raw fragment, so the bare `a LIKE ? OR b LIKE ?` this used to pass bound tighter
       // to the user filter than to the other matches and returned other users' rows.
-      const q = `%${input.query}%`;
-      const conditions = and(
-        eq(expenses.userId, userId),
-        eq(expenses.userType, userType),
-        or(
+      const variants = expandArabicSearchVariants(input.query);
+      const textConditions = variants.flatMap((v) => {
+        const q = `%${v}%`;
+        return [
           like(expenses.category, q),
           like(expenses.subCategory, q),
           like(expenses.description, q),
           like(expenses.rawText, q),
-        ),
+        ];
+      });
+      const conditions = and(
+        eq(expenses.userId, userId),
+        eq(expenses.userType, userType),
+        or(...textConditions),
       );
 
       const items = await db

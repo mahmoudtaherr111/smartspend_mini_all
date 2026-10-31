@@ -985,6 +985,7 @@ model {
   smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.expense.searchTransactions -[reads]-> smartspend.mysql.expenses
+  smartspend.api.trpc.expense.searchTransactions -[uses]-> smartspend.api.modules.arabic-nlp
   smartspend.api.trpc.expense.update -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.expense.update -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.expense.update -[uses]-> smartspend.api.modules.classification
