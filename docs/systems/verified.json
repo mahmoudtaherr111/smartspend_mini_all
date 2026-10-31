@@ -257,7 +257,7 @@
         "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "79a9ed6120aa",
+        "api/expense-router.ts#rest-of-file": "042ee4fc583f",
         "api/image-router.ts": "062a7162dcfb",
         "api/lib/admissibility-gate.ts": "3b5889850057",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
@@ -309,7 +309,7 @@
         "api/lib/taxonomy-adapter.ts": "fd63a36d2f25",
         "api/lib/taxonomy-ssot.ts": "fb99f8118120",
         "api/lib/text-normalizer.ts": "05ac2af6ca6a",
-        "api/lib/unified-normalizer.ts": "603756615433",
+        "api/lib/unified-normalizer.ts": "bfd4f91bfd4b",
         "api/lib/voice-intake-gate.ts": "0a8bf7293a27",
         "api/services/parser-trace.ts": "aa8b5bad3877",
         "src/components/expenses/ExpenseForm.tsx": "39a1b0c52277",
@@ -317,7 +317,7 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-10-31 fa3a344b",
+      "checked": "2026-10-31 1886a71d",
       "arabic": "813b6a5893fe",
       "arabicChecked": "2026-10-31 fa3a344b"
     },
@@ -376,9 +376,9 @@
         "api/expense-router.ts#expense.list": "cd0a841edd6c",
         "api/expense-router.ts#expense.listInstallmentPlans": "826717e1eefe",
         "api/expense-router.ts#expense.previewCategory": "dab97f94d0c8",
-        "api/expense-router.ts#expense.searchTransactions": "9d92514f1158",
+        "api/expense-router.ts#expense.searchTransactions": "2e8fa55eefed",
         "api/expense-router.ts#expense.update": "da26821aaae7",
-        "api/expense-router.ts#rest-of-file": "79a9ed6120aa",
+        "api/expense-router.ts#rest-of-file": "042ee4fc583f",
         "api/export-router.ts#export.myExpenses": "ebbfe5c845ec",
         "api/export-router.ts#rest-of-file": "264f56b1884e",
         "api/goals-router.ts": "7abbe5a2ba53",
@@ -426,7 +426,7 @@
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-10-31 6c9445bc",
+      "checked": "2026-10-31 1886a71d",
       "arabic": "3269a08c3424",
       "arabicChecked": "2026-10-31 6c9445bc"
     },

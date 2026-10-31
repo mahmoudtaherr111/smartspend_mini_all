@@ -10,12 +10,12 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (8 of 
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-31 fa3a344b | 2026-10-31 fa3a344b | 18 | — | — | 1 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-31 1886a71d | 2026-10-31 fa3a344b | 18 | — | — | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 11 | — | — | 3 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-27 d1c95984 | 2026-10-27 d1c95984 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-29 2618b97e | 2026-10-29 e8d275c8 | 9 | — | 2 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-31 6c9445bc | 2026-10-31 6c9445bc | 7 | — | 1 | 7 | 1 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-31 1886a71d | 2026-10-31 6c9445bc | 7 | — | 1 | 7 | 1 |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-30 d3bc8a2b | 2026-10-30 d3bc8a2b | 16 | **1** | — | 8 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-29 c0f01c72 | 2026-10-29 c0f01c72 | 2 | — | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-30 d3bc8a2b | 2026-10-30 d3bc8a2b | 4 | **1** | 1 | 3 | 2 |
