@@ -78,7 +78,7 @@ void _answerCalendarData(FakeApi api, {int? salaryDay}) {
     'totalIncome': 15000,
     'dailyAverage': 160,
     'totalTxnCount': 20,
-    'categoryBreakdown': [],
+    'categoryBreakdown': <Map<String, Object?>>[],
     'dayTrend': [
       {'date': '2026-10-01', 'amount': 250, 'income': 0},
       {'date': '2026-10-02', 'amount': 150, 'income': 0},

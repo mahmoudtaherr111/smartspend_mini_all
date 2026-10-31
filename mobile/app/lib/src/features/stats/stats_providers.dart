@@ -252,3 +252,154 @@ class CategoryTransactions extends AsyncNotifier<LedgerListState> {
     );
   }
 }
+
+
+/// Debts and loans balance overview (STA-05).
+final debtsOverviewProvider = FutureProvider<DebtsOverview>((ref) async {
+  final scope = ref.watch(_statsSessionScopeProvider);
+  if (!scope.signedIn) {
+    return const DebtsOverview(balances: [], totalLent: 0, totalBorrowed: 0, net: 0);
+  }
+  final client = ref.watch(trpcClientProvider);
+  try {
+    final res = await client.query(Procedures.expense.getDebtBalances);
+    if (res is Map<String, Object?>) {
+      return DebtsOverview.fromJson(res);
+    }
+  } catch (_) {
+    // Non-fatal, return empty debts overview
+  }
+  return const DebtsOverview(balances: [], totalLent: 0, totalBorrowed: 0, net: 0);
+});
+
+/// Spending vs budget or income comparison (STA-04, GAP-15).
+final budgetComparisonProvider = FutureProvider<BudgetComparisonData>((ref) async {
+  final scope = ref.watch(_statsSessionScopeProvider);
+  if (!scope.signedIn) {
+    return const BudgetComparisonData(
+      allocated: 0,
+      spent: 0,
+      remaining: 0,
+      percentage: 0,
+      isExceeded: false,
+      fallbackKind: BudgetFallbackKind.none,
+    );
+  }
+  final client = ref.watch(trpcClientProvider);
+  final stats = await ref.watch(monthStatsProvider.future);
+  final spent = stats.expense;
+
+  // 1. Check budget.list for overall budget
+  try {
+    final budgetRes = await client.query(Procedures.budget.list);
+    if (budgetRes is Map<String, Object?> && budgetRes['budgets'] is List) {
+      final list = budgetRes['budgets'] as List<Object?>;
+      Map<String, Object?>? generalBudget;
+      for (final item in list) {
+        if (item is Map<String, Object?>) {
+          final cat = item['category'] as String?;
+          if (cat == null || cat.isEmpty || cat == 'all' || cat == 'الكل') {
+            generalBudget = item;
+            break;
+          }
+        }
+      }
+
+      if (generalBudget != null) {
+        final limit = readAmount(generalBudget['monthlyLimit']) ?? 0;
+        final currentSpent = readAmount(generalBudget['currentSpent']) ?? spent;
+        final percentage = limit > 0 ? ((currentSpent / limit) * 100).round() : 0;
+        return BudgetComparisonData(
+          allocated: limit,
+          spent: currentSpent,
+          remaining: limit > currentSpent ? limit - currentSpent : 0,
+          percentage: percentage,
+          isExceeded: currentSpent > limit,
+          fallbackKind: BudgetFallbackKind.budget,
+          title: generalBudget['title'] as String?,
+        );
+      }
+    }
+  } catch (_) {}
+
+  // 2. GAP-15 Fallback: Profile monthly income
+  try {
+    final profileRes = await client.query(Procedures.profile.getSmartProfile);
+    if (profileRes is Map<String, Object?>) {
+      final summary = SmartProfileSummary.fromJson(profileRes);
+      if (summary.monthlyIncome != null && summary.monthlyIncome! > 0) {
+        final income = summary.monthlyIncome!;
+        final percentage = ((spent / income) * 100).round();
+        return BudgetComparisonData(
+          allocated: income,
+          spent: spent,
+          remaining: income > spent ? income - spent : 0,
+          percentage: percentage,
+          isExceeded: spent > income,
+          fallbackKind: BudgetFallbackKind.profileIncome,
+          title: 'الدخل الشهري المسجل',
+        );
+      }
+    }
+  } catch (_) {}
+
+  // 3. Fallback: Month's income
+  if (stats.income > 0) {
+    final income = stats.income;
+    final percentage = ((spent / income) * 100).round();
+    return BudgetComparisonData(
+      allocated: income,
+      spent: spent,
+      remaining: income > spent ? income - spent : 0,
+      percentage: percentage,
+      isExceeded: spent > income,
+      fallbackKind: BudgetFallbackKind.monthIncome,
+      title: 'إجمالي دخل الشهر',
+    );
+  }
+
+  // 4. No budget and no income
+  return BudgetComparisonData(
+    allocated: 0,
+    spent: spent,
+    remaining: 0,
+    percentage: 0,
+    isExceeded: false,
+    fallbackKind: BudgetFallbackKind.none,
+  );
+});
+
+/// Yearly stats provider for the year in review (STA-09, GAP-18).
+final yearlyStatsProvider = FutureProvider.family<YearlyStatsData, String>((ref, year) async {
+  final scope = ref.watch(_statsSessionScopeProvider);
+  if (!scope.signedIn) {
+    return YearlyStatsData(year: year, totalExpense: 0, totalIncome: 0, netFlow: 0, count: 0, monthlyData: []);
+  }
+  final client = ref.watch(trpcClientProvider);
+  try {
+    final res = await client.query(
+      Procedures.expense.getYearlyStats,
+      input: {'year': year},
+    );
+    if (res is Map<String, Object?>) {
+      return YearlyStatsData.fromJson(year, res);
+    }
+  } catch (_) {}
+  return YearlyStatsData(year: year, totalExpense: 0, totalIncome: 0, netFlow: 0, count: 0, monthlyData: []);
+});
+
+/// Smart profile summary provider (STA-11).
+final smartProfileSummaryProvider = FutureProvider<SmartProfileSummary>((ref) async {
+  final scope = ref.watch(_statsSessionScopeProvider);
+  if (!scope.signedIn) {
+    return const SmartProfileSummary(profileCompleted: false);
+  }
+  final client = ref.watch(trpcClientProvider);
+  try {
+    final res = await client.query(Procedures.profile.getSmartProfile);
+    if (res is Map<String, Object?>) {
+      return SmartProfileSummary.fromJson(res);
+    }
+  } catch (_) {}
+  return const SmartProfileSummary(profileCompleted: false);
+});

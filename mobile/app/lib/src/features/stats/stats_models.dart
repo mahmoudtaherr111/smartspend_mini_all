@@ -193,3 +193,204 @@ final class MonthStats {
   static Map<String, Object?> _object(Object? value) =>
       value is Map<String, Object?> ? value : const <String, Object?>{};
 }
+
+/// A person's debt or loan balance (STA-05).
+final class DebtBalanceItem {
+  const DebtBalanceItem({
+    this.contactId,
+    required this.name,
+    required this.balance,
+    required this.lent,
+    required this.received,
+    required this.count,
+  });
+
+  factory DebtBalanceItem.fromJson(Map<String, Object?> json) {
+    return DebtBalanceItem(
+      contactId: (json['contactId'] as num?)?.toInt(),
+      name: (json['name'] as String?) ?? '',
+      balance: readAmount(json['balance']) ?? 0,
+      lent: readAmount(json['lent']) ?? 0,
+      received: readAmount(json['received']) ?? 0,
+      count: (json['count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  final int? contactId;
+  final String name;
+
+  /// Positive: person owes the user (ليك). Negative: user owes the person (عليك).
+  final num balance;
+  final num lent;
+  final num received;
+  final int count;
+}
+
+/// The user's debts and loans overview (STA-05).
+final class DebtsOverview {
+  const DebtsOverview({
+    required this.balances,
+    required this.totalLent,
+    required this.totalBorrowed,
+    required this.net,
+  });
+
+  factory DebtsOverview.fromJson(Map<String, Object?> json) {
+    final rawBalances = json['balances'] as List<Object?>? ?? const [];
+    return DebtsOverview(
+      balances: [
+        for (final item in rawBalances)
+          if (item is Map<String, Object?>) DebtBalanceItem.fromJson(item),
+      ],
+      totalLent: readAmount(json['totalLent']) ?? 0,
+      totalBorrowed: readAmount(json['totalBorrowed']) ?? 0,
+      net: readAmount(json['net']) ?? 0,
+    );
+  }
+
+  final List<DebtBalanceItem> balances;
+  final num totalLent;
+  final num totalBorrowed;
+  final num net;
+
+  bool get isEmpty => balances.isEmpty;
+}
+
+/// Fallback source for budget comparison when no general budget exists (GAP-15).
+enum BudgetFallbackKind {
+  budget,
+  profileIncome,
+  monthIncome,
+  none,
+}
+
+/// Month's spending vs budget or income fallback (STA-04, GAP-15).
+final class BudgetComparisonData {
+  const BudgetComparisonData({
+    required this.allocated,
+    required this.spent,
+    required this.remaining,
+    required this.percentage,
+    required this.isExceeded,
+    required this.fallbackKind,
+    this.title,
+  });
+
+  final num allocated;
+  final num spent;
+  final num remaining;
+  final int percentage;
+  final bool isExceeded;
+  final BudgetFallbackKind fallbackKind;
+  final String? title;
+}
+
+/// A month in the yearly review (STA-09, GAP-18).
+final class YearlyMonthPoint {
+  const YearlyMonthPoint({
+    required this.month,
+    required this.monthKey,
+    required this.amount,
+    required this.hasData,
+  });
+
+  factory YearlyMonthPoint.fromJson(Map<String, Object?> json) {
+    return YearlyMonthPoint(
+      month: (json['month'] as String?) ?? '',
+      monthKey: (json['monthKey'] as String?) ?? '',
+      amount: readAmount(json['amount']) ?? 0,
+      hasData: json['hasData'] == true,
+    );
+  }
+
+  final String month;
+  final String monthKey;
+  final num amount;
+  final bool hasData;
+}
+
+/// Yearly statistics for the year in review (STA-09, GAP-18).
+final class YearlyStatsData {
+  const YearlyStatsData({
+    required this.year,
+    required this.totalExpense,
+    required this.totalIncome,
+    required this.netFlow,
+    required this.count,
+    required this.monthlyData,
+  });
+
+  factory YearlyStatsData.fromJson(String year, Map<String, Object?> json) {
+    final rawMonthly = json['monthlyData'] as List<Object?>? ?? const [];
+    return YearlyStatsData(
+      year: year,
+      totalExpense: readAmount(json['totalExpense']) ?? 0,
+      totalIncome: readAmount(json['totalIncome']) ?? 0,
+      netFlow: readAmount(json['netFlow']) ?? 0,
+      count: (json['count'] as num?)?.toInt() ?? 0,
+      monthlyData: [
+        for (final item in rawMonthly)
+          if (item is Map<String, Object?>) YearlyMonthPoint.fromJson(item),
+      ],
+    );
+  }
+
+  final String year;
+  final num totalExpense;
+  final num totalIncome;
+  final num netFlow;
+  final int count;
+  final List<YearlyMonthPoint> monthlyData;
+
+  /// Top spending month name and amount, if any.
+  ({String name, num amount})? get topMonth {
+    YearlyMonthPoint? top;
+    for (final m in monthlyData) {
+      if (!m.hasData) continue;
+      if (top == null || m.amount > top.amount) {
+        top = m;
+      }
+    }
+    if (top == null || top.amount <= 0) return null;
+    return (name: top.month, amount: top.amount);
+  }
+}
+
+/// Learned facts summary from the user's Smart Profile (STA-11).
+final class SmartProfileSummary {
+  const SmartProfileSummary({
+    this.monthlyIncome,
+    this.salaryDay,
+    this.financialGoal,
+    this.personality,
+    required this.profileCompleted,
+    this.streak = 0,
+  });
+
+  factory SmartProfileSummary.fromJson(Map<String, Object?> json) {
+    final financial = json['financialInfo'] as Map<String, Object?>? ?? const {};
+    final legacy = json['legacy'] as Map<String, Object?>? ?? const {};
+    final gamification = json['gamification'] as Map<String, Object?>? ?? const {};
+
+    final monthlyIncome = readAmount(financial['monthlyIncome']) ?? readAmount(legacy['monthlyIncome']);
+    final salaryDay = (financial['salaryDay'] as num?)?.toInt();
+    final financialGoal = (financial['primaryGoal'] as String?) ?? (legacy['financialGoal'] as String?);
+    final personality = (financial['spendingStyle'] as String?) ?? (legacy['financialPersonality'] as String?);
+
+    return SmartProfileSummary(
+      monthlyIncome: monthlyIncome,
+      salaryDay: salaryDay,
+      financialGoal: financialGoal,
+      personality: personality,
+      profileCompleted: json['profileCompleted'] == true,
+      streak: (gamification['currentStreak'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  final num? monthlyIncome;
+  final int? salaryDay;
+  final String? financialGoal;
+  final String? personality;
+  final bool profileCompleted;
+  final int streak;
+}
