@@ -12,6 +12,7 @@ import '../features/capture/capture_settings_screen.dart';
 import '../features/contacts/contacts_screen.dart';
 import '../features/goals/goals_screen.dart';
 import '../features/in_progress_screen.dart';
+import '../features/installments/installments_screen.dart';
 import '../features/ledger/record_screen.dart';
 import '../features/ledger/transaction_detail_screen.dart';
 import '../features/ledger/transaction_search_screen.dart';
@@ -130,6 +131,10 @@ final appTabs = <AppTab>[
       GoRoute(
         path: GoalsScreen.path.substring('/more/'.length),
         builder: (context, state) => const GoalsScreen(),
+      ),
+      GoRoute(
+        path: InstallmentsScreen.path.substring('/more/'.length),
+        builder: (context, state) => const InstallmentsScreen(),
       ),
       GoRoute(
         path: SecurityScreen.path.substring('/more/'.length),

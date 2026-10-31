@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../budgets/budgets_screen.dart';
 import '../contacts/contacts_screen.dart';
 import '../goals/goals_screen.dart';
+import '../installments/installments_screen.dart';
 import '../lock/security_screen.dart';
 import '../wallets/wallets_screen.dart';
 import 'account_card.dart';
@@ -53,6 +54,12 @@ class MoreScreen extends StatelessWidget {
                 title: 'أهداف التوفير',
                 subtitle: 'خطط لمستقبلك وتابع وصولك لأهدافك بالذكاء الاصطناعي',
                 onTap: () => context.go(GoalsScreen.path),
+              ),
+              GroupedRow(
+                icon: Icons.calendar_month_outlined,
+                title: 'الأقساط',
+                subtitle: 'متابعة الأقساط الشهرية والباقي منها',
+                onTap: () => context.go(InstallmentsScreen.path),
               ),
             ],
           ),

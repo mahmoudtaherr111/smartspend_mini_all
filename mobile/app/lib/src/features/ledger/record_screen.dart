@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../installments/installments_quick_card.dart';
 import '../lock/app_lock.dart';
 import 'ledger_models.dart';
 import 'ledger_providers.dart';
@@ -96,6 +97,7 @@ class RecordScreen extends ConsumerWidget {
                         const MonthSummaryCard(),
                         const PendingQuestionsCard(),
                         const OutboxSection(),
+                        const InstallmentsQuickCard(),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
