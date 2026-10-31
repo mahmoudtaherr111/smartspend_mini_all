@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,12 +11,14 @@ import '../../l10n/app_localizations.dart';
 import '../ledger/category_style.dart';
 import '../ledger/ledger_providers.dart';
 import '../ledger/record_screen.dart';
+import 'category_transactions_screen.dart';
 import 'stats_models.dart';
 import 'stats_providers.dart';
 
 /// The stats tab (STA-01, STA-02 in .agents/mobile-program/features.json): the month's spending as one hero figure
-/// with how it compares, three small figures, where the money went, and the month's habits in sentences. Every
-/// figure is the server's (`expense.getMonthlyStats`); the month moves with the switcher.
+/// with how it compares, two small figures, where the money went (tapping any category opens its transactions for the
+/// month), and the month's habits in sentences. Every figure is the server's (`expense.getMonthlyStats`); the month
+/// moves with the switcher.
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
 
@@ -30,6 +34,9 @@ class StatsScreen extends ConsumerWidget {
     final words = DateWords.of(context);
 
     Future<void> refresh() async {
+      if (month != null) {
+        ref.invalidate(monthStatsByMonthProvider(month));
+      }
       ref.invalidate(monthStatsProvider);
       // A failed refresh shows its error state; the indicator only waits for the answer.
       await ref
@@ -85,7 +92,12 @@ class StatsScreen extends ConsumerWidget {
                         _ => l10n.statsLoadFailed,
                       },
                       retryLabel: l10n.retry,
-                      onRetry: () => ref.invalidate(monthStatsProvider),
+                      onRetry: () {
+                        if (month != null) {
+                          ref.invalidate(monthStatsByMonthProvider(month));
+                        }
+                        ref.invalidate(monthStatsProvider);
+                      },
                     ),
                   ],
                 ),
@@ -159,11 +171,16 @@ class StatsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          if (stats.categories.isNotEmpty)
+          if (stats.categories.any((c) => c.amount != 0))
             GroupedCard(
               title: l10n.statsByCategory,
               child: ProportionBar(
+                maxRows: math.max(6, stats.categories.length),
                 otherLabel: l10n.statsOther,
+                refundLabel: l10n.statsRefund,
+                onPartTap: (part) => context.go(
+                  CategoryTransactionsScreen.pathFor(part.label, month: month),
+                ),
                 parts: [
                   for (final category in stats.categories)
                     ProportionPart(
@@ -223,7 +240,7 @@ class _Scrolling extends StatelessWidget {
   );
 }
 
-/// A skeleton of the filled layout: the hero, three tiles, the category bar and its rows.
+/// A skeleton of the filled layout: the hero, tiles, the category bar and its rows.
 class _Loading extends StatelessWidget {
   const _Loading();
 

@@ -331,5 +331,10 @@
   "walletKindEtisalatCash": "e& cash",
   "walletNotFoundBody": "It may have been deleted on another device or on the website.",
   "walletsBack": "Back to wallets",
-  "walletsLastFour": "ending {digits}"
+  "walletsLastFour": "ending {digits}",
+  "statsRefund": "Refund",
+  "statsCategoryInMonth": "In {month}",
+  "statsCategoryRefundInMonth": "Net refund in {month}",
+  "statsCategoryEmptyTitle": "No transactions in this category",
+  "statsCategoryEmptyBody": "Nothing recorded under «{category}» in {month}."
 }

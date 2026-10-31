@@ -118,6 +118,14 @@ void main() {
         await tester.tap(find.text(label).last);
         await tester.pumpAndSettle();
         await photograph(theme, slug);
+        if (slug == 'stats') {
+          final categoryRow = find.text('أكل وشرب');
+          await tester.ensureVisible(categoryRow);
+          await tester.pumpAndSettle();
+          await tester.tap(categoryRow);
+          await tester.pumpAndSettle();
+          await photograph(theme, 'category');
+        }
       }
 
       // Wallets and one wallet, reached from the More tab where the loop ended.

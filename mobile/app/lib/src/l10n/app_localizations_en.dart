@@ -1069,4 +1069,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String walletsLastFour(String digits) {
     return 'ending $digits';
   }
+
+  @override
+  String get statsRefund => 'Refund';
+
+  @override
+  String statsCategoryInMonth(String month) {
+    return 'In $month';
+  }
+
+  @override
+  String statsCategoryRefundInMonth(String month) {
+    return 'Net refund in $month';
+  }
+
+  @override
+  String get statsCategoryEmptyTitle => 'No transactions in this category';
+
+  @override
+  String statsCategoryEmptyBody(String category, String month) {
+    return 'Nothing recorded under «$category» in $month.';
+  }
 }

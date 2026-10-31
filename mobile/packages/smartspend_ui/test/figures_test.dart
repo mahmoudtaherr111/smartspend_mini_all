@@ -1,10 +1,14 @@
 // The hero figure, stat tiles, the proportion bar, grouped rows and the month switcher (design brief §9).
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 Widget _app(Widget child, {double textScale = 1}) => MaterialApp(
   theme: SmartSpendTheme.dark(),
+  locale: const Locale('ar'),
+  supportedLocales: const [Locale('ar'), Locale('en')],
+  localizationsDelegates: GlobalMaterialLocalizations.delegates,
   home: Builder(
     builder: (context) => MediaQuery(
       data: MediaQuery.of(context)
@@ -85,6 +89,7 @@ void main() {
           ProportionBar(
             maxRows: 3,
             otherLabel: 'حاجات تانية',
+            refundLabel: 'مرتجع',
             onPartTap: (part) => tapped = part,
             parts: const [
               ProportionPart(label: 'مواصلات', amount: 100, color: Colors.blue),
@@ -95,6 +100,7 @@ void main() {
                 color: Colors.yellow,
               ),
               ProportionPart(label: 'ترفيه', amount: 100, color: Colors.purple),
+              ProportionPart(label: 'تسوق', amount: -150, color: Colors.pink),
               ProportionPart(label: 'صفر', amount: 0, color: Colors.grey),
             ],
           ),
@@ -104,13 +110,16 @@ void main() {
           .widgetList<Text>(find.byType(Text))
           .map((t) => t.data)
           .toList();
-      expect(labels.where(['أكل', 'فواتير', 'حاجات تانية'].contains).toList(), [
-        'أكل',
-        'فواتير',
-        'حاجات تانية',
-      ]);
+      expect(
+        labels
+            .where(['أكل', 'فواتير', 'حاجات تانية', 'تسوق'].contains)
+            .toList(),
+        ['أكل', 'فواتير', 'حاجات تانية', 'تسوق'],
+      );
       expect(find.text('60%'), findsOneWidget);
       expect(find.text('20%'), findsNWidgets(2));
+      expect(find.text('مرتجع'), findsOneWidget);
+      expect(find.text('${ltrIsolate('+150')} ج.م'), findsOneWidget);
       expect(find.text('صفر'), findsNothing);
       final orange = find.byWidgetPredicate(
         (w) => w is ColoredBox && w.color == Colors.orange,
@@ -118,6 +127,12 @@ void main() {
       expect(tester.getSize(orange).height, 14);
       await tester.tap(find.text('أكل'));
       expect(tapped?.label, 'أكل');
+      // The synthetic remainder row does not pretend to be a single category.
+      await tester.tap(find.text('حاجات تانية'));
+      expect(tapped?.label, 'أكل');
+      // A refund-netted negative category still opens its transactions.
+      await tester.tap(find.text('تسوق'));
+      expect(tapped?.label, 'تسوق');
     },
   );
 

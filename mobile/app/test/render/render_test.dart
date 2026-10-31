@@ -65,6 +65,21 @@ final _screens = <(String, bool, Reach)>[
     },
   ),
   (
+    'category',
+    true,
+    (tester, language) async {
+      await tester.tap(
+        find.text(language == AppLanguage.english ? 'Stats' : 'إحصائيات').last,
+      );
+      await tester.pumpAndSettle();
+      final row = find.text('أكل وشرب');
+      await tester.ensureVisible(row);
+      await tester.pumpAndSettle();
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+    },
+  ),
+  (
     'more',
     true,
     (tester, language) async {

@@ -13,6 +13,7 @@ import '../features/ledger/record_screen.dart';
 import '../features/ledger/transactions_screen.dart';
 import '../features/lock/security_screen.dart';
 import '../features/more/more_screen.dart';
+import '../features/stats/category_transactions_screen.dart';
 import '../features/stats/stats_screen.dart';
 import '../features/wallets/wallet_detail_screen.dart';
 import '../features/wallets/wallets_screen.dart';
@@ -60,6 +61,15 @@ final appTabs = <AppTab>[
     selectedIcon: Icons.bar_chart,
     label: (l10n) => l10n.navStats,
     screen: (context) => const StatsScreen(),
+    routes: [
+      GoRoute(
+        path: CategoryTransactionsScreen.subPath,
+        builder: (context, state) => CategoryTransactionsScreen(
+          category: state.uri.queryParameters['name'] ?? '',
+          month: state.uri.queryParameters['month'],
+        ),
+      ),
+    ],
   ),
   AppTab(
     path: '/ai',

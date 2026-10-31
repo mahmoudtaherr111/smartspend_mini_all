@@ -132,6 +132,30 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets(
+    'a transaction row stacks its amount under the details at twice the text size',
+    (tester) async {
+      await tester.pumpWidget(
+        _app(
+          MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+            child: const TransactionRow(
+              icon: Icons.restaurant,
+              title: 'قهوة وكافيه',
+              subtitle: 'أكل وشرب · 8:20 ص',
+              amount: 50,
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getTopLeft(find.byType(AmountText)).dy,
+        greaterThan(tester.getBottomLeft(find.text('أكل وشرب · 8:20 ص')).dy),
+      );
+    },
+  );
+
   testWidgets('a notice with an undo stays until it is used', (tester) async {
     var undone = 0;
     await tester.pumpWidget(

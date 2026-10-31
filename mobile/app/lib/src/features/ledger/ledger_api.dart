@@ -82,11 +82,26 @@ class LedgerApi {
   Future<void> delete(int id) =>
       _client.mutate(Procedures.expense.delete, input: {'id': id});
 
-  /// The newest transactions first: `expense.list`. [before] continues after the last id of the previous page.
-  Future<LedgerPage> list({int limit = 30, int? before}) async {
+  /// The newest transactions first: `expense.list`. [before] continues after the last id of the previous page;
+  /// [startDate] and [endDate] are Cairo wall-clock dates ("YYYY-MM-DD" or "YYYY-MM-DDTHH:mm:ss.SSS").
+  Future<LedgerPage> list({
+    int limit = 30,
+    int? before,
+    String? category,
+    String? type,
+    String? startDate,
+    String? endDate,
+  }) async {
     final data = await _client.query(
       Procedures.expense.list,
-      input: {'limit': limit, 'cursor': ?before},
+      input: {
+        'limit': limit,
+        'cursor': ?before,
+        'category': ?category,
+        'type': ?type,
+        'startDate': ?startDate,
+        'endDate': ?endDate,
+      },
     );
     return LedgerPage.fromJson(_object(data));
   }
@@ -149,4 +164,30 @@ String currentMonthKey(DateTime now, {int? salaryDay}) {
       now.day < min(salaryDay, daysInMonth);
   final start = DateTime(now.year, now.month - (beforePayday ? 1 : 0));
   return '${start.year}-${start.month.toString().padLeft(2, '0')}';
+}
+
+/// The first and last Cairo calendar days ("YYYY-MM-DD") of [month] ("YYYY-MM"), counted from [salaryDay] when the
+/// person's month starts on payday (`api/services/financial-month.ts#getFinancialMonthDayRange`).
+({String startDay, String endDay}) financialMonthDayRange(
+  String month, {
+  int? salaryDay,
+}) {
+  final parts = month.split('-');
+  final year = int.parse(parts[0]);
+  final monthNum = int.parse(parts[1]);
+  String two(int value) => value.toString().padLeft(2, '0');
+
+  final daysInMonth = DateTime.utc(year, monthNum + 1, 0).day;
+  if (salaryDay == null || salaryDay <= 1) {
+    return (startDay: '$month-01', endDay: '$month-${two(daysInMonth)}');
+  }
+  final clampedStart = min(salaryDay, daysInMonth);
+  final startDay = '$year-${two(monthNum)}-${two(clampedStart)}';
+
+  final nextMonth = monthNum == 12 ? 1 : monthNum + 1;
+  final nextYear = monthNum == 12 ? year + 1 : year;
+  final daysInNextMonth = DateTime.utc(nextYear, nextMonth + 1, 0).day;
+  final clampedNextSalary = min(salaryDay, daysInNextMonth);
+  final endDay = '$nextYear-${two(nextMonth)}-${two(clampedNextSalary - 1)}';
+  return (startDay: startDay, endDay: endDay);
 }

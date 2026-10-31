@@ -1074,4 +1074,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String walletsLastFour(String digits) {
     return 'آخره $digits';
   }
+
+  @override
+  String get statsRefund => 'مرتجع';
+
+  @override
+  String statsCategoryInMonth(String month) {
+    return 'في $month';
+  }
+
+  @override
+  String statsCategoryRefundInMonth(String month) {
+    return 'صافي مرتجع في $month';
+  }
+
+  @override
+  String get statsCategoryEmptyTitle => 'مفيش عمليات في التصنيف ده';
+
+  @override
+  String statsCategoryEmptyBody(String category, String month) {
+    return 'مفيش مصاريف متسجّلة تحت «$category» في $month.';
+  }
 }

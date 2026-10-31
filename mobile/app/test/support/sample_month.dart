@@ -68,7 +68,18 @@ void answerSampleMonth(FakeApi api) {
         'count': 23,
       },
     )
-    ..answer('expense.list', (_) => {'items': entries, 'total': entries.length})
+    ..answer('expense.list', (input) {
+      final map = input is Map ? input : const <Object?, Object?>{};
+      final category = map['category'];
+      final type = map['type'];
+      final filtered = [
+        for (final row in entries)
+          if ((category == null || row['category'] == category) &&
+              (type == null || row['type'] == type))
+            row,
+      ];
+      return {'items': filtered, 'total': filtered.length};
+    })
     ..answer(
       'expense.getMonthlyStats',
       (_) => {

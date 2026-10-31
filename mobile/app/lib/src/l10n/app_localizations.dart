@@ -1825,6 +1825,36 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'آخره {digits}'**
   String walletsLastFour(String digits);
+
+  /// No description provided for @statsRefund.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع'**
+  String get statsRefund;
+
+  /// No description provided for @statsCategoryInMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'في {month}'**
+  String statsCategoryInMonth(String month);
+
+  /// No description provided for @statsCategoryRefundInMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي مرتجع في {month}'**
+  String statsCategoryRefundInMonth(String month);
+
+  /// No description provided for @statsCategoryEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش عمليات في التصنيف ده'**
+  String get statsCategoryEmptyTitle;
+
+  /// No description provided for @statsCategoryEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مصاريف متسجّلة تحت «{category}» في {month}.'**
+  String statsCategoryEmptyBody(String category, String month);
 }
 
 class _AppLocalizationsDelegate

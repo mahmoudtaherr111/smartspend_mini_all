@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 
 import '../../core/providers.dart';
+import '../stats/stats_providers.dart';
 import 'ledger_api.dart';
 import 'ledger_models.dart';
 import 'offline/ledger_store.dart';
@@ -189,5 +190,7 @@ void refreshLedger(WidgetRef ref) {
   ref
     ..invalidate(monthSummaryProvider)
     ..invalidate(recentEntriesProvider)
-    ..invalidate(allEntriesProvider);
+    ..invalidate(allEntriesProvider)
+    ..invalidate(monthStatsByMonthProvider)
+    ..invalidate(monthStatsProvider);
 }

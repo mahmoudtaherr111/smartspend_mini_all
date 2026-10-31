@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'haptics.dart';
 import 'money.dart';
 import 'theme.dart';
 import 'tokens.dart';
@@ -196,40 +197,52 @@ final class ProportionPart {
     required this.label,
     required this.amount,
     required this.color,
+    this.interactive = true,
   });
 
   final String label;
   final num amount;
   final Color color;
+
+  /// False on a synthetic remainder row («حاجات تانية») that does not name a single category.
+  final bool interactive;
 }
 
 /// How a whole splits into parts (design brief §8): one rounded bar of segments, then the parts ranked with their
-/// amount and share. A screen reader hears the ranking as sentences; colour is never the only signal, since every
-/// segment has its named row.
+/// amount and share. Refund-netted negative parts sit below with a plus sign and [refundLabel]. A screen reader hears
+/// the ranking as sentences; colour is never the only signal, since every segment has its named row.
 class ProportionBar extends StatelessWidget {
   const ProportionBar({
     super.key,
     required this.parts,
     this.maxRows = 6,
     this.otherLabel,
+    this.refundLabel,
     this.onPartTap,
   });
 
   final List<ProportionPart> parts;
 
-  /// Rows shown before the rest are summed into [otherLabel].
+  /// Positive rows shown before the rest are summed into [otherLabel].
   final int maxRows;
   final String? otherLabel;
+
+  /// Word shown beside a negative, refund-netted category (for example «مرتجع» or "Refund").
+  final String? refundLabel;
   final ValueChanged<ProportionPart>? onPartTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
+    final large = MediaQuery.textScalerOf(context).scale(10) > 15;
     final sorted = [...parts.where((p) => p.amount > 0)]
       ..sort((a, b) => b.amount.compareTo(a.amount));
+    final refunded = [...parts.where((p) => p.amount < 0)]
+      ..sort((a, b) => a.amount.compareTo(b.amount));
     final total = sorted.fold<num>(0, (sum, p) => sum + p.amount);
-    if (total <= 0) return const SizedBox.shrink();
+    if (total <= 0 && refunded.isEmpty) return const SizedBox.shrink();
+
     var shown = sorted;
     if (sorted.length > maxRows && otherLabel != null) {
       final rest = sorted
@@ -241,32 +254,85 @@ class ProportionBar extends StatelessWidget {
           label: otherLabel!,
           amount: rest,
           color: colors.mutedForeground,
+          interactive: false,
         ),
       ];
     }
     int percent(num amount) => (amount / total * 100).round();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ExcludeSemantics(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
-            child: SizedBox(
-              height: 14,
-              // Stretched: a segment has no content of its own to give it height.
+    Widget buildRow(ProportionPart part, {required bool refund}) {
+      final canTap = onPartTap != null && part.interactive;
+      final share = Text(
+        refund ? (refundLabel ?? 'مرتجع') : '${percent(part.amount)}%',
+        style: textTheme.labelLarge?.copyWith(
+          color: refund ? colors.accent : colors.mutedForeground,
+        ),
+      );
+      final amount = AmountText(
+        part.amount.abs(),
+        kind: refund ? AmountKind.income : AmountKind.neutral,
+        style: textTheme.titleSmall,
+      );
+      return MergeSemantics(
+        child: InkWell(
+          onTap: !canTap
+              ? null
+              : () {
+                  SmartSpendHaptics.selection();
+                  onPartTap!(part);
+                },
+          borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: SmartSpendSpacing.xs,
+              ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  for (final (index, part) in shown.indexed) ...[
-                    if (index > 0)
-                      SizedBox(
-                        width: 2,
-                        child: ColoredBox(color: colors.surface),
+                  ExcludeSemantics(
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: part.color,
+                        shape: BoxShape.circle,
                       ),
-                    Expanded(
-                      flex: math.max(1, (part.amount / total * 1000).round()),
-                      child: ColoredBox(color: part.color),
+                    ),
+                  ),
+                  const SizedBox(width: SmartSpendSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(part.label, style: textTheme.bodyLarge),
+                        if (large)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              top: SmartSpendSpacing.xs,
+                            ),
+                            child: Wrap(
+                              spacing: SmartSpendSpacing.md,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [share, amount],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (!large) ...[
+                    share,
+                    const SizedBox(width: SmartSpendSpacing.md),
+                    amount,
+                  ],
+                  if (canTap) ...[
+                    const SizedBox(width: SmartSpendSpacing.xs),
+                    ExcludeSemantics(
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: colors.mutedForeground,
+                      ),
                     ),
                   ],
                 ],
@@ -274,43 +340,42 @@ class ProportionBar extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: SmartSpendSpacing.md),
-        for (final part in shown)
-          MergeSemantics(
-            child: InkWell(
-              onTap: onPartTap == null ? null : () => onPartTap!(part),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (total > 0) ...[
+          ExcludeSemantics(
+            child: ClipRRect(
               borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 48),
+              child: SizedBox(
+                height: 14,
+                // Stretched: a segment has no content of its own to give it height.
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ExcludeSemantics(
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: part.color,
-                          shape: BoxShape.circle,
+                    for (final (index, part) in shown.indexed) ...[
+                      if (index > 0)
+                        SizedBox(
+                          width: 2,
+                          child: ColoredBox(color: colors.surface),
                         ),
+                      Expanded(
+                        flex: math.max(1, (part.amount / total * 1000).round()),
+                        child: ColoredBox(color: part.color),
                       ),
-                    ),
-                    const SizedBox(width: SmartSpendSpacing.md),
-                    Expanded(
-                      child: Text(part.label, style: textTheme.bodyLarge),
-                    ),
-                    Text(
-                      '${percent(part.amount)}%',
-                      style: textTheme.labelLarge?.copyWith(
-                        color: colors.mutedForeground,
-                      ),
-                    ),
-                    const SizedBox(width: SmartSpendSpacing.md),
-                    AmountText(part.amount, style: textTheme.titleSmall),
+                    ],
                   ],
                 ),
               ),
             ),
           ),
+          const SizedBox(height: SmartSpendSpacing.md),
+        ],
+        for (final part in shown) buildRow(part, refund: false),
+        for (final part in refunded) buildRow(part, refund: true),
       ],
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../../stats/stats_models.dart';
 import '../../wallets/wallet_models.dart';
 import '../ledger_models.dart';
 
@@ -83,7 +84,7 @@ final class OutboxItem {
 }
 
 /// Everything the app keeps on the phone for one signed-in account: the outbox, and the last answers it showed,
-/// so the record tab and wallets list have something to show without a network.
+/// so the record tab, statistics and wallets list have something to show without a network.
 final class StoredLedger {
   const StoredLedger({
     this.accountKey,
@@ -91,6 +92,7 @@ final class StoredLedger {
     this.recent,
     this.summaryMonth,
     this.summary,
+    this.statsByMonth = const {},
     this.wallets,
     this.offlineLimit,
   });
@@ -110,6 +112,13 @@ final class StoredLedger {
       final Map<String, Object?> summary => MonthSummary.fromJson(summary),
       _ => null,
     },
+    statsByMonth: switch (json['statsByMonth']) {
+      final Map<String, Object?> months => {
+        for (final MapEntry(:key, :value) in months.entries)
+          if (value is Map<String, Object?>) key: MonthStats.fromJson(value),
+      },
+      _ => const {},
+    },
     wallets: switch (json['wallets']) {
       final List<Object?> rows => [
         for (final row in rows)
@@ -126,6 +135,7 @@ final class StoredLedger {
   final LedgerPage? recent;
   final String? summaryMonth;
   final MonthSummary? summary;
+  final Map<String, MonthStats> statsByMonth;
   final List<Wallet>? wallets;
 
   /// How many sentences the plan lets wait offline (`ai.getUserLimits`); the web's 3 when unknown.
@@ -137,6 +147,7 @@ final class StoredLedger {
     LedgerPage? recent,
     String? summaryMonth,
     MonthSummary? summary,
+    Map<String, MonthStats>? statsByMonth,
     List<Wallet>? wallets,
     int? offlineLimit,
   }) => StoredLedger(
@@ -145,6 +156,7 @@ final class StoredLedger {
     recent: recent ?? this.recent,
     summaryMonth: summaryMonth ?? this.summaryMonth,
     summary: summary ?? this.summary,
+    statsByMonth: statsByMonth ?? this.statsByMonth,
     wallets: wallets ?? this.wallets,
     offlineLimit: offlineLimit ?? this.offlineLimit,
   );
@@ -156,6 +168,10 @@ final class StoredLedger {
     'recent': recent?.toJson(),
     'summaryMonth': summaryMonth,
     'summary': summary?.toJson(),
+    'statsByMonth': {
+      for (final MapEntry(:key, :value) in statsByMonth.entries)
+        key: value.toJson(),
+    },
     'wallets': switch (wallets) {
       final List<Wallet> rows => [for (final wallet in rows) wallet.toJson()],
       null => null,

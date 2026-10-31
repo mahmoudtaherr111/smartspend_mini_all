@@ -11,6 +11,12 @@ final class CategoryAmount {
   final String name;
   final num amount;
   final int count;
+
+  Map<String, Object?> toJson() => {
+    'name': name,
+    'value': amount,
+    'count': count,
+  };
 }
 
 /// How this month's spending compares with the last: by whole month near its end, by the same week before that
@@ -93,6 +99,31 @@ final class MonthStats {
 
   /// Nothing recorded in the month.
   bool get isEmpty => count == 0 && expense == 0 && income == 0;
+
+  Map<String, Object?> toJson() => {
+    'totalExpense': expense,
+    'totalIncome': income,
+    'dailyAverage': dailyAverage,
+    'totalTxnCount': count,
+    'categoryBreakdown': [for (final category in categories) category.toJson()],
+    'comparativeAnalysis': {
+      'previousMonth': {'totalExpense': previousExpense},
+    },
+    'behavioralInsights': {
+      'expenseChangePercent': changePercent,
+      'comparisonType': comparison.name,
+      if (topDay != null || topDayAmount != null)
+        'topSpendingDay': {
+          'date': topDay?.toIso8601String(),
+          'amount': topDayAmount,
+        },
+      if (mostRecurring != null || mostRecurringCount != null)
+        'mostRecurringExpense': {
+          'name': mostRecurring,
+          'count': mostRecurringCount,
+        },
+    },
+  };
 
   static Map<String, Object?> _object(Object? value) =>
       value is Map<String, Object?> ? value : const <String, Object?>{};

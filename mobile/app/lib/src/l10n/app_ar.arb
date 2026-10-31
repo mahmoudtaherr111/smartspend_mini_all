@@ -516,5 +516,13 @@
   "walletNotFoundBody": "يمكن اتمسحت من جهاز تاني أو من الموقع.",
   "walletsBack": "ارجع للمحافظ",
   "walletsLastFour": "آخره {digits}",
-  "@walletsLastFour": { "description": "The last four digits of a card, already isolated left to right.", "placeholders": { "digits": { "type": "String", "example": "4821" } } }
+  "@walletsLastFour": { "description": "The last four digits of a card, already isolated left to right.", "placeholders": { "digits": { "type": "String", "example": "4821" } } },
+  "statsRefund": "مرتجع",
+  "statsCategoryInMonth": "في {month}",
+  "@statsCategoryInMonth": { "placeholders": { "month": { "type": "String", "example": "أكتوبر 2026" } } },
+  "statsCategoryRefundInMonth": "صافي مرتجع في {month}",
+  "@statsCategoryRefundInMonth": { "placeholders": { "month": { "type": "String", "example": "أكتوبر 2026" } } },
+  "statsCategoryEmptyTitle": "مفيش عمليات في التصنيف ده",
+  "statsCategoryEmptyBody": "مفيش مصاريف متسجّلة تحت «{category}» في {month}.",
+  "@statsCategoryEmptyBody": { "placeholders": { "category": { "type": "String", "example": "أكل وشرب" }, "month": { "type": "String", "example": "أكتوبر 2026" } } }
 }
