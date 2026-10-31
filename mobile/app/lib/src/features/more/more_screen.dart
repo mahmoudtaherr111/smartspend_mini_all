@@ -4,6 +4,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../budgets/budgets_screen.dart';
+import '../business/business_screen.dart';
 import '../contacts/contacts_screen.dart';
 import '../export/export_screen.dart';
 import '../goals/goals_screen.dart';
@@ -44,6 +45,12 @@ class MoreScreen extends StatelessWidget {
                   title: l10n.walletsTitle,
                   subtitle: l10n.walletsEntry,
                   onTap: () => context.go(WalletsScreen.path),
+                ),
+                GroupedRow(
+                  icon: Icons.storefront_outlined,
+                  title: 'حساب الشغل / البيزنس',
+                  subtitle: 'فصل مصاريف الشغل عن المصاريف الشخصية',
+                  onTap: () => context.go(BusinessScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.people_outline_rounded,

@@ -36,6 +36,7 @@ const cashflowFields = z.object({
   endDay: day.nullable().optional(),
   certainty: z.enum(["confirmed", "estimated"]).default("confirmed"),
   contactId: z.number().int().positive().nullable().optional(),
+  businessId: z.number().int().positive().nullable().optional(),
 });
 
 const me = (ctx: { user: { id: number | string; type: string } }) => ({ userId: Number(ctx.user.id), userType: ctx.user.type });

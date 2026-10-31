@@ -34,6 +34,7 @@ export interface CashflowInput {
   certainty: "confirmed" | "estimated";
   installmentPlanId?: number | null;
   contactId?: number | null;
+  businessId?: number | null;
   source: "user" | "voice" | "chat";
 }
 
@@ -133,6 +134,7 @@ export async function createCashflow(user: CoachUser, input: CashflowInput): Pro
     source: input.source,
     installmentPlanId: input.installmentPlanId ?? null,
     contactId: input.contactId ?? null,
+    businessId: input.businessId ?? null,
   });
   return { id: Number(inserted.insertId) };
 }
@@ -160,6 +162,7 @@ export async function updateCashflow(
   if (patch.endDay !== undefined) set.endDay = patch.endDay;
   if (patch.certainty) set.certainty = patch.certainty;
   if (patch.contactId !== undefined) set.contactId = patch.contactId;
+  if (patch.businessId !== undefined) set.businessId = patch.businessId;
   if (patch.status) set.status = patch.status;
   await db.transaction(async (tx) => {
     const [row] = await tx.select().from(scheduledCashflows).where(and(scope(user), eq(scheduledCashflows.id, id))).limit(1).for("update");

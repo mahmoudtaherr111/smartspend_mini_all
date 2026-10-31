@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_app/src/features/stats/stats_screen.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
