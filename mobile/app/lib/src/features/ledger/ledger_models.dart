@@ -397,12 +397,13 @@ final class CategoryPreview {
     this.itemCount = 1,
   });
 
-  factory CategoryPreview.fromJson(Map<String, Object?> json) => CategoryPreview(
-    amount: readAmount(json['amount']) ?? 0,
-    category: json['category'] as String? ?? '',
-    subCategory: json['subCategory'] as String? ?? 'عام',
-    itemCount: (json['itemCount'] as num?)?.toInt() ?? 1,
-  );
+  factory CategoryPreview.fromJson(Map<String, Object?> json) =>
+      CategoryPreview(
+        amount: readAmount(json['amount']) ?? 0,
+        category: json['category'] as String? ?? '',
+        subCategory: json['subCategory'] as String? ?? 'عام',
+        itemCount: (json['itemCount'] as num?)?.toInt() ?? 1,
+      );
 
   final num amount;
   final String category;

@@ -30,8 +30,8 @@ class LimitsCard extends ConsumerWidget {
               color: anyExhausted
                   ? colors.danger
                   : anyLow
-                      ? colors.warning
-                      : colors.border,
+                  ? colors.warning
+                  : colors.border,
             ),
           ),
           child: Column(
@@ -52,7 +52,10 @@ class LimitsCard extends ConsumerWidget {
                         Flexible(
                           child: Text(
                             'استهلاك باقتك الشهرية',
-                            style: SmartSpendTypography.style(14, FontWeight.w700).copyWith(color: colors.foreground),
+                            style: SmartSpendTypography.style(
+                              14,
+                              FontWeight.w700,
+                            ).copyWith(color: colors.foreground),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -62,16 +65,23 @@ class LimitsCard extends ConsumerWidget {
                   if (anyLow || anyExhausted) ...[
                     const SizedBox(width: SmartSpendSpacing.xs),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: (anyExhausted ? colors.danger : colors.warning).withValues(alpha: 0.12),
+                        color: (anyExhausted ? colors.danger : colors.warning)
+                            .withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
                       ),
                       child: Text(
                         anyExhausted ? 'وصلت للحد' : 'قربت تخلّص',
-                        style: SmartSpendTypography.style(11, FontWeight.w700).copyWith(
-                          color: anyExhausted ? colors.danger : colors.warning,
-                        ),
+                        style: SmartSpendTypography.style(11, FontWeight.w700)
+                            .copyWith(
+                              color: anyExhausted
+                                  ? colors.danger
+                                  : colors.warning,
+                            ),
                       ),
                     ),
                   ],
@@ -151,7 +161,10 @@ class _QuotaRow extends StatelessWidget {
                   Flexible(
                     child: Text(
                       label,
-                      style: SmartSpendTypography.style(13, FontWeight.w600).copyWith(color: colors.foreground),
+                      style: SmartSpendTypography.style(
+                        13,
+                        FontWeight.w600,
+                      ).copyWith(color: colors.foreground),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

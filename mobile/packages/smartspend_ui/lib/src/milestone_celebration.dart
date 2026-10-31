@@ -106,17 +106,11 @@ class MilestoneCelebration extends StatelessWidget {
     }
 
     return TweenAnimationBuilder<double>(
-      duration: SmartSpendMotion.of(
-        context,
-        const Duration(milliseconds: 350),
-      ),
+      duration: SmartSpendMotion.of(context, const Duration(milliseconds: 350)),
       curve: Curves.easeOutBack,
       tween: Tween<double>(begin: 0.8, end: 1.0),
       builder: (context, scale, child) {
-        return Transform.scale(
-          scale: scale,
-          child: child,
-        );
+        return Transform.scale(scale: scale, child: child);
       },
       child: content,
     );

@@ -110,10 +110,7 @@ class InstallmentsQuickCard extends ConsumerWidget {
                         ).copyWith(color: colors.accent),
                       ),
                       const SizedBox(width: SmartSpendSpacing.xs),
-                      const Icon(
-                        Icons.chevron_left_rounded,
-                        size: 20,
-                      ),
+                      const Icon(Icons.chevron_left_rounded, size: 20),
                     ],
                   ),
                   const SizedBox(height: SmartSpendSpacing.xs),

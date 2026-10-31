@@ -13,10 +13,7 @@ class SeasonsApi {
   final TrpcClient _client;
 
   Future<SeasonSpending> getSeasonSpending(String season, {int? year}) async {
-    final args = <String, Object?>{
-      'season': season,
-      'year': ?year,
-    };
+    final args = <String, Object?>{'season': season, 'year': ?year};
     final response = _object(
       await _client.query(Procedures.expense.getSeasonSpending, input: args),
     );
@@ -29,8 +26,10 @@ final seasonsApiProvider = Provider<SeasonsApi>((ref) {
   return SeasonsApi(client);
 });
 
-final seasonSpendingFamily =
-    FutureProvider.family<SeasonSpending, String>((ref, season) async {
+final seasonSpendingFamily = FutureProvider.family<SeasonSpending, String>((
+  ref,
+  season,
+) async {
   final api = ref.watch(seasonsApiProvider);
   return api.getSeasonSpending(season);
 });

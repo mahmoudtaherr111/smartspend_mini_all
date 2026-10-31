@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -176,7 +177,9 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             const SizedBox(height: SmartSpendSpacing.xs),
             TextField(
               controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
               ],
@@ -203,14 +206,21 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
               onTap: _pickDate,
               borderRadius: BorderRadius.circular(SmartSpendRadii.md),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   border: Border.all(color: colors.border),
                   borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today_rounded, size: 18, color: colors.accent),
+                    Icon(
+                      Icons.calendar_today_rounded,
+                      size: 18,
+                      color: colors.accent,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       _selectedDate != null

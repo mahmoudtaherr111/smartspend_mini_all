@@ -25,9 +25,7 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
     final seasonAsync = ref.watch(seasonSpendingFamily(_selectedSeason));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('مواسم المصاريف'),
-      ),
+      appBar: AppBar(title: const Text('مواسم المصاريف')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -43,7 +41,9 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                 children: kAvailableSeasons.map((season) {
                   final isSelected = _selectedSeason == season['id'];
                   return Padding(
-                    padding: const EdgeInsetsDirectional.only(end: SmartSpendSpacing.sm),
+                    padding: const EdgeInsetsDirectional.only(
+                      end: SmartSpendSpacing.sm,
+                    ),
                     child: ChoiceChip(
                       label: Text(season['label']!),
                       selected: isSelected,
@@ -52,12 +52,15 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                           setState(() => _selectedSeason = season['id']!);
                         }
                       },
-                      labelStyle: SmartSpendTypography.style(
-                        13,
-                        isSelected ? FontWeight.w700 : FontWeight.w500,
-                      ).copyWith(
-                        color: isSelected ? colors.onAccent : colors.foreground,
-                      ),
+                      labelStyle:
+                          SmartSpendTypography.style(
+                            13,
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                          ).copyWith(
+                            color: isSelected
+                                ? colors.onAccent
+                                : colors.foreground,
+                          ),
                       selectedColor: colors.accent,
                       backgroundColor: colors.surface,
                       side: BorderSide(
@@ -87,7 +90,8 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                     child: ErrorState(
                       message: 'مش قادرين نحمّل بيانات الموسم دلوقتي: $err',
                       retryLabel: 'إعادة المحاولة',
-                      onRetry: () => ref.invalidate(seasonSpendingFamily(_selectedSeason)),
+                      onRetry: () =>
+                          ref.invalidate(seasonSpendingFamily(_selectedSeason)),
                     ),
                   ),
                 ),
@@ -107,7 +111,8 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                           'الفترة (${data.startDay} إلى ${data.endDay}) · نفس مصاريف السنة اللي فاتت بالضبط (${formatMoney(prev.total)})';
                     }
                   } else {
-                    comparisonStory = 'الفترة (${data.startDay} إلى ${data.endDay})';
+                    comparisonStory =
+                        'الفترة (${data.startDay} إلى ${data.endDay})';
                   }
 
                   if (data.byCategory.isEmpty) {
@@ -155,11 +160,15 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                       const SizedBox(height: SmartSpendSpacing.sm),
                       ...data.byCategory.map((cat) {
                         return Container(
-                          margin: const EdgeInsets.only(bottom: SmartSpendSpacing.sm),
+                          margin: const EdgeInsets.only(
+                            bottom: SmartSpendSpacing.sm,
+                          ),
                           padding: const EdgeInsets.all(SmartSpendSpacing.md),
                           decoration: BoxDecoration(
                             color: colors.surface,
-                            borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+                            borderRadius: BorderRadius.circular(
+                              SmartSpendRadii.md,
+                            ),
                             border: Border.all(color: colors.border),
                           ),
                           child: Row(
@@ -168,8 +177,13 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: categoryColor(context, cat.category).withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
+                                  color: categoryColor(
+                                    context,
+                                    cat.category,
+                                  ).withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(
+                                    SmartSpendRadii.sm,
+                                  ),
                                 ),
                                 child: Icon(
                                   categoryIcon(cat.category),

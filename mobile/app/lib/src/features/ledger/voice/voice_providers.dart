@@ -18,5 +18,6 @@ class TapToRecordNotifier extends Notifier<bool> {
 }
 
 /// Whether the user toggled tap-to-record mode instead of hold-to-record (Accessibility Rule 12.2).
-final tapToRecordModeProvider =
-    NotifierProvider<TapToRecordNotifier, bool>(TapToRecordNotifier.new);
+final tapToRecordModeProvider = NotifierProvider<TapToRecordNotifier, bool>(
+  TapToRecordNotifier.new,
+);

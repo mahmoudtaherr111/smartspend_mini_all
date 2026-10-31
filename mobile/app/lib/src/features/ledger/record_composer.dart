@@ -151,8 +151,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     final result = await recorder.stopRecording();
     if (result == null || result.audioBase64.trim().isEmpty) return;
 
-    final effectiveDuration =
-        duration > 0 ? duration : result.durationSeconds;
+    final effectiveDuration = duration > 0 ? duration : result.durationSeconds;
 
     UpgradeLimitReason? upgradeReason;
     String? errorMessage;
@@ -179,7 +178,9 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
         }
       } catch (e) {
         final msg = e.toString().toLowerCase();
-        if (msg.contains('voice') || msg.contains('رصيد') || msg.contains('ثواني')) {
+        if (msg.contains('voice') ||
+            msg.contains('رصيد') ||
+            msg.contains('ثواني')) {
           upgradeReason = UpgradeLimitReason.voiceSeconds;
         } else {
           errorMessage = 'حصل خطأ في معالجة التسجيل، جرّب مرة تانية';
@@ -190,10 +191,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     if (!mounted) return;
 
     if (upgradeReason != null) {
-      await showUpgradePromptSheet(
-        context: context,
-        reason: upgradeReason!,
-      );
+      await showUpgradePromptSheet(context: context, reason: upgradeReason!);
       return;
     }
 
@@ -406,7 +404,8 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                                 prefixIcon: IconButton(
                                   tooltip: l10n.manualRecordTitle,
                                   icon: const Icon(Icons.dialpad_rounded),
-                                  onPressed: () => showManualRecordSheet(context),
+                                  onPressed: () =>
+                                      showManualRecordSheet(context),
                                 ),
                                 suffixIcon: IconButton(
                                   tooltip: isTapToRecord
@@ -421,9 +420,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                                   ),
                                   onPressed: () {
                                     ref
-                                        .read(
-                                          tapToRecordModeProvider.notifier,
-                                        )
+                                        .read(tapToRecordModeProvider.notifier)
                                         .toggle();
                                   },
                                 ),
@@ -443,9 +440,9 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                           onPressed: _busy
                               ? null
                               : () => startReceiptIntake(
-                                    context: context,
-                                    ref: ref,
-                                  ),
+                                  context: context,
+                                  ref: ref,
+                                ),
                           icon: Icon(
                             Icons.camera_alt_outlined,
                             color: colors.foreground,
@@ -514,19 +511,21 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
           const SizedBox(width: SmartSpendSpacing.sm),
           Text(
             '00:${_recordingSeconds.toString().padLeft(2, '0')}',
-            style: SmartSpendTypography.style(14, FontWeight.w600)
-                .copyWith(color: colors.foreground),
+            style: SmartSpendTypography.style(
+              14,
+              FontWeight.w600,
+            ).copyWith(color: colors.foreground),
           ),
           const SizedBox(width: SmartSpendSpacing.md),
           Expanded(
-            child: Center(
-              child: VoiceLevelMeter(level: _currentAmplitude),
-            ),
+            child: Center(child: VoiceLevelMeter(level: _currentAmplitude)),
           ),
           Text(
             isTapToRecord ? 'إلغاء' : 'اسحب للإلغاء',
-            style: SmartSpendTypography.style(12, FontWeight.w400)
-                .copyWith(color: colors.mutedForeground),
+            style: SmartSpendTypography.style(
+              12,
+              FontWeight.w400,
+            ).copyWith(color: colors.mutedForeground),
           ),
           const SizedBox(width: SmartSpendSpacing.xs),
           IconButton(
@@ -562,8 +561,10 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
           const SizedBox(width: SmartSpendSpacing.md),
           Text(
             'بنسمع التسجيل...',
-            style: SmartSpendTypography.style(14, FontWeight.w500)
-                .copyWith(color: colors.mutedForeground),
+            style: SmartSpendTypography.style(
+              14,
+              FontWeight.w500,
+            ).copyWith(color: colors.mutedForeground),
           ),
         ],
       ),
@@ -621,7 +622,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
               ? null
               : () {
                   // ignore: avoid_print
-                  },
+                },
           onLongPressMoveUpdate: isTapToRecord
               ? null
               : (details) {

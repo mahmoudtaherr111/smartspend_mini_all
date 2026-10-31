@@ -73,9 +73,7 @@ class WalletDetailScreen extends ConsumerWidget {
                       ],
                     );
                   }
-                  return WalletsScrolling(
-                    children: [_Filled(detail: value)],
-                  );
+                  return WalletsScrolling(children: [_Filled(detail: value)]);
                 }
                 if (detail.hasError) {
                   return WalletsScrolling(
@@ -151,7 +149,10 @@ class _Filled extends StatelessWidget {
                 amount: detail.month.moneyIn,
                 kind: AmountKind.income,
               ),
-              StatTile(label: l10n.walletMonthOut, amount: detail.month.moneyOut),
+              StatTile(
+                label: l10n.walletMonthOut,
+                amount: detail.month.moneyOut,
+              ),
             ],
           ),
         GroupedSection(

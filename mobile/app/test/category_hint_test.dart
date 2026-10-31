@@ -14,7 +14,9 @@ Future<TestApp> _openApp(WidgetTester tester, {FakeApi? api}) async {
 }
 
 void main() {
-  testWidgets('shows debounced category hint while typing with digits', (tester) async {
+  testWidgets('shows debounced category hint while typing with digits', (
+    tester,
+  ) async {
     final api = FakeApi();
 
     await _openApp(tester, api: api);
@@ -65,7 +67,9 @@ void main() {
     expect(excludeSemanticsFinder, findsOneWidget);
   });
 
-  testWidgets('hides hint when offline or when input has no digits', (tester) async {
+  testWidgets('hides hint when offline or when input has no digits', (
+    tester,
+  ) async {
     final api = FakeApi();
 
     await _openApp(tester, api: api);

@@ -35,11 +35,12 @@ final class PlanCatalogItem {
     required this.value,
   });
 
-  factory PlanCatalogItem.fromJson(Map<String, Object?> json) => PlanCatalogItem(
-    key: json['key'] as String? ?? '',
-    label: json['label'] as String? ?? '',
-    value: json['value'] ?? false,
-  );
+  factory PlanCatalogItem.fromJson(Map<String, Object?> json) =>
+      PlanCatalogItem(
+        key: json['key'] as String? ?? '',
+        label: json['label'] as String? ?? '',
+        value: json['value'] ?? false,
+      );
 
   final String key;
   final String label;

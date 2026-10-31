@@ -13,9 +13,7 @@ class LimitsApi {
   final TrpcClient _client;
 
   Future<UserLimits> getUserLimits() async {
-    final response = _object(
-      await _client.query(Procedures.ai.getUserLimits),
-    );
+    final response = _object(await _client.query(Procedures.ai.getUserLimits));
     return UserLimits.fromJson(response);
   }
 }

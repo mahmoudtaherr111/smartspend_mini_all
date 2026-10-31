@@ -60,9 +60,10 @@ class ReceiptPermissionSheet extends StatelessWidget {
           const SizedBox(height: SmartSpendSpacing.sm),
           Text(
             'عشان تقدر تصوّر الفواتير والإيصالات وتقرأها بالذكاء الاصطناعي، محتاجين إذن استخدام الكاميرا.',
-            style: SmartSpendTypography.style(14, FontWeight.w400).copyWith(
-              color: colors.mutedForeground,
-            ),
+            style: SmartSpendTypography.style(
+              14,
+              FontWeight.w400,
+            ).copyWith(color: colors.mutedForeground),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
@@ -84,9 +85,10 @@ class ReceiptPermissionSheet extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'الصور بتستخدم لقراءة أرقام وتفاصيل الفاتورة فقط، وما بتتبعتش لأي جهة تانية.',
-                    style: SmartSpendTypography.style(12, FontWeight.w400).copyWith(
-                      color: colors.mutedForeground,
-                    ),
+                    style: SmartSpendTypography.style(
+                      12,
+                      FontWeight.w400,
+                    ).copyWith(color: colors.mutedForeground),
                   ),
                 ),
               ],

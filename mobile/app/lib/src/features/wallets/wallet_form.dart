@@ -44,8 +44,9 @@ class _WalletFormState extends ConsumerState<_WalletForm> {
 
   late final String _initialName = (widget.wallet?.name ?? '').trim();
   late final String _initialLastFour = (widget.wallet?.lastFour ?? '').trim();
-  late final String _initialBalance =
-      widget.wallet == null ? '' : _plain(widget.wallet!.balance).trim();
+  late final String _initialBalance = widget.wallet == null
+      ? ''
+      : _plain(widget.wallet!.balance).trim();
   late final WalletKind _initialKind = widget.wallet?.kind ?? WalletKind.card;
 
   bool get _isDirty =>

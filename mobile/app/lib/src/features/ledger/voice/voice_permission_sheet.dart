@@ -35,11 +35,7 @@ class VoicePermissionSheet extends StatelessWidget {
                 color: colors.accent.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.mic_rounded,
-                size: 28,
-                color: colors.accent,
-              ),
+              child: Icon(Icons.mic_rounded, size: 28, color: colors.accent),
             ),
           ),
           const SizedBox(height: SmartSpendSpacing.lg),

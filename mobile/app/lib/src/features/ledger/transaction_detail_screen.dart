@@ -116,8 +116,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                 _ => l10n.transactionLoadFailed,
               },
               retryLabel: l10n.retry,
-              onRetry: () =>
-                  ref.invalidate(transactionDetailProvider(entryId)),
+              onRetry: () => ref.invalidate(transactionDetailProvider(entryId)),
             ),
           ],
         );

@@ -391,33 +391,35 @@ final class SearchResult {
 /// Online: calls `expense.searchTransactions`. Offline or network failure: searches cached entries locally with Arabic normalization.
 final transactionSearchResultsProvider =
     FutureProvider.family<SearchResult, String>((ref, query) async {
-  final trimmed = query.trim();
-  if (trimmed.length < 2) {
-    return SearchResult(query: trimmed, entries: const [], isOffline: false);
-  }
+      final trimmed = query.trim();
+      if (trimmed.length < 2) {
+        return SearchResult(
+          query: trimmed,
+          entries: const [],
+          isOffline: false,
+        );
+      }
 
-  final online = ref.watch(networkStatusProvider);
-  if (!online) {
-    return _searchOfflineCache(ref, trimmed);
-  }
+      final online = ref.watch(networkStatusProvider);
+      if (!online) {
+        return _searchOfflineCache(ref, trimmed);
+      }
 
-  try {
-    final api = ref.watch(ledgerApiProvider);
-    final entries = await api.searchTransactions(trimmed);
-    ref.read(networkStatusProvider.notifier).reached();
-    return SearchResult(query: trimmed, entries: entries, isOffline: false);
-  } on ApiNetworkException {
-    ref.read(networkStatusProvider.notifier).unreachable();
-    return _searchOfflineCache(ref, trimmed);
-  }
-});
+      try {
+        final api = ref.watch(ledgerApiProvider);
+        final entries = await api.searchTransactions(trimmed);
+        ref.read(networkStatusProvider.notifier).reached();
+        return SearchResult(query: trimmed, entries: entries, isOffline: false);
+      } on ApiNetworkException {
+        ref.read(networkStatusProvider.notifier).unreachable();
+        return _searchOfflineCache(ref, trimmed);
+      }
+    });
 
 Future<SearchResult> _searchOfflineCache(Ref ref, String query) async {
   final local = ref.watch(localLedgerProvider);
   final stored = await local.snapshot();
-  final cachedEntries = [
-    if (stored.recent != null) ...stored.recent!.entries,
-  ];
+  final cachedEntries = [if (stored.recent != null) ...stored.recent!.entries];
 
   final seen = <int>{};
   final unique = <LedgerEntry>[];
@@ -428,8 +430,12 @@ Future<SearchResult> _searchOfflineCache(Ref ref, String query) async {
   final normalizedQ = normalizeArabic(query);
   final matches = unique.where((entry) {
     final cat = normalizeArabic(entry.category);
-    final sub = entry.subCategory != null ? normalizeArabic(entry.subCategory!) : '';
-    final desc = entry.description != null ? normalizeArabic(entry.description!) : '';
+    final sub = entry.subCategory != null
+        ? normalizeArabic(entry.subCategory!)
+        : '';
+    final desc = entry.description != null
+        ? normalizeArabic(entry.description!)
+        : '';
     final raw = entry.rawText != null ? normalizeArabic(entry.rawText!) : '';
     return cat.contains(normalizedQ) ||
         sub.contains(normalizedQ) ||
@@ -442,20 +448,20 @@ Future<SearchResult> _searchOfflineCache(Ref ref, String query) async {
 
 /// Asks `expense.previewCategory` to hint which category a sentence belongs to (REC-10).
 /// Returns null when text has no digits, is too short, or when offline.
-final categoryPreviewProvider =
-    FutureProvider.autoDispose.family<CategoryPreview?, String>((ref, text) async {
-  final trimmed = text.trim();
-  if (!RegExp(r'[0-9٠-٩]').hasMatch(trimmed) || trimmed.length < 2) {
-    return null;
-  }
-  final online = ref.watch(networkStatusProvider);
-  if (!online) return null;
+final categoryPreviewProvider = FutureProvider.autoDispose
+    .family<CategoryPreview?, String>((ref, text) async {
+      final trimmed = text.trim();
+      if (!RegExp(r'[0-9٠-٩]').hasMatch(trimmed) || trimmed.length < 2) {
+        return null;
+      }
+      final online = ref.watch(networkStatusProvider);
+      if (!online) return null;
 
-  final api = ref.watch(ledgerApiProvider);
-  try {
-    return await api.previewCategory(trimmed);
-  } catch (_) {
-    // Silent fallback: never fail or disrupt typing
-    return null;
-  }
-});
+      final api = ref.watch(ledgerApiProvider);
+      try {
+        return await api.previewCategory(trimmed);
+      } catch (_) {
+        // Silent fallback: never fail or disrupt typing
+        return null;
+      }
+    });

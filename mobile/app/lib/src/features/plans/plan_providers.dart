@@ -24,8 +24,9 @@ final isProUserProvider = Provider<bool>((ref) {
 });
 
 /// Plan catalog describing limits and features: `pro.planCatalog`.
-final planCatalogProvider =
-    FutureProvider<Map<String, List<PlanCatalogItem>>>((ref) async {
+final planCatalogProvider = FutureProvider<Map<String, List<PlanCatalogItem>>>((
+  ref,
+) async {
   final client = ref.watch(trpcClientProvider);
   try {
     final data = await client.query(Procedures.pro.planCatalog);

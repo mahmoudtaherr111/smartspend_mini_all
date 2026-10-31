@@ -388,191 +388,199 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(l10n.editTransactionTitle, style: textTheme.titleLarge),
-          const SizedBox(height: SmartSpendSpacing.xs),
-          Text(
-            l10n.editTransactionSubtitle,
-            style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
-          ),
-          const SizedBox(height: SmartSpendSpacing.lg),
-          Text(
-            l10n.editKindLabel,
-            style: textTheme.labelLarge?.copyWith(
-              color: colors.mutedForeground,
-            ),
-          ),
-          const SizedBox(height: SmartSpendSpacing.xs),
-          Wrap(
-            spacing: SmartSpendSpacing.sm,
-            runSpacing: SmartSpendSpacing.xs,
-            children: [
-              for (final kind in _EditKind.values)
-                ChoiceChip(
-                  label: Text(_kindLabel(l10n, kind)),
-                  selected: _kind == kind,
-                  onSelected: _saving
-                      ? null
-                      : (_) => _selectKind(kind, customCategories),
-                ),
-            ],
-          ),
-          const SizedBox(height: SmartSpendSpacing.md),
-          TextField(
-            controller: _amountController,
-            enabled: !_saving,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            textDirection: TextDirection.ltr,
-            onChanged: (_) {
-              if (_amountError != null || _serverError != null) {
-                setState(() {
-                  _amountError = null;
-                  _serverError = null;
-                });
-              }
-            },
-            decoration: InputDecoration(
-              labelText: l10n.editAmountLabel,
-              errorText: _amountError,
-            ),
-          ),
-          const SizedBox(height: SmartSpendSpacing.md),
-          DropdownButtonFormField<String>(
-            key: ValueKey('category-${_kind.name}-$_category'),
-            initialValue: _category,
-            isExpanded: true,
-            decoration: InputDecoration(labelText: l10n.editCategoryLabel),
-            items: [
-              for (final category in categories)
-                DropdownMenuItem<String>(
-                  value: category,
-                  child: Row(
-                    children: [
-                      Icon(
-                        categoryIcon(category),
-                        size: 20,
-                        color: categoryColor(context, category),
-                      ),
-                      const SizedBox(width: SmartSpendSpacing.sm),
-                      Expanded(
-                        child: Text(category, overflow: TextOverflow.ellipsis),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-            onChanged: _saving
-                ? null
-                : (value) {
-                    if (value != null) _selectCategory(value);
-                  },
-          ),
-          const SizedBox(height: SmartSpendSpacing.md),
-          DropdownButtonFormField<String>(
-            key: ValueKey('sub-$_category-$_subCategory'),
-            initialValue: _subCategory,
-            isExpanded: true,
-            decoration: InputDecoration(labelText: l10n.editSubCategoryLabel),
-            items: [
-              for (final sub in subcategories)
-                DropdownMenuItem<String>(
-                  value: sub,
-                  child: Text(sub, overflow: TextOverflow.ellipsis),
-                ),
-            ],
-            onChanged: _saving
-                ? null
-                : (value) {
-                    if (value != null) {
-                      setState(() {
-                        _subCategory = value;
-                        _serverError = null;
-                      });
-                    }
-                  },
-          ),
-          const SizedBox(height: SmartSpendSpacing.md),
-          InkWell(
-            onTap: _saving ? null : _pickDate,
-            borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-            child: InputDecorator(
-              decoration: InputDecoration(labelText: l10n.editDateLabel),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${words.day(_date, now: clock.now())} · ${inlineName(words.clock(_date))}',
-                      style: textTheme.bodyLarge,
-                    ),
-                  ),
-                  Icon(
-                    Icons.calendar_today_rounded,
-                    size: 18,
-                    color: colors.mutedForeground,
-                  ),
-                ],
+            const SizedBox(height: SmartSpendSpacing.xs),
+            Text(
+              l10n.editTransactionSubtitle,
+              style: textTheme.bodySmall?.copyWith(
+                color: colors.mutedForeground,
               ),
             ),
-          ),
-          const SizedBox(height: SmartSpendSpacing.md),
-          DropdownButtonFormField<int?>(
-            key: ValueKey('wallet-$_walletId-${wallets.length}'),
-            initialValue: _walletId,
-            isExpanded: true,
-            decoration: InputDecoration(labelText: l10n.editWalletLabel),
-            items: walletItems,
-            onChanged: _saving
-                ? null
-                : (value) => setState(() {
-                    _walletId = value;
+            const SizedBox(height: SmartSpendSpacing.lg),
+            Text(
+              l10n.editKindLabel,
+              style: textTheme.labelLarge?.copyWith(
+                color: colors.mutedForeground,
+              ),
+            ),
+            const SizedBox(height: SmartSpendSpacing.xs),
+            Wrap(
+              spacing: SmartSpendSpacing.sm,
+              runSpacing: SmartSpendSpacing.xs,
+              children: [
+                for (final kind in _EditKind.values)
+                  ChoiceChip(
+                    label: Text(_kindLabel(l10n, kind)),
+                    selected: _kind == kind,
+                    onSelected: _saving
+                        ? null
+                        : (_) => _selectKind(kind, customCategories),
+                  ),
+              ],
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            TextField(
+              controller: _amountController,
+              enabled: !_saving,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              textDirection: TextDirection.ltr,
+              onChanged: (_) {
+                if (_amountError != null || _serverError != null) {
+                  setState(() {
+                    _amountError = null;
                     _serverError = null;
-                  }),
-          ),
-          const SizedBox(height: SmartSpendSpacing.md),
-          DropdownButtonFormField<int?>(
-            key: ValueKey('contact-$_contactId-${contacts.length}'),
-            initialValue: _contactId,
-            isExpanded: true,
-            decoration: InputDecoration(labelText: l10n.editPersonLabel),
-            items: contactItems,
-            onChanged: _saving
-                ? null
-                : (value) => setState(() {
-                    _contactId = value;
-                    _serverError = null;
-                  }),
-          ),
-          const SizedBox(height: SmartSpendSpacing.md),
-          TextField(
-            controller: _noteController,
-            enabled: !_saving,
-            maxLines: 2,
-            minLines: 1,
-            maxLength: 2000,
-            decoration: InputDecoration(labelText: l10n.editNoteLabel),
-          ),
-          if (!online) ...[
+                  });
+                }
+              },
+              decoration: InputDecoration(
+                labelText: l10n.editAmountLabel,
+                errorText: _amountError,
+              ),
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            DropdownButtonFormField<String>(
+              key: ValueKey('category-${_kind.name}-$_category'),
+              initialValue: _category,
+              isExpanded: true,
+              decoration: InputDecoration(labelText: l10n.editCategoryLabel),
+              items: [
+                for (final category in categories)
+                  DropdownMenuItem<String>(
+                    value: category,
+                    child: Row(
+                      children: [
+                        Icon(
+                          categoryIcon(category),
+                          size: 20,
+                          color: categoryColor(context, category),
+                        ),
+                        const SizedBox(width: SmartSpendSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            category,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+              onChanged: _saving
+                  ? null
+                  : (value) {
+                      if (value != null) _selectCategory(value);
+                    },
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            DropdownButtonFormField<String>(
+              key: ValueKey('sub-$_category-$_subCategory'),
+              initialValue: _subCategory,
+              isExpanded: true,
+              decoration: InputDecoration(labelText: l10n.editSubCategoryLabel),
+              items: [
+                for (final sub in subcategories)
+                  DropdownMenuItem<String>(
+                    value: sub,
+                    child: Text(sub, overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+              onChanged: _saving
+                  ? null
+                  : (value) {
+                      if (value != null) {
+                        setState(() {
+                          _subCategory = value;
+                          _serverError = null;
+                        });
+                      }
+                    },
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            InkWell(
+              onTap: _saving ? null : _pickDate,
+              borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+              child: InputDecorator(
+                decoration: InputDecoration(labelText: l10n.editDateLabel),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${words.day(_date, now: clock.now())} · ${inlineName(words.clock(_date))}',
+                        style: textTheme.bodyLarge,
+                      ),
+                    ),
+                    Icon(
+                      Icons.calendar_today_rounded,
+                      size: 18,
+                      color: colors.mutedForeground,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            DropdownButtonFormField<int?>(
+              key: ValueKey('wallet-$_walletId-${wallets.length}'),
+              initialValue: _walletId,
+              isExpanded: true,
+              decoration: InputDecoration(labelText: l10n.editWalletLabel),
+              items: walletItems,
+              onChanged: _saving
+                  ? null
+                  : (value) => setState(() {
+                      _walletId = value;
+                      _serverError = null;
+                    }),
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            DropdownButtonFormField<int?>(
+              key: ValueKey('contact-$_contactId-${contacts.length}'),
+              initialValue: _contactId,
+              isExpanded: true,
+              decoration: InputDecoration(labelText: l10n.editPersonLabel),
+              items: contactItems,
+              onChanged: _saving
+                  ? null
+                  : (value) => setState(() {
+                      _contactId = value;
+                      _serverError = null;
+                    }),
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            TextField(
+              controller: _noteController,
+              enabled: !_saving,
+              maxLines: 2,
+              minLines: 1,
+              maxLength: 2000,
+              decoration: InputDecoration(labelText: l10n.editNoteLabel),
+            ),
+            if (!online) ...[
+              const SizedBox(height: SmartSpendSpacing.sm),
+              InlineMessage(l10n.transactionEditOffline, warning: true),
+            ],
+            if (_serverError case final String error) ...[
+              const SizedBox(height: SmartSpendSpacing.sm),
+              InlineMessage(error),
+            ],
+            const SizedBox(height: SmartSpendSpacing.lg),
+            SmartSpendButton(
+              label: l10n.editSave,
+              busy: _saving,
+              onPressed: _saving || !online ? null : _save,
+            ),
             const SizedBox(height: SmartSpendSpacing.sm),
-            InlineMessage(l10n.transactionEditOffline, warning: true),
+            SmartSpendButton(
+              label: l10n.editCancel,
+              variant: ButtonVariant.quiet,
+              onPressed: _saving
+                  ? null
+                  : () => Navigator.of(context).maybePop(false),
+            ),
           ],
-          if (_serverError case final String error) ...[
-            const SizedBox(height: SmartSpendSpacing.sm),
-            InlineMessage(error),
-          ],
-          const SizedBox(height: SmartSpendSpacing.lg),
-          SmartSpendButton(
-            label: l10n.editSave,
-            busy: _saving,
-            onPressed: _saving || !online ? null : _save,
-          ),
-          const SizedBox(height: SmartSpendSpacing.sm),
-          SmartSpendButton(
-            label: l10n.editCancel,
-            variant: ButtonVariant.quiet,
-            onPressed:
-                _saving ? null : () => Navigator.of(context).maybePop(false),
-          ),
-        ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

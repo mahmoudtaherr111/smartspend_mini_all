@@ -9,6 +9,9 @@ import 'support/test_app.dart';
 
 Future<TestApp> _openApp(WidgetTester tester, FakeApi api) async {
   api.answer('localAuth.me', (_) => phoneUser());
+  tester.view.physicalSize = const Size(1080, 2400);
+  tester.view.devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
   final app = TestApp(token: 'stored-token', api: api);
   await app.pump(tester);
   return app;
@@ -96,6 +99,7 @@ void main() {
     await _openApp(tester, api);
 
     await tester.enterText(find.widgetWithText(TextField, 'ردّك'), 'هدية');
+    await tester.ensureVisible(find.text('رد'));
     await tester.tap(find.text('رد'));
     await tester.pumpAndSettle();
 
@@ -126,6 +130,7 @@ void main() {
     expect(find.text('الـ 200 دي سلفة ولا هدية؟'), findsOneWidget);
 
     // Tap dismiss
+    await tester.ensureVisible(find.text('شيلها'));
     await tester.tap(find.text('شيلها'));
     await tester.pumpAndSettle();
 
@@ -135,6 +140,7 @@ void main() {
     expect(find.text('تراجع'), findsOneWidget);
 
     // Tap undo
+    await tester.ensureVisible(find.text('تراجع'));
     await tester.tap(find.text('تراجع'));
     await tester.pumpAndSettle();
 

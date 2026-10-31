@@ -18,7 +18,8 @@ class AiBudgetInfo {
   bool get isLow => !isUnlimited && remaining <= 5;
   bool get isExhausted => !isUnlimited && remaining <= 0;
 
-  double get fraction => isUnlimited ? 0.0 : (limit > 0 ? (used / limit).clamp(0.0, 1.0) : 1.0);
+  double get fraction =>
+      isUnlimited ? 0.0 : (limit > 0 ? (used / limit).clamp(0.0, 1.0) : 1.0);
 
   factory AiBudgetInfo.fromJson(Map<String, Object?> json) => AiBudgetInfo(
     limit: (json['limit'] as num?)?.toInt() ?? 0,
@@ -48,7 +49,8 @@ class VoiceLimitInfo {
   bool get isLow => !isUnlimited && remaining <= 60; // 1 minute left
   bool get isExhausted => !isUnlimited && remaining <= 0;
 
-  double get fraction => isUnlimited ? 0.0 : (limit > 0 ? (used / limit).clamp(0.0, 1.0) : 1.0);
+  double get fraction =>
+      isUnlimited ? 0.0 : (limit > 0 ? (used / limit).clamp(0.0, 1.0) : 1.0);
 
   factory VoiceLimitInfo.fromJson(Map<String, Object?> json) => VoiceLimitInfo(
     limit: (json['limit'] as num?)?.toInt() ?? 0,

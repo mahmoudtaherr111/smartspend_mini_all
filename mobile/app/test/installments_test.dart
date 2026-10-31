@@ -60,7 +60,10 @@ void main() {
     testWidgets('shows empty state when no plans exist', (tester) async {
       final api = FakeApi();
       api.answer('localAuth.me', (_) => phoneUser());
-      api.answer('expense.listInstallmentPlans', (_) => <Map<String, Object?>>[]);
+      api.answer(
+        'expense.listInstallmentPlans',
+        (_) => <Map<String, Object?>>[],
+      );
 
       final app = TestApp(token: 'test-token', api: api);
       await app.pump(tester);
@@ -72,35 +75,40 @@ void main() {
       expect(find.text('إضافة أول قسط'), findsOneWidget);
     });
 
-    testWidgets('displays active plans and hero monthly burden', (tester) async {
+    testWidgets('displays active plans and hero monthly burden', (
+      tester,
+    ) async {
       final api = FakeApi();
       api.answer('localAuth.me', (_) => phoneUser());
-      api.answer('expense.listInstallmentPlans', (_) => [
-        {
-          'id': 1,
-          'title': 'قسط تكييف شارب',
-          'keyword': 'شارب',
-          'monthlyAmount': 1200.0,
-          'totalInstallments': 10,
-          'paid': 3,
-          'remaining': 7,
-          'remainingAmount': 8400.0,
-          'done': false,
-          'countedBy': 'keyword',
-        },
-        {
-          'id': 2,
-          'title': 'موبايل فاليو',
-          'keyword': 'فاليو',
-          'monthlyAmount': 800.0,
-          'totalInstallments': 6,
-          'paid': 6,
-          'remaining': 0,
-          'remainingAmount': 0.0,
-          'done': true,
-          'countedBy': 'keyword',
-        },
-      ]);
+      api.answer(
+        'expense.listInstallmentPlans',
+        (_) => [
+          {
+            'id': 1,
+            'title': 'قسط تكييف شارب',
+            'keyword': 'شارب',
+            'monthlyAmount': 1200.0,
+            'totalInstallments': 10,
+            'paid': 3,
+            'remaining': 7,
+            'remainingAmount': 8400.0,
+            'done': false,
+            'countedBy': 'keyword',
+          },
+          {
+            'id': 2,
+            'title': 'موبايل فاليو',
+            'keyword': 'فاليو',
+            'monthlyAmount': 800.0,
+            'totalInstallments': 6,
+            'paid': 6,
+            'remaining': 0,
+            'remainingAmount': 0.0,
+            'done': true,
+            'countedBy': 'keyword',
+          },
+        ],
+      );
 
       final app = TestApp(token: 'test-token', api: api);
       await app.pump(tester);
@@ -114,10 +122,15 @@ void main() {
       expect(find.text('موبايل فاليو'), findsOneWidget);
     });
 
-    testWidgets('validates inputs and creates plan in InstallmentFormSheet', (tester) async {
+    testWidgets('validates inputs and creates plan in InstallmentFormSheet', (
+      tester,
+    ) async {
       final api = FakeApi();
       api.answer('localAuth.me', (_) => phoneUser());
-      api.answer('expense.listInstallmentPlans', (_) => <Map<String, Object?>>[]);
+      api.answer(
+        'expense.listInstallmentPlans',
+        (_) => <Map<String, Object?>>[],
+      );
 
       Map<String, Object?>? createdInput;
       api.answer('expense.createInstallmentPlan', (input) {
@@ -158,7 +171,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.widgetWithText(SmartSpendButton, 'حفظ القسط'));
+      await tester.ensureVisible(
+        find.widgetWithText(SmartSpendButton, 'حفظ القسط'),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(SmartSpendButton, 'حفظ القسط'));
       await tester.pumpAndSettle();
@@ -169,33 +184,39 @@ void main() {
       expect(createdInput!['totalInstallments'], 12);
     });
 
-    testWidgets('InstallmentsQuickCard shows active count and links to screen', (tester) async {
-      final api = FakeApi();
-      api.answer('localAuth.me', (_) => phoneUser());
-      api.answer('expense.listInstallmentPlans', (_) => [
-        {
-          'id': 1,
-          'title': 'قسط بي تك',
-          'keyword': 'بي تك',
-          'monthlyAmount': 600.0,
-          'totalInstallments': 12,
-          'paid': 2,
-          'remaining': 10,
-          'remainingAmount': 6000.0,
-          'done': false,
-          'countedBy': 'keyword',
-        },
-      ]);
+    testWidgets(
+      'InstallmentsQuickCard shows active count and links to screen',
+      (tester) async {
+        final api = FakeApi();
+        api.answer('localAuth.me', (_) => phoneUser());
+        api.answer(
+          'expense.listInstallmentPlans',
+          (_) => [
+            {
+              'id': 1,
+              'title': 'قسط بي تك',
+              'keyword': 'بي تك',
+              'monthlyAmount': 600.0,
+              'totalInstallments': 12,
+              'paid': 2,
+              'remaining': 10,
+              'remainingAmount': 6000.0,
+              'done': false,
+              'countedBy': 'keyword',
+            },
+          ],
+        );
 
-      final app = TestApp(token: 'test-token', api: api);
-      await app.pump(tester);
+        final app = TestApp(token: 'test-token', api: api);
+        await app.pump(tester);
 
-      // Pump on record screen
-      await tester.pumpAndSettle();
+        // Pump on record screen
+        await tester.pumpAndSettle();
 
-      expect(find.byType(InstallmentsQuickCard), findsOneWidget);
-      expect(find.text('الأقساط (1)'), findsOneWidget);
-      expect(find.text('قسط بي تك: فاضل 10 من أصل 12 قسط'), findsOneWidget);
-    });
+        expect(find.byType(InstallmentsQuickCard), findsOneWidget);
+        expect(find.text('الأقساط (1)'), findsOneWidget);
+        expect(find.text('قسط بي تك: فاضل 10 من أصل 12 قسط'), findsOneWidget);
+      },
+    );
   });
 }

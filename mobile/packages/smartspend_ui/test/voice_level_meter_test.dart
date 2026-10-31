@@ -8,9 +8,7 @@ void main() {
       MaterialApp(
         theme: SmartSpendTheme.dark(),
         home: const Scaffold(
-          body: Center(
-            child: VoiceLevelMeter(level: 0.5, barCount: 5),
-          ),
+          body: Center(child: VoiceLevelMeter(level: 0.5, barCount: 5)),
         ),
       ),
     );
@@ -24,11 +22,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: SmartSpendTheme.dark(),
-        home: const Scaffold(
-          body: Center(
-            child: VoiceLevelMeter(level: 1.5),
-          ),
-        ),
+        home: const Scaffold(body: Center(child: VoiceLevelMeter(level: 1.5))),
       ),
     );
 
@@ -41,11 +35,7 @@ void main() {
         theme: SmartSpendTheme.dark(),
         home: const MediaQuery(
           data: MediaQueryData(disableAnimations: true),
-          child: Scaffold(
-            body: Center(
-              child: VoiceLevelMeter(level: 0.8),
-            ),
-          ),
+          child: Scaffold(body: Center(child: VoiceLevelMeter(level: 0.8))),
         ),
       ),
     );

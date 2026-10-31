@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
@@ -14,12 +15,17 @@ class GoalsScreen extends ConsumerWidget {
 
   static const path = '/more/goals';
 
-  Future<void> _onAddGoal(BuildContext context, WidgetRef ref, GoalsListResponse data) async {
+  Future<void> _onAddGoal(
+    BuildContext context,
+    WidgetRef ref,
+    GoalsListResponse data,
+  ) async {
     final activeCount = data.goals.where((g) => g.isActive).length;
     if (!data.isPro && activeCount >= 3) {
       await showSmartSpendSheet<void>(
         context: context,
-        builder: (_) => const UpgradePromptSheet(reason: UpgradeLimitReason.goals),
+        builder: (_) =>
+            const UpgradePromptSheet(reason: UpgradeLimitReason.goals),
       );
       return;
     }
@@ -55,7 +61,11 @@ class GoalsScreen extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.wifi_off_rounded, size: 48, color: colors.mutedForeground),
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 48,
+                  color: colors.mutedForeground,
+                ),
                 const SizedBox(height: SmartSpendSpacing.md),
                 Text(
                   'تعذر تحميل أهداف التوفير',
@@ -67,7 +77,9 @@ class GoalsScreen extends ConsumerWidget {
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
                   'اتأكد من اتصالك بالإنترنت وجرّب تاني',
-                  style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.lg),
                 SmartSpendButton(
@@ -100,12 +112,15 @@ class GoalsScreen extends ConsumerWidget {
                     Text(
                       'حدد هدف توفير لمستقبلك - سواء عمرة، لابتوب جديد، أو صندوق طوارئ - وتابع خطتك بالذكاء الاصطناعي.',
                       textAlign: TextAlign.center,
-                      style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.mutedForeground,
+                      ),
                     ),
                     const SizedBox(height: SmartSpendSpacing.xl),
                     SmartSpendButton(
                       label: 'إنشاء هدف توفير جديد',
-                      onPressed: () => unawaited(_onAddGoal(context, ref, data)),
+                      onPressed: () =>
+                          unawaited(_onAddGoal(context, ref, data)),
                     ),
                   ],
                 ),
@@ -136,7 +151,11 @@ class GoalsScreen extends ConsumerWidget {
                       goal: g,
                       isPro: data.isPro,
                       onTap: () => unawaited(
-                        GoalDetailSheet.show(context, goal: g, isPro: data.isPro),
+                        GoalDetailSheet.show(
+                          context,
+                          goal: g,
+                          isPro: data.isPro,
+                        ),
                       ),
                     ),
                   ),
@@ -156,7 +175,11 @@ class GoalsScreen extends ConsumerWidget {
                       goal: g,
                       isPro: data.isPro,
                       onTap: () => unawaited(
-                        GoalDetailSheet.show(context, goal: g, isPro: data.isPro),
+                        GoalDetailSheet.show(
+                          context,
+                          goal: g,
+                          isPro: data.isPro,
+                        ),
                       ),
                     ),
                   ),
@@ -176,7 +199,11 @@ class GoalsScreen extends ConsumerWidget {
                       goal: g,
                       isPro: data.isPro,
                       onTap: () => unawaited(
-                        GoalDetailSheet.show(context, goal: g, isPro: data.isPro),
+                        GoalDetailSheet.show(
+                          context,
+                          goal: g,
+                          isPro: data.isPro,
+                        ),
                       ),
                     ),
                   ),
@@ -259,7 +286,10 @@ class _GoalCard extends StatelessWidget {
                   ),
                   if (goal.aiPlan != null)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: colors.ai.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
@@ -267,7 +297,11 @@ class _GoalCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.auto_awesome_rounded, size: 12, color: colors.ai),
+                          Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 12,
+                            color: colors.ai,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             'خطة ذكية',
@@ -281,7 +315,10 @@ class _GoalCard extends StatelessWidget {
                       ),
                     ),
                   const SizedBox(width: 4),
-                  Icon(Icons.chevron_left_rounded, color: colors.mutedForeground),
+                  Icon(
+                    Icons.chevron_left_rounded,
+                    color: colors.mutedForeground,
+                  ),
                 ],
               ),
               if (goal.targetDate != null) ...[

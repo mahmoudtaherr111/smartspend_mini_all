@@ -29,7 +29,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(() {
-      setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
+      setState(
+        () => _searchQuery = _searchController.text.trim().toLowerCase(),
+      );
     });
   }
 
@@ -92,16 +94,16 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
       ),
       body: switch (dataAsync) {
         AsyncData(:final value) => RefreshIndicator(
-            onRefresh: () async => ref.refresh(peopleDebtsDataProvider.future),
-            child: _buildContent(context, value, colors, textTheme),
-          ),
+          onRefresh: () async => ref.refresh(peopleDebtsDataProvider.future),
+          child: _buildContent(context, value, colors, textTheme),
+        ),
         AsyncError() => Center(
-            child: ErrorState(
-              message: 'تعذر تحميل بيانات الناس والديون',
-              retryLabel: 'إعادة المحاولة',
-              onRetry: () => ref.invalidate(peopleDebtsDataProvider),
-            ),
+          child: ErrorState(
+            message: 'تعذر تحميل بيانات الناس والديون',
+            retryLabel: 'إعادة المحاولة',
+            onRetry: () => ref.invalidate(peopleDebtsDataProvider),
           ),
+        ),
         _ => const Center(child: CircularProgressIndicator()),
       },
     );
@@ -117,13 +119,15 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
     final active = data.activeDebts.where((c) {
       if (filterQuery.isEmpty) return true;
       return c.name.toLowerCase().contains(filterQuery) ||
-          (c.relation != null && c.relation!.toLowerCase().contains(filterQuery));
+          (c.relation != null &&
+              c.relation!.toLowerCase().contains(filterQuery));
     }).toList();
 
     final settled = data.settledContacts.where((c) {
       if (filterQuery.isEmpty) return true;
       return c.name.toLowerCase().contains(filterQuery) ||
-          (c.relation != null && c.relation!.toLowerCase().contains(filterQuery));
+          (c.relation != null &&
+              c.relation!.toLowerCase().contains(filterQuery));
     }).toList();
 
     return ListView(
@@ -185,13 +189,16 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
             ),
           )
         else
-          ...active.map((item) => _PersonDebtCard(
-                item: item,
-                onTap: () => _openPerson(item),
-                onMerge: item.contactId != null ? () => _openMerge(item) : null,
-                onDelete:
-                    item.contactId != null ? () => _confirmDelete(item) : null,
-              )),
+          ...active.map(
+            (item) => _PersonDebtCard(
+              item: item,
+              onTap: () => _openPerson(item),
+              onMerge: item.contactId != null ? () => _openMerge(item) : null,
+              onDelete: item.contactId != null
+                  ? () => _confirmDelete(item)
+                  : null,
+            ),
+          ),
 
         const SizedBox(height: SmartSpendSpacing.xl),
 
@@ -215,13 +222,16 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
             ),
           )
         else
-          ...settled.map((item) => _PersonDebtCard(
-                item: item,
-                onTap: () => _openPerson(item),
-                onMerge: item.contactId != null ? () => _openMerge(item) : null,
-                onDelete:
-                    item.contactId != null ? () => _confirmDelete(item) : null,
-              )),
+          ...settled.map(
+            (item) => _PersonDebtCard(
+              item: item,
+              onTap: () => _openPerson(item),
+              onMerge: item.contactId != null ? () => _openMerge(item) : null,
+              onDelete: item.contactId != null
+                  ? () => _confirmDelete(item)
+                  : null,
+            ),
+          ),
       ],
     );
   }
@@ -301,11 +311,7 @@ class _HeroDebtsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                height: 36,
-                width: 1,
-                color: colors.border,
-              ),
+              Container(height: 36, width: 1, color: colors.border),
               const SizedBox(width: SmartSpendSpacing.md),
               Expanded(
                 child: Column(
@@ -358,9 +364,7 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: SmartSpendSpacing.xs + 2),
         Text(
           title,
-          style: textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(width: SmartSpendSpacing.xs),
         Container(
@@ -443,7 +447,8 @@ class _PersonDebtCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (item.relation case final String rel when rel.isNotEmpty) ...[
+                    if (item.relation case final String rel
+                        when rel.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         rel,
@@ -485,11 +490,16 @@ class _PersonDebtCard extends StatelessWidget {
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete_outline_rounded,
-                                size: 18, color: colors.danger),
+                            Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                              color: colors.danger,
+                            ),
                             const SizedBox(width: SmartSpendSpacing.xs),
-                            Text('مسح الشخص',
-                                style: TextStyle(color: colors.danger)),
+                            Text(
+                              'مسح الشخص',
+                              style: TextStyle(color: colors.danger),
+                            ),
                           ],
                         ),
                       ),

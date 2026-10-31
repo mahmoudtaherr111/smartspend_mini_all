@@ -7,10 +7,7 @@ enum ReceiptReviewAction { save, editInComposer, discard }
 
 /// Review sheet for inspected receipt before saving.
 class ReceiptReviewSheet extends StatelessWidget {
-  const ReceiptReviewSheet({
-    super.key,
-    required this.receipt,
-  });
+  const ReceiptReviewSheet({super.key, required this.receipt});
 
   final ReceiptData receipt;
 
@@ -62,18 +59,21 @@ class ReceiptReviewSheet extends StatelessWidget {
               children: [
                 Text(
                   'إجمالي الفاتورة',
-                  style: SmartSpendTypography.style(12, FontWeight.w400).copyWith(
-                    color: colors.mutedForeground,
-                  ),
+                  style: SmartSpendTypography.style(
+                    12,
+                    FontWeight.w400,
+                  ).copyWith(color: colors.mutedForeground),
                 ),
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
                   formatMoney(receipt.amount),
-                  style: SmartSpendTypography.style(28, FontWeight.w800).copyWith(
-                    color: colors.accent,
-                  ),
+                  style: SmartSpendTypography.style(
+                    28,
+                    FontWeight.w800,
+                  ).copyWith(color: colors.accent),
                 ),
-                if (receipt.merchant != null && receipt.merchant!.isNotEmpty) ...[
+                if (receipt.merchant != null &&
+                    receipt.merchant!.isNotEmpty) ...[
                   const SizedBox(height: SmartSpendSpacing.xs),
                   Text(
                     receipt.merchant!,
@@ -99,9 +99,10 @@ class ReceiptReviewSheet extends StatelessWidget {
                   children: [
                     Text(
                       'التصنيف:',
-                      style: SmartSpendTypography.style(12, FontWeight.w400).copyWith(
-                        color: colors.mutedForeground,
-                      ),
+                      style: SmartSpendTypography.style(
+                        12,
+                        FontWeight.w400,
+                      ).copyWith(color: colors.mutedForeground),
                     ),
                     const SizedBox(width: SmartSpendSpacing.xs),
                     Text(
@@ -118,9 +119,10 @@ class ReceiptReviewSheet extends StatelessWidget {
                   const SizedBox(height: SmartSpendSpacing.xs),
                   Text(
                     'البيان: ${receipt.description}',
-                    style: SmartSpendTypography.style(12, FontWeight.w400).copyWith(
-                      color: colors.foreground,
-                    ),
+                    style: SmartSpendTypography.style(
+                      12,
+                      FontWeight.w400,
+                    ).copyWith(color: colors.foreground),
                   ),
                 ],
               ],

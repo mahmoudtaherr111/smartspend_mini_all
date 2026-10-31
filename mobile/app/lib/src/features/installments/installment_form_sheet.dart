@@ -64,7 +64,9 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
       return;
     }
     if (paidBefore < 0 || paidBefore > total) {
-      setState(() => _error = 'عدد الأقساط المدفوعة لازم يكون بين 0 وإجمالي الأقساط');
+      setState(
+        () => _error = 'عدد الأقساط المدفوعة لازم يكون بين 0 وإجمالي الأقساط',
+      );
       return;
     }
 
@@ -81,7 +83,9 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
         totalInstallments: total,
         paidBefore: paidBefore,
       );
-      final ok = await ref.read(installmentsProvider.notifier).createPlan(input);
+      final ok = await ref
+          .read(installmentsProvider.notifier)
+          .createPlan(input);
       if (!mounted) return;
       if (ok) {
         if (!mounted) return;
@@ -191,7 +195,9 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
                 hintText: 'مثلاً: 850',
                 suffixText: 'ج.م',
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
               ],

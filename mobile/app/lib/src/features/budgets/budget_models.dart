@@ -44,17 +44,23 @@ final class BudgetStatus {
       id: (json['id'] as num).toInt(),
       title: json['title'] as String? ?? '',
       category: json['category'] as String?,
-      monthlyLimit: (num.tryParse(json['monthlyLimit']?.toString() ?? '0') ?? 0).toDouble(),
+      monthlyLimit: (num.tryParse(json['monthlyLimit']?.toString() ?? '0') ?? 0)
+          .toDouble(),
       periodStartDay: (json['periodStartDay'] as num?)?.toInt() ?? 1,
       linkedGoalId: (json['linkedGoalId'] as num?)?.toInt(),
-      alertThresholdPercent: (json['alertThresholdPercent'] as num?)?.toInt() ?? 80,
+      alertThresholdPercent:
+          (json['alertThresholdPercent'] as num?)?.toInt() ?? 80,
       status: json['status'] as String? ?? 'active',
       currentSpent: (json['currentSpent'] as num?)?.toDouble() ?? 0.0,
       percentage: (json['percentage'] as num?)?.toInt() ?? 0,
       isExceeded: json['isExceeded'] as bool? ?? false,
       isNearLimit: json['isNearLimit'] as bool? ?? false,
-      cycleStart: json['cycleStart'] != null ? DateTime.tryParse(json['cycleStart'].toString()) : null,
-      cycleEnd: json['cycleEnd'] != null ? DateTime.tryParse(json['cycleEnd'].toString()) : null,
+      cycleStart: json['cycleStart'] != null
+          ? DateTime.tryParse(json['cycleStart'].toString())
+          : null,
+      cycleEnd: json['cycleEnd'] != null
+          ? DateTime.tryParse(json['cycleEnd'].toString())
+          : null,
     );
   }
 }

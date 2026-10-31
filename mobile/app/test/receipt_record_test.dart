@@ -27,31 +27,32 @@ void main() {
     expect(find.byIcon(Icons.camera_alt_outlined), findsOneWidget);
   });
 
-  testWidgets('free plan tapping camera displays UpgradePromptSheet for receipts', (
-    tester,
-  ) async {
-    final fakeApi = FakeApi();
-    fakeApi.answer('localAuth.me', (_) => phoneUser());
-    answerSampleMonth(fakeApi);
-    fakeApi.answer('pro.myPlan', (_) => {'plan': 'free', 'role': 'user'});
-    final app = TestApp(
-      token: 'stored-token',
-      api: fakeApi,
-      overrides: [
-        userPlanProvider.overrideWith(
-          (ref) async => const UserPlanInfo(plan: 'free', role: 'user'),
-        ),
-      ],
-    );
-    await app.pump(tester);
+  testWidgets(
+    'free plan tapping camera displays UpgradePromptSheet for receipts',
+    (tester) async {
+      final fakeApi = FakeApi();
+      fakeApi.answer('localAuth.me', (_) => phoneUser());
+      answerSampleMonth(fakeApi);
+      fakeApi.answer('pro.myPlan', (_) => {'plan': 'free', 'role': 'user'});
+      final app = TestApp(
+        token: 'stored-token',
+        api: fakeApi,
+        overrides: [
+          userPlanProvider.overrideWith(
+            (ref) async => const UserPlanInfo(plan: 'free', role: 'user'),
+          ),
+        ],
+      );
+      await app.pump(tester);
 
-    await tester.tap(find.byTooltip('تصوير فاتورة'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('تصوير فاتورة'));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(UpgradePromptSheet), findsOneWidget);
-    expect(find.text('تصوير الفواتير بالذكاء الاصطناعي'), findsOneWidget);
-    expect(find.text('اشترك الآن في برو'), findsOneWidget);
-  });
+      expect(find.byType(UpgradePromptSheet), findsOneWidget);
+      expect(find.text('تصوير الفواتير بالذكاء الاصطناعي'), findsOneWidget);
+      expect(find.text('اشترك الآن في برو'), findsOneWidget);
+    },
+  );
 
   testWidgets('pro user without camera permission sees explanation sheet', (
     tester,
@@ -94,20 +95,23 @@ void main() {
     final fakeApi = FakeApi();
     fakeApi.answer('localAuth.me', (_) => phoneUser());
     answerSampleMonth(fakeApi);
-    fakeApi.answer('image.parseReceipt', (_) => {
-      'amount': 350.0,
-      'description': 'مشتريات بقالة',
-      'category': 'أكل وشرب',
-      'subCategory': 'سوبرماركت',
-      'type': 'expense',
-      'merchant': 'سوبرماركت زهران',
-      'confidence': 0.95,
-      'ocrText': 'زهران ماركت الإجمالي 350 ج',
-      'tokensUsed': 450,
-      'parsedBy': 'gemini',
-      'expenseId': null,
-      'saved': false,
-    });
+    fakeApi.answer(
+      'image.parseReceipt',
+      (_) => {
+        'amount': 350.0,
+        'description': 'مشتريات بقالة',
+        'category': 'أكل وشرب',
+        'subCategory': 'سوبرماركت',
+        'type': 'expense',
+        'merchant': 'سوبرماركت زهران',
+        'confidence': 0.95,
+        'ocrText': 'زهران ماركت الإجمالي 350 ج',
+        'tokensUsed': 450,
+        'parsedBy': 'gemini',
+        'expenseId': null,
+        'saved': false,
+      },
+    );
     fakeApi.answer('expense.create', (_) => {'id': 991});
 
     final fakePicker = FakeReceiptImagePickerService(
@@ -158,20 +162,23 @@ void main() {
     final fakeApi = FakeApi();
     fakeApi.answer('localAuth.me', (_) => phoneUser());
     answerSampleMonth(fakeApi);
-    fakeApi.answer('image.parseReceipt', (_) => {
-      'amount': 0.0,
-      'description': '',
-      'category': 'عام',
-      'subCategory': null,
-      'type': 'expense',
-      'merchant': null,
-      'confidence': 0.1,
-      'ocrText': null,
-      'tokensUsed': 100,
-      'parsedBy': 'gemini',
-      'expenseId': null,
-      'saved': false,
-    });
+    fakeApi.answer(
+      'image.parseReceipt',
+      (_) => {
+        'amount': 0.0,
+        'description': '',
+        'category': 'عام',
+        'subCategory': null,
+        'type': 'expense',
+        'merchant': null,
+        'confidence': 0.1,
+        'ocrText': null,
+        'tokensUsed': 100,
+        'parsedBy': 'gemini',
+        'expenseId': null,
+        'saved': false,
+      },
+    );
 
     final fakePicker = FakeReceiptImagePickerService(
       hasPermission: true,
@@ -203,7 +210,9 @@ void main() {
     expect(find.byType(ReceiptReviewSheet), findsNothing);
     expect(find.byType(SnackBar), findsOneWidget);
     expect(
-      find.text('الصورة مش واضحة أو مقدرناش نقرأ المبلغ. صوّر في إضاءة أفضل وجرّب تاني.'),
+      find.text(
+        'الصورة مش واضحة أو مقدرناش نقرأ المبلغ. صوّر في إضاءة أفضل وجرّب تاني.',
+      ),
       findsOneWidget,
     );
   });

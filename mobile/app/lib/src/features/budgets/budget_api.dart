@@ -1,4 +1,5 @@
 import 'package:smartspend_api/smartspend_api.dart';
+
 import 'budget_models.dart';
 
 Map<String, Object?> _object(Object? value) =>
@@ -36,8 +37,9 @@ class BudgetApi {
       'linkedGoalId': ?linkedGoalId,
       'alertThresholdPercent': alertThresholdPercent,
     };
-    final response =
-        _object(await _client.mutate(Procedures.budget.create, input: args));
+    final response = _object(
+      await _client.mutate(Procedures.budget.create, input: args),
+    );
     return (response['budgetId'] as num?)?.toInt() ?? 0;
   }
 
@@ -64,16 +66,19 @@ class BudgetApi {
     }
     if (status != null) args['status'] = status;
 
-    final response =
-        _object(await _client.mutate(Procedures.budget.update, input: args));
+    final response = _object(
+      await _client.mutate(Procedures.budget.update, input: args),
+    );
     return response['success'] == true;
   }
 
   Future<bool> deleteBudget(int budgetId) async {
-    final response = _object(await _client.mutate(
-      Procedures.budget.delete,
-      input: {'budgetId': budgetId},
-    ));
+    final response = _object(
+      await _client.mutate(
+        Procedures.budget.delete,
+        input: {'budgetId': budgetId},
+      ),
+    );
     return response['success'] == true;
   }
 }

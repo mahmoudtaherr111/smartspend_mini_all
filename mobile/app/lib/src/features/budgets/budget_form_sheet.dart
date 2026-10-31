@@ -42,8 +42,11 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
     final existing = widget.existing;
     _selectedCategory = existing?.category ?? _allCategories;
     _titleController = TextEditingController(
-      text: existing?.title ??
-          (_selectedCategory == _allCategories ? 'الميزانية العامة' : _selectedCategory),
+      text:
+          existing?.title ??
+          (_selectedCategory == _allCategories
+              ? 'الميزانية العامة'
+              : _selectedCategory),
     );
     _limitController = TextEditingController(
       text: existing != null ? existing.monthlyLimit.toStringAsFixed(0) : '',
@@ -66,8 +69,9 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
       if (_titleController.text.trim().isEmpty ||
           _titleController.text.trim() == 'الميزانية العامة' ||
           categoriesForType('expense').contains(_titleController.text.trim())) {
-        _titleController.text =
-            value == _allCategories ? 'الميزانية العامة' : value;
+        _titleController.text = value == _allCategories
+            ? 'الميزانية العامة'
+            : value;
       }
     });
   }
@@ -81,11 +85,14 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
     }
 
     final title = _titleController.text.trim().isEmpty
-        ? (_selectedCategory == _allCategories ? 'الميزانية العامة' : _selectedCategory)
+        ? (_selectedCategory == _allCategories
+              ? 'الميزانية العامة'
+              : _selectedCategory)
         : _titleController.text.trim();
 
-    final categoryArg =
-        _selectedCategory == _allCategories ? null : _selectedCategory;
+    final categoryArg = _selectedCategory == _allCategories
+        ? null
+        : _selectedCategory;
 
     setState(() {
       _submitting = true;
@@ -198,7 +205,10 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
                   value: _selectedCategory,
                   isExpanded: true,
                   dropdownColor: colors.surface,
-                  icon: Icon(Icons.arrow_drop_down_rounded, color: colors.mutedForeground),
+                  icon: Icon(
+                    Icons.arrow_drop_down_rounded,
+                    color: colors.mutedForeground,
+                  ),
                   items: [
                     const DropdownMenuItem(
                       value: _allCategories,
@@ -209,7 +219,11 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
                         value: cat,
                         child: Row(
                           children: [
-                            Icon(categoryIcon(cat), size: 18, color: colors.accent),
+                            Icon(
+                              categoryIcon(cat),
+                              size: 18,
+                              color: colors.accent,
+                            ),
                             const SizedBox(width: 8),
                             Text(cat),
                           ],
@@ -255,7 +269,9 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
             const SizedBox(height: SmartSpendSpacing.xs),
             TextField(
               controller: _limitController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
               ],

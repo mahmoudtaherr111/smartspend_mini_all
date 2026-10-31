@@ -437,7 +437,9 @@ void main() {
           ..answer(
             'expense.list',
             (_) => {
-              'items': [_entry(3, '185.00', 'أكل وشرب', description: 'Talabat')],
+              'items': [
+                _entry(3, '185.00', 'أكل وشرب', description: 'Talabat'),
+              ],
               'total': 1,
             },
           );
@@ -476,7 +478,9 @@ void main() {
           ..answer(
             'expense.list',
             (_) => {
-              'items': [_entry(3, '185.00', 'أكل وشرب', description: 'Talabat')],
+              'items': [
+                _entry(3, '185.00', 'أكل وشرب', description: 'Talabat'),
+              ],
               'total': 1,
             },
           );

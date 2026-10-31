@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
@@ -40,7 +41,11 @@ class BudgetsScreen extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.wifi_off_rounded, size: 48, color: colors.mutedForeground),
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 48,
+                  color: colors.mutedForeground,
+                ),
                 const SizedBox(height: SmartSpendSpacing.md),
                 Text(
                   'تعذر تحميل الميزانيات',
@@ -52,7 +57,9 @@ class BudgetsScreen extends ConsumerWidget {
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
                   'اتأكد من اتصالك بالإنترنت وجرّب تاني',
-                  style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.lg),
                 SmartSpendButton(
@@ -71,7 +78,11 @@ class BudgetsScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.savings_outlined, size: 64, color: colors.accent),
+                    Icon(
+                      Icons.savings_outlined,
+                      size: 64,
+                      color: colors.accent,
+                    ),
                     const SizedBox(height: SmartSpendSpacing.lg),
                     Text(
                       'لسه ما حددتش أي ميزانية',
@@ -84,7 +95,9 @@ class BudgetsScreen extends ConsumerWidget {
                     Text(
                       'حدد سقف شهري لمصاريفك أو لكل تصنيف عشان تتابع اللي باقي لك أول بأول.',
                       textAlign: TextAlign.center,
-                      style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.mutedForeground,
+                      ),
                     ),
                     const SizedBox(height: SmartSpendSpacing.xl),
                     SmartSpendButton(
@@ -101,10 +114,18 @@ class BudgetsScreen extends ConsumerWidget {
           final overall = budgets.where((b) => b.isOverall).firstOrNull;
           final categoryBudgets = budgets.where((b) => !b.isOverall).toList();
 
-          final heroLimit = overall?.monthlyLimit ??
-              categoryBudgets.fold<double>(0.0, (sum, b) => sum + b.monthlyLimit);
-          final heroSpent = overall?.currentSpent ??
-              categoryBudgets.fold<double>(0.0, (sum, b) => sum + b.currentSpent);
+          final heroLimit =
+              overall?.monthlyLimit ??
+              categoryBudgets.fold<double>(
+                0.0,
+                (sum, b) => sum + b.monthlyLimit,
+              );
+          final heroSpent =
+              overall?.currentSpent ??
+              categoryBudgets.fold<double>(
+                0.0,
+                (sum, b) => sum + b.currentSpent,
+              );
           final heroPercentage = heroLimit > 0
               ? ((heroSpent / heroLimit) * 100).round()
               : 0;
@@ -130,7 +151,9 @@ class BudgetsScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            overall != null ? overall.title : 'إجمالي الميزانيات',
+                            overall != null
+                                ? overall.title
+                                : 'إجمالي الميزانيات',
                             style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: colors.foreground,
@@ -142,7 +165,9 @@ class BudgetsScreen extends ConsumerWidget {
                               fontWeight: FontWeight.bold,
                               color: isHeroExceeded
                                   ? colors.danger
-                                  : (heroPercentage >= 80 ? colors.warning : colors.accent),
+                                  : (heroPercentage >= 80
+                                        ? colors.warning
+                                        : colors.accent),
                             ),
                           ),
                         ],
@@ -159,7 +184,9 @@ class BudgetsScreen extends ConsumerWidget {
                           valueColor: AlwaysStoppedAnimation<Color>(
                             isHeroExceeded
                                 ? colors.danger
-                                : (heroPercentage >= 80 ? colors.warning : colors.accent),
+                                : (heroPercentage >= 80
+                                      ? colors.warning
+                                      : colors.accent),
                           ),
                         ),
                       ),
@@ -169,7 +196,9 @@ class BudgetsScreen extends ConsumerWidget {
                         children: [
                           Text(
                             'اتصرف: ${heroSpent.toStringAsFixed(0)} ج.م',
-                            style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colors.mutedForeground,
+                            ),
                           ),
                           Text(
                             isHeroExceeded
@@ -177,7 +206,9 @@ class BudgetsScreen extends ConsumerWidget {
                                 : 'باقي: ${(heroLimit - heroSpent).toStringAsFixed(0)} ج.م',
                             style: textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: isHeroExceeded ? colors.danger : _positiveGreen,
+                              color: isHeroExceeded
+                                  ? colors.danger
+                                  : _positiveGreen,
                             ),
                           ),
                         ],
@@ -205,7 +236,9 @@ class BudgetsScreen extends ConsumerWidget {
                       : colors.accent;
 
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: SmartSpendSpacing.md),
+                    padding: const EdgeInsets.only(
+                      bottom: SmartSpendSpacing.md,
+                    ),
                     child: Container(
                       padding: const EdgeInsets.all(SmartSpendSpacing.md),
                       decoration: BoxDecoration(
@@ -220,7 +253,9 @@ class BudgetsScreen extends ConsumerWidget {
                             children: [
                               CircleAvatar(
                                 radius: 18,
-                                backgroundColor: iconColor.withValues(alpha: 0.15),
+                                backgroundColor: iconColor.withValues(
+                                  alpha: 0.15,
+                                ),
                                 child: Icon(icon, size: 18, color: iconColor),
                               ),
                               const SizedBox(width: SmartSpendSpacing.sm),
@@ -250,20 +285,30 @@ class BudgetsScreen extends ConsumerWidget {
                                 icon: const Icon(Icons.edit_outlined, size: 20),
                                 tooltip: 'تعديل',
                                 onPressed: () => unawaited(
-                                  BudgetFormSheet.show(context, existing: budget),
+                                  BudgetFormSheet.show(
+                                    context,
+                                    existing: budget,
+                                  ),
                                 ),
                               ),
                               IconButton(
-                                icon: Icon(Icons.delete_outline_rounded,
-                                    size: 20, color: colors.danger),
+                                icon: Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 20,
+                                  color: colors.danger,
+                                ),
                                 tooltip: 'حذف',
                                 onPressed: () async {
-                                  final notifier = ref.read(budgetsProvider.notifier);
+                                  final notifier = ref.read(
+                                    budgetsProvider.notifier,
+                                  );
                                   await notifier.deleteBudget(budget.id);
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('تم حذف ميزانية "${budget.title}"'),
+                                        content: Text(
+                                          'تم حذف ميزانية "${budget.title}"',
+                                        ),
                                         action: SnackBarAction(
                                           label: 'تراجع',
                                           onPressed: () => unawaited(
@@ -282,14 +327,17 @@ class BudgetsScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(4),
                             child: LinearProgressIndicator(
                               value: budget.monthlyLimit > 0
-                                  ? (budget.currentSpent / budget.monthlyLimit).clamp(0.0, 1.0)
+                                  ? (budget.currentSpent / budget.monthlyLimit)
+                                        .clamp(0.0, 1.0)
                                   : 0.0,
                               minHeight: 8,
                               backgroundColor: colors.border,
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 budget.isExceeded
                                     ? colors.danger
-                                    : (budget.isNearLimit ? colors.warning : colors.accent),
+                                    : (budget.isNearLimit
+                                          ? colors.warning
+                                          : colors.accent),
                               ),
                             ),
                           ),
@@ -299,14 +347,21 @@ class BudgetsScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 'اتصرف: ${budget.currentSpent.toStringAsFixed(0)} من ${budget.monthlyLimit.toStringAsFixed(0)} ج.م',
-                                style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colors.mutedForeground,
+                                ),
                               ),
                               if (budget.isExceeded)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: colors.danger.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
+                                    borderRadius: BorderRadius.circular(
+                                      SmartSpendRadii.sm,
+                                    ),
                                   ),
                                   child: Text(
                                     'عدت الميزانية (${budget.percentage}%)',
@@ -319,10 +374,17 @@ class BudgetsScreen extends ConsumerWidget {
                                 )
                               else if (budget.isNearLimit)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: colors.warning.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
+                                    color: colors.warning.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                      SmartSpendRadii.sm,
+                                    ),
                                   ),
                                   child: Text(
                                     'قربت تخلص (${budget.percentage}%)',

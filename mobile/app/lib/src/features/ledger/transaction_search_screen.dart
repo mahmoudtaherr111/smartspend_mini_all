@@ -103,7 +103,9 @@ class _TransactionSearchScreenState
       appBar: AppBar(
         titleSpacing: 0,
         title: Padding(
-          padding: const EdgeInsetsDirectional.only(end: SmartSpendSpacing.screen),
+          padding: const EdgeInsetsDirectional.only(
+            end: SmartSpendSpacing.screen,
+          ),
           child: TextField(
             controller: _controller,
             focusNode: _focusNode,
@@ -141,9 +143,10 @@ class _TransactionSearchScreenState
                   Text(
                     trimmedQuery.isEmpty ? l10n.searchTitle : l10n.searchHint,
                     textAlign: TextAlign.center,
-                    style: SmartSpendTypography.style(15, FontWeight.w500).copyWith(
-                      color: colors.mutedForeground,
-                    ),
+                    style: SmartSpendTypography.style(
+                      15,
+                      FontWeight.w500,
+                    ).copyWith(color: colors.mutedForeground),
                   ),
                 ],
               ),

@@ -15,10 +15,8 @@ import 'offline/outbox.dart';
 Future<bool> showManualRecordSheet(BuildContext context) async {
   final saved = await showSmartSpendSheet<bool>(
     context: context,
-    builder: (_) => const MoneyPrivacy(
-      hidden: false,
-      child: ManualRecordSheet(),
-    ),
+    builder: (_) =>
+        const MoneyPrivacy(hidden: false, child: ManualRecordSheet()),
   );
   return saved ?? false;
 }
@@ -132,7 +130,11 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
   Future<void> _pickCategory() async {
     if (_saving) return;
     final available = categoryTaxonomy
-        .where((tax) => tax.type == _type || (_type == 'expense' && tax.type == 'expense'))
+        .where(
+          (tax) =>
+              tax.type == _type ||
+              (_type == 'expense' && tax.type == 'expense'),
+        )
         .toList();
     if (available.isEmpty) return;
 
@@ -141,12 +143,12 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
       isScrollControlled: true,
       backgroundColor: context.smartSpendColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SmartSpendRadii.sheet)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(SmartSpendRadii.sheet),
+        ),
       ),
-      builder: (ctx) => _CategoryPickerSheet(
-        categories: available,
-        selected: _category,
-      ),
+      builder: (ctx) =>
+          _CategoryPickerSheet(categories: available, selected: _category),
     );
 
     if (picked != null && mounted) {
@@ -293,7 +295,9 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
               // Sheet handle
               Center(
                 child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.sm),
+                  margin: const EdgeInsets.symmetric(
+                    vertical: SmartSpendSpacing.sm,
+                  ),
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
@@ -305,7 +309,9 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
 
               // Header title & close button
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.lg),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SmartSpendSpacing.lg,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -330,7 +336,9 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
 
               // Type Toggle (Expense / Income / Transfer)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.lg),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SmartSpendSpacing.lg,
+                ),
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -369,172 +377,186 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
 
               // Hero Amount Display
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.lg),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SmartSpendSpacing.lg,
+                ),
                 child: Center(
                   child: Text(
                     _amountBuffer.isEmpty
                         ? '${l10n.manualRecordAmountHint} ${MoneyLocale.of(context).symbol}'
                         : '$_amountBuffer ${MoneyLocale.of(context).symbol}',
-                    style: SmartSpendTypography.style(
-                      38,
-                      FontWeight.w800,
-                    ).copyWith(
-                      color: _amountBuffer.isEmpty
-                          ? colors.mutedForeground.withValues(alpha: 0.4)
-                          : _type == 'income'
+                    style: SmartSpendTypography.style(38, FontWeight.w800)
+                        .copyWith(
+                          color: _amountBuffer.isEmpty
+                              ? colors.mutedForeground.withValues(alpha: 0.4)
+                              : _type == 'income'
                               ? colors.accent
                               : colors.foreground,
-                    ),
+                        ),
                   ),
                 ),
               ),
 
               if (_error != null) ...[
-              const SizedBox(height: SmartSpendSpacing.xs),
+                const SizedBox(height: SmartSpendSpacing.xs),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SmartSpendSpacing.lg,
+                  ),
+                  child: Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: SmartSpendTypography.style(
+                      14,
+                      FontWeight.w600,
+                    ).copyWith(color: colors.danger),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: SmartSpendSpacing.sm),
+
+              // Details Row: Category Chip & Date Chip & Wallet Chip
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.lg),
-                child: Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: SmartSpendTypography.style(
-                    14,
-                    FontWeight.w600,
-                  ).copyWith(color: colors.danger),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SmartSpendSpacing.lg,
+                ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      // Category Chip
+                      ActionChip(
+                        avatar: Icon(
+                          categoryIcon(_category),
+                          size: 18,
+                          color: categoryColor(context, _category),
+                        ),
+                        label: Text(_category),
+                        onPressed: _pickCategory,
+                        backgroundColor: colors.surface,
+                        side: BorderSide(color: colors.border),
+                      ),
+                      const SizedBox(width: SmartSpendSpacing.sm),
+
+                      // Date Chip
+                      ActionChip(
+                        avatar: const Icon(
+                          Icons.calendar_today_rounded,
+                          size: 16,
+                        ),
+                        label: Text(
+                          DateWords.of(context).day(_date, now: clock.now()),
+                        ),
+                        onPressed: _pickDate,
+                        backgroundColor: colors.surface,
+                        side: BorderSide(color: colors.border),
+                      ),
+                      const SizedBox(width: SmartSpendSpacing.sm),
+
+                      // Wallet Dropdown / Chip
+                      walletsAsync.maybeWhen(
+                        data: (wallets) => wallets.isEmpty
+                            ? const SizedBox.shrink()
+                            : DropdownButtonHideUnderline(
+                                child: DropdownButton<int?>(
+                                  value: _walletId,
+                                  hint: Text(
+                                    l10n.manualRecordNoWallet,
+                                    style: SmartSpendTypography.style(
+                                      13,
+                                      FontWeight.w500,
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.account_balance_wallet_outlined,
+                                    size: 16,
+                                  ),
+                                  items: [
+                                    DropdownMenuItem<int?>(
+                                      value: null,
+                                      child: Text(l10n.manualRecordNoWallet),
+                                    ),
+                                    for (final w in wallets)
+                                      DropdownMenuItem<int?>(
+                                        value: w.id,
+                                        child: Text(w.name),
+                                      ),
+                                  ],
+                                  onChanged: (id) =>
+                                      setState(() => _walletId = id),
+                                ),
+                              ),
+                        orElse: () => const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: SmartSpendSpacing.xs),
+
+              // Optional Note Field
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SmartSpendSpacing.lg,
+                ),
+                child: TextField(
+                  controller: _noteController,
+                  maxLines: 1,
+                  decoration: InputDecoration(
+                    hintText: l10n.manualRecordNoteHint,
+                    isDense: true,
+                    prefixIcon: const Icon(Icons.edit_note_rounded, size: 20),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: SmartSpendSpacing.sm,
+                      vertical: SmartSpendSpacing.xs,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: SmartSpendSpacing.sm),
+
+              // Custom Egyptian Numeric Keypad
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SmartSpendSpacing.lg,
+                ),
+                child: _EgyptianNumericKeypad(
+                  onDigit: _onDigit,
+                  onDecimal: _onDecimal,
+                  onDelete: _onDelete,
+                  onClear: _onClear,
+                  deleteLabel: 'مسح',
+                ),
+              ),
+
+              const SizedBox(height: SmartSpendSpacing.sm),
+
+              // Save CTA Button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  SmartSpendSpacing.lg,
+                  0,
+                  SmartSpendSpacing.lg,
+                  SmartSpendSpacing.md,
+                ),
+                child: SmartSpendButton(
+                  label: l10n.manualRecordSave,
+                  onPressed: _saving ? null : _save,
+                  busy: _saving,
                 ),
               ),
             ],
-
-            const SizedBox(height: SmartSpendSpacing.sm),
-
-            // Details Row: Category Chip & Date Chip & Wallet Chip
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.lg),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    // Category Chip
-                    ActionChip(
-                      avatar: Icon(
-                        categoryIcon(_category),
-                        size: 18,
-                        color: categoryColor(context, _category),
-                      ),
-                      label: Text(_category),
-                      onPressed: _pickCategory,
-                      backgroundColor: colors.surface,
-                      side: BorderSide(
-                        color: colors.border,
-                      ),
-                    ),
-                    const SizedBox(width: SmartSpendSpacing.sm),
-
-                    // Date Chip
-                    ActionChip(
-                      avatar: const Icon(Icons.calendar_today_rounded, size: 16),
-                      label: Text(
-                        DateWords.of(context).day(_date, now: clock.now()),
-                      ),
-                      onPressed: _pickDate,
-                      backgroundColor: colors.surface,
-                      side: BorderSide(
-                        color: colors.border,
-                      ),
-                    ),
-                    const SizedBox(width: SmartSpendSpacing.sm),
-
-                    // Wallet Dropdown / Chip
-                    walletsAsync.maybeWhen(
-                      data: (wallets) => wallets.isEmpty
-                          ? const SizedBox.shrink()
-                          : DropdownButtonHideUnderline(
-                              child: DropdownButton<int?>(
-                                value: _walletId,
-                                hint: Text(
-                                  l10n.manualRecordNoWallet,
-                                  style: SmartSpendTypography.style(13, FontWeight.w500),
-                                ),
-                                icon: const Icon(Icons.account_balance_wallet_outlined, size: 16),
-                                items: [
-                                  DropdownMenuItem<int?>(
-                                    value: null,
-                                    child: Text(l10n.manualRecordNoWallet),
-                                  ),
-                                  for (final w in wallets)
-                                    DropdownMenuItem<int?>(
-                                      value: w.id,
-                                      child: Text(w.name),
-                                    ),
-                                ],
-                                onChanged: (id) => setState(() => _walletId = id),
-                              ),
-                            ),
-                      orElse: () => const SizedBox.shrink(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: SmartSpendSpacing.xs),
-
-            // Optional Note Field
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.lg),
-              child: TextField(
-                controller: _noteController,
-                maxLines: 1,
-                decoration: InputDecoration(
-                  hintText: l10n.manualRecordNoteHint,
-                  isDense: true,
-                  prefixIcon: const Icon(Icons.edit_note_rounded, size: 20),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: SmartSpendSpacing.sm,
-                    vertical: SmartSpendSpacing.xs,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: SmartSpendSpacing.sm),
-
-            // Custom Egyptian Numeric Keypad
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.lg),
-              child: _EgyptianNumericKeypad(
-                onDigit: _onDigit,
-                onDecimal: _onDecimal,
-                onDelete: _onDelete,
-                onClear: _onClear,
-                deleteLabel: 'مسح',
-              ),
-            ),
-
-            const SizedBox(height: SmartSpendSpacing.sm),
-
-            // Save CTA Button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                SmartSpendSpacing.lg,
-                0,
-                SmartSpendSpacing.lg,
-                SmartSpendSpacing.md,
-              ),
-              child: SmartSpendButton(
-                label: l10n.manualRecordSave,
-                onPressed: _saving ? null : _save,
-                busy: _saving,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 class _TypeTab extends StatelessWidget {
@@ -585,12 +607,15 @@ class _TypeTab extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 label,
-                style: SmartSpendTypography.style(
-                  13,
-                  selected ? FontWeight.w700 : FontWeight.w500,
-                ).copyWith(
-                  color: selected ? colors.foreground : colors.mutedForeground,
-                ),
+                style:
+                    SmartSpendTypography.style(
+                      13,
+                      selected ? FontWeight.w700 : FontWeight.w500,
+                    ).copyWith(
+                      color: selected
+                          ? colors.foreground
+                          : colors.mutedForeground,
+                    ),
               ),
             ],
           ),
@@ -653,10 +678,7 @@ class _EgyptianNumericKeypad extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _ActionKeyButton(
-                label: '.',
-                onTap: onDecimal,
-              ),
+              child: _ActionKeyButton(label: '.', onTap: onDecimal),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -729,10 +751,7 @@ class _KeypadButton extends StatelessWidget {
 }
 
 class _ActionKeyButton extends StatelessWidget {
-  const _ActionKeyButton({
-    required this.label,
-    required this.onTap,
-  });
+  const _ActionKeyButton({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
@@ -826,9 +845,11 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
     final colors = context.smartSpendColors;
     final l10n = AppLocalizations.of(context);
     final filtered = widget.categories
-        .where((cat) =>
-            cat.name.contains(_filter) ||
-            cat.subcategories.any((sub) => sub.contains(_filter)))
+        .where(
+          (cat) =>
+              cat.name.contains(_filter) ||
+              cat.subcategories.any((sub) => sub.contains(_filter)),
+        )
         .toList();
 
     return Container(
@@ -875,10 +896,7 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                 final cat = filtered[index];
                 final isSelected = cat.name == widget.selected;
                 return ListTile(
-                  leading: CategoryTile(
-                    category: cat.name,
-                    size: 38,
-                  ),
+                  leading: CategoryTile(category: cat.name, size: 38),
                   title: Text(
                     cat.name,
                     style: SmartSpendTypography.style(

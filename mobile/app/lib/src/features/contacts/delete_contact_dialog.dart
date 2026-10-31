@@ -8,15 +8,13 @@ import 'contacts_providers.dart';
 /// Confirmation dialog for deleting a contact (`profile.deleteContact`).
 /// Explains that transactions remain in the ledger and only lose their link to the person.
 class DeleteContactDialog extends ConsumerStatefulWidget {
-  const DeleteContactDialog({
-    required this.contact,
-    super.key,
-  });
+  const DeleteContactDialog({required this.contact, super.key});
 
   final ContactDebtItem contact;
 
   @override
-  ConsumerState<DeleteContactDialog> createState() => _DeleteContactDialogState();
+  ConsumerState<DeleteContactDialog> createState() =>
+      _DeleteContactDialogState();
 }
 
 class _DeleteContactDialogState extends ConsumerState<DeleteContactDialog> {
@@ -35,7 +33,9 @@ class _DeleteContactDialogState extends ConsumerState<DeleteContactDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _submitting ? null : () => Navigator.of(context).pop(false),
+          onPressed: _submitting
+              ? null
+              : () => Navigator.of(context).pop(false),
           child: const Text('إلغاء'),
         ),
         FilledButton(

@@ -82,7 +82,9 @@ class SeasonSpending {
           if (item is Map<String, Object?>)
             SeasonCategorySpending.fromJson(item),
       ],
-      previous: prevJson != null ? PreviousSeasonSpending.fromJson(prevJson) : null,
+      previous: prevJson != null
+          ? PreviousSeasonSpending.fromJson(prevJson)
+          : null,
     );
   }
 }

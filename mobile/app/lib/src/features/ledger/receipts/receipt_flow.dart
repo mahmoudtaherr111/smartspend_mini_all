@@ -166,7 +166,8 @@ Future<void> startReceiptIntake({
       );
       final ids = await api.save(
         [parsedItem],
-        rawText: parsedReceipt.ocrText ?? '[image] ${parsedReceipt.description}',
+        rawText:
+            parsedReceipt.ocrText ?? '[image] ${parsedReceipt.description}',
       );
       if (context.mounted) {
         announceSaved(context, ref, [parsedItem], ids);
@@ -186,10 +187,7 @@ Future<void> startReceiptIntake({
 }
 
 class _ReceiptScanningDialog extends StatefulWidget {
-  const _ReceiptScanningDialog({
-    required this.future,
-    required this.onCancel,
-  });
+  const _ReceiptScanningDialog({required this.future, required this.onCancel});
 
   final Future<ReceiptData?> future;
   final VoidCallback onCancel;
@@ -213,28 +211,31 @@ class _ReceiptScanningDialogState extends State<_ReceiptScanningDialog> {
     _timer10s = Timer(const Duration(seconds: 10), () {
       if (mounted) setState(() => _showCancel = true);
     });
-    widget.future.then((result) {
-      if (mounted) Navigator.of(context).pop(result);
-    }).catchError((Object error) {
-      if (mounted) {
-        Navigator.of(context).pop(null);
-        final isProErr = error is ApiException &&
-            (error.code == 'FORBIDDEN' || error.message.contains('pro'));
-        if (isProErr) {
-          unawaited(
-            showUpgradePromptSheet(
-              context: context,
-              reason: UpgradeLimitReason.receipts,
-            ),
-          );
-        } else {
-          showSmartSpendNotice(
-            context,
-            'الصورة مش واضحة أو مقدرناش نقرأ الفاتورة. جرّب صورة أوضح في إضاءة أفضل.',
-          );
-        }
-      }
-    });
+    widget.future
+        .then((result) {
+          if (mounted) Navigator.of(context).pop(result);
+        })
+        .catchError((Object error) {
+          if (mounted) {
+            Navigator.of(context).pop(null);
+            final isProErr =
+                error is ApiException &&
+                (error.code == 'FORBIDDEN' || error.message.contains('pro'));
+            if (isProErr) {
+              unawaited(
+                showUpgradePromptSheet(
+                  context: context,
+                  reason: UpgradeLimitReason.receipts,
+                ),
+              );
+            } else {
+              showSmartSpendNotice(
+                context,
+                'الصورة مش واضحة أو مقدرناش نقرأ الفاتورة. جرّب صورة أوضح في إضاءة أفضل.',
+              );
+            }
+          }
+        });
   }
 
   @override
@@ -275,9 +276,10 @@ class _ReceiptScanningDialogState extends State<_ReceiptScanningDialog> {
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
                   'الذكاء الاصطناعي بيستخرج المبلغ والتفاصيل',
-                  style: SmartSpendTypography.style(12, FontWeight.w400).copyWith(
-                    color: colors.mutedForeground,
-                  ),
+                  style: SmartSpendTypography.style(
+                    12,
+                    FontWeight.w400,
+                  ).copyWith(color: colors.mutedForeground),
                 ),
               ] else ...[
                 const SizedBox.square(

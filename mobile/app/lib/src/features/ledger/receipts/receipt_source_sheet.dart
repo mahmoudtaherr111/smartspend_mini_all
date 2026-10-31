@@ -35,9 +35,10 @@ class ReceiptSourceSheet extends StatelessWidget {
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(
             'صوّر الفاتورة أو اختار صورتها من المعرض، والذكاء الاصطناعي هيقرأ المبلغ والتفاصيل تلقائياً.',
-            style: SmartSpendTypography.style(12, FontWeight.w400).copyWith(
-              color: colors.mutedForeground,
-            ),
+            style: SmartSpendTypography.style(
+              12,
+              FontWeight.w400,
+            ).copyWith(color: colors.mutedForeground),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: SmartSpendSpacing.md),
@@ -46,12 +47,16 @@ class ReceiptSourceSheet extends StatelessWidget {
               backgroundColor: colors.accent.withValues(alpha: 0.12),
               child: Icon(Icons.camera_alt_rounded, color: colors.accent),
             ),
-            title: Text('الكاميرا', style: SmartSpendTypography.style(15, FontWeight.w600)),
+            title: Text(
+              'الكاميرا',
+              style: SmartSpendTypography.style(15, FontWeight.w600),
+            ),
             subtitle: Text(
               'التقط صورة واضحة للفاتورة',
-              style: SmartSpendTypography.style(12, FontWeight.w400).copyWith(
-                color: colors.mutedForeground,
-              ),
+              style: SmartSpendTypography.style(
+                12,
+                FontWeight.w400,
+              ).copyWith(color: colors.mutedForeground),
             ),
             onTap: () => Navigator.of(context).pop(ReceiptSource.camera),
           ),
@@ -59,14 +64,21 @@ class ReceiptSourceSheet extends StatelessWidget {
           ListTile(
             leading: CircleAvatar(
               backgroundColor: colors.surfaceRaised,
-              child: Icon(Icons.photo_library_outlined, color: colors.foreground),
+              child: Icon(
+                Icons.photo_library_outlined,
+                color: colors.foreground,
+              ),
             ),
-            title: Text('اختيار من المعرض', style: SmartSpendTypography.style(15, FontWeight.w600)),
+            title: Text(
+              'اختيار من المعرض',
+              style: SmartSpendTypography.style(15, FontWeight.w600),
+            ),
             subtitle: Text(
               'اختر صورة محفوظة على هاتفك',
-              style: SmartSpendTypography.style(12, FontWeight.w400).copyWith(
-                color: colors.mutedForeground,
-              ),
+              style: SmartSpendTypography.style(
+                12,
+                FontWeight.w400,
+              ).copyWith(color: colors.mutedForeground),
             ),
             onTap: () => Navigator.of(context).pop(ReceiptSource.gallery),
           ),

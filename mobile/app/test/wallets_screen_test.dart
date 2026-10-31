@@ -470,7 +470,9 @@ void main() {
       expect(find.text('محفظة أو كارت جديد'), findsOneWidget);
 
       // Pop again and confirm discard
-      final nav2 = Navigator.of(tester.element(find.text('محفظة أو كارت جديد')));
+      final nav2 = Navigator.of(
+        tester.element(find.text('محفظة أو كارت جديد')),
+      );
       nav2.maybePop();
       await tester.pumpAndSettle();
       expect(find.text('تجاهل التعديلات؟'), findsOneWidget);

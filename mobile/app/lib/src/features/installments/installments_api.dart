@@ -1,4 +1,5 @@
 import 'package:smartspend_api/smartspend_api.dart';
+
 import 'installment_models.dart';
 
 Map<String, Object?> _object(Object? value) =>
@@ -10,7 +11,9 @@ class InstallmentsApi {
   final TrpcClient _client;
 
   Future<List<InstallmentPlan>> listInstallmentPlans() async {
-    final response = await _client.query(Procedures.expense.listInstallmentPlans);
+    final response = await _client.query(
+      Procedures.expense.listInstallmentPlans,
+    );
     if (response is! List) return const [];
     return response
         .whereType<Map<String, Object?>>()

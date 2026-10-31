@@ -4,8 +4,9 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 void main() {
   group('MilestoneCelebration', () {
-    testWidgets('renders title, subtitle, and executes onAction on tap',
-        (tester) async {
+    testWidgets('renders title, subtitle, and executes onAction on tap', (
+      tester,
+    ) async {
       var actionCalled = false;
 
       await tester.pumpWidget(
@@ -45,8 +46,9 @@ void main() {
       expect(find.byType(MilestoneCelebration), findsNothing);
     });
 
-    testWidgets('renders properly with animations disabled (reduced motion)',
-        (tester) async {
+    testWidgets('renders properly with animations disabled (reduced motion)', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MediaQuery(
           data: const MediaQueryData(disableAnimations: true),

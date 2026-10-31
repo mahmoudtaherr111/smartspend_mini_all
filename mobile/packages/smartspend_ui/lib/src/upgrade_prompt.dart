@@ -37,57 +37,49 @@ _LimitCopy _copyFor(UpgradeLimitReason reason) {
     case UpgradeLimitReason.voiceSeconds:
       return const _LimitCopy(
         title: 'تسجيل صوتي بلا حدود مع برو',
-        message:
-            'استهلكت كل ثواني الصوت للشهر ده. اشترك في باقة برو وسجل كل مصاريفك بالصوت بدون أي قيود شهرية.',
+        message: 'استهلكت كل ثواني الصوت للشهر ده. اشترك في باقة برو وسجل كل مصاريفك بالصوت بدون أي قيود شهرية.',
         icon: Icons.mic_rounded,
       );
     case UpgradeLimitReason.receipts:
       return const _LimitCopy(
         title: 'تصوير الفواتير بالذكاء الاصطناعي',
-        message:
-            'ميزة تصوير الفواتير والإيصالات وقراءتها آلياً متاحة حصرياً لأعضاء باقة برو.',
+        message: 'ميزة تصوير الفواتير والإيصالات وقراءتها آلياً متاحة حصرياً لأعضاء باقة برو.',
         icon: Icons.receipt_long_rounded,
       );
     case UpgradeLimitReason.goals:
       return const _LimitCopy(
         title: 'أهداف مالية غير محدودة',
-        message:
-            'وصلت للحد الأقصى للأهداف المالية في الباقة المجانية. باقة برو تتيح لك إنشاء عدد لا نهائي من الأهداف وتحليلها.',
+        message: 'وصلت للحد الأقصى للأهداف المالية في الباقة المجانية. باقة برو تتيح لك إنشاء عدد لا نهائي من الأهداف وتحليلها.',
         icon: Icons.flag_rounded,
       );
     case UpgradeLimitReason.budgets:
       return const _LimitCopy(
         title: 'ميزانيات مخصصة لكل فئة',
-        message:
-            'تحكم بمصاريفك بدقة واصنع ميزانيات مخصصة لكل جوانب حياتك مع باقة برو.',
+        message: 'تحكم بمصاريفك بدقة واصنع ميزانيات مخصصة لكل جوانب حياتك مع باقة برو.',
         icon: Icons.pie_chart_rounded,
       );
     case UpgradeLimitReason.dailyEntries:
       return const _LimitCopy(
         title: 'تسجيل ذكي بلا توقف',
-        message:
-            'وصلت للحد الأقصى للتسجيل اليومي. مع برو، سجّل كل عملياتك يومياً بدون انتظار.',
+        message: 'وصلت للحد الأقصى للتسجيل اليومي. مع برو، سجّل كل عملياتك يومياً بدون انتظار.',
         icon: Icons.bolt_rounded,
       );
     case UpgradeLimitReason.aiTokens:
       return const _LimitCopy(
         title: 'رصيد ذكاء اصطناعي إضافي',
-        message:
-            'استهلكت رصيد الذكاء الاصطناعي للشهر الحالي. اشترك في برو للحصول على رصيد أكبر وتحليلات أعمق.',
+        message: 'استهلكت رصيد الذكاء الاصطناعي للشهر الحالي. اشترك في برو للحصول على رصيد أكبر وتحليلات أعمق.',
         icon: Icons.auto_awesome_rounded,
       );
     case UpgradeLimitReason.export:
       return const _LimitCopy(
         title: 'تصدير تقاريرك المالية',
-        message:
-            'تصدير كل معاملاتك وتقاريرك بصيغ Excel و PDF متاح لمشتركي باقة برو.',
+        message: 'تصدير كل معاملاتك وتقاريرك بصيغ Excel و PDF متاح لمشتركي باقة برو.',
         icon: Icons.file_download_rounded,
       );
     case UpgradeLimitReason.general:
       return const _LimitCopy(
         title: 'ترقية الحساب لباقة برو',
-        message:
-            'افتح إمكانيات سمارت سبند الكاملة: تسجيل صوتي وفواتير وتحليلات ذكاء اصطناعي وبدون إعلانات.',
+        message: 'افتح إمكانيات سمارت سبند الكاملة: تسجيل صوتي وفواتير وتحليلات ذكاء اصطناعي وبدون إعلانات.',
         icon: Icons.workspace_premium_rounded,
       );
   }
@@ -148,11 +140,7 @@ class UpgradePromptSheet extends StatelessWidget {
                     width: 1.5,
                   ),
                 ),
-                child: Icon(
-                  copy.icon,
-                  color: colors.accent,
-                  size: 28,
-                ),
+                child: Icon(copy.icon, color: colors.accent, size: 28),
               ),
             ),
             const SizedBox(height: SmartSpendSpacing.md),
@@ -161,9 +149,10 @@ class UpgradePromptSheet extends StatelessWidget {
             Text(
               copy.title,
               textAlign: TextAlign.center,
-              style: SmartSpendTypography.style(18, FontWeight.w700).copyWith(
-                color: colors.foreground,
-              ),
+              style: SmartSpendTypography.style(
+                18,
+                FontWeight.w700,
+              ).copyWith(color: colors.foreground),
             ),
             const SizedBox(height: SmartSpendSpacing.sm),
 
@@ -171,10 +160,10 @@ class UpgradePromptSheet extends StatelessWidget {
             Text(
               customMessage ?? copy.message,
               textAlign: TextAlign.center,
-              style: SmartSpendTypography.style(14, FontWeight.w400).copyWith(
-                color: colors.mutedForeground,
-                height: 1.5,
-              ),
+              style: SmartSpendTypography.style(
+                14,
+                FontWeight.w400,
+              ).copyWith(color: colors.mutedForeground, height: 1.5),
             ),
             const SizedBox(height: SmartSpendSpacing.lg),
 
@@ -221,9 +210,10 @@ class UpgradePromptSheet extends StatelessWidget {
             Center(
               child: Text(
                 displayedPrice,
-                style: SmartSpendTypography.style(15, FontWeight.w600).copyWith(
-                  color: colors.accent,
-                ),
+                style: SmartSpendTypography.style(
+                  15,
+                  FontWeight.w600,
+                ).copyWith(color: colors.accent),
               ),
             ),
             const SizedBox(height: SmartSpendSpacing.md),

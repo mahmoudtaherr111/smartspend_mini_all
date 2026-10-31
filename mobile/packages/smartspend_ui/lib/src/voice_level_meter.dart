@@ -79,7 +79,8 @@ class VoiceLevelMeter extends StatelessWidget {
     required bool animated,
   }) {
     final weight = index < _barWeights.length ? _barWeights[index] : 0.6;
-    final effectiveHeight = minHeight + (maxHeight - minHeight) * level * weight;
+    final effectiveHeight =
+        minHeight + (maxHeight - minHeight) * level * weight;
 
     return AnimatedContainer(
       duration: animated ? const Duration(milliseconds: 100) : Duration.zero,

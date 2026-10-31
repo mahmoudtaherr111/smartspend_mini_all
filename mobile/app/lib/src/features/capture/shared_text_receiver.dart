@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,7 +9,7 @@ import '../ledger/offline/outbox.dart';
 /// via Android Share Target or iOS Share Extension, routing through the outbox (CAP-05).
 class SharedTextReceiver {
   SharedTextReceiver(this._ref, {MethodChannel? channel})
-      : _channel = channel ?? const MethodChannel('com.smartspend.app/share');
+    : _channel = channel ?? const MethodChannel('com.smartspend.app/share');
 
   final Ref _ref;
   final MethodChannel _channel;

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
@@ -94,5 +95,5 @@ class BudgetsNotifier extends AsyncNotifier<List<BudgetStatus>> {
 
 final budgetsProvider =
     AsyncNotifierProvider<BudgetsNotifier, List<BudgetStatus>>(
-  BudgetsNotifier.new,
-);
+      BudgetsNotifier.new,
+    );

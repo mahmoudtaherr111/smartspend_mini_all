@@ -9,8 +9,9 @@ import 'support/test_app.dart';
 
 void main() {
   group('Budgets (MON-06)', () {
-    testWidgets('BudgetsScreen displays empty state when user has no budgets',
-        (tester) async {
+    testWidgets('BudgetsScreen displays empty state when user has no budgets', (
+      tester,
+    ) async {
       final api = FakeApi();
       api.answer('localAuth.me', (_) => phoneUser());
       api.answer('budget.list', (_) => {'budgets': <Map<String, Object?>>[]});
@@ -26,11 +27,14 @@ void main() {
       expect(find.text('إضافة ميزانية شهرية'), findsOneWidget);
     });
 
-    testWidgets('BudgetsScreen displays hero summary and budget cards with warning badges',
-        (tester) async {
-      final api = FakeApi();
-      api.answer('localAuth.me', (_) => phoneUser());
-      api.answer('budget.list', (_) => {
+    testWidgets(
+      'BudgetsScreen displays hero summary and budget cards with warning badges',
+      (tester) async {
+        final api = FakeApi();
+        api.answer('localAuth.me', (_) => phoneUser());
+        api.answer(
+          'budget.list',
+          (_) => {
             'budgets': [
               {
                 'id': 1,
@@ -66,30 +70,33 @@ void main() {
                 'isNearLimit': false,
               },
             ],
-          });
+          },
+        );
 
-      final app = TestApp(token: 'test-token', api: api);
-      await app.pump(tester);
+        final app = TestApp(token: 'test-token', api: api);
+        await app.pump(tester);
 
-      app.container.read(routerProvider).go(BudgetsScreen.path);
-      await tester.pumpAndSettle();
+        app.container.read(routerProvider).go(BudgetsScreen.path);
+        await tester.pumpAndSettle();
 
-      // Check hero card
-      expect(find.text('الميزانية العامة'), findsWidgets);
-      expect(find.text('85%'), findsOneWidget);
-      expect(find.text('اتصرف: 8500 ج.م'), findsOneWidget);
-      expect(find.text('باقي: 1500 ج.م'), findsOneWidget);
+        // Check hero card
+        expect(find.text('الميزانية العامة'), findsWidgets);
+        expect(find.text('85%'), findsOneWidget);
+        expect(find.text('اتصرف: 8500 ج.م'), findsOneWidget);
+        expect(find.text('باقي: 1500 ج.م'), findsOneWidget);
 
-      // Check category cards and badges
-      expect(find.text('أكل وشرب'), findsWidgets);
-      expect(find.textContaining('عدت الميزانية (117%)'), findsOneWidget);
+        // Check category cards and badges
+        expect(find.text('أكل وشرب'), findsWidgets);
+        expect(find.textContaining('عدت الميزانية (117%)'), findsOneWidget);
 
-      expect(find.text('مواصلات'), findsWidgets);
-      expect(find.text('باقي: 1200 ج.م'), findsOneWidget);
-    });
+        expect(find.text('مواصلات'), findsWidgets);
+        expect(find.text('باقي: 1200 ج.م'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Create budget via BudgetFormSheet invokes budget.create',
-        (tester) async {
+    testWidgets('Create budget via BudgetFormSheet invokes budget.create', (
+      tester,
+    ) async {
       final api = FakeApi();
       api.answer('localAuth.me', (_) => phoneUser());
       api.answer('budget.list', (_) => {'budgets': <Map<String, Object?>>[]});
@@ -117,32 +124,38 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap submit button
-      await tester.tap(find.widgetWithText(SmartSpendButton, 'إضافة الميزانية'));
+      await tester.tap(
+        find.widgetWithText(SmartSpendButton, 'إضافة الميزانية'),
+      );
       await tester.pumpAndSettle();
 
       expect(createdInput, isNotNull);
       expect(createdInput!['monthlyLimit'], 4500.0);
     });
 
-    testWidgets('Delete budget invokes budget.delete and offers undo',
-        (tester) async {
+    testWidgets('Delete budget invokes budget.delete and offers undo', (
+      tester,
+    ) async {
       final api = FakeApi();
       api.answer('localAuth.me', (_) => phoneUser());
-      api.answer('budget.list', (_) => {
-            'budgets': [
-              {
-                'id': 10,
-                'title': 'ميزانية الترفيه',
-                'category': 'ترفيه',
-                'monthlyLimit': 1500,
-                'periodStartDay': 1,
-                'currentSpent': 300,
-                'percentage': 20,
-                'isExceeded': false,
-                'isNearLimit': false,
-              },
-            ],
-          });
+      api.answer(
+        'budget.list',
+        (_) => {
+          'budgets': [
+            {
+              'id': 10,
+              'title': 'ميزانية الترفيه',
+              'category': 'ترفيه',
+              'monthlyLimit': 1500,
+              'periodStartDay': 1,
+              'currentSpent': 300,
+              'percentage': 20,
+              'isExceeded': false,
+              'isNearLimit': false,
+            },
+          ],
+        },
+      );
 
       int? deletedId;
       api.answer('budget.delete', (input) {

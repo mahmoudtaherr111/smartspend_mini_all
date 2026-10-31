@@ -38,7 +38,8 @@ class InstallmentsScreen extends ConsumerWidget {
               child: ErrorState(
                 message: 'مش قادرين نحمّل الأقساط دلوقتي: $err',
                 retryLabel: 'إعادة المحاولة',
-                onRetry: () => ref.read(installmentsProvider.notifier).refresh(),
+                onRetry: () =>
+                    ref.read(installmentsProvider.notifier).refresh(),
               ),
             ),
           ),
@@ -53,8 +54,7 @@ class InstallmentsScreen extends ConsumerWidget {
                     child: EmptyState(
                       icon: Icons.calendar_month_outlined,
                       title: 'مافيش أقساط متسجلة',
-                      message:
-                          'عندك قسط؟ ضيفه هنا وكل ما تسجل «دفعت قسط فاليو 800» هنحسبه تلقائياً ونقولك باقي كام.',
+                      message: 'عندك قسط؟ ضيفه هنا وكل ما تسجل «دفعت قسط فاليو 800» هنحسبه تلقائياً ونقولك باقي كام.',
                       actionLabel: 'إضافة أول قسط',
                       onAction: () => InstallmentFormSheet.show(context),
                     ),
@@ -132,7 +132,9 @@ class _InstallmentCard extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('مسح القسط'),
-        content: Text('متأكد إنك عايز تمسح قسط «${plan.title}»؟ مش هتقدر ترجعه بعد المسح.'),
+        content: Text(
+          'متأكد إنك عايز تمسح قسط «${plan.title}»؟ مش هتقدر ترجعه بعد المسح.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -150,7 +152,9 @@ class _InstallmentCard extends ConsumerWidget {
     );
 
     if (confirmed == true) {
-      final ok = await ref.read(installmentsProvider.notifier).deletePlan(plan.id);
+      final ok = await ref
+          .read(installmentsProvider.notifier)
+          .deletePlan(plan.id);
       if (context.mounted && !ok) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('ماعرفناش نمسح القسط، جرب تاني')),
@@ -187,7 +191,8 @@ class _InstallmentCard extends ConsumerWidget {
                         FontWeight.w700,
                       ).copyWith(color: colors.foreground),
                     ),
-                    if (plan.keyword.isNotEmpty && plan.keyword != plan.title) ...[
+                    if (plan.keyword.isNotEmpty &&
+                        plan.keyword != plan.title) ...[
                       const SizedBox(height: 2),
                       Text(
                         'كلمة التتبع: «${plan.keyword}»',
@@ -201,7 +206,10 @@ class _InstallmentCard extends ConsumerWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: colors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(999),
@@ -230,7 +238,9 @@ class _InstallmentCard extends ConsumerWidget {
               value: plan.progressFraction,
               backgroundColor: colors.surfaceRaised,
               valueColor: AlwaysStoppedAnimation<Color>(
-                plan.done ? colors.accent : (plan.isAmbiguous ? colors.warning : colors.accent),
+                plan.done
+                    ? colors.accent
+                    : (plan.isAmbiguous ? colors.warning : colors.accent),
               ),
               minHeight: 8,
             ),

@@ -92,12 +92,14 @@ final peopleDebtsDataProvider = FutureProvider<PeopleDebtsData>((ref) async {
       if (b.contactId != null && seenContactIds.contains(b.contactId)) continue;
       if (seenNames.contains(b.name.trim())) continue;
       if (b.balance != 0) {
-        activeDebts.add(ContactDebtItem(
-          contactId: b.contactId,
-          name: b.name,
-          balance: b.balance,
-          transactionCount: b.count,
-        ));
+        activeDebts.add(
+          ContactDebtItem(
+            contactId: b.contactId,
+            name: b.name,
+            balance: b.balance,
+            transactionCount: b.count,
+          ),
+        );
       }
     }
 

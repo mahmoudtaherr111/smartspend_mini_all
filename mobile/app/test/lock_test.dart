@@ -159,6 +159,7 @@ void main() {
 
         await tester.tap(find.text('المزيد').last);
         await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('الأمان والخصوصية'));
         await tester.tap(find.text('الأمان والخصوصية'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('اقفل التطبيق'));
@@ -502,6 +503,7 @@ void main() {
 
       await tester.tap(find.text('المزيد').last);
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('الأمان والخصوصية'));
       await tester.tap(find.text('الأمان والخصوصية'));
       await tester.pumpAndSettle();
       expect(

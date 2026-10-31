@@ -3,9 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 void main() {
-  Widget testFrame({required Widget child, Brightness brightness = Brightness.light}) {
+  Widget testFrame({
+    required Widget child,
+    Brightness brightness = Brightness.light,
+  }) {
     return MaterialApp(
-      theme: brightness == Brightness.dark ? SmartSpendTheme.dark() : SmartSpendTheme.light(),
+      theme: brightness == Brightness.dark
+          ? SmartSpendTheme.dark()
+          : SmartSpendTheme.light(),
       home: Scaffold(
         body: Builder(
           builder: (context) => Center(
@@ -23,22 +28,23 @@ void main() {
     );
   }
 
-  testWidgets('renders upgrade prompt with specific reason and highlights', (tester) async {
+  testWidgets('renders upgrade prompt with specific reason and highlights', (
+    tester,
+  ) async {
     await tester.pumpWidget(testFrame(child: const SizedBox()));
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
 
     expect(find.text('تسجيل صوتي بلا حدود مع برو'), findsOneWidget);
-    expect(
-      find.textContaining('استهلكت كل ثواني الصوت'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('استهلكت كل ثواني الصوت'), findsOneWidget);
     expect(find.text('99 ج.م / شهرياً'), findsOneWidget);
     expect(find.text('اشترك الآن في برو'), findsOneWidget);
     expect(find.text('ربما لاحقاً'), findsOneWidget);
   });
 
-  testWidgets('dismissing via quiet button closes sheet and returns false', (tester) async {
+  testWidgets('dismissing via quiet button closes sheet and returns false', (
+    tester,
+  ) async {
     bool? outcome;
     await tester.pumpWidget(
       MaterialApp(
@@ -71,7 +77,9 @@ void main() {
     expect(outcome, false);
   });
 
-  testWidgets('tapping upgrade button calls callback and returns true', (tester) async {
+  testWidgets('tapping upgrade button calls callback and returns true', (
+    tester,
+  ) async {
     bool called = false;
     bool? outcome;
     await tester.pumpWidget(
@@ -106,7 +114,9 @@ void main() {
     expect(outcome, true);
   });
 
-  testWidgets('renders cleanly at 200% text scale without overflow', (tester) async {
+  testWidgets('renders cleanly at 200% text scale without overflow', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: SmartSpendTheme.dark(),

@@ -26,7 +26,9 @@ final class GoalAnalysis {
     }
 
     final rawPercent = json['progress_percent'] ?? json['progressPercent'];
-    final percent = rawPercent is num ? rawPercent.toInt() : int.tryParse(rawPercent?.toString() ?? '');
+    final percent = rawPercent is num
+        ? rawPercent.toInt()
+        : int.tryParse(rawPercent?.toString() ?? '');
 
     return GoalAnalysis(
       insight: json['insight'] as String?,
@@ -77,8 +79,8 @@ final class Goal {
       id: (json['id'] as num).toInt(),
       title: json['title'] as String? ?? '',
       description: json['description'] as String?,
-      targetAmount:
-          (num.tryParse(json['targetAmount']?.toString() ?? '0') ?? 0).toDouble(),
+      targetAmount: (num.tryParse(json['targetAmount']?.toString() ?? '0') ?? 0)
+          .toDouble(),
       targetDate: json['targetDate'] != null
           ? DateTime.tryParse(json['targetDate'].toString())
           : null,
@@ -95,10 +97,7 @@ final class Goal {
 }
 
 final class GoalsListResponse {
-  const GoalsListResponse({
-    required this.goals,
-    required this.isPro,
-  });
+  const GoalsListResponse({required this.goals, required this.isPro});
 
   final List<Goal> goals;
   final bool isPro;

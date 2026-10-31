@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
@@ -8,16 +9,16 @@ import 'goals_providers.dart';
 
 /// Sheet displaying a goal's details, saved AI analysis (MON-05 / GAP-16), and actions.
 class GoalDetailSheet extends ConsumerStatefulWidget {
-  const GoalDetailSheet({
-    super.key,
-    required this.goal,
-    required this.isPro,
-  });
+  const GoalDetailSheet({super.key, required this.goal, required this.isPro});
 
   final Goal goal;
   final bool isPro;
 
-  static Future<void> show(BuildContext context, {required Goal goal, required bool isPro}) {
+  static Future<void> show(
+    BuildContext context, {
+    required Goal goal,
+    required bool isPro,
+  }) {
     return showSmartSpendSheet<void>(
       context: context,
       builder: (context) => GoalDetailSheet(goal: goal, isPro: isPro),
@@ -36,7 +37,8 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
     if (!widget.isPro) {
       await showSmartSpendSheet<void>(
         context: context,
-        builder: (_) => const UpgradePromptSheet(reason: UpgradeLimitReason.goals),
+        builder: (_) =>
+            const UpgradePromptSheet(reason: UpgradeLimitReason.goals),
       );
       return;
     }
@@ -146,13 +148,16 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
               spacing: SmartSpendSpacing.sm,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: goal.isCompleted
                         ? const Color(0xFF10B981).withValues(alpha: 0.15)
                         : (goal.isActive
-                            ? colors.accent.withValues(alpha: 0.15)
-                            : colors.warning.withValues(alpha: 0.15)),
+                              ? colors.accent.withValues(alpha: 0.15)
+                              : colors.warning.withValues(alpha: 0.15)),
                     borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
                   ),
                   child: Text(
@@ -170,7 +175,10 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                 ),
                 if (goal.targetDate != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: colors.surfaceRaised,
                       borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
@@ -178,7 +186,9 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                     ),
                     child: Text(
                       'الموعد: ${goal.targetDate!.year}/${goal.targetDate!.month}/${goal.targetDate!.day}',
-                      style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colors.mutedForeground,
+                      ),
                     ),
                   ),
               ],
@@ -204,7 +214,11 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.auto_awesome_rounded, size: 20, color: colors.ai),
+                      Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 20,
+                        color: colors.ai,
+                      ),
                       const SizedBox(width: SmartSpendSpacing.xs),
                       Expanded(
                         child: Text(
@@ -222,10 +236,15 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                               ? const SizedBox(
                                   width: 14,
                                   height: 14,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Icon(Icons.refresh_rounded, size: 16),
-                          label: const Text('تحديث', style: TextStyle(fontSize: 12)),
+                          label: const Text(
+                            'تحديث',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                     ],
                   ),
@@ -238,7 +257,8 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                     const SizedBox(height: SmartSpendSpacing.xs),
                   ],
                   if (analysis != null) ...[
-                    if (analysis.insight != null && analysis.insight!.isNotEmpty) ...[
+                    if (analysis.insight != null &&
+                        analysis.insight!.isNotEmpty) ...[
                       Text(
                         analysis.insight!,
                         style: textTheme.bodyMedium?.copyWith(
@@ -258,31 +278,31 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                       ),
                       const SizedBox(height: SmartSpendSpacing.xs),
                       ...analysis.plan.asMap().entries.map(
-                            (entry) => Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${entry.key + 1}. ',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: colors.accent,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      entry.value,
-                                      style: textTheme.bodySmall?.copyWith(
-                                        color: colors.foreground,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                        (entry) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${entry.key + 1}. ',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.accent,
+                                  fontSize: 13,
+                                ),
                               ),
-                            ),
+                              Expanded(
+                                child: Text(
+                                  entry.value,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colors.foreground,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                      ),
                     ],
                     if (analysis.weeklyActions.isNotEmpty) ...[
                       const SizedBox(height: SmartSpendSpacing.xs),
@@ -300,7 +320,10 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('• ', style: TextStyle(color: colors.accent)),
+                              Text(
+                                '• ',
+                                style: TextStyle(color: colors.accent),
+                              ),
                               Expanded(
                                 child: Text(
                                   action,
@@ -338,8 +361,8 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                       label: _analyzing
                           ? 'جاري تحليل الهدف...'
                           : (widget.isPro
-                              ? 'تحليل الهدف بالذكاء الاصطناعي'
-                              : 'ترقية إلى Pro للتحليل الذكي'),
+                                ? 'تحليل الهدف بالذكاء الاصطناعي'
+                                : 'ترقية إلى Pro للتحليل الذكي'),
                       onPressed: _analyzing ? null : _analyze,
                     ),
                   ],
@@ -371,7 +394,10 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                 ),
                 const SizedBox(width: SmartSpendSpacing.sm),
                 IconButton(
-                  icon: Icon(Icons.delete_outline_rounded, color: colors.danger),
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    color: colors.danger,
+                  ),
                   tooltip: 'حذف الهدف',
                   onPressed: _delete,
                 ),

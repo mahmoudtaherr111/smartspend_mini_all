@@ -9,10 +9,7 @@ import 'contacts_providers.dart';
 
 /// Bottom sheet to merge duplicate contacts (`profile.mergeContacts`).
 class MergeContactsSheet extends ConsumerStatefulWidget {
-  const MergeContactsSheet({
-    required this.currentContact,
-    super.key,
-  });
+  const MergeContactsSheet({required this.currentContact, super.key});
 
   final ContactDebtItem currentContact;
 
@@ -30,7 +27,8 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
   Widget build(BuildContext context) {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
-    final allContacts = ref.watch(contactsProvider).value ?? const <ContactSummary>[];
+    final allContacts =
+        ref.watch(contactsProvider).value ?? const <ContactSummary>[];
     final otherContacts = allContacts
         .where((c) => c.id != widget.currentContact.contactId)
         .toList();
@@ -60,17 +58,23 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
           const SizedBox(height: SmartSpendSpacing.lg),
           if (otherContacts.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.lg),
+              padding: const EdgeInsets.symmetric(
+                vertical: SmartSpendSpacing.lg,
+              ),
               child: Text(
                 'مفيش جهات اتصال تانية للدمج معاها.',
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.mutedForeground,
+                ),
               ),
             )
           else ...[
             Text(
               'اختار الشخص التاني المراد دمجه مع "${widget.currentContact.name}":',
-              style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: SmartSpendSpacing.sm),
             DropdownButtonFormField<int>(
@@ -99,25 +103,34 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
             if (_selectedOtherId != null) ...[
               Text(
                 'أي اسم هيفضل في السجل؟',
-                style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                style: textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: SmartSpendSpacing.xs),
               RadioGroup<bool>(
                 groupValue: _keepCurrentName,
-                onChanged: (val) => setState(() => _keepCurrentName = val ?? true),
+                onChanged: (val) =>
+                    setState(() => _keepCurrentName = val ?? true),
                 child: Column(
                   children: [
                     RadioListTile<bool>(
                       value: true,
                       title: Text(widget.currentContact.name),
-                      subtitle: const Text('هيفضل الاسم ده وكل المعاملات هتتنقل عليه'),
+                      subtitle: const Text(
+                        'هيفضل الاسم ده وكل المعاملات هتتنقل عليه',
+                      ),
                     ),
                     RadioListTile<bool>(
                       value: false,
                       title: Text(
-                        otherContacts.firstWhere((c) => c.id == _selectedOtherId).name,
+                        otherContacts
+                            .firstWhere((c) => c.id == _selectedOtherId)
+                            .name,
                       ),
-                      subtitle: const Text('هيفضل الاسم ده وكل المعاملات هتتنقل عليه'),
+                      subtitle: const Text(
+                        'هيفضل الاسم ده وكل المعاملات هتتنقل عليه',
+                      ),
                     ),
                   ],
                 ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:smartspend_api/smartspend_api.dart';
@@ -25,8 +26,10 @@ class ExportApi {
     final input = <String, Object?>{
       'format': format.extension,
       'type': type,
-      if (startDate != null) 'startDate': startDate.toIso8601String().substring(0, 10),
-      if (endDate != null) 'endDate': endDate.toIso8601String().substring(0, 10),
+      if (startDate != null)
+        'startDate': startDate.toIso8601String().substring(0, 10),
+      if (endDate != null)
+        'endDate': endDate.toIso8601String().substring(0, 10),
     };
 
     final response = _object(

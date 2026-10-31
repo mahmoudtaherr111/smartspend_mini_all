@@ -172,10 +172,14 @@ final walletDetailProvider = FutureProvider.family<WalletDetail?, int>((
     );
   } on Object catch (e) {
     var isServerError = e is ApiException;
-    if (e case ParallelWaitError(errors: (final AsyncError? err1, final AsyncError? err2))) {
-      isServerError = err1?.error is ApiException || err2?.error is ApiException;
+    if (e case ParallelWaitError(
+      errors: (final AsyncError? err1, final AsyncError? err2),
+    )) {
+      isServerError =
+          err1?.error is ApiException || err2?.error is ApiException;
     }
-    if (!isServerError && (e is ApiNetworkException || e is ParallelWaitError)) {
+    if (!isServerError &&
+        (e is ApiNetworkException || e is ParallelWaitError)) {
       ref.read(networkStatusProvider.notifier).unreachable();
       final stored = await ref.read(localLedgerProvider).snapshot();
       final cachedEntries =

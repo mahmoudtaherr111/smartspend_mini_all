@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
@@ -74,9 +75,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
     final colors = context.smartSpendColors;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('تصدير البيانات'),
-      ),
+      appBar: AppBar(title: const Text('تصدير البيانات')),
       body: ListView(
         padding: const EdgeInsets.all(SmartSpendSpacing.screen),
         children: [
@@ -97,7 +96,11 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                     color: colors.accent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                   ),
-                  child: Icon(Icons.file_download_outlined, color: colors.accent, size: 24),
+                  child: Icon(
+                    Icons.file_download_outlined,
+                    color: colors.accent,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: SmartSpendSpacing.md),
                 Expanded(
@@ -106,12 +109,18 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                     children: [
                       Text(
                         'بياناتك ملكك دائماً',
-                        style: SmartSpendTypography.style(16, FontWeight.w700).copyWith(color: colors.foreground),
+                        style: SmartSpendTypography.style(
+                          16,
+                          FontWeight.w700,
+                        ).copyWith(color: colors.foreground),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'حمّل كل معاملاتك المسجلة في ملف منظم تقدر تفتحه على الكمبيوتر أو الموبايل.',
-                        style: SmartSpendTypography.style(13, FontWeight.w400).copyWith(color: colors.mutedForeground),
+                        style: SmartSpendTypography.style(
+                          13,
+                          FontWeight.w400,
+                        ).copyWith(color: colors.mutedForeground),
                       ),
                     ],
                   ),
@@ -122,7 +131,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           const SizedBox(height: SmartSpendSpacing.xl),
           Text(
             'الفترة الزمنية',
-            style: SmartSpendTypography.style(15, FontWeight.w700).copyWith(color: colors.foreground),
+            style: SmartSpendTypography.style(
+              15,
+              FontWeight.w700,
+            ).copyWith(color: colors.foreground),
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
           RadioGroup<ExportPeriod>(
@@ -135,12 +147,18 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               children: [
                 for (final p in ExportPeriod.values) ...[
                   Padding(
-                    padding: const EdgeInsets.only(bottom: SmartSpendSpacing.xs),
+                    padding: const EdgeInsets.only(
+                      bottom: SmartSpendSpacing.xs,
+                    ),
                     child: Material(
-                      color: _period == p ? colors.accent.withValues(alpha: 0.08) : colors.surface,
+                      color: _period == p
+                          ? colors.accent.withValues(alpha: 0.08)
+                          : colors.surface,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                        side: BorderSide(color: _period == p ? colors.accent : colors.border),
+                        side: BorderSide(
+                          color: _period == p ? colors.accent : colors.border,
+                        ),
                       ),
                       child: RadioListTile<ExportPeriod>(
                         value: p,
@@ -162,7 +180,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           const SizedBox(height: SmartSpendSpacing.lg),
           Text(
             'صيغة الملف',
-            style: SmartSpendTypography.style(15, FontWeight.w700).copyWith(color: colors.foreground),
+            style: SmartSpendTypography.style(
+              15,
+              FontWeight.w700,
+            ).copyWith(color: colors.foreground),
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
           RadioGroup<ExportFormat>(
@@ -175,12 +196,18 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               children: [
                 for (final f in ExportFormat.values) ...[
                   Padding(
-                    padding: const EdgeInsets.only(bottom: SmartSpendSpacing.xs),
+                    padding: const EdgeInsets.only(
+                      bottom: SmartSpendSpacing.xs,
+                    ),
                     child: Material(
-                      color: _format == f ? colors.accent.withValues(alpha: 0.08) : colors.surface,
+                      color: _format == f
+                          ? colors.accent.withValues(alpha: 0.08)
+                          : colors.surface,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                        side: BorderSide(color: _format == f ? colors.accent : colors.border),
+                        side: BorderSide(
+                          color: _format == f ? colors.accent : colors.border,
+                        ),
                       ),
                       child: RadioListTile<ExportFormat>(
                         value: f,
@@ -211,12 +238,19 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.shield_outlined, size: 20, color: colors.mutedForeground),
+                Icon(
+                  Icons.shield_outlined,
+                  size: 20,
+                  color: colors.mutedForeground,
+                ),
                 const SizedBox(width: SmartSpendSpacing.sm),
                 Expanded(
                   child: Text(
                     'حق الوصول للبيانات بموجب قانون حماية البيانات الشخصية رقم 151 لسنة 2020: يمكنك الحصول على نسخة من بياناتك في أي وقت.',
-                    style: SmartSpendTypography.style(12, FontWeight.w400).copyWith(color: colors.mutedForeground),
+                    style: SmartSpendTypography.style(
+                      12,
+                      FontWeight.w400,
+                    ).copyWith(color: colors.mutedForeground),
                   ),
                 ),
               ],
@@ -233,7 +267,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               ),
               child: Text(
                 _error!,
-                style: SmartSpendTypography.style(13, FontWeight.w500).copyWith(color: colors.danger),
+                style: SmartSpendTypography.style(
+                  13,
+                  FontWeight.w500,
+                ).copyWith(color: colors.danger),
               ),
             ),
             const SizedBox(height: SmartSpendSpacing.md),
@@ -248,7 +285,11 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle_rounded, color: colors.accent, size: 24),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: colors.accent,
+                    size: 24,
+                  ),
                   const SizedBox(width: SmartSpendSpacing.sm),
                   Expanded(
                     child: Column(
@@ -256,11 +297,19 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       children: [
                         Text(
                           'تم تصدير وحفظ الملف بنجاح 🎉',
-                          style: SmartSpendTypography.style(14, FontWeight.w700).copyWith(color: colors.accent),
+                          style: SmartSpendTypography.style(
+                            14,
+                            FontWeight.w700,
+                          ).copyWith(color: colors.accent),
                         ),
                         Text(
-                          _exportedFile!.path.split(Platform.pathSeparator).last,
-                          style: SmartSpendTypography.style(12, FontWeight.w500).copyWith(color: colors.foreground),
+                          _exportedFile!.path
+                              .split(Platform.pathSeparator)
+                              .last,
+                          style: SmartSpendTypography.style(
+                            12,
+                            FontWeight.w500,
+                          ).copyWith(color: colors.foreground),
                         ),
                       ],
                     ),

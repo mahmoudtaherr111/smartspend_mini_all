@@ -102,7 +102,9 @@ class RecordScreen extends ConsumerWidget {
                       spacing: 0,
                       children: [
                         const Padding(
-                          padding: EdgeInsets.only(bottom: SmartSpendSpacing.sm),
+                          padding: EdgeInsets.only(
+                            bottom: SmartSpendSpacing.sm,
+                          ),
                           child: Align(
                             alignment: AlignmentDirectional.centerStart,
                             child: StreakBadge(),
@@ -125,8 +127,10 @@ class RecordScreen extends ConsumerWidget {
                               final LedgerPage? value = recent.value;
                               if (value != null) {
                                 if (value.entries
-                                    .where((LedgerEntry e) =>
-                                        !hiddenIds.contains(e.id))
+                                    .where(
+                                      (LedgerEntry e) =>
+                                          !hiddenIds.contains(e.id),
+                                    )
                                     .isEmpty) {
                                   return EmptyState(
                                     icon: Icons.receipt_long_rounded,
@@ -134,9 +138,7 @@ class RecordScreen extends ConsumerWidget {
                                     message: l10n.ledgerEmptyBody,
                                   );
                                 }
-                                return LedgerDayList(
-                                  entries: value.entries,
-                                );
+                                return LedgerDayList(entries: value.entries);
                               }
                               if (recent.hasError) {
                                 return ErrorState(

@@ -1,4 +1,5 @@
 import 'package:smartspend_api/smartspend_api.dart';
+
 import 'goal_models.dart';
 
 Map<String, Object?> _object(Object? value) =>
@@ -15,10 +16,7 @@ class GoalsApi {
     final isPro = response['isPro'] as bool? ?? false;
 
     final goals = (rawGoals is List)
-        ? rawGoals
-            .whereType<Map<String, dynamic>>()
-            .map(Goal.fromJson)
-            .toList()
+        ? rawGoals.whereType<Map<String, dynamic>>().map(Goal.fromJson).toList()
         : <Goal>[];
 
     return GoalsListResponse(goals: goals, isPro: isPro);
@@ -38,35 +36,33 @@ class GoalsApi {
       if (targetDate != null) 'targetDate': targetDate.toIso8601String(),
     };
 
-    final response =
-        _object(await _client.mutate(Procedures.goals.create, input: args));
+    final response = _object(
+      await _client.mutate(Procedures.goals.create, input: args),
+    );
     return (response['id'] as num?)?.toInt() ?? 0;
   }
 
-  Future<bool> setStatus({
-    required int goalId,
-    required String status,
-  }) async {
-    final response = _object(await _client.mutate(
-      Procedures.goals.setStatus,
-      input: {'goalId': goalId, 'status': status},
-    ));
+  Future<bool> setStatus({required int goalId, required String status}) async {
+    final response = _object(
+      await _client.mutate(
+        Procedures.goals.setStatus,
+        input: {'goalId': goalId, 'status': status},
+      ),
+    );
     return response['success'] == true;
   }
 
   Future<bool> deleteGoal(int goalId) async {
-    final response = _object(await _client.mutate(
-      Procedures.goals.delete,
-      input: {'goalId': goalId},
-    ));
+    final response = _object(
+      await _client.mutate(Procedures.goals.delete, input: {'goalId': goalId}),
+    );
     return response['success'] == true;
   }
 
   Future<GoalAnalysis> analyzeGoal(int goalId) async {
-    final response = _object(await _client.mutate(
-      Procedures.goals.analyze,
-      input: {'goalId': goalId},
-    ));
+    final response = _object(
+      await _client.mutate(Procedures.goals.analyze, input: {'goalId': goalId}),
+    );
     final rawAnalysis = response['analysis'];
     if (rawAnalysis is Map<String, dynamic>) {
       return GoalAnalysis.fromJson(rawAnalysis);

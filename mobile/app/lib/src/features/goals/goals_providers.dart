@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
@@ -42,10 +43,7 @@ class GoalsNotifier extends AsyncNotifier<GoalsListResponse> {
     return id;
   }
 
-  Future<bool> setStatus({
-    required int goalId,
-    required String status,
-  }) async {
+  Future<bool> setStatus({required int goalId, required String status}) async {
     final api = ref.read(goalsApiProvider);
     final ok = await api.setStatus(goalId: goalId, status: status);
     unawaited(refresh());
@@ -67,7 +65,6 @@ class GoalsNotifier extends AsyncNotifier<GoalsListResponse> {
   }
 }
 
-final goalsProvider =
-    AsyncNotifierProvider<GoalsNotifier, GoalsListResponse>(
+final goalsProvider = AsyncNotifierProvider<GoalsNotifier, GoalsListResponse>(
   GoalsNotifier.new,
 );

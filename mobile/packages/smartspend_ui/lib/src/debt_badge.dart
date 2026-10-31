@@ -11,11 +11,7 @@ import 'tokens.dart';
 /// Negative: `- 500 ج.م (عليك)` - money the user owes.
 /// Zero: `0 ج.م (متصفي)` - settled account.
 class DebtBadge extends StatelessWidget {
-  const DebtBadge({
-    required this.balance,
-    super.key,
-    this.compact = false,
-  });
+  const DebtBadge({required this.balance, super.key, this.compact = false});
 
   final num balance;
   final bool compact;
@@ -50,7 +46,9 @@ class DebtBadge extends StatelessWidget {
       _ => (
         colors.mutedForeground,
         colors.mutedForeground.withValues(alpha: 0.12),
-        isArabic ? '0 ${locale.symbol} (متصفي)' : '0 ${locale.symbol} (settled)',
+        isArabic
+            ? '0 ${locale.symbol} (متصفي)'
+            : '0 ${locale.symbol} (settled)',
         isArabic ? 'الحساب متصفي' : 'Settled balance',
       ),
     };
@@ -65,10 +63,7 @@ class DebtBadge extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
-          border: Border.all(
-            color: color.withValues(alpha: 0.3),
-            width: 1,
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
         ),
         child: Text(
           text,

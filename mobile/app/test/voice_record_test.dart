@@ -51,88 +51,90 @@ void main() {
     expect(find.byKey(const Key('voice-mic-button')), findsOneWidget);
   });
 
-  testWidgets('recording voice parses and auto-saves transaction with undo toast', (
-    tester,
-  ) async {
-    final fakeApi = FakeApi();
-    fakeApi.answer('localAuth.me', (_) => phoneUser());
-    answerSampleMonth(fakeApi);
+  testWidgets(
+    'recording voice parses and auto-saves transaction with undo toast',
+    (tester) async {
+      final fakeApi = FakeApi();
+      fakeApi.answer('localAuth.me', (_) => phoneUser());
+      answerSampleMonth(fakeApi);
 
-    fakeApi.answer('ai.parseVoiceExpense', (input) {
-      return {
-        'text': 'دفعت 150 سوبرماركت',
-        'decision': 'auto_save',
-        'overallConfidence': 0.95,
-        'classificationLogId': 789,
-        'items': [
-          {
-            'amount': 150,
-            'type': 'expense',
-            'category': 'أكل وشرب',
-            'subCategory': 'سوبرماركت',
-            'description': 'سوبرماركت',
-            'currency': 'EGP',
-          },
-        ],
-      };
-    });
+      fakeApi.answer('ai.parseVoiceExpense', (input) {
+        return {
+          'text': 'دفعت 150 سوبرماركت',
+          'decision': 'auto_save',
+          'overallConfidence': 0.95,
+          'classificationLogId': 789,
+          'items': [
+            {
+              'amount': 150,
+              'type': 'expense',
+              'category': 'أكل وشرب',
+              'subCategory': 'سوبرماركت',
+              'description': 'سوبرماركت',
+              'currency': 'EGP',
+            },
+          ],
+        };
+      });
 
-    fakeApi.answer('expense.create', (input) {
-      return {'id': 101};
-    });
+      fakeApi.answer('expense.create', (input) {
+        return {'id': 101};
+      });
 
-    final app = TestApp(token: 'stored-token', api: fakeApi);
-    await app.pump(tester);
+      final app = TestApp(token: 'stored-token', api: fakeApi);
+      await app.pump(tester);
 
-    // Start recording via gesture
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.byKey(const Key('voice-mic-button'))),
-    );
-    await tester.pump(const Duration(milliseconds: 600));
-    await tester.pump(const Duration(seconds: 2));
+      // Start recording via gesture
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const Key('voice-mic-button'))),
+      );
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(seconds: 2));
 
-    // Releasing the hold completes and processes the recording
-    await gesture.up();
-    await tester.pump();
-    await tester.pumpAndSettle();
+      // Releasing the hold completes and processes the recording
+      await gesture.up();
+      await tester.pump();
+      await tester.pumpAndSettle();
 
-    // Verifies parseVoiceExpense was called
-    expect(fakeApi.paths, contains('ai.parseVoiceExpense'));
-    expect(fakeApi.paths, contains('expense.create'));
+      // Verifies parseVoiceExpense was called
+      expect(fakeApi.paths, contains('ai.parseVoiceExpense'));
+      expect(fakeApi.paths, contains('expense.create'));
 
-    // Verifies undo toast was announced
-    expect(find.textContaining('150'), findsOneWidget);
-    expect(find.text('تراجع'), findsOneWidget);
-  });
+      // Verifies undo toast was announced
+      expect(find.textContaining('150'), findsOneWidget);
+      expect(find.text('تراجع'), findsOneWidget);
+    },
+  );
 
-  testWidgets('tap-to-record accessibility mode allows single tap recording (Rule 12.2)', (
-    tester,
-  ) async {
-    final fakeApi = FakeApi();
-    fakeApi.answer('localAuth.me', (_) => phoneUser());
-    answerSampleMonth(fakeApi);
-    final app = TestApp(token: 'stored-token', api: fakeApi);
-    await app.pump(tester);
+  testWidgets(
+    'tap-to-record accessibility mode allows single tap recording (Rule 12.2)',
+    (tester) async {
+      final fakeApi = FakeApi();
+      fakeApi.answer('localAuth.me', (_) => phoneUser());
+      answerSampleMonth(fakeApi);
+      final app = TestApp(token: 'stored-token', api: fakeApi);
+      await app.pump(tester);
 
-    // Initially in hold mode. Toggle to tap-to-record mode via suffix icon
-    expect(find.byIcon(Icons.gesture_rounded), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.gesture_rounded));
-    await tester.pumpAndSettle();
+      // Initially in hold mode. Toggle to tap-to-record mode via suffix icon
+      expect(find.byIcon(Icons.gesture_rounded), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.gesture_rounded));
+      await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.touch_app_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.touch_app_rounded), findsOneWidget);
 
-    // Single tap on mic starts recording
-    await tester.tap(find.byKey(const Key('voice-mic-button')));
-    await tester.pump(const Duration(milliseconds: 300));
+      // Single tap on mic starts recording
+      await tester.tap(find.byKey(const Key('voice-mic-button')));
+      await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.byType(VoiceLevelMeter), findsOneWidget);
-    expect(find.byKey(const Key('voice-stop-button')), findsOneWidget);
+      expect(find.byType(VoiceLevelMeter), findsOneWidget);
+      expect(find.byKey(const Key('voice-stop-button')), findsOneWidget);
 
-    // Tap cancel button stops it
-    await tester.tap(find.byKey(const Key('voice-cancel-button')));
-    await tester.pumpAndSettle();
-    expect(find.byType(VoiceLevelMeter), findsNothing);
-  });
+      // Tap cancel button stops it
+      await tester.tap(find.byKey(const Key('voice-cancel-button')));
+      await tester.pumpAndSettle();
+      expect(find.byType(VoiceLevelMeter), findsNothing);
+    },
+  );
 
   testWidgets('voice quota limit trigger displays UpgradePromptSheet', (
     tester,
@@ -143,7 +145,11 @@ void main() {
 
     // Backend refuses with quota limit
     fakeApi.answer('ai.parseVoiceExpense', (input) {
-      throw const TrpcFailure('FORBIDDEN', 403, 'استهلكت كل ثواني الصوت لهذا الشهر');
+      throw const TrpcFailure(
+        'FORBIDDEN',
+        403,
+        'استهلكت كل ثواني الصوت لهذا الشهر',
+      );
     });
 
     final app = TestApp(token: 'stored-token', api: fakeApi);

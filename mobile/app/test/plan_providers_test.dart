@@ -6,15 +6,14 @@ import 'support/test_app.dart';
 void main() {
   testWidgets('reads user plan and resolves isPro correctly', (tester) async {
     final api = FakeApi();
-    api.answer('pro.myPlan', (_) => {
-      'plan': 'pro',
-      'role': 'user',
-      'features': {
-        'receipts': true,
-        'business': true,
-        'ads': false,
+    api.answer(
+      'pro.myPlan',
+      (_) => {
+        'plan': 'pro',
+        'role': 'user',
+        'features': {'receipts': true, 'business': true, 'ads': false},
       },
-    });
+    );
 
     final app = TestApp(token: 'token-pro', api: api);
     await app.pump(tester);
@@ -28,15 +27,14 @@ void main() {
 
   testWidgets('free user is not pro and has free features', (tester) async {
     final api = FakeApi();
-    api.answer('pro.myPlan', (_) => {
-      'plan': 'free',
-      'role': 'user',
-      'features': {
-        'receipts': false,
-        'business': false,
-        'ads': true,
+    api.answer(
+      'pro.myPlan',
+      (_) => {
+        'plan': 'free',
+        'role': 'user',
+        'features': {'receipts': false, 'business': false, 'ads': true},
       },
-    });
+    );
 
     final app = TestApp(token: 'token-free', api: api);
     await app.pump(tester);
@@ -50,12 +48,15 @@ void main() {
 
   testWidgets('reads planCatalog correctly', (tester) async {
     final api = FakeApi();
-    api.answer('pro.planCatalog', (_) => {
-      'pro': [
-        {'key': 'voice', 'label': 'التسجيل الصوتي', 'value': 'بدون حد'},
-        {'key': 'receipts', 'label': 'تصوير الفواتير', 'value': true},
-      ],
-    });
+    api.answer(
+      'pro.planCatalog',
+      (_) => {
+        'pro': [
+          {'key': 'voice', 'label': 'التسجيل الصوتي', 'value': 'بدون حد'},
+          {'key': 'receipts', 'label': 'تصوير الفواتير', 'value': true},
+        ],
+      },
+    );
 
     final app = TestApp(token: 'token', api: api);
     await app.pump(tester);
