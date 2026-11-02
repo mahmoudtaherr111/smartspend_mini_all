@@ -3905,4 +3905,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aiOneQuestionBody => 'إجابتك بتخلي نصايحي على مقاسك.';
+
+  @override
+  String get aiChatStopped => 'المساعد متوقف مؤقتًا. تقدر تسجل مصاريفك عادي.';
 }

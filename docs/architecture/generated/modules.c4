@@ -20,8 +20,8 @@ model {
     ai-governance = module 'AI usage and cost governance' {
       description 'Per-plan token limits and per-request caps, burst counting, AI cost metrics and the admin cost overview, and the check of model-written numbers against facts.'
       metadata {
-        files '3'
-        paths 'api/lib/ai-usage-policy.ts, api/services/ai-cost-analytics.ts, api/services/ai-cost-policy.ts'
+        files '4'
+        paths 'api/lib/ai-usage-policy.ts, api/lib/feature-switches.ts, api/services/ai-cost-analytics.ts, api/services/ai-cost-policy.ts'
       }
     }
     ai-insights = module 'AI insights and reports' {
@@ -62,7 +62,7 @@ model {
     api-routers = module 'tRPC routers and HTTP sub-apps' {
       description 'One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts.'
       metadata {
-        files '26'
+        files '27'
         paths 'api/*-router.ts'
       }
     }
@@ -243,7 +243,7 @@ model {
     web-admin = module 'Admin UI' {
       description 'Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.'
       metadata {
-        files '25'
+        files '26'
         paths 'src/components/admin/**'
       }
     }

@@ -164,6 +164,7 @@
       "summary": "The Hono server and tRPC wiring, environment validation, the Redis and settings caches, the MySQL schema and its storage classes, file storage, shared contracts, scheduled job bodies and data retention.",
       "summaryAr": "السيرفر وتوصيل الـAPI، والتحقق من الإعدادات، والكاش، وقاعدة البيانات وتصنيف تخزينها، وتخزين الملفات، والأنواع المشتركة، وأجسام المهام المجدولة، ومدة الاحتفاظ بالبيانات.",
       "clusters": ["api-core", "api-routers", "platform", "database", "contracts", "jobs", "storage"],
+      "routers": ["appConfig"],
       "routes": ["GET /health", "ALL /api/trpc/*"],
       "jobs": ["data-retention-lifecycle"]
     },

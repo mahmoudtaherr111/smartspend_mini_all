@@ -25,7 +25,7 @@ facts.
 ## One message, step by step
 
 ### 1. Limits and the conversation
-`chat.sendMessage` reads its configuration from system settings (`loadChatConfig`). The chat must be enabled for the
+`chat.sendMessage` refuses when an admin stopped the chat (`ai_off_chat`, `api/lib/feature-switches.ts`) and reads its configuration from system settings (`loadChatConfig`). The chat must be enabled for the
 plan (`chatbot_enabled_<plan>`), and the user's messages today must be under `chatbot_daily_limit_<plan>`, counted per
 Cairo business day. The model is asked in this order (`chatModels`): the models the admin assigned to "chat" in the
 console for the user's plan, then the older chatbot settings when they hold a key (`chatbot_api_key`, else

@@ -27,6 +27,11 @@ views {
     include *
   }
 
+  view router_appConfig of smartspend.api.trpc.appConfig {
+    title 'tRPC router · appConfig'
+    include *
+  }
+
   view router_auth of smartspend.api.trpc.auth {
     title 'tRPC router · auth'
     include *

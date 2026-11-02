@@ -28,7 +28,7 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
 | Admin API | `api/admin-router.ts` | Users, sessions, settings, AI providers and telemetry, discount codes, learned rules, raw messages, notification templates |
 | Tab components | `src/components/admin/` | Audit, settings, rules, ads, WhatsApp, clarifications, bank messages and notifications |
 | AI command center | `src/components/admin/ai-center/AiCommandCenter.tsx` | Classification quality and telemetry, providers, one user's quota, and a sandbox |
-| Settings screens | `src/components/admin/settings/` | Plan limits, API keys, discount codes |
+| Settings screens | `src/components/admin/settings/` | Plan limits, API keys, discount codes, and the controls for a bad day (`src/components/admin/settings/AdminOperationsSection.tsx`): stop one AI feature, the daily AI cost ceiling, the oldest allowed mobile build |
 | Support | `api/support-router.ts`, `src/pages/Support.tsx` | Tickets from users, answers from admins |
 | Ads | `api/ads-router.ts`, `src/hooks/useAds.ts`, `src/components/ads/AdBanner.tsx` | Campaigns, the banner in the app, clicks |
 | SEO | `api/seo-router.ts`, `src/components/seo/SEOMeta.tsx` | The title and description of a public page, and a sitemap |

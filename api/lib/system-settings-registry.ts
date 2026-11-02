@@ -226,6 +226,21 @@ export const SETTINGS: SettingDef[] = [
   // USD a Cairo day across all users, priced from the admin's model prices; 0 means no cap. With a cap, only models
   // with a price are called.
   { key: "sms_ai_daily_cost_cap_usd", default: "0" },
+  // USD a Cairo day across all AI work; past it AI stops until midnight (api/lib/feature-switches.ts). 0 means no cap.
+  { key: "ai_daily_cost_cap_usd", default: "50" },
+  // "true" stops one AI feature for everyone (api/lib/feature-switches.ts, read by clients through appConfig.get).
+  { key: "ai_off_parse", default: "false" },
+  { key: "ai_off_chat", default: "false" },
+  { key: "ai_off_speech", default: "false" },
+  { key: "ai_off_image", default: "false" },
+  { key: "ai_off_report", default: "false" },
+  { key: "ai_off_goal", default: "false" },
+  { key: "ai_off_business", default: "false" },
+  // The oldest mobile build the server still works with, and where to update; empty requires nothing.
+  { key: "mobile_min_version_android", default: "" },
+  { key: "mobile_min_version_ios", default: "" },
+  { key: "mobile_store_url_android", default: "" },
+  { key: "mobile_store_url_ios", default: "" },
   // Capture from phones (/api/capture/v1, decision 0028). "false" refuses every signal and tells phones to stop; off
   // until the closed beta.
   { key: "capture_enabled", default: "false" },

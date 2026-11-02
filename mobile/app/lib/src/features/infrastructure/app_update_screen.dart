@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/app_localizations.dart';
 
@@ -10,26 +11,23 @@ import '../ledger/ledger_providers.dart';
 ///
 /// Works offline and displays a clear explanation with a store update action.
 class AppUpdateScreen extends ConsumerWidget {
-  const AppUpdateScreen({
-    super.key,
-    this.minimumVersion,
-    this.storeUrl = 'https://smartspend.eg/download',
-    this.onUpdate,
-  });
+  const AppUpdateScreen({super.key, this.minimumVersion, this.storeUrl = ''});
 
   static const path = '/update-required';
 
   final String? minimumVersion;
   final String storeUrl;
-  final VoidCallback? onUpdate;
 
-  void _handleUpdate(BuildContext context) {
-    if (onUpdate != null) {
-      onUpdate!();
-    } else {
+  Future<void> _handleUpdate(BuildContext context) async {
+    final uri = Uri.tryParse(storeUrl);
+    final opened =
+        uri != null &&
+        uri.hasScheme &&
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
       showSmartSpendNotice(
         context,
-        AppLocalizations.of(context).appPleaseUpdateTheAppFrom(storeUrl),
+        AppLocalizations.of(context).appPleaseUpdateTheApp,
       );
     }
   }
@@ -137,12 +135,6 @@ class AppUpdateScreen extends ConsumerWidget {
                 variant: ButtonVariant.primary,
                 icon: Icons.open_in_new_rounded,
                 onPressed: () => _handleUpdate(context),
-              ),
-              const SizedBox(height: SmartSpendSpacing.sm),
-              SmartSpendButton(
-                label: AppLocalizations.of(context).appContinueOffline,
-                variant: ButtonVariant.quiet,
-                onPressed: () => Navigator.of(context).maybePop(),
               ),
             ],
           ),

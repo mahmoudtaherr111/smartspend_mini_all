@@ -105,6 +105,7 @@ model {
   smartspend.api.modules.ai-actions -[writes]-> smartspend.mysql.financial_goals
   smartspend.api.modules.ai-actions -[writes]-> smartspend.mysql.user_budgets
   smartspend.api.modules.ai-actions -[writes]-> smartspend.mysql.user_wallets
+  smartspend.api.modules.ai-governance -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.ai-governance -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.ai-governance -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ai-governance -[reads]-> smartspend.mysql.classification_logs
@@ -841,6 +842,8 @@ model {
   smartspend.api.trpc.analytics.getDashboardStats -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.analytics.getMyAnalytics -[reads]-> smartspend.mysql.user_analytics
   smartspend.api.trpc.analytics.trackEvent -[writes]-> smartspend.mysql.user_analytics
+  smartspend.api.trpc.appConfig.get -[uses]-> smartspend.api.modules.ai-governance
+  smartspend.api.trpc.appConfig.get -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.auth.googleCallback -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.auth.googleCallback -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.auth.googleCallback -[uses]-> smartspend.api.modules.platform

@@ -6889,6 +6889,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إجابتك بتخلي نصايحي على مقاسك.'**
   String get aiOneQuestionBody;
+
+  /// No description provided for @aiChatStopped.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساعد متوقف مؤقتًا. تقدر تسجل مصاريفك عادي.'**
+  String get aiChatStopped;
 }
 
 class _AppLocalizationsDelegate

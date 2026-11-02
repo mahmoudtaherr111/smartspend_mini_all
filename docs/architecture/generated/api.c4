@@ -983,6 +983,22 @@ model {
         }
       }
     }
+    appConfig = router 'appConfig' {
+      description 'api/app-config-router.ts — 1 procedures.'
+      metadata {
+        file 'api/app-config-router.ts'
+      }
+      get = procedure 'appConfig.get' {
+        #query #public #uncalled
+        technology 'publicProcedure'
+        description 'query · publicProcedure · no caller in src/'
+        metadata {
+          file 'api/app-config-router.ts'
+          builder 'publicProcedure'
+          procedureKind 'query'
+        }
+      }
+    }
     auth = router 'auth' {
       description 'api/auth-router.ts — 5 procedures.'
       metadata {

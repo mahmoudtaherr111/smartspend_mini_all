@@ -1191,5 +1191,6 @@
   "statsNextAsk": "Your biggest item is {p0}. Ask the assistant how to spend less on it.",
   "statsNextAskAction": "Ask the assistant",
   "aiOneQuestion": "One question to know you better",
-  "aiOneQuestionBody": "Your answer makes my advice fit you."
+  "aiOneQuestionBody": "Your answer makes my advice fit you.",
+  "aiChatStopped": "The assistant is paused for now. You can still record your spending."
 }

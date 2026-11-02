@@ -88,21 +88,22 @@
         "src/components/admin/settings/AdminCaptureSection.tsx": "ae07fa37dd43",
         "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
-        "src/components/admin/settings/AdminPlansTab.tsx": "e4df73fd3d47",
+        "src/components/admin/settings/AdminOperationsSection.tsx": "14f41844095f",
+        "src/components/admin/settings/AdminPlansTab.tsx": "0de7a93480c1",
         "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
         "src/components/admin/settings/AdminSmsAiSection.tsx": "ec8a865da902",
         "src/components/admin/settings/AdminVoiceCallSection.tsx": "ae339f527cf2",
         "src/pages/Admin.tsx": "6dbe6a2f35fb",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-02 b7dfb797",
-      "arabic": "89a77122352f",
-      "arabicChecked": "2026-11-02 b7dfb797"
+      "checked": "2026-11-02 16d8e737",
+      "arabic": "4e7183e8df18",
+      "arabicChecked": "2026-11-02 16d8e737"
     },
     "ai-center": {
       "files": {
         "api/boot.ts#job:memory-embedding-backfill": "85d55cd9dc11",
-        "api/chat-router.ts": "6db6be662a4e",
+        "api/chat-router.ts": "5055d0a4213d",
         "api/services/action-runtime/artifacts.ts": "5292dfe6dc80",
         "api/services/action-runtime/confirmation-phrases.ts": "ecf79bb5cfe7",
         "api/services/action-runtime/extended-actions.ts": "eb22b727d1a2",
@@ -154,21 +155,22 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "05db1979579d"
       },
-      "checked": "2026-10-31 092bd28c",
-      "arabic": "35ee1de94106",
-      "arabicChecked": "2026-10-31 092bd28c"
+      "checked": "2026-11-02 16d8e737",
+      "arabic": "cd41fc646ff8",
+      "arabicChecked": "2026-11-02 16d8e737"
     },
     "ai-platform": {
       "files": {
         "api/ai-router.ts#ai.getUserLimits": "85e198fa737d",
         "api/ai-router.ts#rest-of-file": "fdff02729ef4",
         "api/lib/ai-gateway.ts": "db17fb645f84",
-        "api/lib/ai-ledger.ts": "7c1a14b9f2c1",
+        "api/lib/ai-ledger.ts": "6793f09293f3",
         "api/lib/ai-pricing.ts": "23f9d247a58d",
         "api/lib/ai-provider-registry.ts": "da1562b6acdf",
-        "api/lib/ai-usage-policy.ts": "8958b2949e6c",
+        "api/lib/ai-usage-policy.ts": "c638486f2242",
         "api/lib/deepseek-client.ts": "25b94e78c4ee",
         "api/lib/embedding-provider.ts": "72fa42725bca",
+        "api/lib/feature-switches.ts": "8deabac56d76",
         "api/lib/fireworks-client.ts": "0ff5cda683b6",
         "api/lib/groq-client.ts": "bdb495a8b189",
         "api/lib/llm-provider-chain.ts": "fb82931289a2",
@@ -180,9 +182,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-11-02 b7dfb797",
-      "arabic": "9ec4f8d2258f",
-      "arabicChecked": "2026-10-31 092bd28c"
+      "checked": "2026-11-02 16d8e737",
+      "arabic": "cc26e24d7464",
+      "arabicChecked": "2026-11-02 16d8e737"
     },
     "bank-messages": {
       "files": {
@@ -463,6 +465,7 @@
     },
     "platform": {
       "files": {
+        "api/app-config-router.ts": "d321237da523",
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
@@ -478,10 +481,10 @@
         "api/lib/redis-client.ts": "b5bd5c4ff3ad",
         "api/lib/settings-cache.ts": "ee7c564513f7",
         "api/lib/shared-generation.ts": "2d53bf30e567",
-        "api/lib/system-settings-registry.ts": "0f0c45df28f1",
+        "api/lib/system-settings-registry.ts": "a5f0dcbdcc05",
         "api/middleware.ts": "d2e8e2966fe6",
         "api/queries/connection.ts": "49fd2ab76893",
-        "api/router.ts": "72e5cfa66375",
+        "api/router.ts": "21a62d0e0c04",
         "api/server.ts#rest-of-file": "e728f2d81677",
         "api/services/scheduler-lock.ts": "861ab6f129a3",
         "api/services/storage/avatar-service.ts": "d0562e7ea889",
@@ -509,9 +512,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "d271ee15cf38"
       },
-      "checked": "2026-11-02 b7dfb797",
-      "arabic": "0d1400877465",
-      "arabicChecked": "2026-10-31 68ae7cc5"
+      "checked": "2026-11-02 16d8e737",
+      "arabic": "b43c037878d4",
+      "arabicChecked": "2026-11-02 16d8e737"
     },
     "voice-calls": {
       "files": {

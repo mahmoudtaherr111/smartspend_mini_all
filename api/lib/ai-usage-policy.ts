@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "../queries/connection";
 import { businessDayRange } from "./app-time";
+import { assertAiSwitchOn, assertDailyAiCost } from "./feature-switches";
 import {
   classificationLogs,
   localUsers,
@@ -266,6 +267,9 @@ export async function assertAiBudget(
   estimatedInputTokens = 0,
   cfg?: Record<string, string>,
 ): Promise<AiBudget> {
+  // Bank messages have their own switch and cap (api/lib/capture/ai-reader.ts).
+  if (channel !== "sms") await assertAiSwitchOn(channel, cfg);
+  await assertDailyAiCost(cfg);
   await assertAiAbuseGuard(user, channel);
   const budget = await getAiBudget(user, channel, cfg);
 

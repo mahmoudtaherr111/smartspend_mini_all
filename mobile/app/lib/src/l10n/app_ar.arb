@@ -2205,5 +2205,6 @@
   "@statsNextAsk": { "placeholders": { "p0": { "type": "String" } } },
   "statsNextAskAction": "اسأل المساعد",
   "aiOneQuestion": "سؤال واحد يخليني أفهمك أحسن",
-  "aiOneQuestionBody": "إجابتك بتخلي نصايحي على مقاسك."
+  "aiOneQuestionBody": "إجابتك بتخلي نصايحي على مقاسك.",
+  "aiChatStopped": "المساعد متوقف مؤقتًا. تقدر تسجل مصاريفك عادي."
 }

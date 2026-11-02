@@ -29,6 +29,7 @@ import {
 import { AdminVoiceCallSection } from "./AdminVoiceCallSection";
 import { AdminCaptureSection } from "./AdminCaptureSection";
 import { AdminSmsAiSection } from "./AdminSmsAiSection";
+import { AdminOperationsSection } from "./AdminOperationsSection";
 import {
   PLAN_FEATURE_DEFAULTS,
   PLAN_FEATURE_LABELS,
@@ -833,6 +834,7 @@ export function AdminPlansTab({
       <AdminVoiceCallSection formData={formData} updateField={updateField} />
 
       {/* The model that reads bank messages: its switch and daily cost cap (decision 0025) */}
+      <AdminOperationsSection formData={formData} updateField={updateField} />
       <AdminSmsAiSection formData={formData} updateField={updateField} />
       <AdminCaptureSection formData={formData} updateField={updateField} />
 

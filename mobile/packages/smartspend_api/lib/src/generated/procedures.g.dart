@@ -13,6 +13,7 @@ abstract final class Procedures {
   static const ads = AdsProcedures._();
   static const ai = AiProcedures._();
   static const analytics = AnalyticsProcedures._();
+  static const appConfig = AppConfigProcedures._();
   static const auth = AuthProcedures._();
   static const budget = BudgetProcedures._();
   static const business = BusinessProcedures._();
@@ -66,6 +67,13 @@ final class AnalyticsProcedures {
 
   ApiQuery get getMyAnalytics => const ApiQuery('analytics.getMyAnalytics', builder: 'authedProcedure');
   ApiMutation get trackEvent => const ApiMutation('analytics.trackEvent', builder: 'authedProcedure', hasInput: true);
+}
+
+/// The `appConfig` router, `api/app-config-router.ts`.
+final class AppConfigProcedures {
+  const AppConfigProcedures._();
+
+  ApiQuery get get => const ApiQuery('appConfig.get', builder: 'publicProcedure');
 }
 
 /// The `auth` router, `api/auth-router.ts`.

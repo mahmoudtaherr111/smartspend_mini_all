@@ -4,6 +4,8 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import 'core/preferences.dart';
 import 'features/auth/session_controller.dart';
+import 'features/infrastructure/app_update_screen.dart';
+import 'features/infrastructure/remote_config.dart';
 import 'features/lock/lock_screen.dart';
 import 'features/notifications/push_notification_service.dart';
 import 'l10n/app_localizations.dart';
@@ -45,7 +47,18 @@ class SmartSpendApp extends ConsumerWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       routerConfig: ref.watch(routerProvider),
       // The app lock covers every route and sheet; it also hides amounts everywhere when asked.
-      builder: (context, child) => LockGate(child: child!),
+      // A build the server no longer works with shows only the way to update.
+      builder: (context, child) => Consumer(
+        builder: (context, ref, _) {
+          final config = ref.watch(updateRequiredProvider);
+          return config == null
+              ? LockGate(child: child!)
+              : AppUpdateScreen(
+                  minimumVersion: config.minVersion,
+                  storeUrl: config.storeUrl,
+                );
+        },
+      ),
     );
   }
 }

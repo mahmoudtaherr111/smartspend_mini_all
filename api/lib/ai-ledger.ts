@@ -88,6 +88,15 @@ export async function ledgerCostUsdSince(channel: string, since: Date): Promise<
   return Number(row?.usd ?? 0) || 0;
 }
 
+/** What every paid call cost since [since], whatever its channel. */
+export async function ledgerTotalCostUsdSince(since: Date): Promise<number> {
+  const [row] = await db
+    .select({ usd: sql<string>`COALESCE(SUM(${aiTokenLedgers.costUsd}), 0)` })
+    .from(aiTokenLedgers)
+    .where(gte(aiTokenLedgers.createdAt, since));
+  return Number(row?.usd ?? 0) || 0;
+}
+
 async function egpFor(usd: number): Promise<number> {
   const settings = await getSystemSettings();
   return Number((usd * (Number(settings.usd_to_egp_rate) || 48.5)).toFixed(6));

@@ -3944,4 +3944,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiOneQuestionBody => 'Your answer makes my advice fit you.';
+
+  @override
+  String get aiChatStopped =>
+      'The assistant is paused for now. You can still record your spending.';
 }

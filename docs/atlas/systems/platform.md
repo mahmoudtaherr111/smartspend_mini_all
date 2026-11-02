@@ -16,6 +16,7 @@ flowchart LR
     http__api_trpc["ALL /api/trpc/*"]
     http__health["GET /health"]
     job_data_retention_lifecycle["Job · data-retention-lifecycle"]
+    router_appConfig["appConfig API · 1 procedure"]
   end
   subgraph g_modules["Code modules"]
     mod_api_core["API server core"]
@@ -252,6 +253,8 @@ flowchart LR
   mod_platform -.-> tbl_system_settings
   mod_platform ==> tbl_api_key_errors
   mod_storage --> ext_object_storage
+  router_appConfig --> mod_platform
+  router_appConfig --> sys_ai_platform
 ```
 
 ## Code modules
@@ -259,7 +262,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
-| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 26 |
+| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 27 |
 | `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 15 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
@@ -268,7 +271,9 @@ flowchart LR
 
 ## API procedures
 
-_None._
+| Procedure | Kind | Builder | Reads | Writes | Screens that call it |
+| --- | --- | --- | --- | --- | --- |
+| `appConfig.get` | query | `publicProcedure` | — | — | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -419,8 +424,9 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>45 files and declarations</summary>
+<details><summary>46 files and declarations</summary>
 
+- `api/app-config-router.ts`
 - `api/boot.ts#ALL /api/trpc/*`
 - `api/boot.ts#GET /health`
 - `api/boot.ts#job:data-retention-lifecycle`

@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 
 import '../account/account_providers.dart';
 import '../account/onboarding_questions_screen.dart';
+import '../infrastructure/remote_config.dart';
 import '../ledger/ledger_providers.dart';
 import '../ledger/offline/outbox.dart';
 import '../stats/stats_providers.dart';
@@ -119,6 +120,21 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 ),
                 child: Text(AppLocalizations.of(context).aiUpgradeToPro),
               ),
+            ),
+          ),
+
+        if (ref.watch(remoteConfigProvider).value?.aiOff.contains('chat') ??
+            false)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SmartSpendSpacing.screen,
+              SmartSpendSpacing.sm,
+              SmartSpendSpacing.screen,
+              0,
+            ),
+            child: InlineMessage(
+              AppLocalizations.of(context).aiChatStopped,
+              tone: MessageTone.warning,
             ),
           ),
 

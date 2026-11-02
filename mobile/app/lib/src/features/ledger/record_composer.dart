@@ -7,6 +7,7 @@ import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../infrastructure/remote_config.dart';
 import 'category_style.dart';
 import 'ledger_models.dart';
 import 'ledger_providers.dart';
@@ -299,6 +300,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final stopped = ref.watch(remoteConfigProvider).value?.aiOff ?? const {};
     final l10n = AppLocalizations.of(context);
     final colors = context.smartSpendColors;
     final isTapToRecord = ref.watch(tapToRecordModeProvider);
@@ -422,35 +424,37 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                             ),
                     ),
                     const SizedBox(width: SmartSpendSpacing.xs),
-                    Visibility(
-                      visible: !_isRecording,
-                      maintainSize: true,
-                      maintainAnimation: true,
-                      maintainState: true,
-                      child: SizedBox.square(
-                        dimension: 48,
-                        child: IconButton(
-                          tooltip: _l10n.monPhotographAReceipt,
-                          onPressed: _busy
-                              ? null
-                              : () => startReceiptIntake(
-                                  context: context,
-                                  ref: ref,
-                                ),
-                          icon: Icon(
-                            Icons.camera_alt_outlined,
-                            color: colors.foreground,
-                            size: 22,
+                    if (!stopped.contains('image'))
+                      Visibility(
+                        visible: !_isRecording,
+                        maintainSize: true,
+                        maintainAnimation: true,
+                        maintainState: true,
+                        child: SizedBox.square(
+                          dimension: 48,
+                          child: IconButton(
+                            tooltip: _l10n.monPhotographAReceipt,
+                            onPressed: _busy
+                                ? null
+                                : () => startReceiptIntake(
+                                    context: context,
+                                    ref: ref,
+                                  ),
+                            icon: Icon(
+                              Icons.camera_alt_outlined,
+                              color: colors.foreground,
+                              size: 22,
+                            ),
                           ),
                         ),
                       ),
-                    ),
                     const SizedBox(width: SmartSpendSpacing.xs),
-                    _buildMicButton(
-                      colors,
-                      isTapToRecord,
-                      isRecording: _isRecording,
-                    ),
+                    if (!stopped.contains('speech'))
+                      _buildMicButton(
+                        colors,
+                        isTapToRecord,
+                        isRecording: _isRecording,
+                      ),
                     const SizedBox(width: SmartSpendSpacing.xs),
                     Visibility(
                       visible: !_isRecording,

@@ -106,6 +106,9 @@ refused key, and the next answers. The chat also takes its model from the admin'
   answer, because the parser cannot tell a truncated JSON object from an invalid one.
 
 ## Budgets and limits
+- Before anything else `assertAiBudget` obeys the admin's stop for the channel (`ai_off_<name>`) and the ceiling on
+  what all AI costs in a Cairo day (`ai_daily_cost_cap_usd`, 50 USD by default, read at most once a minute per process):
+  `api/lib/feature-switches.ts`. Past the ceiling AI stops until midnight; a failed reading lets the call through.
 - `assertAiBudget` runs the burst guard, resolves the budget, and refuses the call when the plan has no
   allowance for that channel, when the input alone exceeds the hard ceiling, or when the monthly limit is
   used up. Callers then shrink the output with `clampOutputTokens`.

@@ -190,6 +190,7 @@
       "description": "Per-plan token limits and per-request caps, burst counting, AI cost metrics and the admin cost overview, and the check of model-written numbers against facts.",
       "paths": [
         "api/lib/ai-usage-policy.ts",
+        "api/lib/feature-switches.ts",
         "api/services/ai-cost-analytics.ts",
         "api/services/ai-cost-policy.ts"
       ]

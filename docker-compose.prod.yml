@@ -41,8 +41,9 @@ services:
       - redis-server
       - --maxmemory
       - 1gb
+      # Redis also holds one-time codes, sessions and counters: only keys with an expiry may be evicted.
       - --maxmemory-policy
-      - allkeys-lru
+      - volatile-lru
       - --appendonly
       - "yes"
       - --appendfsync

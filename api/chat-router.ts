@@ -95,6 +95,7 @@ import { resolveAdminRoutes } from "./lib/ai-gateway";
 import { env } from "./lib/env";
 import { defaultGeminiModelForPlan, mapModelName } from "./lib/model-mapper";
 import { assertAiBudget, estimateTokensFromText, trackAiTokens } from "./lib/ai-usage-policy";
+import { assertAiSwitchOn } from "./lib/feature-switches";
 
 const log = createLogger("chat");
 
@@ -995,6 +996,8 @@ export const chatRouter = router({
           structured: textActionResult.structured,
         };
       }
+
+      await assertAiSwitchOn("chat", config.settings);
 
       if (!devQaBypassDailyLimit) {
         const promptTokensEstimate = estimateTokensFromText(input.message);
