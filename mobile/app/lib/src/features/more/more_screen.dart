@@ -81,45 +81,45 @@ class MoreScreen extends ConsumerWidget {
                 ),
                 GroupedRow(
                   icon: Icons.storefront_outlined,
-                  title: 'حساب الشغل / البيزنس',
-                  subtitle: 'فصل مصاريف الشغل عن المصاريف الشخصية',
+                  title: AppLocalizations.of(context).calWorkAccount,
+                  subtitle: AppLocalizations.of(context).calKeepWorkSpendingApartFrom,
                   onTap: () => context.go(BusinessScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.people_outline_rounded,
-                  title: 'الناس والديون',
-                  subtitle: 'مين ليك عنده ومين عليك ليه',
+                  title: AppLocalizations.of(context).calPeopleAndDebts,
+                  subtitle: AppLocalizations.of(context).calWhoOwesYouAndWho,
                   onTap: () => context.go(ContactsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.savings_outlined,
-                  title: 'الميزانيات الشهرية',
-                  subtitle: 'حدد سقف لمصاريفك وتابع اللي باقي لك أول بأول',
+                  title: AppLocalizations.of(context).calMonthlyBudgets,
+                  subtitle: AppLocalizations.of(context).calSetALimitAndSee,
                   onTap: () => context.go(BudgetsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.flag_outlined,
-                  title: 'أهداف التوفير',
+                  title: AppLocalizations.of(context).calSavingGoals,
                   subtitle:
-                      'خطط لمستقبلك وتابع وصولك لأهدافك بالذكاء الاصطناعي',
+                      AppLocalizations.of(context).calPlanWhatYouAreSaving,
                   onTap: () => context.go(GoalsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.calendar_month_outlined,
-                  title: 'الأقساط',
-                  subtitle: 'متابعة الأقساط الشهرية والباقي منها',
+                  title: AppLocalizations.of(context).calInstallments,
+                  subtitle: AppLocalizations.of(context).calMonthlyInstallmentsAndWhatIs,
                   onTap: () => context.go(InstallmentsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.wb_sunny_outlined,
-                  title: 'مواسم المصاريف',
-                  subtitle: 'رمضان، الأعياد، المدارس ومصاريف الصيف',
+                  title: AppLocalizations.of(context).calSeasons,
+                  subtitle: AppLocalizations.of(context).calRamadanFeastsSchoolAndSummer,
                   onTap: () => context.go(SeasonsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.file_download_outlined,
-                  title: 'تصدير البيانات',
-                  subtitle: 'نزّل نسخة من كل معاملاتك المالية',
+                  title: AppLocalizations.of(context).calExportMyData,
+                  subtitle: AppLocalizations.of(context).calDownloadACopyOfYour,
                   onTap: () => context.go(ExportScreen.path),
                 ),
               ],
@@ -127,36 +127,36 @@ class MoreScreen extends ConsumerWidget {
 
             // 2. Account & Profile
             GroupedSection(
-              title: 'إعدادات الحساب',
+              title: AppLocalizations.of(context).calAccount,
               children: [
                 GroupedRow(
                   icon: Icons.person_outline_rounded,
-                  title: 'الملف الشخصي',
-                  subtitle: 'تعديل الاسم والصورة ورقم التليفون',
+                  title: AppLocalizations.of(context).calProfile,
+                  subtitle: AppLocalizations.of(context).calYourNameAndPhoneNumber,
                   onTap: () => context.go(ProfileScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.tune_rounded,
-                  title: 'تفضيلات الفلوس',
-                  subtitle: 'بداية الشهر المالي والعملة والكسور',
+                  title: AppLocalizations.of(context).calMoneyPreferences,
+                  subtitle: AppLocalizations.of(context).calWhenYourFinancialMonthStarts,
                   onTap: () => context.go(MoneyPreferencesScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.devices_rounded,
-                  title: 'الأجهزة والجلسات النشطة',
-                  subtitle: 'إدارة الأجهزة المسجل منها الدخول',
+                  title: AppLocalizations.of(context).calSignedInDevices,
+                  subtitle: AppLocalizations.of(context).calSeeAndSignOutYour,
                   onTap: () => context.go(SessionsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.psychology_outlined,
-                  title: 'أسئلة التخصيص الذكية',
-                  subtitle: 'إجابة الأسئلة لمساعدة الذكاء الاصطناعي',
+                  title: AppLocalizations.of(context).calPersonalQuestions,
+                  subtitle: AppLocalizations.of(context).calHelpTheAssistantUnderstandYou,
                   onTap: () => context.go(OnboardingQuestionsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.person_remove_outlined,
-                  title: 'حذف الحساب نهائياً',
-                  subtitle: 'حذف كافة البيانات المالية وفقاً للقانون 151',
+                  title: AppLocalizations.of(context).calDeleteMyAccount,
+                  subtitle: AppLocalizations.of(context).calDeleteYourDataForGood,
                   onTap: () => DeleteAccountSheet.show(context),
                 ),
               ],
@@ -164,19 +164,19 @@ class MoreScreen extends ConsumerWidget {
 
             // 3. Plans & Rewards
             GroupedSection(
-              title: 'الاشتراكات والمكافآت',
+              title: AppLocalizations.of(context).calPlanAndRewards,
               children: [
                 GroupedRow(
                   icon: Icons.star_outline_rounded,
-                  title: 'الخطة والترقية',
-                  subtitle: 'مقارنة مميزات باقة Pro وإدارة اشتراكك',
+                  title: AppLocalizations.of(context).calMyPlan,
+                  subtitle: AppLocalizations.of(context).calComparePlansAndManageYour,
                   onTap: () => context.go(PlanScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.card_giftcard_rounded,
-                  title: 'دعوة الأصدقاء',
+                  title: AppLocalizations.of(context).calInviteFriends,
                   subtitle:
-                      'شارك كود الدعوة الخاص بك واحصل على اشتراك Pro هدية',
+                      AppLocalizations.of(context).calShareYourInviteCode,
                   onTap: () => context.go(InviteFriendsScreen.path),
                 ),
               ],
@@ -194,15 +194,15 @@ class MoreScreen extends ConsumerWidget {
                 ),
                 GroupedRow(
                   icon: Icons.folder_shared_outlined,
-                  title: 'ما يخزنه التطبيق عني',
+                  title: AppLocalizations.of(context).calWhatTheAppStoresAbout,
                   subtitle:
-                      'بياناتك المحفوظة وحقوقك وفقاً لقانون حماية البيانات 151',
+                      AppLocalizations.of(context).calYourDataAndYourRights,
                   onTap: () => context.go(DataStoredScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.description_outlined,
-                  title: 'الشروط والأحكام والخصوصية',
-                  subtitle: 'بنود الاستخدام وسياسة الخصوصية المعتمدة',
+                  title: AppLocalizations.of(context).calTermsAndPrivacy,
+                  subtitle: AppLocalizations.of(context).calTermsOfUseAndPrivacy,
                   onTap: () => context.go(TermsScreen.path),
                 ),
                 const LanguageRow(),
@@ -211,12 +211,12 @@ class MoreScreen extends ConsumerWidget {
 
             // 5. Notifications & Preferences
             GroupedSection(
-              title: 'الإشعارات وتخصيص المظهر',
+              title: AppLocalizations.of(context).calNotificationsAndAppearance,
               children: [
                 GroupedRow(
                   icon: Icons.notifications_outlined,
-                  title: 'صندوق الإشعارات',
-                  subtitle: 'تنبيهات وتحديثات المعاملات والميزانيات',
+                  title: AppLocalizations.of(context).calNotifications,
+                  subtitle: AppLocalizations.of(context).calAlertsAboutYourTransactionsAnd,
                   trailing: unreadCount > 0
                       ? Container(
                           padding: const EdgeInsets.symmetric(
@@ -241,14 +241,14 @@ class MoreScreen extends ConsumerWidget {
                 ),
                 GroupedRow(
                   icon: Icons.notifications_active_outlined,
-                  title: 'إعدادات الإشعارات',
-                  subtitle: 'التحكم في التنبيهات ورسائل التقارير الشهرية',
+                  title: AppLocalizations.of(context).calNotificationSettings,
+                  subtitle: AppLocalizations.of(context).calChooseWhatReachesYou,
                   onTap: () => context.push(NotificationSettingsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.palette_outlined,
-                  title: 'المظهر',
-                  subtitle: 'فاتح، داكن، أو متوافق مع إعدادات جهازك',
+                  title: AppLocalizations.of(context).calAppearance,
+                  subtitle: AppLocalizations.of(context).calLightDarkOrLikeYour,
                   onTap: () => AppearanceSheet.show(context),
                 ),
               ],
@@ -256,18 +256,18 @@ class MoreScreen extends ConsumerWidget {
 
             // 6. Help & About
             GroupedSection(
-              title: 'المساعدة والمعلومات',
+              title: AppLocalizations.of(context).calHelp,
               children: [
                 GroupedRow(
                   icon: Icons.help_outline_rounded,
-                  title: 'مركز المساعدة والدعم',
-                  subtitle: 'الأسئلة الشائعة وتذاكر الدعم مع فريق سمارت سبيند',
+                  title: AppLocalizations.of(context).calHelpCenter,
+                  subtitle: AppLocalizations.of(context).calCommonQuestionsAndSupportTickets,
                   onTap: () => context.go(HelpCenterScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.info_outline_rounded,
-                  title: 'عن سمارت سبيند',
-                  subtitle: 'معلومات الإصدار، الرخص، وفريق العمل',
+                  title: AppLocalizations.of(context).calAboutSmartspend,
+                  subtitle: AppLocalizations.of(context).calVersionAndLicenses,
                   onTap: () => AppInfoSheet.show(context),
                 ),
               ],

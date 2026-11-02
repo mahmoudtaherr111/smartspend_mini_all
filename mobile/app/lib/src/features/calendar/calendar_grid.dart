@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
+import '../../l10n/app_localizations.dart';
 
 import 'calendar_models.dart';
 import 'day_transactions_sheet.dart';
@@ -18,15 +19,8 @@ class CalendarGrid extends StatelessWidget {
   final Map<String, num> daySpendMap;
   final int? salaryDay;
 
-  static const _weekdaysAr = [
-    'السبت',
-    'الأحد',
-    'الإثنين',
-    'الثلاثاء',
-    'الأربعاء',
-    'الخميس',
-    'الجمعة',
-  ];
+  /// `DateWords.weekdays` starts on Monday; the grid starts on Saturday.
+  static const _saturdayFirst = [5, 6, 0, 1, 2, 3, 4];
 
   @override
   Widget build(BuildContext context) {
@@ -122,10 +116,12 @@ class _CalendarMonthGrid extends StatelessWidget {
         // Weekday headers starting on Saturday in Arabic
         Row(
           children: [
-            for (final name in CalendarGrid._weekdaysAr)
+            for (final index in CalendarGrid._saturdayFirst)
               Expanded(
                 child: Text(
-                  name,
+                  DateWords.of(context).weekdays[index],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: textTheme.labelSmall?.copyWith(
                     color: colors.mutedForeground,
@@ -185,7 +181,7 @@ class _DayCellWidget extends StatelessWidget {
         DayTransactionsSheet.show(
           context,
           dateStr: cell.dateStr,
-          formattedDateAr: 'معاملات يوم ${cell.dayNumber}',
+          formattedDateAr: AppLocalizations.of(context).calTransactionsOfDayP0('${cell.dayNumber}'),
         );
       },
       borderRadius: BorderRadius.circular(8),
@@ -232,7 +228,9 @@ class _DayCellWidget extends StatelessWidget {
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  cell.amount >= 1000
+                  MoneyPrivacy.hiddenOf(context)
+                      ? hiddenDigits
+                      : cell.amount >= 1000
                       ? '${(cell.amount / 1000).toStringAsFixed(1)}k'
                       : '${cell.amount.round()}',
                   style: SmartSpendTypography.style(
@@ -296,7 +294,7 @@ class _CalendarDayList extends StatelessWidget {
               DayTransactionsSheet.show(
                 context,
                 dateStr: dateStr,
-                formattedDateAr: 'معاملات يوم $day',
+                formattedDateAr: AppLocalizations.of(context).calTransactionsOfDayP02('$day'),
               );
             },
             leading: Container(
@@ -323,14 +321,14 @@ class _CalendarDayList extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
-                  CalendarGrid._weekdaysAr[(date.weekday % 7 + 1) % 7],
+                  DateWords.of(context).weekdays[date.weekday - 1],
                   style: textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 if (isPayday)
                   Text(
-                    '· المرتب',
+                    AppLocalizations.of(context).calPayday,
                     style: textTheme.bodySmall?.copyWith(
                       color: colors.warning,
                       fontWeight: FontWeight.bold,
@@ -347,7 +345,7 @@ class _CalendarDayList extends StatelessWidget {
                     ),
                   )
                 : Text(
-                    'مفيش صرف',
+                    AppLocalizations.of(context).calNoSpending,
                     style: textTheme.bodySmall?.copyWith(
                       color: colors.mutedForeground,
                     ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../ledger/ledger_models.dart';
 import 'calendar_providers.dart';
@@ -76,7 +77,7 @@ class _DayTransactionsSheetState extends ConsumerState<DayTransactionsSheet> {
               IconButton(
                 icon: const Icon(Icons.close_rounded),
                 onPressed: () => Navigator.of(context).pop(),
-                tooltip: 'إغلاق',
+                tooltip: AppLocalizations.of(context).calClose,
               ),
             ],
           ),
@@ -100,7 +101,7 @@ class _DayTransactionsSheetState extends ConsumerState<DayTransactionsSheet> {
                     child: Padding(
                       padding: const EdgeInsets.all(SmartSpendSpacing.xl),
                       child: Text(
-                        'حصل خطأ في تحميل معاملات اليوم.',
+                        AppLocalizations.of(context).calWeCouldnTLoadThis,
                         style: textTheme.bodyMedium?.copyWith(
                           color: colors.danger,
                         ),
@@ -124,7 +125,7 @@ class _DayTransactionsSheetState extends ConsumerState<DayTransactionsSheet> {
                           ),
                           const SizedBox(height: SmartSpendSpacing.md),
                           Text(
-                            'مفيش أي معاملات مسجلة في اليوم ده. 🪙',
+                            AppLocalizations.of(context).calNothingRecordedOnThisDay,
                             style: textTheme.bodyMedium?.copyWith(
                               color: colors.mutedForeground,
                             ),

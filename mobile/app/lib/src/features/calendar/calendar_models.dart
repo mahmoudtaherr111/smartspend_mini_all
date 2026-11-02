@@ -162,7 +162,9 @@ final class CashPosition {
     required this.freeBeforeIncome,
     this.incomeConfirmed = 0,
     this.incomeEstimated = 0,
-    this.notes = const [],
+    this.unknownBalanceAge = false,
+    this.unknownAmounts = '',
+    this.undatedItems = '',
   });
 
   factory CashPosition.fromJson(Map<String, Object?> json) {
@@ -170,32 +172,11 @@ final class CashPosition {
     final duesUnknown = json['duesUnknownAmount'] as List<Object?>? ?? const [];
     final undated = json['undated'] as List<Object?>? ?? const [];
 
-    final notes = <String>[];
+    String titles(List<Object?> items) => items
+        .map((e) => (e as Map<String, Object?>?)?['title'] as String? ?? '')
+        .where((s) => s.isNotEmpty)
+        .join('، ');
     final walletsCount = (wallets['count'] as num?)?.toInt() ?? 0;
-    if (walletsCount == 0) {
-      notes.add('مفيش محافظ متسجلة، فالحساب بيبدأ من صفر.');
-    }
-    if (wallets['unknownAge'] == true) {
-      notes.add('فيه رصيد مش معروف اتسجل امتى؛ حدّثه من المحافظ.');
-    }
-    if (duesUnknown.isNotEmpty) {
-      final names = duesUnknown
-          .map((e) => (e as Map<String, Object?>?)?['title'] as String? ?? '')
-          .where((s) => s.isNotEmpty)
-          .join('، ');
-      if (names.isNotEmpty) {
-        notes.add('التزامات مبلغها مش معروف: $names.');
-      }
-    }
-    if (undated.isNotEmpty) {
-      final names = undated
-          .map((e) => (e as Map<String, Object?>?)?['title'] as String? ?? '')
-          .where((s) => s.isNotEmpty)
-          .join('، ');
-      if (names.isNotEmpty) {
-        notes.add('التزامات ميعادها مش معروف فمش محسوبة: $names.');
-      }
-    }
 
     return CashPosition(
       untilIsPayday: json['untilIsPayday'] == true,
@@ -207,7 +188,9 @@ final class CashPosition {
       freeBeforeIncome: readAmount(json['freeBeforeIncome']) ?? 0,
       incomeConfirmed: readAmount(json['incomeConfirmed']) ?? 0,
       incomeEstimated: readAmount(json['incomeEstimated']) ?? 0,
-      notes: notes,
+      unknownBalanceAge: wallets['unknownAge'] == true,
+      unknownAmounts: titles(duesUnknown),
+      undatedItems: titles(undated),
     );
   }
 
@@ -220,7 +203,11 @@ final class CashPosition {
   final num freeBeforeIncome;
   final num incomeConfirmed;
   final num incomeEstimated;
-  final List<String> notes;
+  final bool unknownBalanceAge;
+
+  /// Commitments the plan cannot count, as names in one sentence; empty when there are none.
+  final String unknownAmounts;
+  final String undatedItems;
 }
 
 /// Full overview returned by `coach.overview`.

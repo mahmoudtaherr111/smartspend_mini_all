@@ -3019,6 +3019,720 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'مش قادرين نجيب خطتك دلوقتي.'**
   String get calendarLoadFailed;
+
+  /// No description provided for @calTransactionsOfDayP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمليات يوم {p0}'**
+  String calTransactionsOfDayP0(String p0);
+
+  /// No description provided for @calTransactionsOfDayP02.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمليات يوم {p0}'**
+  String calTransactionsOfDayP02(String p0);
+
+  /// No description provided for @calPayday.
+  ///
+  /// In ar, this message translates to:
+  /// **'· يوم القبض'**
+  String get calPayday;
+
+  /// No description provided for @calNoSpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش صرف'**
+  String get calNoSpending;
+
+  /// No description provided for @calAddACommitmentOrIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف التزام أو دخل'**
+  String get calAddACommitmentOrIncome;
+
+  /// No description provided for @calYourFinancialMonthStartsOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'شهرك المالي بيبدأ يوم {p0} وبيخلص يوم {p1}.'**
+  String calYourFinancialMonthStartsOn(String p0, String p1);
+
+  /// No description provided for @calP0DaysToPaydayDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأيام الباقية على القبض (يوم {p1}): {p0}. بعد التزاماتك فاضل معاك:'**
+  String calP0DaysToPaydayDay(String p0, String p1);
+
+  /// No description provided for @calP0DaysToTheEnd.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأيام الباقية في شهرك المالي: {p0}. بعد التزاماتك فاضل معاك:'**
+  String calP0DaysToTheEnd(String p0);
+
+  /// No description provided for @calLeftUntilPayday.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتاح لحد القبض'**
+  String get calLeftUntilPayday;
+
+  /// No description provided for @calNoWalletsYetSoThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش محافظ متسجلة، فالحساب بيبدأ من صفر.'**
+  String get calNoWalletsYetSoThe;
+
+  /// No description provided for @calOneBalanceHasNoKnown.
+  ///
+  /// In ar, this message translates to:
+  /// **'فيه رصيد مش معروف اتسجل امتى؛ حدّثه من المحافظ.'**
+  String get calOneBalanceHasNoKnown;
+
+  /// No description provided for @calCommitmentsWithNoKnownAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'التزامات مبلغها مش معروف: {p0}.'**
+  String calCommitmentsWithNoKnownAmount(String p0);
+
+  /// No description provided for @calCommitmentsWithNoDateSo.
+  ///
+  /// In ar, this message translates to:
+  /// **'التزامات ميعادها مش معروف فمش محسوبة: {p0}.'**
+  String calCommitmentsWithNoDateSo(String p0);
+
+  /// No description provided for @calTotalCommitments.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الالتزامات'**
+  String get calTotalCommitments;
+
+  /// No description provided for @calWalletBalances.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيد المحافظ'**
+  String get calWalletBalances;
+
+  /// No description provided for @calNotRecorded.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش متسجل'**
+  String get calNotRecorded;
+
+  /// No description provided for @calThisMonthSSpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفك في الشهر'**
+  String get calThisMonthSSpending;
+
+  /// No description provided for @calTapADayToSee.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوس على أي يوم تشوف صرفت إيه.'**
+  String get calTapADayToSee;
+
+  /// No description provided for @calCommitmentsAndExpectedIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'الالتزامات والدخل المتوقع'**
+  String get calCommitmentsAndExpectedIncome;
+
+  /// No description provided for @calAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف'**
+  String get calAdd;
+
+  /// No description provided for @calNoCommitmentsThisMonthAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش التزامات الشهر ده.\nضيف فواتيرك وأقساطك علشان تعرف اللي هيفضل لحد القبض.'**
+  String get calNoCommitmentsThisMonthAdd;
+
+  /// No description provided for @calPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع'**
+  String get calPaid;
+
+  /// No description provided for @calPartlyPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع جزء منه'**
+  String get calPartlyPaid;
+
+  /// No description provided for @calOverdue.
+  ///
+  /// In ar, this message translates to:
+  /// **'فات ميعاده'**
+  String get calOverdue;
+
+  /// No description provided for @calDue.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستحق'**
+  String get calDue;
+
+  /// No description provided for @calDueOnDayP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعاده يوم {p0}'**
+  String calDueOnDayP0(String p0);
+
+  /// No description provided for @calSettle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادفع'**
+  String get calSettle;
+
+  /// No description provided for @calPaidTapToUndo.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع (دوس للإلغاء)'**
+  String get calPaidTapToUndo;
+
+  /// No description provided for @calActiveSavingPlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطة التوفير الحالية'**
+  String get calActiveSavingPlan;
+
+  /// No description provided for @calEndThePlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّص الخطة'**
+  String get calEndThePlan;
+
+  /// No description provided for @calPlanSteps.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطوات الخطة:'**
+  String get calPlanSteps;
+
+  /// No description provided for @calReminderOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'التذكير شغال'**
+  String get calReminderOn;
+
+  /// No description provided for @calTurnOnAReminder.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّل تذكير'**
+  String get calTurnOnAReminder;
+
+  /// No description provided for @calReminderCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'التذكير اتلغى'**
+  String get calReminderCancelled;
+
+  /// No description provided for @calReminderSetCairoTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'التذكير اتظبط بتوقيت القاهرة'**
+  String get calReminderSetCairoTime;
+
+  /// No description provided for @calSkipThisStep.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيب الخطوة دي'**
+  String get calSkipThisStep;
+
+  /// No description provided for @calRent.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيجار'**
+  String get calRent;
+
+  /// No description provided for @calBill.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة'**
+  String get calBill;
+
+  /// No description provided for @calSubscription.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراك'**
+  String get calSubscription;
+
+  /// No description provided for @calSchoolFees.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصاريف مدارس'**
+  String get calSchoolFees;
+
+  /// No description provided for @calInstallment.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسط'**
+  String get calInstallment;
+
+  /// No description provided for @calDebtOrLoan.
+  ///
+  /// In ar, this message translates to:
+  /// **'دين أو سلفة'**
+  String get calDebtOrLoan;
+
+  /// No description provided for @calSavingsCircle.
+  ///
+  /// In ar, this message translates to:
+  /// **'جمعية'**
+  String get calSavingsCircle;
+
+  /// No description provided for @calSalary.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتب'**
+  String get calSalary;
+
+  /// No description provided for @calFreelance.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغل حر'**
+  String get calFreelance;
+
+  /// No description provided for @calSomethingElse.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاجة تانية'**
+  String get calSomethingElse;
+
+  /// No description provided for @calEveryMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل شهر'**
+  String get calEveryMonth;
+
+  /// No description provided for @calEveryWeek.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل أسبوع'**
+  String get calEveryWeek;
+
+  /// No description provided for @calEveryYear.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل سنة'**
+  String get calEveryYear;
+
+  /// No description provided for @calOnce.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرة واحدة'**
+  String get calOnce;
+
+  /// No description provided for @calEnterAName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسم'**
+  String get calEnterAName;
+
+  /// No description provided for @calEnterAValidAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب مبلغ صحيح'**
+  String get calEnterAValidAmount;
+
+  /// No description provided for @calWeCouldnTAddIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نضيفه. جرّب تاني.'**
+  String get calWeCouldnTAddIt;
+
+  /// No description provided for @calAddACommitmentOrExpected.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف التزام أو دخل متوقع'**
+  String get calAddACommitmentOrExpected;
+
+  /// No description provided for @calCommitment.
+  ///
+  /// In ar, this message translates to:
+  /// **'التزام / مصروف'**
+  String get calCommitment;
+
+  /// No description provided for @calExpectedIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'دخل متوقع'**
+  String get calExpectedIncome;
+
+  /// No description provided for @calNameLikeTheRent.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم (زي: إيجار الشقة)'**
+  String get calNameLikeTheRent;
+
+  /// No description provided for @calAmountOptionalIfItChanges.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ (اختياري لو بيتغير)'**
+  String get calAmountOptionalIfItChanges;
+
+  /// No description provided for @calKind.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع'**
+  String get calKind;
+
+  /// No description provided for @calDueDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم الميعاد'**
+  String get calDueDay;
+
+  /// No description provided for @calDayP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم {p0}'**
+  String calDayP0(String p0);
+
+  /// No description provided for @calRepeats.
+  ///
+  /// In ar, this message translates to:
+  /// **'التكرار'**
+  String get calRepeats;
+
+  /// No description provided for @calSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ'**
+  String get calSave;
+
+  /// No description provided for @calWeCouldnTRecordThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نسجل الدفع. جرّب تاني.'**
+  String get calWeCouldnTRecordThe;
+
+  /// No description provided for @calSettleP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفع: {p0}'**
+  String calSettleP0(String p0);
+
+  /// No description provided for @calAmountDueP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المستحق: {p0}'**
+  String calAmountDueP0(String p0);
+
+  /// No description provided for @calAmountPaidPartOfIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ اللي دفعته (ينفع جزء منه)'**
+  String get calAmountPaidPartOfIt;
+
+  /// No description provided for @calMatchingTransactions.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمليات ممكن تكون هي:'**
+  String get calMatchingTransactions;
+
+  /// No description provided for @calNoRecentMatchingTransactionYou.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش عملية قريبة شبهها. تقدر تسجل المبلغ مباشرة.'**
+  String get calNoRecentMatchingTransactionYou;
+
+  /// No description provided for @calConfirmPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكد الدفع'**
+  String get calConfirmPayment;
+
+  /// No description provided for @calClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقفل'**
+  String get calClose;
+
+  /// No description provided for @calWeCouldnTLoadThis.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نجيب عمليات اليوم ده.'**
+  String get calWeCouldnTLoadThis;
+
+  /// No description provided for @calNothingRecordedOnThisDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش حاجة متسجلة في اليوم ده.'**
+  String get calNothingRecordedOnThisDay;
+
+  /// No description provided for @calWorkAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب الشغل'**
+  String get calWorkAccount;
+
+  /// No description provided for @calKeepWorkSpendingApartFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'فصل مصاريف الشغل عن المصاريف الشخصية'**
+  String get calKeepWorkSpendingApartFrom;
+
+  /// No description provided for @calPeopleAndDebts.
+  ///
+  /// In ar, this message translates to:
+  /// **'الناس والديون'**
+  String get calPeopleAndDebts;
+
+  /// No description provided for @calWhoOwesYouAndWho.
+  ///
+  /// In ar, this message translates to:
+  /// **'مين ليك عنده ومين عليك ليه'**
+  String get calWhoOwesYouAndWho;
+
+  /// No description provided for @calMonthlyBudgets.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانيات الشهرية'**
+  String get calMonthlyBudgets;
+
+  /// No description provided for @calSetALimitAndSee.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد سقف لمصاريفك وتابع اللي باقي لك أول بأول'**
+  String get calSetALimitAndSee;
+
+  /// No description provided for @calSavingGoals.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهداف التوفير'**
+  String get calSavingGoals;
+
+  /// No description provided for @calPlanWhatYouAreSaving.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطط لمستقبلك وتابع وصولك لأهدافك بالذكاء الاصطناعي'**
+  String get calPlanWhatYouAreSaving;
+
+  /// No description provided for @calInstallments.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقساط'**
+  String get calInstallments;
+
+  /// No description provided for @calMonthlyInstallmentsAndWhatIs.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة الأقساط الشهرية والباقي منها'**
+  String get calMonthlyInstallmentsAndWhatIs;
+
+  /// No description provided for @calSeasons.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواسم الصرف'**
+  String get calSeasons;
+
+  /// No description provided for @calRamadanFeastsSchoolAndSummer.
+  ///
+  /// In ar, this message translates to:
+  /// **'رمضان، الأعياد، المدارس ومصاريف الصيف'**
+  String get calRamadanFeastsSchoolAndSummer;
+
+  /// No description provided for @calExportMyData.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصدير البيانات'**
+  String get calExportMyData;
+
+  /// No description provided for @calDownloadACopyOfYour.
+  ///
+  /// In ar, this message translates to:
+  /// **'نزّل نسخة من عملياتك'**
+  String get calDownloadACopyOfYour;
+
+  /// No description provided for @calAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعدادات الحساب'**
+  String get calAccount;
+
+  /// No description provided for @calProfile.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف الشخصي'**
+  String get calProfile;
+
+  /// No description provided for @calYourNameAndPhoneNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمك ورقم موبايلك'**
+  String get calYourNameAndPhoneNumber;
+
+  /// No description provided for @calMoneyPreferences.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفضيلات الفلوس'**
+  String get calMoneyPreferences;
+
+  /// No description provided for @calWhenYourFinancialMonthStarts.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم بداية شهرك المالي'**
+  String get calWhenYourFinancialMonthStarts;
+
+  /// No description provided for @calSignedInDevices.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأجهزة اللي داخل منها'**
+  String get calSignedInDevices;
+
+  /// No description provided for @calSeeAndSignOutYour.
+  ///
+  /// In ar, this message translates to:
+  /// **'شوف أجهزتك واخرج منها'**
+  String get calSeeAndSignOutYour;
+
+  /// No description provided for @calPersonalQuestions.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسئلة عنك'**
+  String get calPersonalQuestions;
+
+  /// No description provided for @calHelpTheAssistantUnderstandYou.
+  ///
+  /// In ar, this message translates to:
+  /// **'تساعد المساعد يفهمك أكتر'**
+  String get calHelpTheAssistantUnderstandYou;
+
+  /// No description provided for @calDeleteMyAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح حسابي'**
+  String get calDeleteMyAccount;
+
+  /// No description provided for @calDeleteYourDataForGood.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح بياناتك نهائيًا'**
+  String get calDeleteYourDataForGood;
+
+  /// No description provided for @calPlanAndRewards.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباقة والدعوات'**
+  String get calPlanAndRewards;
+
+  /// No description provided for @calMyPlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقتي'**
+  String get calMyPlan;
+
+  /// No description provided for @calComparePlansAndManageYour.
+  ///
+  /// In ar, this message translates to:
+  /// **'قارن الباقات واتحكم في اشتراكك'**
+  String get calComparePlansAndManageYour;
+
+  /// No description provided for @calInviteFriends.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادعي أصحابك'**
+  String get calInviteFriends;
+
+  /// No description provided for @calShareYourInviteCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'شارك كود الدعوة بتاعك'**
+  String get calShareYourInviteCode;
+
+  /// No description provided for @calWhatTheAppStoresAbout.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما يخزنه التطبيق عني'**
+  String get calWhatTheAppStoresAbout;
+
+  /// No description provided for @calYourDataAndYourRights.
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتك وحقوقك'**
+  String get calYourDataAndYourRights;
+
+  /// No description provided for @calTermsAndPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشروط والخصوصية'**
+  String get calTermsAndPrivacy;
+
+  /// No description provided for @calTermsOfUseAndPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'شروط الاستخدام وسياسة الخصوصية'**
+  String get calTermsOfUseAndPrivacy;
+
+  /// No description provided for @calNotificationsAndAppearance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات والشكل'**
+  String get calNotificationsAndAppearance;
+
+  /// No description provided for @calNotifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get calNotifications;
+
+  /// No description provided for @calAlertsAboutYourTransactionsAnd.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات عملياتك وميزانياتك'**
+  String get calAlertsAboutYourTransactionsAnd;
+
+  /// No description provided for @calNotificationSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعدادات الإشعارات'**
+  String get calNotificationSettings;
+
+  /// No description provided for @calChooseWhatReachesYou.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار اللي يوصلك'**
+  String get calChooseWhatReachesYou;
+
+  /// No description provided for @calAppearance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشكل'**
+  String get calAppearance;
+
+  /// No description provided for @calLightDarkOrLikeYour.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتح، غامق، أو زي موبايلك'**
+  String get calLightDarkOrLikeYour;
+
+  /// No description provided for @calHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساعدة'**
+  String get calHelp;
+
+  /// No description provided for @calHelpCenter.
+  ///
+  /// In ar, this message translates to:
+  /// **'مركز المساعدة'**
+  String get calHelpCenter;
+
+  /// No description provided for @calCommonQuestionsAndSupportTickets.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسئلة شائعة وتواصل مع الدعم'**
+  String get calCommonQuestionsAndSupportTickets;
+
+  /// No description provided for @calAboutSmartspend.
+  ///
+  /// In ar, this message translates to:
+  /// **'عن SmartSpend'**
+  String get calAboutSmartspend;
+
+  /// No description provided for @calVersionAndLicenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإصدار والتراخيص'**
+  String get calVersionAndLicenses;
 }
 
 class _AppLocalizationsDelegate

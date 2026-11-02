@@ -144,32 +144,32 @@ void main() {
       expect(find.byType(CalendarScreen), findsOneWidget);
       // Payday month banner (STA-12)
       expect(
-        find.text('الشهر المالي بيبدأ يوم 25 في الشهر وينتهي يوم 24.'),
+        find.text('شهرك المالي بيبدأ يوم 25 وبيخلص يوم 24.'),
         findsOneWidget,
       );
       // Hero free before income (CAL-02)
-      expect(find.text('المتاح حتى يوم القبض'), findsOneWidget);
-      expect(find.text('9000'), findsOneWidget);
-      expect(find.textContaining('باقي 6 يوم على يوم القبض'), findsOneWidget);
+      expect(find.text('المتاح لحد القبض'), findsOneWidget);
+      expect(find.text('9,000 ج.م'), findsOneWidget);
+      expect(find.textContaining('الأيام الباقية على القبض (يوم 25): 6'), findsOneWidget);
 
       // Calendar grid (CAL-01)
       expect(find.byType(CalendarGrid), findsOneWidget);
       expect(find.text('السبت'), findsOneWidget);
-      expect(find.text('الأحد'), findsOneWidget);
+      expect(find.text('الأحد'), findsWidgets);
 
       // Commitments list (CAL-03, CAL-04)
       expect(find.text('الالتزامات والدخل المتوقع'), findsOneWidget);
       expect(find.text('إيجار الشقة'), findsOneWidget);
-      expect(find.text('2500 ج.م'), findsOneWidget);
-      expect(find.text('سداد'), findsOneWidget);
+      expect(find.text('2,500 ج.م'), findsOneWidget);
+      expect(find.text('ادفع'), findsOneWidget);
       expect(find.text('فاتورة الكهرباء'), findsOneWidget);
-      expect(find.text('مسدد'), findsOneWidget);
+      expect(find.text('اتدفع'), findsOneWidget);
 
       // Drag slightly to reveal active plan (CAL-05, CAL-06)
       await tester.drag(_calendarScroll(tester), const Offset(0, -300));
       await tester.pumpAndSettle();
 
-      expect(find.text('خطة التوفير النشطة'), findsOneWidget);
+      expect(find.text('خطة التوفير الحالية'), findsOneWidget);
       expect(find.text('توفير 5000 ج.م قبل نهاية الشهر'), findsOneWidget);
       expect(find.text('تقليل الأكل برة'), findsOneWidget);
       expect(find.text('شراء مستلزمات بالجملة'), findsOneWidget);
@@ -190,15 +190,15 @@ void main() {
     await tester.drag(_calendarScroll(tester), const Offset(0, -200));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('سداد').first);
+    await tester.tap(find.text('ادفع').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('سداد: إيجار الشقة'), findsOneWidget);
-    expect(find.textContaining('المعاملات المقترحة للمطابقة:'), findsOneWidget);
-    expect(find.text('تأكيد السداد'), findsOneWidget);
+    expect(find.text('دفع: إيجار الشقة'), findsOneWidget);
+    expect(find.textContaining('عمليات ممكن تكون هي:'), findsOneWidget);
+    expect(find.text('أكد الدفع'), findsOneWidget);
 
     // Tap confirm settle
-    await tester.tap(find.text('تأكيد السداد'));
+    await tester.tap(find.text('أكد الدفع'));
     await tester.pumpAndSettle();
 
     expect(api.lastInput('coach.settle') != null, isTrue);

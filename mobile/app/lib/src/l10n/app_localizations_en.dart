@@ -1720,4 +1720,398 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarLoadFailed => 'We can\'t load your plan right now.';
+
+  @override
+  String calTransactionsOfDayP0(String p0) {
+    return 'Transactions of day $p0';
+  }
+
+  @override
+  String calTransactionsOfDayP02(String p0) {
+    return 'Transactions of day $p0';
+  }
+
+  @override
+  String get calPayday => '· Payday';
+
+  @override
+  String get calNoSpending => 'No spending';
+
+  @override
+  String get calAddACommitmentOrIncome => 'Add a commitment or income';
+
+  @override
+  String calYourFinancialMonthStartsOn(String p0, String p1) {
+    return 'Your financial month starts on day $p0 and ends on day $p1.';
+  }
+
+  @override
+  String calP0DaysToPaydayDay(String p0, String p1) {
+    return '$p0 days to payday (day $p1). After your commitments you have:';
+  }
+
+  @override
+  String calP0DaysToTheEnd(String p0) {
+    return '$p0 days to the end of your financial month. After your commitments you have:';
+  }
+
+  @override
+  String get calLeftUntilPayday => 'Left until payday';
+
+  @override
+  String get calNoWalletsYetSoThe =>
+      'No wallets yet, so the count starts from zero.';
+
+  @override
+  String get calOneBalanceHasNoKnown =>
+      'One balance has no known date. Update it from your wallets.';
+
+  @override
+  String calCommitmentsWithNoKnownAmount(String p0) {
+    return 'Commitments with no known amount: $p0.';
+  }
+
+  @override
+  String calCommitmentsWithNoDateSo(String p0) {
+    return 'Commitments with no date, so not counted: $p0.';
+  }
+
+  @override
+  String get calTotalCommitments => 'Total commitments';
+
+  @override
+  String get calWalletBalances => 'Wallet balances';
+
+  @override
+  String get calNotRecorded => 'Not recorded';
+
+  @override
+  String get calThisMonthSSpending => 'This month\'s spending';
+
+  @override
+  String get calTapADayToSee => 'Tap a day to see what you spent.';
+
+  @override
+  String get calCommitmentsAndExpectedIncome =>
+      'Commitments and expected income';
+
+  @override
+  String get calAdd => 'Add';
+
+  @override
+  String get calNoCommitmentsThisMonthAdd =>
+      'No commitments this month.\nAdd your bills and installments to see what is left until payday.';
+
+  @override
+  String get calPaid => 'Paid';
+
+  @override
+  String get calPartlyPaid => 'Partly paid';
+
+  @override
+  String get calOverdue => 'Overdue';
+
+  @override
+  String get calDue => 'Due';
+
+  @override
+  String calDueOnDayP0(String p0) {
+    return 'Due on day $p0';
+  }
+
+  @override
+  String get calSettle => 'Settle';
+
+  @override
+  String get calPaidTapToUndo => 'Paid (tap to undo)';
+
+  @override
+  String get calActiveSavingPlan => 'Active saving plan';
+
+  @override
+  String get calEndThePlan => 'End the plan';
+
+  @override
+  String get calPlanSteps => 'Plan steps:';
+
+  @override
+  String get calReminderOn => 'Reminder on';
+
+  @override
+  String get calTurnOnAReminder => 'Turn on a reminder';
+
+  @override
+  String get calReminderCancelled => 'Reminder cancelled';
+
+  @override
+  String get calReminderSetCairoTime => 'Reminder set, Cairo time';
+
+  @override
+  String get calSkipThisStep => 'Skip this step';
+
+  @override
+  String get calRent => 'Rent';
+
+  @override
+  String get calBill => 'Bill';
+
+  @override
+  String get calSubscription => 'Subscription';
+
+  @override
+  String get calSchoolFees => 'School fees';
+
+  @override
+  String get calInstallment => 'Installment';
+
+  @override
+  String get calDebtOrLoan => 'Debt or loan';
+
+  @override
+  String get calSavingsCircle => 'Savings circle';
+
+  @override
+  String get calSalary => 'Salary';
+
+  @override
+  String get calFreelance => 'Freelance';
+
+  @override
+  String get calSomethingElse => 'Something else';
+
+  @override
+  String get calEveryMonth => 'Every month';
+
+  @override
+  String get calEveryWeek => 'Every week';
+
+  @override
+  String get calEveryYear => 'Every year';
+
+  @override
+  String get calOnce => 'Once';
+
+  @override
+  String get calEnterAName => 'Enter a name';
+
+  @override
+  String get calEnterAValidAmount => 'Enter a valid amount';
+
+  @override
+  String get calWeCouldnTAddIt => 'We couldn\'t add it. Try again.';
+
+  @override
+  String get calAddACommitmentOrExpected =>
+      'Add a commitment or expected income';
+
+  @override
+  String get calCommitment => 'Commitment';
+
+  @override
+  String get calExpectedIncome => 'Expected income';
+
+  @override
+  String get calNameLikeTheRent => 'Name (like: the rent)';
+
+  @override
+  String get calAmountOptionalIfItChanges => 'Amount (optional if it changes)';
+
+  @override
+  String get calKind => 'Kind';
+
+  @override
+  String get calDueDay => 'Due day';
+
+  @override
+  String calDayP0(String p0) {
+    return 'Day $p0';
+  }
+
+  @override
+  String get calRepeats => 'Repeats';
+
+  @override
+  String get calSave => 'Save';
+
+  @override
+  String get calWeCouldnTRecordThe =>
+      'We couldn\'t record the payment. Try again.';
+
+  @override
+  String calSettleP0(String p0) {
+    return 'Settle: $p0';
+  }
+
+  @override
+  String calAmountDueP0(String p0) {
+    return 'Amount due: $p0';
+  }
+
+  @override
+  String get calAmountPaidPartOfIt => 'Amount paid (part of it is fine)';
+
+  @override
+  String get calMatchingTransactions => 'Matching transactions:';
+
+  @override
+  String get calNoRecentMatchingTransactionYou =>
+      'No recent matching transaction. You can settle with the amount directly.';
+
+  @override
+  String get calConfirmPayment => 'Confirm payment';
+
+  @override
+  String get calClose => 'Close';
+
+  @override
+  String get calWeCouldnTLoadThis => 'We couldn\'t load this day.';
+
+  @override
+  String get calNothingRecordedOnThisDay => 'Nothing recorded on this day.';
+
+  @override
+  String get calWorkAccount => 'Work account';
+
+  @override
+  String get calKeepWorkSpendingApartFrom =>
+      'Keep work spending apart from personal';
+
+  @override
+  String get calPeopleAndDebts => 'People and debts';
+
+  @override
+  String get calWhoOwesYouAndWho => 'Who owes you and who you owe';
+
+  @override
+  String get calMonthlyBudgets => 'Monthly budgets';
+
+  @override
+  String get calSetALimitAndSee => 'Set a limit and see what is left';
+
+  @override
+  String get calSavingGoals => 'Saving goals';
+
+  @override
+  String get calPlanWhatYouAreSaving => 'Plan what you are saving for';
+
+  @override
+  String get calInstallments => 'Installments';
+
+  @override
+  String get calMonthlyInstallmentsAndWhatIs =>
+      'Monthly installments and what is left';
+
+  @override
+  String get calSeasons => 'Seasons';
+
+  @override
+  String get calRamadanFeastsSchoolAndSummer =>
+      'Ramadan, feasts, school and summer';
+
+  @override
+  String get calExportMyData => 'Export my data';
+
+  @override
+  String get calDownloadACopyOfYour => 'Download a copy of your transactions';
+
+  @override
+  String get calAccount => 'Account';
+
+  @override
+  String get calProfile => 'Profile';
+
+  @override
+  String get calYourNameAndPhoneNumber => 'Your name and phone number';
+
+  @override
+  String get calMoneyPreferences => 'Money preferences';
+
+  @override
+  String get calWhenYourFinancialMonthStarts =>
+      'When your financial month starts';
+
+  @override
+  String get calSignedInDevices => 'Signed-in devices';
+
+  @override
+  String get calSeeAndSignOutYour => 'See and sign out your devices';
+
+  @override
+  String get calPersonalQuestions => 'Personal questions';
+
+  @override
+  String get calHelpTheAssistantUnderstandYou =>
+      'Help the assistant understand you';
+
+  @override
+  String get calDeleteMyAccount => 'Delete my account';
+
+  @override
+  String get calDeleteYourDataForGood => 'Delete your data for good';
+
+  @override
+  String get calPlanAndRewards => 'Plan and rewards';
+
+  @override
+  String get calMyPlan => 'My plan';
+
+  @override
+  String get calComparePlansAndManageYour =>
+      'Compare plans and manage your subscription';
+
+  @override
+  String get calInviteFriends => 'Invite friends';
+
+  @override
+  String get calShareYourInviteCode => 'Share your invite code';
+
+  @override
+  String get calWhatTheAppStoresAbout => 'What the app stores about me';
+
+  @override
+  String get calYourDataAndYourRights => 'Your data and your rights';
+
+  @override
+  String get calTermsAndPrivacy => 'Terms and privacy';
+
+  @override
+  String get calTermsOfUseAndPrivacy => 'Terms of use and privacy policy';
+
+  @override
+  String get calNotificationsAndAppearance => 'Notifications and appearance';
+
+  @override
+  String get calNotifications => 'Notifications';
+
+  @override
+  String get calAlertsAboutYourTransactionsAnd =>
+      'Alerts about your transactions and budgets';
+
+  @override
+  String get calNotificationSettings => 'Notification settings';
+
+  @override
+  String get calChooseWhatReachesYou => 'Choose what reaches you';
+
+  @override
+  String get calAppearance => 'Appearance';
+
+  @override
+  String get calLightDarkOrLikeYour => 'Light, dark, or like your phone';
+
+  @override
+  String get calHelp => 'Help';
+
+  @override
+  String get calHelpCenter => 'Help center';
+
+  @override
+  String get calCommonQuestionsAndSupportTickets =>
+      'Common questions and support tickets';
+
+  @override
+  String get calAboutSmartspend => 'About SmartSpend';
+
+  @override
+  String get calVersionAndLicenses => 'Version and licenses';
 }

@@ -1720,4 +1720,392 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get calendarLoadFailed => 'مش قادرين نجيب خطتك دلوقتي.';
+
+  @override
+  String calTransactionsOfDayP0(String p0) {
+    return 'عمليات يوم $p0';
+  }
+
+  @override
+  String calTransactionsOfDayP02(String p0) {
+    return 'عمليات يوم $p0';
+  }
+
+  @override
+  String get calPayday => '· يوم القبض';
+
+  @override
+  String get calNoSpending => 'مفيش صرف';
+
+  @override
+  String get calAddACommitmentOrIncome => 'ضيف التزام أو دخل';
+
+  @override
+  String calYourFinancialMonthStartsOn(String p0, String p1) {
+    return 'شهرك المالي بيبدأ يوم $p0 وبيخلص يوم $p1.';
+  }
+
+  @override
+  String calP0DaysToPaydayDay(String p0, String p1) {
+    return 'الأيام الباقية على القبض (يوم $p1): $p0. بعد التزاماتك فاضل معاك:';
+  }
+
+  @override
+  String calP0DaysToTheEnd(String p0) {
+    return 'الأيام الباقية في شهرك المالي: $p0. بعد التزاماتك فاضل معاك:';
+  }
+
+  @override
+  String get calLeftUntilPayday => 'المتاح لحد القبض';
+
+  @override
+  String get calNoWalletsYetSoThe => 'مفيش محافظ متسجلة، فالحساب بيبدأ من صفر.';
+
+  @override
+  String get calOneBalanceHasNoKnown =>
+      'فيه رصيد مش معروف اتسجل امتى؛ حدّثه من المحافظ.';
+
+  @override
+  String calCommitmentsWithNoKnownAmount(String p0) {
+    return 'التزامات مبلغها مش معروف: $p0.';
+  }
+
+  @override
+  String calCommitmentsWithNoDateSo(String p0) {
+    return 'التزامات ميعادها مش معروف فمش محسوبة: $p0.';
+  }
+
+  @override
+  String get calTotalCommitments => 'إجمالي الالتزامات';
+
+  @override
+  String get calWalletBalances => 'رصيد المحافظ';
+
+  @override
+  String get calNotRecorded => 'مش متسجل';
+
+  @override
+  String get calThisMonthSSpending => 'صرفك في الشهر';
+
+  @override
+  String get calTapADayToSee => 'دوس على أي يوم تشوف صرفت إيه.';
+
+  @override
+  String get calCommitmentsAndExpectedIncome => 'الالتزامات والدخل المتوقع';
+
+  @override
+  String get calAdd => 'ضيف';
+
+  @override
+  String get calNoCommitmentsThisMonthAdd =>
+      'مفيش التزامات الشهر ده.\nضيف فواتيرك وأقساطك علشان تعرف اللي هيفضل لحد القبض.';
+
+  @override
+  String get calPaid => 'اتدفع';
+
+  @override
+  String get calPartlyPaid => 'اتدفع جزء منه';
+
+  @override
+  String get calOverdue => 'فات ميعاده';
+
+  @override
+  String get calDue => 'مستحق';
+
+  @override
+  String calDueOnDayP0(String p0) {
+    return 'ميعاده يوم $p0';
+  }
+
+  @override
+  String get calSettle => 'ادفع';
+
+  @override
+  String get calPaidTapToUndo => 'اتدفع (دوس للإلغاء)';
+
+  @override
+  String get calActiveSavingPlan => 'خطة التوفير الحالية';
+
+  @override
+  String get calEndThePlan => 'خلّص الخطة';
+
+  @override
+  String get calPlanSteps => 'خطوات الخطة:';
+
+  @override
+  String get calReminderOn => 'التذكير شغال';
+
+  @override
+  String get calTurnOnAReminder => 'شغّل تذكير';
+
+  @override
+  String get calReminderCancelled => 'التذكير اتلغى';
+
+  @override
+  String get calReminderSetCairoTime => 'التذكير اتظبط بتوقيت القاهرة';
+
+  @override
+  String get calSkipThisStep => 'سيب الخطوة دي';
+
+  @override
+  String get calRent => 'إيجار';
+
+  @override
+  String get calBill => 'فاتورة';
+
+  @override
+  String get calSubscription => 'اشتراك';
+
+  @override
+  String get calSchoolFees => 'مصاريف مدارس';
+
+  @override
+  String get calInstallment => 'قسط';
+
+  @override
+  String get calDebtOrLoan => 'دين أو سلفة';
+
+  @override
+  String get calSavingsCircle => 'جمعية';
+
+  @override
+  String get calSalary => 'مرتب';
+
+  @override
+  String get calFreelance => 'شغل حر';
+
+  @override
+  String get calSomethingElse => 'حاجة تانية';
+
+  @override
+  String get calEveryMonth => 'كل شهر';
+
+  @override
+  String get calEveryWeek => 'كل أسبوع';
+
+  @override
+  String get calEveryYear => 'كل سنة';
+
+  @override
+  String get calOnce => 'مرة واحدة';
+
+  @override
+  String get calEnterAName => 'اكتب اسم';
+
+  @override
+  String get calEnterAValidAmount => 'اكتب مبلغ صحيح';
+
+  @override
+  String get calWeCouldnTAddIt => 'ما عرفناش نضيفه. جرّب تاني.';
+
+  @override
+  String get calAddACommitmentOrExpected => 'ضيف التزام أو دخل متوقع';
+
+  @override
+  String get calCommitment => 'التزام / مصروف';
+
+  @override
+  String get calExpectedIncome => 'دخل متوقع';
+
+  @override
+  String get calNameLikeTheRent => 'الاسم (زي: إيجار الشقة)';
+
+  @override
+  String get calAmountOptionalIfItChanges => 'المبلغ (اختياري لو بيتغير)';
+
+  @override
+  String get calKind => 'النوع';
+
+  @override
+  String get calDueDay => 'يوم الميعاد';
+
+  @override
+  String calDayP0(String p0) {
+    return 'يوم $p0';
+  }
+
+  @override
+  String get calRepeats => 'التكرار';
+
+  @override
+  String get calSave => 'احفظ';
+
+  @override
+  String get calWeCouldnTRecordThe => 'ما عرفناش نسجل الدفع. جرّب تاني.';
+
+  @override
+  String calSettleP0(String p0) {
+    return 'دفع: $p0';
+  }
+
+  @override
+  String calAmountDueP0(String p0) {
+    return 'المبلغ المستحق: $p0';
+  }
+
+  @override
+  String get calAmountPaidPartOfIt => 'المبلغ اللي دفعته (ينفع جزء منه)';
+
+  @override
+  String get calMatchingTransactions => 'عمليات ممكن تكون هي:';
+
+  @override
+  String get calNoRecentMatchingTransactionYou =>
+      'مفيش عملية قريبة شبهها. تقدر تسجل المبلغ مباشرة.';
+
+  @override
+  String get calConfirmPayment => 'أكد الدفع';
+
+  @override
+  String get calClose => 'اقفل';
+
+  @override
+  String get calWeCouldnTLoadThis => 'ما عرفناش نجيب عمليات اليوم ده.';
+
+  @override
+  String get calNothingRecordedOnThisDay => 'مفيش حاجة متسجلة في اليوم ده.';
+
+  @override
+  String get calWorkAccount => 'حساب الشغل';
+
+  @override
+  String get calKeepWorkSpendingApartFrom =>
+      'فصل مصاريف الشغل عن المصاريف الشخصية';
+
+  @override
+  String get calPeopleAndDebts => 'الناس والديون';
+
+  @override
+  String get calWhoOwesYouAndWho => 'مين ليك عنده ومين عليك ليه';
+
+  @override
+  String get calMonthlyBudgets => 'الميزانيات الشهرية';
+
+  @override
+  String get calSetALimitAndSee =>
+      'حدد سقف لمصاريفك وتابع اللي باقي لك أول بأول';
+
+  @override
+  String get calSavingGoals => 'أهداف التوفير';
+
+  @override
+  String get calPlanWhatYouAreSaving =>
+      'خطط لمستقبلك وتابع وصولك لأهدافك بالذكاء الاصطناعي';
+
+  @override
+  String get calInstallments => 'الأقساط';
+
+  @override
+  String get calMonthlyInstallmentsAndWhatIs =>
+      'متابعة الأقساط الشهرية والباقي منها';
+
+  @override
+  String get calSeasons => 'مواسم الصرف';
+
+  @override
+  String get calRamadanFeastsSchoolAndSummer =>
+      'رمضان، الأعياد، المدارس ومصاريف الصيف';
+
+  @override
+  String get calExportMyData => 'تصدير البيانات';
+
+  @override
+  String get calDownloadACopyOfYour => 'نزّل نسخة من عملياتك';
+
+  @override
+  String get calAccount => 'إعدادات الحساب';
+
+  @override
+  String get calProfile => 'الملف الشخصي';
+
+  @override
+  String get calYourNameAndPhoneNumber => 'اسمك ورقم موبايلك';
+
+  @override
+  String get calMoneyPreferences => 'تفضيلات الفلوس';
+
+  @override
+  String get calWhenYourFinancialMonthStarts => 'يوم بداية شهرك المالي';
+
+  @override
+  String get calSignedInDevices => 'الأجهزة اللي داخل منها';
+
+  @override
+  String get calSeeAndSignOutYour => 'شوف أجهزتك واخرج منها';
+
+  @override
+  String get calPersonalQuestions => 'أسئلة عنك';
+
+  @override
+  String get calHelpTheAssistantUnderstandYou => 'تساعد المساعد يفهمك أكتر';
+
+  @override
+  String get calDeleteMyAccount => 'امسح حسابي';
+
+  @override
+  String get calDeleteYourDataForGood => 'امسح بياناتك نهائيًا';
+
+  @override
+  String get calPlanAndRewards => 'الباقة والدعوات';
+
+  @override
+  String get calMyPlan => 'باقتي';
+
+  @override
+  String get calComparePlansAndManageYour => 'قارن الباقات واتحكم في اشتراكك';
+
+  @override
+  String get calInviteFriends => 'ادعي أصحابك';
+
+  @override
+  String get calShareYourInviteCode => 'شارك كود الدعوة بتاعك';
+
+  @override
+  String get calWhatTheAppStoresAbout => 'ما يخزنه التطبيق عني';
+
+  @override
+  String get calYourDataAndYourRights => 'بياناتك وحقوقك';
+
+  @override
+  String get calTermsAndPrivacy => 'الشروط والخصوصية';
+
+  @override
+  String get calTermsOfUseAndPrivacy => 'شروط الاستخدام وسياسة الخصوصية';
+
+  @override
+  String get calNotificationsAndAppearance => 'الإشعارات والشكل';
+
+  @override
+  String get calNotifications => 'الإشعارات';
+
+  @override
+  String get calAlertsAboutYourTransactionsAnd => 'تنبيهات عملياتك وميزانياتك';
+
+  @override
+  String get calNotificationSettings => 'إعدادات الإشعارات';
+
+  @override
+  String get calChooseWhatReachesYou => 'اختار اللي يوصلك';
+
+  @override
+  String get calAppearance => 'الشكل';
+
+  @override
+  String get calLightDarkOrLikeYour => 'فاتح، غامق، أو زي موبايلك';
+
+  @override
+  String get calHelp => 'المساعدة';
+
+  @override
+  String get calHelpCenter => 'مركز المساعدة';
+
+  @override
+  String get calCommonQuestionsAndSupportTickets =>
+      'أسئلة شائعة وتواصل مع الدعم';
+
+  @override
+  String get calAboutSmartspend => 'عن SmartSpend';
+
+  @override
+  String get calVersionAndLicenses => 'الإصدار والتراخيص';
 }

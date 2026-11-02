@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
+import '../../l10n/app_localizations.dart';
 
 import 'calendar_models.dart';
 import 'calendar_providers.dart';
@@ -30,24 +31,24 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
   bool _submitting = false;
   String? _error;
 
-  static const _kinds = [
-    ('rent', 'إيجار'),
-    ('bill', 'فاتورة'),
-    ('subscription', 'اشتراك'),
-    ('school', 'مصاريف مدارس'),
-    ('installment', 'قسط'),
-    ('debt', 'دين أو سلفة'),
-    ('gam3eya', 'جمعية'),
-    ('salary', 'مرتب'),
-    ('freelance', 'شغل حر'),
-    ('other', 'حاجة تانية'),
+  List<(String, String)> get _kinds => [
+    ('rent', AppLocalizations.of(context).calRent),
+    ('bill', AppLocalizations.of(context).calBill),
+    ('subscription', AppLocalizations.of(context).calSubscription),
+    ('school', AppLocalizations.of(context).calSchoolFees),
+    ('installment', AppLocalizations.of(context).calInstallment),
+    ('debt', AppLocalizations.of(context).calDebtOrLoan),
+    ('gam3eya', AppLocalizations.of(context).calSavingsCircle),
+    ('salary', AppLocalizations.of(context).calSalary),
+    ('freelance', AppLocalizations.of(context).calFreelance),
+    ('other', AppLocalizations.of(context).calSomethingElse),
   ];
 
-  static const _recurrences = [
-    ('monthly', 'كل شهر'),
-    ('weekly', 'كل أسبوع'),
-    ('yearly', 'كل سنة'),
-    ('once', 'مرة واحدة'),
+  List<(String, String)> get _recurrences => [
+    ('monthly', AppLocalizations.of(context).calEveryMonth),
+    ('weekly', AppLocalizations.of(context).calEveryWeek),
+    ('yearly', AppLocalizations.of(context).calEveryYear),
+    ('once', AppLocalizations.of(context).calOnce),
   ];
 
   @override
@@ -60,7 +61,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
   Future<void> _submit() async {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
-      setState(() => _error = 'من فضلك اكتب اسم الالتزام أو الدخل');
+      setState(() => _error = AppLocalizations.of(context).calEnterAName);
       return;
     }
 
@@ -69,7 +70,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
     if (amountText.isNotEmpty) {
       amount = num.tryParse(amountText.replaceAll(',', ''));
       if (amount == null || amount <= 0) {
-        setState(() => _error = 'من فضلك اكتب مبلغ صحيح');
+        setState(() => _error = AppLocalizations.of(context).calEnterAValidAmount);
         return;
       }
     }
@@ -96,7 +97,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
       if (mounted) {
         setState(() {
           _submitting = false;
-          _error = 'حصل خطأ أثناء إضافة الالتزام. حاول تاني.';
+          _error = AppLocalizations.of(context).calWeCouldnTAddIt;
         });
       }
     }
@@ -117,7 +118,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
             children: [
               Expanded(
                 child: Text(
-                  'إضافة التزام أو دخل متوقع',
+                  AppLocalizations.of(context).calAddACommitmentOrExpected,
                   style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -133,15 +134,15 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
 
           // Direction Segmented Control
           SegmentedButton<String>(
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: 'out',
-                label: Text('التزام / مصروف'),
+                label: Text(AppLocalizations.of(context).calCommitment),
                 icon: Icon(Icons.arrow_upward_rounded),
               ),
               ButtonSegment(
                 value: 'in',
-                label: Text('دخل متوقع'),
+                label: Text(AppLocalizations.of(context).calExpectedIncome),
                 icon: Icon(Icons.arrow_downward_rounded),
               ),
             ],
@@ -163,7 +164,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
           TextField(
             controller: _titleController,
             decoration: InputDecoration(
-              labelText: 'الاسم أو الوصف (مثلاً: إيجار الشقة)',
+              labelText: AppLocalizations.of(context).calNameLikeTheRent,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -176,8 +177,8 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-              labelText: 'المبلغ (اختياري لو مش ثابت)',
-              suffixText: 'ج.م',
+              labelText: AppLocalizations.of(context).calAmountOptionalIfItChanges,
+              suffixText: MoneyLocale.of(context).symbol,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -189,7 +190,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
           DropdownButtonFormField<String>(
             initialValue: _kind,
             decoration: InputDecoration(
-              labelText: 'النوع',
+              labelText: AppLocalizations.of(context).calKind,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -210,7 +211,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
                 child: DropdownButtonFormField<int>(
                   initialValue: _dueDay,
                   decoration: InputDecoration(
-                    labelText: 'يوم الاستحقاق',
+                    labelText: AppLocalizations.of(context).calDueDay,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -219,7 +220,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
                     31,
                     (i) => DropdownMenuItem(
                       value: i + 1,
-                      child: Text('يوم ${i + 1}'),
+                      child: Text(AppLocalizations.of(context).calDayP0('${i + 1}')),
                     ),
                   ),
                   onChanged: (val) {
@@ -232,7 +233,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
                 child: DropdownButtonFormField<String>(
                   initialValue: _recurrence,
                   decoration: InputDecoration(
-                    labelText: 'التكرار',
+                    labelText: AppLocalizations.of(context).calRepeats,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -261,7 +262,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
           ],
 
           SmartSpendButton(
-            label: 'حفظ الالتزام',
+            label: AppLocalizations.of(context).calSave,
             busy: _submitting,
             onPressed: _submitting ? null : _submit,
           ),
@@ -335,7 +336,7 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
       if (mounted) {
         setState(() {
           _submitting = false;
-          _error = 'حصل خطأ أثناء السداد. حاول تاني.';
+          _error = AppLocalizations.of(context).calWeCouldnTRecordThe;
         });
       }
     }
@@ -359,14 +360,14 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'سداد: ${widget.item.title}',
+                      AppLocalizations.of(context).calSettleP0(widget.item.title),
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     if (widget.item.amount != null)
                       Text(
-                        'المبلغ المستحق: ${widget.item.amount!.toStringAsFixed(0)} ج.م',
+                        AppLocalizations.of(context).calAmountDueP0(moneyText(context, widget.item.amount!)),
                         style: textTheme.bodySmall?.copyWith(
                           color: colors.mutedForeground,
                         ),
@@ -387,8 +388,8 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-              labelText: 'مبلغ السداد (يمكنك كتابة جزء من المبلغ)',
-              suffixText: 'ج.م',
+              labelText: AppLocalizations.of(context).calAmountPaidPartOfIt,
+              suffixText: MoneyLocale.of(context).symbol,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -398,7 +399,7 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
 
           // Payment suggestions / matching transactions (CAL-04)
           Text(
-            'المعاملات المقترحة للمطابقة:',
+            AppLocalizations.of(context).calMatchingTransactions,
             style: textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: colors.foreground,
@@ -423,7 +424,7 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
                     vertical: SmartSpendSpacing.sm,
                   ),
                   child: Text(
-                    'مفيش معاملات مطابقة مسجلة حديثاً. تقدر تسدد بالمبلغ مباشرة.',
+                    AppLocalizations.of(context).calNoRecentMatchingTransactionYou,
                     style: textTheme.bodySmall?.copyWith(
                       color: colors.mutedForeground,
                     ),
@@ -477,7 +478,7 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${s.category}: ${s.amount.toStringAsFixed(0)} ج.م',
+                                    '${s.category}: ${moneyText(context, s.amount)}',
                                     style: textTheme.bodyMedium?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -513,7 +514,7 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
           ],
 
           SmartSpendButton(
-            label: 'تأكيد السداد',
+            label: AppLocalizations.of(context).calConfirmPayment,
             busy: _submitting,
             onPressed: _submitting ? null : _settle,
           ),
