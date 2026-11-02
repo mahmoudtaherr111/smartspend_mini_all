@@ -605,17 +605,20 @@ class _TypeTab extends StatelessWidget {
                 color: selected ? color : colors.mutedForeground,
               ),
               const SizedBox(width: 4),
-              Text(
-                label,
-                style:
-                    SmartSpendTypography.style(
-                      13,
-                      selected ? FontWeight.w700 : FontWeight.w500,
-                    ).copyWith(
-                      color: selected
-                          ? colors.foreground
-                          : colors.mutedForeground,
-                    ),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      SmartSpendTypography.style(
+                        13,
+                        selected ? FontWeight.w700 : FontWeight.w500,
+                      ).copyWith(
+                        color: selected
+                            ? colors.foreground
+                            : colors.mutedForeground,
+                      ),
+                ),
               ),
             ],
           ),

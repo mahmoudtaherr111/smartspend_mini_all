@@ -1717,4 +1717,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exportShare => 'Share the file';
+
+  @override
+  String get calendarLoadFailed => 'We can\'t load your plan right now.';
 }

@@ -545,5 +545,6 @@
   "planRestore": "Restore my purchases",
   "planRestored": "Your subscription is back.",
   "planNothingToRestore": "We can't find a past subscription in the store for this account.",
-  "exportShare": "Share the file"
+  "exportShare": "Share the file",
+  "calendarLoadFailed": "We can't load your plan right now."
 }

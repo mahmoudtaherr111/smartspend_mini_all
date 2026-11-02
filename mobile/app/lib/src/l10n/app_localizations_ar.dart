@@ -1717,4 +1717,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get exportShare => 'شارك الملف';
+
+  @override
+  String get calendarLoadFailed => 'مش قادرين نجيب خطتك دلوقتي.';
 }

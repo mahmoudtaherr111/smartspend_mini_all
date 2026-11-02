@@ -3013,6 +3013,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'شارك الملف'**
   String get exportShare;
+
+  /// No description provided for @calendarLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب خطتك دلوقتي.'**
+  String get calendarLoadFailed;
 }
 
 class _AppLocalizationsDelegate

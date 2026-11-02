@@ -528,8 +528,10 @@ class _BudgetComparisonSection extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: SmartSpendSpacing.md,
+            runSpacing: SmartSpendSpacing.xs,
             children: [
               Text(
                 'صرفت: ${moneyText(context, comparison.spent)}',

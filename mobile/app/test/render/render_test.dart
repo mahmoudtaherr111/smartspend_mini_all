@@ -24,6 +24,7 @@ import 'package:smartspend_app/src/features/lock/app_lock.dart';
 import 'package:smartspend_app/src/features/lock/lock_store.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../support/sample_calendar.dart';
 import '../support/sample_month.dart';
 import '../support/test_app.dart';
 
@@ -162,6 +163,30 @@ final _screens = <(String, bool, PrepareApi?, Reach)>[
     (tester, _) async {
       final btn = find.byIcon(Icons.add_rounded);
       await tester.tap(btn);
+      await tester.pumpAndSettle();
+    },
+  ),
+  (
+    'calendar',
+    true,
+    answerSampleCalendar,
+    (tester, language) async {
+      await tester.tap(
+        find.text(language == AppLanguage.english ? 'Calendar' : 'تقويم').last,
+      );
+      await tester.pumpAndSettle();
+    },
+  ),
+  (
+    'ai',
+    true,
+    null,
+    (tester, language) async {
+      await tester.tap(
+        find
+            .text(language == AppLanguage.english ? 'AI Center' : 'مركز AI')
+            .last,
+      );
       await tester.pumpAndSettle();
     },
   ),

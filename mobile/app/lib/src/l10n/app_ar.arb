@@ -744,5 +744,6 @@
   "planRestore": "رجّع مشترياتي",
   "planRestored": "اشتراكك رجع.",
   "planNothingToRestore": "مش لاقيين اشتراك سابق على الحساب ده في المتجر.",
-  "exportShare": "شارك الملف"
+  "exportShare": "شارك الملف",
+  "calendarLoadFailed": "مش قادرين نجيب خطتك دلوقتي."
 }

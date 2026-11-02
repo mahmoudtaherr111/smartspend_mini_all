@@ -318,7 +318,9 @@ class _CalendarDayList extends StatelessWidget {
                 ),
               ),
             ),
-            title: Row(
+            title: Wrap(
+              spacing: SmartSpendSpacing.xs,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
                   CalendarGrid._weekdaysAr[(date.weekday % 7 + 1) % 7],
@@ -326,13 +328,14 @@ class _CalendarDayList extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                if (isPayday) ...[
-                  const SizedBox(width: SmartSpendSpacing.xs),
-                  Badge(
-                    label: const Text('المرتب'),
-                    backgroundColor: colors.warning,
+                if (isPayday)
+                  Text(
+                    '· المرتب',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colors.warning,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ],
               ],
             ),
             trailing: amount > 0

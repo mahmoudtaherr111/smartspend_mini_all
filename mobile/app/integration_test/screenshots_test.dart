@@ -26,6 +26,7 @@ import 'package:smartspend_app/src/l10n/app_localizations.dart';
 import 'package:smartspend_ui/gallery.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../test/support/sample_calendar.dart';
 import '../test/support/sample_month.dart';
 import '../test/support/test_app.dart';
 
@@ -61,6 +62,7 @@ void main() {
   }) async {
     final api = FakeApi()..answer('localAuth.me', (_) => phoneUser());
     answerSampleMonth(api);
+    answerSampleCalendar(api);
     await tester.pumpWidget(
       ProviderScope(
         key: UniqueKey(),

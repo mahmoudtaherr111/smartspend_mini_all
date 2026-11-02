@@ -260,6 +260,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   }
 
   Widget _buildQuickQuestionsHeader(AsyncValue<List<String>> questionsAsync) {
+    final colors = context.smartSpendColors;
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 16),
       child: Column(
@@ -267,18 +268,21 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome, size: 22, color: Colors.teal.shade700),
+              Icon(Icons.auto_awesome, size: 22, color: colors.ai),
               const SizedBox(width: 8),
-              const Text(
-                'أهلاً بك في المساعد الذكي!',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Expanded(
+                child: Text(
+                  'أهلاً بك في المساعد الذكي!',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 6),
           Text(
             'اسألني عن مصاريفك، ميزانيتك، أو اطلب مني تسجيل أي عملية.',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: colors.mutedForeground),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -296,9 +300,10 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 for (final q in questions)
                   ActionChip(
                     label: Text(q),
-                    labelStyle: const TextStyle(fontSize: 13),
-                    backgroundColor: Colors.teal.shade50,
-                    side: BorderSide(color: Colors.teal.shade200),
+                    labelStyle: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: colors.foreground),
+                    backgroundColor: colors.surfaceRaised,
+                    side: BorderSide(color: colors.border),
                     onPressed: () {
                       _textController.text = q;
                       _handleSend();

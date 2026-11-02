@@ -91,7 +91,12 @@ class CalendarScreen extends ConsumerWidget {
                       salaryDay: salaryDay,
                     ),
                     loading: () => const _HeroLoadingPlaceholder(),
-                    error: (_, _) => const _HeroLoadingPlaceholder(),
+                    // A failed load must end in a way forward, never in a spinner that never stops.
+                    error: (_, _) => ErrorState(
+                      message: AppLocalizations.of(context).calendarLoadFailed,
+                      retryLabel: AppLocalizations.of(context).retry,
+                      onRetry: () => ref.invalidate(coachOverviewProvider),
+                    ),
                   ),
                   const SizedBox(height: SmartSpendSpacing.lg),
 
@@ -238,11 +243,13 @@ class _HeroPaydayPlan extends StatelessWidget {
                 color: colors.mutedForeground,
               ),
               const SizedBox(width: SmartSpendSpacing.xs),
-              Text(
-                'المتاح حتى يوم القبض',
-                style: textTheme.labelLarge?.copyWith(
-                  color: colors.mutedForeground,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  'المتاح حتى يوم القبض',
+                  style: textTheme.labelLarge?.copyWith(
+                    color: colors.mutedForeground,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
