@@ -10,7 +10,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | --- | --- | --- | --- | --- | --- |
 | `adminProcedure` | `authedProcedure` | inherited | — | admin | — |
 | `aiProcedure` | `authedProcedure` | inherited | 100 per 1 min (`aiRateLimiter`) | — | — |
-| `authedProcedure` | `t.procedure` | yes | 100 per 1 min (`userRateLimiter`) | — | — |
+| `authedProcedure` | `t.procedure` | yes | 300 per 1 min (`userRateLimiter`) | — | — |
 | `businessAiProcedure` | `planFeatureAiProcedure` | inherited | — | — | — |
 | `businessProcedure` | `planFeatureProcedure` | inherited | — | — | — |
 | `goalAnalysisProcedure` | `planFeatureProcedure` | inherited | — | — | — |
@@ -18,9 +18,9 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `proAiProcedure` | `proProcedure` | inherited | 100 per 1 min (`aiRateLimiter`) | — | — |
 | `proProcedure` | `authedProcedure` | inherited | — | admin | pro, ultra |
 | `proReportProcedure` | `planFeatureProcedure` | inherited | — | — | — |
-| `publicProcedure` | `t.procedure` | no | 400 per 1 min (`publicIpLimiter`) | — | — |
+| `publicProcedure` | `t.procedure` | no | 3000 per 1 min (`publicIpLimiter`) | — | — |
 | `receiptsProcedure` | `planFeatureProcedure` | inherited | — | — | — |
-| `strictPublicProcedure` | `t.procedure` | no | 25 per 15 min (`strictPublicIpLimiter`) | — | — |
+| `strictPublicProcedure` | `t.procedure` | no | 300 per 15 min (`strictPublicIpLimiter`) | — | — |
 | `ultraProcedure` | `authedProcedure` | inherited | — | admin | ultra |
 
 ## Routers

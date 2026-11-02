@@ -170,7 +170,7 @@
         "api/lib/ai-usage-policy.ts": "c638486f2242",
         "api/lib/deepseek-client.ts": "25b94e78c4ee",
         "api/lib/embedding-provider.ts": "72fa42725bca",
-        "api/lib/feature-switches.ts": "8deabac56d76",
+        "api/lib/feature-switches.ts": "13a45bcc027e",
         "api/lib/fireworks-client.ts": "0ff5cda683b6",
         "api/lib/groq-client.ts": "bdb495a8b189",
         "api/lib/llm-provider-chain.ts": "fb82931289a2",
@@ -182,9 +182,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-11-02 16d8e737",
+      "checked": "2026-11-02 4eb38dce",
       "arabic": "cc26e24d7464",
-      "arabicChecked": "2026-11-02 16d8e737"
+      "arabicChecked": "2026-11-02 4eb38dce"
     },
     "bank-messages": {
       "files": {
@@ -482,7 +482,7 @@
         "api/lib/settings-cache.ts": "ee7c564513f7",
         "api/lib/shared-generation.ts": "2d53bf30e567",
         "api/lib/system-settings-registry.ts": "a5f0dcbdcc05",
-        "api/middleware.ts": "d2e8e2966fe6",
+        "api/middleware.ts": "bf9e6f7d50b0",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "21a62d0e0c04",
         "api/server.ts#rest-of-file": "e728f2d81677",
@@ -512,9 +512,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "d271ee15cf38"
       },
-      "checked": "2026-11-02 16d8e737",
-      "arabic": "b43c037878d4",
-      "arabicChecked": "2026-11-02 16d8e737"
+      "checked": "2026-11-02 4eb38dce",
+      "arabic": "9801f9fc5070",
+      "arabicChecked": "2026-11-02 4eb38dce"
     },
     "voice-calls": {
       "files": {

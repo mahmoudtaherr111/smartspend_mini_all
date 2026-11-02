@@ -37,8 +37,8 @@ storage, the contracts shared with the web app, and the retention job that prune
 2. `/api/trpc/*` builds the context. A Bearer header wins over cookies; the token's SHA-256 hash is looked up
    in the Redis principal cache first and only then in `sessions` plus the user table
    ([accounts](accounts.md)).
-3. The procedure's builder applies its limit and checks: anonymous traffic 400 requests a minute per IP,
-   sign-in and registration 25 per quarter hour, a signed-in user 100 a minute, and an AI call another 100 a
+3. The procedure's builder applies its limit and checks: anonymous traffic 3,000 requests a minute per IP (mobile carriers put many customers behind one address),
+   sign-in and registration 300 per quarter hour, a signed-in user 100 a minute, and an AI call another 100 a
    minute on top. `proProcedure`, `proAiProcedure` and `ultraProcedure` check the plan, and the per-feature builders
    (`businessProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`) read the admin's
    `feature_<feature>_<plan>` switch (`contracts/plan-features.ts`); an admin passes all of them.

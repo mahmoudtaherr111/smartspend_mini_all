@@ -66,6 +66,8 @@ Full operational runbook, server hardening, and deployment procedures: see [VPS 
 
 ### Disaster Recovery & Backup Scripts (`scripts/vps/`)
 Production operational and disaster recovery tooling is located in `scripts/vps/`:
+- `scripts/load/day-one.ts`: The day-one load test (1,000 people, 100 at once, reads and saves, no model calls) on a throwaway database on port 3399.
+- `scripts/ops/backup-restore-check.sh`: Loads a dump into a scratch database and compares every table's row count, to prove a backup restores.
 - `scripts/vps/backup.sh`: Transactional `mysqldump` with `--single-transaction --quick --routines --triggers --events --hex-blob --default-character-set=utf8mb4`, Redis BGSAVE snapshot, gzip compression, JSON metadata with SHA-256 checksum, and automatic 30-day rotation.
 - `scripts/vps/restore.sh`: Gzip integrity verification, SHA-256 validation against metadata, automated pre-restore safety snapshot (`pre_restore_*.sql.gz`), database restoration, container restart, and `/health` HTTP 200 verification.
 - `scripts/vps/rollback.sh`: Zero-loss rollback supporting Git ref checkout, pre-migration database snapshot restore, and health verification.

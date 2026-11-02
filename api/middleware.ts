@@ -30,11 +30,13 @@ const t = initTRPC.context<Context>().create({
 export const router = t.router;
 
 /** All anonymous tRPC traffic — generous per-IP cap (SEO, ads list, etc.). */
-const publicIpLimiter = createRateLimiter(400, 60_000);
+// Mobile carriers put many customers behind one address, so a per-IP cap only stops a flood; accounts have their own
+// limits (login-protection.ts).
+const publicIpLimiter = createRateLimiter(3000, 60_000);
 /** Sensitive auth endpoints — stricter per-IP cap. */
-const strictPublicIpLimiter = createRateLimiter(25, 15 * 60_000);
+const strictPublicIpLimiter = createRateLimiter(300, 15 * 60_000);
 /** Authed general user traffic */
-const userRateLimiter = createRateLimiter(100, 60_000);
+const userRateLimiter = createRateLimiter(300, 60_000);
 /** AI Rate Limiter (expensive operations) */
 const aiRateLimiter = createRateLimiter(100, 60_000);
 

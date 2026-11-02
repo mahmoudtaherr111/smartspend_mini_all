@@ -51,11 +51,11 @@ export async function assertDailyAiCost(settings?: Record<string, string>): Prom
       costReading = { usd: await ledgerTotalCostUsdSince(dayStart), at: now, day: dayStart.getTime() };
     }
   } catch (error) {
-    log.warn("daily AI cost could not be read", { error });
+    log.warn({ err: error, event: "ai.daily_cost_unread" }, "Could not read the day's AI cost");
     return;
   }
   if (costReading.usd >= capUsd) {
-    log.error("daily AI cost cap reached", { capUsd, usd: costReading.usd });
+    log.error({ event: "ai.daily_cost_cap_reached", capUsd, usd: costReading.usd }, "Daily AI cost cap reached");
     throw new TRPCError({
       code: "SERVICE_UNAVAILABLE",
       message: "المساعد واخد راحة النهارده. سجّل مصاريفك يدوي، وهيرجع بكره.",

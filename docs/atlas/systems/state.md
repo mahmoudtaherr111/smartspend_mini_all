@@ -20,8 +20,8 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (5 of 
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-02 af0ee524 | 2026-11-02 af0ee524 | 2 | — | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 4 | — | — | 3 | 1 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-02 16d8e737 | 2026-11-02 16d8e737 | 4 | — | 1 | 6 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-02 16d8e737 | 2026-11-02 16d8e737 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-02 16d8e737 | 2026-11-02 16d8e737 | 5 | — | — | — | 7 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-02 4eb38dce | 2026-11-02 4eb38dce | 8 | — | — | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-02 4eb38dce | 2026-11-02 4eb38dce | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 7 | — | — | 3 | 1 |
 
 
