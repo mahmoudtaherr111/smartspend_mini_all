@@ -268,7 +268,7 @@ export function handleUnauthenticatedSession(
  */
 export function resolveApiBaseUrl(
   apiUrl?: string,
-  isProduction: boolean = Boolean((import.meta as any)?.env?.PROD),
+  isProduction: boolean = Boolean((import.meta as unknown as { env?: { PROD?: boolean } })?.env?.PROD),
 ): string {
   if (!apiUrl || apiUrl.trim() === "") {
     return "/api/trpc";

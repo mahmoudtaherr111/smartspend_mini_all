@@ -13,7 +13,9 @@ class AppearanceSheet extends ConsumerWidget {
     return showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SmartSpendRadii.sheet)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(SmartSpendRadii.sheet),
+        ),
       ),
       builder: (ctx) => const AppearanceSheet(),
     );
@@ -47,7 +49,9 @@ class AppearanceSheet extends ConsumerWidget {
             ),
             Text(
               l10n.appearanceTitle,
-              style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: SmartSpendSpacing.md),
             RadioGroup<ThemeChoice>(

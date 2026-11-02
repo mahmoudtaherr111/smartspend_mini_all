@@ -166,7 +166,7 @@ export const StatsView = memo(function StatsView({
             الشخصية المالية
           </p>
           <p className="text-base font-bold text-violet-700 dark:text-violet-300">
-            {(stats?.behavioralInsights as any)?.spendingBehaviorLabelAr ||
+            {stats?.behavioralInsights?.spendingBehaviorLabelAr ||
               (stats?.behavioralInsights?.spendingBehavior === "emotional"
                 ? "صرف عاطفي"
                 : stats?.behavioralInsights?.spendingBehavior === "impulsive"

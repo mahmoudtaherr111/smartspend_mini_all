@@ -6,11 +6,7 @@ import '../ledger/ledger_providers.dart';
 
 /// Reusable banner displayed when the device is offline or requests fail (FND-12).
 class NetworkRetryBanner extends ConsumerWidget {
-  const NetworkRetryBanner({
-    super.key,
-    this.onRetry,
-    this.message,
-  });
+  const NetworkRetryBanner({super.key, this.onRetry, this.message});
 
   final VoidCallback? onRetry;
   final String? message;
@@ -28,7 +24,9 @@ class NetworkRetryBanner extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: colors.warning.withValues(alpha: 0.14),
-        border: Border(bottom: BorderSide(color: colors.warning.withValues(alpha: 0.25))),
+        border: Border(
+          bottom: BorderSide(color: colors.warning.withValues(alpha: 0.25)),
+        ),
       ),
       child: Row(
         children: [
@@ -40,8 +38,14 @@ class NetworkRetryBanner extends ConsumerWidget {
           const SizedBox(width: SmartSpendSpacing.sm),
           Expanded(
             child: Text(
-              message ?? (!online ? 'أنت في وضع عدم الاتصال. يتم الحفظ محلياً والمزامنة لاحقاً.' : 'حدث خطأ في الاتصال.'),
-              style: textTheme.bodySmall?.copyWith(color: colors.warning, fontWeight: FontWeight.w500),
+              message ??
+                  (!online
+                      ? 'أنت في وضع عدم الاتصال. يتم الحفظ محلياً والمزامنة لاحقاً.'
+                      : 'حدث خطأ في الاتصال.'),
+              style: textTheme.bodySmall?.copyWith(
+                color: colors.warning,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           if (onRetry != null) ...[

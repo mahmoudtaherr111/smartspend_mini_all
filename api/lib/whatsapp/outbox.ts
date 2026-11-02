@@ -63,7 +63,7 @@ export interface EnqueueMessageInput {
   messageType?: "reports" | "reminders" | "marketing" | "otp";
   message?: TemplateMessage;
   templateName?: string;
-  payload?: Record<string, any>;
+  payload?: Record<string, unknown>;
   broadcastId?: number;
   notBefore?: Date;
 }

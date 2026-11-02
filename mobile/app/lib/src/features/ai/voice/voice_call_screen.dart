@@ -19,7 +19,10 @@ class VoiceCallScreen extends ConsumerWidget {
     final state = ref.watch(voiceCallControllerProvider);
     final controller = ref.read(voiceCallControllerProvider.notifier);
 
-    final durationMin = (state.durationSeconds ~/ 60).toString().padLeft(2, '0');
+    final durationMin = (state.durationSeconds ~/ 60).toString().padLeft(
+      2,
+      '0',
+    );
     final durationSec = (state.durationSeconds % 60).toString().padLeft(2, '0');
 
     return Scaffold(
@@ -37,7 +40,9 @@ class VoiceCallScreen extends ConsumerWidget {
           },
         ),
         title: Text(
-          state.status == VoiceCallStatus.ended ? 'انتهت المكالمة' : 'مكالمة ذكية مباشرة',
+          state.status == VoiceCallStatus.ended
+              ? 'انتهت المكالمة'
+              : 'مكالمة ذكية مباشرة',
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -72,9 +77,7 @@ class VoiceCallScreen extends ConsumerWidget {
             // Visualizer & status indicator
             Expanded(
               flex: 3,
-              child: Center(
-                child: _CallVisualizer(status: state.status),
-              ),
+              child: Center(child: _CallVisualizer(status: state.status)),
             ),
 
             // Live Assistant Transcript / Status message
@@ -125,7 +128,8 @@ class VoiceCallScreen extends ConsumerWidget {
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: state.cards.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 8),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final card = state.cards[index];
                     return _LiveCallCardWidget(
@@ -234,8 +238,16 @@ class _CallVisualizer extends StatelessWidget {
         // Outer glow circle
         AnimatedContainer(
           duration: const Duration(milliseconds: 400),
-          width: status == VoiceCallStatus.speaking || status == VoiceCallStatus.listening ? 180 : 140,
-          height: status == VoiceCallStatus.speaking || status == VoiceCallStatus.listening ? 180 : 140,
+          width:
+              status == VoiceCallStatus.speaking ||
+                  status == VoiceCallStatus.listening
+              ? 180
+              : 140,
+          height:
+              status == VoiceCallStatus.speaking ||
+                  status == VoiceCallStatus.listening
+              ? 180
+              : 140,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: glowColor.withValues(alpha: 0.15),
@@ -266,11 +278,7 @@ class _CallVisualizer extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(
-            centerIcon,
-            color: Colors.white,
-            size: 40,
-          ),
+          child: Icon(centerIcon, color: Colors.white, size: 40),
         ),
       ],
     );
@@ -362,8 +370,8 @@ class _LiveCallCardWidget extends StatelessWidget {
                 card.status == 'executed' || card.status == 'executing'
                     ? 'تم التنفيذ'
                     : card.status == 'cancelled'
-                        ? 'ملغاة'
-                        : card.status,
+                    ? 'ملغاة'
+                    : card.status,
                 style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
             ),
@@ -396,7 +404,9 @@ class _CallControlsBar extends StatelessWidget {
           IconButton.filledTonal(
             iconSize: 28,
             style: IconButton.styleFrom(
-              backgroundColor: state.isMuted ? Colors.red.withValues(alpha: 0.2) : Colors.white10,
+              backgroundColor: state.isMuted
+                  ? Colors.red.withValues(alpha: 0.2)
+                  : Colors.white10,
               foregroundColor: state.isMuted ? Colors.redAccent : Colors.white,
               padding: const EdgeInsets.all(16),
             ),
@@ -420,8 +430,12 @@ class _CallControlsBar extends StatelessWidget {
           IconButton.filledTonal(
             iconSize: 28,
             style: IconButton.styleFrom(
-              backgroundColor: state.isSpeakerOn ? Colors.blue.withValues(alpha: 0.2) : Colors.white10,
-              foregroundColor: state.isSpeakerOn ? const Color(0xFF38BDF8) : Colors.white,
+              backgroundColor: state.isSpeakerOn
+                  ? Colors.blue.withValues(alpha: 0.2)
+                  : Colors.white10,
+              foregroundColor: state.isSpeakerOn
+                  ? const Color(0xFF38BDF8)
+                  : Colors.white,
               padding: const EdgeInsets.all(16),
             ),
             icon: Icon(state.isSpeakerOn ? Icons.volume_up : Icons.volume_down),

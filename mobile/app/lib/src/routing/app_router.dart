@@ -329,9 +329,7 @@ class NotFoundScreen extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('الصفحة غير موجودة'),
-      ),
+      appBar: AppBar(title: const Text('الصفحة غير موجودة')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(SmartSpendSpacing.screen),

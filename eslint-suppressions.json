@@ -12,18 +12,7 @@
   },
   "api/admin-whatsapp-router.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "api/ads-router.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
+      "count": 2
     }
   },
   "api/ai-router.ts": {
@@ -31,10 +20,10 @@
       "count": 25
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 23
+      "count": 22
     },
     "no-console": {
-      "count": 19
+      "count": 18
     },
     "no-empty": {
       "count": 2
@@ -67,7 +56,7 @@
       "count": 1
     },
     "no-console": {
-      "count": 24
+      "count": 21
     }
   },
   "api/business-router.security.test.ts": {
@@ -175,14 +164,8 @@
     }
   },
   "api/jobs/monthly-report-job.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "no-console": {
-      "count": 10
+      "count": 1
     }
   },
   "api/jobs/rollup-reconciliation-job.ts": {
@@ -191,11 +174,6 @@
     },
     "no-console": {
       "count": 4
-    }
-  },
-  "api/jobs/subscription-expiry-job.ts": {
-    "no-console": {
-      "count": 3
     }
   },
   "api/lib/ai-gateway.ts": {
@@ -418,7 +396,7 @@
   },
   "api/local-auth-router.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 21
+      "count": 20
     }
   },
   "api/middleware.ts": {
@@ -556,28 +534,12 @@
       "count": 2
     }
   },
-  "api/services/batch-ai-service.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 4
-    }
-  },
   "api/services/expense-rollups.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
-    }
-  },
-  "api/services/firebase.ts": {
-    "no-console": {
-      "count": 3
     }
   },
   "api/services/lifestyle-inference-engine.ts": {
@@ -618,7 +580,7 @@
   },
   "api/services/user-profile-service.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 9
+      "count": 8
     },
     "no-empty": {
       "count": 2
@@ -632,21 +594,7 @@
       "count": 1
     }
   },
-  "api/services/whatsapp-service.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "prefer-const": {
-      "count": 1
-    }
-  },
   "api/support-router.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
@@ -783,19 +731,8 @@
     }
   },
   "src/components/admin/AdminAdsTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 4
-    }
-  },
-  "src/components/admin/AdminAuditTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
     }
   },
   "src/components/admin/AdminRulesTab.tsx": {
@@ -816,7 +753,7 @@
       "count": 1
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 3
+      "count": 1
     }
   },
   "src/components/admin/ClarificationsTab.tsx": {
@@ -944,11 +881,6 @@
       "count": 3
     }
   },
-  "src/components/dashboard/UserIntelligencePanel.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
   "src/components/expenses/ExpenseForm.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 21
@@ -961,11 +893,6 @@
     },
     "no-useless-escape": {
       "count": 3
-    }
-  },
-  "src/components/expenses/ReceiptCapture.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
     }
   },
   "src/components/expenses/RecentExpenses.tsx": {
@@ -1157,17 +1084,11 @@
   "src/lib/biometricAuth.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 10
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
     }
   },
   "src/lib/biometricAuth.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "no-empty": {
-      "count": 11
     }
   },
   "src/lib/transactionDisplay.ts": {
@@ -1272,21 +1193,6 @@
   },
   "tests/back-button-manager-adversarial.test.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "tests/e2e/instant-tab-switching.spec.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "tests/e2e/mobile-dashboard-ai-recording.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 8
-    }
-  },
-  "tests/e2e/mobile-fidelity.spec.ts": {
-    "@typescript-eslint/no-explicit-any": {
       "count": 1
     }
   },

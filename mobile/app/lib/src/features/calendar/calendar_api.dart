@@ -97,7 +97,9 @@ final class CalendarApi {
     );
   }
 
-  Future<List<PaymentSuggestionItem>> getPaymentSuggestions(int cashflowId) async {
+  Future<List<PaymentSuggestionItem>> getPaymentSuggestions(
+    int cashflowId,
+  ) async {
     final data = await _client.query(
       Procedures.coach.paymentSuggestions,
       input: {'cashflowId': cashflowId},
@@ -109,14 +111,20 @@ final class CalendarApi {
     ];
   }
 
-  Future<void> setStepStatus({required int stepId, required String status}) async {
+  Future<void> setStepStatus({
+    required int stepId,
+    required String status,
+  }) async {
     await _client.mutate(
       Procedures.coach.setStepStatus,
       input: {'stepId': stepId, 'status': status},
     );
   }
 
-  Future<void> setReminder({required int stepId, required String scheduledAt}) async {
+  Future<void> setReminder({
+    required int stepId,
+    required String scheduledAt,
+  }) async {
     await _client.mutate(
       Procedures.coach.setReminder,
       input: {'stepId': stepId, 'remindAt': scheduledAt},

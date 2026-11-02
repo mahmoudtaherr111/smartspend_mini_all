@@ -11,6 +11,11 @@ import { generateToken, createSession, hashPassword } from "../api/local-auth-ut
 import { eq, and } from "drizzle-orm";
 
 async function main() {
+  // It deletes and writes rows: it runs only on a local throwaway database, never on the one a .env points at.
+  const target = new URL(process.env.DATABASE_URL ?? "");
+  if (!["127.0.0.1", "localhost"].includes(target.hostname) || target.port !== "3399") {
+    throw new Error("The contract runner needs a throwaway database on port 3399");
+  }
   const TEST_USER_ID = 88991;
   const TEST_PHONE = "01012345678";
 
@@ -41,7 +46,7 @@ async function main() {
   });
 
   // Insert a test wallet
-  const [walletResult] = await db.insert(userWallets).values({
+  await db.insert(userWallets).values({
     id: 1,
     userId: TEST_USER_ID,
     userType: "local",
@@ -132,7 +137,7 @@ async function main() {
   const port = 3005;
   const server = serve({ fetch: app.fetch, port, hostname: "127.0.0.1" });
 
-  console.log(`CONTRACT_READY:http://127.0.0.1:${port}/trpc:${token}`);
+  console.log(`CONTRACT_READY:http://127.0.0.1:${port}:${token}`);
 
   // Handle process shutdown
   process.on("SIGINT", () => {

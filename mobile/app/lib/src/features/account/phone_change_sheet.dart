@@ -19,7 +19,9 @@ class PhoneChangeSheet extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SmartSpendRadii.sheet)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(SmartSpendRadii.sheet),
+        ),
       ),
       builder: (ctx) => const PhoneChangeSheet(),
     );
@@ -68,7 +70,8 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
     final phone = normalizePhoneNumber(_phoneController.text.trim());
     if (phone.isEmpty || !RegExp(r'^01[0125]\d{8}$').hasMatch(phone)) {
       setState(() {
-        _errorMessage = 'يرجى إدخال رقم هاتف مصري صحيح مكون من 11 رقماً يبدأ بـ 01';
+        _errorMessage =
+            'يرجى إدخال رقم هاتف مصري صحيح مكون من 11 رقماً يبدأ بـ 01';
       });
       return;
     }
@@ -79,7 +82,9 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
     });
 
     try {
-      final res = await ref.read(accountRepositoryProvider).requestPhoneChange(phone);
+      final res = await ref
+          .read(accountRepositoryProvider)
+          .requestPhoneChange(phone);
       if (!mounted) return;
       setState(() {
         _busy = false;
@@ -119,10 +124,12 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
     });
 
     try {
-      await ref.read(accountRepositoryProvider).confirmPhoneChange(
-        code: code,
-        verificationTicket: _verificationTicket ?? '',
-      );
+      await ref
+          .read(accountRepositoryProvider)
+          .confirmPhoneChange(
+            code: code,
+            verificationTicket: _verificationTicket ?? '',
+          );
 
       if (!mounted) return;
       showSmartSpendNotice(context, l10n.phoneChangeSuccess);
@@ -175,12 +182,18 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
               ),
               Row(
                 children: [
-                  Icon(Icons.phone_android_rounded, color: colors.accent, size: 28),
+                  Icon(
+                    Icons.phone_android_rounded,
+                    color: colors.accent,
+                    size: 28,
+                  ),
                   const SizedBox(width: SmartSpendSpacing.md),
                   Expanded(
                     child: Text(
                       l10n.phoneChangeTitle,
-                      style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -188,7 +201,9 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
               const SizedBox(height: SmartSpendSpacing.md),
               Text(
                 l10n.phoneChangeBody,
-                style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.mutedForeground,
+                ),
               ),
               const SizedBox(height: SmartSpendSpacing.lg),
               if (_step == _Step.inputPhone) ...[
@@ -218,7 +233,11 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
                   enabled: !_busy,
                   maxLength: 6,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(letterSpacing: 8, fontSize: 22, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    letterSpacing: 8,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                   decoration: InputDecoration(
                     labelText: l10n.phoneChangeEnterCode,
                     counterText: '',
@@ -232,7 +251,9 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
                   Text(
                     'يمكنك إعادة طلب الكود بعد $_resendInSeconds ثانية',
                     textAlign: TextAlign.center,
-                    style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colors.mutedForeground,
+                    ),
                   )
                 else
                   TextButton(

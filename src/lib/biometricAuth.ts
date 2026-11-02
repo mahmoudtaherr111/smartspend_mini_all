@@ -104,7 +104,9 @@ export function getBiometricGracePeriod(userKey: string): number {
       const parsed = parseInt(raw, 10);
       if (!isNaN(parsed) && parsed >= 0) return parsed;
     }
-  } catch {}
+  } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
   return BIOMETRIC_CONSTANTS.DEFAULT_GRACE_PERIOD_MS;
 }
 
@@ -157,7 +159,9 @@ export function getPinFailedAttempts(userKey: string): number {
       const parsed = parseInt(raw, 10);
       if (!isNaN(parsed) && parsed >= 0) return parsed;
     }
-  } catch {}
+  } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
   return 0;
 }
 
@@ -174,7 +178,9 @@ export function incrementPinFailedAttempts(userKey: string): number {
           lockoutUntil.toString(),
         );
       }
-    } catch {}
+    } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
   }
   return next;
 }
@@ -184,7 +190,9 @@ export function resetPinFailedAttempts(userKey: string): void {
   try {
     window.localStorage.removeItem(`smartspend_pin_failed_attempts_${userKey}`);
     window.localStorage.removeItem(`smartspend_pin_lockout_until_${userKey}`);
-  } catch {}
+  } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
 }
 
 export function getPinLockoutRemainingMs(userKey: string): number {
@@ -199,7 +207,9 @@ export function getPinLockoutRemainingMs(userKey: string): number {
         window.localStorage.removeItem(`smartspend_pin_lockout_until_${userKey}`);
       }
     }
-  } catch {}
+  } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
   return 0;
 }
 
@@ -238,7 +248,9 @@ async function hashPinLegacy(pin: string): Promise<string> {
       const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-    } catch {}
+    } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
   }
   let hash = 0;
   for (let i = 0; i < salted.length; i++) {
@@ -278,7 +290,9 @@ export async function hashPin(pin: string, salt?: string): Promise<string> {
       );
       const hashArray = Array.from(new Uint8Array(derivedBits));
       return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-    } catch {}
+    } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
   }
   let hash = 0;
   const combo = `${effectiveSalt}_${normalized}`;
@@ -340,7 +354,9 @@ export function removeBiometricPin(userKey: string): void {
     window.localStorage.removeItem(`smartspend_biometric_pin_hash_${userKey}`);
     window.localStorage.removeItem(`smartspend_biometric_pin_salt_${userKey}`);
     resetPinFailedAttempts(userKey);
-  } catch {}
+  } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
 }
 
 export function getLastUnlockedTimestamp(userKey: string = "default"): number {
@@ -358,7 +374,9 @@ export function getLastUnlockedTimestamp(userKey: string = "default"): number {
       const parsed = parseInt(raw, 10);
       if (!isNaN(parsed)) return parsed;
     }
-  } catch {}
+  } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
   return 0;
 }
 
@@ -368,7 +386,9 @@ export function setLastUnlockedTimestamp(ts: number, userKey: string = "default"
     const str = ts.toString();
     window.sessionStorage?.setItem(`smartspend_biometric_last_unlocked_${userKey}`, str);
     window.localStorage?.setItem(`smartspend_biometric_last_unlocked_${userKey}`, str);
-  } catch {}
+  } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
 }
 
 export function getLastActiveTimestamp(userKey: string = "default"): number {
@@ -382,7 +402,9 @@ export function getLastActiveTimestamp(userKey: string = "default"): number {
       const parsed = parseInt(raw, 10);
       if (!isNaN(parsed)) return parsed;
     }
-  } catch {}
+  } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
   return Date.now();
 }
 
@@ -390,7 +412,9 @@ export function setLastActiveTimestamp(ts: number, userKey: string = "default"):
   if (typeof window === "undefined") return;
   try {
     window.localStorage?.setItem(`smartspend_biometric_last_active_${userKey}`, ts.toString());
-  } catch {}
+  } catch {
+    // Storage can be blocked; the lock then falls back to its defaults.
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

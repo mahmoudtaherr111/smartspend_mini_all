@@ -34,10 +34,7 @@ final class DayTrendPoint {
 
 /// A weekday's spending rollup (STA-03).
 final class WeekdayTrendPoint {
-  const WeekdayTrendPoint({
-    required this.name,
-    required this.amount,
-  });
+  const WeekdayTrendPoint({required this.name, required this.amount});
 
   final String name;
   final num amount;
@@ -257,12 +254,7 @@ final class DebtsOverview {
 }
 
 /// Fallback source for budget comparison when no general budget exists (GAP-15).
-enum BudgetFallbackKind {
-  budget,
-  profileIncome,
-  monthIncome,
-  none,
-}
+enum BudgetFallbackKind { budget, profileIncome, monthIncome, none }
 
 /// Month's spending vs budget or income fallback (STA-04, GAP-15).
 final class BudgetComparisonData {
@@ -368,14 +360,22 @@ final class SmartProfileSummary {
   });
 
   factory SmartProfileSummary.fromJson(Map<String, Object?> json) {
-    final financial = json['financialInfo'] as Map<String, Object?>? ?? const {};
+    final financial =
+        json['financialInfo'] as Map<String, Object?>? ?? const {};
     final legacy = json['legacy'] as Map<String, Object?>? ?? const {};
-    final gamification = json['gamification'] as Map<String, Object?>? ?? const {};
+    final gamification =
+        json['gamification'] as Map<String, Object?>? ?? const {};
 
-    final monthlyIncome = readAmount(financial['monthlyIncome']) ?? readAmount(legacy['monthlyIncome']);
+    final monthlyIncome =
+        readAmount(financial['monthlyIncome']) ??
+        readAmount(legacy['monthlyIncome']);
     final salaryDay = (financial['salaryDay'] as num?)?.toInt();
-    final financialGoal = (financial['primaryGoal'] as String?) ?? (legacy['financialGoal'] as String?);
-    final personality = (financial['spendingStyle'] as String?) ?? (legacy['financialPersonality'] as String?);
+    final financialGoal =
+        (financial['primaryGoal'] as String?) ??
+        (legacy['financialGoal'] as String?);
+    final personality =
+        (financial['spendingStyle'] as String?) ??
+        (legacy['financialPersonality'] as String?);
 
     return SmartProfileSummary(
       monthlyIncome: monthlyIncome,

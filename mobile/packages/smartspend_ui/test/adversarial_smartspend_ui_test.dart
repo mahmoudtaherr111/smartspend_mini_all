@@ -20,9 +20,7 @@ Widget _appWithDirection({
     textDirection: direction,
     child: MoneyPrivacy(
       hidden: hiddenMoney,
-      child: Scaffold(
-        body: Center(child: child),
-      ),
+      child: Scaffold(body: Center(child: child)),
     ),
   ),
 );
@@ -35,16 +33,19 @@ void main() {
       expect(parseAmount('١٠٠٠٠٠٠'), 1000000);
     });
 
-    test('parses Arabic thousands (٬) and decimal (٫) separators correctly', () {
-      // 0x066C is Arabic thousands separator
-      expect(parseAmount('١٬٥٠٠.٥٠'), 1500.5);
-      // 0x066B is Arabic decimal separator
-      expect(parseAmount('١٥٠٠٫٥٠'), 1500.5);
-      // Both separators combined
-      expect(parseAmount('١٬٥٠٠٫٥٠'), 1500.5);
-      // Multiple thousands separators
-      expect(parseAmount('١٬٠٠٠٬٠٠٠'), 1000000);
-    });
+    test(
+      'parses Arabic thousands (٬) and decimal (٫) separators correctly',
+      () {
+        // 0x066C is Arabic thousands separator
+        expect(parseAmount('١٬٥٠٠.٥٠'), 1500.5);
+        // 0x066B is Arabic decimal separator
+        expect(parseAmount('١٥٠٠٫٥٠'), 1500.5);
+        // Both separators combined
+        expect(parseAmount('١٬٥٠٠٫٥٠'), 1500.5);
+        // Multiple thousands separators
+        expect(parseAmount('١٬٠٠٠٬٠٠٠'), 1000000);
+      },
+    );
 
     test('parses Persian digits (۰-۹)', () {
       expect(parseAmount('۱۲۵۰.۵۰'), 1250.5);
@@ -84,20 +85,20 @@ void main() {
       }
     });
 
-    test('normalizeDigits transforms Arabic-Indic and Persian digits in text', () {
-      expect(
-        normalizeDigits('المبلغ هو ١٥٠٠.٥٠ جنيه'),
-        'المبلغ هو 1500.50 جنيه',
-      );
-      expect(
-        normalizeDigits('ميزانية ٢٥٠٠ و ١٠٠٠٠٠٠'),
-        'ميزانية 2500 و 1000000',
-      );
-      expect(
-        normalizeDigits('مبلغ ١٬٥٠٠٫٥٠'),
-        'مبلغ 1500.50',
-      );
-    });
+    test(
+      'normalizeDigits transforms Arabic-Indic and Persian digits in text',
+      () {
+        expect(
+          normalizeDigits('المبلغ هو ١٥٠٠.٥٠ جنيه'),
+          'المبلغ هو 1500.50 جنيه',
+        );
+        expect(
+          normalizeDigits('ميزانية ٢٥٠٠ و ١٠٠٠٠٠٠'),
+          'ميزانية 2500 و 1000000',
+        );
+        expect(normalizeDigits('مبلغ ١٬٥٠٠٫٥٠'), 'مبلغ 1500.50');
+      },
+    );
   });
 
   group('Adversarial Challenge: Directional Chevrons in RTL vs LTR', () {
@@ -130,7 +131,9 @@ void main() {
         // In 4x4 matrix, storage[0] is scaleX
         expect(transformWidget.transform.storage[0], -1.0);
 
-        final chevronCenter = tester.getCenter(find.byIcon(Icons.chevron_right_rounded));
+        final chevronCenter = tester.getCenter(
+          find.byIcon(Icons.chevron_right_rounded),
+        );
         final textCenter = tester.getCenter(find.text('إعدادات الحساب'));
         // In RTL, trailing widget is on the left
         expect(chevronCenter.dx, lessThan(textCenter.dx));
@@ -165,7 +168,9 @@ void main() {
         final transformWidget = tester.widget<Transform>(transformFinder);
         expect(transformWidget.transform.storage[0], 1.0);
 
-        final chevronCenter = tester.getCenter(find.byIcon(Icons.chevron_right_rounded));
+        final chevronCenter = tester.getCenter(
+          find.byIcon(Icons.chevron_right_rounded),
+        );
         final textCenter = tester.getCenter(find.text('Account Settings'));
         // In LTR, trailing widget is on the right
         expect(chevronCenter.dx, greaterThan(textCenter.dx));

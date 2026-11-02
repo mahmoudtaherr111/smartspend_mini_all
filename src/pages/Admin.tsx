@@ -1260,7 +1260,7 @@ export default function Admin() {
                           </tr>
                         </thead>
                         <tbody>
-                          {(storeSubsQuery.data?.list ?? stats.data?.recentStorePurchases)?.map((p: any) => (
+                          {(storeSubsQuery.data?.list ?? stats.data?.recentStorePurchases)?.map((p) => (
                             <tr key={p.id} className="border-b last:border-0">
                               <td className="py-2 px-3">
                                 <Badge

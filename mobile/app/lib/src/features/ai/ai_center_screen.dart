@@ -83,7 +83,8 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(sheetCtx).colorScheme.primaryContainer.withValues(alpha: 0.4),
+                    color: Theme.of(sheetCtx).colorScheme.primaryContainer
+                        .withValues(alpha: 0.4),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -140,7 +141,9 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
       if (!mounted) return;
 
       // Initialize voice controller and navigate to call screen
-      await ref.read(voiceCallControllerProvider.notifier).start(ticket: ticket);
+      await ref
+          .read(voiceCallControllerProvider.notifier)
+          .start(ticket: ticket);
       if (!mounted) return;
 
       Navigator.of(context).push(

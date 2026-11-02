@@ -70,7 +70,7 @@ export function AdminAdsTab() {
 
   // Modal / form states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [adToDelete, setAdToDelete] = useState<any | null>(null);
+  const [adToDelete, setAdToDelete] = useState<{ id: number; title: string } | null>(null);
 
   // Form Fields
   const [title, setTitle] = useState("");
@@ -211,7 +211,7 @@ export function AdminAdsTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {adsList.map((ad: any) => (
+                {adsList.map((ad) => (
                   <tr key={ad.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="p-4">
                       <div>
@@ -245,7 +245,7 @@ export function AdminAdsTab() {
                     <td className="p-4 font-mono">{ad.clicks || 0}</td>
                     <td className="p-4 font-mono">
                       {ad.impressions
-                        ? `${((ad.clicks / ad.impressions) * 100).toFixed(1)}%`
+                        ? `${(((ad.clicks ?? 0) / ad.impressions) * 100).toFixed(1)}%`
                         : "0.0%"}
                     </td>
                     <td className="p-4">
@@ -335,7 +335,7 @@ export function AdminAdsTab() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>مكان الظهور</Label>
-                <Select value={placement} onValueChange={(val: any) => setPlacement(val)}>
+                <Select value={placement} onValueChange={(val) => setPlacement(val as typeof placement)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -348,7 +348,7 @@ export function AdminAdsTab() {
               </div>
               <div className="space-y-1">
                 <Label>الباقة المستهدفة</Label>
-                <Select value={targetPlan} onValueChange={(val: any) => setTargetPlan(val)}>
+                <Select value={targetPlan} onValueChange={(val) => setTargetPlan(val as typeof targetPlan)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -362,7 +362,7 @@ export function AdminAdsTab() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>المنصة المستهدفة</Label>
-                <Select value={platformTarget} onValueChange={(val: any) => setPlatformTarget(val)}>
+                <Select value={platformTarget} onValueChange={(val) => setPlatformTarget(val as typeof platformTarget)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

@@ -15,10 +15,12 @@ class NotificationInboxScreen extends ConsumerStatefulWidget {
   static const path = '/notifications';
 
   @override
-  ConsumerState<NotificationInboxScreen> createState() => _NotificationInboxScreenState();
+  ConsumerState<NotificationInboxScreen> createState() =>
+      _NotificationInboxScreenState();
 }
 
-class _NotificationInboxScreenState extends ConsumerState<NotificationInboxScreen> {
+class _NotificationInboxScreenState
+    extends ConsumerState<NotificationInboxScreen> {
   bool _showOnlyUnread = false;
 
   String _dateGroupKey(DateTime dt, AppLocalizations l10n) {
@@ -102,9 +104,8 @@ class _NotificationInboxScreenState extends ConsumerState<NotificationInboxScree
           Expanded(
             child: notifsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(
-                child: Text(l10n.captureStatusFailed),
-              ),
+              error: (err, stack) =>
+                  Center(child: Text(l10n.captureStatusFailed)),
               data: (items) {
                 final filtered = _showOnlyUnread
                     ? items.where((item) => !item.isRead).toList()
@@ -115,11 +116,17 @@ class _NotificationInboxScreenState extends ConsumerState<NotificationInboxScree
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.notifications_none_rounded, size: 64, color: colors.mutedForeground),
+                        Icon(
+                          Icons.notifications_none_rounded,
+                          size: 64,
+                          color: colors.mutedForeground,
+                        ),
                         const SizedBox(height: SmartSpendSpacing.md),
                         Text(
                           l10n.notificationsEmpty,
-                          style: textTheme.bodyLarge?.copyWith(color: colors.mutedForeground),
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: colors.mutedForeground,
+                          ),
                         ),
                       ],
                     ),
@@ -134,7 +141,8 @@ class _NotificationInboxScreenState extends ConsumerState<NotificationInboxScree
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () async => ref.refresh(inAppNotificationsProvider),
+                  onRefresh: () async =>
+                      ref.refresh(inAppNotificationsProvider),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(SmartSpendSpacing.screen),
                     itemCount: groups.length,
@@ -146,7 +154,9 @@ class _NotificationInboxScreenState extends ConsumerState<NotificationInboxScree
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.sm),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: SmartSpendSpacing.sm,
+                            ),
                             child: Text(
                               groupTitle,
                               style: textTheme.labelLarge?.copyWith(
@@ -158,14 +168,17 @@ class _NotificationInboxScreenState extends ConsumerState<NotificationInboxScree
                           Card(
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+                              borderRadius: BorderRadius.circular(
+                                SmartSpendRadii.md,
+                              ),
                               side: BorderSide(color: colors.border),
                             ),
                             child: ListView.separated(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: groupItems.length,
-                              separatorBuilder: (ctx, i) => const Divider(height: 1),
+                              separatorBuilder: (ctx, i) =>
+                                  const Divider(height: 1),
                               itemBuilder: (ctx, i) {
                                 final item = groupItems[i];
                                 return ListTile(
@@ -175,13 +188,17 @@ class _NotificationInboxScreenState extends ConsumerState<NotificationInboxScree
                                     height: 10,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: item.isRead ? Colors.transparent : colors.accent,
+                                      color: item.isRead
+                                          ? Colors.transparent
+                                          : colors.accent,
                                     ),
                                   ),
                                   title: Text(
                                     item.title,
                                     style: textTheme.titleSmall?.copyWith(
-                                      fontWeight: item.isRead ? FontWeight.normal : FontWeight.bold,
+                                      fontWeight: item.isRead
+                                          ? FontWeight.normal
+                                          : FontWeight.bold,
                                     ),
                                   ),
                                   subtitle: Padding(
@@ -193,7 +210,10 @@ class _NotificationInboxScreenState extends ConsumerState<NotificationInboxScree
                                       ),
                                     ),
                                   ),
-                                  trailing: const Icon(Icons.chevron_left_rounded, size: 20),
+                                  trailing: const Icon(
+                                    Icons.chevron_left_rounded,
+                                    size: 20,
+                                  ),
                                 );
                               },
                             ),

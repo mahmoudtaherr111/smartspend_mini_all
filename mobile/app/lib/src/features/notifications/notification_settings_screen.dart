@@ -14,10 +14,12 @@ class NotificationSettingsScreen extends ConsumerStatefulWidget {
   static const path = '/settings/notifications';
 
   @override
-  ConsumerState<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
+  ConsumerState<NotificationSettingsScreen> createState() =>
+      _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsScreenState extends ConsumerState<NotificationSettingsScreen> {
+class _NotificationSettingsScreenState
+    extends ConsumerState<NotificationSettingsScreen> {
   bool _masterEnabled = true;
   bool _budgetEnabled = true;
   bool _dailyEnabled = true;
@@ -72,7 +74,8 @@ class _NotificationSettingsScreenState extends ConsumerState<NotificationSetting
 
     profileAsync.whenData((profile) {
       if (!_initialized) {
-        final notifs = profile.rawPreferences['notifications'] is Map<String, Object?>
+        final notifs =
+            profile.rawPreferences['notifications'] is Map<String, Object?>
             ? profile.rawPreferences['notifications']! as Map<String, Object?>
             : const <String, Object?>{};
 
@@ -101,14 +104,20 @@ class _NotificationSettingsScreenState extends ConsumerState<NotificationSetting
               child: SwitchListTile(
                 title: Text(
                   l10n.notificationSettingsMaster,
-                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                subtitle: const Text('السماح باستقبال الإشعارات والتنبيهات من التطبيق'),
+                subtitle: const Text(
+                  'السماح باستقبال الإشعارات والتنبيهات من التطبيق',
+                ),
                 value: _masterEnabled,
-                onChanged: _saving ? null : (val) {
-                  setState(() => _masterEnabled = val);
-                  _save();
-                },
+                onChanged: _saving
+                    ? null
+                    : (val) {
+                        setState(() => _masterEnabled = val);
+                        _save();
+                      },
               ),
             ),
             const SizedBox(height: SmartSpendSpacing.lg),
@@ -119,42 +128,58 @@ class _NotificationSettingsScreenState extends ConsumerState<NotificationSetting
                   SwitchListTile(
                     secondary: const Icon(Icons.savings_outlined),
                     title: Text(l10n.notificationSettingsBudget),
-                    subtitle: const Text('تنبيه عند اقتراب المصروفات من سقف الميزانية المحددة'),
+                    subtitle: const Text(
+                      'تنبيه عند اقتراب المصروفات من سقف الميزانية المحددة',
+                    ),
                     value: _budgetEnabled,
-                    onChanged: _saving ? null : (val) {
-                      setState(() => _budgetEnabled = val);
-                      _save();
-                    },
+                    onChanged: _saving
+                        ? null
+                        : (val) {
+                            setState(() => _budgetEnabled = val);
+                            _save();
+                          },
                   ),
                   SwitchListTile(
                     secondary: const Icon(Icons.alarm_rounded),
                     title: Text(l10n.notificationSettingsDaily),
-                    subtitle: const Text('تذكير مسائي هادئ لتسجيل مصروفاتك التي لم تسجلها اليوم'),
+                    subtitle: const Text(
+                      'تذكير مسائي هادئ لتسجيل مصروفاتك التي لم تسجلها اليوم',
+                    ),
                     value: _dailyEnabled,
-                    onChanged: _saving ? null : (val) {
-                      setState(() => _dailyEnabled = val);
-                      _save();
-                    },
+                    onChanged: _saving
+                        ? null
+                        : (val) {
+                            setState(() => _dailyEnabled = val);
+                            _save();
+                          },
                   ),
                   SwitchListTile(
                     secondary: const Icon(Icons.local_fire_department_outlined),
                     title: Text(l10n.notificationSettingsStreak),
-                    subtitle: const Text('تنبيه قبل انتهاء اليوم للحفاظ على سلسلة أيام الالتزام والتسجيل'),
+                    subtitle: const Text(
+                      'تنبيه قبل انتهاء اليوم للحفاظ على سلسلة أيام الالتزام والتسجيل',
+                    ),
                     value: _streakEnabled,
-                    onChanged: _saving ? null : (val) {
-                      setState(() => _streakEnabled = val);
-                      _save();
-                    },
+                    onChanged: _saving
+                        ? null
+                        : (val) {
+                            setState(() => _streakEnabled = val);
+                            _save();
+                          },
                   ),
                   SwitchListTile(
                     secondary: const Icon(Icons.assessment_outlined),
                     title: Text(l10n.notificationSettingsMonthly),
-                    subtitle: const Text('إشعار بصدور تقريرك المالي الشهري المفصل فور جاهزيته'),
+                    subtitle: const Text(
+                      'إشعار بصدور تقريرك المالي الشهري المفصل فور جاهزيته',
+                    ),
                     value: _monthlyEnabled,
-                    onChanged: _saving ? null : (val) {
-                      setState(() => _monthlyEnabled = val);
-                      _save();
-                    },
+                    onChanged: _saving
+                        ? null
+                        : (val) {
+                            setState(() => _monthlyEnabled = val);
+                            _save();
+                          },
                   ),
                 ],
               ),

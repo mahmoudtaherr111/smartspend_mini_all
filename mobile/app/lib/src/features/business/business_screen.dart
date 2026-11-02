@@ -46,11 +46,13 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
     setState(() => _suggesting = true);
     try {
-      final suggestions = await ref.read(businessApiProvider).suggestCategories(
-        businessName: name,
-        businessType: _selectedType,
-        description: _descController.text.trim(),
-      );
+      final suggestions = await ref
+          .read(businessApiProvider)
+          .suggestCategories(
+            businessName: name,
+            businessType: _selectedType,
+            description: _descController.text.trim(),
+          );
       if (mounted) {
         setState(() {
           _suggestedCategories = suggestions;
@@ -80,12 +82,14 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
           if (idx < _suggestedCategories.length) _suggestedCategories[idx],
       ];
 
-      await ref.read(businessApiProvider).create(
-        name: name,
-        type: _selectedType,
-        description: _descController.text.trim(),
-        categories: selectedCats,
-      );
+      await ref
+          .read(businessApiProvider)
+          .create(
+            name: name,
+            type: _selectedType,
+            description: _descController.text.trim(),
+            categories: selectedCats,
+          );
 
       ref.invalidate(businessDashboardProvider);
       if (mounted) {
@@ -133,7 +137,10 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         ref.read(isBusinessModeActiveProvider.notifier).set(false);
         ref.invalidate(businessDashboardProvider);
         if (mounted) {
-          showSmartSpendNotice(context, 'تم حذف حساب الشغل وتحويل المعاملات للحساب الشخصي');
+          showSmartSpendNotice(
+            context,
+            'تم حذف حساب الشغل وتحويل المعاملات للحساب الشخصي',
+          );
         }
       } catch (_) {
         if (mounted) {
@@ -160,11 +167,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(
-                Icons.storefront_rounded,
-                size: 64,
-                color: colors.accent,
-              ),
+              Icon(Icons.storefront_rounded, size: 64, color: colors.accent),
               const SizedBox(height: SmartSpendSpacing.md),
               Text(
                 'حساب الشغل متاح في باقة برو',
@@ -204,8 +207,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       body: stateAsync.isLoading
           ? const Center(child: CircularProgressIndicator())
           : bState != null && bState.hasBusiness
-              ? _buildActiveBusinessView(context, bState)
-              : _buildCreationWizard(context),
+          ? _buildActiveBusinessView(context, bState)
+          : _buildCreationWizard(context),
     );
   }
 
@@ -213,13 +216,23 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
     final typesAsync = ref.watch(businessTypesProvider);
-    final types = typesAsync.value ?? const [
-      BusinessTypeOption(id: 'restaurant', label: 'مطاعم ومأكولات', icon: '🍤'),
-      BusinessTypeOption(id: 'retail', label: 'تجارة وتجزئة', icon: '🛍️'),
-      BusinessTypeOption(id: 'services', label: 'خدمات وورش', icon: '🔧'),
-      BusinessTypeOption(id: 'freelance', label: 'عمل حر وشركات', icon: '💻'),
-      BusinessTypeOption(id: 'custom', label: 'نوع آخر', icon: '✏️'),
-    ];
+    final types =
+        typesAsync.value ??
+        const [
+          BusinessTypeOption(
+            id: 'restaurant',
+            label: 'مطاعم ومأكولات',
+            icon: '🍤',
+          ),
+          BusinessTypeOption(id: 'retail', label: 'تجارة وتجزئة', icon: '🛍️'),
+          BusinessTypeOption(id: 'services', label: 'خدمات وورش', icon: '🔧'),
+          BusinessTypeOption(
+            id: 'freelance',
+            label: 'عمل حر وشركات',
+            icon: '💻',
+          ),
+          BusinessTypeOption(id: 'custom', label: 'نوع آخر', icon: '✏️'),
+        ];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(SmartSpendSpacing.screen),
@@ -233,7 +246,9 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               children: [
                 Text(
                   'أنشئ حساباً منفصلاً لعملك أو متجرك لفصل الحسابات الشخصية عن العمل.',
-                  style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.md),
                 TextField(
@@ -295,7 +310,9 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                 children: [
                   Text(
                     'اختر الفئات اللي تناسب نشاطك ليتم إضافتها لحسابك:',
-                    style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colors.mutedForeground,
+                    ),
                   ),
                   const SizedBox(height: SmartSpendSpacing.sm),
                   for (var i = 0; i < _suggestedCategories.length; i++)
@@ -313,11 +330,17 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                       },
                       title: Text(
                         '${_suggestedCategories[i].icon} ${_suggestedCategories[i].nameAr}',
-                        style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       subtitle: Text(
-                        _suggestedCategories[i].type == 'income' ? 'إيراد ومبيعات' : 'مصروفات',
-                        style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                        _suggestedCategories[i].type == 'income'
+                            ? 'إيراد ومبيعات'
+                            : 'مصروفات',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colors.mutedForeground,
+                        ),
                       ),
                     ),
                 ],
@@ -382,10 +405,14 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                     Switch(
                       value: isBusinessActive,
                       onChanged: (val) {
-                        ref.read(isBusinessModeActiveProvider.notifier).set(val);
+                        ref
+                            .read(isBusinessModeActiveProvider.notifier)
+                            .set(val);
                         showSmartSpendNotice(
                           context,
-                          val ? 'تم التحويل لوضع حساب الشغل' : 'تم التحويل للوضع الشخصي',
+                          val
+                              ? 'تم التحويل لوضع حساب الشغل'
+                              : 'تم التحويل للوضع الشخصي',
                         );
                       },
                     ),
@@ -397,7 +424,9 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                       ? 'أنت تعمل حالياً في وضع حساب الشغل. كل المعاملات الجديدة ستُنسب لهذا المشروع.'
                       : 'أنت في الوضع الشخصي. فعّل المفتاح لتسجيل مصاريف وإيرادات الشغل.',
                   style: textTheme.bodySmall?.copyWith(
-                    color: isBusinessActive ? colors.accent : colors.mutedForeground,
+                    color: isBusinessActive
+                        ? colors.accent
+                        : colors.mutedForeground,
                   ),
                 ),
               ],
@@ -413,13 +442,18 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               children: [
                 for (final cat in state.categories)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.xs),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: SmartSpendSpacing.xs,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
                           children: [
-                            Text(cat.icon, style: const TextStyle(fontSize: 20)),
+                            Text(
+                              cat.icon,
+                              style: const TextStyle(fontSize: 20),
+                            ),
                             const SizedBox(width: SmartSpendSpacing.sm),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,7 +468,9 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                                 Text(
                                   cat.type == 'income' ? 'إيراد' : 'مصروف',
                                   style: textTheme.bodySmall?.copyWith(
-                                    color: cat.type == 'income' ? colors.accent : colors.mutedForeground,
+                                    color: cat.type == 'income'
+                                        ? colors.accent
+                                        : colors.mutedForeground,
                                   ),
                                 ),
                               ],
@@ -442,10 +478,16 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                           ],
                         ),
                         IconButton(
-                          icon: Icon(Icons.delete_outline_rounded, color: colors.danger, size: 20),
+                          icon: Icon(
+                            Icons.delete_outline_rounded,
+                            color: colors.danger,
+                            size: 20,
+                          ),
                           tooltip: 'حذف الفئة',
                           onPressed: () async {
-                            final success = await ref.read(businessApiProvider).removeCategory(cat.id);
+                            final success = await ref
+                                .read(businessApiProvider)
+                                .removeCategory(cat.id);
                             if (success) {
                               ref.invalidate(businessDashboardProvider);
                             }
@@ -460,22 +502,25 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                   label: const Text('إضافة فئة جديدة'),
                   onPressed: () => AddBusinessCategorySheet.show(
                     context,
-                    onAdd: ({
-                      required String name,
-                      required String nameAr,
-                      required String type,
-                      required String icon,
-                      required String color,
-                    }) async {
-                      await ref.read(businessApiProvider).addCategory(
-                        name: name,
-                        nameAr: nameAr,
-                        type: type,
-                        icon: icon,
-                        color: color,
-                      );
-                      ref.invalidate(businessDashboardProvider);
-                    },
+                    onAdd:
+                        ({
+                          required String name,
+                          required String nameAr,
+                          required String type,
+                          required String icon,
+                          required String color,
+                        }) async {
+                          await ref
+                              .read(businessApiProvider)
+                              .addCategory(
+                                name: name,
+                                nameAr: nameAr,
+                                type: type,
+                                icon: icon,
+                                color: color,
+                              );
+                          ref.invalidate(businessDashboardProvider);
+                        },
                   ),
                 ),
               ],
@@ -491,12 +536,16 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               children: [
                 Text(
                   'عدد الموردين والعملاء المسجلين: ${state.contactCount}',
-                  style: textTheme.bodyMedium?.copyWith(color: colors.foreground),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.foreground,
+                  ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
                   'تقدر تربط أي شخص أو مورد بالمشروع لمتابعة المستحقات والفواتير.',
-                  style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.sm),
                 Align(

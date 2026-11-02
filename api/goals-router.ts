@@ -2,7 +2,7 @@ import { z } from "zod";
 import { router, authedProcedure, goalAnalysisProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
-import { financialGoals, expenses, users, localUsers, userBudgets } from "../db/schema";
+import { financialGoals, expenses, userBudgets } from "../db/schema";
 import { eq, and, desc, gte, lt, sql } from "drizzle-orm";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "./lib/env";
@@ -11,7 +11,6 @@ import {
   clampOutputTokens,
   estimateTokensFromText,
   loadSystemConfig,
-  recordAiUsageEvent,
   trackAiTokens,
   asPlan,
   capRequestOutputTokens,

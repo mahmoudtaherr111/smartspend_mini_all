@@ -35,7 +35,10 @@ class _TestChatMessagesNotifier extends ChatMessagesNotifier {
   }
 }
 
-List<Override> _testOverrides(FakeApi fakeApi, [List<Override> extra = const []]) {
+List<Override> _testOverrides(
+  FakeApi fakeApi, [
+  List<Override> extra = const [],
+]) {
   final trpc = TrpcClient(
     baseUri: Uri.parse('http://localhost'),
     httpClient: fakeApi.client,
@@ -50,7 +53,9 @@ List<Override> _testOverrides(FakeApi fakeApi, [List<Override> extra = const []]
 
 void main() {
   group('AiChatView & Action Cards Tests (AI-01, AI-02, AI-04)', () {
-    testWidgets('renders user and assistant chat bubbles with markdown', (tester) async {
+    testWidgets('renders user and assistant chat bubbles with markdown', (
+      tester,
+    ) async {
       final fakeApi = FakeApi();
 
       await tester.pumpWidget(
@@ -58,9 +63,7 @@ void main() {
           overrides: _testOverrides(fakeApi, [
             chatMessagesProvider.overrideWith(_TestChatMessagesNotifier.new),
           ]),
-          child: const MaterialApp(
-            home: Scaffold(body: AiChatView()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: AiChatView())),
         ),
       );
       await tester.pumpAndSettle();
@@ -69,7 +72,9 @@ void main() {
       expect(find.textContaining('1200 جنيه'), findsOneWidget);
     });
 
-    testWidgets('renders action card and handles confirm with debounce', (tester) async {
+    testWidgets('renders action card and handles confirm with debounce', (
+      tester,
+    ) async {
       final fakeApi = FakeApi();
 
       int confirmCalls = 0;
@@ -93,9 +98,7 @@ void main() {
           overrides: _testOverrides(fakeApi),
           child: MaterialApp(
             home: Scaffold(
-              body: Center(
-                child: AiActionCard(draft: draft),
-              ),
+              body: Center(child: AiActionCard(draft: draft)),
             ),
           ),
         ),
@@ -116,7 +119,9 @@ void main() {
       expect(confirmCalls, 1);
     });
 
-    testWidgets('renders expired action card with disabled actions', (tester) async {
+    testWidgets('renders expired action card with disabled actions', (
+      tester,
+    ) async {
       final fakeApi = FakeApi();
 
       final expiredDraft = AiActionDraft(
@@ -134,9 +139,7 @@ void main() {
           overrides: _testOverrides(fakeApi),
           child: MaterialApp(
             home: Scaffold(
-              body: Center(
-                child: AiActionCard(draft: expiredDraft),
-              ),
+              body: Center(child: AiActionCard(draft: expiredDraft)),
             ),
           ),
         ),
@@ -147,7 +150,9 @@ void main() {
       expect(find.text('تأكيد'), findsNothing);
     });
 
-    testWidgets('requires exact phrase confirmation for high-risk action', (tester) async {
+    testWidgets('requires exact phrase confirmation for high-risk action', (
+      tester,
+    ) async {
       final fakeApi = FakeApi();
 
       bool confirmedCalled = false;
@@ -172,9 +177,7 @@ void main() {
           overrides: _testOverrides(fakeApi),
           child: MaterialApp(
             home: Scaffold(
-              body: Center(
-                child: AiActionCard(draft: highRiskDraft),
-              ),
+              body: Center(child: AiActionCard(draft: highRiskDraft)),
             ),
           ),
         ),
@@ -187,7 +190,10 @@ void main() {
       await tester.tap(find.text('متابعة التأكيد'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('للتأكيد، اكتب العبارة التالية'), findsOneWidget);
+      expect(
+        find.textContaining('للتأكيد، اكتب العبارة التالية'),
+        findsOneWidget,
+      );
 
       // Typing wrong phrase keeps confirm disabled
       final inputField = find.byType(TextField);
@@ -209,96 +215,105 @@ void main() {
       expect(confirmedCalled, isTrue);
     });
 
-    testWidgets('shows daily limit error banner with upgrade button on TOO_MANY_REQUESTS', (tester) async {
-      final fakeApi = FakeApi();
-      fakeApi.answer('chat.sendMessage', (_) {
-        throw const TrpcFailure(
-          'TOO_MANY_REQUESTS',
-          429,
-          'وصلت للحد الأقصى لرسائل الذكاء الاصطناعي اليومية في باقتك.',
-        );
-      });
+    testWidgets(
+      'shows daily limit error banner with upgrade button on TOO_MANY_REQUESTS',
+      (tester) async {
+        final fakeApi = FakeApi();
+        fakeApi.answer('chat.sendMessage', (_) {
+          throw const TrpcFailure(
+            'TOO_MANY_REQUESTS',
+            429,
+            'وصلت للحد الأقصى لرسائل الذكاء الاصطناعي اليومية في باقتك.',
+          );
+        });
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: _testOverrides(fakeApi),
-          child: const MaterialApp(
-            home: Scaffold(body: AiChatView()),
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: _testOverrides(fakeApi),
+            child: const MaterialApp(home: Scaffold(body: AiChatView())),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Type message and hit send
-      await tester.enterText(find.byType(TextField), 'سؤال جديد');
-      await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
-      await tester.pumpAndSettle();
+        // Type message and hit send
+        await tester.enterText(find.byType(TextField), 'سؤال جديد');
+        await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+        await tester.pumpAndSettle();
 
-      // Daily limit banner is displayed
-      expect(find.textContaining('وصلت للحد الأقصى لرسائل الذكاء الاصطناعي'), findsOneWidget);
-      expect(find.text('ترقية للبرو'), findsOneWidget);
-      // Composer retains draft text
-      expect(find.widgetWithText(TextField, 'سؤال جديد'), findsOneWidget);
-    });
+        // Daily limit banner is displayed
+        expect(
+          find.textContaining('وصلت للحد الأقصى لرسائل الذكاء الاصطناعي'),
+          findsOneWidget,
+        );
+        expect(find.text('ترقية للبرو'), findsOneWidget);
+        // Composer retains draft text
+        expect(find.widgetWithText(TextField, 'سؤال جديد'), findsOneWidget);
+      },
+    );
   });
 
   group('AiConversationsSheet & AiMemoriesSheet (AI-03, AI-05)', () {
-    testWidgets('AiConversationsSheet displays thread list and switches active thread', (tester) async {
-      final fakeApi = FakeApi();
-      fakeApi.answer('chat.getConversations', (_) {
-        return [
-          {
-            'id': 101,
-            'title': 'محادثة ميزانية رمضان',
-            'createdAt': '2026-10-25T12:00:00Z',
-          },
-          {
-            'id': 102,
-            'title': 'تحليل فواتير البيت',
-            'createdAt': '2026-10-26T14:00:00Z',
-          },
-        ];
-      });
+    testWidgets(
+      'AiConversationsSheet displays thread list and switches active thread',
+      (tester) async {
+        final fakeApi = FakeApi();
+        fakeApi.answer('chat.getConversations', (_) {
+          return [
+            {
+              'id': 101,
+              'title': 'محادثة ميزانية رمضان',
+              'createdAt': '2026-10-25T12:00:00Z',
+            },
+            {
+              'id': 102,
+              'title': 'تحليل فواتير البيت',
+              'createdAt': '2026-10-26T14:00:00Z',
+            },
+          ];
+        });
 
-      late ProviderContainer container;
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: _testOverrides(fakeApi),
-          child: Consumer(
-            builder: (context, ref, _) {
-              container = ProviderScope.containerOf(context);
-              return MaterialApp(
-                home: Scaffold(
-                  body: Builder(
-                    builder: (sheetCtx) => ElevatedButton(
-                      onPressed: () => AiConversationsSheet.show(sheetCtx),
-                      child: const Text('افتح المحادثات'),
+        late ProviderContainer container;
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: _testOverrides(fakeApi),
+            child: Consumer(
+              builder: (context, ref, _) {
+                container = ProviderScope.containerOf(context);
+                return MaterialApp(
+                  home: Scaffold(
+                    body: Builder(
+                      builder: (sheetCtx) => ElevatedButton(
+                        onPressed: () => AiConversationsSheet.show(sheetCtx),
+                        child: const Text('افتح المحادثات'),
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.text('افتح المحادثات'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('افتح المحادثات'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('المحادثات السابقة'), findsOneWidget);
-      expect(find.text('محادثة ميزانية رمضان'), findsOneWidget);
-      expect(find.text('تحليل فواتير البيت'), findsOneWidget);
+        expect(find.text('المحادثات السابقة'), findsOneWidget);
+        expect(find.text('محادثة ميزانية رمضان'), findsOneWidget);
+        expect(find.text('تحليل فواتير البيت'), findsOneWidget);
 
-      // Tap on second conversation
-      await tester.tap(find.text('تحليل فواتير البيت'));
-      await tester.pumpAndSettle();
+        // Tap on second conversation
+        await tester.tap(find.text('تحليل فواتير البيت'));
+        await tester.pumpAndSettle();
 
-      // Active conversation id switched to 102
-      expect(container.read(activeConversationIdProvider), 102);
-    });
+        // Active conversation id switched to 102
+        expect(container.read(activeConversationIdProvider), 102);
+      },
+    );
 
-    testWidgets('AiMemoriesSheet displays remembered items and forgets one', (tester) async {
+    testWidgets('AiMemoriesSheet displays remembered items and forgets one', (
+      tester,
+    ) async {
       final fakeApi = FakeApi();
 
       bool forgetCalled = false;
@@ -339,7 +354,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('ذاكرة المساعد الذكي'), findsOneWidget);
-      expect(find.text('المستخدم يفضل التوفير للمصيف في الصيف'), findsOneWidget);
+      expect(
+        find.text('المستخدم يفضل التوفير للمصيف في الصيف'),
+        findsOneWidget,
+      );
 
       // Tap delete icon
       await tester.tap(find.byIcon(Icons.close_rounded));

@@ -25,7 +25,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String? _selectedAvatar;
 
   static const _avatarPresets = [
-    '👤', '👨‍💼', '👩‍💼', '🧑‍💻', '👨‍🎨', '👩‍🎨', '🦁', '🦉', '🚀', '🌟'
+    '👤',
+    '👨‍💼',
+    '👩‍💼',
+    '🧑‍💻',
+    '👨‍🎨',
+    '👩‍🎨',
+    '🦁',
+    '🦉',
+    '🚀',
+    '🌟',
   ];
 
   @override
@@ -54,10 +63,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     setState(() => _saving = true);
     try {
-      await ref.read(accountRepositoryProvider).updateUserInfo(
-        name: name,
-        avatar: _selectedAvatar,
-      );
+      await ref
+          .read(accountRepositoryProvider)
+          .updateUserInfo(name: name, avatar: _selectedAvatar);
       await ref.read(sessionProvider.notifier).refresh();
       ref.invalidate(userProfileProvider);
       if (!mounted) return;
@@ -98,7 +106,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     radius: 40,
                     backgroundColor: colors.accent.withValues(alpha: 0.15),
                     child: Text(
-                      _selectedAvatar ?? (user != null && user.name.isNotEmpty ? user.name.characters.first : '👤'),
+                      _selectedAvatar ??
+                          (user != null && user.name.isNotEmpty
+                              ? user.name.characters.first
+                              : '👤'),
                       style: const TextStyle(fontSize: 36),
                     ),
                   ),
@@ -112,7 +123,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           borderRadius: BorderRadius.circular(20),
                           child: Padding(
                             padding: const EdgeInsets.all(4),
-                            child: Text(avatar, style: const TextStyle(fontSize: 24)),
+                            child: Text(
+                              avatar,
+                              style: const TextStyle(fontSize: 24),
+                            ),
                           ),
                         ),
                     ],
@@ -145,7 +159,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         labelText: l10n.profilePhone,
                         prefixIcon: const Icon(Icons.phone_outlined),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+                          borderRadius: BorderRadius.circular(
+                            SmartSpendRadii.md,
+                          ),
                         ),
                       ),
                     ),

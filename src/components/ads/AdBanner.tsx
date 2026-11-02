@@ -50,7 +50,7 @@ export function AdBanner() {
 
   // Ultra subscribers and admins were being shown ads: the old check tested for
   // the "pro" tier by name instead of for paid access.
-  if (hasProAccess || !ad) return null;
+  if (hasProAccess || adItems.length === 0 || !ad) return null;
 
   return (
     <div

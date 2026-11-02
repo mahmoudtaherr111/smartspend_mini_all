@@ -14,8 +14,8 @@ export const sessionRouter = router({
     let currentTokenHash: string | null = null;
     try {
       const authHeader =
-        "header" in ctx.req && typeof (ctx.req as any).header === "function"
-          ? (ctx.req as any).header("authorization")
+        "header" in ctx.req && typeof (ctx.req as unknown as { header?: unknown }).header === "function"
+          ? (ctx.req as unknown as { header(name: string): string | undefined }).header("authorization")
           : (ctx.req as Request).headers?.get("authorization");
       let token: string | undefined;
       if (authHeader?.startsWith("Bearer ")) {
@@ -24,7 +24,9 @@ export const sessionRouter = router({
       if (token) {
         currentTokenHash = hashSessionToken(token).hex;
       }
-    } catch {}
+    } catch {
+      // No readable token: no session is marked as this one.
+    }
 
     const rows = await db
       .select({

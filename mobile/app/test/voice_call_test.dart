@@ -16,90 +16,117 @@ void main() {
       final fakeSocket = FakeVoiceSocketClient();
       final controller = container.read(voiceCallControllerProvider.notifier);
 
-      expect(container.read(voiceCallControllerProvider).status, VoiceCallStatus.idle);
+      expect(
+        container.read(voiceCallControllerProvider).status,
+        VoiceCallStatus.idle,
+      );
 
-      await controller.start(ticket: 'test-ticket-xyz', socketOverride: fakeSocket);
+      await controller.start(
+        ticket: 'test-ticket-xyz',
+        socketOverride: fakeSocket,
+      );
 
-      expect(container.read(voiceCallControllerProvider).status, VoiceCallStatus.connecting);
+      expect(
+        container.read(voiceCallControllerProvider).status,
+        VoiceCallStatus.connecting,
+      );
       expect(fakeSocket.sentMessages.length, 1);
 
-      final hello = jsonDecode(fakeSocket.sentMessages.first) as Map<String, Object?>;
+      final hello =
+          jsonDecode(fakeSocket.sentMessages.first) as Map<String, Object?>;
       expect(hello['type'], 'hello');
       expect(hello['v'], 2);
       expect(hello['ticket'], 'test-ticket-xyz');
       expect(hello['client'], 'android');
     });
 
-    test('transitions through ready, state, transcript and card events', () async {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
+    test(
+      'transitions through ready, state, transcript and card events',
+      () async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
 
-      final fakeSocket = FakeVoiceSocketClient();
-      final controller = container.read(voiceCallControllerProvider.notifier);
+        final fakeSocket = FakeVoiceSocketClient();
+        final controller = container.read(voiceCallControllerProvider.notifier);
 
-      await controller.start(ticket: 'ticket-1', socketOverride: fakeSocket);
+        await controller.start(ticket: 'ticket-1', socketOverride: fakeSocket);
 
-      // Server sends ready
-      fakeSocket.receiveServerMessage({'type': 'ready', 'callId': 'call-100'});
-      await Future<void>.delayed(Duration.zero);
+        // Server sends ready
+        fakeSocket.receiveServerMessage({
+          'type': 'ready',
+          'callId': 'call-100',
+        });
+        await Future<void>.delayed(Duration.zero);
 
-      var state = container.read(voiceCallControllerProvider);
-      expect(state.status, VoiceCallStatus.listening);
-      expect(state.callId, 'call-100');
+        var state = container.read(voiceCallControllerProvider);
+        expect(state.status, VoiceCallStatus.listening);
+        expect(state.callId, 'call-100');
 
-      // Server sends state change to thinking
-      fakeSocket.receiveServerMessage({
-        'type': 'state',
-        'state': 'thinking',
-        'wait': 'جاري البحث في مصاريف الشهر...',
-      });
-      await Future<void>.delayed(Duration.zero);
+        // Server sends state change to thinking
+        fakeSocket.receiveServerMessage({
+          'type': 'state',
+          'state': 'thinking',
+          'wait': 'جاري البحث في مصاريف الشهر...',
+        });
+        await Future<void>.delayed(Duration.zero);
 
-      state = container.read(voiceCallControllerProvider);
-      expect(state.status, VoiceCallStatus.thinking);
-      expect(state.waitDetail, 'جاري البحث في مصاريف الشهر...');
+        state = container.read(voiceCallControllerProvider);
+        expect(state.status, VoiceCallStatus.thinking);
+        expect(state.waitDetail, 'جاري البحث في مصاريف الشهر...');
 
-      // Server sends assistant transcript
-      fakeSocket.receiveServerMessage({
-        'type': 'transcript',
-        'text': 'صرفت 450 جنيه في المطاعم الأسبوع ده.',
-      });
-      await Future<void>.delayed(Duration.zero);
+        // Server sends assistant transcript
+        fakeSocket.receiveServerMessage({
+          'type': 'transcript',
+          'text': 'صرفت 450 جنيه في المطاعم الأسبوع ده.',
+        });
+        await Future<void>.delayed(Duration.zero);
 
-      state = container.read(voiceCallControllerProvider);
-      expect(state.assistantTranscript, 'صرفت 450 جنيه في المطاعم الأسبوع ده.');
+        state = container.read(voiceCallControllerProvider);
+        expect(
+          state.assistantTranscript,
+          'صرفت 450 جنيه في المطاعم الأسبوع ده.',
+        );
 
-      // Server pushes an action card
-      fakeSocket.receiveServerMessage({
-        'type': 'card',
-        'card': {
-          'kind': 'draft',
-          'id': 'draft-food-1',
-          'title': 'إضافة مصروف غداء',
-          'total': 150.0,
-          'message': 'مطعم البرنس',
-          'status': 'pending',
-        },
-      });
-      await Future<void>.delayed(Duration.zero);
+        // Server pushes an action card
+        fakeSocket.receiveServerMessage({
+          'type': 'card',
+          'card': {
+            'kind': 'draft',
+            'id': 'draft-food-1',
+            'title': 'إضافة مصروف غداء',
+            'total': 150.0,
+            'message': 'مطعم البرنس',
+            'status': 'pending',
+          },
+        });
+        await Future<void>.delayed(Duration.zero);
 
-      state = container.read(voiceCallControllerProvider);
-      expect(state.cards.length, 1);
-      expect(state.cards.first.id, 'draft-food-1');
-      expect(state.cards.first.total, 150.0);
-      expect(state.cards.first.status, 'pending');
+        state = container.read(voiceCallControllerProvider);
+        expect(state.cards.length, 1);
+        expect(state.cards.first.id, 'draft-food-1');
+        expect(state.cards.first.total, 150.0);
+        expect(state.cards.first.status, 'pending');
 
-      // Confirm card
-      controller.confirmCard('draft-food-1');
-      expect(fakeSocket.sentMessages.any((m) => m.contains('"type":"confirm"') && m.contains('draft-food-1')), isTrue);
-      state = container.read(voiceCallControllerProvider);
-      expect(state.cards.first.status, 'executing');
+        // Confirm card
+        controller.confirmCard('draft-food-1');
+        expect(
+          fakeSocket.sentMessages.any(
+            (m) => m.contains('"type":"confirm"') && m.contains('draft-food-1'),
+          ),
+          isTrue,
+        );
+        state = container.read(voiceCallControllerProvider);
+        expect(state.cards.first.status, 'executing');
 
-      // End call
-      controller.endCall();
-      expect(container.read(voiceCallControllerProvider).status, VoiceCallStatus.ended);
-      expect(fakeSocket.isClosed, isTrue);
-    });
+        // End call
+        controller.endCall();
+        expect(
+          container.read(voiceCallControllerProvider).status,
+          VoiceCallStatus.ended,
+        );
+        expect(fakeSocket.isClosed, isTrue);
+      },
+    );
 
     test('toggles mute and speaker states correctly', () async {
       final container = ProviderContainer();
@@ -168,14 +195,20 @@ void main() {
       await tester.tap(find.byIcon(Icons.check_circle));
       await tester.pumpAndSettle();
 
-      expect(fakeSocket.sentMessages.any((m) => m.contains('"type":"confirm"')), isTrue);
+      expect(
+        fakeSocket.sentMessages.any((m) => m.contains('"type":"confirm"')),
+        isTrue,
+      );
       expect(find.text('تم التنفيذ'), findsOneWidget);
 
       // Tap end call button
       await tester.tap(find.byIcon(Icons.call_end));
       await tester.pumpAndSettle();
 
-      expect(container.read(voiceCallControllerProvider).status, VoiceCallStatus.ended);
+      expect(
+        container.read(voiceCallControllerProvider).status,
+        VoiceCallStatus.ended,
+      );
     });
   });
 }

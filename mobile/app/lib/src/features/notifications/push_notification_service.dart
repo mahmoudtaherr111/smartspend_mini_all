@@ -25,10 +25,12 @@ final class PushNotificationService {
   final Ref _ref;
   bool _initialized = false;
   String? _fcmToken;
-  final _foregroundMessageController = StreamController<RemoteMessage>.broadcast();
+  final _foregroundMessageController =
+      StreamController<RemoteMessage>.broadcast();
 
   String? get fcmToken => _fcmToken;
-  Stream<RemoteMessage> get onForegroundMessage => _foregroundMessageController.stream;
+  Stream<RemoteMessage> get onForegroundMessage =>
+      _foregroundMessageController.stream;
 
   /// Initializes Firebase and Push Notification handlers safely.
   Future<void> initialize() async {
@@ -53,16 +55,19 @@ final class PushNotificationService {
       );
 
       if (kDebugMode) {
-        print('User notification permission status: ${settings.authorizationStatus}');
+        print(
+          'User notification permission status: ${settings.authorizationStatus}',
+        );
       }
 
       // 3. Configure iOS foreground presentation options
       if (!kIsWeb && Platform.isIOS) {
-        await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+        await FirebaseMessaging.instance
+            .setForegroundNotificationPresentationOptions(
+              alert: true,
+              badge: true,
+              sound: true,
+            );
       }
 
       // 4. Retrieve FCM Token and register with backend
@@ -99,10 +104,13 @@ final class PushNotificationService {
       });
 
       // 8. Handle cold start when app was launched from terminated state by tapping notification
-      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      final initialMessage = await FirebaseMessaging.instance
+          .getInitialMessage();
       if (initialMessage != null) {
         if (kDebugMode) {
-          print('App launched from terminated state via notification: ${initialMessage.data}');
+          print(
+            'App launched from terminated state via notification: ${initialMessage.data}',
+          );
         }
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _handleNotificationNavigation(initialMessage.data);
@@ -145,7 +153,9 @@ final class PushNotificationService {
       if (rawUrl.contains('record')) {
         return '/record';
       }
-      if (rawUrl.contains('security') || rawUrl.contains('passkey') || rawUrl.contains('biometric')) {
+      if (rawUrl.contains('security') ||
+          rawUrl.contains('passkey') ||
+          rawUrl.contains('biometric')) {
         return '/settings/security';
       }
       if (rawUrl.contains('notifications')) {
@@ -172,10 +182,7 @@ final class PushNotificationService {
       final client = _ref.read(trpcClientProvider);
       await client.mutate(
         Procedures.profile.savePushSubscription,
-        input: {
-          'fcmToken': token,
-          'deviceType': deviceType,
-        },
+        input: {'fcmToken': token, 'deviceType': deviceType},
       );
       if (kDebugMode) {
         print('FCM Token successfully registered with backend ($deviceType).');
@@ -188,6 +195,8 @@ final class PushNotificationService {
   }
 }
 
-final pushNotificationServiceProvider = Provider<PushNotificationService>((ref) {
+final pushNotificationServiceProvider = Provider<PushNotificationService>((
+  ref,
+) {
   return PushNotificationService(ref);
 });

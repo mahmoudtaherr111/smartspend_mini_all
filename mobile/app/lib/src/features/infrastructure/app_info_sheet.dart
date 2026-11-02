@@ -10,7 +10,9 @@ class AppInfoSheet extends StatelessWidget {
     return showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SmartSpendRadii.sheet)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(SmartSpendRadii.sheet),
+        ),
       ),
       builder: (ctx) => const AppInfoSheet(),
     );
@@ -49,17 +51,25 @@ class AppInfoSheet extends StatelessWidget {
                       color: colors.accent.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
                     ),
-                    child: Icon(Icons.wallet_rounded, color: colors.accent, size: 36),
+                    child: Icon(
+                      Icons.wallet_rounded,
+                      color: colors.accent,
+                      size: 36,
+                    ),
                   ),
                   const SizedBox(height: SmartSpendSpacing.md),
                   Text(
                     'SmartSpend AI',
-                    style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: SmartSpendSpacing.xs),
                   Text(
                     'الإصدار 2.1.0 (بناء 2026)',
-                    style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colors.mutedForeground,
+                    ),
                   ),
                 ],
               ),
@@ -78,7 +88,10 @@ class AppInfoSheet extends StatelessWidget {
                     trailing: const Icon(Icons.refresh_rounded),
                     onTap: () {
                       Navigator.of(context).pop();
-                      showSmartSpendNotice(context, 'أنت تستخدم أحدث إصدار من SmartSpend');
+                      showSmartSpendNotice(
+                        context,
+                        'أنت تستخدم أحدث إصدار من SmartSpend',
+                      );
                     },
                   ),
                   const Divider(height: 1),

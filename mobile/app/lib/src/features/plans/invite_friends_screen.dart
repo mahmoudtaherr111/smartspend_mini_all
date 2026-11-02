@@ -38,7 +38,9 @@ class InviteFriendsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text(l10n.captureStatusFailed)),
         data: (code) {
-          final shareText = l10n.inviteShareText(code.isNotEmpty ? code : '...');
+          final shareText = l10n.inviteShareText(
+            code.isNotEmpty ? code : '...',
+          );
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(SmartSpendSpacing.screen),
@@ -53,13 +55,19 @@ class InviteFriendsScreen extends ConsumerWidget {
                       color: colors.accent.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.card_giftcard_rounded, color: colors.accent, size: 36),
+                    child: Icon(
+                      Icons.card_giftcard_rounded,
+                      color: colors.accent,
+                      size: 36,
+                    ),
                   ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.lg),
                 Text(
                   'شارك SmartSpend مع أصدقائك',
-                  style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: SmartSpendSpacing.sm),
@@ -84,7 +92,9 @@ class InviteFriendsScreen extends ConsumerWidget {
                       children: [
                         Text(
                           l10n.inviteYourCode,
-                          style: textTheme.labelMedium?.copyWith(color: colors.mutedForeground),
+                          style: textTheme.labelMedium?.copyWith(
+                            color: colors.mutedForeground,
+                          ),
                         ),
                         const SizedBox(height: SmartSpendSpacing.sm),
                         Text(
@@ -111,7 +121,10 @@ class InviteFriendsScreen extends ConsumerWidget {
                             ? null
                             : () {
                                 Clipboard.setData(ClipboardData(text: code));
-                                showSmartSpendNotice(context, l10n.inviteCopied);
+                                showSmartSpendNotice(
+                                  context,
+                                  l10n.inviteCopied,
+                                );
                               },
                       ),
                     ),
@@ -123,8 +136,13 @@ class InviteFriendsScreen extends ConsumerWidget {
                         onPressed: code.isEmpty
                             ? null
                             : () {
-                                Clipboard.setData(ClipboardData(text: shareText));
-                                showSmartSpendNotice(context, 'تم نسخ رسالة الدعوة للمشاركة!');
+                                Clipboard.setData(
+                                  ClipboardData(text: shareText),
+                                );
+                                showSmartSpendNotice(
+                                  context,
+                                  'تم نسخ رسالة الدعوة للمشاركة!',
+                                );
                               },
                       ),
                     ),

@@ -77,5 +77,6 @@ class _PigeonDeviceLock implements DeviceLock {
   Future<void> setSwitcherCover(bool enabled) => _api.setSwitcherCover(enabled);
 
   @override
-  Future<void> setScreenProtected(bool enabled) => _api.setScreenProtected(enabled);
+  Future<void> setScreenProtected(bool enabled) =>
+      _api.setScreenProtected(enabled);
 }

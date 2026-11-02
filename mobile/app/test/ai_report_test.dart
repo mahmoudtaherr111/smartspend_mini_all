@@ -19,7 +19,10 @@ class _FixedMonthNotifier extends SelectedReportMonthNotifier {
   String build() => '2026-10';
 }
 
-List<Override> _testOverrides(FakeApi fakeApi, [List<Override> extra = const []]) {
+List<Override> _testOverrides(
+  FakeApi fakeApi, [
+  List<Override> extra = const [],
+]) {
   final trpc = TrpcClient(
     baseUri: Uri.parse('http://localhost'),
     httpClient: fakeApi.client,
@@ -35,7 +38,9 @@ List<Override> _testOverrides(FakeApi fakeApi, [List<Override> extra = const []]
 
 void main() {
   group('AiReportView Tests (AI-06, AI-08)', () {
-    testWidgets('renders monthly report with low data warning banner', (tester) async {
+    testWidgets('renders monthly report with low data warning banner', (
+      tester,
+    ) async {
       final fakeApi = FakeApi();
 
       await tester.pumpWidget(
@@ -44,25 +49,29 @@ void main() {
             monthlyReportFamily('2026-10').overrideWith((ref) async {
               return const MonthlyInsights(
                 month: '2026-10',
-                responseText: 'مفيش مصاريف مسجلة كافية في شهر 2026-10 لتقديم تحليل دقيق.',
+                responseText:
+                    'مفيش مصاريف مسجلة كافية في شهر 2026-10 لتقديم تحليل دقيق.',
                 alerts: ['سجل المزيد من المعاملات'],
                 hasLowData: true,
               );
             }),
           ]),
-          child: const MaterialApp(
-            home: Scaffold(body: AiReportView()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: AiReportView())),
         ),
       );
       await tester.pumpAndSettle();
 
       expect(find.text('التحليل المالي للشهر'), findsOneWidget);
-      expect(find.textContaining('بيانات محدودة: سجّل عمليات أكثر'), findsOneWidget);
+      expect(
+        find.textContaining('بيانات محدودة: سجّل عمليات أكثر'),
+        findsOneWidget,
+      );
       expect(find.textContaining('مفيش مصاريف مسجلة كافية'), findsOneWidget);
     });
 
-    testWidgets('renders verified facts table when data is present', (tester) async {
+    testWidgets('renders verified facts table when data is present', (
+      tester,
+    ) async {
       final fakeApi = FakeApi();
 
       await tester.pumpWidget(
@@ -79,9 +88,7 @@ void main() {
               );
             }),
           ]),
-          child: const MaterialApp(
-            home: Scaffold(body: AiReportView()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: AiReportView())),
         ),
       );
       await tester.pumpAndSettle();
@@ -104,9 +111,7 @@ void main() {
               );
             }),
           ]),
-          child: const MaterialApp(
-            home: Scaffold(body: AiReportView()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: AiReportView())),
         ),
       );
       await tester.pumpAndSettle();
@@ -127,9 +132,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: _testOverrides(fakeApi),
-          child: const MaterialApp(
-            home: Scaffold(body: AiCompareView()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: AiCompareView())),
         ),
       );
       await tester.pumpAndSettle();
@@ -137,13 +140,17 @@ void main() {
       expect(find.text('مقارنة بين شهرين'), findsOneWidget);
     });
 
-    testWidgets('renders comparison results when months differ', (tester) async {
+    testWidgets('renders comparison results when months differ', (
+      tester,
+    ) async {
       final fakeApi = FakeApi();
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: _testOverrides(fakeApi, [
-            monthComparisonFamily(('2026-10', '2026-09')).overrideWith((ref) async {
+            monthComparisonFamily(('2026-10', '2026-09')).overrideWith((
+              ref,
+            ) async {
               return const MonthComparison(
                 firstMonth: '2026-10',
                 secondMonth: '2026-09',
@@ -154,9 +161,7 @@ void main() {
               );
             }),
           ]),
-          child: const MaterialApp(
-            home: Scaffold(body: AiCompareView()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: AiCompareView())),
         ),
       );
       await tester.pumpAndSettle();
@@ -172,11 +177,14 @@ void main() {
   });
 
   group('AiYearlyInsightsView Tests (AI-11)', () {
-    testWidgets('renders yearly insights with categories and behaviors', (tester) async {
+    testWidgets('renders yearly insights with categories and behaviors', (
+      tester,
+    ) async {
       final fakeApi = FakeApi();
       fakeApi.answer('ai.generateYearlyInsights', (input) {
         return {
-          'summary': 'ملخص عام 2026: حققت التزاماً بميزانياتك في 8 أشهر من أصل 10.',
+          'summary':
+              'ملخص عام 2026: حققت التزاماً بميزانياتك في 8 أشهر من أصل 10.',
           'topCategories': [
             {'category': 'سكن وفواتير', 'total': 45000.0},
             {'category': 'بقالة وطعام', 'total': 38000.0},
@@ -196,7 +204,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('التقرير السنوي الشامل'), findsOneWidget);
-      expect(find.textContaining('ملخص عام 2026: حققت التزاماً بميزانياتك'), findsOneWidget);
+      expect(
+        find.textContaining('ملخص عام 2026: حققت التزاماً بميزانياتك'),
+        findsOneWidget,
+      );
     });
   });
 }

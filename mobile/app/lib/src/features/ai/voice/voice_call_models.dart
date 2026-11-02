@@ -35,7 +35,8 @@ final class LiveCallCard {
 
     return LiveCallCard(
       kind: (json['kind'] as String?) ?? 'draft',
-      id: (json['draftId'] as String?) ??
+      id:
+          (json['draftId'] as String?) ??
           (json['id'] as String?) ??
           'card_${DateTime.now().millisecondsSinceEpoch}',
       title: (json['title'] as String?) ?? 'إجراء مقترح',
@@ -56,10 +57,7 @@ final class LiveCallCard {
   final String? message;
   final bool requiresTap;
 
-  LiveCallCard copyWith({
-    String? status,
-    String? message,
-  }) {
+  LiveCallCard copyWith({String? status, String? message}) {
     return LiveCallCard(
       kind: kind,
       id: id,

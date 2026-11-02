@@ -25,8 +25,12 @@ final class UserSession {
       userType: json['userType'] as String? ?? 'local',
       ipAddress: json['ipAddress'] as String?,
       userAgent: json['userAgent'] as String?,
-      expiresAt: json['expiresAt'] != null ? DateTime.tryParse(json['expiresAt'].toString()) : null,
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      expiresAt: json['expiresAt'] != null
+          ? DateTime.tryParse(json['expiresAt'].toString())
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : null,
       isCurrent: json['isCurrent'] as bool? ?? false,
     );
   }
@@ -63,10 +67,14 @@ final class UserProfile {
     return UserProfile(
       userId: json['userId'] as int? ?? 0,
       userType: json['userType'] as String? ?? 'local',
-      monthlyIncome: json['monthlyIncome'] != null ? double.tryParse(json['monthlyIncome'].toString()) : null,
+      monthlyIncome: json['monthlyIncome'] != null
+          ? double.tryParse(json['monthlyIncome'].toString())
+          : null,
       financialGoal: json['financialGoal'] as String?,
       salaryDay: prefs['salaryDay'] as int? ?? (json['salaryDay'] as int? ?? 1),
-      currency: prefs['currency'] as String? ?? (json['currency'] as String? ?? 'EGP'),
+      currency:
+          prefs['currency'] as String? ??
+          (json['currency'] as String? ?? 'EGP'),
       decimalPlaces: prefs['decimalPlaces'] as int? ?? 2,
       profileCompleted: json['profileCompleted'] as bool? ?? false,
       rawPreferences: prefs,
@@ -100,10 +108,7 @@ final class AccountRepository {
   Future<void> updateUserInfo({String? name, String? avatar}) async {
     await _client.mutate(
       Procedures.profile.updateUserInfo,
-      input: {
-        'name': ?name,
-        'avatar': ?avatar,
-      },
+      input: {'name': ?name, 'avatar': ?avatar},
     );
   }
 
@@ -138,10 +143,7 @@ final class AccountRepository {
   }) async {
     final res = await _client.mutate(
       Procedures.profile.confirmPhoneChange,
-      input: {
-        'code': code,
-        'verificationTicket': verificationTicket,
-      },
+      input: {'code': code, 'verificationTicket': verificationTicket},
     );
     return res is Map<String, Object?> ? res : const {};
   }
@@ -178,7 +180,9 @@ final class AccountRepository {
   }
 
   Future<Map<String, Object?>?> getNextOnboardingQuestion() async {
-    final data = await _client.query(Procedures.profile.getNextOnboardingQuestion);
+    final data = await _client.query(
+      Procedures.profile.getNextOnboardingQuestion,
+    );
     return data is Map<String, Object?> ? data : null;
   }
 
@@ -188,10 +192,7 @@ final class AccountRepository {
   }) async {
     await _client.mutate(
       Procedures.profile.submitOnboardingAnswer,
-      input: {
-        'questionId': questionId,
-        'answer': answer,
-      },
+      input: {'questionId': questionId, 'answer': answer},
     );
   }
 
@@ -204,10 +205,14 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   return AccountRepository(ref.watch(trpcClientProvider));
 });
 
-final userProfileProvider = FutureProvider.autoDispose<UserProfile>((ref) async {
+final userProfileProvider = FutureProvider.autoDispose<UserProfile>((
+  ref,
+) async {
   return ref.watch(accountRepositoryProvider).getMyProfile();
 });
 
-final userSessionsProvider = FutureProvider.autoDispose<List<UserSession>>((ref) async {
+final userSessionsProvider = FutureProvider.autoDispose<List<UserSession>>((
+  ref,
+) async {
   return ref.watch(accountRepositoryProvider).listSessions();
 });

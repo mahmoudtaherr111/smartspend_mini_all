@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,7 +50,9 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SmartSpendRadii.lg)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(SmartSpendRadii.lg),
+        ),
       ),
       builder: (sheetCtx) {
         final colors = sheetCtx.smartSpendColors;
@@ -62,13 +65,18 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
             children: [
               Text(
                 'تأكيد الاشتراك في باقة Pro',
-                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: SmartSpendSpacing.md),
               Text(
                 'الاشتراك الشهري: 99 ج.م شهرياً يتجدد تلقائياً من خلال متجر التطبيقات، ويمكنك الإلغاء في أي وقت.',
-                style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground, height: 1.5),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.mutedForeground,
+                  height: 1.5,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: SmartSpendSpacing.xl),
@@ -145,25 +153,28 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       final tokens = <String>[
         _currentStore == 'app_store'
             ? 'apple_tx_mock_restore_${DateTime.now().millisecondsSinceEpoch}'
-            : 'google_play_mock_restore_${DateTime.now().millisecondsSinceEpoch}'
+            : 'google_play_mock_restore_${DateTime.now().millisecondsSinceEpoch}',
       ];
 
       final res = await client.mutate(
         Procedures.pro.restorePurchases,
-        input: <String, Object?>{
-          'store': _currentStore,
-          'tokens': tokens,
-        },
+        input: <String, Object?>{'store': _currentStore, 'tokens': tokens},
       );
 
       if (res is Map<String, Object?> && res['restored'] == true) {
         ref.invalidate(userPlanProvider);
         if (mounted) {
-          showSmartSpendNotice(context, 'تمت استعادة مشترياتك وتفعيل اشتراك Pro بنجاح!');
+          showSmartSpendNotice(
+            context,
+            'تمت استعادة مشترياتك وتفعيل اشتراك Pro بنجاح!',
+          );
         }
       } else {
         if (mounted) {
-          showSmartSpendNotice(context, 'لم يتم العثور على اشتراكات سابقة نشطة لهذا الحساب.');
+          showSmartSpendNotice(
+            context,
+            'لم يتم العثور على اشتراكات سابقة نشطة لهذا الحساب.',
+          );
         }
       }
     } on ApiException catch (e) {
@@ -226,15 +237,26 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: (isPro ? colors.accent : colors.surfaceRaised).withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
+                                color:
+                                    (isPro
+                                            ? colors.accent
+                                            : colors.surfaceRaised)
+                                        .withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(
+                                  SmartSpendRadii.sm,
+                                ),
                               ),
                               child: Text(
                                 isPro ? l10n.planPro : l10n.planFree,
                                 style: textTheme.labelMedium?.copyWith(
-                                  color: isPro ? colors.accent : colors.foreground,
+                                  color: isPro
+                                      ? colors.accent
+                                      : colors.foreground,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -251,7 +273,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                         if (isPro) ...[
                           const SizedBox(height: SmartSpendSpacing.lg),
                           TextButton(
-                            onPressed: () => context.push(CancelPlanScreen.path),
+                            onPressed: () =>
+                                context.push(CancelPlanScreen.path),
                             child: Text(
                               l10n.cancelPlanTitle,
                               style: TextStyle(color: colors.mutedForeground),
@@ -265,7 +288,9 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                 const SizedBox(height: SmartSpendSpacing.xl),
                 Text(
                   l10n.planFeaturesTitle,
-                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.md),
                 Card(
@@ -278,7 +303,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     children: [
                       for (final feat in PlanScreen._proFeatures)
                         ListTile(
-                          leading: Icon(Icons.check_circle_rounded, color: colors.accent),
+                          leading: Icon(
+                            Icons.check_circle_rounded,
+                            color: colors.accent,
+                          ),
                           title: Text(feat, style: textTheme.bodyMedium),
                         ),
                     ],
@@ -289,14 +317,18 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   SmartSpendButton(
                     label: l10n.planUpgrade,
                     busy: _purchasing,
-                    onPressed: _purchasing || _restoring ? null : _initiateStorePurchase,
+                    onPressed: _purchasing || _restoring
+                        ? null
+                        : _initiateStorePurchase,
                   ),
                   const SizedBox(height: SmartSpendSpacing.sm),
                   SmartSpendButton(
                     label: 'استعادة المشتريات السابقة',
                     variant: ButtonVariant.quiet,
                     busy: _restoring,
-                    onPressed: _purchasing || _restoring ? null : _restorePurchases,
+                    onPressed: _purchasing || _restoring
+                        ? null
+                        : _restorePurchases,
                   ),
                 ],
               ],

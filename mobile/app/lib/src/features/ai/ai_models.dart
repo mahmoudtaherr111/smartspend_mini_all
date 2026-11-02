@@ -18,7 +18,8 @@ final class ChatMessage {
     AiClarification? clarification;
 
     final toolResults = json['toolResults'] as Map<String, Object?>?;
-    final structured = (toolResults?['structured'] as Map<String, Object?>?) ??
+    final structured =
+        (toolResults?['structured'] as Map<String, Object?>?) ??
         (json['structured'] as Map<String, Object?>?);
 
     if (structured != null) {
@@ -100,10 +101,12 @@ final class AiActionDraft {
         if (a is num) a.toDouble(),
     ];
 
-    final actionName = (json['actionName'] as String?) ??
+    final actionName =
+        (json['actionName'] as String?) ??
         (json['action'] as String?) ??
         'record.expense';
-    final isHighRisk = json['isHighRisk'] == true ||
+    final isHighRisk =
+        json['isHighRisk'] == true ||
         actionName == 'goal.stop' ||
         actionName == 'action.undo' ||
         json['risk'] == 'high';
@@ -126,11 +129,13 @@ final class AiActionDraft {
     }
 
     return AiActionDraft(
-      id: (json['id'] as String?) ??
+      id:
+          (json['id'] as String?) ??
           (json['actionId'] != null ? 'act_${json['actionId']}' : 'act_0'),
       actionName: actionName,
       actionId: (json['actionId'] as num?)?.toInt() ?? 0,
-      summary: (json['summary'] as String?) ??
+      summary:
+          (json['summary'] as String?) ??
           (json['title'] as String?) ??
           'إجراء مقترح',
       amounts: amounts,
@@ -199,8 +204,14 @@ final class AiClarification {
     final rawMissing = json['missing'] as List<Object?>? ?? const [];
     return AiClarification(
       question: (json['question'] as String?) ?? '',
-      replies: [for (final r in rawReplies) if (r is String) r],
-      missing: [for (final m in rawMissing) if (m is String) m],
+      replies: [
+        for (final r in rawReplies)
+          if (r is String) r,
+      ],
+      missing: [
+        for (final m in rawMissing)
+          if (m is String) m,
+      ],
     );
   }
 
@@ -255,7 +266,8 @@ final class AiMemory {
     }
     return AiMemory(
       id: (json['id'] as num?)?.toInt() ?? 0,
-      text: (json['content'] as String?) ??
+      text:
+          (json['content'] as String?) ??
           (json['memoryText'] as String?) ??
           (json['text'] as String?) ??
           (json['fact'] as String?) ??
@@ -283,9 +295,15 @@ final class MonthlyInsights {
     this.cached = false,
   });
 
-  factory MonthlyInsights.fromJson(Map<String, Object?> json, {required String month}) {
+  factory MonthlyInsights.fromJson(
+    Map<String, Object?> json, {
+    required String month,
+  }) {
     final alertsRaw = json['alerts'] as List<Object?>? ?? const [];
-    final alerts = <String>[for (final a in alertsRaw) if (a is String) a];
+    final alerts = <String>[
+      for (final a in alertsRaw)
+        if (a is String) a,
+    ];
 
     final tableRaw = json['data_table'] as List<Object?>? ?? const [];
     final dataTable = <Map<String, Object?>>[
@@ -294,7 +312,8 @@ final class MonthlyInsights {
     ];
 
     final text = (json['response_text'] as String?) ?? '';
-    final hasLowData = text.contains('مفيش مصاريف مسجلة') ||
+    final hasLowData =
+        text.contains('مفيش مصاريف مسجلة') ||
         text.contains('لسه مسجلتش') ||
         text.contains('بيانات غير كافية');
 
@@ -342,7 +361,8 @@ final class MonthComparison {
     return MonthComparison(
       firstMonth: firstMonth,
       secondMonth: secondMonth,
-      responseText: (json['response_text'] as String?) ??
+      responseText:
+          (json['response_text'] as String?) ??
           (json['comparison'] as String?) ??
           'تم تحليل الفروقات بين الشهرين.',
       changes: changes,
@@ -397,7 +417,8 @@ final class VoiceCallItem {
 
   factory VoiceCallItem.fromJson(Map<String, Object?> json) {
     DateTime? startedAt;
-    final startRaw = json['startedAt'] as String? ?? json['createdAt'] as String?;
+    final startRaw =
+        json['startedAt'] as String? ?? json['createdAt'] as String?;
     if (startRaw != null) {
       startedAt = DateTime.tryParse(startRaw);
     }
@@ -410,15 +431,18 @@ final class VoiceCallItem {
 
     return VoiceCallItem(
       id: (json['id'] as num?)?.toInt() ?? 0,
-      callId: (json['callId'] as String?) ??
+      callId:
+          (json['callId'] as String?) ??
           (json['id'] != null ? 'vc_${json['id']}' : 'vc_0'),
       startedAt: startedAt ?? DateTime.now(),
-      durationSeconds: (json['billedSeconds'] as num?)?.toInt() ??
+      durationSeconds:
+          (json['billedSeconds'] as num?)?.toInt() ??
           (json['durationSeconds'] as num?)?.toInt() ??
           (json['duration'] as num?)?.toInt() ??
           0,
       endedAt: endedAt,
-      status: (json['endReason'] as String?) ??
+      status:
+          (json['endReason'] as String?) ??
           (json['status'] as String?) ??
           'completed',
     );

@@ -79,10 +79,7 @@ final class AiApi {
   }) async {
     final res = await _client.mutate(
       Procedures.chat.confirmAction,
-      input: {
-        'actionId': actionId,
-        'confirmationPhrase': ?confirmationPhrase,
-      },
+      input: {'actionId': actionId, 'confirmationPhrase': ?confirmationPhrase},
     );
     if (res is Map<String, Object?>) {
       return res;
@@ -185,10 +182,7 @@ final class AiApi {
   }) async {
     final res = await _client.mutate(
       Procedures.ai.generateMonthlyInsights,
-      input: {
-        'month': month,
-        'forceRefresh': forceRefresh,
-      },
+      input: {'month': month, 'forceRefresh': forceRefresh},
     );
     if (res is Map<String, Object?>) {
       final content = res['insights'];
@@ -214,10 +208,7 @@ final class AiApi {
   }) async {
     final res = await _client.mutate(
       Procedures.ai.compareMonths,
-      input: {
-        'firstMonth': firstMonth,
-        'secondMonth': secondMonth,
-      },
+      input: {'firstMonth': firstMonth, 'secondMonth': secondMonth},
     );
     if (res is Map<String, Object?>) {
       return MonthComparison.fromJson(

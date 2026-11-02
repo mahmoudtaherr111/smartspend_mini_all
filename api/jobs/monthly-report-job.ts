@@ -1,7 +1,7 @@
 import { previousBusinessMonth } from "../lib/app-time";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { getDb } from "../queries/connection";
-import { users, localUsers, systemSettings, monthlyReports, whatsappContacts } from "../../db/schema";
+import { users, localUsers, monthlyReports, whatsappContacts } from "../../db/schema";
 import { enqueueMessage } from "../lib/whatsapp/outbox";
 import { monthlyReportMessage } from "../lib/whatsapp/templates";
 import { getSmartProfile } from "../services/user-profile-service";
@@ -157,7 +157,7 @@ export function reportMonthFor(now = new Date()): string {
 }
 
 export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJobOptions) {
-  console.log("[MonthlyReportJob] Starting execution...");
+  log.info({ event: "monthly_report.start" }, "Monthly report job started");
 
   const db = getDb();
   const options: MonthlyReportJobOptions =
@@ -191,7 +191,7 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
     };
 
     if (!aiConfig.apiKey) {
-      console.warn("[MonthlyReportJob] Missing AI API Key. Deterministic fallback reports will be used.");
+      log.warn({ event: "monthly_report.no_ai_key" }, "No AI key: deterministic reports will be used");
     }
 
     // 2. Fetch the users whose plan gets the WhatsApp report (feature_whatsapp_report_<plan>;
@@ -214,21 +214,21 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
       const isLocal = "phone" in u;
       const userType = isLocal ? "local" : "oauth";
 
-      let targetPhone = isLocal ? (u as any).phone : null;
+      let targetPhone: string | null | undefined = isLocal ? (u as { phone?: string | null }).phone : null;
       const profile = await getSmartProfile(u.id, userType);
 
       if (!targetPhone && profile.basicInfo.phone) {
-        targetPhone = profile.basicInfo.phone;
+        targetPhone = String(profile.basicInfo.phone);
       }
 
       if (!targetPhone) {
-        console.warn(`[MonthlyReportJob] Skipping user ${u.id} - No phone number.`);
+        log.warn({ event: "monthly_report.no_phone", userId: u.id }, "Skipped a user without a phone number");
         continue;
       }
 
       if (!wantsWhatsappReport(profile.preferences)) continue;
 
-      console.log(`[MonthlyReportJob] Preparing semantic report for user ${u.id}...`);
+      log.info({ event: "monthly_report.prepare", userId: u.id }, "Preparing a report");
       const reportStartedAt = Date.now();
 
       const [cachedReport] = await db
@@ -254,12 +254,12 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
       let topCategoryName = "عام";
       if (cachedReport) {
         formattedSpent = `${Math.round(Number(cachedReport.totalAmount || 0))} ج.م`;
-        const cats = Array.isArray(cachedReport.topCategories) ? (cachedReport.topCategories as any[]) : [];
+        const cats = Array.isArray(cachedReport.topCategories) ? (cachedReport.topCategories as { category?: string }[]) : [];
         topCategoryName = cats[0]?.category || "عام";
       }
 
       if (reportContent) {
-        console.log(`[MonthlyReportJob] Reusing cached report for user ${u.id}, month ${month}.`);
+        log.info({ event: "monthly_report.cached", userId: u.id, month }, "Reusing a cached report");
       }
 
       try {
@@ -280,7 +280,7 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
           const topCategories = parseTopCategories(valueOfFact(facts, "top_categories"));
           formattedSpent = `${Math.round(totalExpense)} ج.م`;
           topCategoryName = topCategories[0]?.category || "عام";
-          const userName = String((u as any).name || profile.basicInfo.name || "صديقنا");
+          const userName = String((u as { name?: string | null }).name || profile.basicInfo.name || "صديقنا");
 
           if (aiConfig.apiKey) {
             const systemPrompt =
@@ -297,14 +297,14 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
             let budgetAllowed = false;
             try {
               await assertAiBudget(
-                { id: u.id, type: userType, plan: (u as any).plan || "pro" },
+                { id: u.id, type: userType, plan: (u as { plan?: string | null }).plan || "pro" },
                 "report",
                 estimatedInputTokens,
                 s,
               );
               budgetAllowed = true;
-            } catch (budgetErr: any) {
-              console.warn(`[MonthlyReportJob] Budget exceeded for user ${u.id}: ${budgetErr.message}`);
+            } catch {
+              log.warn({ event: "monthly_report.budget_exceeded", userId: u.id }, "AI budget exceeded");
             }
 
             if (budgetAllowed) {
@@ -363,7 +363,7 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
                   cachedPromptTokens: aiResult.cachedTokens ?? 0,
                 },
               });
-              console.log(`[MonthlyReportJob] Used ${aiResult.tokensUsed} tokens for user ${u.id}.`);
+              log.info({ event: "monthly_report.tokens", userId: u.id, tokens: aiResult.tokensUsed }, "Report model call finished");
             }
           }
 
@@ -412,7 +412,7 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
             await db.insert(monthlyReports).values(reportRow);
           }
         }
-      } catch (err: any) {
+      } catch (err) {
         log.error({ err, event: "monthly_report.failed", userId: u.id }, "Monthly report generation failed");
         // Fallback message
         reportContent = `🌟 *تقريرك الشهري من SmartSpend* 🌟\n\nأهلاً بك!\nتم تجهيز ملخص شهر ${month}. يرجى فتح التطبيق للاطلاع على التفاصيل.`;
@@ -442,12 +442,12 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
           log.info({ event: "monthly_report.skipped_consent", userId: u.id }, "User has not consented to WhatsApp reports");
         }
       } else {
-        console.log(`[MonthlyReportJob] Generated report for user ${u.id}; WhatsApp send skipped.`);
+        log.info({ event: "monthly_report.send_skipped", userId: u.id }, "Report generated without a WhatsApp send");
       }
     }
 
-    console.log("[MonthlyReportJob] Finished successfully.");
+    log.info({ event: "monthly_report.done" }, "Monthly report job finished");
   } catch (err) {
-    console.error("[MonthlyReportJob] Error executing job:", err);
+    log.error({ event: "monthly_report.failed", err }, "Monthly report job failed");
   }
 }

@@ -12,10 +12,7 @@ import '../ai_providers.dart';
 class PastCallsView extends ConsumerWidget {
   final VoidCallback onStartNewCall;
 
-  const PastCallsView({
-    super.key,
-    required this.onStartNewCall,
-  });
+  const PastCallsView({super.key, required this.onStartNewCall});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,7 +31,11 @@ class PastCallsView extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+                  const Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Colors.redAccent,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     'تعذر تحميل سجل المكالمات: $err',
@@ -64,7 +65,10 @@ class PastCallsView extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.4),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primaryContainer
+                                .withValues(alpha: 0.4),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -76,7 +80,10 @@ class PastCallsView extends ConsumerWidget {
                         const SizedBox(height: 24),
                         const Text(
                           'لا توجد مكالمات سابقة',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -84,7 +91,9 @@ class PastCallsView extends ConsumerWidget {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
                             height: 1.5,
                           ),
                         ),
@@ -123,17 +132,24 @@ class PastCallsView extends ConsumerWidget {
 
                 return Card(
                   elevation: 0,
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
+                      color: Theme.of(context).colorScheme.outlineVariant
+                          .withValues(alpha: 0.4),
                     ),
                   ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primaryContainer,
                       child: Icon(
                         Icons.phone,
                         color: Theme.of(context).colorScheme.primary,
@@ -141,7 +157,10 @@ class PastCallsView extends ConsumerWidget {
                     ),
                     title: Text(
                       'مكالمة صوتية',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,7 +170,9 @@ class PastCallsView extends ConsumerWidget {
                           DateFormat('yyyy-MM-dd HH:mm').format(call.startedAt),
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -160,14 +181,18 @@ class PastCallsView extends ConsumerWidget {
                             Icon(
                               Icons.timer_outlined,
                               size: 14,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               'المدة: $durationText',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -175,8 +200,16 @@ class PastCallsView extends ConsumerWidget {
                       ],
                     ),
                     trailing: call.status == 'completed'
-                        ? const Icon(Icons.check_circle_outline, color: Colors.green, size: 20)
-                        : const Icon(Icons.call_missed, color: Colors.orange, size: 20),
+                        ? const Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.green,
+                            size: 20,
+                          )
+                        : const Icon(
+                            Icons.call_missed,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
                   ),
                 );
               },
@@ -196,10 +229,12 @@ class PastCallsView extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest
+            .withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3),
+          color: Theme.of(context).colorScheme.outlineVariant
+              .withValues(alpha: 0.3),
         ),
       ),
       child: Row(

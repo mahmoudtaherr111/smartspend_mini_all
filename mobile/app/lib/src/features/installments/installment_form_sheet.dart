@@ -47,9 +47,11 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
     final keyword = _keywordController.text.trim().isEmpty
         ? title
         : _keywordController.text.trim();
-    final amount = (parseAmount(_amountController.text.trim()) ?? 0.0).toDouble();
+    final amount = (parseAmount(_amountController.text.trim()) ?? 0.0)
+        .toDouble();
     final total = (parseAmount(_totalController.text.trim()) ?? 0).toInt();
-    final paidBefore = (parseAmount(_paidBeforeController.text.trim()) ?? 0).toInt();
+    final paidBefore = (parseAmount(_paidBeforeController.text.trim()) ?? 0)
+        .toInt();
 
     if (title.length < 2) {
       setState(() => _error = 'اكتب اسم القسط (حرفين على الأقل)');

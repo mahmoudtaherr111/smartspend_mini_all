@@ -8,7 +8,8 @@ class AiYearlyInsightsView extends ConsumerStatefulWidget {
   const AiYearlyInsightsView({super.key});
 
   @override
-  ConsumerState<AiYearlyInsightsView> createState() => _AiYearlyInsightsViewState();
+  ConsumerState<AiYearlyInsightsView> createState() =>
+      _AiYearlyInsightsViewState();
 }
 
 class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
@@ -25,10 +26,13 @@ class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
   Future<void> _loadYearlyInsights() async {
     setState(() => _isLoading = true);
     try {
-      final res = await ref.read(aiApiProvider).generateYearlyInsights(_selectedYear);
+      final res = await ref
+          .read(aiApiProvider)
+          .generateYearlyInsights(_selectedYear);
       if (mounted) {
         setState(() {
-          _insightsText = (res['insights'] as String?) ??
+          _insightsText =
+              (res['insights'] as String?) ??
               (res['response_text'] as String?) ??
               (res['summary'] as String?) ??
               'تم تحليل عام $_selectedYear بنجاح. حافظت على توازن جيد بين الالتزامات ومصاريف المعيشة.';
@@ -37,7 +41,8 @@ class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _insightsText = 'تحليل سنوي لعام $_selectedYear: تم تجميع بيانات الصرف عبر جميع الأشهر.';
+          _insightsText =
+              'تحليل سنوي لعام $_selectedYear: تم تجميع بيانات الصرف عبر جميع الأشهر.';
         });
       }
     } finally {
@@ -97,8 +102,11 @@ class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.calendar_today_rounded,
-                          color: Colors.teal.shade700, size: 20),
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        color: Colors.teal.shade700,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'ملخص عام $_selectedYear',

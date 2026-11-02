@@ -19,7 +19,9 @@ final businessDashboardProvider = FutureProvider<BusinessState>((ref) async {
 });
 
 /// Available preset business types (BIZ-01).
-final businessTypesProvider = FutureProvider<List<BusinessTypeOption>>((ref) async {
+final businessTypesProvider = FutureProvider<List<BusinessTypeOption>>((
+  ref,
+) async {
   return ref.watch(businessApiProvider).types();
 });
 
@@ -34,5 +36,5 @@ class BusinessModeActiveNotifier extends Notifier<bool> {
 
 final isBusinessModeActiveProvider =
     NotifierProvider<BusinessModeActiveNotifier, bool>(
-  BusinessModeActiveNotifier.new,
-);
+      BusinessModeActiveNotifier.new,
+    );

@@ -20,86 +20,99 @@ void _answerCalendarData(FakeApi api, {int? salaryDay}) {
       },
     },
   );
-  api.answer('coach.overview', (_) => {
-    'position': {
-      'untilIsPayday': true,
-      'until': '2026-10-25',
-      'days': 6,
-      'wallets': {'count': 1, 'total': 12000},
-      'duesKnown': 3000,
-      'freeBeforeIncome': 9000,
-      'incomeConfirmed': 0,
-      'incomeEstimated': 0,
-    },
-    'cashflows': [
-      {
-        'id': 101,
-        'title': 'إيجار الشقة',
-        'kind': 'rent',
-        'direction': 'out',
-        'amount': 2500,
-        'dueDay': 1,
-        'recurrence': 'monthly',
-        'status': 'due',
+  api.answer(
+    'coach.overview',
+    (_) => {
+      'position': {
+        'untilIsPayday': true,
+        'until': '2026-10-25',
+        'days': 6,
+        'wallets': {'count': 1, 'total': 12000},
+        'duesKnown': 3000,
+        'freeBeforeIncome': 9000,
+        'incomeConfirmed': 0,
+        'incomeEstimated': 0,
       },
-      {
-        'id': 102,
-        'title': 'فاتورة الكهرباء',
-        'kind': 'bill',
-        'direction': 'out',
-        'amount': 350,
-        'dueDay': 15,
-        'recurrence': 'monthly',
-        'status': 'paid',
-      },
-    ],
-    'plan': {
-      'id': 1,
-      'title': 'خطة توفير مصاريف المدارس',
-      'goal': 'توفير 5000 ج.م قبل نهاية الشهر',
-      'steps': [
+      'cashflows': [
         {
-          'id': 201,
-          'title': 'تقليل الأكل برة',
-          'status': 'pending',
-          'remindAt': null,
+          'id': 101,
+          'title': 'إيجار الشقة',
+          'kind': 'rent',
+          'direction': 'out',
+          'amount': 2500,
+          'dueDay': 1,
+          'recurrence': 'monthly',
+          'status': 'due',
         },
         {
-          'id': 202,
-          'title': 'شراء مستلزمات بالجملة',
-          'status': 'done',
-          'remindAt': null,
+          'id': 102,
+          'title': 'فاتورة الكهرباء',
+          'kind': 'bill',
+          'direction': 'out',
+          'amount': 350,
+          'dueDay': 15,
+          'recurrence': 'monthly',
+          'status': 'paid',
         },
       ],
+      'plan': {
+        'id': 1,
+        'title': 'خطة توفير مصاريف المدارس',
+        'goal': 'توفير 5000 ج.م قبل نهاية الشهر',
+        'steps': [
+          {
+            'id': 201,
+            'title': 'تقليل الأكل برة',
+            'status': 'pending',
+            'remindAt': null,
+          },
+          {
+            'id': 202,
+            'title': 'شراء مستلزمات بالجملة',
+            'status': 'done',
+            'remindAt': null,
+          },
+        ],
+      },
     },
-  });
-  api.answer('expense.getMonthlyStats', (_) => {
-    'totalExpense': 5000,
-    'totalIncome': 15000,
-    'dailyAverage': 160,
-    'totalTxnCount': 20,
-    'categoryBreakdown': <Map<String, Object?>>[],
-    'dayTrend': [
-      {'date': '2026-10-01', 'amount': 250, 'income': 0},
-      {'date': '2026-10-02', 'amount': 150, 'income': 0},
-      {'date': '2026-10-15', 'amount': 350, 'income': 0},
+  );
+  api.answer(
+    'expense.getMonthlyStats',
+    (_) => {
+      'totalExpense': 5000,
+      'totalIncome': 15000,
+      'dailyAverage': 160,
+      'totalTxnCount': 20,
+      'categoryBreakdown': <Map<String, Object?>>[],
+      'dayTrend': [
+        {'date': '2026-10-01', 'amount': 250, 'income': 0},
+        {'date': '2026-10-02', 'amount': 150, 'income': 0},
+        {'date': '2026-10-15', 'amount': 350, 'income': 0},
+      ],
+    },
+  );
+  api.answer(
+    'coach.paymentSuggestions',
+    (_) => [
+      {
+        'id': 501,
+        'amount': 2500,
+        'category': 'إيجار',
+        'description': 'تحويل إيجار الشقة',
+        'date': '2026-10-01T10:00:00Z',
+      },
     ],
-  });
-  api.answer('coach.paymentSuggestions', (_) => [
-    {
-      'id': 501,
-      'amount': 2500,
-      'category': 'إيجار',
-      'description': 'تحويل إيجار الشقة',
-      'date': '2026-10-01T10:00:00Z',
-    },
-  ]);
+  );
   api.answer('coach.settle', (_) => {'success': true});
   api.answer('coach.setStepStatus', (_) => {'success': true});
   answerSampleMonth(api);
 }
 
-Future<TestApp> _openCalendar(WidgetTester tester, FakeApi api, {int? salaryDay}) async {
+Future<TestApp> _openCalendar(
+  WidgetTester tester,
+  FakeApi api, {
+  int? salaryDay,
+}) async {
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = const Size(800, 1400);
   _answerCalendarData(api, salaryDay: salaryDay);
@@ -118,52 +131,50 @@ Finder _calendarScroll(WidgetTester tester) {
 }
 
 void main() {
-  testWidgets('Calendar screen mounts and renders hero, grid, commitments and plan', (
-    tester,
-  ) async {
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    final api = FakeApi();
-    await _openCalendar(tester, api, salaryDay: 25);
+  testWidgets(
+    'Calendar screen mounts and renders hero, grid, commitments and plan',
+    (tester) async {
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      final api = FakeApi();
+      await _openCalendar(tester, api, salaryDay: 25);
 
-    expect(find.byType(CalendarScreen), findsOneWidget);
-    // Payday month banner (STA-12)
-    expect(
-      find.text('الشهر المالي بيبدأ يوم 25 في الشهر وينتهي يوم 24.'),
-      findsOneWidget,
-    );
-    // Hero free before income (CAL-02)
-    expect(find.text('المتاح حتى يوم القبض'), findsOneWidget);
-    expect(find.text('9000'), findsOneWidget);
-    expect(
-      find.textContaining('باقي 6 يوم على يوم القبض'),
-      findsOneWidget,
-    );
+      expect(find.byType(CalendarScreen), findsOneWidget);
+      // Payday month banner (STA-12)
+      expect(
+        find.text('الشهر المالي بيبدأ يوم 25 في الشهر وينتهي يوم 24.'),
+        findsOneWidget,
+      );
+      // Hero free before income (CAL-02)
+      expect(find.text('المتاح حتى يوم القبض'), findsOneWidget);
+      expect(find.text('9000'), findsOneWidget);
+      expect(find.textContaining('باقي 6 يوم على يوم القبض'), findsOneWidget);
 
-    // Calendar grid (CAL-01)
-    expect(find.byType(CalendarGrid), findsOneWidget);
-    expect(find.text('السبت'), findsOneWidget);
-    expect(find.text('الأحد'), findsOneWidget);
+      // Calendar grid (CAL-01)
+      expect(find.byType(CalendarGrid), findsOneWidget);
+      expect(find.text('السبت'), findsOneWidget);
+      expect(find.text('الأحد'), findsOneWidget);
 
-    // Commitments list (CAL-03, CAL-04)
-    expect(find.text('الالتزامات والدخل المتوقع'), findsOneWidget);
-    expect(find.text('إيجار الشقة'), findsOneWidget);
-    expect(find.text('2500 ج.م'), findsOneWidget);
-    expect(find.text('سداد'), findsOneWidget);
-    expect(find.text('فاتورة الكهرباء'), findsOneWidget);
-    expect(find.text('مسدد'), findsOneWidget);
+      // Commitments list (CAL-03, CAL-04)
+      expect(find.text('الالتزامات والدخل المتوقع'), findsOneWidget);
+      expect(find.text('إيجار الشقة'), findsOneWidget);
+      expect(find.text('2500 ج.م'), findsOneWidget);
+      expect(find.text('سداد'), findsOneWidget);
+      expect(find.text('فاتورة الكهرباء'), findsOneWidget);
+      expect(find.text('مسدد'), findsOneWidget);
 
-    // Drag slightly to reveal active plan (CAL-05, CAL-06)
-    await tester.drag(_calendarScroll(tester), const Offset(0, -300));
-    await tester.pumpAndSettle();
+      // Drag slightly to reveal active plan (CAL-05, CAL-06)
+      await tester.drag(_calendarScroll(tester), const Offset(0, -300));
+      await tester.pumpAndSettle();
 
-    expect(find.text('خطة التوفير النشطة'), findsOneWidget);
-    expect(find.text('توفير 5000 ج.م قبل نهاية الشهر'), findsOneWidget);
-    expect(find.text('تقليل الأكل برة'), findsOneWidget);
-    expect(find.text('شراء مستلزمات بالجملة'), findsOneWidget);
-  });
+      expect(find.text('خطة التوفير النشطة'), findsOneWidget);
+      expect(find.text('توفير 5000 ج.م قبل نهاية الشهر'), findsOneWidget);
+      expect(find.text('تقليل الأكل برة'), findsOneWidget);
+      expect(find.text('شراء مستلزمات بالجملة'), findsOneWidget);
+    },
+  );
 
   testWidgets('Tapping settle opens SettleCommitmentSheet with suggestions', (
     tester,
@@ -210,22 +221,23 @@ void main() {
     expect(find.byType(DayTransactionsSheet), findsOneWidget);
   });
 
-  testWidgets('At text scale 2.0 calendar renders vertical day list without overflow', (
-    tester,
-  ) async {
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    tester.platformDispatcher.textScaleFactorTestValue = 2.0;
-    addTearDown(() {
-      tester.platformDispatcher.clearTextScaleFactorTestValue();
-    });
+  testWidgets(
+    'At text scale 2.0 calendar renders vertical day list without overflow',
+    (tester) async {
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+      addTearDown(() {
+        tester.platformDispatcher.clearTextScaleFactorTestValue();
+      });
 
-    final api = FakeApi();
-    await _openCalendar(tester, api);
+      final api = FakeApi();
+      await _openCalendar(tester, api);
 
-    expect(find.byType(CalendarScreen), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.byType(CalendarScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

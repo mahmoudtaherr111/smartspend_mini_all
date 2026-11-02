@@ -18,14 +18,17 @@ class ForgotPasswordSheet extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SmartSpendRadii.sheet)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(SmartSpendRadii.sheet),
+        ),
       ),
       builder: (ctx) => const ForgotPasswordSheet(),
     );
   }
 
   @override
-  ConsumerState<ForgotPasswordSheet> createState() => _ForgotPasswordSheetState();
+  ConsumerState<ForgotPasswordSheet> createState() =>
+      _ForgotPasswordSheetState();
 }
 
 enum _Step { phone, code, newPassword }
@@ -70,7 +73,9 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
   Future<void> _sendCode() async {
     final phone = normalizePhoneNumber(_phoneController.text.trim());
     if (phone.isEmpty || !RegExp(r'^01[0125]\d{8}$').hasMatch(phone)) {
-      setState(() => _errorMessage = 'يرجى إدخال رقم هاتف مصري صحيح يبدأ بـ 01');
+      setState(
+        () => _errorMessage = 'يرجى إدخال رقم هاتف مصري صحيح يبدأ بـ 01',
+      );
       return;
     }
 
@@ -80,7 +85,9 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
     });
 
     try {
-      final challenge = await ref.read(authApiProvider).startPhoneChallenge(phone: phone);
+      final challenge = await ref
+          .read(authApiProvider)
+          .startPhoneChallenge(phone: phone);
       if (!mounted) return;
       setState(() {
         _busy = false;
@@ -117,10 +124,9 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
     });
 
     try {
-      await ref.read(authApiProvider).confirmPhoneCode(
-        ticket: _ticket ?? '',
-        code: code,
-      );
+      await ref
+          .read(authApiProvider)
+          .confirmPhoneCode(ticket: _ticket ?? '', code: code);
       if (!mounted) return;
       setState(() {
         _busy = false;
@@ -161,10 +167,12 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
     });
 
     try {
-      final answer = await ref.read(authApiProvider).resetPassword(
-        verificationTicket: _ticket ?? '',
-        newPassword: password,
-      );
+      final answer = await ref
+          .read(authApiProvider)
+          .resetPassword(
+            verificationTicket: _ticket ?? '',
+            newPassword: password,
+          );
       if (!mounted) return;
       showSmartSpendNotice(context, l10n.resetPasswordSuccess);
       await ref.read(sessionProvider.notifier).signIn(answer);
@@ -213,12 +221,18 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
               ),
               Row(
                 children: [
-                  Icon(Icons.lock_reset_rounded, color: colors.accent, size: 28),
+                  Icon(
+                    Icons.lock_reset_rounded,
+                    color: colors.accent,
+                    size: 28,
+                  ),
                   const SizedBox(width: SmartSpendSpacing.md),
                   Expanded(
                     child: Text(
                       l10n.resetPasswordTitle,
-                      style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -227,7 +241,9 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
               if (_step == _Step.phone) ...[
                 Text(
                   'أدخل رقم هاتفك المسجل لنرسل لك كود استعادة الحساب على واتساب:',
-                  style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.md),
                 TextField(
@@ -252,7 +268,9 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
               ] else if (_step == _Step.code) ...[
                 Text(
                   'أدخل كود التحقق المكون من 6 أرقام المرسل إلى واتساب:',
-                  style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.md),
                 TextField(
@@ -261,7 +279,11 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
                   enabled: !_busy,
                   maxLength: 6,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(letterSpacing: 8, fontSize: 22, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    letterSpacing: 8,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                   decoration: InputDecoration(
                     labelText: l10n.phoneChangeEnterCode,
                     counterText: '',
@@ -275,7 +297,9 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
                   Text(
                     'يمكنك إعادة طلب الكود بعد $_resendInSeconds ثانية',
                     textAlign: TextAlign.center,
-                    style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colors.mutedForeground,
+                    ),
                   )
                 else
                   TextButton(
@@ -291,7 +315,9 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
               ] else ...[
                 Text(
                   'اختر كلمة مرور جديدة لحسابك:',
-                  style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.md),
                 TextField(

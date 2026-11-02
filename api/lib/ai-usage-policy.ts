@@ -108,20 +108,16 @@ function userLimitKey(user: AiUsageUser): string {
 
 async function getStoredTokenUsage(user: AiUsageUser): Promise<number> {
   if (user.type === "oauth") {
-    const query: any = db
+    const [row] = await db
       .select({ tokens: users.aiTokensUsed })
-      .from(users);
-    if (typeof query?.where !== "function") return 0;
-    const [row] = await query
+      .from(users)
       .where(eq(users.id, user.id))
       .limit(1);
     return Number(row?.tokens || 0);
   }
-  const query: any = db
+  const [row] = await db
     .select({ tokens: localUsers.aiTokensUsed })
-    .from(localUsers);
-  if (typeof query?.where !== "function") return 0;
-  const [row] = await query
+    .from(localUsers)
     .where(eq(localUsers.id, user.id))
     .limit(1);
   return Number(row?.tokens || 0);

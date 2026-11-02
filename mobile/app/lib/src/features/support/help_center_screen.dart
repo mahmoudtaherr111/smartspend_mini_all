@@ -78,19 +78,20 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
   Future<void> _saveDraft() async {
     final store = ref.read(preferencesStoreProvider);
     final current = await store.read();
-    await store.write(current.copyWith(
-      supportDraftSubject: _subjectController.text,
-      supportDraftMessage: _messageController.text,
-    ));
+    await store.write(
+      current.copyWith(
+        supportDraftSubject: _subjectController.text,
+        supportDraftMessage: _messageController.text,
+      ),
+    );
   }
 
   Future<void> _clearDraft() async {
     final store = ref.read(preferencesStoreProvider);
     final current = await store.read();
-    await store.write(current.copyWith(
-      supportDraftSubject: '',
-      supportDraftMessage: '',
-    ));
+    await store.write(
+      current.copyWith(supportDraftSubject: '', supportDraftMessage: ''),
+    );
   }
 
   Future<void> _submitTicket() async {
@@ -100,24 +101,25 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
 
     setState(() => _submitting = true);
     try {
-      await ref.read(supportRepositoryProvider).createTicket(
-        subject: subject,
-        message: message,
-      );
+      await ref
+          .read(supportRepositoryProvider)
+          .createTicket(subject: subject, message: message);
       await _clearDraft();
       _subjectController.clear();
       _messageController.clear();
 
       if (mounted) {
         ref.invalidate(mySupportTicketsProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إرسال تذكرتك بنجاح')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('تم إرسال تذكرتك بنجاح')));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e is ApiException ? e.message : 'فشل إرسال التذكرة')),
+          SnackBar(
+            content: Text(e is ApiException ? e.message : 'فشل إرسال التذكرة'),
+          ),
         );
       }
     } finally {
@@ -156,10 +158,21 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
                 itemBuilder: (ctx, i) {
                   final faq = _faqs[i];
                   return ExpansionTile(
-                    title: Text(faq.q, style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    title: Text(
+                      faq.q,
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     childrenPadding: const EdgeInsets.all(SmartSpendSpacing.md),
                     children: [
-                      Text(faq.a, style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground, height: 1.4)),
+                      Text(
+                        faq.a,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colors.mutedForeground,
+                          height: 1.4,
+                        ),
+                      ),
                     ],
                   );
                 },
@@ -200,15 +213,22 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
             const SizedBox(height: SmartSpendSpacing.sm),
             ticketsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Text('تعذر تحميل التذاكر', style: TextStyle(color: colors.danger)),
+              error: (err, _) => Text(
+                'تعذر تحميل التذاكر',
+                style: TextStyle(color: colors.danger),
+              ),
               data: (List<SupportTicket> tickets) {
                 if (tickets.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.lg),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: SmartSpendSpacing.lg,
+                    ),
                     child: Center(
                       child: Text(
                         'لا توجد تذاكر دعم سابقة',
-                        style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colors.mutedForeground,
+                        ),
                       ),
                     ),
                   );
@@ -231,12 +251,16 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
                         subtitle: Text(
                           t.status,
                           style: textTheme.bodySmall?.copyWith(
-                            color: t.status == 'resolved' ? colors.accent : colors.warning,
+                            color: t.status == 'resolved'
+                                ? colors.accent
+                                : colors.warning,
                           ),
                         ),
                         trailing: Text(
                           '${t.createdAt.year}/${t.createdAt.month}/${t.createdAt.day}',
-                          style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colors.mutedForeground,
+                          ),
                         ),
                       );
                     },

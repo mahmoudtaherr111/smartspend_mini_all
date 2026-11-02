@@ -1,7 +1,6 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
-  BIOMETRIC_CONSTANTS,
   getUserStorageKey,
   isPlatformAuthenticatorAvailable,
   getBiometricLockEnabled,
@@ -10,7 +9,6 @@ import {
   setBiometricGracePeriod,
   getBiometricPinHash,
   getBiometricPinSalt,
-  generatePinSalt,
   setBiometricPin,
   verifyBiometricPin,
   removeBiometricPin,

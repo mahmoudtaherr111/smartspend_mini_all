@@ -2,15 +2,14 @@ import { z } from "zod";
 import { router, receiptsProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
-import { expenses, userDictionaries, users, localUsers } from "../db/schema";
-import { eq, and, gte, lt, sql } from "drizzle-orm";
+import { expenses, userDictionaries } from "../db/schema";
+import { eq, and, gte, lt } from "drizzle-orm";
 import { env } from "./lib/env";
 import {
   loadSystemConfig,
   assertAiBudget,
   clampOutputTokens,
   estimateTokensFromText,
-  recordAiUsageEvent,
   trackAiTokens,
   asPlan,
 } from "./lib/ai-usage-policy";
@@ -23,9 +22,7 @@ import {
   getSmartProfile,
   summarizeProfileForAI,
 } from "./services/user-profile-service";
-import { invalidateUserMemory } from "./lib/muscle-memory";
 import { businessMonthRange } from "./lib/app-time";
-import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
 
 async function trackImageTokens(
   userId: number,

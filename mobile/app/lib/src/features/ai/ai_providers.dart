@@ -27,8 +27,8 @@ class ActiveConversationIdNotifier extends Notifier<int?> {
 
 final activeConversationIdProvider =
     NotifierProvider<ActiveConversationIdNotifier, int?>(
-  ActiveConversationIdNotifier.new,
-);
+      ActiveConversationIdNotifier.new,
+    );
 
 /// Preserved message draft across network errors and daily limit errors (AI-01).
 class ChatDraftNotifier extends Notifier<String> {
@@ -39,8 +39,9 @@ class ChatDraftNotifier extends Notifier<String> {
   void clear() => state = '';
 }
 
-final chatDraftProvider =
-    NotifierProvider<ChatDraftNotifier, String>(ChatDraftNotifier.new);
+final chatDraftProvider = NotifierProvider<ChatDraftNotifier, String>(
+  ChatDraftNotifier.new,
+);
 
 /// Error state when the daily message limit is reached (AI-01).
 class DailyLimitErrorNotifier extends Notifier<String?> {
@@ -53,8 +54,8 @@ class DailyLimitErrorNotifier extends Notifier<String?> {
 
 final dailyLimitErrorProvider =
     NotifierProvider<DailyLimitErrorNotifier, String?>(
-  DailyLimitErrorNotifier.new,
-);
+      DailyLimitErrorNotifier.new,
+    );
 
 /// Indicates if the assistant is currently generating a response (AI-01).
 class IsAssistantTypingNotifier extends Notifier<bool> {
@@ -66,12 +67,11 @@ class IsAssistantTypingNotifier extends Notifier<bool> {
 
 final isAssistantTypingProvider =
     NotifierProvider<IsAssistantTypingNotifier, bool>(
-  IsAssistantTypingNotifier.new,
-);
+      IsAssistantTypingNotifier.new,
+    );
 
 /// Messages in the active conversation thread (AI-01).
-class ChatMessagesNotifier
-    extends Notifier<AsyncValue<List<ChatMessage>>> {
+class ChatMessagesNotifier extends Notifier<AsyncValue<List<ChatMessage>>> {
   @override
   AsyncValue<List<ChatMessage>> build() {
     final convId = ref.watch(activeConversationIdProvider);
@@ -87,8 +87,9 @@ class ChatMessagesNotifier
   Future<void> loadConversation(int conversationId) async {
     state = const AsyncValue.loading();
     try {
-      final messages =
-          await ref.read(aiApiProvider).getConversation(conversationId);
+      final messages = await ref
+          .read(aiApiProvider)
+          .getConversation(conversationId);
       state = AsyncValue.data(messages);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -124,10 +125,9 @@ class ChatMessagesNotifier
     final activeConvId = ref.read(activeConversationIdProvider);
 
     try {
-      final res = await ref.read(aiApiProvider).sendMessage(
-        message: cleanText,
-        conversationId: activeConvId,
-      );
+      final res = await ref
+          .read(aiApiProvider)
+          .sendMessage(message: cleanText, conversationId: activeConvId);
 
       final newConvId = (res['conversationId'] as num?)?.toInt();
       if (newConvId != null && activeConvId == null) {
@@ -206,12 +206,15 @@ class ChatMessagesNotifier
   }
 }
 
-final chatMessagesProvider = NotifierProvider<ChatMessagesNotifier,
-    AsyncValue<List<ChatMessage>>>(ChatMessagesNotifier.new);
+final chatMessagesProvider =
+    NotifierProvider<ChatMessagesNotifier, AsyncValue<List<ChatMessage>>>(
+      ChatMessagesNotifier.new,
+    );
 
 /// List of past conversation threads (AI-03).
-final chatConversationsProvider =
-    FutureProvider<List<ChatConversation>>((ref) async {
+final chatConversationsProvider = FutureProvider<List<ChatConversation>>((
+  ref,
+) async {
   return ref.watch(aiApiProvider).getConversations();
 });
 
@@ -237,12 +240,14 @@ class SelectedReportMonthNotifier extends Notifier<String> {
 
 final selectedReportMonthProvider =
     NotifierProvider<SelectedReportMonthNotifier, String>(
-  SelectedReportMonthNotifier.new,
-);
+      SelectedReportMonthNotifier.new,
+    );
 
 /// Cached and generated monthly report insights (AI-06).
-final monthlyReportFamily =
-    FutureProvider.family<MonthlyInsights, String>((ref, month) async {
+final monthlyReportFamily = FutureProvider.family<MonthlyInsights, String>((
+  ref,
+  month,
+) async {
   final api = ref.watch(aiApiProvider);
   final cached = await api.getCachedMonthlyInsights(month);
   if (cached != null) return cached;
@@ -252,11 +257,10 @@ final monthlyReportFamily =
 /// Month-over-month comparison provider (AI-07).
 final monthComparisonFamily =
     FutureProvider.family<MonthComparison, (String, String)>((ref, pair) async {
-  return ref.watch(aiApiProvider).compareMonths(
-        firstMonth: pair.$1,
-        secondMonth: pair.$2,
-      );
-});
+      return ref
+          .watch(aiApiProvider)
+          .compareMonths(firstMonth: pair.$1, secondMonth: pair.$2);
+    });
 
 /// Voice call eligibility (AI-09).
 final voiceEligibilityProvider = FutureProvider<VoiceEligibility>((ref) async {

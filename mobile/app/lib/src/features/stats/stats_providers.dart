@@ -253,12 +253,16 @@ class CategoryTransactions extends AsyncNotifier<LedgerListState> {
   }
 }
 
-
 /// Debts and loans balance overview (STA-05).
 final debtsOverviewProvider = FutureProvider<DebtsOverview>((ref) async {
   final scope = ref.watch(_statsSessionScopeProvider);
   if (!scope.signedIn) {
-    return const DebtsOverview(balances: [], totalLent: 0, totalBorrowed: 0, net: 0);
+    return const DebtsOverview(
+      balances: [],
+      totalLent: 0,
+      totalBorrowed: 0,
+      net: 0,
+    );
   }
   final client = ref.watch(trpcClientProvider);
   try {
@@ -269,11 +273,18 @@ final debtsOverviewProvider = FutureProvider<DebtsOverview>((ref) async {
   } catch (_) {
     // Non-fatal, return empty debts overview
   }
-  return const DebtsOverview(balances: [], totalLent: 0, totalBorrowed: 0, net: 0);
+  return const DebtsOverview(
+    balances: [],
+    totalLent: 0,
+    totalBorrowed: 0,
+    net: 0,
+  );
 });
 
 /// Spending vs budget or income comparison (STA-04, GAP-15).
-final budgetComparisonProvider = FutureProvider<BudgetComparisonData>((ref) async {
+final budgetComparisonProvider = FutureProvider<BudgetComparisonData>((
+  ref,
+) async {
   final scope = ref.watch(_statsSessionScopeProvider);
   if (!scope.signedIn) {
     return const BudgetComparisonData(
@@ -308,7 +319,9 @@ final budgetComparisonProvider = FutureProvider<BudgetComparisonData>((ref) asyn
       if (generalBudget != null) {
         final limit = readAmount(generalBudget['monthlyLimit']) ?? 0;
         final currentSpent = readAmount(generalBudget['currentSpent']) ?? spent;
-        final percentage = limit > 0 ? ((currentSpent / limit) * 100).round() : 0;
+        final percentage = limit > 0
+            ? ((currentSpent / limit) * 100).round()
+            : 0;
         return BudgetComparisonData(
           allocated: limit,
           spent: currentSpent,
@@ -370,10 +383,20 @@ final budgetComparisonProvider = FutureProvider<BudgetComparisonData>((ref) asyn
 });
 
 /// Yearly stats provider for the year in review (STA-09, GAP-18).
-final yearlyStatsProvider = FutureProvider.family<YearlyStatsData, String>((ref, year) async {
+final yearlyStatsProvider = FutureProvider.family<YearlyStatsData, String>((
+  ref,
+  year,
+) async {
   final scope = ref.watch(_statsSessionScopeProvider);
   if (!scope.signedIn) {
-    return YearlyStatsData(year: year, totalExpense: 0, totalIncome: 0, netFlow: 0, count: 0, monthlyData: []);
+    return YearlyStatsData(
+      year: year,
+      totalExpense: 0,
+      totalIncome: 0,
+      netFlow: 0,
+      count: 0,
+      monthlyData: [],
+    );
   }
   final client = ref.watch(trpcClientProvider);
   try {
@@ -385,11 +408,20 @@ final yearlyStatsProvider = FutureProvider.family<YearlyStatsData, String>((ref,
       return YearlyStatsData.fromJson(year, res);
     }
   } catch (_) {}
-  return YearlyStatsData(year: year, totalExpense: 0, totalIncome: 0, netFlow: 0, count: 0, monthlyData: []);
+  return YearlyStatsData(
+    year: year,
+    totalExpense: 0,
+    totalIncome: 0,
+    netFlow: 0,
+    count: 0,
+    monthlyData: [],
+  );
 });
 
 /// Smart profile summary provider (STA-11).
-final smartProfileSummaryProvider = FutureProvider<SmartProfileSummary>((ref) async {
+final smartProfileSummaryProvider = FutureProvider<SmartProfileSummary>((
+  ref,
+) async {
   final scope = ref.watch(_statsSessionScopeProvider);
   if (!scope.signedIn) {
     return const SmartProfileSummary(profileCompleted: false);

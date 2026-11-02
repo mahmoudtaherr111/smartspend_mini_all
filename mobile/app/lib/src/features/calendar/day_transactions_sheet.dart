@@ -40,9 +40,7 @@ class _DayTransactionsSheetState extends ConsumerState<DayTransactionsSheet> {
   @override
   void initState() {
     super.initState();
-    _future = ref
-        .read(calendarApiProvider)
-        .getDayTransactions(widget.dateStr);
+    _future = ref.read(calendarApiProvider).getDayTransactions(widget.dateStr);
   }
 
   @override
@@ -154,9 +152,7 @@ class _DayTransactionsSheetState extends ConsumerState<DayTransactionsSheet> {
                       title: item.category,
                       subtitle: item.description ?? item.subCategory ?? '',
                       amount: item.amount,
-                      kind: isExpense
-                          ? AmountKind.expense
-                          : AmountKind.income,
+                      kind: isExpense ? AmountKind.expense : AmountKind.income,
                     );
                   },
                 );

@@ -96,7 +96,9 @@ class _CalendarMonthGrid extends StatelessWidget {
       final shortKey =
           '${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
       final amount = daySpendMap[dateStr] ?? daySpendMap[shortKey] ?? 0;
-      final intensity = maxSpend > 0 ? (amount / maxSpend).clamp(0.0, 1.0) : 0.0;
+      final intensity = maxSpend > 0
+          ? (amount / maxSpend).clamp(0.0, 1.0)
+          : 0.0;
       final isToday = day == todayDay;
       final isPayday = salaryDay != null && day == salaryDay;
 
@@ -160,10 +162,7 @@ class _CalendarMonthGrid extends StatelessWidget {
 }
 
 class _DayCellWidget extends StatelessWidget {
-  const _DayCellWidget({
-    required this.cell,
-    required this.colors,
-  });
+  const _DayCellWidget({required this.cell, required this.colors});
 
   final CalendarDayCell cell;
   final SmartSpendColors colors;
@@ -205,20 +204,17 @@ class _DayCellWidget extends StatelessWidget {
               children: [
                 Text(
                   '${cell.dayNumber}',
-                  style: SmartSpendTypography.style(
-                    11,
-                    cell.isToday ? FontWeight.w800 : FontWeight.w600,
-                  ).copyWith(
-                    color: cell.isToday ? colors.accent : colors.foreground,
-                  ),
+                  style:
+                      SmartSpendTypography.style(
+                        11,
+                        cell.isToday ? FontWeight.w800 : FontWeight.w600,
+                      ).copyWith(
+                        color: cell.isToday ? colors.accent : colors.foreground,
+                      ),
                 ),
                 // Payday shape marker: small star icon
                 if (cell.isPayday)
-                  Icon(
-                    Icons.stars_rounded,
-                    size: 11,
-                    color: colors.warning,
-                  )
+                  Icon(Icons.stars_rounded, size: 11, color: colors.warning)
                 else if (cell.isToday)
                   Container(
                     width: 4,
@@ -239,9 +235,10 @@ class _DayCellWidget extends StatelessWidget {
                   cell.amount >= 1000
                       ? '${(cell.amount / 1000).toStringAsFixed(1)}k'
                       : '${cell.amount.round()}',
-                  style: SmartSpendTypography.style(10, FontWeight.bold).copyWith(
-                    color: colors.foreground,
-                  ),
+                  style: SmartSpendTypography.style(
+                    10,
+                    FontWeight.bold,
+                  ).copyWith(color: colors.foreground),
                 ),
               )
             else

@@ -57,7 +57,8 @@ final class NotificationsRepository {
     if (data is List<Object?>) {
       return [
         for (final item in data)
-          if (item is Map<String, Object?>) InAppNotificationItem.fromJson(item),
+          if (item is Map<String, Object?>)
+            InAppNotificationItem.fromJson(item),
       ];
     }
     return const [];
@@ -75,13 +76,16 @@ final class NotificationsRepository {
   }
 }
 
-final notificationsRepositoryProvider = Provider<NotificationsRepository>((ref) {
+final notificationsRepositoryProvider = Provider<NotificationsRepository>((
+  ref,
+) {
   return NotificationsRepository(ref.watch(trpcClientProvider));
 });
 
-final inAppNotificationsProvider = FutureProvider.autoDispose<List<InAppNotificationItem>>((ref) async {
-  return ref.watch(notificationsRepositoryProvider).list();
-});
+final inAppNotificationsProvider =
+    FutureProvider.autoDispose<List<InAppNotificationItem>>((ref) async {
+      return ref.watch(notificationsRepositoryProvider).list();
+    });
 
 final unreadNotificationsCountProvider = Provider.autoDispose<int>((ref) {
   final list = ref.watch(inAppNotificationsProvider).value ?? const [];

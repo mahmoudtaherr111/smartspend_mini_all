@@ -57,7 +57,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     if (!isOnline) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('محتاجين اتصال بالإنترنت عشان نرد عليك. المسودة محفوظة.'),
+          content: Text(
+            'محتاجين اتصال بالإنترنت عشان نرد عليك. المسودة محفوظة.',
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -67,8 +69,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     _textController.clear();
     _scrollToBottom();
 
-    final success =
-        await ref.read(chatMessagesProvider.notifier).sendMessage(text);
+    final success = await ref
+        .read(chatMessagesProvider.notifier)
+        .sendMessage(text);
     if (success) {
       _scrollToBottom();
     } else {
@@ -97,12 +100,19 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                Icon(Icons.wifi_off_rounded, size: 18, color: Colors.amber.shade900),
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 18,
+                  color: Colors.amber.shade900,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'أنت غير متصل بالإنترنت. سيتم إرسال رسالتك فور عودة الاتصال.',
-                    style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.amber.shade900,
+                    ),
                   ),
                 ),
               ],
@@ -141,16 +151,19 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         Expanded(
           child: messagesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(
-              child: Text('حدث خطأ في تحميل الرسائل: $err'),
-            ),
+            error: (err, _) =>
+                Center(child: Text('حدث خطأ في تحميل الرسائل: $err')),
             data: (messages) {
               final showQuickQuestions = messages.isEmpty && isOnline;
 
               return ListView.builder(
                 controller: _scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                itemCount: messages.length +
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                itemCount:
+                    messages.length +
                     (isTyping ? 1 : 0) +
                     (showQuickQuestions ? 1 : 0),
                 itemBuilder: (context, index) {
@@ -307,12 +320,14 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
-        crossAxisAlignment:
-            isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isUser
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment:
-                isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: isUser
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (!isUser) ...[
@@ -351,7 +366,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           ),
 
           // Clarification replies (if any)
-          if (msg.clarification != null && msg.clarification!.replies.isNotEmpty)
+          if (msg.clarification != null &&
+              msg.clarification!.replies.isNotEmpty)
             Padding(
               padding: const EdgeInsetsDirectional.only(top: 8, start: 36),
               child: Wrap(
@@ -416,7 +432,10 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     if (trimmed.isEmpty) return const SizedBox(height: 6);
 
     // List item (bullet)
-    final isBullet = trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ');
+    final isBullet =
+        trimmed.startsWith('* ') ||
+        trimmed.startsWith('- ') ||
+        trimmed.startsWith('• ');
     final content = isBullet ? trimmed.substring(2).trim() : trimmed;
 
     final spans = _parseSpans(content, isUser);

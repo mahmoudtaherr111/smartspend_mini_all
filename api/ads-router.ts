@@ -7,7 +7,7 @@ import {
 } from "./middleware";
 import { db } from "./queries/connection";
 import { ads, adClicks, adImpressions } from "../db/schema";
-import { eq, and, or, isNull, lte, gte, sql, count, desc } from "drizzle-orm";
+import { eq, and, or, isNull, lte, gte, sql, count, desc, type SQL } from "drizzle-orm";
 import { startOfBusinessDay } from "./lib/app-time";
 import { logAdminAction } from "./lib/admin-audit";
 
@@ -29,7 +29,7 @@ export const adsRouter = router({
       const now = new Date();
       const plan = ctx.user && ctx.user.plan !== "free" ? "pro" : "free";
 
-      const conditions = [
+      const conditions: (SQL | undefined)[] = [
         eq(ads.isActive, true),
         or(isNull(ads.startDate), lte(ads.startDate, now)),
         or(isNull(ads.endDate), gte(ads.endDate, now)),
@@ -43,7 +43,7 @@ export const adsRouter = router({
       ];
 
       if (input?.placement) {
-        conditions.push(eq(ads.placement, input.placement) as any);
+        conditions.push(eq(ads.placement, input.placement));
       }
 
       if (input?.platform && input.platform !== "all") {
@@ -51,7 +51,7 @@ export const adsRouter = router({
           or(
             eq(ads.platformTarget, "all"),
             eq(ads.platformTarget, input.platform),
-          ) as any,
+          ),
         );
       }
 

@@ -4,6 +4,9 @@ import { env } from "../lib/env";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createLogger } from "../lib/log";
+
+const log = createLogger("firebase");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,8 +38,8 @@ if (!projectId || !clientEmail || !privateKey) {
           privateKey = json.private_key;
           break;
         }
-      } catch (err) {
-        console.warn("Could not parse Firebase service account candidate:", candidate, err);
+      } catch {
+        log.warn({ event: "firebase.service_account_unreadable" }, "Could not read a Firebase service account file");
       }
     }
   }
@@ -56,14 +59,12 @@ if (projectId && clientEmail && privateKey) {
 
     messagingInstance = getMessaging();
     isFirebaseInitialized = true;
-    console.log("🔥 Firebase Admin SDK initialized successfully for project:", projectId);
+    log.info({ event: "firebase.ready" }, "Firebase Admin SDK ready");
   } catch (error) {
-    console.error("❌ Failed to initialize Firebase Admin SDK:", error);
+    log.error({ event: "firebase.failed", err: error }, "Firebase Admin SDK failed to start");
   }
 } else {
-  console.warn(
-    "⚠️ Firebase configuration missing in environment variables and service account files. Running notifications in fallback/mock mode."
-  );
+  log.warn({ event: "firebase.not_configured" }, "Firebase is not configured: push is off");
 }
 
 export { messagingInstance as messaging, isFirebaseInitialized };

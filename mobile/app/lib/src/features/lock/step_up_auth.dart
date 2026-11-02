@@ -27,13 +27,15 @@ Future<bool> promptStepUpAuth(
   // If biometrics are ready and enabled, try biometrics prompt first
   if (lock.biometrics && lock.biometricsReady) {
     final l10n = AppLocalizations.of(context);
-    final outcome = await ref.read(appLockProvider.notifier).unlockWithBiometrics(
-      BiometricPromptText(
-        title: l10n.securityTitle,
-        reason: reason,
-        usePin: l10n.biometricPromptUsePin,
-      ),
-    );
+    final outcome = await ref
+        .read(appLockProvider.notifier)
+        .unlockWithBiometrics(
+          BiometricPromptText(
+            title: l10n.securityTitle,
+            reason: reason,
+            usePin: l10n.biometricPromptUsePin,
+          ),
+        );
     if (outcome == BiometricOutcome.success) {
       return true;
     }
@@ -48,7 +50,9 @@ Future<bool> promptStepUpAuth(
     isDismissible: true,
     enableDrag: true,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(SmartSpendRadii.sheet)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(SmartSpendRadii.sheet),
+      ),
     ),
     builder: (ctx) => _StepUpAuthSheet(reason: reason),
   );

@@ -11,7 +11,8 @@ class AddBusinessCategorySheet extends StatefulWidget {
     required String type,
     required String icon,
     required String color,
-  }) onAdd;
+  })
+  onAdd;
 
   static Future<void> show(
     BuildContext context, {
@@ -21,7 +22,8 @@ class AddBusinessCategorySheet extends StatefulWidget {
       required String type,
       required String icon,
       required String color,
-    }) onAdd,
+    })
+    onAdd,
   }) {
     return showModalBottomSheet<void>(
       context: context,
@@ -32,7 +34,8 @@ class AddBusinessCategorySheet extends StatefulWidget {
   }
 
   @override
-  State<AddBusinessCategorySheet> createState() => _AddBusinessCategorySheetState();
+  State<AddBusinessCategorySheet> createState() =>
+      _AddBusinessCategorySheetState();
 }
 
 class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
@@ -42,7 +45,18 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
   final _color = '#3b82f6';
   bool _saving = false;
 
-  static const _emojis = ['🛍️', '🍤', '🔧', '💻', '📦', '🚚', '📊', '🧾', '💰', '🏢'];
+  static const _emojis = [
+    '🛍️',
+    '🍤',
+    '🔧',
+    '💻',
+    '📦',
+    '🚚',
+    '📊',
+    '🧾',
+    '💰',
+    '🏢',
+  ];
 
   @override
   void dispose() {
@@ -75,7 +89,9 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
     final textTheme = Theme.of(context).textTheme;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: const EdgeInsets.all(SmartSpendSpacing.lg),
         decoration: BoxDecoration(

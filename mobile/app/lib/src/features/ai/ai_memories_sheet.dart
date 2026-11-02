@@ -44,10 +44,7 @@ class AiMemoriesSheet extends ConsumerWidget {
                 children: [
                   const Text(
                     'ذاكرة المساعد الذكي',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
                   TextButton.icon(
@@ -97,9 +94,8 @@ class AiMemoriesSheet extends ConsumerWidget {
             Expanded(
               child: memoriesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, _) => Center(
-                  child: Text('تعذر تحميل الذاكرة: $err'),
-                ),
+                error: (err, _) =>
+                    Center(child: Text('تعذر تحميل الذاكرة: $err')),
                 data: (memories) {
                   if (memories.isEmpty) {
                     return Center(
@@ -135,7 +131,8 @@ class AiMemoriesSheet extends ConsumerWidget {
                   return ListView.separated(
                     controller: scrollController,
                     itemCount: memories.length,
-                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final memory = memories[index];
                       return ListTile(
@@ -187,10 +184,7 @@ class AiMemoriesSheet extends ConsumerWidget {
     }
   }
 
-  Future<void> _confirmClearAll(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _confirmClearAll(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

@@ -407,5 +407,6 @@ class FakeDeviceLock implements DeviceLock {
   bool screenProtected = false;
 
   @override
-  Future<void> setScreenProtected(bool enabled) async => screenProtected = enabled;
+  Future<void> setScreenProtected(bool enabled) async =>
+      screenProtected = enabled;
 }

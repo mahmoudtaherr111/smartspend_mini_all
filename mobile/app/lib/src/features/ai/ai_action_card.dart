@@ -7,10 +7,7 @@ import 'ai_providers.dart';
 
 /// An action card embedded within chat messages proposing a change to the user's ledger (AI-02).
 class AiActionCard extends ConsumerStatefulWidget {
-  const AiActionCard({
-    required this.draft,
-    super.key,
-  });
+  const AiActionCard({required this.draft, super.key});
 
   final AiActionDraft draft;
 
@@ -38,16 +35,17 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
     setState(() => _isSubmitting = true);
 
     try {
-      final res = await ref.read(aiApiProvider).confirmAction(
+      final res = await ref
+          .read(aiApiProvider)
+          .confirmAction(
             actionId: widget.draft.actionId,
             confirmationPhrase: widget.draft.confirmationPhrase,
           );
 
       if (mounted) {
-        ref.read(chatMessagesProvider.notifier).updateActionStatus(
-              widget.draft.id,
-              'confirmed',
-            );
+        ref
+            .read(chatMessagesProvider.notifier)
+            .updateActionStatus(widget.draft.id, 'confirmed');
         refreshLedgerViewsFromWidget(ref);
 
         final msg = (res['message'] as String?) ?? 'تم تنفيذ العملية بنجاح';
@@ -81,10 +79,9 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
     try {
       await ref.read(aiApiProvider).cancelAction(widget.draft.actionId);
       if (mounted) {
-        ref.read(chatMessagesProvider.notifier).updateActionStatus(
-              widget.draft.id,
-              'cancelled',
-            );
+        ref
+            .read(chatMessagesProvider.notifier)
+            .updateActionStatus(widget.draft.id, 'cancelled');
       }
     } catch (_) {
       // Best-effort cancel
@@ -152,7 +149,9 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                   child: const Text('إلغاء'),
                 ),
                 FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red.shade700,
+                  ),
                   onPressed: phraseMatches
                       ? () => Navigator.of(dialogCtx).pop(true)
                       : null,
@@ -201,20 +200,20 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
       decoration: BoxDecoration(
         color: isConfirmed
             ? (theme.brightness == Brightness.dark
-                ? const Color(0xFF064E3B).withValues(alpha: 0.3)
-                : const Color(0xFFF0FDF4))
+                  ? const Color(0xFF064E3B).withValues(alpha: 0.3)
+                  : const Color(0xFFF0FDF4))
             : isCancelled || isExpired
-                ? (theme.brightness == Brightness.dark
-                    ? colorScheme.surfaceContainerHigh
-                    : Colors.grey.shade100)
-                : colorScheme.surfaceContainerHighest,
+            ? (theme.brightness == Brightness.dark
+                  ? colorScheme.surfaceContainerHigh
+                  : Colors.grey.shade100)
+            : colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isConfirmed
               ? const Color(0xFF86EFAC)
               : isCancelled || isExpired
-                  ? colorScheme.outlineVariant
-                  : colorScheme.outline,
+              ? colorScheme.outlineVariant
+              : colorScheme.outline,
           width: 1.5,
         ),
       ),
@@ -227,15 +226,15 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                 isConfirmed
                     ? Icons.check_circle_rounded
                     : isCancelled
-                        ? Icons.cancel_outlined
-                        : isExpired
-                            ? Icons.timer_off_outlined
-                            : Icons.bolt_rounded,
+                    ? Icons.cancel_outlined
+                    : isExpired
+                    ? Icons.timer_off_outlined
+                    : Icons.bolt_rounded,
                 color: isConfirmed
                     ? const Color(0xFF16A34A)
                     : isCancelled || isExpired
-                        ? colorScheme.onSurfaceVariant
-                        : const Color(0xFF0F766E),
+                    ? colorScheme.onSurfaceVariant
+                    : const Color(0xFF0F766E),
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -251,9 +250,15 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                   ),
                 ),
               ),
-              if (draft.isHighRisk && !isConfirmed && !isCancelled && !isExpired)
+              if (draft.isHighRisk &&
+                  !isConfirmed &&
+                  !isCancelled &&
+                  !isExpired)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.orange.shade100,
                     borderRadius: BorderRadius.circular(4),
@@ -277,7 +282,10 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
               children: [
                 for (final amt in draft.amounts)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(6),
@@ -292,7 +300,10 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
             const SizedBox(height: 6),
             Text(
               'التاريخ: ${draft.date}',
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
           const SizedBox(height: 12),
@@ -308,7 +319,10 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
           else if (isCancelled)
             Text(
               'تم إلغاء هذا الإجراء.',
-              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 13,
+              ),
             )
           else if (isExpired)
             Text(

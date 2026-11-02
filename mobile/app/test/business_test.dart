@@ -71,7 +71,7 @@ void main() {
             'nameAr': 'مستلزمات',
             'icon': '🔧',
             'type': 'expense',
-          }
+          },
         ],
         'contactCount': 3,
       });
@@ -95,25 +95,44 @@ void main() {
       expect(container.read(isBusinessModeActiveProvider), isFalse);
     });
 
-    testWidgets('displays creation form when no business exists', (tester) async {
+    testWidgets('displays creation form when no business exists', (
+      tester,
+    ) async {
       final api = FakeApi();
       api.answer('localAuth.me', (_) => phoneUser());
-      api.answer('business.get', (_) => {'business': null, 'categories': <Map<String, Object?>>[], 'contactCount': 0});
-      api.answer('business.types', (_) => [
-        {'id': 'retail', 'label': 'محل تجاري', 'icon': '🛍️'},
-      ]);
-      api.answer('pro.myPlan', (_) => {
-        'plan': 'pro',
-        'role': 'user',
-        'features': {'business': true},
-      });
+      api.answer(
+        'business.get',
+        (_) => {
+          'business': null,
+          'categories': <Map<String, Object?>>[],
+          'contactCount': 0,
+        },
+      );
+      api.answer(
+        'business.types',
+        (_) => [
+          {'id': 'retail', 'label': 'محل تجاري', 'icon': '🛍️'},
+        ],
+      );
+      api.answer(
+        'pro.myPlan',
+        (_) => {
+          'plan': 'pro',
+          'role': 'user',
+          'features': {'business': true},
+        },
+      );
 
       final app = TestApp(
         token: 'token',
         api: api,
         overrides: [
           userPlanProvider.overrideWith(
-            (ref) async => const UserPlanInfo(plan: 'pro', role: 'user', businessEnabled: true),
+            (ref) async => const UserPlanInfo(
+              plan: 'pro',
+              role: 'user',
+              businessEnabled: true,
+            ),
           ),
         ],
       );
@@ -126,40 +145,52 @@ void main() {
       expect(find.text('اسم المشروع أو المتجر'), findsOneWidget);
     });
 
-    testWidgets('displays active business when already created', (tester) async {
+    testWidgets('displays active business when already created', (
+      tester,
+    ) async {
       final api = FakeApi();
       api.answer('localAuth.me', (_) => phoneUser());
-      api.answer('business.get', (_) => {
-        'business': {
-          'id': 1,
-          'name': 'مكتبتي',
-          'type': 'retail',
-          'typeLabel': 'مكتبة وتجزئة',
-          'isActive': true,
+      api.answer(
+        'business.get',
+        (_) => {
+          'business': {
+            'id': 1,
+            'name': 'مكتبتي',
+            'type': 'retail',
+            'typeLabel': 'مكتبة وتجزئة',
+            'isActive': true,
+          },
+          'categories': [
+            {
+              'id': 101,
+              'name': 'books',
+              'nameAr': 'كتب وأدوات',
+              'icon': '📚',
+              'type': 'expense',
+            },
+          ],
+          'contactCount': 2,
         },
-        'categories': [
-          {
-            'id': 101,
-            'name': 'books',
-            'nameAr': 'كتب وأدوات',
-            'icon': '📚',
-            'type': 'expense',
-          }
-        ],
-        'contactCount': 2,
-      });
-      api.answer('pro.myPlan', (_) => {
-        'plan': 'pro',
-        'role': 'user',
-        'features': {'business': true},
-      });
+      );
+      api.answer(
+        'pro.myPlan',
+        (_) => {
+          'plan': 'pro',
+          'role': 'user',
+          'features': {'business': true},
+        },
+      );
 
       final app = TestApp(
         token: 'token',
         api: api,
         overrides: [
           userPlanProvider.overrideWith(
-            (ref) async => const UserPlanInfo(plan: 'pro', role: 'user', businessEnabled: true),
+            (ref) async => const UserPlanInfo(
+              plan: 'pro',
+              role: 'user',
+              businessEnabled: true,
+            ),
           ),
         ],
       );

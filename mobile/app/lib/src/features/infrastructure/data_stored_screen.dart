@@ -48,7 +48,9 @@ class DataStoredScreen extends StatelessWidget {
             const SizedBox(height: SmartSpendSpacing.xl),
             Text(
               'ماذا يخزن تطبيق SmartSpend AI؟',
-              style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: SmartSpendSpacing.md),
             _Item(
@@ -74,14 +76,19 @@ class DataStoredScreen extends StatelessWidget {
             const SizedBox(height: SmartSpendSpacing.lg),
             Text(
               'حقوقك في بياناتك:',
-              style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: SmartSpendSpacing.sm),
             Text(
               '1. حق التصدير: يمكنك تنزيل نسخة كاملة من كل معاملاتك من شاشة "تصدير البيانات".\n'
               '2. حق الحذف: يمكنك حذف حسابك وكافة سجلاتك نهائياً من شاشة "حذف الحساب".\n'
               '3. حق الوصول والمراجعة: يمكنك الاطلاع على كل بياناتك وجلساتك في أي وقت.',
-              style: textTheme.bodyMedium?.copyWith(height: 1.7, color: colors.foreground),
+              style: textTheme.bodyMedium?.copyWith(
+                height: 1.7,
+                color: colors.foreground,
+              ),
             ),
           ],
         ),
@@ -121,9 +128,20 @@ class _Item extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(title, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      title,
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: SmartSpendSpacing.xs),
-                    Text(body, style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground, height: 1.4)),
+                    Text(
+                      body,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colors.mutedForeground,
+                        height: 1.4,
+                      ),
+                    ),
                   ],
                 ),
               ),

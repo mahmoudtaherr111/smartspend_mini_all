@@ -53,10 +53,7 @@ final class SupportRepository {
   }) async {
     final data = await _client.mutate(
       Procedures.support.create,
-      input: {
-        'subject': subject,
-        'message': message,
-      },
+      input: {'subject': subject, 'message': message},
     );
     if (data is Map<String, Object?> && data['ticketId'] is int) {
       return data['ticketId']! as int;
@@ -69,6 +66,7 @@ final supportRepositoryProvider = Provider<SupportRepository>((ref) {
   return SupportRepository(ref.watch(trpcClientProvider));
 });
 
-final mySupportTicketsProvider = FutureProvider.autoDispose<List<SupportTicket>>((ref) async {
-  return ref.watch(supportRepositoryProvider).listMine();
-});
+final mySupportTicketsProvider =
+    FutureProvider.autoDispose<List<SupportTicket>>((ref) async {
+      return ref.watch(supportRepositoryProvider).listMine();
+    });

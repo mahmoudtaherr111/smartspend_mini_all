@@ -309,7 +309,8 @@ class BudgetsScreen extends ConsumerWidget {
                                       actions: [
                                         TextButton(
                                           onPressed: () =>
-                                              Navigator.of(dialogCtx).pop(false),
+                                              Navigator.of(dialogCtx)
+                                                  .pop(false),
                                           child: const Text('إلغاء'),
                                         ),
                                         TextButton(
@@ -324,7 +325,8 @@ class BudgetsScreen extends ConsumerWidget {
                                     ),
                                   );
 
-                                  if (confirmed != true || !context.mounted) return;
+                                  if (confirmed != true || !context.mounted)
+                                    return;
 
                                   final notifier = ref.read(
                                     budgetsProvider.notifier,

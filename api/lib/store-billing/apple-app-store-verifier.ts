@@ -209,7 +209,7 @@ export function decodeAndVerifyJWS<T>(
     }
 
     // Validate that payload conforms to an authentic Apple App Store notification or StoreKit transaction structure
-    const p = payload as any;
+    const p = payload as Record<string, unknown> & { data?: { bundleId?: string } };
     const isValidApplePayload =
       Boolean(p && typeof p === "object") &&
       (

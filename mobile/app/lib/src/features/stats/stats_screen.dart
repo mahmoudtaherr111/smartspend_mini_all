@@ -172,7 +172,9 @@ class StatsScreen extends ConsumerWidget {
         ),
     ];
 
-    final currentYear = month != null ? month.split('-').first : DateTime.now().year.toString();
+    final currentYear = month != null
+        ? month.split('-').first
+        : DateTime.now().year.toString();
 
     return [
       StaggeredReveal(
@@ -332,9 +334,7 @@ class _SpendingPersonalitySection extends StatelessWidget {
           const SizedBox(height: SmartSpendSpacing.sm),
           Text(
             explanation,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colors.foreground,
-            ),
+            style: textTheme.bodyMedium?.copyWith(color: colors.foreground),
           ),
           if (stats.count < 5) ...[
             const SizedBox(height: SmartSpendSpacing.xs),
@@ -484,8 +484,10 @@ class _BudgetComparisonSection extends ConsumerWidget {
     final barColor = isExceeded ? colors.danger : colors.accent;
 
     final subtitle = switch (comparison.fallbackKind) {
-      BudgetFallbackKind.budget => comparison.title ?? 'الميزانية الشهرية العامة',
-      BudgetFallbackKind.profileIncome => 'مقارنة بالدخل الشهري المسجل (بدون ميزانية محددة)',
+      BudgetFallbackKind.budget =>
+        comparison.title ?? 'الميزانية الشهرية العامة',
+      BudgetFallbackKind.profileIncome =>
+        'مقارنة بالدخل الشهري المسجل (بدون ميزانية محددة)',
       BudgetFallbackKind.monthIncome => 'مقارنة بإجمالي دخل الشهر الحالي',
       BudgetFallbackKind.none => '',
     };
@@ -531,9 +533,7 @@ class _BudgetComparisonSection extends ConsumerWidget {
             children: [
               Text(
                 'صرفت: ${moneyText(context, comparison.spent)}',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colors.foreground,
-                ),
+                style: textTheme.bodyMedium?.copyWith(color: colors.foreground),
               ),
               Text(
                 isExceeded
@@ -573,22 +573,14 @@ class _ElectronicPaymentsSection extends StatelessWidget {
         children: [
           StatTileRow(
             children: [
-              StatTile(
-                label: 'من البنوك والمحافظ',
-                amount: autoExpense,
-              ),
-              StatTile(
-                label: 'تسجيل يدوي / نقدي',
-                amount: manualExpense,
-              ),
+              StatTile(label: 'من البنوك والمحافظ', amount: autoExpense),
+              StatTile(label: 'تسجيل يدوي / نقدي', amount: manualExpense),
             ],
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(
             'المعاملات الإلكترونية مسجلة تلقائياً وبدقة من رسائل الهاتف والإشعارات البنكية.',
-            style: textTheme.bodySmall?.copyWith(
-              color: colors.mutedForeground,
-            ),
+            style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
           ),
         ],
       ),
@@ -638,16 +630,15 @@ class _DebtsOverviewSection extends ConsumerWidget {
                 amount: debts.totalLent,
                 kind: AmountKind.income,
               ),
-              StatTile(
-                label: 'عليك للناس',
-                amount: debts.totalBorrowed,
-              ),
+              StatTile(label: 'عليك للناس', amount: debts.totalBorrowed),
             ],
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
           for (final person in debts.balances.take(3))
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.xs),
+              padding: const EdgeInsets.symmetric(
+                vertical: SmartSpendSpacing.xs,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -663,7 +654,9 @@ class _DebtsOverviewSection extends ConsumerWidget {
                         ? 'ليك ${moneyText(context, person.balance)}'
                         : 'عليك ${moneyText(context, -person.balance)}',
                     style: textTheme.bodyMedium?.copyWith(
-                      color: person.balance >= 0 ? colors.accent : colors.danger,
+                      color: person.balance >= 0
+                          ? colors.accent
+                          : colors.danger,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -717,7 +710,8 @@ class _YearlyReviewSection extends ConsumerWidget {
       child: SmartSpendLineChart(
         title: title,
         data: points,
-        spokenSummary: 'مخطط مصاريف السنة. إجمالي المصاريف ${moneyText(context, yearly.totalExpense)}.',
+        spokenSummary:
+            'مخطط مصاريف السنة. إجمالي المصاريف ${moneyText(context, yearly.totalExpense)}.',
         accentColor: colors.accent,
       ),
     );
@@ -744,11 +738,7 @@ class _SmartProfileSection extends ConsumerWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.privacy_tip_outlined,
-                size: 20,
-                color: colors.accent,
-              ),
+              Icon(Icons.privacy_tip_outlined, size: 20, color: colors.accent),
               const SizedBox(width: SmartSpendSpacing.sm),
               Expanded(
                 child: Text(
@@ -764,9 +754,7 @@ class _SmartProfileSection extends ConsumerWidget {
             const SizedBox(height: SmartSpendSpacing.xs),
             Text(
               'يوم الراتب المحفوظ: يوم ${profile.salaryDay} من كل شهر.',
-              style: textTheme.bodySmall?.copyWith(
-                color: colors.foreground,
-              ),
+              style: textTheme.bodySmall?.copyWith(color: colors.foreground),
             ),
           ],
         ],

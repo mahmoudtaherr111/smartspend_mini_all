@@ -21,14 +21,11 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
-  XCircle,
   Clock,
-  FileText,
   Radio,
   Server,
   Layers,
-  Check,
-} from "lucide-react";
+  } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -85,7 +82,7 @@ export function AdminWhatsAppTab() {
   });
 
   const syncTemplates = trpc.adminWhatsapp.syncTemplates.useMutation({
-    onSuccess: (res) => {
+    onSuccess: () => {
       toast.success("تمت مزامنة القوالب مع Meta بنجاح");
       refetchTemplates();
     },

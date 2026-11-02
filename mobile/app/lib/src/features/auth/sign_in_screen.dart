@@ -161,7 +161,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               Align(
                 alignment: AlignmentDirectional.centerEnd,
                 child: TextButton(
-                  onPressed: _busy ? null : () => ForgotPasswordSheet.show(context),
+                  onPressed: _busy
+                      ? null
+                      : () => ForgotPasswordSheet.show(context),
                   child: Text(l10n.forgotPassword),
                 ),
               ),

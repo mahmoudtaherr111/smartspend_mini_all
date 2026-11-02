@@ -23,7 +23,8 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
     super.initState();
     final now = DateTime.now();
     _firstMonth = DateFormat('yyyy-MM').format(now);
-    _secondMonth = DateFormat('yyyy-MM').format(DateTime(now.year, now.month - 1, 1));
+    _secondMonth = DateFormat('yyyy-MM')
+        .format(DateTime(now.year, now.month - 1, 1));
   }
 
   bool get _isSameMonth => _firstMonth == _secondMonth;
@@ -74,17 +75,32 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('الشهر الأول:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    const Text(
+                      'الشهر الأول:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _firstMonth,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
                       ),
                       items: [
                         for (final m in availableMonths)
-                          DropdownMenuItem(value: m, child: Text(_formatMonth(m), style: const TextStyle(fontSize: 13))),
+                          DropdownMenuItem(
+                            value: m,
+                            child: Text(
+                              _formatMonth(m),
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
                       ],
                       onChanged: (val) {
                         if (val != null) setState(() => _firstMonth = val);
@@ -98,17 +114,32 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('الشهر الثاني:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    const Text(
+                      'الشهر الثاني:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       initialValue: _secondMonth,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
                       ),
                       items: [
                         for (final m in availableMonths)
-                          DropdownMenuItem(value: m, child: Text(_formatMonth(m), style: const TextStyle(fontSize: 13))),
+                          DropdownMenuItem(
+                            value: m,
+                            child: Text(
+                              _formatMonth(m),
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
                       ],
                       onChanged: (val) {
                         if (val != null) setState(() => _secondMonth = val);
@@ -132,12 +163,19 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline_rounded, color: Colors.red.shade700, size: 20),
+                  Icon(
+                    Icons.error_outline_rounded,
+                    color: Colors.red.shade700,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'يرجى اختيار شهرين مختلفين لإجراء المقارنة.',
-                      style: TextStyle(fontSize: 13, color: Colors.red.shade900),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.red.shade900,
+                      ),
                     ),
                   ),
                 ],
@@ -147,7 +185,9 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
             const SizedBox(height: 20),
             Consumer(
               builder: (context, ref, _) {
-                final compareAsync = ref.watch(monthComparisonFamily((_firstMonth, _secondMonth)));
+                final compareAsync = ref.watch(
+                  monthComparisonFamily((_firstMonth, _secondMonth)),
+                );
                 return compareAsync.when(
                   loading: () => const Center(
                     child: Padding(
@@ -187,11 +227,18 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.compare_arrows_rounded, color: Colors.teal.shade700, size: 22),
+                  Icon(
+                    Icons.compare_arrows_rounded,
+                    color: Colors.teal.shade700,
+                    size: 22,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'نتائج المقارنة (${_formatMonth(comparison.secondMonth)} مقابل ${_formatMonth(comparison.firstMonth)})',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -231,11 +278,16 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
                 return ListTile(
                   dense: true,
                   leading: Icon(
-                    isIncrease ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                    isIncrease
+                        ? Icons.arrow_upward_rounded
+                        : Icons.arrow_downward_rounded,
                     color: isIncrease ? Colors.red : Colors.green,
                     size: 20,
                   ),
-                  title: Text(cat, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  title: Text(
+                    cat,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   trailing: AmountText(diff.abs()),
                 );
               },

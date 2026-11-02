@@ -46,15 +46,14 @@ class AiConversationsSheet extends ConsumerWidget {
                 children: [
                   const Text(
                     'المحادثات السابقة',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
                   FilledButton.icon(
                     onPressed: () {
-                      ref.read(activeConversationIdProvider.notifier).select(null);
+                      ref
+                          .read(activeConversationIdProvider.notifier)
+                          .select(null);
                       ref.read(chatMessagesProvider.notifier).clearLocal();
                       Navigator.of(context).pop();
                     },
@@ -72,9 +71,8 @@ class AiConversationsSheet extends ConsumerWidget {
             Expanded(
               child: conversationsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, _) => Center(
-                  child: Text('تعذر تحميل المحادثات: $err'),
-                ),
+                error: (err, _) =>
+                    Center(child: Text('تعذر تحميل المحادثات: $err')),
                 data: (conversations) {
                   if (conversations.isEmpty) {
                     return Center(
@@ -110,12 +108,16 @@ class AiConversationsSheet extends ConsumerWidget {
                   return ListView.separated(
                     controller: scrollController,
                     itemCount: conversations.length,
-                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final conv = conversations[index];
                       final isSelected = conv.id == activeId;
                       final dateStr = conv.lastMessageAt != null
-                          ? DateFormat('d MMMM yyyy', 'ar').format(conv.lastMessageAt!)
+                          ? DateFormat(
+                              'd MMMM yyyy',
+                              'ar',
+                            ).format(conv.lastMessageAt!)
                           : '';
 
                       return ListTile(
@@ -136,7 +138,9 @@ class AiConversationsSheet extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                         subtitle: Text(
@@ -149,10 +153,13 @@ class AiConversationsSheet extends ConsumerWidget {
                         trailing: IconButton(
                           icon: const Icon(Icons.delete_outline, size: 20),
                           color: Colors.grey.shade500,
-                          onPressed: () => _confirmClearConversation(context, ref, conv),
+                          onPressed: () =>
+                              _confirmClearConversation(context, ref, conv),
                         ),
                         onTap: () {
-                          ref.read(activeConversationIdProvider.notifier).select(conv.id);
+                          ref
+                              .read(activeConversationIdProvider.notifier)
+                              .select(conv.id);
                           Navigator.of(context).pop();
                         },
                       );

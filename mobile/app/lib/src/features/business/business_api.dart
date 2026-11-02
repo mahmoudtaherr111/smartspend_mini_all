@@ -40,7 +40,9 @@ final class BusinessApi {
       input: {
         'businessName': businessName,
         'businessType': businessType,
-        'description': description.length < 10 ? 'مشروع تجاري لـ $businessName' : description,
+        'description': description.length < 10
+            ? 'مشروع تجاري لـ $businessName'
+            : description,
       },
     );
     if (res is List<Object?>) {
@@ -120,7 +122,10 @@ final class BusinessApi {
   }
 
   /// Links a contact to the business as customer or supplier (BIZ-04).
-  Future<bool> linkContact({required int contactId, String role = 'business_supplier'}) async {
+  Future<bool> linkContact({
+    required int contactId,
+    String role = 'business_supplier',
+  }) async {
     final res = await _client.mutate(
       Procedures.business.linkContact,
       input: {'contactId': contactId, 'role': role},

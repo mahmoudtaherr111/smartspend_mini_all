@@ -26,7 +26,9 @@ class AppUpdateScreen extends ConsumerWidget {
       onUpdate!();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('يرجى زيارة متجر التطبيقات لتحديث التطبيق: $storeUrl')),
+        SnackBar(
+          content: Text('يرجى زيارة متجر التطبيقات لتحديث التطبيق: $storeUrl'),
+        ),
       );
     }
   }
@@ -65,18 +67,26 @@ class AppUpdateScreen extends ConsumerWidget {
               Text(
                 'تحديث التطبيق مطلوب',
                 textAlign: TextAlign.center,
-                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: SmartSpendSpacing.sm),
               Text(
                 'الإصدار الحالي لم يعد مدعوماً من الخادم لضمان حماية بياناتك وأمان المعاملات المالية. يُرجى التحديث إلى أحدث إصدار لمتابعة الاستخدام.',
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground, height: 1.5),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.mutedForeground,
+                  height: 1.5,
+                ),
               ),
               if (minimumVersion != null) ...[
                 const SizedBox(height: SmartSpendSpacing.md),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.surface,
                     borderRadius: BorderRadius.circular(SmartSpendRadii.md),
@@ -85,7 +95,9 @@ class AppUpdateScreen extends ConsumerWidget {
                   child: Text(
                     'الحد الأدنى المطلوب: $minimumVersion',
                     textAlign: TextAlign.center,
-                    style: textTheme.labelMedium?.copyWith(color: colors.mutedForeground),
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colors.mutedForeground,
+                    ),
                   ),
                 ),
               ],
@@ -96,16 +108,24 @@ class AppUpdateScreen extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: colors.warning.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                    border: Border.all(color: colors.warning.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: colors.warning.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.wifi_off_rounded, color: colors.warning, size: 20),
+                      Icon(
+                        Icons.wifi_off_rounded,
+                        color: colors.warning,
+                        size: 20,
+                      ),
                       const SizedBox(width: SmartSpendSpacing.sm),
                       Expanded(
                         child: Text(
                           'أنت غير متصل بالإنترنت حالياً. بياناتك المسجلة محفوظة ومتاحة.',
-                          style: textTheme.bodySmall?.copyWith(color: colors.warning),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colors.warning,
+                          ),
                         ),
                       ),
                     ],

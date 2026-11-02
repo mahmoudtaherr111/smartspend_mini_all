@@ -21,7 +21,9 @@ class SessionsScreen extends ConsumerWidget {
     if (ua.contains('android')) {
       return Icons.phone_android_rounded;
     }
-    if (ua.contains('macintosh') || ua.contains('windows') || ua.contains('linux')) {
+    if (ua.contains('macintosh') ||
+        ua.contains('windows') ||
+        ua.contains('linux')) {
       return Icons.computer_rounded;
     }
     return Icons.devices_other_rounded;
@@ -128,10 +130,13 @@ class SessionsScreen extends ConsumerWidget {
             child: ListView.separated(
               padding: const EdgeInsets.all(SmartSpendSpacing.screen),
               itemCount: sessions.length,
-              separatorBuilder: (ctx, i) => const SizedBox(height: SmartSpendSpacing.sm),
+              separatorBuilder: (ctx, i) =>
+                  const SizedBox(height: SmartSpendSpacing.sm),
               itemBuilder: (ctx, i) {
                 final s = sessions[i];
-                final isCurrent = s.isCurrent || (i == 0 && sessions.every((item) => !item.isCurrent));
+                final isCurrent =
+                    s.isCurrent ||
+                    (i == 0 && sessions.every((item) => !item.isCurrent));
                 final icon = _deviceIcon(s.userAgent);
                 final name = _deviceName(s.userAgent);
 
@@ -154,7 +159,9 @@ class SessionsScreen extends ConsumerWidget {
                           height: 44,
                           decoration: BoxDecoration(
                             color: colors.accent.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+                            borderRadius: BorderRadius.circular(
+                              SmartSpendRadii.md,
+                            ),
                           ),
                           child: Icon(icon, color: colors.accent),
                         ),
@@ -168,15 +175,24 @@ class SessionsScreen extends ConsumerWidget {
                                   Expanded(
                                     child: Text(
                                       name,
-                                      style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                                      style: textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                   if (isCurrent)
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: colors.accent.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
+                                        color: colors.accent.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          SmartSpendRadii.sm,
+                                        ),
                                       ),
                                       child: Text(
                                         l10n.sessionsCurrentDevice,
@@ -192,12 +208,16 @@ class SessionsScreen extends ConsumerWidget {
                               if (s.ipAddress != null)
                                 Text(
                                   'IP: ${s.ipAddress}',
-                                  style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colors.mutedForeground,
+                                  ),
                                 ),
                               if (s.createdAt != null)
                                 Text(
                                   'نشط منذ: ${s.createdAt!.toLocal().toString().split('.').first}',
-                                  style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colors.mutedForeground,
+                                  ),
                                 ),
                               const SizedBox(height: SmartSpendSpacing.sm),
                               Align(
@@ -207,7 +227,10 @@ class SessionsScreen extends ConsumerWidget {
                                     foregroundColor: colors.danger,
                                     visualDensity: VisualDensity.compact,
                                   ),
-                                  icon: const Icon(Icons.logout_rounded, size: 16),
+                                  icon: const Icon(
+                                    Icons.logout_rounded,
+                                    size: 16,
+                                  ),
                                   label: Text(l10n.sessionsRevoke),
                                   onPressed: () => _revoke(context, ref, s),
                                 ),

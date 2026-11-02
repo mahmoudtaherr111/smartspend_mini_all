@@ -194,7 +194,7 @@ export function AdminAuditTab() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {auditData?.logs?.map((log: any) => (
+                    {auditData?.logs?.map((log) => (
                       <tr
                         key={log.id}
                         className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors"
@@ -336,7 +336,7 @@ export function AdminAuditTab() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {sessions?.map((session: any) => {
+                    {sessions?.map((session) => {
                       const expired = isExpired(session.expiresAt);
                       return (
                         <tr

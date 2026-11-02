@@ -29,7 +29,9 @@ class DeleteAccountSheet extends ConsumerStatefulWidget {
       enableDrag: false,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(SmartSpendRadii.sheet)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(SmartSpendRadii.sheet),
+        ),
       ),
       builder: (ctx) => const DeleteAccountSheet(),
     );
@@ -100,10 +102,12 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
     setState(() => _deleting = true);
 
     try {
-      await ref.read(accountRepositoryProvider).deleteMyAccount(
-        confirmation: _confirmationController.text.trim(),
-        password: isLocal ? _passwordController.text.trim() : null,
-      );
+      await ref
+          .read(accountRepositoryProvider)
+          .deleteMyAccount(
+            confirmation: _confirmationController.text.trim(),
+            password: isLocal ? _passwordController.text.trim() : null,
+          );
 
       if (!mounted) return;
       showSmartSpendNotice(context, l10n.deleteAccountSuccess);
@@ -136,7 +140,8 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
     };
     final isLocal = user?.kind == AccountKind.phone;
 
-    final canSubmit = _isConfirmed(_confirmationController.text) &&
+    final canSubmit =
+        _isConfirmed(_confirmationController.text) &&
         (!isLocal || _passwordController.text.trim().isNotEmpty) &&
         !_deleting;
 
@@ -233,9 +238,13 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
                         ),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
+                        ),
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(SmartSpendRadii.md),
@@ -257,7 +266,9 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
                       children: [
                         Text(
                           _errorMessage!,
-                          style: textTheme.bodySmall?.copyWith(color: colors.danger),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colors.danger,
+                          ),
                         ),
                         const SizedBox(height: SmartSpendSpacing.xs),
                         GestureDetector(
@@ -289,7 +300,9 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
                 SmartSpendButton(
                   label: l10n.deleteAccountCancelButton,
                   variant: ButtonVariant.quiet,
-                  onPressed: _deleting ? null : () => Navigator.of(context).pop(false),
+                  onPressed: _deleting
+                      ? null
+                      : () => Navigator.of(context).pop(false),
                 ),
               ],
             ),

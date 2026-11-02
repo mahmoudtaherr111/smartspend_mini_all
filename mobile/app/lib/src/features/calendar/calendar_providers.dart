@@ -90,10 +90,9 @@ final calendarMonthStatsProvider = FutureProvider<MonthStats>((ref) async {
   final monthKey = '${target.year}-${target.month.toString().padLeft(2, '0')}';
 
   try {
-    final stats = await ref.watch(statsRepositoryProvider).month(
-      monthKey,
-      salaryDay: salaryDay,
-    );
+    final stats = await ref
+        .watch(statsRepositoryProvider)
+        .month(monthKey, salaryDay: salaryDay);
     ref.read(networkStatusProvider.notifier).reached();
     return stats;
   } on ApiNetworkException {

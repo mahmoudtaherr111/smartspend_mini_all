@@ -80,7 +80,9 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
     });
 
     try {
-      await ref.read(calendarApiProvider).addCashflow(
+      await ref
+          .read(calendarApiProvider)
+          .addCashflow(
             title: title,
             kind: _kind,
             direction: _direction,
@@ -236,8 +238,9 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
                     ),
                   ),
                   items: _recurrences
-                      .map((r) =>
-                          DropdownMenuItem(value: r.$1, child: Text(r.$2)))
+                      .map(
+                        (r) => DropdownMenuItem(value: r.$1, child: Text(r.$2)),
+                      )
                       .toList(),
                   onChanged: (val) {
                     if (val != null) setState(() => _recurrence = val);
@@ -271,10 +274,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
 
 /// Sheet to settle a commitment or link it to a transaction (CAL-04).
 class SettleCommitmentSheet extends ConsumerStatefulWidget {
-  const SettleCommitmentSheet({
-    super.key,
-    required this.item,
-  });
+  const SettleCommitmentSheet({super.key, required this.item});
 
   final CashflowItem item;
 
@@ -322,7 +322,9 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
     });
 
     try {
-      await ref.read(calendarApiProvider).settle(
+      await ref
+          .read(calendarApiProvider)
+          .settle(
             cashflowId: widget.item.id,
             expenseId: _selectedExpenseId,
             amount: amount,

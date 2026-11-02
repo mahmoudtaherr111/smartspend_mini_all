@@ -102,34 +102,40 @@ class VoiceCallController extends Notifier<LiveCallState> {
     _startPingTimer();
 
     final clientPlatform = Platform.isIOS ? 'ios' : 'android';
-    _socket?.send(jsonEncode({
-      'type': 'hello',
-      'v': 2,
-      'ticket': ticket,
-      'codecs': ['pcm16'],
-      'client': clientPlatform,
-    }));
+    _socket?.send(
+      jsonEncode({
+        'type': 'hello',
+        'v': 2,
+        'ticket': ticket,
+        'codecs': ['pcm16'],
+        'client': clientPlatform,
+      }),
+    );
   }
 
   void _setupSocketListener() {
     _subscription?.cancel();
-    _subscription = _socket?.messages.listen((event) {
-      if (event is String) {
-        try {
-          final json = jsonDecode(event) as Map<String, Object?>;
-          _handleServerMessage(json);
-        } catch (_) {}
-      }
-    }, onDone: () {
-      if (state.status != VoiceCallStatus.ended) {
-        endCall();
-      }
-    }, onError: (err) {
-      state = state.copyWith(
-        status: VoiceCallStatus.ended,
-        errorMessage: 'انقطع الاتصال بالخادم.',
-      );
-    });
+    _subscription = _socket?.messages.listen(
+      (event) {
+        if (event is String) {
+          try {
+            final json = jsonDecode(event) as Map<String, Object?>;
+            _handleServerMessage(json);
+          } catch (_) {}
+        }
+      },
+      onDone: () {
+        if (state.status != VoiceCallStatus.ended) {
+          endCall();
+        }
+      },
+      onError: (err) {
+        state = state.copyWith(
+          status: VoiceCallStatus.ended,
+          errorMessage: 'انقطع الاتصال بالخادم.',
+        );
+      },
+    );
   }
 
   void _handleServerMessage(Map<String, Object?> message) {
@@ -153,10 +159,7 @@ class VoiceCallController extends Notifier<LiveCallState> {
           'reconnecting' => VoiceCallStatus.reconnecting,
           _ => state.status,
         };
-        state = state.copyWith(
-          status: status,
-          waitDetail: wait,
-        );
+        state = state.copyWith(status: status, waitDetail: wait);
       case 'transcript':
         final text = (message['text'] as String?) ?? '';
         state = state.copyWith(assistantTranscript: text);
@@ -165,7 +168,9 @@ class VoiceCallController extends Notifier<LiveCallState> {
         if (cardData != null) {
           final newCard = LiveCallCard.fromJson(cardData);
           final updatedCards = [...state.cards];
-          final existingIndex = updatedCards.indexWhere((c) => c.id == newCard.id);
+          final existingIndex = updatedCards.indexWhere(
+            (c) => c.id == newCard.id,
+          );
           if (existingIndex >= 0) {
             updatedCards[existingIndex] = newCard;
           } else {
@@ -174,7 +179,8 @@ class VoiceCallController extends Notifier<LiveCallState> {
           state = state.copyWith(cards: updatedCards);
         }
       case 'error':
-        final errorMsg = (message['message'] as String?) ?? 'حدث خطأ في المكالمة';
+        final errorMsg =
+            (message['message'] as String?) ?? 'حدث خطأ في المكالمة';
         state = state.copyWith(errorMessage: errorMsg);
       case 'ended':
       case 'end':
@@ -193,20 +199,19 @@ class VoiceCallController extends Notifier<LiveCallState> {
     _pingTimer?.cancel();
     _pingTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       try {
-        _socket?.send(jsonEncode({
-          'type': 'ping',
-          't': DateTime.now().millisecondsSinceEpoch,
-        }));
+        _socket?.send(
+          jsonEncode({
+            'type': 'ping',
+            't': DateTime.now().millisecondsSinceEpoch,
+          }),
+        );
       } catch (_) {}
     });
   }
 
   /// Explicitly confirms a draft action card during the call.
   void confirmCard(String draftId) {
-    _socket?.send(jsonEncode({
-      'type': 'confirm',
-      'draftId': draftId,
-    }));
+    _socket?.send(jsonEncode({'type': 'confirm', 'draftId': draftId}));
     final updated = state.cards.map((c) {
       if (c.id == draftId) return c.copyWith(status: 'executing');
       return c;
@@ -216,10 +221,7 @@ class VoiceCallController extends Notifier<LiveCallState> {
 
   /// Cancels a draft action card during the call.
   void cancelCard(String draftId) {
-    _socket?.send(jsonEncode({
-      'type': 'cancel',
-      'draftId': draftId,
-    }));
+    _socket?.send(jsonEncode({'type': 'cancel', 'draftId': draftId}));
     final updated = state.cards.map((c) {
       if (c.id == draftId) return c.copyWith(status: 'cancelled');
       return c;
@@ -255,5 +257,5 @@ class VoiceCallController extends Notifier<LiveCallState> {
 
 final voiceCallControllerProvider =
     NotifierProvider<VoiceCallController, LiveCallState>(
-  VoiceCallController.new,
-);
+      VoiceCallController.new,
+    );

@@ -22,16 +22,14 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
   Future<void> _handleRefresh() async {
     setState(() => _isRefreshing = true);
     try {
-      await ref.read(aiApiProvider).generateMonthlyInsights(
-            month: _selectedMonth,
-            forceRefresh: true,
-          );
+      await ref
+          .read(aiApiProvider)
+          .generateMonthlyInsights(month: _selectedMonth, forceRefresh: true);
       ref.invalidate(monthlyReportFamily(_selectedMonth));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر تحديث التقرير: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('تعذر تحديث التقرير: $e')));
       }
     } finally {
       if (mounted) {
@@ -51,7 +49,9 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
     }
 
     try {
-      final html = await ref.read(aiApiProvider).exportMonthlyReportHtml(_selectedMonth);
+      final html = await ref
+          .read(aiApiProvider)
+          .exportMonthlyReportHtml(_selectedMonth);
       if (mounted) {
         await showDialog<void>(
           context: context,
@@ -82,9 +82,8 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر تصدير التقرير: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('تعذر تصدير التقرير: $e')));
       }
     }
   }
@@ -184,9 +183,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
                 ],
               ),
             ),
-            error: (err, _) => Center(
-              child: Text('تعذر تحميل التقرير: $err'),
-            ),
+            error: (err, _) => Center(child: Text('تعذر تحميل التقرير: $err')),
             data: (report) => _buildReportContent(report),
           ),
         ),
@@ -212,8 +209,11 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline_rounded,
-                      color: Colors.amber.shade900, size: 20),
+                  Icon(
+                    Icons.info_outline_rounded,
+                    color: Colors.amber.shade900,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -234,8 +234,10 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
             for (final alert in report.alerts)
               Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: alert.contains('🚨') || alert.contains('⚠️')
                       ? const Color(0xFFFFF7ED)
@@ -268,8 +270,11 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.auto_awesome,
-                        size: 20, color: Colors.teal.shade700),
+                    Icon(
+                      Icons.auto_awesome,
+                      size: 20,
+                      color: Colors.teal.shade700,
+                    ),
                     const SizedBox(width: 8),
                     const Text(
                       'التحليل المالي للشهر',
@@ -316,11 +321,16 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
                   final row = report.dataTable[index];
                   final cat = (row['category'] as String?) ?? 'عام';
                   final amt = (row['amount'] as num?)?.toDouble() ?? 0.0;
-                  final pct = row['percent'] != null ? '${row['percent']}%' : '';
+                  final pct = row['percent'] != null
+                      ? '${row['percent']}%'
+                      : '';
 
                   return ListTile(
                     dense: true,
-                    title: Text(cat, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    title: Text(
+                      cat,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

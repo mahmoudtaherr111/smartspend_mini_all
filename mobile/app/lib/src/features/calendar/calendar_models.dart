@@ -14,14 +14,14 @@ final class CalendarDayCell {
   });
 
   const CalendarDayCell.empty()
-      : dateStr = '',
-        dayNumber = 0,
-        amount = 0,
-        income = 0,
-        isToday = false,
-        isPayday = false,
-        isEmpty = true,
-        intensity = 0.0;
+    : dateStr = '',
+      dayNumber = 0,
+      amount = 0,
+      income = 0,
+      isToday = false,
+      isPayday = false,
+      isEmpty = true,
+      intensity = 0.0;
 
   final String dateStr; // YYYY-MM-DD
   final int dayNumber;

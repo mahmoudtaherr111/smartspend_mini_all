@@ -14,10 +14,12 @@ class MoneyPreferencesScreen extends ConsumerStatefulWidget {
   static const path = '/more/money-prefs';
 
   @override
-  ConsumerState<MoneyPreferencesScreen> createState() => _MoneyPreferencesScreenState();
+  ConsumerState<MoneyPreferencesScreen> createState() =>
+      _MoneyPreferencesScreenState();
 }
 
-class _MoneyPreferencesScreenState extends ConsumerState<MoneyPreferencesScreen> {
+class _MoneyPreferencesScreenState
+    extends ConsumerState<MoneyPreferencesScreen> {
   int _salaryDay = 1;
   String _currency = 'EGP';
   int _decimalPlaces = 2;
@@ -28,11 +30,13 @@ class _MoneyPreferencesScreenState extends ConsumerState<MoneyPreferencesScreen>
     final l10n = AppLocalizations.of(context);
     setState(() => _saving = true);
     try {
-      await ref.read(accountRepositoryProvider).updateMoneyPreferences(
-        salaryDay: _salaryDay,
-        currency: _currency,
-        decimalPlaces: _decimalPlaces,
-      );
+      await ref
+          .read(accountRepositoryProvider)
+          .updateMoneyPreferences(
+            salaryDay: _salaryDay,
+            currency: _currency,
+            decimalPlaces: _decimalPlaces,
+          );
       ref.invalidate(userProfileProvider);
       ref.invalidate(salaryDayProvider);
       if (mounted) {
@@ -102,8 +106,12 @@ class _MoneyPreferencesScreenState extends ConsumerState<MoneyPreferencesScreen>
                             ),
                           ),
                           Text(
-                            _salaryDay == 1 ? 'أول الشهر' : (_salaryDay >= 28 ? 'آخر الشهر' : ''),
-                            style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+                            _salaryDay == 1
+                                ? 'أول الشهر'
+                                : (_salaryDay >= 28 ? 'آخر الشهر' : ''),
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colors.mutedForeground,
+                            ),
                           ),
                         ],
                       ),
@@ -113,7 +121,8 @@ class _MoneyPreferencesScreenState extends ConsumerState<MoneyPreferencesScreen>
                         max: 31,
                         divisions: 30,
                         label: '$_salaryDay',
-                        onChanged: (val) => setState(() => _salaryDay = val.round()),
+                        onChanged: (val) =>
+                            setState(() => _salaryDay = val.round()),
                       ),
                     ],
                   ),
@@ -132,9 +141,14 @@ class _MoneyPreferencesScreenState extends ConsumerState<MoneyPreferencesScreen>
                 ),
                 SwitchListTile(
                   title: Text(l10n.moneyPrefsDecimalPlaces),
-                  subtitle: Text(_decimalPlaces == 2 ? 'إظهار القروش (مثال: 50.00 ج.م)' : 'أرقام صحيحة بدون قروش'),
+                  subtitle: Text(
+                    _decimalPlaces == 2
+                        ? 'إظهار القروش (مثال: 50.00 ج.م)'
+                        : 'أرقام صحيحة بدون قروش',
+                  ),
                   value: _decimalPlaces == 2,
-                  onChanged: (val) => setState(() => _decimalPlaces = val ? 2 : 0),
+                  onChanged: (val) =>
+                      setState(() => _decimalPlaces = val ? 2 : 0),
                 ),
               ],
             ),

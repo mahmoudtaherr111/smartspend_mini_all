@@ -76,10 +76,7 @@ class CalendarScreen extends ConsumerWidget {
 
           // Payday month helper banner (STA-12)
           if (salaryDay != null && salaryDay > 1)
-            _PaydayMonthBanner(
-              salaryDay: salaryDay,
-              targetDate: targetDate,
-            ),
+            _PaydayMonthBanner(salaryDay: salaryDay, targetDate: targetDate),
 
           Expanded(
             child: RefreshIndicator(
@@ -128,9 +125,8 @@ class CalendarScreen extends ConsumerWidget {
 
                   // Commitments & Expected Income (CAL-03, CAL-04)
                   overviewAsync.when(
-                    data: (overview) => _CommitmentsSection(
-                      cashflow: overview.cashflows,
-                    ),
+                    data: (overview) =>
+                        _CommitmentsSection(cashflow: overview.cashflows),
                     loading: () => const SizedBox.shrink(),
                     error: (_, _) => const SizedBox.shrink(),
                   ),
@@ -143,10 +139,7 @@ class CalendarScreen extends ConsumerWidget {
                       if (plan == null) {
                         return const SizedBox.shrink();
                       }
-                      return _ActivePlanSection(
-                        plan: plan,
-                        steps: plan.steps,
-                      );
+                      return _ActivePlanSection(plan: plan, steps: plan.steps);
                     },
                     loading: () => const SizedBox.shrink(),
                     error: (_, _) => const SizedBox.shrink(),
@@ -164,10 +157,7 @@ class CalendarScreen extends ConsumerWidget {
 
 /// Banner explaining the payday financial month shift (STA-12).
 class _PaydayMonthBanner extends StatelessWidget {
-  const _PaydayMonthBanner({
-    required this.salaryDay,
-    required this.targetDate,
-  });
+  const _PaydayMonthBanner({required this.salaryDay, required this.targetDate});
 
   final int salaryDay;
   final DateTime targetDate;
@@ -189,17 +179,11 @@ class _PaydayMonthBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.accent.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: colors.accent.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: colors.accent.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            size: 18,
-            color: colors.accent,
-          ),
+          Icon(Icons.info_outline_rounded, size: 18, color: colors.accent),
           const SizedBox(width: SmartSpendSpacing.sm),
           Expanded(
             child: Text(
@@ -218,10 +202,7 @@ class _PaydayMonthBanner extends StatelessWidget {
 
 /// Hero section answering "Am I going to be OK until payday?" (CAL-02).
 class _HeroPaydayPlan extends StatelessWidget {
-  const _HeroPaydayPlan({
-    required this.overview,
-    this.salaryDay,
-  });
+  const _HeroPaydayPlan({required this.overview, this.salaryDay});
 
   final CoachOverviewData overview;
   final int? salaryDay;
@@ -269,9 +250,7 @@ class _HeroPaydayPlan extends StatelessWidget {
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(
             explanationSentence,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colors.foreground,
-            ),
+            style: textTheme.bodyMedium?.copyWith(color: colors.foreground),
           ),
           const SizedBox(height: SmartSpendSpacing.md),
           FittedBox(
@@ -327,7 +306,8 @@ class _HeroPaydayPlan extends StatelessWidget {
                 ],
               ),
             ),
-          if (pos.notes.isNotEmpty) const SizedBox(height: SmartSpendSpacing.xs),
+          if (pos.notes.isNotEmpty)
+            const SizedBox(height: SmartSpendSpacing.xs),
 
           // Financial breakdowns
           Wrap(
@@ -427,9 +407,7 @@ class _HeroLoadingPlaceholder extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colors.border),
       ),
-      child: const Center(
-        child: CircularProgressIndicator.adaptive(),
-      ),
+      child: const Center(child: CircularProgressIndicator.adaptive()),
     );
   }
 }
@@ -483,9 +461,7 @@ class _CalendarSection extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'اضغط على أي يوم لمعرفة تفاصيل المصاريف.',
-            style: textTheme.bodySmall?.copyWith(
-              color: colors.mutedForeground,
-            ),
+            style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
           ),
           const SizedBox(height: SmartSpendSpacing.md),
           CalendarGrid(
@@ -551,9 +527,7 @@ class _CommitmentsSection extends ConsumerWidget {
             ),
           )
         else
-          ...cashflow.map(
-            (item) => _CommitmentCard(item: item),
-          ),
+          ...cashflow.map((item) => _CommitmentCard(item: item)),
       ],
     );
   }
@@ -697,10 +671,7 @@ class _CommitmentCard extends ConsumerWidget {
 
 /// Active plan section and steps (CAL-05, CAL-06).
 class _ActivePlanSection extends ConsumerWidget {
-  const _ActivePlanSection({
-    required this.plan,
-    required this.steps,
-  });
+  const _ActivePlanSection({required this.plan, required this.steps});
 
   final ActivePlan plan;
   final List<PlanStep> steps;
@@ -725,11 +696,7 @@ class _ActivePlanSection extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.flag_rounded,
-                    color: colors.accent,
-                    size: 22,
-                  ),
+                  Icon(Icons.flag_rounded, color: colors.accent, size: 22),
                   const SizedBox(width: SmartSpendSpacing.xs),
                   Text(
                     'خطة التوفير النشطة',
@@ -768,9 +735,7 @@ class _ActivePlanSection extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
-          ...steps.map(
-            (step) => _StepTile(step: step),
-          ),
+          ...steps.map((step) => _StepTile(step: step)),
         ],
       ),
     );
@@ -804,10 +769,9 @@ class _StepTile extends ConsumerWidget {
             activeColor: colors.accent,
             onChanged: (val) async {
               final newStatus = (val == true) ? 'done' : 'pending';
-              await ref.read(calendarApiProvider).setStepStatus(
-                    stepId: step.id,
-                    status: newStatus,
-                  );
+              await ref
+                  .read(calendarApiProvider)
+                  .setStepStatus(stepId: step.id, status: newStatus);
               ref.invalidate(coachOverviewProvider);
             },
           ),
@@ -819,9 +783,7 @@ class _StepTile extends ConsumerWidget {
                   step.title,
                   style: textTheme.bodyMedium?.copyWith(
                     decoration: isDone ? TextDecoration.lineThrough : null,
-                    color: isDone
-                        ? colors.mutedForeground
-                        : colors.foreground,
+                    color: isDone ? colors.mutedForeground : colors.foreground,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -848,8 +810,7 @@ class _StepTile extends ConsumerWidget {
                 }
               } else {
                 // Schedule Cairo reminder at 9:00 AM next day
-                final remindDate =
-                    DateTime.now().add(const Duration(days: 1));
+                final remindDate = DateTime.now().add(const Duration(days: 1));
                 final cairoReminder = DateTime(
                   remindDate.year,
                   remindDate.month,
@@ -857,12 +818,17 @@ class _StepTile extends ConsumerWidget {
                   9,
                   0,
                 );
-                await ref.read(calendarApiProvider).setReminder(
+                await ref
+                    .read(calendarApiProvider)
+                    .setReminder(
                       stepId: step.id,
                       scheduledAt: cairoReminder.toIso8601String(),
                     );
                 if (context.mounted) {
-                  showSmartSpendNotice(context, 'تم ضبط التذكير بتوقيت القاهرة');
+                  showSmartSpendNotice(
+                    context,
+                    'تم ضبط التذكير بتوقيت القاهرة',
+                  );
                 }
               }
               ref.invalidate(coachOverviewProvider);
@@ -873,10 +839,9 @@ class _StepTile extends ConsumerWidget {
               icon: const Icon(Icons.close_rounded, size: 18),
               tooltip: 'تخطي الخطوة',
               onPressed: () async {
-                await ref.read(calendarApiProvider).setStepStatus(
-                      stepId: step.id,
-                      status: 'skipped',
-                    );
+                await ref
+                    .read(calendarApiProvider)
+                    .setStepStatus(stepId: step.id, status: 'skipped');
                 ref.invalidate(coachOverviewProvider);
               },
             ),

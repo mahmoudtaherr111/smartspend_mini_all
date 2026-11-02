@@ -67,7 +67,9 @@ class _CancelPlanScreenState extends ConsumerState<CancelPlanScreen> {
               decoration: BoxDecoration(
                 color: colors.warning.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                border: Border.all(color: colors.warning.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: colors.warning.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
@@ -85,7 +87,9 @@ class _CancelPlanScreenState extends ConsumerState<CancelPlanScreen> {
             const SizedBox(height: SmartSpendSpacing.xl),
             Text(
               'ساعدنا نفهم سبب الإلغاء:',
-              style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: SmartSpendSpacing.md),
             Card(

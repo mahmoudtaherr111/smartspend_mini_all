@@ -100,7 +100,8 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.flag_outlined,
                   title: 'أهداف التوفير',
-                  subtitle: 'خطط لمستقبلك وتابع وصولك لأهدافك بالذكاء الاصطناعي',
+                  subtitle:
+                      'خطط لمستقبلك وتابع وصولك لأهدافك بالذكاء الاصطناعي',
                   onTap: () => context.go(GoalsScreen.path),
                 ),
                 GroupedRow(
@@ -174,7 +175,8 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.card_giftcard_rounded,
                   title: 'دعوة الأصدقاء',
-                  subtitle: 'شارك كود الدعوة الخاص بك واحصل على اشتراك Pro هدية',
+                  subtitle:
+                      'شارك كود الدعوة الخاص بك واحصل على اشتراك Pro هدية',
                   onTap: () => context.go(InviteFriendsScreen.path),
                 ),
               ],
@@ -193,7 +195,8 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.folder_shared_outlined,
                   title: 'ما يخزنه التطبيق عني',
-                  subtitle: 'بياناتك المحفوظة وحقوقك وفقاً لقانون حماية البيانات 151',
+                  subtitle:
+                      'بياناتك المحفوظة وحقوقك وفقاً لقانون حماية البيانات 151',
                   onTap: () => context.go(DataStoredScreen.path),
                 ),
                 GroupedRow(
@@ -216,14 +219,21 @@ class MoreScreen extends ConsumerWidget {
                   subtitle: 'تنبيهات وتحديثات المعاملات والميزانيات',
                   trailing: unreadCount > 0
                       ? Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: colors.accent,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             '$unreadCount',
-                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         )
                       : null,
