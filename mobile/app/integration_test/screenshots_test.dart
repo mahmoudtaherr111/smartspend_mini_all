@@ -192,6 +192,11 @@ void main() {
       await _type(tester, _shotPin.substring(2));
       await tester.tap(find.text('المزيد').last);
       await tester.pumpAndSettle();
+      final settingsRow = find.text('الإعدادات');
+      await tester.ensureVisible(settingsRow);
+      await tester.pumpAndSettle();
+      await tester.tap(settingsRow);
+      await tester.pumpAndSettle();
       final securityRow = find.text('الأمان والخصوصية');
       await tester.ensureVisible(securityRow);
       await tester.pumpAndSettle();

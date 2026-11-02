@@ -10,9 +10,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
+  // On CI the github reporter turns each failure into an annotation, readable without signing in.
   reporter: [
     ["html", { open: "never" }],
     ["list"],
+    ...(process.env.CI ? ([["github"]] as const) : []),
   ],
   use: {
     baseURL: process.env.BASE_URL || "http://localhost:3000",
