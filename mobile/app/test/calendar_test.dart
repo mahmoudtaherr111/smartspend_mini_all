@@ -134,6 +134,10 @@ void main() {
   testWidgets(
     'Calendar screen mounts and renders hero, grid, commitments and plan',
     (tester) async {
+      // A tall screen: the month the server names may need six rows of days.
+      tester.view.physicalSize = const Size(1080, 4800);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
       addTearDown(() {
         tester.view.resetPhysicalSize();
         tester.view.resetDevicePixelRatio();
