@@ -1179,5 +1179,17 @@
   "settingsTitle": "Settings",
   "settingsEntry": "Notifications, look, security and your data",
   "aiOpeningMonth": "You spent {p0} this month. Your biggest item is {p1}.",
-  "aiOpeningQuestion": "How can I spend less on {p0}?"
+  "aiOpeningQuestion": "How can I spend less on {p0}?",
+  "walletsStale": "{p0} of your balances have not been updated for over a week. Update them to keep your numbers right.",
+  "calOldBalances": "This figure uses an old balance.",
+  "calUpdateBalances": "Update",
+  "statsNextTitle": "Your next step",
+  "statsNextBudget": "Your {p0} budget reached {p1}%. Review it before the month ends.",
+  "statsNextBudgetAction": "Open budgets",
+  "statsNextFirstBudget": "Your biggest item is {p0}. Set a monthly limit and we will warn you before you pass it.",
+  "statsNextFirstBudgetAction": "Set a budget",
+  "statsNextAsk": "Your biggest item is {p0}. Ask the assistant how to spend less on it.",
+  "statsNextAskAction": "Ask the assistant",
+  "aiOneQuestion": "One question to know you better",
+  "aiOneQuestionBody": "Your answer makes my advice fit you."
 }

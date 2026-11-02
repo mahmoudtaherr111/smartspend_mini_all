@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 
+import '../account/account_providers.dart';
+import '../account/onboarding_questions_screen.dart';
 import '../ledger/ledger_providers.dart';
 import '../ledger/offline/outbox.dart';
 import '../stats/stats_providers.dart';
@@ -268,6 +271,21 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               style: textTheme.labelLarge,
             ),
             const SizedBox(height: SmartSpendSpacing.sm),
+          ],
+          // A question that makes the answers better is asked here, where its use is plain.
+          if (ref.watch(nextPersonalQuestionProvider).value != null) ...[
+            const SizedBox(height: SmartSpendSpacing.md),
+            GroupedSection(
+              children: [
+                GroupedRow(
+                  icon: Icons.psychology_outlined,
+                  tint: colors.ai,
+                  title: AppLocalizations.of(context).aiOneQuestion,
+                  subtitle: AppLocalizations.of(context).aiOneQuestionBody,
+                  onTap: () => context.push(OnboardingQuestionsScreen.path),
+                ),
+              ],
+            ),
           ],
           questionsAsync.when(
             loading: () => const SizedBox.shrink(),

@@ -81,6 +81,13 @@ class WalletsScreen extends ConsumerWidget {
                             story: l10n.walletsTotalStory,
                             wash: true,
                           ),
+                          if (staleWallets(list, clock.now()).isNotEmpty)
+                            InlineMessage(
+                              l10n.walletsStale(
+                                '${staleWallets(list, clock.now()).length}',
+                              ),
+                              tone: MessageTone.warning,
+                            ),
                           GroupedSection(
                             children: [
                               for (final wallet in list)

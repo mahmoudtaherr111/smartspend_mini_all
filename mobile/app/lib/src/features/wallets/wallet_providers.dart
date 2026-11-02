@@ -195,3 +195,12 @@ final walletDetailProvider = FutureProvider.family<WalletDetail?, int>((
     rethrow;
   }
 });
+
+/// A balance moves with what a person does and only a bank message or the person updates it (see the wallets system
+/// page), so after a week it may no longer be true: these are the wallets to ask about.
+List<Wallet> staleWallets(List<Wallet> wallets, DateTime now) => [
+  for (final wallet in wallets)
+    if (wallet.balanceObservedAt == null ||
+        now.difference(wallet.balanceObservedAt!) > const Duration(days: 7))
+      wallet,
+];

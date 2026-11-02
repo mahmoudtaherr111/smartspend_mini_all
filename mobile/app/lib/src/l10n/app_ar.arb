@@ -2189,5 +2189,21 @@
   "aiOpeningMonth": "صرفت {p0} الشهر ده، وأكبر بند عندك {p1}.",
   "@aiOpeningMonth": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
   "aiOpeningQuestion": "إزاي أقلل صرفي على {p0}؟",
-  "@aiOpeningQuestion": { "placeholders": { "p0": { "type": "String" } } }
+  "@aiOpeningQuestion": { "placeholders": { "p0": { "type": "String" } } },
+  "walletsStale": "{p0} من أرصدتك ما اتحدثتش من أكتر من أسبوع. حدّثها عشان حساباتك تفضل صح.",
+  "@walletsStale": { "placeholders": { "p0": { "type": "String" } } },
+  "calOldBalances": "رقم المتاح مبني على رصيد قديم.",
+  "calUpdateBalances": "حدّث",
+  "statsNextTitle": "الخطوة الجاية",
+  "statsNextBudget": "ميزانية {p0} وصلت {p1}%. راجعها قبل ما الشهر يخلص.",
+  "@statsNextBudget": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "statsNextBudgetAction": "افتح الميزانيات",
+  "statsNextFirstBudget": "أكبر بند عندك {p0}. حط له حد شهري ونبهك قبل ما تعدّيه.",
+  "@statsNextFirstBudget": { "placeholders": { "p0": { "type": "String" } } },
+  "statsNextFirstBudgetAction": "حط ميزانية",
+  "statsNextAsk": "أكبر بند عندك {p0}. اسأل المساعد إزاي تقلله.",
+  "@statsNextAsk": { "placeholders": { "p0": { "type": "String" } } },
+  "statsNextAskAction": "اسأل المساعد",
+  "aiOneQuestion": "سؤال واحد يخليني أفهمك أحسن",
+  "aiOneQuestionBody": "إجابتك بتخلي نصايحي على مقاسك."
 }

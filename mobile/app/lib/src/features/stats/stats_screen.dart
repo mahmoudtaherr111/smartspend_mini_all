@@ -8,6 +8,7 @@ import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../budgets/budget_providers.dart';
 import '../budgets/budgets_screen.dart';
 import '../contacts/contacts_screen.dart';
 import '../ledger/category_style.dart';
@@ -202,6 +203,8 @@ class StatsScreen extends ConsumerWidget {
               ),
             ],
           ),
+
+          _NextStepCard(stats: stats),
 
           // Where the money went (category breakdown)
           if (stats.categories.any((c) => c.amount != 0))
@@ -851,4 +854,67 @@ class _Loading extends StatelessWidget {
       const Skeleton(height: 260, radius: SmartSpendRadii.lg),
     ],
   );
+}
+
+/// One thing to do about this month, from the person's own numbers: a budget in danger, a first budget on their
+/// biggest item, or the assistant's advice on it.
+class _NextStepCard extends ConsumerWidget {
+  const _NextStepCard({required this.stats});
+
+  final MonthStats stats;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final budgets = ref.watch(budgetsProvider).value;
+    if (budgets == null ||
+        ref.watch(statsMonthOffsetProvider) != 0 ||
+        stats.expense <= 0 ||
+        stats.categories.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final l10n = AppLocalizations.of(context);
+    final top = stats.categories.reduce((a, b) => a.amount >= b.amount ? a : b);
+    final inDanger =
+        budgets.where((b) => b.isExceeded || b.isNearLimit).toList()
+          ..sort((a, b) => b.percentage.compareTo(a.percentage));
+    final (sentence, action, IconData icon, path) = inDanger.isNotEmpty
+        ? (
+            l10n.statsNextBudget(
+              inDanger.first.title,
+              '${inDanger.first.percentage}',
+            ),
+            l10n.statsNextBudgetAction,
+            Icons.savings_outlined,
+            BudgetsScreen.path,
+          )
+        : budgets.isEmpty
+        ? (
+            l10n.statsNextFirstBudget(top.name),
+            l10n.statsNextFirstBudgetAction,
+            Icons.savings_outlined,
+            BudgetsScreen.path,
+          )
+        : (
+            l10n.statsNextAsk(top.name),
+            l10n.statsNextAskAction,
+            Icons.auto_awesome,
+            '/ai',
+          );
+    return GroupedCard(
+      title: l10n.statsNextTitle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(sentence, style: Theme.of(context).textTheme.bodyLarge),
+          const SizedBox(height: SmartSpendSpacing.md),
+          SmartSpendButton(
+            label: action,
+            icon: icon,
+            variant: ButtonVariant.secondary,
+            onPressed: () => context.go(path),
+          ),
+        ],
+      ),
+    );
+  }
 }

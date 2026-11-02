@@ -6817,6 +6817,78 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إزاي أقلل صرفي على {p0}؟'**
   String aiOpeningQuestion(String p0);
+
+  /// No description provided for @walletsStale.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} من أرصدتك ما اتحدثتش من أكتر من أسبوع. حدّثها عشان حساباتك تفضل صح.'**
+  String walletsStale(String p0);
+
+  /// No description provided for @calOldBalances.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم المتاح مبني على رصيد قديم.'**
+  String get calOldBalances;
+
+  /// No description provided for @calUpdateBalances.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث'**
+  String get calUpdateBalances;
+
+  /// No description provided for @statsNextTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخطوة الجاية'**
+  String get statsNextTitle;
+
+  /// No description provided for @statsNextBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميزانية {p0} وصلت {p1}%. راجعها قبل ما الشهر يخلص.'**
+  String statsNextBudget(String p0, String p1);
+
+  /// No description provided for @statsNextBudgetAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الميزانيات'**
+  String get statsNextBudgetAction;
+
+  /// No description provided for @statsNextFirstBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكبر بند عندك {p0}. حط له حد شهري ونبهك قبل ما تعدّيه.'**
+  String statsNextFirstBudget(String p0);
+
+  /// No description provided for @statsNextFirstBudgetAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'حط ميزانية'**
+  String get statsNextFirstBudgetAction;
+
+  /// No description provided for @statsNextAsk.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكبر بند عندك {p0}. اسأل المساعد إزاي تقلله.'**
+  String statsNextAsk(String p0);
+
+  /// No description provided for @statsNextAskAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل المساعد'**
+  String get statsNextAskAction;
+
+  /// No description provided for @aiOneQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'سؤال واحد يخليني أفهمك أحسن'**
+  String get aiOneQuestion;
+
+  /// No description provided for @aiOneQuestionBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجابتك بتخلي نصايحي على مقاسك.'**
+  String get aiOneQuestionBody;
 }
 
 class _AppLocalizationsDelegate

@@ -3861,4 +3861,48 @@ class AppLocalizationsAr extends AppLocalizations {
   String aiOpeningQuestion(String p0) {
     return 'إزاي أقلل صرفي على $p0؟';
   }
+
+  @override
+  String walletsStale(String p0) {
+    return '$p0 من أرصدتك ما اتحدثتش من أكتر من أسبوع. حدّثها عشان حساباتك تفضل صح.';
+  }
+
+  @override
+  String get calOldBalances => 'رقم المتاح مبني على رصيد قديم.';
+
+  @override
+  String get calUpdateBalances => 'حدّث';
+
+  @override
+  String get statsNextTitle => 'الخطوة الجاية';
+
+  @override
+  String statsNextBudget(String p0, String p1) {
+    return 'ميزانية $p0 وصلت $p1%. راجعها قبل ما الشهر يخلص.';
+  }
+
+  @override
+  String get statsNextBudgetAction => 'افتح الميزانيات';
+
+  @override
+  String statsNextFirstBudget(String p0) {
+    return 'أكبر بند عندك $p0. حط له حد شهري ونبهك قبل ما تعدّيه.';
+  }
+
+  @override
+  String get statsNextFirstBudgetAction => 'حط ميزانية';
+
+  @override
+  String statsNextAsk(String p0) {
+    return 'أكبر بند عندك $p0. اسأل المساعد إزاي تقلله.';
+  }
+
+  @override
+  String get statsNextAskAction => 'اسأل المساعد';
+
+  @override
+  String get aiOneQuestion => 'سؤال واحد يخليني أفهمك أحسن';
+
+  @override
+  String get aiOneQuestionBody => 'إجابتك بتخلي نصايحي على مقاسك.';
 }

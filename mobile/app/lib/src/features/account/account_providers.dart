@@ -205,6 +205,12 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   return AccountRepository(ref.watch(trpcClientProvider));
 });
 
+/// The next question that helps the assistant, or null when none is waiting.
+final nextPersonalQuestionProvider =
+    FutureProvider.autoDispose<Map<String, Object?>?>(
+      (ref) => ref.watch(accountRepositoryProvider).getNextOnboardingQuestion(),
+    );
+
 final userProfileProvider = FutureProvider.autoDispose<UserProfile>((
   ref,
 ) async {

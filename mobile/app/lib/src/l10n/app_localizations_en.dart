@@ -3900,4 +3900,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String aiOpeningQuestion(String p0) {
     return 'How can I spend less on $p0?';
   }
+
+  @override
+  String walletsStale(String p0) {
+    return '$p0 of your balances have not been updated for over a week. Update them to keep your numbers right.';
+  }
+
+  @override
+  String get calOldBalances => 'This figure uses an old balance.';
+
+  @override
+  String get calUpdateBalances => 'Update';
+
+  @override
+  String get statsNextTitle => 'Your next step';
+
+  @override
+  String statsNextBudget(String p0, String p1) {
+    return 'Your $p0 budget reached $p1%. Review it before the month ends.';
+  }
+
+  @override
+  String get statsNextBudgetAction => 'Open budgets';
+
+  @override
+  String statsNextFirstBudget(String p0) {
+    return 'Your biggest item is $p0. Set a monthly limit and we will warn you before you pass it.';
+  }
+
+  @override
+  String get statsNextFirstBudgetAction => 'Set a budget';
+
+  @override
+  String statsNextAsk(String p0) {
+    return 'Your biggest item is $p0. Ask the assistant how to spend less on it.';
+  }
+
+  @override
+  String get statsNextAskAction => 'Ask the assistant';
+
+  @override
+  String get aiOneQuestion => 'One question to know you better';
+
+  @override
+  String get aiOneQuestionBody => 'Your answer makes my advice fit you.';
 }

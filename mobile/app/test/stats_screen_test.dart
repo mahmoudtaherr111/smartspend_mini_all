@@ -127,6 +127,8 @@ void main() {
       expect(find.text('مرتجع'), findsOneWidget);
       expect(find.text('${ltrIsolate('+300')} ج.م'), findsOneWidget);
 
+      await tester.ensureVisible(find.text('تسوق'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('تسوق'));
       await tester.pumpAndSettle();
       expect(find.text('مرتجع أمازون'), findsOneWidget);

@@ -1,9 +1,13 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../ledger/ledger_providers.dart';
+import '../wallets/wallet_providers.dart';
+import '../wallets/wallets_screen.dart';
 import 'calendar_grid.dart';
 import 'calendar_models.dart';
 import 'calendar_providers.dart';
@@ -309,6 +313,27 @@ class _HeroPaydayPlan extends StatelessWidget {
               pos.unknownAmounts.isNotEmpty ||
               pos.undatedItems.isNotEmpty)
             const SizedBox(height: SmartSpendSpacing.xs),
+
+          // A plan on an old balance says so and offers the fix.
+          Consumer(
+            builder: (context, ref, _) {
+              final wallets = ref.watch(walletsProvider).value ?? const [];
+              if (staleWallets(wallets, clock.now()).isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: SmartSpendSpacing.sm),
+                child: InlineMessage(
+                  AppLocalizations.of(context).calOldBalances,
+                  tone: MessageTone.warning,
+                  action: TextButton(
+                    onPressed: () => context.go(WalletsScreen.path),
+                    child: Text(AppLocalizations.of(context).calUpdateBalances),
+                  ),
+                ),
+              );
+            },
+          ),
 
           // Financial breakdowns
           Wrap(
