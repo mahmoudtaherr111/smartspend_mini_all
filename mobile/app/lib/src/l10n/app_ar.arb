@@ -2206,5 +2206,10 @@
   "statsNextAskAction": "اسأل المساعد",
   "aiOneQuestion": "سؤال واحد يخليني أفهمك أحسن",
   "aiOneQuestionBody": "إجابتك بتخلي نصايحي على مقاسك.",
-  "aiChatStopped": "المساعد متوقف مؤقتًا. تقدر تسجل مصاريفك عادي."
+  "aiChatStopped": "المساعد متوقف مؤقتًا. تقدر تسجل مصاريفك عادي.",
+  "adLabel": "إعلان",
+  "helpTicketAnswered": "اترد عليها",
+  "helpTicketInProgress": "بنراجعها",
+  "helpTicketWaiting": "مستنية رد",
+  "helpTicketReply": "رد فريق الدعم"
 }

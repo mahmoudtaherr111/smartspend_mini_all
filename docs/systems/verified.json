@@ -468,6 +468,8 @@
         "api/app-config-router.ts": "d321237da523",
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
+        "api/boot.ts#GET /robots.txt": "c4dc59fa55af",
+        "api/boot.ts#GET /sitemap.xml": "64c40dc44152",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
         "api/boot.ts#rest-of-file": "74f88df7623e",
         "api/context.ts": "d2add89863df",
@@ -512,9 +514,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "d271ee15cf38"
       },
-      "checked": "2026-11-02 af230467",
+      "checked": "2026-11-02 69f9ab34",
       "arabic": "d521b3fe9cdd",
-      "arabicChecked": "2026-11-02 af230467"
+      "arabicChecked": "2026-11-02 69f9ab34"
     },
     "voice-calls": {
       "files": {

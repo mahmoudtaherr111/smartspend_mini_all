@@ -10,6 +10,7 @@ final class SupportTicket {
     required this.message,
     required this.status,
     required this.createdAt,
+    this.response,
   });
 
   factory SupportTicket.fromJson(Map<String, Object?> json) {
@@ -18,6 +19,7 @@ final class SupportTicket {
       subject: json['subject'] as String? ?? '',
       message: json['message'] as String? ?? '',
       status: json['status'] as String? ?? 'open',
+      response: json['response'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -29,6 +31,9 @@ final class SupportTicket {
   final String message;
   final String status;
   final DateTime createdAt;
+
+  /// The support team's answer, once there is one.
+  final String? response;
 }
 
 final class SupportRepository {

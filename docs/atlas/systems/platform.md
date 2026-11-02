@@ -15,6 +15,8 @@ flowchart LR
   subgraph g_api["API, routes and jobs"]
     http__api_trpc["ALL /api/trpc/*"]
     http__health["GET /health"]
+    http__robots_txt["GET /robots.txt"]
+    http__sitemap_xml["GET /sitemap.xml"]
     job_data_retention_lifecycle["Job · data-retention-lifecycle"]
     router_appConfig["appConfig API · 1 procedure"]
   end
@@ -114,6 +116,8 @@ flowchart LR
   sys_notifications[["Notifications and WhatsApp (system)"]]
   sys_voice_calls[["Live voice assistant (system)"]]
   http__api_trpc --> mod_api_core
+  http__robots_txt --> mod_platform
+  http__sitemap_xml --> mod_api_routers
   job_data_retention_lifecycle --> mod_jobs
   mod_api_core --> mod_api_routers
   mod_api_core --> mod_contracts
@@ -281,6 +285,8 @@ flowchart LR
 | --- | --- | --- |
 | `ALL /api/trpc/*` | trpc | `api/boot.ts` |
 | `GET /health` | http | `api/boot.ts` |
+| `GET /robots.txt` | http | `api/boot.ts` |
+| `GET /sitemap.xml` | http | `api/boot.ts` |
 | `data-retention-lifecycle` | job, `0 5 * * *` | `api/boot.ts` |
 
 ## Data
@@ -424,11 +430,13 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>46 files and declarations</summary>
+<details><summary>48 files and declarations</summary>
 
 - `api/app-config-router.ts`
 - `api/boot.ts#ALL /api/trpc/*`
 - `api/boot.ts#GET /health`
+- `api/boot.ts#GET /robots.txt`
+- `api/boot.ts#GET /sitemap.xml`
 - `api/boot.ts#job:data-retention-lifecycle`
 - `api/boot.ts#rest-of-file`
 - `api/context.ts`

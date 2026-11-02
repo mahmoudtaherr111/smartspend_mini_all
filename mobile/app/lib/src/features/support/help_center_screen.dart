@@ -244,22 +244,44 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
                     separatorBuilder: (ctx, i) => const Divider(height: 1),
                     itemBuilder: (ctx, i) {
                       final t = tickets[i];
-                      return ListTile(
+                      final reply = t.response;
+                      return ExpansionTile(
+                        initiallyExpanded: reply != null && i == 0,
                         title: Text(t.subject, style: textTheme.titleSmall),
                         subtitle: Text(
-                          t.status,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: t.status == 'resolved'
-                                ? colors.accent
-                                : colors.warning,
-                          ),
-                        ),
-                        trailing: Text(
-                          '${t.createdAt.year}/${t.createdAt.month}/${t.createdAt.day}',
+                          [
+                            switch (t.status) {
+                              'resolved' || 'closed' => l10n.helpTicketAnswered,
+                              'in_progress' => l10n.helpTicketInProgress,
+                              _ => l10n.helpTicketWaiting,
+                            },
+                            DateWords.of(context).date(t.createdAt),
+                          ].join(' · '),
                           style: textTheme.bodySmall?.copyWith(
                             color: colors.mutedForeground,
                           ),
                         ),
+                        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                        childrenPadding: const EdgeInsets.fromLTRB(
+                          SmartSpendSpacing.lg,
+                          0,
+                          SmartSpendSpacing.lg,
+                          SmartSpendSpacing.md,
+                        ),
+                        children: [
+                          Text(t.message, style: textTheme.bodyMedium),
+                          if (reply != null) ...[
+                            const SizedBox(height: SmartSpendSpacing.md),
+                            Text(
+                              l10n.helpTicketReply,
+                              style: textTheme.labelLarge?.copyWith(
+                                color: colors.accent,
+                              ),
+                            ),
+                            const SizedBox(height: SmartSpendSpacing.xs),
+                            Text(reply, style: textTheme.bodyMedium),
+                          ],
+                        ],
                       );
                     },
                   ),

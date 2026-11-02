@@ -33,10 +33,15 @@ class CalendarScreen extends ConsumerWidget {
     final words = DateWords.of(context);
 
     // Compute month key and current target date
-    final now = DateTime.now();
-    final targetDate = DateTime(now.year, now.month - offset, 1);
-    final monthKey =
-        '${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}';
+    final monthKey = calendarMonthKey(
+      ref.watch(currentMonthProvider).value,
+      offset,
+    );
+    final monthParts = monthKey.split('-');
+    final targetDate = DateTime(
+      int.parse(monthParts[0]),
+      int.parse(monthParts[1]),
+    );
 
     Future<void> refresh() async {
       ref.invalidate(coachOverviewProvider);

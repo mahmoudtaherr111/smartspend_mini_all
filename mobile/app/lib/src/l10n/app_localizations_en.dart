@@ -3948,4 +3948,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get aiChatStopped =>
       'The assistant is paused for now. You can still record your spending.';
+
+  @override
+  String get adLabel => 'Ad';
+
+  @override
+  String get helpTicketAnswered => 'Answered';
+
+  @override
+  String get helpTicketInProgress => 'In review';
+
+  @override
+  String get helpTicketWaiting => 'Waiting for a reply';
+
+  @override
+  String get helpTicketReply => 'Support replied';
 }

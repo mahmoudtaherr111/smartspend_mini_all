@@ -84,10 +84,10 @@ final calendarMonthStatsProvider = FutureProvider<MonthStats>((ref) async {
   final offset = ref.watch(calendarMonthOffsetProvider);
   final salaryDay = ref.watch(salaryDayProvider).value;
 
-  // Compute month key (YYYY-MM)
-  final now = DateTime.now();
-  final target = DateTime(now.year, now.month - offset, 1);
-  final monthKey = '${target.year}-${target.month.toString().padLeft(2, '0')}';
+  final String? current = await ref
+      .watch(currentMonthProvider.future)
+      .then<String?>((month) => month, onError: (Object _) => null);
+  final monthKey = calendarMonthKey(current, offset);
 
   try {
     final stats = await ref
@@ -107,3 +107,13 @@ final calendarMonthStatsProvider = FutureProvider<MonthStats>((ref) async {
     );
   }
 });
+
+/// The month [monthsBack] before the server's current one (mobile rule 8); the phone's clock only until the server has
+/// answered.
+String calendarMonthKey(String? current, int monthsBack) {
+  final now = DateTime.now();
+  return monthBefore(
+    current ?? '${now.year}-${now.month.toString().padLeft(2, '0')}',
+    monthsBack,
+  );
+}

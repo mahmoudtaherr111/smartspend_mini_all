@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../support/help_center_screen.dart';
 import 'notification_providers.dart';
 
 /// Notification Inbox Screen with read/unread filtering, date grouping, and deep link navigation (NOT-01, FND-10).
@@ -45,7 +46,9 @@ class _NotificationInboxScreenState
 
     final url = item.actionUrl!;
     try {
-      if (url.startsWith('/')) {
+      if (url == '/support') {
+        unawaited(context.push(HelpCenterScreen.path));
+      } else if (url.startsWith('/')) {
         unawaited(context.push(url));
       } else if (url.startsWith('smartspend://')) {
         final internalPath = url.replaceFirst('smartspend://', '/');

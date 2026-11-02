@@ -1192,5 +1192,10 @@
   "statsNextAskAction": "Ask the assistant",
   "aiOneQuestion": "One question to know you better",
   "aiOneQuestionBody": "Your answer makes my advice fit you.",
-  "aiChatStopped": "The assistant is paused for now. You can still record your spending."
+  "aiChatStopped": "The assistant is paused for now. You can still record your spending.",
+  "adLabel": "Ad",
+  "helpTicketAnswered": "Answered",
+  "helpTicketInProgress": "In review",
+  "helpTicketWaiting": "Waiting for a reply",
+  "helpTicketReply": "Support replied"
 }

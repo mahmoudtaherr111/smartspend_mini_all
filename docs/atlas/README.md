@@ -47,5 +47,4 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 
 Gaps the generator found between the code and the hand-maintained maps in `docs/architecture/`, or code patterns it cannot read.
 
-- docs/architecture/systems.json: the route "GET /robots.txt" belongs to no system.
-- docs/architecture/systems.json: the route "GET /sitemap.xml" belongs to no system.
+None.

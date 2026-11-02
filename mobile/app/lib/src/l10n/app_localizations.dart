@@ -6895,6 +6895,36 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'المساعد متوقف مؤقتًا. تقدر تسجل مصاريفك عادي.'**
   String get aiChatStopped;
+
+  /// No description provided for @adLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعلان'**
+  String get adLabel;
+
+  /// No description provided for @helpTicketAnswered.
+  ///
+  /// In ar, this message translates to:
+  /// **'اترد عليها'**
+  String get helpTicketAnswered;
+
+  /// No description provided for @helpTicketInProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنراجعها'**
+  String get helpTicketInProgress;
+
+  /// No description provided for @helpTicketWaiting.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستنية رد'**
+  String get helpTicketWaiting;
+
+  /// No description provided for @helpTicketReply.
+  ///
+  /// In ar, this message translates to:
+  /// **'رد فريق الدعم'**
+  String get helpTicketReply;
 }
 
 class _AppLocalizationsDelegate

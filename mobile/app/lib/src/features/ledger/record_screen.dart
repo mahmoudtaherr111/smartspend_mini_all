@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../ads/sponsored_card.dart';
 import '../capture/shared_text_receiver.dart';
 import '../installments/installments_quick_card.dart';
 import '../lock/app_lock.dart';
@@ -152,6 +153,7 @@ class RecordScreen extends ConsumerWidget {
                             }(),
                           ],
                         ),
+                        const SponsoredCard(),
                       ],
                     ),
                   ],

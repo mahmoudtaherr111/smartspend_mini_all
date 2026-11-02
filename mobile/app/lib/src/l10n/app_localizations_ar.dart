@@ -3908,4 +3908,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aiChatStopped => 'المساعد متوقف مؤقتًا. تقدر تسجل مصاريفك عادي.';
+
+  @override
+  String get adLabel => 'إعلان';
+
+  @override
+  String get helpTicketAnswered => 'اترد عليها';
+
+  @override
+  String get helpTicketInProgress => 'بنراجعها';
+
+  @override
+  String get helpTicketWaiting => 'مستنية رد';
+
+  @override
+  String get helpTicketReply => 'رد فريق الدعم';
 }
