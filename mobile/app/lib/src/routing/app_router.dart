@@ -30,6 +30,7 @@ import '../features/ledger/transaction_search_screen.dart';
 import '../features/ledger/transactions_screen.dart';
 import '../features/lock/security_screen.dart';
 import '../features/more/more_screen.dart';
+import '../features/more/settings_screen.dart';
 import '../features/notifications/notification_inbox_screen.dart';
 import '../features/notifications/notification_settings_screen.dart';
 import '../features/plans/cancel_plan_screen.dart';
@@ -116,6 +117,10 @@ final appTabs = <AppTab>[
     label: (l10n) => l10n.navMore,
     screen: (context) => const MoreScreen(),
     routes: [
+      GoRoute(
+        path: SettingsScreen.path.substring('/more/'.length),
+        builder: (context, state) => const SettingsScreen(),
+      ),
       GoRoute(
         path: ProfileScreen.path.substring('/more/'.length),
         builder: (context, state) => const ProfileScreen(),

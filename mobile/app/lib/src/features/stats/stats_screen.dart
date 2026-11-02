@@ -14,6 +14,7 @@ import '../ledger/category_style.dart';
 import '../ledger/ledger_providers.dart';
 import '../ledger/record_screen.dart';
 import '../ledger/transaction_search_screen.dart';
+import '../seasons/seasons_screen.dart';
 import 'category_transactions_screen.dart';
 import 'stats_models.dart';
 import 'stats_providers.dart';
@@ -232,6 +233,18 @@ class StatsScreen extends ConsumerWidget {
 
           // STA-03: Weekday spending rollup bar chart
           _WeekdaySpendingSection(stats: stats),
+
+          // What the big seasons cost, beside the months they fall in
+          GroupedSection(
+            children: [
+              GroupedRow(
+                icon: Icons.wb_sunny_outlined,
+                title: l10n.calSeasons,
+                subtitle: l10n.calRamadanFeastsSchoolAndSummer,
+                onTap: () => context.go(SeasonsScreen.path),
+              ),
+            ],
+          ),
 
           // STA-06, STA-10: Electronic & bank message spending
           if (stats.automatedExpense > 0 || stats.automatedIncome > 0)

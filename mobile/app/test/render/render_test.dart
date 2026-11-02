@@ -194,6 +194,7 @@ final _screens = <(String, bool, PrepareApi?, Reach)>[
   ('ai-compare', true, answerSampleMoney, _aiTab(2)),
   ('ai-yearly', true, answerSampleMoney, _aiTab(3)),
   for (final path in const [
+    '/more/settings',
     '/more/profile',
     '/more/money-prefs',
     '/more/sessions',

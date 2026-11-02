@@ -5,6 +5,7 @@ import 'package:in_app_purchase/in_app_purchase.dart' show ProductDetails;
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../limits/limits_card.dart';
 import 'cancel_plan_screen.dart';
 import 'plan_providers.dart';
 import 'store_purchases.dart';
@@ -184,6 +185,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     ),
                   ),
                 ),
+                const LimitsCard(),
                 const SizedBox(height: SmartSpendSpacing.xl),
                 Text(l10n.planFeaturesTitle, style: textTheme.titleMedium),
                 const SizedBox(height: SmartSpendSpacing.md),

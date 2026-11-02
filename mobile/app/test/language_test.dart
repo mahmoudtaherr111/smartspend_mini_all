@@ -39,6 +39,10 @@ void main() {
 
       await tester.tap(find.text('المزيد').last);
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('الإعدادات'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('الإعدادات'));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('لغة التطبيق'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('لغة التطبيق'));
@@ -90,6 +94,8 @@ void main() {
     await app.pump(tester);
 
     await tester.tap(find.text('More').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Sign out'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sign out'));
     await tester.pumpAndSettle();

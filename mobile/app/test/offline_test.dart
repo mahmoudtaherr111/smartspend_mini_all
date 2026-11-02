@@ -325,6 +325,8 @@ void main() {
       api.offline = false;
       await tester.tap(find.text('المزيد').last);
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('تسجيل الخروج'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('تسجيل الخروج'));
       await tester.pumpAndSettle();
       expect(find.text('اخرج على أي حال'), findsOneWidget);

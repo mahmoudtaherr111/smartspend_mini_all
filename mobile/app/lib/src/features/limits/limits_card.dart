@@ -8,7 +8,10 @@ import 'limits_api.dart';
 
 /// Card showing remaining AI messages, voice seconds and offline limits (REC-16).
 class LimitsCard extends ConsumerWidget {
-  const LimitsCard({super.key});
+  const LimitsCard({super.key, this.onlyWhenLow = false});
+
+  /// The More tab shows the card only when it asks for something; the plan screen always does.
+  final bool onlyWhenLow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,6 +24,9 @@ class LimitsCard extends ConsumerWidget {
       data: (limits) {
         final anyLow = limits.ai.isLow || limits.voice.isLow;
         final anyExhausted = limits.ai.isExhausted || limits.voice.isExhausted;
+        if (onlyWhenLow && !anyLow && !anyExhausted) {
+          return const SizedBox.shrink();
+        }
 
         return Container(
           margin: const EdgeInsets.only(top: SmartSpendSpacing.md),

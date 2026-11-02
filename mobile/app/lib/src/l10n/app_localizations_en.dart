@@ -3884,4 +3884,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancelPlanOpenStore => 'Open my subscriptions in the store';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsEntry => 'Notifications, look, security and your data';
+
+  @override
+  String aiOpeningMonth(String p0, String p1) {
+    return 'You spent $p0 this month. Your biggest item is $p1.';
+  }
+
+  @override
+  String aiOpeningQuestion(String p0) {
+    return 'How can I spend less on $p0?';
+  }
 }

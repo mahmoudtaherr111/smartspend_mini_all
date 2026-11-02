@@ -247,6 +247,8 @@ void main() {
     // The number reads left to right inside the Arabic card.
     expect(find.text(inlineName('01012345678')), findsOneWidget);
 
+    await tester.ensureVisible(find.text('تسجيل الخروج'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('تسجيل الخروج'));
     await tester.pumpAndSettle();
 

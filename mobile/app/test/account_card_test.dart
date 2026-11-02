@@ -69,6 +69,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap sign-out
+      await tester.ensureVisible(find.text('تسجيل الخروج'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('تسجيل الخروج'));
       await tester.pumpAndSettle();
 
@@ -120,6 +122,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap sign-out
+      await tester.ensureVisible(find.text('تسجيل الخروج'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('تسجيل الخروج'));
       await tester.pumpAndSettle();
 
@@ -145,6 +149,8 @@ void main() {
       expect(app.ledgerStore.ledger.outbox, hasLength(1));
 
       // 2. User taps sign-out again and confirms
+      await tester.ensureVisible(find.text('تسجيل الخروج'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('تسجيل الخروج'));
       await tester.pumpAndSettle();
 

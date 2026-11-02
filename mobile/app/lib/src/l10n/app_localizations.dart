@@ -6793,6 +6793,30 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'افتح اشتراكاتي في المتجر'**
   String get cancelPlanOpenStore;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsEntry.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات والشكل والأمان وبياناتك'**
+  String get settingsEntry;
+
+  /// No description provided for @aiOpeningMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت {p0} الشهر ده، وأكبر بند عندك {p1}.'**
+  String aiOpeningMonth(String p0, String p1);
+
+  /// No description provided for @aiOpeningQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزاي أقلل صرفي على {p0}؟'**
+  String aiOpeningQuestion(String p0);
 }
 
 class _AppLocalizationsDelegate

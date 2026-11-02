@@ -3845,4 +3845,20 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cancelPlanOpenStore => 'افتح اشتراكاتي في المتجر';
+
+  @override
+  String get settingsTitle => 'الإعدادات';
+
+  @override
+  String get settingsEntry => 'الإشعارات والشكل والأمان وبياناتك';
+
+  @override
+  String aiOpeningMonth(String p0, String p1) {
+    return 'صرفت $p0 الشهر ده، وأكبر بند عندك $p1.';
+  }
+
+  @override
+  String aiOpeningQuestion(String p0) {
+    return 'إزاي أقلل صرفي على $p0؟';
+  }
 }

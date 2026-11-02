@@ -1,20 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../account/profile_screen.dart';
 import '../auth/session_controller.dart';
 import '../ledger/offline/outbox.dart';
 
-/// Who is signed in on this phone, and the way out.
-class AccountCard extends ConsumerStatefulWidget {
+/// Who is signed in on this phone; it opens their profile.
+class AccountCard extends ConsumerWidget {
   const AccountCard({super.key});
 
   @override
-  ConsumerState<AccountCard> createState() => _AccountCardState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.smartSpendColors;
+    final textTheme = Theme.of(context).textTheme;
+    final user = switch (ref.watch(sessionProvider)) {
+      SignedIn(:final user) => user,
+      _ => null,
+    };
+    // A phone number or an email reads left to right inside the Arabic card, aligned with the rest of it.
+    final contact = user?.phone ?? user?.email;
+    if (user == null) return const SizedBox.shrink();
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.go(ProfileScreen.path),
+        child: Padding(
+          padding: const EdgeInsets.all(SmartSpendSpacing.lg),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: SmartSpendSpacing.xl,
+                backgroundColor: colors.accent.withValues(alpha: 0.14),
+                child: Text(
+                  user.name.isEmpty ? '👤' : user.name.characters.first,
+                  style: textTheme.titleLarge?.copyWith(color: colors.accent),
+                ),
+              ),
+              const SizedBox(width: SmartSpendSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(user.name, style: textTheme.titleMedium),
+                    if (contact != null)
+                      Text(
+                        inlineName(contact),
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colors.mutedForeground,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: colors.mutedForeground),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _AccountCardState extends ConsumerState<AccountCard> {
+/// The way out, which warns first about sentences that have not reached the server.
+class SignOutButton extends ConsumerStatefulWidget {
+  const SignOutButton({super.key});
+
+  @override
+  ConsumerState<SignOutButton> createState() => _SignOutButtonState();
+}
+
+class _SignOutButtonState extends ConsumerState<SignOutButton> {
   bool _signingOut = false;
 
   Future<void> _signOut() async {
@@ -37,50 +96,12 @@ class _AccountCardState extends ConsumerState<AccountCard> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = context.smartSpendColors;
-    final textTheme = Theme.of(context).textTheme;
-    final user = switch (ref.watch(sessionProvider)) {
-      SignedIn(:final user) => user,
-      _ => null,
-    };
-    // A phone number or an email reads left to right inside the Arabic card, aligned with the rest of it.
-    final contact = user?.phone ?? user?.email;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(SmartSpendSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.accountTitle,
-              style: textTheme.labelLarge?.copyWith(
-                color: colors.mutedForeground,
-              ),
-            ),
-            if (user != null) ...[
-              const SizedBox(height: SmartSpendSpacing.sm),
-              Text(user.name, style: textTheme.titleMedium),
-              if (contact != null)
-                Text(
-                  inlineName(contact),
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colors.mutedForeground,
-                  ),
-                ),
-            ],
-            const SizedBox(height: SmartSpendSpacing.lg),
-            SmartSpendButton(
-              label: l10n.signOut,
-              variant: ButtonVariant.secondary,
-              icon: Icons.logout,
-              busy: _signingOut,
-              onPressed: _signOut,
-            ),
-          ],
-        ),
-      ),
+    return SmartSpendButton(
+      label: AppLocalizations.of(context).signOut,
+      variant: ButtonVariant.secondary,
+      icon: Icons.logout,
+      busy: _signingOut,
+      onPressed: _signOut,
     );
   }
 }

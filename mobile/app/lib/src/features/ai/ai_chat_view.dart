@@ -4,7 +4,9 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 
+import '../ledger/ledger_providers.dart';
 import '../ledger/offline/outbox.dart';
+import '../stats/stats_providers.dart';
 import 'ai_action_card.dart';
 import 'ai_models.dart';
 import 'ai_providers.dart';
@@ -212,9 +214,28 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     );
   }
 
+  /// The chat opens on the person's own month and the question it raises, read from the statistics the app already
+  /// has, so it costs no model call. Null until something was recorded this month.
+  ({String text, String question})? _opening() {
+    final month = ref.watch(currentMonthProvider).value;
+    final stats = month == null
+        ? null
+        : ref.watch(monthStatsByMonthProvider(month)).value;
+    if (stats == null || stats.expense <= 0 || stats.categories.isEmpty) {
+      return null;
+    }
+    final top = stats.categories.reduce((a, b) => a.amount >= b.amount ? a : b);
+    final l10n = AppLocalizations.of(context);
+    return (
+      text: l10n.aiOpeningMonth(moneyText(context, stats.expense), top.name),
+      question: l10n.aiOpeningQuestion(top.name),
+    );
+  }
+
   Widget _buildQuickQuestionsHeader(AsyncValue<List<String>> questionsAsync) {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
+    final opening = _opening();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.lg),
       child: Column(
@@ -234,10 +255,11 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
           Text(
-            AppLocalizations.of(context).aiAskAboutYourSpendingOr,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colors.mutedForeground,
-            ),
+            opening?.text ??
+                AppLocalizations.of(context).aiAskAboutYourSpendingOr,
+            style: opening == null
+                ? textTheme.bodyMedium?.copyWith(color: colors.mutedForeground)
+                : textTheme.bodyLarge,
           ),
           if (questionsAsync.value?.isNotEmpty ?? false) ...[
             const SizedBox(height: SmartSpendSpacing.lg),
@@ -254,7 +276,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               spacing: SmartSpendSpacing.sm,
               runSpacing: SmartSpendSpacing.sm,
               children: [
-                for (final q in questions)
+                for (final q in [?opening?.question, ...questions])
                   ActionChip(
                     label: Text(q),
                     onPressed: () {

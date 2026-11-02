@@ -1175,5 +1175,9 @@
   "appInstallmentLeft": "{p0}: {p1} of {p2} left",
   "aiSend": "Send",
   "cancelPlanAtStore": "A subscription is cancelled at the store you bought it from, not in the app. We will open your subscriptions page there; tap cancel on SmartSpend.",
-  "cancelPlanOpenStore": "Open my subscriptions in the store"
+  "cancelPlanOpenStore": "Open my subscriptions in the store",
+  "settingsTitle": "Settings",
+  "settingsEntry": "Notifications, look, security and your data",
+  "aiOpeningMonth": "You spent {p0} this month. Your biggest item is {p1}.",
+  "aiOpeningQuestion": "How can I spend less on {p0}?"
 }

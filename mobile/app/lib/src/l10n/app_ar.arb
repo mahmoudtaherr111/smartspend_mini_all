@@ -2183,5 +2183,11 @@
   },
   "aiSend": "ابعت",
   "cancelPlanAtStore": "الاشتراك بيتلغي من المتجر اللي اشتركت منه، مش من التطبيق. هنفتحلك صفحة اشتراكاتك هناك، ودوس إلغاء على SmartSpend.",
-  "cancelPlanOpenStore": "افتح اشتراكاتي في المتجر"
+  "cancelPlanOpenStore": "افتح اشتراكاتي في المتجر",
+  "settingsTitle": "الإعدادات",
+  "settingsEntry": "الإشعارات والشكل والأمان وبياناتك",
+  "aiOpeningMonth": "صرفت {p0} الشهر ده، وأكبر بند عندك {p1}.",
+  "@aiOpeningMonth": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "aiOpeningQuestion": "إزاي أقلل صرفي على {p0}؟",
+  "@aiOpeningQuestion": { "placeholders": { "p0": { "type": "String" } } }
 }
