@@ -694,15 +694,33 @@ export default function Admin() {
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
                   <StatCard
                     icon={<Activity className="w-5 h-5" />}
-                    label="DAU"
+                    label="سجّلوا النهارده"
                     value={founderQuery.data.dau}
                     color="green"
                   />
                   <StatCard
                     icon={<Users className="w-5 h-5" />}
-                    label="WAU"
+                    label="سجّلوا الأسبوع ده"
                     value={founderQuery.data.wau}
                     color="blue"
+                  />
+                  <StatCard
+                    icon={<Users className="w-5 h-5" />}
+                    label="سجلوا (7 أيام)"
+                    value={founderQuery.data.signups7d}
+                    color="blue"
+                  />
+                  <StatCard
+                    icon={<Activity className="w-5 h-5" />}
+                    label="منهم سجّل عملية"
+                    value={founderQuery.data.activated7d}
+                    color="green"
+                  />
+                  <StatCard
+                    icon={<Activity className="w-5 h-5" />}
+                    label="رجعوا الأسبوع ده"
+                    value={`${founderQuery.data.weekReturnPercent}%`}
+                    color="green"
                   />
                   <StatCard
                     icon={<Crown className="w-5 h-5" />}

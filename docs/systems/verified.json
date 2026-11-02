@@ -60,7 +60,7 @@
     },
     "admin": {
       "files": {
-        "api/admin-router.ts": "9a4e368b78d9",
+        "api/admin-router.ts": "c9c4e40d57a8",
         "api/ads-router.ts": "ace6b064f74c",
         "api/analytics-router.ts": "ef70b00b91a8",
         "api/export-router.ts#export.allUsers": "c142aeea8326",
@@ -93,12 +93,12 @@
         "src/components/admin/settings/AdminSettingsShared.tsx": "a310475825d1",
         "src/components/admin/settings/AdminSmsAiSection.tsx": "ec8a865da902",
         "src/components/admin/settings/AdminVoiceCallSection.tsx": "ae339f527cf2",
-        "src/pages/Admin.tsx": "6dbe6a2f35fb",
+        "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-02 af230467",
-      "arabic": "6a2e1c935ece",
-      "arabicChecked": "2026-11-02 af230467"
+      "checked": "2026-11-02 add3d763",
+      "arabic": "6eaa6e120157",
+      "arabicChecked": "2026-11-02 add3d763"
     },
     "ai-center": {
       "files": {

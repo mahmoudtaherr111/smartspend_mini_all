@@ -53,6 +53,7 @@ import {
   count,
   and,
   gte,
+  lt,
   lte,
   sum,
   inArray,
@@ -1369,7 +1370,7 @@ export const adminRouter = router({
       return { success: true, message: "تم حذف الكود" };
     }),
 
-  /** Founder / ops: DAU, Pro subs, token burn estimate */
+  /** Founder / ops: who records, who signs up and stays, Pro subs, token burn estimate */
   getFounderMetrics: adminProcedure.query(async () => {
     // Cairo's midnight, not the server's (golden rule 6).
     const today = startOfBusinessDay();
@@ -1388,22 +1389,64 @@ export const adminRouter = router({
       }
     };
 
-    const dau = await safeCount(() =>
-      db
-        .select({
-          count: sql<number>`COUNT(DISTINCT CONCAT(${sessions.userType}, ':', ${sessions.userId}))`,
-        })
-        .from(sessions)
-        .where(gte(sessions.createdAt, today)),
-    );
+    const twoWeeksAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const recordersSince = (since: Date) =>
+      safeCount(() =>
+        db
+          .select({
+            count: sql<number>`COUNT(DISTINCT CONCAT(${expenses.userType}, ':', ${expenses.userId}))`,
+          })
+          .from(expenses)
+          .where(gte(expenses.date, since)),
+      );
 
-    const wau = await safeCount(() =>
+    // Who used the product, measured by what they recorded: a session stays open for weeks and says nothing.
+    const dau = await recordersSince(today);
+    const wau = await recordersSince(weekAgo);
+
+    // The launch questions: do people who sign up record anything, and do those who recorded come back?
+    const signedUp = (table: typeof users | typeof localUsers, userType: "oauth" | "local") =>
+      Promise.all([
+        safeCount(() =>
+          db.select({ count: count() }).from(table).where(gte(table.createdAt, weekAgo)),
+        ),
+        safeCount(() =>
+          db
+            .select({ count: count() })
+            .from(table)
+            .where(
+              and(
+                gte(table.createdAt, weekAgo),
+                sql`EXISTS (SELECT 1 FROM ${expenses} WHERE ${expenses.userId} = ${table.id} AND ${expenses.userType} = ${userType})`,
+              ),
+            ),
+        ),
+      ]);
+    const [[oauthSignups, oauthActivated], [localSignups, localActivated]] = await Promise.all([
+      signedUp(users, "oauth"),
+      signedUp(localUsers, "local"),
+    ]);
+    const lastWeekRecorders = await safeCount(() =>
       db
         .select({
-          count: sql<number>`COUNT(DISTINCT CONCAT(${sessions.userType}, ':', ${sessions.userId}))`,
+          count: sql<number>`COUNT(DISTINCT CONCAT(${expenses.userType}, ':', ${expenses.userId}))`,
         })
-        .from(sessions)
-        .where(gte(sessions.createdAt, weekAgo)),
+        .from(expenses)
+        .where(and(gte(expenses.date, twoWeeksAgo), lt(expenses.date, weekAgo))),
+    );
+    const returned = await safeCount(() =>
+      db
+        .select({
+          count: sql<number>`COUNT(DISTINCT CONCAT(${expenses.userType}, ':', ${expenses.userId}))`,
+        })
+        .from(expenses)
+        .where(
+          and(
+            gte(expenses.date, twoWeeksAgo),
+            lt(expenses.date, weekAgo),
+            sql`EXISTS (SELECT 1 FROM expenses later WHERE later.user_id = ${expenses.userId} AND later.user_type = ${expenses.userType} AND later.date >= ${weekAgo})`,
+          ),
+        ),
     );
 
     const newProSubs7d = await safeCount(() =>
@@ -1423,6 +1466,9 @@ export const adminRouter = router({
         .select({ count: count() })
         .from(proSubscriptions)
         .where(eq(proSubscriptions.status, "active")),
+    );
+    const activeStoreSubs = await safeCount(() =>
+      db.select({ count: count() }).from(storePurchases).where(eq(storePurchases.status, "active")),
     );
 
     let tokenTotal = 0;
@@ -1458,7 +1504,10 @@ export const adminRouter = router({
       dau,
       wau,
       newProSubs7d,
-      activeProSubs,
+      activeProSubs: activeProSubs + activeStoreSubs,
+      signups7d: oauthSignups + localSignups,
+      activated7d: oauthActivated + localActivated,
+      weekReturnPercent: lastWeekRecorders === 0 ? 0 : Math.round((returned / lastWeekRecorders) * 100),
       estimatedTokensUsed: tokenTotal,
       upgradeEvents,
       openTickets,

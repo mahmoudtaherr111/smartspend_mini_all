@@ -644,9 +644,10 @@ model {
   smartspend.api.trpc.admin.getDashboardStats -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.admin.getDashboardStats -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.admin.getDiscountCodes -[reads]-> smartspend.mysql.discount_codes
+  smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.pro_subscriptions
-  smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.sessions
+  smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.store_purchases
   smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.support_tickets
   smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.admin.getFounderMetrics -[uses]-> smartspend.api.modules.platform
