@@ -2136,7 +2136,7 @@ model {
       }
     }
     pro = router 'pro' {
-      description 'api/pro-router.ts — 8 procedures.'
+      description 'api/pro-router.ts — 9 procedures.'
       metadata {
         file 'api/pro-router.ts'
       }
@@ -2198,6 +2198,16 @@ model {
           file 'api/pro-router.ts'
           builder 'authedProcedure'
           procedureKind 'mutation'
+        }
+      }
+      storeBilling = procedure 'pro.storeBilling' {
+        #query #authed #uncalled
+        technology 'authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/pro-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
         }
       }
       upgrade = procedure 'pro.upgrade' {

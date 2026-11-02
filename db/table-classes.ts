@@ -72,6 +72,7 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   referrals: "A",
   pro_subscriptions: "A",
   store_purchases: "A",
+  store_events: "E",
   seo_pages: "A",
   system_settings: "A",
   user_profiles: "A",

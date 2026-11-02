@@ -12,9 +12,11 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `AI_GATEWAY_SECRET` | no | — | `api/lib/provider-key-crypto.ts` |
 | `AI_GATEWAY_SECRET_PREVIOUS` | no | — | `api/lib/provider-key-crypto.ts` |
 | `ALLOWED_ORIGINS` | no | — | `api/lib/origin-policy.ts` |
+| `APPLE_BUNDLE_ID` | no | `com.smartspend.app` | `api/lib/store-billing/apple-app-store-verifier.ts` |
+| `APPLE_STORE_BILLING_ENABLED` | no | — | `api/lib/store-billing/apple-app-store-verifier.ts` |
 | `APP_TIMEZONE` | no | `Africa/Cairo` | `api/boot.ts`, `api/lib/app-time.ts`, `api/lib/seasons.ts` |
 | `APP_URL` | no | `http://localhost:5173` | `api/lib/origin-policy.ts`, `api/notification-engine.ts`, `api/webauthn-router.ts` |
-| `BILLING_SIMULATE` | no | — | `api/lib/store-billing/apple-app-store-verifier.ts`, `api/lib/store-billing/google-play-verifier.ts`, `api/pro-router.ts` |
+| `BILLING_SIMULATE` | no | — | `api/pro-router.ts` |
 | `DATABASE_URL` | yes | — | `api/queries/connection.ts` |
 | `ENABLE_CRONS` | no | — | `api/boot.ts` |
 | `FIREBASE_CLIENT_EMAIL` | no | — | `api/services/firebase.ts` |
@@ -30,16 +32,19 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `GOOGLE_CLIENT_ID` | yes | — | `api/auth-router.ts` |
 | `GOOGLE_CLIENT_SECRET` | yes | — | `api/auth-router.ts` |
 | `GOOGLE_IOS_CLIENT_IDS` | no | — | — |
-| `GOOGLE_PLAY_WEBHOOK_SECRET` | no | — | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_PACKAGE_NAME` | no | `com.smartspend.app` | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_PUBSUB_AUDIENCE` | no | — | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT` | no | — | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | no | — | `api/lib/store-billing/google-play-verifier.ts` |
 | `GOOGLE_REDIRECT_URI` | no | `http://localhost:3000/api/auth/google/callback` | `api/auth-router.ts` |
 | `GROQ_API_KEY` | no | — | `api/ai-router.ts` |
-| `JWT_SECRET` | yes | — | `api/lib/capture/memory.ts`, `api/lib/login-protection.ts`, `api/lib/provider-key-crypto.ts`, `api/lib/session-validation.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` |
+| `JWT_SECRET` | yes | — | `api/lib/capture/memory.ts`, `api/lib/login-protection.ts`, `api/lib/provider-key-crypto.ts`, `api/lib/session-validation.ts`, `api/lib/store-billing/ledger.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` |
 | `LOGIN_ACCOUNT_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOGIN_IP_BURST_MAX_FAILURES` | no | `10` | `api/lib/login-protection.ts` |
 | `LOGIN_IP_MAX_FAILURES` | no | `50` | `api/lib/login-protection.ts` |
 | `LOGIN_PAIR_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOG_SLOW_QUERIES` | no | `true` | `api/queries/connection.ts` |
-| `NODE_ENV` | no | `development` | `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/lib/store-billing/apple-app-store-verifier.ts`, `api/lib/store-billing/google-play-verifier.ts`, `api/local-auth-utils.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
+| `NODE_ENV` | no | `development` | `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-utils.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
 | `NVIDIA_API_KEY` | no | — | `api/ai-router.ts` |
 | `OWNER_EMAIL` | no | — | — |
 | `PAYMOB_API_KEY` | no | — | `api/lib/paymob.ts` |

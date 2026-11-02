@@ -1,263 +1,197 @@
 /**
- * Google Play Developer API & RTDN Verifier
- * Authoritative Specifications: ORIGINAL_REQUEST.md R2 & PROJECT.md § Interface Contracts #2
+ * Google Play: who may call the webhook, and what a purchase really is.
+ *
+ * Two rules. The webhook is believed only after its Google-signed OIDC token is verified, and even then a
+ * notification only says "look at this purchase": its state always comes from the Play Developer API, so nothing in
+ * a request can extend a subscription.
  */
-
+import { createHash } from "node:crypto";
+import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT, type JWTVerifyGetKey } from "jose";
 import { env } from "../env";
+import { STORE_PRODUCT_IDS, type EntitlementState } from "./entitlement";
 
-export const ALLOWED_GOOGLE_PACKAGES = ["com.smartspend.app", "com.smartspend.app.dev"] as const;
+const GOOGLE_CERTS_URL = new URL("https://www.googleapis.com/oauth2/v3/certs");
+const GOOGLE_ISSUERS = ["https://accounts.google.com", "accounts.google.com"];
+const TOKEN_URL = "https://oauth2.googleapis.com/token";
+const PUBLISHER_SCOPE = "https://www.googleapis.com/auth/androidpublisher";
+const PUBLISHER_API = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications";
 
-export const GOOGLE_PLAY_NOTIFICATION_TYPES = {
-  SUBSCRIPTION_RECOVERED: 1,
-  SUBSCRIPTION_RENEWED: 2,
-  SUBSCRIPTION_CANCELED: 3,
-  SUBSCRIPTION_PURCHASED: 4,
-  SUBSCRIPTION_ON_HOLD: 5,
-  SUBSCRIPTION_IN_GRACE_PERIOD: 6,
-  SUBSCRIPTION_RESTARTED: 7,
-  SUBSCRIPTION_PRICE_CHANGE_CONFIRMED: 8,
-  SUBSCRIPTION_DEFERRED: 9,
-  SUBSCRIPTION_PAUSED: 10,
-  SUBSCRIPTION_PAUSE_SCHEDULE_CHANGED: 11,
-  SUBSCRIPTION_REVOKED: 12,
-  SUBSCRIPTION_EXPIRED: 13,
-} as const;
+/** The Play notification that means the money went back. Its v2 state reads only as expired. */
+const SUBSCRIPTION_REVOKED = 12;
 
-export interface GooglePlaySubscriptionNotification {
-  version: string;
-  notificationType: number;
-  purchaseToken: string;
-  subscriptionId: string;
+export function isGooglePlayConfigured(): boolean {
+  return Boolean(
+    env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON &&
+      env.GOOGLE_PLAY_PUBSUB_AUDIENCE &&
+      env.GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT,
+  );
 }
 
-export interface GooglePlayDeveloperNotification {
-  version: string;
-  packageName: string;
-  eventTimeMillis: string;
-  subscriptionNotification?: GooglePlaySubscriptionNotification;
-  testNotification?: {
-    version: string;
-  };
+/** A purchase token can pass 255 characters, so its row is keyed by the token's hash. */
+export function googlePurchaseKey(purchaseToken: string): string {
+  return createHash("sha256").update(purchaseToken).digest("hex");
 }
 
-export interface GooglePlayPubSubMessage {
-  message: {
-    data: string;
-    messageId: string;
-    publishTime: string;
-  };
-  subscription?: string;
-}
-
-/**
- * Validates purchase token format: non-empty, <= 2048 chars, no null bytes.
- */
 export function validateTokenInput(token: string): boolean {
-  if (!token || typeof token !== "string") return false;
-  const trimmed = token.trim();
-  if (trimmed.length === 0) return false;
-  if (token.length > 2048) return false;
-  if (token.includes("\0")) return false;
-  return true;
+  return typeof token === "string" && token.trim().length > 0 && token.length <= 2048 && !token.includes("\0");
 }
 
-/**
- * Checks if package name matches allowed application identifiers.
- */
-export function verifyGooglePackage(packageName: string): boolean {
-  return (ALLOWED_GOOGLE_PACKAGES as readonly string[]).includes(packageName);
-}
+let googleKeys: JWTVerifyGetKey | undefined;
 
-/**
- * Decodes base64 payload from Pub/Sub message data.
- */
-export function decodePubSubData(base64Data: string): GooglePlayDeveloperNotification | null {
+/** Verifies the bearer token Pub/Sub sends: Google's signature, this endpoint's audience, our service account. */
+export async function verifyGooglePlayWebhookAuth(
+  authorization: string | undefined,
+  options: { keys?: JWTVerifyGetKey } = {},
+): Promise<boolean> {
+  if (!env.GOOGLE_PLAY_PUBSUB_AUDIENCE || !env.GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT) return false;
+  if (!authorization?.startsWith("Bearer ")) return false;
+  googleKeys ??= createRemoteJWKSet(GOOGLE_CERTS_URL);
   try {
-    const jsonStr = Buffer.from(base64Data, "base64").toString("utf-8");
-    return JSON.parse(jsonStr);
+    const { payload } = await jwtVerify(authorization.slice("Bearer ".length).trim(), options.keys ?? googleKeys, {
+      issuer: GOOGLE_ISSUERS,
+      audience: env.GOOGLE_PLAY_PUBSUB_AUDIENCE,
+    });
+    return payload.email === env.GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT && payload.email_verified === true;
+  } catch {
+    return false;
+  }
+}
+
+export interface GooglePlayPush {
+  messageId: string;
+  purchaseToken: string;
+  notificationType: number;
+  eventTime: Date;
+}
+
+/** Reads a Pub/Sub push. Null for anything that is not a subscription notification of this app. */
+export function parseGooglePlayPush(body: unknown): GooglePlayPush | null {
+  const message = (body as { message?: { data?: unknown; messageId?: unknown } } | null)?.message;
+  if (typeof message?.data !== "string" || typeof message.messageId !== "string") return null;
+  try {
+    const decoded = JSON.parse(Buffer.from(message.data, "base64").toString("utf8"));
+    const notification = decoded?.subscriptionNotification;
+    if (decoded?.packageName !== env.GOOGLE_PLAY_PACKAGE_NAME || !notification) return null;
+    if (!validateTokenInput(notification.purchaseToken) || typeof notification.notificationType !== "number") {
+      return null;
+    }
+    const eventTime = new Date(Number(decoded.eventTimeMillis));
+    if (Number.isNaN(eventTime.getTime())) return null;
+    return {
+      messageId: message.messageId,
+      purchaseToken: notification.purchaseToken,
+      notificationType: notification.notificationType,
+      eventTime,
+    };
   } catch {
     return null;
   }
 }
 
-export interface ParsedGooglePlayEvent {
-  packageName: string;
-  eventTime: number;
-  messageId: string;
-  purchaseToken: string;
-  subscriptionId: string;
-  notificationType: number;
-  eventType:
-    | "PURCHASE"
-    | "RENEWAL"
-    | "GRACE_PERIOD"
-    | "HOLD"
-    | "CANCEL"
-    | "EXPIRE"
-    | "REFUND"
-    | "REVOKE"
-    | "RECOVER";
+export interface GoogleSubscription {
+  state: EntitlementState;
+  productId: string;
+  expiresAt: Date | null;
+  orderId: string | null;
+  acknowledged: boolean;
+  linkedPurchaseToken: string | null;
+  accountToken: string | null;
 }
 
-/**
- * Parses and verifies an incoming Google Play RTDN Pub/Sub webhook payload.
- * Throws or returns null if package name is forged or payload is invalid.
- */
-export function parseAndVerifyGooglePlayPubSub(
-  body: GooglePlayPubSubMessage
-): ParsedGooglePlayEvent | null {
-  if (!body?.message?.data) {
-    return null;
-  }
+type Fetch = typeof fetch;
 
-  const decoded = decodePubSubData(body.message.data);
-  if (!decoded || !verifyGooglePackage(decoded.packageName)) {
-    return null;
-  }
+let cachedAccess: { token: string; expiresAt: number } | undefined;
 
-  const subNotif = decoded.subscriptionNotification;
-  if (!subNotif) {
-    return null;
-  }
+async function accessToken(fetcher: Fetch): Promise<string> {
+  if (cachedAccess && cachedAccess.expiresAt > Date.now() + 60_000) return cachedAccess.token;
+  const account = JSON.parse(env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON ?? "{}") as {
+    client_email?: string;
+    private_key?: string;
+  };
+  if (!account.client_email || !account.private_key) throw new Error("Google Play service account is not configured");
+  const key = await importPKCS8(account.private_key, "RS256");
+  const assertion = await new SignJWT({ scope: PUBLISHER_SCOPE })
+    .setProtectedHeader({ alg: "RS256" })
+    .setIssuer(account.client_email)
+    .setAudience(TOKEN_URL)
+    .setIssuedAt()
+    .setExpirationTime("1h")
+    .sign(key);
+  const response = await fetcher(TOKEN_URL, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion }),
+  });
+  if (!response.ok) throw new Error(`Google token request failed with ${response.status}`);
+  const body = (await response.json()) as { access_token: string; expires_in: number };
+  cachedAccess = { token: body.access_token, expiresAt: Date.now() + body.expires_in * 1000 };
+  return body.access_token;
+}
 
-  if (!validateTokenInput(subNotif.purchaseToken)) {
-    return null;
-  }
-
-  let eventType: ParsedGooglePlayEvent["eventType"];
-  switch (subNotif.notificationType) {
-    case GOOGLE_PLAY_NOTIFICATION_TYPES.SUBSCRIPTION_PURCHASED:
-      eventType = "PURCHASE";
-      break;
-    case GOOGLE_PLAY_NOTIFICATION_TYPES.SUBSCRIPTION_RENEWED:
-    case GOOGLE_PLAY_NOTIFICATION_TYPES.SUBSCRIPTION_RESTARTED:
-      eventType = "RENEWAL";
-      break;
-    case GOOGLE_PLAY_NOTIFICATION_TYPES.SUBSCRIPTION_RECOVERED:
-      eventType = "RECOVER";
-      break;
-    case GOOGLE_PLAY_NOTIFICATION_TYPES.SUBSCRIPTION_IN_GRACE_PERIOD:
-      eventType = "GRACE_PERIOD";
-      break;
-    case GOOGLE_PLAY_NOTIFICATION_TYPES.SUBSCRIPTION_ON_HOLD:
-      eventType = "HOLD";
-      break;
-    case GOOGLE_PLAY_NOTIFICATION_TYPES.SUBSCRIPTION_CANCELED:
-      eventType = "CANCEL";
-      break;
-    case GOOGLE_PLAY_NOTIFICATION_TYPES.SUBSCRIPTION_EXPIRED:
-      eventType = "EXPIRE";
-      break;
-    case GOOGLE_PLAY_NOTIFICATION_TYPES.SUBSCRIPTION_REVOKED:
-      eventType = "REFUND";
-      break;
+function readState(subscriptionState: string, notificationType?: number): EntitlementState {
+  if (notificationType === SUBSCRIPTION_REVOKED) return "refunded";
+  switch (subscriptionState) {
+    case "SUBSCRIPTION_STATE_ACTIVE":
+      return "active";
+    case "SUBSCRIPTION_STATE_IN_GRACE_PERIOD":
+      return "in_grace_period";
+    case "SUBSCRIPTION_STATE_ON_HOLD":
+      return "on_hold";
+    case "SUBSCRIPTION_STATE_PAUSED":
+      return "paused";
+    case "SUBSCRIPTION_STATE_CANCELED":
+      return "cancelled";
+    case "SUBSCRIPTION_STATE_PENDING":
+      return "pending";
     default:
-      eventType = "PURCHASE";
-      break;
+      return "expired";
   }
+}
 
+/** The purchase as Google records it, or null when Google does not know the token. */
+export async function fetchGoogleSubscription(
+  purchaseToken: string,
+  options: { notificationType?: number; fetcher?: Fetch } = {},
+): Promise<GoogleSubscription | null> {
+  const fetcher = options.fetcher ?? fetch;
+  const url = `${PUBLISHER_API}/${env.GOOGLE_PLAY_PACKAGE_NAME}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`;
+  const response = await fetcher(url, {
+    headers: { authorization: `Bearer ${await accessToken(fetcher)}` },
+  });
+  if (response.status === 404 || response.status === 410) return null;
+  if (!response.ok) throw new Error(`Google Play answered ${response.status}`);
+  const body = (await response.json()) as {
+    subscriptionState?: string;
+    acknowledgementState?: string;
+    latestOrderId?: string;
+    linkedPurchaseToken?: string;
+    externalAccountIdentifiers?: { obfuscatedExternalAccountId?: string };
+    lineItems?: { productId?: string; expiryTime?: string }[];
+  };
+  const item = body.lineItems?.[0];
+  if (!item?.productId || !(STORE_PRODUCT_IDS as readonly string[]).includes(item.productId)) return null;
   return {
-    packageName: decoded.packageName,
-    eventTime: Number(decoded.eventTimeMillis) || Date.now(),
-    messageId: body.message.messageId,
-    purchaseToken: subNotif.purchaseToken,
-    subscriptionId: subNotif.subscriptionId,
-    notificationType: subNotif.notificationType,
-    eventType,
+    state: readState(body.subscriptionState ?? "", options.notificationType),
+    productId: item.productId,
+    expiresAt: item.expiryTime ? new Date(item.expiryTime) : null,
+    orderId: body.latestOrderId ?? null,
+    acknowledged: body.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+    linkedPurchaseToken: body.linkedPurchaseToken ?? null,
+    accountToken: body.externalAccountIdentifiers?.obfuscatedExternalAccountId ?? null,
   };
 }
 
-/**
- * Server-side purchase token verification.
- * Strictly checks token validity and rejects malformed or unverified tokens.
- */
-export async function verifyGooglePlayPurchaseToken(
-  token: string,
-  productId: string
-): Promise<{ valid: boolean; orderId?: string; expiryTimeMillis?: number }> {
-  if (!validateTokenInput(token)) {
-    return { valid: false };
-  }
-
-  // In production, enforce genuine Google Play Developer API verification
-  if (env.NODE_ENV === "production" && env.BILLING_SIMULATE !== "true") {
-    // Fail closed in production until official Google Play service account keys are provisioned
-    return { valid: false };
-  }
-
-  // In development / test mode: reject arbitrary strings.
-  // Only accept designated mock tokens
-  const isDesignatedMockToken =
-    token.startsWith("google_play_mock_") ||
-    token.startsWith("google_play_test_") ||
-    token.startsWith("GPA.") ||
-    token.startsWith("valid_purchase_token_") ||
-    token.startsWith("tok_");
-
-  if (!isDesignatedMockToken) {
-    return { valid: false };
-  }
-
-  const expiryTimeMillis = Date.now() + 30 * 24 * 60 * 60 * 1000;
-  return {
-    valid: true,
-    orderId: `GPA.${token.substring(0, 16)}`,
-    expiryTimeMillis,
-  };
-}
-
-/**
- * Authenticates incoming Google Play RTDN webhook requests (DEF-03).
- * Verifies either:
- * 1. Configured webhook secret token header (x-goog-webhook-token or Bearer token matching GOOGLE_PLAY_WEBHOOK_SECRET).
- * 2. Authentic Google Cloud Pub/Sub Bearer JWT OIDC token signed by Google (claims.iss = https://accounts.google.com).
- */
-export function verifyGooglePlayWebhookAuth(headers: Record<string, string | undefined> | Headers | any): boolean {
-  const secret = env.GOOGLE_PLAY_WEBHOOK_SECRET;
-
-  const getHeader = (name: string): string | undefined => {
-    if (!headers) return undefined;
-    if (typeof headers.get === "function") {
-      return headers.get(name) ?? headers.get(name.toLowerCase()) ?? undefined;
-    }
-    return headers[name] ?? headers[name.toLowerCase()] ?? undefined;
-  };
-
-  const authHeader = getHeader("authorization");
-  const tokenHeader = getHeader("x-goog-webhook-token");
-
-  // Check configured secret header or Bearer secret
-  if (secret && secret.length > 0) {
-    if (tokenHeader === secret) return true;
-    if (authHeader === `Bearer ${secret}`) return true;
-  }
-
-  // Check Bearer Google Cloud Pub/Sub JWT
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.slice(7).trim();
-    const parts = token.split(".");
-    if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
-      try {
-        const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"));
-        const isGoogleIssuer =
-          payload.iss === "https://accounts.google.com" || payload.iss === "accounts.google.com";
-        const email = String(payload.email || "");
-        if (isGoogleIssuer || email.includes("gserviceaccount.com")) {
-          if (payload.exp && typeof payload.exp === "number" && payload.exp * 1000 < Date.now()) {
-            return false;
-          }
-          return true;
-        }
-      } catch {
-        return false;
-      }
-    }
-  }
-
-  // In test / development mode when no secret is configured, allow requests from local test runner
-  if (!secret && env.NODE_ENV !== "production") {
-    return true;
-  }
-
-  return false;
+/** Google refunds a subscription that stays unacknowledged for three days. */
+export async function acknowledgeGooglePurchase(
+  purchaseToken: string,
+  productId: string,
+  fetcher: Fetch = fetch,
+): Promise<void> {
+  const url = `${PUBLISHER_API}/${env.GOOGLE_PLAY_PACKAGE_NAME}/purchases/subscriptions/${productId}/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`;
+  const response = await fetcher(url, {
+    method: "POST",
+    headers: { authorization: `Bearer ${await accessToken(fetcher)}`, "content-type": "application/json" },
+    body: "{}",
+  });
+  if (!response.ok) throw new Error(`Google Play acknowledge answered ${response.status}`);
 }

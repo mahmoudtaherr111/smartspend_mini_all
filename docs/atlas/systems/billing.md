@@ -21,7 +21,7 @@ flowchart LR
   subgraph g_api["API, routes and jobs"]
     http__api_webhooks["HTTP /api/webhooks/… · 3 routes"]
     job_daily_subscription_expiry["Job · daily-subscription-expiry"]
-    router_pro["pro API · 8 procedures"]
+    router_pro["pro API · 9 procedures"]
     router_referral["referral API · 4 procedures"]
   end
   subgraph g_modules["Code modules"]
@@ -32,6 +32,7 @@ flowchart LR
     tbl_local_users[("local_users")]
     tbl_pro_subscriptions[("pro_subscriptions")]
     tbl_referrals[("referrals")]
+    tbl_store_events[("store_events")]
     tbl_store_purchases[("store_purchases")]
     tbl_user_analytics[("user_analytics")]
     tbl_users[("users")]
@@ -41,16 +42,15 @@ flowchart LR
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_platform[["Server platform and data (system)"]]
   http__api_webhooks --> mod_billing
-  http__api_webhooks --> sys_accounts
   http__api_webhooks --> sys_platform
-  http__api_webhooks ==> tbl_store_purchases
   job_daily_subscription_expiry --> sys_platform
   mod_billing --> ext_google_oauth
   mod_billing --> ext_paymob
   mod_billing --> sys_accounts
   mod_billing --> sys_platform
-  mod_billing -.-> tbl_store_purchases
   mod_billing ==> tbl_pro_subscriptions
+  mod_billing ==> tbl_store_events
+  mod_billing ==> tbl_store_purchases
   mod_billing ==> tbl_user_analytics
   page_Pro --> router_pro
   page_Pro --> router_referral
@@ -117,9 +117,10 @@ Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it 
 | `pro.listSubscriptions` | query | `adminProcedure` | `pro_subscriptions` | — | — |
 | `pro.myPlan` | query | `authedProcedure` | `local_users`, `pro_subscriptions`, `store_purchases`, `users` | `pro_subscriptions`, `store_purchases` | `Home`, `More`, `Pro` |
 | `pro.planCatalog` | query | `authedProcedure` | — | — | `More`, `Pro` |
-| `pro.restorePurchases` | mutation | `authedProcedure` | `store_purchases` | `store_purchases` | — |
+| `pro.restorePurchases` | mutation | `authedProcedure` | — | — | — |
+| `pro.storeBilling` | query | `authedProcedure` | — | — | — |
 | `pro.upgrade` | mutation | `authedProcedure` | — | — | `More`, `Pro` |
-| `pro.verifyStorePurchase` | mutation | `authedProcedure` | `store_purchases` | `store_purchases` | — |
+| `pro.verifyStorePurchase` | mutation | `authedProcedure` | — | — | — |
 | `referral.applyCode` | mutation | `authedProcedure` | `local_users`, `referrals`, `users` | `local_users`, `referrals`, `users` | `More`, `Pro` |
 | `referral.listAll` | query | `adminProcedure` | `referrals` | — | — |
 | `referral.myCode` | query | `authedProcedure` | `discount_codes`, `local_users`, `referrals`, `users` | `local_users`, `users` | `More`, `Pro` |
@@ -144,7 +145,8 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `local_users` | A | `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
 | `pro_subscriptions` | A | `billing`, `pro.cancel`, `pro.myPlan` | `billing`, `pro.listSubscriptions`, `pro.myPlan` |
 | `referrals` | A | `referral.applyCode` | `referral.applyCode`, `referral.listAll`, `referral.myCode`, `referral.myReferrals` |
-| `store_purchases` | A | `POST /api/webhooks/apple-asn`, `POST /api/webhooks/google-play`, `pro.myPlan`, `pro.restorePurchases`, `pro.verifyStorePurchase` | `POST /api/webhooks/apple-asn`, `POST /api/webhooks/google-play`, `billing`, `pro.myPlan`, `pro.restorePurchases`, `pro.verifyStorePurchase` |
+| `store_events` | E | `billing` | — |
+| `store_purchases` | A | `billing`, `pro.myPlan` | `billing`, `pro.myPlan` |
 | `user_analytics` | E | `billing` | — |
 | `users` | A | `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
 
@@ -165,9 +167,13 @@ Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [S
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
-| `BILLING_SIMULATE` | yes | `api/lib/store-billing/apple-app-store-verifier.ts`, `api/lib/store-billing/google-play-verifier.ts` |
-| `GOOGLE_PLAY_WEBHOOK_SECRET` | yes | `api/lib/store-billing/google-play-verifier.ts` |
-| `NODE_ENV` | yes | `api/lib/store-billing/apple-app-store-verifier.ts`, `api/lib/store-billing/google-play-verifier.ts` |
+| `APPLE_BUNDLE_ID` | yes | `api/lib/store-billing/apple-app-store-verifier.ts` |
+| `APPLE_STORE_BILLING_ENABLED` | yes | `api/lib/store-billing/apple-app-store-verifier.ts` |
+| `GOOGLE_PLAY_PACKAGE_NAME` | yes | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_PUBSUB_AUDIENCE` | yes | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT` | yes | `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | yes | `api/lib/store-billing/google-play-verifier.ts` |
+| `JWT_SECRET` | yes | `api/lib/store-billing/ledger.ts` |
 | `PAYMOB_API_KEY` | yes | `api/lib/paymob.ts` |
 | `PAYMOB_IFRAME_ID` | yes | `api/lib/paymob.ts` |
 | `PAYMOB_INTEGRATION_ID` | yes | `api/lib/paymob.ts` |
@@ -186,10 +192,10 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/paymob.ts`
 - `api/lib/plan-catalog.ts`
 - `api/lib/store-billing/apple-app-store-verifier.ts`
-- `api/lib/store-billing/entitlement-state-machine.ts`
+- `api/lib/store-billing/entitlement.ts`
 - `api/lib/store-billing/google-play-verifier.ts`
 - `api/lib/store-billing/index.ts`
-- `api/lib/store-billing/promo-codes.ts`
+- `api/lib/store-billing/ledger.ts`
 - `api/lib/subscription-service.ts`
 - `api/pro-router.ts`
 - `api/referral-router.ts`

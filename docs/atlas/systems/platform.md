@@ -130,7 +130,6 @@ flowchart LR
   mod_api_core -.-> tbl_users
   mod_api_core ==> tbl_auth_challenges
   mod_api_core ==> tbl_classification_logs
-  mod_api_core ==> tbl_store_purchases
   mod_api_routers --> ext_fireworks
   mod_api_routers --> ext_gemini
   mod_api_routers --> ext_google_oauth
@@ -332,7 +331,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `scheduled_cashflows` | C | `api-routers` | `api-routers` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
 | `sessions` | D | — | `api-routers` |
-| `store_purchases` | A | `api-core`, `api-routers`, `jobs` | `api-core`, `api-routers`, `jobs` |
+| `store_purchases` | A | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `subscription_catalog` | A | `api-routers` | `api-routers` |
 | `support_tickets` | A | `api-routers` | `api-routers` |
 | `system_settings` | A | `api-routers` | `api-routers`, `platform` |

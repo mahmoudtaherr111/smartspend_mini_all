@@ -86,7 +86,7 @@ Hono app and server entry points, request context, tRPC procedure builders and t
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/boot.ts` | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `coaching`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | — | `store_purchases` | `auth_challenges`, `classification_logs`, `store_purchases` |
+| `api/boot.ts` | `ai-memory`, `ai-providers`, `api-routers`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `coaching`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | — | — | `auth_challenges`, `classification_logs` |
 | `api/context.ts` | `auth`, `database`, `security` | — | `local_users`, `users` | — |
 | `api/middleware.ts` | `contracts`, `platform`, `security` | — | — | — |
 | `api/router.ts` | `api-routers` | — | — | — |
@@ -218,10 +218,10 @@ Paymob checkout requests, webhook verification settings, the subscription grant 
 | `api/lib/paymob.ts` | `contracts`, `platform` | `paymob` | — | — |
 | `api/lib/plan-catalog.ts` | `contracts`, `platform` | — | — | — |
 | `api/lib/store-billing/apple-app-store-verifier.ts` | `platform` | — | — | — |
-| `api/lib/store-billing/entitlement-state-machine.ts` | `database` | — | `store_purchases` | — |
+| `api/lib/store-billing/entitlement.ts` | — | — | — | — |
 | `api/lib/store-billing/google-play-verifier.ts` | `platform` | `google-oauth` | — | — |
 | `api/lib/store-billing/index.ts` | — | — | — | — |
-| `api/lib/store-billing/promo-codes.ts` | — | — | — | — |
+| `api/lib/store-billing/ledger.ts` | `auth`, `database`, `platform` | — | `pro_subscriptions`, `store_purchases` | `store_events`, `store_purchases` |
 | `api/lib/subscription-service.ts` | `auth`, `contracts`, `database` | — | `pro_subscriptions` | `pro_subscriptions`, `user_analytics` |
 
 ### `ledger` — Ledger writer and aggregates

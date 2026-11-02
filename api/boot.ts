@@ -252,9 +252,6 @@ installProviderHealthReporter();
 // doing it at boot makes a deploy with a new AI_GATEWAY_SECRET enough, without waiting for a model call.
 if (env.NODE_ENV !== "test") {
   void refreshGatewayCache();
-  void import("./lib/store-billing").then(({ globalEntitlementStateMachine }) => {
-    globalEntitlementStateMachine.hydrateFromDb().catch(() => {});
-  });
 }
 
 const app = new Hono();
@@ -627,214 +624,54 @@ app.post("/api/webhooks/whatsapp", async (c) => {
 
 // ─── Store Billing Webhooks (Google Play & Apple App Store) ───
 app.post("/api/webhooks/google-play", async (c) => {
-  const { verifyGooglePlayWebhookAuth, parseAndVerifyGooglePlayPubSub, globalEntitlementStateMachine } = await import(
-    "./lib/store-billing"
-  );
-
-  // Authenticate incoming Google Play RTDN webhook request (DEF-03)
-  if (!verifyGooglePlayWebhookAuth(c.req.raw.headers)) {
-    storeBillingLog.warn({ event: "google_play.webhook.unauthorized" }, "Rejected unauthenticated Google Play RTDN request");
+  const { applyStoreEvent, fetchGoogleSubscription, googlePurchaseKey, parseGooglePlayPush, verifyGooglePlayWebhookAuth } =
+    await import("./lib/store-billing");
+  if (!(await verifyGooglePlayWebhookAuth(c.req.header("authorization")))) {
+    storeBillingLog.warn({ event: "google_play.webhook.unauthorized" }, "Rejected a Google Play notification");
     return c.json({ error: "Unauthorized" }, 401);
   }
+  const push = parseGooglePlayPush(await c.req.json().catch(() => null));
+  // A push that is not ours is acknowledged, or Pub/Sub would deliver it for a week.
+  if (!push) return c.json({ ok: true });
 
-  let body: any;
-  try {
-    const raw = await c.req.text();
-    body = JSON.parse(raw);
-  } catch {
-    return c.json({ error: "Invalid JSON" }, 400);
-  }
-
-  const parsed = parseAndVerifyGooglePlayPubSub(body);
-  if (!parsed) {
-    storeBillingLog.warn({ event: "google_play.webhook.invalid" }, "Rejected forged or malformed Google Play RTDN event");
-    return c.json({ error: "Invalid or forged payload" }, 400);
-  }
-
-  const { db } = await import("./queries/connection");
-  const { storePurchases } = await import("../db/schema");
-  const { eq } = await import("drizzle-orm");
-  const { setPlan } = await import("./lib/access-control");
-
-  const existing = await db
-    .select()
-    .from(storePurchases)
-    .where(eq(storePurchases.originalTransactionId, parsed.purchaseToken))
-    .limit(1);
-
-  // Ensure state machine is synchronized with existing purchase for restart durability (DEF-05)
-  const subKey = `android:${parsed.purchaseToken}`;
-  if (existing[0] && !globalEntitlementStateMachine.getSubscription(subKey)) {
-    globalEntitlementStateMachine.setSubscription(subKey, {
-      platform: "android",
-      originalTxId: parsed.purchaseToken,
-      tokenOrTxId: parsed.purchaseToken,
-      productId: existing[0].storeProductId || parsed.subscriptionId,
-      userId: String(existing[0].userId),
-      userType: (existing[0].userType === "oauth" ? "oauth" : "local") as "local" | "oauth",
-      status: (existing[0].status?.toUpperCase() || "ACTIVE") as any,
-      lastEventTime: existing[0].updatedAt?.getTime() ?? Date.now(),
-      expiresAt: existing[0].expiresAt?.getTime() ?? Date.now() + 30 * 24 * 60 * 60 * 1000,
-    });
-  }
-
-  const userId = existing[0]?.userId ? String(existing[0].userId) : "system";
-  const userType = (existing[0]?.userType as "local" | "oauth") ?? "local";
-
-  const transition = globalEntitlementStateMachine.processStoreEvent({
-    platform: "android",
-    originalTxId: parsed.purchaseToken,
-    tokenOrTxId: parsed.purchaseToken,
-    productId: parsed.subscriptionId,
-    userId,
-    userType,
-    eventType: parsed.eventType,
-    eventTime: parsed.eventTime,
-    eventId: parsed.messageId,
+  const purchase = await fetchGoogleSubscription(push.purchaseToken, { notificationType: push.notificationType });
+  if (!purchase) return c.json({ ok: true });
+  const result = await applyStoreEvent({
+    store: "google_play",
+    purchaseKey: googlePurchaseKey(push.purchaseToken),
+    replacesPurchaseKey: purchase.linkedPurchaseToken ? googlePurchaseKey(purchase.linkedPurchaseToken) : null,
+    purchaseToken: push.purchaseToken,
+    productId: purchase.productId,
+    state: purchase.state,
+    expiresAt: purchase.expiresAt,
+    eventId: push.messageId,
+    eventType: `rtdn:${push.notificationType}`,
+    eventTime: push.eventTime,
+    owner: null,
   });
-
-  if (!transition.success) {
-    storeBillingLog.warn(
-      { event: "google_play.webhook.transition.ignored", reason: transition.reason },
-      "Google Play RTDN webhook transition was not applied",
-    );
-    return c.json({ ok: false, reason: transition.reason }, 200);
-  }
-
-  if (existing[0]) {
-    const updateData: Record<string, unknown> = {
-      status: transition.state.toLowerCase(),
-      rawPayload: {
-        eventType: parsed.eventType,
-        messageId: parsed.messageId,
-        eventId: parsed.messageId,
-        processedEvents: [parsed.messageId ?? `${subKey}:${parsed.eventType}:${parsed.eventTime}`],
-      },
-    };
-
-    // DEF-04: Update storePurchases.expiresAt upon receiving SUBSCRIPTION_RENEWED so pro.myPlan doesn't expire
-    if (parsed.eventType === "RENEWAL" || parsed.notificationType === 2 /* SUBSCRIPTION_RENEWED */) {
-      const currentExpiry = existing[0].expiresAt ? new Date(existing[0].expiresAt).getTime() : Date.now();
-      const baseTime = currentExpiry > Date.now() ? currentExpiry : Date.now();
-      const updatedExpiresAt = new Date(baseTime + 30 * 24 * 60 * 60 * 1000);
-      updateData.expiresAt = updatedExpiresAt;
-    }
-
-    await db
-      .update(storePurchases)
-      .set(updateData)
-      .where(eq(storePurchases.id, existing[0].id));
-
-    if (existing[0].userId) {
-      const uType = (existing[0].userType === "oauth" ? "oauth" : "local") as "oauth" | "local";
-      await setPlan(uType, existing[0].userId, transition.effectivePlan);
-    }
-  }
-
-  storeBillingLog.info(
-    { event: "google_play.webhook.processed", eventType: parsed.eventType, state: transition.state },
-    "Google Play RTDN webhook processed",
-  );
-
-  return c.json({ ok: true, state: transition.state, effectivePlan: transition.effectivePlan });
+  return c.json({ ok: true, outcome: result.outcome });
 });
 
 app.post("/api/webhooks/apple-asn", async (c) => {
-  let body: any;
-  try {
-    const raw = await c.req.text();
-    body = JSON.parse(raw);
-  } catch {
-    return c.json({ error: "Invalid JSON" }, 400);
-  }
-
-  const { parseAndVerifyAppleASN, globalEntitlementStateMachine } = await import(
-    "./lib/store-billing"
-  );
-  const parsed = parseAndVerifyAppleASN(body);
+  const { applyStoreEvent, parseAndVerifyAppleASN } = await import("./lib/store-billing");
+  const parsed = parseAndVerifyAppleASN(await c.req.json().catch(() => null));
   if (!parsed) {
-    storeBillingLog.warn({ event: "apple_asn.webhook.invalid" }, "Rejected forged or malformed Apple ASN v2 event");
-    return c.json({ error: "Invalid or forged payload" }, 400);
+    storeBillingLog.warn({ event: "apple_asn.webhook.rejected" }, "Rejected an App Store notification");
+    return c.json({ error: "Invalid notification" }, 400);
   }
-
-  const { db } = await import("./queries/connection");
-  const { storePurchases } = await import("../db/schema");
-  const { eq } = await import("drizzle-orm");
-  const { setPlan } = await import("./lib/access-control");
-
-  const existing = await db
-    .select()
-    .from(storePurchases)
-    .where(eq(storePurchases.originalTransactionId, parsed.originalTransactionId))
-    .limit(1);
-
-  // Sync state machine if restarted (DEF-05)
-  const appleSubKey = `ios:${parsed.originalTransactionId}`;
-  if (existing[0] && !globalEntitlementStateMachine.getSubscription(appleSubKey)) {
-    globalEntitlementStateMachine.setSubscription(appleSubKey, {
-      platform: "ios",
-      originalTxId: parsed.originalTransactionId,
-      tokenOrTxId: parsed.transactionId,
-      productId: existing[0].storeProductId || parsed.productId,
-      userId: String(existing[0].userId),
-      userType: (existing[0].userType === "oauth" ? "oauth" : "local") as "local" | "oauth",
-      status: (existing[0].status?.toUpperCase() || "ACTIVE") as any,
-      lastEventTime: existing[0].updatedAt?.getTime() ?? Date.now(),
-      expiresAt: existing[0].expiresAt?.getTime() ?? parsed.expiresDate,
-    });
-  }
-
-  const userId = existing[0]?.userId ? String(existing[0].userId) : "system";
-  const userType = (existing[0]?.userType as "local" | "oauth") ?? "local";
-
-  const transition = globalEntitlementStateMachine.processStoreEvent({
-    platform: "ios",
-    originalTxId: parsed.originalTransactionId,
-    tokenOrTxId: parsed.transactionId,
+  const result = await applyStoreEvent({
+    store: "app_store",
+    purchaseKey: parsed.originalTransactionId,
+    purchaseToken: parsed.transactionId,
     productId: parsed.productId,
-    userId,
-    userType,
-    eventType: parsed.eventType,
-    eventTime: parsed.signedDate,
-    expiresAt: parsed.expiresDate,
+    state: parsed.state,
+    expiresAt: parsed.expiresAt,
     eventId: parsed.notificationUUID,
+    eventType: `asn:${parsed.notificationType}`,
+    eventTime: parsed.signedAt,
+    owner: null,
   });
-
-  if (!transition.success) {
-    storeBillingLog.warn(
-      { event: "apple_asn.webhook.transition.ignored", reason: transition.reason },
-      "Apple ASN v2 webhook transition was not applied",
-    );
-    return c.json({ ok: false, reason: transition.reason }, 200);
-  }
-
-  if (existing[0]) {
-    await db
-      .update(storePurchases)
-      .set({
-        status: transition.state.toLowerCase(),
-        expiresAt: new Date(parsed.expiresDate),
-        rawPayload: {
-          eventType: parsed.eventType,
-          notificationUUID: parsed.notificationUUID,
-          eventId: parsed.notificationUUID,
-          processedEvents: [parsed.notificationUUID],
-        },
-      })
-      .where(eq(storePurchases.id, existing[0].id));
-
-    if (existing[0].userId) {
-      const uType = (existing[0].userType === "oauth" ? "oauth" : "local") as "oauth" | "local";
-      await setPlan(uType, existing[0].userId, transition.effectivePlan);
-    }
-  }
-
-  storeBillingLog.info(
-    { event: "apple_asn.webhook.processed", eventType: parsed.eventType, state: transition.state },
-    "Apple ASN v2 webhook processed",
-  );
-
-  return c.json({ ok: true, state: transition.state, effectivePlan: transition.effectivePlan });
+  return c.json({ ok: true, outcome: result.outcome });
 });
 
 // Health check

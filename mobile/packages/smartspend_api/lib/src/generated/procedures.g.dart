@@ -236,6 +236,7 @@ final class ProProcedures {
   ApiQuery get myPlan => const ApiQuery('pro.myPlan', builder: 'authedProcedure');
   ApiQuery get planCatalog => const ApiQuery('pro.planCatalog', builder: 'authedProcedure');
   ApiMutation get restorePurchases => const ApiMutation('pro.restorePurchases', builder: 'authedProcedure', hasInput: true);
+  ApiQuery get storeBilling => const ApiQuery('pro.storeBilling', builder: 'authedProcedure');
   ApiMutation get upgrade => const ApiMutation('pro.upgrade', builder: 'authedProcedure', hasInput: true);
   ApiMutation get verifyStorePurchase => const ApiMutation('pro.verifyStorePurchase', builder: 'authedProcedure', hasInput: true);
 }

@@ -152,10 +152,10 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/sms-ai-contract.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/spending-behavior.ts` | [insights](insights.md) |
 | `api/lib/store-billing/apple-app-store-verifier.ts` | [billing](billing.md) |
-| `api/lib/store-billing/entitlement-state-machine.ts` | [billing](billing.md) |
+| `api/lib/store-billing/entitlement.ts` | [billing](billing.md) |
 | `api/lib/store-billing/google-play-verifier.ts` | [billing](billing.md) |
 | `api/lib/store-billing/index.ts` | [billing](billing.md) |
-| `api/lib/store-billing/promo-codes.ts` | [billing](billing.md) |
+| `api/lib/store-billing/ledger.ts` | [billing](billing.md) |
 | `api/lib/stt-corrections.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/subscription-service.ts` | [billing](billing.md) |
 | `api/lib/system-settings-registry.ts` | [platform](platform.md) |

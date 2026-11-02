@@ -534,17 +534,34 @@ export const storePurchases = mysqlTable(
     purchaseToken: text("purchase_token").notNull(),
     status: varchar("status", { length: 50 }).notNull().default("active"),
     expiresAt: datetime("expires_at"),
-    rawPayload: json("raw_payload"),
+    lastEventAt: datetime("last_event_at", { fsp: 3 }),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: datetime("updated_at").default(
       sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
     ),
   },
   (t) => [
+    uniqueIndex("store_purchases_store_key_idx").on(t.store, t.originalTransactionId),
     index("store_purchases_user_idx").on(t.userId, t.userType),
-    index("store_purchases_orig_tx_idx").on(t.originalTransactionId),
-    index("store_purchases_store_idx").on(t.store),
-    index("store_purchases_status_idx").on(t.status),
+    index("store_purchases_expiry_idx").on(t.status, t.expiresAt),
+  ],
+);
+
+// Every store event once, so a replay cannot change a subscription twice.
+export const storeEvents = mysqlTable(
+  "store_events",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    store: varchar("store", { length: 50 }).notNull(),
+    eventId: varchar("event_id", { length: 191 }).notNull(),
+    eventType: varchar("event_type", { length: 100 }).notNull(),
+    purchaseKey: varchar("purchase_key", { length: 255 }).notNull(),
+    eventTime: datetime("event_time", { fsp: 3 }).notNull(),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("store_events_event_idx").on(t.store, t.eventId),
+    index("store_events_created_idx").on(t.createdAt),
   ],
 );
 

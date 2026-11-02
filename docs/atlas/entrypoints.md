@@ -26,8 +26,8 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 | GET | `/api/auth/google/callback` | http | `api/boot.ts` | `api/context.ts`, `api/lib/env.ts`, `api/router.ts` | — | — |
 | GET | `/api/auth/google/start` | http | `api/boot.ts` | `api/auth-router.ts`, `api/lib/env.ts` | — | — |
 | ALL | `/api/trpc/*` | trpc | `api/boot.ts` | `api/router.ts` | — | — |
-| POST | `/api/webhooks/apple-asn` | webhook | `api/boot.ts` | `api/lib/access-control.ts`, `api/lib/store-billing/index.ts` | `store_purchases` | `store_purchases` |
-| POST | `/api/webhooks/google-play` | webhook | `api/boot.ts` | `api/lib/access-control.ts`, `api/lib/store-billing/index.ts` | `store_purchases` | `store_purchases` |
+| POST | `/api/webhooks/apple-asn` | webhook | `api/boot.ts` | `api/lib/store-billing/index.ts` | — | — |
+| POST | `/api/webhooks/google-play` | webhook | `api/boot.ts` | `api/lib/store-billing/index.ts` | — | — |
 | POST | `/api/webhooks/paymob` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` | — | — |
 | GET | `/api/webhooks/whatsapp` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/whatsapp/webhook.ts` | — | — |
 | POST | `/api/webhooks/whatsapp` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/whatsapp/outbox.ts`, `api/lib/whatsapp/webhook.ts` | — | — |

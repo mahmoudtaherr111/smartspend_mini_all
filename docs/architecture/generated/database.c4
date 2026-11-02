@@ -451,9 +451,17 @@ model {
         storageClass 'D'
       }
     }
+    store_events = table 'store_events' {
+      #classE
+      description '7 columns, 2 indexes, storage class E.'
+      metadata {
+        export 'storeEvents'
+        storageClass 'E'
+      }
+    }
     store_purchases = table 'store_purchases' {
       #classA #dualOwner
-      description '12 columns, 4 indexes, storage class A.'
+      description '12 columns, 3 indexes, storage class A.'
       metadata {
         export 'storePurchases'
         storageClass 'A'

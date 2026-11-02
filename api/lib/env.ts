@@ -58,7 +58,14 @@ const envSchema = z.object({
   /** When "true", allows demo transaction ids in `pro.upgrade` (never enable in production). */
   BILLING_SIMULATE: z.enum(["true", "false"]).optional(),
   // Store Billing
-  GOOGLE_PLAY_WEBHOOK_SECRET: z.string().optional(),
+  /** Service account JSON with access to the Play Developer API. */
+  GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  GOOGLE_PLAY_PACKAGE_NAME: z.string().default("com.smartspend.app"),
+  /** The audience and the service account set on the Pub/Sub push subscription. */
+  GOOGLE_PLAY_PUBSUB_AUDIENCE: z.string().optional(),
+  GOOGLE_PLAY_PUBSUB_SERVICE_ACCOUNT: z.string().optional(),
+  APPLE_STORE_BILLING_ENABLED: z.enum(["true", "false"]).optional(),
+  APPLE_BUNDLE_ID: z.string().default("com.smartspend.app"),
   // Bot & Abuse Protection (Cloudflare Turnstile)
   TURNSTILE_SECRET_KEY: z.string().optional(),
   TRUST_PROXY: z.string().optional(),
@@ -119,6 +126,13 @@ export function parseServerEnv(source: NodeJS.ProcessEnv) {
   return envSchema
     .superRefine((value, ctx) => {
       if (value.NODE_ENV !== "production") return;
+      if (value.BILLING_SIMULATE === "true") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["BILLING_SIMULATE"],
+          message: "BILLING_SIMULATE grants paid plans without payment and cannot be on in production",
+        });
+      }
       for (const key of PRODUCTION_SECRETS) {
         const secret = value[key];
         if (secret !== undefined && secret.length < MIN_PRODUCTION_SECRET_LENGTH) {
