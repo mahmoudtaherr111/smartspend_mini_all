@@ -21,8 +21,6 @@ class MoneyPreferencesScreen extends ConsumerStatefulWidget {
 class _MoneyPreferencesScreenState
     extends ConsumerState<MoneyPreferencesScreen> {
   int _salaryDay = 1;
-  String _currency = 'EGP';
-  int _decimalPlaces = 2;
   bool _saving = false;
   bool _initialized = false;
 
@@ -32,11 +30,7 @@ class _MoneyPreferencesScreenState
     try {
       await ref
           .read(accountRepositoryProvider)
-          .updateMoneyPreferences(
-            salaryDay: _salaryDay,
-            currency: _currency,
-            decimalPlaces: _decimalPlaces,
-          );
+          .updateMoneyPreferences(salaryDay: _salaryDay);
       ref.invalidate(userProfileProvider);
       ref.invalidate(salaryDayProvider);
       if (mounted) {
@@ -66,8 +60,6 @@ class _MoneyPreferencesScreenState
     profileAsync.whenData((profile) {
       if (!_initialized) {
         _salaryDay = profile.salaryDay;
-        _currency = profile.currency;
-        _decimalPlaces = profile.decimalPlaces;
         _initialized = true;
       }
     });
@@ -99,7 +91,8 @@ class _MoneyPreferencesScreenState
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'يوم $_salaryDay في الشهر',
+                            AppLocalizations.of(context)
+                                .appDayP0OfTheMonth('$_salaryDay'),
                             style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: colors.accent,
@@ -107,8 +100,11 @@ class _MoneyPreferencesScreenState
                           ),
                           Text(
                             _salaryDay == 1
-                                ? 'أول الشهر'
-                                : (_salaryDay >= 28 ? 'آخر الشهر' : ''),
+                                ? AppLocalizations.of(context).appStartOfMonth
+                                : (_salaryDay >= 28
+                                      ? AppLocalizations.of(context)
+                                            .appEndOfMonth
+                                      : ''),
                             style: textTheme.bodySmall?.copyWith(
                               color: colors.mutedForeground,
                             ),
@@ -126,29 +122,6 @@ class _MoneyPreferencesScreenState
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: SmartSpendSpacing.lg),
-            GroupedSection(
-              title: 'العملة وتنسيق الأرقام',
-              children: [
-                GroupedRow(
-                  icon: Icons.attach_money_rounded,
-                  title: l10n.moneyPrefsCurrency,
-                  subtitle: _currency,
-                  onTap: () {},
-                ),
-                SwitchListTile(
-                  title: Text(l10n.moneyPrefsDecimalPlaces),
-                  subtitle: Text(
-                    _decimalPlaces == 2
-                        ? 'إظهار القروش (مثال: 50.00 ج.م)'
-                        : 'أرقام صحيحة بدون قروش',
-                  ),
-                  value: _decimalPlaces == 2,
-                  onChanged: (val) =>
-                      setState(() => _decimalPlaces = val ? 2 : 0),
                 ),
               ],
             ),

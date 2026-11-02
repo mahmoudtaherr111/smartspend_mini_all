@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'installment_form_sheet.dart';
 import 'installment_models.dart';
 import 'installments_providers.dart';
@@ -19,11 +21,11 @@ class InstallmentsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الأقساط'),
+        title: Text(AppLocalizations.of(context).appInstallments),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),
-            tooltip: 'إضافة قسط',
+            tooltip: AppLocalizations.of(context).appAddAnInstallment,
             onPressed: () => InstallmentFormSheet.show(context),
           ),
         ],
@@ -36,8 +38,8 @@ class InstallmentsScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(SmartSpendSpacing.screen),
               child: ErrorState(
-                message: 'مش قادرين نحمّل الأقساط دلوقتي: $err',
-                retryLabel: 'إعادة المحاولة',
+                message: AppLocalizations.of(context).appWeCanTLoadYour,
+                retryLabel: AppLocalizations.of(context).appTryAgain,
                 onRetry: () =>
                     ref.read(installmentsProvider.notifier).refresh(),
               ),
@@ -53,9 +55,11 @@ class InstallmentsScreen extends ConsumerWidget {
                   Center(
                     child: EmptyState(
                       icon: Icons.calendar_month_outlined,
-                      title: 'مافيش أقساط متسجلة',
-                      message: 'عندك قسط؟ ضيفه هنا وكل ما تسجل «دفعت قسط فاليو 800» هنحسبه تلقائياً ونقولك باقي كام.',
-                      actionLabel: 'إضافة أول قسط',
+                      title: AppLocalizations.of(context).appNoInstallmentsYet,
+                      message: AppLocalizations.of(context)
+                          .appAddAnInstallmentAndWhenever,
+                      actionLabel: AppLocalizations.of(context)
+                          .appAddYourFirstInstallment,
                       onAction: () => InstallmentFormSheet.show(context),
                     ),
                   ),
@@ -80,18 +84,25 @@ class InstallmentsScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(SmartSpendSpacing.screen),
               children: [
                 HeroFigure(
-                  label: 'إجمالي الأقساط الشهرية',
+                  label: AppLocalizations.of(context)
+                      .appTotalMonthlyInstallments,
                   amount: totalMonthly,
                   kind: AmountKind.expense,
                   story: activePlans.isNotEmpty
-                      ? 'عندك ${activePlans.length} أقساط نشطة · إجمالي اللي باقي منها ${formatMoney(totalRemaining)}'
-                      : 'خلّصت كل الأقساط المسجلة! مفيش التزامات نشطة حالياً 🎉',
+                      ? AppLocalizations.of(context)
+                            .appP0ActiveInstallmentsP1Left(
+                              '${activePlans.length}',
+                              formatMoney(totalRemaining),
+                            )
+                      : AppLocalizations.of(context)
+                            .appAllYourInstallmentsAreFinished,
                   wash: true,
                 ),
                 const SizedBox(height: SmartSpendSpacing.lg),
                 if (activePlans.isNotEmpty) ...[
                   Text(
-                    'الأقساط النشطة (${activePlans.length})',
+                    AppLocalizations.of(context)
+                        .appActiveInstallmentsP0('${activePlans.length}'),
                     style: SmartSpendTypography.style(
                       16,
                       FontWeight.w700,
@@ -103,7 +114,8 @@ class InstallmentsScreen extends ConsumerWidget {
                 if (completedPlans.isNotEmpty) ...[
                   const SizedBox(height: SmartSpendSpacing.xl),
                   Text(
-                    'الأقساط المكتملة (${completedPlans.length})',
+                    AppLocalizations.of(context)
+                        .appFinishedInstallmentsP0('${completedPlans.length}'),
                     style: SmartSpendTypography.style(
                       16,
                       FontWeight.w700,
@@ -131,21 +143,21 @@ class _InstallmentCard extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('مسح القسط'),
+        title: Text(AppLocalizations.of(context).appDeleteTheInstallment),
         content: Text(
-          'متأكد إنك عايز تمسح قسط «${plan.title}»؟ مش هتقدر ترجعه بعد المسح.',
+          AppLocalizations.of(context).appDeleteP0ThisCanT(plan.title),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(AppLocalizations.of(context).appCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(ctx).colorScheme.error,
             ),
-            child: const Text('مسح'),
+            child: Text(AppLocalizations.of(context).appDelete),
           ),
         ],
       ),
@@ -157,7 +169,9 @@ class _InstallmentCard extends ConsumerWidget {
           .deletePlan(plan.id);
       if (context.mounted && !ok) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ماعرفناش نمسح القسط، جرب تاني')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).appWeCouldnTDeleteIt),
+          ),
         );
       }
     }
@@ -195,7 +209,8 @@ class _InstallmentCard extends ConsumerWidget {
                         plan.keyword != plan.title) ...[
                       const SizedBox(height: 2),
                       Text(
-                        'كلمة التتبع: «${plan.keyword}»',
+                        AppLocalizations.of(context)
+                            .appTrackingWordP0(plan.keyword),
                         style: SmartSpendTypography.style(
                           12,
                           FontWeight.w400,
@@ -215,7 +230,8 @@ class _InstallmentCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  '${formatMoney(plan.monthlyAmount)} / شهر',
+                  AppLocalizations.of(context)
+                      .appP0Month2(formatMoney(plan.monthlyAmount)),
                   style: SmartSpendTypography.style(
                     13,
                     FontWeight.w700,
@@ -226,7 +242,7 @@ class _InstallmentCard extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.delete_outline_rounded, size: 20),
                 color: colors.mutedForeground,
-                tooltip: 'مسح القسط',
+                tooltip: AppLocalizations.of(context).appDeleteTheInstallment,
                 onPressed: () => _confirmDelete(context, ref),
               ),
             ],
@@ -251,8 +267,14 @@ class _InstallmentCard extends ConsumerWidget {
             children: [
               Text(
                 plan.done
-                    ? 'خلّصت كل الأقساط (${plan.totalInstallments} من ${plan.totalInstallments})'
-                    : 'مدفوع ${plan.paid} من ${plan.totalInstallments} قسط',
+                    ? AppLocalizations.of(context).appAllPaidP0OfP1(
+                        '${plan.totalInstallments}',
+                        '${plan.totalInstallments}',
+                      )
+                    : AppLocalizations.of(context).appPaidP0OfP1(
+                        '${plan.paid}',
+                        '${plan.totalInstallments}',
+                      ),
                 style: SmartSpendTypography.style(
                   13,
                   FontWeight.w500,
@@ -260,7 +282,8 @@ class _InstallmentCard extends ConsumerWidget {
               ),
               if (!plan.done)
                 Text(
-                  'باقي ${formatMoney(plan.remainingAmount)}',
+                  AppLocalizations.of(context)
+                      .appP0Left(formatMoney(plan.remainingAmount)),
                   style: SmartSpendTypography.style(
                     13,
                     FontWeight.w600,
@@ -277,7 +300,7 @@ class _InstallmentCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
               ),
               child: Text(
-                'الدفعات باسم متشابه مع خطة تانية. اربطها بمواعيد القسط عشان تعرف الباقي بدقة.',
+                AppLocalizations.of(context).appPaymentsShareANameWith,
                 style: SmartSpendTypography.style(
                   12,
                   FontWeight.w500,
@@ -293,7 +316,9 @@ class _InstallmentCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
               ),
               child: Text(
-                'خلّصت الأقساط كلها 🎉 تم سداد إجمالي ${formatMoney(plan.monthlyAmount * plan.totalInstallments)}',
+                AppLocalizations.of(context).appAllPaidYouPaidP0(
+                  formatMoney(plan.monthlyAmount * plan.totalInstallments),
+                ),
                 style: SmartSpendTypography.style(
                   12,
                   FontWeight.w600,

@@ -128,7 +128,8 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'المستهدف: ${moneyText(context, goal.targetAmount)}',
+                        AppLocalizations.of(context)
+                            .monTargetP0(moneyText(context, goal.targetAmount)),
                         style: textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: colors.accent,

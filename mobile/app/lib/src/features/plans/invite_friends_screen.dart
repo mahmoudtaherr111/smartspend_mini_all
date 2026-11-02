@@ -67,7 +67,8 @@ class InviteFriendsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: SmartSpendSpacing.lg),
                 Text(
-                  'شارك SmartSpend مع أصدقائك',
+                  AppLocalizations.of(context)
+                      .appShareSmartspendWithYourFriends,
                   style: textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -75,7 +76,7 @@ class InviteFriendsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: SmartSpendSpacing.sm),
                 Text(
-                  'ادعُ أصحابك وعائلتك لتنظيم مصاريفهم بذكاء، وكل صديق يسجل بكودك ستحصل على ميزات وتحديثات حصرية.',
+                  AppLocalizations.of(context).appInviteYourFriendsAndFamily,
                   style: textTheme.bodyMedium?.copyWith(
                     color: colors.mutedForeground,
                     height: 1.5,
@@ -101,7 +102,9 @@ class InviteFriendsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: SmartSpendSpacing.sm),
                         Text(
-                          code.isNotEmpty ? code : 'جاري التحميل...',
+                          code.isNotEmpty
+                              ? code
+                              : AppLocalizations.of(context).appLoading,
                           style: textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             letterSpacing: 4,

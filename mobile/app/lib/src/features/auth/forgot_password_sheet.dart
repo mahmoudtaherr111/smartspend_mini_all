@@ -74,7 +74,9 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
     final phone = normalizePhoneNumber(_phoneController.text.trim());
     if (phone.isEmpty || !RegExp(r'^01[0125]\d{8}$').hasMatch(phone)) {
       setState(
-        () => _errorMessage = 'يرجى إدخال رقم هاتف مصري صحيح يبدأ بـ 01',
+        () =>
+            _errorMessage = AppLocalizations.of(context)
+                .appEnterAValidEgyptianMobile2,
       );
       return;
     }
@@ -106,7 +108,7 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _errorMessage = 'مش قادرين نبعت كود دلوقتي. تأكد من النت وجرّب تاني.';
+        _errorMessage = AppLocalizations.of(context).appWeCanTSendA;
       });
     }
   }
@@ -114,7 +116,10 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
   Future<void> _verifyCode() async {
     final code = _codeController.text.trim();
     if (code.length != 6) {
-      setState(() => _errorMessage = 'أدخل الكود المكون من 6 أرقام');
+      setState(
+        () =>
+            _errorMessage = AppLocalizations.of(context).appEnterThe6DigitCode2,
+      );
       return;
     }
 
@@ -142,7 +147,7 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _errorMessage = 'فشل التحقق من الكود.';
+        _errorMessage = AppLocalizations.of(context).appThatCodeDidnTWork;
       });
     }
   }
@@ -153,11 +158,17 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
     final confirm = _confirmPasswordController.text;
 
     if (password.length < 6) {
-      setState(() => _errorMessage = 'كلمة المرور يجب ألا تقل عن 6 أحرف');
+      setState(
+        () =>
+            _errorMessage = AppLocalizations.of(context).appThePasswordMustBeAt,
+      );
       return;
     }
     if (password != confirm) {
-      setState(() => _errorMessage = 'كلمتا المرور غير متطابقتين');
+      setState(
+        () =>
+            _errorMessage = AppLocalizations.of(context).appTheTwoPasswordsDonT,
+      );
       return;
     }
 
@@ -188,7 +199,7 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _errorMessage = 'تعذر تغيير كلمة المرور.';
+        _errorMessage = AppLocalizations.of(context).appWeCouldnTChangeThe;
       });
     }
   }
@@ -240,7 +251,7 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
               const SizedBox(height: SmartSpendSpacing.lg),
               if (_step == _Step.phone) ...[
                 Text(
-                  'أدخل رقم هاتفك المسجل لنرسل لك كود استعادة الحساب على واتساب:',
+                  AppLocalizations.of(context).appEnterYourRegisteredNumberAnd,
                   style: textTheme.bodyMedium?.copyWith(
                     color: colors.mutedForeground,
                   ),
@@ -267,7 +278,7 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
                 ),
               ] else if (_step == _Step.code) ...[
                 Text(
-                  'أدخل كود التحقق المكون من 6 أرقام المرسل إلى واتساب:',
+                  AppLocalizations.of(context).appEnterThe6DigitCode3,
                   style: textTheme.bodyMedium?.copyWith(
                     color: colors.mutedForeground,
                   ),
@@ -295,7 +306,8 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
                 const SizedBox(height: SmartSpendSpacing.md),
                 if (_resendInSeconds > 0)
                   Text(
-                    'يمكنك إعادة طلب الكود بعد $_resendInSeconds ثانية',
+                    AppLocalizations.of(context)
+                        .appYouCanAskForA('$_resendInSeconds'),
                     textAlign: TextAlign.center,
                     style: textTheme.bodySmall?.copyWith(
                       color: colors.mutedForeground,
@@ -308,13 +320,13 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
                   ),
                 const SizedBox(height: SmartSpendSpacing.lg),
                 SmartSpendButton(
-                  label: 'تأكيد الكود',
+                  label: AppLocalizations.of(context).appConfirmTheCode,
                   busy: _busy,
                   onPressed: _verifyCode,
                 ),
               ] else ...[
                 Text(
-                  'اختر كلمة مرور جديدة لحسابك:',
+                  AppLocalizations.of(context).appChooseANewPassword,
                   style: textTheme.bodyMedium?.copyWith(
                     color: colors.mutedForeground,
                   ),

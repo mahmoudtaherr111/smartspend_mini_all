@@ -25,22 +25,22 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
   bool _submitting = false;
   Timer? _draftTimer;
 
-  static const _faqs = [
+  List<({String q, String a})> get _faqs => [
     (
-      q: 'إزاي أسجل مصاريفي؟',
-      a: 'تقدر تسجل بكتابة الجملة بالعامية، أو بالتسجيل الصوتي، أو مسح الإيصالات بالكاميرا، أو استقبال إشعارات البنك والمحافظ تلقائياً.',
+      q: AppLocalizations.of(context).appHowDoIRecordMy,
+      a: AppLocalizations.of(context).appTypeASentenceRecordYour,
     ),
     (
-      q: 'هل بياناتي المالية آمنة؟',
-      a: 'بياناتك مشفرة بالكامل ومحمية وفقاً لقانون حماية البيانات الشخصية المصري رقم 151 لسنة 2020، ولا تتم مشاركتها مع أي طرف ثالث.',
+      q: AppLocalizations.of(context).appIsMyFinancialDataSafe,
+      a: AppLocalizations.of(context).appOnlyYourAccountCanReach,
     ),
     (
-      q: 'إزاي أغير بداية الشهر المالي؟',
-      a: 'من شاشة "المزيد" > "تفضيلات الفلوس"، تقدر تحدد يوم قبض المرتب من 1 إلى 31 لتبدأ دورة مصاريفك الجديدة منه.',
+      q: AppLocalizations.of(context).appHowDoIChangeWhen,
+      a: AppLocalizations.of(context).appFromMoreMoneyPreferencesChoose,
     ),
     (
-      q: 'ما هو موعد الرد على تذاكر الدعم؟',
-      a: 'فريق الدعم متاح ويرد على الاستفسارات والتذاكر خلال ساعات العمل الرسمية.',
+      q: AppLocalizations.of(context).appWhenWillSupportAnswer,
+      a: AppLocalizations.of(context).appOurTeamReadsEveryTicket,
     ),
   ];
 
@@ -110,15 +110,21 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
 
       if (mounted) {
         ref.invalidate(mySupportTicketsProvider);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('تم إرسال تذكرتك بنجاح')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).appYourTicketWasSent),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e is ApiException ? e.message : 'فشل إرسال التذكرة'),
+            content: Text(
+              e is ApiException
+                  ? e.message
+                  : AppLocalizations.of(context).appWeCouldnTSendYour,
+            ),
           ),
         );
       }
@@ -214,7 +220,7 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
             ticketsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Text(
-                'تعذر تحميل التذاكر',
+                AppLocalizations.of(context).appWeCanTLoadYour2,
                 style: TextStyle(color: colors.danger),
               ),
               data: (List<SupportTicket> tickets) {
@@ -225,7 +231,7 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        'لا توجد تذاكر دعم سابقة',
+                        AppLocalizations.of(context).appNoPastTickets,
                         style: textTheme.bodyMedium?.copyWith(
                           color: colors.mutedForeground,
                         ),

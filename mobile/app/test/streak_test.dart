@@ -42,7 +42,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(StreakBadge), findsOneWidget);
-        expect(find.text('7 يوم متواصل'), findsOneWidget);
+        expect(find.text('7 يوم ورا بعض'), findsOneWidget);
       },
     );
 
@@ -63,7 +63,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(StreakBadge), findsOneWidget);
-      expect(find.text('14 يوم متواصل 🔥'), findsOneWidget);
+      expect(find.text('14 يوم ورا بعض'), findsOneWidget);
     });
   });
 }

@@ -2888,35 +2888,11 @@ abstract class AppLocalizations {
   /// **'البيانات والخصوصية'**
   String get dataStoredTitle;
 
-  /// No description provided for @appInfoTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'عن التطبيق'**
-  String get appInfoTitle;
-
   /// No description provided for @appVersion.
   ///
   /// In ar, this message translates to:
   /// **'الإصدار'**
   String get appVersion;
-
-  /// No description provided for @appUpdateRequired.
-  ///
-  /// In ar, this message translates to:
-  /// **'تحديث إجباري متوفر'**
-  String get appUpdateRequired;
-
-  /// No description provided for @appUpdateBody.
-  ///
-  /// In ar, this message translates to:
-  /// **'يتطلب التطبيق التحديث إلى أحدث إصدار لمتابعة الاستخدام وحماية بياناتك.'**
-  String get appUpdateBody;
-
-  /// No description provided for @appUpdateNow.
-  ///
-  /// In ar, this message translates to:
-  /// **'تحديث الآن'**
-  String get appUpdateNow;
 
   /// No description provided for @offlineRetryBanner.
   ///
@@ -4520,24 +4496,6 @@ abstract class AppLocalizations {
   /// **'مش دلوقتي'**
   String get monNotNow;
 
-  /// No description provided for @monAll.
-  ///
-  /// In ar, this message translates to:
-  /// **'الكل'**
-  String get monAll;
-
-  /// No description provided for @monRecordedMonthlyIncome.
-  ///
-  /// In ar, this message translates to:
-  /// **'الدخل الشهري المسجل'**
-  String get monRecordedMonthlyIncome;
-
-  /// No description provided for @monTotalIncomeThisMonth.
-  ///
-  /// In ar, this message translates to:
-  /// **'إجمالي دخل الشهر'**
-  String get monTotalIncomeThisMonth;
-
   /// No description provided for @monHowYouSpend.
   ///
   /// In ar, this message translates to:
@@ -4897,18 +4855,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'أكد'**
   String get aiConfirm2;
-
-  /// No description provided for @aiReportReceived.
-  ///
-  /// In ar, this message translates to:
-  /// **'التقرير وصل.'**
-  String get aiReportReceived;
-
-  /// No description provided for @aiMonthsCompared.
-  ///
-  /// In ar, this message translates to:
-  /// **'قارنا الشهرين.'**
-  String get aiMonthsCompared;
 
   /// No description provided for @aiLiveCall.
   ///
@@ -5408,24 +5354,6 @@ abstract class AppLocalizations {
   /// **'خصوصيتك: الصوت ونص المكالمة مش بيتحفظوا.'**
   String get aiYourPrivacyNeitherTheAudio;
 
-  /// No description provided for @aiWeCouldnTConnectThe.
-  ///
-  /// In ar, this message translates to:
-  /// **'ما عرفناش نوصل المكالمة.'**
-  String get aiWeCouldnTConnectThe;
-
-  /// No description provided for @aiTheCallLostItsConnection.
-  ///
-  /// In ar, this message translates to:
-  /// **'الاتصال انقطع.'**
-  String get aiTheCallLostItsConnection;
-
-  /// No description provided for @aiSomethingWentWrongInThe.
-  ///
-  /// In ar, this message translates to:
-  /// **'حصلت مشكلة في المكالمة'**
-  String get aiSomethingWentWrongInThe;
-
   /// No description provided for @aiCallEnded.
   ///
   /// In ar, this message translates to:
@@ -5491,12 +5419,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'اتلغت'**
   String get aiCancelled2;
-
-  /// No description provided for @aiABusinessForP0.
-  ///
-  /// In ar, this message translates to:
-  /// **'مشروع {p0}'**
-  String aiABusinessForP0(String p0);
 
   /// No description provided for @aiAddACategory.
   ///
@@ -5948,12 +5870,6 @@ abstract class AppLocalizations {
   /// **'امسح الشخص'**
   String get aiDeleteThePerson;
 
-  /// No description provided for @aiNoName.
-  ///
-  /// In ar, this message translates to:
-  /// **'من غير اسم'**
-  String get aiNoName;
-
   /// No description provided for @aiDeleteP0.
   ///
   /// In ar, this message translates to:
@@ -6037,6 +5953,1002 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'ما عرفناش ندمج. جرّب تاني.'**
   String get aiWeCouldnTMergeThem;
+
+  /// No description provided for @appDayP0OfTheMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم {p0} في الشهر'**
+  String appDayP0OfTheMonth(String p0);
+
+  /// No description provided for @appStartOfMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول الشهر'**
+  String get appStartOfMonth;
+
+  /// No description provided for @appEndOfMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر الشهر'**
+  String get appEndOfMonth;
+
+  /// No description provided for @appWeCouldnTSaveYour.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نحفظ إجابتك.'**
+  String get appWeCouldnTSaveYour;
+
+  /// No description provided for @appBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get appBack;
+
+  /// No description provided for @appWriteYourAnswerHere.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب إجابتك هنا...'**
+  String get appWriteYourAnswerHere;
+
+  /// No description provided for @appEnterAValidEgyptianMobile.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب رقم موبايل مصري صحيح: 11 رقم بيبدأ بـ 01'**
+  String get appEnterAValidEgyptianMobile;
+
+  /// No description provided for @appEnterThe6DigitCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب الكود المكون من 6 أرقام'**
+  String get appEnterThe6DigitCode;
+
+  /// No description provided for @appYouCanAskForA.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدر تطلب كود جديد بعد {p0} ثانية'**
+  String appYouCanAskForA(String p0);
+
+  /// No description provided for @appSignedOutOfThatDevice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجهاز ده خرج من حسابك'**
+  String get appSignedOutOfThatDevice;
+
+  /// No description provided for @appTryAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get appTryAgain;
+
+  /// No description provided for @appNoSessionsRecorded.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش أجهزة متسجلة'**
+  String get appNoSessionsRecorded;
+
+  /// No description provided for @appEnterAValidEgyptianMobile2.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب رقم موبايل مصري صحيح بيبدأ بـ 01'**
+  String get appEnterAValidEgyptianMobile2;
+
+  /// No description provided for @appWeCanTSendA.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نبعت كود دلوقتي. تأكد من النت وجرّب تاني.'**
+  String get appWeCanTSendA;
+
+  /// No description provided for @appEnterThe6DigitCode2.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب الكود المكون من 6 أرقام'**
+  String get appEnterThe6DigitCode2;
+
+  /// No description provided for @appThatCodeDidnTWork.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكود ده ما نفعش.'**
+  String get appThatCodeDidnTWork;
+
+  /// No description provided for @appThePasswordMustBeAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباسورد لازم يكون 6 حروف على الأقل'**
+  String get appThePasswordMustBeAt;
+
+  /// No description provided for @appTheTwoPasswordsDonT.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباسوردين مش زي بعض'**
+  String get appTheTwoPasswordsDonT;
+
+  /// No description provided for @appWeCouldnTChangeThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نغير الباسورد.'**
+  String get appWeCouldnTChangeThe;
+
+  /// No description provided for @appEnterYourRegisteredNumberAnd.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب رقمك المسجل وهنبعتلك كود على واتساب:'**
+  String get appEnterYourRegisteredNumberAnd;
+
+  /// No description provided for @appEnterThe6DigitCode3.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب الكود اللي وصلك على واتساب:'**
+  String get appEnterThe6DigitCode3;
+
+  /// No description provided for @appConfirmTheCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكد الكود'**
+  String get appConfirmTheCode;
+
+  /// No description provided for @appChooseANewPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار باسورد جديد:'**
+  String get appChooseANewPassword;
+
+  /// No description provided for @appThisMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشهر ده'**
+  String get appThisMonth;
+
+  /// No description provided for @appLast3Months.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر 3 شهور'**
+  String get appLast3Months;
+
+  /// No description provided for @appEverythingFromTheStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل العمليات من الأول'**
+  String get appEverythingFromTheStart;
+
+  /// No description provided for @appCsvFileSpreadsheet.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف CSV (جداول)'**
+  String get appCsvFileSpreadsheet;
+
+  /// No description provided for @appExcelFileXlsx.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف Excel (.xlsx)'**
+  String get appExcelFileXlsx;
+
+  /// No description provided for @appJsonFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملف JSON'**
+  String get appJsonFile;
+
+  /// No description provided for @appWeCouldnTPrepareThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرناش نجهز الملف دلوقتي. اتأكد من النت وجرّب تاني.'**
+  String get appWeCouldnTPrepareThe;
+
+  /// No description provided for @appExportMyData.
+  ///
+  /// In ar, this message translates to:
+  /// **'صدّر بياناتك'**
+  String get appExportMyData;
+
+  /// No description provided for @appYourDataIsAlwaysYours.
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتك بتاعتك دايمًا'**
+  String get appYourDataIsAlwaysYours;
+
+  /// No description provided for @appDownloadEverythingYouRecordedIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'نزّل كل اللي سجلته في ملف تقدر تفتحه على الكمبيوتر.'**
+  String get appDownloadEverythingYouRecordedIn;
+
+  /// No description provided for @appPeriod.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفترة'**
+  String get appPeriod;
+
+  /// No description provided for @appFileType.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الملف'**
+  String get appFileType;
+
+  /// No description provided for @appYouHaveTheRightTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'من حقك توصل لبياناتك طبقًا لقانون 151 لسنة 2020.'**
+  String get appYouHaveTheRightTo;
+
+  /// No description provided for @appTheFileIsReady.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف جاهز'**
+  String get appTheFileIsReady;
+
+  /// No description provided for @appPreparingTheFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنجهز الملف...'**
+  String get appPreparingTheFile;
+
+  /// No description provided for @appExportTheFile.
+  ///
+  /// In ar, this message translates to:
+  /// **'صدّر الملف'**
+  String get appExportTheFile;
+
+  /// No description provided for @appTermsOfService.
+  ///
+  /// In ar, this message translates to:
+  /// **'شروط الخدمة'**
+  String get appTermsOfService;
+
+  /// No description provided for @appDataAndPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيانات والخصوصية'**
+  String get appDataAndPrivacy;
+
+  /// No description provided for @app2026SmartspendAiEgypt.
+  ///
+  /// In ar, this message translates to:
+  /// **'© 2026 SmartSpend AI، مصر'**
+  String get app2026SmartspendAiEgypt;
+
+  /// No description provided for @appPleaseUpdateTheAppFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث التطبيق من المتجر: {p0}'**
+  String appPleaseUpdateTheAppFrom(String p0);
+
+  /// No description provided for @appPleaseUpdateTheApp.
+  ///
+  /// In ar, this message translates to:
+  /// **'لازم تحدّث التطبيق'**
+  String get appPleaseUpdateTheApp;
+
+  /// No description provided for @appThisVersionIsNoLonger.
+  ///
+  /// In ar, this message translates to:
+  /// **'النسخة دي ما بقتش مدعومة. حدّث علشان بياناتك تفضل في أمان.'**
+  String get appThisVersionIsNoLonger;
+
+  /// No description provided for @appMinimumVersionP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقل نسخة مطلوبة: {p0}'**
+  String appMinimumVersionP0(String p0);
+
+  /// No description provided for @appYouReOfflineYourSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت من غير نت. بياناتك المحفوظة موجودة.'**
+  String get appYouReOfflineYourSaved;
+
+  /// No description provided for @appUpdateNow2.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث دلوقتي'**
+  String get appUpdateNow2;
+
+  /// No description provided for @appContinueOffline.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمّل من غير نت'**
+  String get appContinueOffline;
+
+  /// No description provided for @appThisPageExplainsWhatThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصفحة دي بتوضح التطبيق بيحتفظ بإيه عنك وحقوقك طبقًا لقانون 151 لسنة 2020.'**
+  String get appThisPageExplainsWhatThe;
+
+  /// No description provided for @appYouReOfflineChangesSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت من غير نت. التغييرات بتتحفظ هنا وبتتبعت بعدين.'**
+  String get appYouReOfflineChangesSave;
+
+  /// No description provided for @appConnectionError.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشكلة في الاتصال.'**
+  String get appConnectionError;
+
+  /// No description provided for @appHaveMonthlyInstallmentsFollowThem.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك أقساط شهرية؟ تابعها من هنا'**
+  String get appHaveMonthlyInstallmentsFollowThem;
+
+  /// No description provided for @appAddAnInstallment.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف قسط'**
+  String get appAddAnInstallment;
+
+  /// No description provided for @appInstallmentsP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقساط ({p0})'**
+  String appInstallmentsP0(String p0);
+
+  /// No description provided for @appP0Month.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} / شهر'**
+  String appP0Month(String p0);
+
+  /// No description provided for @appInstallments.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقساط'**
+  String get appInstallments;
+
+  /// No description provided for @appWeCanTLoadYour.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب الأقساط دلوقتي.'**
+  String get appWeCanTLoadYour;
+
+  /// No description provided for @appNoInstallmentsYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش أقساط'**
+  String get appNoInstallmentsYet;
+
+  /// No description provided for @appAddAnInstallmentAndWhenever.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف القسط، وكل ما تسجل «دفعت قسط فاليو 800» هنحسبه.'**
+  String get appAddAnInstallmentAndWhenever;
+
+  /// No description provided for @appAddYourFirstInstallment.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف أول قسط'**
+  String get appAddYourFirstInstallment;
+
+  /// No description provided for @appTotalMonthlyInstallments.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الأقساط الشهرية'**
+  String get appTotalMonthlyInstallments;
+
+  /// No description provided for @appP0ActiveInstallmentsP1Left.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك {p0} أقساط شغالة · الباقي منها {p1}'**
+  String appP0ActiveInstallmentsP1Left(String p0, String p1);
+
+  /// No description provided for @appAllYourInstallmentsAreFinished.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّصت كل الأقساط. مفيش حاجة شغالة دلوقتي.'**
+  String get appAllYourInstallmentsAreFinished;
+
+  /// No description provided for @appActiveInstallmentsP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقساط الشغالة ({p0})'**
+  String appActiveInstallmentsP0(String p0);
+
+  /// No description provided for @appFinishedInstallmentsP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقساط اللي خلصت ({p0})'**
+  String appFinishedInstallmentsP0(String p0);
+
+  /// No description provided for @appDeleteTheInstallment.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح القسط'**
+  String get appDeleteTheInstallment;
+
+  /// No description provided for @appDeleteP0ThisCanT.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمسح قسط «{p0}»؟ المسح مابيترجعش.'**
+  String appDeleteP0ThisCanT(String p0);
+
+  /// No description provided for @appCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get appCancel;
+
+  /// No description provided for @appDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح'**
+  String get appDelete;
+
+  /// No description provided for @appWeCouldnTDeleteIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نمسح القسط. جرّب تاني.'**
+  String get appWeCouldnTDeleteIt;
+
+  /// No description provided for @appTrackingWordP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة التتبع: «{p0}»'**
+  String appTrackingWordP0(String p0);
+
+  /// No description provided for @appP0Month2.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} / شهر'**
+  String appP0Month2(String p0);
+
+  /// No description provided for @appAllPaidP0OfP1.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت كلها ({p0} من {p1})'**
+  String appAllPaidP0OfP1(String p0, String p1);
+
+  /// No description provided for @appPaidP0OfP1.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتدفع {p0} من {p1}'**
+  String appPaidP0OfP1(String p0, String p1);
+
+  /// No description provided for @appP0Left.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل {p0}'**
+  String appP0Left(String p0);
+
+  /// No description provided for @appPaymentsShareANameWith.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدفعات اسمها شبه خطة تانية. اربطها بمواعيد القسط علشان تفرق بينهم.'**
+  String get appPaymentsShareANameWith;
+
+  /// No description provided for @appAllPaidYouPaidP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت الأقساط كلها. دفعت {p0} في المجموع.'**
+  String appAllPaidYouPaidP0(String p0);
+
+  /// No description provided for @appEnterANameAtLeast.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسم القسط (حرفين على الأقل)'**
+  String get appEnterANameAtLeast;
+
+  /// No description provided for @appEnterTheMonthlyAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب قيمة القسط الشهري'**
+  String get appEnterTheMonthlyAmount;
+
+  /// No description provided for @appEnterTheNumberOfInstallments.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب عدد الأقساط (قسط واحد على الأقل)'**
+  String get appEnterTheNumberOfInstallments;
+
+  /// No description provided for @appPaidInstallmentsMustBeBetween.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدفوع لازم يكون بين 0 وإجمالي الأقساط'**
+  String get appPaidInstallmentsMustBeBetween;
+
+  /// No description provided for @appWeCouldnTAddIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نضيف القسط. اتأكد من النت وجرّب تاني.'**
+  String get appWeCouldnTAddIt;
+
+  /// No description provided for @appSomethingWentWrongTryAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'حصلت مشكلة. جرّب تاني.'**
+  String get appSomethingWentWrongTryAgain;
+
+  /// No description provided for @appNewInstallment.
+  ///
+  /// In ar, this message translates to:
+  /// **'قسط جديد'**
+  String get appNewInstallment;
+
+  /// No description provided for @appClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقفل'**
+  String get appClose;
+
+  /// No description provided for @appWheneverYouRecordSpendingWith.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل ما تسجل مصروف فيه كلمة القسط (زي «دفعت قسط فاليو 800») هنعدّه.'**
+  String get appWheneverYouRecordSpendingWith;
+
+  /// No description provided for @appName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم القسط *'**
+  String get appName;
+
+  /// No description provided for @appLikeValuPhoneOrThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: موبايل فاليو أو قسط التكييف'**
+  String get appLikeValuPhoneOrThe;
+
+  /// No description provided for @appPaymentWordOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة الدفع (اختياري)'**
+  String get appPaymentWordOptional;
+
+  /// No description provided for @appLikeValuEmptyUsesThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: فاليو (لو سبتها فاضية هناخد اسم القسط)'**
+  String get appLikeValuEmptyUsesThe;
+
+  /// No description provided for @appMonthlyAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'القسط كام في الشهر *'**
+  String get appMonthlyAmount;
+
+  /// No description provided for @appLike850.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: 850'**
+  String get appLike850;
+
+  /// No description provided for @appTotalInstallments.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الأقساط *'**
+  String get appTotalInstallments;
+
+  /// No description provided for @appLike12.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: 12'**
+  String get appLike12;
+
+  /// No description provided for @appAlreadyPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدفوع منه كام'**
+  String get appAlreadyPaid;
+
+  /// No description provided for @appSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ القسط'**
+  String get appSave;
+
+  /// No description provided for @appYourPlanSMonthlyUsage.
+  ///
+  /// In ar, this message translates to:
+  /// **'استهلاك باقتك الشهرية'**
+  String get appYourPlanSMonthlyUsage;
+
+  /// No description provided for @appLimitReached.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت للحد'**
+  String get appLimitReached;
+
+  /// No description provided for @appAlmostUsed.
+  ///
+  /// In ar, this message translates to:
+  /// **'قربت تخلص'**
+  String get appAlmostUsed;
+
+  /// No description provided for @appVoiceRecording.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسجيل الصوتي'**
+  String get appVoiceRecording;
+
+  /// No description provided for @appUnlimited.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير حد'**
+  String get appUnlimited;
+
+  /// No description provided for @appP0OfP1SecondsLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقي {p0} ثانية من {p1}'**
+  String appP0OfP1SecondsLeft(String p0, String p1);
+
+  /// No description provided for @appDailyAi.
+  ///
+  /// In ar, this message translates to:
+  /// **'الذكاء الاصطناعي اليومي'**
+  String get appDailyAi;
+
+  /// No description provided for @appP0OfP1Left.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقي {p0} عملية من {p1}'**
+  String appP0OfP1Left(String p0, String p1);
+
+  /// No description provided for @appUpgradeToPro.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في Pro'**
+  String get appUpgradeToPro;
+
+  /// No description provided for @appNotificationSettingsSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعدادات الإشعارات اتحفظت'**
+  String get appNotificationSettingsSaved;
+
+  /// No description provided for @appAllowNotificationsFromTheApp.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمح بالإشعارات من التطبيق'**
+  String get appAllowNotificationsFromTheApp;
+
+  /// No description provided for @appChooseYourNotifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار إشعاراتك'**
+  String get appChooseYourNotifications;
+
+  /// No description provided for @appWhenSpendingNearsABudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'لما مصاريفك تقرب من سقف الميزانية'**
+  String get appWhenSpendingNearsABudget;
+
+  /// No description provided for @appAQuietEveningReminderTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذكير هادي بالليل تسجل مصاريفك'**
+  String get appAQuietEveningReminderTo;
+
+  /// No description provided for @appBeforeTheDayEndsTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل ما اليوم يخلص علشان تحافظ على سلسلة التسجيل'**
+  String get appBeforeTheDayEndsTo;
+
+  /// No description provided for @appWhenYourMonthlyReportIs.
+  ///
+  /// In ar, this message translates to:
+  /// **'لما تقريرك الشهري يجهز'**
+  String get appWhenYourMonthlyReportIs;
+
+  /// No description provided for @appThePriceIsHighFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر غالي عليّ'**
+  String get appThePriceIsHighFor;
+
+  /// No description provided for @appIDonTNeedThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش محتاج المميزات الزيادة'**
+  String get appIDonTNeedThe;
+
+  /// No description provided for @appIHadTechnicalProblems.
+  ///
+  /// In ar, this message translates to:
+  /// **'قابلتني مشاكل تقنية'**
+  String get appIHadTechnicalProblems;
+
+  /// No description provided for @appILlSubscribeAgainLater.
+  ///
+  /// In ar, this message translates to:
+  /// **'هشترك تاني بعدين'**
+  String get appILlSubscribeAgainLater;
+
+  /// No description provided for @appAnotherReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب تاني'**
+  String get appAnotherReason;
+
+  /// No description provided for @appAutoRenewalIsCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'التجديد التلقائي اتلغى'**
+  String get appAutoRenewalIsCancelled;
+
+  /// No description provided for @appWeCanTCancelRight.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نلغي دلوقتي.'**
+  String get appWeCanTCancelRight;
+
+  /// No description provided for @appHelpUsUnderstandWhy.
+  ///
+  /// In ar, this message translates to:
+  /// **'قولنا السبب:'**
+  String get appHelpUsUnderstandWhy;
+
+  /// No description provided for @appKeepMyPlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيب باقتي'**
+  String get appKeepMyPlan;
+
+  /// No description provided for @appShareSmartspendWithYourFriends.
+  ///
+  /// In ar, this message translates to:
+  /// **'شارك SmartSpend مع أصحابك'**
+  String get appShareSmartspendWithYourFriends;
+
+  /// No description provided for @appInviteYourFriendsAndFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادعي أصحابك وأهلك ينظموا مصاريفهم.'**
+  String get appInviteYourFriendsAndFamily;
+
+  /// No description provided for @appLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنحمّل...'**
+  String get appLoading;
+
+  /// No description provided for @appReadReceiptsWithTheCamera.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة الفواتير بالكاميرا'**
+  String get appReadReceiptsWithTheCamera;
+
+  /// No description provided for @appKeepWorkApartFromPersonal.
+  ///
+  /// In ar, this message translates to:
+  /// **'فصل حساب الشغل عن مصاريفك الشخصية'**
+  String get appKeepWorkApartFromPersonal;
+
+  /// No description provided for @appGoalAnalysisAndTheDetailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليل الأهداف والتقرير المفصل'**
+  String get appGoalAnalysisAndTheDetailed;
+
+  /// No description provided for @appNoSponsoredCards.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير إعلانات'**
+  String get appNoSponsoredCards;
+
+  /// No description provided for @appYourMonthlyReportOnWhatsapp.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقريرك الشهري على واتساب'**
+  String get appYourMonthlyReportOnWhatsapp;
+
+  /// No description provided for @appYouHaveAllOfPro.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت معاك كل مميزات Pro.'**
+  String get appYouHaveAllOfPro;
+
+  /// No description provided for @appYouReOnTheFree.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت على الباقة المجانية.'**
+  String get appYouReOnTheFree;
+
+  /// No description provided for @appSeasons.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواسم الصرف'**
+  String get appSeasons;
+
+  /// No description provided for @appWeCanTLoadThis.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب الموسم دلوقتي.'**
+  String get appWeCanTLoadThis;
+
+  /// No description provided for @appP0ToP1P2More.
+  ///
+  /// In ar, this message translates to:
+  /// **'من {p0} إلى {p1} · أكتر من السنة اللي فاتت بـ {p2}%'**
+  String appP0ToP1P2More(String p0, String p1, String p2, String p3);
+
+  /// No description provided for @appP0ToP1P2Less.
+  ///
+  /// In ar, this message translates to:
+  /// **'من {p0} إلى {p1} · أقل من السنة اللي فاتت بـ {p2}%'**
+  String appP0ToP1P2Less(String p0, String p1, String p2, String p3);
+
+  /// No description provided for @appP0ToP1SameAs.
+  ///
+  /// In ar, this message translates to:
+  /// **'من {p0} إلى {p1} · نفس السنة اللي فاتت'**
+  String appP0ToP1SameAs(String p0, String p1, String p2);
+
+  /// No description provided for @appP0ToP1.
+  ///
+  /// In ar, this message translates to:
+  /// **'من {p0} إلى {p1}'**
+  String appP0ToP1(String p0, String p1);
+
+  /// No description provided for @appWhatP0CostYou.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} كلفك كام'**
+  String appWhatP0CostYou(String p0);
+
+  /// No description provided for @appNoSpendingInP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مصاريف في {p0}'**
+  String appNoSpendingInP0(String p0);
+
+  /// No description provided for @appNothingRecordedFromP0To.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش حاجة متسجلة من {p0} إلى {p1}.'**
+  String appNothingRecordedFromP0To(String p0, String p1);
+
+  /// No description provided for @appByCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسب الفئة'**
+  String get appByCategory;
+
+  /// No description provided for @appP0Transactions.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} عملية'**
+  String appP0Transactions(String p0);
+
+  /// No description provided for @appDaysInARow.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم ورا بعض'**
+  String get appDaysInARow;
+
+  /// No description provided for @appDaysInARow2.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم ورا بعض'**
+  String get appDaysInARow2;
+
+  /// No description provided for @appDaysInARow3.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم ورا بعض'**
+  String get appDaysInARow3;
+
+  /// No description provided for @appDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم'**
+  String get appDay;
+
+  /// No description provided for @appYouRecordedP0P1.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجلت {p0} {p1}'**
+  String appYouRecordedP0P1(String p0, String p1);
+
+  /// No description provided for @appHowDoIRecordMy.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزاي أسجل مصاريفي؟'**
+  String get appHowDoIRecordMy;
+
+  /// No description provided for @appTypeASentenceRecordYour.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب جملة، أو سجّل بصوتك، أو صوّر الفاتورة.'**
+  String get appTypeASentenceRecordYour;
+
+  /// No description provided for @appIsMyFinancialDataSafe.
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتي في أمان؟'**
+  String get appIsMyFinancialDataSafe;
+
+  /// No description provided for @appOnlyYourAccountCanReach.
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتك مربوطة بحسابك بس، وتقدر تقفل التطبيق برمز أو بصمة.'**
+  String get appOnlyYourAccountCanReach;
+
+  /// No description provided for @appHowDoIChangeWhen.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزاي أغير بداية شهري؟'**
+  String get appHowDoIChangeWhen;
+
+  /// No description provided for @appFromMoreMoneyPreferencesChoose.
+  ///
+  /// In ar, this message translates to:
+  /// **'من «المزيد» ثم «تفضيلات الفلوس» اختار يوم القبض.'**
+  String get appFromMoreMoneyPreferencesChoose;
+
+  /// No description provided for @appWhenWillSupportAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدعم بيرد إمتى؟'**
+  String get appWhenWillSupportAnswer;
+
+  /// No description provided for @appOurTeamReadsEveryTicket.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفريق بيقرا كل طلب وبيرد في أقرب وقت.'**
+  String get appOurTeamReadsEveryTicket;
+
+  /// No description provided for @appYourTicketWasSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبك اتبعت'**
+  String get appYourTicketWasSent;
+
+  /// No description provided for @appWeCouldnTSendYour.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نبعت طلبك.'**
+  String get appWeCouldnTSendYour;
+
+  /// No description provided for @appWeCanTLoadYour2.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب طلباتك.'**
+  String get appWeCanTLoadYour2;
+
+  /// No description provided for @appNoPastTickets.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش طلبات قبل كده'**
+  String get appNoPastTickets;
+
+  /// No description provided for @appPageNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصفحة مش موجودة'**
+  String get appPageNotFound;
+
+  /// No description provided for @appThisPageIsnTHere.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصفحة اللي بتدور عليها مش موجودة'**
+  String get appThisPageIsnTHere;
+
+  /// No description provided for @appTheLinkMayHaveChanged.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرابط ممكن يكون اتغير أو الصفحة اتمسحت.'**
+  String get appTheLinkMayHaveChanged;
+
+  /// No description provided for @appBackToHome.
+  ///
+  /// In ar, this message translates to:
+  /// **'ارجع للرئيسية'**
+  String get appBackToHome;
+
+  /// No description provided for @appActiveSince.
+  ///
+  /// In ar, this message translates to:
+  /// **'نشط من {p0}'**
+  String appActiveSince(String p0);
+
+  /// No description provided for @appInstallmentLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0}: باقي {p1} من {p2}'**
+  String appInstallmentLeft(String p0, String p1, String p2);
 }
 
 class _AppLocalizationsDelegate

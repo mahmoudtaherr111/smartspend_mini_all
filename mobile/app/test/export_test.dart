@@ -64,10 +64,10 @@ void main() {
         app.container.read(routerProvider).go(ExportScreen.path);
         await tester.pumpAndSettle();
 
-        expect(find.text('تصدير البيانات'), findsOneWidget);
-        expect(find.text('الشهر الحالي'), findsOneWidget);
+        expect(find.text('صدّر بياناتك'), findsOneWidget);
+        expect(find.text('الشهر ده'), findsOneWidget);
         expect(find.text('آخر 3 شهور'), findsOneWidget);
-        expect(find.text('كل المعاملات من البداية'), findsOneWidget);
+        expect(find.text('كل العمليات من الأول'), findsOneWidget);
 
         await tester.scrollUntilVisible(
           find.textContaining('151 لسنة 2020'),
@@ -77,13 +77,11 @@ void main() {
         expect(find.textContaining('151 لسنة 2020'), findsOneWidget);
 
         await tester.scrollUntilVisible(
-          find.widgetWithText(SmartSpendButton, 'تصدير وتحميل الملف'),
+          find.widgetWithText(SmartSpendButton, 'صدّر الملف'),
           100,
         );
         await tester.pumpAndSettle();
-        await tester.tap(
-          find.widgetWithText(SmartSpendButton, 'تصدير وتحميل الملف'),
-        );
+        await tester.tap(find.widgetWithText(SmartSpendButton, 'صدّر الملف'));
         await tester.pumpAndSettle();
 
         expect(exportArgs, isNotNull);

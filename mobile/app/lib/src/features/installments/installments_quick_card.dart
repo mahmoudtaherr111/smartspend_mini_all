@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'installment_form_sheet.dart';
 import 'installments_providers.dart';
 import 'installments_screen.dart';
@@ -46,7 +48,8 @@ class InstallmentsQuickCard extends ConsumerWidget {
                     const SizedBox(width: SmartSpendSpacing.sm),
                     Expanded(
                       child: Text(
-                        'عندك أقساط شهرية؟ تابعها من هنا',
+                        AppLocalizations.of(context)
+                            .appHaveMonthlyInstallmentsFollowThem,
                         style: SmartSpendTypography.style(
                           13,
                           FontWeight.w500,
@@ -55,7 +58,7 @@ class InstallmentsQuickCard extends ConsumerWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.add_rounded, size: 20),
-                      tooltip: 'إضافة قسط',
+                      tooltip: AppLocalizations.of(context).appAddAnInstallment,
                       onPressed: () => InstallmentFormSheet.show(context),
                     ),
                   ],
@@ -95,7 +98,8 @@ class InstallmentsQuickCard extends ConsumerWidget {
                       const SizedBox(width: SmartSpendSpacing.sm),
                       Expanded(
                         child: Text(
-                          'الأقساط (${activePlans.length})',
+                          AppLocalizations.of(context)
+                              .appInstallmentsP0('${activePlans.length}'),
                           style: SmartSpendTypography.style(
                             14,
                             FontWeight.w700,
@@ -103,7 +107,8 @@ class InstallmentsQuickCard extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        '${formatMoney(totalMonthly)} / شهر',
+                        AppLocalizations.of(context)
+                            .appP0Month(formatMoney(totalMonthly)),
                         style: SmartSpendTypography.style(
                           13,
                           FontWeight.w700,
@@ -115,7 +120,11 @@ class InstallmentsQuickCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: SmartSpendSpacing.xs),
                   Text(
-                    '${activePlans.first.title}: فاضل ${activePlans.first.remaining} من أصل ${activePlans.first.totalInstallments} قسط',
+                    AppLocalizations.of(context).appInstallmentLeft(
+                      activePlans.first.title,
+                      '${activePlans.first.remaining}',
+                      '${activePlans.first.totalInstallments}',
+                    ),
                     style: SmartSpendTypography.style(
                       12,
                       FontWeight.w400,

@@ -329,7 +329,7 @@ class NotFoundScreen extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('الصفحة غير موجودة')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).appPageNotFound)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(SmartSpendSpacing.screen),
@@ -343,7 +343,7 @@ class NotFoundScreen extends StatelessWidget {
               ),
               const SizedBox(height: SmartSpendSpacing.md),
               Text(
-                'الصفحة اللي بتدور عليها مش موجودة',
+                AppLocalizations.of(context).appThisPageIsnTHere,
                 style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colors.foreground,
@@ -352,7 +352,7 @@ class NotFoundScreen extends StatelessWidget {
               ),
               const SizedBox(height: SmartSpendSpacing.sm),
               Text(
-                'الرابط ممكن يكون اتغير أو الصفحة اتمسحت.',
+                AppLocalizations.of(context).appTheLinkMayHaveChanged,
                 style: textTheme.bodyMedium?.copyWith(
                   color: colors.mutedForeground,
                 ),
@@ -360,7 +360,7 @@ class NotFoundScreen extends StatelessWidget {
               ),
               const SizedBox(height: SmartSpendSpacing.xl),
               SmartSpendButton(
-                label: 'الرجوع للرئيسية',
+                label: AppLocalizations.of(context).appBackToHome,
                 onPressed: () => context.go(appTabs.first.path),
               ),
             ],

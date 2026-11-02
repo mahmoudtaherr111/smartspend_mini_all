@@ -50,7 +50,10 @@ class _NotificationSettingsScreenState
       );
       ref.invalidate(userProfileProvider);
       if (mounted) {
-        showSmartSpendNotice(context, 'تم حفظ إعدادات الإشعارات بنجاح');
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).appNotificationSettingsSaved,
+        );
       }
     } on ApiException catch (e) {
       if (mounted) {
@@ -109,8 +112,8 @@ class _NotificationSettingsScreenState
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                subtitle: const Text(
-                  'السماح باستقبال الإشعارات والتنبيهات من التطبيق',
+                subtitle: Text(
+                  AppLocalizations.of(context).appAllowNotificationsFromTheApp,
                 ),
                 value: _masterEnabled,
                 onChanged: _saving
@@ -130,13 +133,13 @@ class _NotificationSettingsScreenState
             const SizedBox(height: SmartSpendSpacing.lg),
             if (_masterEnabled) ...[
               GroupedSection(
-                title: 'تخصيص الإشعارات',
+                title: AppLocalizations.of(context).appChooseYourNotifications,
                 children: [
                   SwitchListTile(
                     secondary: const Icon(Icons.savings_outlined),
                     title: Text(l10n.notificationSettingsBudget),
-                    subtitle: const Text(
-                      'تنبيه عند اقتراب المصروفات من سقف الميزانية المحددة',
+                    subtitle: Text(
+                      AppLocalizations.of(context).appWhenSpendingNearsABudget,
                     ),
                     value: _budgetEnabled,
                     onChanged: _saving
@@ -149,8 +152,8 @@ class _NotificationSettingsScreenState
                   SwitchListTile(
                     secondary: const Icon(Icons.alarm_rounded),
                     title: Text(l10n.notificationSettingsDaily),
-                    subtitle: const Text(
-                      'تذكير مسائي هادئ لتسجيل مصروفاتك التي لم تسجلها اليوم',
+                    subtitle: Text(
+                      AppLocalizations.of(context).appAQuietEveningReminderTo,
                     ),
                     value: _dailyEnabled,
                     onChanged: _saving
@@ -163,8 +166,8 @@ class _NotificationSettingsScreenState
                   SwitchListTile(
                     secondary: const Icon(Icons.local_fire_department_outlined),
                     title: Text(l10n.notificationSettingsStreak),
-                    subtitle: const Text(
-                      'تنبيه قبل انتهاء اليوم للحفاظ على سلسلة أيام الالتزام والتسجيل',
+                    subtitle: Text(
+                      AppLocalizations.of(context).appBeforeTheDayEndsTo,
                     ),
                     value: _streakEnabled,
                     onChanged: _saving
@@ -177,8 +180,8 @@ class _NotificationSettingsScreenState
                   SwitchListTile(
                     secondary: const Icon(Icons.assessment_outlined),
                     title: Text(l10n.notificationSettingsMonthly),
-                    subtitle: const Text(
-                      'إشعار بصدور تقريرك المالي الشهري المفصل فور جاهزيته',
+                    subtitle: Text(
+                      AppLocalizations.of(context).appWhenYourMonthlyReportIs,
                     ),
                     value: _monthlyEnabled,
                     onChanged: _saving

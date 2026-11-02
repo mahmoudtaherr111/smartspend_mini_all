@@ -285,12 +285,14 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             style: Theme.of(context).textTheme.bodyMedium
                 ?.copyWith(color: colors.mutedForeground),
           ),
-          const SizedBox(height: 16),
-          Text(
-            AppLocalizations.of(context).aiTryAsking,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
+          if (questionsAsync.value?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 16),
+            Text(
+              AppLocalizations.of(context).aiTryAsking,
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+          ],
           questionsAsync.when(
             loading: () => const SizedBox.shrink(),
             error: (err, stack) => const SizedBox.shrink(),

@@ -18,7 +18,7 @@ Why it exists and what is decided: `docs/decisions/0022-flutter-mobile-app.md`. 
 5. Pigeon and gen-l10n output is committed exactly as the tools write it. (the "Generated code matches its sources"
    step of `.github/workflows/mobile.yml`)
 6. Every text a user reads is in `app/lib/src/l10n/app_ar.arb` first, then `app_en.arb`, written as
-   `docs/guides/writing-app-messages.md` says. (missing English keys: gen-l10n; text written in Dart code: unenforced)
+   `docs/guides/writing-app-messages.md` says. (missing English keys: gen-l10n; text written in Dart code: `app/test/no_hardcoded_text_test.dart`)
 7. The session token lives only in `SessionStore` (Keychain or Keystore), and `SessionController` is the only code
    that writes or clears it. Never log it, a Google ID token, a message's text, a phone number or a transcript (golden
    rule 10 in the root `AGENTS.md`). (unenforced)

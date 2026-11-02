@@ -77,7 +77,10 @@ class _OnboardingQuestionsScreenState
       showSmartSpendNotice(context, e.message);
     } on Object {
       if (!mounted) return;
-      showSmartSpendNotice(context, 'تعذر حفظ الإجابة حالياً');
+      showSmartSpendNotice(
+        context,
+        AppLocalizations.of(context).appWeCouldnTSaveYour,
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -121,7 +124,7 @@ class _OnboardingQuestionsScreenState
                     Text(l10n.onboardingDone, style: textTheme.titleLarge),
                     const SizedBox(height: SmartSpendSpacing.xl),
                     SmartSpendButton(
-                      label: 'العودة',
+                      label: AppLocalizations.of(context).appBack,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -193,7 +196,8 @@ class _OnboardingQuestionsScreenState
                     TextField(
                       controller: _answerController,
                       decoration: InputDecoration(
-                        hintText: 'اكتب إجابتك هنا...',
+                        hintText: AppLocalizations.of(context)
+                            .appWriteYourAnswerHere,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(
                             SmartSpendRadii.md,

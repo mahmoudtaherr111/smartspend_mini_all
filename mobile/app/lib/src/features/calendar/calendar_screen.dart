@@ -458,11 +458,13 @@ class _CalendarSection extends StatelessWidget {
                 color: colors.foreground,
               ),
               const SizedBox(width: SmartSpendSpacing.xs),
-              Text(
-                AppLocalizations.of(context).calThisMonthSSpending,
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colors.foreground,
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context).calThisMonthSSpending,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colors.foreground,
+                  ),
                 ),
               ),
             ],
@@ -502,11 +504,13 @@ class _CommitmentsSection extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              AppLocalizations.of(context).calCommitmentsAndExpectedIncome,
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: colors.foreground,
+            Expanded(
+              child: Text(
+                AppLocalizations.of(context).calCommitmentsAndExpectedIncome,
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colors.foreground,
+                ),
               ),
             ),
             TextButton.icon(

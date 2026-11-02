@@ -19,12 +19,12 @@ class PlanScreen extends ConsumerStatefulWidget {
 
   static const path = '/more/plan';
 
-  static const _proFeatures = [
-    'مسح وقراءة إيصالات الشراء الذكية بالكاميرا',
-    'فصل حسابات الشغل والبيزنس عن المصاريف الشخصية',
-    'تحليلات مالية ومقارنات سنوية غير محدودة بالذكاء الاصطناعي',
-    'إزالة كافة الإعلانات الممولة تماماً',
-    'دعم فني مخصص ذو أولوية',
+  static List<String> _proFeatures(BuildContext context) => [
+    AppLocalizations.of(context).appReadReceiptsWithTheCamera,
+    AppLocalizations.of(context).appKeepWorkApartFromPersonal,
+    AppLocalizations.of(context).appGoalAnalysisAndTheDetailed,
+    AppLocalizations.of(context).appNoSponsoredCards,
+    AppLocalizations.of(context).appYourMonthlyReportOnWhatsapp,
   ];
 
   @override
@@ -157,8 +157,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                         const SizedBox(height: SmartSpendSpacing.md),
                         Text(
                           isPro
-                              ? 'أنت تستمتع حالياً بكافة مميزات خطة Pro بدون قيود.'
-                              : 'أنت على الخطة المجانية. يمكنك الترقية إلى Pro للحصول على تجربة متكاملة وبدون إعلانات.',
+                              ? AppLocalizations.of(context).appYouHaveAllOfPro
+                              : AppLocalizations.of(context).appYouReOnTheFree,
                           style: textTheme.bodyMedium,
                         ),
                         if (isPro) ...[
@@ -192,7 +192,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   ),
                   child: Column(
                     children: [
-                      for (final feat in PlanScreen._proFeatures)
+                      for (final feat in PlanScreen._proFeatures(context))
                         ListTile(
                           leading: Icon(
                             Icons.check_circle_rounded,

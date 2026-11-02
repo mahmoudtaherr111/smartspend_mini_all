@@ -19,21 +19,13 @@ class ExportResult {
   );
 }
 
-enum ExportPeriod {
-  thisMonth('الشهر الحالي'),
-  lastThreeMonths('آخر 3 شهور'),
-  allTime('كل المعاملات من البداية');
-
-  const ExportPeriod(this.label);
-  final String label;
-}
+enum ExportPeriod { thisMonth, lastThreeMonths, allTime }
 
 enum ExportFormat {
-  csv('ملف CSV (جداول بيانات)', 'csv'),
-  xlsx('ملف Excel (.xlsx)', 'xlsx'),
-  json('ملف بيانات برمجي (.json)', 'json');
+  csv('csv'),
+  xlsx('xlsx'),
+  json('json');
 
-  const ExportFormat(this.label, this.extension);
-  final String label;
+  const ExportFormat(this.extension);
   final String extension;
 }

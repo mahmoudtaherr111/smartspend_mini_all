@@ -71,8 +71,8 @@ void main() {
       app.container.read(routerProvider).go(InstallmentsScreen.path);
       await tester.pumpAndSettle();
 
-      expect(find.text('مافيش أقساط متسجلة'), findsOneWidget);
-      expect(find.text('إضافة أول قسط'), findsOneWidget);
+      expect(find.text('لسه مفيش أقساط'), findsOneWidget);
+      expect(find.text('ضيف أول قسط'), findsOneWidget);
     });
 
     testWidgets('displays active plans and hero monthly burden', (
@@ -118,7 +118,7 @@ void main() {
 
       expect(find.text('إجمالي الأقساط الشهرية'), findsOneWidget);
       expect(find.text('قسط تكييف شارب'), findsOneWidget);
-      expect(find.text('الأقساط المكتملة (1)'), findsOneWidget);
+      expect(find.text('الأقساط اللي خلصت (1)'), findsOneWidget);
       expect(find.text('موبايل فاليو'), findsOneWidget);
     });
 
@@ -144,13 +144,13 @@ void main() {
       app.container.read(routerProvider).go(InstallmentsScreen.path);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('إضافة أول قسط'));
+      await tester.tap(find.text('ضيف أول قسط'));
       await tester.pumpAndSettle();
 
       expect(find.byType(InstallmentFormSheet), findsOneWidget);
 
       // Tap save without filling: shows error
-      await tester.tap(find.text('حفظ القسط'));
+      await tester.tap(find.text('احفظ القسط'));
       await tester.pumpAndSettle();
       expect(find.text('اكتب اسم القسط (حرفين على الأقل)'), findsOneWidget);
 
@@ -161,7 +161,7 @@ void main() {
       );
       // Fill amount
       await tester.enterText(
-        find.widgetWithText(TextField, 'القسط كام في الشهر (ج.م) *'),
+        find.widgetWithText(TextField, 'القسط كام في الشهر *'),
         '1500',
       );
       // Fill total
@@ -172,10 +172,10 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.ensureVisible(
-        find.widgetWithText(SmartSpendButton, 'حفظ القسط'),
+        find.widgetWithText(SmartSpendButton, 'احفظ القسط'),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(SmartSpendButton, 'حفظ القسط'));
+      await tester.tap(find.widgetWithText(SmartSpendButton, 'احفظ القسط'));
       await tester.pumpAndSettle();
 
       expect(createdInput, isNotNull);
@@ -215,7 +215,7 @@ void main() {
 
         expect(find.byType(InstallmentsQuickCard), findsOneWidget);
         expect(find.text('الأقساط (1)'), findsOneWidget);
-        expect(find.text('قسط بي تك: فاضل 10 من أصل 12 قسط'), findsOneWidget);
+        expect(find.text('قسط بي تك: باقي 10 من 12'), findsOneWidget);
       },
     );
   });

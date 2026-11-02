@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'limits_api.dart';
 
 /// Card showing remaining AI messages, voice seconds and offline limits (REC-16).
@@ -51,7 +53,8 @@ class LimitsCard extends ConsumerWidget {
                         const SizedBox(width: SmartSpendSpacing.sm),
                         Flexible(
                           child: Text(
-                            'استهلاك باقتك الشهرية',
+                            AppLocalizations.of(context)
+                                .appYourPlanSMonthlyUsage,
                             style: SmartSpendTypography.style(
                               14,
                               FontWeight.w700,
@@ -75,7 +78,9 @@ class LimitsCard extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
                       ),
                       child: Text(
-                        anyExhausted ? 'وصلت للحد' : 'قربت تخلّص',
+                        anyExhausted
+                            ? AppLocalizations.of(context).appLimitReached
+                            : AppLocalizations.of(context).appAlmostUsed,
                         style: SmartSpendTypography.style(11, FontWeight.w700)
                             .copyWith(
                               color: anyExhausted
@@ -91,10 +96,13 @@ class LimitsCard extends ConsumerWidget {
               // Voice Quota
               _QuotaRow(
                 icon: Icons.mic_none_rounded,
-                label: 'التسجيل الصوتي',
+                label: AppLocalizations.of(context).appVoiceRecording,
                 detail: limits.voice.isUnlimited
-                    ? 'غير محدود'
-                    : 'باقي ${limits.voice.remaining} ثانية من أصل ${limits.voice.limit}',
+                    ? AppLocalizations.of(context).appUnlimited
+                    : AppLocalizations.of(context).appP0OfP1SecondsLeft(
+                        '${limits.voice.remaining}',
+                        '${limits.voice.limit}',
+                      ),
                 fraction: limits.voice.fraction,
                 isLow: limits.voice.isLow,
               ),
@@ -102,17 +110,20 @@ class LimitsCard extends ConsumerWidget {
               // AI Messages Quota
               _QuotaRow(
                 icon: Icons.auto_awesome_outlined,
-                label: 'الذكاء الاصطناعي اليومي',
+                label: AppLocalizations.of(context).appDailyAi,
                 detail: limits.ai.isUnlimited
-                    ? 'غير محدود'
-                    : 'باقي ${limits.ai.remaining} عملية من أصل ${limits.ai.limit}',
+                    ? AppLocalizations.of(context).appUnlimited
+                    : AppLocalizations.of(context).appP0OfP1Left(
+                        '${limits.ai.remaining}',
+                        '${limits.ai.limit}',
+                      ),
                 fraction: limits.ai.fraction,
                 isLow: limits.ai.isLow,
               ),
               if (anyLow || anyExhausted) ...[
                 const SizedBox(height: SmartSpendSpacing.md),
                 SmartSpendButton(
-                  label: 'ترقية باقتك إلى Pro',
+                  label: AppLocalizations.of(context).appUpgradeToPro,
                   variant: ButtonVariant.secondary,
                   onPressed: () => showUpgradePromptSheet(
                     context: context,

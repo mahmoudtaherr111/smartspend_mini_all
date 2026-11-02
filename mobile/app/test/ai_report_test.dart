@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/src/internals.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartspend_app/src/l10n/app_localizations.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_app/src/core/providers.dart';
 import 'package:smartspend_app/src/features/ai/ai_api.dart';
@@ -11,6 +10,7 @@ import 'package:smartspend_app/src/features/ai/ai_models.dart';
 import 'package:smartspend_app/src/features/ai/ai_providers.dart';
 import 'package:smartspend_app/src/features/ai/ai_report_view.dart';
 import 'package:smartspend_app/src/features/ai/ai_yearly_insights_view.dart';
+import 'package:smartspend_app/src/l10n/app_localizations.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import 'support/test_app.dart';

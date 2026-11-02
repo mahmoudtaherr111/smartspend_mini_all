@@ -1649,20 +1649,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get dataStoredTitle => 'البيانات والخصوصية';
 
   @override
-  String get appInfoTitle => 'عن التطبيق';
-
-  @override
   String get appVersion => 'الإصدار';
-
-  @override
-  String get appUpdateRequired => 'تحديث إجباري متوفر';
-
-  @override
-  String get appUpdateBody =>
-      'يتطلب التطبيق التحديث إلى أحدث إصدار لمتابعة الاستخدام وحماية بياناتك.';
-
-  @override
-  String get appUpdateNow => 'تحديث الآن';
 
   @override
   String get offlineRetryBanner =>
@@ -2546,15 +2533,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get monNotNow => 'مش دلوقتي';
 
   @override
-  String get monAll => 'الكل';
-
-  @override
-  String get monRecordedMonthlyIncome => 'الدخل الشهري المسجل';
-
-  @override
-  String get monTotalIncomeThisMonth => 'إجمالي دخل الشهر';
-
-  @override
   String get monHowYouSpend => 'طريقة صرفك';
 
   @override
@@ -2771,12 +2749,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aiConfirm2 => 'أكد';
-
-  @override
-  String get aiReportReceived => 'التقرير وصل.';
-
-  @override
-  String get aiMonthsCompared => 'قارنا الشهرين.';
 
   @override
   String get aiLiveCall => 'المكالمة المباشرة';
@@ -3052,15 +3024,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'خصوصيتك: الصوت ونص المكالمة مش بيتحفظوا.';
 
   @override
-  String get aiWeCouldnTConnectThe => 'ما عرفناش نوصل المكالمة.';
-
-  @override
-  String get aiTheCallLostItsConnection => 'الاتصال انقطع.';
-
-  @override
-  String get aiSomethingWentWrongInThe => 'حصلت مشكلة في المكالمة';
-
-  @override
   String get aiCallEnded => 'المكالمة خلصت';
 
   @override
@@ -3093,11 +3056,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aiCancelled2 => 'اتلغت';
-
-  @override
-  String aiABusinessForP0(String p0) {
-    return 'مشروع $p0';
-  }
 
   @override
   String get aiAddACategory => 'ضيف فئة للمشروع';
@@ -3338,9 +3296,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get aiDeleteThePerson => 'امسح الشخص';
 
   @override
-  String get aiNoName => 'من غير اسم';
-
-  @override
   String aiDeleteP0(String p0) {
     return 'تمسح \"$p0\"؟';
   }
@@ -3387,4 +3342,588 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aiWeCouldnTMergeThem => 'ما عرفناش ندمج. جرّب تاني.';
+
+  @override
+  String appDayP0OfTheMonth(String p0) {
+    return 'يوم $p0 في الشهر';
+  }
+
+  @override
+  String get appStartOfMonth => 'أول الشهر';
+
+  @override
+  String get appEndOfMonth => 'آخر الشهر';
+
+  @override
+  String get appWeCouldnTSaveYour => 'ما عرفناش نحفظ إجابتك.';
+
+  @override
+  String get appBack => 'رجوع';
+
+  @override
+  String get appWriteYourAnswerHere => 'اكتب إجابتك هنا...';
+
+  @override
+  String get appEnterAValidEgyptianMobile =>
+      'اكتب رقم موبايل مصري صحيح: 11 رقم بيبدأ بـ 01';
+
+  @override
+  String get appEnterThe6DigitCode => 'اكتب الكود المكون من 6 أرقام';
+
+  @override
+  String appYouCanAskForA(String p0) {
+    return 'تقدر تطلب كود جديد بعد $p0 ثانية';
+  }
+
+  @override
+  String get appSignedOutOfThatDevice => 'الجهاز ده خرج من حسابك';
+
+  @override
+  String get appTryAgain => 'جرّب تاني';
+
+  @override
+  String get appNoSessionsRecorded => 'مفيش أجهزة متسجلة';
+
+  @override
+  String get appEnterAValidEgyptianMobile2 =>
+      'اكتب رقم موبايل مصري صحيح بيبدأ بـ 01';
+
+  @override
+  String get appWeCanTSendA =>
+      'مش قادرين نبعت كود دلوقتي. تأكد من النت وجرّب تاني.';
+
+  @override
+  String get appEnterThe6DigitCode2 => 'اكتب الكود المكون من 6 أرقام';
+
+  @override
+  String get appThatCodeDidnTWork => 'الكود ده ما نفعش.';
+
+  @override
+  String get appThePasswordMustBeAt => 'الباسورد لازم يكون 6 حروف على الأقل';
+
+  @override
+  String get appTheTwoPasswordsDonT => 'الباسوردين مش زي بعض';
+
+  @override
+  String get appWeCouldnTChangeThe => 'ما عرفناش نغير الباسورد.';
+
+  @override
+  String get appEnterYourRegisteredNumberAnd =>
+      'اكتب رقمك المسجل وهنبعتلك كود على واتساب:';
+
+  @override
+  String get appEnterThe6DigitCode3 => 'اكتب الكود اللي وصلك على واتساب:';
+
+  @override
+  String get appConfirmTheCode => 'أكد الكود';
+
+  @override
+  String get appChooseANewPassword => 'اختار باسورد جديد:';
+
+  @override
+  String get appThisMonth => 'الشهر ده';
+
+  @override
+  String get appLast3Months => 'آخر 3 شهور';
+
+  @override
+  String get appEverythingFromTheStart => 'كل العمليات من الأول';
+
+  @override
+  String get appCsvFileSpreadsheet => 'ملف CSV (جداول)';
+
+  @override
+  String get appExcelFileXlsx => 'ملف Excel (.xlsx)';
+
+  @override
+  String get appJsonFile => 'ملف JSON';
+
+  @override
+  String get appWeCouldnTPrepareThe =>
+      'مقدرناش نجهز الملف دلوقتي. اتأكد من النت وجرّب تاني.';
+
+  @override
+  String get appExportMyData => 'صدّر بياناتك';
+
+  @override
+  String get appYourDataIsAlwaysYours => 'بياناتك بتاعتك دايمًا';
+
+  @override
+  String get appDownloadEverythingYouRecordedIn =>
+      'نزّل كل اللي سجلته في ملف تقدر تفتحه على الكمبيوتر.';
+
+  @override
+  String get appPeriod => 'الفترة';
+
+  @override
+  String get appFileType => 'نوع الملف';
+
+  @override
+  String get appYouHaveTheRightTo =>
+      'من حقك توصل لبياناتك طبقًا لقانون 151 لسنة 2020.';
+
+  @override
+  String get appTheFileIsReady => 'الملف جاهز';
+
+  @override
+  String get appPreparingTheFile => 'بنجهز الملف...';
+
+  @override
+  String get appExportTheFile => 'صدّر الملف';
+
+  @override
+  String get appTermsOfService => 'شروط الخدمة';
+
+  @override
+  String get appDataAndPrivacy => 'البيانات والخصوصية';
+
+  @override
+  String get app2026SmartspendAiEgypt => '© 2026 SmartSpend AI، مصر';
+
+  @override
+  String appPleaseUpdateTheAppFrom(String p0) {
+    return 'حدّث التطبيق من المتجر: $p0';
+  }
+
+  @override
+  String get appPleaseUpdateTheApp => 'لازم تحدّث التطبيق';
+
+  @override
+  String get appThisVersionIsNoLonger =>
+      'النسخة دي ما بقتش مدعومة. حدّث علشان بياناتك تفضل في أمان.';
+
+  @override
+  String appMinimumVersionP0(String p0) {
+    return 'أقل نسخة مطلوبة: $p0';
+  }
+
+  @override
+  String get appYouReOfflineYourSaved =>
+      'إنت من غير نت. بياناتك المحفوظة موجودة.';
+
+  @override
+  String get appUpdateNow2 => 'حدّث دلوقتي';
+
+  @override
+  String get appContinueOffline => 'كمّل من غير نت';
+
+  @override
+  String get appThisPageExplainsWhatThe =>
+      'الصفحة دي بتوضح التطبيق بيحتفظ بإيه عنك وحقوقك طبقًا لقانون 151 لسنة 2020.';
+
+  @override
+  String get appYouReOfflineChangesSave =>
+      'إنت من غير نت. التغييرات بتتحفظ هنا وبتتبعت بعدين.';
+
+  @override
+  String get appConnectionError => 'مشكلة في الاتصال.';
+
+  @override
+  String get appHaveMonthlyInstallmentsFollowThem =>
+      'عندك أقساط شهرية؟ تابعها من هنا';
+
+  @override
+  String get appAddAnInstallment => 'ضيف قسط';
+
+  @override
+  String appInstallmentsP0(String p0) {
+    return 'الأقساط ($p0)';
+  }
+
+  @override
+  String appP0Month(String p0) {
+    return '$p0 / شهر';
+  }
+
+  @override
+  String get appInstallments => 'الأقساط';
+
+  @override
+  String get appWeCanTLoadYour => 'مش قادرين نجيب الأقساط دلوقتي.';
+
+  @override
+  String get appNoInstallmentsYet => 'لسه مفيش أقساط';
+
+  @override
+  String get appAddAnInstallmentAndWhenever =>
+      'ضيف القسط، وكل ما تسجل «دفعت قسط فاليو 800» هنحسبه.';
+
+  @override
+  String get appAddYourFirstInstallment => 'ضيف أول قسط';
+
+  @override
+  String get appTotalMonthlyInstallments => 'إجمالي الأقساط الشهرية';
+
+  @override
+  String appP0ActiveInstallmentsP1Left(String p0, String p1) {
+    return 'عندك $p0 أقساط شغالة · الباقي منها $p1';
+  }
+
+  @override
+  String get appAllYourInstallmentsAreFinished =>
+      'خلّصت كل الأقساط. مفيش حاجة شغالة دلوقتي.';
+
+  @override
+  String appActiveInstallmentsP0(String p0) {
+    return 'الأقساط الشغالة ($p0)';
+  }
+
+  @override
+  String appFinishedInstallmentsP0(String p0) {
+    return 'الأقساط اللي خلصت ($p0)';
+  }
+
+  @override
+  String get appDeleteTheInstallment => 'امسح القسط';
+
+  @override
+  String appDeleteP0ThisCanT(String p0) {
+    return 'تمسح قسط «$p0»؟ المسح مابيترجعش.';
+  }
+
+  @override
+  String get appCancel => 'إلغاء';
+
+  @override
+  String get appDelete => 'امسح';
+
+  @override
+  String get appWeCouldnTDeleteIt => 'ما عرفناش نمسح القسط. جرّب تاني.';
+
+  @override
+  String appTrackingWordP0(String p0) {
+    return 'كلمة التتبع: «$p0»';
+  }
+
+  @override
+  String appP0Month2(String p0) {
+    return '$p0 / شهر';
+  }
+
+  @override
+  String appAllPaidP0OfP1(String p0, String p1) {
+    return 'خلصت كلها ($p0 من $p1)';
+  }
+
+  @override
+  String appPaidP0OfP1(String p0, String p1) {
+    return 'اتدفع $p0 من $p1';
+  }
+
+  @override
+  String appP0Left(String p0) {
+    return 'فاضل $p0';
+  }
+
+  @override
+  String get appPaymentsShareANameWith =>
+      'الدفعات اسمها شبه خطة تانية. اربطها بمواعيد القسط علشان تفرق بينهم.';
+
+  @override
+  String appAllPaidYouPaidP0(String p0) {
+    return 'خلصت الأقساط كلها. دفعت $p0 في المجموع.';
+  }
+
+  @override
+  String get appEnterANameAtLeast => 'اكتب اسم القسط (حرفين على الأقل)';
+
+  @override
+  String get appEnterTheMonthlyAmount => 'اكتب قيمة القسط الشهري';
+
+  @override
+  String get appEnterTheNumberOfInstallments =>
+      'اكتب عدد الأقساط (قسط واحد على الأقل)';
+
+  @override
+  String get appPaidInstallmentsMustBeBetween =>
+      'المدفوع لازم يكون بين 0 وإجمالي الأقساط';
+
+  @override
+  String get appWeCouldnTAddIt =>
+      'ما عرفناش نضيف القسط. اتأكد من النت وجرّب تاني.';
+
+  @override
+  String get appSomethingWentWrongTryAgain => 'حصلت مشكلة. جرّب تاني.';
+
+  @override
+  String get appNewInstallment => 'قسط جديد';
+
+  @override
+  String get appClose => 'اقفل';
+
+  @override
+  String get appWheneverYouRecordSpendingWith =>
+      'كل ما تسجل مصروف فيه كلمة القسط (زي «دفعت قسط فاليو 800») هنعدّه.';
+
+  @override
+  String get appName => 'اسم القسط *';
+
+  @override
+  String get appLikeValuPhoneOrThe => 'زي: موبايل فاليو أو قسط التكييف';
+
+  @override
+  String get appPaymentWordOptional => 'كلمة الدفع (اختياري)';
+
+  @override
+  String get appLikeValuEmptyUsesThe =>
+      'زي: فاليو (لو سبتها فاضية هناخد اسم القسط)';
+
+  @override
+  String get appMonthlyAmount => 'القسط كام في الشهر *';
+
+  @override
+  String get appLike850 => 'زي: 850';
+
+  @override
+  String get appTotalInstallments => 'إجمالي الأقساط *';
+
+  @override
+  String get appLike12 => 'زي: 12';
+
+  @override
+  String get appAlreadyPaid => 'مدفوع منه كام';
+
+  @override
+  String get appSave => 'احفظ القسط';
+
+  @override
+  String get appYourPlanSMonthlyUsage => 'استهلاك باقتك الشهرية';
+
+  @override
+  String get appLimitReached => 'وصلت للحد';
+
+  @override
+  String get appAlmostUsed => 'قربت تخلص';
+
+  @override
+  String get appVoiceRecording => 'التسجيل الصوتي';
+
+  @override
+  String get appUnlimited => 'من غير حد';
+
+  @override
+  String appP0OfP1SecondsLeft(String p0, String p1) {
+    return 'باقي $p0 ثانية من $p1';
+  }
+
+  @override
+  String get appDailyAi => 'الذكاء الاصطناعي اليومي';
+
+  @override
+  String appP0OfP1Left(String p0, String p1) {
+    return 'باقي $p0 عملية من $p1';
+  }
+
+  @override
+  String get appUpgradeToPro => 'اشترك في Pro';
+
+  @override
+  String get appNotificationSettingsSaved => 'إعدادات الإشعارات اتحفظت';
+
+  @override
+  String get appAllowNotificationsFromTheApp => 'اسمح بالإشعارات من التطبيق';
+
+  @override
+  String get appChooseYourNotifications => 'اختار إشعاراتك';
+
+  @override
+  String get appWhenSpendingNearsABudget => 'لما مصاريفك تقرب من سقف الميزانية';
+
+  @override
+  String get appAQuietEveningReminderTo => 'تذكير هادي بالليل تسجل مصاريفك';
+
+  @override
+  String get appBeforeTheDayEndsTo =>
+      'قبل ما اليوم يخلص علشان تحافظ على سلسلة التسجيل';
+
+  @override
+  String get appWhenYourMonthlyReportIs => 'لما تقريرك الشهري يجهز';
+
+  @override
+  String get appThePriceIsHighFor => 'السعر غالي عليّ';
+
+  @override
+  String get appIDonTNeedThe => 'مش محتاج المميزات الزيادة';
+
+  @override
+  String get appIHadTechnicalProblems => 'قابلتني مشاكل تقنية';
+
+  @override
+  String get appILlSubscribeAgainLater => 'هشترك تاني بعدين';
+
+  @override
+  String get appAnotherReason => 'سبب تاني';
+
+  @override
+  String get appAutoRenewalIsCancelled => 'التجديد التلقائي اتلغى';
+
+  @override
+  String get appWeCanTCancelRight => 'مش قادرين نلغي دلوقتي.';
+
+  @override
+  String get appHelpUsUnderstandWhy => 'قولنا السبب:';
+
+  @override
+  String get appKeepMyPlan => 'سيب باقتي';
+
+  @override
+  String get appShareSmartspendWithYourFriends => 'شارك SmartSpend مع أصحابك';
+
+  @override
+  String get appInviteYourFriendsAndFamily =>
+      'ادعي أصحابك وأهلك ينظموا مصاريفهم.';
+
+  @override
+  String get appLoading => 'بنحمّل...';
+
+  @override
+  String get appReadReceiptsWithTheCamera => 'قراءة الفواتير بالكاميرا';
+
+  @override
+  String get appKeepWorkApartFromPersonal =>
+      'فصل حساب الشغل عن مصاريفك الشخصية';
+
+  @override
+  String get appGoalAnalysisAndTheDetailed => 'تحليل الأهداف والتقرير المفصل';
+
+  @override
+  String get appNoSponsoredCards => 'من غير إعلانات';
+
+  @override
+  String get appYourMonthlyReportOnWhatsapp => 'تقريرك الشهري على واتساب';
+
+  @override
+  String get appYouHaveAllOfPro => 'إنت معاك كل مميزات Pro.';
+
+  @override
+  String get appYouReOnTheFree => 'إنت على الباقة المجانية.';
+
+  @override
+  String get appSeasons => 'مواسم الصرف';
+
+  @override
+  String get appWeCanTLoadThis => 'مش قادرين نجيب الموسم دلوقتي.';
+
+  @override
+  String appP0ToP1P2More(String p0, String p1, String p2, String p3) {
+    return 'من $p0 إلى $p1 · أكتر من السنة اللي فاتت بـ $p2%';
+  }
+
+  @override
+  String appP0ToP1P2Less(String p0, String p1, String p2, String p3) {
+    return 'من $p0 إلى $p1 · أقل من السنة اللي فاتت بـ $p2%';
+  }
+
+  @override
+  String appP0ToP1SameAs(String p0, String p1, String p2) {
+    return 'من $p0 إلى $p1 · نفس السنة اللي فاتت';
+  }
+
+  @override
+  String appP0ToP1(String p0, String p1) {
+    return 'من $p0 إلى $p1';
+  }
+
+  @override
+  String appWhatP0CostYou(String p0) {
+    return '$p0 كلفك كام';
+  }
+
+  @override
+  String appNoSpendingInP0(String p0) {
+    return 'مفيش مصاريف في $p0';
+  }
+
+  @override
+  String appNothingRecordedFromP0To(String p0, String p1) {
+    return 'مفيش حاجة متسجلة من $p0 إلى $p1.';
+  }
+
+  @override
+  String get appByCategory => 'حسب الفئة';
+
+  @override
+  String appP0Transactions(String p0) {
+    return '$p0 عملية';
+  }
+
+  @override
+  String get appDaysInARow => 'يوم ورا بعض';
+
+  @override
+  String get appDaysInARow2 => 'يوم ورا بعض';
+
+  @override
+  String get appDaysInARow3 => 'يوم ورا بعض';
+
+  @override
+  String get appDay => 'يوم';
+
+  @override
+  String appYouRecordedP0P1(String p0, String p1) {
+    return 'سجلت $p0 $p1';
+  }
+
+  @override
+  String get appHowDoIRecordMy => 'إزاي أسجل مصاريفي؟';
+
+  @override
+  String get appTypeASentenceRecordYour =>
+      'اكتب جملة، أو سجّل بصوتك، أو صوّر الفاتورة.';
+
+  @override
+  String get appIsMyFinancialDataSafe => 'بياناتي في أمان؟';
+
+  @override
+  String get appOnlyYourAccountCanReach =>
+      'بياناتك مربوطة بحسابك بس، وتقدر تقفل التطبيق برمز أو بصمة.';
+
+  @override
+  String get appHowDoIChangeWhen => 'إزاي أغير بداية شهري؟';
+
+  @override
+  String get appFromMoreMoneyPreferencesChoose =>
+      'من «المزيد» ثم «تفضيلات الفلوس» اختار يوم القبض.';
+
+  @override
+  String get appWhenWillSupportAnswer => 'الدعم بيرد إمتى؟';
+
+  @override
+  String get appOurTeamReadsEveryTicket =>
+      'الفريق بيقرا كل طلب وبيرد في أقرب وقت.';
+
+  @override
+  String get appYourTicketWasSent => 'طلبك اتبعت';
+
+  @override
+  String get appWeCouldnTSendYour => 'ما عرفناش نبعت طلبك.';
+
+  @override
+  String get appWeCanTLoadYour2 => 'مش قادرين نجيب طلباتك.';
+
+  @override
+  String get appNoPastTickets => 'مفيش طلبات قبل كده';
+
+  @override
+  String get appPageNotFound => 'الصفحة مش موجودة';
+
+  @override
+  String get appThisPageIsnTHere => 'الصفحة اللي بتدور عليها مش موجودة';
+
+  @override
+  String get appTheLinkMayHaveChanged =>
+      'الرابط ممكن يكون اتغير أو الصفحة اتمسحت.';
+
+  @override
+  String get appBackToHome => 'ارجع للرئيسية';
+
+  @override
+  String appActiveSince(String p0) {
+    return 'نشط من $p0';
+  }
+
+  @override
+  String appInstallmentLeft(String p0, String p1, String p2) {
+    return '$p0: باقي $p1 من $p2';
+  }
 }

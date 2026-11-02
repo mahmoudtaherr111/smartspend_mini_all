@@ -63,12 +63,9 @@ void main() {
         app.container.read(routerProvider).go(SeasonsScreen.path);
         await tester.pumpAndSettle();
 
-        expect(find.text('مواسم المصاريف'), findsOneWidget);
-        expect(find.text('مافيش مصاريف في رمضان'), findsOneWidget);
-        expect(
-          find.textContaining('المواسم بتتحسب تلقائياً من تواريخ مصاريفك'),
-          findsOneWidget,
-        );
+        expect(find.text('مواسم الصرف'), findsOneWidget);
+        expect(find.text('مفيش مصاريف في رمضان'), findsOneWidget);
+        expect(find.textContaining('مفيش حاجة متسجلة من'), findsOneWidget);
       },
     );
 

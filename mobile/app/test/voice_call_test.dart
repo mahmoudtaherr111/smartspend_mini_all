@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartspend_app/src/l10n/app_localizations.dart';
 import 'package:smartspend_app/src/features/ai/voice/voice_call_controller.dart';
 import 'package:smartspend_app/src/features/ai/voice/voice_call_models.dart';
 import 'package:smartspend_app/src/features/ai/voice/voice_call_screen.dart';
+import 'package:smartspend_app/src/l10n/app_localizations.dart';
 
 void main() {
   group('VoiceCallController Protocol v2 State Machine', () {
@@ -188,7 +188,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('المكالمة المباشرة'), findsOneWidget);
+      expect(find.text('مكالمة مباشرة'), findsOneWidget);
       expect(find.text('مرحباً، كيف أساعدك اليوم؟'), findsOneWidget);
       expect(find.text('إضافة مصروف'), findsOneWidget);
       expect(find.textContaining('85'), findsOneWidget);

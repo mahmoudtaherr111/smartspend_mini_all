@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import '../ledger/ledger_providers.dart';
 
 /// Reusable banner displayed when the device is offline or requests fail (FND-12).
@@ -40,8 +42,8 @@ class NetworkRetryBanner extends ConsumerWidget {
             child: Text(
               message ??
                   (!online
-                      ? 'أنت في وضع عدم الاتصال. يتم الحفظ محلياً والمزامنة لاحقاً.'
-                      : 'حدث خطأ في الاتصال.'),
+                      ? AppLocalizations.of(context).appYouReOfflineChangesSave
+                      : AppLocalizations.of(context).appConnectionError),
               style: textTheme.bodySmall?.copyWith(
                 color: colors.warning,
                 fontWeight: FontWeight.w500,
@@ -53,7 +55,7 @@ class NetworkRetryBanner extends ConsumerWidget {
             GestureDetector(
               onTap: onRetry,
               child: Text(
-                'إعادة المحاولة',
+                AppLocalizations.of(context).appTryAgain,
                 style: textTheme.labelSmall?.copyWith(
                   color: colors.accent,
                   fontWeight: FontWeight.bold,

@@ -4,6 +4,7 @@ import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../core/providers.dart';
+import '../../l10n/app_localizations.dart';
 
 Map<String, Object?> _object(Object? value) =>
     value is Map<String, Object?> ? value : const {};
@@ -36,20 +37,20 @@ class StreakBadge extends ConsumerWidget {
     Color bgColor;
     Color borderColor;
     Color textColor;
-    String labelSuffix = 'يوم متواصل';
+    String labelSuffix = AppLocalizations.of(context).appDaysInARow;
 
     if (streak >= 30) {
       flameColor = const Color(0xFFA855F7); // Purple
       bgColor = const Color(0xFFA855F7).withValues(alpha: 0.12);
       borderColor = const Color(0xFFA855F7).withValues(alpha: 0.3);
       textColor = const Color(0xFFA855F7);
-      labelSuffix = 'يوم متواصل 👑';
+      labelSuffix = AppLocalizations.of(context).appDaysInARow2;
     } else if (streak >= 10) {
       flameColor = const Color(0xFF3B82F6); // Blue
       bgColor = const Color(0xFF3B82F6).withValues(alpha: 0.12);
       borderColor = const Color(0xFF3B82F6).withValues(alpha: 0.3);
       textColor = const Color(0xFF3B82F6);
-      labelSuffix = 'يوم متواصل 🔥';
+      labelSuffix = AppLocalizations.of(context).appDaysInARow3;
     } else if (streak >= 1) {
       flameColor = const Color(0xFFF97316); // Orange
       bgColor = const Color(0xFFF97316).withValues(alpha: 0.12);
@@ -60,11 +61,12 @@ class StreakBadge extends ConsumerWidget {
       bgColor = const Color(0xFF94A3B8).withValues(alpha: 0.1);
       borderColor = const Color(0xFF94A3B8).withValues(alpha: 0.2);
       textColor = const Color(0xFF64748B);
-      labelSuffix = 'يوم';
+      labelSuffix = AppLocalizations.of(context).appDay;
     }
 
     return Semantics(
-      label: 'سجلت $streak $labelSuffix',
+      label: AppLocalizations.of(context)
+          .appYouRecordedP0P1('$streak', labelSuffix),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(

@@ -1649,20 +1649,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dataStoredTitle => 'Data & Privacy';
 
   @override
-  String get appInfoTitle => 'App Information';
-
-  @override
   String get appVersion => 'Version';
-
-  @override
-  String get appUpdateRequired => 'Update Required';
-
-  @override
-  String get appUpdateBody =>
-      'A required update is available. Please update the app to continue.';
-
-  @override
-  String get appUpdateNow => 'Update Now';
 
   @override
   String get offlineRetryBanner =>
@@ -2558,15 +2545,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monNotNow => 'Not now';
 
   @override
-  String get monAll => 'All';
-
-  @override
-  String get monRecordedMonthlyIncome => 'Recorded monthly income';
-
-  @override
-  String get monTotalIncomeThisMonth => 'Total income this month';
-
-  @override
   String get monHowYouSpend => 'How you spend';
 
   @override
@@ -2791,12 +2769,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiConfirm2 => 'Confirm';
-
-  @override
-  String get aiReportReceived => 'Report received.';
-
-  @override
-  String get aiMonthsCompared => 'Months compared.';
 
   @override
   String get aiLiveCall => 'Live call';
@@ -3076,15 +3048,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your privacy: neither the audio nor a transcript is saved.';
 
   @override
-  String get aiWeCouldnTConnectThe => 'We couldn\'t connect the call.';
-
-  @override
-  String get aiTheCallLostItsConnection => 'The call lost its connection.';
-
-  @override
-  String get aiSomethingWentWrongInThe => 'Something went wrong in the call';
-
-  @override
   String get aiCallEnded => 'Call ended';
 
   @override
@@ -3118,11 +3081,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiCancelled2 => 'Cancelled';
-
-  @override
-  String aiABusinessForP0(String p0) {
-    return 'A business for $p0';
-  }
 
   @override
   String get aiAddACategory => 'Add a category';
@@ -3368,9 +3326,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiDeleteThePerson => 'Delete the person';
 
   @override
-  String get aiNoName => 'No name';
-
-  @override
   String aiDeleteP0(String p0) {
     return 'Delete \"$p0\"?';
   }
@@ -3418,4 +3373,596 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiWeCouldnTMergeThem => 'We couldn\'t merge them. Try again.';
+
+  @override
+  String appDayP0OfTheMonth(String p0) {
+    return 'Day $p0 of the month';
+  }
+
+  @override
+  String get appStartOfMonth => 'Start of month';
+
+  @override
+  String get appEndOfMonth => 'End of month';
+
+  @override
+  String get appWeCouldnTSaveYour => 'We couldn\'t save your answer.';
+
+  @override
+  String get appBack => 'Back';
+
+  @override
+  String get appWriteYourAnswerHere => 'Write your answer here...';
+
+  @override
+  String get appEnterAValidEgyptianMobile =>
+      'Enter a valid Egyptian mobile number: 11 digits starting with 01';
+
+  @override
+  String get appEnterThe6DigitCode => 'Enter the 6-digit code';
+
+  @override
+  String appYouCanAskForA(String p0) {
+    return 'You can ask for a new code in $p0 seconds';
+  }
+
+  @override
+  String get appSignedOutOfThatDevice => 'Signed out of that device';
+
+  @override
+  String get appTryAgain => 'Try again';
+
+  @override
+  String get appNoSessionsRecorded => 'No sessions recorded';
+
+  @override
+  String get appEnterAValidEgyptianMobile2 =>
+      'Enter a valid Egyptian mobile number starting with 01';
+
+  @override
+  String get appWeCanTSendA =>
+      'We can\'t send a code right now. Check your connection and try again.';
+
+  @override
+  String get appEnterThe6DigitCode2 => 'Enter the 6-digit code';
+
+  @override
+  String get appThatCodeDidnTWork => 'That code didn\'t work.';
+
+  @override
+  String get appThePasswordMustBeAt =>
+      'The password must be at least 6 characters';
+
+  @override
+  String get appTheTwoPasswordsDonT => 'The two passwords don\'t match';
+
+  @override
+  String get appWeCouldnTChangeThe => 'We couldn\'t change the password.';
+
+  @override
+  String get appEnterYourRegisteredNumberAnd =>
+      'Enter your registered number and we\'ll send a code on WhatsApp:';
+
+  @override
+  String get appEnterThe6DigitCode3 =>
+      'Enter the 6-digit code we sent on WhatsApp:';
+
+  @override
+  String get appConfirmTheCode => 'Confirm the code';
+
+  @override
+  String get appChooseANewPassword => 'Choose a new password:';
+
+  @override
+  String get appThisMonth => 'This month';
+
+  @override
+  String get appLast3Months => 'Last 3 months';
+
+  @override
+  String get appEverythingFromTheStart => 'Everything from the start';
+
+  @override
+  String get appCsvFileSpreadsheet => 'CSV file (spreadsheet)';
+
+  @override
+  String get appExcelFileXlsx => 'Excel file (.xlsx)';
+
+  @override
+  String get appJsonFile => 'JSON file';
+
+  @override
+  String get appWeCouldnTPrepareThe =>
+      'We couldn\'t prepare the file. Check your connection and try again.';
+
+  @override
+  String get appExportMyData => 'Export my data';
+
+  @override
+  String get appYourDataIsAlwaysYours => 'Your data is always yours';
+
+  @override
+  String get appDownloadEverythingYouRecordedIn =>
+      'Download everything you recorded in a file you can open on a computer.';
+
+  @override
+  String get appPeriod => 'Period';
+
+  @override
+  String get appFileType => 'File type';
+
+  @override
+  String get appYouHaveTheRightTo =>
+      'You have the right to access your data under Law 151 of 2020.';
+
+  @override
+  String get appTheFileIsReady => 'The file is ready';
+
+  @override
+  String get appPreparingTheFile => 'Preparing the file...';
+
+  @override
+  String get appExportTheFile => 'Export the file';
+
+  @override
+  String get appTermsOfService => 'Terms of service';
+
+  @override
+  String get appDataAndPrivacy => 'Data and privacy';
+
+  @override
+  String get app2026SmartspendAiEgypt => '© 2026 SmartSpend AI, Egypt';
+
+  @override
+  String appPleaseUpdateTheAppFrom(String p0) {
+    return 'Please update the app from the store: $p0';
+  }
+
+  @override
+  String get appPleaseUpdateTheApp => 'Please update the app';
+
+  @override
+  String get appThisVersionIsNoLonger =>
+      'This version is no longer supported. Update to keep your data safe.';
+
+  @override
+  String appMinimumVersionP0(String p0) {
+    return 'Minimum version: $p0';
+  }
+
+  @override
+  String get appYouReOfflineYourSaved =>
+      'You\'re offline. Your saved data is still here.';
+
+  @override
+  String get appUpdateNow2 => 'Update now';
+
+  @override
+  String get appContinueOffline => 'Continue offline';
+
+  @override
+  String get appThisPageExplainsWhatThe =>
+      'This page explains what the app keeps about you and your rights under Law 151 of 2020.';
+
+  @override
+  String get appYouReOfflineChangesSave =>
+      'You\'re offline. Changes save here and sync later.';
+
+  @override
+  String get appConnectionError => 'Connection error.';
+
+  @override
+  String get appHaveMonthlyInstallmentsFollowThem =>
+      'Have monthly installments? Follow them here';
+
+  @override
+  String get appAddAnInstallment => 'Add an installment';
+
+  @override
+  String appInstallmentsP0(String p0) {
+    return 'Installments ($p0)';
+  }
+
+  @override
+  String appP0Month(String p0) {
+    return '$p0 / month';
+  }
+
+  @override
+  String get appInstallments => 'Installments';
+
+  @override
+  String get appWeCanTLoadYour => 'We can\'t load your installments right now.';
+
+  @override
+  String get appNoInstallmentsYet => 'No installments yet';
+
+  @override
+  String get appAddAnInstallmentAndWhenever =>
+      'Add an installment, and whenever you record \"I paid the Valu installment 800\" we count it.';
+
+  @override
+  String get appAddYourFirstInstallment => 'Add your first installment';
+
+  @override
+  String get appTotalMonthlyInstallments => 'Total monthly installments';
+
+  @override
+  String appP0ActiveInstallmentsP1Left(String p0, String p1) {
+    return '$p0 active installments · $p1 left in total';
+  }
+
+  @override
+  String get appAllYourInstallmentsAreFinished =>
+      'All your installments are finished. Nothing active now.';
+
+  @override
+  String appActiveInstallmentsP0(String p0) {
+    return 'Active installments ($p0)';
+  }
+
+  @override
+  String appFinishedInstallmentsP0(String p0) {
+    return 'Finished installments ($p0)';
+  }
+
+  @override
+  String get appDeleteTheInstallment => 'Delete the installment';
+
+  @override
+  String appDeleteP0ThisCanT(String p0) {
+    return 'Delete «$p0»? This can\'t be undone.';
+  }
+
+  @override
+  String get appCancel => 'Cancel';
+
+  @override
+  String get appDelete => 'Delete';
+
+  @override
+  String get appWeCouldnTDeleteIt => 'We couldn\'t delete it. Try again.';
+
+  @override
+  String appTrackingWordP0(String p0) {
+    return 'Tracking word: «$p0»';
+  }
+
+  @override
+  String appP0Month2(String p0) {
+    return '$p0 / month';
+  }
+
+  @override
+  String appAllPaidP0OfP1(String p0, String p1) {
+    return 'All paid ($p0 of $p1)';
+  }
+
+  @override
+  String appPaidP0OfP1(String p0, String p1) {
+    return 'Paid $p0 of $p1';
+  }
+
+  @override
+  String appP0Left(String p0) {
+    return '$p0 left';
+  }
+
+  @override
+  String get appPaymentsShareANameWith =>
+      'Payments share a name with another plan. Link them to the installment dates to tell them apart.';
+
+  @override
+  String appAllPaidYouPaidP0(String p0) {
+    return 'All paid. You paid $p0 in total.';
+  }
+
+  @override
+  String get appEnterANameAtLeast => 'Enter a name (at least 2 letters)';
+
+  @override
+  String get appEnterTheMonthlyAmount => 'Enter the monthly amount';
+
+  @override
+  String get appEnterTheNumberOfInstallments =>
+      'Enter the number of installments (at least one)';
+
+  @override
+  String get appPaidInstallmentsMustBeBetween =>
+      'Paid installments must be between 0 and the total';
+
+  @override
+  String get appWeCouldnTAddIt =>
+      'We couldn\'t add it. Check your connection and try again.';
+
+  @override
+  String get appSomethingWentWrongTryAgain =>
+      'Something went wrong. Try again.';
+
+  @override
+  String get appNewInstallment => 'New installment';
+
+  @override
+  String get appClose => 'Close';
+
+  @override
+  String get appWheneverYouRecordSpendingWith =>
+      'Whenever you record spending with the installment\'s word (like \"I paid the Valu installment 800\") we count it.';
+
+  @override
+  String get appName => 'Name *';
+
+  @override
+  String get appLikeValuPhoneOrThe => 'Like: Valu phone or the air conditioner';
+
+  @override
+  String get appPaymentWordOptional => 'Payment word (optional)';
+
+  @override
+  String get appLikeValuEmptyUsesThe => 'Like: Valu (empty uses the name)';
+
+  @override
+  String get appMonthlyAmount => 'Monthly amount *';
+
+  @override
+  String get appLike850 => 'Like: 850';
+
+  @override
+  String get appTotalInstallments => 'Total installments *';
+
+  @override
+  String get appLike12 => 'Like: 12';
+
+  @override
+  String get appAlreadyPaid => 'Already paid';
+
+  @override
+  String get appSave => 'Save';
+
+  @override
+  String get appYourPlanSMonthlyUsage => 'Your plan\'s monthly usage';
+
+  @override
+  String get appLimitReached => 'Limit reached';
+
+  @override
+  String get appAlmostUsed => 'Almost used';
+
+  @override
+  String get appVoiceRecording => 'Voice recording';
+
+  @override
+  String get appUnlimited => 'Unlimited';
+
+  @override
+  String appP0OfP1SecondsLeft(String p0, String p1) {
+    return '$p0 of $p1 seconds left';
+  }
+
+  @override
+  String get appDailyAi => 'Daily AI';
+
+  @override
+  String appP0OfP1Left(String p0, String p1) {
+    return '$p0 of $p1 left';
+  }
+
+  @override
+  String get appUpgradeToPro => 'Upgrade to Pro';
+
+  @override
+  String get appNotificationSettingsSaved => 'Notification settings saved';
+
+  @override
+  String get appAllowNotificationsFromTheApp =>
+      'Allow notifications from the app';
+
+  @override
+  String get appChooseYourNotifications => 'Choose your notifications';
+
+  @override
+  String get appWhenSpendingNearsABudget =>
+      'When spending nears a budget limit';
+
+  @override
+  String get appAQuietEveningReminderTo =>
+      'A quiet evening reminder to record your spending';
+
+  @override
+  String get appBeforeTheDayEndsTo =>
+      'Before the day ends, to keep your streak';
+
+  @override
+  String get appWhenYourMonthlyReportIs => 'When your monthly report is ready';
+
+  @override
+  String get appThePriceIsHighFor => 'The price is high for me';
+
+  @override
+  String get appIDonTNeedThe => 'I don\'t need the extra features';
+
+  @override
+  String get appIHadTechnicalProblems => 'I had technical problems';
+
+  @override
+  String get appILlSubscribeAgainLater => 'I\'ll subscribe again later';
+
+  @override
+  String get appAnotherReason => 'Another reason';
+
+  @override
+  String get appAutoRenewalIsCancelled => 'Auto-renewal is cancelled';
+
+  @override
+  String get appWeCanTCancelRight => 'We can\'t cancel right now.';
+
+  @override
+  String get appHelpUsUnderstandWhy => 'Help us understand why:';
+
+  @override
+  String get appKeepMyPlan => 'Keep my plan';
+
+  @override
+  String get appShareSmartspendWithYourFriends =>
+      'Share SmartSpend with your friends';
+
+  @override
+  String get appInviteYourFriendsAndFamily =>
+      'Invite your friends and family to organize their spending.';
+
+  @override
+  String get appLoading => 'Loading...';
+
+  @override
+  String get appReadReceiptsWithTheCamera => 'Read receipts with the camera';
+
+  @override
+  String get appKeepWorkApartFromPersonal =>
+      'Keep work apart from personal spending';
+
+  @override
+  String get appGoalAnalysisAndTheDetailed =>
+      'Goal analysis and the detailed report';
+
+  @override
+  String get appNoSponsoredCards => 'No sponsored cards';
+
+  @override
+  String get appYourMonthlyReportOnWhatsapp =>
+      'Your monthly report on WhatsApp';
+
+  @override
+  String get appYouHaveAllOfPro => 'You have all of Pro.';
+
+  @override
+  String get appYouReOnTheFree => 'You\'re on the free plan.';
+
+  @override
+  String get appSeasons => 'Seasons';
+
+  @override
+  String get appWeCanTLoadThis => 'We can\'t load this season right now.';
+
+  @override
+  String appP0ToP1P2More(String p0, String p1, String p2, String p3) {
+    return '$p0 to $p1 · $p2% more than last year';
+  }
+
+  @override
+  String appP0ToP1P2Less(String p0, String p1, String p2, String p3) {
+    return '$p0 to $p1 · $p2% less than last year';
+  }
+
+  @override
+  String appP0ToP1SameAs(String p0, String p1, String p2) {
+    return '$p0 to $p1 · Same as last year';
+  }
+
+  @override
+  String appP0ToP1(String p0, String p1) {
+    return '$p0 to $p1';
+  }
+
+  @override
+  String appWhatP0CostYou(String p0) {
+    return 'What $p0 cost you';
+  }
+
+  @override
+  String appNoSpendingInP0(String p0) {
+    return 'No spending in $p0';
+  }
+
+  @override
+  String appNothingRecordedFromP0To(String p0, String p1) {
+    return 'Nothing recorded from $p0 to $p1.';
+  }
+
+  @override
+  String get appByCategory => 'By category';
+
+  @override
+  String appP0Transactions(String p0) {
+    return '$p0 transactions';
+  }
+
+  @override
+  String get appDaysInARow => 'days in a row';
+
+  @override
+  String get appDaysInARow2 => 'days in a row';
+
+  @override
+  String get appDaysInARow3 => 'days in a row';
+
+  @override
+  String get appDay => 'day';
+
+  @override
+  String appYouRecordedP0P1(String p0, String p1) {
+    return 'You recorded $p0 $p1';
+  }
+
+  @override
+  String get appHowDoIRecordMy => 'How do I record my spending?';
+
+  @override
+  String get appTypeASentenceRecordYour =>
+      'Type a sentence, record your voice, or photograph a receipt.';
+
+  @override
+  String get appIsMyFinancialDataSafe => 'Is my financial data safe?';
+
+  @override
+  String get appOnlyYourAccountCanReach =>
+      'Only your account can reach your data, and the app can lock with a PIN or fingerprint.';
+
+  @override
+  String get appHowDoIChangeWhen => 'How do I change when my month starts?';
+
+  @override
+  String get appFromMoreMoneyPreferencesChoose =>
+      'From More > Money preferences, choose your payday.';
+
+  @override
+  String get appWhenWillSupportAnswer => 'When will support answer?';
+
+  @override
+  String get appOurTeamReadsEveryTicket =>
+      'Our team reads every ticket and answers as soon as it can.';
+
+  @override
+  String get appYourTicketWasSent => 'Your ticket was sent';
+
+  @override
+  String get appWeCouldnTSendYour => 'We couldn\'t send your ticket.';
+
+  @override
+  String get appWeCanTLoadYour2 => 'We can\'t load your tickets.';
+
+  @override
+  String get appNoPastTickets => 'No past tickets';
+
+  @override
+  String get appPageNotFound => 'Page not found';
+
+  @override
+  String get appThisPageIsnTHere => 'This page isn\'t here';
+
+  @override
+  String get appTheLinkMayHaveChanged =>
+      'The link may have changed or the page was deleted.';
+
+  @override
+  String get appBackToHome => 'Back to home';
+
+  @override
+  String appActiveSince(String p0) {
+    return 'Active since $p0';
+  }
+
+  @override
+  String appInstallmentLeft(String p0, String p1, String p2) {
+    return '$p0: $p1 of $p2 left';
+  }
 }

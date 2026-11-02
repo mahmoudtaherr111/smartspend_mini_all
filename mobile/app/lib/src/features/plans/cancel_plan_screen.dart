@@ -21,12 +21,12 @@ class _CancelPlanScreenState extends ConsumerState<CancelPlanScreen> {
   int _selectedReason = 0;
   bool _cancelling = false;
 
-  static const _reasons = [
-    'سعر الاشتراك مرتفع بالنسبة لي',
-    'لم أعد بحاجة للميزات الإضافية',
-    'واجهت مشاكل تقنية أثناء الاستخدام',
-    'سأشترك مجدداً في وقت لاحق',
-    'سبب آخر',
+  List<String> get _reasons => [
+    AppLocalizations.of(context).appThePriceIsHighFor,
+    AppLocalizations.of(context).appIDonTNeedThe,
+    AppLocalizations.of(context).appIHadTechnicalProblems,
+    AppLocalizations.of(context).appILlSubscribeAgainLater,
+    AppLocalizations.of(context).appAnotherReason,
   ];
 
   Future<void> _cancel() async {
@@ -36,14 +36,20 @@ class _CancelPlanScreenState extends ConsumerState<CancelPlanScreen> {
       await client.mutate(Procedures.pro.cancel);
       ref.invalidate(userPlanProvider);
       if (!mounted) return;
-      showSmartSpendNotice(context, 'تم إلغاء التجديد التلقائي للاشتراك بنجاح');
+      showSmartSpendNotice(
+        context,
+        AppLocalizations.of(context).appAutoRenewalIsCancelled,
+      );
       Navigator.of(context).pop();
     } on ApiException catch (e) {
       if (!mounted) return;
       showSmartSpendNotice(context, e.message);
     } on Object {
       if (!mounted) return;
-      showSmartSpendNotice(context, 'تعذر إلغاء الاشتراك حالياً');
+      showSmartSpendNotice(
+        context,
+        AppLocalizations.of(context).appWeCanTCancelRight,
+      );
     } finally {
       if (mounted) setState(() => _cancelling = false);
     }
@@ -86,7 +92,7 @@ class _CancelPlanScreenState extends ConsumerState<CancelPlanScreen> {
             ),
             const SizedBox(height: SmartSpendSpacing.xl),
             Text(
-              'ساعدنا نفهم سبب الإلغاء:',
+              AppLocalizations.of(context).appHelpUsUnderstandWhy,
               style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -121,7 +127,7 @@ class _CancelPlanScreenState extends ConsumerState<CancelPlanScreen> {
             ),
             const SizedBox(height: SmartSpendSpacing.sm),
             SmartSpendButton(
-              label: 'التراجع والاحتفاظ بالباقة',
+              label: AppLocalizations.of(context).appKeepMyPlan,
               variant: ButtonVariant.quiet,
               onPressed: _cancelling ? null : () => Navigator.of(context).pop(),
             ),

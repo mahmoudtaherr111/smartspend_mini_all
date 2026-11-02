@@ -71,13 +71,40 @@
   "captureWalletAdd": "ضيفها",
   "captureWalletNo": "لا",
   "captureIgnoredCard": "كارت آخره {digits}",
-  "@captureIgnoredCard": {"placeholders": {"digits": {"type": "String"}}},
+  "@captureIgnoredCard": {
+    "placeholders": {
+      "digits": {
+        "type": "String"
+      }
+    }
+  },
   "captureIgnoreThisCard": "تجاهل كارت آخره {digits}",
-  "@captureIgnoreThisCard": {"placeholders": {"digits": {"type": "String"}}},
+  "@captureIgnoreThisCard": {
+    "placeholders": {
+      "digits": {
+        "type": "String"
+      }
+    }
+  },
   "captureHeldUntil": "أول عملية منهم محفوظة لحد {date}.",
-  "@captureHeldUntil": {"placeholders": {"date": {"type": "String"}}},
+  "@captureHeldUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "captureWalletOffer": "لقينا كارت {bank} آخره {digits}. نضيفه لمحافظك؟",
-  "@captureWalletOffer": {"placeholders": {"bank": {"type": "String"}, "digits": {"type": "String"}}},
+  "@captureWalletOffer": {
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      },
+      "digits": {
+        "type": "String"
+      }
+    }
+  },
   "captureOffline": "مستنيين النت عشان نبعت.",
   "captureRevoked": "الجهاز ده اتفصل. شغّله تاني من هنا.",
   "captureReviewEntry": "{count, plural, =0{مفيش عمليات مستنية ردك} =1{عملية واحدة مستنية ردك} =2{عمليتين مستنيين ردك} few{{count} عمليات مستنية ردك} other{{count} عملية مستنية ردك}}",
@@ -431,14 +458,46 @@
   "languageEnglish": "English",
   "languageNote": "التسجيل والتصنيفات بيفضلوا بالعربي: اكتب واتكلم بالعامية زي ما انت.",
   "statsLessThanLastMonth": "أقل من الشهر اللي فات بـ {percent}.",
-  "@statsLessThanLastMonth": { "description": "The percentage, already written with its sign (12%).", "placeholders": { "percent": { "type": "String", "example": "12%" } } },
+  "@statsLessThanLastMonth": {
+    "description": "The percentage, already written with its sign (12%).",
+    "placeholders": {
+      "percent": {
+        "type": "String",
+        "example": "12%"
+      }
+    }
+  },
   "statsMoreThanLastMonth": "أكتر من الشهر اللي فات بـ {percent}.",
-  "@statsMoreThanLastMonth": { "description": "The percentage, already written with its sign (12%).", "placeholders": { "percent": { "type": "String", "example": "12%" } } },
+  "@statsMoreThanLastMonth": {
+    "description": "The percentage, already written with its sign (12%).",
+    "placeholders": {
+      "percent": {
+        "type": "String",
+        "example": "12%"
+      }
+    }
+  },
   "statsSameAsLastMonth": "زي الشهر اللي فات بالظبط.",
   "statsLessThanLastWeek": "الأسبوع ده أقل من نفس الأسبوع الشهر اللي فات بـ {percent}.",
-  "@statsLessThanLastWeek": { "description": "The percentage, already written with its sign (12%).", "placeholders": { "percent": { "type": "String", "example": "8%" } } },
+  "@statsLessThanLastWeek": {
+    "description": "The percentage, already written with its sign (12%).",
+    "placeholders": {
+      "percent": {
+        "type": "String",
+        "example": "8%"
+      }
+    }
+  },
   "statsMoreThanLastWeek": "الأسبوع ده أكتر من نفس الأسبوع الشهر اللي فات بـ {percent}.",
-  "@statsMoreThanLastWeek": { "description": "The percentage, already written with its sign (12%).", "placeholders": { "percent": { "type": "String", "example": "8%" } } },
+  "@statsMoreThanLastWeek": {
+    "description": "The percentage, already written with its sign (12%).",
+    "placeholders": {
+      "percent": {
+        "type": "String",
+        "example": "8%"
+      }
+    }
+  },
   "statsNoComparison": "لسه مفيش شهر قبله نقارن بيه.",
   "statsDailyAverage": "متوسط يومي",
   "statsLastMonth": "الشهر اللي فات",
@@ -448,14 +507,39 @@
   "statsTopDay": "أكتر يوم صرفت فيه: {day}، {amount}.",
   "@statsTopDay": {
     "description": "The day with the most spending and its amount, already written.",
-    "placeholders": { "day": { "type": "String", "example": "الخميس 16 أكتوبر" }, "amount": { "type": "String", "example": "1,250 ج.م" } }
+    "placeholders": {
+      "day": {
+        "type": "String",
+        "example": "الخميس 16 أكتوبر"
+      },
+      "amount": {
+        "type": "String",
+        "example": "1,250 ج.م"
+      }
+    }
   },
   "statsMostRecurring": "أكتر حاجة بتتكرر: {name}، {count, plural, =1{مرة واحدة} =2{مرتين} few{{count} مرات} other{{count} مرة}}.",
   "@statsMostRecurring": {
-    "placeholders": { "name": { "type": "String", "example": "قهوة وكافيه" }, "count": { "type": "int", "example": "9" } }
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "قهوة وكافيه"
+      },
+      "count": {
+        "type": "int",
+        "example": "9"
+      }
+    }
   },
   "statsEmptyTitle": "مفيش مصاريف في {month}",
-  "@statsEmptyTitle": { "placeholders": { "month": { "type": "String", "example": "أكتوبر" } } },
+  "@statsEmptyTitle": {
+    "placeholders": {
+      "month": {
+        "type": "String",
+        "example": "أكتوبر"
+      }
+    }
+  },
   "statsEmptyBody": "سجّل مصاريفك من تبويب التسجيل، وهنا هتشوف صرفت على إيه وإزاي بيتغيّر من شهر لشهر.",
   "statsEmptyAction": "سجّل مصروف",
   "statsLoadFailed": "مش قادرين نجيب إحصائيات الشهر دلوقتي.",
@@ -472,10 +556,26 @@
   "walletsAdd": "ضيف محفظة أو كارت",
   "walletsLoadFailed": "مش قادرين نجيب المحافظ دلوقتي.",
   "walletUpdated": "اتحدّث {date}",
-  "@walletUpdated": { "description": "When the balance was given, already written (النهارده، امبارح، الخميس 16 أكتوبر).", "placeholders": { "date": { "type": "String", "example": "امبارح" } } },
+  "@walletUpdated": {
+    "description": "When the balance was given, already written (النهارده، امبارح، الخميس 16 أكتوبر).",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "امبارح"
+      }
+    }
+  },
   "walletUpdatedUnknown": "مش معروف اتحدّث إمتى",
   "walletBalanceStory": "ده الرصيد اللي كتبته {date}. حدّثه لما يتغيّر.",
-  "@walletBalanceStory": { "description": "When the balance was given, already written (النهارده، امبارح، الخميس 16 أكتوبر).", "placeholders": { "date": { "type": "String", "example": "امبارح" } } },
+  "@walletBalanceStory": {
+    "description": "When the balance was given, already written (النهارده، امبارح، الخميس 16 أكتوبر).",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "امبارح"
+      }
+    }
+  },
   "walletBalanceStoryUnknown": "ده الرصيد اللي كتبته، ومش معروف إمتى. حدّثه علشان يبقى مظبوط.",
   "walletMonthIn": "دخل الشهر ده",
   "walletMonthOut": "خرج الشهر ده",
@@ -484,14 +584,28 @@
   "walletEdit": "تعديل الرصيد والاسم",
   "walletDelete": "مسح المحفظة",
   "walletDeleteTitle": "تمسح {name}؟",
-  "@walletDeleteTitle": { "placeholders": { "name": { "type": "String", "example": "كارت CIB" } } },
+  "@walletDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "كارت CIB"
+      }
+    }
+  },
   "walletDeleteBody": "المحفظة هتتمسح. العمليات اللي كانت عليها هتفضل في سجلك من غير محفظة. المسح مابيترجعش.",
   "walletDeleteConfirm": "امسحها",
   "walletDeleteKeep": "لأ، سيبها",
   "walletDeleted": "المحفظة اتمسحت.",
   "walletFormAddTitle": "محفظة أو كارت جديد",
   "walletFormEditTitle": "تعديل {name}",
-  "@walletFormEditTitle": { "placeholders": { "name": { "type": "String", "example": "كارت CIB" } } },
+  "@walletFormEditTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "كارت CIB"
+      }
+    }
+  },
   "walletKindLabel": "النوع",
   "walletNameLabel": "الاسم",
   "walletNameHint": "زي: كارت CIB أو فودافون كاش بتاعي",
@@ -516,15 +630,48 @@
   "walletNotFoundBody": "يمكن اتمسحت من جهاز تاني أو من الموقع.",
   "walletsBack": "ارجع للمحافظ",
   "walletsLastFour": "آخره {digits}",
-  "@walletsLastFour": { "description": "The last four digits of a card, already isolated left to right.", "placeholders": { "digits": { "type": "String", "example": "4821" } } },
+  "@walletsLastFour": {
+    "description": "The last four digits of a card, already isolated left to right.",
+    "placeholders": {
+      "digits": {
+        "type": "String",
+        "example": "4821"
+      }
+    }
+  },
   "statsRefund": "مرتجع",
   "statsCategoryInMonth": "في {month}",
-  "@statsCategoryInMonth": { "placeholders": { "month": { "type": "String", "example": "أكتوبر 2026" } } },
+  "@statsCategoryInMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String",
+        "example": "أكتوبر 2026"
+      }
+    }
+  },
   "statsCategoryRefundInMonth": "صافي مرتجع في {month}",
-  "@statsCategoryRefundInMonth": { "placeholders": { "month": { "type": "String", "example": "أكتوبر 2026" } } },
+  "@statsCategoryRefundInMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String",
+        "example": "أكتوبر 2026"
+      }
+    }
+  },
   "statsCategoryEmptyTitle": "مفيش عمليات في التصنيف ده",
   "statsCategoryEmptyBody": "مفيش مصاريف متسجّلة تحت «{category}» في {month}.",
-  "@statsCategoryEmptyBody": { "placeholders": { "category": { "type": "String", "example": "أكل وشرب" }, "month": { "type": "String", "example": "أكتوبر 2026" } } },
+  "@statsCategoryEmptyBody": {
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "أكل وشرب"
+      },
+      "month": {
+        "type": "String",
+        "example": "أكتوبر 2026"
+      }
+    }
+  },
   "transactionTitle": "تفاصيل العملية",
   "transactionKindExpense": "مصروف",
   "transactionKindRefund": "مرتجع",
@@ -553,7 +700,14 @@
   "transactionNotFoundBody": "يمكن اتمسحت من جهاز تاني أو من الموقع.",
   "transactionBack": "ارجع",
   "personTransactionsTitle": "عمليات {name}",
-  "@personTransactionsTitle": { "placeholders": { "name": { "type": "String", "example": "أحمد" } } },
+  "@personTransactionsTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "أحمد"
+      }
+    }
+  },
   "personTransactionsEmpty": "مفيش عمليات معروضة للشخص ده دلوقتي.",
   "editTransactionTitle": "تعديل العملية",
   "editTransactionSubtitle": "لو غيّرت التصنيف، التطبيق هيفتكر اختيارك للجمل اللي شبهها.",
@@ -723,11 +877,7 @@
   "appearanceDark": "داكن",
   "termsTitle": "شروط الخدمة",
   "dataStoredTitle": "البيانات والخصوصية",
-  "appInfoTitle": "عن التطبيق",
   "appVersion": "الإصدار",
-  "appUpdateRequired": "تحديث إجباري متوفر",
-  "appUpdateBody": "يتطلب التطبيق التحديث إلى أحدث إصدار لمتابعة الاستخدام وحماية بياناتك.",
-  "appUpdateNow": "تحديث الآن",
   "offlineRetryBanner": "لا يوجد اتصال بالإنترنت. التعديلات ستُحفظ محلياً.",
   "forgotPassword": "نسيت كلمة المرور؟",
   "resetPasswordTitle": "إعادة تعيين كلمة المرور",
@@ -736,7 +886,14 @@
   "resetPasswordSubmit": "تغيير كلمة المرور والدخول",
   "resetPasswordSuccess": "تم تغيير كلمة المرور بنجاح",
   "planBuy": "اشترك في Pro بـ {price}",
-  "@planBuy": { "placeholders": { "price": { "type": "String", "example": "99 ج.م" } } },
+  "@planBuy": {
+    "placeholders": {
+      "price": {
+        "type": "String",
+        "example": "99 ج.م"
+      }
+    }
+  },
   "planStoreSoon": "الاشتراك من جوه التطبيق هيتاح قريب.",
   "planActivated": "اشتراك Pro اتفعّل.",
   "planPurchasePending": "عملية الدفع لسه بتتراجع. هنفعّل الاشتراك أول ما تتأكد.",
@@ -747,25 +904,73 @@
   "exportShare": "شارك الملف",
   "calendarLoadFailed": "مش قادرين نجيب خطتك دلوقتي.",
   "calTransactionsOfDayP0": "عمليات يوم {p0}",
-  "@calTransactionsOfDayP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@calTransactionsOfDayP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "calTransactionsOfDayP02": "عمليات يوم {p0}",
-  "@calTransactionsOfDayP02": { "placeholders": { "p0": { "type": "String" } } },
+  "@calTransactionsOfDayP02": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "calPayday": "· يوم القبض",
   "calNoSpending": "مفيش صرف",
   "calAddACommitmentOrIncome": "ضيف التزام أو دخل",
   "calYourFinancialMonthStartsOn": "شهرك المالي بيبدأ يوم {p0} وبيخلص يوم {p1}.",
-  "@calYourFinancialMonthStartsOn": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "@calYourFinancialMonthStartsOn": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
   "calP0DaysToPaydayDay": "الأيام الباقية على القبض (يوم {p1}): {p0}. بعد التزاماتك فاضل معاك:",
-  "@calP0DaysToPaydayDay": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "@calP0DaysToPaydayDay": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
   "calP0DaysToTheEnd": "الأيام الباقية في شهرك المالي: {p0}. بعد التزاماتك فاضل معاك:",
-  "@calP0DaysToTheEnd": { "placeholders": { "p0": { "type": "String" } } },
+  "@calP0DaysToTheEnd": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "calLeftUntilPayday": "المتاح لحد القبض",
   "calNoWalletsYetSoThe": "مفيش محافظ متسجلة، فالحساب بيبدأ من صفر.",
   "calOneBalanceHasNoKnown": "فيه رصيد مش معروف اتسجل امتى؛ حدّثه من المحافظ.",
   "calCommitmentsWithNoKnownAmount": "التزامات مبلغها مش معروف: {p0}.",
-  "@calCommitmentsWithNoKnownAmount": { "placeholders": { "p0": { "type": "String" } } },
+  "@calCommitmentsWithNoKnownAmount": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "calCommitmentsWithNoDateSo": "التزامات ميعادها مش معروف فمش محسوبة: {p0}.",
-  "@calCommitmentsWithNoDateSo": { "placeholders": { "p0": { "type": "String" } } },
+  "@calCommitmentsWithNoDateSo": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "calTotalCommitments": "إجمالي الالتزامات",
   "calWalletBalances": "رصيد المحافظ",
   "calNotRecorded": "مش متسجل",
@@ -779,7 +984,13 @@
   "calOverdue": "فات ميعاده",
   "calDue": "مستحق",
   "calDueOnDayP0": "ميعاده يوم {p0}",
-  "@calDueOnDayP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@calDueOnDayP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "calSettle": "ادفع",
   "calPaidTapToUndo": "اتدفع (دوس للإلغاء)",
   "calActiveSavingPlan": "خطة التوفير الحالية",
@@ -815,14 +1026,32 @@
   "calKind": "النوع",
   "calDueDay": "يوم الميعاد",
   "calDayP0": "يوم {p0}",
-  "@calDayP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@calDayP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "calRepeats": "التكرار",
   "calSave": "احفظ",
   "calWeCouldnTRecordThe": "ما عرفناش نسجل الدفع. جرّب تاني.",
   "calSettleP0": "دفع: {p0}",
-  "@calSettleP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@calSettleP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "calAmountDueP0": "المبلغ المستحق: {p0}",
-  "@calAmountDueP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@calAmountDueP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "calAmountPaidPartOfIt": "المبلغ اللي دفعته (ينفع جزء منه)",
   "calMatchingTransactions": "عمليات ممكن تكون هي:",
   "calNoRecentMatchingTransactionYou": "مفيش عملية قريبة شبهها. تقدر تسجل المبلغ مباشرة.",
@@ -886,29 +1115,86 @@
   "monAddAMonthlyBudget": "ضيف ميزانية شهرية",
   "monAllBudgets": "إجمالي الميزانيات",
   "monSpentP0": "صرفت: {p0}",
-  "@monSpentP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monSpentP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monOverByP0": "زدت بـ {p0}",
-  "@monOverByP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monOverByP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monLeftP0": "فاضل: {p0}",
-  "@monLeftP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monLeftP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monBudgetDetails": "تفاصيل الميزانيات",
   "monEdit": "عدّل",
   "monDelete": "امسح",
   "monDeleteTheBudget": "امسح الميزانية",
   "monDeleteTheBudgetP0": "تمسح ميزانية \"{p0}\"؟",
-  "@monDeleteTheBudgetP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monDeleteTheBudgetP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monCancel": "إلغاء",
   "monBudgetP0Deleted": "ميزانية \"{p0}\" اتمسحت",
-  "@monBudgetP0Deleted": { "placeholders": { "p0": { "type": "String" } } },
+  "@monBudgetP0Deleted": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monUndo": "تراجع",
   "monSpentP0OfP1": "صرفت {p0} من {p1}",
-  "@monSpentP0OfP1": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "@monSpentP0OfP1": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
   "monOverBudgetP0": "زدت عن الميزانية ({p0}%)",
-  "@monOverBudgetP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monOverBudgetP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monAlmostUsedP0": "قربت تخلص ({p0}%)",
-  "@monAlmostUsedP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monAlmostUsedP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monLeftP02": "فاضل: {p0}",
-  "@monLeftP02": { "placeholders": { "p0": { "type": "String" } } },
+  "@monLeftP02": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monOverallBudget": "الميزانية العامة",
   "monEnterTheMonthlyAmount": "اكتب المبلغ الشهري",
   "monWeCouldnTSaveIt": "ما عرفناش نحفظ. جرّب تاني كمان شوية.",
@@ -934,25 +1220,73 @@
   "monGoalsReached": "أهداف حققتها",
   "monPausedGoals": "أهداف متوقفة",
   "monTargetP0": "الهدف: {p0}",
-  "@monTargetP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monTargetP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monSmartPlan": "خطة ذكية",
   "monTargetDateP0P1P2": "الميعاد: {p0}/{p1}/{p2}",
-  "@monTargetDateP0P1P2": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" }, "p2": { "type": "String" } } },
+  "@monTargetDateP0P1P2": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      },
+      "p2": {
+        "type": "String"
+      }
+    }
+  },
   "monWeCouldnTRunThe": "ما عرفناش نعمل التحليل. اتأكد من النت وجرّب تاني.",
   "monCongratulations": "ألف مبروك!",
   "monYouReachedYourGoalP0": "حققت هدف \"{p0}\". خطوة كبيرة لقدام!",
-  "@monYouReachedYourGoalP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monYouReachedYourGoalP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monReached": "اتحقق",
   "monActive": "شغال",
   "monPaused": "متوقف",
   "monDateP0P1P2": "الميعاد: {p0}/{p1}/{p2}",
-  "@monDateP0P1P2": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" }, "p2": { "type": "String" } } },
+  "@monDateP0P1P2": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      },
+      "p2": {
+        "type": "String"
+      }
+    }
+  },
   "monGoalAnalysis": "تحليل الهدف",
   "monRefresh": "حدّث",
   "monStepsToYourGoal": "خطوات الوصول للهدف:",
   "monSuggestedWeeklyActions": "حاجات تعملها كل أسبوع:",
   "monLastAnalysisP0P1P2": "آخر تحليل: {p0}/{p1}/{p2}",
-  "@monLastAnalysisP0P1P2": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" }, "p2": { "type": "String" } } },
+  "@monLastAnalysisP0P1P2": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      },
+      "p2": {
+        "type": "String"
+      }
+    }
+  },
   "monRunTheAnalysisToGet": "شغّل التحليل وهتاخد خطة مبنية على مصاريفك.",
   "monGoalAnalysisComesWithPro": "تحليل الأهداف متاح في باقة Pro.",
   "monAnalyzing": "بنحلل الهدف...",
@@ -1009,7 +1343,13 @@
   "monReceiptTotal": "إجمالي الفاتورة",
   "monCategory2": "الفئة:",
   "monDetailsP0": "البيان: {p0}",
-  "@monDetailsP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monDetailsP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monSave": "احفظ",
   "monEditInTheBox": "عدّل في الخانة",
   "monPhotographTheReceipt": "صوّر الفاتورة",
@@ -1022,9 +1362,6 @@
   "monToRecordYourSpendingBy": "علشان تسجل بصوتك محتاجين إذن المايك. صوتك بيتحول لنص وما بيتحفظش.",
   "monAllowTheMicrophone": "اسمح بالمايك",
   "monNotNow": "مش دلوقتي",
-  "monAll": "الكل",
-  "monRecordedMonthlyIncome": "الدخل الشهري المسجل",
-  "monTotalIncomeThisMonth": "إجمالي دخل الشهر",
   "monHowYouSpend": "طريقة صرفك",
   "monRecordMoreThisMonthTo": "سجّل مصاريف أكتر الشهر ده علشان طريقتك تبان بوضوح.",
   "monYourSpendingJumpsOnCertain": "مصاريفك بتقفز في أيام معينة، مش متوزعة بالتساوي.",
@@ -1035,11 +1372,29 @@
   "monYouStickToYourBudget": "ملتزم بميزانيتك ومصاريفك منظمة.",
   "monYourSpendingIsBalancedWith": "مصاريفك متوازنة ومفيهاش قفزات.",
   "monYourBiggestSpendingDayP0": "أكتر يوم بتصرف فيه: {p0} ({p1})",
-  "@monYourBiggestSpendingDayP0": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "@monYourBiggestSpendingDayP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
   "monYourSpendingByWeekday": "مصاريفك حسب أيام الأسبوع",
   "monSpendingDays": "أيام الصرف",
   "monChartOfSpendingByWeekday": "رسم مصاريف أيام الأسبوع. أعلى يوم {p0} بمبلغ {p1}.",
-  "@monChartOfSpendingByWeekday": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "@monChartOfSpendingByWeekday": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
   "monChartOfSpendingByWeekday2": "رسم مصاريف أيام الأسبوع.",
   "monRecordMoreToSeeYour": "سجّل مصاريف أكتر علشان تعرف أيام صرفك.",
   "monMonthlyBudget": "الميزانية الشهرية",
@@ -1050,11 +1405,29 @@
   "monComparedWithThisMonthS": "مقارنة بدخل الشهر ده",
   "monBudgetAndSpending": "الميزانية والصرف",
   "monSpentP02": "صرفت: {p0}",
-  "@monSpentP02": { "placeholders": { "p0": { "type": "String" } } },
+  "@monSpentP02": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monOverBudgetByP0": "زدت عن الميزانية بـ {p0}",
-  "@monOverBudgetByP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monOverBudgetByP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monLeftP03": "فاضل: {p0}",
-  "@monLeftP03": { "placeholders": { "p0": { "type": "String" } } },
+  "@monLeftP03": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monRecordedAutomatically": "اللي اتسجل تلقائيًا",
   "monFromBanksAndWallets": "من البنوك والمحافظ",
   "monByHandOrCash": "يدوي أو كاش",
@@ -1065,43 +1438,104 @@
   "monOwedToYou": "ليك برّه",
   "monYouOwe": "عليك للناس",
   "monOwesYouP0": "ليك {p0}",
-  "@monOwesYouP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monOwesYouP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monYouOweP0": "عليك {p0}",
-  "@monYouOweP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monYouOweP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monSeeAllPeopleAndDebts": "شوف كل الناس والديون",
   "monThisYearYourHighestMonth": "السنة دي: أعلى شهر صرف كان {p0} ({p1})",
-  "@monThisYearYourHighestMonth": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "@monThisYearYourHighestMonth": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
   "monYourSpendingInP0": "مصاريفك في {p0}",
-  "@monYourSpendingInP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monYourSpendingInP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monThisYearP0": "السنة دي ({p0})",
-  "@monThisYearP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monThisYearP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monChartOfTheYearS": "رسم مصاريف السنة. الإجمالي {p0}.",
-  "@monChartOfTheYearS": { "placeholders": { "p0": { "type": "String" } } },
+  "@monChartOfTheYearS": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "monYourSmartProfileAndPrivacy": "ملفك الذكي وخصوصيتك",
   "monWhatTheAppLearnedAbout": "اللي التطبيق اتعلمه عنك بيستخدم لخدمتك بس، وتقدر تغيره من هنا.",
   "monYourSavedPaydayDayP0": "يوم القبض المحفوظ: يوم {p0} من كل شهر.",
-  "@monYourSavedPaydayDayP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@monYourSavedPaydayDayP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiWeCanTRunThe": "ما عرفناش نعمل التحليل السنوي دلوقتي.",
   "aiConfirmIt": "أكد العملية",
   "aiDone": "اتعملت",
   "aiItDidnTGoThrough": "ما اتعملتش. جرّب تاني.",
   "aiConfirmASensitiveAction": "تأكيد لعملية حساسة",
   "aiThisActionP0CanT": "العملية دي ({p0}) مش سهل ترجع فيها.",
-  "@aiThisActionP0CanT": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiThisActionP0CanT": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiToConfirmTypeExactlyP0": "علشان تأكد، اكتب بالظبط:\n«{p0}»",
-  "@aiToConfirmTypeExactlyP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiToConfirmTypeExactlyP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiCancel": "إلغاء",
   "aiConfirm": "أكد",
   "aiSensitive": "حساسة",
   "aiDateP0": "التاريخ: {p0}",
-  "@aiDateP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiDateP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiDoneAndYourRecordsAre": "اتعملت وحساباتك اتحدثت.",
   "aiCancelled": "اتلغت.",
   "aiThisHasExpiredAndCan": "المدة انتهت، ومش هينفع تتنفذ.",
   "aiContinue": "كمّل التأكيد",
   "aiConfirm2": "أكد",
-  "aiReportReceived": "التقرير وصل.",
-  "aiMonthsCompared": "قارنا الشهرين.",
   "aiLiveCall": "المكالمة المباشرة",
   "aiTheLiveCallComesWith": "المكالمة المباشرة متاحة في باقة Pro.",
   "aiUpgrade": "رقّي باقتك",
@@ -1135,7 +1569,16 @@
   "aiPickTwoDifferentMonths": "اختار شهرين مختلفين.",
   "aiWeCouldnTCompareThem": "ما عرفناش نقارن.",
   "aiComparisonP0AndP1": "المقارنة ({p0} و{p1})",
-  "@aiComparisonP0AndP1": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "@aiComparisonP0AndP1": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
   "aiBiggestChangesByCategory": "أكبر تغييرات في الفئات:",
   "aiCategory": "فئة",
   "aiNewChat": "محادثة جديدة",
@@ -1144,10 +1587,25 @@
   "aiStartANewChatWith": "ابدأ محادثة جديدة مع المساعد",
   "aiConversation": "محادثة",
   "aiP0P1Messages": "{p0} • {p1} رسالة",
-  "@aiP0P1Messages": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "@aiP0P1Messages": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
   "aiDeleteTheConversation": "امسح المحادثة",
   "aiDeleteTheConversationP0": "تمسح محادثة «{p0}»؟",
-  "@aiDeleteTheConversationP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiDeleteTheConversationP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiDelete": "امسح",
   "aiWhatTheAssistantRemembers2": "ذاكرة المساعد",
   "aiClearAll": "امسح الكل",
@@ -1162,7 +1620,13 @@
   "aiWeCouldnTUpdateThe": "ما عرفناش نحدث التقرير.",
   "aiExportTheReport": "صدّر التقرير",
   "aiTheReportForP0Is": "تقرير {p0} جاهز.",
-  "@aiTheReportForP0Is": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiTheReportForP0Is": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiReportReceived2": "التقرير وصل.",
   "aiOk": "تمام",
   "aiWeCouldnTExportThe": "ما عرفناش نصدر التقرير.",
@@ -1177,7 +1641,13 @@
   "aiGeneral": "عام",
   "aiYearlyReport2": "التقرير السنوي",
   "aiP0Summary": "ملخص {p0}",
-  "@aiP0Summary": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiP0Summary": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiNotEnoughDataForThis": "مفيش بيانات كفاية للسنة دي.",
   "aiWeCanTLoadYour3": "مش قادرين نجيب مكالماتك.",
   "aiTryAgain": "جرّب تاني",
@@ -1185,17 +1655,35 @@
   "aiTalkToTheAssistantIn": "اتكلم مع المساعد بطريقتك عن فلوسك.",
   "aiStartANewCall": "ابدأ مكالمة جديدة",
   "aiP0MinP1Sec": "{p0} دقيقة و{p1} ثانية",
-  "@aiP0MinP1Sec": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "@aiP0MinP1Sec": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
   "aiP0Sec": "{p0} ثانية",
-  "@aiP0Sec": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiP0Sec": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiVoiceCall": "مكالمة صوتية",
   "aiDurationP0": "المدة: {p0}",
-  "@aiDurationP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiDurationP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiNewCall": "مكالمة جديدة",
   "aiYourPrivacyNeitherTheAudio": "خصوصيتك: الصوت ونص المكالمة مش بيتحفظوا.",
-  "aiWeCouldnTConnectThe": "ما عرفناش نوصل المكالمة.",
-  "aiTheCallLostItsConnection": "الاتصال انقطع.",
-  "aiSomethingWentWrongInThe": "حصلت مشكلة في المكالمة",
   "aiCallEnded": "المكالمة خلصت",
   "aiTheAudioIsNotRecorded": "الصوت مش بيتسجل ولا بيتحفظ بعد المكالمة.",
   "aiReady": "جاهز",
@@ -1207,8 +1695,6 @@
   "aiReconnecting": "بنوصل تاني...",
   "aiDone2": "اتعملت",
   "aiCancelled2": "اتلغت",
-  "aiABusinessForP0": "مشروع {p0}",
-  "@aiABusinessForP0": { "placeholders": { "p0": { "type": "String" } } },
   "aiAddACategory": "ضيف فئة للمشروع",
   "aiCategoryNameLikeStockShop": "اسم الفئة (زي: بضاعة، إيجار المحل)",
   "aiExpense": "مصروف",
@@ -1251,13 +1737,25 @@
   "aiYouReInTheWork": "إنت دلوقتي في حساب الشغل. العمليات الجديدة هتتسجل فيه.",
   "aiYouReInPersonalMode": "إنت في الوضع الشخصي. شغّل المفتاح علشان تسجل لشغلك.",
   "aiBusinessCategoriesP0": "فئات المشروع ({p0})",
-  "@aiBusinessCategoriesP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiBusinessCategoriesP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiIncome": "إيراد",
   "aiDeleteTheCategory": "امسح الفئة",
   "aiAddANewCategory": "ضيف فئة جديدة",
   "aiBusinessPeopleAndSuppliers": "ناس وموردين المشروع",
   "aiSuppliersAndCustomersP0": "عدد الموردين والعملاء: {p0}",
-  "@aiSuppliersAndCustomersP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiSuppliersAndCustomersP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiLinkAnyoneToTheBusiness": "تقدر تربط أي شخص بالمشروع علشان تتابع المستحقات.",
   "aiManageContactsAndSuppliers": "ظبط الناس والموردين",
   "aiDeleteTheWorkAccount2": "امسح حساب الشغل",
@@ -1286,9 +1784,14 @@
   "aiYouOwe": "عليك برّه",
   "aiMergeWithADuplicate": "ادمج مع شخص مكرر",
   "aiDeleteThePerson": "امسح الشخص",
-  "aiNoName": "من غير اسم",
   "aiDeleteP0": "تمسح \"{p0}\"؟",
-  "@aiDeleteP0": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiDeleteP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiTheirRecordedTransactionsStayOnly": "العمليات المسجلة معاه هتفضل، والشخص بس اللي هيتمسح.",
   "aiDeleting": "بنمسح...",
   "aiDelete2": "امسح",
@@ -1296,11 +1799,440 @@
   "aiChooseTheNameToKeep": "اختار الاسم اللي هيفضل، وكل العمليات هتتنقل عليه.",
   "aiNoOtherContactsToMerge": "مفيش حد تاني تدمج معاه.",
   "aiChooseWhoToMergeWith": "اختار الشخص اللي هيتدمج مع \"{p0}\":",
-  "@aiChooseWhoToMergeWith": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiChooseWhoToMergeWith": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "aiChooseAContact": "اختار شخص",
   "aiWhichNameStays": "أنهي اسم يفضل؟",
   "aiThisNameStaysAndAll": "الاسم ده هيفضل وكل العمليات هتتنقل عليه",
   "aiMerging": "بندمج...",
   "aiConfirmMerge": "أكد الدمج",
-  "aiWeCouldnTMergeThem": "ما عرفناش ندمج. جرّب تاني."
+  "aiWeCouldnTMergeThem": "ما عرفناش ندمج. جرّب تاني.",
+  "appDayP0OfTheMonth": "يوم {p0} في الشهر",
+  "@appDayP0OfTheMonth": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appStartOfMonth": "أول الشهر",
+  "appEndOfMonth": "آخر الشهر",
+  "appWeCouldnTSaveYour": "ما عرفناش نحفظ إجابتك.",
+  "appBack": "رجوع",
+  "appWriteYourAnswerHere": "اكتب إجابتك هنا...",
+  "appEnterAValidEgyptianMobile": "اكتب رقم موبايل مصري صحيح: 11 رقم بيبدأ بـ 01",
+  "appEnterThe6DigitCode": "اكتب الكود المكون من 6 أرقام",
+  "appYouCanAskForA": "تقدر تطلب كود جديد بعد {p0} ثانية",
+  "@appYouCanAskForA": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appSignedOutOfThatDevice": "الجهاز ده خرج من حسابك",
+  "appTryAgain": "جرّب تاني",
+  "appNoSessionsRecorded": "مفيش أجهزة متسجلة",
+  "appEnterAValidEgyptianMobile2": "اكتب رقم موبايل مصري صحيح بيبدأ بـ 01",
+  "appWeCanTSendA": "مش قادرين نبعت كود دلوقتي. تأكد من النت وجرّب تاني.",
+  "appEnterThe6DigitCode2": "اكتب الكود المكون من 6 أرقام",
+  "appThatCodeDidnTWork": "الكود ده ما نفعش.",
+  "appThePasswordMustBeAt": "الباسورد لازم يكون 6 حروف على الأقل",
+  "appTheTwoPasswordsDonT": "الباسوردين مش زي بعض",
+  "appWeCouldnTChangeThe": "ما عرفناش نغير الباسورد.",
+  "appEnterYourRegisteredNumberAnd": "اكتب رقمك المسجل وهنبعتلك كود على واتساب:",
+  "appEnterThe6DigitCode3": "اكتب الكود اللي وصلك على واتساب:",
+  "appConfirmTheCode": "أكد الكود",
+  "appChooseANewPassword": "اختار باسورد جديد:",
+  "appThisMonth": "الشهر ده",
+  "appLast3Months": "آخر 3 شهور",
+  "appEverythingFromTheStart": "كل العمليات من الأول",
+  "appCsvFileSpreadsheet": "ملف CSV (جداول)",
+  "appExcelFileXlsx": "ملف Excel (.xlsx)",
+  "appJsonFile": "ملف JSON",
+  "appWeCouldnTPrepareThe": "مقدرناش نجهز الملف دلوقتي. اتأكد من النت وجرّب تاني.",
+  "appExportMyData": "صدّر بياناتك",
+  "appYourDataIsAlwaysYours": "بياناتك بتاعتك دايمًا",
+  "appDownloadEverythingYouRecordedIn": "نزّل كل اللي سجلته في ملف تقدر تفتحه على الكمبيوتر.",
+  "appPeriod": "الفترة",
+  "appFileType": "نوع الملف",
+  "appYouHaveTheRightTo": "من حقك توصل لبياناتك طبقًا لقانون 151 لسنة 2020.",
+  "appTheFileIsReady": "الملف جاهز",
+  "appPreparingTheFile": "بنجهز الملف...",
+  "appExportTheFile": "صدّر الملف",
+  "appTermsOfService": "شروط الخدمة",
+  "appDataAndPrivacy": "البيانات والخصوصية",
+  "app2026SmartspendAiEgypt": "© 2026 SmartSpend AI، مصر",
+  "appPleaseUpdateTheAppFrom": "حدّث التطبيق من المتجر: {p0}",
+  "@appPleaseUpdateTheAppFrom": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appPleaseUpdateTheApp": "لازم تحدّث التطبيق",
+  "appThisVersionIsNoLonger": "النسخة دي ما بقتش مدعومة. حدّث علشان بياناتك تفضل في أمان.",
+  "appMinimumVersionP0": "أقل نسخة مطلوبة: {p0}",
+  "@appMinimumVersionP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appYouReOfflineYourSaved": "إنت من غير نت. بياناتك المحفوظة موجودة.",
+  "appUpdateNow2": "حدّث دلوقتي",
+  "appContinueOffline": "كمّل من غير نت",
+  "appThisPageExplainsWhatThe": "الصفحة دي بتوضح التطبيق بيحتفظ بإيه عنك وحقوقك طبقًا لقانون 151 لسنة 2020.",
+  "appYouReOfflineChangesSave": "إنت من غير نت. التغييرات بتتحفظ هنا وبتتبعت بعدين.",
+  "appConnectionError": "مشكلة في الاتصال.",
+  "appHaveMonthlyInstallmentsFollowThem": "عندك أقساط شهرية؟ تابعها من هنا",
+  "appAddAnInstallment": "ضيف قسط",
+  "appInstallmentsP0": "الأقساط ({p0})",
+  "@appInstallmentsP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appP0Month": "{p0} / شهر",
+  "@appP0Month": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appInstallments": "الأقساط",
+  "appWeCanTLoadYour": "مش قادرين نجيب الأقساط دلوقتي.",
+  "appNoInstallmentsYet": "لسه مفيش أقساط",
+  "appAddAnInstallmentAndWhenever": "ضيف القسط، وكل ما تسجل «دفعت قسط فاليو 800» هنحسبه.",
+  "appAddYourFirstInstallment": "ضيف أول قسط",
+  "appTotalMonthlyInstallments": "إجمالي الأقساط الشهرية",
+  "appP0ActiveInstallmentsP1Left": "عندك {p0} أقساط شغالة · الباقي منها {p1}",
+  "@appP0ActiveInstallmentsP1Left": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "appAllYourInstallmentsAreFinished": "خلّصت كل الأقساط. مفيش حاجة شغالة دلوقتي.",
+  "appActiveInstallmentsP0": "الأقساط الشغالة ({p0})",
+  "@appActiveInstallmentsP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appFinishedInstallmentsP0": "الأقساط اللي خلصت ({p0})",
+  "@appFinishedInstallmentsP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appDeleteTheInstallment": "امسح القسط",
+  "appDeleteP0ThisCanT": "تمسح قسط «{p0}»؟ المسح مابيترجعش.",
+  "@appDeleteP0ThisCanT": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appCancel": "إلغاء",
+  "appDelete": "امسح",
+  "appWeCouldnTDeleteIt": "ما عرفناش نمسح القسط. جرّب تاني.",
+  "appTrackingWordP0": "كلمة التتبع: «{p0}»",
+  "@appTrackingWordP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appP0Month2": "{p0} / شهر",
+  "@appP0Month2": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appAllPaidP0OfP1": "خلصت كلها ({p0} من {p1})",
+  "@appAllPaidP0OfP1": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "appPaidP0OfP1": "اتدفع {p0} من {p1}",
+  "@appPaidP0OfP1": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "appP0Left": "فاضل {p0}",
+  "@appP0Left": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appPaymentsShareANameWith": "الدفعات اسمها شبه خطة تانية. اربطها بمواعيد القسط علشان تفرق بينهم.",
+  "appAllPaidYouPaidP0": "خلصت الأقساط كلها. دفعت {p0} في المجموع.",
+  "@appAllPaidYouPaidP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appEnterANameAtLeast": "اكتب اسم القسط (حرفين على الأقل)",
+  "appEnterTheMonthlyAmount": "اكتب قيمة القسط الشهري",
+  "appEnterTheNumberOfInstallments": "اكتب عدد الأقساط (قسط واحد على الأقل)",
+  "appPaidInstallmentsMustBeBetween": "المدفوع لازم يكون بين 0 وإجمالي الأقساط",
+  "appWeCouldnTAddIt": "ما عرفناش نضيف القسط. اتأكد من النت وجرّب تاني.",
+  "appSomethingWentWrongTryAgain": "حصلت مشكلة. جرّب تاني.",
+  "appNewInstallment": "قسط جديد",
+  "appClose": "اقفل",
+  "appWheneverYouRecordSpendingWith": "كل ما تسجل مصروف فيه كلمة القسط (زي «دفعت قسط فاليو 800») هنعدّه.",
+  "appName": "اسم القسط *",
+  "appLikeValuPhoneOrThe": "زي: موبايل فاليو أو قسط التكييف",
+  "appPaymentWordOptional": "كلمة الدفع (اختياري)",
+  "appLikeValuEmptyUsesThe": "زي: فاليو (لو سبتها فاضية هناخد اسم القسط)",
+  "appMonthlyAmount": "القسط كام في الشهر *",
+  "appLike850": "زي: 850",
+  "appTotalInstallments": "إجمالي الأقساط *",
+  "appLike12": "زي: 12",
+  "appAlreadyPaid": "مدفوع منه كام",
+  "appSave": "احفظ القسط",
+  "appYourPlanSMonthlyUsage": "استهلاك باقتك الشهرية",
+  "appLimitReached": "وصلت للحد",
+  "appAlmostUsed": "قربت تخلص",
+  "appVoiceRecording": "التسجيل الصوتي",
+  "appUnlimited": "من غير حد",
+  "appP0OfP1SecondsLeft": "باقي {p0} ثانية من {p1}",
+  "@appP0OfP1SecondsLeft": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "appDailyAi": "الذكاء الاصطناعي اليومي",
+  "appP0OfP1Left": "باقي {p0} عملية من {p1}",
+  "@appP0OfP1Left": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "appUpgradeToPro": "اشترك في Pro",
+  "appNotificationSettingsSaved": "إعدادات الإشعارات اتحفظت",
+  "appAllowNotificationsFromTheApp": "اسمح بالإشعارات من التطبيق",
+  "appChooseYourNotifications": "اختار إشعاراتك",
+  "appWhenSpendingNearsABudget": "لما مصاريفك تقرب من سقف الميزانية",
+  "appAQuietEveningReminderTo": "تذكير هادي بالليل تسجل مصاريفك",
+  "appBeforeTheDayEndsTo": "قبل ما اليوم يخلص علشان تحافظ على سلسلة التسجيل",
+  "appWhenYourMonthlyReportIs": "لما تقريرك الشهري يجهز",
+  "appThePriceIsHighFor": "السعر غالي عليّ",
+  "appIDonTNeedThe": "مش محتاج المميزات الزيادة",
+  "appIHadTechnicalProblems": "قابلتني مشاكل تقنية",
+  "appILlSubscribeAgainLater": "هشترك تاني بعدين",
+  "appAnotherReason": "سبب تاني",
+  "appAutoRenewalIsCancelled": "التجديد التلقائي اتلغى",
+  "appWeCanTCancelRight": "مش قادرين نلغي دلوقتي.",
+  "appHelpUsUnderstandWhy": "قولنا السبب:",
+  "appKeepMyPlan": "سيب باقتي",
+  "appShareSmartspendWithYourFriends": "شارك SmartSpend مع أصحابك",
+  "appInviteYourFriendsAndFamily": "ادعي أصحابك وأهلك ينظموا مصاريفهم.",
+  "appLoading": "بنحمّل...",
+  "appReadReceiptsWithTheCamera": "قراءة الفواتير بالكاميرا",
+  "appKeepWorkApartFromPersonal": "فصل حساب الشغل عن مصاريفك الشخصية",
+  "appGoalAnalysisAndTheDetailed": "تحليل الأهداف والتقرير المفصل",
+  "appNoSponsoredCards": "من غير إعلانات",
+  "appYourMonthlyReportOnWhatsapp": "تقريرك الشهري على واتساب",
+  "appYouHaveAllOfPro": "إنت معاك كل مميزات Pro.",
+  "appYouReOnTheFree": "إنت على الباقة المجانية.",
+  "appSeasons": "مواسم الصرف",
+  "appWeCanTLoadThis": "مش قادرين نجيب الموسم دلوقتي.",
+  "appP0ToP1P2More": "من {p0} إلى {p1} · أكتر من السنة اللي فاتت بـ {p2}%",
+  "@appP0ToP1P2More": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      },
+      "p2": {
+        "type": "String"
+      },
+      "p3": {
+        "type": "String"
+      }
+    }
+  },
+  "appP0ToP1P2Less": "من {p0} إلى {p1} · أقل من السنة اللي فاتت بـ {p2}%",
+  "@appP0ToP1P2Less": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      },
+      "p2": {
+        "type": "String"
+      },
+      "p3": {
+        "type": "String"
+      }
+    }
+  },
+  "appP0ToP1SameAs": "من {p0} إلى {p1} · نفس السنة اللي فاتت",
+  "@appP0ToP1SameAs": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      },
+      "p2": {
+        "type": "String"
+      }
+    }
+  },
+  "appP0ToP1": "من {p0} إلى {p1}",
+  "@appP0ToP1": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "appWhatP0CostYou": "{p0} كلفك كام",
+  "@appWhatP0CostYou": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appNoSpendingInP0": "مفيش مصاريف في {p0}",
+  "@appNoSpendingInP0": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appNothingRecordedFromP0To": "مفيش حاجة متسجلة من {p0} إلى {p1}.",
+  "@appNothingRecordedFromP0To": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "appByCategory": "حسب الفئة",
+  "appP0Transactions": "{p0} عملية",
+  "@appP0Transactions": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appDaysInARow": "يوم ورا بعض",
+  "appDaysInARow2": "يوم ورا بعض",
+  "appDaysInARow3": "يوم ورا بعض",
+  "appDay": "يوم",
+  "appYouRecordedP0P1": "سجلت {p0} {p1}",
+  "@appYouRecordedP0P1": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
+  "appHowDoIRecordMy": "إزاي أسجل مصاريفي؟",
+  "appTypeASentenceRecordYour": "اكتب جملة، أو سجّل بصوتك، أو صوّر الفاتورة.",
+  "appIsMyFinancialDataSafe": "بياناتي في أمان؟",
+  "appOnlyYourAccountCanReach": "بياناتك مربوطة بحسابك بس، وتقدر تقفل التطبيق برمز أو بصمة.",
+  "appHowDoIChangeWhen": "إزاي أغير بداية شهري؟",
+  "appFromMoreMoneyPreferencesChoose": "من «المزيد» ثم «تفضيلات الفلوس» اختار يوم القبض.",
+  "appWhenWillSupportAnswer": "الدعم بيرد إمتى؟",
+  "appOurTeamReadsEveryTicket": "الفريق بيقرا كل طلب وبيرد في أقرب وقت.",
+  "appYourTicketWasSent": "طلبك اتبعت",
+  "appWeCouldnTSendYour": "ما عرفناش نبعت طلبك.",
+  "appWeCanTLoadYour2": "مش قادرين نجيب طلباتك.",
+  "appNoPastTickets": "مفيش طلبات قبل كده",
+  "appPageNotFound": "الصفحة مش موجودة",
+  "appThisPageIsnTHere": "الصفحة اللي بتدور عليها مش موجودة",
+  "appTheLinkMayHaveChanged": "الرابط ممكن يكون اتغير أو الصفحة اتمسحت.",
+  "appBackToHome": "ارجع للرئيسية",
+  "appActiveSince": "نشط من {p0}",
+  "@appActiveSince": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
+  "appInstallmentLeft": "{p0}: باقي {p1} من {p2}",
+  "@appInstallmentLeft": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      },
+      "p2": {
+        "type": "String"
+      }
+    }
+  }
 }

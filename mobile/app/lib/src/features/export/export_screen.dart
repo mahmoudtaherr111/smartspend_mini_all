@@ -67,7 +67,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'مقدرناش نجهز الملف دلوقتي. اتأكد من النت وجرّب تاني.';
+        _error = AppLocalizations.of(context).appWeCouldnTPrepareThe;
       });
     }
   }
@@ -75,9 +75,10 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.smartSpendColors;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('تصدير البيانات')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).appExportMyData)),
       body: ListView(
         padding: const EdgeInsets.all(SmartSpendSpacing.screen),
         children: [
@@ -110,7 +111,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'بياناتك ملكك دائماً',
+                        AppLocalizations.of(context).appYourDataIsAlwaysYours,
                         style: SmartSpendTypography.style(
                           16,
                           FontWeight.w700,
@@ -118,7 +119,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'حمّل كل معاملاتك المسجلة في ملف منظم تقدر تفتحه على الكمبيوتر أو الموبايل.',
+                        AppLocalizations.of(context)
+                            .appDownloadEverythingYouRecordedIn,
                         style: SmartSpendTypography.style(
                           13,
                           FontWeight.w400,
@@ -132,7 +134,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           ),
           const SizedBox(height: SmartSpendSpacing.xl),
           Text(
-            'الفترة الزمنية',
+            AppLocalizations.of(context).appPeriod,
             style: SmartSpendTypography.style(
               15,
               FontWeight.w700,
@@ -165,7 +167,12 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       child: RadioListTile<ExportPeriod>(
                         value: p,
                         title: Text(
-                          p.label,
+                          switch (p) {
+                            ExportPeriod.thisMonth => l10n.appThisMonth,
+                            ExportPeriod.lastThreeMonths => l10n.appLast3Months,
+                            ExportPeriod.allTime =>
+                              l10n.appEverythingFromTheStart,
+                          },
                           style: SmartSpendTypography.style(
                             14,
                             _period == p ? FontWeight.w700 : FontWeight.w500,
@@ -181,7 +188,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           ),
           const SizedBox(height: SmartSpendSpacing.lg),
           Text(
-            'صيغة الملف',
+            AppLocalizations.of(context).appFileType,
             style: SmartSpendTypography.style(
               15,
               FontWeight.w700,
@@ -214,7 +221,11 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       child: RadioListTile<ExportFormat>(
                         value: f,
                         title: Text(
-                          f.label,
+                          switch (f) {
+                            ExportFormat.csv => l10n.appCsvFileSpreadsheet,
+                            ExportFormat.xlsx => l10n.appExcelFileXlsx,
+                            ExportFormat.json => l10n.appJsonFile,
+                          },
                           style: SmartSpendTypography.style(
                             14,
                             _format == f ? FontWeight.w700 : FontWeight.w500,
@@ -248,7 +259,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                 const SizedBox(width: SmartSpendSpacing.sm),
                 Expanded(
                   child: Text(
-                    'حق الوصول للبيانات بموجب قانون حماية البيانات الشخصية رقم 151 لسنة 2020: يمكنك الحصول على نسخة من بياناتك في أي وقت.',
+                    AppLocalizations.of(context).appYouHaveTheRightTo,
                     style: SmartSpendTypography.style(
                       12,
                       FontWeight.w400,
@@ -298,7 +309,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'الملف جاهز',
+                          AppLocalizations.of(context).appTheFileIsReady,
                           style: SmartSpendTypography.style(
                             14,
                             FontWeight.w700,
@@ -335,7 +346,9 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             variant: _exportedFile == null
                 ? ButtonVariant.primary
                 : ButtonVariant.secondary,
-            label: _loading ? 'بنجهز الملف...' : 'تصدير وتحميل الملف',
+            label: _loading
+                ? AppLocalizations.of(context).appPreparingTheFile
+                : AppLocalizations.of(context).appExportTheFile,
             busy: _loading,
             onPressed: _loading ? null : _runExport,
           ),

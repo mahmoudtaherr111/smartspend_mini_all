@@ -135,7 +135,7 @@ class ChatMessagesNotifier extends Notifier<AsyncValue<List<ChatMessage>>> {
         ref.invalidate(chatConversationsProvider);
       }
 
-      final responseText = (res['response'] as String?) ?? 'تمام.';
+      final responseText = (res['response'] as String?) ?? '';
       AiActionDraft? actionDraft;
       AiClarification? clarification;
 

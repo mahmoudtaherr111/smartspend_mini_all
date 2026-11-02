@@ -56,11 +56,11 @@ void main() {
 
         expect(find.byType(LimitsCard), findsOneWidget);
         expect(find.text('استهلاك باقتك الشهرية'), findsOneWidget);
-        expect(find.text('قربت تخلّص'), findsOneWidget);
-        expect(find.text('باقي 30 ثانية من أصل 300'), findsOneWidget);
-        expect(find.text('باقي 2 عملية من أصل 20'), findsOneWidget);
+        expect(find.text('قربت تخلص'), findsOneWidget);
+        expect(find.text('باقي 30 ثانية من 300'), findsOneWidget);
+        expect(find.text('باقي 2 عملية من 20'), findsOneWidget);
         expect(
-          find.widgetWithText(SmartSpendButton, 'ترقية باقتك إلى Pro'),
+          find.widgetWithText(SmartSpendButton, 'اشترك في Pro'),
           findsOneWidget,
         );
       },

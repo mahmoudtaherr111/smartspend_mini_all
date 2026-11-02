@@ -70,8 +70,8 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
     final phone = normalizePhoneNumber(_phoneController.text.trim());
     if (phone.isEmpty || !RegExp(r'^01[0125]\d{8}$').hasMatch(phone)) {
       setState(() {
-        _errorMessage =
-            'يرجى إدخال رقم هاتف مصري صحيح مكون من 11 رقماً يبدأ بـ 01';
+        _errorMessage = AppLocalizations.of(context)
+            .appEnterAValidEgyptianMobile;
       });
       return;
     }
@@ -113,7 +113,7 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
     final code = _codeController.text.trim();
     if (code.length != 6) {
       setState(() {
-        _errorMessage = 'أدخل كود التأكيد المكون من 6 أرقام';
+        _errorMessage = AppLocalizations.of(context).appEnterThe6DigitCode;
       });
       return;
     }
@@ -249,7 +249,8 @@ class _PhoneChangeSheetState extends ConsumerState<PhoneChangeSheet> {
                 const SizedBox(height: SmartSpendSpacing.md),
                 if (_resendInSeconds > 0)
                   Text(
-                    'يمكنك إعادة طلب الكود بعد $_resendInSeconds ثانية',
+                    AppLocalizations.of(context)
+                        .appYouCanAskForA('$_resendInSeconds'),
                     textAlign: TextAlign.center,
                     style: textTheme.bodySmall?.copyWith(
                       color: colors.mutedForeground,

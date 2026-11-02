@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'installment_models.dart';
 import 'installments_providers.dart';
 
@@ -54,20 +56,30 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
         .toInt();
 
     if (title.length < 2) {
-      setState(() => _error = 'اكتب اسم القسط (حرفين على الأقل)');
+      setState(
+        () => _error = AppLocalizations.of(context).appEnterANameAtLeast,
+      );
       return;
     }
     if (amount <= 0) {
-      setState(() => _error = 'اكتب قيمة القسط الشهري');
+      setState(
+        () => _error = AppLocalizations.of(context).appEnterTheMonthlyAmount,
+      );
       return;
     }
     if (total < 1) {
-      setState(() => _error = 'اكتب إجمالي عدد الأقساط (قسط واحد على الأقل)');
+      setState(
+        () =>
+            _error = AppLocalizations.of(context)
+                .appEnterTheNumberOfInstallments,
+      );
       return;
     }
     if (paidBefore < 0 || paidBefore > total) {
       setState(
-        () => _error = 'عدد الأقساط المدفوعة لازم يكون بين 0 وإجمالي الأقساط',
+        () =>
+            _error = AppLocalizations.of(context)
+                .appPaidInstallmentsMustBeBetween,
       );
       return;
     }
@@ -95,14 +107,14 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
       } else {
         setState(() {
           _submitting = false;
-          _error = 'ماعرفناش نضيف القسط، اتأكد من النت وجرب تاني';
+          _error = AppLocalizations.of(context).appWeCouldnTAddIt;
         });
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = 'حصل خطأ: $e';
+        _error = AppLocalizations.of(context).appSomethingWentWrongTryAgain;
       });
     }
   }
@@ -129,7 +141,7 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    'إضافة قسط جديد',
+                    AppLocalizations.of(context).appNewInstallment,
                     style: SmartSpendTypography.style(
                       20,
                       FontWeight.w700,
@@ -138,14 +150,14 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
-                  tooltip: 'إغلاق',
+                  tooltip: AppLocalizations.of(context).appClose,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
             ),
             const SizedBox(height: SmartSpendSpacing.sm),
             Text(
-              'كل ما تسجل مصروف فيه كلمة القسط (زي «دفعت قسط فاليو 800») هنعدّه تلقائياً ونقولك باقي كام.',
+              AppLocalizations.of(context).appWheneverYouRecordSpendingWith,
               style: SmartSpendTypography.style(
                 13,
                 FontWeight.w400,
@@ -174,28 +186,28 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
             ],
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'اسم القسط *',
-                hintText: 'مثلاً: موبايل فاليو أو قسط التكييف',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).appName,
+                hintText: AppLocalizations.of(context).appLikeValuPhoneOrThe,
               ),
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: SmartSpendSpacing.md),
             TextField(
               controller: _keywordController,
-              decoration: const InputDecoration(
-                labelText: 'كلمة الدفع (اختياري)',
-                hintText: 'مثلاً: فاليو (لو سبتها فاضية هناخد اسم القسط)',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).appPaymentWordOptional,
+                hintText: AppLocalizations.of(context).appLikeValuEmptyUsesThe,
               ),
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: SmartSpendSpacing.md),
             TextField(
               controller: _amountController,
-              decoration: const InputDecoration(
-                labelText: 'القسط كام في الشهر (ج.م) *',
-                hintText: 'مثلاً: 850',
-                suffixText: 'ج.م',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).appMonthlyAmount,
+                hintText: AppLocalizations.of(context).appLike850,
+                suffixText: MoneyLocale.of(context).symbol,
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -213,9 +225,10 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
                 Expanded(
                   child: TextField(
                     controller: _totalController,
-                    decoration: const InputDecoration(
-                      labelText: 'إجمالي الأقساط *',
-                      hintText: 'مثلاً: 12',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)
+                          .appTotalInstallments,
+                      hintText: AppLocalizations.of(context).appLike12,
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [
@@ -228,8 +241,8 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
                 Expanded(
                   child: TextField(
                     controller: _paidBeforeController,
-                    decoration: const InputDecoration(
-                      labelText: 'مدفوع منه كام',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).appAlreadyPaid,
                       hintText: '0',
                     ),
                     keyboardType: TextInputType.number,
@@ -244,7 +257,7 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
             ),
             const SizedBox(height: SmartSpendSpacing.xl),
             SmartSpendButton(
-              label: 'حفظ القسط',
+              label: AppLocalizations.of(context).appSave,
               busy: _submitting,
               onPressed: _submitting ? null : _submit,
             ),

@@ -37,7 +37,7 @@ class SessionsScreen extends ConsumerWidget {
     if (ua.contains('macintosh')) return 'Mac Web Browser';
     if (ua.contains('windows')) return 'Windows PC Browser';
     if (ua.contains('linux')) return 'Linux Browser';
-    return userAgent ?? 'متصفح / جهاز غير معروف';
+    return userAgent ?? 'Unknown device';
   }
 
   Future<void> _revoke(
@@ -84,7 +84,10 @@ class SessionsScreen extends ConsumerWidget {
         await ref.read(sessionProvider.notifier).signOut();
       } else {
         ref.invalidate(userSessionsProvider);
-        showSmartSpendNotice(context, 'تم إنهاء الجلسة بنجاح');
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).appSignedOutOfThatDevice,
+        );
       }
     } on ApiException catch (e) {
       if (!context.mounted) return;
@@ -114,7 +117,7 @@ class SessionsScreen extends ConsumerWidget {
               Text(l10n.captureStatusFailed),
               const SizedBox(height: SmartSpendSpacing.md),
               SmartSpendButton(
-                label: 'إعادة المحاولة',
+                label: AppLocalizations.of(context).appTryAgain,
                 onPressed: () => ref.invalidate(userSessionsProvider),
               ),
             ],
@@ -122,7 +125,9 @@ class SessionsScreen extends ConsumerWidget {
         ),
         data: (sessions) {
           if (sessions.isEmpty) {
-            return const Center(child: Text('لا توجد جلسات مسجلة'));
+            return Center(
+              child: Text(AppLocalizations.of(context).appNoSessionsRecorded),
+            );
           }
 
           return RefreshIndicator(
@@ -214,7 +219,12 @@ class SessionsScreen extends ConsumerWidget {
                                 ),
                               if (s.createdAt != null)
                                 Text(
-                                  'نشط منذ: ${s.createdAt!.toLocal().toString().split('.').first}',
+                                  AppLocalizations.of(context).appActiveSince(
+                                    DateWords.of(context).day(
+                                      s.createdAt!.toLocal(),
+                                      now: DateTime.now(),
+                                    ),
+                                  ),
                                   style: textTheme.bodySmall?.copyWith(
                                     color: colors.mutedForeground,
                                   ),

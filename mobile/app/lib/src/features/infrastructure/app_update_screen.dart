@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import '../ledger/ledger_providers.dart';
 
 /// Screen displayed when the server signals that the installed app build is too old (FND-11).
@@ -27,7 +29,9 @@ class AppUpdateScreen extends ConsumerWidget {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('يرجى زيارة متجر التطبيقات لتحديث التطبيق: $storeUrl'),
+          content: Text(
+            AppLocalizations.of(context).appPleaseUpdateTheAppFrom(storeUrl),
+          ),
         ),
       );
     }
@@ -65,7 +69,7 @@ class AppUpdateScreen extends ConsumerWidget {
               ),
               const SizedBox(height: SmartSpendSpacing.xl),
               Text(
-                'تحديث التطبيق مطلوب',
+                AppLocalizations.of(context).appPleaseUpdateTheApp,
                 textAlign: TextAlign.center,
                 style: textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
@@ -73,7 +77,7 @@ class AppUpdateScreen extends ConsumerWidget {
               ),
               const SizedBox(height: SmartSpendSpacing.sm),
               Text(
-                'الإصدار الحالي لم يعد مدعوماً من الخادم لضمان حماية بياناتك وأمان المعاملات المالية. يُرجى التحديث إلى أحدث إصدار لمتابعة الاستخدام.',
+                AppLocalizations.of(context).appThisVersionIsNoLonger,
                 textAlign: TextAlign.center,
                 style: textTheme.bodyMedium?.copyWith(
                   color: colors.mutedForeground,
@@ -93,7 +97,8 @@ class AppUpdateScreen extends ConsumerWidget {
                     border: Border.all(color: colors.border),
                   ),
                   child: Text(
-                    'الحد الأدنى المطلوب: $minimumVersion',
+                    AppLocalizations.of(context)
+                        .appMinimumVersionP0('$minimumVersion'),
                     textAlign: TextAlign.center,
                     style: textTheme.labelMedium?.copyWith(
                       color: colors.mutedForeground,
@@ -122,7 +127,7 @@ class AppUpdateScreen extends ConsumerWidget {
                       const SizedBox(width: SmartSpendSpacing.sm),
                       Expanded(
                         child: Text(
-                          'أنت غير متصل بالإنترنت حالياً. بياناتك المسجلة محفوظة ومتاحة.',
+                          AppLocalizations.of(context).appYouReOfflineYourSaved,
                           style: textTheme.bodySmall?.copyWith(
                             color: colors.warning,
                           ),
@@ -134,14 +139,14 @@ class AppUpdateScreen extends ConsumerWidget {
                 const SizedBox(height: SmartSpendSpacing.md),
               ],
               SmartSpendButton(
-                label: 'تحديث التطبيق الآن',
+                label: AppLocalizations.of(context).appUpdateNow2,
                 variant: ButtonVariant.primary,
                 icon: Icons.open_in_new_rounded,
                 onPressed: () => _handleUpdate(context),
               ),
               const SizedBox(height: SmartSpendSpacing.sm),
               SmartSpendButton(
-                label: 'الاستمرار بدون اتصال',
+                label: AppLocalizations.of(context).appContinueOffline,
                 variant: ButtonVariant.quiet,
                 onPressed: () => Navigator.of(context).maybePop(),
               ),

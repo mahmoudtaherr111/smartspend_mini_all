@@ -23,6 +23,14 @@ class CalendarGrid extends StatelessWidget {
   /// `DateWords.weekdays` starts on Monday; the grid starts on Saturday.
   static const _saturdayFirst = [5, 6, 0, 1, 2, 3, 4];
 
+  /// English names are cut to three letters so a column stays readable; Arabic ones fit whole.
+  static String _shortDay(BuildContext context, int index) {
+    final name = DateWords.of(context).weekdays[index];
+    return Localizations.localeOf(context).languageCode == 'en'
+        ? name.substring(0, 3)
+        : name;
+  }
+
   @override
   Widget build(BuildContext context) {
     final textScaler = MediaQuery.textScalerOf(context);
@@ -120,7 +128,7 @@ class _CalendarMonthGrid extends StatelessWidget {
             for (final index in CalendarGrid._saturdayFirst)
               Expanded(
                 child: Text(
-                  DateWords.of(context).weekdays[index],
+                  CalendarGrid._shortDay(context, index),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
