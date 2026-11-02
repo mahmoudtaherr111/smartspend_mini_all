@@ -192,7 +192,10 @@ void main() {
       await _type(tester, _shotPin.substring(2));
       await tester.tap(find.text('المزيد').last);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('الأمان والخصوصية'));
+      final securityRow = find.text('الأمان والخصوصية');
+      await tester.ensureVisible(securityRow);
+      await tester.pumpAndSettle();
+      await tester.tap(securityRow);
       await tester.pumpAndSettle();
       await _type(tester, _shotPin);
       await photograph(theme, 'security');
