@@ -515,4 +515,26 @@ class DeviceLockHostApi {
       isNullValid: true,
     );
   }
+
+  /// Prevents screenshots and screen recording on sensitive screens (SEC-F2).
+  /// Android sets WindowManager.LayoutParams.FLAG_SECURE; iOS covers the screen when captured/recorded.
+  Future<void> setScreenProtected(bool enabled) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.device_lock.DeviceLockHostApi.setScreenProtected$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[enabled],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: true,
+    );
+  }
 }

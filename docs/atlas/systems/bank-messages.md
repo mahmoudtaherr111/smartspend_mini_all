@@ -97,6 +97,7 @@ flowchart LR
   router_capture --> sys_platform
   router_captureAdmin --> mod_capture_catalog
   router_captureAdmin --> mod_capture_intake
+  router_captureAdmin --> sys_accounts
   router_captureAdmin --> sys_platform
   router_captureAdmin ==> tbl_capture_sources
   router_captureAdmin ==> tbl_subscription_catalog

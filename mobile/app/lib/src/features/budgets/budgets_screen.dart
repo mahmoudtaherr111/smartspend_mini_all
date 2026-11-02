@@ -195,15 +195,15 @@ class BudgetsScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'اتصرف: ${heroSpent.toStringAsFixed(0)} ج.م',
+                            'اتصرف: ${moneyText(context, heroSpent)}',
                             style: textTheme.bodySmall?.copyWith(
                               color: colors.mutedForeground,
                             ),
                           ),
                           Text(
                             isHeroExceeded
-                                ? 'عديت بـ ${(heroSpent - heroLimit).toStringAsFixed(0)} ج.م'
-                                : 'باقي: ${(heroLimit - heroSpent).toStringAsFixed(0)} ج.م',
+                                ? 'عديت بـ ${moneyText(context, heroSpent - heroLimit)}'
+                                : 'باقي: ${moneyText(context, heroLimit - heroSpent)}',
                             style: textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: isHeroExceeded
@@ -299,6 +299,33 @@ class BudgetsScreen extends ConsumerWidget {
                                 ),
                                 tooltip: 'حذف',
                                 onPressed: () async {
+                                  final confirmed = await showDialog<bool>(
+                                    context: context,
+                                    builder: (dialogCtx) => AlertDialog(
+                                      title: const Text('حذف الميزانية'),
+                                      content: Text(
+                                        'هل أنت متأكد من حذف ميزانية "${budget.title}"؟',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(dialogCtx).pop(false),
+                                          child: const Text('إلغاء'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(dialogCtx).pop(true),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: colors.danger,
+                                          ),
+                                          child: const Text('حذف'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (confirmed != true || !context.mounted) return;
+
                                   final notifier = ref.read(
                                     budgetsProvider.notifier,
                                   );
@@ -346,7 +373,7 @@ class BudgetsScreen extends ConsumerWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'اتصرف: ${budget.currentSpent.toStringAsFixed(0)} من ${budget.monthlyLimit.toStringAsFixed(0)} ج.م',
+                                'اتصرف: ${moneyText(context, budget.currentSpent)} من ${moneyText(context, budget.monthlyLimit)}',
                                 style: textTheme.bodySmall?.copyWith(
                                   color: colors.mutedForeground,
                                 ),
@@ -397,7 +424,7 @@ class BudgetsScreen extends ConsumerWidget {
                                 )
                               else
                                 Text(
-                                  'باقي: ${budget.remaining.toStringAsFixed(0)} ج.م',
+                                  'باقي: ${moneyText(context, budget.remaining)}',
                                   style: textTheme.bodySmall?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: _positiveGreen,

@@ -106,6 +106,16 @@ describe("changing a plan", () => {
     expect(dbMock.update).not.toHaveBeenCalled();
     expect(bumped).toHaveBeenCalledWith("local", 12);
   });
+
+  it("defers invalidation when deferInvalidation is requested in a transaction", async () => {
+    const tx = { update: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn(async () => undefined) })) })) };
+    const invalidate = await setPlan("local", 13, "pro", { tx: tx as never, deferInvalidation: true });
+    expect(tx.update).toHaveBeenCalledTimes(1);
+    expect(bumped).not.toHaveBeenCalled();
+    expect(typeof invalidate).toBe("function");
+    await invalidate!();
+    expect(bumped).toHaveBeenCalledWith("local", 13);
+  });
 });
 
 describe("ending a session", () => {

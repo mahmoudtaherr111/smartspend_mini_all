@@ -301,6 +301,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
   Widget _buildMessageBubble(ChatMessage msg) {
     final isUser = msg.role == 'user';
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -334,12 +336,12 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   decoration: BoxDecoration(
                     color: isUser
                         ? const Color(0xFF0F766E)
-                        : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(16),
-                      topRight: const Radius.circular(16),
-                      bottomLeft: Radius.circular(isUser ? 16 : 4),
-                      bottomRight: Radius.circular(isUser ? 4 : 16),
+                        : colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadiusDirectional.only(
+                      topStart: const Radius.circular(16),
+                      topEnd: const Radius.circular(16),
+                      bottomStart: Radius.circular(isUser ? 16 : 4),
+                      bottomEnd: Radius.circular(isUser ? 4 : 16),
                     ),
                   ),
                   child: _renderFormattedText(msg.content, isUser),
@@ -351,7 +353,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           // Clarification replies (if any)
           if (msg.clarification != null && msg.clarification!.replies.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 8, right: 36),
+              padding: const EdgeInsetsDirectional.only(top: 8, start: 36),
               child: Wrap(
                 spacing: 6,
                 runSpacing: 6,
@@ -359,9 +361,20 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   for (final reply in msg.clarification!.replies)
                     ActionChip(
                       label: Text(reply),
-                      labelStyle: const TextStyle(fontSize: 12),
-                      backgroundColor: Colors.teal.shade50,
-                      side: BorderSide(color: Colors.teal.shade200),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        color: theme.brightness == Brightness.dark
+                            ? colorScheme.onSurface
+                            : Colors.teal.shade900,
+                      ),
+                      backgroundColor: theme.brightness == Brightness.dark
+                          ? colorScheme.surfaceContainerHigh
+                          : Colors.teal.shade50,
+                      side: BorderSide(
+                        color: theme.brightness == Brightness.dark
+                            ? colorScheme.outlineVariant
+                            : Colors.teal.shade200,
+                      ),
                       onPressed: () {
                         _textController.text = reply;
                         _handleSend();
@@ -374,7 +387,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           // Embedded Action Card (AI-02)
           if (msg.actionDraft != null)
             Padding(
-              padding: const EdgeInsets.only(right: 36),
+              padding: const EdgeInsetsDirectional.only(start: 36),
               child: AiActionCard(draft: msg.actionDraft!),
             ),
         ],
@@ -471,18 +484,22 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
   }
 
   InlineSpan _buildSpan(String text, bool isUser, {required bool isBold}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return TextSpan(
       text: text,
       style: TextStyle(
         fontSize: 14.5,
         height: 1.45,
         fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-        color: isUser ? Colors.white : Colors.black87,
+        color: isUser ? Colors.white : colorScheme.onSurface,
       ),
     );
   }
 
   Widget _buildTypingIndicator() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -500,7 +517,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -519,7 +536,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                   'بيفكر...',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey.shade600,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],

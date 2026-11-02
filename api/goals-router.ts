@@ -251,7 +251,13 @@ export const goalsRouter = router({
           aiPlan,
           lastAnalyzedAt: new Date(),
         })
-        .where(eq(financialGoals.id, goal.id));
+        .where(
+          and(
+            eq(financialGoals.id, goal.id),
+            eq(financialGoals.userId, ctx.user.id),
+            eq(financialGoals.userType, ctx.user.type),
+          ),
+        );
       await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
 
       return { goalId: goal.id, analysis: aiPlan, tokensUsed: tokens };

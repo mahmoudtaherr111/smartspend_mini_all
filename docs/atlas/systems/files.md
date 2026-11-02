@@ -14,7 +14,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/ai-router.ts` | [ai-platform](ai-platform.md): `ai.getUserLimits` · [expense-capture](expense-capture.md): `ai.learnWord`, `ai.parseExpense`, `ai.parseVoiceExpense`, `ai.speechToText` · [insights](insights.md): `ai.compareMonths`, `ai.generateMonthlyInsights`, `ai.generateYearlyInsights`, `ai.getCachedMonthlyInsights` · rest of the file: [ai-platform](ai-platform.md), [expense-capture](expense-capture.md), [insights](insights.md) |
 | `api/analytics-router.ts` | [admin](admin.md) |
 | `api/auth-router.ts` | [accounts](accounts.md) |
-| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `job:daily-auth-cleanup` · [ai-center](ai-center.md): `job:memory-embedding-backfill` · [bank-messages](bank-messages.md): `job:capture-ai-sweep`, `job:capture-breaker`, `job:capture-silent-devices`, `job:seed-capture-catalog` · [billing](billing.md): `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:coaching-reminders`, `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `GET /api/webhooks/whatsapp`, `POST /api/webhooks/whatsapp`, `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications`, `job:whatsapp-outbox` · [platform](platform.md): `ALL /api/trpc/*`, `GET /health`, `job:data-retention-lifecycle` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
+| `api/boot.ts` | [accounts](accounts.md): `GET /api/auth/google/callback`, `GET /api/auth/google/start`, `job:daily-auth-cleanup` · [ai-center](ai-center.md): `job:memory-embedding-backfill` · [bank-messages](bank-messages.md): `job:capture-ai-sweep`, `job:capture-breaker`, `job:capture-silent-devices`, `job:seed-capture-catalog` · [billing](billing.md): `POST /api/webhooks/apple-asn`, `POST /api/webhooks/google-play`, `POST /api/webhooks/paymob`, `job:daily-subscription-expiry` · [expense-capture](expense-capture.md): `job:classification-log-cleanup` · [insights](insights.md): `job:monthly-behavior-snapshots`, `job:monthly-report-generation` · [money](money.md): `job:coaching-reminders`, `job:nightly-rollup-reconciliation`, `job:taxonomy-migration` · [notifications](notifications.md): `GET /api/webhooks/whatsapp`, `POST /api/webhooks/whatsapp`, `job:scheduled-notifications`, `job:seed-default-templates`, `job:smart-activity-notifications`, `job:whatsapp-outbox` · [platform](platform.md): `ALL /api/trpc/*`, `GET /health`, `job:data-retention-lifecycle` · [voice-calls](voice-calls.md): `job:voice-call-memory`, `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
 | `api/budget-router.ts` | [money](money.md) |
 | `api/business-router.ts` | [money](money.md) |
 | `api/capture-admin-router.ts` | [bank-messages](bank-messages.md) |
@@ -34,6 +34,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/jobs/subscription-expiry-job.ts` | [billing](billing.md) |
 | `api/jobs/taxonomy-migration-job.ts` | [money](money.md) |
 | `api/lib/access-control.ts` | [accounts](accounts.md) |
+| `api/lib/admin-audit.ts` | [accounts](accounts.md) |
 | `api/lib/admin-safe-fields.ts` | [accounts](accounts.md) |
 | `api/lib/admissibility-gate.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/ai-gateway.ts` | [ai-platform](ai-platform.md) |
@@ -150,6 +151,11 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/smart-pipeline.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/sms-ai-contract.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/spending-behavior.ts` | [insights](insights.md) |
+| `api/lib/store-billing/apple-app-store-verifier.ts` | [billing](billing.md) |
+| `api/lib/store-billing/entitlement-state-machine.ts` | [billing](billing.md) |
+| `api/lib/store-billing/google-play-verifier.ts` | [billing](billing.md) |
+| `api/lib/store-billing/index.ts` | [billing](billing.md) |
+| `api/lib/store-billing/promo-codes.ts` | [billing](billing.md) |
 | `api/lib/stt-corrections.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/subscription-service.ts` | [billing](billing.md) |
 | `api/lib/system-settings-registry.ts` | [platform](platform.md) |
@@ -286,7 +292,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice/gateway/store.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/post-call.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/text-model.ts` | [voice-calls](voice-calls.md) |
-| `api/services/whatsapp-service.ts` | [notifications](notifications.md) |
 | `api/session-router.ts` | [accounts](accounts.md) |
 | `api/support-router.ts` | [admin](admin.md) |
 | `api/voice-router.ts` | [voice-calls](voice-calls.md) |
@@ -316,7 +321,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/NotificationBell.tsx` | [web-app](web-app.md) |
 | `src/components/OnboardingCard.tsx` | [web-app](web-app.md) |
 | `src/components/PageLoadingSkeleton.tsx` | [web-app](web-app.md) |
-| `src/components/ProductTour.tsx` | [web-app](web-app.md) |
 | `src/components/Sidebar.tsx` | [web-app](web-app.md) |
 | `src/components/admin/AdminAdsTab.tsx` | [admin](admin.md) |
 | `src/components/admin/AdminAuditTab.tsx` | [admin](admin.md) |
@@ -359,17 +363,14 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/dashboard/HomeHeader.tsx` | [money](money.md) |
 | `src/components/dashboard/HomeSummaryCards.tsx` | [money](money.md) |
 | `src/components/dashboard/MonthlyCalendar.tsx` | [money](money.md) |
-| `src/components/dashboard/MonthlyStats.tsx` | [money](money.md) |
 | `src/components/dashboard/NativeTabPanels.tsx` | [money](money.md) |
 | `src/components/dashboard/StatsView.tsx` | [money](money.md) |
 | `src/components/dashboard/StreakCounter.tsx` | [money](money.md) |
-| `src/components/dashboard/UserIntelligencePanel.tsx` | [money](money.md) |
 | `src/components/debts/DebtsPanel.tsx` | [money](money.md) |
 | `src/components/expenses/EditExpenseDialog.tsx` | [money](money.md) |
 | `src/components/expenses/ExpenseForm.tsx` | [expense-capture](expense-capture.md) |
 | `src/components/expenses/ExportExpensesCard.tsx` | [money](money.md) |
 | `src/components/expenses/PendingQuestionsCard.tsx` | [money](money.md) |
-| `src/components/expenses/ReceiptCapture.tsx` | [expense-capture](expense-capture.md) |
 | `src/components/expenses/RecentExpenses.tsx` | [money](money.md) |
 | `src/components/goals/FinancialGoalsPanel.tsx` | [money](money.md) |
 | `src/components/insights/AIInsights.tsx` | [insights](insights.md) |
@@ -388,7 +389,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/pwa/PwaEnhancements.tsx` | [web-app](web-app.md) |
 | `src/components/pwa/PwaInstallPrompt.tsx` | [web-app](web-app.md) |
 | `src/components/pwa/PwaOfflineSyncDialog.tsx` | [web-app](web-app.md) |
-| `src/components/routing/PlanGates.tsx` | [web-app](web-app.md) |
 | `src/components/seasons/SeasonsPanel.tsx` | [money](money.md) |
 | `src/components/seo/SEOMeta.tsx` | [web-app](web-app.md) |
 | `src/components/settings/BusinessSettingsView.tsx` | [accounts](accounts.md) |
@@ -463,7 +463,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/hooks/useBiometricOnboarding.ts` | [web-app](web-app.md) |
 | `src/hooks/useHaptics.ts` | [web-app](web-app.md) |
 | `src/hooks/useHistoryBound.ts` | [web-app](web-app.md) |
-| `src/hooks/useKeyboardNav.ts` | [web-app](web-app.md) |
 | `src/hooks/useLaunchNavigation.ts` | [web-app](web-app.md) |
 | `src/hooks/useMediaQuery.ts` | [web-app](web-app.md) |
 | `src/hooks/useNativeThemeSync.ts` | [web-app](web-app.md) |
@@ -474,7 +473,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/hooks/useScrollRestoration.ts` | [web-app](web-app.md) |
 | `src/hooks/useSessionTracker.ts` | [web-app](web-app.md) |
 | `src/hooks/useSheetManager.ts` | [web-app](web-app.md) |
-| `src/hooks/useSwipeNavigation.ts` | [web-app](web-app.md) |
 | `src/hooks/useVirtualKeyboard.ts` | [web-app](web-app.md) |
 | `src/hooks/useVoiceCallEntry.ts` | [voice-calls](voice-calls.md) |
 | `src/i18n/LanguagePreferenceSync.tsx` | [web-app](web-app.md) |
@@ -485,7 +483,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/i18n/format.ts` | [web-app](web-app.md) |
 | `src/i18n/language.ts` | [web-app](web-app.md) |
 | `src/lib/back-button-manager.ts` | [web-app](web-app.md) |
-| `src/lib/backButtonManager.ts` | [web-app](web-app.md) |
 | `src/lib/biometricAuth.ts` | [web-app](web-app.md) |
 | `src/lib/clientRulesEngine.ts` | [expense-capture](expense-capture.md) |
 | `src/lib/compress-image.ts` | [expense-capture](expense-capture.md) |

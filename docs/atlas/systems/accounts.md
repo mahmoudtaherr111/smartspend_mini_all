@@ -25,7 +25,7 @@ flowchart LR
     http__api_auth["HTTP /api/auth/… · 2 routes"]
     job_daily_auth_cleanup["Job · daily-auth-cleanup"]
     router_auth["auth API · 5 procedures"]
-    router_localAuth["localAuth API · 12 procedures"]
+    router_localAuth["localAuth API · 13 procedures"]
     router_profile["profile API · 6 procedures"]
     router_session["session API · 5 procedures"]
     router_webauthn["webauthn API · 6 procedures"]
@@ -38,6 +38,8 @@ flowchart LR
   end
   subgraph g_tables["MySQL tables"]
     tbl_ad_clicks[("ad_clicks")]
+    tbl_ad_impressions[("ad_impressions")]
+    tbl_admin_audit_logs[("admin_audit_logs")]
     tbl_ai_action_audit_logs[("ai_action_audit_logs")]
     tbl_ai_action_memory[("ai_action_memory")]
     tbl_ai_conversation_summaries[("ai_conversation_summaries")]
@@ -81,6 +83,7 @@ flowchart LR
     tbl_referrals[("referrals")]
     tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_sessions[("sessions")]
+    tbl_store_purchases[("store_purchases")]
     tbl_support_tickets[("support_tickets")]
     tbl_user_analytics[("user_analytics")]
     tbl_user_budgets[("user_budgets")]
@@ -109,6 +112,7 @@ flowchart LR
   job_daily_auth_cleanup --> mod_auth
   job_daily_auth_cleanup ==> tbl_auth_challenges
   mod_accounts ==> tbl_ad_clicks
+  mod_accounts ==> tbl_ad_impressions
   mod_accounts ==> tbl_ai_action_audit_logs
   mod_accounts ==> tbl_ai_action_memory
   mod_accounts ==> tbl_ai_conversation_summaries
@@ -152,6 +156,7 @@ flowchart LR
   mod_accounts ==> tbl_referrals
   mod_accounts ==> tbl_scheduled_cashflows
   mod_accounts ==> tbl_sessions
+  mod_accounts ==> tbl_store_purchases
   mod_accounts ==> tbl_support_tickets
   mod_accounts ==> tbl_user_analytics
   mod_accounts ==> tbl_user_budgets
@@ -182,6 +187,7 @@ flowchart LR
   mod_security -.-> tbl_user_businesses
   mod_security -.-> tbl_user_contacts
   mod_security -.-> tbl_user_wallets
+  mod_security ==> tbl_admin_audit_logs
   mod_web_account --> ext_turnstile
   mod_web_account --> sys_platform
   mod_web_account --> sys_web_app
@@ -238,7 +244,7 @@ flowchart LR
 | --- | --- | --- |
 | `accounts` — Account lifecycle | Account deletion: purgeUserData removes every row a user owns, inside the caller's transaction. | 1 |
 | `auth` — Authentication and sessions | Password hashing, JWT session creation, session validation, login brute-force protection, the one module that changes a role, a plan or a session and invalidates the cached principal with it, and the phone challenges that prove a number over WhatsApp before a sign-up or a WhatsApp sign-in, and the check of a Google ID token from the mobile app (Google's signature, issuer, expiry, and an audience and authorized party that are the app's own client ids). | 6 |
-| `security` — Request security | HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging. | 11 |
+| `security` — Request security | HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging. | 12 |
 | `web-account` — Account UI | Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt. | 14 |
 
 ## API procedures
@@ -260,6 +266,7 @@ flowchart LR
 | `localAuth.logout` | mutation | `publicProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support` |
 | `localAuth.me` | query | `publicProcedure` | `local_users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `Login`, `More`, `Settings`, `Support` |
 | `localAuth.register` | mutation | `strictPublicProcedure` | `local_users` | `local_users` | `Login` |
+| `localAuth.resetPassword` | mutation | `strictPublicProcedure` | `local_users` | `local_users` | — |
 | `localAuth.updateRole` | mutation | `adminProcedure` | — | — | — |
 | `localAuth.verifyOtp` | mutation | `strictPublicProcedure` | `local_users` | — | — |
 | `profile.confirmPhoneChange` | mutation | `authedProcedure` | `local_users` | `local_users` | — |
@@ -267,7 +274,7 @@ flowchart LR
 | `profile.getMyProfile` | query | `authedProcedure` | `user_profiles` | — | — |
 | `profile.requestPhoneChange` | mutation | `authedProcedure` | `local_users` | — | — |
 | `profile.updateProfile` | mutation | `authedProcedure` | — | `user_profiles` | — |
-| `profile.updateUserInfo` | mutation | `authedProcedure` | `local_users` | `local_users`, `users` | `More`, `Settings` |
+| `profile.updateUserInfo` | mutation | `authedProcedure` | — | `local_users`, `users` | `More`, `Settings` |
 | `session.listAll` | query | `adminProcedure` | `sessions` | — | — |
 | `session.listMine` | query | `authedProcedure` | `sessions` | — | — |
 | `session.revokeMine` | mutation | `authedProcedure` | — | — | — |
@@ -295,6 +302,8 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `ad_clicks` | E | `accounts` | — |
+| `ad_impressions` | E | `accounts` | — |
+| `admin_audit_logs` | B | `security` | — |
 | `ai_action_audit_logs` | E | `accounts` | — |
 | `ai_action_memory` | F | `accounts` | — |
 | `ai_conversation_summaries` | F | `accounts` | — |
@@ -327,7 +336,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `financial_goals` | C | `accounts` | `security` |
 | `in_app_notifications` | D | `accounts` | — |
 | `installment_plans` | C | `accounts` | — |
-| `local_users` | A | `accounts`, `auth`, `localAuth.login`, `localAuth.register`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `accounts`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.deleteMyAccount`, `profile.requestPhoneChange`, `profile.updateUserInfo`, `webauthn.generateRegistrationOptions` |
+| `local_users` | A | `accounts`, `auth`, `localAuth.login`, `localAuth.register`, `localAuth.resetPassword`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `accounts`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.resetPassword`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.deleteMyAccount`, `profile.requestPhoneChange`, `webauthn.generateRegistrationOptions` |
 | `monthly_behavior_snapshots` | C | `accounts` | — |
 | `monthly_reports` | C | `accounts` | — |
 | `notification_logs` | E | `accounts` | — |
@@ -338,6 +347,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `referrals` | A | `accounts` | — |
 | `scheduled_cashflows` | C | `accounts` | — |
 | `sessions` | D | `accounts`, `auth` | `auth`, `session.listAll`, `session.listMine`, `session.stats` |
+| `store_purchases` | A | `accounts` | — |
 | `support_tickets` | A | `accounts` | — |
 | `user_analytics` | E | `accounts`, `session.trackEvent` | — |
 | `user_budgets` | C | `accounts` | — |
@@ -367,7 +377,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 Depends on: [Admin console, support and growth tools](admin.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
+Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -393,13 +403,14 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/accounts.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>49 files and declarations</summary>
+<details><summary>50 files and declarations</summary>
 
 - `api/auth-router.ts`
 - `api/boot.ts#GET /api/auth/google/callback`
 - `api/boot.ts#GET /api/auth/google/start`
 - `api/boot.ts#job:daily-auth-cleanup`
 - `api/lib/access-control.ts`
+- `api/lib/admin-audit.ts`
 - `api/lib/admin-safe-fields.ts`
 - `api/lib/anonymizer.ts`
 - `api/lib/get-client-ip.ts`

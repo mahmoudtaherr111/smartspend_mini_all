@@ -62,12 +62,7 @@ vi.mock("./lib/settings-cache", () => ({
   getSystemSettings: vi.fn(async () => ({})),
 }));
 
-vi.mock("./services/whatsapp-service", () => ({
-  whatsappService: {
-    getStatus: vi.fn(() => ({})),
-    sendMessage: vi.fn(),
-  },
-}));
+vi.mock("./lib/whatsapp/outbox", () => ({ enqueueMessage: vi.fn(), sendMessageNow: vi.fn() }));
 
 vi.mock("./services/user-purge-service", () => ({
   purgeUserData: vi.fn(),

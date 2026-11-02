@@ -82,15 +82,15 @@ void main() {
         // Check hero card
         expect(find.text('الميزانية العامة'), findsWidgets);
         expect(find.text('85%'), findsOneWidget);
-        expect(find.text('اتصرف: 8500 ج.م'), findsOneWidget);
-        expect(find.text('باقي: 1500 ج.م'), findsOneWidget);
+        expect(find.text('اتصرف: 8,500 ج.م'), findsOneWidget);
+        expect(find.text('باقي: 1,500 ج.م'), findsOneWidget);
 
         // Check category cards and badges
         expect(find.text('أكل وشرب'), findsWidgets);
         expect(find.textContaining('عدت الميزانية (117%)'), findsOneWidget);
 
         expect(find.text('مواصلات'), findsWidgets);
-        expect(find.text('باقي: 1200 ج.م'), findsOneWidget);
+        expect(find.text('باقي: 1,200 ج.م'), findsOneWidget);
       },
     );
 
@@ -177,6 +177,10 @@ void main() {
 
       // Tap delete icon
       await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+      await tester.pumpAndSettle();
+
+      // Confirm in dialog (DEF-25)
+      await tester.tap(find.widgetWithText(TextButton, 'حذف'));
       await tester.pumpAndSettle();
 
       expect(deletedId, 10);

@@ -19,9 +19,9 @@ flowchart LR
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
-    http__api_webhooks["POST /api/webhooks/paymob"]
+    http__api_webhooks["HTTP /api/webhooks/… · 3 routes"]
     job_daily_subscription_expiry["Job · daily-subscription-expiry"]
-    router_pro["pro API · 6 procedures"]
+    router_pro["pro API · 8 procedures"]
     router_referral["referral API · 4 procedures"]
   end
   subgraph g_modules["Code modules"]
@@ -32,18 +32,24 @@ flowchart LR
     tbl_local_users[("local_users")]
     tbl_pro_subscriptions[("pro_subscriptions")]
     tbl_referrals[("referrals")]
+    tbl_store_purchases[("store_purchases")]
     tbl_user_analytics[("user_analytics")]
     tbl_users[("users")]
   end
+  ext_google_oauth{{"Google OAuth 2.0"}}
   ext_paymob{{"Paymob (Accept)"}}
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_platform[["Server platform and data (system)"]]
   http__api_webhooks --> mod_billing
+  http__api_webhooks --> sys_accounts
   http__api_webhooks --> sys_platform
+  http__api_webhooks ==> tbl_store_purchases
   job_daily_subscription_expiry --> sys_platform
+  mod_billing --> ext_google_oauth
   mod_billing --> ext_paymob
   mod_billing --> sys_accounts
   mod_billing --> sys_platform
+  mod_billing -.-> tbl_store_purchases
   mod_billing ==> tbl_pro_subscriptions
   mod_billing ==> tbl_user_analytics
   page_Pro --> router_pro
@@ -54,6 +60,7 @@ flowchart LR
   router_pro -.-> tbl_local_users
   router_pro -.-> tbl_users
   router_pro ==> tbl_pro_subscriptions
+  router_pro ==> tbl_store_purchases
   router_referral --> sys_platform
   router_referral -.-> tbl_discount_codes
   router_referral ==> tbl_local_users
@@ -99,7 +106,7 @@ Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it 
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `billing` — Billing | Paymob checkout requests, webhook verification settings, the subscription grant that sets a user's plan, and the per-plan catalog of limits and features read from the admin's settings for the plans screen. | 3 |
+| `billing` — Billing | Paymob checkout requests, webhook verification settings, the subscription grant that sets a user's plan, and the per-plan catalog of limits and features read from the admin's settings for the plans screen. | 8 |
 
 ## API procedures
 
@@ -108,9 +115,11 @@ Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it 
 | `pro.cancel` | mutation | `authedProcedure` | — | `pro_subscriptions` | `More`, `Pro` |
 | `pro.createCheckoutSession` | mutation | `authedProcedure` | — | — | `More`, `Pro` |
 | `pro.listSubscriptions` | query | `adminProcedure` | `pro_subscriptions` | — | — |
-| `pro.myPlan` | query | `authedProcedure` | `local_users`, `pro_subscriptions`, `users` | `pro_subscriptions` | `Home`, `More`, `Pro` |
+| `pro.myPlan` | query | `authedProcedure` | `local_users`, `pro_subscriptions`, `store_purchases`, `users` | `pro_subscriptions`, `store_purchases` | `Home`, `More`, `Pro` |
 | `pro.planCatalog` | query | `authedProcedure` | — | — | `More`, `Pro` |
+| `pro.restorePurchases` | mutation | `authedProcedure` | `store_purchases` | `store_purchases` | — |
 | `pro.upgrade` | mutation | `authedProcedure` | — | — | `More`, `Pro` |
+| `pro.verifyStorePurchase` | mutation | `authedProcedure` | `store_purchases` | `store_purchases` | — |
 | `referral.applyCode` | mutation | `authedProcedure` | `local_users`, `referrals`, `users` | `local_users`, `referrals`, `users` | `More`, `Pro` |
 | `referral.listAll` | query | `adminProcedure` | `referrals` | — | — |
 | `referral.myCode` | query | `authedProcedure` | `discount_codes`, `local_users`, `referrals`, `users` | `local_users`, `users` | `More`, `Pro` |
@@ -120,6 +129,8 @@ Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it 
 
 | Entry point | Kind | Declared in |
 | --- | --- | --- |
+| `POST /api/webhooks/apple-asn` | webhook | `api/boot.ts` |
+| `POST /api/webhooks/google-play` | webhook | `api/boot.ts` |
 | `POST /api/webhooks/paymob` | webhook | `api/boot.ts` |
 | `daily-subscription-expiry` | job, `0 6 * * *` | `api/boot.ts` |
 
@@ -133,6 +144,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `local_users` | A | `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
 | `pro_subscriptions` | A | `billing`, `pro.cancel`, `pro.myPlan` | `billing`, `pro.listSubscriptions`, `pro.myPlan` |
 | `referrals` | A | `referral.applyCode` | `referral.applyCode`, `referral.listAll`, `referral.myCode`, `referral.myReferrals` |
+| `store_purchases` | A | `POST /api/webhooks/apple-asn`, `POST /api/webhooks/google-play`, `pro.myPlan`, `pro.restorePurchases`, `pro.verifyStorePurchase` | `POST /api/webhooks/apple-asn`, `POST /api/webhooks/google-play`, `billing`, `pro.myPlan`, `pro.restorePurchases`, `pro.verifyStorePurchase` |
 | `user_analytics` | E | `billing` | — |
 | `users` | A | `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
 
@@ -140,6 +152,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | System | Kind | Modules |
 | --- | --- | --- |
+| Google OAuth 2.0 | identity | `billing` |
 | Paymob (Accept) | payments | `billing` |
 
 ## Other systems
@@ -152,6 +165,9 @@ Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [S
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
+| `BILLING_SIMULATE` | yes | `api/lib/store-billing/apple-app-store-verifier.ts`, `api/lib/store-billing/google-play-verifier.ts` |
+| `GOOGLE_PLAY_WEBHOOK_SECRET` | yes | `api/lib/store-billing/google-play-verifier.ts` |
+| `NODE_ENV` | yes | `api/lib/store-billing/apple-app-store-verifier.ts`, `api/lib/store-billing/google-play-verifier.ts` |
 | `PAYMOB_API_KEY` | yes | `api/lib/paymob.ts` |
 | `PAYMOB_IFRAME_ID` | yes | `api/lib/paymob.ts` |
 | `PAYMOB_INTEGRATION_ID` | yes | `api/lib/paymob.ts` |
@@ -160,13 +176,20 @@ Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [S
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/billing.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>10 files and declarations</summary>
+<details><summary>17 files and declarations</summary>
 
+- `api/boot.ts#POST /api/webhooks/apple-asn`
+- `api/boot.ts#POST /api/webhooks/google-play`
 - `api/boot.ts#POST /api/webhooks/paymob`
 - `api/boot.ts#job:daily-subscription-expiry`
 - `api/jobs/subscription-expiry-job.ts`
 - `api/lib/paymob.ts`
 - `api/lib/plan-catalog.ts`
+- `api/lib/store-billing/apple-app-store-verifier.ts`
+- `api/lib/store-billing/entitlement-state-machine.ts`
+- `api/lib/store-billing/google-play-verifier.ts`
+- `api/lib/store-billing/index.ts`
+- `api/lib/store-billing/promo-codes.ts`
 - `api/lib/subscription-service.ts`
 - `api/pro-router.ts`
 - `api/referral-router.ts`

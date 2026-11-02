@@ -128,7 +128,10 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
             ListTile(
               leading: const Icon(Icons.password),
               title: Text(l10n.securityChangePin),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Transform.scale(
+                scaleX: Directionality.of(context) == TextDirection.rtl ? -1 : 1,
+                child: const Icon(Icons.chevron_right),
+              ),
               onTap: _setUpPin,
             ),
           ],
@@ -179,6 +182,21 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
   var _first = '';
   String? _message;
   bool _saving = false;
+
+  late final DeviceLock _deviceLock;
+
+  @override
+  void initState() {
+    super.initState();
+    _deviceLock = ref.read(deviceLockProvider);
+    unawaited(_deviceLock.setScreenProtected(true));
+  }
+
+  @override
+  void dispose() {
+    unawaited(_deviceLock.setScreenProtected(false));
+    super.dispose();
+  }
 
   void _say(String message) {
     setState(() => _message = message);

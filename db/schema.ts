@@ -422,6 +422,8 @@ export const ads = mysqlTable("ads", {
   linkUrl: varchar("link_url", { length: 500 }),
   placement: varchar("placement", { length: 100 }).notNull().default("sidebar"), // sidebar | banner | popup
   targetPlan: varchar("target_plan", { length: 50 }).default("free"), // free | all
+  platformTarget: varchar("platform_target", { length: 50 }).notNull().default("all"), // all | android | ios | web
+  frequencyCapPerDay: int("frequency_cap_per_day").notNull().default(0), // 0 = unlimited
   startDate: datetime("start_date"),
   endDate: datetime("end_date"),
   clicks: int("clicks").default(0),
@@ -448,6 +450,26 @@ export const adClicks = mysqlTable("ad_clicks", {
   index("ad_clicks_ad_idx").on(t.adId),
   index("ad_clicks_user_idx").on(t.userId, t.userType)
 ]);
+
+// ─── Ad Impressions (ADS-02, BUG-06) ───
+export const adImpressions = mysqlTable(
+  "ad_impressions",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    adId: int("ad_id").notNull(),
+    userId: int("user_id"),
+    userType: varchar("user_type", { length: 50 }),
+    placement: varchar("placement", { length: 100 }).notNull(),
+    impressionToken: varchar("impression_token", { length: 128 }).notNull(),
+    ipAddress: varchar("ip_address", { length: 100 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("ad_impressions_token_idx").on(t.impressionToken),
+    index("ad_impressions_user_idx").on(t.userId, t.userType),
+    index("ad_impressions_ad_user_idx").on(t.adId, t.userId, t.createdAt),
+  ],
+);
 
 // ─── Referrals ───
 export const referrals = mysqlTable(
@@ -496,6 +518,33 @@ export const proSubscriptions = mysqlTable(
   (t) => [
     index("pro_sub_user_idx").on(t.userId, t.userType),
     uniqueIndex("pro_sub_transaction_unique_idx").on(t.transactionId),
+  ],
+);
+
+// ─── Store Purchases (Google Play & Apple App Store) ───
+export const storePurchases = mysqlTable(
+  "store_purchases",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    store: varchar("store", { length: 50 }).notNull(),
+    storeProductId: varchar("store_product_id", { length: 100 }).notNull(),
+    originalTransactionId: varchar("original_transaction_id", { length: 255 }).notNull(),
+    purchaseToken: text("purchase_token").notNull(),
+    status: varchar("status", { length: 50 }).notNull().default("active"),
+    expiresAt: datetime("expires_at"),
+    rawPayload: json("raw_payload"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(
+      sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
+    ),
+  },
+  (t) => [
+    index("store_purchases_user_idx").on(t.userId, t.userType),
+    index("store_purchases_orig_tx_idx").on(t.originalTransactionId),
+    index("store_purchases_store_idx").on(t.store),
+    index("store_purchases_status_idx").on(t.status),
   ],
 );
 
@@ -1910,4 +1959,29 @@ export const voiceCallIncidents = mysqlTable(
     index("voice_call_incidents_created_idx").on(t.createdAt),
   ],
 );
+
+// ─── Admin Action Audit Logs (GAP-36) ───
+export const adminAuditLogs = mysqlTable(
+  "admin_audit_logs",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    adminId: int("admin_id").notNull(),
+    adminType: varchar("admin_type", { length: 50 }).notNull(),
+    action: varchar("action", { length: 100 }).notNull(),
+    targetType: varchar("target_type", { length: 100 }).notNull(),
+    targetId: varchar("target_id", { length: 255 }).notNull(),
+    details: json("details"),
+    ipAddress: varchar("ip_address", { length: 100 }),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("admin_audit_admin_idx").on(t.adminId, t.adminType),
+    index("admin_audit_action_idx").on(t.action),
+    index("admin_audit_target_idx").on(t.targetType, t.targetId),
+    index("admin_audit_created_idx").on(t.createdAt),
+  ],
+);
+export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;
+export type NewAdminAuditLog = typeof adminAuditLogs.$inferInsert;
+
 

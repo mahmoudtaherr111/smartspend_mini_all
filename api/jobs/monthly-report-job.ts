@@ -1,8 +1,9 @@
 import { previousBusinessMonth } from "../lib/app-time";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { getDb } from "../queries/connection";
-import { users, localUsers, systemSettings, monthlyReports } from "../../db/schema";
-import { whatsappService } from "../services/whatsapp-service";
+import { users, localUsers, systemSettings, monthlyReports, whatsappContacts } from "../../db/schema";
+import { enqueueMessage } from "../lib/whatsapp/outbox";
+import { monthlyReportMessage } from "../lib/whatsapp/templates";
 import { getSmartProfile } from "../services/user-profile-service";
 import { buildMonthlyReportFactsPack } from "../services/finance-semantic-layer";
 import { recordAICostMetric, resolveAICostPolicy } from "../services/ai-cost-policy";
@@ -249,6 +250,14 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
 
       let reportSource = reportContent ? "monthly_report_cache" : "monthly_report_semantic_facts";
 
+      let formattedSpent = "0 ج.م";
+      let topCategoryName = "عام";
+      if (cachedReport) {
+        formattedSpent = `${Math.round(Number(cachedReport.totalAmount || 0))} ج.م`;
+        const cats = Array.isArray(cachedReport.topCategories) ? (cachedReport.topCategories as any[]) : [];
+        topCategoryName = cats[0]?.category || "عام";
+      }
+
       if (reportContent) {
         console.log(`[MonthlyReportJob] Reusing cached report for user ${u.id}, month ${month}.`);
       }
@@ -269,6 +278,8 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
           const netFlow = numberFact(facts, "net_flow");
           const dailyAverage = numberFact(facts, "daily_average_expense");
           const topCategories = parseTopCategories(valueOfFact(facts, "top_categories"));
+          formattedSpent = `${Math.round(totalExpense)} ج.م`;
+          topCategoryName = topCategories[0]?.category || "عام";
           const userName = String((u as any).name || profile.basicInfo.name || "صديقنا");
 
           if (aiConfig.apiKey) {
@@ -407,10 +418,29 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
         reportContent = `🌟 *تقريرك الشهري من SmartSpend* 🌟\n\nأهلاً بك!\nتم تجهيز ملخص شهر ${month}. يرجى فتح التطبيق للاطلاع على التفاصيل.`;
       }
 
-      // 4. Send via WhatsApp
+      // 4. Send via WhatsApp Cloud API
       if (sendWhatsApp) {
-        await whatsappService.sendMessage(targetPhone, reportContent);
-        log.info({ event: "monthly_report.sent", userId: u.id, phone: phoneTail(targetPhone) }, "Monthly report sent");
+        const [contact] = await db
+          .select({ reportsConsent: whatsappContacts.reportsConsent, optedOutAt: whatsappContacts.optedOutAt })
+          .from(whatsappContacts)
+          .where(and(eq(whatsappContacts.userId, u.id), eq(whatsappContacts.userType, userType)))
+          .limit(1);
+
+        if (contact?.reportsConsent && !contact?.optedOutAt) {
+          const outcome = await enqueueMessage({
+            owner: { userId: u.id, userType: userType as "local" | "oauth" },
+            to: targetPhone,
+            purpose: "report",
+            message: monthlyReportMessage(month, formattedSpent, topCategoryName),
+          });
+          if (outcome.enqueued) {
+            log.info({ event: "monthly_report.enqueued", userId: u.id, phone: phoneTail(targetPhone) }, "Monthly report enqueued to outbox");
+          } else {
+            log.warn({ event: "monthly_report.enqueue_refused", userId: u.id, error: outcome.error }, "Monthly report enqueue was refused");
+          }
+        } else {
+          log.info({ event: "monthly_report.skipped_consent", userId: u.id }, "User has not consented to WhatsApp reports");
+        }
       } else {
         console.log(`[MonthlyReportJob] Generated report for user ${u.id}; WhatsApp send skipped.`);
       }

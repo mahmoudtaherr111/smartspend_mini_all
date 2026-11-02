@@ -4,7 +4,7 @@
 model {
   extend smartspend.api.trpc {
     admin = router 'admin' {
-      description 'api/admin-router.ts — 56 procedures.'
+      description 'api/admin-router.ts — 60 procedures.'
       metadata {
         file 'api/admin-router.ts'
       }
@@ -118,6 +118,16 @@ model {
           procedureKind 'mutation'
         }
       }
+      generateBackupExport = procedure 'admin.generateBackupExport' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
       getAIClassificationStats = procedure 'admin.getAIClassificationStats' {
         #query #admin
         technology 'adminProcedure'
@@ -189,6 +199,16 @@ model {
         }
       }
       getApiKeyErrors = procedure 'admin.getApiKeyErrors' {
+        #query #admin
+        technology 'adminProcedure'
+        description 'query · adminProcedure'
+        metadata {
+          file 'api/admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      getAuditLogs = procedure 'admin.getAuditLogs' {
         #query #admin
         technology 'adminProcedure'
         description 'query · adminProcedure'
@@ -388,6 +408,16 @@ model {
           procedureKind 'query'
         }
       }
+      listStorePurchasesAdmin = procedure 'admin.listStorePurchasesAdmin' {
+        #query #admin
+        technology 'adminProcedure'
+        description 'query · adminProcedure'
+        metadata {
+          file 'api/admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
       listSubscriptionsAdmin = procedure 'admin.listSubscriptionsAdmin' {
         #query #admin
         technology 'adminProcedure'
@@ -439,6 +469,16 @@ model {
         }
       }
       saveAiModels = procedure 'admin.saveAiModels' {
+        #mutation #admin
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure'
+        metadata {
+          file 'api/admin-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      sendInstantNotification = procedure 'admin.sendInstantNotification' {
         #mutation #admin
         technology 'adminProcedure'
         description 'mutation · adminProcedure'
@@ -570,14 +610,24 @@ model {
       }
     }
     adminWhatsapp = router 'adminWhatsapp' {
-      description 'api/admin-whatsapp-router.ts — 9 procedures.'
+      description 'api/admin-whatsapp-router.ts — 14 procedures.'
       metadata {
         file 'api/admin-whatsapp-router.ts'
       }
       broadcastMessage = procedure 'adminWhatsapp.broadcastMessage' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-whatsapp-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      broadcastTemplate = procedure 'adminWhatsapp.broadcastTemplate' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-whatsapp-router.ts'
           builder 'adminProcedure'
@@ -585,13 +635,23 @@ model {
         }
       }
       clearQueue = procedure 'adminWhatsapp.clearQueue' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-whatsapp-router.ts'
           builder 'adminProcedure'
           procedureKind 'mutation'
+        }
+      }
+      getOutboxLog = procedure 'adminWhatsapp.getOutboxLog' {
+        #query #admin
+        technology 'adminProcedure'
+        description 'query · adminProcedure'
+        metadata {
+          file 'api/admin-whatsapp-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
         }
       }
       getSettings = procedure 'adminWhatsapp.getSettings' {
@@ -614,10 +674,20 @@ model {
           procedureKind 'query'
         }
       }
-      getUsers = procedure 'adminWhatsapp.getUsers' {
+      getTemplates = procedure 'adminWhatsapp.getTemplates' {
         #query #admin
         technology 'adminProcedure'
         description 'query · adminProcedure'
+        metadata {
+          file 'api/admin-whatsapp-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      getUsers = procedure 'adminWhatsapp.getUsers' {
+        #query #admin #uncalled
+        technology 'adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-whatsapp-router.ts'
           builder 'adminProcedure'
@@ -635,9 +705,9 @@ model {
         }
       }
       startService = procedure 'adminWhatsapp.startService' {
-        #mutation #admin
+        #mutation #admin #uncalled
         technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
         metadata {
           file 'api/admin-whatsapp-router.ts'
           builder 'adminProcedure'
@@ -645,6 +715,16 @@ model {
         }
       }
       stopService = procedure 'adminWhatsapp.stopService' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-whatsapp-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      syncTemplates = procedure 'adminWhatsapp.syncTemplates' {
         #mutation #admin
         technology 'adminProcedure'
         description 'mutation · adminProcedure'
@@ -655,6 +735,16 @@ model {
         }
       }
       toggleOtpVerification = procedure 'adminWhatsapp.toggleOtpVerification' {
+        #mutation #admin #uncalled
+        technology 'adminProcedure'
+        description 'mutation · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-whatsapp-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      updateSettings = procedure 'adminWhatsapp.updateSettings' {
         #mutation #admin
         technology 'adminProcedure'
         description 'mutation · adminProcedure'
@@ -666,7 +756,7 @@ model {
       }
     }
     ads = router 'ads' {
-      description 'api/ads-router.ts — 7 procedures.'
+      description 'api/ads-router.ts — 8 procedures.'
       metadata {
         file 'api/ads-router.ts'
       }
@@ -718,6 +808,16 @@ model {
           file 'api/ads-router.ts'
           builder 'publicProcedure'
           procedureKind 'query'
+        }
+      }
+      recordImpression = procedure 'ads.recordImpression' {
+        #mutation #public
+        technology 'publicProcedure'
+        description 'mutation · publicProcedure'
+        metadata {
+          file 'api/ads-router.ts'
+          builder 'publicProcedure'
+          procedureKind 'mutation'
         }
       }
       stats = procedure 'ads.stats' {
@@ -1900,7 +2000,7 @@ model {
       }
     }
     localAuth = router 'localAuth' {
-      description 'api/local-auth-router.ts — 12 procedures.'
+      description 'api/local-auth-router.ts — 13 procedures.'
       metadata {
         file 'api/local-auth-router.ts'
       }
@@ -2004,6 +2104,16 @@ model {
           procedureKind 'mutation'
         }
       }
+      resetPassword = procedure 'localAuth.resetPassword' {
+        #mutation #strictPublic #uncalled
+        technology 'strictPublicProcedure'
+        description 'mutation · strictPublicProcedure · no caller in src/'
+        metadata {
+          file 'api/local-auth-router.ts'
+          builder 'strictPublicProcedure'
+          procedureKind 'mutation'
+        }
+      }
       updateRole = procedure 'localAuth.updateRole' {
         #mutation #admin #uncalled
         technology 'adminProcedure'
@@ -2026,7 +2136,7 @@ model {
       }
     }
     pro = router 'pro' {
-      description 'api/pro-router.ts — 6 procedures.'
+      description 'api/pro-router.ts — 8 procedures.'
       metadata {
         file 'api/pro-router.ts'
       }
@@ -2080,10 +2190,30 @@ model {
           procedureKind 'query'
         }
       }
+      restorePurchases = procedure 'pro.restorePurchases' {
+        #mutation #authed #uncalled
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/pro-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
       upgrade = procedure 'pro.upgrade' {
         #mutation #authed
         technology 'authedProcedure'
         description 'mutation · authedProcedure'
+        metadata {
+          file 'api/pro-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      verifyStorePurchase = procedure 'pro.verifyStorePurchase' {
+        #mutation #authed #uncalled
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure · no caller in src/'
         metadata {
           file 'api/pro-router.ts'
           builder 'authedProcedure'
@@ -2775,6 +2905,24 @@ model {
         file 'api/boot.ts'
         method 'GET'
         path '/api/webhooks/whatsapp'
+      }
+    }
+    post_webhooks_apple-asn = endpoint 'POST /api/webhooks/apple-asn' {
+      #webhook
+      description 'Declared in api/boot.ts.'
+      metadata {
+        file 'api/boot.ts'
+        method 'POST'
+        path '/api/webhooks/apple-asn'
+      }
+    }
+    post_webhooks_google-play = endpoint 'POST /api/webhooks/google-play' {
+      #webhook
+      description 'Declared in api/boot.ts.'
+      metadata {
+        file 'api/boot.ts'
+        method 'POST'
+        path '/api/webhooks/google-play'
       }
     }
     post_webhooks_paymob = endpoint 'POST /api/webhooks/paymob' {

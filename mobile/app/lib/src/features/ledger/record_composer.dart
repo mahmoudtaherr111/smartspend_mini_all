@@ -434,7 +434,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                       maintainAnimation: true,
                       maintainState: true,
                       child: SizedBox.square(
-                        dimension: 44,
+                        dimension: 48,
                         child: IconButton(
                           tooltip: 'تصوير فاتورة',
                           onPressed: _busy

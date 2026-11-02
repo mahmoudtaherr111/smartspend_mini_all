@@ -1,5 +1,5 @@
-import { db } from "../api/db/queries/connection";
-import { classificationLogs } from "../api/db/schema";
+import { db } from "../api/queries/connection";
+import { classificationLogs } from "../db/schema";
 import { sql } from "drizzle-orm";
 
 async function clearInaccurateMuscleMemory() {

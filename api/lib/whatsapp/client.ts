@@ -32,7 +32,7 @@ export function whatsAppConfig(source: WhatsAppEnv = env): WhatsAppCloudConfig |
     accessToken,
     phoneNumberId,
     wabaId: source.WHATSAPP_CLOUD_WABA_ID?.trim() || undefined,
-    apiVersion: source.WHATSAPP_CLOUD_API_VERSION ?? "v23.0",
+    apiVersion: source.WHATSAPP_CLOUD_API_VERSION ?? "v21.0",
   };
 }
 

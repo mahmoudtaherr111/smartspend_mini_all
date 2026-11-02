@@ -72,6 +72,23 @@ export function NotificationsTab() {
   );
 
   // Mutations
+  const sendInstant = trpc.admin.sendInstantNotification.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message || "تم إرسال الإشعار بنجاح!");
+      setBroadcastTitleAr("");
+      setBroadcastBodyAr("");
+      setBroadcastTitleEn("");
+      setBroadcastBodyEn("");
+      setSelectedUser(null);
+      setUserSearchText("");
+      utils.admin.getNotificationLogs.invalidate();
+      utils.admin.getNotificationStats.invalidate();
+    },
+    onError: (err) => {
+      toast.error("فشل الإرسال: " + err.message);
+    }
+  });
+
   const createTemplate = trpc.admin.createNotificationTemplate.useMutation({
     onSuccess: () => {
       toast.success("تم الحفظ والجدولة بنجاح!");
@@ -196,6 +213,17 @@ export function NotificationsTab() {
       targetSegment.userId = selectedUser.id;
       targetSegment.userType = selectedUser.userType;
       targetSegment.minUsage = 0;
+    }
+
+    if (!isScheduled) {
+      sendInstant.mutate({
+        targetType: (targetPlan as "all" | "pro" | "free" | "specific"),
+        targetUserId: selectedUser?.id,
+        targetUserType: selectedUser?.userType,
+        title: broadcastTitleAr || broadcastTitleEn,
+        body: broadcastBodyAr || broadcastBodyEn,
+      });
+      return;
     }
 
     createTemplate.mutate({

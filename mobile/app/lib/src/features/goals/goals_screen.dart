@@ -276,7 +276,7 @@ class _GoalCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'المستهدف: ${goal.targetAmount.toStringAsFixed(0)} ج.م',
+                          'المستهدف: ${moneyText(context, goal.targetAmount)}',
                           style: textTheme.bodySmall?.copyWith(
                             color: colors.mutedForeground,
                           ),

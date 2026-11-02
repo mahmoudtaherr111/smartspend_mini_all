@@ -25,39 +25,78 @@ enum AppLanguage {
       code == english.code ? english : arabic;
 }
 
+enum ThemeChoice {
+  system('system'),
+  light('light'),
+  dark('dark');
+
+  const ThemeChoice(this.code);
+  final String code;
+
+  static ThemeChoice fromCode(Object? code) => switch (code) {
+    'light' => ThemeChoice.light,
+    'dark' => ThemeChoice.dark,
+    _ => ThemeChoice.system,
+  };
+}
+
 /// Choices that belong to the phone, not to the account: they stay through signing out, so the sign-in screen
 /// already speaks the person's language.
 final class DevicePreferences {
   const DevicePreferences({
     this.language = AppLanguage.arabic,
+    this.themeChoice = ThemeChoice.system,
     this.captureInstallationId,
+    this.supportDraftSubject,
+    this.supportDraftMessage,
   });
 
   final AppLanguage language;
+  final ThemeChoice themeChoice;
 
   /// This installation's id for bank message capture (`capture.registerDevice`): kept through signing out, so
   /// registering again replaces the same device instead of adding one.
   final String? captureInstallationId;
+  final String? supportDraftSubject;
+  final String? supportDraftMessage;
 
   DevicePreferences copyWith({
     AppLanguage? language,
+    ThemeChoice? themeChoice,
     String? captureInstallationId,
+    String? supportDraftSubject,
+    String? supportDraftMessage,
   }) => DevicePreferences(
     language: language ?? this.language,
+    themeChoice: themeChoice ?? this.themeChoice,
     captureInstallationId: captureInstallationId ?? this.captureInstallationId,
+    supportDraftSubject: supportDraftSubject ?? this.supportDraftSubject,
+    supportDraftMessage: supportDraftMessage ?? this.supportDraftMessage,
   );
 
   Map<String, Object?> toJson() => {
     'version': 1,
     'language': language.code,
+    'themeChoice': themeChoice.code,
     'captureInstallationId': ?captureInstallationId,
+    'supportDraftSubject': ?supportDraftSubject,
+    'supportDraftMessage': ?supportDraftMessage,
   };
 
   static DevicePreferences fromJson(Map<String, Object?> json) =>
       DevicePreferences(
         language: AppLanguage.fromCode(json['language']),
+        themeChoice: ThemeChoice.fromCode(json['themeChoice']),
         captureInstallationId: switch (json['captureInstallationId']) {
           final String id when id.isNotEmpty => id,
+          _ => null,
+        },
+        supportDraftSubject: switch (json['supportDraftSubject']) {
+          final String s when s.isNotEmpty => s,
+          _ => null,
+        },
+        supportDraftMessage: switch (json['supportDraftMessage']) {
+          final String m when m.isNotEmpty => m,
           _ => null,
         },
       );
@@ -148,5 +187,20 @@ class LanguageController extends Notifier<AppLanguage> {
     );
     final store = ref.read(preferencesStoreProvider);
     await store.write((await store.read()).copyWith(language: language));
+  }
+}
+
+final themeModeProvider = NotifierProvider<ThemeModeController, ThemeChoice>(
+  ThemeModeController.new,
+);
+
+class ThemeModeController extends Notifier<ThemeChoice> {
+  @override
+  ThemeChoice build() => ref.read(initialPreferencesProvider).themeChoice;
+
+  Future<void> choose(ThemeChoice choice) async {
+    state = choice;
+    final store = ref.read(preferencesStoreProvider);
+    await store.write((await store.read()).copyWith(themeChoice: choice));
   }
 }

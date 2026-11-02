@@ -173,7 +173,7 @@ flowchart LR
 | --- | --- | --- |
 | `coaching` — Commitments and coaching plans | Scheduled commitments and expected income with their due dates (the 31st on a short month's last day), the payments linked to each due date without counting one twice, what is free until the next payday from the recorded wallets, the coaching plan the user accepted with its steps, and in-app reminders delivered once per step revision. | 3 |
 | `ledger` — Ledger writer and aggregates | The ledger writer (adding, changing and removing an expense row in one transaction with its signed amount, rollup delta, contact count, settlements and the streak, then clearing muscle memory and the finance caches and checking budgets), daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer). | 7 |
-| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses, goals, and the cards and wallets screen. | 21 |
+| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses, goals, and the cards and wallets screen. | 19 |
 
 ## API procedures
 
@@ -290,7 +290,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>67 files and declarations</summary>
+<details><summary>65 files and declarations</summary>
 
 - `api/boot.ts#job:coaching-reminders`
 - `api/boot.ts#job:nightly-rollup-reconciliation`
@@ -342,11 +342,9 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/dashboard/HomeHeader.tsx`
 - `src/components/dashboard/HomeSummaryCards.tsx`
 - `src/components/dashboard/MonthlyCalendar.tsx`
-- `src/components/dashboard/MonthlyStats.tsx`
 - `src/components/dashboard/NativeTabPanels.tsx`
 - `src/components/dashboard/StatsView.tsx`
 - `src/components/dashboard/StreakCounter.tsx`
-- `src/components/dashboard/UserIntelligencePanel.tsx`
 - `src/components/debts/DebtsPanel.tsx`
 - `src/components/expenses/EditExpenseDialog.tsx`
 - `src/components/expenses/ExportExpensesCard.tsx`

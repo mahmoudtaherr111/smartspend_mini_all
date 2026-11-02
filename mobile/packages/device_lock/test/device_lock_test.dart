@@ -97,4 +97,12 @@ void main() {
       ),
     );
   });
+
+  test('setScreenProtected() forwards flag to native host (SEC-F2)', () async {
+    final sent = answer('setScreenProtected', null);
+
+    await DeviceLock().setScreenProtected(true);
+
+    expect((sent.single! as List<Object?>)[0], true);
+  });
 }

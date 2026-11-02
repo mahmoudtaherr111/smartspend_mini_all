@@ -75,6 +75,8 @@ export const businessRouter = router({
         .from(userContacts)
         .where(and(
           eq(userContacts.businessId, business.id),
+          eq(userContacts.userId, ctx.user.id),
+          eq(userContacts.userType, ctx.user.type),
           eq(userContacts.contactType, "business_supplier"),
         ));
 

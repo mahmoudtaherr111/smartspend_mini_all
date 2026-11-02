@@ -130,10 +130,17 @@ class GroupedRow extends StatelessWidget {
     // The same threshold as StatTileRow: from about 1.5 times the text size, the value goes under the title.
     final large = MediaQuery.textScalerOf(context).scale(10) > 15;
     final value = this.value;
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
     final end =
         trailing ??
         (onTap != null && !destructive
-            ? Icon(Icons.chevron_right_rounded, color: colors.mutedForeground)
+            ? Transform.scale(
+                scaleX: isRtl ? -1 : 1,
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: colors.mutedForeground,
+                ),
+              )
             : null);
     return MergeSemantics(
       child: InkWell(
@@ -235,13 +242,16 @@ class MonthSwitcher extends StatelessWidget {
       action();
     }
 
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
     return Row(
       children: [
-        // chevron_left points back to the start in right-to-left too: Flutter mirrors it.
         IconButton(
           tooltip: previousTooltip,
           onPressed: onPrevious == null ? null : () => tap(onPrevious),
-          icon: const Icon(Icons.chevron_left_rounded),
+          icon: Transform.scale(
+            scaleX: isRtl ? -1 : 1,
+            child: const Icon(Icons.chevron_left_rounded),
+          ),
         ),
         Expanded(
           child: Text(
@@ -253,9 +263,12 @@ class MonthSwitcher extends StatelessWidget {
         IconButton(
           tooltip: nextTooltip,
           onPressed: onNext == null ? null : () => tap(onNext),
-          icon: Icon(
-            Icons.chevron_right_rounded,
-            color: onNext == null ? colors.border : null,
+          icon: Transform.scale(
+            scaleX: isRtl ? -1 : 1,
+            child: Icon(
+              Icons.chevron_right_rounded,
+              color: onNext == null ? colors.border : null,
+            ),
           ),
         ),
       ],

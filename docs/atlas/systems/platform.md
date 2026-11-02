@@ -28,7 +28,9 @@ flowchart LR
   end
   subgraph g_tables["MySQL tables"]
     tbl_ad_clicks[("ad_clicks")]
+    tbl_ad_impressions[("ad_impressions")]
     tbl_ad_stats_daily[("ad_stats_daily")]
+    tbl_admin_audit_logs[("admin_audit_logs")]
     tbl_ads[("ads")]
     tbl_ai_action_audit_logs[("ai_action_audit_logs")]
     tbl_ai_conversation_summaries[("ai_conversation_summaries")]
@@ -72,6 +74,7 @@ flowchart LR
     tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_seo_pages[("seo_pages")]
     tbl_sessions[("sessions")]
+    tbl_store_purchases[("store_purchases")]
     tbl_subscription_catalog[("subscription_catalog")]
     tbl_support_tickets[("support_tickets")]
     tbl_system_settings[("system_settings")]
@@ -88,6 +91,7 @@ flowchart LR
     tbl_voice_call_incidents[("voice_call_incidents")]
     tbl_voice_calls[("voice_calls")]
     tbl_voice_usage[("voice_usage")]
+    tbl_whatsapp_contacts[("whatsapp_contacts")]
     tbl_whatsapp_messages[("whatsapp_messages")]
   end
   ext_fireworks{{"Fireworks AI"}}
@@ -126,6 +130,7 @@ flowchart LR
   mod_api_core -.-> tbl_users
   mod_api_core ==> tbl_auth_challenges
   mod_api_core ==> tbl_classification_logs
+  mod_api_core ==> tbl_store_purchases
   mod_api_routers --> ext_fireworks
   mod_api_routers --> ext_gemini
   mod_api_routers --> ext_google_oauth
@@ -142,15 +147,17 @@ flowchart LR
   mod_api_routers --> sys_money
   mod_api_routers --> sys_notifications
   mod_api_routers --> sys_voice_calls
+  mod_api_routers -.-> tbl_admin_audit_logs
   mod_api_routers -.-> tbl_ai_pending_actions
   mod_api_routers -.-> tbl_ai_token_ledgers
   mod_api_routers -.-> tbl_cashflow_settlements
   mod_api_routers -.-> tbl_expense_daily_rollups
-  mod_api_routers -.-> tbl_notification_logs
   mod_api_routers -.-> tbl_onboarding_questions
   mod_api_routers -.-> tbl_sessions
   mod_api_routers -.-> tbl_voice_calls
+  mod_api_routers -.-> tbl_whatsapp_contacts
   mod_api_routers ==> tbl_ad_clicks
+  mod_api_routers ==> tbl_ad_impressions
   mod_api_routers ==> tbl_ads
   mod_api_routers ==> tbl_ai_conversation_summaries
   mod_api_routers ==> tbl_ai_memory_embeddings
@@ -172,6 +179,7 @@ flowchart LR
   mod_api_routers ==> tbl_installment_plans
   mod_api_routers ==> tbl_local_users
   mod_api_routers ==> tbl_monthly_behavior_snapshots
+  mod_api_routers ==> tbl_notification_logs
   mod_api_routers ==> tbl_notification_templates
   mod_api_routers ==> tbl_pending_clarifications
   mod_api_routers ==> tbl_pro_subscriptions
@@ -179,6 +187,7 @@ flowchart LR
   mod_api_routers ==> tbl_referrals
   mod_api_routers ==> tbl_scheduled_cashflows
   mod_api_routers ==> tbl_seo_pages
+  mod_api_routers ==> tbl_store_purchases
   mod_api_routers ==> tbl_subscription_catalog
   mod_api_routers ==> tbl_support_tickets
   mod_api_routers ==> tbl_system_settings
@@ -192,6 +201,7 @@ flowchart LR
   mod_api_routers ==> tbl_user_wallets
   mod_api_routers ==> tbl_users
   mod_api_routers ==> tbl_voice_usage
+  mod_api_routers ==> tbl_whatsapp_messages
   mod_database --> ext_mysql
   mod_database --> mod_platform
   mod_jobs --> ext_fireworks
@@ -208,6 +218,7 @@ flowchart LR
   mod_jobs -.-> tbl_local_users
   mod_jobs -.-> tbl_user_profiles
   mod_jobs -.-> tbl_users
+  mod_jobs -.-> tbl_whatsapp_contacts
   mod_jobs ==> tbl_ad_clicks
   mod_jobs ==> tbl_ad_stats_daily
   mod_jobs ==> tbl_ai_action_audit_logs
@@ -227,6 +238,7 @@ flowchart LR
   mod_jobs ==> tbl_pending_clarifications
   mod_jobs ==> tbl_pro_subscriptions
   mod_jobs ==> tbl_profile_learning_events
+  mod_jobs ==> tbl_store_purchases
   mod_jobs ==> tbl_user_analytics
   mod_jobs ==> tbl_user_budgets
   mod_jobs ==> tbl_user_correction_rules
@@ -274,7 +286,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `ad_clicks` | E | `api-routers`, `jobs` | `jobs` |
+| `ad_impressions` | E | `api-routers` | `api-routers` |
 | `ad_stats_daily` | C | `jobs` | — |
+| `admin_audit_logs` | B | — | `api-routers` |
 | `ads` | A | `api-routers` | `api-routers` |
 | `ai_action_audit_logs` | E | `jobs` | — |
 | `ai_conversation_summaries` | F | `api-routers` | — |
@@ -307,7 +321,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `local_users` | A | `api-routers` | `api-core`, `api-routers`, `jobs` |
 | `monthly_behavior_snapshots` | C | `api-routers` | — |
 | `monthly_reports` | C | `jobs` | `jobs` |
-| `notification_logs` | E | `jobs` | `api-routers` |
+| `notification_logs` | E | `api-routers`, `jobs` | `api-routers` |
 | `notification_templates` | A | `api-routers` | `api-routers` |
 | `onboarding_questions` | A | — | `api-routers` |
 | `pending_clarifications` | D | `api-routers`, `jobs` | `api-routers` |
@@ -318,6 +332,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `scheduled_cashflows` | C | `api-routers` | `api-routers` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
 | `sessions` | D | — | `api-routers` |
+| `store_purchases` | A | `api-core`, `api-routers`, `jobs` | `api-core`, `api-routers`, `jobs` |
 | `subscription_catalog` | A | `api-routers` | `api-routers` |
 | `support_tickets` | A | `api-routers` | `api-routers` |
 | `system_settings` | A | `api-routers` | `api-routers`, `platform` |
@@ -334,7 +349,8 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `voice_call_incidents` | E | `jobs` | — |
 | `voice_calls` | E | `jobs` | `api-routers` |
 | `voice_usage` | E | `api-routers`, `jobs` | `api-routers` |
-| `whatsapp_messages` | E | `jobs` | — |
+| `whatsapp_contacts` | A | — | `api-routers`, `jobs` |
+| `whatsapp_messages` | E | `api-routers`, `jobs` | `api-routers` |
 
 ## Outside systems
 
@@ -368,7 +384,6 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `BILLING_SIMULATE` | yes | `api/pro-router.ts` |
 | `DATABASE_URL` | yes | `api/queries/connection.ts` |
 | `ENABLE_CRONS` | yes | `api/boot.ts` |
-| `ENABLE_WHATSAPP` | yes | `api/boot.ts` |
 | `FIREWORKS_API_KEY` | yes | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_API_KEY` | yes | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/expense-router.ts`, `api/goals-router.ts`, `api/image-router.ts`, `api/lib/system-settings-registry.ts` |
 | `GEMINI_MODEL_FREE` | yes | `api/ai-router.ts`, `api/lib/system-settings-registry.ts` |

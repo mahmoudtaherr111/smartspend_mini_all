@@ -84,15 +84,19 @@ class PinEntryState extends ConsumerState<PinEntry> {
   String? _message;
   Duration _wait = Duration.zero;
   Timer? _ticker;
+  late final DeviceLock _deviceLock;
 
   @override
   void initState() {
     super.initState();
+    _deviceLock = ref.read(deviceLockProvider);
+    unawaited(_deviceLock.setScreenProtected(true));
     _followWait(ref.read(appLockProvider.notifier).waitLeft);
   }
 
   @override
   void dispose() {
+    unawaited(_deviceLock.setScreenProtected(false));
     _ticker?.cancel();
     super.dispose();
   }

@@ -71,6 +71,7 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   ads: "A",
   referrals: "A",
   pro_subscriptions: "A",
+  store_purchases: "A",
   seo_pages: "A",
   system_settings: "A",
   user_profiles: "A",
@@ -87,6 +88,7 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
 
   // Class B: Core Ledger (Forever, Never auto-deleted)
   expenses: "B",
+  admin_audit_logs: "B",
 
   // Class C: Derived / Rollup (Rebuildable from B)
   expense_daily_rollups: "C",
@@ -126,6 +128,7 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   user_analytics: "E",
   notification_logs: "E",
   ad_clicks: "E",
+  ad_impressions: "E",
   voice_usage: "E",
   voice_calls: "E",
   voice_call_incidents: "E",

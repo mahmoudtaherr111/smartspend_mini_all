@@ -87,3 +87,12 @@ export function verificationMessage(code: string): TemplateMessage {
     buttons: [{ index: 0, subType: "url", parameter: code }],
   };
 }
+
+/** The message that sends a monthly report summary: month, total spent, and largest category. */
+export function monthlyReportMessage(month: string, totalSpent: string, topCategory: string): TemplateMessage {
+  return {
+    name: MONTHLY_REPORT_TEMPLATE.name,
+    language: TEMPLATE_LANGUAGE,
+    body: [month, totalSpent, topCategory],
+  };
+}

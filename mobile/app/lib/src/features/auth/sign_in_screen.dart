@@ -11,6 +11,7 @@ import '../../l10n/app_localizations.dart';
 import '../more/language_card.dart';
 import 'auth_api.dart';
 import 'auth_widgets.dart';
+import 'forgot_password_sheet.dart';
 import 'google_identity.dart';
 import 'register_screen.dart';
 import 'session_controller.dart';
@@ -156,6 +157,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               PasswordField(
                 controller: _password,
                 onSubmitted: (_) => _signInWithPhone(),
+              ),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
+                  onPressed: _busy ? null : () => ForgotPasswordSheet.show(context),
+                  child: Text(l10n.forgotPassword),
+                ),
               ),
             ],
           ),

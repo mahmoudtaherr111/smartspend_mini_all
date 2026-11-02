@@ -84,11 +84,11 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `web-growth` — Ads and SEO UI | The ad banner and SEO meta tags. | 2 |
-| `web-hooks` — Web hooks | React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics. | 21 |
-| `web-lib` — Web utilities | Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/. | 11 |
+| `web-hooks` — Web hooks | React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics. | 19 |
+| `web-lib` — Web utilities | Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/. | 10 |
 | `web-pages` — Web pages | Route-level page components lazy-loaded by src/App.tsx. | 17 |
-| `web-shared` — Shared web components | Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton. | 5 |
-| `web-shell` — Web app shell | Entry point, providers, layout, route guards and PWA or native integration. | 24 |
+| `web-shared` — Shared web components | Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton. | 4 |
+| `web-shell` — Web app shell | Entry point, providers, layout, route guards and PWA or native integration. | 23 |
 | `web-ui-kit` — UI primitives | shadcn and Radix UI primitives in src/components/ui/. | 55 |
 
 ## API procedures
@@ -139,13 +139,12 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/web-app.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>123 files and declarations</summary>
+<details><summary>118 files and declarations</summary>
 
 - `src/App.tsx`
 - `src/components/NotificationBell.tsx`
 - `src/components/OnboardingCard.tsx`
 - `src/components/PageLoadingSkeleton.tsx`
-- `src/components/ProductTour.tsx`
 - `src/components/Sidebar.tsx`
 - `src/components/ads/AdBanner.tsx`
 - `src/components/layout/MobileBottomNav.tsx`
@@ -156,7 +155,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/pwa/PwaEnhancements.tsx`
 - `src/components/pwa/PwaInstallPrompt.tsx`
 - `src/components/pwa/PwaOfflineSyncDialog.tsx`
-- `src/components/routing/PlanGates.tsx`
 - `src/components/seo/SEOMeta.tsx`
 - `src/components/ui/accordion.tsx`
 - `src/components/ui/adaptive-dialog.tsx`
@@ -221,7 +219,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/hooks/useBiometricOnboarding.ts`
 - `src/hooks/useHaptics.ts`
 - `src/hooks/useHistoryBound.ts`
-- `src/hooks/useKeyboardNav.ts`
 - `src/hooks/useLaunchNavigation.ts`
 - `src/hooks/useMediaQuery.ts`
 - `src/hooks/useNativeThemeSync.ts`
@@ -232,7 +229,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/hooks/useScrollRestoration.ts`
 - `src/hooks/useSessionTracker.ts`
 - `src/hooks/useSheetManager.ts`
-- `src/hooks/useSwipeNavigation.ts`
 - `src/hooks/useVirtualKeyboard.ts`
 - `src/i18n/LanguagePreferenceSync.tsx`
 - `src/i18n/LanguageProvider.tsx`
@@ -242,7 +238,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/i18n/format.ts`
 - `src/i18n/language.ts`
 - `src/lib/back-button-manager.ts`
-- `src/lib/backButtonManager.ts`
 - `src/lib/biometricAuth.ts`
 - `src/lib/financial-taxonomy.ts`
 - `src/lib/ledger-refresh.ts`

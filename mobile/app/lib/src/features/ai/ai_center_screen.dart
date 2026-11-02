@@ -51,7 +51,7 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
             title: const Text('المكالمة الذكية المباشرة'),
             content: Text(
               eligibility.reason ??
-                  'المكالمة الصوتية المباشرة مع المساعد الذكي تتطلب باقة Ultra.',
+                  'المكالمة الصوتية المباشرة مع المساعد الذكي تتطلب باقة Pro.',
             ),
             actions: [
               TextButton(
@@ -61,7 +61,7 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
               FilledButton(
                 onPressed: () {
                   Navigator.of(dialogCtx).pop();
-                  context.push('/plans');
+                  context.push('/more/plan');
                 },
                 child: const Text('ترقية الباقة'),
               ),

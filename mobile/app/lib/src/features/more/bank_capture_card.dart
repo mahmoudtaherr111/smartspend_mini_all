@@ -192,7 +192,10 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(l10n.captureSettingsTitle),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: Transform.scale(
+              scaleX: Directionality.of(context) == TextDirection.rtl ? -1 : 1,
+              child: const Icon(Icons.chevron_right),
+            ),
             onTap: () => context.go(CaptureSettingsScreen.path),
           ),
         ],

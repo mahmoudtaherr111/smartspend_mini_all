@@ -2577,7 +2577,7 @@ function ManualForm({
                 type="button"
                 onClick={() => setTransferDirection(d.id as "outgoing" | "incoming")}
                 className={cn(
-                  "flex-1 min-h-[36px] flex items-center justify-center text-xs rounded-lg transition-all active:scale-[0.97] cursor-pointer",
+                  "flex-1 min-h-[48px] flex items-center justify-center text-xs rounded-lg transition-all active:scale-[0.97] cursor-pointer",
                   transferDirection === d.id
                     ? d.activeClass
                     : "text-muted-foreground hover:bg-sky-100/50 dark:hover:bg-sky-900/40",

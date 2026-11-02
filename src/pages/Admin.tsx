@@ -42,6 +42,8 @@ import {
   Send,
   ArrowRight,
   ChevronDown,
+  Smartphone,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,12 +89,22 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
+export const ADMIN_GROUPS = [
+  { id: "operations", title: "العمليات والمالية" },
+  { id: "ai", title: "الذكاء الاصطناعي والمحركات" },
+  { id: "communications", title: "المدخلات والمراسلات" },
+  { id: "system", title: "الحملات والنظام والرقابة" },
+] as const;
+
+export type AdminGroupId = (typeof ADMIN_GROUPS)[number]["id"];
+
 const ADMIN_SECTIONS = [
   {
     value: "overview",
     label: "نظرة عامة",
     description: "ملخص الأداء والنشاط",
     icon: LayoutDashboard,
+    group: "operations" as AdminGroupId,
     activeClass:
       "data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-900/30",
   },
@@ -101,94 +113,106 @@ const ADMIN_SECTIONS = [
     label: "المستخدمون",
     description: "الحسابات والصلاحيات",
     icon: Users,
+    group: "operations" as AdminGroupId,
     activeClass:
       "data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30",
   },
   {
+    value: "billing",
+    label: "الاشتراكات والمتاجر",
+    description: "Web Pro + Google Play + App Store",
+    icon: Crown,
+    group: "operations" as AdminGroupId,
+    activeClass:
+      "data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-900/30",
+  },
+  {
     value: "tickets",
-    label: "الدعم",
+    label: "الدعم الفني",
     description: "التذاكر والردود",
     icon: Ticket,
+    group: "operations" as AdminGroupId,
     activeClass:
       "data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/30",
   },
   {
     value: "ai",
-    label: "الذكاء الاصطناعي",
+    label: "مركز الذكاء الاصطناعي",
     description: "الجودة والتكلفة والنماذج",
     icon: Brain,
+    group: "ai" as AdminGroupId,
     activeClass:
       "data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 dark:data-[state=active]:bg-purple-900/30",
-  },
-  {
-    value: "billing",
-    label: "الاشتراكات",
-    description: "الباقات وحالة الدفع",
-    icon: Crown,
-    activeClass:
-      "data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-900/30",
-  },
-  {
-    value: "clarifications",
-    label: "التوضيحات المعلقة",
-    description: "مراجعة الحالات غير الواضحة",
-    icon: AlertCircle,
-    activeClass:
-      "data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 dark:data-[state=active]:bg-orange-900/30",
-  },
-  {
-    value: "whatsapp",
-    label: "واتساب",
-    description: "الخدمة والرسائل",
-    icon: MessageCircle,
-    activeClass:
-      "data-[state=active]:bg-green-50 data-[state=active]:text-green-700 dark:data-[state=active]:bg-green-900/30",
-  },
-  {
-    value: "ads",
-    label: "الحملات الإعلانية",
-    description: "الحملات والاستهداف",
-    icon: Megaphone,
-    activeClass:
-      "data-[state=active]:bg-pink-50 data-[state=active]:text-pink-700 dark:data-[state=active]:bg-pink-900/30",
   },
   {
     value: "rules",
     label: "القاموس والقواعد",
     description: "قواعد التصنيف المتعلمة",
     icon: BookOpen,
+    group: "ai" as AdminGroupId,
     activeClass:
       "data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 dark:data-[state=active]:bg-teal-900/30",
   },
   {
+    value: "clarifications",
+    label: "التوضيحات المعلقة",
+    description: "مراجعة الحالات غير الواضحة",
+    icon: AlertCircle,
+    group: "ai" as AdminGroupId,
+    activeClass:
+      "data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 dark:data-[state=active]:bg-orange-900/30",
+  },
+  {
     value: "raw-sms",
-    label: "رسايل البنوك",
-    description: "البنوك والمحافظ والاشتراكات والسجل",
+    label: "رسايل البنوك والمحافظ",
+    description: "البنوك والمحافظ والاشتراكات والكتالوج",
     icon: FileText,
+    group: "communications" as AdminGroupId,
     activeClass:
       "data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700 dark:data-[state=active]:bg-violet-900/30",
   },
   {
-    value: "audit",
-    label: "سجل الرقابة",
-    description: "الجلسات والنشاط الإداري",
-    icon: History,
+    value: "whatsapp",
+    label: "واتساب Meta Cloud",
+    description: "الخدمة وسجل الصندوق",
+    icon: MessageCircle,
+    group: "communications" as AdminGroupId,
     activeClass:
-      "data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800",
+      "data-[state=active]:bg-green-50 data-[state=active]:text-green-700 dark:data-[state=active]:bg-green-900/30",
   },
   {
     value: "notifications",
-    label: "الإشعارات",
-    description: "القوالب وسجل الإرسال",
+    label: "محرك الإشعارات",
+    description: "FCM / APNs وسجل الإرسال",
     icon: Bell,
+    group: "communications" as AdminGroupId,
     activeClass:
       "data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 dark:data-[state=active]:bg-sky-900/30",
   },
   {
+    value: "ads",
+    label: "الحملات الإعلانية",
+    description: "الحملات واستهداف الموبايل",
+    icon: Megaphone,
+    group: "system" as AdminGroupId,
+    activeClass:
+      "data-[state=active]:bg-pink-50 data-[state=active]:text-pink-700 dark:data-[state=active]:bg-pink-900/30",
+  },
+  {
+    value: "audit",
+    label: "سجل الرقابة (Audit Trail)",
+    description: "سجل عمليات المشرفين والأنشطة",
+    icon: History,
+    group: "system" as AdminGroupId,
+    activeClass:
+      "data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800",
+  },
+  {
     value: "settings",
-    label: "الحدود والإعدادات",
-    description: "الخطط والمفاتيح والحدود",
+    label: "الحدود والخزنة",
+    description: "الخطط والمفاتيح المركزية",
     icon: Settings2,
+    group: "system" as AdminGroupId,
     activeClass:
       "data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800",
   },
@@ -276,6 +300,11 @@ export default function Admin() {
 
   const subsQuery = trpc.admin.listSubscriptionsAdmin.useQuery(
     { page: 1, limit: 20 },
+    { enabled: activeTab === "billing" && user?.role === "admin" },
+  );
+
+  const storeSubsQuery = trpc.admin.listStorePurchasesAdmin.useQuery(
+    { page: 1, limit: 50 },
     { enabled: activeTab === "billing" && user?.role === "admin" },
   );
 
@@ -511,7 +540,7 @@ export default function Admin() {
 
       <div
         id="admin-content"
-        className="mx-auto mt-4 min-w-0 max-w-[1400px] scroll-mt-36 px-3 sm:mt-8 sm:px-6 lg:scroll-mt-20 lg:px-8"
+        className="mx-auto mt-4 min-w-0 max-w-[1560px] scroll-mt-36 px-3 sm:mt-6 sm:px-6 lg:scroll-mt-20 lg:px-8"
       >
         <Tabs
           dir="rtl"
@@ -519,22 +548,62 @@ export default function Admin() {
           onValueChange={(value) => setActiveTab(value as AdminSection)}
           className="min-w-0 no-print"
         >
-          <TabsList className="mb-8 hidden h-auto w-full max-w-full flex-wrap justify-start gap-1 rounded-2xl border border-white/50 bg-white/60 p-1.5 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/60 lg:flex">
-            {ADMIN_SECTIONS.map((section) => {
-              const Icon = section.icon;
-              return (
-                <TabsTrigger
-                  key={section.value}
-                  value={section.value}
-                  className={`gap-2 rounded-xl px-3 py-2.5 transition-all sm:px-4 ${section.activeClass}`}
-                >
-                  <Icon className="w-4 h-4 shrink-0" /> {section.label}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+          <div className="lg:grid lg:grid-cols-[280px_1fr] lg:gap-8 lg:items-start">
+            {/* Desktop Modern Enterprise Sidebar */}
+            <aside className="hidden lg:block sticky top-24 self-start space-y-4">
+              <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl border border-slate-200/80 dark:border-slate-800 p-3.5 shadow-sm space-y-5">
+                <TabsList className="flex flex-col h-auto w-full bg-transparent p-0 space-y-5 items-stretch justify-start">
+                {ADMIN_GROUPS.map((group) => {
+                  const groupSections = ADMIN_SECTIONS.filter((s) => s.group === group.id);
+                  return (
+                    <div key={group.id} className="space-y-1">
+                      <p className="px-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                        {group.title}
+                      </p>
+                      <div className="space-y-0.5">
+                        {groupSections.map((section) => {
+                          const Icon = section.icon;
+                          const isActive = section.value === activeTab;
+                          return (
+                            <TabsTrigger
+                              key={section.value}
+                              value={section.value}
+                              data-testid={`admin-sidebar-tab-${section.value}`}
+                              className={`w-full flex items-center justify-start gap-3 px-3 py-2.5 rounded-2xl text-start transition-all ${
+                                isActive
+                                  ? "!bg-indigo-600 !text-white font-bold shadow-md shadow-indigo-600/25"
+                                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800/60"
+                              }`}
+                            >
+                              <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "text-slate-400"}`} />
+                              <span className="text-sm truncate">{section.label}</span>
+                            </TabsTrigger>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+                </TabsList>
 
-          <div className="min-w-0 animate-in fade-in-50 duration-300 slide-in-from-bottom-2">
+                {/* System Status Pill in Sidebar */}
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 px-2 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                      SmartSpend Core
+                    </span>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/30 text-emerald-600">v2.1 Enterprise</Badge>
+                  </div>
+                  <p className="text-[10px] text-slate-400 text-center font-mono">
+                    Node + MySQL 8.4 + Redis 7.4
+                  </p>
+                </div>
+              </div>
+            </aside>
+
+            {/* Main Operations Canvas */}
+            <main className="min-w-0 flex-1 animate-in fade-in-50 duration-300">
             {/* 1. Overview */}
             <TabsContent value="overview">
               {stats.isError && (
@@ -594,6 +663,30 @@ export default function Admin() {
                   label="تسجيل محلي"
                   value={stats.data?.totalLocalUsers ?? 0}
                   color="teal"
+                />
+                <StatCard
+                  icon={<Smartphone className="w-6 h-6" />}
+                  label="اشتراكات Google Play"
+                  value={stats.data?.playStoreActive ?? 0}
+                  color="green"
+                />
+                <StatCard
+                  icon={<Smartphone className="w-6 h-6" />}
+                  label="اشتراكات App Store"
+                  value={stats.data?.appStoreActive ?? 0}
+                  color="blue"
+                />
+                <StatCard
+                  icon={<CreditCard className="w-6 h-6" />}
+                  label="إجمالي اشتراكات المتاجر"
+                  value={stats.data?.totalStoreActive ?? 0}
+                  color="yellow"
+                />
+                <StatCard
+                  icon={<Crown className="w-6 h-6" />}
+                  label="اشتراكات الويب النشطة"
+                  value={stats.data?.webProActive ?? 0}
+                  color="purple"
                 />
               </div>
 
@@ -1099,15 +1192,15 @@ export default function Admin() {
                   <AiCommandCenter />
                 </TabsContent>
 
-                <TabsContent value="billing">
+                <TabsContent value="billing" className="space-y-6">
                   <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Crown className="w-5 h-5 text-amber-500" />
-                        اشتراكات Pro
+                        اشتراكات الويب (Web Pro)
                       </CardTitle>
                       <CardDescription>
-                        آخر {subsQuery.data?.list?.length ?? 0} اشتراك
+                        آخر {subsQuery.data?.list?.length ?? 0} اشتراك عبر بوابة الدفع الإلكتروني
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="overflow-x-auto">
@@ -1142,6 +1235,84 @@ export default function Admin() {
                       )}
                     </CardContent>
                   </Card>
+
+                  {/* Store Subscriptions (Google Play & App Store) */}
+                  <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Smartphone className="w-5 h-5 text-indigo-500" />
+                        اشتراكات متاجر التطبيقات (Google Play & App Store)
+                      </CardTitle>
+                      <CardDescription>
+                        إجمالي {storeSubsQuery.data?.total ?? stats.data?.totalStoreActive ?? 0} اشتراك من متاجر الهواتف
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="overflow-x-auto">
+                      <table className="w-full text-sm text-end">
+                        <thead className="text-muted-foreground border-b">
+                          <tr>
+                            <th className="py-2 px-3">المتجر</th>
+                            <th className="py-2 px-3">المستخدم</th>
+                            <th className="py-2 px-3">معرف المنتج</th>
+                            <th className="py-2 px-3">الحالة</th>
+                            <th className="py-2 px-3">تاريخ الانتهاء</th>
+                            <th className="py-2 px-3">تاريخ الشراء</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(storeSubsQuery.data?.list ?? stats.data?.recentStorePurchases)?.map((p: any) => (
+                            <tr key={p.id} className="border-b last:border-0">
+                              <td className="py-2 px-3">
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    p.store === "google_play"
+                                      ? "bg-emerald-500/10 text-emerald-600 border-emerald-300"
+                                      : "bg-blue-500/10 text-blue-600 border-blue-300"
+                                  }
+                                >
+                                  {p.store === "google_play" ? "Google Play" : "App Store"}
+                                </Badge>
+                              </td>
+                              <td className="py-2 px-3 font-mono text-xs">
+                                {p.userType}:{p.userId}
+                              </td>
+                              <td className="py-2 px-3 font-mono text-xs">{p.storeProductId}</td>
+                              <td className="py-2 px-3">
+                                <Badge
+                                  className={
+                                    p.status === "active"
+                                      ? "bg-emerald-500"
+                                      : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                  }
+                                >
+                                  {p.status}
+                                </Badge>
+                              </td>
+                              <td className="py-2 px-3 font-mono text-xs text-slate-500">
+                                {p.expiresAt
+                                  ? new Date(p.expiresAt).toLocaleDateString("ar-EG")
+                                  : "—"}
+                              </td>
+                              <td className="py-2 px-3 font-mono text-xs text-slate-500">
+                                {p.createdAt
+                                  ? new Date(p.createdAt).toLocaleDateString("ar-EG")
+                                  : "—"}
+                              </td>
+                            </tr>
+                          ))}
+                          {(!storeSubsQuery.data?.list || storeSubsQuery.data.list.length === 0) &&
+                            (!stats.data?.recentStorePurchases || stats.data.recentStorePurchases.length === 0) && (
+                              <tr>
+                                <td colSpan={6} className="py-6 text-center text-slate-500">
+                                  لا توجد اشتراكات مسجلة من متاجر التطبيقات حتى الآن.
+                                </td>
+                              </tr>
+                            )}
+                        </tbody>
+                      </table>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
 
                 <TabsContent value="notifications">
@@ -1172,9 +1343,10 @@ export default function Admin() {
                 </TabsContent>
               </>
             )}
-          </div>
-        </Tabs>
-      </div>
+          </main>
+        </div>
+      </Tabs>
+    </div>
 
       {/* Premium Delete User Dialog */}
       <Dialog

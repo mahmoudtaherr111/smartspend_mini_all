@@ -11,7 +11,6 @@ import { db } from "./queries/connection";
 import {
   localUsers,
   expenses,
-  sessions,
   userAnalytics,
   supportTickets,
   userWallets,
@@ -69,7 +68,7 @@ import {
   releaseLoginAttempt,
   setLoginRateLimitHeaders,
 } from "./lib/login-protection";
-import { invalidatePrincipal, setRole } from "./lib/access-control";
+import { invalidatePrincipal, setRole, revokeAllSessions } from "./lib/access-control";
 
 // A fixed cost-12 hash keeps nonexistent-account failures on the same bcrypt
 // path as incorrect passwords without deriving a hash during each request.
@@ -418,6 +417,73 @@ export const localAuthRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "التوثيق ده اتستخدم قبل كده" });
       }
 
+      const token = await generateToken(user.id, "local");
+      await createSession(
+        user.id,
+        "local",
+        token,
+        getSessionMetadata(ctx.req, ctx.ip),
+      );
+
+      if (ctx.resHeaders) ctx.resHeaders.append("Set-Cookie", sessionCookie(token, ctx.req));
+
+      return {
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          phone: user.phone,
+          role: user.role,
+          plan: user.plan,
+        },
+      };
+    }),
+
+  /**
+   * Reset forgotten password with a verified phone challenge ticket (AUTH-04, GAP-22, GAP-23, GAP-27, GAP-29).
+   */
+  resetPassword: strictPublicProcedure
+    .input(
+      z.object({
+        verificationTicket: z.string().min(1).max(200),
+        newPassword: z.string().min(6, "الباسورد لازم يكون 6 أحرف على الأقل").max(1_024),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const challenge = await verifiedChallenge(input.verificationTicket);
+      if (!challenge) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "الرقم لسه ماتوثقش، أو التوثيق انتهى" });
+      }
+
+      const user = await db.query.localUsers.findFirst({
+        where: eq(localUsers.phone, challenge.phone),
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "الحساب غير موجود",
+        });
+      }
+
+      const hashedPassword = await hashPassword(input.newPassword);
+
+      await db.transaction(async (tx) => {
+        if (!(await consumePhoneChallenge(challenge, { tx }))) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "التوثيق ده اتستخدم قبل كده" });
+        }
+
+        await tx
+          .update(localUsers)
+          .set({ password: hashedPassword })
+          .where(eq(localUsers.id, user.id));
+      });
+
+      // Revoke all existing sessions for this user on password reset (GAP-27)
+      await revokeAllSessions("local", user.id);
+
+      // Issue a fresh new session for this login (GAP-28, GAP-29)
       const token = await generateToken(user.id, "local");
       await createSession(
         user.id,

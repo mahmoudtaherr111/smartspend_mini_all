@@ -11,6 +11,14 @@ model {
         storageClass 'E'
       }
     }
+    ad_impressions = table 'ad_impressions' {
+      #classE #dualOwner
+      description '8 columns, 3 indexes, storage class E.'
+      metadata {
+        export 'adImpressions'
+        storageClass 'E'
+      }
+    }
     ad_stats_daily = table 'ad_stats_daily' {
       #classC
       description '5 columns, 1 indexes, storage class C.'
@@ -19,9 +27,17 @@ model {
         storageClass 'C'
       }
     }
+    admin_audit_logs = table 'admin_audit_logs' {
+      #classB
+      description '9 columns, 4 indexes, storage class B.'
+      metadata {
+        export 'adminAuditLogs'
+        storageClass 'B'
+      }
+    }
     ads = table 'ads' {
       #classA
-      description '14 columns, 2 indexes, storage class A.'
+      description '16 columns, 2 indexes, storage class A.'
       metadata {
         export 'ads'
         storageClass 'A'
@@ -433,6 +449,14 @@ model {
       metadata {
         export 'sessions'
         storageClass 'D'
+      }
+    }
+    store_purchases = table 'store_purchases' {
+      #classA #dualOwner
+      description '12 columns, 4 indexes, storage class A.'
+      metadata {
+        export 'storePurchases'
+        storageClass 'A'
       }
     }
     subscription_catalog = table 'subscription_catalog' {

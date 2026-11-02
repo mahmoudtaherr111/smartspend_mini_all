@@ -27,9 +27,9 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Router | File | Procedures | Queries | Mutations | Builders used |
 | --- | --- | --- | --- | --- | --- |
-| `admin` | `api/admin-router.ts` | 56 | 28 | 28 | `adminProcedure` |
-| `adminWhatsapp` | `api/admin-whatsapp-router.ts` | 9 | 3 | 6 | `adminProcedure` |
-| `ads` | `api/ads-router.ts` | 7 | 2 | 5 | `adminProcedure`, `authedProcedure`, `publicProcedure` |
+| `admin` | `api/admin-router.ts` | 60 | 30 | 30 | `adminProcedure` |
+| `adminWhatsapp` | `api/admin-whatsapp-router.ts` | 14 | 5 | 9 | `adminProcedure` |
+| `ads` | `api/ads-router.ts` | 8 | 2 | 6 | `adminProcedure`, `authedProcedure`, `publicProcedure` |
 | `ai` | `api/ai-router.ts` | 9 | 2 | 7 | `aiProcedure`, `authedProcedure` |
 | `analytics` | `api/analytics-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `auth` | `api/auth-router.ts` | 5 | 2 | 3 | `authedProcedure`, `publicProcedure`, `strictPublicProcedure` |
@@ -43,8 +43,8 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `export` | `api/export-router.ts` | 3 | 0 | 3 | `adminProcedure`, `authedProcedure`, `proReportProcedure` |
 | `goals` | `api/goals-router.ts` | 5 | 1 | 4 | `authedProcedure`, `goalAnalysisProcedure` |
 | `image` | `api/image-router.ts` | 1 | 0 | 1 | `receiptsProcedure` |
-| `localAuth` | `api/local-auth-router.ts` | 12 | 4 | 8 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
-| `pro` | `api/pro-router.ts` | 6 | 3 | 3 | `adminProcedure`, `authedProcedure` |
+| `localAuth` | `api/local-auth-router.ts` | 13 | 4 | 9 | `adminProcedure`, `publicProcedure`, `strictPublicProcedure` |
+| `pro` | `api/pro-router.ts` | 8 | 3 | 5 | `adminProcedure`, `authedProcedure` |
 | `profile` | `api/profile-router.ts` | 22 | 6 | 16 | `authedProcedure` |
 | `referral` | `api/referral-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `seo` | `api/seo-router.ts` | 5 | 3 | 2 | `adminProcedure`, `publicProcedure` |
@@ -60,17 +60,18 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `admin.addAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.addAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/admin-audit.ts`, `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.checkProviderHealth` | mutation | `adminProcedure` | no | `ai_providers` | `ai_providers` | `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | — |
-| `admin.clearAllApiKeyErrors` | mutation | `adminProcedure` | no | — | — | `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
-| `admin.createDiscountCode` | mutation | `adminProcedure` | yes | `discount_codes` | `discount_codes` | — | `src/components/admin/settings/AdminCodesTab.tsx` |
-| `admin.createNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
-| `admin.deleteAiProvider` | mutation | `adminProcedure` | yes | — | `ai_models`, `ai_providers` | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.deleteDiscountCode` | mutation | `adminProcedure` | yes | — | `discount_codes` | — | `src/components/admin/settings/AdminCodesTab.tsx` |
-| `admin.deleteLearnedRule` | mutation | `adminProcedure` | yes | — | `user_dictionaries` | — | `src/components/admin/AdminRulesTab.tsx` |
-| `admin.deleteNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
-| `admin.deleteUser` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/services/user-purge-service.ts` | `src/hooks/useAdmin.ts` |
+| `admin.clearAllApiKeyErrors` | mutation | `adminProcedure` | no | — | — | `api/lib/admin-audit.ts`, `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
+| `admin.createDiscountCode` | mutation | `adminProcedure` | yes | `discount_codes` | `discount_codes` | `api/lib/admin-audit.ts` | `src/components/admin/settings/AdminCodesTab.tsx` |
+| `admin.createNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | `api/lib/admin-audit.ts` | `src/components/admin/NotificationsTab.tsx` |
+| `admin.deleteAiProvider` | mutation | `adminProcedure` | yes | — | `ai_models`, `ai_providers` | `api/lib/admin-audit.ts`, `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.deleteDiscountCode` | mutation | `adminProcedure` | yes | — | `discount_codes` | `api/lib/admin-audit.ts` | `src/components/admin/settings/AdminCodesTab.tsx` |
+| `admin.deleteLearnedRule` | mutation | `adminProcedure` | yes | — | `user_dictionaries` | `api/lib/admin-audit.ts` | `src/components/admin/AdminRulesTab.tsx` |
+| `admin.deleteNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | `api/lib/admin-audit.ts` | `src/components/admin/NotificationsTab.tsx` |
+| `admin.deleteUser` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/lib/admin-audit.ts`, `api/services/user-purge-service.ts` | `src/hooks/useAdmin.ts` |
 | `admin.discoverProviderModels` | mutation | `adminProcedure` | yes | — | — | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.generateBackupExport` | mutation | `adminProcedure` | no | — | — | `api/lib/admin-audit.ts` | — |
 | `admin.getAIClassificationStats` | query | `adminProcedure` | no | `classification_logs` | — | — | `src/hooks/useAdmin.ts` |
 | `admin.getAICostOverview` | query | `adminProcedure` | yes | — | — | `api/services/ai-cost-analytics.ts` | `src/pages/Admin.tsx` |
 | `admin.getActivityLog` | query | `adminProcedure` | yes | `local_users`, `sessions`, `users` | — | — | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
@@ -79,10 +80,11 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `admin.getAiTelemetryOverview` | query | `adminProcedure` | no | `ai_token_ledgers` | — | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
 | `admin.getAiTokenLedger` | query | `adminProcedure` | yes | `ai_token_ledgers` | — | — | — |
 | `admin.getApiKeyErrors` | query | `adminProcedure` | yes | — | — | `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
+| `admin.getAuditLogs` | query | `adminProcedure` | yes | `admin_audit_logs`, `local_users`, `users` | — | — | `src/components/admin/AdminAuditTab.tsx` |
 | `admin.getAvailableModels` | query | `adminProcedure` | no | — | — | `api/lib/env.ts`, `api/lib/settings-cache.ts` | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getClassificationLogs` | query | `adminProcedure` | yes | `classification_logs`, `local_users`, `users` | — | — | `src/hooks/useAdmin.ts` |
 | `admin.getClassificationQuality` | query | `adminProcedure` | yes | `classification_logs` | — | — | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
-| `admin.getDashboardStats` | query | `adminProcedure` | no | `expense_daily_rollups`, `local_users`, `sessions`, `support_tickets`, `users` | — | `api/lib/app-time.ts` | `src/hooks/useAdmin.ts` |
+| `admin.getDashboardStats` | query | `adminProcedure` | no | `expense_daily_rollups`, `local_users`, `pro_subscriptions`, `sessions`, `store_purchases`, `support_tickets`, `users` | — | `api/lib/app-time.ts` | `src/hooks/useAdmin.ts` |
 | `admin.getDiscountCodes` | query | `adminProcedure` | no | `discount_codes` | — | — | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.getFounderMetrics` | query | `adminProcedure` | no | `local_users`, `pro_subscriptions`, `sessions`, `support_tickets`, `users` | — | `api/lib/app-time.ts` | `src/pages/Admin.tsx` |
 | `admin.getLearnedRules` | query | `adminProcedure` | yes | `local_users`, `user_dictionaries`, `users` | — | — | `src/components/admin/AdminRulesTab.tsx` |
@@ -98,50 +100,58 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `admin.getUserSmartProfile` | query | `adminProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/pages/Admin.tsx` |
 | `admin.getVoiceUsageStats` | query | `adminProcedure` | no | `voice_usage` | — | — | `src/hooks/useAdmin.ts` |
 | `admin.listAllUsers` | query | `adminProcedure` | yes | `expenses`, `local_users`, `users` | — | — | `src/components/admin/NotificationsTab.tsx`, `src/hooks/useAdmin.ts` |
+| `admin.listStorePurchasesAdmin` | query | `adminProcedure` | yes | `store_purchases` | — | — | `src/pages/Admin.tsx` |
 | `admin.listSubscriptionsAdmin` | query | `adminProcedure` | yes | `pro_subscriptions` | — | — | `src/pages/Admin.tsx` |
-| `admin.resetUserTokens` | mutation | `adminProcedure` | yes | — | `local_users`, `users` | — | — |
-| `admin.resolveApiKeyError` | mutation | `adminProcedure` | yes | — | — | `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
-| `admin.resolveClarification` | mutation | `adminProcedure` | yes | — | `pending_clarifications` | — | `src/components/admin/ClarificationsTab.tsx` |
-| `admin.revokeSession` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
-| `admin.saveAiModels` | mutation | `adminProcedure` | yes | `ai_models` | `ai_models` | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.sendPushNotification` | mutation | `adminProcedure` | yes | `local_users`, `push_subscriptions`, `users` | — | `api/notification-engine.ts`, `contracts/notification-types.ts` | — |
-| `admin.setUserTokenLimit` | mutation | `adminProcedure` | yes | `system_settings` | `system_settings` | `api/lib/settings-cache.ts` | — |
-| `admin.toggleNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
+| `admin.resetUserTokens` | mutation | `adminProcedure` | yes | — | `local_users`, `users` | `api/lib/admin-audit.ts` | — |
+| `admin.resolveApiKeyError` | mutation | `adminProcedure` | yes | — | — | `api/lib/admin-audit.ts`, `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
+| `admin.resolveClarification` | mutation | `adminProcedure` | yes | — | `pending_clarifications` | `api/lib/admin-audit.ts` | `src/components/admin/ClarificationsTab.tsx` |
+| `admin.revokeSession` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/lib/admin-audit.ts` | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
+| `admin.saveAiModels` | mutation | `adminProcedure` | yes | `ai_models` | `ai_models` | `api/lib/admin-audit.ts`, `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.sendInstantNotification` | mutation | `adminProcedure` | yes | `local_users`, `push_subscriptions`, `users` | `notification_logs` | `api/lib/admin-audit.ts`, `api/notification-engine.ts` | `src/components/admin/NotificationsTab.tsx` |
+| `admin.sendPushNotification` | mutation | `adminProcedure` | yes | `local_users`, `push_subscriptions`, `users` | — | `api/lib/admin-audit.ts`, `api/notification-engine.ts`, `contracts/notification-types.ts` | — |
+| `admin.setUserTokenLimit` | mutation | `adminProcedure` | yes | `system_settings` | `system_settings` | `api/lib/admin-audit.ts`, `api/lib/settings-cache.ts` | — |
+| `admin.toggleNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | `api/lib/admin-audit.ts` | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerActivityCheck` | mutation | `adminProcedure` | no | — | — | `api/notification-engine.ts` | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerBackupDemo` | mutation | `adminProcedure` | no | `ads`, `discount_codes`, `onboarding_questions` | — | `api/lib/settings-cache.ts` | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.updateAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.updateNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
-| `admin.updateSettings` | mutation | `adminProcedure` | yes | — | `system_settings` | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.updateUserPlan` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | — |
-| `admin.updateUserPlanV2` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | `src/hooks/useAdmin.ts` |
-| `admin.updateUserRole` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | `src/hooks/useAdmin.ts` |
+| `admin.updateAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/admin-audit.ts`, `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.updateNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | `api/lib/admin-audit.ts` | `src/components/admin/NotificationsTab.tsx` |
+| `admin.updateSettings` | mutation | `adminProcedure` | yes | — | `system_settings` | `api/lib/admin-audit.ts`, `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` | `src/components/admin/AdminSettingsTab.tsx` |
+| `admin.updateUserPlan` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/lib/admin-audit.ts` | — |
+| `admin.updateUserPlanV2` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/lib/admin-audit.ts` | `src/hooks/useAdmin.ts` |
+| `admin.updateUserRole` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts`, `api/lib/admin-audit.ts` | `src/hooks/useAdmin.ts` |
 | `admin.validateApiKey` | mutation | `adminProcedure` | yes | — | — | `api/lib/ai-gateway.ts`, `api/lib/error-logger.ts`, `api/lib/llm-provider-chain.ts` | `src/components/admin/settings/AdminKeysTab.tsx` |
 
 ### `adminWhatsapp` — `api/admin-whatsapp-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `adminWhatsapp.broadcastMessage` | mutation | `adminProcedure` | yes | `local_users` | — | `api/lib/log.ts`, `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.clearQueue` | mutation | `adminProcedure` | no | — | — | — | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.broadcastMessage` | mutation | `adminProcedure` | yes | — | — | — | — |
+| `adminWhatsapp.broadcastTemplate` | mutation | `adminProcedure` | yes | `local_users`, `whatsapp_contacts` | — | `api/lib/admin-audit.ts`, `api/lib/whatsapp/outbox.ts` | — |
+| `adminWhatsapp.clearQueue` | mutation | `adminProcedure` | no | — | — | — | — |
+| `adminWhatsapp.getOutboxLog` | query | `adminProcedure` | yes | `whatsapp_messages` | — | `api/lib/log.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getSettings` | query | `adminProcedure` | no | — | — | `api/lib/settings-cache.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getStatus` | query | `adminProcedure` | no | — | — | `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getUsers` | query | `adminProcedure` | no | `local_users`, `users` | — | — | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.sendDirectMessage` | mutation | `adminProcedure` | yes | — | — | `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx`, `src/pages/Admin.tsx` |
-| `adminWhatsapp.startService` | mutation | `adminProcedure` | no | — | — | `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.stopService` | mutation | `adminProcedure` | no | — | — | `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.toggleOtpVerification` | mutation | `adminProcedure` | yes | — | `system_settings` | `api/lib/settings-cache.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getStatus` | query | `adminProcedure` | no | `whatsapp_contacts`, `whatsapp_messages` | — | `api/lib/app-time.ts`, `api/lib/whatsapp/client.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getTemplates` | query | `adminProcedure` | no | — | — | `api/lib/whatsapp/client.ts`, `api/lib/whatsapp/templates.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getUsers` | query | `adminProcedure` | no | `local_users`, `users` | — | — | — |
+| `adminWhatsapp.sendDirectMessage` | mutation | `adminProcedure` | yes | `local_users`, `whatsapp_contacts` | `whatsapp_messages` | `api/lib/admin-audit.ts`, `api/lib/log.ts`, `api/lib/whatsapp/client.ts` | `src/components/admin/AdminWhatsAppTab.tsx`, `src/pages/Admin.tsx` |
+| `adminWhatsapp.startService` | mutation | `adminProcedure` | no | — | — | — | — |
+| `adminWhatsapp.stopService` | mutation | `adminProcedure` | no | — | — | — | — |
+| `adminWhatsapp.syncTemplates` | mutation | `adminProcedure` | no | — | — | `api/lib/whatsapp/client.ts`, `api/lib/whatsapp/templates.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.toggleOtpVerification` | mutation | `adminProcedure` | yes | — | `system_settings` | `api/lib/admin-audit.ts`, `api/lib/settings-cache.ts` | — |
+| `adminWhatsapp.updateSettings` | mutation | `adminProcedure` | yes | — | `system_settings` | `api/lib/admin-audit.ts`, `api/lib/settings-cache.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
 
 ### `ads` — `api/ads-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ads.click` | mutation | `authedProcedure` | yes | — | `ad_clicks`, `ads` | — | `src/hooks/useAds.ts` |
-| `ads.create` | mutation | `adminProcedure` | yes | — | `ads` | — | `src/components/admin/AdminAdsTab.tsx` |
-| `ads.delete` | mutation | `adminProcedure` | yes | — | `ad_clicks`, `ads` | — | `src/components/admin/AdminAdsTab.tsx` |
+| `ads.create` | mutation | `adminProcedure` | yes | — | `ads` | `api/lib/admin-audit.ts` | `src/components/admin/AdminAdsTab.tsx` |
+| `ads.delete` | mutation | `adminProcedure` | yes | — | `ad_clicks`, `ad_impressions`, `ads` | `api/lib/admin-audit.ts` | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.impression` | mutation | `publicProcedure` | yes | — | `ads` | — | — |
-| `ads.list` | query | `publicProcedure` | yes | `ads` | — | — | `src/hooks/useAds.ts` |
+| `ads.list` | query | `publicProcedure` | yes | `ad_impressions`, `ads` | — | `api/lib/app-time.ts` | `src/hooks/useAds.ts` |
+| `ads.recordImpression` | mutation | `publicProcedure` | yes | `ad_impressions` | `ad_impressions`, `ads` | — | `src/components/ads/AdBanner.tsx` |
 | `ads.stats` | query | `adminProcedure` | no | `ads` | — | — | `src/components/admin/AdminAdsTab.tsx` |
-| `ads.update` | mutation | `adminProcedure` | yes | — | `ads` | — | `src/components/admin/AdminAdsTab.tsx` |
+| `ads.update` | mutation | `adminProcedure` | yes | — | `ads` | `api/lib/admin-audit.ts` | `src/components/admin/AdminAdsTab.tsx` |
 
 ### `ai` — `api/ai-router.ts`
 
@@ -225,15 +235,15 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `captureAdmin.bulkUndo` | mutation | `adminProcedure` | yes | — | — | `api/lib/capture/operations.ts` | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
+| `captureAdmin.bulkUndo` | mutation | `adminProcedure` | yes | — | — | `api/lib/admin-audit.ts`, `api/lib/capture/operations.ts` | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `captureAdmin.catalog` | query | `adminProcedure` | no | `capture_sources`, `subscription_catalog` | — | `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.funnel` | query | `adminProcedure` | yes | — | — | `api/lib/capture/operations.ts` | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
-| `captureAdmin.restoreSeed` | mutation | `adminProcedure` | yes | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` | `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.saveSource` | mutation | `adminProcedure` | yes | `capture_sources` | `capture_sources` | `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.saveSubscription` | mutation | `adminProcedure` | yes | `subscription_catalog` | `subscription_catalog` | `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.setSourceStatus` | mutation | `adminProcedure` | yes | `capture_sources` | `capture_sources` | `api/lib/capture/catalog.ts`, `contracts/capture.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.setSubscriptionStatus` | mutation | `adminProcedure` | yes | `subscription_catalog` | `subscription_catalog` | `api/lib/capture/catalog.ts`, `contracts/capture.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
-| `captureAdmin.syncSeed` | mutation | `adminProcedure` | no | — | — | `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.restoreSeed` | mutation | `adminProcedure` | yes | `capture_sources`, `subscription_catalog` | `capture_sources`, `subscription_catalog` | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSource` | mutation | `adminProcedure` | yes | `capture_sources` | `capture_sources` | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.saveSubscription` | mutation | `adminProcedure` | yes | `subscription_catalog` | `subscription_catalog` | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSourceStatus` | mutation | `adminProcedure` | yes | `capture_sources` | `capture_sources` | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts`, `contracts/capture.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.setSubscriptionStatus` | mutation | `adminProcedure` | yes | `subscription_catalog` | `subscription_catalog` | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts`, `contracts/capture.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
+| `captureAdmin.syncSeed` | mutation | `adminProcedure` | no | — | — | `api/lib/admin-audit.ts`, `api/lib/capture/catalog.ts` | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.timeline` | query | `adminProcedure` | yes | — | — | `api/lib/capture/operations.ts` | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 
 ### `chat` — `api/chat-router.ts`
@@ -330,6 +340,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `localAuth.logout` | mutation | `publicProcedure` | no | — | — | `api/lib/get-client-ip.ts`, `api/local-auth-utils.ts` | `src/hooks/useAuth.ts` |
 | `localAuth.me` | query | `publicProcedure` | no | `local_users` | — | — | `src/components/profile/ProfileScreen.tsx`, `src/hooks/useAuth.ts` |
 | `localAuth.register` | mutation | `strictPublicProcedure` | yes | `local_users` | `local_users` | `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` | `src/pages/Login.tsx` |
+| `localAuth.resetPassword` | mutation | `strictPublicProcedure` | yes | `local_users` | `local_users` | `api/lib/access-control.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` | — |
 | `localAuth.updateRole` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | — |
 | `localAuth.verifyOtp` | mutation | `strictPublicProcedure` | yes | `local_users` | — | `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` | — |
 
@@ -340,16 +351,18 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `pro.cancel` | mutation | `authedProcedure` | no | — | `pro_subscriptions` | — | `src/hooks/usePro.ts` |
 | `pro.createCheckoutSession` | mutation | `authedProcedure` | yes | — | — | `api/lib/env.ts`, `api/lib/paymob.ts`, `contracts/plans.ts` | `src/hooks/usePro.ts` |
 | `pro.listSubscriptions` | query | `adminProcedure` | yes | `pro_subscriptions` | — | — | — |
-| `pro.myPlan` | query | `authedProcedure` | no | `local_users`, `pro_subscriptions`, `users` | `pro_subscriptions` | `api/lib/access-control.ts`, `api/lib/plan-catalog.ts`, `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/hooks/usePro.ts` |
+| `pro.myPlan` | query | `authedProcedure` | no | `local_users`, `pro_subscriptions`, `store_purchases`, `users` | `pro_subscriptions`, `store_purchases` | `api/lib/access-control.ts`, `api/lib/plan-catalog.ts`, `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/hooks/usePro.ts` |
 | `pro.planCatalog` | query | `authedProcedure` | no | — | — | `api/lib/plan-catalog.ts`, `api/lib/settings-cache.ts` | `src/pages/Pro.tsx` |
+| `pro.restorePurchases` | mutation | `authedProcedure` | yes | `store_purchases` | `store_purchases` | `api/lib/access-control.ts`, `api/lib/store-billing/index.ts` | — |
 | `pro.upgrade` | mutation | `authedProcedure` | yes | — | — | `api/lib/env.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` | `src/hooks/usePro.ts` |
+| `pro.verifyStorePurchase` | mutation | `authedProcedure` | yes | `store_purchases` | `store_purchases` | `api/lib/access-control.ts`, `api/lib/store-billing/index.ts` | — |
 
 ### `profile` — `api/profile-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `profile.addContact` | mutation | `authedProcedure` | yes | `user_contacts` | `user_contacts` | `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts` | `src/components/settings/PeopleSettingsView.tsx` |
-| `profile.confirmPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | `local_users` | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts` | — |
+| `profile.confirmPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | `local_users` | `api/lib/access-control.ts`, `api/services/phone-challenge.ts` | — |
 | `profile.deleteContact` | mutation | `authedProcedure` | yes | `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.deleteMyAccount` | mutation | `authedProcedure` | yes | `local_users` | — | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts`, `api/services/user-purge-service.ts`, `contracts/account-deletion.ts` | `src/components/profile/ProfileScreen.tsx` |
 | `profile.dismissOnboarding` | mutation | `authedProcedure` | no | — | `user_profiles` | — | `src/components/OnboardingCard.tsx` |
@@ -363,13 +376,13 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `profile.markInAppNotificationRead` | mutation | `authedProcedure` | yes | — | `in_app_notifications` | — | `src/components/notifications/NotificationList.tsx` |
 | `profile.mergeContacts` | mutation | `authedProcedure` | yes | `expenses`, `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/index.ts` | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.refreshInferences` | mutation | `authedProcedure` | yes | `expenses` | `monthly_behavior_snapshots` | `api/lib/app-time.ts`, `api/services/lifestyle-inference-engine.ts`, `api/services/user-profile-service.ts` | — |
-| `profile.requestPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | — | `api/lib/redis-client.ts`, `api/lib/settings-cache.ts`, `api/local-auth-utils.ts`, `api/services/whatsapp-service.ts` | — |
+| `profile.requestPhoneChange` | mutation | `authedProcedure` | yes | `local_users` | — | `api/lib/whatsapp/client.ts`, `api/lib/whatsapp/outbox.ts`, `api/lib/whatsapp/templates.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` | — |
 | `profile.savePushSubscription` | mutation | `authedProcedure` | yes | `push_subscriptions` | `push_subscriptions` | — | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | mutation | `authedProcedure` | yes | — | — | `api/services/adaptive-question-engine.ts`, `api/services/user-profile-service.ts` | `src/components/OnboardingCard.tsx`, `src/components/profile/ProfileScreen.tsx` |
 | `profile.updateContact` | mutation | `authedProcedure` | yes | `user_contacts` | `user_contacts` | `api/lib/muscle-memory.ts`, `api/lib/ownership-guard.ts` | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.updateProfile` | mutation | `authedProcedure` | yes | — | `user_profiles` | — | — |
 | `profile.updateSmartProfile` | mutation | `authedProcedure` | yes | — | — | `api/services/user-profile-service.ts` | `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/hooks/useBiometricOnboarding.ts`, `src/pages/Settings.tsx` |
-| `profile.updateUserInfo` | mutation | `authedProcedure` | yes | `local_users` | `local_users`, `users` | `api/lib/access-control.ts`, `api/lib/redis-client.ts`, `api/local-auth-utils.ts` | `src/components/profile/ProfileScreen.tsx` |
+| `profile.updateUserInfo` | mutation | `authedProcedure` | yes | — | `local_users`, `users` | — | `src/components/profile/ProfileScreen.tsx` |
 
 ### `referral` — `api/referral-router.ts`
 
@@ -395,7 +408,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `session.listAll` | query | `adminProcedure` | yes | `sessions` | — | `api/lib/admin-safe-fields.ts` | — |
-| `session.listMine` | query | `authedProcedure` | no | `sessions` | — | `api/lib/admin-safe-fields.ts` | — |
+| `session.listMine` | query | `authedProcedure` | no | `sessions` | — | `api/lib/admin-safe-fields.ts`, `api/lib/session-validation.ts` | — |
 | `session.revokeMine` | mutation | `authedProcedure` | yes | — | — | `api/lib/access-control.ts` | — |
 | `session.stats` | query | `adminProcedure` | no | `sessions` | — | — | — |
 | `session.trackEvent` | mutation | `authedProcedure` | yes | — | `user_analytics` | — | — |
@@ -404,13 +417,13 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `support.assign` | mutation | `adminProcedure` | yes | `support_tickets` | `support_tickets` | — | — |
+| `support.assign` | mutation | `adminProcedure` | yes | `support_tickets` | `support_tickets` | `api/lib/admin-audit.ts` | — |
 | `support.close` | mutation | `authedProcedure` | yes | `support_tickets` | `support_tickets` | — | `src/pages/Admin.tsx` |
 | `support.create` | mutation | `authedProcedure` | yes | — | `support_tickets` | — | `src/pages/Support.tsx` |
 | `support.getById` | query | `authedProcedure` | yes | `support_tickets` | — | — | — |
 | `support.listAll` | query | `adminProcedure` | yes | `local_users`, `support_tickets`, `users` | — | — | `src/pages/Admin.tsx` |
 | `support.listMine` | query | `authedProcedure` | no | `support_tickets` | — | — | `src/pages/Support.tsx` |
-| `support.respond` | mutation | `adminProcedure` | yes | `support_tickets` | `support_tickets` | — | `src/pages/Admin.tsx` |
+| `support.respond` | mutation | `adminProcedure` | yes | `support_tickets` | `in_app_notifications`, `support_tickets` | `api/lib/admin-audit.ts`, `api/notification-engine.ts` | `src/pages/Admin.tsx` |
 
 ### `voice` — `api/voice-router.ts`
 
@@ -447,4 +460,4 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 These are not referenced by the web app. Some may be called by other clients (Android app, iOS shortcuts) or server-side through `createCaller`; the rest are candidates for removal.
 
-`admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `auth.signInWithGoogle`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `capture.answer`, `capture.answerWalletOffer`, `capture.autoOffers`, `capture.deleteMyData`, `capture.devices`, `capture.ignore`, `capture.ignored`, `capture.pending`, `capture.registerDevice`, `capture.revokeDevice`, `capture.setAuto`, `capture.setConsent`, `capture.sources`, `capture.status`, `capture.unignore`, `capture.walletOffers`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `profile.confirmPhoneChange`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`
+`admin.checkProviderHealth`, `admin.generateBackupExport`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `adminWhatsapp.broadcastMessage`, `adminWhatsapp.broadcastTemplate`, `adminWhatsapp.clearQueue`, `adminWhatsapp.getUsers`, `adminWhatsapp.startService`, `adminWhatsapp.stopService`, `adminWhatsapp.toggleOtpVerification`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `auth.googleCallback`, `auth.signInWithGoogle`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `capture.answer`, `capture.answerWalletOffer`, `capture.autoOffers`, `capture.deleteMyData`, `capture.devices`, `capture.ignore`, `capture.ignored`, `capture.pending`, `capture.registerDevice`, `capture.revokeDevice`, `capture.setAuto`, `capture.setConsent`, `capture.sources`, `capture.status`, `capture.unignore`, `capture.walletOffers`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.resetPassword`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `pro.restorePurchases`, `pro.verifyStorePurchase`, `profile.confirmPhoneChange`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `referral.listAll`, `referral.myReferrals`, `seo.delete`, `seo.list`, `seo.sitemap`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`

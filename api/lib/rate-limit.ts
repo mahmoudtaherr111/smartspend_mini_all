@@ -57,6 +57,9 @@ export function createRateLimiter(max: number, windowMs: number): RateLimiter {
         },
       );
 
+      // Suppress unhandled rejection if caller does not await the promise
+      redisPromise.catch(() => {});
+
       // Return promise for async callers that await it
       return redisPromise;
     },

@@ -14,10 +14,9 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `ALLOWED_ORIGINS` | no | — | `api/lib/origin-policy.ts` |
 | `APP_TIMEZONE` | no | `Africa/Cairo` | `api/boot.ts`, `api/lib/app-time.ts`, `api/lib/seasons.ts` |
 | `APP_URL` | no | `http://localhost:5173` | `api/lib/origin-policy.ts`, `api/notification-engine.ts`, `api/webauthn-router.ts` |
-| `BILLING_SIMULATE` | no | — | `api/pro-router.ts` |
+| `BILLING_SIMULATE` | no | — | `api/lib/store-billing/apple-app-store-verifier.ts`, `api/lib/store-billing/google-play-verifier.ts`, `api/pro-router.ts` |
 | `DATABASE_URL` | yes | — | `api/queries/connection.ts` |
 | `ENABLE_CRONS` | no | — | `api/boot.ts` |
-| `ENABLE_WHATSAPP` | no | — | `api/boot.ts` |
 | `FIREBASE_CLIENT_EMAIL` | no | — | `api/services/firebase.ts` |
 | `FIREBASE_PRIVATE_KEY` | no | — | `api/services/firebase.ts` |
 | `FIREBASE_PROJECT_ID` | no | — | `api/services/firebase.ts` |
@@ -31,6 +30,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `GOOGLE_CLIENT_ID` | yes | — | `api/auth-router.ts` |
 | `GOOGLE_CLIENT_SECRET` | yes | — | `api/auth-router.ts` |
 | `GOOGLE_IOS_CLIENT_IDS` | no | — | — |
+| `GOOGLE_PLAY_WEBHOOK_SECRET` | no | — | `api/lib/store-billing/google-play-verifier.ts` |
 | `GOOGLE_REDIRECT_URI` | no | `http://localhost:3000/api/auth/google/callback` | `api/auth-router.ts` |
 | `GROQ_API_KEY` | no | — | `api/ai-router.ts` |
 | `JWT_SECRET` | yes | — | `api/lib/capture/memory.ts`, `api/lib/login-protection.ts`, `api/lib/provider-key-crypto.ts`, `api/lib/session-validation.ts`, `api/local-auth-utils.ts`, `api/services/phone-challenge.ts` |
@@ -39,7 +39,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `LOGIN_IP_MAX_FAILURES` | no | `50` | `api/lib/login-protection.ts` |
 | `LOGIN_PAIR_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOG_SLOW_QUERIES` | no | `true` | `api/queries/connection.ts` |
-| `NODE_ENV` | no | `development` | `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-utils.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
+| `NODE_ENV` | no | `development` | `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/lib/store-billing/apple-app-store-verifier.ts`, `api/lib/store-billing/google-play-verifier.ts`, `api/local-auth-utils.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
 | `NVIDIA_API_KEY` | no | — | `api/ai-router.ts` |
 | `OWNER_EMAIL` | no | — | — |
 | `PAYMOB_API_KEY` | no | — | `api/lib/paymob.ts` |
@@ -60,7 +60,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `VAPID_PUBLIC_KEY` | no | — | `api/notification-engine.ts` |
 | `VAPID_SUBJECT` | no | `mailto:contact@smartspend.com` | `api/notification-engine.ts` |
 | `WHATSAPP_CLOUD_ACCESS_TOKEN` | no | — | — |
-| `WHATSAPP_CLOUD_API_VERSION` | no | `v23.0` | — |
+| `WHATSAPP_CLOUD_API_VERSION` | no | `v21.0` | — |
 | `WHATSAPP_CLOUD_APP_SECRET` | no | — | `api/boot.ts` |
 | `WHATSAPP_CLOUD_PHONE_NUMBER_ID` | no | — | — |
 | `WHATSAPP_CLOUD_VERIFY_TOKEN` | no | — | `api/boot.ts` |

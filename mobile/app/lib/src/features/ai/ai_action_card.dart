@@ -192,23 +192,29 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
     final isExpired = draft.isExpired;
     final isConfirmed = draft.status == 'confirmed';
     final isCancelled = draft.status == 'cancelled';
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isConfirmed
-            ? const Color(0xFFF0FDF4)
+            ? (theme.brightness == Brightness.dark
+                ? const Color(0xFF064E3B).withValues(alpha: 0.3)
+                : const Color(0xFFF0FDF4))
             : isCancelled || isExpired
-                ? Colors.grey.shade100
-                : const Color(0xFFF8FAFC),
+                ? (theme.brightness == Brightness.dark
+                    ? colorScheme.surfaceContainerHigh
+                    : Colors.grey.shade100)
+                : colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isConfirmed
               ? const Color(0xFF86EFAC)
               : isCancelled || isExpired
-                  ? Colors.grey.shade300
-                  : const Color(0xFFCBD5E1),
+                  ? colorScheme.outlineVariant
+                  : colorScheme.outline,
           width: 1.5,
         ),
       ),
@@ -228,7 +234,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                 color: isConfirmed
                     ? const Color(0xFF16A34A)
                     : isCancelled || isExpired
-                        ? Colors.grey.shade600
+                        ? colorScheme.onSurfaceVariant
                         : const Color(0xFF0F766E),
                 size: 20,
               ),
@@ -240,8 +246,8 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                     color: isCancelled || isExpired
-                        ? Colors.grey.shade700
-                        : Colors.black87,
+                        ? colorScheme.onSurfaceVariant
+                        : colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -273,9 +279,9 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.grey.shade200),
+                      border: Border.all(color: colorScheme.outlineVariant),
                     ),
                     child: AmountText(amt),
                   ),
@@ -286,7 +292,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
             const SizedBox(height: 6),
             Text(
               'التاريخ: ${draft.date}',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
             ),
           ],
           const SizedBox(height: 12),
@@ -302,7 +308,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
           else if (isCancelled)
             Text(
               'تم إلغاء هذا الإجراء.',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
             )
           else if (isExpired)
             Text(
@@ -321,7 +327,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                   onPressed: _isSubmitting ? null : _handleCancel,
                   style: OutlinedButton.styleFrom(
                     visualDensity: VisualDensity.compact,
-                    foregroundColor: Colors.grey.shade700,
+                    foregroundColor: colorScheme.onSurfaceVariant,
                   ),
                   child: const Text('إلغاء'),
                 ),

@@ -6,7 +6,8 @@ import {
 } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
-import { supportTickets, users, localUsers } from "../db/schema";
+import { supportTickets, users, localUsers, inAppNotifications } from "../db/schema";
+import { logAdminAction } from "./lib/admin-audit";
 import { eq, desc, and, sql, count, inArray } from "drizzle-orm";
 
 export const supportRouter = router({
@@ -145,7 +146,7 @@ export const supportRouter = router({
       return { list: enrichedList, total: total[0]?.count ?? 0, page, limit };
     }),
 
-  // ─── Respond to Ticket ───
+  // ─── Respond to Ticket (GAP-38) ───
   respond: adminProcedure
     .input(
       z.object({
@@ -156,7 +157,7 @@ export const supportRouter = router({
           .optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const ticket = await db
         .select()
         .from(supportTickets)
@@ -169,16 +170,54 @@ export const supportRouter = router({
         });
       }
 
-      const updates: any = {
-        response: input.response,
-        respondedAt: new Date(),
-      };
-      if (input.status) updates.status = input.status;
+      const newStatus = input.status || "resolved";
       await db
         .update(supportTickets)
-        .set(updates)
+        .set({
+          response: input.response,
+          respondedAt: new Date(),
+          status: newStatus,
+        })
         .where(eq(supportTickets.id, input.id));
-      return { success: true, message: "تم الرد على التذكرة" };
+
+      // In-App Notification (The Bell & Mobile Notification Inbox)
+      await db.insert(inAppNotifications).values({
+        userId: ticket[0].userId,
+        userType: ticket[0].userType,
+        title: "رد جديد على تذكرة الدعم الفني 🎫",
+        body: `تم الرد على تذكرتك (${ticket[0].subject}): ${input.response.slice(0, 150)}`,
+        actionUrl: "/support",
+        isRead: false,
+      });
+
+      // Mobile Push Notification (GAP-38)
+      try {
+        const { sendPushToUser } = await import("./notification-engine");
+        await sendPushToUser(ticket[0].userId, ticket[0].userType, {
+          title: "رد جديد على تذكرة الدعم الفني 🎫",
+          body: `تم الرد على تذكرتك (${ticket[0].subject}): ${input.response.slice(0, 150)}`,
+          actionUrl: "/support",
+          type: "support_reply",
+          lang: "ar",
+        });
+      } catch {
+        // non-blocking if push fails
+      }
+
+      // Audit Trail
+      await logAdminAction(ctx, {
+        action: "RESPOND_SUPPORT_TICKET",
+        targetType: "support_ticket",
+        targetId: String(input.id),
+        details: {
+          ticketSubject: ticket[0].subject,
+          newStatus,
+          recipientUserId: ticket[0].userId,
+          recipientUserType: ticket[0].userType,
+        },
+      });
+
+      return { success: true, message: "تم الرد على التذكرة وإشعار المستخدم بنجاح" };
     }),
 
   // ─── Assign Ticket ───
@@ -189,7 +228,7 @@ export const supportRouter = router({
         moderatorId: z.number(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const ticket = await db
         .select()
         .from(supportTickets)
@@ -206,6 +245,17 @@ export const supportRouter = router({
         .update(supportTickets)
         .set({ assignedTo: input.moderatorId, status: "in_progress" })
         .where(eq(supportTickets.id, input.id));
+
+      await logAdminAction(ctx, {
+        action: "ASSIGN_SUPPORT_TICKET",
+        targetType: "support_ticket",
+        targetId: String(input.id),
+        details: {
+          ticketSubject: ticket[0].subject,
+          moderatorId: input.moderatorId,
+        },
+      });
+
       return { success: true, message: "تم تعيين التذكرة" };
     }),
 

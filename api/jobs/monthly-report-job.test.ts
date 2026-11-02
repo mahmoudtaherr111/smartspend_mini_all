@@ -2,10 +2,8 @@ vi.mock("../queries/connection", () => ({
   getDb: vi.fn(),
 }));
 
-vi.mock("../services/whatsapp-service", () => ({
-  whatsappService: {
-    sendMessage: vi.fn(),
-  },
+vi.mock("../lib/whatsapp/outbox", () => ({
+  enqueueMessage: vi.fn(),
 }));
 
 vi.mock("../services/user-profile-service", () => ({

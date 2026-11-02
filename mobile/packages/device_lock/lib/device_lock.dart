@@ -40,6 +40,9 @@ abstract interface class DeviceLock {
   Future<void> forgetPinKey();
 
   Future<void> setSwitcherCover(bool enabled);
+
+  /// Sets screenshot and screen recording protection for secret screens (SEC-F2).
+  Future<void> setScreenProtected(bool enabled);
 }
 
 class _PigeonDeviceLock implements DeviceLock {
@@ -72,4 +75,7 @@ class _PigeonDeviceLock implements DeviceLock {
 
   @override
   Future<void> setSwitcherCover(bool enabled) => _api.setSwitcherCover(enabled);
+
+  @override
+  Future<void> setScreenProtected(bool enabled) => _api.setScreenProtected(enabled);
 }

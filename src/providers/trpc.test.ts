@@ -11,6 +11,7 @@ import {
   preserveActiveFormDrafts,
   handleUnauthenticatedSession,
   deviceHadSession,
+  resolveApiBaseUrl,
   DRAFT_STORAGE_PREFIX,
   ACTIVE_DRAFTS_INDEX_KEY,
 } from "./trpc";
@@ -258,6 +259,43 @@ describe("tRPC Client Headers & Tunnel Bypass Removal", () => {
       // A token older builds kept is not a session: only the identity a sign-in leaves counts.
       store.set("local_auth_token", "t");
       expect(deviceHadSession()).toBe(false);
+    });
+  });
+
+  // =========================================================================
+  // 6. DYNAMIC API CONFIGURATION & HTTPS ENFORCEMENT (REL-04)
+  // =========================================================================
+  describe("6. Dynamic API Configuration & HTTPS Enforcement (REL-04)", () => {
+    it("defaults to /api/trpc when no apiUrl is provided", () => {
+      expect(resolveApiBaseUrl("", false)).toBe("/api/trpc");
+      expect(resolveApiBaseUrl(undefined, true)).toBe("/api/trpc");
+    });
+
+    it("accepts HTTP in development", () => {
+      expect(resolveApiBaseUrl("http://localhost:3000", false)).toBe("http://localhost:3000/api/trpc");
+      expect(resolveApiBaseUrl("http://api.dev.test", false)).toBe("http://api.dev.test/api/trpc");
+    });
+
+    it("accepts HTTPS in production", () => {
+      expect(resolveApiBaseUrl("https://api.smartspend.app", true)).toBe("https://api.smartspend.app/api/trpc");
+    });
+
+    it("allows localhost HTTP in production for container/e2e testing", () => {
+      expect(resolveApiBaseUrl("http://localhost:3000", true)).toBe("http://localhost:3000/api/trpc");
+      expect(resolveApiBaseUrl("http://127.0.0.1:3000", true)).toBe("http://127.0.0.1:3000/api/trpc");
+      expect(resolveApiBaseUrl("http://test.local:3000", true)).toBe("http://test.local:3000/api/trpc");
+    });
+
+    it("rejects non-HTTPS external URLs in production", () => {
+      expect(() => resolveApiBaseUrl("http://api.smartspend.app", true)).toThrow(
+        /Insecure API URL rejected in production/,
+      );
+    });
+
+    it("rejects invalid URL formats", () => {
+      expect(() => resolveApiBaseUrl("not-a-valid-url", false)).toThrow(
+        /Invalid VITE_API_URL format/,
+      );
     });
   });
 });

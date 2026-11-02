@@ -76,15 +76,21 @@ export async function setPlan(
   userType: SessionUserType,
   userId: number,
   plan: UserPlan,
-  options: { tx?: Writer } = {},
-): Promise<void> {
+  options: { tx?: Writer; deferInvalidation?: boolean } = {},
+): Promise<(() => Promise<void>) | void> {
   const writer = options.tx ?? db;
   if (userType === "oauth") {
     await writer.update(users).set({ plan }).where(eq(users.id, userId));
   } else {
     await writer.update(localUsers).set({ plan }).where(eq(localUsers.id, userId));
   }
-  await bumpAuthVersion(userType, userId);
+  const invalidate = async (): Promise<void> => {
+    await bumpAuthVersion(userType, userId);
+  };
+  if (options.deferInvalidation) {
+    return invalidate;
+  }
+  await invalidate();
 }
 
 /**

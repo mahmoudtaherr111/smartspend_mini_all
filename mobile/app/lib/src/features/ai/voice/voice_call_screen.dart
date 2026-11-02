@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smartspend_ui/smartspend_ui.dart';
 
 import 'voice_call_controller.dart';
 import 'voice_call_models.dart';
@@ -328,7 +329,7 @@ class _LiveCallCardWidget extends StatelessWidget {
                 if (card.total != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '${card.total} ج.م',
+                    moneyText(context, card.total!),
                     style: const TextStyle(
                       color: Color(0xFF34D399),
                       fontWeight: FontWeight.bold,

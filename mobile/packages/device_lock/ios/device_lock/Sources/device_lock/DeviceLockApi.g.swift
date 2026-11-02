@@ -448,6 +448,9 @@ protocol DeviceLockHostApi {
   /// can still take screenshots), older Android sets FLAG_SECURE, and iOS covers the window while the app is not
   /// active.
   func setSwitcherCover(enabled: Bool) throws
+  /// Prevents screenshots and screen recording on sensitive screens (SEC-F2).
+  /// Android sets WindowManager.LayoutParams.FLAG_SECURE; iOS covers the screen when captured/recorded.
+  func setScreenProtected(enabled: Bool) throws
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -569,6 +572,23 @@ class DeviceLockHostApiSetup {
       }
     } else {
       setSwitcherCoverChannel.setMessageHandler(nil)
+    }
+    /// Prevents screenshots and screen recording on sensitive screens (SEC-F2).
+    /// Android sets WindowManager.LayoutParams.FLAG_SECURE; iOS covers the screen when captured/recorded.
+    let setScreenProtectedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.device_lock.DeviceLockHostApi.setScreenProtected\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setScreenProtectedChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let enabledArg = args[0] as! Bool
+        do {
+          try api.setScreenProtected(enabled: enabledArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setScreenProtectedChannel.setMessageHandler(nil)
     }
   }
 }

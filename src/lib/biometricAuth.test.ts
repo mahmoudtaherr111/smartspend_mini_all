@@ -9,6 +9,8 @@ import {
   getBiometricGracePeriod,
   setBiometricGracePeriod,
   getBiometricPinHash,
+  getBiometricPinSalt,
+  generatePinSalt,
   setBiometricPin,
   verifyBiometricPin,
   removeBiometricPin,
@@ -77,6 +79,44 @@ describe("Biometric Authentication & Local App Lock Utilities", () => {
   });
 
   describe("3. Device-Scoped Storage Settings", () => {
+    it("generates unique per-user salt and derives different hashes for identical PINs (SEC-02)", async () => {
+      const userA = "local_1";
+      const userB = "local_2";
+      await setBiometricPin(userA, "1234");
+      await setBiometricPin(userB, "1234");
+
+      const saltA = getBiometricPinSalt(userA);
+      const saltB = getBiometricPinSalt(userB);
+      expect(saltA).toBeTruthy();
+      expect(saltB).toBeTruthy();
+      expect(saltA).not.toBe(saltB);
+
+      const hashA = getBiometricPinHash(userA);
+      const hashB = getBiometricPinHash(userB);
+      expect(hashA).toBeTruthy();
+      expect(hashB).toBeTruthy();
+      expect(hashA).not.toBe(hashB);
+
+      expect(await verifyBiometricPin(userA, "1234")).toBe(true);
+      expect(await verifyBiometricPin(userB, "1234")).toBe(true);
+    });
+
+    it("transparently migrates legacy fixed-salt hash to salted PBKDF2 hash upon verification (SEC-02)", async () => {
+      const userLegacy = "local_legacy";
+      const enc = new TextEncoder();
+      const legacySalted = "smartspend_pin_salt_1234";
+      const hashBuffer = await crypto.subtle.digest("SHA-256", enc.encode(legacySalted));
+      const legacyHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem("smartspend_biometric_pin_hash_" + userLegacy, legacyHash);
+      expect(getBiometricPinSalt(userLegacy)).toBeNull();
+
+      expect(await verifyBiometricPin(userLegacy, "1234")).toBe(true);
+      expect(getBiometricPinSalt(userLegacy)).toBeTruthy();
+      expect(getBiometricPinHash(userLegacy)).not.toBe(legacyHash);
+
+      expect(await verifyBiometricPin(userLegacy, "1234")).toBe(true);
+    });
+
     const userKey = "local_123";
 
     it("manages biometric lock enabled state per user and device", () => {

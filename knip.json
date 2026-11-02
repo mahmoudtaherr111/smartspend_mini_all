@@ -8,7 +8,10 @@
     "scripts/**/*.{ts,mts,mjs,cjs}",
     "tests/**/*.{ts,tsx}",
     "**/*.test.{ts,tsx}",
-    "tests/e2e/**/*.spec.ts"
+    "tests/e2e/**/*.spec.ts",
+    "contracts/**/*.ts",
+    "api/lib/groq-client.ts",
+    "api/lib/real-user-sim.ts"
   ],
   "project": [
     "{api,src,db,contracts,scripts,tests}/**/*.{ts,tsx,mts,mjs,cjs}"

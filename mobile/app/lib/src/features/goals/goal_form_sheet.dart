@@ -61,7 +61,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
     }
 
     final rawAmount = _amountController.text.trim();
-    final amount = double.tryParse(rawAmount);
+    final amount = parseAmount(rawAmount)?.toDouble();
     if (amount == null || amount <= 0) {
       setState(() => _error = 'من فضلك اكتب المبلغ المستهدف للهدف');
       return;
@@ -181,7 +181,9 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                 decimal: true,
               ),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                FilteringTextInputFormatter.allow(
+                  RegExp(r'^[0-9٠-٩]*\.?[0-9٠-٩]*'),
+                ),
               ],
               decoration: InputDecoration(
                 hintText: 'مثلاً: 25000',

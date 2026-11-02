@@ -1,19 +1,60 @@
+import { useEffect, useRef } from "react";
 import { useAds } from "../../hooks/useAds";
 import { useAuth } from "../../hooks/useAuth";
+import { trpc } from "../../providers/trpc";
 
 export function AdBanner() {
   const { hasProAccess } = useAuth();
   const { ads, clickAd } = useAds();
+  const recordImpression = trpc.ads.recordImpression.useMutation();
+  const bannerRef = useRef<HTMLDivElement | null>(null);
+  const recordedTokenRef = useRef<string | null>(null);
+
   const adItems = Array.isArray(ads.data) ? ads.data : [];
+  const ad = adItems[0];
+
+  useEffect(() => {
+    if (!ad || !bannerRef.current || recordedTokenRef.current) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      const token = `imp_${ad.id}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      recordedTokenRef.current = token;
+      recordImpression.mutate({
+        adId: ad.id,
+        placement: ad.placement,
+        impressionToken: token,
+      });
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry && entry.isIntersecting && !recordedTokenRef.current) {
+          const token = `imp_${ad.id}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+          recordedTokenRef.current = token;
+          recordImpression.mutate({
+            adId: ad.id,
+            placement: ad.placement,
+            impressionToken: token,
+          });
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 },
+    );
+
+    observer.observe(bannerRef.current);
+    return () => observer.disconnect();
+  }, [ad, recordImpression]);
 
   // Ultra subscribers and admins were being shown ads: the old check tested for
   // the "pro" tier by name instead of for paid access.
-  if (hasProAccess || adItems.length === 0) return null;
-
-  const ad = adItems[0];
+  if (hasProAccess || !ad) return null;
 
   return (
     <div
+      ref={bannerRef}
       role="region"
       aria-label="إعلان ممول"
       className="rounded-xl border border-dashed border-yellow-500/50 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 p-4 mb-4"

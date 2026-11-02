@@ -39,7 +39,7 @@ and that only the content patterns in `tailwind.config.js` reach. Passing the ga
 advisories. Do not use `npm audit fix --force` to downgrade
 those parent packages. Development/test dependencies include Undici 8, requiring Node 22.19 or newer.
 
-`docker-compose.yml` defines:
+`docker-compose.yml` defines the local development stack:
 
 | Service | Image | Host port | Notes |
 | --- | --- | --- | --- |
@@ -49,6 +49,28 @@ those parent packages. Development/test dependencies include Undici 8, requiring
 
 Local services for development: `docker compose up -d mysql redis`. The whole stack:
 `docker compose --profile app up -d --build`. The app service mounts no volume.
+
+### Production VPS Deployment (`docker-compose.prod.yml`)
+For production servers, use `docker-compose.prod.yml`. It provides a hardened, production-ready stack:
+
+| Service | Image | Ports / Network | Notes |
+| --- | --- | --- | --- |
+| proxy | Nginx 1.27-alpine | `80:80`, `443:443` | Reverse proxy terminating TLS; routes `/api/voice/v2` with WebSocket upgrade and `/api/admin/events` with SSE buffering disabled |
+| app | built from Dockerfile | `127.0.0.1:3000:3000` | Single-replica cron runner (`ENABLE_CRONS=true`); loopback-bound; healthcheck on `/health` |
+| mysql | MySQL 8.4 | `127.0.0.1:3308:3306` | Loopback-bound; `--innodb-buffer-pool-size=3G`; internal backend network |
+| redis | Redis 7.4-alpine | `127.0.0.1:6379:6379` | Loopback-bound; `--maxmemory 1gb --maxmemory-policy allkeys-lru`; AOF persistence |
+| certbot | Certbot latest | volume mounted | Automatic Let's Encrypt TLS certificate renewal (12-hour daemon loop) |
+
+Start production stack: `docker compose -f docker-compose.prod.yml up -d --build`.
+Full operational runbook, server hardening, and deployment procedures: see [VPS Move Plan](vps-move-plan.md).
+
+### Disaster Recovery & Backup Scripts (`scripts/vps/`)
+Production operational and disaster recovery tooling is located in `scripts/vps/`:
+- `scripts/vps/backup.sh`: Transactional `mysqldump` with `--single-transaction --quick --routines --triggers --events --hex-blob --default-character-set=utf8mb4`, Redis BGSAVE snapshot, gzip compression, JSON metadata with SHA-256 checksum, and automatic 30-day rotation.
+- `scripts/vps/restore.sh`: Gzip integrity verification, SHA-256 validation against metadata, automated pre-restore safety snapshot (`pre_restore_*.sql.gz`), database restoration, container restart, and `/health` HTTP 200 verification.
+- `scripts/vps/rollback.sh`: Zero-loss rollback supporting Git ref checkout, pre-migration database snapshot restore, and health verification.
+- `scripts/vps/preflight.sh`: Pre-migration verification enforcing three gates: `databaseHealthy`, `backupSnapshotTaken` (<15m), and `journalValid` (`npm run db:doctor -- --strict`).
+
 
 ## Database
 The schema is `db/schema.ts`. `npm run db:generate` writes SQL migrations to `db/migrations` (configured in

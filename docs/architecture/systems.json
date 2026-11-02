@@ -116,7 +116,11 @@
       "clusters": ["billing"],
       "routers": ["pro", "referral"],
       "pages": ["Pro", "UltraLounge"],
-      "routes": ["POST /api/webhooks/paymob"],
+      "routes": [
+        "POST /api/webhooks/paymob",
+        "POST /api/webhooks/google-play",
+        "POST /api/webhooks/apple-asn"
+      ],
       "jobs": ["daily-subscription-expiry"],
       "flows": ["flow_paymob_upgrade"]
     },

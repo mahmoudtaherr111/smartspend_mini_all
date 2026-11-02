@@ -1,6 +1,7 @@
 import { and, eq, inArray, or } from "drizzle-orm";
 import {
   adClicks,
+  adImpressions,
   adStatsDaily,
   aiActionAuditLogs,
   aiActionMemory,
@@ -28,6 +29,7 @@ import {
   pendingClarifications,
   profileLearningEvents,
   proSubscriptions,
+  storePurchases,
   pushSubscriptions,
   referrals,
   sessions,
@@ -155,6 +157,7 @@ export async function purgeUserData(
   await tx.delete(userAnalytics).where(userScope(userAnalytics, userId, userType));
   await tx.delete(supportTickets).where(userScope(supportTickets, userId, userType));
   await tx.delete(proSubscriptions).where(userScope(proSubscriptions, userId, userType));
+  await tx.delete(storePurchases).where(userScope(storePurchases, userId, userType));
   await tx.delete(aiSummaries).where(userScope(aiSummaries, userId, userType));
   await tx.delete(profileLearningEvents).where(userScope(profileLearningEvents, userId, userType));
   await tx.delete(monthlyBehaviorSnapshots).where(userScope(monthlyBehaviorSnapshots, userId, userType));
@@ -164,6 +167,7 @@ export async function purgeUserData(
   await tx.delete(voiceCallIncidents).where(userScope(voiceCallIncidents, userId, userType));
   await tx.delete(voiceCalls).where(userScope(voiceCalls, userId, userType));
   await tx.delete(adClicks).where(userScope(adClicks, userId, userType));
+  await tx.delete(adImpressions).where(userScope(adImpressions, userId, userType));
   await tx.delete(inAppNotifications).where(userScope(inAppNotifications, userId, userType));
   await tx.delete(notificationLogs).where(userScope(notificationLogs, userId, userType));
   await tx.delete(referrals).where(

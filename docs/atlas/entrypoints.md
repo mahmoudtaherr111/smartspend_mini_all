@@ -26,6 +26,8 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 | GET | `/api/auth/google/callback` | http | `api/boot.ts` | `api/context.ts`, `api/lib/env.ts`, `api/router.ts` | — | — |
 | GET | `/api/auth/google/start` | http | `api/boot.ts` | `api/auth-router.ts`, `api/lib/env.ts` | — | — |
 | ALL | `/api/trpc/*` | trpc | `api/boot.ts` | `api/router.ts` | — | — |
+| POST | `/api/webhooks/apple-asn` | webhook | `api/boot.ts` | `api/lib/access-control.ts`, `api/lib/store-billing/index.ts` | `store_purchases` | `store_purchases` |
+| POST | `/api/webhooks/google-play` | webhook | `api/boot.ts` | `api/lib/access-control.ts`, `api/lib/store-billing/index.ts` | `store_purchases` | `store_purchases` |
 | POST | `/api/webhooks/paymob` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` | — | — |
 | GET | `/api/webhooks/whatsapp` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/whatsapp/webhook.ts` | — | — |
 | POST | `/api/webhooks/whatsapp` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/whatsapp/outbox.ts`, `api/lib/whatsapp/webhook.ts` | — | — |
@@ -40,7 +42,7 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 
 ## Scheduled jobs
 
-`api/boot.ts` checks these environment switches before starting background work: `ENABLE_CRONS`, `ENABLE_WHATSAPP`. See [env.md](env.md).
+`api/boot.ts` checks these environment switches before starting background work: `ENABLE_CRONS`. See [env.md](env.md).
 
 Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module it calls.
 
@@ -52,11 +54,11 @@ Reads and writes cover the job body in `api/boot.ts` plus the `api/jobs/` module
 | `classification-log-cleanup` | `0 3 * * 0` | — | — | `classification_logs` |
 | `coaching-reminders` | `*/5 * * * *` | `api/services/coach/plans.ts` | — | — |
 | `daily-auth-cleanup` | `0 0 * * *` | `api/lib/access-control.ts`, `api/services/phone-challenge.ts` | — | `auth_challenges` |
-| `daily-subscription-expiry` | `0 6 * * *` | `api/jobs/subscription-expiry-job.ts` | `pro_subscriptions` | `pro_subscriptions` |
+| `daily-subscription-expiry` | `0 6 * * *` | `api/jobs/subscription-expiry-job.ts` | `pro_subscriptions`, `store_purchases` | `pro_subscriptions`, `store_purchases` |
 | `data-retention-lifecycle` | `0 5 * * *` | `api/jobs/data-retention-job.ts` | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_ai_jobs`, `capture_events`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `whatsapp_messages` |
 | `memory-embedding-backfill` | `*/20 * * * *` | `api/services/ai-memory/index.ts` | — | — |
 | `monthly-behavior-snapshots` | `0 1 1 * *` | `api/jobs/monthly-behavior-job.ts` | `expenses`, `user_profiles` | — |
-| `monthly-report-generation` | `0 2 1 * *` | `api/jobs/monthly-report-job.ts` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
+| `monthly-report-generation` | `0 2 1 * *` | `api/jobs/monthly-report-job.ts` | `local_users`, `monthly_reports`, `users`, `whatsapp_contacts` | `monthly_reports` |
 | `nightly-rollup-reconciliation` | `0 4 * * *` | `api/jobs/rollup-reconciliation-job.ts` | `expense_daily_rollups`, `expenses` | — |
 | `scheduled-notifications` | `* * * * *` | `api/notification-engine.ts` | — | — |
 | `seed-capture-catalog` | once at boot | `api/lib/capture/catalog.ts` | — | — |

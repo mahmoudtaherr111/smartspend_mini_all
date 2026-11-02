@@ -654,51 +654,54 @@ class _EgyptianNumericKeypad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var row = 0; row < 3; row++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              children: [
-                for (var col = 0; col < 3; col++) ...[
-                  if (col > 0) const SizedBox(width: 8),
-                  Expanded(
-                    child: _KeypadButton(
-                      westernDigit: _keys[row * 3 + col].$1,
-                      easternDigit: _keys[row * 3 + col].$2,
-                      onTap: () => onDigit(_keys[row * 3 + col].$1),
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var row = 0; row < 3; row++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  for (var col = 0; col < 3; col++) ...[
+                    if (col > 0) const SizedBox(width: 8),
+                    Expanded(
+                      child: _KeypadButton(
+                        westernDigit: _keys[row * 3 + col].$1,
+                        easternDigit: _keys[row * 3 + col].$2,
+                        onTap: () => onDigit(_keys[row * 3 + col].$1),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
+          Row(
+            children: [
+              Expanded(
+                child: _ActionKeyButton(label: '.', onTap: onDecimal),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _KeypadButton(
+                  westernDigit: '0',
+                  easternDigit: '٠',
+                  onTap: () => onDigit('0'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _DeleteKeyButton(
+                  onTap: onDelete,
+                  onLongPress: onClear,
+                  semanticsLabel: deleteLabel,
+                ),
+              ),
+            ],
           ),
-        Row(
-          children: [
-            Expanded(
-              child: _ActionKeyButton(label: '.', onTap: onDecimal),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _KeypadButton(
-                westernDigit: '0',
-                easternDigit: '٠',
-                onTap: () => onDigit('0'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _DeleteKeyButton(
-                onTap: onDelete,
-                onLongPress: onClear,
-                semanticsLabel: deleteLabel,
-              ),
-            ),
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

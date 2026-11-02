@@ -1,6 +1,6 @@
 import { db } from "./queries/connection";
 import { notificationTemplates, inAppNotifications, notificationLogs, pushSubscriptions, users, localUsers, userProfiles, expenses, expenseDailyRollups } from "../db/schema";
-import { eq, and, or, lte, gte, lt, sql, isNull, inArray } from "drizzle-orm";
+import { eq, and, or, lte, gte, lt, gt, asc, sql, isNull, inArray } from "drizzle-orm";
 import webpush from "web-push";
 import { messaging, isFirebaseInitialized } from "./services/firebase";
 import { env } from "./lib/env";
@@ -30,13 +30,105 @@ function webPushOptions(item: PushContent) {
   return { icon: iconUrl, badge: badgeUrl, tag: item.type, dir, lang: item.lang };
 }
 
+export interface NotificationChannelConfig {
+  channelId: string;
+  channelName: string;
+  priority: "high" | "normal";
+  apnsPriority: "10" | "5";
+  ttlSeconds: number;
+  collapseId: string;
+}
+
+export function getNotificationChannelConfig(type: string): NotificationChannelConfig {
+  const isSecurity = type.includes("security") || type.includes("auth") || type.includes("biometric");
+  const isBudgetOrExpense = type.includes("budget") || type.includes("expense") || type.includes("subscription");
+
+  if (isSecurity) {
+    return {
+      channelId: "channel_security_auth",
+      channelName: "Security & Authentication",
+      priority: "high",
+      apnsPriority: "10",
+      ttlSeconds: 300, // 5 minutes TTL for security
+      collapseId: "sec_" + type,
+    };
+  }
+
+  if (isBudgetOrExpense) {
+    return {
+      channelId: "channel_budget_spending",
+      channelName: "Budgets & Spending Alerts",
+      priority: "high",
+      apnsPriority: "10",
+      ttlSeconds: 86400, // 24 hours TTL for financial transactions & budget alerts
+      collapseId: "budget_" + type,
+    };
+  }
+
+  return {
+    channelId: "channel_reminders_marketing",
+    channelName: "Reminders & Updates",
+    priority: "normal",
+    apnsPriority: "5",
+    ttlSeconds: 172800, // 48 hours TTL for periodic recaps and updates
+    collapseId: "rem_" + type,
+  };
+}
+
 export function fcmMessage(token: string, item: PushContent) {
+  const config = getNotificationChannelConfig(item.type);
+  const nowUnix = Math.floor(Date.now() / 1000);
+  const expirationUnix = nowUnix + config.ttlSeconds;
+
   return {
     token,
-    notification: { title: item.title, body: item.body },
-    data: { url: item.actionUrl, type: item.type },
-    webpush: { notification: webPushOptions(item), fcmOptions: { link: item.actionUrl } },
-    apns: { payload: { aps: { sound: "default" } } },
+    notification: {
+      title: item.title,
+      body: item.body,
+    },
+    data: {
+      url: item.actionUrl,
+      route: item.actionUrl,
+      type: item.type,
+      channelId: config.channelId,
+      click_action: "FLUTTER_NOTIFICATION_CLICK",
+    },
+    android: {
+      priority: config.priority,
+      ttl: config.ttlSeconds * 1000,
+      collapseKey: config.collapseId,
+      notification: {
+        channelId: config.channelId,
+        icon: "ic_stat_notification",
+        color: "#00D09E",
+        sound: "default",
+        clickAction: "FLUTTER_NOTIFICATION_CLICK",
+        defaultSound: true,
+        defaultVibrateTimings: true,
+      },
+    },
+    apns: {
+      headers: {
+        "apns-priority": config.apnsPriority,
+        "apns-expiration": "" + expirationUnix,
+        "apns-collapse-id": config.collapseId,
+      },
+      payload: {
+        aps: {
+          sound: "default",
+          badge: 1,
+          contentAvailable: true,
+          alert: {
+            title: item.title,
+            body: item.body,
+          },
+        },
+      },
+    },
+    webpush: {
+      notification: webPushOptions(item),
+      fcmOptions: { link: item.actionUrl },
+    },
   };
 }
 
@@ -117,6 +209,30 @@ export async function sendPushBatch(
       );
     }
   }
+}
+
+export async function sendPushToUser(
+  userId: number,
+  userType: string,
+  item: Omit<PushContent, "lang"> & { lang?: string },
+) {
+  const subs = await db
+    .select()
+    .from(pushSubscriptions)
+    .where(
+      and(
+        eq(pushSubscriptions.userId, userId),
+        eq(pushSubscriptions.userType, userType),
+      ),
+    );
+  if (subs.length === 0) return;
+  await sendPushBatch(
+    subs.map((sub) => ({
+      ...item,
+      lang: item.lang || "ar",
+      sub,
+    })),
+  );
 }
 
 async function triggerTemplateNotificationsBatch(
@@ -379,8 +495,8 @@ export async function processScheduledNotifications() {
           return query;
         };
 
-        const oauthRes = await applyFilters(oauthQuery, users, true).limit(limit).offset(offset);
-        const localRes = await applyFilters(localQuery, localUsers, false).limit(limit).offset(offset);
+        const oauthRes = await applyFilters(oauthQuery, users, true).orderBy(asc(users.id)).limit(limit).offset(offset);
+        const localRes = await applyFilters(localQuery, localUsers, false).orderBy(asc(localUsers.id)).limit(limit).offset(offset);
 
         if (oauthRes.length === 0 && localRes.length === 0) break;
 
@@ -646,6 +762,22 @@ export async function seedDefaultTemplates() {
   }
 }
 
+async function fetchAllTargets<T extends { id: number }>(
+  fetchChunk: (lastId: number, chunkSize: number) => Promise<T[]>,
+  chunkSize = 500,
+): Promise<T[]> {
+  const all: T[] = [];
+  let lastId = 0;
+  while (true) {
+    const chunk = await fetchChunk(lastId, chunkSize);
+    if (chunk.length === 0) break;
+    all.push(...chunk);
+    lastId = chunk[chunk.length - 1].id;
+    if (chunk.length < chunkSize) break;
+  }
+  return all;
+}
+
 export async function checkAndTriggerSmartActivityNotifications() {
   try {
     await seedDefaultTemplates();
@@ -666,45 +798,55 @@ export async function checkAndTriggerSmartActivityNotifications() {
       const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
       const thirtySixHoursAgo = new Date(now.getTime() - 36 * 60 * 60 * 1000);
 
-      const matchingOauth = await db.select({
-        id: users.id,
-        name: users.name,
-        plan: users.plan,
-        currentStreak: users.currentStreak
-      })
-      .from(users)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, users.id),
-        eq(notificationLogs.userType, "oauth"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, startOfToday)
-      ))
-      .where(and(
-        gte(users.currentStreak, minStreak),
-        gte(users.lastStreakAt, thirtySixHoursAgo),
-        lte(users.lastStreakAt, twelveHoursAgo),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+      const matchingOauth = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
+          id: users.id,
+          name: users.name,
+          plan: users.plan,
+          currentStreak: users.currentStreak
+        })
+        .from(users)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, users.id),
+          eq(notificationLogs.userType, "oauth"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, startOfToday)
+        ))
+        .where(and(
+          gt(users.id, lastId),
+          gte(users.currentStreak, minStreak),
+          gte(users.lastStreakAt, thirtySixHoursAgo),
+          lte(users.lastStreakAt, twelveHoursAgo),
+          isNull(notificationLogs.id)
+        ))
+        .orderBy(asc(users.id))
+        .limit(chunkSize)
+      );
 
-      const matchingLocal = await db.select({
-        id: localUsers.id,
-        name: localUsers.name,
-        plan: localUsers.plan,
-        currentStreak: localUsers.currentStreak
-      })
-      .from(localUsers)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, localUsers.id),
-        eq(notificationLogs.userType, "local"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, startOfToday)
-      ))
-      .where(and(
-        gte(localUsers.currentStreak, minStreak),
-        gte(localUsers.lastStreakAt, thirtySixHoursAgo),
-        lte(localUsers.lastStreakAt, twelveHoursAgo),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+      const matchingLocal = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
+          id: localUsers.id,
+          name: localUsers.name,
+          plan: localUsers.plan,
+          currentStreak: localUsers.currentStreak
+        })
+        .from(localUsers)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, localUsers.id),
+          eq(notificationLogs.userType, "local"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, startOfToday)
+        ))
+        .where(and(
+          gt(localUsers.id, lastId),
+          gte(localUsers.currentStreak, minStreak),
+          gte(localUsers.lastStreakAt, thirtySixHoursAgo),
+          lte(localUsers.lastStreakAt, twelveHoursAgo),
+          isNull(notificationLogs.id)
+        ))
+        .orderBy(asc(localUsers.id))
+        .limit(chunkSize)
+      );
 
       const targets = [
         ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
@@ -733,45 +875,55 @@ export async function checkAndTriggerSmartActivityNotifications() {
 
       const thirtySixHoursAgo = new Date(now.getTime() - 36 * 60 * 60 * 1000);
 
-      const matchingOauth = await db.select({
-        id: users.id,
-        name: users.name,
-        plan: users.plan,
-        currentStreak: users.currentStreak
-      })
-      .from(users)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, users.id),
-        eq(notificationLogs.userType, "oauth"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, sevenDaysAgo)
-      ))
-      .where(and(
-        eq(users.plan, "free"),
-        gte(users.currentStreak, minStreak),
-        gte(users.lastStreakAt, thirtySixHoursAgo),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+      const matchingOauth = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
+          id: users.id,
+          name: users.name,
+          plan: users.plan,
+          currentStreak: users.currentStreak
+        })
+        .from(users)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, users.id),
+          eq(notificationLogs.userType, "oauth"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, sevenDaysAgo)
+        ))
+        .where(and(
+          gt(users.id, lastId),
+          eq(users.plan, "free"),
+          gte(users.currentStreak, minStreak),
+          gte(users.lastStreakAt, thirtySixHoursAgo),
+          isNull(notificationLogs.id)
+        ))
+        .orderBy(asc(users.id))
+        .limit(chunkSize)
+      );
 
-      const matchingLocal = await db.select({
-        id: localUsers.id,
-        name: localUsers.name,
-        plan: localUsers.plan,
-        currentStreak: localUsers.currentStreak
-      })
-      .from(localUsers)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, localUsers.id),
-        eq(notificationLogs.userType, "local"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, sevenDaysAgo)
-      ))
-      .where(and(
-        eq(localUsers.plan, "free"),
-        gte(localUsers.currentStreak, minStreak),
-        gte(localUsers.lastStreakAt, thirtySixHoursAgo),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+      const matchingLocal = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
+          id: localUsers.id,
+          name: localUsers.name,
+          plan: localUsers.plan,
+          currentStreak: localUsers.currentStreak
+        })
+        .from(localUsers)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, localUsers.id),
+          eq(notificationLogs.userType, "local"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, sevenDaysAgo)
+        ))
+        .where(and(
+          gt(localUsers.id, lastId),
+          eq(localUsers.plan, "free"),
+          gte(localUsers.currentStreak, minStreak),
+          gte(localUsers.lastStreakAt, thirtySixHoursAgo),
+          isNull(notificationLogs.id)
+        ))
+        .orderBy(asc(localUsers.id))
+        .limit(chunkSize)
+      );
 
       const targets = [
         ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
@@ -803,43 +955,53 @@ export async function checkAndTriggerSmartActivityNotifications() {
       const startRange = new Date(now.getTime() - inactivityMsEnd);
       const endRange = new Date(now.getTime() - inactivityMsStart);
 
-      const matchingOauth = await db.select({
-        id: users.id,
-        name: users.name,
-        plan: users.plan,
-        currentStreak: users.currentStreak
-      })
-      .from(users)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, users.id),
-        eq(notificationLogs.userType, "oauth"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, sevenDaysAgo)
-      ))
-      .where(and(
-        gte(users.lastStreakAt, startRange),
-        lte(users.lastStreakAt, endRange),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+      const matchingOauth = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
+          id: users.id,
+          name: users.name,
+          plan: users.plan,
+          currentStreak: users.currentStreak
+        })
+        .from(users)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, users.id),
+          eq(notificationLogs.userType, "oauth"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, sevenDaysAgo)
+        ))
+        .where(and(
+          gt(users.id, lastId),
+          gte(users.lastStreakAt, startRange),
+          lte(users.lastStreakAt, endRange),
+          isNull(notificationLogs.id)
+        ))
+        .orderBy(asc(users.id))
+        .limit(chunkSize)
+      );
 
-      const matchingLocal = await db.select({
-        id: localUsers.id,
-        name: localUsers.name,
-        plan: localUsers.plan,
-        currentStreak: localUsers.currentStreak
-      })
-      .from(localUsers)
-      .leftJoin(notificationLogs, and(
-        eq(notificationLogs.userId, localUsers.id),
-        eq(notificationLogs.userType, "local"),
-        eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, sevenDaysAgo)
-      ))
-      .where(and(
-        gte(localUsers.lastStreakAt, startRange),
-        lte(localUsers.lastStreakAt, endRange),
-        isNull(notificationLogs.id)
-      )).limit(1000);
+      const matchingLocal = await fetchAllTargets((lastId, chunkSize) =>
+        db.select({
+          id: localUsers.id,
+          name: localUsers.name,
+          plan: localUsers.plan,
+          currentStreak: localUsers.currentStreak
+        })
+        .from(localUsers)
+        .leftJoin(notificationLogs, and(
+          eq(notificationLogs.userId, localUsers.id),
+          eq(notificationLogs.userType, "local"),
+          eq(notificationLogs.templateId, template.id),
+          gte(notificationLogs.sentAt, sevenDaysAgo)
+        ))
+        .where(and(
+          gt(localUsers.id, lastId),
+          gte(localUsers.lastStreakAt, startRange),
+          lte(localUsers.lastStreakAt, endRange),
+          isNull(notificationLogs.id)
+        ))
+        .orderBy(asc(localUsers.id))
+        .limit(chunkSize)
+      );
 
       const targets = [
         ...matchingOauth.map(u => ({ ...u, type: "oauth" })),

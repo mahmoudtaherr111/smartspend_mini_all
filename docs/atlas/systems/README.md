@@ -77,6 +77,7 @@ flowchart LR
   sys_money --> sys_insights
   sys_money --> sys_notifications
   sys_money --> sys_voice_calls
+  sys_notifications --> sys_accounts
   sys_notifications --> sys_money
   sys_voice_calls --> sys_ai_center
   sys_voice_calls --> sys_ai_platform

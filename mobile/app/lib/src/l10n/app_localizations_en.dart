@@ -1379,4 +1379,310 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchNoTransactions => 'No transactions to search yet.';
+
+  @override
+  String get deleteAccountTitle => 'Delete Account';
+
+  @override
+  String get deleteAccountBody =>
+      'All your personal transactions, ledger entries, and records will be deleted immediately and permanently. In accordance with Egyptian Personal Data Protection Law 151/2020, certain statutory compliance logs may be retained only for the legally mandated period.';
+
+  @override
+  String get deleteAccountPhraseInstruction =>
+      'To confirm deletion, type \'delete my account\' below:';
+
+  @override
+  String get deleteAccountPasswordLabel => 'Current Password';
+
+  @override
+  String get deleteAccountPasswordHint =>
+      'Enter your password to verify your identity';
+
+  @override
+  String get deleteAccountConfirmButton => 'Delete My Account Permanently';
+
+  @override
+  String get deleteAccountCancelButton => 'Cancel';
+
+  @override
+  String get deleteAccountSuccess =>
+      'Your account has been deleted successfully.';
+
+  @override
+  String get deleteAccountFailed =>
+      'Failed to delete account. Please verify your details or contact support.';
+
+  @override
+  String get deleteAccountContactSupport => 'Contact Support';
+
+  @override
+  String get profileTitle => 'Profile';
+
+  @override
+  String get profileName => 'Name';
+
+  @override
+  String get profilePhone => 'Phone Number';
+
+  @override
+  String get profileEmail => 'Email';
+
+  @override
+  String get profileChangePhone => 'Change Phone';
+
+  @override
+  String get profileSave => 'Save Changes';
+
+  @override
+  String get profileSaved => 'Profile updated successfully';
+
+  @override
+  String get phoneChangeTitle => 'Change Phone Number';
+
+  @override
+  String get phoneChangeBody =>
+      'We will send a verification code via WhatsApp to your new number.';
+
+  @override
+  String get phoneChangeNewNumber => 'New Phone Number';
+
+  @override
+  String get phoneChangeSendCode => 'Send Verification Code';
+
+  @override
+  String get phoneChangeEnterCode => 'Enter Verification Code';
+
+  @override
+  String get phoneChangeSuccess => 'Phone number updated successfully';
+
+  @override
+  String get moneyPrefsTitle => 'Money Preferences';
+
+  @override
+  String get moneyPrefsSalaryDay => 'Payday (Start of Financial Month)';
+
+  @override
+  String get moneyPrefsSalaryDayBody =>
+      'The day your financial month begins. In shorter months such as February, the last day of the month is used automatically.';
+
+  @override
+  String get moneyPrefsCurrency => 'Currency';
+
+  @override
+  String get moneyPrefsDecimalPlaces => 'Decimal Places';
+
+  @override
+  String get moneyPrefsSaved => 'Preferences saved';
+
+  @override
+  String get onboardingQuestionsTitle => 'Personalization Questions';
+
+  @override
+  String get onboardingSkip => 'Skip for now';
+
+  @override
+  String get onboardingSubmit => 'Save & Continue';
+
+  @override
+  String get onboardingDone => 'Thanks for your answers!';
+
+  @override
+  String get sessionsTitle => 'Active Sessions & Devices';
+
+  @override
+  String get sessionsCurrentDevice => 'Current Device';
+
+  @override
+  String get sessionsRevoke => 'Revoke Session';
+
+  @override
+  String get sessionsRevokeConfirm =>
+      'Are you sure you want to revoke this session?';
+
+  @override
+  String get sessionsRevokeCurrentWarning =>
+      'Revoking this session will sign you out of this phone immediately.';
+
+  @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String get notificationsEmpty => 'No notifications right now';
+
+  @override
+  String get notificationsMarkAllRead => 'Mark All as Read';
+
+  @override
+  String get notificationsFilterAll => 'All';
+
+  @override
+  String get notificationsFilterUnread => 'Unread';
+
+  @override
+  String get notificationsToday => 'Today';
+
+  @override
+  String get notificationsYesterday => 'Yesterday';
+
+  @override
+  String get notificationsThisWeek => 'This Week';
+
+  @override
+  String get notificationsOlder => 'Older';
+
+  @override
+  String get notificationSettingsTitle => 'Notification Settings';
+
+  @override
+  String get notificationSettingsMaster => 'Enable Notifications';
+
+  @override
+  String get notificationSettingsBudget => 'Budget Alerts';
+
+  @override
+  String get notificationSettingsDaily => 'Daily Reminder';
+
+  @override
+  String get notificationSettingsStreak => 'Streak Alerts';
+
+  @override
+  String get notificationSettingsMonthly => 'Monthly Report';
+
+  @override
+  String get helpCenterTitle => 'Help & Support';
+
+  @override
+  String get helpFaqSection => 'Frequently Asked Questions';
+
+  @override
+  String get helpTicketSection => 'Contact Support';
+
+  @override
+  String get helpTicketSubject => 'Subject';
+
+  @override
+  String get helpTicketMessage => 'Message details';
+
+  @override
+  String get helpTicketSubmit => 'Submit Ticket';
+
+  @override
+  String get helpTicketSuccess =>
+      'Ticket submitted successfully, we\'ll get back to you soon.';
+
+  @override
+  String get helpMyTickets => 'My Tickets';
+
+  @override
+  String get helpTicketOpen => 'Open';
+
+  @override
+  String get helpTicketClosed => 'Closed';
+
+  @override
+  String get helpTicketReplied => 'Replied';
+
+  @override
+  String get planTitle => 'Plans & Subscription';
+
+  @override
+  String get planCurrent => 'Current Plan';
+
+  @override
+  String get planFree => 'Free Plan';
+
+  @override
+  String get planPro => 'Pro Plan';
+
+  @override
+  String get planUpgrade => 'Upgrade to Pro';
+
+  @override
+  String get planFeaturesTitle => 'Pro Plan Features';
+
+  @override
+  String get cancelPlanTitle => 'Cancel Subscription';
+
+  @override
+  String get cancelPlanConfirm => 'Confirm Cancellation';
+
+  @override
+  String get cancelPlanRetainNotice =>
+      'Your Pro plan features will remain active until the end of your billing cycle.';
+
+  @override
+  String get inviteTitle => 'Invite Friends';
+
+  @override
+  String get inviteYourCode => 'Your Referral Code';
+
+  @override
+  String get inviteShare => 'Share Code';
+
+  @override
+  String inviteShareText(String code) {
+    return 'Try SmartSpend AI to manage your spending! Use my referral code: $code';
+  }
+
+  @override
+  String get inviteCopy => 'Copy Code';
+
+  @override
+  String get inviteCopied => 'Code copied!';
+
+  @override
+  String get appearanceTitle => 'Appearance';
+
+  @override
+  String get appearanceSystem => 'System Default';
+
+  @override
+  String get appearanceLight => 'Light';
+
+  @override
+  String get appearanceDark => 'Dark';
+
+  @override
+  String get termsTitle => 'Terms of Service';
+
+  @override
+  String get dataStoredTitle => 'Data & Privacy';
+
+  @override
+  String get appInfoTitle => 'App Information';
+
+  @override
+  String get appVersion => 'Version';
+
+  @override
+  String get appUpdateRequired => 'Update Required';
+
+  @override
+  String get appUpdateBody =>
+      'A required update is available. Please update the app to continue.';
+
+  @override
+  String get appUpdateNow => 'Update Now';
+
+  @override
+  String get offlineRetryBanner =>
+      'No internet connection. Changes will be saved locally.';
+
+  @override
+  String get forgotPassword => 'Forgot password?';
+
+  @override
+  String get resetPasswordTitle => 'Reset Password';
+
+  @override
+  String get resetPasswordNew => 'New Password';
+
+  @override
+  String get resetPasswordConfirm => 'Confirm Password';
+
+  @override
+  String get resetPasswordSubmit => 'Change Password & Sign In';
+
+  @override
+  String get resetPasswordSuccess => 'Password reset successfully';
 }

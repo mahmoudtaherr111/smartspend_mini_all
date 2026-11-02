@@ -19,7 +19,13 @@ describe("what a push looks like on the phone", () => {
   it("groups by type, reads right to left in Arabic, and opens the destination", () => {
     const message = fcmMessage("token", item);
     expect(message.webpush.notification).toMatchObject({ tag: "budget_near_limit", dir: "rtl", lang: "ar" });
-    expect(message.data).toEqual({ url: item.actionUrl, type: item.type });
+    expect(message.data).toEqual({
+      url: item.actionUrl,
+      route: item.actionUrl,
+      type: item.type,
+      channelId: "channel_budget_spending",
+      click_action: "FLUTTER_NOTIFICATION_CLICK",
+    });
     expect(message.webpush.fcmOptions.link).toBe(item.actionUrl);
     expect(fcmMessage("token", { ...item, lang: "en" }).webpush.notification.dir).toBe("ltr");
   });

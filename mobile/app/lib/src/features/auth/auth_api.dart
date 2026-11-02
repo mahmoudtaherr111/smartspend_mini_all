@@ -59,7 +59,7 @@ final class AppUser {
   /// Admin or moderator access; not the subscription (golden rule 2).
   final String role;
 
-  /// `free`, `pro` or `ultra`.
+  /// `free` or `pro`.
   final String plan;
 }
 
@@ -169,6 +169,21 @@ final class AuthApi {
       Procedures.localAuth.confirmVerificationCode,
       input: {'verificationTicket': ticket, 'code': code},
     );
+  }
+
+  /// Resets a forgotten password with a verified WhatsApp challenge ticket (AUTH-04).
+  Future<SignedInAnswer> resetPassword({
+    required String verificationTicket,
+    required String newPassword,
+  }) async {
+    final data = await _client.mutate(
+      Procedures.localAuth.resetPassword,
+      input: {
+        'verificationTicket': verificationTicket,
+        'newPassword': newPassword,
+      },
+    );
+    return _signedIn(data, AccountKind.phone);
   }
 
   /// Exchanges the phone's Google sign-in for a session (`auth.signInWithGoogle`). [nonce] is the value made for

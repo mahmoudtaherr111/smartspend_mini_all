@@ -47,6 +47,7 @@
         "api/lib/ownership-guard.ts",
         "api/lib/image-magic-bytes.ts",
         "api/lib/admin-safe-fields.ts",
+        "api/lib/admin-audit.ts",
         "api/lib/security-logger.ts",
         "api/lib/anonymizer.ts",
         "api/services/turnstile-service.ts"
@@ -94,7 +95,8 @@
       "paths": [
         "api/lib/paymob.ts",
         "api/lib/subscription-service.ts",
-        "api/lib/plan-catalog.ts"
+        "api/lib/plan-catalog.ts",
+        "api/lib/store-billing/**"
       ]
     },
     {
@@ -147,9 +149,8 @@
     {
       "id": "whatsapp",
       "title": "WhatsApp",
-      "description": "WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp), and, until it is removed, the Baileys client that still sends reports, phone-change codes and admin messages; verification codes are challenges in MySQL (`phone-challenge.ts`).",
+      "description": "WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp); verification codes are challenges in MySQL (`phone-challenge.ts`).",
       "paths": [
-        "api/services/whatsapp-service.ts",
         "api/lib/whatsapp/**"
       ]
     },
@@ -436,7 +437,6 @@
       "description": "The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded.",
       "paths": [
         "src/components/expenses/ExpenseForm.tsx",
-        "src/components/expenses/ReceiptCapture.tsx",
         "src/lib/clientRulesEngine.ts",
         "src/lib/compress-image.ts"
       ]

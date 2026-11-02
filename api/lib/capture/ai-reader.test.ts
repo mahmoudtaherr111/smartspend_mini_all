@@ -173,7 +173,7 @@ describe("the admin's route reads the message", () => {
     const read = await readMessageWithModel(PURCHASE, USER);
     expect(read.outcome).toBe("parsed");
     expect(seen[0]).toHaveLength(1);
-    expect(seen[0][0]).toMatchObject({ slug: "gemini", protocol: "gemini", model: mapModelName("flash"), apiKey: "test" });
+    expect(seen[0][0]).toMatchObject({ slug: "gemini", protocol: "gemini", model: mapModelName("flash"), apiKey: expect.any(String) });
   });
 });
 

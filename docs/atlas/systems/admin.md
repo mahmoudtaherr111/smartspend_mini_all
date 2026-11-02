@@ -21,8 +21,8 @@ flowchart LR
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
-    router_admin["admin API · 56 procedures"]
-    router_ads["ads API · 7 procedures"]
+    router_admin["admin API · 60 procedures"]
+    router_ads["ads API · 8 procedures"]
     router_analytics["analytics API · 4 procedures"]
     router_export["export API · 1 procedure"]
     router_seo["seo API · 5 procedures"]
@@ -33,12 +33,15 @@ flowchart LR
   end
   subgraph g_tables["MySQL tables"]
     tbl_ad_clicks[("ad_clicks")]
+    tbl_ad_impressions[("ad_impressions")]
     tbl_ads[("ads")]
     tbl_ai_models[("ai_models")]
     tbl_ai_providers[("ai_providers")]
     tbl_discount_codes[("discount_codes")]
+    tbl_in_app_notifications[("in_app_notifications")]
     tbl_local_users[("local_users")]
-    tbl_more[("10 tables it only reads, listed under Data")]
+    tbl_more[("11 tables it only reads, listed under Data")]
+    tbl_notification_logs[("notification_logs")]
     tbl_notification_templates[("notification_templates")]
     tbl_pending_clarifications[("pending_clarifications")]
     tbl_seo_pages[("seo_pages")]
@@ -81,12 +84,16 @@ flowchart LR
   router_admin ==> tbl_ai_providers
   router_admin ==> tbl_discount_codes
   router_admin ==> tbl_local_users
+  router_admin ==> tbl_notification_logs
   router_admin ==> tbl_notification_templates
   router_admin ==> tbl_pending_clarifications
   router_admin ==> tbl_system_settings
   router_admin ==> tbl_user_dictionaries
   router_admin ==> tbl_users
+  router_ads --> sys_accounts
+  router_ads --> sys_platform
   router_ads ==> tbl_ad_clicks
+  router_ads ==> tbl_ad_impressions
   router_ads ==> tbl_ads
   router_analytics --> sys_platform
   router_analytics -.-> tbl_local_users
@@ -96,8 +103,11 @@ flowchart LR
   router_export -.-> tbl_local_users
   router_export -.-> tbl_users
   router_seo ==> tbl_seo_pages
+  router_support --> sys_accounts
+  router_support --> sys_notifications
   router_support -.-> tbl_local_users
   router_support -.-> tbl_users
+  router_support ==> tbl_in_app_notifications
   router_support ==> tbl_support_tickets
   screens_accounts --> router_seo
   screens_billing --> router_seo
@@ -131,6 +141,7 @@ flowchart LR
 | `admin.deleteNotificationTemplate` | mutation | `adminProcedure` | — | `notification_templates` | `Admin`, `More` |
 | `admin.deleteUser` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `admin.discoverProviderModels` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
+| `admin.generateBackupExport` | mutation | `adminProcedure` | — | — | — |
 | `admin.getAIClassificationStats` | query | `adminProcedure` | `classification_logs` | — | `Admin`, `More` |
 | `admin.getAICostOverview` | query | `adminProcedure` | — | — | `Admin`, `More` |
 | `admin.getActivityLog` | query | `adminProcedure` | `local_users`, `sessions`, `users` | — | `Admin`, `More` |
@@ -139,10 +150,11 @@ flowchart LR
 | `admin.getAiTelemetryOverview` | query | `adminProcedure` | `ai_token_ledgers` | — | `Admin`, `More` |
 | `admin.getAiTokenLedger` | query | `adminProcedure` | `ai_token_ledgers` | — | — |
 | `admin.getApiKeyErrors` | query | `adminProcedure` | — | — | `Admin`, `More` |
+| `admin.getAuditLogs` | query | `adminProcedure` | `admin_audit_logs`, `local_users`, `users` | — | `Admin`, `More` |
 | `admin.getAvailableModels` | query | `adminProcedure` | — | — | `Admin`, `More` |
 | `admin.getClassificationLogs` | query | `adminProcedure` | `classification_logs`, `local_users`, `users` | — | `Admin`, `More` |
 | `admin.getClassificationQuality` | query | `adminProcedure` | `classification_logs` | — | `Admin`, `More` |
-| `admin.getDashboardStats` | query | `adminProcedure` | `expense_daily_rollups`, `local_users`, `sessions`, `support_tickets`, `users` | — | `Admin`, `More` |
+| `admin.getDashboardStats` | query | `adminProcedure` | `expense_daily_rollups`, `local_users`, `pro_subscriptions`, `sessions`, `store_purchases`, `support_tickets`, `users` | — | `Admin`, `More` |
 | `admin.getDiscountCodes` | query | `adminProcedure` | `discount_codes` | — | `Admin`, `More` |
 | `admin.getFounderMetrics` | query | `adminProcedure` | `local_users`, `pro_subscriptions`, `sessions`, `support_tickets`, `users` | — | `Admin`, `More` |
 | `admin.getLearnedRules` | query | `adminProcedure` | `local_users`, `user_dictionaries`, `users` | — | `Admin`, `More` |
@@ -158,12 +170,14 @@ flowchart LR
 | `admin.getUserSmartProfile` | query | `adminProcedure` | — | — | `Admin`, `More` |
 | `admin.getVoiceUsageStats` | query | `adminProcedure` | `voice_usage` | — | `Admin`, `More` |
 | `admin.listAllUsers` | query | `adminProcedure` | `expenses`, `local_users`, `users` | — | `Admin`, `More` |
+| `admin.listStorePurchasesAdmin` | query | `adminProcedure` | `store_purchases` | — | `Admin`, `More` |
 | `admin.listSubscriptionsAdmin` | query | `adminProcedure` | `pro_subscriptions` | — | `Admin`, `More` |
 | `admin.resetUserTokens` | mutation | `adminProcedure` | — | `local_users`, `users` | — |
 | `admin.resolveApiKeyError` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `admin.resolveClarification` | mutation | `adminProcedure` | — | `pending_clarifications` | `Admin`, `More` |
 | `admin.revokeSession` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `admin.saveAiModels` | mutation | `adminProcedure` | `ai_models` | `ai_models` | `Admin`, `More` |
+| `admin.sendInstantNotification` | mutation | `adminProcedure` | `local_users`, `push_subscriptions`, `users` | `notification_logs` | `Admin`, `More` |
 | `admin.sendPushNotification` | mutation | `adminProcedure` | `local_users`, `push_subscriptions`, `users` | — | — |
 | `admin.setUserTokenLimit` | mutation | `adminProcedure` | `system_settings` | `system_settings` | — |
 | `admin.toggleNotificationTemplate` | mutation | `adminProcedure` | — | `notification_templates` | `Admin`, `More` |
@@ -178,9 +192,10 @@ flowchart LR
 | `admin.validateApiKey` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `ads.click` | mutation | `authedProcedure` | — | `ad_clicks`, `ads` | `App shell` |
 | `ads.create` | mutation | `adminProcedure` | — | `ads` | `Admin`, `More` |
-| `ads.delete` | mutation | `adminProcedure` | — | `ad_clicks`, `ads` | `Admin`, `More` |
+| `ads.delete` | mutation | `adminProcedure` | — | `ad_clicks`, `ad_impressions`, `ads` | `Admin`, `More` |
 | `ads.impression` | mutation | `publicProcedure` | — | `ads` | — |
-| `ads.list` | query | `publicProcedure` | `ads` | — | `App shell` |
+| `ads.list` | query | `publicProcedure` | `ad_impressions`, `ads` | — | `App shell` |
+| `ads.recordImpression` | mutation | `publicProcedure` | `ad_impressions` | `ad_impressions`, `ads` | `App shell` |
 | `ads.stats` | query | `adminProcedure` | `ads` | — | `Admin`, `More` |
 | `ads.update` | mutation | `adminProcedure` | — | `ads` | `Admin`, `More` |
 | `analytics.getAllUserStats` | query | `adminProcedure` | `expenses`, `local_users`, `users` | — | — |
@@ -199,7 +214,7 @@ flowchart LR
 | `support.getById` | query | `authedProcedure` | `support_tickets` | — | — |
 | `support.listAll` | query | `adminProcedure` | `local_users`, `support_tickets`, `users` | — | `Admin`, `More` |
 | `support.listMine` | query | `authedProcedure` | `support_tickets` | — | `More`, `Support` |
-| `support.respond` | mutation | `adminProcedure` | `support_tickets` | `support_tickets` | `Admin`, `More` |
+| `support.respond` | mutation | `adminProcedure` | `support_tickets` | `in_app_notifications`, `support_tickets` | `Admin`, `More` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -212,7 +227,9 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `ad_clicks` | E | `ads.click`, `ads.delete` | — |
-| `ads` | A | `ads.click`, `ads.create`, `ads.delete`, `ads.impression`, `ads.update` | `admin.triggerBackupDemo`, `ads.list`, `ads.stats` |
+| `ad_impressions` | E | `ads.delete`, `ads.recordImpression` | `ads.list`, `ads.recordImpression` |
+| `admin_audit_logs` | B | — | `admin.getAuditLogs` |
+| `ads` | A | `ads.click`, `ads.create`, `ads.delete`, `ads.impression`, `ads.recordImpression`, `ads.update` | `admin.triggerBackupDemo`, `ads.list`, `ads.stats` |
 | `ai_models` | A | `admin.deleteAiProvider`, `admin.saveAiModels` | `admin.getAiModels`, `admin.saveAiModels` |
 | `ai_providers` | A | `admin.addAiProvider`, `admin.checkProviderHealth`, `admin.deleteAiProvider`, `admin.updateAiProvider` | `admin.checkProviderHealth`, `admin.getAiProviders` |
 | `ai_token_ledgers` | E | — | `admin.getAiTelemetryOverview`, `admin.getAiTokenLedger`, `admin.getUserAiQuota` |
@@ -220,20 +237,22 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `discount_codes` | A | `admin.createDiscountCode`, `admin.deleteDiscountCode` | `admin.createDiscountCode`, `admin.getDiscountCodes`, `admin.triggerBackupDemo` |
 | `expense_daily_rollups` | C | — | `admin.getDashboardStats` |
 | `expenses` | B | — | `admin.listAllUsers`, `analytics.getAllUserStats`, `analytics.getDashboardStats` |
-| `local_users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendPushNotification`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
-| `notification_logs` | E | — | `admin.getNotificationLogs` |
+| `in_app_notifications` | D | `support.respond` | — |
+| `local_users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getAuditLogs`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendInstantNotification`, `admin.sendPushNotification`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
+| `notification_logs` | E | `admin.sendInstantNotification` | `admin.getNotificationLogs` |
 | `notification_templates` | A | `admin.createNotificationTemplate`, `admin.deleteNotificationTemplate`, `admin.toggleNotificationTemplate`, `admin.updateNotificationTemplate` | `admin.getNotificationTemplates` |
 | `onboarding_questions` | A | — | `admin.triggerBackupDemo` |
 | `pending_clarifications` | D | `admin.resolveClarification` | `admin.getPendingClarifications` |
-| `pro_subscriptions` | A | — | `admin.getFounderMetrics`, `admin.listSubscriptionsAdmin` |
-| `push_subscriptions` | A | — | `admin.getNotificationStats`, `admin.sendPushNotification` |
+| `pro_subscriptions` | A | — | `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.listSubscriptionsAdmin` |
+| `push_subscriptions` | A | — | `admin.getNotificationStats`, `admin.sendInstantNotification`, `admin.sendPushNotification` |
 | `seo_pages` | A | `seo.delete`, `seo.upsert` | `seo.getPage`, `seo.list`, `seo.sitemap`, `seo.upsert` |
 | `sessions` | D | — | `admin.getActivityLog`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getUserSessions` |
+| `store_purchases` | A | — | `admin.getDashboardStats`, `admin.listStorePurchasesAdmin` |
 | `support_tickets` | A | `support.assign`, `support.close`, `support.create`, `support.respond` | `admin.getDashboardStats`, `admin.getFounderMetrics`, `support.assign`, `support.close`, `support.getById`, `support.listAll`, `support.listMine`, `support.respond` |
 | `system_settings` | A | `admin.setUserTokenLimit`, `admin.updateSettings` | `admin.setUserTokenLimit` |
 | `user_analytics` | E | `analytics.trackEvent` | `analytics.getMyAnalytics` |
 | `user_dictionaries` | F | `admin.deleteLearnedRule` | `admin.getLearnedRules` |
-| `users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendPushNotification`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
+| `users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getAuditLogs`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendInstantNotification`, `admin.sendPushNotification`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
 | `voice_usage` | E | — | `admin.getVoiceUsageStats` |
 
 ## Outside systems

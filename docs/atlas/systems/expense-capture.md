@@ -154,7 +154,7 @@ Drawn in `docs/architecture/flows/record-expense.c4`; in the interactive map it 
 | `classification` — Expense classification pipeline | smart-pipeline.ts and the modules it composes: financial events, the role of each number and of each word in a clause, admissibility, rules, muscle memory, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance. | 40 |
 | `classification-qa` — Classification benchmark helpers | Helpers used only by the classification benchmark and QA scripts: taxonomy assertions and simulated users. | 2 |
 | `receipt-parsing` — Receipt parsing | Receipt parsing with a vision model. | 1 |
-| `web-capture` — Expense entry UI | The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded. | 4 |
+| `web-capture` — Expense entry UI | The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded. | 3 |
 
 ## API procedures
 
@@ -218,7 +218,7 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/expense-capture.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>72 files and declarations</summary>
+<details><summary>71 files and declarations</summary>
 
 - `api/ai-router.ts#ai.learnWord`
 - `api/ai-router.ts#ai.parseExpense`
@@ -289,7 +289,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/voice-intake-gate.ts`
 - `api/services/parser-trace.ts`
 - `src/components/expenses/ExpenseForm.tsx`
-- `src/components/expenses/ReceiptCapture.tsx`
 - `src/lib/clientRulesEngine.ts`
 - `src/lib/compress-image.ts`
 

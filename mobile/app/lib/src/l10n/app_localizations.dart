@@ -2377,6 +2377,588 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لسه مفيش معاملات تبحث فيها.'**
   String get searchNoTransactions;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الحساب'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم مسح جميع بياناتك، سجلاتك، ومعاملاتك نهائياً وفوراً. لن تتمكن من استرجاع هذا الحساب مجدداً. وفقاً لقانون حماية البيانات الشخصية رقم 151 لسنة 2020، قد يتم الاحتفاظ ببعض سجلات الامتثال المالي فقط للمدة المقررة قانوناً.'**
+  String get deleteAccountBody;
+
+  /// No description provided for @deleteAccountPhraseInstruction.
+  ///
+  /// In ar, this message translates to:
+  /// **'لتأكيد الحذف، اكتب كلمة «احذف حسابي» أدناه:'**
+  String get deleteAccountPhraseInstruction;
+
+  /// No description provided for @deleteAccountPasswordLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة المرور الحالية'**
+  String get deleteAccountPasswordLabel;
+
+  /// No description provided for @deleteAccountPasswordHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب كلمة المرور لتأكيد هويتك'**
+  String get deleteAccountPasswordHint;
+
+  /// No description provided for @deleteAccountConfirmButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف حسابي نهائياً'**
+  String get deleteAccountConfirmButton;
+
+  /// No description provided for @deleteAccountCancelButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء والتراجع'**
+  String get deleteAccountCancelButton;
+
+  /// No description provided for @deleteAccountSuccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حذف حسابك بنجاح.'**
+  String get deleteAccountSuccess;
+
+  /// No description provided for @deleteAccountFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'فشل حذف الحساب. يرجى التأكد من البيانات أو التواصل مع الدعم.'**
+  String get deleteAccountFailed;
+
+  /// No description provided for @deleteAccountContactSupport.
+  ///
+  /// In ar, this message translates to:
+  /// **'تواصل مع الدعم'**
+  String get deleteAccountContactSupport;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف الشخصي'**
+  String get profileTitle;
+
+  /// No description provided for @profileName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get profileName;
+
+  /// No description provided for @profilePhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الهاتف'**
+  String get profilePhone;
+
+  /// No description provided for @profileEmail.
+  ///
+  /// In ar, this message translates to:
+  /// **'البريد الإلكتروني'**
+  String get profileEmail;
+
+  /// No description provided for @profileChangePhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير الرقم'**
+  String get profileChangePhone;
+
+  /// No description provided for @profileSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ التعديلات'**
+  String get profileSave;
+
+  /// No description provided for @profileSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ التعديلات بنجاح'**
+  String get profileSaved;
+
+  /// No description provided for @phoneChangeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير رقم الهاتف'**
+  String get phoneChangeTitle;
+
+  /// No description provided for @phoneChangeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سنرسل رمز تأكيد على واتساب إلى رقمك الجديد.'**
+  String get phoneChangeBody;
+
+  /// No description provided for @phoneChangeNewNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرقم الجديد'**
+  String get phoneChangeNewNumber;
+
+  /// No description provided for @phoneChangeSendCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال كود التأكيد'**
+  String get phoneChangeSendCode;
+
+  /// No description provided for @phoneChangeEnterCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل رمز التأكيد المرسل'**
+  String get phoneChangeEnterCode;
+
+  /// No description provided for @phoneChangeSuccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تغيير رقم الهاتف بنجاح'**
+  String get phoneChangeSuccess;
+
+  /// No description provided for @moneyPrefsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفضيلات الراتب والميزانية'**
+  String get moneyPrefsTitle;
+
+  /// No description provided for @moneyPrefsSalaryDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم نزول الراتب (بداية الشهر المالي)'**
+  String get moneyPrefsSalaryDay;
+
+  /// No description provided for @moneyPrefsSalaryDayBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم الذي تبدأ فيه حساب مصاريفك وميزانيتك الشهرية. في الشهور القصيرة مثل فبراير يتم اعتماد آخر يوم في الشهر تلقائياً.'**
+  String get moneyPrefsSalaryDayBody;
+
+  /// No description provided for @moneyPrefsCurrency.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملة'**
+  String get moneyPrefsCurrency;
+
+  /// No description provided for @moneyPrefsDecimalPlaces.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكسور العشرية'**
+  String get moneyPrefsDecimalPlaces;
+
+  /// No description provided for @moneyPrefsSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ تفضيلات الراتب'**
+  String get moneyPrefsSaved;
+
+  /// No description provided for @onboardingQuestionsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسئلة التخصيص'**
+  String get onboardingQuestionsTitle;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In ar, this message translates to:
+  /// **'تخطي الآن'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingSubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ ومتابعة'**
+  String get onboardingSubmit;
+
+  /// No description provided for @onboardingDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'شكراً لإجاباتك!'**
+  String get onboardingDone;
+
+  /// No description provided for @sessionsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأجهزة والجلسات النشطة'**
+  String get sessionsTitle;
+
+  /// No description provided for @sessionsCurrentDevice.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الجهاز'**
+  String get sessionsCurrentDevice;
+
+  /// No description provided for @sessionsRevoke.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنهاء الجلسة'**
+  String get sessionsRevoke;
+
+  /// No description provided for @sessionsRevokeConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد إنهاء هذه الجلسة وتسجيل الخروج منها؟'**
+  String get sessionsRevokeConfirm;
+
+  /// No description provided for @sessionsRevokeCurrentWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنهاء هذه الجلسة سيؤدي لتسجيل خروجك فوراً من هذا الموبايل.'**
+  String get sessionsRevokeCurrentWarning;
+
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get notificationsTitle;
+
+  /// No description provided for @notificationsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد إشعارات حالياً'**
+  String get notificationsEmpty;
+
+  /// No description provided for @notificationsMarkAllRead.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد الكل كمقروء'**
+  String get notificationsMarkAllRead;
+
+  /// No description provided for @notificationsFilterAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get notificationsFilterAll;
+
+  /// No description provided for @notificationsFilterUnread.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مقروءة'**
+  String get notificationsFilterUnread;
+
+  /// No description provided for @notificationsToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم'**
+  String get notificationsToday;
+
+  /// No description provided for @notificationsYesterday.
+  ///
+  /// In ar, this message translates to:
+  /// **'أمس'**
+  String get notificationsYesterday;
+
+  /// No description provided for @notificationsThisWeek.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الأسبوع'**
+  String get notificationsThisWeek;
+
+  /// No description provided for @notificationsOlder.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقدم'**
+  String get notificationsOlder;
+
+  /// No description provided for @notificationSettingsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعدادات الإشعارات'**
+  String get notificationSettingsTitle;
+
+  /// No description provided for @notificationSettingsMaster.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل الإشعارات'**
+  String get notificationSettingsMaster;
+
+  /// No description provided for @notificationSettingsBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات الميزانية'**
+  String get notificationSettingsBudget;
+
+  /// No description provided for @notificationSettingsDaily.
+  ///
+  /// In ar, this message translates to:
+  /// **'التذكير اليومي بالتسجيل'**
+  String get notificationSettingsDaily;
+
+  /// No description provided for @notificationSettingsStreak.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات الحفاظ على الالتزام (Streak)'**
+  String get notificationSettingsStreak;
+
+  /// No description provided for @notificationSettingsMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقرير الشهري'**
+  String get notificationSettingsMonthly;
+
+  /// No description provided for @helpCenterTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مركز المساعدة والدعم'**
+  String get helpCenterTitle;
+
+  /// No description provided for @helpFaqSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسئلة الشائعة'**
+  String get helpFaqSection;
+
+  /// No description provided for @helpTicketSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'تواصل مع الدعم'**
+  String get helpTicketSection;
+
+  /// No description provided for @helpTicketSubject.
+  ///
+  /// In ar, this message translates to:
+  /// **'موضوع الرسالة'**
+  String get helpTicketSubject;
+
+  /// No description provided for @helpTicketMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل المشكلة أو الاستفسار'**
+  String get helpTicketMessage;
+
+  /// No description provided for @helpTicketSubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرسال التذكرة'**
+  String get helpTicketSubmit;
+
+  /// No description provided for @helpTicketSuccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إرسال تذكرتك بنجاح، سنرد عليك في أقرب وقت.'**
+  String get helpTicketSuccess;
+
+  /// No description provided for @helpMyTickets.
+  ///
+  /// In ar, this message translates to:
+  /// **'تذاكري السابقة'**
+  String get helpMyTickets;
+
+  /// No description provided for @helpTicketOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيد الانتظار'**
+  String get helpTicketOpen;
+
+  /// No description provided for @helpTicketClosed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مغلقة'**
+  String get helpTicketClosed;
+
+  /// No description provided for @helpTicketReplied.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الرد'**
+  String get helpTicketReplied;
+
+  /// No description provided for @planTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراك والترقية'**
+  String get planTitle;
+
+  /// No description provided for @planCurrent.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقتك الحالية'**
+  String get planCurrent;
+
+  /// No description provided for @planFree.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخطة المجانية'**
+  String get planFree;
+
+  /// No description provided for @planPro.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطة المحترفين (Pro)'**
+  String get planPro;
+
+  /// No description provided for @planUpgrade.
+  ///
+  /// In ar, this message translates to:
+  /// **'الترقية إلى Pro'**
+  String get planUpgrade;
+
+  /// No description provided for @planFeaturesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مميزات خطة Pro'**
+  String get planFeaturesTitle;
+
+  /// No description provided for @cancelPlanTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الاشتراك'**
+  String get cancelPlanTitle;
+
+  /// No description provided for @cancelPlanConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد إلغاء التجديد التلقائي'**
+  String get cancelPlanConfirm;
+
+  /// No description provided for @cancelPlanRetainNotice.
+  ///
+  /// In ar, this message translates to:
+  /// **'ستستمر باقتك الحالية حتى نهاية فترة الاشتراك ولن يتم تجديدها تلقائياً.'**
+  String get cancelPlanRetainNotice;
+
+  /// No description provided for @inviteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'دعوة أصدقاء'**
+  String get inviteTitle;
+
+  /// No description provided for @inviteYourCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الدعوة الخاص بك'**
+  String get inviteYourCode;
+
+  /// No description provided for @inviteShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة الكود'**
+  String get inviteShare;
+
+  /// No description provided for @inviteShareText.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرب تطبيق SmartSpend AI لتنظيم مصاريفك بذكاء! استخدم كود الدعوة بتاعي: {code}'**
+  String inviteShareText(String code);
+
+  /// No description provided for @inviteCopy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخ الكود'**
+  String get inviteCopy;
+
+  /// No description provided for @inviteCopied.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم نسخ الكود!'**
+  String get inviteCopied;
+
+  /// No description provided for @appearanceTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المظهر'**
+  String get appearanceTitle;
+
+  /// No description provided for @appearanceSystem.
+  ///
+  /// In ar, this message translates to:
+  /// **'تلقائي (حسب النظام)'**
+  String get appearanceSystem;
+
+  /// No description provided for @appearanceLight.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتح'**
+  String get appearanceLight;
+
+  /// No description provided for @appearanceDark.
+  ///
+  /// In ar, this message translates to:
+  /// **'داكن'**
+  String get appearanceDark;
+
+  /// No description provided for @termsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شروط الخدمة'**
+  String get termsTitle;
+
+  /// No description provided for @dataStoredTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيانات والخصوصية'**
+  String get dataStoredTitle;
+
+  /// No description provided for @appInfoTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عن التطبيق'**
+  String get appInfoTitle;
+
+  /// No description provided for @appVersion.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإصدار'**
+  String get appVersion;
+
+  /// No description provided for @appUpdateRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث إجباري متوفر'**
+  String get appUpdateRequired;
+
+  /// No description provided for @appUpdateBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتطلب التطبيق التحديث إلى أحدث إصدار لمتابعة الاستخدام وحماية بياناتك.'**
+  String get appUpdateBody;
+
+  /// No description provided for @appUpdateNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث الآن'**
+  String get appUpdateNow;
+
+  /// No description provided for @offlineRetryBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد اتصال بالإنترنت. التعديلات ستُحفظ محلياً.'**
+  String get offlineRetryBanner;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسيت كلمة المرور؟'**
+  String get forgotPassword;
+
+  /// No description provided for @resetPasswordTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة تعيين كلمة المرور'**
+  String get resetPasswordTitle;
+
+  /// No description provided for @resetPasswordNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة المرور الجديدة'**
+  String get resetPasswordNew;
+
+  /// No description provided for @resetPasswordConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد كلمة المرور'**
+  String get resetPasswordConfirm;
+
+  /// No description provided for @resetPasswordSubmit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير كلمة المرور والدخول'**
+  String get resetPasswordSubmit;
+
+  /// No description provided for @resetPasswordSuccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تغيير كلمة المرور بنجاح'**
+  String get resetPasswordSuccess;
 }
 
 class _AppLocalizationsDelegate

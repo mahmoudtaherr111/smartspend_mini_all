@@ -11,6 +11,7 @@ import { z } from "zod";
 import { CATALOG_STATUSES } from "../contracts/capture";
 import { captureSources, subscriptionCatalog } from "../db/schema";
 import { adminProcedure, router } from "./middleware";
+import { logAdminAction } from "./lib/admin-audit";
 import {
   captureSourceInput,
   getCaptureCatalog,
@@ -73,7 +74,7 @@ export const captureAdminRouter = router({
 
   saveSource: adminProcedure
     .input(z.object({ id: z.number().int().positive().optional(), item: captureSourceInput }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id } = input;
       const values = normalizeSourceInput(input.item);
       await assertSlugFree(captureSources, values.slug, id);
@@ -85,21 +86,33 @@ export const captureAdminRouter = router({
         await db.insert(captureSources).values({ ...values, origin: "admin" });
       }
       await invalidateCaptureCatalog();
+      await logAdminAction(ctx, {
+        action: id ? "UPDATE_CAPTURE_SOURCE" : "CREATE_CAPTURE_SOURCE",
+        targetType: "capture_source",
+        targetId: id ?? values.slug,
+        details: { slug: values.slug, nameAr: values.nameAr, nameEn: values.nameEn },
+      });
       return { success: true };
     }),
 
   setSourceStatus: adminProcedure
     .input(idInput.extend({ status: z.enum(CATALOG_STATUSES) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       await sourceById(input.id);
       await db.update(captureSources).set({ status: input.status, adminEditedAt: new Date() }).where(eq(captureSources.id, input.id));
       await invalidateCaptureCatalog();
+      await logAdminAction(ctx, {
+        action: "SET_CAPTURE_SOURCE_STATUS",
+        targetType: "capture_source",
+        targetId: input.id,
+        details: { status: input.status },
+      });
       return { success: true };
     }),
 
   saveSubscription: adminProcedure
     .input(z.object({ id: z.number().int().positive().optional(), item: subscriptionInput }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const values = normalizeSubscriptionInput(input.item);
       await assertSlugFree(subscriptionCatalog, values.slug, input.id);
       if (input.id) {
@@ -109,18 +122,30 @@ export const captureAdminRouter = router({
         await db.insert(subscriptionCatalog).values({ ...values, origin: "admin" });
       }
       await invalidateCaptureCatalog();
+      await logAdminAction(ctx, {
+        action: input.id ? "UPDATE_CAPTURE_SUBSCRIPTION" : "CREATE_CAPTURE_SUBSCRIPTION",
+        targetType: "capture_subscription",
+        targetId: input.id ?? values.slug,
+        details: { slug: values.slug, name: values.name, nameAr: values.nameAr },
+      });
       return { success: true };
     }),
 
   setSubscriptionStatus: adminProcedure
     .input(idInput.extend({ status: z.enum(CATALOG_STATUSES) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       await subscriptionById(input.id);
       await db
         .update(subscriptionCatalog)
         .set({ status: input.status, adminEditedAt: new Date() })
         .where(eq(subscriptionCatalog.id, input.id));
       await invalidateCaptureCatalog();
+      await logAdminAction(ctx, {
+        action: "SET_CAPTURE_SUBSCRIPTION_STATUS",
+        targetType: "capture_subscription",
+        targetId: input.id,
+        details: { status: input.status },
+      });
       return { success: true };
     }),
 
@@ -128,12 +153,20 @@ export const captureAdminRouter = router({
    * Writes the shipped seed now, as boot does on the servers that run background jobs: missing banks and
    * subscriptions are added and untouched seeded rows updated; an admin's rows are left alone.
    */
-  syncSeed: adminProcedure.mutation(async () => syncCaptureSeed()),
+  syncSeed: adminProcedure.mutation(async ({ ctx }) => {
+    const res = await syncCaptureSeed();
+    await logAdminAction(ctx, {
+      action: "SYNC_CAPTURE_SEED",
+      targetType: "capture_seed",
+      targetId: "all",
+    });
+    return res;
+  }),
 
   /** A seeded row back exactly as shipped, and followed by the seed again from now on. */
   restoreSeed: adminProcedure
     .input(idInput.extend({ table: z.enum(["source", "subscription"]) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       if (input.table === "source") {
         const row = await sourceById(input.id);
         const seed = seedSourceBySlug(row.slug);
@@ -147,6 +180,11 @@ export const captureAdminRouter = router({
         await db.update(subscriptionCatalog).set({ ...seed, adminEditedAt: null }).where(eq(subscriptionCatalog.id, input.id));
       }
       await invalidateCaptureCatalog();
+      await logAdminAction(ctx, {
+        action: "RESTORE_CAPTURE_SEED",
+        targetType: input.table === "source" ? "capture_source" : "capture_subscription",
+        targetId: input.id,
+      });
       return { success: true };
     }),
 
@@ -175,11 +213,25 @@ export const captureAdminRouter = router({
         apply: z.boolean().default(false),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const range = { ...input, from: new Date(input.from), to: new Date(input.to) };
       if (range.from > range.to) throw new TRPCError({ code: "BAD_REQUEST", message: "بداية الفترة بعد نهايتها." });
       const preview = await previewBulkUndo(range);
       if (!input.apply) return { ...preview, removed: 0, max: BULK_UNDO_MAX };
-      return { ...preview, removed: await applyBulkUndo(range), max: BULK_UNDO_MAX };
+      const removed = await applyBulkUndo(range);
+      await logAdminAction(ctx, {
+        action: "BULK_UNDO_CAPTURE",
+        targetType: "capture_bulk_undo",
+        targetId: input.sourceSlug,
+        details: {
+          sourceSlug: input.sourceSlug,
+          readerVersion: input.readerVersion,
+          from: input.from,
+          to: input.to,
+          onlyAuto: input.onlyAuto,
+          removed,
+        },
+      });
+      return { ...preview, removed, max: BULK_UNDO_MAX };
     }),
 });

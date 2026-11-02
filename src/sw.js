@@ -54,7 +54,7 @@ function isSameOrigin(url) {
 // immediately. The registration flow updates the worker out of band, so an
 // offline/cold launch never waits on a network timeout before showing UI.
 registerRoute(
-  ({ request }) => request.mode === "navigate",
+  ({ request, url }) => request.mode === "navigate" && !url.pathname.startsWith("/admin"),
   createHandlerBoundToURL("/index.html"),
 );
 

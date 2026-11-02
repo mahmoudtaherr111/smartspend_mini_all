@@ -20,6 +20,8 @@ public class DeviceLockPlugin: NSObject, FlutterPlugin, DeviceLockHostApi {
   private var cover: UIView?
   /// While the app's own Face ID prompt is up the app is inactive, but the lock screen is what shows: no cover.
   private var authenticating = false
+  private var screenProtected = false
+  private var recordingObserver: NSObjectProtocol?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let plugin = DeviceLockPlugin()
@@ -126,6 +128,44 @@ public class DeviceLockPlugin: NSObject, FlutterPlugin, DeviceLockHostApi {
 
   func forgetPinKey() throws {
     deleteItem(account: Self.pinAccount)
+  }
+
+  func setScreenProtected(enabled: Bool) throws {
+    screenProtected = enabled
+    DispatchQueue.main.async { [weak self] in
+      self?.applyScreenProtection()
+    }
+  }
+
+  private func applyScreenProtection() {
+    if screenProtected {
+      if recordingObserver == nil {
+        recordingObserver = NotificationCenter.default.addObserver(
+          forName: UIScreen.capturedDidChangeNotification,
+          object: nil,
+          queue: .main
+        ) { [weak self] _ in
+          self?.checkScreenRecording()
+        }
+      }
+      checkScreenRecording()
+    } else {
+      if let observer = recordingObserver {
+        NotificationCenter.default.removeObserver(observer)
+        recordingObserver = nil
+      }
+      if !coverEnabled {
+        uncoverContent()
+      }
+    }
+  }
+
+  private func checkScreenRecording() {
+    if UIScreen.main.isCaptured && screenProtected {
+      coverContent()
+    } else if !coverEnabled {
+      uncoverContent()
+    }
   }
 
   func setSwitcherCover(enabled: Bool) throws {

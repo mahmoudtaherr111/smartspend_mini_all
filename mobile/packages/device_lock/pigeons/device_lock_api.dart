@@ -121,4 +121,8 @@ abstract class DeviceLockHostApi {
   /// can still take screenshots), older Android sets FLAG_SECURE, and iOS covers the window while the app is not
   /// active.
   void setSwitcherCover(bool enabled);
+
+  /// Prevents screenshots and screen recording on sensitive screens (SEC-F2).
+  /// Android sets WindowManager.LayoutParams.FLAG_SECURE; iOS covers the screen when captured/recorded.
+  void setScreenProtected(bool enabled);
 }

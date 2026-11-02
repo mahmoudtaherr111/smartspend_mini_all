@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../features/account/money_preferences_screen.dart';
+import '../features/account/onboarding_questions_screen.dart';
+import '../features/account/profile_screen.dart';
+import '../features/account/sessions_screen.dart';
 import '../features/ai/ai_center_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/session_controller.dart';
@@ -15,6 +20,9 @@ import '../features/capture/capture_settings_screen.dart';
 import '../features/contacts/contacts_screen.dart';
 import '../features/export/export_screen.dart';
 import '../features/goals/goals_screen.dart';
+import '../features/infrastructure/app_update_screen.dart';
+import '../features/infrastructure/data_stored_screen.dart';
+import '../features/infrastructure/terms_screen.dart';
 import '../features/installments/installments_screen.dart';
 import '../features/ledger/record_screen.dart';
 import '../features/ledger/transaction_detail_screen.dart';
@@ -22,9 +30,15 @@ import '../features/ledger/transaction_search_screen.dart';
 import '../features/ledger/transactions_screen.dart';
 import '../features/lock/security_screen.dart';
 import '../features/more/more_screen.dart';
+import '../features/notifications/notification_inbox_screen.dart';
+import '../features/notifications/notification_settings_screen.dart';
+import '../features/plans/cancel_plan_screen.dart';
+import '../features/plans/invite_friends_screen.dart';
+import '../features/plans/plan_screen.dart';
 import '../features/seasons/seasons_screen.dart';
 import '../features/stats/category_transactions_screen.dart';
 import '../features/stats/stats_screen.dart';
+import '../features/support/help_center_screen.dart';
 import '../features/wallets/wallet_detail_screen.dart';
 import '../features/wallets/wallets_screen.dart';
 import '../l10n/app_localizations.dart';
@@ -102,6 +116,46 @@ final appTabs = <AppTab>[
     label: (l10n) => l10n.navMore,
     screen: (context) => const MoreScreen(),
     routes: [
+      GoRoute(
+        path: ProfileScreen.path.substring('/more/'.length),
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: MoneyPreferencesScreen.path.substring('/more/'.length),
+        builder: (context, state) => const MoneyPreferencesScreen(),
+      ),
+      GoRoute(
+        path: SessionsScreen.path.substring('/more/'.length),
+        builder: (context, state) => const SessionsScreen(),
+      ),
+      GoRoute(
+        path: OnboardingQuestionsScreen.path.substring('/more/'.length),
+        builder: (context, state) => const OnboardingQuestionsScreen(),
+      ),
+      GoRoute(
+        path: HelpCenterScreen.path.substring('/more/'.length),
+        builder: (context, state) => const HelpCenterScreen(),
+      ),
+      GoRoute(
+        path: PlanScreen.path.substring('/more/'.length),
+        builder: (context, state) => const PlanScreen(),
+      ),
+      GoRoute(
+        path: CancelPlanScreen.path.substring('/more/'.length),
+        builder: (context, state) => const CancelPlanScreen(),
+      ),
+      GoRoute(
+        path: InviteFriendsScreen.path.substring('/more/'.length),
+        builder: (context, state) => const InviteFriendsScreen(),
+      ),
+      GoRoute(
+        path: TermsScreen.path.substring('/more/'.length),
+        builder: (context, state) => const TermsScreen(),
+      ),
+      GoRoute(
+        path: DataStoredScreen.path.substring('/more/'.length),
+        builder: (context, state) => const DataStoredScreen(),
+      ),
       GoRoute(
         path: CaptureReviewScreen.path.substring('/more/'.length),
         builder: (context, state) => const CaptureReviewScreen(),
@@ -192,6 +246,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: session,
     redirect: (context, state) =>
         sessionRedirect(session.value, state.uri.path),
+    errorBuilder: (context, state) => const NotFoundScreen(),
     routes: [
       GoRoute(
         path: StartingScreen.path,
@@ -225,6 +280,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+      GoRoute(
+        path: NotificationInboxScreen.path,
+        builder: (context, state) => const NotificationInboxScreen(),
+      ),
+      GoRoute(
+        path: NotificationSettingsScreen.path,
+        builder: (context, state) => const NotificationSettingsScreen(),
+      ),
+      GoRoute(
+        path: AppUpdateScreen.path,
+        builder: (context, state) => const AppUpdateScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
@@ -249,3 +316,59 @@ final routerProvider = Provider<GoRouter>((ref) {
   });
   return router;
 });
+
+/// A dedicated 404 screen shown when an invalid or unknown route is accessed.
+class NotFoundScreen extends StatelessWidget {
+  const NotFoundScreen({super.key});
+
+  static const path = '/404';
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.smartSpendColors;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('الصفحة غير موجودة'),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(SmartSpendSpacing.screen),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.search_off_rounded,
+                size: 64,
+                color: colors.mutedForeground,
+              ),
+              const SizedBox(height: SmartSpendSpacing.md),
+              Text(
+                'الصفحة اللي بتدور عليها مش موجودة',
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colors.foreground,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: SmartSpendSpacing.sm),
+              Text(
+                'الرابط ممكن يكون اتغير أو الصفحة اتمسحت.',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.mutedForeground,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: SmartSpendSpacing.xl),
+              SmartSpendButton(
+                label: 'الرجوع للرئيسية',
+                onPressed: () => context.go(appTabs.first.path),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

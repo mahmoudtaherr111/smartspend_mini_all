@@ -1,0 +1,96 @@
+name: iOS Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-release-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: mobile
+
+jobs:
+  build:
+    name: Build iOS Release (Xcode & IPA)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: mobile/pubspec.yaml
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Configure Signing Certificates & Provisioning Profile
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD || 'smartspend-ci' }}
+        run: |
+          if [ -n "$CERTIFICATE_BASE64" ]; then
+            CERT_PATH=$RUNNER_TEMP/build_cert.p12
+            PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+            KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+            echo "$CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
+            echo "$PROVISION_PROFILE_BASE64" | base64 --decode > "$PP_PATH"
+
+            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+            security import "$CERT_PATH" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+            security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+            cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
+
+            echo "iOS signing credentials installed."
+          else
+            echo "No iOS signing certificates configured in secrets. Building unsigned archive."
+          fi
+
+      - name: Build iOS Archive & IPA
+        working-directory: mobile/app
+        run: |
+          if [ -n "${{ secrets.IOS_CERTIFICATE_BASE64 }}" ]; then
+            flutter build ipa --release \
+              --dart-define=SMARTSPEND_ENV=production \
+              --dart-define=SMARTSPEND_API_URL=https://api.smartspend.app
+          else
+            flutter build ios --release --no-codesign \
+              --dart-define=SMARTSPEND_ENV=production \
+              --dart-define=SMARTSPEND_API_URL=https://api.smartspend.app
+            mkdir -p build/ios/ipa
+            if [ -d "build/ios/iphoneos/Runner.app" ]; then
+              mkdir -p Payload
+              cp -r build/ios/iphoneos/Runner.app Payload/
+              zip -r build/ios/ipa/SmartSpend-unsigned.ipa Payload
+              rm -rf Payload
+            fi
+          fi
+
+      - name: Upload iOS Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartspend-ios-release
+          path: |
+            mobile/app/build/ios/archive/*.xcarchive
+            mobile/app/build/ios/ipa/*.ipa
+            mobile/app/build/ios/iphoneos/*.app
+          if-no-files-found: warn
+          retention-days: 30

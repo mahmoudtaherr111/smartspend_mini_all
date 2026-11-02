@@ -42,6 +42,7 @@ final class AdsProcedures {
   ApiMutation get click => const ApiMutation('ads.click', builder: 'authedProcedure', hasInput: true);
   ApiMutation get impression => const ApiMutation('ads.impression', builder: 'publicProcedure', hasInput: true);
   ApiQuery get list => const ApiQuery('ads.list', builder: 'publicProcedure', hasInput: true);
+  ApiMutation get recordImpression => const ApiMutation('ads.recordImpression', builder: 'publicProcedure', hasInput: true);
 }
 
 /// The `ai` router, `api/ai-router.ts`.
@@ -222,6 +223,7 @@ final class LocalAuthProcedures {
   ApiMutation get logout => const ApiMutation('localAuth.logout', builder: 'publicProcedure');
   ApiQuery get me => const ApiQuery('localAuth.me', builder: 'publicProcedure');
   ApiMutation get register => const ApiMutation('localAuth.register', builder: 'strictPublicProcedure', hasInput: true);
+  ApiMutation get resetPassword => const ApiMutation('localAuth.resetPassword', builder: 'strictPublicProcedure', hasInput: true);
   ApiMutation get verifyOtp => const ApiMutation('localAuth.verifyOtp', builder: 'strictPublicProcedure', hasInput: true);
 }
 
@@ -233,7 +235,9 @@ final class ProProcedures {
   ApiMutation get createCheckoutSession => const ApiMutation('pro.createCheckoutSession', builder: 'authedProcedure', hasInput: true);
   ApiQuery get myPlan => const ApiQuery('pro.myPlan', builder: 'authedProcedure');
   ApiQuery get planCatalog => const ApiQuery('pro.planCatalog', builder: 'authedProcedure');
+  ApiMutation get restorePurchases => const ApiMutation('pro.restorePurchases', builder: 'authedProcedure', hasInput: true);
   ApiMutation get upgrade => const ApiMutation('pro.upgrade', builder: 'authedProcedure', hasInput: true);
+  ApiMutation get verifyStorePurchase => const ApiMutation('pro.verifyStorePurchase', builder: 'authedProcedure', hasInput: true);
 }
 
 /// The `profile` router, `api/profile-router.ts`.

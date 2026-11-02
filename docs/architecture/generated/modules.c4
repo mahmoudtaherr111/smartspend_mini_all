@@ -83,8 +83,8 @@ model {
     billing = module 'Billing' {
       description 'Paymob checkout requests, webhook verification settings, the subscription grant that sets a user’s plan, and the per-plan catalog of limits and features read from the admin’s settings for the plans screen.'
       metadata {
-        files '3'
-        paths 'api/lib/paymob.ts, api/lib/subscription-service.ts, api/lib/plan-catalog.ts'
+        files '8'
+        paths 'api/lib/paymob.ts, api/lib/subscription-service.ts, api/lib/plan-catalog.ts, api/lib/store-billing/**'
       }
     }
     capture-ai-reader = module 'Message model reader' {
@@ -188,8 +188,8 @@ model {
     security = module 'Request security' {
       description 'HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging.'
       metadata {
-        files '11'
-        paths 'api/lib/security-headers.ts, api/lib/rate-limit.ts, api/lib/origin-policy.ts, api/lib/http-origin-security.ts, api/lib/get-client-ip.ts, api/lib/ownership-guard.ts, api/lib/image-magic-bytes.ts, api/lib/admin-safe-fields.ts, api/lib/security-logger.ts, api/lib/anonymizer.ts, api/services/turnstile-service.ts'
+        files '12'
+        paths 'api/lib/security-headers.ts, api/lib/rate-limit.ts, api/lib/origin-policy.ts, api/lib/http-origin-security.ts, api/lib/get-client-ip.ts, api/lib/ownership-guard.ts, api/lib/image-magic-bytes.ts, api/lib/admin-safe-fields.ts, api/lib/admin-audit.ts, api/lib/security-logger.ts, api/lib/anonymizer.ts, api/services/turnstile-service.ts'
       }
     }
     site-guide = module 'Site guide' {
@@ -214,10 +214,10 @@ model {
       }
     }
     whatsapp = module 'WhatsApp' {
-      description 'WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp), and, until it is removed, the Baileys client that still sends reports, phone-change codes and admin messages; verification codes are challenges in MySQL (`phone-challenge.ts`).'
+      description 'WhatsApp: Meta Cloud API client, signed webhook, the persistent outbox and the template catalogue (api/lib/whatsapp); verification codes are challenges in MySQL (`phone-challenge.ts`).'
       metadata {
-        files '5'
-        paths 'api/services/whatsapp-service.ts, api/lib/whatsapp/**'
+        files '4'
+        paths 'api/lib/whatsapp/**'
       }
     }
   }
@@ -257,14 +257,14 @@ model {
     web-capture = module 'Expense entry UI' {
       description 'The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded.'
       metadata {
-        files '4'
-        paths 'src/components/expenses/ExpenseForm.tsx, src/components/expenses/ReceiptCapture.tsx, src/lib/clientRulesEngine.ts, src/lib/compress-image.ts'
+        files '3'
+        paths 'src/components/expenses/ExpenseForm.tsx, src/lib/clientRulesEngine.ts, src/lib/compress-image.ts'
       }
     }
     web-finance = module 'Finance UI' {
       description 'Home dashboard (summaries, calendar, charts, search, streaks), recent expenses, goals, and the cards and wallets screen.'
       metadata {
-        files '21'
+        files '19'
         paths 'src/components/dashboard/**, src/components/wallets/**, src/components/expenses/**, src/components/goals/**, src/components/budgets/**, src/components/debts/**, src/components/installments/**, src/components/seasons/**'
       }
     }
@@ -278,7 +278,7 @@ model {
     web-hooks = module 'Web hooks' {
       description 'React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics.'
       metadata {
-        files '21'
+        files '19'
         paths 'src/hooks/**'
       }
     }
@@ -292,7 +292,7 @@ model {
     web-lib = module 'Web utilities' {
       description 'Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/.'
       metadata {
-        files '11'
+        files '10'
         paths 'src/lib/**, src/types/**, src/*.ts'
       }
     }
@@ -306,14 +306,14 @@ model {
     web-shared = module 'Shared web components' {
       description 'Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton.'
       metadata {
-        files '5'
+        files '4'
         paths 'src/components/*.tsx'
       }
     }
     web-shell = module 'Web app shell' {
       description 'Entry point, providers, layout, route guards and PWA or native integration.'
       metadata {
-        files '24'
+        files '23'
         paths 'src/main.tsx, src/App.tsx, src/providers/**, src/i18n/**, src/pwa/**, src/components/layout/**, src/components/routing/**, src/components/pwa/**'
       }
     }

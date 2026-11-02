@@ -55,29 +55,131 @@ const affected = (result: unknown) => Number((result as { affectedRows?: number 
 /** What a row keeps to send its template later: the body and button parameters, never a verification code. */
 type StoredParams = Pick<TemplateMessage, "body" | "buttons">;
 
-/** Queues a template for the job; returns the row's id. */
-export async function enqueueMessage(input: {
+export interface EnqueueMessageInput {
   owner?: MessageOwner;
-  to: string;
-  purpose: Exclude<MessagePurpose, "verification" | "reply">;
-  message: TemplateMessage;
+  to?: string;
+  recipientPhone?: string;
+  purpose?: Exclude<MessagePurpose, "verification" | "reply">;
+  messageType?: "reports" | "reminders" | "marketing" | "otp";
+  message?: TemplateMessage;
+  templateName?: string;
+  payload?: Record<string, any>;
   broadcastId?: number;
   notBefore?: Date;
-}): Promise<number> {
-  const params: StoredParams = { body: input.message.body, buttons: input.message.buttons };
-  const [result] = await getDb().insert(whatsappMessages).values({
+}
+
+export type EnqueueOutcome =
+  | { enqueued: true; id: number; messageId: string }
+  | { enqueued: false; error: string; id?: undefined; messageId?: undefined };
+
+/** Queues a template for the job after verifying recipient consent; returns EnqueueOutcome. */
+export async function enqueueMessage(input: EnqueueMessageInput): Promise<EnqueueOutcome> {
+  const recipient = input.to || input.recipientPhone || "";
+  const effectivePurpose: MessagePurpose =
+    input.purpose ??
+    (input.messageType === "reports"
+      ? "report"
+      : input.messageType === "reminders"
+        ? "reminder"
+        : input.messageType === "marketing"
+          ? "broadcast"
+          : "report");
+
+  const db = getDb();
+
+  // OTP messages bypass marketing/report consent
+  if ((effectivePurpose as string) !== "verification" && input.messageType !== "otp") {
+    let contact = null;
+
+    if (input.owner) {
+      const [found] = await db
+        .select()
+        .from(whatsappContacts)
+        .where(
+          and(
+            eq(whatsappContacts.userId, input.owner.userId),
+            eq(whatsappContacts.userType, input.owner.userType),
+          ),
+        )
+        .limit(1);
+      contact = found ?? null;
+    }
+
+    if (!contact && recipient) {
+      const local = localNumber(recipient);
+      const [account] = await db
+        .select({ id: localUsers.id })
+        .from(localUsers)
+        .where(eq(localUsers.phone, local))
+        .limit(1);
+      if (account) {
+        const [found] = await db
+          .select()
+          .from(whatsappContacts)
+          .where(
+            and(
+              eq(whatsappContacts.userId, account.id),
+              eq(whatsappContacts.userType, "local"),
+            ),
+          )
+          .limit(1);
+        contact = found ?? null;
+      }
+    }
+
+    if (!contact) {
+      return { enqueued: false, error: "RECIPIENT_CONSENT_REQUIRED_NO_RECORD" };
+    }
+
+    if (contact.optedOutAt) {
+      return { enqueued: false, error: "RECIPIENT_OPTED_OUT" };
+    }
+
+    if (
+      (effectivePurpose === "report" || input.messageType === "reports") &&
+      !contact.reportsConsent
+    ) {
+      return { enqueued: false, error: "RECIPIENT_DECLINED_REPORTS_CONSENT" };
+    }
+
+    if (
+      (effectivePurpose === "broadcast" || input.messageType === "marketing") &&
+      !contact.marketingConsent
+    ) {
+      return { enqueued: false, error: "RECIPIENT_DECLINED_MARKETING_CONSENT" };
+    }
+
+    if (
+      (effectivePurpose === "reminder" || input.messageType === "reminders") &&
+      !contact.remindersConsent
+    ) {
+      return { enqueued: false, error: "RECIPIENT_DECLINED_REMINDERS_CONSENT" };
+    }
+  }
+
+  const templateName = input.message?.name ?? input.templateName ?? "";
+  const language = input.message?.language ?? "ar";
+  const params: StoredParams = input.message
+    ? { body: input.message.body, buttons: input.message.buttons }
+    : input.payload
+      ? { body: Object.values(input.payload).map(String) }
+      : {};
+
+  const [result] = await db.insert(whatsappMessages).values({
     userId: input.owner?.userId ?? null,
     userType: input.owner?.userType ?? null,
-    recipient: input.to,
-    purpose: input.purpose,
-    templateName: input.message.name,
-    language: input.message.language,
+    recipient,
+    purpose: effectivePurpose,
+    templateName,
+    language,
     params,
     status: "queued",
     broadcastId: input.broadcastId ?? null,
     nextAttemptAt: input.notBefore ?? null,
   });
-  return Number((result as { insertId?: number }).insertId);
+
+  const insertedId = Number((result as { insertId?: number }).insertId);
+  return { enqueued: true, id: insertedId, messageId: `msg_${insertedId}` };
 }
 
 /**
@@ -265,14 +367,30 @@ export async function recordInbound(
         userType: owner.userType,
         bsuid: event.bsuid ?? null,
         lastInboundAt: event.at,
-        ...(optedOut ? { marketingConsent: false, optedOutAt: now, marketingConsentSource: "reply" } : {}),
+        ...(optedOut
+          ? {
+              reportsConsent: false,
+              remindersConsent: false,
+              marketingConsent: false,
+              optedOutAt: now,
+              marketingConsentSource: "reply",
+            }
+          : {}),
       })
       .onDuplicateKeyUpdate({
         set: {
           lastInboundAt: event.at,
           updatedAt: now,
           ...(event.bsuid ? { bsuid: event.bsuid } : {}),
-          ...(optedOut ? { marketingConsent: false, optedOutAt: now, marketingConsentSource: "reply" } : {}),
+          ...(optedOut
+            ? {
+                reportsConsent: false,
+                remindersConsent: false,
+                marketingConsent: false,
+                optedOutAt: now,
+                marketingConsentSource: "reply",
+              }
+            : {}),
         },
       });
   }

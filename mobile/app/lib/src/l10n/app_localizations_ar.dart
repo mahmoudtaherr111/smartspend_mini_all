@@ -1381,4 +1381,308 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get searchNoTransactions => 'لسه مفيش معاملات تبحث فيها.';
+
+  @override
+  String get deleteAccountTitle => 'حذف الحساب';
+
+  @override
+  String get deleteAccountBody =>
+      'سيتم مسح جميع بياناتك، سجلاتك، ومعاملاتك نهائياً وفوراً. لن تتمكن من استرجاع هذا الحساب مجدداً. وفقاً لقانون حماية البيانات الشخصية رقم 151 لسنة 2020، قد يتم الاحتفاظ ببعض سجلات الامتثال المالي فقط للمدة المقررة قانوناً.';
+
+  @override
+  String get deleteAccountPhraseInstruction =>
+      'لتأكيد الحذف، اكتب كلمة «احذف حسابي» أدناه:';
+
+  @override
+  String get deleteAccountPasswordLabel => 'كلمة المرور الحالية';
+
+  @override
+  String get deleteAccountPasswordHint => 'اكتب كلمة المرور لتأكيد هويتك';
+
+  @override
+  String get deleteAccountConfirmButton => 'حذف حسابي نهائياً';
+
+  @override
+  String get deleteAccountCancelButton => 'إلغاء والتراجع';
+
+  @override
+  String get deleteAccountSuccess => 'تم حذف حسابك بنجاح.';
+
+  @override
+  String get deleteAccountFailed =>
+      'فشل حذف الحساب. يرجى التأكد من البيانات أو التواصل مع الدعم.';
+
+  @override
+  String get deleteAccountContactSupport => 'تواصل مع الدعم';
+
+  @override
+  String get profileTitle => 'الملف الشخصي';
+
+  @override
+  String get profileName => 'الاسم';
+
+  @override
+  String get profilePhone => 'رقم الهاتف';
+
+  @override
+  String get profileEmail => 'البريد الإلكتروني';
+
+  @override
+  String get profileChangePhone => 'تغيير الرقم';
+
+  @override
+  String get profileSave => 'حفظ التعديلات';
+
+  @override
+  String get profileSaved => 'تم حفظ التعديلات بنجاح';
+
+  @override
+  String get phoneChangeTitle => 'تغيير رقم الهاتف';
+
+  @override
+  String get phoneChangeBody => 'سنرسل رمز تأكيد على واتساب إلى رقمك الجديد.';
+
+  @override
+  String get phoneChangeNewNumber => 'الرقم الجديد';
+
+  @override
+  String get phoneChangeSendCode => 'إرسال كود التأكيد';
+
+  @override
+  String get phoneChangeEnterCode => 'أدخل رمز التأكيد المرسل';
+
+  @override
+  String get phoneChangeSuccess => 'تم تغيير رقم الهاتف بنجاح';
+
+  @override
+  String get moneyPrefsTitle => 'تفضيلات الراتب والميزانية';
+
+  @override
+  String get moneyPrefsSalaryDay => 'يوم نزول الراتب (بداية الشهر المالي)';
+
+  @override
+  String get moneyPrefsSalaryDayBody =>
+      'اليوم الذي تبدأ فيه حساب مصاريفك وميزانيتك الشهرية. في الشهور القصيرة مثل فبراير يتم اعتماد آخر يوم في الشهر تلقائياً.';
+
+  @override
+  String get moneyPrefsCurrency => 'العملة';
+
+  @override
+  String get moneyPrefsDecimalPlaces => 'الكسور العشرية';
+
+  @override
+  String get moneyPrefsSaved => 'تم حفظ تفضيلات الراتب';
+
+  @override
+  String get onboardingQuestionsTitle => 'أسئلة التخصيص';
+
+  @override
+  String get onboardingSkip => 'تخطي الآن';
+
+  @override
+  String get onboardingSubmit => 'حفظ ومتابعة';
+
+  @override
+  String get onboardingDone => 'شكراً لإجاباتك!';
+
+  @override
+  String get sessionsTitle => 'الأجهزة والجلسات النشطة';
+
+  @override
+  String get sessionsCurrentDevice => 'هذا الجهاز';
+
+  @override
+  String get sessionsRevoke => 'إنهاء الجلسة';
+
+  @override
+  String get sessionsRevokeConfirm =>
+      'هل تريد إنهاء هذه الجلسة وتسجيل الخروج منها؟';
+
+  @override
+  String get sessionsRevokeCurrentWarning =>
+      'إنهاء هذه الجلسة سيؤدي لتسجيل خروجك فوراً من هذا الموبايل.';
+
+  @override
+  String get notificationsTitle => 'الإشعارات';
+
+  @override
+  String get notificationsEmpty => 'لا توجد إشعارات حالياً';
+
+  @override
+  String get notificationsMarkAllRead => 'تحديد الكل كمقروء';
+
+  @override
+  String get notificationsFilterAll => 'الكل';
+
+  @override
+  String get notificationsFilterUnread => 'غير مقروءة';
+
+  @override
+  String get notificationsToday => 'اليوم';
+
+  @override
+  String get notificationsYesterday => 'أمس';
+
+  @override
+  String get notificationsThisWeek => 'هذا الأسبوع';
+
+  @override
+  String get notificationsOlder => 'أقدم';
+
+  @override
+  String get notificationSettingsTitle => 'إعدادات الإشعارات';
+
+  @override
+  String get notificationSettingsMaster => 'تفعيل الإشعارات';
+
+  @override
+  String get notificationSettingsBudget => 'تنبيهات الميزانية';
+
+  @override
+  String get notificationSettingsDaily => 'التذكير اليومي بالتسجيل';
+
+  @override
+  String get notificationSettingsStreak =>
+      'تنبيهات الحفاظ على الالتزام (Streak)';
+
+  @override
+  String get notificationSettingsMonthly => 'التقرير الشهري';
+
+  @override
+  String get helpCenterTitle => 'مركز المساعدة والدعم';
+
+  @override
+  String get helpFaqSection => 'الأسئلة الشائعة';
+
+  @override
+  String get helpTicketSection => 'تواصل مع الدعم';
+
+  @override
+  String get helpTicketSubject => 'موضوع الرسالة';
+
+  @override
+  String get helpTicketMessage => 'تفاصيل المشكلة أو الاستفسار';
+
+  @override
+  String get helpTicketSubmit => 'إرسال التذكرة';
+
+  @override
+  String get helpTicketSuccess =>
+      'تم إرسال تذكرتك بنجاح، سنرد عليك في أقرب وقت.';
+
+  @override
+  String get helpMyTickets => 'تذاكري السابقة';
+
+  @override
+  String get helpTicketOpen => 'قيد الانتظار';
+
+  @override
+  String get helpTicketClosed => 'مغلقة';
+
+  @override
+  String get helpTicketReplied => 'تم الرد';
+
+  @override
+  String get planTitle => 'الاشتراك والترقية';
+
+  @override
+  String get planCurrent => 'باقتك الحالية';
+
+  @override
+  String get planFree => 'الخطة المجانية';
+
+  @override
+  String get planPro => 'خطة المحترفين (Pro)';
+
+  @override
+  String get planUpgrade => 'الترقية إلى Pro';
+
+  @override
+  String get planFeaturesTitle => 'مميزات خطة Pro';
+
+  @override
+  String get cancelPlanTitle => 'إلغاء الاشتراك';
+
+  @override
+  String get cancelPlanConfirm => 'تأكيد إلغاء التجديد التلقائي';
+
+  @override
+  String get cancelPlanRetainNotice =>
+      'ستستمر باقتك الحالية حتى نهاية فترة الاشتراك ولن يتم تجديدها تلقائياً.';
+
+  @override
+  String get inviteTitle => 'دعوة أصدقاء';
+
+  @override
+  String get inviteYourCode => 'كود الدعوة الخاص بك';
+
+  @override
+  String get inviteShare => 'مشاركة الكود';
+
+  @override
+  String inviteShareText(String code) {
+    return 'جرب تطبيق SmartSpend AI لتنظيم مصاريفك بذكاء! استخدم كود الدعوة بتاعي: $code';
+  }
+
+  @override
+  String get inviteCopy => 'نسخ الكود';
+
+  @override
+  String get inviteCopied => 'تم نسخ الكود!';
+
+  @override
+  String get appearanceTitle => 'المظهر';
+
+  @override
+  String get appearanceSystem => 'تلقائي (حسب النظام)';
+
+  @override
+  String get appearanceLight => 'فاتح';
+
+  @override
+  String get appearanceDark => 'داكن';
+
+  @override
+  String get termsTitle => 'شروط الخدمة';
+
+  @override
+  String get dataStoredTitle => 'البيانات والخصوصية';
+
+  @override
+  String get appInfoTitle => 'عن التطبيق';
+
+  @override
+  String get appVersion => 'الإصدار';
+
+  @override
+  String get appUpdateRequired => 'تحديث إجباري متوفر';
+
+  @override
+  String get appUpdateBody =>
+      'يتطلب التطبيق التحديث إلى أحدث إصدار لمتابعة الاستخدام وحماية بياناتك.';
+
+  @override
+  String get appUpdateNow => 'تحديث الآن';
+
+  @override
+  String get offlineRetryBanner =>
+      'لا يوجد اتصال بالإنترنت. التعديلات ستُحفظ محلياً.';
+
+  @override
+  String get forgotPassword => 'نسيت كلمة المرور؟';
+
+  @override
+  String get resetPasswordTitle => 'إعادة تعيين كلمة المرور';
+
+  @override
+  String get resetPasswordNew => 'كلمة المرور الجديدة';
+
+  @override
+  String get resetPasswordConfirm => 'تأكيد كلمة المرور';
+
+  @override
+  String get resetPasswordSubmit => 'تغيير كلمة المرور والدخول';
+
+  @override
+  String get resetPasswordSuccess => 'تم تغيير كلمة المرور بنجاح';
 }

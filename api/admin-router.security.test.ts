@@ -28,7 +28,6 @@ vi.mock("./queries/connection", async () => {
   const db = drizzle(execute, { schema });
   return { db, getDb: () => db };
 });
-vi.mock("./services/whatsapp-service", () => ({ whatsappService: {} }));
 vi.mock("./notification-engine", () => ({
   sendPush: vi.fn(),
   checkAndTriggerSmartActivityNotifications: vi.fn(),

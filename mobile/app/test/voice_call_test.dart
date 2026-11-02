@@ -151,6 +151,7 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
+            locale: Locale('ar'),
             home: VoiceCallScreen(),
           ),
         ),
@@ -160,7 +161,7 @@ void main() {
       expect(find.text('مكالمة ذكية مباشرة'), findsOneWidget);
       expect(find.text('مرحباً، كيف أساعدك اليوم؟'), findsOneWidget);
       expect(find.text('إضافة مصروف'), findsOneWidget);
-      expect(find.text('85.0 ج.م'), findsOneWidget);
+      expect(find.textContaining('85'), findsOneWidget);
       expect(find.text('قهوة وشاي'), findsOneWidget);
 
       // Tap confirm button

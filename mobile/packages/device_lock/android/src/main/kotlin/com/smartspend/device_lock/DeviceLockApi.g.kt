@@ -486,6 +486,11 @@ interface DeviceLockHostApi {
    * active.
    */
   fun setSwitcherCover(enabled: Boolean)
+  /**
+   * Prevents screenshots and screen recording on sensitive screens (SEC-F2).
+   * Android sets WindowManager.LayoutParams.FLAG_SECURE; iOS covers the screen when captured/recorded.
+   */
+  fun setScreenProtected(enabled: Boolean)
 
   companion object {
     /** The codec used by DeviceLockHostApi. */
@@ -608,6 +613,24 @@ interface DeviceLockHostApi {
             val enabledArg = args[0] as Boolean
             val wrapped: List<Any?> = try {
               api.setSwitcherCover(enabledArg)
+              listOf(null)
+            } catch (exception: Throwable) {
+              DeviceLockApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.device_lock.DeviceLockHostApi.setScreenProtected$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val enabledArg = args[0] as Boolean
+            val wrapped: List<Any?> = try {
+              api.setScreenProtected(enabledArg)
               listOf(null)
             } catch (exception: Throwable) {
               DeviceLockApiPigeonUtils.wrapError(exception)

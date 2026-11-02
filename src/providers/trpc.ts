@@ -261,6 +261,41 @@ export function handleUnauthenticatedSession(
   }
 }
 
+/**
+ * Resolves the API base URL and enforces HTTPS in production environments.
+ * - In production: rejects plain HTTP URLs (except localhost, 127.0.0.1, ::1, or .local).
+ * - In development: permits HTTP and defaults to relative '/api/trpc' for Vite proxying.
+ */
+export function resolveApiBaseUrl(
+  apiUrl?: string,
+  isProduction: boolean = Boolean((import.meta as any)?.env?.PROD),
+): string {
+  if (!apiUrl || apiUrl.trim() === "") {
+    return "/api/trpc";
+  }
+  const trimmed = apiUrl.trim().replace(/\/+$/, "");
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    throw new Error(`Invalid VITE_API_URL format: ${apiUrl}`);
+  }
+
+  const isLocalhost =
+    parsed.hostname === "localhost" ||
+    parsed.hostname === "127.0.0.1" ||
+    parsed.hostname === "::1" ||
+    parsed.hostname.endsWith(".local");
+
+  if (isProduction && parsed.protocol !== "https:" && !isLocalhost) {
+    throw new Error(
+      `Insecure API URL rejected in production. VITE_API_URL must use HTTPS: ${apiUrl}`,
+    );
+  }
+
+  return `${trimmed}/api/trpc`;
+}
+
 // VITE_API_URL → backend deployed separately (e.g. https://api.smartspend.app)
 // Falls back to relative /api/trpc for monorepo dev mode (Vite dev server proxies to Hono)
 // Using `as any` cast to stay compatible with both tsconfig.app (vite/client) and tsconfig.server (node)
@@ -268,7 +303,9 @@ const _viteMeta = (import.meta as any)?.env as
   | Record<string, string>
   | undefined;
 const _viteApiUrl = _viteMeta?.["VITE_API_URL"];
-const API_BASE_URL = _viteApiUrl ? `${_viteApiUrl}/api/trpc` : "/api/trpc";
+const _isProd = Boolean(_viteMeta?.["PROD"]);
+const API_BASE_URL = resolveApiBaseUrl(_viteApiUrl, _isProd);
+
 
 export const trpcClient = trpc.createClient({
   links: [

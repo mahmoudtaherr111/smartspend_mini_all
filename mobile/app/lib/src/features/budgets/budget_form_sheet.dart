@@ -78,7 +78,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
 
   Future<void> _submit() async {
     final rawLimit = _limitController.text.trim();
-    final limit = double.tryParse(rawLimit);
+    final limit = parseAmount(rawLimit)?.toDouble();
     if (limit == null || limit <= 0) {
       setState(() => _error = 'من فضلك اكتب مبلغ الميزانية الشهري');
       return;
@@ -273,7 +273,9 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
                 decimal: true,
               ),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                FilteringTextInputFormatter.allow(
+                  RegExp(r'^[0-9٠-٩]*\.?[0-9٠-٩]*'),
+                ),
               ],
               decoration: InputDecoration(
                 hintText: '5000',

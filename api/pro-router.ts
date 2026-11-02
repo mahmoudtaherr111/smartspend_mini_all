@@ -1,9 +1,14 @@
 import { z } from "zod";
 import { router, authedProcedure, adminProcedure } from "./middleware";
 import { db } from "./queries/connection";
-import { users, localUsers, proSubscriptions } from "../db/schema";
+import { users, localUsers, proSubscriptions, storePurchases } from "../db/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import {
+  globalEntitlementStateMachine,
+  verifyGooglePlayPurchaseToken,
+  verifyAppleStoreKitTransaction,
+} from "./lib/store-billing";
 import { env } from "./lib/env";
 import { grantProSubscription } from "./lib/subscription-service";
 import {
@@ -50,36 +55,76 @@ export const proRouter = router({
       .orderBy(desc(proSubscriptions.createdAt))
       .limit(1);
 
+    const storeSubs = await db
+      .select()
+      .from(storePurchases)
+      .where(
+        and(
+          eq(storePurchases.userId, ctx.user.id),
+          eq(storePurchases.userType, ctx.user.type),
+        ),
+      )
+      .orderBy(desc(storePurchases.createdAt))
+      .limit(1);
+
     const row = user[0];
     let plan = row?.plan ?? "free";
     const role = row?.role ?? "user";
+    const now = new Date();
 
-    // Subscription expiration check
     const sub = subs[0];
-    if (
-      sub &&
-      plan !== "free" &&
-      (sub.status === "active" || sub.status === "cancelled") &&
-      sub.endDate < new Date()
-    ) {
-      await db
-        .update(proSubscriptions)
-        .set({ status: "expired" })
-        .where(eq(proSubscriptions.id, sub.id));
-      // A read that writes, on purpose: the daily job in api/jobs/subscription-expiry-job.ts is the owner of
-      // this downgrade, and this is the safety net for the hours between its runs. It goes through the same
-      // helper so the paid plan does not survive in a cached session.
+    const storeSub = storeSubs[0];
+    let activeSubscriptionFound = false;
+
+    // Check web subscription
+    if (sub) {
+      if ((sub.status === "active" || sub.status === "cancelled") && sub.endDate >= now) {
+        activeSubscriptionFound = true;
+      } else if ((sub.status === "active" || sub.status === "cancelled") && sub.endDate < now) {
+        await db
+          .update(proSubscriptions)
+          .set({ status: "expired" })
+          .where(eq(proSubscriptions.id, sub.id));
+        sub.status = "expired";
+      }
+    }
+
+    // Check mobile store subscription
+    if (storeSub) {
+      if (storeSub.expiresAt && (storeSub.status === "active" || storeSub.status === "cancelled") && storeSub.expiresAt >= now) {
+        activeSubscriptionFound = true;
+      } else if (storeSub.expiresAt && (storeSub.status === "active" || storeSub.status === "cancelled") && storeSub.expiresAt < now) {
+        await db
+          .update(storePurchases)
+          .set({ status: "expired" })
+          .where(eq(storePurchases.id, storeSub.id));
+        storeSub.status = "expired";
+      }
+    }
+
+    // Downgrade to free if no active subscription exists
+    if (!activeSubscriptionFound && plan !== "free" && role !== "admin") {
       await setPlan(ctx.user.type, ctx.user.id, "free");
       plan = "free";
-      sub.status = "expired";
     }
+
+    const effectiveSubscription = sub ?? (storeSub ? {
+      id: storeSub.id,
+      userId: storeSub.userId,
+      userType: storeSub.userType,
+      plan: storeSub.storeProductId?.toLowerCase().includes("ultra") ? "ultra" : "pro",
+      status: storeSub.status,
+      startDate: storeSub.createdAt,
+      endDate: storeSub.expiresAt ?? storeSub.createdAt,
+      paymobOrderId: storeSub.originalTransactionId,
+    } : null);
 
     const settings = await getSystemSettings().catch(() => ({} as Record<string, string>));
 
     return {
       plan,
       role,
-      subscription: sub ?? null,
+      subscription: effectiveSubscription,
       features: planFeatures(settings, plan, role),
       included: buildPlanCatalogEntry(settings, asPlanId(plan)),
     };
@@ -199,5 +244,243 @@ export const proRouter = router({
         ? await totalQuery.where(eq(proSubscriptions.status, status))
         : await totalQuery;
       return { list, total: total[0]?.count ?? 0, page, limit };
+    }),
+
+  /** Verifies mobile in-app purchases (Google Play or Apple App Store) and activates Pro. */
+  verifyStorePurchase: authedProcedure
+    .input(
+      z.object({
+        store: z.enum(["google_play", "app_store"]),
+        productId: z.string(),
+        purchaseToken: z.string(),
+        signature: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!input.purchaseToken || input.purchaseToken.length > 4096 || input.purchaseToken.includes("\0")) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "رمز الشراء غير صالح أو تالف.",
+        });
+      }
+
+      let verifiedOriginalTxId: string;
+      let verifiedTxId: string;
+      let expiresDate: Date;
+
+      if (input.store === "google_play") {
+        const verifyRes = await verifyGooglePlayPurchaseToken(input.purchaseToken, input.productId);
+        if (!verifyRes.valid) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "فشل التحقق من صحة عملية الشراء من متجر Google Play.",
+          });
+        }
+        verifiedOriginalTxId = input.purchaseToken;
+        verifiedTxId = verifyRes.orderId ?? input.purchaseToken;
+        expiresDate = new Date(verifyRes.expiryTimeMillis ?? Date.now() + 30 * 24 * 60 * 60 * 1000);
+      } else {
+        const verifyRes = await verifyAppleStoreKitTransaction(input.purchaseToken, input.productId);
+        if (!verifyRes.valid) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "فشل التحقق من صحة عملية الشراء من App Store.",
+          });
+        }
+        verifiedOriginalTxId = verifyRes.originalTransactionId ?? input.purchaseToken;
+        verifiedTxId = verifyRes.transactionId ?? input.purchaseToken;
+        expiresDate = new Date(verifyRes.expiresDate ?? Date.now() + 30 * 24 * 60 * 60 * 1000);
+      }
+
+      const subKey = `${input.store === "google_play" ? "android" : "ios"}:${verifiedOriginalTxId}`;
+      const existingPurchase = await db
+        .select()
+        .from(storePurchases)
+        .where(eq(storePurchases.originalTransactionId, verifiedOriginalTxId))
+        .limit(1);
+
+      if (existingPurchase[0]) {
+        if (existingPurchase[0].userId !== ctx.user.id || existingPurchase[0].userType !== ctx.user.type) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "عملية الشراء مسجلة لحساب آخر.",
+          });
+        }
+        if (!globalEntitlementStateMachine.getSubscription(subKey)) {
+          globalEntitlementStateMachine.setSubscription(subKey, {
+            platform: input.store === "google_play" ? "android" : "ios",
+            originalTxId: verifiedOriginalTxId,
+            tokenOrTxId: verifiedTxId,
+            productId: existingPurchase[0].storeProductId || input.productId,
+            userId: String(existingPurchase[0].userId),
+            userType: (existingPurchase[0].userType === "oauth" ? "oauth" : "local") as "local" | "oauth",
+            status: (existingPurchase[0].status?.toUpperCase() || "ACTIVE") as any,
+            lastEventTime: existingPurchase[0].updatedAt?.getTime() ?? Date.now(),
+            expiresAt: existingPurchase[0].expiresAt?.getTime() ?? expiresDate.getTime(),
+          });
+        }
+      }
+
+      const transition = globalEntitlementStateMachine.processStoreEvent({
+        platform: input.store === "google_play" ? "android" : "ios",
+        originalTxId: verifiedOriginalTxId,
+        tokenOrTxId: verifiedTxId,
+        productId: input.productId,
+        userId: String(ctx.user.id),
+        userType: ctx.user.type as "local" | "oauth",
+        eventType: "PURCHASE",
+        eventTime: Date.now(),
+        expiresAt: expiresDate.getTime(),
+        eventId: verifiedTxId,
+      });
+
+      if (!transition.success) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "ما عرفناش نفعّل الاشتراك: " + (transition.reason ?? "حالة مش صالحة"),
+        });
+      }
+
+      if (existingPurchase[0]) {
+        await db
+          .update(storePurchases)
+          .set({
+            status: transition.state.toLowerCase(),
+            expiresAt: expiresDate,
+            purchaseToken: input.purchaseToken,
+            rawPayload: {
+              verifiedTxId,
+              eventType: "PURCHASE",
+              eventId: verifiedTxId,
+              processedEvents: [verifiedTxId],
+            },
+          })
+          .where(eq(storePurchases.id, existingPurchase[0].id));
+      } else {
+        await db.insert(storePurchases).values({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          store: input.store,
+          storeProductId: input.productId,
+          originalTransactionId: verifiedOriginalTxId,
+          purchaseToken: input.purchaseToken,
+          status: transition.state.toLowerCase(),
+          expiresAt: expiresDate,
+          rawPayload: {
+            verifiedTxId,
+            eventType: "PURCHASE",
+            eventId: verifiedTxId,
+            processedEvents: [verifiedTxId],
+          },
+        });
+      }
+
+      await setPlan(ctx.user.type, ctx.user.id, transition.effectivePlan);
+
+      return {
+        status: "active" as const,
+        entitlement: transition.effectivePlan,
+        expiresAt: expiresDate.toISOString(),
+      };
+    }),
+
+  /** Restores existing mobile store purchases on a new device. */
+  restorePurchases: authedProcedure
+    .input(
+      z.object({
+        store: z.enum(["google_play", "app_store"]),
+        tokens: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!input.tokens || input.tokens.length === 0) {
+        return { restored: false, plan: ctx.user.plan };
+      }
+
+      let activeFound = false;
+      let latestExpiry = new Date(0);
+      let restoredPlan: "pro" | "ultra" = "pro";
+
+      for (const token of input.tokens) {
+        if (!token || token.length > 4096 || token.includes("\0")) continue;
+
+        let verifiedOriginalTxId: string | undefined;
+        let exp: Date | undefined;
+        let identifiedProductId = "pro_monthly";
+
+        if (input.store === "google_play") {
+          const verifyRes = await verifyGooglePlayPurchaseToken(token, "pro_monthly");
+          if (verifyRes.valid) {
+            verifiedOriginalTxId = token;
+            exp = new Date(verifyRes.expiryTimeMillis ?? Date.now() + 30 * 24 * 60 * 60 * 1000);
+          }
+        } else {
+          const verifyRes = await verifyAppleStoreKitTransaction(token, "pro_monthly");
+          if (verifyRes.valid) {
+            verifiedOriginalTxId = verifyRes.originalTransactionId ?? token;
+            exp = new Date(verifyRes.expiresDate ?? Date.now() + 30 * 24 * 60 * 60 * 1000);
+          }
+        }
+
+        if (verifiedOriginalTxId && exp && exp > new Date()) {
+          // Check ownership to prevent cross-user token theft
+          const existing = await db
+            .select()
+            .from(storePurchases)
+            .where(eq(storePurchases.originalTransactionId, verifiedOriginalTxId))
+            .limit(1);
+
+          if (existing[0]) {
+            if (existing[0].userId !== ctx.user.id || existing[0].userType !== ctx.user.type) {
+              // Token already claimed by another user — prevent hijacking
+              continue;
+            }
+            if (existing[0].storeProductId?.toLowerCase().includes("ultra")) {
+              restoredPlan = "ultra";
+            }
+            await db
+              .update(storePurchases)
+              .set({
+                status: "active",
+                expiresAt: exp,
+              })
+              .where(eq(storePurchases.id, existing[0].id));
+          } else {
+            const isUltra = token.toLowerCase().includes("ultra");
+            identifiedProductId = isUltra ? "ultra_monthly" : "pro_monthly";
+            if (isUltra) {
+              restoredPlan = "ultra";
+            }
+            await db.insert(storePurchases).values({
+              userId: ctx.user.id,
+              userType: ctx.user.type,
+              store: input.store,
+              storeProductId: identifiedProductId,
+              originalTransactionId: verifiedOriginalTxId,
+              purchaseToken: token,
+              status: "active",
+              expiresAt: exp,
+              rawPayload: { restored: true, timestamp: Date.now() },
+            });
+          }
+
+          activeFound = true;
+          if (exp > latestExpiry) latestExpiry = exp;
+        }
+      }
+
+      if (activeFound) {
+        await setPlan(ctx.user.type, ctx.user.id, restoredPlan);
+        return {
+          restored: true,
+          plan: restoredPlan,
+          expiresAt: latestExpiry.toISOString(),
+        };
+      }
+
+      return {
+        restored: false,
+        plan: ctx.user.plan,
+      };
     }),
 });

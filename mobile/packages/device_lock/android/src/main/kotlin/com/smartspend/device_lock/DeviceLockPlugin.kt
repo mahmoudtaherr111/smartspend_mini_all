@@ -39,6 +39,7 @@ class DeviceLockPlugin : FlutterPlugin, ActivityAware, DeviceLockHostApi {
     private var context: Context? = null
     private var activity: Activity? = null
     private var coverEnabled = false
+    private var screenProtected = false
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         context = binding.applicationContext
@@ -53,6 +54,7 @@ class DeviceLockPlugin : FlutterPlugin, ActivityAware, DeviceLockHostApi {
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
         applyCover()
+        applyScreenProtection()
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) = onAttachedToActivity(binding)
@@ -157,6 +159,22 @@ class DeviceLockPlugin : FlutterPlugin, ActivityAware, DeviceLockHostApi {
     override fun setSwitcherCover(enabled: Boolean) {
         coverEnabled = enabled
         applyCover()
+    }
+
+    override fun setScreenProtected(enabled: Boolean) {
+        screenProtected = enabled
+        applyScreenProtection()
+    }
+
+    private fun applyScreenProtection() {
+        val activity = activity ?: return
+        activity.runOnUiThread {
+            if (screenProtected) {
+                activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            } else if (!coverEnabled || Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
+        }
     }
 
     private fun applyCover() {

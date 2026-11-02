@@ -2,6 +2,20 @@
  * Biometric Authentication & Local App Lock Utilities
  * Supports WebAuthn Platform Authenticator (Face ID / Touch ID / Windows Hello / Android Biometrics)
  * and local offline app lock with zero network latency.
+ *
+ * ---
+ * WHAT A BROWSER APP LOCK CAN AND CANNOT PROTECT (SEC-02):
+ * 1. WHAT IT CAN PROTECT:
+ *    - Casual shoulder surfing and physical access when stepping away from an active machine.
+ *    - Prevents accidental exposure of balances, transactions, and private accounts in an open tab.
+ * 2. WHAT IT CANNOT PROTECT:
+ *    - A browser lock runs entirely in the unprivileged client JavaScript context.
+ *    - Anyone with access to browser DevTools or filesystem access to the user profile directory
+ *      can inspect localStorage, tamper with DOM elements, or read active session cookies directly.
+ *    - For true cryptographic and hardware-backed isolation with Keystore/Keychain and secure enclave
+ *      protections against device compromises, the native Flutter mobile app (mobile/packages/device_lock)
+ *      must be used.
+ * ---
  */
 
 export interface BiometricAuthResult {
@@ -193,7 +207,29 @@ export function isPinLockedOut(userKey: string): boolean {
   return getPinLockoutRemainingMs(userKey) > 0;
 }
 
-export async function hashPin(pin: string): Promise<string> {
+/**
+ * Generates a per-user cryptographically random 16-byte salt for PIN hashing (SEC-02).
+ */
+export function generatePinSalt(): string {
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  return Math.random().toString(36).substring(2, 18);
+}
+
+export function getBiometricPinSalt(userKey: string): string | null {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  try {
+    return window.localStorage.getItem(`smartspend_biometric_pin_salt_${userKey}`);
+  } catch {
+    return null;
+  }
+}
+
+/** Legacy fixed-salt hash for backward compatibility migration */
+async function hashPinLegacy(pin: string): Promise<string> {
   const normalized = normalizeDigits(pin);
   const salted = `smartspend_pin_salt_${normalized}`;
   if (typeof crypto !== "undefined" && crypto.subtle) {
@@ -204,10 +240,50 @@ export async function hashPin(pin: string): Promise<string> {
       return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
     } catch {}
   }
-  // Simple deterministic fallback for non-crypto-subtle environments (e.g. test runner)
   let hash = 0;
   for (let i = 0; i < salted.length; i++) {
     const char = salted.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return `fallback_${Math.abs(hash).toString(16)}`;
+}
+
+/**
+ * Derives a key using PBKDF2 with a per-user salt and 10,000 iterations (SEC-02).
+ * Defends against rainbow table attacks while maintaining low unlock latency.
+ */
+export async function hashPin(pin: string, salt?: string): Promise<string> {
+  const normalized = normalizeDigits(pin);
+  const effectiveSalt = salt ?? "smartspend_pin_salt";
+  if (typeof crypto !== "undefined" && crypto.subtle) {
+    try {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        enc.encode(normalized),
+        { name: "PBKDF2" },
+        false,
+        ["deriveBits"],
+      );
+      const derivedBits = await crypto.subtle.deriveBits(
+        {
+          name: "PBKDF2",
+          salt: enc.encode(effectiveSalt),
+          iterations: 10000,
+          hash: "SHA-256",
+        },
+        keyMaterial,
+        256,
+      );
+      const hashArray = Array.from(new Uint8Array(derivedBits));
+      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    } catch {}
+  }
+  let hash = 0;
+  const combo = `${effectiveSalt}_${normalized}`;
+  for (let i = 0; i < combo.length; i++) {
+    const char = combo.charCodeAt(i);
     hash = (hash << 5) - hash + char;
     hash |= 0;
   }
@@ -219,7 +295,9 @@ export async function setBiometricPin(userKey: string, pin: string): Promise<voi
   if (!normalized || !/^\d{4}$/.test(normalized)) return;
   if (typeof window === "undefined" || !window.localStorage) return;
   try {
-    const hashed = await hashPin(normalized);
+    const salt = generatePinSalt();
+    const hashed = await hashPin(normalized, salt);
+    window.localStorage.setItem(`smartspend_biometric_pin_salt_${userKey}`, salt);
     window.localStorage.setItem(`smartspend_biometric_pin_hash_${userKey}`, hashed);
     resetPinFailedAttempts(userKey);
   } catch (e) {
@@ -233,8 +311,20 @@ export async function verifyBiometricPin(userKey: string, pin: string): Promise<
   if (!normalized || !/^\d{4}$/.test(normalized)) return false;
   const storedHash = getBiometricPinHash(userKey);
   if (!storedHash) return false;
-  const currentHash = await hashPin(normalized);
-  const isMatch = storedHash === currentHash;
+  const storedSalt = getBiometricPinSalt(userKey);
+
+  let isMatch = false;
+  if (storedSalt) {
+    const currentHash = await hashPin(normalized, storedSalt);
+    isMatch = storedHash === currentHash;
+  } else {
+    const oldHash = await hashPinLegacy(normalized);
+    if (storedHash === oldHash) {
+      isMatch = true;
+      await setBiometricPin(userKey, normalized);
+    }
+  }
+
   if (isMatch) {
     resetPinFailedAttempts(userKey);
     return true;
@@ -248,6 +338,7 @@ export function removeBiometricPin(userKey: string): void {
   if (typeof window === "undefined" || !window.localStorage) return;
   try {
     window.localStorage.removeItem(`smartspend_biometric_pin_hash_${userKey}`);
+    window.localStorage.removeItem(`smartspend_biometric_pin_salt_${userKey}`);
     resetPinFailedAttempts(userKey);
   } catch {}
 }

@@ -47,9 +47,9 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
     final keyword = _keywordController.text.trim().isEmpty
         ? title
         : _keywordController.text.trim();
-    final amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
-    final total = int.tryParse(_totalController.text.trim()) ?? 0;
-    final paidBefore = int.tryParse(_paidBeforeController.text.trim()) ?? 0;
+    final amount = (parseAmount(_amountController.text.trim()) ?? 0.0).toDouble();
+    final total = (parseAmount(_totalController.text.trim()) ?? 0).toInt();
+    final paidBefore = (parseAmount(_paidBeforeController.text.trim()) ?? 0).toInt();
 
     if (title.length < 2) {
       setState(() => _error = 'اكتب اسم القسط (حرفين على الأقل)');
@@ -199,7 +199,9 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
                 decimal: true,
               ),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                FilteringTextInputFormatter.allow(
+                  RegExp(r'^[0-9٠-٩]*\.?[0-9٠-٩]*'),
+                ),
               ],
               textInputAction: TextInputAction.next,
             ),
@@ -214,7 +216,9 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
                       hintText: 'مثلاً: 12',
                     ),
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^[0-9٠-٩]*')),
+                    ],
                     textInputAction: TextInputAction.next,
                   ),
                 ),
@@ -227,7 +231,9 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
                       hintText: '0',
                     ),
                     keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^[0-9٠-٩]*')),
+                    ],
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _submit(),
                   ),

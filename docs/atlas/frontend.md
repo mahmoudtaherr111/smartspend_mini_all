@@ -37,6 +37,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | --- | --- | --- |
 | `ads.click` | useMutation | `src/hooks/useAds.ts` |
 | `ads.list` | useQuery, utils.invalidate | `src/hooks/useAds.ts` |
+| `ads.recordImpression` | useMutation | `src/components/ads/AdBanner.tsx` |
 | `analytics.trackEvent` | useMutation | `src/hooks/useSessionTracker.ts` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
 | `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
@@ -107,6 +108,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.getAiProviders` | useQuery, utils.invalidate | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.getAiTelemetryOverview` | useQuery | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
+| `admin.getAuditLogs` | useQuery | `src/components/admin/AdminAuditTab.tsx` |
 | `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
@@ -115,7 +117,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getLearnedRules` | useQuery | `src/components/admin/AdminRulesTab.tsx` |
 | `admin.getNotificationLogs` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
-| `admin.getNotificationStats` | useQuery | `src/components/admin/NotificationsTab.tsx` |
+| `admin.getNotificationStats` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getNotificationTemplates` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getPendingClarifications` | useQuery | `src/components/admin/ClarificationsTab.tsx` |
 | `admin.getSettings` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
@@ -124,11 +126,13 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.getUserSmartProfile` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getVoiceUsageStats` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.listAllUsers` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx`, `src/hooks/useAdmin.ts` |
+| `admin.listStorePurchasesAdmin` | useQuery | `src/pages/Admin.tsx` |
 | `admin.listSubscriptionsAdmin` | useQuery | `src/pages/Admin.tsx` |
 | `admin.resolveApiKeyError` | useMutation | `src/pages/Admin.tsx` |
 | `admin.resolveClarification` | useMutation | `src/components/admin/ClarificationsTab.tsx` |
 | `admin.revokeSession` | useMutation | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
 | `admin.saveAiModels` | useMutation | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.sendInstantNotification` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.toggleNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerActivityCheck` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerBackupDemo` | useMutation | `src/components/admin/AdminSettingsTab.tsx` |
@@ -138,15 +142,13 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.updateUserPlanV2` | useMutation | `src/hooks/useAdmin.ts` |
 | `admin.updateUserRole` | useMutation | `src/hooks/useAdmin.ts` |
 | `admin.validateApiKey` | useMutation | `src/components/admin/settings/AdminKeysTab.tsx` |
-| `adminWhatsapp.broadcastMessage` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.clearQueue` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getOutboxLog` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getSettings` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getStatus` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getUsers` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getTemplates` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.sendDirectMessage` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx`, `src/pages/Admin.tsx` |
-| `adminWhatsapp.startService` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.stopService` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.toggleOtpVerification` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.syncTemplates` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.updateSettings` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `ads.create` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.delete` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.stats` | useQuery | `src/components/admin/AdminAdsTab.tsx` |
@@ -275,6 +277,7 @@ _None._
 | `admin.getAiProviders` | useQuery, utils.invalidate | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.getAiTelemetryOverview` | useQuery | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
+| `admin.getAuditLogs` | useQuery | `src/components/admin/AdminAuditTab.tsx` |
 | `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
@@ -283,7 +286,7 @@ _None._
 | `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getLearnedRules` | useQuery | `src/components/admin/AdminRulesTab.tsx` |
 | `admin.getNotificationLogs` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
-| `admin.getNotificationStats` | useQuery | `src/components/admin/NotificationsTab.tsx` |
+| `admin.getNotificationStats` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getNotificationTemplates` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
 | `admin.getPendingClarifications` | useQuery | `src/components/admin/ClarificationsTab.tsx` |
 | `admin.getSettings` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
@@ -292,11 +295,13 @@ _None._
 | `admin.getUserSmartProfile` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getVoiceUsageStats` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.listAllUsers` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx`, `src/hooks/useAdmin.ts` |
+| `admin.listStorePurchasesAdmin` | useQuery | `src/pages/Admin.tsx` |
 | `admin.listSubscriptionsAdmin` | useQuery | `src/pages/Admin.tsx` |
 | `admin.resolveApiKeyError` | useMutation | `src/pages/Admin.tsx` |
 | `admin.resolveClarification` | useMutation | `src/components/admin/ClarificationsTab.tsx` |
 | `admin.revokeSession` | useMutation | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
 | `admin.saveAiModels` | useMutation | `src/components/admin/ai-center/modals/AiModelEditDialog.tsx`, `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.sendInstantNotification` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.toggleNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerActivityCheck` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerBackupDemo` | useMutation | `src/components/admin/AdminSettingsTab.tsx` |
@@ -306,15 +311,13 @@ _None._
 | `admin.updateUserPlanV2` | useMutation | `src/hooks/useAdmin.ts` |
 | `admin.updateUserRole` | useMutation | `src/hooks/useAdmin.ts` |
 | `admin.validateApiKey` | useMutation | `src/components/admin/settings/AdminKeysTab.tsx` |
-| `adminWhatsapp.broadcastMessage` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.clearQueue` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getOutboxLog` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getSettings` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getStatus` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.getUsers` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.getTemplates` | useQuery | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.sendDirectMessage` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx`, `src/pages/Admin.tsx` |
-| `adminWhatsapp.startService` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.stopService` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
-| `adminWhatsapp.toggleOtpVerification` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.syncTemplates` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.updateSettings` | useMutation | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `ads.create` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.delete` | useMutation | `src/components/admin/AdminAdsTab.tsx` |
 | `ads.stats` | useQuery | `src/components/admin/AdminAdsTab.tsx` |

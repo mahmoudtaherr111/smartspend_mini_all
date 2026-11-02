@@ -57,6 +57,8 @@ const envSchema = z.object({
   PAYMOB_HMAC_SECRET: z.string().optional(),
   /** When "true", allows demo transaction ids in `pro.upgrade` (never enable in production). */
   BILLING_SIMULATE: z.enum(["true", "false"]).optional(),
+  // Store Billing
+  GOOGLE_PLAY_WEBHOOK_SECRET: z.string().optional(),
   // Bot & Abuse Protection (Cloudflare Turnstile)
   TURNSTILE_SECRET_KEY: z.string().optional(),
   TRUST_PROXY: z.string().optional(),
@@ -78,8 +80,6 @@ const envSchema = z.object({
   LOGIN_PAIR_MAX_FAILURES: z.coerce.number().int().min(3).max(20).default(5),
   /** Background jobs are opt-in in development and explicit in production. */
   ENABLE_CRONS: z.enum(["true", "false"]).optional(),
-  /** Baileys must not connect merely because credentials happen to be on disk. */
-  ENABLE_WHATSAPP: z.enum(["true", "false"]).optional(),
   REDIS_URL: z.string().optional(),
   AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION: z.enum(["true", "false"]).optional(),
   SENTRY_DSN: z.string().optional(),
@@ -98,7 +98,7 @@ const envSchema = z.object({
   WHATSAPP_CLOUD_WABA_ID: z.string().optional(),
   WHATSAPP_CLOUD_APP_SECRET: z.string().optional(),
   WHATSAPP_CLOUD_VERIFY_TOKEN: z.string().optional(),
-  WHATSAPP_CLOUD_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v23.0"),
+  WHATSAPP_CLOUD_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v21.0"),
 
   // Firebase FCM
   FIREBASE_PROJECT_ID: z.string().optional(),

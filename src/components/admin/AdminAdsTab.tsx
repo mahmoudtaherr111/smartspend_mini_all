@@ -79,6 +79,8 @@ export function AdminAdsTab() {
   const [linkUrl, setLinkUrl] = useState("");
   const [placement, setPlacement] = useState<"sidebar" | "banner" | "popup">("sidebar");
   const [targetPlan, setTargetPlan] = useState<"free" | "all">("free");
+  const [platformTarget, setPlatformTarget] = useState<"all" | "android" | "ios" | "web">("all");
+  const [frequencyCapPerDay, setFrequencyCapPerDay] = useState<number>(0);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -89,6 +91,8 @@ export function AdminAdsTab() {
     setLinkUrl("");
     setPlacement("sidebar");
     setTargetPlan("free");
+    setPlatformTarget("all");
+    setFrequencyCapPerDay(0);
     setStartDate("");
     setEndDate("");
   };
@@ -106,6 +110,8 @@ export function AdminAdsTab() {
       linkUrl: linkUrl.trim() || undefined,
       placement,
       targetPlan,
+      platformTarget,
+      frequencyCapPerDay: Number(frequencyCapPerDay) || 0,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
     });
@@ -195,8 +201,8 @@ export function AdminAdsTab() {
               <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500">
                 <tr>
                   <th className="p-4 font-medium">العنوان</th>
-                  <th className="p-4 font-medium">الظهور</th>
-                  <th className="p-4 font-medium">الباقة المستهدفة</th>
+                  <th className="p-4 font-medium">الظهور / المنصة</th>
+                  <th className="p-4 font-medium">الباقة / التكرار</th>
                   <th className="p-4 font-medium">المشاهدات</th>
                   <th className="p-4 font-medium">النقرات</th>
                   <th className="p-4 font-medium">معدل التحويل (CTR)</th>
@@ -214,14 +220,26 @@ export function AdminAdsTab() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <Badge variant="secondary" className="capitalize">
-                        {ad.placement}
-                      </Badge>
+                      <div className="flex flex-col gap-1 items-start">
+                        <Badge variant="secondary" className="capitalize">
+                          {ad.placement}
+                        </Badge>
+                        <span className="text-[11px] text-slate-500 font-mono">
+                          {ad.platformTarget === "all" ? "جميع المنصات" : ad.platformTarget}
+                        </span>
+                      </div>
                     </td>
                     <td className="p-4">
-                      <Badge variant="outline" className="capitalize">
-                        {ad.targetPlan}
-                      </Badge>
+                      <div className="flex flex-col gap-1 items-start">
+                        <Badge variant="outline" className="capitalize">
+                          {ad.targetPlan}
+                        </Badge>
+                        {ad.frequencyCapPerDay > 0 && (
+                          <span className="text-[11px] text-slate-500">
+                            حد: {ad.frequencyCapPerDay}/يوم
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4 font-mono">{ad.impressions || 0}</td>
                     <td className="p-4 font-mono">{ad.clicks || 0}</td>
@@ -339,6 +357,32 @@ export function AdminAdsTab() {
                     <SelectItem value="all">جميع خطط الاشتراكات</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label>المنصة المستهدفة</Label>
+                <Select value={platformTarget} onValueChange={(val: any) => setPlatformTarget(val)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع المنصات (All Platforms)</SelectItem>
+                    <SelectItem value="android">أندرويد (Android)</SelectItem>
+                    <SelectItem value="ios">آيفون (iOS)</SelectItem>
+                    <SelectItem value="web">الويب (Web)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label>الحد الأقصى للظهور اليومي (لكل مستخدم)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={frequencyCapPerDay}
+                  onChange={(e) => setFrequencyCapPerDay(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  placeholder="0 = غير محدود"
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
