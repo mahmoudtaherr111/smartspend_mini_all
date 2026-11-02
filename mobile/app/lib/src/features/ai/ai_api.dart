@@ -195,10 +195,7 @@ final class AiApi {
         return MonthlyInsights.fromJson(content, month: month);
       }
     }
-    return MonthlyInsights(
-      month: month,
-      responseText: 'تم استلام التقرير بنجاح.',
-    );
+    return MonthlyInsights(month: month, responseText: '');
   }
 
   /// Compares two months' financial patterns (AI-07).
@@ -220,7 +217,7 @@ final class AiApi {
     return MonthComparison(
       firstMonth: firstMonth,
       secondMonth: secondMonth,
-      responseText: 'تمت مقارنة الشهرين.',
+      responseText: '',
     );
   }
 

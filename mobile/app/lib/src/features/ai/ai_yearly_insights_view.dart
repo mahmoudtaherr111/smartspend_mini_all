@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'ai_providers.dart';
 
 /// Yearly insights view analyzing the user's entire year of finances (AI-11).
@@ -15,6 +17,7 @@ class AiYearlyInsightsView extends ConsumerStatefulWidget {
 class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
   String _selectedYear = '2026';
   bool _isLoading = false;
+  bool _failed = false;
   String? _insightsText;
 
   @override
@@ -34,15 +37,16 @@ class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
           _insightsText =
               (res['insights'] as String?) ??
               (res['response_text'] as String?) ??
-              (res['summary'] as String?) ??
-              'تم تحليل عام $_selectedYear بنجاح. حافظت على توازن جيد بين الالتزامات ومصاريف المعيشة.';
+              (res['summary'] as String?);
+          _failed = false;
         });
       }
-    } catch (e) {
+    } on Object {
+      // A failed analysis says so: a person never reads a made-up verdict on their money.
       if (mounted) {
         setState(() {
-          _insightsText =
-              'تحليل سنوي لعام $_selectedYear: تم تجميع بيانات الصرف عبر جميع الأشهر.';
+          _insightsText = null;
+          _failed = true;
         });
       }
     } finally {
@@ -54,6 +58,13 @@ class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
 
   @override
   Widget build(BuildContext context) {
+    if (_failed && !_isLoading) {
+      return ErrorState(
+        message: AppLocalizations.of(context).aiWeCanTRunThe,
+        retryLabel: AppLocalizations.of(context).retry,
+        onRetry: _loadYearlyInsights,
+      );
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -61,8 +72,8 @@ class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
         children: [
           Row(
             children: [
-              const Text(
-                'التقرير السنوي الشامل',
+              Text(
+                AppLocalizations.of(context).aiYearlyReport2,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
@@ -109,7 +120,7 @@ class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'ملخص عام $_selectedYear',
+                        AppLocalizations.of(context).aiP0Summary(_selectedYear),
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -119,7 +130,8 @@ class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    _insightsText ?? 'لا توجد بيانات كافية لهذا العام.',
+                    _insightsText ??
+                        AppLocalizations.of(context).aiNotEnoughDataForThis,
                     style: const TextStyle(fontSize: 14.5, height: 1.55),
                   ),
                 ],

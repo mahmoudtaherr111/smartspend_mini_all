@@ -2717,4 +2717,674 @@ class AppLocalizationsAr extends AppLocalizations {
   String monYourSavedPaydayDayP0(String p0) {
     return 'يوم القبض المحفوظ: يوم $p0 من كل شهر.';
   }
+
+  @override
+  String get aiWeCanTRunThe => 'ما عرفناش نعمل التحليل السنوي دلوقتي.';
+
+  @override
+  String get aiConfirmIt => 'أكد العملية';
+
+  @override
+  String get aiDone => 'اتعملت';
+
+  @override
+  String get aiItDidnTGoThrough => 'ما اتعملتش. جرّب تاني.';
+
+  @override
+  String get aiConfirmASensitiveAction => 'تأكيد لعملية حساسة';
+
+  @override
+  String aiThisActionP0CanT(String p0) {
+    return 'العملية دي ($p0) مش سهل ترجع فيها.';
+  }
+
+  @override
+  String aiToConfirmTypeExactlyP0(String p0) {
+    return 'علشان تأكد، اكتب بالظبط:\n«$p0»';
+  }
+
+  @override
+  String get aiCancel => 'إلغاء';
+
+  @override
+  String get aiConfirm => 'أكد';
+
+  @override
+  String get aiSensitive => 'حساسة';
+
+  @override
+  String aiDateP0(String p0) {
+    return 'التاريخ: $p0';
+  }
+
+  @override
+  String get aiDoneAndYourRecordsAre => 'اتعملت وحساباتك اتحدثت.';
+
+  @override
+  String get aiCancelled => 'اتلغت.';
+
+  @override
+  String get aiThisHasExpiredAndCan => 'المدة انتهت، ومش هينفع تتنفذ.';
+
+  @override
+  String get aiContinue => 'كمّل التأكيد';
+
+  @override
+  String get aiConfirm2 => 'أكد';
+
+  @override
+  String get aiReportReceived => 'التقرير وصل.';
+
+  @override
+  String get aiMonthsCompared => 'قارنا الشهرين.';
+
+  @override
+  String get aiLiveCall => 'المكالمة المباشرة';
+
+  @override
+  String get aiTheLiveCallComesWith => 'المكالمة المباشرة متاحة في باقة Pro.';
+
+  @override
+  String get aiUpgrade => 'رقّي باقتك';
+
+  @override
+  String get aiStartALiveCall => 'ابدأ مكالمة مباشرة';
+
+  @override
+  String get aiWeLlUseTheMicrophone => 'هنستخدم المايك علشان تكلم المساعد.';
+
+  @override
+  String get aiCall => 'اتصل';
+
+  @override
+  String get aiWeCouldnTStartThe => 'ما عرفناش نبدأ المكالمة.';
+
+  @override
+  String get aiAiCenter => 'مركز AI';
+
+  @override
+  String get aiLiveCall2 => 'مكالمة مباشرة';
+
+  @override
+  String get aiWhatTheAssistantRemembers => 'ذاكرة المساعد';
+
+  @override
+  String get aiPastConversations => 'المحادثات اللي فاتت';
+
+  @override
+  String get aiChat => 'المحادثة';
+
+  @override
+  String get aiMonthlyReport => 'التقرير الشهري';
+
+  @override
+  String get aiCompareMonths => 'قارن الشهور';
+
+  @override
+  String get aiCalls => 'المكالمات';
+
+  @override
+  String get aiYearlyReport => 'التقرير السنوي';
+
+  @override
+  String get aiWeNeedInternetToAnswer =>
+      'محتاجين نت علشان نرد عليك. اللي كتبته محفوظ.';
+
+  @override
+  String get aiYouReOfflineYourDraft =>
+      'إنت من غير نت. اللي كتبته محفوظ، وابعته لما النت يرجع.';
+
+  @override
+  String get aiUpgradeToPro => 'اشترك في Pro';
+
+  @override
+  String get aiWeCanTLoadYour => 'مش قادرين نجيب رسايلك.';
+
+  @override
+  String get aiAskAboutYourSpending => 'اسأل عن مصاريفك...';
+
+  @override
+  String get aiSendingNeedsInternet => 'الإرسال محتاج نت...';
+
+  @override
+  String get aiHiIMYourAssistant => 'أهلًا، أنا مساعدك';
+
+  @override
+  String get aiAskAboutYourSpendingOr =>
+      'اسألني عن مصاريفك أو ميزانيتك، أو قولّي أسجل حاجة.';
+
+  @override
+  String get aiTryAsking => 'جرّب تسأل:';
+
+  @override
+  String get aiThinking => 'بيفكر...';
+
+  @override
+  String get aiCompareTwoMonths => 'قارن شهرين';
+
+  @override
+  String get aiPickTwoDifferentMonthsTo =>
+      'اختار شهرين مختلفين تشوف إيه اللي اتغير وليه.';
+
+  @override
+  String get aiFirstMonth => 'الشهر الأول:';
+
+  @override
+  String get aiSecondMonth => 'الشهر التاني:';
+
+  @override
+  String get aiPickTwoDifferentMonths => 'اختار شهرين مختلفين.';
+
+  @override
+  String get aiWeCouldnTCompareThem => 'ما عرفناش نقارن.';
+
+  @override
+  String aiComparisonP0AndP1(String p0, String p1) {
+    return 'المقارنة ($p0 و$p1)';
+  }
+
+  @override
+  String get aiBiggestChangesByCategory => 'أكبر تغييرات في الفئات:';
+
+  @override
+  String get aiCategory => 'فئة';
+
+  @override
+  String get aiNewChat => 'محادثة جديدة';
+
+  @override
+  String get aiWeCanTLoadYour2 => 'مش قادرين نجيب محادثاتك.';
+
+  @override
+  String get aiNoPastConversations => 'مفيش محادثات قبل كده';
+
+  @override
+  String get aiStartANewChatWith => 'ابدأ محادثة جديدة مع المساعد';
+
+  @override
+  String get aiConversation => 'محادثة';
+
+  @override
+  String aiP0P1Messages(String p0, String p1) {
+    return '$p0 • $p1 رسالة';
+  }
+
+  @override
+  String get aiDeleteTheConversation => 'امسح المحادثة';
+
+  @override
+  String aiDeleteTheConversationP0(String p0) {
+    return 'تمسح محادثة «$p0»؟';
+  }
+
+  @override
+  String get aiDelete => 'امسح';
+
+  @override
+  String get aiWhatTheAssistantRemembers2 => 'ذاكرة المساعد';
+
+  @override
+  String get aiClearAll => 'امسح الكل';
+
+  @override
+  String get aiTheAssistantKeepsAFew =>
+      'المساعد بيحفظ شوية حاجات أساسية عن عاداتك وأولوياتك علشان ردوده تناسبك، وتقدر تمسح أي حاجة منها هنا.';
+
+  @override
+  String get aiWeCanTLoadThe => 'مش قادرين نجيب الذاكرة.';
+
+  @override
+  String get aiTheAssistantDoesnTKnow => 'المساعد لسه ما يعرفش تفاصيل عنك';
+
+  @override
+  String get aiTheMoreYouTalkThe => 'كل ما تتكلم معاه أكتر، هيفتكر أكتر.';
+
+  @override
+  String get aiForgetThis => 'انسى المعلومة دي';
+
+  @override
+  String get aiRemovedFromTheAssistantS => 'اتمسحت من ذاكرة المساعد.';
+
+  @override
+  String get aiClearAllMemories => 'امسح كل الذاكرة';
+
+  @override
+  String get aiDeleteEverythingSavedTheAssistant =>
+      'تمسح كل اللي اتحفظ؟ المساعد هيبدأ يتعلمك من الأول.';
+
+  @override
+  String get aiWeCouldnTUpdateThe => 'ما عرفناش نحدث التقرير.';
+
+  @override
+  String get aiExportTheReport => 'صدّر التقرير';
+
+  @override
+  String aiTheReportForP0Is(String p0) {
+    return 'تقرير $p0 جاهز.';
+  }
+
+  @override
+  String get aiReportReceived2 => 'التقرير وصل.';
+
+  @override
+  String get aiOk => 'تمام';
+
+  @override
+  String get aiWeCouldnTExportThe => 'ما عرفناش نصدر التقرير.';
+
+  @override
+  String get aiPreviousMonth => 'الشهر اللي فات';
+
+  @override
+  String get aiNextMonth => 'الشهر الجاي';
+
+  @override
+  String get aiAnalyzeAgain => 'حلل تاني';
+
+  @override
+  String get aiPreparingThisMonthSReport => 'بنجهز تقرير الشهر...';
+
+  @override
+  String get aiWeCanTLoadThe2 => 'مش قادرين نجيب التقرير.';
+
+  @override
+  String get aiLimitedDataRecordMoreThis =>
+      'بيانات قليلة: سجّل عمليات أكتر الشهر ده علشان التقرير يبقى أوضح.';
+
+  @override
+  String get aiThisMonthSAnalysis => 'تحليل الشهر';
+
+  @override
+  String get aiTopConfirmedSpending => 'أعلى بنود الصرف:';
+
+  @override
+  String get aiGeneral => 'عام';
+
+  @override
+  String get aiYearlyReport2 => 'التقرير السنوي';
+
+  @override
+  String aiP0Summary(String p0) {
+    return 'ملخص $p0';
+  }
+
+  @override
+  String get aiNotEnoughDataForThis => 'مفيش بيانات كفاية للسنة دي.';
+
+  @override
+  String get aiWeCanTLoadYour3 => 'مش قادرين نجيب مكالماتك.';
+
+  @override
+  String get aiTryAgain => 'جرّب تاني';
+
+  @override
+  String get aiNoPastCalls => 'مفيش مكالمات قبل كده';
+
+  @override
+  String get aiTalkToTheAssistantIn => 'اتكلم مع المساعد بطريقتك عن فلوسك.';
+
+  @override
+  String get aiStartANewCall => 'ابدأ مكالمة جديدة';
+
+  @override
+  String aiP0MinP1Sec(String p0, String p1) {
+    return '$p0 دقيقة و$p1 ثانية';
+  }
+
+  @override
+  String aiP0Sec(String p0) {
+    return '$p0 ثانية';
+  }
+
+  @override
+  String get aiVoiceCall => 'مكالمة صوتية';
+
+  @override
+  String aiDurationP0(String p0) {
+    return 'المدة: $p0';
+  }
+
+  @override
+  String get aiNewCall => 'مكالمة جديدة';
+
+  @override
+  String get aiYourPrivacyNeitherTheAudio =>
+      'خصوصيتك: الصوت ونص المكالمة مش بيتحفظوا.';
+
+  @override
+  String get aiWeCouldnTConnectThe => 'ما عرفناش نوصل المكالمة.';
+
+  @override
+  String get aiTheCallLostItsConnection => 'الاتصال انقطع.';
+
+  @override
+  String get aiSomethingWentWrongInThe => 'حصلت مشكلة في المكالمة';
+
+  @override
+  String get aiCallEnded => 'المكالمة خلصت';
+
+  @override
+  String get aiTheAudioIsNotRecorded =>
+      'الصوت مش بيتسجل ولا بيتحفظ بعد المكالمة.';
+
+  @override
+  String get aiReady => 'جاهز';
+
+  @override
+  String get aiConnecting => 'بنوصل...';
+
+  @override
+  String get aiListeningGoAhead => 'سامعينك، اتكلم...';
+
+  @override
+  String get aiThinking2 => 'بيفكر...';
+
+  @override
+  String get aiTheAssistantIsSpeaking => 'المساعد بيتكلم...';
+
+  @override
+  String get aiPleaseConfirmTheSuggestedAction => 'أكد العملية المقترحة';
+
+  @override
+  String get aiReconnecting => 'بنوصل تاني...';
+
+  @override
+  String get aiDone2 => 'اتعملت';
+
+  @override
+  String get aiCancelled2 => 'اتلغت';
+
+  @override
+  String aiABusinessForP0(String p0) {
+    return 'مشروع $p0';
+  }
+
+  @override
+  String get aiAddACategory => 'ضيف فئة للمشروع';
+
+  @override
+  String get aiCategoryNameLikeStockShop =>
+      'اسم الفئة (زي: بضاعة، إيجار المحل)';
+
+  @override
+  String get aiExpense => 'مصروف';
+
+  @override
+  String get aiIncomeOrSales => 'إيراد أو مبيعات';
+
+  @override
+  String get aiIcon => 'الأيقونة';
+
+  @override
+  String get aiAddTheCategory => 'ضيف الفئة';
+
+  @override
+  String get aiEnterTheBusinessNameFirst => 'اكتب اسم المشروع الأول';
+
+  @override
+  String get aiWeCouldnTSuggestCategories => 'ما عرفناش نقترح فئات. جرّب تاني.';
+
+  @override
+  String get aiYourWorkAccountIsOn => 'حساب الشغل اتفعّل';
+
+  @override
+  String get aiWeCouldnTCreateThe => 'ما عرفناش نعمل المشروع.';
+
+  @override
+  String get aiDeleteTheWorkAccount => 'تمسح حساب الشغل؟';
+
+  @override
+  String get aiIfYouDeleteTheWork =>
+      'لو مسحت حساب الشغل:\n• عملياتك هتفضل محفوظة وهتتنقل لحسابك الشخصي.\n• فئاته وقواعده هتتمسح.\n• المسح مابيترجعش.';
+
+  @override
+  String get aiConfirmDelete => 'أكد المسح';
+
+  @override
+  String get aiWorkAccountDeletedAndIts =>
+      'حساب الشغل اتمسح وعملياته اتنقلت للشخصي';
+
+  @override
+  String get aiWeCanTDeleteThe => 'مش قادرين نمسح المشروع دلوقتي.';
+
+  @override
+  String get aiWorkAccount => 'حساب الشغل';
+
+  @override
+  String get aiTheWorkAccountComesWith => 'حساب الشغل متاح في باقة Pro';
+
+  @override
+  String get aiKeepYourBusinessSSpending =>
+      'افصل مصاريف وإيرادات مشروعك عن مصاريف بيتك.';
+
+  @override
+  String get aiUpgradingFromTheAppIs => 'الاشتراك من التطبيق هيتاح قريب';
+
+  @override
+  String get aiUpgradeToPro2 => 'اشترك في Pro';
+
+  @override
+  String get aiRestaurantsAndFood => 'مطاعم وأكل';
+
+  @override
+  String get aiTradeAndRetail => 'تجارة وقطاعي';
+
+  @override
+  String get aiServicesAndWorkshops => 'خدمات وورش';
+
+  @override
+  String get aiFreelanceAndCompanies => 'شغل حر وشركات';
+
+  @override
+  String get aiSomethingElse => 'نوع تاني';
+
+  @override
+  String get aiSetUpTheWorkAccount => 'جهز حساب الشغل';
+
+  @override
+  String get aiMakeASeparateAccountFor => 'اعمل حساب منفصل لشغلك أو محلك.';
+
+  @override
+  String get aiBusinessOrShopName => 'اسم المشروع أو المحل';
+
+  @override
+  String get aiField => 'مجال المشروع';
+
+  @override
+  String get aiShortDescriptionOptional => 'وصف قصير (اختياري)';
+
+  @override
+  String get aiSuggestCategories => 'اقترح فئات';
+
+  @override
+  String get aiSuggestedCategoriesReviewThem => 'فئات مقترحة (راجعها)';
+
+  @override
+  String get aiChooseTheOnesThatFit => 'اختار اللي يناسب شغلك:';
+
+  @override
+  String get aiIncomeAndSales => 'إيراد ومبيعات';
+
+  @override
+  String get aiExpenses => 'مصروفات';
+
+  @override
+  String get aiCreateTheWorkAccount => 'اعمل حساب الشغل';
+
+  @override
+  String get aiCurrentWorkAccount => 'حساب الشغل الحالي';
+
+  @override
+  String get aiSwitchedToTheWorkAccount => 'اتحولت لحساب الشغل';
+
+  @override
+  String get aiSwitchedToPersonal => 'اتحولت للشخصي';
+
+  @override
+  String get aiYouReInTheWork =>
+      'إنت دلوقتي في حساب الشغل. العمليات الجديدة هتتسجل فيه.';
+
+  @override
+  String get aiYouReInPersonalMode =>
+      'إنت في الوضع الشخصي. شغّل المفتاح علشان تسجل لشغلك.';
+
+  @override
+  String aiBusinessCategoriesP0(String p0) {
+    return 'فئات المشروع ($p0)';
+  }
+
+  @override
+  String get aiIncome => 'إيراد';
+
+  @override
+  String get aiDeleteTheCategory => 'امسح الفئة';
+
+  @override
+  String get aiAddANewCategory => 'ضيف فئة جديدة';
+
+  @override
+  String get aiBusinessPeopleAndSuppliers => 'ناس وموردين المشروع';
+
+  @override
+  String aiSuppliersAndCustomersP0(String p0) {
+    return 'عدد الموردين والعملاء: $p0';
+  }
+
+  @override
+  String get aiLinkAnyoneToTheBusiness =>
+      'تقدر تربط أي شخص بالمشروع علشان تتابع المستحقات.';
+
+  @override
+  String get aiManageContactsAndSuppliers => 'ظبط الناس والموردين';
+
+  @override
+  String get aiDeleteTheWorkAccount2 => 'امسح حساب الشغل';
+
+  @override
+  String get aiEnterThePersonSName => 'اكتب اسم الشخص الأول';
+
+  @override
+  String get aiWeCouldnTAddThem => 'ما عرفناش نضيفه. اتأكد من النت وجرّب تاني.';
+
+  @override
+  String get aiAddANewPerson => 'ضيف شخص جديد';
+
+  @override
+  String get aiSoYouCanRecordSpending =>
+      'علشان تسجل معاه مصاريف أو سلف أو ديون بسهولة.';
+
+  @override
+  String get aiName => 'اسم الشخص *';
+
+  @override
+  String get aiLikeMohamedIbrahimOrAhmed =>
+      'زي: محمد إبراهيم أو أحمد الكهربائي';
+
+  @override
+  String get aiRelationOptional => 'صلة القرابة أو الوصف (اختياري)';
+
+  @override
+  String get aiLikeColleagueFriendBrother => 'زي: زميل شغل، صاحبي، أخويا...';
+
+  @override
+  String get aiSaving => 'بنحفظ...';
+
+  @override
+  String get aiSaveThePerson => 'احفظ الشخص';
+
+  @override
+  String get aiPeopleAndDebts => 'الناس والديون';
+
+  @override
+  String get aiAddAPerson => 'ضيف شخص';
+
+  @override
+  String get aiWeCanTLoadYour4 => 'مش قادرين نجيب الناس والديون.';
+
+  @override
+  String get aiSearchByNameOrRelation => 'دوّر بالاسم أو صلة القرابة...';
+
+  @override
+  String get aiOpenBalances => 'حسابات مفتوحة';
+
+  @override
+  String get aiNoResults => 'مفيش نتايج';
+
+  @override
+  String get aiNoOpenDebtsAllSettled => 'مفيش ديون مفتوحة، كله متصفي.';
+
+  @override
+  String get aiSettled => 'حسابات متصفية';
+
+  @override
+  String get aiNoResults2 => 'مفيش نتايج';
+
+  @override
+  String get aiNoSettledAccountsYet => 'لسه مفيش حسابات متصفية.';
+
+  @override
+  String get aiNetMoneyOut => 'صافي الفلوس برّه';
+
+  @override
+  String get aiOwedToYou => 'ليك برّه';
+
+  @override
+  String get aiYouOwe => 'عليك برّه';
+
+  @override
+  String get aiMergeWithADuplicate => 'ادمج مع شخص مكرر';
+
+  @override
+  String get aiDeleteThePerson => 'امسح الشخص';
+
+  @override
+  String get aiNoName => 'من غير اسم';
+
+  @override
+  String aiDeleteP0(String p0) {
+    return 'تمسح \"$p0\"؟';
+  }
+
+  @override
+  String get aiTheirRecordedTransactionsStayOnly =>
+      'العمليات المسجلة معاه هتفضل، والشخص بس اللي هيتمسح.';
+
+  @override
+  String get aiDeleting => 'بنمسح...';
+
+  @override
+  String get aiDelete2 => 'امسح';
+
+  @override
+  String get aiMergeDuplicates => 'ادمج المكررين';
+
+  @override
+  String get aiChooseTheNameToKeep =>
+      'اختار الاسم اللي هيفضل، وكل العمليات هتتنقل عليه.';
+
+  @override
+  String get aiNoOtherContactsToMerge => 'مفيش حد تاني تدمج معاه.';
+
+  @override
+  String aiChooseWhoToMergeWith(String p0) {
+    return 'اختار الشخص اللي هيتدمج مع \"$p0\":';
+  }
+
+  @override
+  String get aiChooseAContact => 'اختار شخص';
+
+  @override
+  String get aiWhichNameStays => 'أنهي اسم يفضل؟';
+
+  @override
+  String get aiThisNameStaysAndAll => 'الاسم ده هيفضل وكل العمليات هتتنقل عليه';
+
+  @override
+  String get aiMerging => 'بندمج...';
+
+  @override
+  String get aiConfirmMerge => 'أكد الدمج';
+
+  @override
+  String get aiWeCouldnTMergeThem => 'ما عرفناش ندمج. جرّب تاني.';
 }

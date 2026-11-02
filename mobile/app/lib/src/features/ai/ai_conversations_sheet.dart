@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'ai_models.dart';
 import 'ai_providers.dart';
 
@@ -44,8 +46,8 @@ class AiConversationsSheet extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  const Text(
-                    'المحادثات السابقة',
+                  Text(
+                    AppLocalizations.of(context).aiPastConversations,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
@@ -58,7 +60,7 @@ class AiConversationsSheet extends ConsumerWidget {
                       Navigator.of(context).pop();
                     },
                     icon: const Icon(Icons.add, size: 18),
-                    label: const Text('محادثة جديدة'),
+                    label: Text(AppLocalizations.of(context).aiNewChat),
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF0F766E),
                       visualDensity: VisualDensity.compact,
@@ -71,8 +73,9 @@ class AiConversationsSheet extends ConsumerWidget {
             Expanded(
               child: conversationsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, _) =>
-                    Center(child: Text('تعذر تحميل المحادثات: $err')),
+                error: (err, _) => Center(
+                  child: Text(AppLocalizations.of(context).aiWeCanTLoadYour2),
+                ),
                 data: (conversations) {
                   if (conversations.isEmpty) {
                     return Center(
@@ -86,7 +89,7 @@ class AiConversationsSheet extends ConsumerWidget {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'مفيش محادثات سابقة',
+                            AppLocalizations.of(context).aiNoPastConversations,
                             style: TextStyle(
                               color: Colors.grey.shade600,
                               fontSize: 15,
@@ -94,7 +97,7 @@ class AiConversationsSheet extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'ابدأ محادثة جديدة مع المساعد الذكي',
+                            AppLocalizations.of(context).aiStartANewChatWith,
                             style: TextStyle(
                               color: Colors.grey.shade500,
                               fontSize: 13,
@@ -134,7 +137,9 @@ class AiConversationsSheet extends ConsumerWidget {
                           ),
                         ),
                         title: Text(
-                          conv.title.isNotEmpty ? conv.title : 'محادثة',
+                          conv.title.isNotEmpty
+                              ? conv.title
+                              : AppLocalizations.of(context).aiConversation,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -144,7 +149,8 @@ class AiConversationsSheet extends ConsumerWidget {
                           ),
                         ),
                         subtitle: Text(
-                          '$dateStr • ${conv.messageCount} رسائل',
+                          AppLocalizations.of(context)
+                              .aiP0P1Messages(dateStr, '${conv.messageCount}'),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -182,17 +188,19 @@ class AiConversationsSheet extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('حذف المحادثة'),
-        content: Text('هل أنت متأكد من حذف محادثة «${conv.title}»؟'),
+        title: Text(AppLocalizations.of(context).aiDeleteTheConversation),
+        content: Text(
+          AppLocalizations.of(context).aiDeleteTheConversationP0(conv.title),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(AppLocalizations.of(context).aiCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('حذف'),
+            child: Text(AppLocalizations.of(context).aiDelete),
           ),
         ],
       ),

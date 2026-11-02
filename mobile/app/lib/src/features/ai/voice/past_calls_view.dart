@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 import '../ai_providers.dart';
 
 /// Screen view displaying past voice calls history (AI-10).
@@ -38,14 +40,14 @@ class PastCallsView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'تعذر تحميل سجل المكالمات: $err',
+                    AppLocalizations.of(context).aiWeCanTLoadYour3,
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => ref.invalidate(pastVoiceCallsProvider),
-                    child: const Text('إعادة المحاولة'),
+                    child: Text(AppLocalizations.of(context).aiTryAgain),
                   ),
                 ],
               ),
@@ -78,8 +80,8 @@ class PastCallsView extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        const Text(
-                          'لا توجد مكالمات سابقة',
+                        Text(
+                          AppLocalizations.of(context).aiNoPastCalls,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -87,7 +89,7 @@ class PastCallsView extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'يمكنك التحدث مباشرة مع المساعد الذكي باللغة العامية لتسجيل المصاريف، متابعة الميزانيات، والاستفسار عن حساباتك بدون لمس الشاشة.',
+                          AppLocalizations.of(context).aiTalkToTheAssistantIn,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
@@ -101,7 +103,9 @@ class PastCallsView extends ConsumerWidget {
                         FilledButton.icon(
                           onPressed: onStartNewCall,
                           icon: const Icon(Icons.call),
-                          label: const Text('بدء مكالمة ذكية جديدة'),
+                          label: Text(
+                            AppLocalizations.of(context).aiStartANewCall,
+                          ),
                         ),
                         const SizedBox(height: 32),
                         _buildPrivacyCard(context),
@@ -127,8 +131,9 @@ class PastCallsView extends ConsumerWidget {
                 final durationMin = call.durationSeconds ~/ 60;
                 final durationSec = call.durationSeconds % 60;
                 final durationText = durationMin > 0
-                    ? '$durationMin دقيقة و $durationSec ثانية'
-                    : '$durationSec ثانية';
+                    ? AppLocalizations.of(context)
+                          .aiP0MinP1Sec('$durationMin', '$durationSec')
+                    : AppLocalizations.of(context).aiP0Sec('$durationSec');
 
                 return Card(
                   elevation: 0,
@@ -156,7 +161,7 @@ class PastCallsView extends ConsumerWidget {
                       ),
                     ),
                     title: Text(
-                      'مكالمة صوتية',
+                      AppLocalizations.of(context).aiVoiceCall,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -187,7 +192,8 @@ class PastCallsView extends ConsumerWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'المدة: $durationText',
+                              AppLocalizations.of(context)
+                                  .aiDurationP0(durationText),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Theme.of(context)
@@ -220,7 +226,7 @@ class PastCallsView extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: onStartNewCall,
         icon: const Icon(Icons.call),
-        label: const Text('مكالمة جديدة'),
+        label: Text(AppLocalizations.of(context).aiNewCall),
       ),
     );
   }
@@ -247,7 +253,7 @@ class PastCallsView extends ConsumerWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'أمان وخصوصية: لا يتم حفظ التسجيل الصوتي أو نصوص المحادثات نهائياً لحماية سرية بياناتك المالية.',
+              AppLocalizations.of(context).aiYourPrivacyNeitherTheAudio,
               style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import '../ledger/ledger_models.dart';
 import '../ledger/ledger_providers.dart';
 import 'contact_models.dart';
@@ -45,12 +47,12 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'دمج جهات الاتصال المكررة',
+            AppLocalizations.of(context).aiMergeDuplicates,
             style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(
-            'اختار الاسم اللي هيفضل وكل المعاملات هتتنقل عليه.',
+            AppLocalizations.of(context).aiChooseTheNameToKeep,
             style: textTheme.bodyMedium?.copyWith(
               color: colors.mutedForeground,
             ),
@@ -62,7 +64,7 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
                 vertical: SmartSpendSpacing.lg,
               ),
               child: Text(
-                'مفيش جهات اتصال تانية للدمج معاها.',
+                AppLocalizations.of(context).aiNoOtherContactsToMerge,
                 textAlign: TextAlign.center,
                 style: textTheme.bodyMedium?.copyWith(
                   color: colors.mutedForeground,
@@ -71,7 +73,8 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
             )
           else ...[
             Text(
-              'اختار الشخص التاني المراد دمجه مع "${widget.currentContact.name}":',
+              AppLocalizations.of(context)
+                  .aiChooseWhoToMergeWith(widget.currentContact.name),
               style: textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -79,7 +82,7 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
             const SizedBox(height: SmartSpendSpacing.sm),
             DropdownButtonFormField<int>(
               initialValue: _selectedOtherId,
-              hint: const Text('اختار جهة الاتصال'),
+              hint: Text(AppLocalizations.of(context).aiChooseAContact),
               decoration: const InputDecoration(
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: SmartSpendSpacing.md,
@@ -102,7 +105,7 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
             const SizedBox(height: SmartSpendSpacing.lg),
             if (_selectedOtherId != null) ...[
               Text(
-                'أي اسم هيفضل في السجل؟',
+                AppLocalizations.of(context).aiWhichNameStays,
                 style: textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -117,8 +120,8 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
                     RadioListTile<bool>(
                       value: true,
                       title: Text(widget.currentContact.name),
-                      subtitle: const Text(
-                        'هيفضل الاسم ده وكل المعاملات هتتنقل عليه',
+                      subtitle: Text(
+                        AppLocalizations.of(context).aiThisNameStaysAndAll,
                       ),
                     ),
                     RadioListTile<bool>(
@@ -128,8 +131,8 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
                             .firstWhere((c) => c.id == _selectedOtherId)
                             .name,
                       ),
-                      subtitle: const Text(
-                        'هيفضل الاسم ده وكل المعاملات هتتنقل عليه',
+                      subtitle: Text(
+                        AppLocalizations.of(context).aiThisNameStaysAndAll,
                       ),
                     ),
                   ],
@@ -145,7 +148,9 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
             ],
             const SizedBox(height: SmartSpendSpacing.xl),
             SmartSpendButton(
-              label: _submitting ? 'جاري الدمج...' : 'تأكيد الدمج',
+              label: _submitting
+                  ? AppLocalizations.of(context).aiMerging
+                  : AppLocalizations.of(context).aiConfirmMerge,
               onPressed: (_selectedOtherId == null || _submitting)
                   ? null
                   : () async {
@@ -178,7 +183,8 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
                         if (mounted) {
                           setState(() {
                             _submitting = false;
-                            _error = 'تعذر إتمام عملية الدمج، جرب تاني';
+                            _error = AppLocalizations.of(context)
+                                .aiWeCouldnTMergeThem;
                           });
                         }
                       }

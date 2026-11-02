@@ -92,7 +92,7 @@ class VoiceCallController extends Notifier<LiveCallState> {
       } catch (e) {
         state = state.copyWith(
           status: VoiceCallStatus.ended,
-          errorMessage: 'فشل الاتصال بالخادم الصوتي: $e',
+          errorMessage: 'ما عرفناش نوصل المكالمة.',
         );
         return;
       }
@@ -132,7 +132,7 @@ class VoiceCallController extends Notifier<LiveCallState> {
       onError: (err) {
         state = state.copyWith(
           status: VoiceCallStatus.ended,
-          errorMessage: 'انقطع الاتصال بالخادم.',
+          errorMessage: 'الاتصال انقطع.',
         );
       },
     );
@@ -180,7 +180,7 @@ class VoiceCallController extends Notifier<LiveCallState> {
         }
       case 'error':
         final errorMsg =
-            (message['message'] as String?) ?? 'حدث خطأ في المكالمة';
+            (message['message'] as String?) ?? 'حصلت مشكلة في المكالمة';
         state = state.copyWith(errorMessage: errorMsg);
       case 'ended':
       case 'end':

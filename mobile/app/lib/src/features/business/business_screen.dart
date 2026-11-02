@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import '../contacts/contacts_screen.dart';
 import '../plans/plan_providers.dart';
 import 'business_category_sheet.dart';
@@ -40,7 +42,10 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
   Future<void> _fetchAiSuggestions() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      showSmartSpendNotice(context, 'اكتب اسم المشروع أولاً');
+      showSmartSpendNotice(
+        context,
+        AppLocalizations.of(context).aiEnterTheBusinessNameFirst,
+      );
       return;
     }
 
@@ -66,7 +71,10 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     } catch (_) {
       if (mounted) {
         setState(() => _suggesting = false);
-        showSmartSpendNotice(context, 'تعذر اقتراح الفئات، جرب مرة أخرى');
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).aiWeCouldnTSuggestCategories,
+        );
       }
     }
   }
@@ -94,12 +102,18 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
       ref.invalidate(businessDashboardProvider);
       if (mounted) {
         setState(() => _creating = false);
-        showSmartSpendNotice(context, 'تم تفعيل حساب الشغل بنجاح');
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).aiYourWorkAccountIsOn,
+        );
       }
     } catch (_) {
       if (mounted) {
         setState(() => _creating = false);
-        showSmartSpendNotice(context, 'حدث خطأ أثناء إنشاء المشروع');
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).aiWeCouldnTCreateThe,
+        );
       }
     }
   }
@@ -108,24 +122,19 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('حذف حساب الشغل؟'),
-        content: const Text(
-          'عند حذف حساب الشغل:\n'
-          '• كل المعاملات اللي سجلتها هتفضل محفوظة بس هتتحول لمعاملات شخصية عادية.\n'
-          '• فئات الشغل وقواعد الذكاء الاصطناعي الخاصة بيه هتتحذف.\n\n'
-          'هل تريد الاستمرار؟',
-        ),
+        title: Text(AppLocalizations.of(context).aiDeleteTheWorkAccount),
+        content: Text(AppLocalizations.of(context).aiIfYouDeleteTheWork),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(AppLocalizations.of(context).aiCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: ctx.smartSpendColors.danger,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('تأكيد الحذف'),
+            child: Text(AppLocalizations.of(context).aiConfirmDelete),
           ),
         ],
       ),
@@ -139,12 +148,15 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         if (mounted) {
           showSmartSpendNotice(
             context,
-            'تم حذف حساب الشغل وتحويل المعاملات للحساب الشخصي',
+            AppLocalizations.of(context).aiWorkAccountDeletedAndIts,
           );
         }
       } catch (_) {
         if (mounted) {
-          showSmartSpendNotice(context, 'تعذر حذف المشروع حالياً');
+          showSmartSpendNotice(
+            context,
+            AppLocalizations.of(context).aiWeCanTDeleteThe,
+          );
         }
       }
     }
@@ -160,7 +172,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     final plan = planAsync.value;
     if (plan != null && !plan.businessEnabled) {
       return Scaffold(
-        appBar: AppBar(title: const Text('حساب الشغل / البيزنس')),
+        appBar: AppBar(title: Text(AppLocalizations.of(context).aiWorkAccount)),
         body: Padding(
           padding: const EdgeInsets.all(SmartSpendSpacing.screen),
           child: Column(
@@ -170,7 +182,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               Icon(Icons.storefront_rounded, size: 64, color: colors.accent),
               const SizedBox(height: SmartSpendSpacing.md),
               Text(
-                'حساب الشغل متاح في باقة برو',
+                AppLocalizations.of(context).aiTheWorkAccountComesWith,
                 style: textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: colors.foreground,
@@ -179,7 +191,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               ),
               const SizedBox(height: SmartSpendSpacing.sm),
               Text(
-                'افصل مصاريف وإيرادات مشروعك عن مصاريف بيتك الشخصية، وخصص فئات تجارية ذكية تناسب مجالك مع تقارير وإقرارات ضريبية مبسطة.',
+                AppLocalizations.of(context).aiKeepYourBusinessSSpending,
                 style: textTheme.bodyMedium?.copyWith(
                   color: colors.mutedForeground,
                 ),
@@ -189,9 +201,9 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               FilledButton(
                 onPressed: () => showSmartSpendNotice(
                   context,
-                  'الترقية متاحة قريباً عبر متجر التطبيقات',
+                  AppLocalizations.of(context).aiUpgradingFromTheAppIs,
                 ),
-                child: const Text('ترقية إلى برو'),
+                child: Text(AppLocalizations.of(context).aiUpgradeToPro2),
               ),
             ],
           ),
@@ -203,7 +215,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     final bState = stateAsync.value;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('حساب الشغل / البيزنس')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).aiWorkAccount)),
       body: stateAsync.isLoading
           ? const Center(child: CircularProgressIndicator())
           : bState != null && bState.hasBusiness
@@ -218,20 +230,32 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
     final typesAsync = ref.watch(businessTypesProvider);
     final types =
         typesAsync.value ??
-        const [
+        [
           BusinessTypeOption(
             id: 'restaurant',
-            label: 'مطاعم ومأكولات',
+            label: AppLocalizations.of(context).aiRestaurantsAndFood,
             icon: '🍤',
           ),
-          BusinessTypeOption(id: 'retail', label: 'تجارة وتجزئة', icon: '🛍️'),
-          BusinessTypeOption(id: 'services', label: 'خدمات وورش', icon: '🔧'),
+          BusinessTypeOption(
+            id: 'retail',
+            label: AppLocalizations.of(context).aiTradeAndRetail,
+            icon: '🛍️',
+          ),
+          BusinessTypeOption(
+            id: 'services',
+            label: AppLocalizations.of(context).aiServicesAndWorkshops,
+            icon: '🔧',
+          ),
           BusinessTypeOption(
             id: 'freelance',
-            label: 'عمل حر وشركات',
+            label: AppLocalizations.of(context).aiFreelanceAndCompanies,
             icon: '💻',
           ),
-          BusinessTypeOption(id: 'custom', label: 'نوع آخر', icon: '✏️'),
+          BusinessTypeOption(
+            id: 'custom',
+            label: AppLocalizations.of(context).aiSomethingElse,
+            icon: '✏️',
+          ),
         ];
 
     return SingleChildScrollView(
@@ -240,12 +264,12 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           GroupedCard(
-            title: 'إعداد حساب الشغل',
+            title: AppLocalizations.of(context).aiSetUpTheWorkAccount,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'أنشئ حساباً منفصلاً لعملك أو متجرك لفصل الحسابات الشخصية عن العمل.',
+                  AppLocalizations.of(context).aiMakeASeparateAccountFor,
                   style: textTheme.bodyMedium?.copyWith(
                     color: colors.mutedForeground,
                   ),
@@ -253,13 +277,17 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                 const SizedBox(height: SmartSpendSpacing.md),
                 TextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'اسم المشروع أو المتجر',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)
+                        .aiBusinessOrShopName,
                     border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.md),
-                Text('مجال المشروع', style: textTheme.labelLarge),
+                Text(
+                  AppLocalizations.of(context).aiField,
+                  style: textTheme.labelLarge,
+                ),
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Wrap(
                   spacing: SmartSpendSpacing.sm,
@@ -279,8 +307,9 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                 TextField(
                   controller: _descController,
                   maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: 'وصف مختصر (اختياري - بيساعد الذكاء الاصطناعي)',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)
+                        .aiShortDescriptionOptional,
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -293,7 +322,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.auto_awesome_rounded),
-                  label: const Text('اقتراح فئات بالذكاء الاصطناعي'),
+                  label: Text(AppLocalizations.of(context).aiSuggestCategories),
                   onPressed: _suggesting ? null : _fetchAiSuggestions,
                 ),
               ],
@@ -304,12 +333,13 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
           if (_suggestedCategories.isNotEmpty) ...[
             const SizedBox(height: SmartSpendSpacing.md),
             GroupedCard(
-              title: 'الفئات المقترحة للمشروع (راجع ووافق عليها)',
+              title: AppLocalizations.of(context)
+                  .aiSuggestedCategoriesReviewThem,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'اختر الفئات اللي تناسب نشاطك ليتم إضافتها لحسابك:',
+                    AppLocalizations.of(context).aiChooseTheOnesThatFit,
                     style: textTheme.bodySmall?.copyWith(
                       color: colors.mutedForeground,
                     ),
@@ -336,8 +366,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                       ),
                       subtitle: Text(
                         _suggestedCategories[i].type == 'income'
-                            ? 'إيراد ومبيعات'
-                            : 'مصروفات',
+                            ? AppLocalizations.of(context).aiIncomeAndSales
+                            : AppLocalizations.of(context).aiExpenses,
                         style: textTheme.bodySmall?.copyWith(
                           color: colors.mutedForeground,
                         ),
@@ -357,7 +387,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('إنشاء حساب الشغل'),
+                : Text(AppLocalizations.of(context).aiCreateTheWorkAccount),
           ),
         ],
       ),
@@ -377,7 +407,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
         children: [
           // Business Mode Switcher Card (BIZ-01, BIZ-03)
           GroupedCard(
-            title: 'حساب الشغل الحالي',
+            title: AppLocalizations.of(context).aiCurrentWorkAccount,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -411,8 +441,10 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                         showSmartSpendNotice(
                           context,
                           val
-                              ? 'تم التحويل لوضع حساب الشغل'
-                              : 'تم التحويل للوضع الشخصي',
+                              ? AppLocalizations.of(context)
+                                    .aiSwitchedToTheWorkAccount
+                              : AppLocalizations.of(context)
+                                    .aiSwitchedToPersonal,
                         );
                       },
                     ),
@@ -421,8 +453,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
                   isBusinessActive
-                      ? 'أنت تعمل حالياً في وضع حساب الشغل. كل المعاملات الجديدة ستُنسب لهذا المشروع.'
-                      : 'أنت في الوضع الشخصي. فعّل المفتاح لتسجيل مصاريف وإيرادات الشغل.',
+                      ? AppLocalizations.of(context).aiYouReInTheWork
+                      : AppLocalizations.of(context).aiYouReInPersonalMode,
                   style: textTheme.bodySmall?.copyWith(
                     color: isBusinessActive
                         ? colors.accent
@@ -436,7 +468,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
           // Business Categories Manager (BIZ-02)
           GroupedCard(
-            title: 'فئات المشروع (${state.categories.length})',
+            title: AppLocalizations.of(context)
+                .aiBusinessCategoriesP0('${state.categories.length}'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -466,7 +499,9 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                                   ),
                                 ),
                                 Text(
-                                  cat.type == 'income' ? 'إيراد' : 'مصروف',
+                                  cat.type == 'income'
+                                      ? AppLocalizations.of(context).aiIncome
+                                      : AppLocalizations.of(context).aiExpense,
                                   style: textTheme.bodySmall?.copyWith(
                                     color: cat.type == 'income'
                                         ? colors.accent
@@ -483,7 +518,8 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                             color: colors.danger,
                             size: 20,
                           ),
-                          tooltip: 'حذف الفئة',
+                          tooltip: AppLocalizations.of(context)
+                              .aiDeleteTheCategory,
                           onPressed: () async {
                             final success = await ref
                                 .read(businessApiProvider)
@@ -499,7 +535,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                 const SizedBox(height: SmartSpendSpacing.sm),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text('إضافة فئة جديدة'),
+                  label: Text(AppLocalizations.of(context).aiAddANewCategory),
                   onPressed: () => AddBusinessCategorySheet.show(
                     context,
                     onAdd:
@@ -530,19 +566,20 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
 
           // People of the Business (BIZ-04)
           GroupedCard(
-            title: 'أشخاص وموردي المشروع',
+            title: AppLocalizations.of(context).aiBusinessPeopleAndSuppliers,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'عدد الموردين والعملاء المسجلين: ${state.contactCount}',
+                  AppLocalizations.of(context)
+                      .aiSuppliersAndCustomersP0('${state.contactCount}'),
                   style: textTheme.bodyMedium?.copyWith(
                     color: colors.foreground,
                   ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
-                  'تقدر تربط أي شخص أو مورد بالمشروع لمتابعة المستحقات والفواتير.',
+                  AppLocalizations.of(context).aiLinkAnyoneToTheBusiness,
                   style: textTheme.bodySmall?.copyWith(
                     color: colors.mutedForeground,
                   ),
@@ -552,7 +589,9 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                   alignment: AlignmentDirectional.centerStart,
                   child: TextButton.icon(
                     icon: const Icon(Icons.people_outline_rounded),
-                    label: const Text('إدارة جهات الاتصال والموردين'),
+                    label: Text(
+                      AppLocalizations.of(context).aiManageContactsAndSuppliers,
+                    ),
                     onPressed: () => context.go(ContactsScreen.path),
                   ),
                 ),
@@ -568,7 +607,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               side: BorderSide(color: colors.danger.withAlpha(120)),
             ),
             icon: const Icon(Icons.delete_forever_rounded),
-            label: const Text('حذف حساب الشغل'),
+            label: Text(AppLocalizations.of(context).aiDeleteTheWorkAccount2),
             onPressed: () => _confirmDeleteBusiness(business),
           ),
         ],

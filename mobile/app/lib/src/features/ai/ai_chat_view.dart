@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import '../ledger/offline/outbox.dart';
 import 'ai_action_card.dart';
 import 'ai_models.dart';
@@ -56,10 +58,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     final isOnline = ref.read(connectivityProvider).asData?.value ?? true;
     if (!isOnline) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'محتاجين اتصال بالإنترنت عشان نرد عليك. المسودة محفوظة.',
-          ),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).aiWeNeedInternetToAnswer),
           backgroundColor: Colors.orange,
         ),
       );
@@ -108,7 +108,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'أنت غير متصل بالإنترنت. سيتم إرسال رسالتك فور عودة الاتصال.',
+                    AppLocalizations.of(context).aiYouReOfflineYourDraft,
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.amber.shade900,
@@ -141,7 +141,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                       reason: UpgradeLimitReason.aiTokens,
                     );
                   },
-                  child: const Text('ترقية للبرو'),
+                  child: Text(AppLocalizations.of(context).aiUpgradeToPro),
                 ),
               ],
             ),
@@ -151,8 +151,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         Expanded(
           child: messagesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) =>
-                Center(child: Text('حدث خطأ في تحميل الرسائل: $err')),
+            error: (err, _) => Center(
+              child: Text(AppLocalizations.of(context).aiWeCanTLoadYour),
+            ),
             data: (messages) {
               final showQuickQuestions = messages.isEmpty && isOnline;
 
@@ -217,8 +218,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                     onSubmitted: (_) => _handleSend(),
                     decoration: InputDecoration(
                       hintText: isOnline
-                          ? 'اسأل المساعد عن مصاريفك...'
-                          : 'محتاج اتصال بالإنترنت لإرسال الرسالة...',
+                          ? AppLocalizations.of(context).aiAskAboutYourSpending
+                          : AppLocalizations.of(context).aiSendingNeedsInternet,
                       hintStyle: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade400,
@@ -272,7 +273,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'أهلاً بك في المساعد الذكي!',
+                  AppLocalizations.of(context).aiHiIMYourAssistant,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -280,13 +281,13 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           ),
           const SizedBox(height: 6),
           Text(
-            'اسألني عن مصاريفك، ميزانيتك، أو اطلب مني تسجيل أي عملية.',
+            AppLocalizations.of(context).aiAskAboutYourSpendingOr,
             style: Theme.of(context).textTheme.bodyMedium
                 ?.copyWith(color: colors.mutedForeground),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'أسئلة مقترحة:',
+          Text(
+            AppLocalizations.of(context).aiTryAsking,
             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
@@ -557,7 +558,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'بيفكر...',
+                  AppLocalizations.of(context).aiThinking,
                   style: TextStyle(
                     fontSize: 13,
                     color: colorScheme.onSurfaceVariant,

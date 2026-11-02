@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smartspend_app/src/l10n/app_localizations.dart';
 import 'package:smartspend_app/src/features/ai/voice/voice_call_controller.dart';
 import 'package:smartspend_app/src/features/ai/voice/voice_call_models.dart';
 import 'package:smartspend_app/src/features/ai/voice/voice_call_screen.dart';
@@ -177,15 +178,17 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(
-            locale: Locale('ar'),
-            home: VoiceCallScreen(),
+          child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: const VoiceCallScreen(),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('مكالمة ذكية مباشرة'), findsOneWidget);
+      expect(find.text('المكالمة المباشرة'), findsOneWidget);
       expect(find.text('مرحباً، كيف أساعدك اليوم؟'), findsOneWidget);
       expect(find.text('إضافة مصروف'), findsOneWidget);
       expect(find.textContaining('85'), findsOneWidget);
@@ -199,7 +202,7 @@ void main() {
         fakeSocket.sentMessages.any((m) => m.contains('"type":"confirm"')),
         isTrue,
       );
-      expect(find.text('تم التنفيذ'), findsOneWidget);
+      expect(find.text('اتعملت'), findsOneWidget);
 
       // Tap end call button
       await tester.tap(find.byIcon(Icons.call_end));

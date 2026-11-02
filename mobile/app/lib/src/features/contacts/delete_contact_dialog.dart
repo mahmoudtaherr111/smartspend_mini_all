@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'contact_models.dart';
 import 'contacts_providers.dart';
 
@@ -26,9 +28,9 @@ class _DeleteContactDialogState extends ConsumerState<DeleteContactDialog> {
     final textTheme = Theme.of(context).textTheme;
 
     return AlertDialog(
-      title: Text('مسح "${widget.contact.name}"؟'),
+      title: Text(AppLocalizations.of(context).aiDeleteP0(widget.contact.name)),
       content: Text(
-        'مسح الشخص مش هيمسح المعاملات المسجلة معاه في السجل، بس هيفك ربطها باسمه.',
+        AppLocalizations.of(context).aiTheirRecordedTransactionsStayOnly,
         style: textTheme.bodyMedium?.copyWith(color: colors.foreground),
       ),
       actions: [
@@ -36,7 +38,7 @@ class _DeleteContactDialogState extends ConsumerState<DeleteContactDialog> {
           onPressed: _submitting
               ? null
               : () => Navigator.of(context).pop(false),
-          child: const Text('إلغاء'),
+          child: Text(AppLocalizations.of(context).aiCancel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
@@ -64,7 +66,11 @@ class _DeleteContactDialogState extends ConsumerState<DeleteContactDialog> {
                     }
                   }
                 },
-          child: Text(_submitting ? 'جاري المسح...' : 'مسح'),
+          child: Text(
+            _submitting
+                ? AppLocalizations.of(context).aiDeleting
+                : AppLocalizations.of(context).aiDelete2,
+          ),
         ),
       ],
     );

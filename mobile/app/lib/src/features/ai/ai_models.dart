@@ -118,7 +118,7 @@ final class AiActionDraft {
       } else if (actionName == 'action.undo') {
         phrase = 'تراجع عن العملية';
       } else {
-        phrase = 'أكد العملية';
+        phrase = 'أكد العملية'; // The phrase the server compares; it is not translated.
       }
     }
 

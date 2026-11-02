@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 import 'voice_call_controller.dart';
 import 'voice_call_models.dart';
 
@@ -41,8 +43,8 @@ class VoiceCallScreen extends ConsumerWidget {
         ),
         title: Text(
           state.status == VoiceCallStatus.ended
-              ? 'انتهت المكالمة'
-              : 'مكالمة ذكية مباشرة',
+              ? AppLocalizations.of(context).aiCallEnded
+              : AppLocalizations.of(context).aiLiveCall2,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -88,7 +90,7 @@ class VoiceCallScreen extends ConsumerWidget {
                 child: Text(
                   state.assistantTranscript.isNotEmpty
                       ? state.assistantTranscript
-                      : _statusText(state.status, state.waitDetail),
+                      : _statusText(context, state.status, state.waitDetail),
                   key: ValueKey(state.assistantTranscript + state.status.name),
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -145,7 +147,7 @@ class VoiceCallScreen extends ConsumerWidget {
 
             // Privacy disclaimer
             Text(
-              '🔒 المكالمة مشفرة، ولا يتم تسجيل أو حفظ الصوت بعد انتهائها.',
+              AppLocalizations.of(context).aiTheAudioIsNotRecorded,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 11,
@@ -169,26 +171,30 @@ class VoiceCallScreen extends ConsumerWidget {
     );
   }
 
-  String _statusText(VoiceCallStatus status, String? waitDetail) {
+  String _statusText(
+    BuildContext context,
+    VoiceCallStatus status,
+    String? waitDetail,
+  ) {
     switch (status) {
       case VoiceCallStatus.idle:
-        return 'جاهز للبدء';
+        return AppLocalizations.of(context).aiReady;
       case VoiceCallStatus.connecting:
-        return 'جاري الاتصال بالخادم...';
+        return AppLocalizations.of(context).aiConnecting;
       case VoiceCallStatus.listening:
-        return 'نسمعك الآن، تحدث بحرية...';
+        return AppLocalizations.of(context).aiListeningGoAhead;
       case VoiceCallStatus.thinking:
         return waitDetail != null && waitDetail.isNotEmpty
             ? waitDetail
-            : 'جاري التفكير وتحليل الحسابات...';
+            : AppLocalizations.of(context).aiThinking2;
       case VoiceCallStatus.speaking:
-        return 'المساعد الذكي يتحدث...';
+        return AppLocalizations.of(context).aiTheAssistantIsSpeaking;
       case VoiceCallStatus.awaitingConfirmation:
-        return 'يرجى تأكيد العملية المقترحة';
+        return AppLocalizations.of(context).aiPleaseConfirmTheSuggestedAction;
       case VoiceCallStatus.reconnecting:
-        return 'جاري إعادة الاتصال...';
+        return AppLocalizations.of(context).aiReconnecting;
       case VoiceCallStatus.ended:
-        return 'انتهت المكالمة';
+        return AppLocalizations.of(context).aiCallEnded;
     }
   }
 }
@@ -351,12 +357,12 @@ class _LiveCallCardWidget extends StatelessWidget {
           if (isPending) ...[
             IconButton(
               icon: const Icon(Icons.close, color: Colors.redAccent),
-              tooltip: 'إلغاء',
+              tooltip: AppLocalizations.of(context).aiCancel,
               onPressed: onCancel,
             ),
             IconButton(
               icon: const Icon(Icons.check_circle, color: Color(0xFF34D399)),
-              tooltip: 'تأكيد',
+              tooltip: AppLocalizations.of(context).aiConfirm2,
               onPressed: onConfirm,
             ),
           ] else ...[
@@ -368,9 +374,9 @@ class _LiveCallCardWidget extends StatelessWidget {
               ),
               child: Text(
                 card.status == 'executed' || card.status == 'executing'
-                    ? 'تم التنفيذ'
+                    ? AppLocalizations.of(context).aiDone2
                     : card.status == 'cancelled'
-                    ? 'ملغاة'
+                    ? AppLocalizations.of(context).aiCancelled2
                     : card.status,
                 style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),

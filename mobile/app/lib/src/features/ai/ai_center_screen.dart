@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'ai_chat_view.dart';
 import 'ai_compare_view.dart';
 import 'ai_conversations_sheet.dart';
@@ -54,22 +56,22 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
         await showDialog<void>(
           context: context,
           builder: (dialogCtx) => AlertDialog(
-            title: const Text('المكالمة الذكية المباشرة'),
+            title: Text(AppLocalizations.of(context).aiLiveCall),
             content: Text(
               eligibility.reason ??
-                  'المكالمة الصوتية المباشرة مع المساعد الذكي تتطلب باقة Pro.',
+                  AppLocalizations.of(context).aiTheLiveCallComesWith,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogCtx).pop(),
-                child: const Text('إلغاء'),
+                child: Text(AppLocalizations.of(context).aiCancel),
               ),
               FilledButton(
                 onPressed: () {
                   Navigator.of(dialogCtx).pop();
                   context.push('/more/plan');
                 },
-                child: const Text('ترقية الباقة'),
+                child: Text(AppLocalizations.of(context).aiUpgrade),
               ),
             ],
           ),
@@ -100,13 +102,13 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'بدء مكالمة ذكية مباشرة',
+                Text(
+                  AppLocalizations.of(context).aiStartALiveCall,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'سيتم استخدام الميكروفون للتحدث بالعامية مع المساعد الذكي. المكالمة مشفرة ولا يتم تخزين التسجيل.',
+                  AppLocalizations.of(context).aiWeLlUseTheMicrophone,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
@@ -119,7 +121,7 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(sheetCtx).pop(false),
-                        child: const Text('إلغاء'),
+                        child: Text(AppLocalizations.of(context).aiCancel),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -127,7 +129,7 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
                       child: FilledButton.icon(
                         onPressed: () => Navigator.of(sheetCtx).pop(true),
                         icon: const Icon(Icons.call),
-                        label: const Text('بدء الاتصال'),
+                        label: Text(AppLocalizations.of(context).aiCall),
                       ),
                     ),
                   ],
@@ -160,7 +162,9 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
       );
     } catch (e) {
       scaffoldMessenger.showSnackBar(
-        SnackBar(content: Text('تعذر بدء المكالمة: $e')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).aiWeCouldnTStartThe),
+        ),
       );
     }
   }
@@ -169,8 +173,8 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'مركز الذكاء المالي',
+        title: Text(
+          AppLocalizations.of(context).aiAiCenter,
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -178,19 +182,19 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
           if (liveCallsEnabled)
             IconButton(
               icon: const Icon(Icons.phone_in_talk_outlined),
-              tooltip: 'مكالمة ذكية مباشرة',
+              tooltip: AppLocalizations.of(context).aiLiveCall2,
               onPressed: _startVoiceCall,
             ),
           // Long-term Memories list (AI-05)
           IconButton(
             icon: const Icon(Icons.psychology_outlined),
-            tooltip: 'ذاكرة المساعد',
+            tooltip: AppLocalizations.of(context).aiWhatTheAssistantRemembers,
             onPressed: () => AiMemoriesSheet.show(context),
           ),
           // Conversation threads (AI-03)
           IconButton(
             icon: const Icon(Icons.forum_outlined),
-            tooltip: 'المحادثات السابقة',
+            tooltip: AppLocalizations.of(context).aiPastConversations,
             onPressed: () => AiConversationsSheet.show(context),
           ),
         ],
@@ -198,12 +202,13 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
           controller: _tabController,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
-          tabs: const [
-            Tab(text: 'المحادثة'),
-            Tab(text: 'التقرير الشهري'),
-            Tab(text: 'مقارنة الشهور'),
-            if (liveCallsEnabled) Tab(text: 'سجل المكالمات'),
-            Tab(text: 'التقرير السنوي'),
+          tabs: [
+            Tab(text: AppLocalizations.of(context).aiChat),
+            Tab(text: AppLocalizations.of(context).aiMonthlyReport),
+            Tab(text: AppLocalizations.of(context).aiCompareMonths),
+            if (liveCallsEnabled)
+              Tab(text: AppLocalizations.of(context).aiCalls),
+            Tab(text: AppLocalizations.of(context).aiYearlyReport),
           ],
         ),
       ),

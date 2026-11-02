@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/src/internals.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smartspend_app/src/l10n/app_localizations.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_app/src/core/providers.dart';
 import 'package:smartspend_app/src/features/ai/ai_action_card.dart';
@@ -63,7 +64,12 @@ void main() {
           overrides: _testOverrides(fakeApi, [
             chatMessagesProvider.overrideWith(_TestChatMessagesNotifier.new),
           ]),
-          child: const MaterialApp(home: Scaffold(body: AiChatView())),
+          child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: AiChatView()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -97,6 +103,9 @@ void main() {
         ProviderScope(
           overrides: _testOverrides(fakeApi),
           child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: Scaffold(
               body: Center(child: AiActionCard(draft: draft)),
             ),
@@ -109,7 +118,7 @@ void main() {
       expect(find.byType(AmountText), findsOneWidget);
 
       // Tap confirm button
-      final confirmBtn = find.text('تأكيد');
+      final confirmBtn = find.text('أكد');
       expect(confirmBtn, findsOneWidget);
       await tester.tap(confirmBtn);
       // Immediate second tap should be debounced
@@ -138,6 +147,9 @@ void main() {
         ProviderScope(
           overrides: _testOverrides(fakeApi),
           child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: Scaffold(
               body: Center(child: AiActionCard(draft: expiredDraft)),
             ),
@@ -146,8 +158,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('انتهت صلاحية هذا الإجراء'), findsOneWidget);
-      expect(find.text('تأكيد'), findsNothing);
+      expect(find.textContaining('المدة انتهت'), findsOneWidget);
+      expect(find.text('أكد'), findsNothing);
     });
 
     testWidgets('requires exact phrase confirmation for high-risk action', (
@@ -167,7 +179,7 @@ void main() {
         actionName: 'action.undo',
         summary: 'مسح جميع المعاملات',
         isHighRisk: true,
-        confirmationPhrase: 'تأكيد مسح كل المعاملات',
+        confirmationPhrase: 'أكد مسح كل المعاملات',
         status: 'pending',
         expiresAt: DateTime.now().add(const Duration(minutes: 10)),
       );
@@ -176,6 +188,9 @@ void main() {
         ProviderScope(
           overrides: _testOverrides(fakeApi),
           child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: Scaffold(
               body: Center(child: AiActionCard(draft: highRiskDraft)),
             ),
@@ -184,16 +199,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('حساس'), findsOneWidget);
+      expect(find.text('حساسة'), findsOneWidget);
 
       // Tap confirm button -> opens phrase dialog
-      await tester.tap(find.text('متابعة التأكيد'));
+      await tester.tap(find.text('كمّل التأكيد'));
       await tester.pumpAndSettle();
 
-      expect(
-        find.textContaining('للتأكيد، اكتب العبارة التالية'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('علشان تأكد، اكتب'), findsOneWidget);
 
       // Typing wrong phrase keeps confirm disabled
       final inputField = find.byType(TextField);
@@ -201,11 +213,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Submit button should be disabled
-      final dialogConfirm = find.widgetWithText(FilledButton, 'تأكيد التنفيذ');
+      final dialogConfirm = find.widgetWithText(FilledButton, 'أكد');
       expect(tester.widget<FilledButton>(dialogConfirm).onPressed, isNull);
 
       // Typing the exact phrase enables button
-      await tester.enterText(inputField, 'تأكيد مسح كل المعاملات');
+      await tester.enterText(inputField, 'أكد مسح كل المعاملات');
       await tester.pumpAndSettle();
 
       expect(tester.widget<FilledButton>(dialogConfirm).onPressed, isNotNull);
@@ -230,7 +242,12 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: _testOverrides(fakeApi),
-            child: const MaterialApp(home: Scaffold(body: AiChatView())),
+            child: MaterialApp(
+              locale: const Locale('ar'),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(body: AiChatView()),
+            ),
           ),
         );
         await tester.pumpAndSettle();
@@ -245,7 +262,7 @@ void main() {
           find.textContaining('وصلت للحد الأقصى لرسائل الذكاء الاصطناعي'),
           findsOneWidget,
         );
-        expect(find.text('ترقية للبرو'), findsOneWidget);
+        expect(find.text('اشترك في Pro'), findsOneWidget);
         // Composer retains draft text
         expect(find.widgetWithText(TextField, 'سؤال جديد'), findsOneWidget);
       },
@@ -280,6 +297,10 @@ void main() {
               builder: (context, ref, _) {
                 container = ProviderScope.containerOf(context);
                 return MaterialApp(
+                  locale: const Locale('ar'),
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  localizationsDelegates:
+                      AppLocalizations.localizationsDelegates,
                   home: Scaffold(
                     body: Builder(
                       builder: (sheetCtx) => ElevatedButton(
@@ -298,7 +319,7 @@ void main() {
         await tester.tap(find.text('افتح المحادثات'));
         await tester.pumpAndSettle();
 
-        expect(find.text('المحادثات السابقة'), findsOneWidget);
+        expect(find.text('المحادثات اللي فاتت'), findsOneWidget);
         expect(find.text('محادثة ميزانية رمضان'), findsOneWidget);
         expect(find.text('تحليل فواتير البيت'), findsOneWidget);
 
@@ -337,6 +358,9 @@ void main() {
         ProviderScope(
           overrides: _testOverrides(fakeApi),
           child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: Scaffold(
               body: Builder(
                 builder: (context) => ElevatedButton(
@@ -353,7 +377,7 @@ void main() {
       await tester.tap(find.text('افتح الذاكرة'));
       await tester.pumpAndSettle();
 
-      expect(find.text('ذاكرة المساعد الذكي'), findsOneWidget);
+      expect(find.text('ذاكرة المساعد'), findsOneWidget);
       expect(
         find.text('المستخدم يفضل التوفير للمصيف في الصيف'),
         findsOneWidget,

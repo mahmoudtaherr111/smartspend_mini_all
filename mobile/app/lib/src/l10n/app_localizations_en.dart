@@ -2736,4 +2736,686 @@ class AppLocalizationsEn extends AppLocalizations {
   String monYourSavedPaydayDayP0(String p0) {
     return 'Your saved payday: day $p0 of each month.';
   }
+
+  @override
+  String get aiWeCanTRunThe => 'We can\'t run the yearly analysis right now.';
+
+  @override
+  String get aiConfirmIt => 'Confirm it';
+
+  @override
+  String get aiDone => 'Done';
+
+  @override
+  String get aiItDidnTGoThrough => 'It didn\'t go through. Try again.';
+
+  @override
+  String get aiConfirmASensitiveAction => 'Confirm a sensitive action';
+
+  @override
+  String aiThisActionP0CanT(String p0) {
+    return 'This action ($p0) can\'t easily be undone.';
+  }
+
+  @override
+  String aiToConfirmTypeExactlyP0(String p0) {
+    return 'To confirm, type exactly:\n«$p0»';
+  }
+
+  @override
+  String get aiCancel => 'Cancel';
+
+  @override
+  String get aiConfirm => 'Confirm';
+
+  @override
+  String get aiSensitive => 'Sensitive';
+
+  @override
+  String aiDateP0(String p0) {
+    return 'Date: $p0';
+  }
+
+  @override
+  String get aiDoneAndYourRecordsAre => 'Done, and your records are updated.';
+
+  @override
+  String get aiCancelled => 'Cancelled.';
+
+  @override
+  String get aiThisHasExpiredAndCan =>
+      'This has expired and can\'t be done anymore.';
+
+  @override
+  String get aiContinue => 'Continue';
+
+  @override
+  String get aiConfirm2 => 'Confirm';
+
+  @override
+  String get aiReportReceived => 'Report received.';
+
+  @override
+  String get aiMonthsCompared => 'Months compared.';
+
+  @override
+  String get aiLiveCall => 'Live call';
+
+  @override
+  String get aiTheLiveCallComesWith => 'The live call comes with Pro.';
+
+  @override
+  String get aiUpgrade => 'Upgrade';
+
+  @override
+  String get aiStartALiveCall => 'Start a live call';
+
+  @override
+  String get aiWeLlUseTheMicrophone =>
+      'We\'ll use the microphone so you can talk to the assistant.';
+
+  @override
+  String get aiCall => 'Call';
+
+  @override
+  String get aiWeCouldnTStartThe => 'We couldn\'t start the call.';
+
+  @override
+  String get aiAiCenter => 'AI Center';
+
+  @override
+  String get aiLiveCall2 => 'Live call';
+
+  @override
+  String get aiWhatTheAssistantRemembers => 'What the assistant remembers';
+
+  @override
+  String get aiPastConversations => 'Past conversations';
+
+  @override
+  String get aiChat => 'Chat';
+
+  @override
+  String get aiMonthlyReport => 'Monthly report';
+
+  @override
+  String get aiCompareMonths => 'Compare months';
+
+  @override
+  String get aiCalls => 'Calls';
+
+  @override
+  String get aiYearlyReport => 'Yearly report';
+
+  @override
+  String get aiWeNeedInternetToAnswer =>
+      'We need internet to answer you. Your draft is saved.';
+
+  @override
+  String get aiYouReOfflineYourDraft =>
+      'You\'re offline. Your draft is saved; send it when you\'re back.';
+
+  @override
+  String get aiUpgradeToPro => 'Upgrade to Pro';
+
+  @override
+  String get aiWeCanTLoadYour => 'We can\'t load your messages.';
+
+  @override
+  String get aiAskAboutYourSpending => 'Ask about your spending...';
+
+  @override
+  String get aiSendingNeedsInternet => 'Sending needs internet...';
+
+  @override
+  String get aiHiIMYourAssistant => 'Hi, I\'m your assistant';
+
+  @override
+  String get aiAskAboutYourSpendingOr =>
+      'Ask about your spending or budget, or tell me to record something.';
+
+  @override
+  String get aiTryAsking => 'Try asking:';
+
+  @override
+  String get aiThinking => 'Thinking...';
+
+  @override
+  String get aiCompareTwoMonths => 'Compare two months';
+
+  @override
+  String get aiPickTwoDifferentMonthsTo =>
+      'Pick two different months to see what changed and why.';
+
+  @override
+  String get aiFirstMonth => 'First month:';
+
+  @override
+  String get aiSecondMonth => 'Second month:';
+
+  @override
+  String get aiPickTwoDifferentMonths => 'Pick two different months.';
+
+  @override
+  String get aiWeCouldnTCompareThem => 'We couldn\'t compare them.';
+
+  @override
+  String aiComparisonP0AndP1(String p0, String p1) {
+    return 'Comparison ($p0 and $p1)';
+  }
+
+  @override
+  String get aiBiggestChangesByCategory => 'Biggest changes by category:';
+
+  @override
+  String get aiCategory => 'Category';
+
+  @override
+  String get aiNewChat => 'New chat';
+
+  @override
+  String get aiWeCanTLoadYour2 => 'We can\'t load your conversations.';
+
+  @override
+  String get aiNoPastConversations => 'No past conversations';
+
+  @override
+  String get aiStartANewChatWith => 'Start a new chat with the assistant';
+
+  @override
+  String get aiConversation => 'Conversation';
+
+  @override
+  String aiP0P1Messages(String p0, String p1) {
+    return '$p0 • $p1 messages';
+  }
+
+  @override
+  String get aiDeleteTheConversation => 'Delete the conversation';
+
+  @override
+  String aiDeleteTheConversationP0(String p0) {
+    return 'Delete the conversation «$p0»?';
+  }
+
+  @override
+  String get aiDelete => 'Delete';
+
+  @override
+  String get aiWhatTheAssistantRemembers2 => 'What the assistant remembers';
+
+  @override
+  String get aiClearAll => 'Clear all';
+
+  @override
+  String get aiTheAssistantKeepsAFew =>
+      'The assistant keeps a few basics about your habits and priorities so its answers fit you. You can delete anything here.';
+
+  @override
+  String get aiWeCanTLoadThe => 'We can\'t load the memory.';
+
+  @override
+  String get aiTheAssistantDoesnTKnow =>
+      'The assistant doesn\'t know details about you yet';
+
+  @override
+  String get aiTheMoreYouTalkThe => 'The more you talk, the more it remembers.';
+
+  @override
+  String get aiForgetThis => 'Forget this';
+
+  @override
+  String get aiRemovedFromTheAssistantS =>
+      'Removed from the assistant\'s memory.';
+
+  @override
+  String get aiClearAllMemories => 'Clear all memories';
+
+  @override
+  String get aiDeleteEverythingSavedTheAssistant =>
+      'Delete everything saved? The assistant starts learning about you again.';
+
+  @override
+  String get aiWeCouldnTUpdateThe => 'We couldn\'t update the report.';
+
+  @override
+  String get aiExportTheReport => 'Export the report';
+
+  @override
+  String aiTheReportForP0Is(String p0) {
+    return 'The report for $p0 is ready.';
+  }
+
+  @override
+  String get aiReportReceived2 => 'Report received.';
+
+  @override
+  String get aiOk => 'OK';
+
+  @override
+  String get aiWeCouldnTExportThe => 'We couldn\'t export the report.';
+
+  @override
+  String get aiPreviousMonth => 'Previous month';
+
+  @override
+  String get aiNextMonth => 'Next month';
+
+  @override
+  String get aiAnalyzeAgain => 'Analyze again';
+
+  @override
+  String get aiPreparingThisMonthSReport => 'Preparing this month\'s report...';
+
+  @override
+  String get aiWeCanTLoadThe2 => 'We can\'t load the report.';
+
+  @override
+  String get aiLimitedDataRecordMoreThis =>
+      'Limited data: record more this month for a fuller report.';
+
+  @override
+  String get aiThisMonthSAnalysis => 'This month\'s analysis';
+
+  @override
+  String get aiTopConfirmedSpending => 'Top confirmed spending:';
+
+  @override
+  String get aiGeneral => 'General';
+
+  @override
+  String get aiYearlyReport2 => 'Yearly report';
+
+  @override
+  String aiP0Summary(String p0) {
+    return '$p0 summary';
+  }
+
+  @override
+  String get aiNotEnoughDataForThis => 'Not enough data for this year.';
+
+  @override
+  String get aiWeCanTLoadYour3 => 'We can\'t load your calls.';
+
+  @override
+  String get aiTryAgain => 'Try again';
+
+  @override
+  String get aiNoPastCalls => 'No past calls';
+
+  @override
+  String get aiTalkToTheAssistantIn =>
+      'Talk to the assistant in your own words about your money.';
+
+  @override
+  String get aiStartANewCall => 'Start a new call';
+
+  @override
+  String aiP0MinP1Sec(String p0, String p1) {
+    return '$p0 min $p1 sec';
+  }
+
+  @override
+  String aiP0Sec(String p0) {
+    return '$p0 sec';
+  }
+
+  @override
+  String get aiVoiceCall => 'Voice call';
+
+  @override
+  String aiDurationP0(String p0) {
+    return 'Duration: $p0';
+  }
+
+  @override
+  String get aiNewCall => 'New call';
+
+  @override
+  String get aiYourPrivacyNeitherTheAudio =>
+      'Your privacy: neither the audio nor a transcript is saved.';
+
+  @override
+  String get aiWeCouldnTConnectThe => 'We couldn\'t connect the call.';
+
+  @override
+  String get aiTheCallLostItsConnection => 'The call lost its connection.';
+
+  @override
+  String get aiSomethingWentWrongInThe => 'Something went wrong in the call';
+
+  @override
+  String get aiCallEnded => 'Call ended';
+
+  @override
+  String get aiTheAudioIsNotRecorded =>
+      'The audio is not recorded or saved after the call.';
+
+  @override
+  String get aiReady => 'Ready';
+
+  @override
+  String get aiConnecting => 'Connecting...';
+
+  @override
+  String get aiListeningGoAhead => 'Listening, go ahead...';
+
+  @override
+  String get aiThinking2 => 'Thinking...';
+
+  @override
+  String get aiTheAssistantIsSpeaking => 'The assistant is speaking...';
+
+  @override
+  String get aiPleaseConfirmTheSuggestedAction =>
+      'Please confirm the suggested action';
+
+  @override
+  String get aiReconnecting => 'Reconnecting...';
+
+  @override
+  String get aiDone2 => 'Done';
+
+  @override
+  String get aiCancelled2 => 'Cancelled';
+
+  @override
+  String aiABusinessForP0(String p0) {
+    return 'A business for $p0';
+  }
+
+  @override
+  String get aiAddACategory => 'Add a category';
+
+  @override
+  String get aiCategoryNameLikeStockShop =>
+      'Category name (like: stock, shop rent)';
+
+  @override
+  String get aiExpense => 'Expense';
+
+  @override
+  String get aiIncomeOrSales => 'Income or sales';
+
+  @override
+  String get aiIcon => 'Icon';
+
+  @override
+  String get aiAddTheCategory => 'Add the category';
+
+  @override
+  String get aiEnterTheBusinessNameFirst => 'Enter the business name first';
+
+  @override
+  String get aiWeCouldnTSuggestCategories =>
+      'We couldn\'t suggest categories. Try again.';
+
+  @override
+  String get aiYourWorkAccountIsOn => 'Your work account is on';
+
+  @override
+  String get aiWeCouldnTCreateThe => 'We couldn\'t create the business.';
+
+  @override
+  String get aiDeleteTheWorkAccount => 'Delete the work account?';
+
+  @override
+  String get aiIfYouDeleteTheWork =>
+      'If you delete the work account:\n• Your transactions stay saved and move to your personal account.\n• Its categories and rules are removed.\n• This can\'t be undone.';
+
+  @override
+  String get aiConfirmDelete => 'Confirm delete';
+
+  @override
+  String get aiWorkAccountDeletedAndIts =>
+      'Work account deleted, and its transactions moved to personal';
+
+  @override
+  String get aiWeCanTDeleteThe => 'We can\'t delete the business right now.';
+
+  @override
+  String get aiWorkAccount => 'Work account';
+
+  @override
+  String get aiTheWorkAccountComesWith => 'The work account comes with Pro';
+
+  @override
+  String get aiKeepYourBusinessSSpending =>
+      'Keep your business\'s spending and income apart from your home\'s.';
+
+  @override
+  String get aiUpgradingFromTheAppIs => 'Upgrading from the app is coming soon';
+
+  @override
+  String get aiUpgradeToPro2 => 'Upgrade to Pro';
+
+  @override
+  String get aiRestaurantsAndFood => 'Restaurants and food';
+
+  @override
+  String get aiTradeAndRetail => 'Trade and retail';
+
+  @override
+  String get aiServicesAndWorkshops => 'Services and workshops';
+
+  @override
+  String get aiFreelanceAndCompanies => 'Freelance and companies';
+
+  @override
+  String get aiSomethingElse => 'Something else';
+
+  @override
+  String get aiSetUpTheWorkAccount => 'Set up the work account';
+
+  @override
+  String get aiMakeASeparateAccountFor =>
+      'Make a separate account for your work or shop.';
+
+  @override
+  String get aiBusinessOrShopName => 'Business or shop name';
+
+  @override
+  String get aiField => 'Field';
+
+  @override
+  String get aiShortDescriptionOptional => 'Short description (optional)';
+
+  @override
+  String get aiSuggestCategories => 'Suggest categories';
+
+  @override
+  String get aiSuggestedCategoriesReviewThem =>
+      'Suggested categories (review them)';
+
+  @override
+  String get aiChooseTheOnesThatFit => 'Choose the ones that fit your work:';
+
+  @override
+  String get aiIncomeAndSales => 'Income and sales';
+
+  @override
+  String get aiExpenses => 'Expenses';
+
+  @override
+  String get aiCreateTheWorkAccount => 'Create the work account';
+
+  @override
+  String get aiCurrentWorkAccount => 'Current work account';
+
+  @override
+  String get aiSwitchedToTheWorkAccount => 'Switched to the work account';
+
+  @override
+  String get aiSwitchedToPersonal => 'Switched to personal';
+
+  @override
+  String get aiYouReInTheWork =>
+      'You\'re in the work account. New transactions go to it.';
+
+  @override
+  String get aiYouReInPersonalMode =>
+      'You\'re in personal mode. Turn this on to record for your work.';
+
+  @override
+  String aiBusinessCategoriesP0(String p0) {
+    return 'Business categories ($p0)';
+  }
+
+  @override
+  String get aiIncome => 'Income';
+
+  @override
+  String get aiDeleteTheCategory => 'Delete the category';
+
+  @override
+  String get aiAddANewCategory => 'Add a new category';
+
+  @override
+  String get aiBusinessPeopleAndSuppliers => 'Business people and suppliers';
+
+  @override
+  String aiSuppliersAndCustomersP0(String p0) {
+    return 'Suppliers and customers: $p0';
+  }
+
+  @override
+  String get aiLinkAnyoneToTheBusiness =>
+      'Link anyone to the business to follow what is owed.';
+
+  @override
+  String get aiManageContactsAndSuppliers => 'Manage contacts and suppliers';
+
+  @override
+  String get aiDeleteTheWorkAccount2 => 'Delete the work account';
+
+  @override
+  String get aiEnterThePersonSName => 'Enter the person\'s name first';
+
+  @override
+  String get aiWeCouldnTAddThem =>
+      'We couldn\'t add them. Check your connection and try again.';
+
+  @override
+  String get aiAddANewPerson => 'Add a new person';
+
+  @override
+  String get aiSoYouCanRecordSpending =>
+      'So you can record spending, loans or debts with them easily.';
+
+  @override
+  String get aiName => 'Name *';
+
+  @override
+  String get aiLikeMohamedIbrahimOrAhmed =>
+      'Like: Mohamed Ibrahim or Ahmed the electrician';
+
+  @override
+  String get aiRelationOptional => 'Relation (optional)';
+
+  @override
+  String get aiLikeColleagueFriendBrother =>
+      'Like: colleague, friend, brother...';
+
+  @override
+  String get aiSaving => 'Saving...';
+
+  @override
+  String get aiSaveThePerson => 'Save the person';
+
+  @override
+  String get aiPeopleAndDebts => 'People and debts';
+
+  @override
+  String get aiAddAPerson => 'Add a person';
+
+  @override
+  String get aiWeCanTLoadYour4 => 'We can\'t load your people and debts.';
+
+  @override
+  String get aiSearchByNameOrRelation => 'Search by name or relation...';
+
+  @override
+  String get aiOpenBalances => 'Open balances';
+
+  @override
+  String get aiNoResults => 'No results';
+
+  @override
+  String get aiNoOpenDebtsAllSettled => 'No open debts. All settled.';
+
+  @override
+  String get aiSettled => 'Settled';
+
+  @override
+  String get aiNoResults2 => 'No results';
+
+  @override
+  String get aiNoSettledAccountsYet => 'No settled accounts yet.';
+
+  @override
+  String get aiNetMoneyOut => 'Net money out';
+
+  @override
+  String get aiOwedToYou => 'Owed to you';
+
+  @override
+  String get aiYouOwe => 'You owe';
+
+  @override
+  String get aiMergeWithADuplicate => 'Merge with a duplicate';
+
+  @override
+  String get aiDeleteThePerson => 'Delete the person';
+
+  @override
+  String get aiNoName => 'No name';
+
+  @override
+  String aiDeleteP0(String p0) {
+    return 'Delete \"$p0\"?';
+  }
+
+  @override
+  String get aiTheirRecordedTransactionsStayOnly =>
+      'Their recorded transactions stay; only the person is removed.';
+
+  @override
+  String get aiDeleting => 'Deleting...';
+
+  @override
+  String get aiDelete2 => 'Delete';
+
+  @override
+  String get aiMergeDuplicates => 'Merge duplicates';
+
+  @override
+  String get aiChooseTheNameToKeep =>
+      'Choose the name to keep; all transactions move to it.';
+
+  @override
+  String get aiNoOtherContactsToMerge => 'No other contacts to merge with.';
+
+  @override
+  String aiChooseWhoToMergeWith(String p0) {
+    return 'Choose who to merge with \"$p0\":';
+  }
+
+  @override
+  String get aiChooseAContact => 'Choose a contact';
+
+  @override
+  String get aiWhichNameStays => 'Which name stays?';
+
+  @override
+  String get aiThisNameStaysAndAll =>
+      'This name stays and all transactions move to it';
+
+  @override
+  String get aiMerging => 'Merging...';
+
+  @override
+  String get aiConfirmMerge => 'Confirm merge';
+
+  @override
+  String get aiWeCouldnTMergeThem => 'We couldn\'t merge them. Try again.';
 }

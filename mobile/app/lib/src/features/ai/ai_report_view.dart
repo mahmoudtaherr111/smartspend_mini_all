@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import '../plans/plan_providers.dart';
 import 'ai_models.dart';
 import 'ai_providers.dart';
@@ -28,8 +30,11 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
       ref.invalidate(monthlyReportFamily(_selectedMonth));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('تعذر تحديث التقرير: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).aiWeCouldnTUpdateThe),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -56,17 +61,18 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
         await showDialog<void>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Row(
+            title: Row(
               children: [
                 Icon(Icons.description_outlined, color: Color(0xFF0F766E)),
                 SizedBox(width: 8),
-                Text('تصدير التقرير'),
+                Text(AppLocalizations.of(context).aiExportTheReport),
               ],
             ),
             content: Text(
               html.isNotEmpty
-                  ? 'تم تجهيز التقرير الشهري لشهر $_selectedMonth بنجاح بصيغة HTML متوافقة مع الطباعة وPDF.'
-                  : 'تم استلام التقرير.',
+                  ? AppLocalizations.of(context)
+                        .aiTheReportForP0Is(_selectedMonth)
+                  : AppLocalizations.of(context).aiReportReceived2,
             ),
             actions: [
               FilledButton(
@@ -74,7 +80,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
                   backgroundColor: const Color(0xFF0F766E),
                 ),
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('حسناً'),
+                child: Text(AppLocalizations.of(context).aiOk),
               ),
             ],
           ),
@@ -82,8 +88,11 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('تعذر تصدير التقرير: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).aiWeCouldnTExportThe),
+          ),
+        );
       }
     }
   }
@@ -112,7 +121,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
             children: [
               IconButton(
                 icon: const Icon(Icons.chevron_right_rounded),
-                tooltip: 'الشهر السابق',
+                tooltip: AppLocalizations.of(context).aiPreviousMonth,
                 onPressed: () => _changeMonth(-1),
               ),
               Row(
@@ -130,7 +139,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
               ),
               IconButton(
                 icon: const Icon(Icons.chevron_left_rounded),
-                tooltip: 'الشهر القادم',
+                tooltip: AppLocalizations.of(context).aiNextMonth,
                 onPressed: () => _changeMonth(1),
               ),
             ],
@@ -152,7 +161,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.refresh_rounded, size: 18),
-                label: const Text('إعادة تحليل'),
+                label: Text(AppLocalizations.of(context).aiAnalyzeAgain),
                 style: OutlinedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                 ),
@@ -161,7 +170,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
               FilledButton.icon(
                 onPressed: _handleExport,
                 icon: const Icon(Icons.share_outlined, size: 18),
-                label: const Text('تصدير التقرير'),
+                label: Text(AppLocalizations.of(context).aiExportTheReport),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF0F766E),
                   visualDensity: VisualDensity.compact,
@@ -173,17 +182,21 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
 
         Expanded(
           child: reportAsync.when(
-            loading: () => const Center(
+            loading: () => Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('جاري إعداد تقرير الشهر بالذكاء الاصطناعي...'),
+                  Text(
+                    AppLocalizations.of(context).aiPreparingThisMonthSReport,
+                  ),
                 ],
               ),
             ),
-            error: (err, _) => Center(child: Text('تعذر تحميل التقرير: $err')),
+            error: (err, _) => Center(
+              child: Text(AppLocalizations.of(context).aiWeCanTLoadThe2),
+            ),
             data: (report) => _buildReportContent(report),
           ),
         ),
@@ -217,7 +230,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'بيانات محدودة: سجّل عمليات أكثر خلال الشهر للحصول على تحليل مالي مفصل وتوصيات أدق.',
+                      AppLocalizations.of(context).aiLimitedDataRecordMoreThis,
                       style: TextStyle(
                         fontSize: 12.5,
                         color: Colors.amber.shade900,
@@ -276,8 +289,8 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
                       color: Colors.teal.shade700,
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'التحليل المالي للشهر',
+                    Text(
+                      AppLocalizations.of(context).aiThisMonthSAnalysis,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -301,8 +314,8 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
           // Data table (if returned)
           if (report.dataTable.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text(
-              'أعلى بنود الإنفاق المؤكدة:',
+            Text(
+              AppLocalizations.of(context).aiTopConfirmedSpending,
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -319,7 +332,9 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
                 separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final row = report.dataTable[index];
-                  final cat = (row['category'] as String?) ?? 'عام';
+                  final cat =
+                      (row['category'] as String?) ??
+                      AppLocalizations.of(context).aiGeneral;
                   final amt = (row['amount'] as num?)?.toDouble() ?? 0.0;
                   final pct = row['percent'] != null
                       ? '${row['percent']}%'

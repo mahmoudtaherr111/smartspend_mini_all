@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'ai_models.dart';
 import 'ai_providers.dart';
 
@@ -23,7 +25,9 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
 
     // High-risk actions require explicit phrase input
     if (widget.draft.isHighRisk) {
-      final expectedPhrase = widget.draft.confirmationPhrase ?? 'أكد العملية';
+      final expectedPhrase =
+          widget.draft.confirmationPhrase ??
+          AppLocalizations.of(context).aiConfirmIt;
       final confirmed = await _showHighRiskConfirmationDialog(
         context,
         expectedPhrase: expectedPhrase,
@@ -48,7 +52,8 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
             .updateActionStatus(widget.draft.id, 'confirmed');
         refreshLedgerViewsFromWidget(ref);
 
-        final msg = (res['message'] as String?) ?? 'تم تنفيذ العملية بنجاح';
+        final msg =
+            (res['message'] as String?) ?? AppLocalizations.of(context).aiDone;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
@@ -60,7 +65,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('فشل تنفيذ العملية: $e'),
+            content: Text(AppLocalizations.of(context).aiItDidnTGoThrough),
             backgroundColor: Colors.red.shade700,
           ),
         );
@@ -107,11 +112,11 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Row(
+              title: Row(
                 children: [
                   Icon(Icons.warning_amber_rounded, color: Colors.orange),
                   SizedBox(width: 8),
-                  Text('تأكيد إجراء حساس'),
+                  Text(AppLocalizations.of(context).aiConfirmASensitiveAction),
                 ],
               ),
               content: Column(
@@ -119,12 +124,14 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'هذا الإجراء ($actionTitle) لا يمكن التراجع عنه بسهولة.',
+                    AppLocalizations.of(context)
+                        .aiThisActionP0CanT(actionTitle),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'للتأكيد، اكتب العبارة التالية بالضبط:\n«$expectedPhrase»',
+                    AppLocalizations.of(context)
+                        .aiToConfirmTypeExactlyP0(expectedPhrase),
                     style: TextStyle(color: Colors.grey.shade700),
                   ),
                   const SizedBox(height: 12),
@@ -146,7 +153,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogCtx).pop(false),
-                  child: const Text('إلغاء'),
+                  child: Text(AppLocalizations.of(context).aiCancel),
                 ),
                 FilledButton(
                   style: FilledButton.styleFrom(
@@ -155,7 +162,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                   onPressed: phraseMatches
                       ? () => Navigator.of(dialogCtx).pop(true)
                       : null,
-                  child: const Text('تأكيد التنفيذ'),
+                  child: Text(AppLocalizations.of(context).aiConfirm),
                 ),
               ],
             );
@@ -263,8 +270,8 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                     color: Colors.orange.shade100,
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text(
-                    'حساس',
+                  child: Text(
+                    AppLocalizations.of(context).aiSensitive,
                     style: TextStyle(
                       color: Colors.deepOrange,
                       fontSize: 11,
@@ -299,7 +306,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
           if (draft.date != null && draft.date!.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
-              'التاريخ: ${draft.date}',
+              AppLocalizations.of(context).aiDateP0('${draft.date}'),
               style: TextStyle(
                 fontSize: 12,
                 color: colorScheme.onSurfaceVariant,
@@ -308,8 +315,8 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
           ],
           const SizedBox(height: 12),
           if (isConfirmed)
-            const Text(
-              'تم تنفيذ الإجراء وتحديث الحسابات بنجاح ✓',
+            Text(
+              AppLocalizations.of(context).aiDoneAndYourRecordsAre,
               style: TextStyle(
                 color: Color(0xFF16A34A),
                 fontWeight: FontWeight.bold,
@@ -318,7 +325,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
             )
           else if (isCancelled)
             Text(
-              'تم إلغاء هذا الإجراء.',
+              AppLocalizations.of(context).aiCancelled,
               style: TextStyle(
                 color: colorScheme.onSurfaceVariant,
                 fontSize: 13,
@@ -326,7 +333,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
             )
           else if (isExpired)
             Text(
-              'انتهت صلاحية هذا الإجراء ولم يعد قابلاً للتنفيذ.',
+              AppLocalizations.of(context).aiThisHasExpiredAndCan,
               style: TextStyle(
                 color: Colors.orange.shade800,
                 fontWeight: FontWeight.w600,
@@ -343,7 +350,7 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                     visualDensity: VisualDensity.compact,
                     foregroundColor: colorScheme.onSurfaceVariant,
                   ),
-                  child: const Text('إلغاء'),
+                  child: Text(AppLocalizations.of(context).aiCancel),
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
@@ -363,7 +370,11 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
                             color: Colors.white,
                           ),
                         )
-                      : Text(draft.isHighRisk ? 'متابعة التأكيد' : 'تأكيد'),
+                      : Text(
+                          draft.isHighRisk
+                              ? AppLocalizations.of(context).aiContinue
+                              : AppLocalizations.of(context).aiConfirm2,
+                        ),
                 ),
               ],
             ),

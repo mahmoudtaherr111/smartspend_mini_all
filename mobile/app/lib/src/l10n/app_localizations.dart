@@ -4801,6 +4801,1242 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'يوم القبض المحفوظ: يوم {p0} من كل شهر.'**
   String monYourSavedPaydayDayP0(String p0);
+
+  /// No description provided for @aiWeCanTRunThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نعمل التحليل السنوي دلوقتي.'**
+  String get aiWeCanTRunThe;
+
+  /// No description provided for @aiConfirmIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكد العملية'**
+  String get aiConfirmIt;
+
+  /// No description provided for @aiDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتعملت'**
+  String get aiDone;
+
+  /// No description provided for @aiItDidnTGoThrough.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما اتعملتش. جرّب تاني.'**
+  String get aiItDidnTGoThrough;
+
+  /// No description provided for @aiConfirmASensitiveAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد لعملية حساسة'**
+  String get aiConfirmASensitiveAction;
+
+  /// No description provided for @aiThisActionP0CanT.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملية دي ({p0}) مش سهل ترجع فيها.'**
+  String aiThisActionP0CanT(String p0);
+
+  /// No description provided for @aiToConfirmTypeExactlyP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'علشان تأكد، اكتب بالظبط:\n«{p0}»'**
+  String aiToConfirmTypeExactlyP0(String p0);
+
+  /// No description provided for @aiCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get aiCancel;
+
+  /// No description provided for @aiConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكد'**
+  String get aiConfirm;
+
+  /// No description provided for @aiSensitive.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساسة'**
+  String get aiSensitive;
+
+  /// No description provided for @aiDateP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ: {p0}'**
+  String aiDateP0(String p0);
+
+  /// No description provided for @aiDoneAndYourRecordsAre.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتعملت وحساباتك اتحدثت.'**
+  String get aiDoneAndYourRecordsAre;
+
+  /// No description provided for @aiCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتلغت.'**
+  String get aiCancelled;
+
+  /// No description provided for @aiThisHasExpiredAndCan.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدة انتهت، ومش هينفع تتنفذ.'**
+  String get aiThisHasExpiredAndCan;
+
+  /// No description provided for @aiContinue.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمّل التأكيد'**
+  String get aiContinue;
+
+  /// No description provided for @aiConfirm2.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكد'**
+  String get aiConfirm2;
+
+  /// No description provided for @aiReportReceived.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقرير وصل.'**
+  String get aiReportReceived;
+
+  /// No description provided for @aiMonthsCompared.
+  ///
+  /// In ar, this message translates to:
+  /// **'قارنا الشهرين.'**
+  String get aiMonthsCompared;
+
+  /// No description provided for @aiLiveCall.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكالمة المباشرة'**
+  String get aiLiveCall;
+
+  /// No description provided for @aiTheLiveCallComesWith.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكالمة المباشرة متاحة في باقة Pro.'**
+  String get aiTheLiveCallComesWith;
+
+  /// No description provided for @aiUpgrade.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقّي باقتك'**
+  String get aiUpgrade;
+
+  /// No description provided for @aiStartALiveCall.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ مكالمة مباشرة'**
+  String get aiStartALiveCall;
+
+  /// No description provided for @aiWeLlUseTheMicrophone.
+  ///
+  /// In ar, this message translates to:
+  /// **'هنستخدم المايك علشان تكلم المساعد.'**
+  String get aiWeLlUseTheMicrophone;
+
+  /// No description provided for @aiCall.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصل'**
+  String get aiCall;
+
+  /// No description provided for @aiWeCouldnTStartThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نبدأ المكالمة.'**
+  String get aiWeCouldnTStartThe;
+
+  /// No description provided for @aiAiCenter.
+  ///
+  /// In ar, this message translates to:
+  /// **'مركز AI'**
+  String get aiAiCenter;
+
+  /// No description provided for @aiLiveCall2.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكالمة مباشرة'**
+  String get aiLiveCall2;
+
+  /// No description provided for @aiWhatTheAssistantRemembers.
+  ///
+  /// In ar, this message translates to:
+  /// **'ذاكرة المساعد'**
+  String get aiWhatTheAssistantRemembers;
+
+  /// No description provided for @aiPastConversations.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحادثات اللي فاتت'**
+  String get aiPastConversations;
+
+  /// No description provided for @aiChat.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحادثة'**
+  String get aiChat;
+
+  /// No description provided for @aiMonthlyReport.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقرير الشهري'**
+  String get aiMonthlyReport;
+
+  /// No description provided for @aiCompareMonths.
+  ///
+  /// In ar, this message translates to:
+  /// **'قارن الشهور'**
+  String get aiCompareMonths;
+
+  /// No description provided for @aiCalls.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكالمات'**
+  String get aiCalls;
+
+  /// No description provided for @aiYearlyReport.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقرير السنوي'**
+  String get aiYearlyReport;
+
+  /// No description provided for @aiWeNeedInternetToAnswer.
+  ///
+  /// In ar, this message translates to:
+  /// **'محتاجين نت علشان نرد عليك. اللي كتبته محفوظ.'**
+  String get aiWeNeedInternetToAnswer;
+
+  /// No description provided for @aiYouReOfflineYourDraft.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت من غير نت. اللي كتبته محفوظ، وابعته لما النت يرجع.'**
+  String get aiYouReOfflineYourDraft;
+
+  /// No description provided for @aiUpgradeToPro.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في Pro'**
+  String get aiUpgradeToPro;
+
+  /// No description provided for @aiWeCanTLoadYour.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب رسايلك.'**
+  String get aiWeCanTLoadYour;
+
+  /// No description provided for @aiAskAboutYourSpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل عن مصاريفك...'**
+  String get aiAskAboutYourSpending;
+
+  /// No description provided for @aiSendingNeedsInternet.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإرسال محتاج نت...'**
+  String get aiSendingNeedsInternet;
+
+  /// No description provided for @aiHiIMYourAssistant.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلًا، أنا مساعدك'**
+  String get aiHiIMYourAssistant;
+
+  /// No description provided for @aiAskAboutYourSpendingOr.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسألني عن مصاريفك أو ميزانيتك، أو قولّي أسجل حاجة.'**
+  String get aiAskAboutYourSpendingOr;
+
+  /// No description provided for @aiTryAsking.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تسأل:'**
+  String get aiTryAsking;
+
+  /// No description provided for @aiThinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيفكر...'**
+  String get aiThinking;
+
+  /// No description provided for @aiCompareTwoMonths.
+  ///
+  /// In ar, this message translates to:
+  /// **'قارن شهرين'**
+  String get aiCompareTwoMonths;
+
+  /// No description provided for @aiPickTwoDifferentMonthsTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار شهرين مختلفين تشوف إيه اللي اتغير وليه.'**
+  String get aiPickTwoDifferentMonthsTo;
+
+  /// No description provided for @aiFirstMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشهر الأول:'**
+  String get aiFirstMonth;
+
+  /// No description provided for @aiSecondMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشهر التاني:'**
+  String get aiSecondMonth;
+
+  /// No description provided for @aiPickTwoDifferentMonths.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار شهرين مختلفين.'**
+  String get aiPickTwoDifferentMonths;
+
+  /// No description provided for @aiWeCouldnTCompareThem.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نقارن.'**
+  String get aiWeCouldnTCompareThem;
+
+  /// No description provided for @aiComparisonP0AndP1.
+  ///
+  /// In ar, this message translates to:
+  /// **'المقارنة ({p0} و{p1})'**
+  String aiComparisonP0AndP1(String p0, String p1);
+
+  /// No description provided for @aiBiggestChangesByCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكبر تغييرات في الفئات:'**
+  String get aiBiggestChangesByCategory;
+
+  /// No description provided for @aiCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'فئة'**
+  String get aiCategory;
+
+  /// No description provided for @aiNewChat.
+  ///
+  /// In ar, this message translates to:
+  /// **'محادثة جديدة'**
+  String get aiNewChat;
+
+  /// No description provided for @aiWeCanTLoadYour2.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب محادثاتك.'**
+  String get aiWeCanTLoadYour2;
+
+  /// No description provided for @aiNoPastConversations.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش محادثات قبل كده'**
+  String get aiNoPastConversations;
+
+  /// No description provided for @aiStartANewChatWith.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ محادثة جديدة مع المساعد'**
+  String get aiStartANewChatWith;
+
+  /// No description provided for @aiConversation.
+  ///
+  /// In ar, this message translates to:
+  /// **'محادثة'**
+  String get aiConversation;
+
+  /// No description provided for @aiP0P1Messages.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} • {p1} رسالة'**
+  String aiP0P1Messages(String p0, String p1);
+
+  /// No description provided for @aiDeleteTheConversation.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح المحادثة'**
+  String get aiDeleteTheConversation;
+
+  /// No description provided for @aiDeleteTheConversationP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمسح محادثة «{p0}»؟'**
+  String aiDeleteTheConversationP0(String p0);
+
+  /// No description provided for @aiDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح'**
+  String get aiDelete;
+
+  /// No description provided for @aiWhatTheAssistantRemembers2.
+  ///
+  /// In ar, this message translates to:
+  /// **'ذاكرة المساعد'**
+  String get aiWhatTheAssistantRemembers2;
+
+  /// No description provided for @aiClearAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح الكل'**
+  String get aiClearAll;
+
+  /// No description provided for @aiTheAssistantKeepsAFew.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساعد بيحفظ شوية حاجات أساسية عن عاداتك وأولوياتك علشان ردوده تناسبك، وتقدر تمسح أي حاجة منها هنا.'**
+  String get aiTheAssistantKeepsAFew;
+
+  /// No description provided for @aiWeCanTLoadThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب الذاكرة.'**
+  String get aiWeCanTLoadThe;
+
+  /// No description provided for @aiTheAssistantDoesnTKnow.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساعد لسه ما يعرفش تفاصيل عنك'**
+  String get aiTheAssistantDoesnTKnow;
+
+  /// No description provided for @aiTheMoreYouTalkThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل ما تتكلم معاه أكتر، هيفتكر أكتر.'**
+  String get aiTheMoreYouTalkThe;
+
+  /// No description provided for @aiForgetThis.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسى المعلومة دي'**
+  String get aiForgetThis;
+
+  /// No description provided for @aiRemovedFromTheAssistantS.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتمسحت من ذاكرة المساعد.'**
+  String get aiRemovedFromTheAssistantS;
+
+  /// No description provided for @aiClearAllMemories.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح كل الذاكرة'**
+  String get aiClearAllMemories;
+
+  /// No description provided for @aiDeleteEverythingSavedTheAssistant.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمسح كل اللي اتحفظ؟ المساعد هيبدأ يتعلمك من الأول.'**
+  String get aiDeleteEverythingSavedTheAssistant;
+
+  /// No description provided for @aiWeCouldnTUpdateThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نحدث التقرير.'**
+  String get aiWeCouldnTUpdateThe;
+
+  /// No description provided for @aiExportTheReport.
+  ///
+  /// In ar, this message translates to:
+  /// **'صدّر التقرير'**
+  String get aiExportTheReport;
+
+  /// No description provided for @aiTheReportForP0Is.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقرير {p0} جاهز.'**
+  String aiTheReportForP0Is(String p0);
+
+  /// No description provided for @aiReportReceived2.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقرير وصل.'**
+  String get aiReportReceived2;
+
+  /// No description provided for @aiOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام'**
+  String get aiOk;
+
+  /// No description provided for @aiWeCouldnTExportThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نصدر التقرير.'**
+  String get aiWeCouldnTExportThe;
+
+  /// No description provided for @aiPreviousMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشهر اللي فات'**
+  String get aiPreviousMonth;
+
+  /// No description provided for @aiNextMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشهر الجاي'**
+  String get aiNextMonth;
+
+  /// No description provided for @aiAnalyzeAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'حلل تاني'**
+  String get aiAnalyzeAgain;
+
+  /// No description provided for @aiPreparingThisMonthSReport.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنجهز تقرير الشهر...'**
+  String get aiPreparingThisMonthSReport;
+
+  /// No description provided for @aiWeCanTLoadThe2.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب التقرير.'**
+  String get aiWeCanTLoadThe2;
+
+  /// No description provided for @aiLimitedDataRecordMoreThis.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيانات قليلة: سجّل عمليات أكتر الشهر ده علشان التقرير يبقى أوضح.'**
+  String get aiLimitedDataRecordMoreThis;
+
+  /// No description provided for @aiThisMonthSAnalysis.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليل الشهر'**
+  String get aiThisMonthSAnalysis;
+
+  /// No description provided for @aiTopConfirmedSpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعلى بنود الصرف:'**
+  String get aiTopConfirmedSpending;
+
+  /// No description provided for @aiGeneral.
+  ///
+  /// In ar, this message translates to:
+  /// **'عام'**
+  String get aiGeneral;
+
+  /// No description provided for @aiYearlyReport2.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقرير السنوي'**
+  String get aiYearlyReport2;
+
+  /// No description provided for @aiP0Summary.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملخص {p0}'**
+  String aiP0Summary(String p0);
+
+  /// No description provided for @aiNotEnoughDataForThis.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش بيانات كفاية للسنة دي.'**
+  String get aiNotEnoughDataForThis;
+
+  /// No description provided for @aiWeCanTLoadYour3.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب مكالماتك.'**
+  String get aiWeCanTLoadYour3;
+
+  /// No description provided for @aiTryAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get aiTryAgain;
+
+  /// No description provided for @aiNoPastCalls.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مكالمات قبل كده'**
+  String get aiNoPastCalls;
+
+  /// No description provided for @aiTalkToTheAssistantIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتكلم مع المساعد بطريقتك عن فلوسك.'**
+  String get aiTalkToTheAssistantIn;
+
+  /// No description provided for @aiStartANewCall.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ مكالمة جديدة'**
+  String get aiStartANewCall;
+
+  /// No description provided for @aiP0MinP1Sec.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} دقيقة و{p1} ثانية'**
+  String aiP0MinP1Sec(String p0, String p1);
+
+  /// No description provided for @aiP0Sec.
+  ///
+  /// In ar, this message translates to:
+  /// **'{p0} ثانية'**
+  String aiP0Sec(String p0);
+
+  /// No description provided for @aiVoiceCall.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكالمة صوتية'**
+  String get aiVoiceCall;
+
+  /// No description provided for @aiDurationP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدة: {p0}'**
+  String aiDurationP0(String p0);
+
+  /// No description provided for @aiNewCall.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكالمة جديدة'**
+  String get aiNewCall;
+
+  /// No description provided for @aiYourPrivacyNeitherTheAudio.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصوصيتك: الصوت ونص المكالمة مش بيتحفظوا.'**
+  String get aiYourPrivacyNeitherTheAudio;
+
+  /// No description provided for @aiWeCouldnTConnectThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نوصل المكالمة.'**
+  String get aiWeCouldnTConnectThe;
+
+  /// No description provided for @aiTheCallLostItsConnection.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاتصال انقطع.'**
+  String get aiTheCallLostItsConnection;
+
+  /// No description provided for @aiSomethingWentWrongInThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'حصلت مشكلة في المكالمة'**
+  String get aiSomethingWentWrongInThe;
+
+  /// No description provided for @aiCallEnded.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكالمة خلصت'**
+  String get aiCallEnded;
+
+  /// No description provided for @aiTheAudioIsNotRecorded.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصوت مش بيتسجل ولا بيتحفظ بعد المكالمة.'**
+  String get aiTheAudioIsNotRecorded;
+
+  /// No description provided for @aiReady.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاهز'**
+  String get aiReady;
+
+  /// No description provided for @aiConnecting.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنوصل...'**
+  String get aiConnecting;
+
+  /// No description provided for @aiListeningGoAhead.
+  ///
+  /// In ar, this message translates to:
+  /// **'سامعينك، اتكلم...'**
+  String get aiListeningGoAhead;
+
+  /// No description provided for @aiThinking2.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيفكر...'**
+  String get aiThinking2;
+
+  /// No description provided for @aiTheAssistantIsSpeaking.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساعد بيتكلم...'**
+  String get aiTheAssistantIsSpeaking;
+
+  /// No description provided for @aiPleaseConfirmTheSuggestedAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكد العملية المقترحة'**
+  String get aiPleaseConfirmTheSuggestedAction;
+
+  /// No description provided for @aiReconnecting.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنوصل تاني...'**
+  String get aiReconnecting;
+
+  /// No description provided for @aiDone2.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتعملت'**
+  String get aiDone2;
+
+  /// No description provided for @aiCancelled2.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتلغت'**
+  String get aiCancelled2;
+
+  /// No description provided for @aiABusinessForP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشروع {p0}'**
+  String aiABusinessForP0(String p0);
+
+  /// No description provided for @aiAddACategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف فئة للمشروع'**
+  String get aiAddACategory;
+
+  /// No description provided for @aiCategoryNameLikeStockShop.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الفئة (زي: بضاعة، إيجار المحل)'**
+  String get aiCategoryNameLikeStockShop;
+
+  /// No description provided for @aiExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروف'**
+  String get aiExpense;
+
+  /// No description provided for @aiIncomeOrSales.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيراد أو مبيعات'**
+  String get aiIncomeOrSales;
+
+  /// No description provided for @aiIcon.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأيقونة'**
+  String get aiIcon;
+
+  /// No description provided for @aiAddTheCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف الفئة'**
+  String get aiAddTheCategory;
+
+  /// No description provided for @aiEnterTheBusinessNameFirst.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسم المشروع الأول'**
+  String get aiEnterTheBusinessNameFirst;
+
+  /// No description provided for @aiWeCouldnTSuggestCategories.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نقترح فئات. جرّب تاني.'**
+  String get aiWeCouldnTSuggestCategories;
+
+  /// No description provided for @aiYourWorkAccountIsOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب الشغل اتفعّل'**
+  String get aiYourWorkAccountIsOn;
+
+  /// No description provided for @aiWeCouldnTCreateThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نعمل المشروع.'**
+  String get aiWeCouldnTCreateThe;
+
+  /// No description provided for @aiDeleteTheWorkAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمسح حساب الشغل؟'**
+  String get aiDeleteTheWorkAccount;
+
+  /// No description provided for @aiIfYouDeleteTheWork.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو مسحت حساب الشغل:\n• عملياتك هتفضل محفوظة وهتتنقل لحسابك الشخصي.\n• فئاته وقواعده هتتمسح.\n• المسح مابيترجعش.'**
+  String get aiIfYouDeleteTheWork;
+
+  /// No description provided for @aiConfirmDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكد المسح'**
+  String get aiConfirmDelete;
+
+  /// No description provided for @aiWorkAccountDeletedAndIts.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب الشغل اتمسح وعملياته اتنقلت للشخصي'**
+  String get aiWorkAccountDeletedAndIts;
+
+  /// No description provided for @aiWeCanTDeleteThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نمسح المشروع دلوقتي.'**
+  String get aiWeCanTDeleteThe;
+
+  /// No description provided for @aiWorkAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب الشغل'**
+  String get aiWorkAccount;
+
+  /// No description provided for @aiTheWorkAccountComesWith.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب الشغل متاح في باقة Pro'**
+  String get aiTheWorkAccountComesWith;
+
+  /// No description provided for @aiKeepYourBusinessSSpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'افصل مصاريف وإيرادات مشروعك عن مصاريف بيتك.'**
+  String get aiKeepYourBusinessSSpending;
+
+  /// No description provided for @aiUpgradingFromTheAppIs.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراك من التطبيق هيتاح قريب'**
+  String get aiUpgradingFromTheAppIs;
+
+  /// No description provided for @aiUpgradeToPro2.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في Pro'**
+  String get aiUpgradeToPro2;
+
+  /// No description provided for @aiRestaurantsAndFood.
+  ///
+  /// In ar, this message translates to:
+  /// **'مطاعم وأكل'**
+  String get aiRestaurantsAndFood;
+
+  /// No description provided for @aiTradeAndRetail.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجارة وقطاعي'**
+  String get aiTradeAndRetail;
+
+  /// No description provided for @aiServicesAndWorkshops.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدمات وورش'**
+  String get aiServicesAndWorkshops;
+
+  /// No description provided for @aiFreelanceAndCompanies.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغل حر وشركات'**
+  String get aiFreelanceAndCompanies;
+
+  /// No description provided for @aiSomethingElse.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع تاني'**
+  String get aiSomethingElse;
+
+  /// No description provided for @aiSetUpTheWorkAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهز حساب الشغل'**
+  String get aiSetUpTheWorkAccount;
+
+  /// No description provided for @aiMakeASeparateAccountFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعمل حساب منفصل لشغلك أو محلك.'**
+  String get aiMakeASeparateAccountFor;
+
+  /// No description provided for @aiBusinessOrShopName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المشروع أو المحل'**
+  String get aiBusinessOrShopName;
+
+  /// No description provided for @aiField.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجال المشروع'**
+  String get aiField;
+
+  /// No description provided for @aiShortDescriptionOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصف قصير (اختياري)'**
+  String get aiShortDescriptionOptional;
+
+  /// No description provided for @aiSuggestCategories.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقترح فئات'**
+  String get aiSuggestCategories;
+
+  /// No description provided for @aiSuggestedCategoriesReviewThem.
+  ///
+  /// In ar, this message translates to:
+  /// **'فئات مقترحة (راجعها)'**
+  String get aiSuggestedCategoriesReviewThem;
+
+  /// No description provided for @aiChooseTheOnesThatFit.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار اللي يناسب شغلك:'**
+  String get aiChooseTheOnesThatFit;
+
+  /// No description provided for @aiIncomeAndSales.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيراد ومبيعات'**
+  String get aiIncomeAndSales;
+
+  /// No description provided for @aiExpenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروفات'**
+  String get aiExpenses;
+
+  /// No description provided for @aiCreateTheWorkAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعمل حساب الشغل'**
+  String get aiCreateTheWorkAccount;
+
+  /// No description provided for @aiCurrentWorkAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب الشغل الحالي'**
+  String get aiCurrentWorkAccount;
+
+  /// No description provided for @aiSwitchedToTheWorkAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحولت لحساب الشغل'**
+  String get aiSwitchedToTheWorkAccount;
+
+  /// No description provided for @aiSwitchedToPersonal.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحولت للشخصي'**
+  String get aiSwitchedToPersonal;
+
+  /// No description provided for @aiYouReInTheWork.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت دلوقتي في حساب الشغل. العمليات الجديدة هتتسجل فيه.'**
+  String get aiYouReInTheWork;
+
+  /// No description provided for @aiYouReInPersonalMode.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت في الوضع الشخصي. شغّل المفتاح علشان تسجل لشغلك.'**
+  String get aiYouReInPersonalMode;
+
+  /// No description provided for @aiBusinessCategoriesP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'فئات المشروع ({p0})'**
+  String aiBusinessCategoriesP0(String p0);
+
+  /// No description provided for @aiIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيراد'**
+  String get aiIncome;
+
+  /// No description provided for @aiDeleteTheCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح الفئة'**
+  String get aiDeleteTheCategory;
+
+  /// No description provided for @aiAddANewCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف فئة جديدة'**
+  String get aiAddANewCategory;
+
+  /// No description provided for @aiBusinessPeopleAndSuppliers.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناس وموردين المشروع'**
+  String get aiBusinessPeopleAndSuppliers;
+
+  /// No description provided for @aiSuppliersAndCustomersP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الموردين والعملاء: {p0}'**
+  String aiSuppliersAndCustomersP0(String p0);
+
+  /// No description provided for @aiLinkAnyoneToTheBusiness.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدر تربط أي شخص بالمشروع علشان تتابع المستحقات.'**
+  String get aiLinkAnyoneToTheBusiness;
+
+  /// No description provided for @aiManageContactsAndSuppliers.
+  ///
+  /// In ar, this message translates to:
+  /// **'ظبط الناس والموردين'**
+  String get aiManageContactsAndSuppliers;
+
+  /// No description provided for @aiDeleteTheWorkAccount2.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح حساب الشغل'**
+  String get aiDeleteTheWorkAccount2;
+
+  /// No description provided for @aiEnterThePersonSName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسم الشخص الأول'**
+  String get aiEnterThePersonSName;
+
+  /// No description provided for @aiWeCouldnTAddThem.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نضيفه. اتأكد من النت وجرّب تاني.'**
+  String get aiWeCouldnTAddThem;
+
+  /// No description provided for @aiAddANewPerson.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف شخص جديد'**
+  String get aiAddANewPerson;
+
+  /// No description provided for @aiSoYouCanRecordSpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'علشان تسجل معاه مصاريف أو سلف أو ديون بسهولة.'**
+  String get aiSoYouCanRecordSpending;
+
+  /// No description provided for @aiName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الشخص *'**
+  String get aiName;
+
+  /// No description provided for @aiLikeMohamedIbrahimOrAhmed.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: محمد إبراهيم أو أحمد الكهربائي'**
+  String get aiLikeMohamedIbrahimOrAhmed;
+
+  /// No description provided for @aiRelationOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'صلة القرابة أو الوصف (اختياري)'**
+  String get aiRelationOptional;
+
+  /// No description provided for @aiLikeColleagueFriendBrother.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: زميل شغل، صاحبي، أخويا...'**
+  String get aiLikeColleagueFriendBrother;
+
+  /// No description provided for @aiSaving.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنحفظ...'**
+  String get aiSaving;
+
+  /// No description provided for @aiSaveThePerson.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ الشخص'**
+  String get aiSaveThePerson;
+
+  /// No description provided for @aiPeopleAndDebts.
+  ///
+  /// In ar, this message translates to:
+  /// **'الناس والديون'**
+  String get aiPeopleAndDebts;
+
+  /// No description provided for @aiAddAPerson.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف شخص'**
+  String get aiAddAPerson;
+
+  /// No description provided for @aiWeCanTLoadYour4.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب الناس والديون.'**
+  String get aiWeCanTLoadYour4;
+
+  /// No description provided for @aiSearchByNameOrRelation.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوّر بالاسم أو صلة القرابة...'**
+  String get aiSearchByNameOrRelation;
+
+  /// No description provided for @aiOpenBalances.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابات مفتوحة'**
+  String get aiOpenBalances;
+
+  /// No description provided for @aiNoResults.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش نتايج'**
+  String get aiNoResults;
+
+  /// No description provided for @aiNoOpenDebtsAllSettled.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش ديون مفتوحة، كله متصفي.'**
+  String get aiNoOpenDebtsAllSettled;
+
+  /// No description provided for @aiSettled.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابات متصفية'**
+  String get aiSettled;
+
+  /// No description provided for @aiNoResults2.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش نتايج'**
+  String get aiNoResults2;
+
+  /// No description provided for @aiNoSettledAccountsYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش حسابات متصفية.'**
+  String get aiNoSettledAccountsYet;
+
+  /// No description provided for @aiNetMoneyOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي الفلوس برّه'**
+  String get aiNetMoneyOut;
+
+  /// No description provided for @aiOwedToYou.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليك برّه'**
+  String get aiOwedToYou;
+
+  /// No description provided for @aiYouOwe.
+  ///
+  /// In ar, this message translates to:
+  /// **'عليك برّه'**
+  String get aiYouOwe;
+
+  /// No description provided for @aiMergeWithADuplicate.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادمج مع شخص مكرر'**
+  String get aiMergeWithADuplicate;
+
+  /// No description provided for @aiDeleteThePerson.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح الشخص'**
+  String get aiDeleteThePerson;
+
+  /// No description provided for @aiNoName.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير اسم'**
+  String get aiNoName;
+
+  /// No description provided for @aiDeleteP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمسح \"{p0}\"؟'**
+  String aiDeleteP0(String p0);
+
+  /// No description provided for @aiTheirRecordedTransactionsStayOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'العمليات المسجلة معاه هتفضل، والشخص بس اللي هيتمسح.'**
+  String get aiTheirRecordedTransactionsStayOnly;
+
+  /// No description provided for @aiDeleting.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنمسح...'**
+  String get aiDeleting;
+
+  /// No description provided for @aiDelete2.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح'**
+  String get aiDelete2;
+
+  /// No description provided for @aiMergeDuplicates.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادمج المكررين'**
+  String get aiMergeDuplicates;
+
+  /// No description provided for @aiChooseTheNameToKeep.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار الاسم اللي هيفضل، وكل العمليات هتتنقل عليه.'**
+  String get aiChooseTheNameToKeep;
+
+  /// No description provided for @aiNoOtherContactsToMerge.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش حد تاني تدمج معاه.'**
+  String get aiNoOtherContactsToMerge;
+
+  /// No description provided for @aiChooseWhoToMergeWith.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار الشخص اللي هيتدمج مع \"{p0}\":'**
+  String aiChooseWhoToMergeWith(String p0);
+
+  /// No description provided for @aiChooseAContact.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار شخص'**
+  String get aiChooseAContact;
+
+  /// No description provided for @aiWhichNameStays.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنهي اسم يفضل؟'**
+  String get aiWhichNameStays;
+
+  /// No description provided for @aiThisNameStaysAndAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم ده هيفضل وكل العمليات هتتنقل عليه'**
+  String get aiThisNameStaysAndAll;
+
+  /// No description provided for @aiMerging.
+  ///
+  /// In ar, this message translates to:
+  /// **'بندمج...'**
+  String get aiMerging;
+
+  /// No description provided for @aiConfirmMerge.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكد الدمج'**
+  String get aiConfirmMerge;
+
+  /// No description provided for @aiWeCouldnTMergeThem.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش ندمج. جرّب تاني.'**
+  String get aiWeCouldnTMergeThem;
 }
 
 class _AppLocalizationsDelegate

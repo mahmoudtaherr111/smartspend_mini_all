@@ -80,12 +80,12 @@ void main() {
 
         // Verify Header
         expect(find.text('الناس والديون'), findsOneWidget);
-        expect(find.text('صافي الفلوس بره'), findsOneWidget);
+        expect(find.text('صافي الفلوس برّه'), findsOneWidget);
         expect(find.text('+ 1,500 ج.م'), findsWidgets);
         expect(find.text('- 300 ج.م'), findsWidgets);
 
         // Verify Active Debts
-        expect(find.text('معاملات مفتوحة'), findsOneWidget);
+        expect(find.text('حسابات مفتوحة'), findsOneWidget);
         expect(find.text('محمد عبد الرحمن إبراهيم الدسوقي'), findsOneWidget);
         expect(find.text('+ 1,500 ج.م (ليك)'), findsOneWidget);
 
@@ -235,11 +235,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('مسح "طارق سليم"؟'), findsOneWidget);
+      expect(find.text('تمسح "طارق سليم"؟'), findsOneWidget);
       expect(
-        find.text(
-          'مسح الشخص مش هيمسح المعاملات المسجلة معاه في السجل، بس هيفك ربطها باسمه.',
-        ),
+        find.text('العمليات المسجلة معاه هتفضل، والشخص بس اللي هيتمسح.'),
         findsOneWidget,
       );
     });
@@ -285,9 +283,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('دمج جهات الاتصال المكررة'), findsOneWidget);
+      expect(find.text('ادمج المكررين'), findsOneWidget);
       expect(
-        find.text('اختار الاسم اللي هيفضل وكل المعاملات هتتنقل عليه.'),
+        find.text('اختار الاسم اللي هيفضل، وكل العمليات هتتنقل عليه.'),
         findsOneWidget,
       );
     });

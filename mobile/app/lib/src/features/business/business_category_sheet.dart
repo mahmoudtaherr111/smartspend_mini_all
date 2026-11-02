@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 /// Bottom sheet to add a custom business category (BIZ-02).
 class AddBusinessCategorySheet extends StatefulWidget {
   const AddBusinessCategorySheet({super.key, required this.onAdd});
@@ -108,7 +110,7 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'إضافة فئة للمشروع',
+                  AppLocalizations.of(context).aiAddACategory,
                   style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colors.foreground,
@@ -123,16 +125,23 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
             const SizedBox(height: SmartSpendSpacing.md),
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'اسم الفئة (مثال: بضاعة، إيجار المحل، خامات)',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)
+                    .aiCategoryNameLikeStockShop,
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: SmartSpendSpacing.md),
             SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'expense', label: Text('مصروف')),
-                ButtonSegment(value: 'income', label: Text('إيراد / مبيعات')),
+              segments: [
+                ButtonSegment(
+                  value: 'expense',
+                  label: Text(AppLocalizations.of(context).aiExpense),
+                ),
+                ButtonSegment(
+                  value: 'income',
+                  label: Text(AppLocalizations.of(context).aiIncomeOrSales),
+                ),
               ],
               selected: {_type},
               onSelectionChanged: (set) {
@@ -140,7 +149,10 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
               },
             ),
             const SizedBox(height: SmartSpendSpacing.md),
-            Text('الأيقونة', style: textTheme.labelLarge),
+            Text(
+              AppLocalizations.of(context).aiIcon,
+              style: textTheme.labelLarge,
+            ),
             const SizedBox(height: SmartSpendSpacing.xs),
             Wrap(
               spacing: SmartSpendSpacing.sm,
@@ -164,7 +176,7 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('إضافة الفئة'),
+                  : Text(AppLocalizations.of(context).aiAddTheCategory),
             ),
           ],
         ),

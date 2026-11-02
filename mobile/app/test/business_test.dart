@@ -141,8 +141,8 @@ void main() {
       app.container.read(routerProvider).go(BusinessScreen.path);
       await tester.pumpAndSettle();
 
-      expect(find.text('إعداد حساب الشغل'), findsOneWidget);
-      expect(find.text('اسم المشروع أو المتجر'), findsOneWidget);
+      expect(find.text('جهز حساب الشغل'), findsOneWidget);
+      expect(find.text('اسم المشروع أو المحل'), findsOneWidget);
     });
 
     testWidgets('displays active business when already created', (

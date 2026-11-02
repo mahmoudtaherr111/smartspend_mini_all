@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'contacts_providers.dart';
 
 /// Bottom sheet to add a new contact (`profile.addContact`).
@@ -28,7 +30,9 @@ class _AddContactSheetState extends ConsumerState<AddContactSheet> {
   Future<void> _submit() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = 'اكتب اسم الشخص أولاً');
+      setState(
+        () => _error = AppLocalizations.of(context).aiEnterThePersonSName,
+      );
       return;
     }
 
@@ -53,7 +57,7 @@ class _AddContactSheetState extends ConsumerState<AddContactSheet> {
       if (mounted) {
         setState(() {
           _submitting = false;
-          _error = 'تعذر إضافة الشخص، اتأكد من النت وجرب تاني';
+          _error = AppLocalizations.of(context).aiWeCouldnTAddThem;
         });
       }
     }
@@ -76,12 +80,12 @@ class _AddContactSheetState extends ConsumerState<AddContactSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'إضافة شخص جديد',
+            AppLocalizations.of(context).aiAddANewPerson,
             style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(
-            'عشان تسجل معاه مصاريف أو سلف أو ديون بسهولة.',
+            AppLocalizations.of(context).aiSoYouCanRecordSpending,
             style: textTheme.bodyMedium?.copyWith(
               color: colors.mutedForeground,
             ),
@@ -92,22 +96,26 @@ class _AddContactSheetState extends ConsumerState<AddContactSheet> {
             autofocus: true,
             textCapitalization: TextCapitalization.words,
             decoration: InputDecoration(
-              labelText: 'اسم الشخص *',
-              hintText: 'مثلاً: محمد إبراهيم أو أحمد كهربائي',
+              labelText: AppLocalizations.of(context).aiName,
+              hintText: AppLocalizations.of(context)
+                  .aiLikeMohamedIbrahimOrAhmed,
               errorText: _error,
             ),
           ),
           const SizedBox(height: SmartSpendSpacing.md),
           TextField(
             controller: _relationController,
-            decoration: const InputDecoration(
-              labelText: 'صلة القرابة أو الوصف (اختياري)',
-              hintText: 'مثلاً: زميل شغل، صاحبي، أخويا...',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).aiRelationOptional,
+              hintText: AppLocalizations.of(context)
+                  .aiLikeColleagueFriendBrother,
             ),
           ),
           const SizedBox(height: SmartSpendSpacing.xl),
           SmartSpendButton(
-            label: _submitting ? 'جاري الحفظ...' : 'حفظ الشخص',
+            label: _submitting
+                ? AppLocalizations.of(context).aiSaving
+                : AppLocalizations.of(context).aiSaveThePerson,
             onPressed: _submitting ? null : _submit,
           ),
         ],

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'ai_models.dart';
 import 'ai_providers.dart';
 
@@ -57,13 +59,13 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'مقارنة بين شهرين',
+          Text(
+            AppLocalizations.of(context).aiCompareTwoMonths,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           Text(
-            'اختر شهرين مختلفين لتحليل التغيرات في المصاريف وأسبابها.',
+            AppLocalizations.of(context).aiPickTwoDifferentMonthsTo,
             style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 16),
@@ -75,8 +77,8 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'الشهر الأول:',
+                    Text(
+                      AppLocalizations.of(context).aiFirstMonth,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -114,8 +116,8 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'الشهر الثاني:',
+                    Text(
+                      AppLocalizations.of(context).aiSecondMonth,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -171,7 +173,7 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'يرجى اختيار شهرين مختلفين لإجراء المقارنة.',
+                      AppLocalizations.of(context).aiPickTwoDifferentMonths,
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.red.shade900,
@@ -198,7 +200,9 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
                   error: (err, _) => Center(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 20),
-                      child: Text('تعذر إجراء المقارنة: $err'),
+                      child: Text(
+                        AppLocalizations.of(context).aiWeCouldnTCompareThem,
+                      ),
                     ),
                   ),
                   data: (comparison) => _buildComparisonResults(comparison),
@@ -234,7 +238,10 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'نتائج المقارنة (${_formatMonth(comparison.secondMonth)} مقابل ${_formatMonth(comparison.firstMonth)})',
+                    AppLocalizations.of(context).aiComparisonP0AndP1(
+                      _formatMonth(comparison.secondMonth),
+                      _formatMonth(comparison.firstMonth),
+                    ),
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -253,8 +260,8 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
 
         if (comparison.changes.isNotEmpty) ...[
           const SizedBox(height: 16),
-          const Text(
-            'أكبر التغيرات بالفئات:',
+          Text(
+            AppLocalizations.of(context).aiBiggestChangesByCategory,
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
@@ -271,7 +278,9 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final change = comparison.changes[index];
-                final cat = (change['category'] as String?) ?? 'فئة';
+                final cat =
+                    (change['category'] as String?) ??
+                    AppLocalizations.of(context).aiCategory;
                 final diff = (change['diff'] as num?)?.toDouble() ?? 0.0;
                 final isIncrease = diff > 0;
 

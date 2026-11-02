@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'ai_models.dart';
 import 'ai_providers.dart';
 
@@ -42,15 +44,15 @@ class AiMemoriesSheet extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  const Text(
-                    'ذاكرة المساعد الذكي',
+                  Text(
+                    AppLocalizations.of(context).aiWhatTheAssistantRemembers2,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: () => _confirmClearAll(context, ref),
                     icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                    label: const Text('مسح الكل'),
+                    label: Text(AppLocalizations.of(context).aiClearAll),
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.red.shade700,
                       visualDensity: VisualDensity.compact,
@@ -79,7 +81,7 @@ class AiMemoriesSheet extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'المساعد الذكي يحفظ معلومات أساسية عن عاداتك وأولوياتك لمساعدتك في اتخاذ قرارات أفضل. بياناتك مشفرة ولا تتم مشاركتها أبداً.',
+                      AppLocalizations.of(context).aiTheAssistantKeepsAFew,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.green.shade900,
@@ -94,8 +96,9 @@ class AiMemoriesSheet extends ConsumerWidget {
             Expanded(
               child: memoriesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, _) =>
-                    Center(child: Text('تعذر تحميل الذاكرة: $err')),
+                error: (err, _) => Center(
+                  child: Text(AppLocalizations.of(context).aiWeCanTLoadThe),
+                ),
                 data: (memories) {
                   if (memories.isEmpty) {
                     return Center(
@@ -109,7 +112,8 @@ class AiMemoriesSheet extends ConsumerWidget {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'المساعد لسه ميعرفش عنك تفاصيل خاصة',
+                            AppLocalizations.of(context)
+                                .aiTheAssistantDoesnTKnow,
                             style: TextStyle(
                               color: Colors.grey.shade600,
                               fontSize: 15,
@@ -117,7 +121,7 @@ class AiMemoriesSheet extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'كل ما تتكلم معاه أكتر، هيفتكر تفضيلاتك المالية تلقائياً',
+                            AppLocalizations.of(context).aiTheMoreYouTalkThe,
                             style: TextStyle(
                               color: Colors.grey.shade500,
                               fontSize: 13,
@@ -151,7 +155,7 @@ class AiMemoriesSheet extends ConsumerWidget {
                         trailing: IconButton(
                           icon: const Icon(Icons.close_rounded, size: 18),
                           color: Colors.grey.shade500,
-                          tooltip: 'نسيان هذه المعلومة',
+                          tooltip: AppLocalizations.of(context).aiForgetThis,
                           onPressed: () => _forgetMemory(context, ref, memory),
                         ),
                       );
@@ -176,8 +180,10 @@ class AiMemoriesSheet extends ConsumerWidget {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم حذف المعلومة من ذاكرة المساعد.'),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).aiRemovedFromTheAssistantS,
+          ),
           duration: Duration(seconds: 2),
         ),
       );
@@ -188,19 +194,19 @@ class AiMemoriesSheet extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('مسح جميع الذكريات'),
-        content: const Text(
-          'هل أنت متأكد من مسح جميع المعلومات المحفوظة؟ سيبدأ المساعد في التعرف على تفضيلاتك من جديد.',
+        title: Text(AppLocalizations.of(context).aiClearAllMemories),
+        content: Text(
+          AppLocalizations.of(context).aiDeleteEverythingSavedTheAssistant,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(AppLocalizations.of(context).aiCancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('مسح الكل'),
+            child: Text(AppLocalizations.of(context).aiClearAll),
           ),
         ],
       ),

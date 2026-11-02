@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'add_contact_sheet.dart';
 import 'contact_models.dart';
 import 'contacts_providers.dart';
@@ -83,11 +85,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الناس والديون'),
+        title: Text(AppLocalizations.of(context).aiPeopleAndDebts),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add_alt_1_rounded),
-            tooltip: 'إضافة شخص',
+            tooltip: AppLocalizations.of(context).aiAddAPerson,
             onPressed: _openAddSheet,
           ),
         ],
@@ -99,8 +101,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
         ),
         AsyncError() => Center(
           child: ErrorState(
-            message: 'تعذر تحميل بيانات الناس والديون',
-            retryLabel: 'إعادة المحاولة',
+            message: AppLocalizations.of(context).aiWeCanTLoadYour4,
+            retryLabel: AppLocalizations.of(context).aiTryAgain,
             onRetry: () => ref.invalidate(peopleDebtsDataProvider),
           ),
         ),
@@ -151,7 +153,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
         TextField(
           controller: _searchController,
           decoration: InputDecoration(
-            hintText: 'ابحث بالاسم أو صلة القرابة...',
+            hintText: AppLocalizations.of(context).aiSearchByNameOrRelation,
             prefixIcon: const Icon(Icons.search_rounded),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
@@ -171,7 +173,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
 
         // Active debts section
         _SectionHeader(
-          title: 'معاملات مفتوحة',
+          title: AppLocalizations.of(context).aiOpenBalances,
           count: active.length,
           icon: Icons.sync_alt_rounded,
         ),
@@ -181,8 +183,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
             padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.md),
             child: Text(
               _searchQuery.isNotEmpty
-                  ? 'مفيش نتائج مطابقة للبحث'
-                  : 'مفيش ديون مفتوحة حالياً، الحسابات كلها متصفية.',
+                  ? AppLocalizations.of(context).aiNoResults
+                  : AppLocalizations.of(context).aiNoOpenDebtsAllSettled,
               style: textTheme.bodyMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
@@ -204,7 +206,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
 
         // Settled accounts section
         _SectionHeader(
-          title: 'حسابات متصفية',
+          title: AppLocalizations.of(context).aiSettled,
           count: settled.length,
           icon: Icons.check_circle_outline_rounded,
         ),
@@ -214,8 +216,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
             padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.md),
             child: Text(
               _searchQuery.isNotEmpty
-                  ? 'مفيش نتائج مطابقة'
-                  : 'مفيش حسابات متصفية مسجلة.',
+                  ? AppLocalizations.of(context).aiNoResults2
+                  : AppLocalizations.of(context).aiNoSettledAccountsYet,
               style: textTheme.bodyMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
@@ -264,7 +266,7 @@ class _HeroDebtsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'صافي الفلوس بره',
+            AppLocalizations.of(context).aiNetMoneyOut,
             style: textTheme.bodySmall?.copyWith(
               color: colors.mutedForeground,
               fontWeight: FontWeight.w600,
@@ -295,7 +297,7 @@ class _HeroDebtsCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ليك بره',
+                      AppLocalizations.of(context).aiOwedToYou,
                       style: textTheme.bodySmall?.copyWith(
                         color: colors.mutedForeground,
                       ),
@@ -318,7 +320,7 @@ class _HeroDebtsCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'عليك بره',
+                      AppLocalizations.of(context).aiYouOwe,
                       style: textTheme.bodySmall?.copyWith(
                         color: colors.mutedForeground,
                       ),
@@ -475,13 +477,16 @@ class _PersonDebtCard extends StatelessWidget {
                   },
                   itemBuilder: (context) => [
                     if (onMerge != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'merge',
                         child: Row(
                           children: [
                             Icon(Icons.call_merge_rounded, size: 18),
                             SizedBox(width: SmartSpendSpacing.xs),
-                            Text('دمج مع شخص مكرر'),
+                            Text(
+                              AppLocalizations.of(context)
+                                  .aiMergeWithADuplicate,
+                            ),
                           ],
                         ),
                       ),
@@ -497,7 +502,7 @@ class _PersonDebtCard extends StatelessWidget {
                             ),
                             const SizedBox(width: SmartSpendSpacing.xs),
                             Text(
-                              'مسح الشخص',
+                              AppLocalizations.of(context).aiDeleteThePerson,
                               style: TextStyle(color: colors.danger),
                             ),
                           ],

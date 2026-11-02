@@ -41,7 +41,7 @@ final class BusinessApi {
         'businessName': businessName,
         'businessType': businessType,
         'description': description.length < 10
-            ? 'مشروع تجاري لـ $businessName'
+            ? 'مشروع $businessName'
             : description,
       },
     );

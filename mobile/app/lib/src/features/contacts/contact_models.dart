@@ -14,7 +14,7 @@ final class DebtBalance {
 
   factory DebtBalance.fromJson(Map<String, Object?> json) => DebtBalance(
     contactId: (json['contactId'] as num?)?.toInt(),
-    name: json['name'] as String? ?? 'من غير اسم',
+    name: json['name'] as String? ?? '',
     balance: readAmount(json['balance']) ?? 0,
     lent: readAmount(json['lent']) ?? 0,
     received: readAmount(json['received']) ?? 0,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/src/internals.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smartspend_app/src/l10n/app_localizations.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_app/src/core/providers.dart';
 import 'package:smartspend_app/src/features/ai/ai_api.dart';
@@ -56,16 +57,18 @@ void main() {
               );
             }),
           ]),
-          child: const MaterialApp(home: Scaffold(body: AiReportView())),
+          child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: AiReportView()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('التحليل المالي للشهر'), findsOneWidget);
-      expect(
-        find.textContaining('بيانات محدودة: سجّل عمليات أكثر'),
-        findsOneWidget,
-      );
+      expect(find.text('تحليل الشهر'), findsOneWidget);
+      expect(find.textContaining('بيانات قليلة'), findsOneWidget);
       expect(find.textContaining('مفيش مصاريف مسجلة كافية'), findsOneWidget);
     });
 
@@ -88,12 +91,17 @@ void main() {
               );
             }),
           ]),
-          child: const MaterialApp(home: Scaffold(body: AiReportView())),
+          child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: AiReportView()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('أعلى بنود الإنفاق المؤكدة:'), findsOneWidget);
+      expect(find.text('أعلى بنود الصرف:'), findsOneWidget);
       expect(find.text('بقالة'), findsOneWidget);
       expect(find.text('فواتير'), findsOneWidget);
     });
@@ -111,13 +119,18 @@ void main() {
               );
             }),
           ]),
-          child: const MaterialApp(home: Scaffold(body: AiReportView())),
+          child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: AiReportView()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
       // Tap export button
-      await tester.tap(find.text('تصدير التقرير'));
+      await tester.tap(find.text('صدّر التقرير'));
       await tester.pumpAndSettle();
 
       // Shows upgrade sheet
@@ -132,12 +145,17 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: _testOverrides(fakeApi),
-          child: const MaterialApp(home: Scaffold(body: AiCompareView())),
+          child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: AiCompareView()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('مقارنة بين شهرين'), findsOneWidget);
+      expect(find.text('قارن شهرين'), findsOneWidget);
     });
 
     testWidgets('renders comparison results when months differ', (
@@ -161,7 +179,12 @@ void main() {
               );
             }),
           ]),
-          child: const MaterialApp(home: Scaffold(body: AiCompareView())),
+          child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(body: AiCompareView()),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -172,7 +195,7 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      expect(find.text('مقارنة بين شهرين'), findsOneWidget);
+      expect(find.text('قارن شهرين'), findsOneWidget);
     });
   });
 
@@ -183,8 +206,7 @@ void main() {
       final fakeApi = FakeApi();
       fakeApi.answer('ai.generateYearlyInsights', (input) {
         return {
-          'summary':
-              'ملخص عام 2026: حققت التزاماً بميزانياتك في 8 أشهر من أصل 10.',
+          'summary': 'ملخص 2026: حققت التزاماً بميزانياتك في 8 أشهر من أصل 10.',
           'topCategories': [
             {'category': 'سكن وفواتير', 'total': 45000.0},
             {'category': 'بقالة وطعام', 'total': 38000.0},
@@ -196,16 +218,19 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: _testOverrides(fakeApi),
-          child: const MaterialApp(
+          child: MaterialApp(
+            locale: const Locale('ar'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             home: Scaffold(body: AiYearlyInsightsView()),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('التقرير السنوي الشامل'), findsOneWidget);
+      expect(find.text('التقرير السنوي'), findsOneWidget);
       expect(
-        find.textContaining('ملخص عام 2026: حققت التزاماً بميزانياتك'),
+        find.textContaining('ملخص 2026: حققت التزاماً بميزانياتك'),
         findsOneWidget,
       );
     });
