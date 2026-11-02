@@ -67,7 +67,7 @@ grant a plan, the daily job that ends subscriptions, referral codes, and the Ult
 The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob-upgrade.c4`.
 
 ## Ending and cancelling
-- `pro.cancel` marks the user's active subscriptions `cancelled`; the plan stays until the end date.
+- `pro.cancel` marks the user's active subscriptions `cancelled`; the plan stays until the end date. A store subscription renews at the store whatever this row says, so the mobile app does not call it: its cancel screen opens the person's subscriptions page in Google Play or the App Store.
 - `daily-subscription-expiry` runs at 06:00 on replicas with `ENABLE_CRONS=true`: subscriptions that are active or
   cancelled and past their end date become `expired`, and a user without another running subscription goes back to
   Free, with the auth version bumped. One run handles up to 500 subscriptions. The same run then reminds users whose
