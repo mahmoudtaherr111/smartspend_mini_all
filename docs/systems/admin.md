@@ -44,7 +44,7 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
 | AI | Recent API key errors, with resolve and clear; then the command center: classification quality over the last 7, 30 or 90 days beside the period before (share saved on its own, the silent-mistake rate — auto-saved answers the user later changed —, review, questions, corrections, share sent to a model, average time, from `classification_logs`); consumption, cost and latency this billing period by provider and channel; providers with their keys masked, the models discovered for each and every model's purposes, plans and prices; one user's quota, measured against the limit the server enforces (the user's own override, else `<plan>_token_limit`), and latest requests; a sandbox that sends a typed sentence through `ai.parseExpense` | `admin.getApiKeyErrors`, `admin.resolveApiKeyError`, `admin.clearAllApiKeyErrors`, `admin.getClassificationQuality`, `admin.getAiTelemetryOverview`, `admin.getAiProviders`, `admin.getAiModels`, `admin.addAiProvider`, `admin.updateAiProvider`, `admin.deleteAiProvider`, `admin.discoverProviderModels`, `admin.saveAiModels`, `admin.getUserAiQuota` |
 | Subscriptions | The latest subscriptions with their status | `admin.listSubscriptionsAdmin` |
 | Clarifications | Items the classifier could not settle; mark one resolved or ignored | `admin.getPendingClarifications`, `admin.resolveClarification` |
-| WhatsApp | Connection and QR code, direct messages, broadcasts, the verification switch ([notifications](notifications.md)) | `adminWhatsapp.*` |
+| WhatsApp | Delivery counts and consent, templates, direct messages, template broadcasts, the verification switch ([notifications](notifications.md)) | `adminWhatsapp.*` |
 | Ads | Campaigns with placement, target plan, dates, clicks and impressions | `ads.stats`, `ads.create`, `ads.update`, `ads.delete` |
 | Rules | Words users taught the classifier (`user_dictionaries`), with the owner's name and delete | `admin.getLearnedRules`, `admin.deleteLearnedRule` |
 | Bank messages (رسايل البنوك) | Three inner tabs (`src/components/admin/capture/AdminCaptureTab.tsx`): the banks, wallets and apps whose notifications are read and the subscriptions recognised in card charges, both editable without a deploy ([bank messages](bank-messages.md#who-is-read-the-capture-catalog)); and the numbers (`src/components/admin/capture/AdminCaptureNumbers.tsx`): what became of the captured payments per bank and kind over 1, 7 or 30 days with the undo rate of those recorded on their own, the banks the breaker stopped, the model queue, the bulk undo of one bank's recordings in a period, counted first and confirmed once more, and one user's capture for support (phones and their health, consents, latest payments and model jobs, no message text). Admins also get in-app alerts when the breaker stops a bank or the model's queue waits more than five minutes | `captureAdmin.*` |
@@ -121,8 +121,8 @@ and `api/lib/admin-model-switch.test.ts`.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** Nothing records what admins do. The audit tab lists recent sessions, and changing a role or plan, editing
-   settings, deleting an account or sending a message leaves no trail.
+1. **Gap.** `logAdminAction` in `api/lib/admin-audit.ts` records actions in `admin_audit_logs` and the audit tab shows them, but
+   not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
 2. **Debt.** Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`,
    `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would
    show them, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted. The classification quality itself is
@@ -135,7 +135,7 @@ Checked against the code; each one names where it lives.
 5. **Gap.** Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it
    would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either
    (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
-6. **Bug.** Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.
+6. **Gap.** The website counts impressions through `ads.recordImpression`; the mobile app shows no ads yet.
 7. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
    `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`,
    `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one),

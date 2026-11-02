@@ -65,7 +65,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `VAPID_PUBLIC_KEY` | no | — | `api/notification-engine.ts` |
 | `VAPID_SUBJECT` | no | `mailto:contact@smartspend.com` | `api/notification-engine.ts` |
 | `WHATSAPP_CLOUD_ACCESS_TOKEN` | no | — | — |
-| `WHATSAPP_CLOUD_API_VERSION` | no | `v21.0` | — |
+| `WHATSAPP_CLOUD_API_VERSION` | no | `v23.0` | — |
 | `WHATSAPP_CLOUD_APP_SECRET` | no | — | `api/boot.ts` |
 | `WHATSAPP_CLOUD_PHONE_NUMBER_ID` | no | — | — |
 | `WHATSAPP_CLOUD_VERIFY_TOKEN` | no | — | `api/boot.ts` |

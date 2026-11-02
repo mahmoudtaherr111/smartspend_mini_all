@@ -4,44 +4,41 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (8 of 81 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (5 of 76 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 18 | — | — | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 11 | — | — | 3 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 18 | — | — | 1 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-02 b7dfb797 | 2026-10-28 70ef02d1 | 11 | — | — | 3 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 6 | — | — | 2 | 2 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 9 | — | 2 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 7 | — | 1 | 7 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-10-30 d3bc8a2b | 2026-10-30 d3bc8a2b | 16 | **1** | — | 8 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-10-29 c0f01c72 | 2026-10-29 c0f01c72 | 2 | — | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-10-30 d3bc8a2b | 2026-10-30 d3bc8a2b | 4 | **1** | 1 | 3 | 2 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-10-28 70ef02d1 | 2026-10-28 70ef02d1 | 4 | — | 2 | 5 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-10-31 68ae7cc5 | 2026-10-31 68ae7cc5 | 5 | — | — | — | 7 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-10-29 753851e1 | 2026-10-29 753851e1 | 7 | — | — | 3 | 2 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 9 | — | 2 | 3 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-02 b7dfb797 | 2026-10-31 092bd28c | 7 | — | 1 | 7 | 1 |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 16 | **1** | — | 7 | — |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 2 | — | — | 3 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 4 | — | — | 3 | 1 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 4 | — | 1 | 6 | 1 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-02 b7dfb797 | 2026-10-31 092bd28c | 8 | — | — | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-02 b7dfb797 | 2026-10-31 68ae7cc5 | 5 | — | — | — | 7 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 7 | — | — | 3 | 1 |
 
 
 ## Where the risk is
 
 Every system's explanation names at least one test.
 
-## What is waiting (81 issue(s))
+## What is waiting (76 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
-### Security (2)
+### Security (1)
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
-- The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the same storage.
+- The website's app lock hashes its PIN with PBKDF2 and a random salt, but the hash and the lockout counter sit in `localStorage`, so it stops a passer-by and not anyone who can open the browser's tools (`src/lib/biometricAuth.ts`).
 
-**Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing checks that recipients agreed.
-
-### Bugs (6)
+### Bugs (4)
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the financial month only.
@@ -50,17 +47,13 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 
-**Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- The activity checks take at most 1000 users per account table a day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
-
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
-- Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero.
 - Discount codes are created here but checkout never applies them ([billing](billing.md)).
 
 ### Gaps (45)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
-- `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
+- `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and The website has no receipt capture. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - iPhone capture is not built: the card on an iPhone only opens the Shortcuts app. There is no push: a question from the model the phone did not fetch within about a minute shows only in the app. The Android side was compiled and tested only in CI; it has not run on a real phone yet.
@@ -94,8 +87,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - Verification is the setting `whatsapp_otp_enabled` (shown and switched in the admin console's WhatsApp tab, [notifications](notifications.md)): while it is off any number registers without proof that it belongs to the person.
 - In production, verification needs both Turnstile keys: `TURNSTILE_SECRET_KEY` on the server and `VITE_TURNSTILE_SITE_KEY` in the web build. With verification on and either missing, nobody can sign up with a phone number.
-- Changing a phone number has no screen, and with verification off its code is never sent; the profile shows the number read-only.
-- Users cannot see or end their sessions: `session.listMine` and `session.revokeMine` have no screen.
+- Changing a phone number and seeing sessions have screens in the mobile app only; the website shows the number read-only and has no sessions screen. A phone change needs WhatsApp to be configured.
 - The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
 - Google sign-in in the mobile app is off until it is configured on both sides: `GOOGLE_ANDROID_CLIENT_IDS` or `GOOGLE_IOS_CLIENT_IDS` on the server, `GOOGLE_SERVER_CLIENT_ID` (and on iOS `GOOGLE_IOS_CLIENT_ID` with the reversed id in `GoogleSignIn.xcconfig`) in the app build. None of these values is set yet, so the app hides the button.
 - In the mobile app Turnstile runs in a web view loaded as the API's origin, so the site key must list the API's host. A build without `TURNSTILE_SITE_KEY` sends no token, and a production server with verification on then refuses its sign-ups, as known issue 2 says for the web.
@@ -109,13 +101,14 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - The logging reminder the permission prompt mentions reaches only users with a streak whose last recorded day was 12 to 36 hours ago.
 - A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount that checkout never gives ([billing](billing.md)); unedited ones were replaced.
-- Push cannot be turned off from the app, a device cannot be removed, the bell has no clearing, and nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion. Bell items keep no type, so the icon is read from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
+- A device cannot be removed from the web, and nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion. Bell items keep no type, so the icon is read from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
-- Nothing records what admins do. The audit tab lists recent sessions, and changing a role or plan, editing settings, deleting an account or sending a message leaves no trail.
+- `logAdminAction` in `api/lib/admin-audit.ts` records actions in `admin_audit_logs` and the audit tab shows them, but not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
 - The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the browser; nothing backs up the database.
 - Answering a ticket does not notify the user, while the support page promises a reply within a day. The reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses them, and `support.assign` has no screen.
 - Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
+- The website counts impressions through `ads.recordImpression`; the mobile app shows no ads yet.
 - Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one), `support.getById`, `support.assign` and every statistic of `analytics`.
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
@@ -124,11 +117,11 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card — is only ever written by the breaker during real traffic ([admin](admin.md)).
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
-- `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
+- `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in gate components are unused, so the plan is checked on the server only.
 - The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the token. The Flutter app replaces them (decision 0022); until they are retired they only reach the sign-in screen.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (28)
+### Debt (26)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - **Clarifications save immediately with undo (Decision 0039).** A clarification saves as soon as it is answered; the saved items are shown afterwards with an immediate "تراجع" (Undo) banner rather than requiring a blocking confirmation modal. This design eliminates friction during frequent Egyptian micro-transaction and voice recording; undo and post-save edits remain instant and safe. Questions stored before the source was kept save a spoken sentence as `manual`.
@@ -147,7 +140,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns with `ALTER TABLE` when a read fails, outside the migrations in `db/`.
 - The behaviour snapshots are written but not read: `getProactiveInsights` in `api/services/finance-semantic-layer/proactive-insights.ts` has no caller, and no caller asks the facts pack to prefer a snapshot.
-- Unused code: `buildProReportPrompt` and `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.
+- Unused code: `buildProReportPrompt` and `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called by no screen.
 
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - Writers outside `api/expense-router.ts` still write `expenses` with their own steps instead of the ledger writer: receipts (`api/image-router.ts#parseReceipt`), the AI Center's actions (`api/services/action-runtime/extended-actions.ts`), business, profile and wallet changes (`api/business-router.ts`, `api/profile-router.ts`, `api/wallet-router.ts`), the taxonomy migration and account purge. Each moves to it as its own change (decision 0027).
@@ -157,8 +150,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - No test covers the grant's transaction (`grantProSubscription` against a database), the expiry job or referrals.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- Nothing tests notification delivery, the templates, the activity checks or the WhatsApp connection and its sending.
-- The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
+- The activity checks and scheduled templates have no test against a real database; `api/notification-engine.delivery.test.ts` covers the push payloads only.
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would show them, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted. The classification quality itself is shown by the command center's quality card (`admin.getClassificationQuality`).
@@ -179,5 +171,4 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten: they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that print `error.message` as text print provider, socket and storage errors today, or failed reads whose values are ids and dates (`api/ai-router.ts`, `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
-- `src/components/ProductTour.tsx` is never mounted, and `src/lib/backButtonManager.ts` only re-exports `src/lib/back-button-manager.ts` for an importer that no longer exists.
 - The list of routes that show the tab bar lives in `BOTTOM_NAV_ROUTES` next to the route table, so a new screen has to be added in both places or it loses its navigation.

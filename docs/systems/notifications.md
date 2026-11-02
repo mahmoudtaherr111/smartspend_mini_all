@@ -17,9 +17,8 @@ week), and the WhatsApp service that verifies phone numbers, sends messages and 
 | Destinations | `contracts/notification-types.ts#NOTIFICATION_TYPES`, `resolveNotificationTarget` | Each type and the page it opens; old stored destinations repaired |
 | Notification center | `src/components/NotificationBell.tsx`, `src/components/notifications/NotificationList.tsx`, `src/pages/Notifications.tsx`, `profile.getInAppNotifications`, `profile.markInAppNotificationRead`, `profile.markAllInAppNotificationsRead` | The bell with the unread count, the list in a sheet and on `/notifications`, marking one or all read |
 | Settings | `src/components/notifications/NotificationSettings.tsx` | This device's push state and the budget-alerts switch |
-| WhatsApp service | `api/services/whatsapp-service.ts#whatsappService` | A WhatsApp Web client (Baileys) with its session on disk; still sends the monthly report, the phone-change code and admin messages until the Cloud API below replaces it |
 | WhatsApp Cloud API | `api/lib/whatsapp/` | Meta's official API: the client, the templates we submit, the signed webhook, and the outbox every message goes through ([decision 0038](../decisions/0038-whatsapp-cloud-api.md)) |
-| WhatsApp admin | `api/admin-whatsapp-router.ts`, `src/components/admin/AdminWhatsAppTab.tsx` | Status and QR code, start and stop, direct messages, broadcasts, the verification switch |
+| WhatsApp admin | `api/admin-whatsapp-router.ts`, `src/components/admin/AdminWhatsAppTab.tsx` | Delivery counts and consent, templates, direct messages, template broadcasts to people who agreed, the verification switch |
 | Templates admin | the notification procedures of `api/admin-router.ts`, `src/components/admin/NotificationsTab.tsx` | Creating, scheduling and switching templates, running the activity check at once, logs and device statistics; see [admin](admin.md) |
 
 ## Delivering a notification
@@ -79,22 +78,15 @@ runs; a stored template still holding the previous default title and body is upd
   only the Home-Screen app can) and the budget-alerts switch.
 
 ## WhatsApp
-- The service is WhatsApp Web through Baileys, logged in by scanning a QR code shown in the admin console. Its session
-  lives in `whatsapp_auth_info/` on the server's disk. At boot it starts only when `ENABLE_WHATSAPP=true` and a saved
-  session exists; otherwise an admin starts it. A dropped connection reconnects after a few seconds, and a logout deletes
-  the session.
-- `sendMessage` refuses when the service is not connected or the number has no WhatsApp, shows typing for a moment, and
-  sends. The WhatsApp monthly report of [insights](insights.md), the phone-change codes of [accounts](accounts.md) and
-  admin messages go through it.
-- Verification codes no longer go through it: they are sent in Meta's authentication template and typed back
-  ([accounts](accounts.md), [decision 0038](../decisions/0038-whatsapp-cloud-api.md)); it ignores incoming messages.
-- Admin broadcasts (`adminWhatsapp.broadcastMessage`) queue one message per phone user in process memory and send them
-  one at a time, with a random pause of two to four minutes and a random choice between the `{a|b}` alternatives written
-  in the text.
+Every message goes through Meta's Cloud API and the outbox below. The unofficial client and its session on disk are
+gone. Verification codes are sent in Meta's authentication template and typed back ([accounts](accounts.md),
+[decision 0038](../decisions/0038-whatsapp-cloud-api.md)). The monthly report of [insights](insights.md) is queued only
+for people whose `whatsapp_contacts` row holds their reports consent, and an admin broadcast
+(`adminWhatsapp.broadcastTemplate`) sends an approved template only to people who agreed to that kind and did not opt out.
 
-## WhatsApp on Meta's Cloud API (being built)
+## WhatsApp on Meta's Cloud API
 The owner chose Meta's official WhatsApp Business Platform ([decision 0038](../decisions/0038-whatsapp-cloud-api.md)).
-Its foundation is in place and does nothing until the owner sets the keys; the senders above still use Baileys.
+It does nothing until the owner sets the keys.
 - **Configuration** (`api/lib/env.ts`): `WHATSAPP_CLOUD_ACCESS_TOKEN` and `WHATSAPP_CLOUD_PHONE_NUMBER_ID` to send,
   `WHATSAPP_CLOUD_WABA_ID` for templates, `WHATSAPP_CLOUD_APP_SECRET` and `WHATSAPP_CLOUD_VERIFY_TOKEN` for the webhook,
   `WHATSAPP_CLOUD_API_VERSION` (default `v23.0`). `whatsAppConfig()` is null until the first two are set.
@@ -128,18 +120,15 @@ Its foundation is in place and does nothing until the owner sets the keys; the s
 | Delivery | `sendPush` and `sendPushBatch` in `api/notification-engine.ts`, `api/services/firebase.ts` | |
 | Asking for push permission | `src/components/notifications/PushNotificationPrompt.tsx`, `src/hooks/usePushNotifications.ts` | |
 | The bell | `src/components/NotificationBell.tsx` | |
-| The WhatsApp connection and sending | `api/services/whatsapp-service.ts` | |
 | Broadcasts | `api/admin-whatsapp-router.ts` | |
 | The Cloud API, its templates, webhook and outbox | `api/lib/whatsapp/` | `api/lib/whatsapp/*.test.ts`, `tests/security/whatsapp-webhook.test.ts` |
 
 ## Rules for changes here
 1. Send through a template with `triggerEventNotification` or the batch sender, so the notification reaches the bell,
    the log and every device.
-2. Never log message text, codes or phone numbers (golden rule 10): the WhatsApp service, the code blocklist and
-   broadcasts log a number as its last four digits and never a code or a message, and a failed push logs the
-   subscription's id, never the device token.
+2. Never log message text, codes or phone numbers (golden rule 10): the outbox and broadcasts log ids and statuses,
+   and a failed push logs the subscription's id, never the device token.
 3. Anything sent to many users is paced and runs as a scheduled job, which holds a lock on one replica.
-4. The WhatsApp session belongs to one process: never start it on more than one replica.
 
 ## Tests
 `api/lib/whatsapp/client.test.ts` (requests, numbers, which refusals are retried),
@@ -148,20 +137,15 @@ stop words), `api/lib/whatsapp/outbox.test.ts` (retry delays, status order) and 
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Debt.** Nothing tests notification delivery, the templates, the activity checks or the WhatsApp connection and its
-   sending.
+1. **Debt.** The activity checks and scheduled templates have no test against a real database;
+   `api/notification-engine.delivery.test.ts` covers the push payloads only.
 2. **Gap.** The logging reminder the permission prompt mentions reaches only users with a streak whose last recorded day
    was 12 to 36 hours ago.
 3. **Gap.** A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount
    that checkout never gives ([billing](billing.md)); unedited ones were replaced.
-4. **Security.** WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied
-   wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing
-   checks that recipients agreed.
-5. **Debt.** The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
-6. **Gap.** Push cannot be turned off from the app, a device cannot be removed, the bell has no clearing, and nothing prunes
-   `in_app_notifications` or `notification_logs` apart from account deletion. Bell items keep no type, so the icon is read
+4. **Gap.** A device cannot be removed from the web, and nothing prunes `in_app_notifications` or `notification_logs`
+   apart from account deletion. Bell items keep no type, so the icon is read
    from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
-7. **Bug.** The activity checks take at most 1000 users per account table a day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): phone verification and the passkey suggestion.

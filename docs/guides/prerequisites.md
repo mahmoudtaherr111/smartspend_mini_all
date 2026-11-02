@@ -10,7 +10,7 @@ This document outlines the hardware capabilities, platform permissions, and fall
 | :--- | :--- | :--- | :--- | :--- |
 | `sms_bank_capture` | `RECEIVE_SMS` / `BIND_NOTIFICATION_LISTENER_SERVICE` | `N/A (Notification Extension)` / Shortcuts App Intent | `manual_entry` | `CAP-04`, `CAP-06`, `mobile/packages/bank_capture` |
 | `biometric_lock` | `USE_BIOMETRIC` (BiometricPrompt) | `NSFaceIDUsageDescription` (LocalAuthentication) | `pin_prompt` | `SEC-F3`, `mobile/packages/device_lock` |
-| `receipt_camera` | `CAMERA` | `NSCameraUsageDescription` | `gallery_upload` / `manual_entry` | `GAP-03..05`, `mobile/app/lib/src/features/receipt` |
+| `receipt_camera` | `CAMERA` | `NSCameraUsageDescription` | `gallery_upload` / `manual_entry` | `GAP-03..05`, `mobile/app/lib/src/features/ledger/receipts` |
 | `microphone` | `RECORD_AUDIO` / `FOREGROUND_SERVICE_MICROPHONE` | `NSMicrophoneUsageDescription` | `text_chat` | `AI-09`, `GAP-06`, `mobile/app/lib/src/features/ai` |
 
 ---

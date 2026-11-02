@@ -1,7 +1,7 @@
 # Plans and payments
 
-The Free, Pro and Ultra plans, buying Pro through Paymob's hosted checkout, the webhook that grants a plan, the daily
-job that ends subscriptions, referral codes, and the Ultra members page.
+The Free, Pro and Ultra plans, buying Pro through Paymob's hosted checkout or inside the phone stores, the webhooks that
+grant a plan, the daily job that ends subscriptions, referral codes, and the Ultra members page.
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/billing.md](../atlas/systems/billing.md)
 - The same story for readers who do not read code: [docs/ar/systems/billing.md](../ar/systems/billing.md)
@@ -103,6 +103,22 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
 4. Plan writes go through `setPlan` in `api/lib/access-control.ts` — with the caller's transaction when the
    plan must commit with something else, as the grant does — so the cached session never keeps a plan the
    row no longer has (`tests/knowledge/architecture.test.ts`).
+
+## Store subscriptions
+Google Play and the App Store sell Pro inside the app. The code lives in `api/lib/store-billing/`, and nothing sells until
+the owner configures a store; `pro.storeBilling` tells the app which ones are on.
+- **Trust.** What a request says is never believed. A Google notification passes only with a Google-signed OIDC token for
+  this endpoint and service account (`verifyGooglePlayWebhookAuth`), and even then the state is read from the Play
+  Developer API (`fetchGoogleSubscription`). An Apple transaction or notification passes only when its signature chains to
+  Apple's root (`decodeAndVerifyJWS`). `BILLING_SIMULATE=true` refuses to start in production.
+- **State.** `store_purchases` holds one row per purchase, unique per store and key, and `store_events` one row per event.
+  `applyStoreEvent` in `api/lib/store-billing/ledger.ts` is the only writer: in one transaction it records the event, locks
+  the purchase, refuses another account, drops an older delivery, and sets the plan from everything the person pays for,
+  the website's subscriptions included. Nothing is kept in process memory, so replicas agree.
+- **Ownership.** `storeAccountToken` is a value derived from the account that the app passes with a purchase; a purchase
+  carrying another account's value is refused.
+- **Acknowledging.** Google refunds a purchase left unacknowledged for three days, so a confirmed purchase is acknowledged
+  (`acknowledgeGooglePurchase`).
 
 ## Tests
 `api/lib/billing-plans.test.ts` covers the plan contract. `tests/security/paymob-webhook.test.ts` posts callbacks to the

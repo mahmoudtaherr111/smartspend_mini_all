@@ -105,7 +105,7 @@ const envSchema = z.object({
   WHATSAPP_CLOUD_WABA_ID: z.string().optional(),
   WHATSAPP_CLOUD_APP_SECRET: z.string().optional(),
   WHATSAPP_CLOUD_VERIFY_TOKEN: z.string().optional(),
-  WHATSAPP_CLOUD_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v21.0"),
+  WHATSAPP_CLOUD_API_VERSION: z.string().regex(/^v\d+\.\d+$/).default("v23.0"),
 
   // Firebase FCM
   FIREBASE_PROJECT_ID: z.string().optional(),

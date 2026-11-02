@@ -194,11 +194,10 @@ Then, per procedure:
 - **Admin answers** select fields from `api/lib/admin-safe-fields.ts`, so credentials and session tokens never leave.
 
 ## Account changes and deletion
-- `profile.updateUserInfo` changes the name and avatar. A new phone number needs a code: `profile.requestPhoneChange`
-  sends one over WhatsApp when verification is on and keeps it for ten minutes as shared state (`stateSet` in
-  `api/lib/redis-client.ts`: Redis, or the process's memory where there is no Redis), so the confirmation may reach any
-  replica; `profile.confirmPhoneChange` checks it, saves the number, bumps the auth version and returns a one-time
-  grant that `profile.updateUserInfo` also accepts for fifteen minutes.
+- `profile.updateUserInfo` changes the name and avatar. A new phone number goes through the WhatsApp challenge:
+  `profile.requestPhoneChange` refuses a number another account holds and sends a code to the new number, and
+  `profile.confirmPhoneChange` takes the code typed back and moves the account in one transaction that spends the challenge.
+  Without WhatsApp configured the change is refused with a plain message.
 - `purgeUserData` first locks the identity row, which delayed memory writers also lock; it deletes, inside the caller's transaction, every user-owned row (conversations and memory, the ledger,
   goals, contacts, sessions, passkeys, the profile, logs, voice usage and live calls with their incidents, the capture
   devices, consents, signals, events, monthly use, memory and pairs, the model's queue, the cards and phrases it ignores, the
@@ -256,6 +255,10 @@ Then, per procedure:
 `mobile/app` (sign-in, sign-up with verification, route guard, answer shapes) and `dart test` in
 `mobile/packages/smartspend_api` (the client's session hook and the challenge stream).
 
+## Forgotten password
+`localAuth.resetPassword` takes a verified phone challenge and a new password, spends the challenge in the same
+transaction, ends every session of the account, and opens a new one.
+
 ## Known issues
 Checked against the code; each one names where it lives.
 1. **Gap.** Verification is the setting `whatsapp_otp_enabled` (shown and switched in the admin console's WhatsApp tab,
@@ -263,12 +266,11 @@ Checked against the code; each one names where it lives.
 2. **Gap.** In production, verification needs both Turnstile keys: `TURNSTILE_SECRET_KEY` on the server and
    `VITE_TURNSTILE_SITE_KEY` in the web build. With verification on and either missing, nobody can sign up with a phone
    number.
-3. **Gap.** Changing a phone number has no screen, and with verification off its code is never sent; the profile shows the
-   number read-only.
-4. **Gap.** Users cannot see or end their sessions: `session.listMine` and `session.revokeMine` have no screen.
+3. **Gap.** Changing a phone number and seeing sessions have screens in the mobile app only; the website shows the number
+   read-only and has no sessions screen. A phone change needs WhatsApp to be configured.
 5. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
-6. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
-   same storage.
+6. **Security.** The website's app lock hashes its PIN with PBKDF2 and a random salt, but the hash and the lockout counter sit in
+   `localStorage`, so it stops a passer-by and not anyone who can open the browser's tools (`src/lib/biometricAuth.ts`).
 7. **Gap.** Google sign-in in the mobile app is off until it is configured on both sides: `GOOGLE_ANDROID_CLIENT_IDS` or
    `GOOGLE_IOS_CLIENT_IDS` on the server, `GOOGLE_SERVER_CLIENT_ID` (and on iOS `GOOGLE_IOS_CLIENT_ID` with the reversed id
    in `GoogleSignIn.xcconfig`) in the app build. None of these values is set yet, so the app hides the button.

@@ -22,7 +22,7 @@ public pages (landing, privacy, terms and the not-found page).
 | Native | `src/hooks/useNativeThemeSync.ts`, `src/hooks/useHaptics.ts`, `src/lib/back-button-manager.ts`, `src/components/layout/mobile-nav-platform.ts` | The Capacitor side: splash screen, theme, haptics, the Android back button and platform-specific navigation |
 | Lock | `src/providers/BiometricLockProvider.tsx`, `src/lib/biometricAuth.ts`, `src/hooks/useBiometricOnboarding.ts`, `src/hooks/usePasskeyEnrolment.ts` | The app lock, and the fingerprint / Face ID sign-in suggestion with its rules ([accounts](accounts.md)) |
 | Robot check | `src/lib/turnstile-config.ts`, `src/components/auth/TurnstileWidget.tsx` | The Cloudflare Turnstile widget on the sign-up form, built in only when `VITE_TURNSTILE_SITE_KEY` is set ([accounts](accounts.md)) |
-| Behaviour hooks | `src/hooks/useAppResume.ts`, `src/hooks/useScrollRestoration.ts`, `src/hooks/useVirtualKeyboard.ts`, `src/hooks/useSwipeNavigation.ts` | Returning to the app, scroll position, the on-screen keyboard and swipe gestures |
+| Behaviour hooks | `src/hooks/useAppResume.ts`, `src/hooks/useScrollRestoration.ts`, `src/hooks/useVirtualKeyboard.ts` | Returning to the app, scroll position, the on-screen keyboard and swipe gestures |
 | Utilities | `src/lib/transactionDisplay.ts`, `src/lib/financial-taxonomy.ts`, `src/lib/utils.ts` | How a transaction is presented; the category pickers, icons and colours, read from the server's taxonomy in `contracts/categories.ts` rather than a copy; the class-name helper |
 | Interface language | `src/i18n/` | Arabic source of truth and default (`src/i18n/ar.ts`), optional English dictionary loaded on demand (`src/i18n/en.ts`), `DirectionProvider`, and pre-render synchronous direction application |
 | Public pages | `src/pages/Landing.tsx`, `src/pages/More.tsx`, `src/pages/Privacy.tsx`, `src/pages/Terms.tsx`, `src/pages/NotFound.tsx` | The landing page, the settings menu (which also holds the expense export card of [money](money.md)), the two legal pages and the 404 |
@@ -133,12 +133,10 @@ and the component tests beside their files.
 Checked against the code; each one names where it lives.
 1. **Gap.** `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page
    itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in
-   `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
+   gate components are unused, so the plan is checked on the server only.
 2. **Gap.** The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another
    site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the
    token. The Flutter app replaces them (decision 0022); until they are retired they only reach the sign-in screen.
-3. **Debt.** `src/components/ProductTour.tsx` is never mounted, and `src/lib/backButtonManager.ts` only re-exports
-   `src/lib/back-button-manager.ts` for an importer that no longer exists.
 4. **Debt.** The list of routes that show the tab bar lives in `BOTTOM_NAV_ROUTES` next to the route table, so a new
    screen has to be added in both places or it loses its navigation.
 5. **Gap.** The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten

@@ -425,7 +425,7 @@ Checked against the code; each one names where it lives.
    confirmation modal. This design eliminates friction during frequent Egyptian micro-transaction and voice recording;
    undo and post-save edits remain instant and safe. Questions stored before the source was kept save a spoken sentence as `manual`.
 2. **Gap.** `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and
-   `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere. (People a recording names become contacts
+   The website has no receipt capture. (People a recording names become contacts
    when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in
    `api/services/entitlements/voice.ts`.)
 

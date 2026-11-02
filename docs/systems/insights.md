@@ -181,7 +181,7 @@ Checked against the code; each one names where it lives.
 8. **Debt.** Unused code: `buildProReportPrompt` and
    `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are
    not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called
-   only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.
+   by no screen.
 
 ## Related systems
 - [AI Center](ai-center.md): hosts the analysis tab and owns the finance layer the facts come from.
