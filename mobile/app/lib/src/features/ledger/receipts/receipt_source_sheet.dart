@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 enum ReceiptSource { camera, gallery }
 
 /// Bottom sheet offering camera or gallery selection.
@@ -28,13 +30,13 @@ class ReceiptSourceSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'تصوير الفاتورة',
+            AppLocalizations.of(context).monPhotographTheReceipt,
             style: SmartSpendTypography.style(18, FontWeight.w700),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(
-            'صوّر الفاتورة أو اختار صورتها من المعرض، والذكاء الاصطناعي هيقرأ المبلغ والتفاصيل تلقائياً.',
+            AppLocalizations.of(context).monTakeAPhotoOfThe,
             style: SmartSpendTypography.style(
               12,
               FontWeight.w400,
@@ -48,11 +50,11 @@ class ReceiptSourceSheet extends StatelessWidget {
               child: Icon(Icons.camera_alt_rounded, color: colors.accent),
             ),
             title: Text(
-              'الكاميرا',
+              AppLocalizations.of(context).monCamera,
               style: SmartSpendTypography.style(15, FontWeight.w600),
             ),
             subtitle: Text(
-              'التقط صورة واضحة للفاتورة',
+              AppLocalizations.of(context).monTakeAClearPhotoOf,
               style: SmartSpendTypography.style(
                 12,
                 FontWeight.w400,
@@ -70,11 +72,11 @@ class ReceiptSourceSheet extends StatelessWidget {
               ),
             ),
             title: Text(
-              'اختيار من المعرض',
+              AppLocalizations.of(context).monChooseFromTheGallery,
               style: SmartSpendTypography.style(15, FontWeight.w600),
             ),
             subtitle: Text(
-              'اختر صورة محفوظة على هاتفك',
+              AppLocalizations.of(context).monPickAPhotoSavedOn,
               style: SmartSpendTypography.style(
                 12,
                 FontWeight.w400,

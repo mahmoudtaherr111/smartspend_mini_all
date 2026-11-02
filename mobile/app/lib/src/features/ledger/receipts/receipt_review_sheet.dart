@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 import 'receipt_models.dart';
 
 enum ReceiptReviewAction { save, editInComposer, discard }
@@ -40,7 +42,7 @@ class ReceiptReviewSheet extends StatelessWidget {
               const SizedBox(width: SmartSpendSpacing.sm),
               Expanded(
                 child: Text(
-                  'مراجعة الفاتورة',
+                  AppLocalizations.of(context).monReviewTheReceipt,
                   style: SmartSpendTypography.style(18, FontWeight.w700),
                 ),
               ),
@@ -58,7 +60,7 @@ class ReceiptReviewSheet extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  'إجمالي الفاتورة',
+                  AppLocalizations.of(context).monReceiptTotal,
                   style: SmartSpendTypography.style(
                     12,
                     FontWeight.w400,
@@ -98,7 +100,7 @@ class ReceiptReviewSheet extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      'التصنيف:',
+                      AppLocalizations.of(context).monCategory2,
                       style: SmartSpendTypography.style(
                         12,
                         FontWeight.w400,
@@ -118,7 +120,8 @@ class ReceiptReviewSheet extends StatelessWidget {
                 if (receipt.description.isNotEmpty) ...[
                   const SizedBox(height: SmartSpendSpacing.xs),
                   Text(
-                    'البيان: ${receipt.description}',
+                    AppLocalizations.of(context)
+                        .monDetailsP0(receipt.description),
                     style: SmartSpendTypography.style(
                       12,
                       FontWeight.w400,
@@ -130,21 +133,21 @@ class ReceiptReviewSheet extends StatelessWidget {
           ),
           const SizedBox(height: SmartSpendSpacing.lg),
           SmartSpendButton(
-            label: 'حفظ في السجل',
+            label: AppLocalizations.of(context).monSave,
             variant: ButtonVariant.primary,
             onPressed: () =>
                 Navigator.of(context).pop(ReceiptReviewAction.save),
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
           SmartSpendButton(
-            label: 'تعديل في الصندوق',
+            label: AppLocalizations.of(context).monEditInTheBox,
             variant: ButtonVariant.quiet,
             onPressed: () =>
                 Navigator.of(context).pop(ReceiptReviewAction.editInComposer),
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
           SmartSpendButton(
-            label: 'إلغاء',
+            label: AppLocalizations.of(context).monCancel,
             variant: ButtonVariant.quiet,
             onPressed: () =>
                 Navigator.of(context).pop(ReceiptReviewAction.discard),

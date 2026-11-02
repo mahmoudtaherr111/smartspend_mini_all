@@ -126,7 +126,7 @@ void main() {
       (_) => throw const TrpcFailure(
         'BAD_REQUEST',
         400,
-        'التصنيف غير مسموح لهذه العملية',
+        'الفئة غير مسموح لهذه العملية',
       ),
     );
 
@@ -140,7 +140,7 @@ void main() {
     await _tapSave(tester);
 
     // Error message is displayed inline
-    expect(find.text('التصنيف غير مسموح لهذه العملية'), findsOneWidget);
+    expect(find.text('الفئة غير مسموح لهذه العملية'), findsOneWidget);
     // User input is preserved
     expect(find.text('250'), findsOneWidget);
     // Sheet remains open

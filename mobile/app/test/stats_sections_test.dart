@@ -86,9 +86,9 @@ void main() {
 
       await _openStatsScreen(tester, api);
 
-      expect(find.text('نمط وسلوك الصرف'), findsOneWidget);
+      expect(find.text('طريقة صرفك'), findsOneWidget);
       expect(find.text('نمط متزن'), findsOneWidget);
-      expect(find.textContaining('مصاريفك متوزعة بشكل متوازن'), findsOneWidget);
+      expect(find.textContaining('مصاريفك متوازنة'), findsOneWidget);
     },
   );
 
@@ -130,7 +130,7 @@ void main() {
 
       expect(find.text('الميزانية والصرف'), findsOneWidget);
       expect(find.text('125%'), findsOneWidget);
-      expect(find.textContaining('تجاوزت الميزانية بـ'), findsOneWidget);
+      expect(find.textContaining('زدت عن الميزانية بـ'), findsOneWidget);
     },
   );
 
@@ -172,7 +172,7 @@ void main() {
 
       expect(find.text('فلوس مع الناس (ديون وسلف)'), findsOneWidget);
       expect(find.text('أحمد إبراهيم'), findsOneWidget);
-      expect(find.text('عرض كل الناس والديون'), findsOneWidget);
+      expect(find.text('شوف كل الناس والديون'), findsOneWidget);
     },
   );
 
@@ -260,11 +260,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('الملف المالي الذكي والخصوصية'), findsOneWidget);
-    expect(
-      find.textContaining('القانون المصري رقم 151 لسنة 2020'),
-      findsOneWidget,
-    );
-    expect(find.textContaining('يوم الراتب المحفوظ: يوم 25'), findsOneWidget);
+    expect(find.text('ملفك الذكي وخصوصيتك'), findsOneWidget);
+    expect(find.textContaining('لخدمتك بس'), findsOneWidget);
+    expect(find.textContaining('يوم القبض المحفوظ: يوم 25'), findsOneWidget);
   });
 }

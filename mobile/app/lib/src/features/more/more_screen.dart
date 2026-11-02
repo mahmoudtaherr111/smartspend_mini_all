@@ -82,7 +82,8 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.storefront_outlined,
                   title: AppLocalizations.of(context).calWorkAccount,
-                  subtitle: AppLocalizations.of(context).calKeepWorkSpendingApartFrom,
+                  subtitle: AppLocalizations.of(context)
+                      .calKeepWorkSpendingApartFrom,
                   onTap: () => context.go(BusinessScreen.path),
                 ),
                 GroupedRow(
@@ -100,20 +101,22 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.flag_outlined,
                   title: AppLocalizations.of(context).calSavingGoals,
-                  subtitle:
-                      AppLocalizations.of(context).calPlanWhatYouAreSaving,
+                  subtitle: AppLocalizations.of(context)
+                      .calPlanWhatYouAreSaving,
                   onTap: () => context.go(GoalsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.calendar_month_outlined,
                   title: AppLocalizations.of(context).calInstallments,
-                  subtitle: AppLocalizations.of(context).calMonthlyInstallmentsAndWhatIs,
+                  subtitle: AppLocalizations.of(context)
+                      .calMonthlyInstallmentsAndWhatIs,
                   onTap: () => context.go(InstallmentsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.wb_sunny_outlined,
                   title: AppLocalizations.of(context).calSeasons,
-                  subtitle: AppLocalizations.of(context).calRamadanFeastsSchoolAndSummer,
+                  subtitle: AppLocalizations.of(context)
+                      .calRamadanFeastsSchoolAndSummer,
                   onTap: () => context.go(SeasonsScreen.path),
                 ),
                 GroupedRow(
@@ -132,13 +135,15 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.person_outline_rounded,
                   title: AppLocalizations.of(context).calProfile,
-                  subtitle: AppLocalizations.of(context).calYourNameAndPhoneNumber,
+                  subtitle: AppLocalizations.of(context)
+                      .calYourNameAndPhoneNumber,
                   onTap: () => context.go(ProfileScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.tune_rounded,
                   title: AppLocalizations.of(context).calMoneyPreferences,
-                  subtitle: AppLocalizations.of(context).calWhenYourFinancialMonthStarts,
+                  subtitle: AppLocalizations.of(context)
+                      .calWhenYourFinancialMonthStarts,
                   onTap: () => context.go(MoneyPreferencesScreen.path),
                 ),
                 GroupedRow(
@@ -150,13 +155,15 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.psychology_outlined,
                   title: AppLocalizations.of(context).calPersonalQuestions,
-                  subtitle: AppLocalizations.of(context).calHelpTheAssistantUnderstandYou,
+                  subtitle: AppLocalizations.of(context)
+                      .calHelpTheAssistantUnderstandYou,
                   onTap: () => context.go(OnboardingQuestionsScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.person_remove_outlined,
                   title: AppLocalizations.of(context).calDeleteMyAccount,
-                  subtitle: AppLocalizations.of(context).calDeleteYourDataForGood,
+                  subtitle: AppLocalizations.of(context)
+                      .calDeleteYourDataForGood,
                   onTap: () => DeleteAccountSheet.show(context),
                 ),
               ],
@@ -169,14 +176,14 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.star_outline_rounded,
                   title: AppLocalizations.of(context).calMyPlan,
-                  subtitle: AppLocalizations.of(context).calComparePlansAndManageYour,
+                  subtitle: AppLocalizations.of(context)
+                      .calComparePlansAndManageYour,
                   onTap: () => context.go(PlanScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.card_giftcard_rounded,
                   title: AppLocalizations.of(context).calInviteFriends,
-                  subtitle:
-                      AppLocalizations.of(context).calShareYourInviteCode,
+                  subtitle: AppLocalizations.of(context).calShareYourInviteCode,
                   onTap: () => context.go(InviteFriendsScreen.path),
                 ),
               ],
@@ -195,14 +202,15 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.folder_shared_outlined,
                   title: AppLocalizations.of(context).calWhatTheAppStoresAbout,
-                  subtitle:
-                      AppLocalizations.of(context).calYourDataAndYourRights,
+                  subtitle: AppLocalizations.of(context)
+                      .calYourDataAndYourRights,
                   onTap: () => context.go(DataStoredScreen.path),
                 ),
                 GroupedRow(
                   icon: Icons.description_outlined,
                   title: AppLocalizations.of(context).calTermsAndPrivacy,
-                  subtitle: AppLocalizations.of(context).calTermsOfUseAndPrivacy,
+                  subtitle: AppLocalizations.of(context)
+                      .calTermsOfUseAndPrivacy,
                   onTap: () => context.go(TermsScreen.path),
                 ),
                 const LanguageRow(),
@@ -216,7 +224,8 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.notifications_outlined,
                   title: AppLocalizations.of(context).calNotifications,
-                  subtitle: AppLocalizations.of(context).calAlertsAboutYourTransactionsAnd,
+                  subtitle: AppLocalizations.of(context)
+                      .calAlertsAboutYourTransactionsAnd,
                   trailing: unreadCount > 0
                       ? Container(
                           padding: const EdgeInsets.symmetric(
@@ -242,7 +251,8 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.notifications_active_outlined,
                   title: AppLocalizations.of(context).calNotificationSettings,
-                  subtitle: AppLocalizations.of(context).calChooseWhatReachesYou,
+                  subtitle: AppLocalizations.of(context)
+                      .calChooseWhatReachesYou,
                   onTap: () => context.push(NotificationSettingsScreen.path),
                 ),
                 GroupedRow(
@@ -261,7 +271,8 @@ class MoreScreen extends ConsumerWidget {
                 GroupedRow(
                   icon: Icons.help_outline_rounded,
                   title: AppLocalizations.of(context).calHelpCenter,
-                  subtitle: AppLocalizations.of(context).calCommonQuestionsAndSupportTickets,
+                  subtitle: AppLocalizations.of(context)
+                      .calCommonQuestionsAndSupportTickets,
                   onTap: () => context.go(HelpCenterScreen.path),
                 ),
                 GroupedRow(

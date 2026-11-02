@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
+
 import '../../l10n/app_localizations.dart';
 
 import 'calendar_models.dart';
@@ -70,7 +71,9 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
     if (amountText.isNotEmpty) {
       amount = num.tryParse(amountText.replaceAll(',', ''));
       if (amount == null || amount <= 0) {
-        setState(() => _error = AppLocalizations.of(context).calEnterAValidAmount);
+        setState(
+          () => _error = AppLocalizations.of(context).calEnterAValidAmount,
+        );
         return;
       }
     }
@@ -177,7 +180,8 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
             controller: _amountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
-              labelText: AppLocalizations.of(context).calAmountOptionalIfItChanges,
+              labelText: AppLocalizations.of(context)
+                  .calAmountOptionalIfItChanges,
               suffixText: MoneyLocale.of(context).symbol,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -220,7 +224,9 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
                     31,
                     (i) => DropdownMenuItem(
                       value: i + 1,
-                      child: Text(AppLocalizations.of(context).calDayP0('${i + 1}')),
+                      child: Text(
+                        AppLocalizations.of(context).calDayP0('${i + 1}'),
+                      ),
                     ),
                   ),
                   onChanged: (val) {
@@ -360,14 +366,17 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      AppLocalizations.of(context).calSettleP0(widget.item.title),
+                      AppLocalizations.of(context)
+                          .calSettleP0(widget.item.title),
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     if (widget.item.amount != null)
                       Text(
-                        AppLocalizations.of(context).calAmountDueP0(moneyText(context, widget.item.amount!)),
+                        AppLocalizations.of(context).calAmountDueP0(
+                          moneyText(context, widget.item.amount!),
+                        ),
                         style: textTheme.bodySmall?.copyWith(
                           color: colors.mutedForeground,
                         ),
@@ -424,7 +433,8 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
                     vertical: SmartSpendSpacing.sm,
                   ),
                   child: Text(
-                    AppLocalizations.of(context).calNoRecentMatchingTransactionYou,
+                    AppLocalizations.of(context)
+                        .calNoRecentMatchingTransactionYou,
                     style: textTheme.bodySmall?.copyWith(
                       color: colors.mutedForeground,
                     ),

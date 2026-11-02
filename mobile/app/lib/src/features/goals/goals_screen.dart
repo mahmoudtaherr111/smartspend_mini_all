@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'goal_detail_sheet.dart';
 import 'goal_form_sheet.dart';
 import 'goal_models.dart';
@@ -40,11 +41,11 @@ class GoalsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('أهداف التوفير'),
+        title: Text(AppLocalizations.of(context).monSavingGoals),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),
-            tooltip: 'هدف جديد',
+            tooltip: AppLocalizations.of(context).monNewGoal,
             onPressed: () {
               goalsAsync.whenData((data) {
                 unawaited(_onAddGoal(context, ref, data));
@@ -68,7 +69,7 @@ class GoalsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: SmartSpendSpacing.md),
                 Text(
-                  'تعذر تحميل أهداف التوفير',
+                  AppLocalizations.of(context).monWeCanTLoadYour2,
                   style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colors.foreground,
@@ -76,14 +77,14 @@ class GoalsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
-                  'اتأكد من اتصالك بالإنترنت وجرّب تاني',
+                  AppLocalizations.of(context).monCheckYourConnectionAndTry,
                   style: textTheme.bodyMedium?.copyWith(
                     color: colors.mutedForeground,
                   ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.lg),
                 SmartSpendButton(
-                  label: 'إعادة المحاولة',
+                  label: AppLocalizations.of(context).monTryAgain,
                   onPressed: () => ref.read(goalsProvider.notifier).refresh(),
                 ),
               ],
@@ -102,7 +103,7 @@ class GoalsScreen extends ConsumerWidget {
                     Icon(Icons.flag_outlined, size: 64, color: colors.accent),
                     const SizedBox(height: SmartSpendSpacing.lg),
                     Text(
-                      'لسه ما حددتش أي هدف توفير',
+                      AppLocalizations.of(context).monNoSavingGoalsYet,
                       style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: colors.foreground,
@@ -110,7 +111,7 @@ class GoalsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: SmartSpendSpacing.sm),
                     Text(
-                      'حدد هدف توفير لمستقبلك - سواء عمرة، لابتوب جديد، أو صندوق طوارئ - وتابع خطتك بالذكاء الاصطناعي.',
+                      AppLocalizations.of(context).monSetAGoalLikeUmrah,
                       textAlign: TextAlign.center,
                       style: textTheme.bodyMedium?.copyWith(
                         color: colors.mutedForeground,
@@ -118,7 +119,7 @@ class GoalsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: SmartSpendSpacing.xl),
                     SmartSpendButton(
-                      label: 'إنشاء هدف توفير جديد',
+                      label: AppLocalizations.of(context).monCreateASavingGoal,
                       onPressed: () =>
                           unawaited(_onAddGoal(context, ref, data)),
                     ),
@@ -139,7 +140,7 @@ class GoalsScreen extends ConsumerWidget {
               children: [
                 if (activeGoals.isNotEmpty) ...[
                   Text(
-                    'الأهداف الحالية',
+                    AppLocalizations.of(context).monCurrentGoals,
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: colors.foreground,
@@ -163,7 +164,7 @@ class GoalsScreen extends ConsumerWidget {
                 ],
                 if (completedGoals.isNotEmpty) ...[
                   Text(
-                    'أهداف تم تحقيقها 🎯',
+                    AppLocalizations.of(context).monGoalsReached,
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: colors.foreground,
@@ -187,7 +188,7 @@ class GoalsScreen extends ConsumerWidget {
                 ],
                 if (pausedGoals.isNotEmpty) ...[
                   Text(
-                    'أهداف متوقفة مؤقتاً',
+                    AppLocalizations.of(context).monPausedGoals,
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: colors.foreground,
@@ -276,7 +277,9 @@ class _GoalCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'المستهدف: ${moneyText(context, goal.targetAmount)}',
+                          AppLocalizations.of(
+                            context,
+                          ).monTargetP0(moneyText(context, goal.targetAmount)),
                           style: textTheme.bodySmall?.copyWith(
                             color: colors.mutedForeground,
                           ),
@@ -304,7 +307,7 @@ class _GoalCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'خطة ذكية',
+                            AppLocalizations.of(context).monSmartPlan,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -324,7 +327,11 @@ class _GoalCard extends StatelessWidget {
               if (goal.targetDate != null) ...[
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
-                  'الموعد المستهدف: ${goal.targetDate!.year}/${goal.targetDate!.month}/${goal.targetDate!.day}',
+                  AppLocalizations.of(context).monTargetDateP0P1P2(
+                    '${goal.targetDate!.year}',
+                    '${goal.targetDate!.month}',
+                    '${goal.targetDate!.day}',
+                  ),
                   style: textTheme.bodySmall?.copyWith(
                     color: colors.mutedForeground,
                     fontSize: 11,

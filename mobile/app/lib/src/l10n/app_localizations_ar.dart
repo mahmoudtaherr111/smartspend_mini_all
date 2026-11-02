@@ -2108,4 +2108,613 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get calVersionAndLicenses => 'الإصدار والتراخيص';
+
+  @override
+  String get monMonthlyBudgets => 'الميزانيات الشهرية';
+
+  @override
+  String get monAddABudget => 'ضيف ميزانية';
+
+  @override
+  String get monWeCanTLoadYour => 'مش قادرين نجيب ميزانياتك';
+
+  @override
+  String get monCheckYourConnectionAndTry => 'اتأكد من النت وجرّب تاني';
+
+  @override
+  String get monTryAgain => 'جرّب تاني';
+
+  @override
+  String get monNoBudgetsYet => 'لسه مفيش ميزانيات';
+
+  @override
+  String get monSetAMonthlyLimitFor =>
+      'حدد سقف شهري لمصاريفك أو لفئة معينة، وتابع اللي فاضل أول بأول.';
+
+  @override
+  String get monAddAMonthlyBudget => 'ضيف ميزانية شهرية';
+
+  @override
+  String get monAllBudgets => 'إجمالي الميزانيات';
+
+  @override
+  String monSpentP0(String p0) {
+    return 'صرفت: $p0';
+  }
+
+  @override
+  String monOverByP0(String p0) {
+    return 'زدت بـ $p0';
+  }
+
+  @override
+  String monLeftP0(String p0) {
+    return 'فاضل: $p0';
+  }
+
+  @override
+  String get monBudgetDetails => 'تفاصيل الميزانيات';
+
+  @override
+  String get monEdit => 'عدّل';
+
+  @override
+  String get monDelete => 'امسح';
+
+  @override
+  String get monDeleteTheBudget => 'امسح الميزانية';
+
+  @override
+  String monDeleteTheBudgetP0(String p0) {
+    return 'تمسح ميزانية \"$p0\"؟';
+  }
+
+  @override
+  String get monCancel => 'إلغاء';
+
+  @override
+  String monBudgetP0Deleted(String p0) {
+    return 'ميزانية \"$p0\" اتمسحت';
+  }
+
+  @override
+  String get monUndo => 'تراجع';
+
+  @override
+  String monSpentP0OfP1(String p0, String p1) {
+    return 'صرفت $p0 من $p1';
+  }
+
+  @override
+  String monOverBudgetP0(String p0) {
+    return 'زدت عن الميزانية ($p0%)';
+  }
+
+  @override
+  String monAlmostUsedP0(String p0) {
+    return 'قربت تخلص ($p0%)';
+  }
+
+  @override
+  String monLeftP02(String p0) {
+    return 'فاضل: $p0';
+  }
+
+  @override
+  String get monOverallBudget => 'الميزانية العامة';
+
+  @override
+  String get monEnterTheMonthlyAmount => 'اكتب المبلغ الشهري';
+
+  @override
+  String get monWeCouldnTSaveIt => 'ما عرفناش نحفظ. جرّب تاني كمان شوية.';
+
+  @override
+  String get monEditTheBudget => 'عدّل الميزانية';
+
+  @override
+  String get monNewMonthlyBudget => 'ميزانية شهرية جديدة';
+
+  @override
+  String get monClose => 'اقفل';
+
+  @override
+  String get monCategory => 'الفئة';
+
+  @override
+  String get monOverallBudgetAllSpending => 'الميزانية العامة (كل المصاريف)';
+
+  @override
+  String get monBudgetName => 'اسم الميزانية';
+
+  @override
+  String get monLikeFoodAndDrink => 'زي: الأكل والشرب';
+
+  @override
+  String get monMonthlyLimit => 'الحد الشهري';
+
+  @override
+  String get monAlertMeAt => 'نبهني عند';
+
+  @override
+  String get monSaving => 'بنحفظ...';
+
+  @override
+  String get monSaveChanges => 'احفظ التعديلات';
+
+  @override
+  String get monAddTheBudget => 'ضيف الميزانية';
+
+  @override
+  String get monSavingGoals => 'أهداف التوفير';
+
+  @override
+  String get monNewGoal => 'هدف جديد';
+
+  @override
+  String get monWeCanTLoadYour2 => 'مش قادرين نجيب أهدافك';
+
+  @override
+  String get monNoSavingGoalsYet => 'لسه مفيش أهداف';
+
+  @override
+  String get monSetAGoalLikeUmrah =>
+      'حدد هدف، زي عمرة أو لابتوب جديد أو فلوس للطوارئ، وتابعه خطوة بخطوة.';
+
+  @override
+  String get monCreateASavingGoal => 'اعمل هدف جديد';
+
+  @override
+  String get monCurrentGoals => 'أهدافك الحالية';
+
+  @override
+  String get monGoalsReached => 'أهداف حققتها';
+
+  @override
+  String get monPausedGoals => 'أهداف متوقفة';
+
+  @override
+  String monTargetP0(String p0) {
+    return 'الهدف: $p0';
+  }
+
+  @override
+  String get monSmartPlan => 'خطة ذكية';
+
+  @override
+  String monTargetDateP0P1P2(String p0, String p1, String p2) {
+    return 'الميعاد: $p0/$p1/$p2';
+  }
+
+  @override
+  String get monWeCouldnTRunThe =>
+      'ما عرفناش نعمل التحليل. اتأكد من النت وجرّب تاني.';
+
+  @override
+  String get monCongratulations => 'ألف مبروك!';
+
+  @override
+  String monYouReachedYourGoalP0(String p0) {
+    return 'حققت هدف \"$p0\". خطوة كبيرة لقدام!';
+  }
+
+  @override
+  String get monReached => 'اتحقق';
+
+  @override
+  String get monActive => 'شغال';
+
+  @override
+  String get monPaused => 'متوقف';
+
+  @override
+  String monDateP0P1P2(String p0, String p1, String p2) {
+    return 'الميعاد: $p0/$p1/$p2';
+  }
+
+  @override
+  String get monGoalAnalysis => 'تحليل الهدف';
+
+  @override
+  String get monRefresh => 'حدّث';
+
+  @override
+  String get monStepsToYourGoal => 'خطوات الوصول للهدف:';
+
+  @override
+  String get monSuggestedWeeklyActions => 'حاجات تعملها كل أسبوع:';
+
+  @override
+  String monLastAnalysisP0P1P2(String p0, String p1, String p2) {
+    return 'آخر تحليل: $p0/$p1/$p2';
+  }
+
+  @override
+  String get monRunTheAnalysisToGet =>
+      'شغّل التحليل وهتاخد خطة مبنية على مصاريفك.';
+
+  @override
+  String get monGoalAnalysisComesWithPro => 'تحليل الأهداف متاح في باقة Pro.';
+
+  @override
+  String get monAnalyzing => 'بنحلل الهدف...';
+
+  @override
+  String get monAnalyzeThisGoal => 'حلل الهدف';
+
+  @override
+  String get monUpgradeToProForThe => 'اشترك في Pro للتحليل';
+
+  @override
+  String get monGoalReached => 'الهدف اتحقق!';
+
+  @override
+  String get monPause => 'وقّف مؤقتًا';
+
+  @override
+  String get monResumeTheGoal => 'كمّل الهدف';
+
+  @override
+  String get monDeleteTheGoal => 'امسح الهدف';
+
+  @override
+  String get monEnterANameForThe => 'اكتب اسم الهدف';
+
+  @override
+  String get monEnterTheTargetAmount => 'اكتب المبلغ المستهدف';
+
+  @override
+  String get monWeCouldnTCreateThe =>
+      'ما عرفناش نعمل الهدف. اتأكد من النت وجرّب تاني.';
+
+  @override
+  String get monNewSavingGoal => 'هدف جديد';
+
+  @override
+  String get monGoalName => 'اسم الهدف';
+
+  @override
+  String get monLikeUmrahANewLaptop => 'زي: عمرة، لابتوب جديد، صيانة العربية';
+
+  @override
+  String get monTargetAmountRequired => 'المبلغ المستهدف (مطلوب)';
+
+  @override
+  String get monLike25000 => 'زي: 25000';
+
+  @override
+  String get monTargetDateOptional => 'ميعاد الهدف (اختياري)';
+
+  @override
+  String get monChooseADate => 'اختار ميعاد';
+
+  @override
+  String get monNotesOptional => 'ملاحظات (اختياري)';
+
+  @override
+  String get monAnythingThatHelpsYouRemember => 'أي حاجة تفكرك بخطتك...';
+
+  @override
+  String get monCreating => 'بنعمل الهدف...';
+
+  @override
+  String get monCreateTheGoal => 'اعمل الهدف';
+
+  @override
+  String get monClear => 'امسح';
+
+  @override
+  String get monVoiceRecordingNeedsInternetYou =>
+      'التسجيل بالصوت محتاج نت. تقدر تكتب الجملة دلوقتي.';
+
+  @override
+  String get monWeNeedMicrophoneAccessTo =>
+      'محتاجين إذن المايك علشان تسجل بصوتك.';
+
+  @override
+  String get monWeCouldnTStartRecording => 'ما عرفناش نبدأ التسجيل. جرّب تاني.';
+
+  @override
+  String get monRecordingCancelled => 'التسجيل اتلغى';
+
+  @override
+  String get monBalance => 'رصيد';
+
+  @override
+  String get monSeconds => 'ثانية';
+
+  @override
+  String get monPlan => 'باقة';
+
+  @override
+  String get monWeCouldnTProcessThe => 'ما عرفناش نقرا التسجيل. جرّب تاني.';
+
+  @override
+  String get monWeCouldnTHearAny => 'ما سمعناش مصروف في التسجيل.';
+
+  @override
+  String get monVoiceRecording => 'تسجيل صوتي';
+
+  @override
+  String get monModeSingleTap => 'الوضع: ضغطة واحدة';
+
+  @override
+  String get monModeHold => 'الوضع: ضغطة طويلة';
+
+  @override
+  String get monPhotographAReceipt => 'صوّر فاتورة';
+
+  @override
+  String get monSlideToCancel => 'اسحب للإلغاء';
+
+  @override
+  String get monCancelRecording => 'ألغي التسجيل';
+
+  @override
+  String get monListeningToTheRecording => 'بنسمع التسجيل...';
+
+  @override
+  String get monStopRecording => 'وقّف التسجيل';
+
+  @override
+  String get monRecordByVoiceTapTo => 'سجّل بصوتك (دوس للبدء)';
+
+  @override
+  String get monRecordByVoiceHold => 'سجّل بصوتك (دوس مطوّل)';
+
+  @override
+  String get monHoldTheMicToRecord => 'دوس مطوّل على المايك علشان تسجل';
+
+  @override
+  String get monReadingReceiptsNeedsInternet => 'قراءة الفواتير محتاجة نت.';
+
+  @override
+  String get monWeCanTOpenThe =>
+      'مش قادرين نفتح الكاميرا. اسمح بالوصول من إعدادات الموبايل، أو اختار صورة من المعرض.';
+
+  @override
+  String get monThisPhotoIsTooLarge =>
+      'الصورة كبيرة قوي. جرّب صورة تانية أقرب للفاتورة.';
+
+  @override
+  String get monThePhotoIsnTClear =>
+      'الصورة مش واضحة أو مش قادرين نقرا المبلغ. جرّب في نور أحسن.';
+
+  @override
+  String get monReceipt => 'فاتورة';
+
+  @override
+  String get monThePhotoIsnTClear2 =>
+      'الصورة مش واضحة. جرّب صورة أوضح في نور أحسن.';
+
+  @override
+  String get monReadingTheReceipt => 'بنقرا الفاتورة...';
+
+  @override
+  String get monFindingTheAmountAndDetails => 'بنطلع المبلغ والتفاصيل';
+
+  @override
+  String get monReviewTheReceipt => 'راجع الفاتورة';
+
+  @override
+  String get monReceiptTotal => 'إجمالي الفاتورة';
+
+  @override
+  String get monCategory2 => 'الفئة:';
+
+  @override
+  String monDetailsP0(String p0) {
+    return 'البيان: $p0';
+  }
+
+  @override
+  String get monSave => 'احفظ';
+
+  @override
+  String get monEditInTheBox => 'عدّل في الخانة';
+
+  @override
+  String get monPhotographTheReceipt => 'صوّر الفاتورة';
+
+  @override
+  String get monTakeAPhotoOfThe =>
+      'صوّر الفاتورة أو اختار صورتها من المعرض، وإحنا هنقراها لك.';
+
+  @override
+  String get monCamera => 'الكاميرا';
+
+  @override
+  String get monTakeAClearPhotoOf => 'صوّر الفاتورة صورة واضحة';
+
+  @override
+  String get monChooseFromTheGallery => 'اختار من المعرض';
+
+  @override
+  String get monPickAPhotoSavedOn => 'اختار صورة من موبايلك';
+
+  @override
+  String get monRecordByVoice => 'سجّل مصاريفك بصوتك';
+
+  @override
+  String get monToRecordYourSpendingBy =>
+      'علشان تسجل بصوتك محتاجين إذن المايك. صوتك بيتحول لنص وما بيتحفظش.';
+
+  @override
+  String get monAllowTheMicrophone => 'اسمح بالمايك';
+
+  @override
+  String get monNotNow => 'مش دلوقتي';
+
+  @override
+  String get monAll => 'الكل';
+
+  @override
+  String get monRecordedMonthlyIncome => 'الدخل الشهري المسجل';
+
+  @override
+  String get monTotalIncomeThisMonth => 'إجمالي دخل الشهر';
+
+  @override
+  String get monHowYouSpend => 'طريقة صرفك';
+
+  @override
+  String get monRecordMoreThisMonthTo =>
+      'سجّل مصاريف أكتر الشهر ده علشان طريقتك تبان بوضوح.';
+
+  @override
+  String get monYourSpendingJumpsOnCertain =>
+      'مصاريفك بتقفز في أيام معينة، مش متوزعة بالتساوي.';
+
+  @override
+  String get monYourSpendingRisesOnWeekends =>
+      'مصاريفك بتزيد في الويك إند والمناسبات.';
+
+  @override
+  String get monMostOfYourSpendingGoes => 'معظم مصاريفك رايحة لفئة واحدة.';
+
+  @override
+  String get monFrequentPurchasesWithoutPlanning =>
+      'مشتريات متكررة من غير تخطيط.';
+
+  @override
+  String get monYouSpendCautiouslyAndKeep => 'بتصرف بحرص ومحافظ على مبلغ أمان.';
+
+  @override
+  String get monYouStickToYourBudget => 'ملتزم بميزانيتك ومصاريفك منظمة.';
+
+  @override
+  String get monYourSpendingIsBalancedWith => 'مصاريفك متوازنة ومفيهاش قفزات.';
+
+  @override
+  String monYourBiggestSpendingDayP0(String p0, String p1) {
+    return 'أكتر يوم بتصرف فيه: $p0 ($p1)';
+  }
+
+  @override
+  String get monYourSpendingByWeekday => 'مصاريفك حسب أيام الأسبوع';
+
+  @override
+  String get monSpendingDays => 'أيام الصرف';
+
+  @override
+  String monChartOfSpendingByWeekday(String p0, String p1) {
+    return 'رسم مصاريف أيام الأسبوع. أعلى يوم $p0 بمبلغ $p1.';
+  }
+
+  @override
+  String get monChartOfSpendingByWeekday2 => 'رسم مصاريف أيام الأسبوع.';
+
+  @override
+  String get monRecordMoreToSeeYour => 'سجّل مصاريف أكتر علشان تعرف أيام صرفك.';
+
+  @override
+  String get monMonthlyBudget => 'الميزانية الشهرية';
+
+  @override
+  String get monSetAMonthlyBudgetTo =>
+      'حدد ميزانية شهرية علشان تعرف فاضل معاك كام أول بأول.';
+
+  @override
+  String get monSetABudget => 'حدد ميزانية';
+
+  @override
+  String get monOverallMonthlyBudget => 'الميزانية الشهرية العامة';
+
+  @override
+  String get monComparedWithYourRecordedMonthly =>
+      'مقارنة بدخلك الشهري المسجل (مفيش ميزانية)';
+
+  @override
+  String get monComparedWithThisMonthS => 'مقارنة بدخل الشهر ده';
+
+  @override
+  String get monBudgetAndSpending => 'الميزانية والصرف';
+
+  @override
+  String monSpentP02(String p0) {
+    return 'صرفت: $p0';
+  }
+
+  @override
+  String monOverBudgetByP0(String p0) {
+    return 'زدت عن الميزانية بـ $p0';
+  }
+
+  @override
+  String monLeftP03(String p0) {
+    return 'فاضل: $p0';
+  }
+
+  @override
+  String get monRecordedAutomatically => 'اللي اتسجل تلقائيًا';
+
+  @override
+  String get monFromBanksAndWallets => 'من البنوك والمحافظ';
+
+  @override
+  String get monByHandOrCash => 'يدوي أو كاش';
+
+  @override
+  String get monTheseCameFromYourBank => 'دول جايين من رسايل البنك والمحفظة.';
+
+  @override
+  String get monMoneyWithPeople => 'فلوس مع الناس';
+
+  @override
+  String get monNoDebtsOrLoansYet =>
+      'لسه مفيش ديون أو سلف. قول أو اكتب: \"سلفت أحمد 200 جنيه\".';
+
+  @override
+  String get monMoneyWithPeopleDebtsAnd => 'فلوس مع الناس (ديون وسلف)';
+
+  @override
+  String get monOwedToYou => 'ليك برّه';
+
+  @override
+  String get monYouOwe => 'عليك للناس';
+
+  @override
+  String monOwesYouP0(String p0) {
+    return 'ليك $p0';
+  }
+
+  @override
+  String monYouOweP0(String p0) {
+    return 'عليك $p0';
+  }
+
+  @override
+  String get monSeeAllPeopleAndDebts => 'شوف كل الناس والديون';
+
+  @override
+  String monThisYearYourHighestMonth(String p0, String p1) {
+    return 'السنة دي: أعلى شهر صرف كان $p0 ($p1)';
+  }
+
+  @override
+  String monYourSpendingInP0(String p0) {
+    return 'مصاريفك في $p0';
+  }
+
+  @override
+  String monThisYearP0(String p0) {
+    return 'السنة دي ($p0)';
+  }
+
+  @override
+  String monChartOfTheYearS(String p0) {
+    return 'رسم مصاريف السنة. الإجمالي $p0.';
+  }
+
+  @override
+  String get monYourSmartProfileAndPrivacy => 'ملفك الذكي وخصوصيتك';
+
+  @override
+  String get monWhatTheAppLearnedAbout =>
+      'اللي التطبيق اتعلمه عنك بيستخدم لخدمتك بس، وتقدر تغيره من هنا.';
+
+  @override
+  String monYourSavedPaydayDayP0(String p0) {
+    return 'يوم القبض المحفوظ: يوم $p0 من كل شهر.';
+  }
 }

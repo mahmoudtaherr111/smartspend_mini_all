@@ -30,7 +30,7 @@ void main() {
     await app.pump(tester);
 
     expect(find.byType(RecordComposer), findsOneWidget);
-    expect(find.byTooltip('تصوير فاتورة'), findsOneWidget);
+    expect(find.byTooltip('صوّر فاتورة'), findsOneWidget);
     expect(find.byIcon(Icons.camera_alt_outlined), findsOneWidget);
   });
 
@@ -52,7 +52,7 @@ void main() {
       );
       await app.pump(tester);
 
-      await tester.tap(find.byTooltip('تصوير فاتورة'));
+      await tester.tap(find.byTooltip('صوّر فاتورة'));
       await tester.pumpAndSettle();
 
       expect(find.byType(UpgradePromptSheet), findsOneWidget);
@@ -80,7 +80,7 @@ void main() {
     );
     await app.pump(tester);
 
-    await tester.tap(find.byTooltip('تصوير فاتورة'));
+    await tester.tap(find.byTooltip('صوّر فاتورة'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('الكاميرا'));
     await tester.pumpAndSettle();
@@ -131,7 +131,7 @@ void main() {
     );
     await app.pump(tester);
 
-    await tester.tap(find.byTooltip('تصوير فاتورة'));
+    await tester.tap(find.byTooltip('صوّر فاتورة'));
     await tester.pumpAndSettle();
 
     // Pick camera
@@ -140,12 +140,12 @@ void main() {
 
     // Review sheet appears
     expect(find.byType(ReceiptReviewSheet), findsOneWidget);
-    expect(find.text('مراجعة الفاتورة'), findsOneWidget);
+    expect(find.text('راجع الفاتورة'), findsOneWidget);
     expect(find.text('سوبرماركت زهران'), findsOneWidget);
-    expect(find.text('حفظ في السجل'), findsOneWidget);
+    expect(find.text('احفظ'), findsOneWidget);
 
     // Tap save
-    await tester.tap(find.text('حفظ في السجل'));
+    await tester.tap(find.text('احفظ'));
     await tester.pumpAndSettle();
 
     // Sheet dismissed and saved notification shown
@@ -196,7 +196,7 @@ void main() {
     );
     await app.pump(tester);
 
-    await tester.tap(find.byTooltip('تصوير فاتورة'));
+    await tester.tap(find.byTooltip('صوّر فاتورة'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('الكاميرا'));
@@ -206,9 +206,7 @@ void main() {
     expect(find.byType(ReceiptReviewSheet), findsNothing);
     expect(find.byType(SnackBar), findsOneWidget);
     expect(
-      find.text(
-        'الصورة مش واضحة أو مقدرناش نقرأ المبلغ. صوّر في إضاءة أفضل وجرّب تاني.',
-      ),
+      find.text('الصورة مش واضحة أو مش قادرين نقرا المبلغ. جرّب في نور أحسن.'),
       findsOneWidget,
     );
   });

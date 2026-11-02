@@ -192,7 +192,9 @@ class _PaydayMonthBanner extends StatelessWidget {
           const SizedBox(width: SmartSpendSpacing.sm),
           Expanded(
             child: Text(
-              AppLocalizations.of(context).calYourFinancialMonthStartsOn('$salaryDay', '${salaryDay - 1}'),
+              AppLocalizations.of(
+                context,
+              ).calYourFinancialMonthStartsOn('$salaryDay', '${salaryDay - 1}'),
               style: textTheme.bodySmall?.copyWith(
                 color: colors.foreground,
                 fontWeight: FontWeight.w500,
@@ -222,7 +224,8 @@ class _HeroPaydayPlan extends StatelessWidget {
     final heroColor = isPositive ? colors.accent : colors.danger;
 
     final explanationSentence = pos.untilIsPayday
-        ? AppLocalizations.of(context).calP0DaysToPaydayDay('${pos.days}', '${salaryDay ?? 1}')
+        ? AppLocalizations.of(context)
+              .calP0DaysToPaydayDay('${pos.days}', '${salaryDay ?? 1}')
         : AppLocalizations.of(context).calP0DaysToTheEnd('${pos.days}');
 
     return Container(
@@ -277,10 +280,16 @@ class _HeroPaydayPlan extends StatelessWidget {
 
           // Honest status notes from server position (CAL-02)
           for (final note in [
-            if (pos.walletsCount == 0) AppLocalizations.of(context).calNoWalletsYetSoThe,
-            if (pos.unknownBalanceAge) AppLocalizations.of(context).calOneBalanceHasNoKnown,
-            if (pos.unknownAmounts.isNotEmpty) AppLocalizations.of(context).calCommitmentsWithNoKnownAmount(pos.unknownAmounts),
-            if (pos.undatedItems.isNotEmpty) AppLocalizations.of(context).calCommitmentsWithNoDateSo(pos.undatedItems),
+            if (pos.walletsCount == 0)
+              AppLocalizations.of(context).calNoWalletsYetSoThe,
+            if (pos.unknownBalanceAge)
+              AppLocalizations.of(context).calOneBalanceHasNoKnown,
+            if (pos.unknownAmounts.isNotEmpty)
+              AppLocalizations.of(context)
+                  .calCommitmentsWithNoKnownAmount(pos.unknownAmounts),
+            if (pos.undatedItems.isNotEmpty)
+              AppLocalizations.of(context)
+                  .calCommitmentsWithNoDateSo(pos.undatedItems),
           ])
             Padding(
               padding: const EdgeInsets.only(bottom: SmartSpendSpacing.xs),
@@ -600,7 +609,9 @@ class _CommitmentCard extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      item.amount == null ? '—' : moneyText(context, item.amount!),
+                      item.amount == null
+                          ? '—'
+                          : moneyText(context, item.amount!),
                       style: textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: colors.foreground,
@@ -615,7 +626,10 @@ class _CommitmentCard extends ConsumerWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      item.dueDay == null ? '—' : AppLocalizations.of(context).calDueOnDayP0('${item.dueDay}'),
+                      item.dueDay == null
+                          ? '—'
+                          : AppLocalizations.of(context)
+                                .calDueOnDayP0('${item.dueDay}'),
                       style: textTheme.labelSmall?.copyWith(
                         color: colors.mutedForeground,
                       ),
@@ -801,12 +815,17 @@ class _StepTile extends ConsumerWidget {
                   ? colors.accent
                   : colors.mutedForeground,
             ),
-            tooltip: step.remindAt != null ? AppLocalizations.of(context).calReminderOn : AppLocalizations.of(context).calTurnOnAReminder,
+            tooltip: step.remindAt != null
+                ? AppLocalizations.of(context).calReminderOn
+                : AppLocalizations.of(context).calTurnOnAReminder,
             onPressed: () async {
               if (step.remindAt != null) {
                 await ref.read(calendarApiProvider).cancelReminder(step.id);
                 if (context.mounted) {
-                  showSmartSpendNotice(context, AppLocalizations.of(context).calReminderCancelled);
+                  showSmartSpendNotice(
+                    context,
+                    AppLocalizations.of(context).calReminderCancelled,
+                  );
                 }
               } else {
                 // Schedule Cairo reminder at 9:00 AM next day

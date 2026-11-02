@@ -3733,6 +3733,1074 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الإصدار والتراخيص'**
   String get calVersionAndLicenses;
+
+  /// No description provided for @monMonthlyBudgets.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانيات الشهرية'**
+  String get monMonthlyBudgets;
+
+  /// No description provided for @monAddABudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف ميزانية'**
+  String get monAddABudget;
+
+  /// No description provided for @monWeCanTLoadYour.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب ميزانياتك'**
+  String get monWeCanTLoadYour;
+
+  /// No description provided for @monCheckYourConnectionAndTry.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد من النت وجرّب تاني'**
+  String get monCheckYourConnectionAndTry;
+
+  /// No description provided for @monTryAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get monTryAgain;
+
+  /// No description provided for @monNoBudgetsYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش ميزانيات'**
+  String get monNoBudgetsYet;
+
+  /// No description provided for @monSetAMonthlyLimitFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد سقف شهري لمصاريفك أو لفئة معينة، وتابع اللي فاضل أول بأول.'**
+  String get monSetAMonthlyLimitFor;
+
+  /// No description provided for @monAddAMonthlyBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف ميزانية شهرية'**
+  String get monAddAMonthlyBudget;
+
+  /// No description provided for @monAllBudgets.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الميزانيات'**
+  String get monAllBudgets;
+
+  /// No description provided for @monSpentP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت: {p0}'**
+  String monSpentP0(String p0);
+
+  /// No description provided for @monOverByP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'زدت بـ {p0}'**
+  String monOverByP0(String p0);
+
+  /// No description provided for @monLeftP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل: {p0}'**
+  String monLeftP0(String p0);
+
+  /// No description provided for @monBudgetDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الميزانيات'**
+  String get monBudgetDetails;
+
+  /// No description provided for @monEdit.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّل'**
+  String get monEdit;
+
+  /// No description provided for @monDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح'**
+  String get monDelete;
+
+  /// No description provided for @monDeleteTheBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح الميزانية'**
+  String get monDeleteTheBudget;
+
+  /// No description provided for @monDeleteTheBudgetP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمسح ميزانية \"{p0}\"؟'**
+  String monDeleteTheBudgetP0(String p0);
+
+  /// No description provided for @monCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get monCancel;
+
+  /// No description provided for @monBudgetP0Deleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميزانية \"{p0}\" اتمسحت'**
+  String monBudgetP0Deleted(String p0);
+
+  /// No description provided for @monUndo.
+  ///
+  /// In ar, this message translates to:
+  /// **'تراجع'**
+  String get monUndo;
+
+  /// No description provided for @monSpentP0OfP1.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت {p0} من {p1}'**
+  String monSpentP0OfP1(String p0, String p1);
+
+  /// No description provided for @monOverBudgetP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'زدت عن الميزانية ({p0}%)'**
+  String monOverBudgetP0(String p0);
+
+  /// No description provided for @monAlmostUsedP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'قربت تخلص ({p0}%)'**
+  String monAlmostUsedP0(String p0);
+
+  /// No description provided for @monLeftP02.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل: {p0}'**
+  String monLeftP02(String p0);
+
+  /// No description provided for @monOverallBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية العامة'**
+  String get monOverallBudget;
+
+  /// No description provided for @monEnterTheMonthlyAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب المبلغ الشهري'**
+  String get monEnterTheMonthlyAmount;
+
+  /// No description provided for @monWeCouldnTSaveIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نحفظ. جرّب تاني كمان شوية.'**
+  String get monWeCouldnTSaveIt;
+
+  /// No description provided for @monEditTheBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّل الميزانية'**
+  String get monEditTheBudget;
+
+  /// No description provided for @monNewMonthlyBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميزانية شهرية جديدة'**
+  String get monNewMonthlyBudget;
+
+  /// No description provided for @monClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقفل'**
+  String get monClose;
+
+  /// No description provided for @monCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة'**
+  String get monCategory;
+
+  /// No description provided for @monOverallBudgetAllSpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية العامة (كل المصاريف)'**
+  String get monOverallBudgetAllSpending;
+
+  /// No description provided for @monBudgetName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الميزانية'**
+  String get monBudgetName;
+
+  /// No description provided for @monLikeFoodAndDrink.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: الأكل والشرب'**
+  String get monLikeFoodAndDrink;
+
+  /// No description provided for @monMonthlyLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الشهري'**
+  String get monMonthlyLimit;
+
+  /// No description provided for @monAlertMeAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'نبهني عند'**
+  String get monAlertMeAt;
+
+  /// No description provided for @monSaving.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنحفظ...'**
+  String get monSaving;
+
+  /// No description provided for @monSaveChanges.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ التعديلات'**
+  String get monSaveChanges;
+
+  /// No description provided for @monAddTheBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف الميزانية'**
+  String get monAddTheBudget;
+
+  /// No description provided for @monSavingGoals.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهداف التوفير'**
+  String get monSavingGoals;
+
+  /// No description provided for @monNewGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'هدف جديد'**
+  String get monNewGoal;
+
+  /// No description provided for @monWeCanTLoadYour2.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب أهدافك'**
+  String get monWeCanTLoadYour2;
+
+  /// No description provided for @monNoSavingGoalsYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش أهداف'**
+  String get monNoSavingGoalsYet;
+
+  /// No description provided for @monSetAGoalLikeUmrah.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد هدف، زي عمرة أو لابتوب جديد أو فلوس للطوارئ، وتابعه خطوة بخطوة.'**
+  String get monSetAGoalLikeUmrah;
+
+  /// No description provided for @monCreateASavingGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعمل هدف جديد'**
+  String get monCreateASavingGoal;
+
+  /// No description provided for @monCurrentGoals.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهدافك الحالية'**
+  String get monCurrentGoals;
+
+  /// No description provided for @monGoalsReached.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهداف حققتها'**
+  String get monGoalsReached;
+
+  /// No description provided for @monPausedGoals.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهداف متوقفة'**
+  String get monPausedGoals;
+
+  /// No description provided for @monTargetP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف: {p0}'**
+  String monTargetP0(String p0);
+
+  /// No description provided for @monSmartPlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطة ذكية'**
+  String get monSmartPlan;
+
+  /// No description provided for @monTargetDateP0P1P2.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميعاد: {p0}/{p1}/{p2}'**
+  String monTargetDateP0P1P2(String p0, String p1, String p2);
+
+  /// No description provided for @monWeCouldnTRunThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نعمل التحليل. اتأكد من النت وجرّب تاني.'**
+  String get monWeCouldnTRunThe;
+
+  /// No description provided for @monCongratulations.
+  ///
+  /// In ar, this message translates to:
+  /// **'ألف مبروك!'**
+  String get monCongratulations;
+
+  /// No description provided for @monYouReachedYourGoalP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'حققت هدف \"{p0}\". خطوة كبيرة لقدام!'**
+  String monYouReachedYourGoalP0(String p0);
+
+  /// No description provided for @monReached.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحقق'**
+  String get monReached;
+
+  /// No description provided for @monActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغال'**
+  String get monActive;
+
+  /// No description provided for @monPaused.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوقف'**
+  String get monPaused;
+
+  /// No description provided for @monDateP0P1P2.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميعاد: {p0}/{p1}/{p2}'**
+  String monDateP0P1P2(String p0, String p1, String p2);
+
+  /// No description provided for @monGoalAnalysis.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليل الهدف'**
+  String get monGoalAnalysis;
+
+  /// No description provided for @monRefresh.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث'**
+  String get monRefresh;
+
+  /// No description provided for @monStepsToYourGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطوات الوصول للهدف:'**
+  String get monStepsToYourGoal;
+
+  /// No description provided for @monSuggestedWeeklyActions.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاجات تعملها كل أسبوع:'**
+  String get monSuggestedWeeklyActions;
+
+  /// No description provided for @monLastAnalysisP0P1P2.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر تحليل: {p0}/{p1}/{p2}'**
+  String monLastAnalysisP0P1P2(String p0, String p1, String p2);
+
+  /// No description provided for @monRunTheAnalysisToGet.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّل التحليل وهتاخد خطة مبنية على مصاريفك.'**
+  String get monRunTheAnalysisToGet;
+
+  /// No description provided for @monGoalAnalysisComesWithPro.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحليل الأهداف متاح في باقة Pro.'**
+  String get monGoalAnalysisComesWithPro;
+
+  /// No description provided for @monAnalyzing.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنحلل الهدف...'**
+  String get monAnalyzing;
+
+  /// No description provided for @monAnalyzeThisGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'حلل الهدف'**
+  String get monAnalyzeThisGoal;
+
+  /// No description provided for @monUpgradeToProForThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في Pro للتحليل'**
+  String get monUpgradeToProForThe;
+
+  /// No description provided for @monGoalReached.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف اتحقق!'**
+  String get monGoalReached;
+
+  /// No description provided for @monPause.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقّف مؤقتًا'**
+  String get monPause;
+
+  /// No description provided for @monResumeTheGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمّل الهدف'**
+  String get monResumeTheGoal;
+
+  /// No description provided for @monDeleteTheGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح الهدف'**
+  String get monDeleteTheGoal;
+
+  /// No description provided for @monEnterANameForThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب اسم الهدف'**
+  String get monEnterANameForThe;
+
+  /// No description provided for @monEnterTheTargetAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب المبلغ المستهدف'**
+  String get monEnterTheTargetAmount;
+
+  /// No description provided for @monWeCouldnTCreateThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نعمل الهدف. اتأكد من النت وجرّب تاني.'**
+  String get monWeCouldnTCreateThe;
+
+  /// No description provided for @monNewSavingGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'هدف جديد'**
+  String get monNewSavingGoal;
+
+  /// No description provided for @monGoalName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الهدف'**
+  String get monGoalName;
+
+  /// No description provided for @monLikeUmrahANewLaptop.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: عمرة، لابتوب جديد، صيانة العربية'**
+  String get monLikeUmrahANewLaptop;
+
+  /// No description provided for @monTargetAmountRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المستهدف (مطلوب)'**
+  String get monTargetAmountRequired;
+
+  /// No description provided for @monLike25000.
+  ///
+  /// In ar, this message translates to:
+  /// **'زي: 25000'**
+  String get monLike25000;
+
+  /// No description provided for @monTargetDateOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعاد الهدف (اختياري)'**
+  String get monTargetDateOptional;
+
+  /// No description provided for @monChooseADate.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار ميعاد'**
+  String get monChooseADate;
+
+  /// No description provided for @monNotesOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات (اختياري)'**
+  String get monNotesOptional;
+
+  /// No description provided for @monAnythingThatHelpsYouRemember.
+  ///
+  /// In ar, this message translates to:
+  /// **'أي حاجة تفكرك بخطتك...'**
+  String get monAnythingThatHelpsYouRemember;
+
+  /// No description provided for @monCreating.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنعمل الهدف...'**
+  String get monCreating;
+
+  /// No description provided for @monCreateTheGoal.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعمل الهدف'**
+  String get monCreateTheGoal;
+
+  /// No description provided for @monClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح'**
+  String get monClear;
+
+  /// No description provided for @monVoiceRecordingNeedsInternetYou.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسجيل بالصوت محتاج نت. تقدر تكتب الجملة دلوقتي.'**
+  String get monVoiceRecordingNeedsInternetYou;
+
+  /// No description provided for @monWeNeedMicrophoneAccessTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'محتاجين إذن المايك علشان تسجل بصوتك.'**
+  String get monWeNeedMicrophoneAccessTo;
+
+  /// No description provided for @monWeCouldnTStartRecording.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نبدأ التسجيل. جرّب تاني.'**
+  String get monWeCouldnTStartRecording;
+
+  /// No description provided for @monRecordingCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسجيل اتلغى'**
+  String get monRecordingCancelled;
+
+  /// No description provided for @monBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيد'**
+  String get monBalance;
+
+  /// No description provided for @monSeconds.
+  ///
+  /// In ar, this message translates to:
+  /// **'ثانية'**
+  String get monSeconds;
+
+  /// No description provided for @monPlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقة'**
+  String get monPlan;
+
+  /// No description provided for @monWeCouldnTProcessThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما عرفناش نقرا التسجيل. جرّب تاني.'**
+  String get monWeCouldnTProcessThe;
+
+  /// No description provided for @monWeCouldnTHearAny.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما سمعناش مصروف في التسجيل.'**
+  String get monWeCouldnTHearAny;
+
+  /// No description provided for @monVoiceRecording.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل صوتي'**
+  String get monVoiceRecording;
+
+  /// No description provided for @monModeSingleTap.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوضع: ضغطة واحدة'**
+  String get monModeSingleTap;
+
+  /// No description provided for @monModeHold.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوضع: ضغطة طويلة'**
+  String get monModeHold;
+
+  /// No description provided for @monPhotographAReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر فاتورة'**
+  String get monPhotographAReceipt;
+
+  /// No description provided for @monSlideToCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب للإلغاء'**
+  String get monSlideToCancel;
+
+  /// No description provided for @monCancelRecording.
+  ///
+  /// In ar, this message translates to:
+  /// **'ألغي التسجيل'**
+  String get monCancelRecording;
+
+  /// No description provided for @monListeningToTheRecording.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنسمع التسجيل...'**
+  String get monListeningToTheRecording;
+
+  /// No description provided for @monStopRecording.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقّف التسجيل'**
+  String get monStopRecording;
+
+  /// No description provided for @monRecordByVoiceTapTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل بصوتك (دوس للبدء)'**
+  String get monRecordByVoiceTapTo;
+
+  /// No description provided for @monRecordByVoiceHold.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل بصوتك (دوس مطوّل)'**
+  String get monRecordByVoiceHold;
+
+  /// No description provided for @monHoldTheMicToRecord.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوس مطوّل على المايك علشان تسجل'**
+  String get monHoldTheMicToRecord;
+
+  /// No description provided for @monReadingReceiptsNeedsInternet.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة الفواتير محتاجة نت.'**
+  String get monReadingReceiptsNeedsInternet;
+
+  /// No description provided for @monWeCanTOpenThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نفتح الكاميرا. اسمح بالوصول من إعدادات الموبايل، أو اختار صورة من المعرض.'**
+  String get monWeCanTOpenThe;
+
+  /// No description provided for @monThisPhotoIsTooLarge.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصورة كبيرة قوي. جرّب صورة تانية أقرب للفاتورة.'**
+  String get monThisPhotoIsTooLarge;
+
+  /// No description provided for @monThePhotoIsnTClear.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصورة مش واضحة أو مش قادرين نقرا المبلغ. جرّب في نور أحسن.'**
+  String get monThePhotoIsnTClear;
+
+  /// No description provided for @monReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة'**
+  String get monReceipt;
+
+  /// No description provided for @monThePhotoIsnTClear2.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصورة مش واضحة. جرّب صورة أوضح في نور أحسن.'**
+  String get monThePhotoIsnTClear2;
+
+  /// No description provided for @monReadingTheReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنقرا الفاتورة...'**
+  String get monReadingTheReceipt;
+
+  /// No description provided for @monFindingTheAmountAndDetails.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنطلع المبلغ والتفاصيل'**
+  String get monFindingTheAmountAndDetails;
+
+  /// No description provided for @monReviewTheReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع الفاتورة'**
+  String get monReviewTheReceipt;
+
+  /// No description provided for @monReceiptTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الفاتورة'**
+  String get monReceiptTotal;
+
+  /// No description provided for @monCategory2.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة:'**
+  String get monCategory2;
+
+  /// No description provided for @monDetailsP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيان: {p0}'**
+  String monDetailsP0(String p0);
+
+  /// No description provided for @monSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ'**
+  String get monSave;
+
+  /// No description provided for @monEditInTheBox.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّل في الخانة'**
+  String get monEditInTheBox;
+
+  /// No description provided for @monPhotographTheReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الفاتورة'**
+  String get monPhotographTheReceipt;
+
+  /// No description provided for @monTakeAPhotoOfThe.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الفاتورة أو اختار صورتها من المعرض، وإحنا هنقراها لك.'**
+  String get monTakeAPhotoOfThe;
+
+  /// No description provided for @monCamera.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكاميرا'**
+  String get monCamera;
+
+  /// No description provided for @monTakeAClearPhotoOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الفاتورة صورة واضحة'**
+  String get monTakeAClearPhotoOf;
+
+  /// No description provided for @monChooseFromTheGallery.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار من المعرض'**
+  String get monChooseFromTheGallery;
+
+  /// No description provided for @monPickAPhotoSavedOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار صورة من موبايلك'**
+  String get monPickAPhotoSavedOn;
+
+  /// No description provided for @monRecordByVoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصاريفك بصوتك'**
+  String get monRecordByVoice;
+
+  /// No description provided for @monToRecordYourSpendingBy.
+  ///
+  /// In ar, this message translates to:
+  /// **'علشان تسجل بصوتك محتاجين إذن المايك. صوتك بيتحول لنص وما بيتحفظش.'**
+  String get monToRecordYourSpendingBy;
+
+  /// No description provided for @monAllowTheMicrophone.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمح بالمايك'**
+  String get monAllowTheMicrophone;
+
+  /// No description provided for @monNotNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش دلوقتي'**
+  String get monNotNow;
+
+  /// No description provided for @monAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get monAll;
+
+  /// No description provided for @monRecordedMonthlyIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدخل الشهري المسجل'**
+  String get monRecordedMonthlyIncome;
+
+  /// No description provided for @monTotalIncomeThisMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي دخل الشهر'**
+  String get monTotalIncomeThisMonth;
+
+  /// No description provided for @monHowYouSpend.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة صرفك'**
+  String get monHowYouSpend;
+
+  /// No description provided for @monRecordMoreThisMonthTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصاريف أكتر الشهر ده علشان طريقتك تبان بوضوح.'**
+  String get monRecordMoreThisMonthTo;
+
+  /// No description provided for @monYourSpendingJumpsOnCertain.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصاريفك بتقفز في أيام معينة، مش متوزعة بالتساوي.'**
+  String get monYourSpendingJumpsOnCertain;
+
+  /// No description provided for @monYourSpendingRisesOnWeekends.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصاريفك بتزيد في الويك إند والمناسبات.'**
+  String get monYourSpendingRisesOnWeekends;
+
+  /// No description provided for @monMostOfYourSpendingGoes.
+  ///
+  /// In ar, this message translates to:
+  /// **'معظم مصاريفك رايحة لفئة واحدة.'**
+  String get monMostOfYourSpendingGoes;
+
+  /// No description provided for @monFrequentPurchasesWithoutPlanning.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشتريات متكررة من غير تخطيط.'**
+  String get monFrequentPurchasesWithoutPlanning;
+
+  /// No description provided for @monYouSpendCautiouslyAndKeep.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتصرف بحرص ومحافظ على مبلغ أمان.'**
+  String get monYouSpendCautiouslyAndKeep;
+
+  /// No description provided for @monYouStickToYourBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملتزم بميزانيتك ومصاريفك منظمة.'**
+  String get monYouStickToYourBudget;
+
+  /// No description provided for @monYourSpendingIsBalancedWith.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصاريفك متوازنة ومفيهاش قفزات.'**
+  String get monYourSpendingIsBalancedWith;
+
+  /// No description provided for @monYourBiggestSpendingDayP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتر يوم بتصرف فيه: {p0} ({p1})'**
+  String monYourBiggestSpendingDayP0(String p0, String p1);
+
+  /// No description provided for @monYourSpendingByWeekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصاريفك حسب أيام الأسبوع'**
+  String get monYourSpendingByWeekday;
+
+  /// No description provided for @monSpendingDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'أيام الصرف'**
+  String get monSpendingDays;
+
+  /// No description provided for @monChartOfSpendingByWeekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسم مصاريف أيام الأسبوع. أعلى يوم {p0} بمبلغ {p1}.'**
+  String monChartOfSpendingByWeekday(String p0, String p1);
+
+  /// No description provided for @monChartOfSpendingByWeekday2.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسم مصاريف أيام الأسبوع.'**
+  String get monChartOfSpendingByWeekday2;
+
+  /// No description provided for @monRecordMoreToSeeYour.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصاريف أكتر علشان تعرف أيام صرفك.'**
+  String get monRecordMoreToSeeYour;
+
+  /// No description provided for @monMonthlyBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية الشهرية'**
+  String get monMonthlyBudget;
+
+  /// No description provided for @monSetAMonthlyBudgetTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد ميزانية شهرية علشان تعرف فاضل معاك كام أول بأول.'**
+  String get monSetAMonthlyBudgetTo;
+
+  /// No description provided for @monSetABudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد ميزانية'**
+  String get monSetABudget;
+
+  /// No description provided for @monOverallMonthlyBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية الشهرية العامة'**
+  String get monOverallMonthlyBudget;
+
+  /// No description provided for @monComparedWithYourRecordedMonthly.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقارنة بدخلك الشهري المسجل (مفيش ميزانية)'**
+  String get monComparedWithYourRecordedMonthly;
+
+  /// No description provided for @monComparedWithThisMonthS.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقارنة بدخل الشهر ده'**
+  String get monComparedWithThisMonthS;
+
+  /// No description provided for @monBudgetAndSpending.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية والصرف'**
+  String get monBudgetAndSpending;
+
+  /// No description provided for @monSpentP02.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت: {p0}'**
+  String monSpentP02(String p0);
+
+  /// No description provided for @monOverBudgetByP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'زدت عن الميزانية بـ {p0}'**
+  String monOverBudgetByP0(String p0);
+
+  /// No description provided for @monLeftP03.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل: {p0}'**
+  String monLeftP03(String p0);
+
+  /// No description provided for @monRecordedAutomatically.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي اتسجل تلقائيًا'**
+  String get monRecordedAutomatically;
+
+  /// No description provided for @monFromBanksAndWallets.
+  ///
+  /// In ar, this message translates to:
+  /// **'من البنوك والمحافظ'**
+  String get monFromBanksAndWallets;
+
+  /// No description provided for @monByHandOrCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'يدوي أو كاش'**
+  String get monByHandOrCash;
+
+  /// No description provided for @monTheseCameFromYourBank.
+  ///
+  /// In ar, this message translates to:
+  /// **'دول جايين من رسايل البنك والمحفظة.'**
+  String get monTheseCameFromYourBank;
+
+  /// No description provided for @monMoneyWithPeople.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوس مع الناس'**
+  String get monMoneyWithPeople;
+
+  /// No description provided for @monNoDebtsOrLoansYet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش ديون أو سلف. قول أو اكتب: \"سلفت أحمد 200 جنيه\".'**
+  String get monNoDebtsOrLoansYet;
+
+  /// No description provided for @monMoneyWithPeopleDebtsAnd.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوس مع الناس (ديون وسلف)'**
+  String get monMoneyWithPeopleDebtsAnd;
+
+  /// No description provided for @monOwedToYou.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليك برّه'**
+  String get monOwedToYou;
+
+  /// No description provided for @monYouOwe.
+  ///
+  /// In ar, this message translates to:
+  /// **'عليك للناس'**
+  String get monYouOwe;
+
+  /// No description provided for @monOwesYouP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليك {p0}'**
+  String monOwesYouP0(String p0);
+
+  /// No description provided for @monYouOweP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'عليك {p0}'**
+  String monYouOweP0(String p0);
+
+  /// No description provided for @monSeeAllPeopleAndDebts.
+  ///
+  /// In ar, this message translates to:
+  /// **'شوف كل الناس والديون'**
+  String get monSeeAllPeopleAndDebts;
+
+  /// No description provided for @monThisYearYourHighestMonth.
+  ///
+  /// In ar, this message translates to:
+  /// **'السنة دي: أعلى شهر صرف كان {p0} ({p1})'**
+  String monThisYearYourHighestMonth(String p0, String p1);
+
+  /// No description provided for @monYourSpendingInP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصاريفك في {p0}'**
+  String monYourSpendingInP0(String p0);
+
+  /// No description provided for @monThisYearP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'السنة دي ({p0})'**
+  String monThisYearP0(String p0);
+
+  /// No description provided for @monChartOfTheYearS.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسم مصاريف السنة. الإجمالي {p0}.'**
+  String monChartOfTheYearS(String p0);
+
+  /// No description provided for @monYourSmartProfileAndPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملفك الذكي وخصوصيتك'**
+  String get monYourSmartProfileAndPrivacy;
+
+  /// No description provided for @monWhatTheAppLearnedAbout.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي التطبيق اتعلمه عنك بيستخدم لخدمتك بس، وتقدر تغيره من هنا.'**
+  String get monWhatTheAppLearnedAbout;
+
+  /// No description provided for @monYourSavedPaydayDayP0.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم القبض المحفوظ: يوم {p0} من كل شهر.'**
+  String monYourSavedPaydayDayP0(String p0);
 }
 
 class _AppLocalizationsDelegate

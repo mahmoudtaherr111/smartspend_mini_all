@@ -150,7 +150,10 @@ void main() {
       // Hero free before income (CAL-02)
       expect(find.text('المتاح لحد القبض'), findsOneWidget);
       expect(find.text('9,000 ج.م'), findsOneWidget);
-      expect(find.textContaining('الأيام الباقية على القبض (يوم 25): 6'), findsOneWidget);
+      expect(
+        find.textContaining('الأيام الباقية على القبض (يوم 25): 6'),
+        findsOneWidget,
+      );
 
       // Calendar grid (CAL-01)
       expect(find.byType(CalendarGrid), findsOneWidget);

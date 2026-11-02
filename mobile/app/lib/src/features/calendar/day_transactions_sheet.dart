@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
+
 import '../../l10n/app_localizations.dart';
 
 import '../ledger/ledger_models.dart';
@@ -125,7 +126,8 @@ class _DayTransactionsSheetState extends ConsumerState<DayTransactionsSheet> {
                           ),
                           const SizedBox(height: SmartSpendSpacing.md),
                           Text(
-                            AppLocalizations.of(context).calNothingRecordedOnThisDay,
+                            AppLocalizations.of(context)
+                                .calNothingRecordedOnThisDay,
                             style: textTheme.bodyMedium?.copyWith(
                               color: colors.mutedForeground,
                             ),

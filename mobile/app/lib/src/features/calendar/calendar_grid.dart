@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
+
 import '../../l10n/app_localizations.dart';
 
 import 'calendar_models.dart';
@@ -181,7 +182,8 @@ class _DayCellWidget extends StatelessWidget {
         DayTransactionsSheet.show(
           context,
           dateStr: cell.dateStr,
-          formattedDateAr: AppLocalizations.of(context).calTransactionsOfDayP0('${cell.dayNumber}'),
+          formattedDateAr: AppLocalizations.of(context)
+              .calTransactionsOfDayP0('${cell.dayNumber}'),
         );
       },
       borderRadius: BorderRadius.circular(8),
@@ -294,7 +296,8 @@ class _CalendarDayList extends StatelessWidget {
               DayTransactionsSheet.show(
                 context,
                 dateStr: dateStr,
-                formattedDateAr: AppLocalizations.of(context).calTransactionsOfDayP02('$day'),
+                formattedDateAr: AppLocalizations.of(context)
+                    .calTransactionsOfDayP02('$day'),
               );
             },
             leading: Container(

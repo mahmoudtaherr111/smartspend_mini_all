@@ -27,8 +27,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('أهداف التوفير'), findsOneWidget);
-      expect(find.text('لسه ما حددتش أي هدف توفير'), findsOneWidget);
-      expect(find.text('إنشاء هدف توفير جديد'), findsOneWidget);
+      expect(find.text('لسه مفيش أهداف'), findsOneWidget);
+      expect(find.text('اعمل هدف جديد'), findsOneWidget);
     });
 
     testWidgets(
@@ -53,7 +53,7 @@ void main() {
         app.container.read(routerProvider).go(GoalsScreen.path);
         await tester.pumpAndSettle();
 
-        await tester.tap(find.text('إنشاء هدف توفير جديد'));
+        await tester.tap(find.text('اعمل هدف جديد'));
         await tester.pumpAndSettle();
 
         expect(find.byType(GoalFormSheet), findsOneWidget);
@@ -64,13 +64,13 @@ void main() {
 
         // Submit without amount -> Must show error and not call API!
         await tester.ensureVisible(
-          find.widgetWithText(SmartSpendButton, 'إنشاء الهدف'),
+          find.widgetWithText(SmartSpendButton, 'اعمل الهدف'),
         );
         await tester.pumpAndSettle();
-        await tester.tap(find.widgetWithText(SmartSpendButton, 'إنشاء الهدف'));
+        await tester.tap(find.widgetWithText(SmartSpendButton, 'اعمل الهدف'));
         await tester.pumpAndSettle();
 
-        expect(find.text('من فضلك اكتب المبلغ المستهدف للهدف'), findsOneWidget);
+        expect(find.text('اكتب المبلغ المستهدف'), findsOneWidget);
         expect(createdArgs, isNull);
 
         // Now enter valid amount: 35000
@@ -78,10 +78,10 @@ void main() {
         await tester.pumpAndSettle();
 
         await tester.ensureVisible(
-          find.widgetWithText(SmartSpendButton, 'إنشاء الهدف'),
+          find.widgetWithText(SmartSpendButton, 'اعمل الهدف'),
         );
         await tester.pumpAndSettle();
-        await tester.tap(find.widgetWithText(SmartSpendButton, 'إنشاء الهدف'));
+        await tester.tap(find.widgetWithText(SmartSpendButton, 'اعمل الهدف'));
         await tester.pumpAndSettle();
 
         expect(createdArgs, isNotNull);
@@ -135,7 +135,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(GoalDetailSheet), findsOneWidget);
-        expect(find.text('تحليل الذكاء الاصطناعي للهدف'), findsOneWidget);
+        expect(find.text('تحليل الهدف'), findsOneWidget);
         expect(
           find.textContaining('تقدر توصل لهدفك خلال 4 شهور'),
           findsOneWidget,
@@ -181,7 +181,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Tap complete goal button
-        await tester.tap(find.text('تم تحقيق الهدف! 🎯'));
+        await tester.tap(find.text('الهدف اتحقق!'));
         await tester.pumpAndSettle();
 
         expect(statusArgs, isNotNull);
@@ -190,7 +190,7 @@ void main() {
 
         // MilestoneCelebration should be displayed!
         expect(find.byType(MilestoneCelebration), findsOneWidget);
-        expect(find.text('ألف مبروك! 🎯'), findsOneWidget);
+        expect(find.text('ألف مبروك!'), findsOneWidget);
       },
     );
 

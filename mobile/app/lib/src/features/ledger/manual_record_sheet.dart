@@ -531,7 +531,7 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
                   onDecimal: _onDecimal,
                   onDelete: _onDelete,
                   onClear: _onClear,
-                  deleteLabel: 'مسح',
+                  deleteLabel: AppLocalizations.of(context).monClear,
                 ),
               ),
 

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import '../ledger/category_style.dart';
 import 'budget_models.dart';
 import 'budget_providers.dart';
@@ -44,15 +46,22 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
     _titleController = TextEditingController(
       text:
           existing?.title ??
-          (_selectedCategory == _allCategories
-              ? 'الميزانية العامة'
-              : _selectedCategory),
+          (_selectedCategory == _allCategories ? '' : _selectedCategory),
     );
     _limitController = TextEditingController(
       text: existing != null ? existing.monthlyLimit.toStringAsFixed(0) : '',
     );
     _periodStartDay = existing?.periodStartDay ?? 1;
     _alertThresholdPercent = existing?.alertThresholdPercent ?? 80;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Localizations are out of reach in initState.
+    if (widget.existing == null && _titleController.text.isEmpty) {
+      _titleController.text = AppLocalizations.of(context).monOverallBudget;
+    }
   }
 
   @override
@@ -67,10 +76,11 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
       _selectedCategory = value;
       // Auto-update title if user hasn't typed a custom title
       if (_titleController.text.trim().isEmpty ||
-          _titleController.text.trim() == 'الميزانية العامة' ||
+          _titleController.text.trim() ==
+              AppLocalizations.of(context).monOverallBudget ||
           categoriesForType('expense').contains(_titleController.text.trim())) {
         _titleController.text = value == _allCategories
-            ? 'الميزانية العامة'
+            ? AppLocalizations.of(context).monOverallBudget
             : value;
       }
     });
@@ -80,13 +90,15 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
     final rawLimit = _limitController.text.trim();
     final limit = parseAmount(rawLimit)?.toDouble();
     if (limit == null || limit <= 0) {
-      setState(() => _error = 'من فضلك اكتب مبلغ الميزانية الشهري');
+      setState(
+        () => _error = AppLocalizations.of(context).monEnterTheMonthlyAmount,
+      );
       return;
     }
 
     final title = _titleController.text.trim().isEmpty
         ? (_selectedCategory == _allCategories
-              ? 'الميزانية العامة'
+              ? AppLocalizations.of(context).monOverallBudget
               : _selectedCategory)
         : _titleController.text.trim();
 
@@ -127,7 +139,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
       if (mounted) {
         setState(() {
           _submitting = false;
-          _error = 'حصلت مشكلة أثناء الحفظ، جرّب تاني بعد لحظات';
+          _error = AppLocalizations.of(context).monWeCouldnTSaveIt;
         });
       }
     }
@@ -156,7 +168,9 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    isEditing ? 'تعديل الميزانية' : 'ميزانية شهرية جديدة',
+                    isEditing
+                        ? AppLocalizations.of(context).monEditTheBudget
+                        : AppLocalizations.of(context).monNewMonthlyBudget,
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: colors.foreground,
@@ -165,7 +179,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
-                  tooltip: 'إغلاق',
+                  tooltip: AppLocalizations.of(context).monClose,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -187,7 +201,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
             ],
             // Category selector dropdown
             Text(
-              'التصنيف',
+              AppLocalizations.of(context).monCategory,
               style: textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colors.mutedForeground,
@@ -210,9 +224,12 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
                     color: colors.mutedForeground,
                   ),
                   items: [
-                    const DropdownMenuItem(
+                    DropdownMenuItem(
                       value: _allCategories,
-                      child: Text('الميزانية العامة (كل المصاريف)'),
+                      child: Text(
+                        AppLocalizations.of(context)
+                            .monOverallBudgetAllSpending,
+                      ),
                     ),
                     ...expenseCategories.map(
                       (cat) => DropdownMenuItem(
@@ -240,7 +257,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
             const SizedBox(height: SmartSpendSpacing.md),
             // Title input
             Text(
-              'اسم الميزانية',
+              AppLocalizations.of(context).monBudgetName,
               style: textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colors.mutedForeground,
@@ -250,7 +267,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
             TextField(
               controller: _titleController,
               decoration: InputDecoration(
-                hintText: 'مثلاً: ميزانية الأكل والشرب',
+                hintText: AppLocalizations.of(context).monLikeFoodAndDrink,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                   borderSide: BorderSide(color: colors.border),
@@ -260,7 +277,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
             const SizedBox(height: SmartSpendSpacing.md),
             // Monthly limit input
             Text(
-              'المبلغ الشهري الأقصى',
+              AppLocalizations.of(context).monMonthlyLimit,
               style: textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colors.mutedForeground,
@@ -279,7 +296,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
               ],
               decoration: InputDecoration(
                 hintText: '5000',
-                suffixText: 'ج.م',
+                suffixText: MoneyLocale.of(context).symbol,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                   borderSide: BorderSide(color: colors.border),
@@ -289,7 +306,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
             const SizedBox(height: SmartSpendSpacing.md),
             // Alert Threshold chips
             Text(
-              'تنبيه عند بلوغ نسبة',
+              AppLocalizations.of(context).monAlertMeAt,
               style: textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colors.mutedForeground,
@@ -313,8 +330,10 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
             const SizedBox(height: SmartSpendSpacing.lg),
             SmartSpendButton(
               label: _submitting
-                  ? 'جاري الحفظ...'
-                  : (isEditing ? 'حفظ التعديلات' : 'إضافة الميزانية'),
+                  ? AppLocalizations.of(context).monSaving
+                  : (isEditing
+                        ? AppLocalizations.of(context).monSaveChanges
+                        : AppLocalizations.of(context).monAddTheBudget),
               onPressed: _submitting ? null : _submit,
             ),
           ],

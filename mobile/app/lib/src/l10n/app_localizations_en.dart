@@ -2114,4 +2114,626 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calVersionAndLicenses => 'Version and licenses';
+
+  @override
+  String get monMonthlyBudgets => 'Monthly budgets';
+
+  @override
+  String get monAddABudget => 'Add a budget';
+
+  @override
+  String get monWeCanTLoadYour => 'We can\'t load your budgets';
+
+  @override
+  String get monCheckYourConnectionAndTry =>
+      'Check your connection and try again';
+
+  @override
+  String get monTryAgain => 'Try again';
+
+  @override
+  String get monNoBudgetsYet => 'No budgets yet';
+
+  @override
+  String get monSetAMonthlyLimitFor =>
+      'Set a monthly limit for your spending or for a category, and see what is left as you go.';
+
+  @override
+  String get monAddAMonthlyBudget => 'Add a monthly budget';
+
+  @override
+  String get monAllBudgets => 'All budgets';
+
+  @override
+  String monSpentP0(String p0) {
+    return 'Spent: $p0';
+  }
+
+  @override
+  String monOverByP0(String p0) {
+    return 'Over by $p0';
+  }
+
+  @override
+  String monLeftP0(String p0) {
+    return 'Left: $p0';
+  }
+
+  @override
+  String get monBudgetDetails => 'Budget details';
+
+  @override
+  String get monEdit => 'Edit';
+
+  @override
+  String get monDelete => 'Delete';
+
+  @override
+  String get monDeleteTheBudget => 'Delete the budget';
+
+  @override
+  String monDeleteTheBudgetP0(String p0) {
+    return 'Delete the budget \"$p0\"?';
+  }
+
+  @override
+  String get monCancel => 'Cancel';
+
+  @override
+  String monBudgetP0Deleted(String p0) {
+    return 'Budget \"$p0\" deleted';
+  }
+
+  @override
+  String get monUndo => 'Undo';
+
+  @override
+  String monSpentP0OfP1(String p0, String p1) {
+    return 'Spent $p0 of $p1';
+  }
+
+  @override
+  String monOverBudgetP0(String p0) {
+    return 'Over budget ($p0%)';
+  }
+
+  @override
+  String monAlmostUsedP0(String p0) {
+    return 'Almost used ($p0%)';
+  }
+
+  @override
+  String monLeftP02(String p0) {
+    return 'Left: $p0';
+  }
+
+  @override
+  String get monOverallBudget => 'Overall budget';
+
+  @override
+  String get monEnterTheMonthlyAmount => 'Enter the monthly amount';
+
+  @override
+  String get monWeCouldnTSaveIt =>
+      'We couldn\'t save it. Try again in a moment.';
+
+  @override
+  String get monEditTheBudget => 'Edit the budget';
+
+  @override
+  String get monNewMonthlyBudget => 'New monthly budget';
+
+  @override
+  String get monClose => 'Close';
+
+  @override
+  String get monCategory => 'Category';
+
+  @override
+  String get monOverallBudgetAllSpending => 'Overall budget (all spending)';
+
+  @override
+  String get monBudgetName => 'Budget name';
+
+  @override
+  String get monLikeFoodAndDrink => 'Like: food and drink';
+
+  @override
+  String get monMonthlyLimit => 'Monthly limit';
+
+  @override
+  String get monAlertMeAt => 'Alert me at';
+
+  @override
+  String get monSaving => 'Saving...';
+
+  @override
+  String get monSaveChanges => 'Save changes';
+
+  @override
+  String get monAddTheBudget => 'Add the budget';
+
+  @override
+  String get monSavingGoals => 'Saving goals';
+
+  @override
+  String get monNewGoal => 'New goal';
+
+  @override
+  String get monWeCanTLoadYour2 => 'We can\'t load your goals';
+
+  @override
+  String get monNoSavingGoalsYet => 'No saving goals yet';
+
+  @override
+  String get monSetAGoalLikeUmrah =>
+      'Set a goal, like Umrah, a new laptop or an emergency fund, and follow it step by step.';
+
+  @override
+  String get monCreateASavingGoal => 'Create a saving goal';
+
+  @override
+  String get monCurrentGoals => 'Current goals';
+
+  @override
+  String get monGoalsReached => 'Goals reached';
+
+  @override
+  String get monPausedGoals => 'Paused goals';
+
+  @override
+  String monTargetP0(String p0) {
+    return 'Target: $p0';
+  }
+
+  @override
+  String get monSmartPlan => 'Smart plan';
+
+  @override
+  String monTargetDateP0P1P2(String p0, String p1, String p2) {
+    return 'Target date: $p0/$p1/$p2';
+  }
+
+  @override
+  String get monWeCouldnTRunThe =>
+      'We couldn\'t run the analysis. Check your connection and try again.';
+
+  @override
+  String get monCongratulations => 'Congratulations!';
+
+  @override
+  String monYouReachedYourGoalP0(String p0) {
+    return 'You reached your goal \"$p0\". A big step forward!';
+  }
+
+  @override
+  String get monReached => 'Reached';
+
+  @override
+  String get monActive => 'Active';
+
+  @override
+  String get monPaused => 'Paused';
+
+  @override
+  String monDateP0P1P2(String p0, String p1, String p2) {
+    return 'Date: $p0/$p1/$p2';
+  }
+
+  @override
+  String get monGoalAnalysis => 'Goal analysis';
+
+  @override
+  String get monRefresh => 'Refresh';
+
+  @override
+  String get monStepsToYourGoal => 'Steps to your goal:';
+
+  @override
+  String get monSuggestedWeeklyActions => 'Suggested weekly actions:';
+
+  @override
+  String monLastAnalysisP0P1P2(String p0, String p1, String p2) {
+    return 'Last analysis: $p0/$p1/$p2';
+  }
+
+  @override
+  String get monRunTheAnalysisToGet =>
+      'Run the analysis to get a plan based on your spending.';
+
+  @override
+  String get monGoalAnalysisComesWithPro => 'Goal analysis comes with Pro.';
+
+  @override
+  String get monAnalyzing => 'Analyzing...';
+
+  @override
+  String get monAnalyzeThisGoal => 'Analyze this goal';
+
+  @override
+  String get monUpgradeToProForThe => 'Upgrade to Pro for the analysis';
+
+  @override
+  String get monGoalReached => 'Goal reached!';
+
+  @override
+  String get monPause => 'Pause';
+
+  @override
+  String get monResumeTheGoal => 'Resume the goal';
+
+  @override
+  String get monDeleteTheGoal => 'Delete the goal';
+
+  @override
+  String get monEnterANameForThe => 'Enter a name for the goal';
+
+  @override
+  String get monEnterTheTargetAmount => 'Enter the target amount';
+
+  @override
+  String get monWeCouldnTCreateThe =>
+      'We couldn\'t create the goal. Check your connection and try again.';
+
+  @override
+  String get monNewSavingGoal => 'New saving goal';
+
+  @override
+  String get monGoalName => 'Goal name';
+
+  @override
+  String get monLikeUmrahANewLaptop => 'Like: Umrah, a new laptop, car repairs';
+
+  @override
+  String get monTargetAmountRequired => 'Target amount (required)';
+
+  @override
+  String get monLike25000 => 'Like: 25000';
+
+  @override
+  String get monTargetDateOptional => 'Target date (optional)';
+
+  @override
+  String get monChooseADate => 'Choose a date';
+
+  @override
+  String get monNotesOptional => 'Notes (optional)';
+
+  @override
+  String get monAnythingThatHelpsYouRemember =>
+      'Anything that helps you remember your plan...';
+
+  @override
+  String get monCreating => 'Creating...';
+
+  @override
+  String get monCreateTheGoal => 'Create the goal';
+
+  @override
+  String get monClear => 'Clear';
+
+  @override
+  String get monVoiceRecordingNeedsInternetYou =>
+      'Voice recording needs internet. You can type it for now.';
+
+  @override
+  String get monWeNeedMicrophoneAccessTo =>
+      'We need microphone access to record your voice.';
+
+  @override
+  String get monWeCouldnTStartRecording =>
+      'We couldn\'t start recording. Try again.';
+
+  @override
+  String get monRecordingCancelled => 'Recording cancelled';
+
+  @override
+  String get monBalance => 'balance';
+
+  @override
+  String get monSeconds => 'seconds';
+
+  @override
+  String get monPlan => 'plan';
+
+  @override
+  String get monWeCouldnTProcessThe =>
+      'We couldn\'t process the recording. Try again.';
+
+  @override
+  String get monWeCouldnTHearAny => 'We couldn\'t hear any spending in that.';
+
+  @override
+  String get monVoiceRecording => 'Voice recording';
+
+  @override
+  String get monModeSingleTap => 'Mode: single tap';
+
+  @override
+  String get monModeHold => 'Mode: hold';
+
+  @override
+  String get monPhotographAReceipt => 'Photograph a receipt';
+
+  @override
+  String get monSlideToCancel => 'Slide to cancel';
+
+  @override
+  String get monCancelRecording => 'Cancel recording';
+
+  @override
+  String get monListeningToTheRecording => 'Listening to the recording...';
+
+  @override
+  String get monStopRecording => 'Stop recording';
+
+  @override
+  String get monRecordByVoiceTapTo => 'Record by voice (tap to start)';
+
+  @override
+  String get monRecordByVoiceHold => 'Record by voice (hold)';
+
+  @override
+  String get monHoldTheMicToRecord => 'Hold the mic to record';
+
+  @override
+  String get monReadingReceiptsNeedsInternet =>
+      'Reading receipts needs internet.';
+
+  @override
+  String get monWeCanTOpenThe =>
+      'We can\'t open the camera. Allow it in your phone\'s settings, or choose a photo from the gallery.';
+
+  @override
+  String get monThisPhotoIsTooLarge =>
+      'This photo is too large. Try another one closer to the receipt.';
+
+  @override
+  String get monThePhotoIsnTClear =>
+      'The photo isn\'t clear, or we can\'t read the amount. Try in better light.';
+
+  @override
+  String get monReceipt => 'Receipt';
+
+  @override
+  String get monThePhotoIsnTClear2 =>
+      'The photo isn\'t clear. Try a sharper one in better light.';
+
+  @override
+  String get monReadingTheReceipt => 'Reading the receipt...';
+
+  @override
+  String get monFindingTheAmountAndDetails => 'Finding the amount and details';
+
+  @override
+  String get monReviewTheReceipt => 'Review the receipt';
+
+  @override
+  String get monReceiptTotal => 'Receipt total';
+
+  @override
+  String get monCategory2 => 'Category:';
+
+  @override
+  String monDetailsP0(String p0) {
+    return 'Details: $p0';
+  }
+
+  @override
+  String get monSave => 'Save';
+
+  @override
+  String get monEditInTheBox => 'Edit in the box';
+
+  @override
+  String get monPhotographTheReceipt => 'Photograph the receipt';
+
+  @override
+  String get monTakeAPhotoOfThe =>
+      'Take a photo of the receipt or choose one from your gallery, and we\'ll read it for you.';
+
+  @override
+  String get monCamera => 'Camera';
+
+  @override
+  String get monTakeAClearPhotoOf => 'Take a clear photo of the receipt';
+
+  @override
+  String get monChooseFromTheGallery => 'Choose from the gallery';
+
+  @override
+  String get monPickAPhotoSavedOn => 'Pick a photo saved on your phone';
+
+  @override
+  String get monRecordByVoice => 'Record by voice';
+
+  @override
+  String get monToRecordYourSpendingBy =>
+      'To record your spending by voice we need the microphone. Your voice is turned into text and not kept.';
+
+  @override
+  String get monAllowTheMicrophone => 'Allow the microphone';
+
+  @override
+  String get monNotNow => 'Not now';
+
+  @override
+  String get monAll => 'All';
+
+  @override
+  String get monRecordedMonthlyIncome => 'Recorded monthly income';
+
+  @override
+  String get monTotalIncomeThisMonth => 'Total income this month';
+
+  @override
+  String get monHowYouSpend => 'How you spend';
+
+  @override
+  String get monRecordMoreThisMonthTo =>
+      'Record more this month to see your pattern clearly.';
+
+  @override
+  String get monYourSpendingJumpsOnCertain =>
+      'Your spending jumps on certain days instead of spreading evenly.';
+
+  @override
+  String get monYourSpendingRisesOnWeekends =>
+      'Your spending rises on weekends or special occasions.';
+
+  @override
+  String get monMostOfYourSpendingGoes =>
+      'Most of your spending goes to one category.';
+
+  @override
+  String get monFrequentPurchasesWithoutPlanning =>
+      'Frequent purchases without planning.';
+
+  @override
+  String get monYouSpendCautiouslyAndKeep =>
+      'You spend cautiously and keep a safety margin.';
+
+  @override
+  String get monYouStickToYourBudget =>
+      'You stick to your budget and spend in an organized way.';
+
+  @override
+  String get monYourSpendingIsBalancedWith =>
+      'Your spending is balanced with no sudden jumps.';
+
+  @override
+  String monYourBiggestSpendingDayP0(String p0, String p1) {
+    return 'Your biggest spending day: $p0 ($p1)';
+  }
+
+  @override
+  String get monYourSpendingByWeekday => 'Your spending by weekday';
+
+  @override
+  String get monSpendingDays => 'Spending days';
+
+  @override
+  String monChartOfSpendingByWeekday(String p0, String p1) {
+    return 'Chart of spending by weekday. The highest day is $p0 with $p1.';
+  }
+
+  @override
+  String get monChartOfSpendingByWeekday2 => 'Chart of spending by weekday.';
+
+  @override
+  String get monRecordMoreToSeeYour =>
+      'Record more to see your weekly pattern.';
+
+  @override
+  String get monMonthlyBudget => 'Monthly budget';
+
+  @override
+  String get monSetAMonthlyBudgetTo =>
+      'Set a monthly budget to always know what is left.';
+
+  @override
+  String get monSetABudget => 'Set a budget';
+
+  @override
+  String get monOverallMonthlyBudget => 'Overall monthly budget';
+
+  @override
+  String get monComparedWithYourRecordedMonthly =>
+      'Compared with your recorded monthly income (no budget set)';
+
+  @override
+  String get monComparedWithThisMonthS => 'Compared with this month\'s income';
+
+  @override
+  String get monBudgetAndSpending => 'Budget and spending';
+
+  @override
+  String monSpentP02(String p0) {
+    return 'Spent: $p0';
+  }
+
+  @override
+  String monOverBudgetByP0(String p0) {
+    return 'Over budget by $p0';
+  }
+
+  @override
+  String monLeftP03(String p0) {
+    return 'Left: $p0';
+  }
+
+  @override
+  String get monRecordedAutomatically => 'Recorded automatically';
+
+  @override
+  String get monFromBanksAndWallets => 'From banks and wallets';
+
+  @override
+  String get monByHandOrCash => 'By hand or cash';
+
+  @override
+  String get monTheseCameFromYourBank =>
+      'These came from your bank and wallet messages.';
+
+  @override
+  String get monMoneyWithPeople => 'Money with people';
+
+  @override
+  String get monNoDebtsOrLoansYet =>
+      'No debts or loans yet. Say or type: \"I lent Ahmed 200\".';
+
+  @override
+  String get monMoneyWithPeopleDebtsAnd =>
+      'Money with people (debts and loans)';
+
+  @override
+  String get monOwedToYou => 'Owed to you';
+
+  @override
+  String get monYouOwe => 'You owe';
+
+  @override
+  String monOwesYouP0(String p0) {
+    return 'Owes you $p0';
+  }
+
+  @override
+  String monYouOweP0(String p0) {
+    return 'You owe $p0';
+  }
+
+  @override
+  String get monSeeAllPeopleAndDebts => 'See all people and debts';
+
+  @override
+  String monThisYearYourHighestMonth(String p0, String p1) {
+    return 'This year: your highest month was $p0 ($p1)';
+  }
+
+  @override
+  String monYourSpendingInP0(String p0) {
+    return 'Your spending in $p0';
+  }
+
+  @override
+  String monThisYearP0(String p0) {
+    return 'This year ($p0)';
+  }
+
+  @override
+  String monChartOfTheYearS(String p0) {
+    return 'Chart of the year\'s spending. Total $p0.';
+  }
+
+  @override
+  String get monYourSmartProfileAndPrivacy => 'Your smart profile and privacy';
+
+  @override
+  String get monWhatTheAppLearnedAbout =>
+      'What the app learned about you is used only to serve you, and you can change it here.';
+
+  @override
+  String monYourSavedPaydayDayP0(String p0) {
+    return 'Your saved payday: day $p0 of each month.';
+  }
 }

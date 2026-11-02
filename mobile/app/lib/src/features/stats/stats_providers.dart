@@ -350,7 +350,6 @@ final budgetComparisonProvider = FutureProvider<BudgetComparisonData>((
           percentage: percentage,
           isExceeded: spent > income,
           fallbackKind: BudgetFallbackKind.profileIncome,
-          title: 'الدخل الشهري المسجل',
         );
       }
     }
@@ -367,7 +366,6 @@ final budgetComparisonProvider = FutureProvider<BudgetComparisonData>((
       percentage: percentage,
       isExceeded: spent > income,
       fallbackKind: BudgetFallbackKind.monthIncome,
-      title: 'إجمالي دخل الشهر',
     );
   }
 

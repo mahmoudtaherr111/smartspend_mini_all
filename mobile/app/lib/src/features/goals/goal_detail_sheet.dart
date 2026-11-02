@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'goal_models.dart';
 import 'goals_providers.dart';
 
@@ -58,7 +59,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
       if (mounted) {
         setState(() {
           _analyzing = false;
-          _error = 'تعذر تشغيل التحليل بالذكاء الاصطناعي، اتأكد من اتصالك وجرّب تاني';
+          _error = AppLocalizations.of(context).monWeCouldnTRunThe;
         });
       }
     }
@@ -72,8 +73,9 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
       Navigator.of(context).pop();
       await MilestoneCelebration.show(
         context: context,
-        title: 'ألف مبروك! 🎯',
-        subtitle: 'حققت هدف "${widget.goal.title}" بنجاح، خطوة كبيرة لقدام!',
+        title: AppLocalizations.of(context).monCongratulations,
+        subtitle: AppLocalizations.of(context)
+            .monYouReachedYourGoalP0(widget.goal.title),
       );
     }
   }
@@ -126,7 +128,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'المستهدف: ${goal.targetAmount.toStringAsFixed(0)} ج.م',
+                        'المستهدف: ${moneyText(context, goal.targetAmount)}',
                         style: textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: colors.accent,
@@ -137,7 +139,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
-                  tooltip: 'إغلاق',
+                  tooltip: AppLocalizations.of(context).monClose,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -162,8 +164,10 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                   ),
                   child: Text(
                     goal.isCompleted
-                        ? 'مكتمل'
-                        : (goal.isActive ? 'نشط' : 'متوقف مؤقتاً'),
+                        ? AppLocalizations.of(context).monReached
+                        : (goal.isActive
+                              ? AppLocalizations.of(context).monActive
+                              : AppLocalizations.of(context).monPaused),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -185,7 +189,11 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                       border: Border.all(color: colors.border),
                     ),
                     child: Text(
-                      'الموعد: ${goal.targetDate!.year}/${goal.targetDate!.month}/${goal.targetDate!.day}',
+                      AppLocalizations.of(context).monDateP0P1P2(
+                        '${goal.targetDate!.year}',
+                        '${goal.targetDate!.month}',
+                        '${goal.targetDate!.day}',
+                      ),
                       style: textTheme.bodySmall?.copyWith(
                         color: colors.mutedForeground,
                       ),
@@ -222,7 +230,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                       const SizedBox(width: SmartSpendSpacing.xs),
                       Expanded(
                         child: Text(
-                          'تحليل الذكاء الاصطناعي للهدف',
+                          AppLocalizations.of(context).monGoalAnalysis,
                           style: textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: colors.foreground,
@@ -241,8 +249,8 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                                   ),
                                 )
                               : const Icon(Icons.refresh_rounded, size: 16),
-                          label: const Text(
-                            'تحديث',
+                          label: Text(
+                            AppLocalizations.of(context).monRefresh,
                             style: TextStyle(fontSize: 12),
                           ),
                         ),
@@ -270,7 +278,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                     ],
                     if (analysis.plan.isNotEmpty) ...[
                       Text(
-                        'خطوات الوصول للهدف:',
+                        AppLocalizations.of(context).monStepsToYourGoal,
                         style: textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: colors.mutedForeground,
@@ -307,7 +315,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                     if (analysis.weeklyActions.isNotEmpty) ...[
                       const SizedBox(height: SmartSpendSpacing.xs),
                       Text(
-                        'إجراءات أسبوعية مقترحة:',
+                        AppLocalizations.of(context).monSuggestedWeeklyActions,
                         style: textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: colors.mutedForeground,
@@ -340,7 +348,11 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                     if (goal.lastAnalyzedAt != null) ...[
                       const SizedBox(height: SmartSpendSpacing.xs),
                       Text(
-                        'آخر تحليل: ${goal.lastAnalyzedAt!.year}/${goal.lastAnalyzedAt!.month}/${goal.lastAnalyzedAt!.day}',
+                        AppLocalizations.of(context).monLastAnalysisP0P1P2(
+                          '${goal.lastAnalyzedAt!.year}',
+                          '${goal.lastAnalyzedAt!.month}',
+                          '${goal.lastAnalyzedAt!.day}',
+                        ),
                         style: textTheme.bodySmall?.copyWith(
                           color: colors.mutedForeground,
                           fontSize: 11,
@@ -350,8 +362,9 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                   ] else ...[
                     Text(
                       widget.isPro
-                          ? 'شغّل المستشار الذكي لتحليل ميزانيتك ومصاريفك ووضع خطة مخصصة للوصول لهدفك.'
-                          : 'ميزة التحليل بالذكاء الاصطناعي متوفرة لمشتركي باقة Pro.',
+                          ? AppLocalizations.of(context).monRunTheAnalysisToGet
+                          : AppLocalizations.of(context)
+                                .monGoalAnalysisComesWithPro,
                       style: textTheme.bodySmall?.copyWith(
                         color: colors.mutedForeground,
                       ),
@@ -359,10 +372,12 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                     const SizedBox(height: SmartSpendSpacing.md),
                     SmartSpendButton(
                       label: _analyzing
-                          ? 'جاري تحليل الهدف...'
+                          ? AppLocalizations.of(context).monAnalyzing
                           : (widget.isPro
-                                ? 'تحليل الهدف بالذكاء الاصطناعي'
-                                : 'ترقية إلى Pro للتحليل الذكي'),
+                                ? AppLocalizations.of(context)
+                                      .monAnalyzeThisGoal
+                                : AppLocalizations.of(context)
+                                      .monUpgradeToProForThe),
                       onPressed: _analyzing ? null : _analyze,
                     ),
                   ],
@@ -373,7 +388,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
             // Actions
             if (!goal.isCompleted) ...[
               SmartSpendButton(
-                label: 'تم تحقيق الهدف! 🎯',
+                label: AppLocalizations.of(context).monGoalReached,
                 onPressed: _completeGoal,
               ),
               const SizedBox(height: SmartSpendSpacing.sm),
@@ -389,7 +404,11 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                         borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                       ),
                     ),
-                    child: Text(goal.isActive ? 'إيقاف مؤقت' : 'استئناف الهدف'),
+                    child: Text(
+                      goal.isActive
+                          ? AppLocalizations.of(context).monPause
+                          : AppLocalizations.of(context).monResumeTheGoal,
+                    ),
                   ),
                 ),
                 const SizedBox(width: SmartSpendSpacing.sm),
@@ -398,7 +417,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                     Icons.delete_outline_rounded,
                     color: colors.danger,
                   ),
-                  tooltip: 'حذف الهدف',
+                  tooltip: AppLocalizations.of(context).monDeleteTheGoal,
                   onPressed: _delete,
                 ),
               ],

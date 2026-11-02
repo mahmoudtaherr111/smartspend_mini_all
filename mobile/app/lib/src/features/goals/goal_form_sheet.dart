@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'goals_providers.dart';
 
 /// Bottom sheet to create a new financial goal (`goals.create`).
@@ -56,14 +57,16 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
   Future<void> _submit() async {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
-      setState(() => _error = 'من فضلك اكتب اسم الهدف');
+      setState(() => _error = AppLocalizations.of(context).monEnterANameForThe);
       return;
     }
 
     final rawAmount = _amountController.text.trim();
     final amount = parseAmount(rawAmount)?.toDouble();
     if (amount == null || amount <= 0) {
-      setState(() => _error = 'من فضلك اكتب المبلغ المستهدف للهدف');
+      setState(
+        () => _error = AppLocalizations.of(context).monEnterTheTargetAmount,
+      );
       return;
     }
 
@@ -90,7 +93,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
       if (mounted) {
         setState(() {
           _submitting = false;
-          _error = 'حصلت مشكلة أثناء إنشاء الهدف، اتأكد من اتصالك وجرّب تاني';
+          _error = AppLocalizations.of(context).monWeCouldnTCreateThe;
         });
       }
     }
@@ -117,7 +120,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    'هدف توفير جديد',
+                    AppLocalizations.of(context).monNewSavingGoal,
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: colors.foreground,
@@ -126,7 +129,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
-                  tooltip: 'إغلاق',
+                  tooltip: AppLocalizations.of(context).monClose,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -148,7 +151,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             ],
             // Title input
             Text(
-              'اسم الهدف',
+              AppLocalizations.of(context).monGoalName,
               style: textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colors.mutedForeground,
@@ -158,7 +161,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             TextField(
               controller: _titleController,
               decoration: InputDecoration(
-                hintText: 'مثلاً: عمرة، لابتوب جديد، صيانة العربية',
+                hintText: AppLocalizations.of(context).monLikeUmrahANewLaptop,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                   borderSide: BorderSide(color: colors.border),
@@ -168,7 +171,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             const SizedBox(height: SmartSpendSpacing.md),
             // Target amount input (REQUIRED)
             Text(
-              'المبلغ المستهدف (مطلوب)',
+              AppLocalizations.of(context).monTargetAmountRequired,
               style: textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colors.mutedForeground,
@@ -186,8 +189,8 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                 ),
               ],
               decoration: InputDecoration(
-                hintText: 'مثلاً: 25000',
-                suffixText: 'ج.م',
+                hintText: AppLocalizations.of(context).monLike25000,
+                suffixText: MoneyLocale.of(context).symbol,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                   borderSide: BorderSide(color: colors.border),
@@ -197,7 +200,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             const SizedBox(height: SmartSpendSpacing.md),
             // Target date picker
             Text(
-              'تاريخ الوصول للهدف (اختياري)',
+              AppLocalizations.of(context).monTargetDateOptional,
               style: textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colors.mutedForeground,
@@ -227,7 +230,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                     Text(
                       _selectedDate != null
                           ? '${_selectedDate!.year}/${_selectedDate!.month}/${_selectedDate!.day}'
-                          : 'حدد تاريخ مستهدف',
+                          : AppLocalizations.of(context).monChooseADate,
                       style: textTheme.bodyMedium?.copyWith(
                         color: _selectedDate != null
                             ? colors.foreground
@@ -241,7 +244,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             const SizedBox(height: SmartSpendSpacing.md),
             // Description input (optional)
             Text(
-              'ملاحظات إضافية (اختياري)',
+              AppLocalizations.of(context).monNotesOptional,
               style: textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colors.mutedForeground,
@@ -252,7 +255,8 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
               controller: _descController,
               maxLines: 2,
               decoration: InputDecoration(
-                hintText: 'أي تفاصيل تساعدك تفتكر خطتك...',
+                hintText: AppLocalizations.of(context)
+                    .monAnythingThatHelpsYouRemember,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                   borderSide: BorderSide(color: colors.border),
@@ -261,7 +265,9 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             ),
             const SizedBox(height: SmartSpendSpacing.lg),
             SmartSpendButton(
-              label: _submitting ? 'جاري الإنشاء...' : 'إنشاء الهدف',
+              label: _submitting
+                  ? AppLocalizations.of(context).monCreating
+                  : AppLocalizations.of(context).monCreateTheGoal,
               onPressed: _submitting ? null : _submit,
             ),
           ],

@@ -23,8 +23,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('الميزانيات الشهرية'), findsOneWidget);
-      expect(find.text('لسه ما حددتش أي ميزانية'), findsOneWidget);
-      expect(find.text('إضافة ميزانية شهرية'), findsOneWidget);
+      expect(find.text('لسه مفيش ميزانيات'), findsOneWidget);
+      expect(find.text('ضيف ميزانية شهرية'), findsOneWidget);
     });
 
     testWidgets(
@@ -82,15 +82,15 @@ void main() {
         // Check hero card
         expect(find.text('الميزانية العامة'), findsWidgets);
         expect(find.text('85%'), findsOneWidget);
-        expect(find.text('اتصرف: 8,500 ج.م'), findsOneWidget);
-        expect(find.text('باقي: 1,500 ج.م'), findsOneWidget);
+        expect(find.text('صرفت: 8,500 ج.م'), findsOneWidget);
+        expect(find.text('فاضل: 1,500 ج.م'), findsOneWidget);
 
         // Check category cards and badges
         expect(find.text('أكل وشرب'), findsWidgets);
-        expect(find.textContaining('عدت الميزانية (117%)'), findsOneWidget);
+        expect(find.textContaining('زدت عن الميزانية (117%)'), findsOneWidget);
 
         expect(find.text('مواصلات'), findsWidgets);
-        expect(find.text('باقي: 1,200 ج.م'), findsOneWidget);
+        expect(find.text('فاضل: 1,200 ج.م'), findsOneWidget);
       },
     );
 
@@ -114,7 +114,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap add budget in empty state
-      await tester.tap(find.text('إضافة ميزانية شهرية'));
+      await tester.tap(find.text('ضيف ميزانية شهرية'));
       await tester.pumpAndSettle();
 
       expect(find.byType(BudgetFormSheet), findsOneWidget);
@@ -124,9 +124,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap submit button
-      await tester.tap(
-        find.widgetWithText(SmartSpendButton, 'إضافة الميزانية'),
-      );
+      await tester.tap(find.widgetWithText(SmartSpendButton, 'ضيف الميزانية'));
       await tester.pumpAndSettle();
 
       expect(createdInput, isNotNull);
@@ -180,11 +178,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Confirm in dialog (DEF-25)
-      await tester.tap(find.widgetWithText(TextButton, 'حذف'));
+      await tester.tap(find.widgetWithText(TextButton, 'امسح'));
       await tester.pumpAndSettle();
 
       expect(deletedId, 10);
-      expect(find.textContaining('تم حذف ميزانية'), findsOneWidget);
+      expect(find.textContaining('اتمسحت'), findsOneWidget);
 
       // Tap Undo (تراجع)
       await tester.tap(find.text('تراجع'));

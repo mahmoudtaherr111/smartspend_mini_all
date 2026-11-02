@@ -291,10 +291,10 @@ class _SpendingPersonalitySection extends StatelessWidget {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
 
-    final explanation = _behaviorExplanation(stats.spendingBehavior);
+    final explanation = _behaviorExplanation(context, stats.spendingBehavior);
 
     return GroupedCard(
-      title: 'نمط وسلوك الصرف',
+      title: AppLocalizations.of(context).monHowYouSpend,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -339,7 +339,7 @@ class _SpendingPersonalitySection extends StatelessWidget {
           if (stats.count < 5) ...[
             const SizedBox(height: SmartSpendSpacing.xs),
             Text(
-              'سجّل مصاريف أكتر خلال الشهر عشان يتعرف النظام على نمطك بدقة أعلى.',
+              AppLocalizations.of(context).monRecordMoreThisMonthTo,
               style: textTheme.bodySmall?.copyWith(
                 color: colors.mutedForeground,
               ),
@@ -350,14 +350,19 @@ class _SpendingPersonalitySection extends StatelessWidget {
     );
   }
 
-  static String _behaviorExplanation(String? behavior) => switch (behavior) {
-    'spiky' => 'مصاريفك فيها قفزات مفاجئة بأيام محددة مش متوزعة بالتساوي.',
-    'emotional' => 'مصاريفك بتزيد في عطلات نهاية الأسبوع أو بمناسبات معينة.',
-    'concentrated' => 'معظم مصاريفك مركزة في فئة واحدة بتستحوذ على الميزانية.',
-    'impulsive' => 'معاملات شراء متكررة بدون تخطيط مسبق.',
-    'conservative' => 'تحفظ في الصرف ومحافظة مستمرة على سيولة أمان.',
-    'planned' => 'التزام واضح بالميزانية وتوزيع منظم لمصاريفك.',
-    _ => 'مصاريفك متوزعة بشكل متوازن ومفيش قفزات مفاجئة.',
+  static String _behaviorExplanation(
+    BuildContext context,
+    String? behavior,
+  ) => switch (behavior) {
+    'spiky' => AppLocalizations.of(context).monYourSpendingJumpsOnCertain,
+    'emotional' => AppLocalizations.of(context).monYourSpendingRisesOnWeekends,
+    'concentrated' => AppLocalizations.of(context).monMostOfYourSpendingGoes,
+    'impulsive' => AppLocalizations.of(
+      context,
+    ).monFrequentPurchasesWithoutPlanning,
+    'conservative' => AppLocalizations.of(context).monYouSpendCautiouslyAndKeep,
+    'planned' => AppLocalizations.of(context).monYouStickToYourBudget,
+    _ => AppLocalizations.of(context).monYourSpendingIsBalancedWith,
   };
 }
 
@@ -382,6 +387,10 @@ class _WeekdaySpendingSection extends StatelessWidget {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
 
+    // The server names days in Arabic; these keys read its answer, the interface shows its own language.
+    String label(String day) => DateWords.of(context)
+        .weekdays[const [5, 6, 0, 1, 2, 3, 4][_arabicWeekdays.indexOf(day)]];
+
     final amountsMap = <String, num>{};
     for (final pt in stats.dayOfWeekTrend) {
       amountsMap[pt.name] = pt.amount;
@@ -399,13 +408,16 @@ class _WeekdaySpendingSection extends StatelessWidget {
     }
 
     final title = topDayName != null && topDayAmount > 0
-        ? 'أكتر يوم بتصرف فيه: $topDayName (${moneyText(context, topDayAmount)})'
-        : 'مصاريفك حسب أيام الأسبوع';
+        ? AppLocalizations.of(context).monYourBiggestSpendingDayP0(
+            label(topDayName),
+            moneyText(context, topDayAmount),
+          )
+        : AppLocalizations.of(context).monYourSpendingByWeekday;
 
     final barData = [
       for (final day in _arabicWeekdays)
         BarDataPoint(
-          label: day,
+          label: label(day),
           value: amountsMap[day] ?? 0,
           isHighlighted: day == topDayName && topDayAmount > 0,
         ),
@@ -415,7 +427,7 @@ class _WeekdaySpendingSection extends StatelessWidget {
     if (!hasAnyData && stats.count == 0) return const SizedBox.shrink();
 
     return GroupedCard(
-      title: 'أيام الصرف',
+      title: AppLocalizations.of(context).monSpendingDays,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -423,14 +435,17 @@ class _WeekdaySpendingSection extends StatelessWidget {
             title: title,
             data: barData,
             spokenSummary: topDayName != null
-                ? 'مخطط مصاريف أيام الأسبوع. أعلى يوم هو $topDayName بمبلغ ${moneyText(context, topDayAmount)}.'
-                : 'مخطط مصاريف أيام الأسبوع.',
+                ? AppLocalizations.of(context).monChartOfSpendingByWeekday(
+                    label(topDayName),
+                    moneyText(context, topDayAmount),
+                  )
+                : AppLocalizations.of(context).monChartOfSpendingByWeekday2,
             accentColor: colors.accent,
           ),
           if (stats.count < 5) ...[
             const SizedBox(height: SmartSpendSpacing.xs),
             Text(
-              'سجّل مصاريف أكتر عشان تعرف أنماط أيامك بدقة.',
+              AppLocalizations.of(context).monRecordMoreToSeeYour,
               style: textTheme.bodySmall?.copyWith(
                 color: colors.mutedForeground,
               ),
@@ -457,12 +472,12 @@ class _BudgetComparisonSection extends ConsumerWidget {
 
     if (comparison.fallbackKind == BudgetFallbackKind.none) {
       return GroupedCard(
-        title: 'الميزانية الشهرية',
+        title: AppLocalizations.of(context).monMonthlyBudget,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'حدد ميزانية شهرية لمصاريفك عشان تعرف فاضل لك كام أول بأول وماتتفاجئش بآخر الشهر.',
+              AppLocalizations.of(context).monSetAMonthlyBudgetTo,
               style: textTheme.bodyMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
@@ -472,7 +487,7 @@ class _BudgetComparisonSection extends ConsumerWidget {
               alignment: AlignmentDirectional.centerStart,
               child: FilledButton.tonal(
                 onPressed: () => context.go(BudgetsScreen.path),
-                child: const Text('تحديد ميزانية'),
+                child: Text(AppLocalizations.of(context).monSetABudget),
               ),
             ),
           ],
@@ -485,15 +500,19 @@ class _BudgetComparisonSection extends ConsumerWidget {
 
     final subtitle = switch (comparison.fallbackKind) {
       BudgetFallbackKind.budget =>
-        comparison.title ?? 'الميزانية الشهرية العامة',
-      BudgetFallbackKind.profileIncome =>
-        'مقارنة بالدخل الشهري المسجل (بدون ميزانية محددة)',
-      BudgetFallbackKind.monthIncome => 'مقارنة بإجمالي دخل الشهر الحالي',
+        comparison.title ??
+            AppLocalizations.of(context).monOverallMonthlyBudget,
+      BudgetFallbackKind.profileIncome => AppLocalizations.of(
+        context,
+      ).monComparedWithYourRecordedMonthly,
+      BudgetFallbackKind.monthIncome => AppLocalizations.of(
+        context,
+      ).monComparedWithThisMonthS,
       BudgetFallbackKind.none => '',
     };
 
     return GroupedCard(
-      title: 'الميزانية والصرف',
+      title: AppLocalizations.of(context).monBudgetAndSpending,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -534,13 +553,20 @@ class _BudgetComparisonSection extends ConsumerWidget {
             runSpacing: SmartSpendSpacing.xs,
             children: [
               Text(
-                'صرفت: ${moneyText(context, comparison.spent)}',
+                AppLocalizations.of(context)
+                    .monSpentP02(moneyText(context, comparison.spent)),
                 style: textTheme.bodyMedium?.copyWith(color: colors.foreground),
               ),
               Text(
                 isExceeded
-                    ? 'تجاوزت الميزانية بـ ${moneyText(context, comparison.spent - comparison.allocated)}'
-                    : 'فاضل: ${moneyText(context, comparison.remaining)}',
+                    ? AppLocalizations.of(context).monOverBudgetByP0(
+                        moneyText(
+                          context,
+                          comparison.spent - comparison.allocated,
+                        ),
+                      )
+                    : AppLocalizations.of(context)
+                          .monLeftP03(moneyText(context, comparison.remaining)),
                 style: textTheme.bodyMedium?.copyWith(
                   color: barColor,
                   fontWeight: FontWeight.w600,
@@ -569,19 +595,25 @@ class _ElectronicPaymentsSection extends StatelessWidget {
     final manualExpense = math.max(0, stats.expense - autoExpense);
 
     return GroupedCard(
-      title: 'المعاملات المقروءة تلقائياً',
+      title: AppLocalizations.of(context).monRecordedAutomatically,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           StatTileRow(
             children: [
-              StatTile(label: 'من البنوك والمحافظ', amount: autoExpense),
-              StatTile(label: 'تسجيل يدوي / نقدي', amount: manualExpense),
+              StatTile(
+                label: AppLocalizations.of(context).monFromBanksAndWallets,
+                amount: autoExpense,
+              ),
+              StatTile(
+                label: AppLocalizations.of(context).monByHandOrCash,
+                amount: manualExpense,
+              ),
             ],
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(
-            'المعاملات الإلكترونية مسجلة تلقائياً وبدقة من رسائل الهاتف والإشعارات البنكية.',
+            AppLocalizations.of(context).monTheseCameFromYourBank,
             style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
           ),
         ],
@@ -605,12 +637,12 @@ class _DebtsOverviewSection extends ConsumerWidget {
 
     if (debts.isEmpty) {
       return GroupedCard(
-        title: 'فلوس مع الناس',
+        title: AppLocalizations.of(context).monMoneyWithPeople,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'لسه ماسجلتش ديون أو سلف. تقدر تسجل بصوتك أو كتابة: "سلفت أحمد 200 جنيه" أو "استلفت من سارة 500 جنيه" وهتتسجل بحساب الشخص تلقائياً.',
+              AppLocalizations.of(context).monNoDebtsOrLoansYet,
               style: textTheme.bodyMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
@@ -621,18 +653,21 @@ class _DebtsOverviewSection extends ConsumerWidget {
     }
 
     return GroupedCard(
-      title: 'فلوس مع الناس (ديون وسلف)',
+      title: AppLocalizations.of(context).monMoneyWithPeopleDebtsAnd,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           StatTileRow(
             children: [
               StatTile(
-                label: 'ليك بره',
+                label: AppLocalizations.of(context).monOwedToYou,
                 amount: debts.totalLent,
                 kind: AmountKind.income,
               ),
-              StatTile(label: 'عليك للناس', amount: debts.totalBorrowed),
+              StatTile(
+                label: AppLocalizations.of(context).monYouOwe,
+                amount: debts.totalBorrowed,
+              ),
             ],
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
@@ -653,8 +688,10 @@ class _DebtsOverviewSection extends ConsumerWidget {
                   ),
                   Text(
                     person.balance >= 0
-                        ? 'ليك ${moneyText(context, person.balance)}'
-                        : 'عليك ${moneyText(context, -person.balance)}',
+                        ? AppLocalizations.of(context)
+                              .monOwesYouP0(moneyText(context, person.balance))
+                        : AppLocalizations.of(context)
+                              .monYouOweP0(moneyText(context, -person.balance)),
                     style: textTheme.bodyMedium?.copyWith(
                       color: person.balance >= 0
                           ? colors.accent
@@ -670,7 +707,7 @@ class _DebtsOverviewSection extends ConsumerWidget {
             alignment: AlignmentDirectional.centerStart,
             child: TextButton(
               onPressed: () => context.go(ContactsScreen.path),
-              child: const Text('عرض كل الناس والديون'),
+              child: Text(AppLocalizations.of(context).monSeeAllPeopleAndDebts),
             ),
           ),
         ],
@@ -695,8 +732,11 @@ class _YearlyReviewSection extends ConsumerWidget {
 
     final topMonth = yearly.topMonth;
     final title = topMonth != null
-        ? 'السنة دي: أعلى شهر صرف كان ${topMonth.name} (${moneyText(context, topMonth.amount)})'
-        : 'مصاريفك خلال سنة $year';
+        ? AppLocalizations.of(context).monThisYearYourHighestMonth(
+            topMonth.name,
+            moneyText(context, topMonth.amount),
+          )
+        : AppLocalizations.of(context).monYourSpendingInP0(year);
 
     final points = [
       for (final m in yearly.monthlyData)
@@ -708,12 +748,12 @@ class _YearlyReviewSection extends ConsumerWidget {
     ];
 
     return GroupedCard(
-      title: 'السنة دي ($year)',
+      title: AppLocalizations.of(context).monThisYearP0(year),
       child: SmartSpendLineChart(
         title: title,
         data: points,
-        spokenSummary:
-            'مخطط مصاريف السنة. إجمالي المصاريف ${moneyText(context, yearly.totalExpense)}.',
+        spokenSummary: AppLocalizations.of(context)
+            .monChartOfTheYearS(moneyText(context, yearly.totalExpense)),
         accentColor: colors.accent,
       ),
     );
@@ -733,7 +773,7 @@ class _SmartProfileSection extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return GroupedCard(
-      title: 'الملف المالي الذكي والخصوصية',
+      title: AppLocalizations.of(context).monYourSmartProfileAndPrivacy,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -744,7 +784,7 @@ class _SmartProfileSection extends ConsumerWidget {
               const SizedBox(width: SmartSpendSpacing.sm),
               Expanded(
                 child: Text(
-                  'الأنماط المالية والمعلومات المحفوظة مشفرة لخدمتك طبقاً لأحكام القانون المصري رقم 151 لسنة 2020 لحماية البيانات الشخصية. بياناتك ملكك وحدك.',
+                  AppLocalizations.of(context).monWhatTheAppLearnedAbout,
                   style: textTheme.bodySmall?.copyWith(
                     color: colors.mutedForeground,
                   ),
@@ -755,7 +795,8 @@ class _SmartProfileSection extends ConsumerWidget {
           if (profile != null && profile.salaryDay != null) ...[
             const SizedBox(height: SmartSpendSpacing.xs),
             Text(
-              'يوم الراتب المحفوظ: يوم ${profile.salaryDay} من كل شهر.',
+              AppLocalizations.of(context)
+                  .monYourSavedPaydayDayP0('${profile.salaryDay}'),
               style: textTheme.bodySmall?.copyWith(color: colors.foreground),
             ),
           ],

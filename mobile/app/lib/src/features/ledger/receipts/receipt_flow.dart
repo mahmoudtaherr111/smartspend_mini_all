@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../plans/plan_models.dart';
 import '../../plans/plan_providers.dart';
 import '../ledger_models.dart';
@@ -45,7 +46,7 @@ Future<void> startReceiptIntake({
     if (context.mounted) {
       showSmartSpendNotice(
         context,
-        'قراءة الفواتير محتاجة اتصال بالنت، ومش بتتحفظ في وضع عدم الاتصال.',
+        AppLocalizations.of(context).monReadingReceiptsNeedsInternet,
       );
     }
     return;
@@ -69,7 +70,7 @@ Future<void> startReceiptIntake({
     if (context.mounted) {
       showSmartSpendNotice(
         context,
-        'مش قادرين نفتح الكاميرا. اسمح بالوصول من إعدادات الموبايل، أو اختار صورة من المعرض.',
+        AppLocalizations.of(context).monWeCanTOpenThe,
       );
     }
     return;
@@ -79,7 +80,7 @@ Future<void> startReceiptIntake({
   if (picked.bytes.lengthInBytes > _maxReceiptBytes) {
     showSmartSpendNotice(
       context,
-      'الصورة كبيرة قوي. جرّب صورة تانية أقرب للفاتورة.',
+      AppLocalizations.of(context).monThisPhotoIsTooLarge,
     );
     return;
   }
@@ -135,7 +136,7 @@ Future<void> startReceiptIntake({
     if (context.mounted) {
       showSmartSpendNotice(
         context,
-        'الصورة مش واضحة أو مقدرناش نقرأ المبلغ. صوّر في إضاءة أفضل وجرّب تاني.',
+        AppLocalizations.of(context).monThePhotoIsnTClear,
       );
     }
     return;
@@ -154,7 +155,8 @@ Future<void> startReceiptIntake({
         subCategory: parsedReceipt.subCategory,
         description: parsedReceipt.description.isNotEmpty
             ? parsedReceipt.description
-            : (parsedReceipt.merchant ?? 'فاتورة'),
+            : (parsedReceipt.merchant ??
+                  AppLocalizations.of(context).monReceipt),
       );
       final ids = await api.save(
         [parsedItem],
@@ -223,7 +225,7 @@ class _ReceiptScanningDialogState extends State<_ReceiptScanningDialog> {
             } else {
               showSmartSpendNotice(
                 context,
-                'الصورة مش واضحة أو مقدرناش نقرأ الفاتورة. جرّب صورة أوضح في إضاءة أفضل.',
+                AppLocalizations.of(context).monThePhotoIsnTClear2,
               );
             }
           }
@@ -262,12 +264,12 @@ class _ReceiptScanningDialogState extends State<_ReceiptScanningDialog> {
                 ),
                 const SizedBox(height: SmartSpendSpacing.md),
                 Text(
-                  'بنقرأ بيانات الفاتورة...',
+                  AppLocalizations.of(context).monReadingTheReceipt,
                   style: SmartSpendTypography.style(15, FontWeight.w600),
                 ),
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
-                  'الذكاء الاصطناعي بيستخرج المبلغ والتفاصيل',
+                  AppLocalizations.of(context).monFindingTheAmountAndDetails,
                   style: SmartSpendTypography.style(
                     12,
                     FontWeight.w400,
@@ -282,7 +284,7 @@ class _ReceiptScanningDialogState extends State<_ReceiptScanningDialog> {
               if (_showCancel) ...[
                 const SizedBox(height: SmartSpendSpacing.md),
                 SmartSpendButton(
-                  label: 'إلغاء',
+                  label: AppLocalizations.of(context).monCancel,
                   variant: ButtonVariant.quiet,
                   onPressed: widget.onCancel,
                 ),

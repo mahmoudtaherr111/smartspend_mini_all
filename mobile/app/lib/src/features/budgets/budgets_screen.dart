@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../ledger/category_style.dart';
 import 'budget_form_sheet.dart';
 import 'budget_providers.dart';
@@ -24,11 +25,11 @@ class BudgetsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الميزانيات الشهرية'),
+        title: Text(AppLocalizations.of(context).monMonthlyBudgets),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),
-            tooltip: 'إضافة ميزانية',
+            tooltip: AppLocalizations.of(context).monAddABudget,
             onPressed: () => unawaited(BudgetFormSheet.show(context)),
           ),
         ],
@@ -48,7 +49,7 @@ class BudgetsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: SmartSpendSpacing.md),
                 Text(
-                  'تعذر تحميل الميزانيات',
+                  AppLocalizations.of(context).monWeCanTLoadYour,
                   style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colors.foreground,
@@ -56,14 +57,14 @@ class BudgetsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
-                  'اتأكد من اتصالك بالإنترنت وجرّب تاني',
+                  AppLocalizations.of(context).monCheckYourConnectionAndTry,
                   style: textTheme.bodyMedium?.copyWith(
                     color: colors.mutedForeground,
                   ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.lg),
                 SmartSpendButton(
-                  label: 'إعادة المحاولة',
+                  label: AppLocalizations.of(context).monTryAgain,
                   onPressed: () => ref.read(budgetsProvider.notifier).refresh(),
                 ),
               ],
@@ -85,7 +86,7 @@ class BudgetsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: SmartSpendSpacing.lg),
                     Text(
-                      'لسه ما حددتش أي ميزانية',
+                      AppLocalizations.of(context).monNoBudgetsYet,
                       style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: colors.foreground,
@@ -93,7 +94,7 @@ class BudgetsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: SmartSpendSpacing.sm),
                     Text(
-                      'حدد سقف شهري لمصاريفك أو لكل تصنيف عشان تتابع اللي باقي لك أول بأول.',
+                      AppLocalizations.of(context).monSetAMonthlyLimitFor,
                       textAlign: TextAlign.center,
                       style: textTheme.bodyMedium?.copyWith(
                         color: colors.mutedForeground,
@@ -101,7 +102,7 @@ class BudgetsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: SmartSpendSpacing.xl),
                     SmartSpendButton(
-                      label: 'إضافة ميزانية شهرية',
+                      label: AppLocalizations.of(context).monAddAMonthlyBudget,
                       onPressed: () => unawaited(BudgetFormSheet.show(context)),
                     ),
                   ],
@@ -153,7 +154,7 @@ class BudgetsScreen extends ConsumerWidget {
                           Text(
                             overall != null
                                 ? overall.title
-                                : 'إجمالي الميزانيات',
+                                : AppLocalizations.of(context).monAllBudgets,
                             style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: colors.foreground,
@@ -195,15 +196,20 @@ class BudgetsScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'اتصرف: ${moneyText(context, heroSpent)}',
+                            AppLocalizations.of(context)
+                                .monSpentP0(moneyText(context, heroSpent)),
                             style: textTheme.bodySmall?.copyWith(
                               color: colors.mutedForeground,
                             ),
                           ),
                           Text(
                             isHeroExceeded
-                                ? 'عديت بـ ${moneyText(context, heroSpent - heroLimit)}'
-                                : 'باقي: ${moneyText(context, heroLimit - heroSpent)}',
+                                ? AppLocalizations.of(context).monOverByP0(
+                                    moneyText(context, heroSpent - heroLimit),
+                                  )
+                                : AppLocalizations.of(context).monLeftP0(
+                                    moneyText(context, heroLimit - heroSpent),
+                                  ),
                             style: textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: isHeroExceeded
@@ -219,7 +225,7 @@ class BudgetsScreen extends ConsumerWidget {
                 const SizedBox(height: SmartSpendSpacing.lg),
                 // Section Title
                 Text(
-                  'تفاصيل الميزانيات',
+                  AppLocalizations.of(context).monBudgetDetails,
                   style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colors.foreground,
@@ -283,7 +289,7 @@ class BudgetsScreen extends ConsumerWidget {
                               ),
                               IconButton(
                                 icon: const Icon(Icons.edit_outlined, size: 20),
-                                tooltip: 'تعديل',
+                                tooltip: AppLocalizations.of(context).monEdit,
                                 onPressed: () => unawaited(
                                   BudgetFormSheet.show(
                                     context,
@@ -297,21 +303,28 @@ class BudgetsScreen extends ConsumerWidget {
                                   size: 20,
                                   color: colors.danger,
                                 ),
-                                tooltip: 'حذف',
+                                tooltip: AppLocalizations.of(context).monDelete,
                                 onPressed: () async {
                                   final confirmed = await showDialog<bool>(
                                     context: context,
                                     builder: (dialogCtx) => AlertDialog(
-                                      title: const Text('حذف الميزانية'),
+                                      title: Text(
+                                        AppLocalizations.of(context)
+                                            .monDeleteTheBudget,
+                                      ),
                                       content: Text(
-                                        'هل أنت متأكد من حذف ميزانية "${budget.title}"؟',
+                                        AppLocalizations.of(context)
+                                            .monDeleteTheBudgetP0(budget.title),
                                       ),
                                       actions: [
                                         TextButton(
                                           onPressed: () =>
                                               Navigator.of(dialogCtx)
                                                   .pop(false),
-                                          child: const Text('إلغاء'),
+                                          child: Text(
+                                            AppLocalizations.of(context)
+                                                .monCancel,
+                                          ),
                                         ),
                                         TextButton(
                                           onPressed: () =>
@@ -319,7 +332,10 @@ class BudgetsScreen extends ConsumerWidget {
                                           style: TextButton.styleFrom(
                                             foregroundColor: colors.danger,
                                           ),
-                                          child: const Text('حذف'),
+                                          child: Text(
+                                            AppLocalizations.of(context)
+                                                .monDelete,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -337,10 +353,12 @@ class BudgetsScreen extends ConsumerWidget {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
-                                          'تم حذف ميزانية "${budget.title}"',
+                                          AppLocalizations.of(context)
+                                              .monBudgetP0Deleted(budget.title),
                                         ),
                                         action: SnackBarAction(
-                                          label: 'تراجع',
+                                          label: AppLocalizations.of(context)
+                                              .monUndo,
                                           onPressed: () => unawaited(
                                             notifier.restoreBudget(budget),
                                           ),
@@ -376,7 +394,10 @@ class BudgetsScreen extends ConsumerWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'اتصرف: ${moneyText(context, budget.currentSpent)} من ${moneyText(context, budget.monthlyLimit)}',
+                                AppLocalizations.of(context).monSpentP0OfP1(
+                                  moneyText(context, budget.currentSpent),
+                                  moneyText(context, budget.monthlyLimit),
+                                ),
                                 style: textTheme.bodySmall?.copyWith(
                                   color: colors.mutedForeground,
                                 ),
@@ -394,7 +415,9 @@ class BudgetsScreen extends ConsumerWidget {
                                     ),
                                   ),
                                   child: Text(
-                                    'عدت الميزانية (${budget.percentage}%)',
+                                    AppLocalizations.of(
+                                      context,
+                                    ).monOverBudgetP0('${budget.percentage}'),
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
@@ -417,7 +440,9 @@ class BudgetsScreen extends ConsumerWidget {
                                     ),
                                   ),
                                   child: Text(
-                                    'قربت تخلص (${budget.percentage}%)',
+                                    AppLocalizations.of(
+                                      context,
+                                    ).monAlmostUsedP0('${budget.percentage}'),
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
@@ -427,7 +452,9 @@ class BudgetsScreen extends ConsumerWidget {
                                 )
                               else
                                 Text(
-                                  'باقي: ${moneyText(context, budget.remaining)}',
+                                  AppLocalizations.of(context).monLeftP02(
+                                    moneyText(context, budget.remaining),
+                                  ),
                                   style: textTheme.bodySmall?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: _positiveGreen,

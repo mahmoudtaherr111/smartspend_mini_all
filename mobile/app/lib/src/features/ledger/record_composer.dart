@@ -29,6 +29,8 @@ class RecordComposer extends ConsumerStatefulWidget {
 }
 
 class _RecordComposerState extends ConsumerState<RecordComposer> {
+  AppLocalizations get _l10n => AppLocalizations.of(context);
+
   final _text = TextEditingController();
   Timer? _debounceTimer;
   String _debouncedQuery = '';
@@ -81,7 +83,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     if (_busy || _isRecording) return;
     final isOnline = ref.read(networkStatusProvider);
     if (!isOnline) {
-      _tell('التسجيل بالصوت محتاج نت، تقدر تكتب الجملة يدوي دلوقتي');
+      _tell(_l10n.monVoiceRecordingNeedsInternetYou);
       return;
     }
 
@@ -93,7 +95,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
       if (!allowed || !mounted) return;
       final granted = await recorder.requestPermission();
       if (!granted || !mounted) {
-        _tell('محتاجين إذن الميكروفون عشان تسجل بالصوت');
+        _tell(_l10n.monWeNeedMicrophoneAccessTo);
         return;
       }
     }
@@ -114,7 +116,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
         _isRecording = true;
       });
     } catch (_) {
-      _tell('تعذر بدء التسجيل، حاول مرة ثانية');
+      _tell(_l10n.monWeCouldnTStartRecording);
     }
   }
 
@@ -131,7 +133,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     await recorder.cancelRecording();
     unawaited(SmartSpendHaptics.warning());
     if (mounted) {
-      showSmartSpendNotice(context, 'تم إلغاء التسجيل');
+      showSmartSpendNotice(context, _l10n.monRecordingCancelled);
     }
   }
 
@@ -169,9 +171,9 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
         final msg = e.message.toLowerCase();
         if (e.code == 'FORBIDDEN' ||
             msg.contains('voice') ||
-            msg.contains('رصيد') ||
-            msg.contains('ثواني') ||
-            msg.contains('باقة')) {
+            msg.contains(_l10n.monBalance) ||
+            msg.contains(_l10n.monSeconds) ||
+            msg.contains(_l10n.monPlan)) {
           upgradeReason = UpgradeLimitReason.voiceSeconds;
         } else {
           errorMessage = e.message;
@@ -179,11 +181,11 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
       } catch (e) {
         final msg = e.toString().toLowerCase();
         if (msg.contains('voice') ||
-            msg.contains('رصيد') ||
-            msg.contains('ثواني')) {
+            msg.contains(_l10n.monBalance) ||
+            msg.contains(_l10n.monSeconds)) {
           upgradeReason = UpgradeLimitReason.voiceSeconds;
         } else {
-          errorMessage = 'حصل خطأ في معالجة التسجيل، جرّب مرة تانية';
+          errorMessage = _l10n.monWeCouldnTProcessThe;
         }
       }
     });
@@ -201,7 +203,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
     }
 
     if (parse == null || parse!.items.isEmpty) {
-      _tell('لم نتمكن من سماع شيء أو استخراج مصاريف');
+      _tell(_l10n.monWeCouldnTHearAny);
       return;
     }
 
@@ -210,7 +212,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
       final api = ref.read(ledgerApiProvider);
       final ids = await api.save(
         p.items,
-        rawText: 'تسجيل صوتي',
+        rawText: _l10n.monVoiceRecording,
         classificationLogId: p.classificationLogId,
       );
       if (!mounted) return;
@@ -220,7 +222,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
       final api = ref.read(ledgerApiProvider);
       final outboxItem = OutboxItem(
         id: api.newRequestId(),
-        text: 'تسجيل صوتي',
+        text: _l10n.monVoiceRecording,
         createdAt: clock.now(),
         parse: p,
       );
@@ -409,8 +411,8 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                                 ),
                                 suffixIcon: IconButton(
                                   tooltip: isTapToRecord
-                                      ? 'الوضع: ضغطة واحدة'
-                                      : 'الوضع: ضغط مطول',
+                                      ? _l10n.monModeSingleTap
+                                      : _l10n.monModeHold,
                                   icon: Icon(
                                     isTapToRecord
                                         ? Icons.touch_app_rounded
@@ -436,7 +438,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                       child: SizedBox.square(
                         dimension: 48,
                         child: IconButton(
-                          tooltip: 'تصوير فاتورة',
+                          tooltip: _l10n.monPhotographAReceipt,
                           onPressed: _busy
                               ? null
                               : () => startReceiptIntake(
@@ -521,7 +523,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
             child: Center(child: VoiceLevelMeter(level: _currentAmplitude)),
           ),
           Text(
-            isTapToRecord ? 'إلغاء' : 'اسحب للإلغاء',
+            isTapToRecord ? _l10n.monCancel : _l10n.monSlideToCancel,
             style: SmartSpendTypography.style(
               12,
               FontWeight.w400,
@@ -531,7 +533,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
           IconButton(
             key: const Key('voice-cancel-button'),
             icon: const Icon(Icons.close_rounded, size: 20),
-            tooltip: 'إلغاء التسجيل',
+            tooltip: _l10n.monCancelRecording,
             onPressed: () => unawaited(_cancelVoiceRecording()),
           ),
         ],
@@ -560,7 +562,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
           ),
           const SizedBox(width: SmartSpendSpacing.md),
           Text(
-            'بنسمع التسجيل...',
+            _l10n.monListeningToTheRecording,
             style: SmartSpendTypography.style(
               14,
               FontWeight.w500,
@@ -584,8 +586,10 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
       dimension: 48,
       child: Tooltip(
         message: isTapToRecord
-            ? (isRecording ? 'إيقاف التسجيل' : 'تسجيل بالصوت (ضغطة للبدء)')
-            : 'تسجيل بالصوت (اضغط مطولاً)',
+            ? (isRecording
+                  ? _l10n.monStopRecording
+                  : _l10n.monRecordByVoiceTapTo)
+            : _l10n.monRecordByVoiceHold,
         child: GestureDetector(
           key: Key(keyName),
           behavior: HitTestBehavior.opaque,
@@ -595,10 +599,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                     : () => unawaited(_startVoiceRecording()))
               : () {
                   SmartSpendHaptics.selection();
-                  showSmartSpendNotice(
-                    context,
-                    'اضغط مطولاً على المايك للتسجيل',
-                  );
+                  showSmartSpendNotice(context, _l10n.monHoldTheMicToRecord);
                 },
           onLongPressStart: isTapToRecord
               ? null

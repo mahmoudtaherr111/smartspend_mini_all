@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 /// Shows an explanation sheet before prompting for OS microphone permission (REC-05).
 /// Clearly articulates the privacy policy (instant speech-to-text, no audio saved).
 Future<bool> showVoicePermissionSheet(BuildContext context) async {
@@ -40,7 +42,7 @@ class VoicePermissionSheet extends StatelessWidget {
           ),
           const SizedBox(height: SmartSpendSpacing.lg),
           Text(
-            'تسجيل المصاريف بالصوت',
+            AppLocalizations.of(context).monRecordByVoice,
             textAlign: TextAlign.center,
             style: SmartSpendTypography.style(
               18,
@@ -49,7 +51,7 @@ class VoicePermissionSheet extends StatelessWidget {
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
           Text(
-            'عشان تسجل مصاريفك بالصوت، محتاجين إذن الميكروفون. صوتك بيتحول لنص في لحظتها عشان يسجل العملية، ومش بنحفظ أي تسجيلات صوتية.',
+            AppLocalizations.of(context).monToRecordYourSpendingBy,
             textAlign: TextAlign.center,
             style: SmartSpendTypography.style(
               14,
@@ -58,12 +60,12 @@ class VoicePermissionSheet extends StatelessWidget {
           ),
           const SizedBox(height: SmartSpendSpacing.xl),
           SmartSpendButton(
-            label: 'السماح بالميكروفون',
+            label: AppLocalizations.of(context).monAllowTheMicrophone,
             onPressed: () => Navigator.of(context).pop(true),
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
           SmartSpendButton(
-            label: 'مش دلوقتي',
+            label: AppLocalizations.of(context).monNotNow,
             variant: ButtonVariant.quiet,
             onPressed: () => Navigator.of(context).pop(false),
           ),
