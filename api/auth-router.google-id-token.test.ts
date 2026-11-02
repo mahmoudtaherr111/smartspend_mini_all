@@ -254,10 +254,10 @@ describe("auth.signInWithGoogle", () => {
     expect(mocks.claimed.size).toBe(0);
   });
 
-  it("shares the strict sign-in limit: 25 attempts per address in 15 minutes", async () => {
+  it("shares the strict sign-in limit: 300 attempts per address in 15 minutes", async () => {
     mocks.verify.mockRejectedValue(new GoogleIdTokenRejected("signature"));
     const ip = "197.38.9.9";
-    for (let attempt = 0; attempt < 25; attempt++) {
+    for (let attempt = 0; attempt < 300; attempt++) {
       await expect(caller(ip).signInWithGoogle({ idToken: "a.b.c", nonce: NONCE })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     }
     await expect(caller(ip).signInWithGoogle({ idToken: "a.b.c", nonce: NONCE })).rejects.toMatchObject({
