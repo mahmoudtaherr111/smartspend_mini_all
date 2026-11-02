@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartspend_app/src/features/streak/streak_badge.dart';
 
@@ -5,7 +6,7 @@ import 'support/test_app.dart';
 
 void main() {
   group('Recording streak (REC-17)', () {
-    testWidgets('StreakBadge displays zero days streak with gray badge', (
+    testWidgets('StreakBadge shows nothing before the first day', (
       tester,
     ) async {
       final api = FakeApi();
@@ -22,7 +23,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(StreakBadge), findsOneWidget);
-      expect(find.text('0 يوم'), findsOneWidget);
+      // Nothing to celebrate yet: the badge stays out of the way.
+      expect(find.byIcon(Icons.local_fire_department_rounded), findsNothing);
     });
 
     testWidgets(

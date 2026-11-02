@@ -323,7 +323,6 @@ class _SpendingPersonalitySection extends StatelessWidget {
                       labelAr,
                       style: textTheme.labelLarge?.copyWith(
                         color: colors.accent,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -529,10 +528,7 @@ class _BudgetComparisonSection extends ConsumerWidget {
               ),
               Text(
                 '${comparison.percentage}%',
-                style: textTheme.titleMedium?.copyWith(
-                  color: barColor,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: textTheme.titleMedium?.copyWith(color: barColor),
               ),
             ],
           ),
@@ -567,10 +563,7 @@ class _BudgetComparisonSection extends ConsumerWidget {
                       )
                     : AppLocalizations.of(context)
                           .monLeftP03(moneyText(context, comparison.remaining)),
-                style: textTheme.bodyMedium?.copyWith(
-                  color: barColor,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: textTheme.titleSmall?.copyWith(color: barColor),
               ),
             ],
           ),
@@ -681,9 +674,8 @@ class _DebtsOverviewSection extends ConsumerWidget {
                 children: [
                   Text(
                     person.name,
-                    style: textTheme.bodyMedium?.copyWith(
+                    style: textTheme.titleSmall?.copyWith(
                       color: colors.foreground,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
@@ -692,11 +684,10 @@ class _DebtsOverviewSection extends ConsumerWidget {
                               .monOwesYouP0(moneyText(context, person.balance))
                         : AppLocalizations.of(context)
                               .monYouOweP0(moneyText(context, -person.balance)),
-                    style: textTheme.bodyMedium?.copyWith(
+                    style: textTheme.titleSmall?.copyWith(
                       color: person.balance >= 0
                           ? colors.accent
                           : colors.danger,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],

@@ -10,15 +10,11 @@ import 'package:smartspend_app/src/features/ai/ai_models.dart';
 import 'package:smartspend_app/src/features/ai/ai_providers.dart';
 import 'package:smartspend_app/src/features/ai/ai_report_view.dart';
 import 'package:smartspend_app/src/features/ai/ai_yearly_insights_view.dart';
+import 'package:smartspend_app/src/features/ledger/ledger_providers.dart';
 import 'package:smartspend_app/src/l10n/app_localizations.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import 'support/test_app.dart';
-
-class _FixedMonthNotifier extends SelectedReportMonthNotifier {
-  @override
-  String build() => '2026-10';
-}
 
 List<Override> _testOverrides(
   FakeApi fakeApi, [
@@ -32,7 +28,7 @@ List<Override> _testOverrides(
     trpcClientProvider.overrideWithValue(trpc),
     aiApiProvider.overrideWithValue(AiApi(trpc)),
     sessionStoreProvider.overrideWithValue(MemorySessionStore('test-token')),
-    selectedReportMonthProvider.overrideWith(_FixedMonthNotifier.new),
+    currentMonthProvider.overrideWith((ref) async => '2026-10'),
     ...extra,
   ];
 }
@@ -130,6 +126,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap export button
+      await tester.ensureVisible(find.text('صدّر التقرير'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('صدّر التقرير'));
       await tester.pumpAndSettle();
 

@@ -70,9 +70,7 @@ class _DayTransactionsSheetState extends ConsumerState<DayTransactionsSheet> {
               Expanded(
                 child: Text(
                   widget.formattedDateAr,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: textTheme.titleMedium,
                 ),
               ),
               IconButton(

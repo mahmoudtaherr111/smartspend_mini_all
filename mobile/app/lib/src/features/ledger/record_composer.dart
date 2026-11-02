@@ -10,7 +10,6 @@ import '../../l10n/app_localizations.dart';
 import 'category_style.dart';
 import 'ledger_models.dart';
 import 'ledger_providers.dart';
-import 'manual_record_sheet.dart';
 import 'offline/ledger_store.dart';
 import 'offline/offline_rules.dart';
 import 'offline/outbox.dart';
@@ -340,11 +339,13 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                         key: const Key('category-hint'),
                         padding: const EdgeInsets.symmetric(
                           horizontal: SmartSpendSpacing.sm,
-                          vertical: 4,
+                          vertical: SmartSpendSpacing.xs,
                         ),
                         decoration: BoxDecoration(
                           color: colors.accent.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(
+                            SmartSpendRadii.pill,
+                          ),
                           border: Border.all(
                             color: colors.accent.withValues(alpha: 0.25),
                           ),
@@ -363,19 +364,15 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                                       preview.subCategory != 'عام'
                                   ? '${preview.category} / ${preview.subCategory}'
                                   : preview.category,
-                              style: SmartSpendTypography.style(
-                                12,
-                                FontWeight.w600,
-                              ).copyWith(color: colors.accent),
+                              style: Theme.of(context).textTheme.labelMedium!
+                                  .copyWith(color: colors.accent),
                             ),
                             if (preview.amount > 0) ...[
                               const SizedBox(width: SmartSpendSpacing.xs),
                               Text(
-                                '· ${formatMoney(preview.amount)}',
-                                style: SmartSpendTypography.style(
-                                  12,
-                                  FontWeight.w500,
-                                ).copyWith(color: colors.mutedForeground),
+                                '· ${moneyText(context, preview.amount)}',
+                                style: Theme.of(context).textTheme.bodySmall!
+                                    .copyWith(color: colors.mutedForeground),
                               ),
                             ],
                           ],
@@ -403,12 +400,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
                               onSubmitted: (_) => _submit(),
                               decoration: InputDecoration(
                                 hintText: l10n.composerHint,
-                                prefixIcon: IconButton(
-                                  tooltip: l10n.manualRecordTitle,
-                                  icon: const Icon(Icons.dialpad_rounded),
-                                  onPressed: () =>
-                                      showManualRecordSheet(context),
-                                ),
+                                hintMaxLines: 1,
                                 suffixIcon: IconButton(
                                   tooltip: isTapToRecord
                                       ? _l10n.monModeSingleTap
@@ -497,7 +489,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
       padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.md),
       decoration: BoxDecoration(
         color: colors.surfaceRaised,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.pill),
         border: Border.all(color: colors.accent.withValues(alpha: 0.3)),
       ),
       child: Row(
@@ -505,18 +497,16 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
           Container(
             width: 10,
             height: 10,
-            decoration: const BoxDecoration(
-              color: Color(0xFFEF4444),
+            decoration: BoxDecoration(
+              color: context.smartSpendColors.danger,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: SmartSpendSpacing.sm),
           Text(
             '00:${_recordingSeconds.toString().padLeft(2, '0')}',
-            style: SmartSpendTypography.style(
-              14,
-              FontWeight.w600,
-            ).copyWith(color: colors.foreground),
+            style: Theme.of(context).textTheme.titleSmall!
+                .copyWith(color: colors.foreground),
           ),
           const SizedBox(width: SmartSpendSpacing.md),
           Expanded(
@@ -524,10 +514,8 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
           ),
           Text(
             isTapToRecord ? _l10n.monCancel : _l10n.monSlideToCancel,
-            style: SmartSpendTypography.style(
-              12,
-              FontWeight.w400,
-            ).copyWith(color: colors.mutedForeground),
+            style: Theme.of(context).textTheme.bodySmall!
+                .copyWith(color: colors.mutedForeground),
           ),
           const SizedBox(width: SmartSpendSpacing.xs),
           IconButton(
@@ -547,8 +535,7 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
       padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.lg),
       decoration: BoxDecoration(
         color: colors.surfaceRaised,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.pill),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -563,10 +550,8 @@ class _RecordComposerState extends ConsumerState<RecordComposer> {
           const SizedBox(width: SmartSpendSpacing.md),
           Text(
             _l10n.monListeningToTheRecording,
-            style: SmartSpendTypography.style(
-              14,
-              FontWeight.w500,
-            ).copyWith(color: colors.mutedForeground),
+            style: Theme.of(context).textTheme.bodyMedium!
+                .copyWith(color: colors.mutedForeground),
           ),
         ],
       ),

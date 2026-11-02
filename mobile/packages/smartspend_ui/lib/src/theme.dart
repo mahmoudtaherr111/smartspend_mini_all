@@ -147,6 +147,47 @@ abstract final class SmartSpendTheme {
         errorBorder: _fieldBorder(c.danger),
         focusedErrorBorder: _fieldBorder(c.danger, width: 1.5),
       ),
+      // An off switch stays visible: its outline carries the 3:1 a control needs (rule 6.1).
+      switchTheme: SwitchThemeData(
+        trackOutlineColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? Colors.transparent
+              : c.mutedForeground,
+        ),
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? c.onAccent
+              : c.mutedForeground,
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: c.accent,
+        unselectedLabelColor: c.mutedForeground,
+        indicatorColor: c.accent,
+        dividerColor: Colors.transparent,
+        labelStyle: SmartSpendTypography.style(14, FontWeight.w700),
+        unselectedLabelStyle: SmartSpendTypography.style(14, FontWeight.w500),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: c.surfaceRaised,
+        selectedColor: c.accent.withValues(alpha: 0.2),
+        checkmarkColor: c.accent,
+        side: BorderSide.none,
+        labelStyle: SmartSpendTypography.style(
+          14,
+          FontWeight.w500,
+        ).copyWith(color: c.foreground),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SmartSpendRadii.md),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: c.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
+        ),
+      ),
       extensions: [SmartSpendColorsTheme(c)],
     );
   }

@@ -8,19 +8,53 @@ import 'tokens.dart';
 /// Every screen is designed in five states: loading, empty, error, offline and filled (rule 7.3 of
 /// docs/guides/mobile-design.md). These are the first four.
 
-/// A message beside a form or a section: an error marked with the danger colour, or a notice with the warning
-/// colour. The colour is in the icon and the tint; the words stay in the main text colour, which reads at 4.5:1 on
-/// the tint in both themes (rule 6.1 of docs/guides/mobile-design.md). Screen readers announce it when it appears.
+/// What an [InlineMessage] is about, which sets its colour and icon.
+enum MessageTone {
+  /// Something failed.
+  danger,
+
+  /// Waiting, or close to a limit.
+  warning,
+
+  /// Worth knowing, nothing is wrong.
+  info,
+
+  /// It worked.
+  success,
+}
+
+/// A message beside a form or a section. The colour is in the icon and the tint; the words stay in the main text
+/// colour, which reads at 4.5:1 on the tint in both themes (rule 6.1 of docs/guides/mobile-design.md). Screen
+/// readers announce it when it appears. An [action] such as "upgrade" sits at the end of the row.
 class InlineMessage extends StatelessWidget {
-  const InlineMessage(this.text, {super.key, this.warning = false});
+  const InlineMessage(
+    this.text, {
+    super.key,
+    this.tone = MessageTone.danger,
+    this.icon,
+    this.action,
+  });
 
   final String text;
-  final bool warning;
+  final MessageTone tone;
+
+  /// Replaces the tone's own icon.
+  final IconData? icon;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.smartSpendColors;
-    final color = warning ? colors.warning : colors.danger;
+    final (color, toneIcon) = switch (tone) {
+      MessageTone.danger => (colors.danger, Icons.error_outline_rounded),
+      MessageTone.warning => (colors.warning, Icons.info_outline_rounded),
+      MessageTone.info => (colors.info, Icons.info_outline_rounded),
+      MessageTone.success => (
+        colors.accent,
+        Icons.check_circle_outline_rounded,
+      ),
+    };
+    final action = this.action;
     return Semantics(
       liveRegion: true,
       child: Container(
@@ -32,13 +66,7 @@ class InlineMessage extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              warning
-                  ? Icons.info_outline_rounded
-                  : Icons.error_outline_rounded,
-              color: color,
-              size: 20,
-            ),
+            Icon(icon ?? toneIcon, color: color, size: 20),
             const SizedBox(width: SmartSpendSpacing.sm),
             Expanded(
               child: Text(
@@ -47,8 +75,43 @@ class InlineMessage extends StatelessWidget {
                     ?.copyWith(color: colors.foreground),
               ),
             ),
+            if (action != null) ...[
+              const SizedBox(width: SmartSpendSpacing.sm),
+              action,
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A short label on a tinted pill: «حساس», «مكتمل». Colour never carries it alone, the word does (rule 6.2).
+class StatusTag extends StatelessWidget {
+  const StatusTag(this.label, {super.key, this.color});
+
+  final String label;
+
+  /// The accent by default.
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.smartSpendColors;
+    final tint = color ?? colors.accent;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SmartSpendSpacing.sm,
+        vertical: SmartSpendSpacing.xs / 2,
+      ),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.pill),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall
+            ?.copyWith(color: colors.foreground),
       ),
     );
   }

@@ -10,13 +10,8 @@ class AppearanceSheet extends ConsumerWidget {
   const AppearanceSheet({super.key});
 
   static Future<void> show(BuildContext context) {
-    return showModalBottomSheet<void>(
+    return showSmartSpendSheet<void>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(SmartSpendRadii.sheet),
-        ),
-      ),
       builder: (ctx) => const AppearanceSheet(),
     );
   }
@@ -24,7 +19,6 @@ class AppearanceSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
 
     final currentChoice = ref.watch(themeModeProvider);
@@ -36,23 +30,7 @@ class AppearanceSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: SmartSpendSpacing.lg),
-                decoration: BoxDecoration(
-                  color: colors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            Text(
-              l10n.appearanceTitle,
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text(l10n.appearanceTitle, style: textTheme.titleMedium),
             const SizedBox(height: SmartSpendSpacing.md),
             RadioGroup<ThemeChoice>(
               groupValue: currentChoice,

@@ -122,7 +122,6 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                   child: Text(
                     AppLocalizations.of(context).monNewSavingGoal,
                     style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
                       color: colors.foreground,
                     ),
                   ),
@@ -144,7 +143,8 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                 ),
                 child: Text(
                   _error!,
-                  style: TextStyle(color: colors.danger, fontSize: 13),
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: colors.danger),
                 ),
               ),
               const SizedBox(height: SmartSpendSpacing.md),
@@ -152,8 +152,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             // Title input
             Text(
               AppLocalizations.of(context).monGoalName,
-              style: textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: textTheme.labelMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
             ),
@@ -172,8 +171,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             // Target amount input (REQUIRED)
             Text(
               AppLocalizations.of(context).monTargetAmountRequired,
-              style: textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: textTheme.labelMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
             ),
@@ -201,8 +199,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             // Target date picker
             Text(
               AppLocalizations.of(context).monTargetDateOptional,
-              style: textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: textTheme.labelMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
             ),
@@ -212,11 +209,10 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
               borderRadius: BorderRadius.circular(SmartSpendRadii.md),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 14,
+                  horizontal: SmartSpendSpacing.md,
+                  vertical: SmartSpendSpacing.md,
                 ),
                 decoration: BoxDecoration(
-                  border: Border.all(color: colors.border),
                   borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                 ),
                 child: Row(
@@ -226,7 +222,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
                       size: 18,
                       color: colors.accent,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: SmartSpendSpacing.sm),
                     Text(
                       _selectedDate != null
                           ? '${_selectedDate!.year}/${_selectedDate!.month}/${_selectedDate!.day}'
@@ -245,8 +241,7 @@ class _GoalFormSheetState extends ConsumerState<GoalFormSheet> {
             // Description input (optional)
             Text(
               AppLocalizations.of(context).monNotesOptional,
-              style: textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: textTheme.labelMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
             ),

@@ -28,12 +28,15 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
       final expectedPhrase =
           widget.draft.confirmationPhrase ??
           AppLocalizations.of(context).aiConfirmIt;
-      final confirmed = await _showHighRiskConfirmationDialog(
-        context,
-        expectedPhrase: expectedPhrase,
-        actionTitle: widget.draft.summary,
+      final confirmed = await showSmartSpendSheet<bool>(
+        context: context,
+        isDismissible: false,
+        builder: (_) => _HighRiskConfirmSheet(
+          expectedPhrase: expectedPhrase,
+          actionTitle: widget.draft.summary,
+        ),
       );
-      if (!confirmed) return;
+      if (confirmed != true) return;
     }
 
     setState(() => _isSubmitting = true);
@@ -54,20 +57,13 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
 
         final msg =
             (res['message'] as String?) ?? AppLocalizations.of(context).aiDone;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: const Color(0xFF0F766E),
-          ),
-        );
+        showSmartSpendNotice(context, msg);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).aiItDidnTGoThrough),
-            backgroundColor: Colors.red.shade700,
-          ),
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).aiItDidnTGoThrough,
         );
       }
     } finally {
@@ -97,82 +93,132 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
     }
   }
 
-  Future<bool> _showHighRiskConfirmationDialog(
-    BuildContext context, {
-    required String expectedPhrase,
-    required String actionTitle,
-  }) async {
-    final controller = TextEditingController();
-    bool phraseMatches = false;
+  @override
+  Widget build(BuildContext context) {
+    final draft = widget.draft;
+    final isExpired = draft.isExpired;
+    final isConfirmed = draft.status == 'confirmed';
+    final isCancelled = draft.status == 'cancelled';
+    final isClosed = isCancelled || isExpired;
+    final colors = context.smartSpendColors;
+    final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
+    final muted = textTheme.bodySmall?.copyWith(color: colors.mutedForeground);
 
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                  SizedBox(width: 8),
-                  Text(AppLocalizations.of(context).aiConfirmASensitiveAction),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.sm),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(SmartSpendSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    AppLocalizations.of(context)
-                        .aiThisActionP0CanT(actionTitle),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  Icon(
+                    isConfirmed
+                        ? Icons.check_circle_rounded
+                        : isCancelled
+                        ? Icons.cancel_outlined
+                        : isExpired
+                        ? Icons.timer_off_outlined
+                        : Icons.bolt_rounded,
+                    color: isConfirmed
+                        ? colors.accent
+                        : isClosed
+                        ? colors.mutedForeground
+                        : colors.ai,
+                    size: 20,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    AppLocalizations.of(context)
-                        .aiToConfirmTypeExactlyP0(expectedPhrase),
-                    style: TextStyle(color: Colors.grey.shade700),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: controller,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      hintText: expectedPhrase,
-                      border: const OutlineInputBorder(),
+                  const SizedBox(width: SmartSpendSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      draft.summary,
+                      style: textTheme.titleSmall?.copyWith(
+                        color: isClosed
+                            ? colors.mutedForeground
+                            : colors.foreground,
+                      ),
                     ),
-                    onChanged: (text) {
-                      setDialogState(() {
-                        phraseMatches = _matchesPhrase(text, expectedPhrase);
-                      });
-                    },
                   ),
+                  if (draft.isHighRisk && !isConfirmed && !isClosed) ...[
+                    const SizedBox(width: SmartSpendSpacing.sm),
+                    StatusTag(l10n.aiSensitive, color: colors.warning),
+                  ],
                 ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogCtx).pop(false),
-                  child: Text(AppLocalizations.of(context).aiCancel),
-                ),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.red.shade700,
-                  ),
-                  onPressed: phraseMatches
-                      ? () => Navigator.of(dialogCtx).pop(true)
-                      : null,
-                  child: Text(AppLocalizations.of(context).aiConfirm),
+              if (draft.amounts.isNotEmpty) ...[
+                const SizedBox(height: SmartSpendSpacing.sm),
+                Wrap(
+                  spacing: SmartSpendSpacing.lg,
+                  runSpacing: SmartSpendSpacing.xs,
+                  children: [for (final amt in draft.amounts) AmountText(amt)],
                 ),
               ],
-            );
-          },
-        );
-      },
+              if (draft.date != null && draft.date!.isNotEmpty) ...[
+                const SizedBox(height: SmartSpendSpacing.xs),
+                Text(l10n.aiDateP0('${draft.date}'), style: muted),
+              ],
+              const SizedBox(height: SmartSpendSpacing.md),
+              if (isConfirmed)
+                Text(l10n.aiDoneAndYourRecordsAre, style: muted)
+              else if (isCancelled)
+                Text(l10n.aiCancelled, style: muted)
+              else if (isExpired)
+                InlineMessage(
+                  l10n.aiThisHasExpiredAndCan,
+                  tone: MessageTone.warning,
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: SmartSpendButton(
+                        label: l10n.aiCancel,
+                        variant: ButtonVariant.secondary,
+                        onPressed: _isSubmitting ? null : _handleCancel,
+                      ),
+                    ),
+                    const SizedBox(width: SmartSpendSpacing.sm),
+                    Expanded(
+                      child: SmartSpendButton(
+                        label: draft.isHighRisk
+                            ? l10n.aiContinue
+                            : l10n.aiConfirm2,
+                        variant: draft.isHighRisk
+                            ? ButtonVariant.destructive
+                            : ButtonVariant.primary,
+                        busy: _isSubmitting,
+                        onPressed: _handleConfirm,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
     );
-
-    return result == true;
   }
+}
+
+/// Asks for the exact phrase before a high-risk action: the button wakes only when the phrase matches.
+class _HighRiskConfirmSheet extends StatefulWidget {
+  const _HighRiskConfirmSheet({
+    required this.expectedPhrase,
+    required this.actionTitle,
+  });
+
+  final String expectedPhrase;
+  final String actionTitle;
+
+  @override
+  State<_HighRiskConfirmSheet> createState() => _HighRiskConfirmSheetState();
+}
+
+class _HighRiskConfirmSheetState extends State<_HighRiskConfirmSheet> {
+  bool _phraseMatches = false;
 
   static bool _matchesPhrase(String given, String expected) {
     return _normalize(given) == _normalize(expected);
@@ -194,191 +240,61 @@ class _AiActionCardState extends ConsumerState<AiActionCard> {
 
   @override
   Widget build(BuildContext context) {
-    final draft = widget.draft;
-    final isExpired = draft.isExpired;
-    final isConfirmed = draft.status == 'confirmed';
-    final isCancelled = draft.status == 'cancelled';
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isConfirmed
-            ? (theme.brightness == Brightness.dark
-                  ? const Color(0xFF064E3B).withValues(alpha: 0.3)
-                  : const Color(0xFFF0FDF4))
-            : isCancelled || isExpired
-            ? (theme.brightness == Brightness.dark
-                  ? colorScheme.surfaceContainerHigh
-                  : Colors.grey.shade100)
-            : colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isConfirmed
-              ? const Color(0xFF86EFAC)
-              : isCancelled || isExpired
-              ? colorScheme.outlineVariant
-              : colorScheme.outline,
-          width: 1.5,
+    final l10n = AppLocalizations.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          SmartSpendSpacing.screen,
+          0,
+          SmartSpendSpacing.screen,
+          SmartSpendSpacing.lg,
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                isConfirmed
-                    ? Icons.check_circle_rounded
-                    : isCancelled
-                    ? Icons.cancel_outlined
-                    : isExpired
-                    ? Icons.timer_off_outlined
-                    : Icons.bolt_rounded,
-                color: isConfirmed
-                    ? const Color(0xFF16A34A)
-                    : isCancelled || isExpired
-                    ? colorScheme.onSurfaceVariant
-                    : const Color(0xFF0F766E),
-                size: 20,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Text(
+                l10n.aiConfirmASensitiveAction,
+                style: textTheme.titleLarge,
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  draft.summary,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: isCancelled || isExpired
-                        ? colorScheme.onSurfaceVariant
-                        : colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              if (draft.isHighRisk &&
-                  !isConfirmed &&
-                  !isCancelled &&
-                  !isExpired)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade100,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    AppLocalizations.of(context).aiSensitive,
-                    style: TextStyle(
-                      color: Colors.deepOrange,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          if (draft.amounts.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                for (final amt in draft.amounts)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: colorScheme.outlineVariant),
-                    ),
-                    child: AmountText(amt),
-                  ),
-              ],
+            ),
+            const SizedBox(height: SmartSpendSpacing.sm),
+            Text(
+              l10n.aiThisActionP0CanT(widget.actionTitle),
+              style: textTheme.titleSmall,
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            Text(
+              l10n.aiToConfirmTypeExactlyP0(widget.expectedPhrase),
+              style: textTheme.bodyMedium,
+            ),
+            const SizedBox(height: SmartSpendSpacing.md),
+            TextField(
+              autofocus: true,
+              decoration: InputDecoration(hintText: widget.expectedPhrase),
+              onChanged: (text) => setState(() {
+                _phraseMatches = _matchesPhrase(text, widget.expectedPhrase);
+              }),
+            ),
+            const SizedBox(height: SmartSpendSpacing.xl),
+            SmartSpendButton(
+              label: l10n.aiConfirm,
+              variant: ButtonVariant.destructive,
+              onPressed: _phraseMatches
+                  ? () => Navigator.of(context).pop(true)
+                  : null,
+            ),
+            const SizedBox(height: SmartSpendSpacing.sm),
+            SmartSpendButton(
+              label: l10n.aiCancel,
+              variant: ButtonVariant.secondary,
+              onPressed: () => Navigator.of(context).pop(false),
             ),
           ],
-          if (draft.date != null && draft.date!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              AppLocalizations.of(context).aiDateP0('${draft.date}'),
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          if (isConfirmed)
-            Text(
-              AppLocalizations.of(context).aiDoneAndYourRecordsAre,
-              style: TextStyle(
-                color: Color(0xFF16A34A),
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            )
-          else if (isCancelled)
-            Text(
-              AppLocalizations.of(context).aiCancelled,
-              style: TextStyle(
-                color: colorScheme.onSurfaceVariant,
-                fontSize: 13,
-              ),
-            )
-          else if (isExpired)
-            Text(
-              AppLocalizations.of(context).aiThisHasExpiredAndCan,
-              style: TextStyle(
-                color: Colors.orange.shade800,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            )
-          else
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton(
-                  onPressed: _isSubmitting ? null : _handleCancel,
-                  style: OutlinedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: colorScheme.onSurfaceVariant,
-                  ),
-                  child: Text(AppLocalizations.of(context).aiCancel),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: _isSubmitting ? null : _handleConfirm,
-                  style: FilledButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    backgroundColor: draft.isHighRisk
-                        ? Colors.deepOrange.shade700
-                        : const Color(0xFF0F766E),
-                  ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          draft.isHighRisk
-                              ? AppLocalizations.of(context).aiContinue
-                              : AppLocalizations.of(context).aiConfirm2,
-                        ),
-                ),
-              ],
-            ),
-        ],
+        ),
       ),
     );
   }

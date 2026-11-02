@@ -185,7 +185,7 @@ class _ReviewSheet extends StatelessWidget {
           Text(title, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: SmartSpendSpacing.sm),
           if (alert case final String note when note.isNotEmpty) ...[
-            InlineMessage(note, warning: true),
+            InlineMessage(note, tone: MessageTone.warning),
             const SizedBox(height: SmartSpendSpacing.sm),
           ],
           for (final item in items)

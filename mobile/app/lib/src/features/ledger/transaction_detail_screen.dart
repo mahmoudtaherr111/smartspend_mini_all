@@ -351,7 +351,7 @@ class _Filled extends ConsumerWidget {
         ),
         if (!online) ...[
           const SizedBox(height: SmartSpendSpacing.lg),
-          InlineMessage(l10n.transactionEditOffline, warning: true),
+          InlineMessage(l10n.transactionEditOffline, tone: MessageTone.warning),
         ],
         GroupedSection(
           children: [

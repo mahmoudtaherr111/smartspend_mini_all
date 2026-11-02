@@ -252,7 +252,6 @@ class _ReceiptScanningDialogState extends State<_ReceiptScanningDialog> {
           decoration: BoxDecoration(
             color: colors.surfaceRaised,
             borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
-            border: Border.all(color: colors.border),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -265,15 +264,13 @@ class _ReceiptScanningDialogState extends State<_ReceiptScanningDialog> {
                 const SizedBox(height: SmartSpendSpacing.md),
                 Text(
                   AppLocalizations.of(context).monReadingTheReceipt,
-                  style: SmartSpendTypography.style(15, FontWeight.w600),
+                  style: Theme.of(context).textTheme.titleMedium!,
                 ),
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
                   AppLocalizations.of(context).monFindingTheAmountAndDetails,
-                  style: SmartSpendTypography.style(
-                    12,
-                    FontWeight.w400,
-                  ).copyWith(color: colors.mutedForeground),
+                  style: Theme.of(context).textTheme.bodySmall!
+                      .copyWith(color: colors.mutedForeground),
                 ),
               ] else ...[
                 const SizedBox.square(

@@ -111,16 +111,10 @@ class SessionsScreen extends ConsumerWidget {
       body: sessionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l10n.captureStatusFailed),
-              const SizedBox(height: SmartSpendSpacing.md),
-              SmartSpendButton(
-                label: AppLocalizations.of(context).appTryAgain,
-                onPressed: () => ref.invalidate(userSessionsProvider),
-              ),
-            ],
+          child: ErrorState(
+            message: l10n.captureStatusFailed,
+            retryLabel: l10n.retry,
+            onRetry: () => ref.invalidate(userSessionsProvider),
           ),
         ),
         data: (sessions) {
@@ -180,16 +174,14 @@ class SessionsScreen extends ConsumerWidget {
                                   Expanded(
                                     child: Text(
                                       name,
-                                      style: textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: textTheme.titleSmall,
                                     ),
                                   ),
                                   if (isCurrent)
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
+                                        horizontal: SmartSpendSpacing.sm,
+                                        vertical: SmartSpendSpacing.xs / 2,
                                       ),
                                       decoration: BoxDecoration(
                                         color: colors.accent.withValues(
@@ -203,7 +195,6 @@ class SessionsScreen extends ConsumerWidget {
                                         l10n.sessionsCurrentDevice,
                                         style: textTheme.labelSmall?.copyWith(
                                           color: colors.accent,
-                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ),

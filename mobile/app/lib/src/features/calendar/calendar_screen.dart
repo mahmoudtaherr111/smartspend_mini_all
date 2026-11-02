@@ -183,7 +183,7 @@ class _PaydayMonthBanner extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: colors.accent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
         border: Border.all(color: colors.accent.withValues(alpha: 0.2)),
       ),
       child: Row(
@@ -195,10 +195,7 @@ class _PaydayMonthBanner extends StatelessWidget {
               AppLocalizations.of(
                 context,
               ).calYourFinancialMonthStartsOn('$salaryDay', '${salaryDay - 1}'),
-              style: textTheme.bodySmall?.copyWith(
-                color: colors.foreground,
-                fontWeight: FontWeight.w500,
-              ),
+              style: textTheme.bodySmall?.copyWith(color: colors.foreground),
             ),
           ),
         ],
@@ -232,8 +229,7 @@ class _HeroPaydayPlan extends StatelessWidget {
       padding: const EdgeInsets.all(SmartSpendSpacing.screen),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +247,6 @@ class _HeroPaydayPlan extends StatelessWidget {
                   AppLocalizations.of(context).calLeftUntilPayday,
                   style: textTheme.labelLarge?.copyWith(
                     color: colors.mutedForeground,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -268,10 +263,7 @@ class _HeroPaydayPlan extends StatelessWidget {
             alignment: AlignmentDirectional.centerStart,
             child: Text(
               moneyText(context, pos.freeBeforeIncome),
-              style: textTheme.displaySmall?.copyWith(
-                color: heroColor,
-                fontWeight: FontWeight.bold,
-              ),
+              style: textTheme.displaySmall?.copyWith(color: heroColor),
             ),
           ),
           const SizedBox(height: SmartSpendSpacing.md),
@@ -369,7 +361,7 @@ class _MetricItem extends StatelessWidget {
       padding: const EdgeInsets.all(SmartSpendSpacing.sm),
       decoration: BoxDecoration(
         color: colors.background,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,7 +369,7 @@ class _MetricItem extends StatelessWidget {
           Row(
             children: [
               Icon(icon, size: 14, color: colors.mutedForeground),
-              const SizedBox(width: 4),
+              const SizedBox(width: SmartSpendSpacing.xs),
               Expanded(
                 child: Text(
                   label,
@@ -389,13 +381,10 @@ class _MetricItem extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: SmartSpendSpacing.xs / 2),
           Text(
             value,
-            style: textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colors.foreground,
-            ),
+            style: textTheme.titleSmall?.copyWith(color: colors.foreground),
           ),
         ],
       ),
@@ -413,8 +402,7 @@ class _HeroLoadingPlaceholder extends StatelessWidget {
       height: 180,
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.md),
       ),
       child: const Center(child: CircularProgressIndicator.adaptive()),
     );
@@ -444,8 +432,7 @@ class _CalendarSection extends StatelessWidget {
       padding: const EdgeInsets.all(SmartSpendSpacing.screen),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,14 +449,13 @@ class _CalendarSection extends StatelessWidget {
                 child: Text(
                   AppLocalizations.of(context).calThisMonthSSpending,
                   style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
                     color: colors.foreground,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: SmartSpendSpacing.xs),
           Text(
             AppLocalizations.of(context).calTapADayToSee,
             style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
@@ -508,7 +494,6 @@ class _CommitmentsSection extends ConsumerWidget {
               child: Text(
                 AppLocalizations.of(context).calCommitmentsAndExpectedIncome,
                 style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
                   color: colors.foreground,
                 ),
               ),
@@ -526,8 +511,7 @@ class _CommitmentsSection extends ConsumerWidget {
             padding: const EdgeInsets.all(SmartSpendSpacing.lg),
             decoration: BoxDecoration(
               color: colors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: colors.border),
+              borderRadius: BorderRadius.circular(SmartSpendRadii.md),
             ),
             child: Center(
               child: Text(
@@ -581,8 +565,7 @@ class _CommitmentCard extends ConsumerWidget {
       padding: const EdgeInsets.all(SmartSpendSpacing.md),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.md),
       ),
       child: Row(
         children: [
@@ -606,8 +589,7 @@ class _CommitmentCard extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         item.title,
-                        style: textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                        style: textTheme.titleSmall?.copyWith(
                           color: colors.foreground,
                         ),
                       ),
@@ -616,14 +598,13 @@ class _CommitmentCard extends ConsumerWidget {
                       item.amount == null
                           ? '—'
                           : moneyText(context, item.amount!),
-                      style: textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: textTheme.titleSmall?.copyWith(
                         color: colors.foreground,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: SmartSpendSpacing.xs),
                 Wrap(
                   spacing: SmartSpendSpacing.sm,
                   runSpacing: 2,
@@ -640,19 +621,17 @@ class _CommitmentCard extends ConsumerWidget {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
+                        horizontal: SmartSpendSpacing.sm,
+                        vertical: SmartSpendSpacing.xs / 2,
                       ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
                       ),
                       child: Text(
                         statusLabel,
                         style: textTheme.labelSmall?.copyWith(
                           color: statusColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
                         ),
                       ),
                     ),
@@ -666,7 +645,9 @@ class _CommitmentCard extends ConsumerWidget {
             OutlinedButton(
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(48, 36),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SmartSpendSpacing.md,
+                ),
               ),
               onPressed: () => SettleCommitmentSheet.show(context, item: item),
               child: Text(AppLocalizations.of(context).calSettle),
@@ -703,7 +684,7 @@ class _ActivePlanSection extends ConsumerWidget {
       padding: const EdgeInsets.all(SmartSpendSpacing.screen),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.md),
         border: Border.all(color: colors.accent.withValues(alpha: 0.3)),
       ),
       child: Column(
@@ -719,7 +700,6 @@ class _ActivePlanSection extends ConsumerWidget {
                   Text(
                     AppLocalizations.of(context).calActiveSavingPlan,
                     style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
                       color: colors.foreground,
                     ),
                   ),
@@ -737,10 +717,7 @@ class _ActivePlanSection extends ConsumerWidget {
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(
             plan.goal ?? plan.title,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colors.foreground,
-              fontWeight: FontWeight.w600,
-            ),
+            style: textTheme.titleSmall?.copyWith(color: colors.foreground),
           ),
           const SizedBox(height: SmartSpendSpacing.md),
           const Divider(height: 1),
@@ -749,7 +726,6 @@ class _ActivePlanSection extends ConsumerWidget {
             AppLocalizations.of(context).calPlanSteps,
             style: textTheme.labelLarge?.copyWith(
               color: colors.mutedForeground,
-              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
@@ -778,7 +754,7 @@ class _StepTile extends ConsumerWidget {
       padding: const EdgeInsets.all(SmartSpendSpacing.sm),
       decoration: BoxDecoration(
         color: colors.background,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
       ),
       child: Row(
         children: [
@@ -802,7 +778,6 @@ class _StepTile extends ConsumerWidget {
                   style: textTheme.bodyMedium?.copyWith(
                     decoration: isDone ? TextDecoration.lineThrough : null,
                     color: isDone ? colors.mutedForeground : colors.foreground,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],

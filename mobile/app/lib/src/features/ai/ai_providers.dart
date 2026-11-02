@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 
 import '../../core/providers.dart';
@@ -228,19 +227,22 @@ final aiMemoriesProvider = FutureProvider<List<AiMemory>>((ref) async {
   return ref.watch(aiApiProvider).listMemories();
 });
 
-/// Selected month for monthly reports and comparisons (e.g. "2026-10") (AI-06).
-class SelectedReportMonthNotifier extends Notifier<String> {
+/// How many months back from the current one the report shows: 0 is the current month, which the server names
+/// (mobile rule 8).
+class ReportMonthsBackNotifier extends Notifier<int> {
   @override
-  String build() {
-    return DateFormat('yyyy-MM').format(DateTime.now());
-  }
+  int build() => 0;
 
-  void select(String month) => state = month;
+  void previous() => state = state + 1;
+
+  void next() {
+    if (state > 0) state = state - 1;
+  }
 }
 
-final selectedReportMonthProvider =
-    NotifierProvider<SelectedReportMonthNotifier, String>(
-      SelectedReportMonthNotifier.new,
+final reportMonthsBackProvider =
+    NotifierProvider<ReportMonthsBackNotifier, int>(
+      ReportMonthsBackNotifier.new,
     );
 
 /// Cached and generated monthly report insights (AI-06).
@@ -261,6 +263,18 @@ final monthComparisonFamily =
           .watch(aiApiProvider)
           .compareMonths(firstMonth: pair.$1, secondMonth: pair.$2);
     });
+
+/// The analysis of one year (AI-11), kept for the session: each run costs a model call. Null when there is too little
+/// data to say anything.
+final yearlyInsightsFamily = FutureProvider.family<String?, String>((
+  ref,
+  year,
+) async {
+  final res = await ref.watch(aiApiProvider).generateYearlyInsights(year);
+  return (res['insights'] as String?) ??
+      (res['response_text'] as String?) ??
+      (res['summary'] as String?);
+});
 
 /// Voice call eligibility (AI-09).
 final voiceEligibilityProvider = FutureProvider<VoiceEligibility>((ref) async {

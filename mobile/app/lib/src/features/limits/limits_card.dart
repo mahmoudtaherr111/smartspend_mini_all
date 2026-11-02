@@ -55,10 +55,8 @@ class LimitsCard extends ConsumerWidget {
                           child: Text(
                             AppLocalizations.of(context)
                                 .appYourPlanSMonthlyUsage,
-                            style: SmartSpendTypography.style(
-                              14,
-                              FontWeight.w700,
-                            ).copyWith(color: colors.foreground),
+                            style: Theme.of(context).textTheme.titleSmall!
+                                .copyWith(color: colors.foreground),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -69,8 +67,8 @@ class LimitsCard extends ConsumerWidget {
                     const SizedBox(width: SmartSpendSpacing.xs),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
+                        horizontal: SmartSpendSpacing.sm,
+                        vertical: SmartSpendSpacing.xs / 2,
                       ),
                       decoration: BoxDecoration(
                         color: (anyExhausted ? colors.danger : colors.warning)
@@ -81,12 +79,9 @@ class LimitsCard extends ConsumerWidget {
                         anyExhausted
                             ? AppLocalizations.of(context).appLimitReached
                             : AppLocalizations.of(context).appAlmostUsed,
-                        style: SmartSpendTypography.style(11, FontWeight.w700)
-                            .copyWith(
-                              color: anyExhausted
-                                  ? colors.danger
-                                  : colors.warning,
-                            ),
+                        style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                          color: anyExhausted ? colors.danger : colors.warning,
+                        ),
                       ),
                     ),
                   ],
@@ -172,10 +167,8 @@ class _QuotaRow extends StatelessWidget {
                   Flexible(
                     child: Text(
                       label,
-                      style: SmartSpendTypography.style(
-                        13,
-                        FontWeight.w600,
-                      ).copyWith(color: colors.foreground),
+                      style: Theme.of(context).textTheme.titleSmall!
+                          .copyWith(color: colors.foreground),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -185,15 +178,15 @@ class _QuotaRow extends StatelessWidget {
             const SizedBox(width: SmartSpendSpacing.xs),
             Text(
               detail,
-              style: SmartSpendTypography.style(12, FontWeight.w500).copyWith(
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
                 color: isLow ? colors.warning : colors.mutedForeground,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: SmartSpendSpacing.xs),
         ClipRRect(
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(SmartSpendRadii.pill),
           child: LinearProgressIndicator(
             value: fraction,
             backgroundColor: colors.surfaceRaised,

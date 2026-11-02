@@ -39,7 +39,13 @@ class InviteFriendsScreen extends ConsumerWidget {
       appBar: AppBar(title: Text(l10n.inviteTitle)),
       body: codeAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text(l10n.captureStatusFailed)),
+        error: (err, stack) => Center(
+          child: ErrorState(
+            message: l10n.captureStatusFailed,
+            retryLabel: l10n.retry,
+            onRetry: () => ref.invalidate(myReferralCodeProvider),
+          ),
+        ),
         data: (code) {
           final shareText = l10n.inviteShareText(
             code.isNotEmpty ? code : '...',
@@ -69,9 +75,7 @@ class InviteFriendsScreen extends ConsumerWidget {
                 Text(
                   AppLocalizations.of(context)
                       .appShareSmartspendWithYourFriends,
-                  style: textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: SmartSpendSpacing.sm),
@@ -106,7 +110,6 @@ class InviteFriendsScreen extends ConsumerWidget {
                               ? code
                               : AppLocalizations.of(context).appLoading,
                           style: textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
                             letterSpacing: 4,
                             color: colors.accent,
                           ),

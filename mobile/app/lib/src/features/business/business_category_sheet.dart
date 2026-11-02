@@ -27,10 +27,8 @@ class AddBusinessCategorySheet extends StatefulWidget {
     })
     onAdd,
   }) {
-    return showModalBottomSheet<void>(
+    return showSmartSpendSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (_) => AddBusinessCategorySheet(onAdd: onAdd),
     );
   }
@@ -112,7 +110,6 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
                 Text(
                   AppLocalizations.of(context).aiAddACategory,
                   style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
                     color: colors.foreground,
                   ),
                 ),
@@ -159,7 +156,10 @@ class _AddBusinessCategorySheetState extends State<AddBusinessCategorySheet> {
               children: [
                 for (final emoji in _emojis)
                   ChoiceChip(
-                    label: Text(emoji, style: const TextStyle(fontSize: 18)),
+                    label: Text(
+                      emoji,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     selected: _icon == emoji,
                     onSelected: (sel) {
                       if (sel) setState(() => _icon = emoji);

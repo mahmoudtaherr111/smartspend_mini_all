@@ -142,10 +142,8 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
                 Expanded(
                   child: Text(
                     AppLocalizations.of(context).appNewInstallment,
-                    style: SmartSpendTypography.style(
-                      20,
-                      FontWeight.w700,
-                    ).copyWith(color: colors.foreground),
+                    style: Theme.of(context).textTheme.headlineSmall!
+                        .copyWith(color: colors.foreground),
                   ),
                 ),
                 IconButton(
@@ -158,10 +156,8 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
             const SizedBox(height: SmartSpendSpacing.sm),
             Text(
               AppLocalizations.of(context).appWheneverYouRecordSpendingWith,
-              style: SmartSpendTypography.style(
-                13,
-                FontWeight.w400,
-              ).copyWith(color: colors.mutedForeground),
+              style: Theme.of(context).textTheme.bodyMedium!
+                  .copyWith(color: colors.mutedForeground),
             ),
             const SizedBox(height: SmartSpendSpacing.md),
             if (_error != null) ...[
@@ -176,10 +172,8 @@ class _InstallmentFormSheetState extends ConsumerState<InstallmentFormSheet> {
                 ),
                 child: Text(
                   _error!,
-                  style: SmartSpendTypography.style(
-                    13,
-                    FontWeight.w500,
-                  ).copyWith(color: colors.danger),
+                  style: Theme.of(context).textTheme.bodyMedium!
+                      .copyWith(color: colors.danger),
                 ),
               ),
               const SizedBox(height: SmartSpendSpacing.sm),

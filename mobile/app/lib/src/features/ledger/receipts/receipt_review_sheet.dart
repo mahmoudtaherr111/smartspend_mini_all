@@ -43,7 +43,7 @@ class ReceiptReviewSheet extends StatelessWidget {
               Expanded(
                 child: Text(
                   AppLocalizations.of(context).monReviewTheReceipt,
-                  style: SmartSpendTypography.style(18, FontWeight.w700),
+                  style: Theme.of(context).textTheme.titleLarge!,
                 ),
               ),
             ],
@@ -55,31 +55,26 @@ class ReceiptReviewSheet extends StatelessWidget {
             decoration: BoxDecoration(
               color: colors.surfaceRaised,
               borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
-              border: Border.all(color: colors.border),
             ),
             child: Column(
               children: [
                 Text(
                   AppLocalizations.of(context).monReceiptTotal,
-                  style: SmartSpendTypography.style(
-                    12,
-                    FontWeight.w400,
-                  ).copyWith(color: colors.mutedForeground),
+                  style: Theme.of(context).textTheme.bodySmall!
+                      .copyWith(color: colors.mutedForeground),
                 ),
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
-                  formatMoney(receipt.amount),
-                  style: SmartSpendTypography.style(
-                    28,
-                    FontWeight.w800,
-                  ).copyWith(color: colors.accent),
+                  moneyText(context, receipt.amount),
+                  style: Theme.of(context).textTheme.displaySmall!
+                      .copyWith(color: colors.accent),
                 ),
                 if (receipt.merchant != null &&
                     receipt.merchant!.isNotEmpty) ...[
                   const SizedBox(height: SmartSpendSpacing.xs),
                   Text(
                     receipt.merchant!,
-                    style: SmartSpendTypography.style(14, FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleSmall!,
                   ),
                 ],
               ],
@@ -92,7 +87,6 @@ class ReceiptReviewSheet extends StatelessWidget {
             decoration: BoxDecoration(
               color: colors.surfaceRaised,
               borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-              border: Border.all(color: colors.border),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,10 +95,8 @@ class ReceiptReviewSheet extends StatelessWidget {
                   children: [
                     Text(
                       AppLocalizations.of(context).monCategory2,
-                      style: SmartSpendTypography.style(
-                        12,
-                        FontWeight.w400,
-                      ).copyWith(color: colors.mutedForeground),
+                      style: Theme.of(context).textTheme.bodySmall!
+                          .copyWith(color: colors.mutedForeground),
                     ),
                     const SizedBox(width: SmartSpendSpacing.xs),
                     Text(
@@ -113,7 +105,7 @@ class ReceiptReviewSheet extends StatelessWidget {
                               receipt.subCategory != 'عام'
                           ? '${receipt.category} / ${receipt.subCategory}'
                           : receipt.category,
-                      style: SmartSpendTypography.style(14, FontWeight.w600),
+                      style: Theme.of(context).textTheme.titleSmall!,
                     ),
                   ],
                 ),
@@ -122,10 +114,8 @@ class ReceiptReviewSheet extends StatelessWidget {
                   Text(
                     AppLocalizations.of(context)
                         .monDetailsP0(receipt.description),
-                    style: SmartSpendTypography.style(
-                      12,
-                      FontWeight.w400,
-                    ).copyWith(color: colors.foreground),
+                    style: Theme.of(context).textTheme.bodySmall!
+                        .copyWith(color: colors.foreground),
                   ),
                 ],
               ],

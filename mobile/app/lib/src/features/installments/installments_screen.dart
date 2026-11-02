@@ -92,7 +92,7 @@ class InstallmentsScreen extends ConsumerWidget {
                       ? AppLocalizations.of(context)
                             .appP0ActiveInstallmentsP1Left(
                               '${activePlans.length}',
-                              formatMoney(totalRemaining),
+                              moneyText(context, totalRemaining),
                             )
                       : AppLocalizations.of(context)
                             .appAllYourInstallmentsAreFinished,
@@ -103,10 +103,8 @@ class InstallmentsScreen extends ConsumerWidget {
                   Text(
                     AppLocalizations.of(context)
                         .appActiveInstallmentsP0('${activePlans.length}'),
-                    style: SmartSpendTypography.style(
-                      16,
-                      FontWeight.w700,
-                    ).copyWith(color: colors.foreground),
+                    style: Theme.of(context).textTheme.titleMedium!
+                        .copyWith(color: colors.foreground),
                   ),
                   const SizedBox(height: SmartSpendSpacing.sm),
                   ...activePlans.map((plan) => _InstallmentCard(plan: plan)),
@@ -116,10 +114,8 @@ class InstallmentsScreen extends ConsumerWidget {
                   Text(
                     AppLocalizations.of(context)
                         .appFinishedInstallmentsP0('${completedPlans.length}'),
-                    style: SmartSpendTypography.style(
-                      16,
-                      FontWeight.w700,
-                    ).copyWith(color: colors.foreground),
+                    style: Theme.of(context).textTheme.titleMedium!
+                        .copyWith(color: colors.foreground),
                   ),
                   const SizedBox(height: SmartSpendSpacing.sm),
                   ...completedPlans.map((plan) => _InstallmentCard(plan: plan)),
@@ -168,10 +164,9 @@ class _InstallmentCard extends ConsumerWidget {
           .read(installmentsProvider.notifier)
           .deletePlan(plan.id);
       if (context.mounted && !ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).appWeCouldnTDeleteIt),
-          ),
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).appWeCouldnTDeleteIt,
         );
       }
     }
@@ -187,7 +182,6 @@ class _InstallmentCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
-        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -200,42 +194,26 @@ class _InstallmentCard extends ConsumerWidget {
                   children: [
                     Text(
                       plan.title,
-                      style: SmartSpendTypography.style(
-                        16,
-                        FontWeight.w700,
-                      ).copyWith(color: colors.foreground),
+                      style: Theme.of(context).textTheme.titleMedium!
+                          .copyWith(color: colors.foreground),
+                    ),
+                    Text(
+                      AppLocalizations.of(context)
+                          .appP0Month2(moneyText(context, plan.monthlyAmount)),
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(color: colors.accent),
                     ),
                     if (plan.keyword.isNotEmpty &&
                         plan.keyword != plan.title) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: SmartSpendSpacing.xs / 2),
                       Text(
                         AppLocalizations.of(context)
                             .appTrackingWordP0(plan.keyword),
-                        style: SmartSpendTypography.style(
-                          12,
-                          FontWeight.w400,
-                        ).copyWith(color: colors.mutedForeground),
+                        style: Theme.of(context).textTheme.bodySmall!
+                            .copyWith(color: colors.mutedForeground),
                       ),
                     ],
                   ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: colors.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  AppLocalizations.of(context)
-                      .appP0Month2(formatMoney(plan.monthlyAmount)),
-                  style: SmartSpendTypography.style(
-                    13,
-                    FontWeight.w700,
-                  ).copyWith(color: colors.accent),
                 ),
               ),
               const SizedBox(width: SmartSpendSpacing.xs),
@@ -249,7 +227,7 @@ class _InstallmentCard extends ConsumerWidget {
           ),
           const SizedBox(height: SmartSpendSpacing.md),
           ClipRRect(
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(SmartSpendRadii.pill),
             child: LinearProgressIndicator(
               value: plan.progressFraction,
               backgroundColor: colors.surfaceRaised,
@@ -262,8 +240,9 @@ class _InstallmentCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: SmartSpendSpacing.sm,
             children: [
               Text(
                 plan.done
@@ -275,19 +254,15 @@ class _InstallmentCard extends ConsumerWidget {
                         '${plan.paid}',
                         '${plan.totalInstallments}',
                       ),
-                style: SmartSpendTypography.style(
-                  13,
-                  FontWeight.w500,
-                ).copyWith(color: colors.foreground),
+                style: Theme.of(context).textTheme.bodyMedium!
+                    .copyWith(color: colors.foreground),
               ),
               if (!plan.done)
                 Text(
                   AppLocalizations.of(context)
-                      .appP0Left(formatMoney(plan.remainingAmount)),
-                  style: SmartSpendTypography.style(
-                    13,
-                    FontWeight.w600,
-                  ).copyWith(color: colors.mutedForeground),
+                      .appP0Left(moneyText(context, plan.remainingAmount)),
+                  style: Theme.of(context).textTheme.titleSmall!
+                      .copyWith(color: colors.mutedForeground),
                 ),
             ],
           ),
@@ -301,10 +276,8 @@ class _InstallmentCard extends ConsumerWidget {
               ),
               child: Text(
                 AppLocalizations.of(context).appPaymentsShareANameWith,
-                style: SmartSpendTypography.style(
-                  12,
-                  FontWeight.w500,
-                ).copyWith(color: colors.warning),
+                style: Theme.of(context).textTheme.bodySmall!
+                    .copyWith(color: colors.warning),
               ),
             ),
           ] else if (plan.done) ...[
@@ -317,12 +290,13 @@ class _InstallmentCard extends ConsumerWidget {
               ),
               child: Text(
                 AppLocalizations.of(context).appAllPaidYouPaidP0(
-                  formatMoney(plan.monthlyAmount * plan.totalInstallments),
+                  moneyText(
+                    context,
+                    plan.monthlyAmount * plan.totalInstallments,
+                  ),
                 ),
-                style: SmartSpendTypography.style(
-                  12,
-                  FontWeight.w600,
-                ).copyWith(color: colors.accent),
+                style: Theme.of(context).textTheme.labelMedium!
+                    .copyWith(color: colors.accent),
               ),
             ),
           ],

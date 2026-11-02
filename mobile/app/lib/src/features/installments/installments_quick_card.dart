@@ -36,7 +36,6 @@ class InstallmentsQuickCard extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: colors.surface,
                   borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                  border: Border.all(color: colors.border),
                 ),
                 child: Row(
                   children: [
@@ -50,10 +49,8 @@ class InstallmentsQuickCard extends ConsumerWidget {
                       child: Text(
                         AppLocalizations.of(context)
                             .appHaveMonthlyInstallmentsFollowThem,
-                        style: SmartSpendTypography.style(
-                          13,
-                          FontWeight.w500,
-                        ).copyWith(color: colors.foreground),
+                        style: Theme.of(context).textTheme.bodyMedium!
+                            .copyWith(color: colors.foreground),
                       ),
                     ),
                     IconButton(
@@ -83,7 +80,6 @@ class InstallmentsQuickCard extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: colors.surface,
                 borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
-                border: Border.all(color: colors.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -100,22 +96,18 @@ class InstallmentsQuickCard extends ConsumerWidget {
                         child: Text(
                           AppLocalizations.of(context)
                               .appInstallmentsP0('${activePlans.length}'),
-                          style: SmartSpendTypography.style(
-                            14,
-                            FontWeight.w700,
-                          ).copyWith(color: colors.foreground),
+                          style: Theme.of(context).textTheme.titleSmall!
+                              .copyWith(color: colors.foreground),
                         ),
                       ),
                       Text(
                         AppLocalizations.of(context)
-                            .appP0Month(formatMoney(totalMonthly)),
-                        style: SmartSpendTypography.style(
-                          13,
-                          FontWeight.w700,
-                        ).copyWith(color: colors.accent),
+                            .appP0Month(moneyText(context, totalMonthly)),
+                        style: Theme.of(context).textTheme.titleSmall!
+                            .copyWith(color: colors.accent),
                       ),
                       const SizedBox(width: SmartSpendSpacing.xs),
-                      const Icon(Icons.chevron_left_rounded, size: 20),
+                      const Icon(Icons.chevron_right, size: 20),
                     ],
                   ),
                   const SizedBox(height: SmartSpendSpacing.xs),
@@ -125,10 +117,8 @@ class InstallmentsQuickCard extends ConsumerWidget {
                       '${activePlans.first.remaining}',
                       '${activePlans.first.totalInstallments}',
                     ),
-                    style: SmartSpendTypography.style(
-                      12,
-                      FontWeight.w400,
-                    ).copyWith(color: colors.mutedForeground),
+                    style: Theme.of(context).textTheme.bodySmall!
+                        .copyWith(color: colors.mutedForeground),
                   ),
                 ],
               ),

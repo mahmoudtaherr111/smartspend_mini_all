@@ -87,14 +87,14 @@ class _MoneyPreferencesScreenState
                         ),
                       ),
                       const SizedBox(height: SmartSpendSpacing.lg),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        spacing: SmartSpendSpacing.sm,
                         children: [
                           Text(
                             AppLocalizations.of(context)
                                 .appDayP0OfTheMonth('$_salaryDay'),
                             style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
                               color: colors.accent,
                             ),
                           ),

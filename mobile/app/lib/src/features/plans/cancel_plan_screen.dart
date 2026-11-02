@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/providers.dart';
 import '../../l10n/app_localizations.dart';
-import 'plan_providers.dart';
 
 /// Screen allowing users to cancel Pro renewal with feedback survey (PLN-03).
 class CancelPlanScreen extends ConsumerStatefulWidget {
@@ -18,48 +16,41 @@ class CancelPlanScreen extends ConsumerStatefulWidget {
 }
 
 class _CancelPlanScreenState extends ConsumerState<CancelPlanScreen> {
-  int _selectedReason = 0;
-  bool _cancelling = false;
+  bool _opening = false;
 
-  List<String> get _reasons => [
-    AppLocalizations.of(context).appThePriceIsHighFor,
-    AppLocalizations.of(context).appIDonTNeedThe,
-    AppLocalizations.of(context).appIHadTechnicalProblems,
-    AppLocalizations.of(context).appILlSubscribeAgainLater,
-    AppLocalizations.of(context).appAnotherReason,
-  ];
-
-  Future<void> _cancel() async {
-    setState(() => _cancelling = true);
+  /// A store subscription renews at the store until it is cancelled there: nothing the server does stops the charge,
+  /// so the app opens the person's subscriptions page.
+  Future<void> _openStore() async {
+    setState(() => _opening = true);
+    final page = Theme.of(context).platform == TargetPlatform.iOS
+        ? 'https://apps.apple.com/account/subscriptions'
+        : 'https://play.google.com/store/account/subscriptions';
     try {
-      final client = ref.read(trpcClientProvider);
-      await client.mutate(Procedures.pro.cancel);
-      ref.invalidate(userPlanProvider);
-      if (!mounted) return;
-      showSmartSpendNotice(
-        context,
-        AppLocalizations.of(context).appAutoRenewalIsCancelled,
+      final opened = await launchUrl(
+        Uri.parse(page),
+        mode: LaunchMode.externalApplication,
       );
-      Navigator.of(context).pop();
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      showSmartSpendNotice(context, e.message);
+      if (!opened && mounted) {
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).appWeCanTCancelRight,
+        );
+      }
     } on Object {
-      if (!mounted) return;
-      showSmartSpendNotice(
-        context,
-        AppLocalizations.of(context).appWeCanTCancelRight,
-      );
+      if (mounted) {
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).appWeCanTCancelRight,
+        );
+      }
     } finally {
-      if (mounted) setState(() => _cancelling = false);
+      if (mounted) setState(() => _opening = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = context.smartSpendColors;
-    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.cancelPlanTitle)),
@@ -68,68 +59,24 @@ class _CancelPlanScreenState extends ConsumerState<CancelPlanScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              padding: const EdgeInsets.all(SmartSpendSpacing.md),
-              decoration: BoxDecoration(
-                color: colors.warning.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                border: Border.all(
-                  color: colors.warning.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline_rounded, color: colors.warning),
-                  const SizedBox(width: SmartSpendSpacing.md),
-                  Expanded(
-                    child: Text(
-                      l10n.cancelPlanRetainNotice,
-                      style: textTheme.bodySmall?.copyWith(height: 1.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: SmartSpendSpacing.xl),
+            InlineMessage(l10n.cancelPlanRetainNotice, tone: MessageTone.info),
+            const SizedBox(height: SmartSpendSpacing.lg),
             Text(
-              AppLocalizations.of(context).appHelpUsUnderstandWhy,
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: SmartSpendSpacing.md),
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                side: BorderSide(color: colors.border),
-              ),
-              child: RadioGroup<int>(
-                groupValue: _selectedReason,
-                onChanged: (val) => setState(() => _selectedReason = val ?? 0),
-                child: Column(
-                  children: [
-                    for (int i = 0; i < _reasons.length; i++)
-                      RadioListTile<int>(
-                        title: Text(_reasons[i], style: textTheme.bodyMedium),
-                        value: i,
-                      ),
-                  ],
-                ),
-              ),
+              l10n.cancelPlanAtStore,
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: SmartSpendSpacing.xl),
             SmartSpendButton(
-              label: l10n.cancelPlanConfirm,
-              variant: ButtonVariant.destructive,
-              busy: _cancelling,
-              onPressed: _cancelling ? null : _cancel,
+              label: l10n.cancelPlanOpenStore,
+              icon: Icons.open_in_new_rounded,
+              busy: _opening,
+              onPressed: _openStore,
             ),
             const SizedBox(height: SmartSpendSpacing.sm),
             SmartSpendButton(
-              label: AppLocalizations.of(context).appKeepMyPlan,
+              label: l10n.appKeepMyPlan,
               variant: ButtonVariant.quiet,
-              onPressed: _cancelling ? null : () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         ),

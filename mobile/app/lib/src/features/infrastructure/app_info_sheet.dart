@@ -9,13 +9,8 @@ class AppInfoSheet extends StatelessWidget {
   const AppInfoSheet({super.key});
 
   static Future<void> show(BuildContext context) {
-    return showModalBottomSheet<void>(
+    return showSmartSpendSheet<void>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(SmartSpendRadii.sheet),
-        ),
-      ),
       builder: (ctx) => const AppInfoSheet(),
     );
   }
@@ -33,17 +28,6 @@ class AppInfoSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: SmartSpendSpacing.lg),
-                decoration: BoxDecoration(
-                  color: colors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            Center(
               child: Column(
                 children: [
                   Container(
@@ -60,12 +44,7 @@ class AppInfoSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: SmartSpendSpacing.md),
-                  Text(
-                    'SmartSpend AI',
-                    style: textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text('SmartSpend AI', style: textTheme.titleLarge),
                 ],
               ),
             ),
@@ -80,7 +59,7 @@ class AppInfoSheet extends StatelessWidget {
                 children: [
                   ListTile(
                     title: Text(AppLocalizations.of(context).appTermsOfService),
-                    trailing: const Icon(Icons.chevron_left_rounded),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       Navigator.of(context).pop();
                       context.push('/more/terms');
@@ -89,7 +68,7 @@ class AppInfoSheet extends StatelessWidget {
                   const Divider(height: 1),
                   ListTile(
                     title: Text(AppLocalizations.of(context).appDataAndPrivacy),
-                    trailing: const Icon(Icons.chevron_left_rounded),
+                    trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       Navigator.of(context).pop();
                       context.push('/more/data-stored');
@@ -103,7 +82,6 @@ class AppInfoSheet extends StatelessWidget {
               AppLocalizations.of(context).app2026SmartspendAiEgypt,
               style: textTheme.bodySmall?.copyWith(
                 color: colors.mutedForeground,
-                fontSize: 11,
               ),
               textAlign: TextAlign.center,
             ),

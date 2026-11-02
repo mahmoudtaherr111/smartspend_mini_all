@@ -105,12 +105,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   CircleAvatar(
                     radius: 40,
                     backgroundColor: colors.accent.withValues(alpha: 0.15),
+                    foregroundImage:
+                        _selectedAvatar?.startsWith('http') ?? false
+                        ? NetworkImage(_selectedAvatar!)
+                        : null,
                     child: Text(
-                      _selectedAvatar ??
-                          (user != null && user.name.isNotEmpty
-                              ? user.name.characters.first
-                              : '👤'),
-                      style: const TextStyle(fontSize: 36),
+                      _selectedAvatar != null &&
+                              !_selectedAvatar!.startsWith('http')
+                          ? _selectedAvatar!
+                          : (user != null && user.name.isNotEmpty
+                                ? user.name.characters.first
+                                : '👤'),
+                      style: Theme.of(context).textTheme.displaySmall,
                     ),
                   ),
                   const SizedBox(height: SmartSpendSpacing.sm),
@@ -120,12 +126,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       for (final avatar in _avatarPresets)
                         InkWell(
                           onTap: () => setState(() => _selectedAvatar = avatar),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(
+                            SmartSpendRadii.lg,
+                          ),
                           child: Padding(
-                            padding: const EdgeInsets.all(4),
+                            padding: const EdgeInsets.all(SmartSpendSpacing.xs),
                             child: Text(
                               avatar,
-                              style: const TextStyle(fontSize: 24),
+                              style: Theme.of(context).textTheme.headlineMedium,
                             ),
                           ),
                         ),
@@ -148,34 +156,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: SmartSpendSpacing.md),
             if (user?.phone != null) ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      initialValue: user!.phone,
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: l10n.profilePhone,
-                        prefixIcon: const Icon(Icons.phone_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            SmartSpendRadii.md,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (isPhoneUser) ...[
-                    const SizedBox(width: SmartSpendSpacing.sm),
-                    SmartSpendButton(
-                      label: l10n.profileChangePhone,
-                      variant: ButtonVariant.secondary,
-                      onPressed: () => PhoneChangeSheet.show(context),
-                    ),
-                  ],
-                ],
+              TextFormField(
+                initialValue: user!.phone,
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: l10n.profilePhone,
+                  prefixIcon: const Icon(Icons.phone_outlined),
+                ),
               ),
+              if (isPhoneUser)
+                SmartSpendButton(
+                  label: l10n.profileChangePhone,
+                  variant: ButtonVariant.quiet,
+                  onPressed: () => PhoneChangeSheet.show(context),
+                ),
               const SizedBox(height: SmartSpendSpacing.md),
             ],
             if (user?.email != null) ...[

@@ -57,11 +57,9 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
     final isOnline = ref.read(connectivityProvider).asData?.value ?? true;
     if (!isOnline) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).aiWeNeedInternetToAnswer),
-          backgroundColor: Colors.orange,
-        ),
+      showSmartSpendNotice(
+        context,
+        AppLocalizations.of(context).aiWeNeedInternetToAnswer,
       );
       return;
     }
@@ -93,57 +91,29 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
     return Column(
       children: [
-        // Offline alert banner
         if (!isOnline)
-          Container(
-            color: Colors.amber.shade100,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.wifi_off_rounded,
-                  size: 18,
-                  color: Colors.amber.shade900,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    AppLocalizations.of(context).aiYouReOfflineYourDraft,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.amber.shade900,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          OfflineBanner(AppLocalizations.of(context).aiYouReOfflineYourDraft),
 
-        // Daily limit reached banner with upgrade button
+        // Daily limit reached, with the way past it
         if (dailyLimitError != null)
-          Container(
-            color: const Color(0xFFFEF2F2),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                const Icon(Icons.bolt_rounded, size: 20, color: Colors.red),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    dailyLimitError,
-                    style: const TextStyle(fontSize: 13, color: Colors.red),
-                  ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              SmartSpendSpacing.screen,
+              SmartSpendSpacing.sm,
+              SmartSpendSpacing.screen,
+              0,
+            ),
+            child: InlineMessage(
+              dailyLimitError,
+              tone: MessageTone.warning,
+              icon: Icons.bolt_rounded,
+              action: TextButton(
+                onPressed: () => showUpgradePromptSheet(
+                  context: context,
+                  reason: UpgradeLimitReason.aiTokens,
                 ),
-                TextButton(
-                  onPressed: () {
-                    showUpgradePromptSheet(
-                      context: context,
-                      reason: UpgradeLimitReason.aiTokens,
-                    );
-                  },
-                  child: Text(AppLocalizations.of(context).aiUpgradeToPro),
-                ),
-              ],
+                child: Text(AppLocalizations.of(context).aiUpgradeToPro),
+              ),
             ),
           ),
 
@@ -152,7 +122,18 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           child: messagesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(
-              child: Text(AppLocalizations.of(context).aiWeCanTLoadYour),
+              child: ErrorState(
+                message: AppLocalizations.of(context).aiWeCanTLoadYour,
+                retryLabel: AppLocalizations.of(context).retry,
+                onRetry: () {
+                  final id = ref.read(activeConversationIdProvider);
+                  if (id != null) {
+                    ref
+                        .read(chatMessagesProvider.notifier)
+                        .loadConversation(id);
+                  }
+                },
+              ),
             ),
             data: (messages) {
               final showQuickQuestions = messages.isEmpty && isOnline;
@@ -160,8 +141,8 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
               return ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                  horizontal: SmartSpendSpacing.screen,
+                  vertical: SmartSpendSpacing.md,
                 ),
                 itemCount:
                     messages.length +
@@ -186,73 +167,44 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         ),
 
         // Composer at bottom above keyboard
-        Container(
-          padding: EdgeInsets.only(
-            left: 12,
-            right: 12,
-            top: 8,
-            bottom: MediaQuery.of(context).viewInsets.bottom > 0 ? 8 : 12,
-          ),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 4,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
+        ColoredBox(
+          color: context.smartSpendColors.surface,
           child: SafeArea(
             top: false,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _textController,
-                    focusNode: _focusNode,
-                    minLines: 1,
-                    maxLines: 4,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _handleSend(),
-                    decoration: InputDecoration(
-                      hintText: isOnline
-                          ? AppLocalizations.of(context).aiAskAboutYourSpending
-                          : AppLocalizations.of(context).aiSendingNeedsInternet,
-                      hintStyle: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade400,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: const BorderSide(color: Color(0xFF0F766E)),
+            child: Padding(
+              padding: const EdgeInsets.all(SmartSpendSpacing.sm),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _textController,
+                      focusNode: _focusNode,
+                      minLines: 1,
+                      maxLines: 4,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _handleSend(),
+                      decoration: InputDecoration(
+                        hintText: isOnline
+                            ? AppLocalizations.of(context)
+                                  .aiAskAboutYourSpending
+                            : AppLocalizations.of(context)
+                                  .aiSendingNeedsInternet,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: isTyping ? null : _handleSend,
-                  style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F766E),
-                    foregroundColor: Colors.white,
+                  const SizedBox(width: SmartSpendSpacing.sm),
+                  IconButton.filled(
+                    tooltip: AppLocalizations.of(context).aiSend,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 48,
+                      height: 48,
+                    ),
+                    onPressed: isTyping ? null : _handleSend,
+                    icon: const Icon(Icons.arrow_upward_rounded),
                   ),
-                  icon: const Icon(Icons.arrow_upward_rounded, size: 20),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -262,51 +214,49 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
   Widget _buildQuickQuestionsHeader(AsyncValue<List<String>> questionsAsync) {
     final colors = context.smartSpendColors;
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(top: 24, bottom: 16),
+      padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome, size: 22, color: colors.ai),
-              const SizedBox(width: 8),
+              const _AssistantMark(),
+              const SizedBox(width: SmartSpendSpacing.sm),
               Expanded(
                 child: Text(
                   AppLocalizations.of(context).aiHiIMYourAssistant,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: textTheme.titleMedium,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: SmartSpendSpacing.sm),
           Text(
             AppLocalizations.of(context).aiAskAboutYourSpendingOr,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: colors.mutedForeground),
+            style: textTheme.bodyMedium?.copyWith(
+              color: colors.mutedForeground,
+            ),
           ),
           if (questionsAsync.value?.isNotEmpty ?? false) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: SmartSpendSpacing.lg),
             Text(
               AppLocalizations.of(context).aiTryAsking,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              style: textTheme.labelLarge,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: SmartSpendSpacing.sm),
           ],
           questionsAsync.when(
             loading: () => const SizedBox.shrink(),
             error: (err, stack) => const SizedBox.shrink(),
             data: (questions) => Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: SmartSpendSpacing.sm,
+              runSpacing: SmartSpendSpacing.sm,
               children: [
                 for (final q in questions)
                   ActionChip(
                     label: Text(q),
-                    labelStyle: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(color: colors.foreground),
-                    backgroundColor: colors.surfaceRaised,
-                    side: BorderSide(color: colors.border),
                     onPressed: () {
                       _textController.text = q;
                       _handleSend();
@@ -322,11 +272,14 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
   Widget _buildMessageBubble(ChatMessage msg) {
     final isUser = msg.role == 'user';
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colors = context.smartSpendColors;
+    const tail = Radius.circular(SmartSpendSpacing.xs);
+    const corner = Radius.circular(SmartSpendRadii.md);
+    // The mark's width and the gap after it, so what belongs to a message lines up under its text.
+    const indent = _AssistantMark.size + SmartSpendSpacing.sm;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.xs),
       child: Column(
         crossAxisAlignment: isUser
             ? CrossAxisAlignment.end
@@ -339,32 +292,22 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (!isUser) ...[
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: const Color(0xFFCCFBF1),
-                  child: Icon(
-                    Icons.auto_awesome,
-                    size: 14,
-                    color: Colors.teal.shade800,
-                  ),
-                ),
-                const SizedBox(width: 6),
+                const _AssistantMark(),
+                const SizedBox(width: SmartSpendSpacing.sm),
               ],
               Flexible(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
+                    horizontal: SmartSpendSpacing.md,
+                    vertical: SmartSpendSpacing.sm,
                   ),
                   decoration: BoxDecoration(
-                    color: isUser
-                        ? const Color(0xFF0F766E)
-                        : colorScheme.surfaceContainerHighest,
+                    color: isUser ? colors.accent : colors.surface,
                     borderRadius: BorderRadiusDirectional.only(
-                      topStart: const Radius.circular(16),
-                      topEnd: const Radius.circular(16),
-                      bottomStart: Radius.circular(isUser ? 16 : 4),
-                      bottomEnd: Radius.circular(isUser ? 4 : 16),
+                      topStart: corner,
+                      topEnd: corner,
+                      bottomStart: isUser ? corner : tail,
+                      bottomEnd: isUser ? tail : corner,
                     ),
                   ),
                   child: _renderFormattedText(msg.content, isUser),
@@ -377,28 +320,17 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           if (msg.clarification != null &&
               msg.clarification!.replies.isNotEmpty)
             Padding(
-              padding: const EdgeInsetsDirectional.only(top: 8, start: 36),
+              padding: const EdgeInsetsDirectional.only(
+                top: SmartSpendSpacing.sm,
+                start: indent,
+              ),
               child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
+                spacing: SmartSpendSpacing.sm,
+                runSpacing: SmartSpendSpacing.sm,
                 children: [
                   for (final reply in msg.clarification!.replies)
                     ActionChip(
                       label: Text(reply),
-                      labelStyle: TextStyle(
-                        fontSize: 12,
-                        color: theme.brightness == Brightness.dark
-                            ? colorScheme.onSurface
-                            : Colors.teal.shade900,
-                      ),
-                      backgroundColor: theme.brightness == Brightness.dark
-                          ? colorScheme.surfaceContainerHigh
-                          : Colors.teal.shade50,
-                      side: BorderSide(
-                        color: theme.brightness == Brightness.dark
-                            ? colorScheme.outlineVariant
-                            : Colors.teal.shade200,
-                      ),
                       onPressed: () {
                         _textController.text = reply;
                         _handleSend();
@@ -411,7 +343,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
           // Embedded Action Card (AI-02)
           if (msg.actionDraft != null)
             Padding(
-              padding: const EdgeInsetsDirectional.only(start: 36),
+              padding: const EdgeInsetsDirectional.only(start: indent),
               child: AiActionCard(draft: msg.actionDraft!),
             ),
         ],
@@ -427,7 +359,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (int i = 0; i < lines.length; i++) ...[
-            if (i > 0) const SizedBox(height: 4),
+            if (i > 0) const SizedBox(height: SmartSpendSpacing.xs),
             _buildFormattedLine(lines[i], isUser),
           ],
         ],
@@ -437,7 +369,7 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
   Widget _buildFormattedLine(String line, bool isUser) {
     final trimmed = line.trim();
-    if (trimmed.isEmpty) return const SizedBox(height: 6);
+    if (trimmed.isEmpty) return const SizedBox(height: SmartSpendSpacing.sm);
 
     // List item (bullet)
     final isBullet =
@@ -450,18 +382,15 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
 
     if (isBullet) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.xs / 2),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           textDirection: TextDirection.rtl,
           children: [
             Text(
               '• ',
-              style: TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.bold,
-                color: isUser ? Colors.white70 : Colors.teal.shade700,
-              ),
+              style: Theme.of(context).textTheme.titleSmall
+                  ?.copyWith(color: _textColor(isUser)),
             ),
             Expanded(
               child: Text.rich(
@@ -510,66 +439,81 @@ class _AiChatViewState extends ConsumerState<AiChatView> {
     });
   }
 
+  Color _textColor(bool isUser) {
+    final colors = context.smartSpendColors;
+    return isUser ? colors.onAccent : colors.foreground;
+  }
+
   InlineSpan _buildSpan(String text, bool isUser, {required bool isBold}) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = Theme.of(context).textTheme;
     return TextSpan(
       text: text,
-      style: TextStyle(
-        fontSize: 14.5,
-        height: 1.45,
-        fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-        color: isUser ? Colors.white : colorScheme.onSurface,
+      style: (isBold ? theme.titleSmall : theme.bodyMedium)?.copyWith(
+        color: _textColor(isUser),
       ),
     );
   }
 
   Widget _buildTypingIndicator() {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colors = context.smartSpendColors;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.xs),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 14,
-            backgroundColor: const Color(0xFFCCFBF1),
-            child: Icon(
-              Icons.auto_awesome,
-              size: 14,
-              color: Colors.teal.shade800,
-            ),
-          ),
-          const SizedBox(width: 8),
+          const _AssistantMark(),
+          const SizedBox(width: SmartSpendSpacing.sm),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: SmartSpendSpacing.md,
+              vertical: SmartSpendSpacing.sm,
+            ),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(16),
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(SmartSpendRadii.md),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: 14,
-                  height: 14,
+                SizedBox.square(
+                  dimension: SmartSpendSpacing.md,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.teal.shade700,
+                    color: colors.ai,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: SmartSpendSpacing.sm),
                 Text(
                   AppLocalizations.of(context).aiThinking,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: colors.mutedForeground),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The assistant's mark beside what it says, in the AI Center's colour.
+class _AssistantMark extends StatelessWidget {
+  const _AssistantMark();
+
+  static const double size = 28;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.smartSpendColors;
+    return ExcludeSemantics(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: colors.ai.withValues(alpha: 0.14),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(Icons.auto_awesome, size: 16, color: colors.ai),
       ),
     );
   }

@@ -122,9 +122,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
               Expanded(
                 child: Text(
                   AppLocalizations.of(context).calAddACommitmentOrExpected,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: textTheme.titleMedium,
                 ),
               ),
               IconButton(
@@ -169,7 +167,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context).calNameLikeTheRent,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(SmartSpendRadii.md),
               ),
             ),
           ),
@@ -184,7 +182,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
                   .calAmountOptionalIfItChanges,
               suffixText: MoneyLocale.of(context).symbol,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(SmartSpendRadii.md),
               ),
             ),
           ),
@@ -196,7 +194,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context).calKind,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(SmartSpendRadii.md),
               ),
             ),
             items: _kinds
@@ -217,7 +215,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context).calDueDay,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                     ),
                   ),
                   items: List.generate(
@@ -241,7 +239,7 @@ class _AddCommitmentSheetState extends ConsumerState<AddCommitmentSheet> {
                   decoration: InputDecoration(
                     labelText: AppLocalizations.of(context).calRepeats,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                     ),
                   ),
                   items: _recurrences
@@ -368,9 +366,7 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
                     Text(
                       AppLocalizations.of(context)
                           .calSettleP0(widget.item.title),
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: textTheme.titleMedium,
                     ),
                     if (widget.item.amount != null)
                       Text(
@@ -400,7 +396,7 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
               labelText: AppLocalizations.of(context).calAmountPaidPartOfIt,
               suffixText: MoneyLocale.of(context).symbol,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(SmartSpendRadii.md),
               ),
             ),
           ),
@@ -409,10 +405,7 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
           // Payment suggestions / matching transactions (CAL-04)
           Text(
             AppLocalizations.of(context).calMatchingTransactions,
-            style: textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colors.foreground,
-            ),
+            style: textTheme.labelLarge?.copyWith(color: colors.foreground),
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
 
@@ -456,15 +449,19 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
                           }
                         });
                       },
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
                       child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        margin: const EdgeInsets.symmetric(
+                          vertical: SmartSpendSpacing.xs,
+                        ),
                         padding: const EdgeInsets.all(SmartSpendSpacing.sm),
                         decoration: BoxDecoration(
                           color: _selectedExpenseId == s.id
                               ? colors.accent.withValues(alpha: 0.1)
                               : colors.background,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(
+                            SmartSpendRadii.sm,
+                          ),
                           border: Border.all(
                             color: _selectedExpenseId == s.id
                                 ? colors.accent
@@ -489,9 +486,7 @@ class _SettleCommitmentSheetState extends ConsumerState<SettleCommitmentSheet> {
                                 children: [
                                   Text(
                                     '${s.category}: ${moneyText(context, s.amount)}',
-                                    style: textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: textTheme.titleSmall,
                                   ),
                                   if (s.description != null &&
                                       s.description!.isNotEmpty)

@@ -55,21 +55,23 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                         }
                       },
                       labelStyle:
-                          SmartSpendTypography.style(
-                            13,
-                            isSelected ? FontWeight.w700 : FontWeight.w500,
-                          ).copyWith(
-                            color: isSelected
-                                ? colors.onAccent
-                                : colors.foreground,
-                          ),
+                          (isSelected
+                                  ? Theme.of(context).textTheme.titleSmall
+                                  : Theme.of(context).textTheme.bodyMedium)!
+                              .copyWith(
+                                color: isSelected
+                                    ? colors.onAccent
+                                    : colors.foreground,
+                              ),
                       selectedColor: colors.accent,
                       backgroundColor: colors.surface,
                       side: BorderSide(
                         color: isSelected ? colors.accent : colors.border,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(
+                          SmartSpendRadii.pill,
+                        ),
                       ),
                     ),
                   );
@@ -108,7 +110,7 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                             data.startDay,
                             data.endDay,
                             '$change',
-                            formatMoney(prev.total),
+                            moneyText(context, prev.total),
                           );
                     } else if (change < 0) {
                       comparisonStory = AppLocalizations.of(context)
@@ -116,19 +118,21 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                             data.startDay,
                             data.endDay,
                             '${change.abs()}',
-                            formatMoney(prev.total),
+                            moneyText(context, prev.total),
                           );
                     } else {
                       comparisonStory = AppLocalizations.of(context)
                           .appP0ToP1SameAs(
                             data.startDay,
                             data.endDay,
-                            formatMoney(prev.total),
+                            moneyText(context, prev.total),
                           );
                     }
                   } else {
-                    comparisonStory = AppLocalizations.of(context)
-                        .appP0ToP1(data.startDay, data.endDay);
+                    comparisonStory = AppLocalizations.of(context).appP0ToP1(
+                      _dayLabel(context, data.startDay),
+                      _dayLabel(context, data.endDay),
+                    );
                   }
 
                   if (data.byCategory.isEmpty) {
@@ -174,79 +178,23 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
                       const SizedBox(height: SmartSpendSpacing.lg),
                       Text(
                         AppLocalizations.of(context).appByCategory,
-                        style: SmartSpendTypography.style(
-                          16,
-                          FontWeight.w700,
-                        ).copyWith(color: colors.foreground),
+                        style: Theme.of(context).textTheme.titleMedium!
+                            .copyWith(color: colors.foreground),
                       ),
                       const SizedBox(height: SmartSpendSpacing.sm),
-                      ...data.byCategory.map((cat) {
-                        return Container(
-                          margin: const EdgeInsets.only(
-                            bottom: SmartSpendSpacing.sm,
-                          ),
-                          padding: const EdgeInsets.all(SmartSpendSpacing.md),
-                          decoration: BoxDecoration(
-                            color: colors.surface,
-                            borderRadius: BorderRadius.circular(
-                              SmartSpendRadii.md,
+                      GroupedSection(
+                        children: [
+                          for (final cat in data.byCategory)
+                            GroupedRow(
+                              icon: categoryIcon(cat.category),
+                              tint: categoryColor(context, cat.category),
+                              title: cat.category,
+                              subtitle: AppLocalizations.of(context)
+                                  .appP0Transactions('${cat.count}'),
+                              value: AmountText(cat.amount),
                             ),
-                            border: Border.all(color: colors.border),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: categoryColor(
-                                    context,
-                                    cat.category,
-                                  ).withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(
-                                    SmartSpendRadii.sm,
-                                  ),
-                                ),
-                                child: Icon(
-                                  categoryIcon(cat.category),
-                                  color: categoryColor(context, cat.category),
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: SmartSpendSpacing.md),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      cat.category,
-                                      style: SmartSpendTypography.style(
-                                        15,
-                                        FontWeight.w600,
-                                      ).copyWith(color: colors.foreground),
-                                    ),
-                                    Text(
-                                      AppLocalizations.of(context)
-                                          .appP0Transactions('${cat.count}'),
-                                      style: SmartSpendTypography.style(
-                                        12,
-                                        FontWeight.w400,
-                                      ).copyWith(color: colors.mutedForeground),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Text(
-                                formatMoney(cat.amount),
-                                style: SmartSpendTypography.style(
-                                  15,
-                                  FontWeight.w700,
-                                ).copyWith(color: colors.foreground),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
+                        ],
+                      ),
                       const SizedBox(height: SmartSpendSpacing.xxl),
                     ],
                   );
@@ -258,4 +206,10 @@ class _SeasonsScreenState extends ConsumerState<SeasonsScreen> {
       ),
     );
   }
+}
+
+/// A server day such as "2026-02-18" in words; the key itself when it is not one.
+String _dayLabel(BuildContext context, String day) {
+  final date = DateTime.tryParse(day);
+  return date == null ? day : DateWords.of(context).date(date);
 }

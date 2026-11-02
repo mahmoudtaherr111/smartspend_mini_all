@@ -81,7 +81,7 @@ class _AddContactSheetState extends ConsumerState<AddContactSheet> {
         children: [
           Text(
             AppLocalizations.of(context).aiAddANewPerson,
-            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: textTheme.titleLarge,
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(

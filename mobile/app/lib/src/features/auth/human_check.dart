@@ -111,10 +111,16 @@ function ready() {
       ..loadHtmlString(page, baseUrl: widget.origin.toString());
   }
 
+  /// The height Turnstile draws its widget at.
+  static const double _height = 72;
+
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
-    if (controller == null) return const SizedBox(height: 72);
-    return SizedBox(height: 72, child: WebViewWidget(controller: controller));
+    if (controller == null) return const SizedBox(height: _height);
+    return SizedBox(
+      height: _height,
+      child: WebViewWidget(controller: controller),
+    );
   }
 }

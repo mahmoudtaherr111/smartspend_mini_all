@@ -138,15 +138,8 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
         .toList();
     if (available.isEmpty) return;
 
-    final picked = await showModalBottomSheet<String>(
+    final picked = await showSmartSpendSheet<String>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: context.smartSpendColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(SmartSpendRadii.sheet),
-        ),
-      ),
       builder: (ctx) =>
           _CategoryPickerSheet(categories: available, selected: _category),
     );
@@ -292,21 +285,6 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Sheet handle
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(
-                    vertical: SmartSpendSpacing.sm,
-                  ),
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colors.mutedForeground.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-
               // Header title & close button
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -317,7 +295,7 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
                     Expanded(
                       child: Text(
                         l10n.manualRecordTitle,
-                        style: SmartSpendTypography.style(20, FontWeight.w700),
+                        style: Theme.of(context).textTheme.headlineSmall!,
                       ),
                     ),
                     IconButton(
@@ -340,7 +318,7 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
                   horizontal: SmartSpendSpacing.lg,
                 ),
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(SmartSpendSpacing.xs),
                   decoration: BoxDecoration(
                     color: colors.surfaceRaised,
                     borderRadius: BorderRadius.circular(SmartSpendRadii.md),
@@ -385,14 +363,13 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
                     _amountBuffer.isEmpty
                         ? '${l10n.manualRecordAmountHint} ${MoneyLocale.of(context).symbol}'
                         : '$_amountBuffer ${MoneyLocale.of(context).symbol}',
-                    style: SmartSpendTypography.style(38, FontWeight.w800)
-                        .copyWith(
-                          color: _amountBuffer.isEmpty
-                              ? colors.mutedForeground.withValues(alpha: 0.4)
-                              : _type == 'income'
-                              ? colors.accent
-                              : colors.foreground,
-                        ),
+                    style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                      color: _amountBuffer.isEmpty
+                          ? colors.mutedForeground.withValues(alpha: 0.4)
+                          : _type == 'income'
+                          ? colors.accent
+                          : colors.foreground,
+                    ),
                   ),
                 ),
               ),
@@ -406,10 +383,8 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
                   child: Text(
                     _error!,
                     textAlign: TextAlign.center,
-                    style: SmartSpendTypography.style(
-                      14,
-                      FontWeight.w600,
-                    ).copyWith(color: colors.danger),
+                    style: Theme.of(context).textTheme.titleSmall!
+                        .copyWith(color: colors.danger),
                   ),
                 ),
               ],
@@ -463,10 +438,9 @@ class _ManualRecordSheetState extends ConsumerState<ManualRecordSheet> {
                                   value: _walletId,
                                   hint: Text(
                                     l10n.manualRecordNoWallet,
-                                    style: SmartSpendTypography.style(
-                                      13,
-                                      FontWeight.w500,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium!,
                                   ),
                                   icon: const Icon(
                                     Icons.account_balance_wallet_outlined,
@@ -582,42 +556,36 @@ class _TypeTab extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: SmartSpendSpacing.sm),
           decoration: BoxDecoration(
             color: selected ? colors.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 16,
-                color: selected ? color : colors.mutedForeground,
-              ),
-              const SizedBox(width: 4),
+              // Large text needs the row's width for the word.
+              if (MediaQuery.textScalerOf(context).scale(10) <= 15) ...[
+                Icon(
+                  icon,
+                  size: 16,
+                  color: selected ? color : colors.mutedForeground,
+                ),
+                const SizedBox(width: SmartSpendSpacing.xs),
+              ],
               Flexible(
                 child: Text(
                   label,
                   overflow: TextOverflow.ellipsis,
                   style:
-                      SmartSpendTypography.style(
-                        13,
-                        selected ? FontWeight.w700 : FontWeight.w500,
-                      ).copyWith(
-                        color: selected
-                            ? colors.foreground
-                            : colors.mutedForeground,
-                      ),
+                      (selected
+                              ? Theme.of(context).textTheme.titleSmall
+                              : Theme.of(context).textTheme.bodyMedium)!
+                          .copyWith(
+                            color: selected
+                                ? colors.foreground
+                                : colors.mutedForeground,
+                          ),
                 ),
               ),
             ],
@@ -664,11 +632,11 @@ class _EgyptianNumericKeypad extends StatelessWidget {
         children: [
           for (var row = 0; row < 3; row++)
             Padding(
-              padding: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.only(bottom: SmartSpendSpacing.sm),
               child: Row(
                 children: [
                   for (var col = 0; col < 3; col++) ...[
-                    if (col > 0) const SizedBox(width: 8),
+                    if (col > 0) const SizedBox(width: SmartSpendSpacing.sm),
                     Expanded(
                       child: _KeypadButton(
                         westernDigit: _keys[row * 3 + col].$1,
@@ -685,7 +653,7 @@ class _EgyptianNumericKeypad extends StatelessWidget {
               Expanded(
                 child: _ActionKeyButton(label: '.', onTap: onDecimal),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: SmartSpendSpacing.sm),
               Expanded(
                 child: _KeypadButton(
                   westernDigit: '0',
@@ -693,7 +661,7 @@ class _EgyptianNumericKeypad extends StatelessWidget {
                   onTap: () => onDigit('0'),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: SmartSpendSpacing.sm),
               Expanded(
                 child: _DeleteKeyButton(
                   onTap: onDelete,
@@ -738,15 +706,13 @@ class _KeypadButton extends StatelessWidget {
             children: [
               Text(
                 westernDigit,
-                style: SmartSpendTypography.style(20, FontWeight.w700),
+                style: Theme.of(context).textTheme.headlineSmall!,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: SmartSpendSpacing.xs),
               Text(
                 easternDigit,
-                style: SmartSpendTypography.style(
-                  13,
-                  FontWeight.w500,
-                ).copyWith(color: colors.mutedForeground),
+                style: Theme.of(context).textTheme.bodyMedium!
+                    .copyWith(color: colors.mutedForeground),
               ),
             ],
           ),
@@ -776,7 +742,7 @@ class _ActionKeyButton extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             label,
-            style: SmartSpendTypography.style(22, FontWeight.w700),
+            style: Theme.of(context).textTheme.headlineMedium!,
           ),
         ),
       ),
@@ -871,7 +837,7 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
               Expanded(
                 child: Text(
                   l10n.manualRecordSelectCategory,
-                  style: SmartSpendTypography.style(18, FontWeight.w700),
+                  style: Theme.of(context).textTheme.titleLarge!,
                 ),
               ),
               IconButton(
@@ -905,10 +871,9 @@ class _CategoryPickerSheetState extends State<_CategoryPickerSheet> {
                   leading: CategoryTile(category: cat.name, size: 38),
                   title: Text(
                     cat.name,
-                    style: SmartSpendTypography.style(
-                      15,
-                      isSelected ? FontWeight.w700 : FontWeight.w500,
-                    ),
+                    style: (isSelected
+                        ? Theme.of(context).textTheme.titleMedium
+                        : Theme.of(context).textTheme.bodyLarge)!,
                   ),
                   trailing: isSelected
                       ? Icon(Icons.check_rounded, color: colors.accent)

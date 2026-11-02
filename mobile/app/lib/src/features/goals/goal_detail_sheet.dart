@@ -122,16 +122,14 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                       Text(
                         goal.title,
                         style: textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
                           color: colors.foreground,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: SmartSpendSpacing.xs / 2),
                       Text(
                         AppLocalizations.of(context)
                             .monTargetP0(moneyText(context, goal.targetAmount)),
-                        style: textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                        style: textTheme.titleSmall?.copyWith(
                           color: colors.accent,
                         ),
                       ),
@@ -152,12 +150,12 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: SmartSpendSpacing.sm,
+                    vertical: SmartSpendSpacing.xs,
                   ),
                   decoration: BoxDecoration(
                     color: goal.isCompleted
-                        ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                        ? colors.accent.withValues(alpha: 0.15)
                         : (goal.isActive
                               ? colors.accent.withValues(alpha: 0.15)
                               : colors.warning.withValues(alpha: 0.15)),
@@ -169,11 +167,9 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                         : (goal.isActive
                               ? AppLocalizations.of(context).monActive
                               : AppLocalizations.of(context).monPaused),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: goal.isCompleted
-                          ? const Color(0xFF10B981)
+                          ? colors.accent
                           : (goal.isActive ? colors.accent : colors.warning),
                     ),
                   ),
@@ -181,19 +177,16 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                 if (goal.targetDate != null)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: SmartSpendSpacing.sm,
+                      vertical: SmartSpendSpacing.xs,
                     ),
                     decoration: BoxDecoration(
                       color: colors.surfaceRaised,
                       borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
-                      border: Border.all(color: colors.border),
                     ),
                     child: Text(
                       AppLocalizations.of(context).monDateP0P1P2(
-                        '${goal.targetDate!.year}',
-                        '${goal.targetDate!.month}',
-                        '${goal.targetDate!.day}',
+                        DateWords.of(context).date(goal.targetDate!),
                       ),
                       style: textTheme.bodySmall?.copyWith(
                         color: colors.mutedForeground,
@@ -216,7 +209,6 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
               decoration: BoxDecoration(
                 color: colors.surfaceRaised,
                 borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
-                border: Border.all(color: colors.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -233,7 +225,6 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                         child: Text(
                           AppLocalizations.of(context).monGoalAnalysis,
                           style: textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
                             color: colors.foreground,
                           ),
                         ),
@@ -252,7 +243,7 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                               : const Icon(Icons.refresh_rounded, size: 16),
                           label: Text(
                             AppLocalizations.of(context).monRefresh,
-                            style: TextStyle(fontSize: 12),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ),
                     ],
@@ -261,7 +252,8 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                   if (_error != null) ...[
                     Text(
                       _error!,
-                      style: TextStyle(color: colors.danger, fontSize: 12),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: colors.danger),
                     ),
                     const SizedBox(height: SmartSpendSpacing.xs),
                   ],
@@ -280,25 +272,23 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                     if (analysis.plan.isNotEmpty) ...[
                       Text(
                         AppLocalizations.of(context).monStepsToYourGoal,
-                        style: textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: textTheme.labelMedium?.copyWith(
                           color: colors.mutedForeground,
                         ),
                       ),
                       const SizedBox(height: SmartSpendSpacing.xs),
                       ...analysis.plan.asMap().entries.map(
                         (entry) => Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
+                          padding: const EdgeInsets.only(
+                            bottom: SmartSpendSpacing.xs,
+                          ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 '${entry.key + 1}. ',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: colors.accent,
-                                  fontSize: 13,
-                                ),
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(color: colors.accent),
                               ),
                               Expanded(
                                 child: Text(
@@ -317,21 +307,23 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                       const SizedBox(height: SmartSpendSpacing.xs),
                       Text(
                         AppLocalizations.of(context).monSuggestedWeeklyActions,
-                        style: textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: textTheme.labelMedium?.copyWith(
                           color: colors.mutedForeground,
                         ),
                       ),
                       const SizedBox(height: SmartSpendSpacing.xs),
                       ...analysis.weeklyActions.map(
                         (action) => Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
+                          padding: const EdgeInsets.only(
+                            bottom: SmartSpendSpacing.xs,
+                          ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 '• ',
-                                style: TextStyle(color: colors.accent),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: colors.accent),
                               ),
                               Expanded(
                                 child: Text(
@@ -350,13 +342,10 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                       const SizedBox(height: SmartSpendSpacing.xs),
                       Text(
                         AppLocalizations.of(context).monLastAnalysisP0P1P2(
-                          '${goal.lastAnalyzedAt!.year}',
-                          '${goal.lastAnalyzedAt!.month}',
-                          '${goal.lastAnalyzedAt!.day}',
+                          DateWords.of(context).date(goal.lastAnalyzedAt!),
                         ),
                         style: textTheme.bodySmall?.copyWith(
                           color: colors.mutedForeground,
-                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -400,7 +389,9 @@ class _GoalDetailSheetState extends ConsumerState<GoalDetailSheet> {
                   child: OutlinedButton(
                     onPressed: _togglePause,
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: SmartSpendSpacing.md,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                       ),

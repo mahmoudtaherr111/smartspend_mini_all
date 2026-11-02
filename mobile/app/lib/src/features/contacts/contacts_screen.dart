@@ -260,29 +260,26 @@ class _HeroDebtsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surfaceRaised,
         borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
-        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             AppLocalizations.of(context).aiNetMoneyOut,
-            style: textTheme.bodySmall?.copyWith(
+            style: textTheme.labelMedium?.copyWith(
               color: colors.mutedForeground,
-              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: SmartSpendSpacing.sm,
+            runSpacing: SmartSpendSpacing.xs,
             children: [
-              Expanded(
-                child: Text(
-                  formatMoney(netBalance),
-                  style: textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              Text(
+                moneyText(context, netBalance),
+                style: textTheme.headlineMedium,
               ),
               DebtBadge(balance: netBalance),
             ],
@@ -302,12 +299,11 @@ class _HeroDebtsCard extends StatelessWidget {
                         color: colors.mutedForeground,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: SmartSpendSpacing.xs / 2),
                     Text(
-                      '+ ${formatMoney(totalOwedToYou)}',
+                      '+ ${moneyText(context, totalOwedToYou)}',
                       style: textTheme.titleMedium?.copyWith(
                         color: colors.accent,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -325,12 +321,11 @@ class _HeroDebtsCard extends StatelessWidget {
                         color: colors.mutedForeground,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: SmartSpendSpacing.xs / 2),
                     Text(
-                      '- ${formatMoney(totalYouOwe)}',
+                      '- ${moneyText(context, totalYouOwe)}',
                       style: textTheme.titleMedium?.copyWith(
                         color: colors.danger,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -364,22 +359,21 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: colors.mutedForeground),
         const SizedBox(width: SmartSpendSpacing.xs + 2),
-        Text(
-          title,
-          style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
+        Flexible(child: Text(title, style: textTheme.titleMedium)),
         const SizedBox(width: SmartSpendSpacing.xs),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SmartSpendSpacing.sm,
+            vertical: SmartSpendSpacing.xs / 2,
+          ),
           decoration: BoxDecoration(
             color: colors.surfaceRaised,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
           ),
           child: Text(
             '$count',
-            style: textTheme.bodySmall?.copyWith(
+            style: textTheme.labelMedium?.copyWith(
               color: colors.mutedForeground,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -419,7 +413,6 @@ class _PersonDebtCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: colors.surface,
             borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-            border: Border.all(color: colors.border),
           ),
           child: Row(
             children: [
@@ -432,7 +425,6 @@ class _PersonDebtCard extends StatelessWidget {
                       : '؟',
                   style: textTheme.titleMedium?.copyWith(
                     color: colors.foreground,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -443,15 +435,15 @@ class _PersonDebtCard extends StatelessWidget {
                   children: [
                     Text(
                       item.name,
-                      style: textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: textTheme.titleSmall,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: SmartSpendSpacing.xs),
+                    DebtBadge(balance: item.balance, compact: true),
                     if (item.relation case final String rel
                         when rel.isNotEmpty) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: SmartSpendSpacing.xs / 2),
                       Text(
                         rel,
                         style: textTheme.bodySmall?.copyWith(
@@ -462,8 +454,6 @@ class _PersonDebtCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: SmartSpendSpacing.sm),
-              DebtBadge(balance: item.balance, compact: true),
               if (onMerge != null || onDelete != null) ...[
                 PopupMenuButton<String>(
                   icon: Icon(
@@ -503,7 +493,8 @@ class _PersonDebtCard extends StatelessWidget {
                             const SizedBox(width: SmartSpendSpacing.xs),
                             Text(
                               AppLocalizations.of(context).aiDeleteThePerson,
-                              style: TextStyle(color: colors.danger),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: colors.danger),
                             ),
                           ],
                         ),

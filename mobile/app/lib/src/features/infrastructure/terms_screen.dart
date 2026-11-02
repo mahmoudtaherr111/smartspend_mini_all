@@ -24,9 +24,7 @@ class TermsScreen extends StatelessWidget {
           children: [
             Text(
               'شروط وأحكام استخدام SmartSpend AI',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: textTheme.titleLarge,
             ),
             const SizedBox(height: SmartSpendSpacing.xs),
             Text(
@@ -85,10 +83,7 @@ class _Section extends StatelessWidget {
         children: [
           Text(
             title,
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colors.accent,
-            ),
+            style: textTheme.titleMedium?.copyWith(color: colors.accent),
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(

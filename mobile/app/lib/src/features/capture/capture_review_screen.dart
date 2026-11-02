@@ -29,7 +29,13 @@ class CaptureReviewScreen extends ConsumerWidget {
               when value.isEmpty && offers.isEmpty && wallets.isEmpty =>
             ListView(
               padding: const EdgeInsets.all(SmartSpendSpacing.screen),
-              children: [Center(child: Text(l10n.captureReviewEmpty))],
+              children: [
+                EmptyState(
+                  icon: Icons.inbox_outlined,
+                  title: l10n.captureReviewTitle,
+                  message: l10n.captureReviewEmpty,
+                ),
+              ],
             ),
           AsyncData(:final value) => ListView(
             padding: const EdgeInsets.all(SmartSpendSpacing.screen),
@@ -50,7 +56,13 @@ class CaptureReviewScreen extends ConsumerWidget {
           ),
           AsyncError() => ListView(
             padding: const EdgeInsets.all(SmartSpendSpacing.screen),
-            children: [Center(child: Text(l10n.captureReviewFailed))],
+            children: [
+              ErrorState(
+                message: l10n.captureReviewFailed,
+                retryLabel: l10n.retry,
+                onRetry: () => ref.invalidate(capturePendingProvider),
+              ),
+            ],
           ),
           _ => const Center(child: CircularProgressIndicator()),
         },

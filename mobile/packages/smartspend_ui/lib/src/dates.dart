@@ -108,6 +108,10 @@ final class DateWords {
     return day.year == today.year ? label : '$label ${day.year}';
   }
 
+  /// «16 أكتوبر 2026».
+  String date(DateTime date) =>
+      '${date.day} ${months[date.month - 1]} ${date.year}';
+
   /// «أكتوبر 2026» for a month key such as "2026-10"; the key itself when it is not one.
   String month(String monthKey) {
     final match = RegExp(r'^(\d{4})-(\d{2})$').firstMatch(monthKey);

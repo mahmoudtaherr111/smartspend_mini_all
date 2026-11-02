@@ -5,6 +5,7 @@
 //   SMARTSPEND_RENDER_DIR=E:/smartspend_V1_fixed/.agents/mobile-program/renders flutter test test/render
 //
 // Without SMARTSPEND_RENDER_DIR every case is skipped, so CI never runs it.
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -13,6 +14,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:smartspend_app/src/app.dart';
 import 'package:smartspend_app/src/config/app_config.dart';
 import 'package:smartspend_app/src/core/preferences.dart';
@@ -25,6 +27,7 @@ import 'package:smartspend_app/src/features/lock/lock_store.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../support/sample_calendar.dart';
+import '../support/sample_money.dart';
 import '../support/sample_month.dart';
 import '../support/test_app.dart';
 
@@ -36,6 +39,15 @@ const _sizes = [('small', Size(360, 800)), ('large', Size(412, 915))];
 const _themes = [('dark', Brightness.dark), ('light', Brightness.light)];
 const _languages = [('ar', AppLanguage.arabic), ('en', AppLanguage.english)];
 const _scales = [('x1', 1.0), ('x2', 2.0)];
+
+/// With SMARTSPEND_RENDER_QUICK set, three pictures of a screen instead of sixteen: each theme, and English at
+/// twice the text size.
+final _quick = Platform.environment['SMARTSPEND_RENDER_QUICK'] != null;
+const _quickCases = {
+  'small-dark-ar-x1',
+  'small-light-ar-x1',
+  'small-dark-en-x2',
+};
 
 /// One screen to draw: how to reach it once the app is open, signed in or not.
 typedef Reach = Future<void> Function(
@@ -177,20 +189,64 @@ final _screens = <(String, bool, PrepareApi?, Reach)>[
       await tester.pumpAndSettle();
     },
   ),
-  (
-    'ai',
-    true,
-    null,
-    (tester, language) async {
-      await tester.tap(
-        find
-            .text(language == AppLanguage.english ? 'AI Center' : 'مركز AI')
-            .last,
-      );
-      await tester.pumpAndSettle();
-    },
-  ),
+  ('ai', true, answerSampleMoney, _openAi),
+  ('ai-report', true, answerSampleMoney, _aiTab(1)),
+  ('ai-compare', true, answerSampleMoney, _aiTab(2)),
+  ('ai-yearly', true, answerSampleMoney, _aiTab(3)),
+  for (final path in const [
+    '/more/profile',
+    '/more/money-prefs',
+    '/more/sessions',
+    '/more/onboarding',
+    '/more/help',
+    '/more/plan',
+    '/more/cancel-plan',
+    '/more/invite',
+    '/more/terms',
+    '/more/data-stored',
+    '/more/capture',
+    '/more/capture-settings',
+    '/more/contacts',
+    '/more/budgets',
+    '/more/goals',
+    '/more/installments',
+    '/more/seasons',
+    '/more/export',
+    '/more/business',
+    '/more/security',
+    '/more/security/pin',
+    '/notifications',
+    '/search',
+    '/settings/notifications',
+  ])
+    (
+      path.substring(1).replaceAll('/', '-'),
+      true,
+      answerSampleMoney,
+      _push(path),
+    ),
 ];
+
+Reach _push(String path) => (tester, _) async {
+  unawaited(GoRouter.of(tester.element(find.byType(NavigationBar))).push(path));
+  await tester.pumpAndSettle();
+};
+
+Future<void> _openAi(WidgetTester tester, AppLanguage language) async {
+  await tester.tap(
+    find.text(language == AppLanguage.english ? 'AI Center' : 'مركز AI').last,
+  );
+  await tester.pumpAndSettle();
+}
+
+Reach _aiTab(int index) => (tester, language) async {
+  await _openAi(tester, language);
+  final tab = find.byType(Tab).at(index);
+  await tester.ensureVisible(tab);
+  await tester.pumpAndSettle();
+  await tester.tap(tab);
+  await tester.pumpAndSettle();
+};
 
 Future<void> _openWallets(WidgetTester tester, AppLanguage language) async {
   final english = language == AppLanguage.english;
@@ -295,6 +351,8 @@ void main() {
         for (final (themeName, brightness) in _themes) {
           for (final (languageName, language) in _languages) {
             for (final (scaleName, scale) in _scales) {
+              final name = '$sizeName-$themeName-$languageName-$scaleName';
+              if (_quick && !_quickCases.contains(name)) continue;
               tester.view
                 ..physicalSize = size * 2
                 ..devicePixelRatio = 2;
@@ -308,10 +366,7 @@ void main() {
                 prepareApi: prepareApi,
               );
               await reach(tester, language);
-              await _save(
-                tester,
-                '$screen/$sizeName-$themeName-$languageName-$scaleName',
-              );
+              await _save(tester, '$screen/$name');
             }
           }
         }

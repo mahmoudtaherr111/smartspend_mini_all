@@ -32,47 +32,27 @@ class StreakBadge extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final streakAsync = ref.watch(streakProvider);
     final streak = streakAsync.value ?? 0;
+    if (streak == 0) return const SizedBox.shrink();
 
-    Color flameColor;
-    Color bgColor;
-    Color borderColor;
-    Color textColor;
-    String labelSuffix = AppLocalizations.of(context).appDaysInARow;
-
-    if (streak >= 30) {
-      flameColor = const Color(0xFFA855F7); // Purple
-      bgColor = const Color(0xFFA855F7).withValues(alpha: 0.12);
-      borderColor = const Color(0xFFA855F7).withValues(alpha: 0.3);
-      textColor = const Color(0xFFA855F7);
-      labelSuffix = AppLocalizations.of(context).appDaysInARow2;
-    } else if (streak >= 10) {
-      flameColor = const Color(0xFF3B82F6); // Blue
-      bgColor = const Color(0xFF3B82F6).withValues(alpha: 0.12);
-      borderColor = const Color(0xFF3B82F6).withValues(alpha: 0.3);
-      textColor = const Color(0xFF3B82F6);
-      labelSuffix = AppLocalizations.of(context).appDaysInARow3;
-    } else if (streak >= 1) {
-      flameColor = const Color(0xFFF97316); // Orange
-      bgColor = const Color(0xFFF97316).withValues(alpha: 0.12);
-      borderColor = const Color(0xFFF97316).withValues(alpha: 0.3);
-      textColor = const Color(0xFFEA580C);
-    } else {
-      flameColor = const Color(0xFF94A3B8); // Slate
-      bgColor = const Color(0xFF94A3B8).withValues(alpha: 0.1);
-      borderColor = const Color(0xFF94A3B8).withValues(alpha: 0.2);
-      textColor = const Color(0xFF64748B);
-      labelSuffix = AppLocalizations.of(context).appDay;
-    }
+    final colors = context.smartSpendColors;
+    final l10n = AppLocalizations.of(context);
+    final (flameColor, labelSuffix) = streak >= 30
+        ? (colors.ai, l10n.appDaysInARow2)
+        : streak >= 10
+        ? (colors.info, l10n.appDaysInARow3)
+        : (colors.warning, l10n.appDaysInARow);
 
     return Semantics(
       label: AppLocalizations.of(context)
           .appYouRecordedP0P1('$streak', labelSuffix),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SmartSpendSpacing.md,
+          vertical: SmartSpendSpacing.xs,
+        ),
         decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: borderColor),
+          color: flameColor.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(SmartSpendRadii.pill),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -82,13 +62,11 @@ class StreakBadge extends ConsumerWidget {
               size: 16,
               color: flameColor,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: SmartSpendSpacing.xs),
             Text(
               '$streak $labelSuffix',
-              style: SmartSpendTypography.style(
-                12,
-                streak > 0 ? FontWeight.w700 : FontWeight.w500,
-              ).copyWith(color: textColor),
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(color: colors.foreground),
             ),
           ],
         ),

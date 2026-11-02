@@ -31,16 +31,14 @@ class ReceiptSourceSheet extends StatelessWidget {
         children: [
           Text(
             AppLocalizations.of(context).monPhotographTheReceipt,
-            style: SmartSpendTypography.style(18, FontWeight.w700),
+            style: Theme.of(context).textTheme.titleLarge!,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(
             AppLocalizations.of(context).monTakeAPhotoOfThe,
-            style: SmartSpendTypography.style(
-              12,
-              FontWeight.w400,
-            ).copyWith(color: colors.mutedForeground),
+            style: Theme.of(context).textTheme.bodySmall!
+                .copyWith(color: colors.mutedForeground),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: SmartSpendSpacing.md),
@@ -51,14 +49,12 @@ class ReceiptSourceSheet extends StatelessWidget {
             ),
             title: Text(
               AppLocalizations.of(context).monCamera,
-              style: SmartSpendTypography.style(15, FontWeight.w600),
+              style: Theme.of(context).textTheme.titleMedium!,
             ),
             subtitle: Text(
               AppLocalizations.of(context).monTakeAClearPhotoOf,
-              style: SmartSpendTypography.style(
-                12,
-                FontWeight.w400,
-              ).copyWith(color: colors.mutedForeground),
+              style: Theme.of(context).textTheme.bodySmall!
+                  .copyWith(color: colors.mutedForeground),
             ),
             onTap: () => Navigator.of(context).pop(ReceiptSource.camera),
           ),
@@ -73,14 +69,12 @@ class ReceiptSourceSheet extends StatelessWidget {
             ),
             title: Text(
               AppLocalizations.of(context).monChooseFromTheGallery,
-              style: SmartSpendTypography.style(15, FontWeight.w600),
+              style: Theme.of(context).textTheme.titleMedium!,
             ),
             subtitle: Text(
               AppLocalizations.of(context).monPickAPhotoSavedOn,
-              style: SmartSpendTypography.style(
-                12,
-                FontWeight.w400,
-              ).copyWith(color: colors.mutedForeground),
+              style: Theme.of(context).textTheme.bodySmall!
+                  .copyWith(color: colors.mutedForeground),
             ),
             onTap: () => Navigator.of(context).pop(ReceiptSource.gallery),
           ),

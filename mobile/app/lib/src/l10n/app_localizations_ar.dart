@@ -447,9 +447,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get summaryIncome => 'دخل';
 
   @override
-  String get summaryNet => 'الصافي';
-
-  @override
   String summaryCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -488,7 +485,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get retry => 'جرّب تاني';
 
   @override
-  String get composerHint => 'اكتب اللي صرفته… مثلاً: قهوة 50 وأوبر 120';
+  String get composerHint => 'اكتب: قهوة 50 وأوبر 120';
 
   @override
   String get composerSend => 'ابعت';
@@ -855,9 +852,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get statsDailyAverage => 'متوسط يومي';
-
-  @override
-  String get statsLastMonth => 'الشهر اللي فات';
 
   @override
   String get statsByCategory => 'صرفت على إيه';
@@ -1325,22 +1319,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get manualRecordTypeTransfer => 'تحويل';
 
   @override
-  String get manualRecordCategory => 'التصنيف';
-
-  @override
   String get manualRecordSelectCategory => 'اختر التصنيف';
 
   @override
-  String get manualRecordDate => 'التاريخ';
-
-  @override
-  String get manualRecordWallet => 'المحفظة (اختياري)';
-
-  @override
   String get manualRecordNoWallet => 'بدون محفظة';
-
-  @override
-  String get manualRecordNote => 'ملاحظة (اختياري)';
 
   @override
   String get manualRecordNoteHint => 'تفاصيل إضافية...';
@@ -1378,9 +1360,6 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get searchOfflineNotice =>
       'البحث دلوقتي شغال على العمليات المحفوظة على جهازك بس.';
-
-  @override
-  String get searchNoTransactions => 'لسه مفيش معاملات تبحث فيها.';
 
   @override
   String get deleteAccountTitle => 'حذف الحساب';
@@ -1463,12 +1442,6 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get moneyPrefsSalaryDayBody =>
       'اليوم الذي تبدأ فيه حساب مصاريفك وميزانيتك الشهرية. في الشهور القصيرة مثل فبراير يتم اعتماد آخر يوم في الشهر تلقائياً.';
-
-  @override
-  String get moneyPrefsCurrency => 'العملة';
-
-  @override
-  String get moneyPrefsDecimalPlaces => 'الكسور العشرية';
 
   @override
   String get moneyPrefsSaved => 'تم حفظ تفضيلات الراتب';
@@ -1567,20 +1540,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get helpTicketSubmit => 'إرسال التذكرة';
 
   @override
-  String get helpTicketSuccess =>
-      'تم إرسال تذكرتك بنجاح، سنرد عليك في أقرب وقت.';
-
-  @override
   String get helpMyTickets => 'تذاكري السابقة';
-
-  @override
-  String get helpTicketOpen => 'قيد الانتظار';
-
-  @override
-  String get helpTicketClosed => 'مغلقة';
-
-  @override
-  String get helpTicketReplied => 'تم الرد';
 
   @override
   String get planTitle => 'الاشتراك والترقية';
@@ -1595,20 +1555,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get planPro => 'خطة المحترفين (Pro)';
 
   @override
-  String get planUpgrade => 'الترقية إلى Pro';
-
-  @override
   String get planFeaturesTitle => 'مميزات خطة Pro';
 
   @override
   String get cancelPlanTitle => 'إلغاء الاشتراك';
 
   @override
-  String get cancelPlanConfirm => 'تأكيد إلغاء التجديد التلقائي';
-
-  @override
   String get cancelPlanRetainNotice =>
-      'ستستمر باقتك الحالية حتى نهاية فترة الاشتراك ولن يتم تجديدها تلقائياً.';
+      'باقتك هتفضل شغالة لحد آخر الفترة اللي دفعتها.';
 
   @override
   String get inviteTitle => 'دعوة أصدقاء';
@@ -1647,13 +1601,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dataStoredTitle => 'البيانات والخصوصية';
-
-  @override
-  String get appVersion => 'الإصدار';
-
-  @override
-  String get offlineRetryBanner =>
-      'لا يوجد اتصال بالإنترنت. التعديلات ستُحفظ محلياً.';
 
   @override
   String get forgotPassword => 'نسيت كلمة المرور؟';
@@ -2269,8 +2216,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get monSmartPlan => 'خطة ذكية';
 
   @override
-  String monTargetDateP0P1P2(String p0, String p1, String p2) {
-    return 'الميعاد: $p0/$p1/$p2';
+  String monTargetDateP0P1P2(String p0) {
+    return 'الميعاد: $p0';
   }
 
   @override
@@ -2295,8 +2242,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get monPaused => 'متوقف';
 
   @override
-  String monDateP0P1P2(String p0, String p1, String p2) {
-    return 'الميعاد: $p0/$p1/$p2';
+  String monDateP0P1P2(String p0) {
+    return 'الميعاد: $p0';
   }
 
   @override
@@ -2312,8 +2259,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get monSuggestedWeeklyActions => 'حاجات تعملها كل أسبوع:';
 
   @override
-  String monLastAnalysisP0P1P2(String p0, String p1, String p2) {
-    return 'آخر تحليل: $p0/$p1/$p2';
+  String monLastAnalysisP0P1P2(String p0) {
+    return 'آخر تحليل: $p0';
   }
 
   @override
@@ -2787,16 +2734,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get aiChat => 'المحادثة';
 
   @override
-  String get aiMonthlyReport => 'التقرير الشهري';
+  String get aiMonthlyReport => 'الشهر';
 
   @override
-  String get aiCompareMonths => 'قارن الشهور';
+  String get aiCompareMonths => 'قارن';
 
   @override
   String get aiCalls => 'المكالمات';
 
   @override
-  String get aiYearlyReport => 'التقرير السنوي';
+  String get aiYearlyReport => 'السنة';
 
   @override
   String get aiWeNeedInternetToAnswer =>
@@ -2931,17 +2878,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get aiExportTheReport => 'صدّر التقرير';
 
   @override
-  String aiTheReportForP0Is(String p0) {
-    return 'تقرير $p0 جاهز.';
-  }
-
-  @override
-  String get aiReportReceived2 => 'التقرير وصل.';
-
-  @override
-  String get aiOk => 'تمام';
-
-  @override
   String get aiWeCouldnTExportThe => 'ما عرفناش نصدر التقرير.';
 
   @override
@@ -2952,9 +2888,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aiAnalyzeAgain => 'حلل تاني';
-
-  @override
-  String get aiPreparingThisMonthSReport => 'بنجهز تقرير الشهر...';
 
   @override
   String get aiWeCanTLoadThe2 => 'مش قادرين نجيب التقرير.';
@@ -3740,28 +3673,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appWhenYourMonthlyReportIs => 'لما تقريرك الشهري يجهز';
 
   @override
-  String get appThePriceIsHighFor => 'السعر غالي عليّ';
-
-  @override
-  String get appIDonTNeedThe => 'مش محتاج المميزات الزيادة';
-
-  @override
-  String get appIHadTechnicalProblems => 'قابلتني مشاكل تقنية';
-
-  @override
-  String get appILlSubscribeAgainLater => 'هشترك تاني بعدين';
-
-  @override
-  String get appAnotherReason => 'سبب تاني';
-
-  @override
-  String get appAutoRenewalIsCancelled => 'التجديد التلقائي اتلغى';
-
-  @override
   String get appWeCanTCancelRight => 'مش قادرين نلغي دلوقتي.';
-
-  @override
-  String get appHelpUsUnderstandWhy => 'قولنا السبب:';
 
   @override
   String get appKeepMyPlan => 'سيب باقتي';
@@ -3857,9 +3769,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appDaysInARow3 => 'يوم ورا بعض';
 
   @override
-  String get appDay => 'يوم';
-
-  @override
   String appYouRecordedP0P1(String p0, String p1) {
     return 'سجلت $p0 $p1';
   }
@@ -3926,4 +3835,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String appInstallmentLeft(String p0, String p1, String p2) {
     return '$p0: باقي $p1 من $p2';
   }
+
+  @override
+  String get aiSend => 'ابعت';
+
+  @override
+  String get cancelPlanAtStore =>
+      'الاشتراك بيتلغي من المتجر اللي اشتركت منه، مش من التطبيق. هنفتحلك صفحة اشتراكاتك هناك، ودوس إلغاء على SmartSpend.';
+
+  @override
+  String get cancelPlanOpenStore => 'افتح اشتراكاتي في المتجر';
 }

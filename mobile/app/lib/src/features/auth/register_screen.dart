@@ -390,7 +390,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: SmartSpendSpacing.lg),
       ],
       if (notice != null) ...[
-        InlineMessage(notice, warning: true),
+        InlineMessage(notice, tone: MessageTone.warning),
         const SizedBox(height: SmartSpendSpacing.lg),
       ],
       // Digits in a code read left to right in Arabic too.

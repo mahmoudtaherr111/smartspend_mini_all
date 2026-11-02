@@ -48,7 +48,7 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
         children: [
           Text(
             AppLocalizations.of(context).aiMergeDuplicates,
-            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: textTheme.titleLarge,
           ),
           const SizedBox(height: SmartSpendSpacing.xs),
           Text(
@@ -75,9 +75,7 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
             Text(
               AppLocalizations.of(context)
                   .aiChooseWhoToMergeWith(widget.currentContact.name),
-              style: textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: textTheme.titleSmall,
             ),
             const SizedBox(height: SmartSpendSpacing.sm),
             DropdownButtonFormField<int>(
@@ -106,9 +104,7 @@ class _MergeContactsSheetState extends ConsumerState<MergeContactsSheet> {
             if (_selectedOtherId != null) ...[
               Text(
                 AppLocalizations.of(context).aiWhichNameStays,
-                style: textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: textTheme.titleSmall,
               ),
               const SizedBox(height: SmartSpendSpacing.xs),
               RadioGroup<bool>(

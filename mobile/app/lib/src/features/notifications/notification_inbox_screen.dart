@@ -104,8 +104,13 @@ class _NotificationInboxScreenState
           Expanded(
             child: notifsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) =>
-                  Center(child: Text(l10n.captureStatusFailed)),
+              error: (err, stack) => Center(
+                child: ErrorState(
+                  message: l10n.captureStatusFailed,
+                  retryLabel: l10n.retry,
+                  onRetry: () => ref.invalidate(inAppNotificationsProvider),
+                ),
+              ),
               data: (items) {
                 final filtered = _showOnlyUnread
                     ? items.where((item) => !item.isRead).toList()
@@ -161,7 +166,6 @@ class _NotificationInboxScreenState
                               groupTitle,
                               style: textTheme.labelLarge?.copyWith(
                                 color: colors.accent,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -195,14 +199,14 @@ class _NotificationInboxScreenState
                                   ),
                                   title: Text(
                                     item.title,
-                                    style: textTheme.titleSmall?.copyWith(
-                                      fontWeight: item.isRead
-                                          ? FontWeight.normal
-                                          : FontWeight.bold,
-                                    ),
+                                    style: item.isRead
+                                        ? textTheme.bodyMedium
+                                        : textTheme.titleSmall,
                                   ),
                                   subtitle: Padding(
-                                    padding: const EdgeInsets.only(top: 4),
+                                    padding: const EdgeInsets.only(
+                                      top: SmartSpendSpacing.xs,
+                                    ),
                                     child: Text(
                                       item.body,
                                       style: textTheme.bodySmall?.copyWith(
@@ -211,7 +215,7 @@ class _NotificationInboxScreenState
                                     ),
                                   ),
                                   trailing: const Icon(
-                                    Icons.chevron_left_rounded,
+                                    Icons.chevron_right,
                                     size: 20,
                                   ),
                                 );

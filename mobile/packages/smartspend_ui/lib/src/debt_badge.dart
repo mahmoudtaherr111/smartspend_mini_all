@@ -27,21 +27,21 @@ class DebtBadge extends StatelessWidget {
         colors.accent,
         colors.accent.withValues(alpha: 0.12),
         isArabic
-            ? '+ ${formatMoney(balance, locale: locale)} (ليك)'
-            : '+ ${formatMoney(balance, locale: locale)} (owes you)',
+            ? '+ ${moneyText(context, balance)} (ليك)'
+            : '+ ${moneyText(context, balance)} (owes you)',
         isArabic
-            ? 'ليك ${balance.round()} جنيه'
-            : 'Owes you ${balance.round()} EGP',
+            ? 'ليك ${moneyText(context, balance)}'
+            : 'Owes you ${moneyText(context, balance)}',
       ),
       < 0 => (
         colors.danger,
         colors.danger.withValues(alpha: 0.12),
         isArabic
-            ? '- ${formatMoney(balance.abs(), locale: locale)} (عليك)'
-            : '- ${formatMoney(balance.abs(), locale: locale)} (you owe)',
+            ? '- ${moneyText(context, balance.abs())} (عليك)'
+            : '- ${moneyText(context, balance.abs())} (you owe)',
         isArabic
-            ? 'عليك ${balance.abs().round()} جنيه'
-            : 'You owe ${balance.abs().round()} EGP',
+            ? 'عليك ${moneyText(context, balance.abs())}'
+            : 'You owe ${moneyText(context, balance.abs())}',
       ),
       _ => (
         colors.mutedForeground,
@@ -67,12 +67,8 @@ class DebtBadge extends StatelessWidget {
         ),
         child: Text(
           text,
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.w600,
-            fontSize: compact ? 12 : 13,
-            letterSpacing: 0.2,
-          ),
+          style: Theme.of(context).textTheme.labelMedium
+              ?.copyWith(color: color),
         ),
       ),
     );

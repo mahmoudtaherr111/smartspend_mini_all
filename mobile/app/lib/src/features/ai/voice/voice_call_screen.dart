@@ -45,24 +45,24 @@ class VoiceCallScreen extends ConsumerWidget {
           state.status == VoiceCallStatus.ended
               ? AppLocalizations.of(context).aiCallEnded
               : AppLocalizations.of(context).aiLiveCall2,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(color: Colors.white),
         ),
         centerTitle: true,
       ),
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 12),
+            const SizedBox(height: SmartSpendSpacing.md),
             // Call duration counter
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(
+                horizontal: SmartSpendSpacing.lg,
+                vertical: SmartSpendSpacing.sm,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
               ),
               child: Text(
                 '$durationMin:$durationSec',
@@ -74,7 +74,7 @@ class VoiceCallScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: SmartSpendSpacing.xl),
 
             // Visualizer & status indicator
             Expanded(
@@ -84,7 +84,9 @@ class VoiceCallScreen extends ConsumerWidget {
 
             // Live Assistant Transcript / Status message
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(
+                horizontal: SmartSpendSpacing.xl,
+              ),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 child: Text(
@@ -93,29 +95,29 @@ class VoiceCallScreen extends ConsumerWidget {
                       : _statusText(context, state.status, state.waitDetail),
                   key: ValueKey(state.assistantTranscript + state.status.name),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 16,
-                    height: 1.5,
-                  ),
+                  style: Theme.of(context).textTheme.bodyLarge
+                      ?.copyWith(color: Colors.white.withValues(alpha: 0.9)),
                 ),
               ),
             ),
 
             if (state.errorMessage != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: SmartSpendSpacing.md),
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: SmartSpendSpacing.xl,
+                ),
+                padding: const EdgeInsets.all(SmartSpendSpacing.md),
                 decoration: BoxDecoration(
                   color: Colors.red.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                   border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   state.errorMessage!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: Colors.redAccent),
                 ),
               ),
             ],
@@ -126,12 +128,14 @@ class VoiceCallScreen extends ConsumerWidget {
             if (state.cards.isNotEmpty)
               Container(
                 constraints: const BoxConstraints(maxHeight: 180),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SmartSpendSpacing.lg,
+                ),
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: state.cards.length,
                   separatorBuilder: (context, index) =>
-                      const SizedBox(height: 8),
+                      const SizedBox(height: SmartSpendSpacing.sm),
                   itemBuilder: (context, index) {
                     final card = state.cards[index];
                     return _LiveCallCardWidget(
@@ -143,17 +147,15 @@ class VoiceCallScreen extends ConsumerWidget {
                 ),
               ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: SmartSpendSpacing.lg),
 
             // Privacy disclaimer
             Text(
               AppLocalizations.of(context).aiTheAudioIsNotRecorded,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.4),
-                fontSize: 11,
-              ),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: Colors.white.withValues(alpha: 0.4)),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: SmartSpendSpacing.screen),
 
             // In-call control buttons (AI-09)
             _CallControlsBar(
@@ -164,7 +166,7 @@ class VoiceCallScreen extends ConsumerWidget {
                 Navigator.of(context).maybePop();
               },
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: SmartSpendSpacing.xl),
           ],
         ),
       ),
@@ -307,10 +309,10 @@ class _LiveCallCardWidget extends StatelessWidget {
     final isPending = card.status == 'pending';
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(SmartSpendSpacing.md),
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.md),
         border: Border.all(
           color: isPending ? const Color(0xFF38BDF8) : Colors.white12,
         ),
@@ -324,31 +326,23 @@ class _LiveCallCardWidget extends StatelessWidget {
               children: [
                 Text(
                   card.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall
+                      ?.copyWith(color: Colors.white),
                 ),
                 if (card.message != null && card.message!.isNotEmpty) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: SmartSpendSpacing.xs / 2),
                   Text(
                     card.message!,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 12,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
                   ),
                 ],
                 if (card.total != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: SmartSpendSpacing.xs),
                   Text(
                     moneyText(context, card.total!),
-                    style: const TextStyle(
-                      color: Color(0xFF34D399),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
+                    style: Theme.of(context).textTheme.titleSmall
+                        ?.copyWith(color: Color(0xFF34D399)),
                   ),
                 ],
               ],
@@ -367,10 +361,13 @@ class _LiveCallCardWidget extends StatelessWidget {
             ),
           ] else ...[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: SmartSpendSpacing.md,
+                vertical: SmartSpendSpacing.xs,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white10,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
               ),
               child: Text(
                 card.status == 'executed' || card.status == 'executing'
@@ -378,7 +375,8 @@ class _LiveCallCardWidget extends StatelessWidget {
                     : card.status == 'cancelled'
                     ? AppLocalizations.of(context).aiCancelled2
                     : card.status,
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: Colors.white70),
               ),
             ),
           ],
@@ -402,7 +400,7 @@ class _CallControlsBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: SmartSpendSpacing.xxl),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -414,7 +412,7 @@ class _CallControlsBar extends StatelessWidget {
                   ? Colors.red.withValues(alpha: 0.2)
                   : Colors.white10,
               foregroundColor: state.isMuted ? Colors.redAccent : Colors.white,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(SmartSpendSpacing.lg),
             ),
             icon: Icon(state.isMuted ? Icons.mic_off : Icons.mic),
             onPressed: controller.toggleMute,
@@ -426,7 +424,7 @@ class _CallControlsBar extends StatelessWidget {
             style: IconButton.styleFrom(
               backgroundColor: Colors.redAccent,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(SmartSpendSpacing.lg),
             ),
             icon: const Icon(Icons.call_end),
             onPressed: onEnd,
@@ -442,7 +440,7 @@ class _CallControlsBar extends StatelessWidget {
               foregroundColor: state.isSpeakerOn
                   ? const Color(0xFF38BDF8)
                   : Colors.white,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(SmartSpendSpacing.lg),
             ),
             icon: Icon(state.isSpeakerOn ? Icons.volume_up : Icons.volume_down),
             onPressed: controller.toggleSpeaker,

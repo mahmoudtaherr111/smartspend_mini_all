@@ -44,19 +44,15 @@ class VoicePermissionSheet extends StatelessWidget {
           Text(
             AppLocalizations.of(context).monRecordByVoice,
             textAlign: TextAlign.center,
-            style: SmartSpendTypography.style(
-              18,
-              FontWeight.w700,
-            ).copyWith(color: colors.foreground),
+            style: Theme.of(context).textTheme.titleLarge!
+                .copyWith(color: colors.foreground),
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
           Text(
             AppLocalizations.of(context).monToRecordYourSpendingBy,
             textAlign: TextAlign.center,
-            style: SmartSpendTypography.style(
-              14,
-              FontWeight.w400,
-            ).copyWith(color: colors.mutedForeground, height: 1.5),
+            style: Theme.of(context).textTheme.bodyMedium!
+                .copyWith(color: colors.mutedForeground, height: 1.5),
           ),
           const SizedBox(height: SmartSpendSpacing.xl),
           SmartSpendButton(

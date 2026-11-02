@@ -140,9 +140,7 @@ class _OnboardingQuestionsScreenState
                     _currentQuestion!['title'] as String? ??
                         _currentQuestion!['question'] as String? ??
                         '',
-                    style: textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: textTheme.titleLarge,
                   ),
                   if (_currentQuestion!['subtitle'] != null) ...[
                     const SizedBox(height: SmartSpendSpacing.sm),
@@ -184,11 +182,9 @@ class _OnboardingQuestionsScreenState
                             opt is Map
                                 ? (opt['label'] as String? ?? opt.toString())
                                 : opt.toString(),
-                            style: textTheme.bodyMedium?.copyWith(
-                              fontWeight: _selectedOption == opt
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
+                            style: _selectedOption == opt
+                                ? textTheme.titleSmall
+                                : textTheme.bodyMedium,
                           ),
                         ),
                       ),

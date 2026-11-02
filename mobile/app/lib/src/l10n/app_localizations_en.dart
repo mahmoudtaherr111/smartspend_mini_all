@@ -447,9 +447,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get summaryIncome => 'Income';
 
   @override
-  String get summaryNet => 'Net';
-
-  @override
   String summaryCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -486,7 +483,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Try again';
 
   @override
-  String get composerHint => 'Type what you spent… e.g. coffee 50 and Uber 120';
+  String get composerHint => 'Type: coffee 50, Uber 120';
 
   @override
   String get composerSend => 'Send';
@@ -849,9 +846,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statsDailyAverage => 'Daily average';
-
-  @override
-  String get statsLastMonth => 'Last month';
 
   @override
   String get statsByCategory => 'Where it went';
@@ -1322,22 +1316,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manualRecordTypeTransfer => 'Transfer';
 
   @override
-  String get manualRecordCategory => 'Category';
-
-  @override
   String get manualRecordSelectCategory => 'Select category';
 
   @override
-  String get manualRecordDate => 'Date';
-
-  @override
-  String get manualRecordWallet => 'Wallet (optional)';
-
-  @override
   String get manualRecordNoWallet => 'No wallet';
-
-  @override
-  String get manualRecordNote => 'Note (optional)';
 
   @override
   String get manualRecordNoteHint => 'Additional details...';
@@ -1376,9 +1358,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get searchOfflineNotice =>
       'Searching only transactions saved on this device.';
-
-  @override
-  String get searchNoTransactions => 'No transactions to search yet.';
 
   @override
   String get deleteAccountTitle => 'Delete Account';
@@ -1464,12 +1443,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get moneyPrefsSalaryDayBody =>
       'The day your financial month begins. In shorter months such as February, the last day of the month is used automatically.';
-
-  @override
-  String get moneyPrefsCurrency => 'Currency';
-
-  @override
-  String get moneyPrefsDecimalPlaces => 'Decimal Places';
 
   @override
   String get moneyPrefsSaved => 'Preferences saved';
@@ -1567,20 +1540,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helpTicketSubmit => 'Submit Ticket';
 
   @override
-  String get helpTicketSuccess =>
-      'Ticket submitted successfully, we\'ll get back to you soon.';
-
-  @override
   String get helpMyTickets => 'My Tickets';
-
-  @override
-  String get helpTicketOpen => 'Open';
-
-  @override
-  String get helpTicketClosed => 'Closed';
-
-  @override
-  String get helpTicketReplied => 'Replied';
 
   @override
   String get planTitle => 'Plans & Subscription';
@@ -1595,20 +1555,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planPro => 'Pro Plan';
 
   @override
-  String get planUpgrade => 'Upgrade to Pro';
-
-  @override
   String get planFeaturesTitle => 'Pro Plan Features';
 
   @override
   String get cancelPlanTitle => 'Cancel Subscription';
 
   @override
-  String get cancelPlanConfirm => 'Confirm Cancellation';
-
-  @override
   String get cancelPlanRetainNotice =>
-      'Your Pro plan features will remain active until the end of your billing cycle.';
+      'Your plan keeps working until the end of the period you paid for.';
 
   @override
   String get inviteTitle => 'Invite Friends';
@@ -1647,13 +1601,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataStoredTitle => 'Data & Privacy';
-
-  @override
-  String get appVersion => 'Version';
-
-  @override
-  String get offlineRetryBanner =>
-      'No internet connection. Changes will be saved locally.';
 
   @override
   String get forgotPassword => 'Forgot password?';
@@ -2277,8 +2224,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monSmartPlan => 'Smart plan';
 
   @override
-  String monTargetDateP0P1P2(String p0, String p1, String p2) {
-    return 'Target date: $p0/$p1/$p2';
+  String monTargetDateP0P1P2(String p0) {
+    return 'Target date: $p0';
   }
 
   @override
@@ -2303,8 +2250,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monPaused => 'Paused';
 
   @override
-  String monDateP0P1P2(String p0, String p1, String p2) {
-    return 'Date: $p0/$p1/$p2';
+  String monDateP0P1P2(String p0) {
+    return 'Date: $p0';
   }
 
   @override
@@ -2320,8 +2267,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monSuggestedWeeklyActions => 'Suggested weekly actions:';
 
   @override
-  String monLastAnalysisP0P1P2(String p0, String p1, String p2) {
-    return 'Last analysis: $p0/$p1/$p2';
+  String monLastAnalysisP0P1P2(String p0) {
+    return 'Last analysis: $p0';
   }
 
   @override
@@ -2808,16 +2755,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiChat => 'Chat';
 
   @override
-  String get aiMonthlyReport => 'Monthly report';
+  String get aiMonthlyReport => 'Month';
 
   @override
-  String get aiCompareMonths => 'Compare months';
+  String get aiCompareMonths => 'Compare';
 
   @override
   String get aiCalls => 'Calls';
 
   @override
-  String get aiYearlyReport => 'Yearly report';
+  String get aiYearlyReport => 'Year';
 
   @override
   String get aiWeNeedInternetToAnswer =>
@@ -2954,17 +2901,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiExportTheReport => 'Export the report';
 
   @override
-  String aiTheReportForP0Is(String p0) {
-    return 'The report for $p0 is ready.';
-  }
-
-  @override
-  String get aiReportReceived2 => 'Report received.';
-
-  @override
-  String get aiOk => 'OK';
-
-  @override
   String get aiWeCouldnTExportThe => 'We couldn\'t export the report.';
 
   @override
@@ -2975,9 +2911,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiAnalyzeAgain => 'Analyze again';
-
-  @override
-  String get aiPreparingThisMonthSReport => 'Preparing this month\'s report...';
 
   @override
   String get aiWeCanTLoadThe2 => 'We can\'t load the report.';
@@ -3776,28 +3709,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appWhenYourMonthlyReportIs => 'When your monthly report is ready';
 
   @override
-  String get appThePriceIsHighFor => 'The price is high for me';
-
-  @override
-  String get appIDonTNeedThe => 'I don\'t need the extra features';
-
-  @override
-  String get appIHadTechnicalProblems => 'I had technical problems';
-
-  @override
-  String get appILlSubscribeAgainLater => 'I\'ll subscribe again later';
-
-  @override
-  String get appAnotherReason => 'Another reason';
-
-  @override
-  String get appAutoRenewalIsCancelled => 'Auto-renewal is cancelled';
-
-  @override
   String get appWeCanTCancelRight => 'We can\'t cancel right now.';
-
-  @override
-  String get appHelpUsUnderstandWhy => 'Help us understand why:';
 
   @override
   String get appKeepMyPlan => 'Keep my plan';
@@ -3896,9 +3808,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appDaysInARow3 => 'days in a row';
 
   @override
-  String get appDay => 'day';
-
-  @override
   String appYouRecordedP0P1(String p0, String p1) {
     return 'You recorded $p0 $p1';
   }
@@ -3965,4 +3874,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String appInstallmentLeft(String p0, String p1, String p2) {
     return '$p0: $p1 of $p2 left';
   }
+
+  @override
+  String get aiSend => 'Send';
+
+  @override
+  String get cancelPlanAtStore =>
+      'A subscription is cancelled at the store you bought it from, not in the app. We will open your subscriptions page there; tap cancel on SmartSpend.';
+
+  @override
+  String get cancelPlanOpenStore => 'Open my subscriptions in the store';
 }

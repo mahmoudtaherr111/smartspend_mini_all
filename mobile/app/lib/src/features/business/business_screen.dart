@@ -184,7 +184,6 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
               Text(
                 AppLocalizations.of(context).aiTheWorkAccountComesWith,
                 style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
                   color: colors.foreground,
                 ),
                 textAlign: TextAlign.center,
@@ -360,9 +359,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                       },
                       title: Text(
                         '${_suggestedCategories[i].icon} ${_suggestedCategories[i].nameAr}',
-                        style: textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: textTheme.titleSmall,
                       ),
                       subtitle: Text(
                         _suggestedCategories[i].type == 'income'
@@ -420,7 +417,6 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                         Text(
                           business.name,
                           style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
                             color: colors.foreground,
                           ),
                         ),
@@ -485,7 +481,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                           children: [
                             Text(
                               cat.icon,
-                              style: const TextStyle(fontSize: 20),
+                              style: Theme.of(context).textTheme.headlineSmall,
                             ),
                             const SizedBox(width: SmartSpendSpacing.sm),
                             Column(
@@ -493,8 +489,7 @@ class _BusinessScreenState extends ConsumerState<BusinessScreen> {
                               children: [
                                 Text(
                                   cat.nameAr,
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
+                                  style: textTheme.titleSmall?.copyWith(
                                     color: colors.foreground,
                                   ),
                                 ),

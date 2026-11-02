@@ -53,7 +53,7 @@ class PersonTransactionsSheet extends ConsumerWidget {
             style: textTheme.titleLarge,
           ),
           if (relation case final String rel when rel.trim().isNotEmpty) ...[
-            const SizedBox(height: 2),
+            const SizedBox(height: SmartSpendSpacing.xs / 2),
             Text(
               rel.trim(),
               style: textTheme.bodySmall?.copyWith(

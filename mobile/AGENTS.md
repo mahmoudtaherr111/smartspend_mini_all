@@ -33,7 +33,8 @@ Why it exists and what is decided: `docs/decisions/0022-flutter-mobile-app.md`. 
     `docs/guides/mobile-design.md`). Money is written only by `formatMoney`, shown only by `AmountText` and read only
     by `parseAmount`; a Latin name inside Arabic text goes through `inlineName`. A piece two screens need moves into
     `smartspend_ui` with its tests and an entry in `lib/gallery.dart`. (component behaviour, contrast and target
-    sizes: `packages/smartspend_ui/test/`; using them in screens: unenforced)
+    sizes: `packages/smartspend_ui/test/`; raw colours, type, radii, spacing and sheets in screens:
+    `app/test/design_tokens_test.dart`)
 13. A sentence is recorded only through the outbox (`Outbox.submit` in
     `app/lib/src/features/ledger/offline/outbox.dart`), never by calling `ai.parseExpense` from a screen, and every
     save of it carries the outbox item's id as its `clientRequestId`, so a save repeated after a lost answer is stored
@@ -43,7 +44,7 @@ Why it exists and what is decided: `docs/decisions/0022-flutter-mobile-app.md`. 
     writes its record or the `device_lock` keys, a PIN is never stored or logged, and every PIN check, including the
     one before changing the lock, goes through `AppLock.checkPin` so wrong PINs are always counted. Amounts follow
     `MoneyPrivacy`: a screen that writes money in text uses `moneyText`, never `formatMoney` directly.
-    (`app/test/lock_test.dart`; the `formatMoney` ban in screens is unenforced)
+    (`app/test/lock_test.dart`; the `formatMoney` ban in screens: `app/test/design_tokens_test.dart`)
 15. The interface language is a choice of the phone, not of the account: `languageProvider` in
     `app/lib/src/core/preferences.dart`, read by `bootstrap()` before the first frame and kept through signing out.
     English changes the interface only; categories, the person's sentences and the AI's answers are never translated

@@ -95,7 +95,13 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       appBar: AppBar(title: Text(l10n.planTitle)),
       body: planAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text(l10n.captureStatusFailed)),
+        error: (err, stack) => Center(
+          child: ErrorState(
+            message: l10n.captureStatusFailed,
+            retryLabel: l10n.retry,
+            onRetry: () => ref.invalidate(userPlanProvider),
+          ),
+        ),
         data: (planInfo) {
           final isPro = planInfo.isPro;
 
@@ -118,8 +124,10 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          spacing: SmartSpendSpacing.sm,
+                          runSpacing: SmartSpendSpacing.xs,
                           children: [
                             Text(
                               l10n.planCurrent,
@@ -129,8 +137,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
+                                horizontal: SmartSpendSpacing.md,
+                                vertical: SmartSpendSpacing.xs,
                               ),
                               decoration: BoxDecoration(
                                 color:
@@ -148,7 +156,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                                   color: isPro
                                       ? colors.accent
                                       : colors.foreground,
-                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
@@ -168,7 +175,8 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                                 context.push(CancelPlanScreen.path),
                             child: Text(
                               l10n.cancelPlanTitle,
-                              style: TextStyle(color: colors.mutedForeground),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: colors.mutedForeground),
                             ),
                           ),
                         ],
@@ -177,12 +185,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   ),
                 ),
                 const SizedBox(height: SmartSpendSpacing.xl),
-                Text(
-                  l10n.planFeaturesTitle,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(l10n.planFeaturesTitle, style: textTheme.titleMedium),
                 const SizedBox(height: SmartSpendSpacing.md),
                 Card(
                   elevation: 0,

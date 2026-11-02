@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../../l10n/app_localizations.dart';
 
@@ -29,7 +30,7 @@ class PastCallsView extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => Center(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(SmartSpendSpacing.xl),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -38,13 +39,13 @@ class PastCallsView extends ConsumerWidget {
                     size: 48,
                     color: Colors.redAccent,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: SmartSpendSpacing.md),
                   Text(
                     AppLocalizations.of(context).aiWeCanTLoadYour3,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 14),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: SmartSpendSpacing.lg),
                   ElevatedButton(
                     onPressed: () => ref.invalidate(pastVoiceCallsProvider),
                     child: Text(AppLocalizations.of(context).aiTryAgain),
@@ -60,12 +61,14 @@ class PastCallsView extends ConsumerWidget {
                 children: [
                   const SizedBox(height: 80),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: SmartSpendSpacing.xxl,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(SmartSpendSpacing.xl),
                           decoration: BoxDecoration(
                             color: Theme.of(context)
                                 .colorScheme
@@ -79,27 +82,23 @@ class PastCallsView extends ConsumerWidget {
                             color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: SmartSpendSpacing.xl),
                         Text(
                           AppLocalizations.of(context).aiNoPastCalls,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.headlineSmall,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: SmartSpendSpacing.md),
                         Text(
                           AppLocalizations.of(context).aiTalkToTheAssistantIn,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                            height: 1.5,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: SmartSpendSpacing.xl),
                         FilledButton.icon(
                           onPressed: onStartNewCall,
                           icon: const Icon(Icons.call),
@@ -107,7 +106,7 @@ class PastCallsView extends ConsumerWidget {
                             AppLocalizations.of(context).aiStartANewCall,
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: SmartSpendSpacing.xxl),
                         _buildPrivacyCard(context),
                       ],
                     ),
@@ -117,13 +116,16 @@ class PastCallsView extends ConsumerWidget {
             }
 
             return ListView.separated(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(SmartSpendSpacing.lg),
               itemCount: calls.length + 1,
-              separatorBuilder: (context, index) => const SizedBox(height: 8),
+              separatorBuilder: (context, index) =>
+                  const SizedBox(height: SmartSpendSpacing.sm),
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.only(
+                      bottom: SmartSpendSpacing.md,
+                    ),
                     child: _buildPrivacyCard(context),
                   );
                 }
@@ -140,7 +142,7 @@ class PastCallsView extends ConsumerWidget {
                   color: Theme.of(context).colorScheme.surfaceContainerHighest
                       .withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(SmartSpendRadii.md),
                     side: BorderSide(
                       color: Theme.of(context).colorScheme.outlineVariant
                           .withValues(alpha: 0.4),
@@ -148,8 +150,8 @@ class PastCallsView extends ConsumerWidget {
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                      horizontal: SmartSpendSpacing.lg,
+                      vertical: SmartSpendSpacing.sm,
                     ),
                     leading: CircleAvatar(
                       backgroundColor: Theme.of(context)
@@ -162,25 +164,22 @@ class PastCallsView extends ConsumerWidget {
                     ),
                     title: Text(
                       AppLocalizations.of(context).aiVoiceCall,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 4),
+                        const SizedBox(height: SmartSpendSpacing.xs),
                         Text(
                           DateFormat('yyyy-MM-dd HH:mm').format(call.startedAt),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: SmartSpendSpacing.xs / 2),
                         Row(
                           children: [
                             Icon(
@@ -190,16 +189,16 @@ class PastCallsView extends ConsumerWidget {
                                   .colorScheme
                                   .onSurfaceVariant,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: SmartSpendSpacing.xs),
                             Text(
                               AppLocalizations.of(context)
                                   .aiDurationP0(durationText),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
                             ),
                           ],
                         ),
@@ -233,11 +232,11 @@ class PastCallsView extends ConsumerWidget {
 
   Widget _buildPrivacyCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(SmartSpendSpacing.md),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest
             .withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SmartSpendRadii.md),
         border: Border.all(
           color: Theme.of(context).colorScheme.outlineVariant
               .withValues(alpha: 0.3),
@@ -250,14 +249,12 @@ class PastCallsView extends ConsumerWidget {
             size: 20,
             color: Theme.of(context).colorScheme.primary,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: SmartSpendSpacing.sm),
           Expanded(
             child: Text(
               AppLocalizations.of(context).aiYourPrivacyNeitherTheAudio,
-              style: TextStyle(
-                fontSize: 11,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
-                height: 1.4,
               ),
             ),
           ),

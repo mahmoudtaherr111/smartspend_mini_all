@@ -812,12 +812,6 @@ abstract class AppLocalizations {
   /// **'دخل'**
   String get summaryIncome;
 
-  /// No description provided for @summaryNet.
-  ///
-  /// In ar, this message translates to:
-  /// **'الصافي'**
-  String get summaryNet;
-
   /// No description provided for @summaryCount.
   ///
   /// In ar, this message translates to:
@@ -869,7 +863,7 @@ abstract class AppLocalizations {
   /// No description provided for @composerHint.
   ///
   /// In ar, this message translates to:
-  /// **'اكتب اللي صرفته… مثلاً: قهوة 50 وأوبر 120'**
+  /// **'اكتب: قهوة 50 وأوبر 120'**
   String get composerHint;
 
   /// No description provided for @composerSend.
@@ -1447,12 +1441,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'متوسط يومي'**
   String get statsDailyAverage;
-
-  /// No description provided for @statsLastMonth.
-  ///
-  /// In ar, this message translates to:
-  /// **'الشهر اللي فات'**
-  String get statsLastMonth;
 
   /// No description provided for @statsByCategory.
   ///
@@ -2270,41 +2258,17 @@ abstract class AppLocalizations {
   /// **'تحويل'**
   String get manualRecordTypeTransfer;
 
-  /// No description provided for @manualRecordCategory.
-  ///
-  /// In ar, this message translates to:
-  /// **'التصنيف'**
-  String get manualRecordCategory;
-
   /// No description provided for @manualRecordSelectCategory.
   ///
   /// In ar, this message translates to:
   /// **'اختر التصنيف'**
   String get manualRecordSelectCategory;
 
-  /// No description provided for @manualRecordDate.
-  ///
-  /// In ar, this message translates to:
-  /// **'التاريخ'**
-  String get manualRecordDate;
-
-  /// No description provided for @manualRecordWallet.
-  ///
-  /// In ar, this message translates to:
-  /// **'المحفظة (اختياري)'**
-  String get manualRecordWallet;
-
   /// No description provided for @manualRecordNoWallet.
   ///
   /// In ar, this message translates to:
   /// **'بدون محفظة'**
   String get manualRecordNoWallet;
-
-  /// No description provided for @manualRecordNote.
-  ///
-  /// In ar, this message translates to:
-  /// **'ملاحظة (اختياري)'**
-  String get manualRecordNote;
 
   /// No description provided for @manualRecordNoteHint.
   ///
@@ -2371,12 +2335,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'البحث دلوقتي شغال على العمليات المحفوظة على جهازك بس.'**
   String get searchOfflineNotice;
-
-  /// No description provided for @searchNoTransactions.
-  ///
-  /// In ar, this message translates to:
-  /// **'لسه مفيش معاملات تبحث فيها.'**
-  String get searchNoTransactions;
 
   /// No description provided for @deleteAccountTitle.
   ///
@@ -2533,18 +2491,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'اليوم الذي تبدأ فيه حساب مصاريفك وميزانيتك الشهرية. في الشهور القصيرة مثل فبراير يتم اعتماد آخر يوم في الشهر تلقائياً.'**
   String get moneyPrefsSalaryDayBody;
-
-  /// No description provided for @moneyPrefsCurrency.
-  ///
-  /// In ar, this message translates to:
-  /// **'العملة'**
-  String get moneyPrefsCurrency;
-
-  /// No description provided for @moneyPrefsDecimalPlaces.
-  ///
-  /// In ar, this message translates to:
-  /// **'الكسور العشرية'**
-  String get moneyPrefsDecimalPlaces;
 
   /// No description provided for @moneyPrefsSaved.
   ///
@@ -2732,35 +2678,11 @@ abstract class AppLocalizations {
   /// **'إرسال التذكرة'**
   String get helpTicketSubmit;
 
-  /// No description provided for @helpTicketSuccess.
-  ///
-  /// In ar, this message translates to:
-  /// **'تم إرسال تذكرتك بنجاح، سنرد عليك في أقرب وقت.'**
-  String get helpTicketSuccess;
-
   /// No description provided for @helpMyTickets.
   ///
   /// In ar, this message translates to:
   /// **'تذاكري السابقة'**
   String get helpMyTickets;
-
-  /// No description provided for @helpTicketOpen.
-  ///
-  /// In ar, this message translates to:
-  /// **'قيد الانتظار'**
-  String get helpTicketOpen;
-
-  /// No description provided for @helpTicketClosed.
-  ///
-  /// In ar, this message translates to:
-  /// **'مغلقة'**
-  String get helpTicketClosed;
-
-  /// No description provided for @helpTicketReplied.
-  ///
-  /// In ar, this message translates to:
-  /// **'تم الرد'**
-  String get helpTicketReplied;
 
   /// No description provided for @planTitle.
   ///
@@ -2786,12 +2708,6 @@ abstract class AppLocalizations {
   /// **'خطة المحترفين (Pro)'**
   String get planPro;
 
-  /// No description provided for @planUpgrade.
-  ///
-  /// In ar, this message translates to:
-  /// **'الترقية إلى Pro'**
-  String get planUpgrade;
-
   /// No description provided for @planFeaturesTitle.
   ///
   /// In ar, this message translates to:
@@ -2804,16 +2720,10 @@ abstract class AppLocalizations {
   /// **'إلغاء الاشتراك'**
   String get cancelPlanTitle;
 
-  /// No description provided for @cancelPlanConfirm.
-  ///
-  /// In ar, this message translates to:
-  /// **'تأكيد إلغاء التجديد التلقائي'**
-  String get cancelPlanConfirm;
-
   /// No description provided for @cancelPlanRetainNotice.
   ///
   /// In ar, this message translates to:
-  /// **'ستستمر باقتك الحالية حتى نهاية فترة الاشتراك ولن يتم تجديدها تلقائياً.'**
+  /// **'باقتك هتفضل شغالة لحد آخر الفترة اللي دفعتها.'**
   String get cancelPlanRetainNotice;
 
   /// No description provided for @inviteTitle.
@@ -2887,18 +2797,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'البيانات والخصوصية'**
   String get dataStoredTitle;
-
-  /// No description provided for @appVersion.
-  ///
-  /// In ar, this message translates to:
-  /// **'الإصدار'**
-  String get appVersion;
-
-  /// No description provided for @offlineRetryBanner.
-  ///
-  /// In ar, this message translates to:
-  /// **'لا يوجد اتصال بالإنترنت. التعديلات ستُحفظ محلياً.'**
-  String get offlineRetryBanner;
 
   /// No description provided for @forgotPassword.
   ///
@@ -4013,8 +3911,8 @@ abstract class AppLocalizations {
   /// No description provided for @monTargetDateP0P1P2.
   ///
   /// In ar, this message translates to:
-  /// **'الميعاد: {p0}/{p1}/{p2}'**
-  String monTargetDateP0P1P2(String p0, String p1, String p2);
+  /// **'الميعاد: {p0}'**
+  String monTargetDateP0P1P2(String p0);
 
   /// No description provided for @monWeCouldnTRunThe.
   ///
@@ -4055,8 +3953,8 @@ abstract class AppLocalizations {
   /// No description provided for @monDateP0P1P2.
   ///
   /// In ar, this message translates to:
-  /// **'الميعاد: {p0}/{p1}/{p2}'**
-  String monDateP0P1P2(String p0, String p1, String p2);
+  /// **'الميعاد: {p0}'**
+  String monDateP0P1P2(String p0);
 
   /// No description provided for @monGoalAnalysis.
   ///
@@ -4085,8 +3983,8 @@ abstract class AppLocalizations {
   /// No description provided for @monLastAnalysisP0P1P2.
   ///
   /// In ar, this message translates to:
-  /// **'آخر تحليل: {p0}/{p1}/{p2}'**
-  String monLastAnalysisP0P1P2(String p0, String p1, String p2);
+  /// **'آخر تحليل: {p0}'**
+  String monLastAnalysisP0P1P2(String p0);
 
   /// No description provided for @monRunTheAnalysisToGet.
   ///
@@ -4931,13 +4829,13 @@ abstract class AppLocalizations {
   /// No description provided for @aiMonthlyReport.
   ///
   /// In ar, this message translates to:
-  /// **'التقرير الشهري'**
+  /// **'الشهر'**
   String get aiMonthlyReport;
 
   /// No description provided for @aiCompareMonths.
   ///
   /// In ar, this message translates to:
-  /// **'قارن الشهور'**
+  /// **'قارن'**
   String get aiCompareMonths;
 
   /// No description provided for @aiCalls.
@@ -4949,7 +4847,7 @@ abstract class AppLocalizations {
   /// No description provided for @aiYearlyReport.
   ///
   /// In ar, this message translates to:
-  /// **'التقرير السنوي'**
+  /// **'السنة'**
   String get aiYearlyReport;
 
   /// No description provided for @aiWeNeedInternetToAnswer.
@@ -5192,24 +5090,6 @@ abstract class AppLocalizations {
   /// **'صدّر التقرير'**
   String get aiExportTheReport;
 
-  /// No description provided for @aiTheReportForP0Is.
-  ///
-  /// In ar, this message translates to:
-  /// **'تقرير {p0} جاهز.'**
-  String aiTheReportForP0Is(String p0);
-
-  /// No description provided for @aiReportReceived2.
-  ///
-  /// In ar, this message translates to:
-  /// **'التقرير وصل.'**
-  String get aiReportReceived2;
-
-  /// No description provided for @aiOk.
-  ///
-  /// In ar, this message translates to:
-  /// **'تمام'**
-  String get aiOk;
-
   /// No description provided for @aiWeCouldnTExportThe.
   ///
   /// In ar, this message translates to:
@@ -5233,12 +5113,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'حلل تاني'**
   String get aiAnalyzeAgain;
-
-  /// No description provided for @aiPreparingThisMonthSReport.
-  ///
-  /// In ar, this message translates to:
-  /// **'بنجهز تقرير الشهر...'**
-  String get aiPreparingThisMonthSReport;
 
   /// No description provided for @aiWeCanTLoadThe2.
   ///
@@ -6632,53 +6506,11 @@ abstract class AppLocalizations {
   /// **'لما تقريرك الشهري يجهز'**
   String get appWhenYourMonthlyReportIs;
 
-  /// No description provided for @appThePriceIsHighFor.
-  ///
-  /// In ar, this message translates to:
-  /// **'السعر غالي عليّ'**
-  String get appThePriceIsHighFor;
-
-  /// No description provided for @appIDonTNeedThe.
-  ///
-  /// In ar, this message translates to:
-  /// **'مش محتاج المميزات الزيادة'**
-  String get appIDonTNeedThe;
-
-  /// No description provided for @appIHadTechnicalProblems.
-  ///
-  /// In ar, this message translates to:
-  /// **'قابلتني مشاكل تقنية'**
-  String get appIHadTechnicalProblems;
-
-  /// No description provided for @appILlSubscribeAgainLater.
-  ///
-  /// In ar, this message translates to:
-  /// **'هشترك تاني بعدين'**
-  String get appILlSubscribeAgainLater;
-
-  /// No description provided for @appAnotherReason.
-  ///
-  /// In ar, this message translates to:
-  /// **'سبب تاني'**
-  String get appAnotherReason;
-
-  /// No description provided for @appAutoRenewalIsCancelled.
-  ///
-  /// In ar, this message translates to:
-  /// **'التجديد التلقائي اتلغى'**
-  String get appAutoRenewalIsCancelled;
-
   /// No description provided for @appWeCanTCancelRight.
   ///
   /// In ar, this message translates to:
   /// **'مش قادرين نلغي دلوقتي.'**
   String get appWeCanTCancelRight;
-
-  /// No description provided for @appHelpUsUnderstandWhy.
-  ///
-  /// In ar, this message translates to:
-  /// **'قولنا السبب:'**
-  String get appHelpUsUnderstandWhy;
 
   /// No description provided for @appKeepMyPlan.
   ///
@@ -6830,12 +6662,6 @@ abstract class AppLocalizations {
   /// **'يوم ورا بعض'**
   String get appDaysInARow3;
 
-  /// No description provided for @appDay.
-  ///
-  /// In ar, this message translates to:
-  /// **'يوم'**
-  String get appDay;
-
   /// No description provided for @appYouRecordedP0P1.
   ///
   /// In ar, this message translates to:
@@ -6949,6 +6775,24 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'{p0}: باقي {p1} من {p2}'**
   String appInstallmentLeft(String p0, String p1, String p2);
+
+  /// No description provided for @aiSend.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابعت'**
+  String get aiSend;
+
+  /// No description provided for @cancelPlanAtStore.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراك بيتلغي من المتجر اللي اشتركت منه، مش من التطبيق. هنفتحلك صفحة اشتراكاتك هناك، ودوس إلغاء على SmartSpend.'**
+  String get cancelPlanAtStore;
+
+  /// No description provided for @cancelPlanOpenStore.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح اشتراكاتي في المتجر'**
+  String get cancelPlanOpenStore;
 }
 
 class _AppLocalizationsDelegate

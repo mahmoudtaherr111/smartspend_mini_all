@@ -41,10 +41,7 @@ class _DeleteContactDialogState extends ConsumerState<DeleteContactDialog> {
           child: Text(AppLocalizations.of(context).aiCancel),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: colors.danger,
-            foregroundColor: Colors.white,
-          ),
+          style: FilledButton.styleFrom(backgroundColor: colors.danger),
           onPressed: _submitting
               ? null
               : () async {

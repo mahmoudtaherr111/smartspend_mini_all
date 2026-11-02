@@ -145,7 +145,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           InlineMessage(error),
           const SizedBox(height: SmartSpendSpacing.lg),
         ] else if (session case SignedOut(expired: true)) ...[
-          InlineMessage(l10n.sessionEnded, warning: true),
+          InlineMessage(l10n.sessionEnded, tone: MessageTone.warning),
           const SizedBox(height: SmartSpendSpacing.lg),
         ],
         AutofillGroup(

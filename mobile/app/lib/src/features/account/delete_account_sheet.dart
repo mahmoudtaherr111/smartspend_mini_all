@@ -23,16 +23,9 @@ class DeleteAccountSheet extends ConsumerStatefulWidget {
   const DeleteAccountSheet({super.key});
 
   static Future<bool?> show(BuildContext context) {
-    return showModalBottomSheet<bool>(
+    return showSmartSpendSheet<bool>(
       context: context,
       isDismissible: false,
-      enableDrag: false,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(SmartSpendRadii.sheet),
-        ),
-      ),
       builder: (ctx) => const DeleteAccountSheet(),
     );
   }
@@ -177,9 +170,7 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
                     Expanded(
                       child: Text(
                         l10n.deleteAccountTitle,
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: textTheme.titleMedium,
                       ),
                     ),
                   ],
@@ -190,7 +181,6 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
                   decoration: BoxDecoration(
                     color: colors.surfaceRaised.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                    border: Border.all(color: colors.border),
                   ),
                   child: Text(
                     l10n.deleteAccountBody,
@@ -203,9 +193,7 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
                 const SizedBox(height: SmartSpendSpacing.lg),
                 Text(
                   l10n.deleteAccountPhraseInstruction,
-                  style: textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: textTheme.titleSmall,
                 ),
                 const SizedBox(height: SmartSpendSpacing.sm),
                 TextField(
@@ -224,9 +212,7 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
                   const SizedBox(height: SmartSpendSpacing.md),
                   Text(
                     l10n.deleteAccountPasswordLabel,
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: textTheme.titleSmall,
                   ),
                   const SizedBox(height: SmartSpendSpacing.sm),
                   TextField(
@@ -278,9 +264,8 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
                           },
                           child: Text(
                             l10n.deleteAccountContactSupport,
-                            style: textTheme.bodySmall?.copyWith(
+                            style: textTheme.labelMedium?.copyWith(
                               color: colors.accent,
-                              fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,
                             ),
                           ),

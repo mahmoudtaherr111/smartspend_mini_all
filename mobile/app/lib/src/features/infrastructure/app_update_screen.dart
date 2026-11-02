@@ -27,12 +27,9 @@ class AppUpdateScreen extends ConsumerWidget {
     if (onUpdate != null) {
       onUpdate!();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).appPleaseUpdateTheAppFrom(storeUrl),
-          ),
-        ),
+      showSmartSpendNotice(
+        context,
+        AppLocalizations.of(context).appPleaseUpdateTheAppFrom(storeUrl),
       );
     }
   }
@@ -71,9 +68,7 @@ class AppUpdateScreen extends ConsumerWidget {
               Text(
                 AppLocalizations.of(context).appPleaseUpdateTheApp,
                 textAlign: TextAlign.center,
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: textTheme.headlineSmall,
               ),
               const SizedBox(height: SmartSpendSpacing.sm),
               Text(
@@ -88,13 +83,12 @@ class AppUpdateScreen extends ConsumerWidget {
                 const SizedBox(height: SmartSpendSpacing.md),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: SmartSpendSpacing.lg,
+                    vertical: SmartSpendSpacing.sm,
                   ),
                   decoration: BoxDecoration(
                     color: colors.surface,
                     borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                    border: Border.all(color: colors.border),
                   ),
                   child: Text(
                     AppLocalizations.of(context)

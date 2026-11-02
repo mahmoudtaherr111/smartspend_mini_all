@@ -44,16 +44,8 @@ Future<bool> promptStepUpAuth(
   if (!context.mounted) return false;
 
   // Otherwise, show Step-Up PIN sheet
-  final confirmed = await showModalBottomSheet<bool>(
+  final confirmed = await showSmartSpendSheet<bool>(
     context: context,
-    isScrollControlled: true,
-    isDismissible: true,
-    enableDrag: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(SmartSpendRadii.sheet),
-      ),
-    ),
     builder: (ctx) => _StepUpAuthSheet(reason: reason),
   );
 
@@ -101,14 +93,6 @@ class _StepUpAuthSheetState extends ConsumerState<_StepUpAuthSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
               const SizedBox(height: SmartSpendSpacing.lg),
               Text(
                 widget.reason,

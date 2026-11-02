@@ -71,7 +71,6 @@ class GoalsScreen extends ConsumerWidget {
                 Text(
                   AppLocalizations.of(context).monWeCanTLoadYour2,
                   style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
                     color: colors.foreground,
                   ),
                 ),
@@ -105,7 +104,6 @@ class GoalsScreen extends ConsumerWidget {
                     Text(
                       AppLocalizations.of(context).monNoSavingGoalsYet,
                       style: textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
                         color: colors.foreground,
                       ),
                     ),
@@ -142,7 +140,6 @@ class GoalsScreen extends ConsumerWidget {
                   Text(
                     AppLocalizations.of(context).monCurrentGoals,
                     style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
                       color: colors.foreground,
                     ),
                   ),
@@ -166,7 +163,6 @@ class GoalsScreen extends ConsumerWidget {
                   Text(
                     AppLocalizations.of(context).monGoalsReached,
                     style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
                       color: colors.foreground,
                     ),
                   ),
@@ -190,7 +186,6 @@ class GoalsScreen extends ConsumerWidget {
                   Text(
                     AppLocalizations.of(context).monPausedGoals,
                     style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
                       color: colors.foreground,
                     ),
                   ),
@@ -244,7 +239,6 @@ class _GoalCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: colors.surface,
             borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-            border: Border.all(color: colors.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -259,9 +253,7 @@ class _GoalCard extends StatelessWidget {
                           ? Icons.emoji_events_rounded
                           : Icons.flag_rounded,
                       size: 20,
-                      color: goal.isCompleted
-                          ? const Color(0xFF10B981)
-                          : colors.accent,
+                      color: goal.isCompleted ? colors.accent : colors.accent,
                     ),
                   ),
                   const SizedBox(width: SmartSpendSpacing.sm),
@@ -272,7 +264,6 @@ class _GoalCard extends StatelessWidget {
                         Text(
                           goal.title,
                           style: textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
                             color: colors.foreground,
                           ),
                         ),
@@ -284,57 +275,28 @@ class _GoalCard extends StatelessWidget {
                             color: colors.mutedForeground,
                           ),
                         ),
+                        if (goal.aiPlan != null) ...[
+                          const SizedBox(height: SmartSpendSpacing.xs),
+                          StatusTag(
+                            AppLocalizations.of(context).monSmartPlan,
+                            color: colors.ai,
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                  if (goal.aiPlan != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colors.ai.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.auto_awesome_rounded,
-                            size: 12,
-                            color: colors.ai,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            AppLocalizations.of(context).monSmartPlan,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: colors.ai,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.chevron_left_rounded,
-                    color: colors.mutedForeground,
-                  ),
+                  const SizedBox(width: SmartSpendSpacing.xs),
+                  Icon(Icons.chevron_right, color: colors.mutedForeground),
                 ],
               ),
               if (goal.targetDate != null) ...[
                 const SizedBox(height: SmartSpendSpacing.xs),
                 Text(
                   AppLocalizations.of(context).monTargetDateP0P1P2(
-                    '${goal.targetDate!.year}',
-                    '${goal.targetDate!.month}',
-                    '${goal.targetDate!.day}',
+                    DateWords.of(context).date(goal.targetDate!),
                   ),
                   style: textTheme.bodySmall?.copyWith(
                     color: colors.mutedForeground,
-                    fontSize: 11,
                   ),
                 ),
               ],

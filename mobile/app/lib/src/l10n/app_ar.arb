@@ -249,7 +249,6 @@
     }
   },
   "summaryIncome": "دخل",
-  "summaryNet": "الصافي",
   "summaryCount": "{count, plural, =0{مفيش عمليات} =1{عملية واحدة} =2{عمليتين} few{{count} عمليات} many{{count} عملية} other{{count} عملية}}",
   "@summaryCount": {
     "placeholders": {
@@ -265,7 +264,7 @@
   "ledgerEmptyBody": "اكتب أول مصروف تحت بالعامية، وإحنا هنصنّفه لوحدنا.",
   "ledgerLoadFailed": "مش قادرين نجيب العمليات دلوقتي. اتأكد من النت وجرّب تاني.",
   "retry": "جرّب تاني",
-  "composerHint": "اكتب اللي صرفته… مثلاً: قهوة 50 وأوبر 120",
+  "composerHint": "اكتب: قهوة 50 وأوبر 120",
   "composerSend": "ابعت",
   "savedAuto": "اتحفظت لوحدها: {summary}",
   "@savedAuto": {
@@ -500,7 +499,6 @@
   },
   "statsNoComparison": "لسه مفيش شهر قبله نقارن بيه.",
   "statsDailyAverage": "متوسط يومي",
-  "statsLastMonth": "الشهر اللي فات",
   "statsByCategory": "صرفت على إيه",
   "statsOther": "حاجات تانية",
   "statsHabits": "عاداتك في الشهر",
@@ -758,12 +756,8 @@
   "manualRecordTypeExpense": "مصروف",
   "manualRecordTypeIncome": "دخل",
   "manualRecordTypeTransfer": "تحويل",
-  "manualRecordCategory": "التصنيف",
   "manualRecordSelectCategory": "اختر التصنيف",
-  "manualRecordDate": "التاريخ",
-  "manualRecordWallet": "المحفظة (اختياري)",
   "manualRecordNoWallet": "بدون محفظة",
-  "manualRecordNote": "ملاحظة (اختياري)",
   "manualRecordNoteHint": "تفاصيل إضافية...",
   "manualRecordSave": "حفظ العملية",
   "manualRecordAmountRequired": "اكتب المبلغ الأول",
@@ -783,7 +777,6 @@
   },
   "searchEmptyBody": "جرّب تبحث بكلمة تانية أو اتأكد من الحروف.",
   "searchOfflineNotice": "البحث دلوقتي شغال على العمليات المحفوظة على جهازك بس.",
-  "searchNoTransactions": "لسه مفيش معاملات تبحث فيها.",
   "deleteAccountTitle": "حذف الحساب",
   "deleteAccountBody": "سيتم مسح جميع بياناتك، سجلاتك، ومعاملاتك نهائياً وفوراً. لن تتمكن من استرجاع هذا الحساب مجدداً. وفقاً لقانون حماية البيانات الشخصية رقم 151 لسنة 2020، قد يتم الاحتفاظ ببعض سجلات الامتثال المالي فقط للمدة المقررة قانوناً.",
   "deleteAccountPhraseInstruction": "لتأكيد الحذف، اكتب كلمة «احذف حسابي» أدناه:",
@@ -810,8 +803,6 @@
   "moneyPrefsTitle": "تفضيلات الراتب والميزانية",
   "moneyPrefsSalaryDay": "يوم نزول الراتب (بداية الشهر المالي)",
   "moneyPrefsSalaryDayBody": "اليوم الذي تبدأ فيه حساب مصاريفك وميزانيتك الشهرية. في الشهور القصيرة مثل فبراير يتم اعتماد آخر يوم في الشهر تلقائياً.",
-  "moneyPrefsCurrency": "العملة",
-  "moneyPrefsDecimalPlaces": "الكسور العشرية",
   "moneyPrefsSaved": "تم حفظ تفضيلات الراتب",
   "onboardingQuestionsTitle": "أسئلة التخصيص",
   "onboardingSkip": "تخطي الآن",
@@ -843,20 +834,14 @@
   "helpTicketSubject": "موضوع الرسالة",
   "helpTicketMessage": "تفاصيل المشكلة أو الاستفسار",
   "helpTicketSubmit": "إرسال التذكرة",
-  "helpTicketSuccess": "تم إرسال تذكرتك بنجاح، سنرد عليك في أقرب وقت.",
   "helpMyTickets": "تذاكري السابقة",
-  "helpTicketOpen": "قيد الانتظار",
-  "helpTicketClosed": "مغلقة",
-  "helpTicketReplied": "تم الرد",
   "planTitle": "الاشتراك والترقية",
   "planCurrent": "باقتك الحالية",
   "planFree": "الخطة المجانية",
   "planPro": "خطة المحترفين (Pro)",
-  "planUpgrade": "الترقية إلى Pro",
   "planFeaturesTitle": "مميزات خطة Pro",
   "cancelPlanTitle": "إلغاء الاشتراك",
-  "cancelPlanConfirm": "تأكيد إلغاء التجديد التلقائي",
-  "cancelPlanRetainNotice": "ستستمر باقتك الحالية حتى نهاية فترة الاشتراك ولن يتم تجديدها تلقائياً.",
+  "cancelPlanRetainNotice": "باقتك هتفضل شغالة لحد آخر الفترة اللي دفعتها.",
   "inviteTitle": "دعوة أصدقاء",
   "inviteYourCode": "كود الدعوة الخاص بك",
   "inviteShare": "مشاركة الكود",
@@ -877,8 +862,6 @@
   "appearanceDark": "داكن",
   "termsTitle": "شروط الخدمة",
   "dataStoredTitle": "البيانات والخصوصية",
-  "appVersion": "الإصدار",
-  "offlineRetryBanner": "لا يوجد اتصال بالإنترنت. التعديلات ستُحفظ محلياً.",
   "forgotPassword": "نسيت كلمة المرور؟",
   "resetPasswordTitle": "إعادة تعيين كلمة المرور",
   "resetPasswordNew": "كلمة المرور الجديدة",
@@ -1228,16 +1211,10 @@
     }
   },
   "monSmartPlan": "خطة ذكية",
-  "monTargetDateP0P1P2": "الميعاد: {p0}/{p1}/{p2}",
+  "monTargetDateP0P1P2": "الميعاد: {p0}",
   "@monTargetDateP0P1P2": {
     "placeholders": {
       "p0": {
-        "type": "String"
-      },
-      "p1": {
-        "type": "String"
-      },
-      "p2": {
         "type": "String"
       }
     }
@@ -1255,16 +1232,10 @@
   "monReached": "اتحقق",
   "monActive": "شغال",
   "monPaused": "متوقف",
-  "monDateP0P1P2": "الميعاد: {p0}/{p1}/{p2}",
+  "monDateP0P1P2": "الميعاد: {p0}",
   "@monDateP0P1P2": {
     "placeholders": {
       "p0": {
-        "type": "String"
-      },
-      "p1": {
-        "type": "String"
-      },
-      "p2": {
         "type": "String"
       }
     }
@@ -1273,16 +1244,10 @@
   "monRefresh": "حدّث",
   "monStepsToYourGoal": "خطوات الوصول للهدف:",
   "monSuggestedWeeklyActions": "حاجات تعملها كل أسبوع:",
-  "monLastAnalysisP0P1P2": "آخر تحليل: {p0}/{p1}/{p2}",
+  "monLastAnalysisP0P1P2": "آخر تحليل: {p0}",
   "@monLastAnalysisP0P1P2": {
     "placeholders": {
       "p0": {
-        "type": "String"
-      },
-      "p1": {
-        "type": "String"
-      },
-      "p2": {
         "type": "String"
       }
     }
@@ -1548,10 +1513,10 @@
   "aiWhatTheAssistantRemembers": "ذاكرة المساعد",
   "aiPastConversations": "المحادثات اللي فاتت",
   "aiChat": "المحادثة",
-  "aiMonthlyReport": "التقرير الشهري",
-  "aiCompareMonths": "قارن الشهور",
+  "aiMonthlyReport": "الشهر",
+  "aiCompareMonths": "قارن",
   "aiCalls": "المكالمات",
-  "aiYearlyReport": "التقرير السنوي",
+  "aiYearlyReport": "السنة",
   "aiWeNeedInternetToAnswer": "محتاجين نت علشان نرد عليك. اللي كتبته محفوظ.",
   "aiYouReOfflineYourDraft": "إنت من غير نت. اللي كتبته محفوظ، وابعته لما النت يرجع.",
   "aiUpgradeToPro": "اشترك في Pro",
@@ -1619,21 +1584,10 @@
   "aiDeleteEverythingSavedTheAssistant": "تمسح كل اللي اتحفظ؟ المساعد هيبدأ يتعلمك من الأول.",
   "aiWeCouldnTUpdateThe": "ما عرفناش نحدث التقرير.",
   "aiExportTheReport": "صدّر التقرير",
-  "aiTheReportForP0Is": "تقرير {p0} جاهز.",
-  "@aiTheReportForP0Is": {
-    "placeholders": {
-      "p0": {
-        "type": "String"
-      }
-    }
-  },
-  "aiReportReceived2": "التقرير وصل.",
-  "aiOk": "تمام",
   "aiWeCouldnTExportThe": "ما عرفناش نصدر التقرير.",
   "aiPreviousMonth": "الشهر اللي فات",
   "aiNextMonth": "الشهر الجاي",
   "aiAnalyzeAgain": "حلل تاني",
-  "aiPreparingThisMonthSReport": "بنجهز تقرير الشهر...",
   "aiWeCanTLoadThe2": "مش قادرين نجيب التقرير.",
   "aiLimitedDataRecordMoreThis": "بيانات قليلة: سجّل عمليات أكتر الشهر ده علشان التقرير يبقى أوضح.",
   "aiThisMonthSAnalysis": "تحليل الشهر",
@@ -2066,14 +2020,7 @@
   "appAQuietEveningReminderTo": "تذكير هادي بالليل تسجل مصاريفك",
   "appBeforeTheDayEndsTo": "قبل ما اليوم يخلص علشان تحافظ على سلسلة التسجيل",
   "appWhenYourMonthlyReportIs": "لما تقريرك الشهري يجهز",
-  "appThePriceIsHighFor": "السعر غالي عليّ",
-  "appIDonTNeedThe": "مش محتاج المميزات الزيادة",
-  "appIHadTechnicalProblems": "قابلتني مشاكل تقنية",
-  "appILlSubscribeAgainLater": "هشترك تاني بعدين",
-  "appAnotherReason": "سبب تاني",
-  "appAutoRenewalIsCancelled": "التجديد التلقائي اتلغى",
   "appWeCanTCancelRight": "مش قادرين نلغي دلوقتي.",
-  "appHelpUsUnderstandWhy": "قولنا السبب:",
   "appKeepMyPlan": "سيب باقتي",
   "appShareSmartspendWithYourFriends": "شارك SmartSpend مع أصحابك",
   "appInviteYourFriendsAndFamily": "ادعي أصحابك وأهلك ينظموا مصاريفهم.",
@@ -2185,7 +2132,6 @@
   "appDaysInARow": "يوم ورا بعض",
   "appDaysInARow2": "يوم ورا بعض",
   "appDaysInARow3": "يوم ورا بعض",
-  "appDay": "يوم",
   "appYouRecordedP0P1": "سجلت {p0} {p1}",
   "@appYouRecordedP0P1": {
     "placeholders": {
@@ -2234,5 +2180,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "aiSend": "ابعت",
+  "cancelPlanAtStore": "الاشتراك بيتلغي من المتجر اللي اشتركت منه، مش من التطبيق. هنفتحلك صفحة اشتراكاتك هناك، ودوس إلغاء على SmartSpend.",
+  "cancelPlanOpenStore": "افتح اشتراكاتي في المتجر"
 }

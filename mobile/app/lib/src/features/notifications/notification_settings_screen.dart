@@ -108,9 +108,7 @@ class _NotificationSettingsScreenState
               child: SwitchListTile(
                 title: Text(
                   l10n.notificationSettingsMaster,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: textTheme.titleMedium,
                 ),
                 subtitle: Text(
                   AppLocalizations.of(context).appAllowNotificationsFromTheApp,

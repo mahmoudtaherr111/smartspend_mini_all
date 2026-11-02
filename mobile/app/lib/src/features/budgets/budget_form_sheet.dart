@@ -172,7 +172,6 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
                         ? AppLocalizations.of(context).monEditTheBudget
                         : AppLocalizations.of(context).monNewMonthlyBudget,
                     style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
                       color: colors.foreground,
                     ),
                   ),
@@ -194,7 +193,8 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
                 ),
                 child: Text(
                   _error!,
-                  style: TextStyle(color: colors.danger, fontSize: 13),
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: colors.danger),
                 ),
               ),
               const SizedBox(height: SmartSpendSpacing.md),
@@ -202,16 +202,16 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
             // Category selector dropdown
             Text(
               AppLocalizations.of(context).monCategory,
-              style: textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: textTheme.labelMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
             ),
             const SizedBox(height: SmartSpendSpacing.xs),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: SmartSpendSpacing.md,
+              ),
               decoration: BoxDecoration(
-                border: Border.all(color: colors.border),
                 borderRadius: BorderRadius.circular(SmartSpendRadii.md),
               ),
               child: DropdownButtonHideUnderline(
@@ -241,7 +241,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
                               size: 18,
                               color: colors.accent,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: SmartSpendSpacing.sm),
                             Text(cat),
                           ],
                         ),
@@ -258,8 +258,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
             // Title input
             Text(
               AppLocalizations.of(context).monBudgetName,
-              style: textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: textTheme.labelMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
             ),
@@ -278,8 +277,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
             // Monthly limit input
             Text(
               AppLocalizations.of(context).monMonthlyLimit,
-              style: textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: textTheme.labelMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
             ),
@@ -307,8 +305,7 @@ class _BudgetFormSheetState extends ConsumerState<BudgetFormSheet> {
             // Alert Threshold chips
             Text(
               AppLocalizations.of(context).monAlertMeAt,
-              style: textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: textTheme.labelMedium?.copyWith(
                 color: colors.mutedForeground,
               ),
             ),

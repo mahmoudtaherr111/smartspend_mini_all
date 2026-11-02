@@ -110,22 +110,18 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
 
       if (mounted) {
         ref.invalidate(mySupportTicketsProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).appYourTicketWasSent),
-          ),
+        showSmartSpendNotice(
+          context,
+          AppLocalizations.of(context).appYourTicketWasSent,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e is ApiException
-                  ? e.message
-                  : AppLocalizations.of(context).appWeCouldnTSendYour,
-            ),
-          ),
+        showSmartSpendNotice(
+          context,
+          e is ApiException
+              ? e.message
+              : AppLocalizations.of(context).appWeCouldnTSendYour,
         );
       }
     } finally {
@@ -164,12 +160,7 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
                 itemBuilder: (ctx, i) {
                   final faq = _faqs[i];
                   return ExpansionTile(
-                    title: Text(
-                      faq.q,
-                      style: textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    title: Text(faq.q, style: textTheme.titleSmall),
                     childrenPadding: const EdgeInsets.all(SmartSpendSpacing.md),
                     children: [
                       Text(
@@ -219,9 +210,10 @@ class _HelpCenterScreenState extends ConsumerState<HelpCenterScreen> {
             const SizedBox(height: SmartSpendSpacing.sm),
             ticketsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Text(
-                AppLocalizations.of(context).appWeCanTLoadYour2,
-                style: TextStyle(color: colors.danger),
+              error: (err, _) => ErrorState(
+                message: AppLocalizations.of(context).appWeCanTLoadYour2,
+                retryLabel: l10n.retry,
+                onRetry: () => ref.invalidate(mySupportTicketsProvider),
               ),
               data: (List<SupportTicket> tickets) {
                 if (tickets.isEmpty) {

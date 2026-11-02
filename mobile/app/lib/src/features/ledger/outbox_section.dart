@@ -109,7 +109,7 @@ class _OutboxRow extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.titleSmall,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: SmartSpendSpacing.xs / 2),
                     Text(
                       status,
                       maxLines: 2,

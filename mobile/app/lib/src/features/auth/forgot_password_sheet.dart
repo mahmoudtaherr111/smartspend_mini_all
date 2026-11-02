@@ -14,14 +14,8 @@ class ForgotPasswordSheet extends ConsumerStatefulWidget {
   const ForgotPasswordSheet({super.key});
 
   static Future<bool?> show(BuildContext context) {
-    return showModalBottomSheet<bool>(
+    return showSmartSpendSheet<bool>(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(SmartSpendRadii.sheet),
-        ),
-      ),
       builder: (ctx) => const ForgotPasswordSheet(),
     );
   }
@@ -221,15 +215,6 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: SmartSpendSpacing.lg),
-                decoration: BoxDecoration(
-                  color: colors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
               Row(
                 children: [
                   Icon(
@@ -241,9 +226,7 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
                   Expanded(
                     child: Text(
                       l10n.resetPasswordTitle,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: textTheme.titleMedium,
                     ),
                   ),
                 ],
@@ -290,11 +273,8 @@ class _ForgotPasswordSheetState extends ConsumerState<ForgotPasswordSheet> {
                   enabled: !_busy,
                   maxLength: 6,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    letterSpacing: 8,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.headlineMedium
+                      ?.copyWith(letterSpacing: SmartSpendSpacing.sm),
                   decoration: InputDecoration(
                     labelText: l10n.phoneChangeEnterCode,
                     counterText: '',

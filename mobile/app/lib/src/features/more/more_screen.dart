@@ -43,7 +43,6 @@ class MoreScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final colors = context.smartSpendColors;
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
 
     return Scaffold(
@@ -226,26 +225,7 @@ class MoreScreen extends ConsumerWidget {
                   title: AppLocalizations.of(context).calNotifications,
                   subtitle: AppLocalizations.of(context)
                       .calAlertsAboutYourTransactionsAnd,
-                  trailing: unreadCount > 0
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colors.accent,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '$unreadCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        )
-                      : null,
+                  trailing: unreadCount > 0 ? StatusTag('$unreadCount') : null,
                   onTap: () => context.push(NotificationInboxScreen.path),
                 ),
                 GroupedRow(

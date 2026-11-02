@@ -24,7 +24,8 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
 1. **One brand interface on both platforms**, built only from the tokens in
    `mobile/packages/smartspend_ui/lib/src/tokens.dart`, the theme in
    `mobile/packages/smartspend_ui/lib/src/theme.dart` and the components beside them. A screen never hard-codes a
-   colour, font, size or radius. (unenforced)
+   colour, font, size or radius. (`mobile/app/test/design_tokens_test.dart`; the bank brand colours of a wallet and
+   the hidden call screens are the named exceptions)
 2. **Dark first, light equally finished.** The dark theme's near-black navy lets the money and chart colours carry
    the screen, as Google's Rally finance study does; surfaces step up in tone instead of casting shadows. The light
    theme passes every rule below too: the phone chooses, as the web app does by default. (contrast: rule 6.1)
@@ -60,7 +61,8 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
 ## 3. Layout and touch
 1. **Every target is at least 48 by 48** (Android asks 48 dp, Apple 44 pt; we use the larger everywhere).
    (`androidTapTargetGuideline` and `iOSTapTargetGuideline` in the component tests)
-2. **Spacing on a 4-point grid**, 20 at the sides of a screen (`SmartSpendSpacing`). (unenforced)
+2. **Spacing on a 4-point grid**, 20 at the sides of a screen (`SmartSpendSpacing`).
+   (`mobile/app/test/design_tokens_test.dart`)
 3. **One main action per screen, within reach of the thumb**, at the bottom. (unenforced)
 4. **Edge to edge, inside the safe areas.** Android 15 draws apps under the system bars and Android 16 removes the
    way out for apps targeting it; nothing important sits under a bar, notch or home indicator. (screenshots review)
@@ -85,7 +87,8 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
 
 ## 5. Type
 1. **Only the type scale** in `mobile/packages/smartspend_ui/lib/src/typography.dart`; nothing under 11 points
-   (Apple's minimum), body text 14–16. (unenforced)
+   (Apple's minimum), body text 14–16. A screen picks a style of the text theme, with no size or weight of its own:
+   the bolder step of a style is another style. (`mobile/app/test/design_tokens_test.dart`)
 2. **Weight moves the variable font**, through `SmartSpendTypography.style`.
    (`mobile/packages/smartspend_ui/test/smartspend_ui_test.dart`)
 3. **Amounts are the heroes:** bold, Western digits, the currency after the number. (unenforced)
@@ -184,6 +187,8 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
   (`mobile/packages/smartspend_ui/lib/gallery.dart`).
 - **Component tests** in `mobile/packages/smartspend_ui/test/` check contrast, target sizes, labels and behaviour, and
   run Flutter's accessibility guidelines over the whole component gallery in both themes.
+- **Render loop:** `mobile/app/test/render/render_test.dart` draws every route on this machine in both themes, in
+  both languages and at twice the text size, and fails on any overflow; add a new route to its list.
 - **Screenshots:** every screen, and the component gallery, is in `mobile/app/integration_test/screenshots_test.dart`,
   so its picture in both themes, on both platforms, lands in the gallery `.github/workflows/mobile-screenshots.yml`
   publishes.

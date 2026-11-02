@@ -134,8 +134,6 @@ class _CalendarMonthGrid extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: textTheme.labelSmall?.copyWith(
                     color: colors.mutedForeground,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -194,14 +192,17 @@ class _DayCellWidget extends StatelessWidget {
               .calTransactionsOfDayP0('${cell.dayNumber}'),
         );
       },
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
       child: Container(
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
           border: border,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SmartSpendSpacing.xs / 2,
+          vertical: SmartSpendSpacing.xs,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -210,13 +211,9 @@ class _DayCellWidget extends StatelessWidget {
               children: [
                 Text(
                   '${cell.dayNumber}',
-                  style:
-                      SmartSpendTypography.style(
-                        11,
-                        cell.isToday ? FontWeight.w800 : FontWeight.w600,
-                      ).copyWith(
-                        color: cell.isToday ? colors.accent : colors.foreground,
-                      ),
+                  style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                    color: cell.isToday ? colors.accent : colors.foreground,
+                  ),
                 ),
                 // Payday shape marker: small star icon
                 if (cell.isPayday)
@@ -231,7 +228,7 @@ class _DayCellWidget extends StatelessWidget {
                     ),
                   )
                 else
-                  const SizedBox(width: 4),
+                  const SizedBox(width: SmartSpendSpacing.xs),
               ],
             ),
             if (cell.amount > 0)
@@ -243,10 +240,8 @@ class _DayCellWidget extends StatelessWidget {
                       : cell.amount >= 1000
                       ? '${(cell.amount / 1000).toStringAsFixed(1)}k'
                       : '${cell.amount.round()}',
-                  style: SmartSpendTypography.style(
-                    10,
-                    FontWeight.bold,
-                  ).copyWith(color: colors.foreground),
+                  style: Theme.of(context).textTheme.labelSmall!
+                      .copyWith(color: colors.foreground),
                 ),
               )
             else
@@ -321,9 +316,8 @@ class _CalendarDayList extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 '$day',
-                style: TextStyle(
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: isToday ? colors.onAccent : colors.foreground,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -333,16 +327,13 @@ class _CalendarDayList extends StatelessWidget {
               children: [
                 Text(
                   DateWords.of(context).weekdays[date.weekday - 1],
-                  style: textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: textTheme.titleSmall,
                 ),
                 if (isPayday)
                   Text(
                     AppLocalizations.of(context).calPayday,
-                    style: textTheme.bodySmall?.copyWith(
+                    style: textTheme.labelMedium?.copyWith(
                       color: colors.warning,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
               ],
@@ -351,9 +342,7 @@ class _CalendarDayList extends StatelessWidget {
                 ? AmountText(
                     amount,
                     kind: AmountKind.expense,
-                    style: textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: textTheme.titleMedium,
                   )
                 : Text(
                     AppLocalizations.of(context).calNoSpending,

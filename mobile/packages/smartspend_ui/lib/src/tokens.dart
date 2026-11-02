@@ -134,4 +134,7 @@ abstract final class SmartSpendRadii {
 
   /// The top corners of a bottom sheet.
   static const double sheet = 28;
+
+  /// Fully round ends: a tag, a progress track.
+  static const double pill = 999;
 }

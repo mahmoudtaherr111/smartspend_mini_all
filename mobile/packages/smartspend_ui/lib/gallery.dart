@@ -243,7 +243,7 @@ class ComponentGallery extends StatelessWidget {
           const SizedBox(height: SmartSpendSpacing.sm),
           const InlineMessage(
             'فاضل 3 تسجيلات تلقائية الشهر ده.',
-            warning: true,
+            tone: MessageTone.warning,
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
           const OfflineBanner('النت فاصل. هنحفظ وهنبعت لما يرجع.'),

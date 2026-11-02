@@ -143,10 +143,8 @@ class _TransactionSearchScreenState
                   Text(
                     trimmedQuery.isEmpty ? l10n.searchTitle : l10n.searchHint,
                     textAlign: TextAlign.center,
-                    style: SmartSpendTypography.style(
-                      15,
-                      FontWeight.w500,
-                    ).copyWith(color: colors.mutedForeground),
+                    style: Theme.of(context).textTheme.bodyLarge!
+                        .copyWith(color: colors.mutedForeground),
                   ),
                 ],
               ),

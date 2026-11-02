@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 
@@ -80,71 +81,22 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
       }
 
       // Show confirmation & preparation sheet before connecting
-      final confirmed = await showModalBottomSheet<bool>(
+      final l10n = AppLocalizations.of(context);
+      final confirmed = await confirmInSheet(
         context: context,
-        builder: (sheetCtx) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(sheetCtx).colorScheme.primaryContainer
-                        .withValues(alpha: 0.4),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.phone_in_talk,
-                    size: 40,
-                    color: Theme.of(sheetCtx).colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  AppLocalizations.of(context).aiStartALiveCall,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  AppLocalizations.of(context).aiWeLlUseTheMicrophone,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(sheetCtx).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(sheetCtx).pop(false),
-                        child: Text(AppLocalizations.of(context).aiCancel),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () => Navigator.of(sheetCtx).pop(true),
-                        icon: const Icon(Icons.call),
-                        label: Text(AppLocalizations.of(context).aiCall),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+        title: l10n.aiStartALiveCall,
+        message: l10n.aiWeLlUseTheMicrophone,
+        confirmLabel: l10n.aiCall,
+        cancelLabel: l10n.aiCancel,
+        destructive: false,
       );
 
-      if (confirmed != true || !mounted) return;
+      if (!confirmed || !mounted) return;
 
       // Start call session on server
       final callSession = await ref.read(aiApiProvider).startVoiceCall();
-      final ticket = callSession['ticket'] as String? ?? 'dev-ticket';
+      final ticket = callSession['ticket'] as String?;
+      if (ticket == null) throw StateError('no call ticket');
 
       if (!mounted) return;
 
@@ -173,10 +125,7 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          AppLocalizations.of(context).aiAiCenter,
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(AppLocalizations.of(context).aiAiCenter),
         actions: [
           // Live Voice Call button (AI-09)
           if (liveCallsEnabled)

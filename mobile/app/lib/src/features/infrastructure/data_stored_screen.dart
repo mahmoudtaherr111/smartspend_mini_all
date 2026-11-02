@@ -36,10 +36,7 @@ class DataStoredScreen extends StatelessWidget {
                   Expanded(
                     child: Text(
                       AppLocalizations.of(context).appThisPageExplainsWhatThe,
-                      style: textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        height: 1.5,
-                      ),
+                      style: textTheme.labelMedium?.copyWith(height: 1.5),
                     ),
                   ),
                 ],
@@ -48,9 +45,7 @@ class DataStoredScreen extends StatelessWidget {
             const SizedBox(height: SmartSpendSpacing.xl),
             Text(
               'ماذا يخزن تطبيق SmartSpend AI؟',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: textTheme.titleMedium,
             ),
             const SizedBox(height: SmartSpendSpacing.md),
             _Item(
@@ -74,12 +69,7 @@ class DataStoredScreen extends StatelessWidget {
               body: 'عنوان IP واسم المتصفح أو نوع الموبايل لتأمين حسابك ضد أي وصول غير مصرح به.',
             ),
             const SizedBox(height: SmartSpendSpacing.lg),
-            Text(
-              'حقوقك في بياناتك:',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text('حقوقك في بياناتك:', style: textTheme.titleMedium),
             const SizedBox(height: SmartSpendSpacing.sm),
             Text(
               '1. حق التصدير: يمكنك تنزيل نسخة كاملة من كل معاملاتك من شاشة "تصدير البيانات".\n2. حق الحذف: يمكنك حذف حسابك وكافة سجلاتك نهائياً من شاشة "حذف الحساب".\n3. حق الوصول والمراجعة: يمكنك الاطلاع على كل بياناتك وجلساتك في أي وقت.',
@@ -126,12 +116,7 @@ class _Item extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      title,
-                      style: textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text(title, style: textTheme.titleSmall),
                     const SizedBox(height: SmartSpendSpacing.xs),
                     Text(
                       body,

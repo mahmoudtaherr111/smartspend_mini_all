@@ -558,7 +558,10 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
             ),
             if (!online) ...[
               const SizedBox(height: SmartSpendSpacing.sm),
-              InlineMessage(l10n.transactionEditOffline, warning: true),
+              InlineMessage(
+                l10n.transactionEditOffline,
+                tone: MessageTone.warning,
+              ),
             ],
             if (_serverError case final String error) ...[
               const SizedBox(height: SmartSpendSpacing.sm),

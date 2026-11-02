@@ -87,7 +87,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             decoration: BoxDecoration(
               color: colors.surface,
               borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
-              border: Border.all(color: colors.border),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,19 +111,15 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                     children: [
                       Text(
                         AppLocalizations.of(context).appYourDataIsAlwaysYours,
-                        style: SmartSpendTypography.style(
-                          16,
-                          FontWeight.w700,
-                        ).copyWith(color: colors.foreground),
+                        style: Theme.of(context).textTheme.titleMedium!
+                            .copyWith(color: colors.foreground),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: SmartSpendSpacing.xs),
                       Text(
                         AppLocalizations.of(context)
                             .appDownloadEverythingYouRecordedIn,
-                        style: SmartSpendTypography.style(
-                          13,
-                          FontWeight.w400,
-                        ).copyWith(color: colors.mutedForeground),
+                        style: Theme.of(context).textTheme.bodyMedium!
+                            .copyWith(color: colors.mutedForeground),
                       ),
                     ],
                   ),
@@ -135,10 +130,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           const SizedBox(height: SmartSpendSpacing.xl),
           Text(
             AppLocalizations.of(context).appPeriod,
-            style: SmartSpendTypography.style(
-              15,
-              FontWeight.w700,
-            ).copyWith(color: colors.foreground),
+            style: Theme.of(context).textTheme.titleMedium!
+                .copyWith(color: colors.foreground),
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
           RadioGroup<ExportPeriod>(
@@ -173,10 +166,11 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                             ExportPeriod.allTime =>
                               l10n.appEverythingFromTheStart,
                           },
-                          style: SmartSpendTypography.style(
-                            14,
-                            _period == p ? FontWeight.w700 : FontWeight.w500,
-                          ).copyWith(color: colors.foreground),
+                          style:
+                              (_period == p
+                                      ? Theme.of(context).textTheme.titleSmall
+                                      : Theme.of(context).textTheme.bodyMedium)!
+                                  .copyWith(color: colors.foreground),
                         ),
                         activeColor: colors.accent,
                       ),
@@ -189,10 +183,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
           const SizedBox(height: SmartSpendSpacing.lg),
           Text(
             AppLocalizations.of(context).appFileType,
-            style: SmartSpendTypography.style(
-              15,
-              FontWeight.w700,
-            ).copyWith(color: colors.foreground),
+            style: Theme.of(context).textTheme.titleMedium!
+                .copyWith(color: colors.foreground),
           ),
           const SizedBox(height: SmartSpendSpacing.sm),
           RadioGroup<ExportFormat>(
@@ -226,10 +218,11 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                             ExportFormat.xlsx => l10n.appExcelFileXlsx,
                             ExportFormat.json => l10n.appJsonFile,
                           },
-                          style: SmartSpendTypography.style(
-                            14,
-                            _format == f ? FontWeight.w700 : FontWeight.w500,
-                          ).copyWith(color: colors.foreground),
+                          style:
+                              (_format == f
+                                      ? Theme.of(context).textTheme.titleSmall
+                                      : Theme.of(context).textTheme.bodyMedium)!
+                                  .copyWith(color: colors.foreground),
                         ),
                         activeColor: colors.accent,
                       ),
@@ -246,7 +239,6 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             decoration: BoxDecoration(
               color: colors.surfaceRaised,
               borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-              border: Border.all(color: colors.border),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,10 +252,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                 Expanded(
                   child: Text(
                     AppLocalizations.of(context).appYouHaveTheRightTo,
-                    style: SmartSpendTypography.style(
-                      12,
-                      FontWeight.w400,
-                    ).copyWith(color: colors.mutedForeground),
+                    style: Theme.of(context).textTheme.bodySmall!
+                        .copyWith(color: colors.mutedForeground),
                   ),
                 ),
               ],
@@ -280,10 +270,8 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
               ),
               child: Text(
                 _error!,
-                style: SmartSpendTypography.style(
-                  13,
-                  FontWeight.w500,
-                ).copyWith(color: colors.danger),
+                style: Theme.of(context).textTheme.bodyMedium!
+                    .copyWith(color: colors.danger),
               ),
             ),
             const SizedBox(height: SmartSpendSpacing.md),
@@ -310,19 +298,15 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       children: [
                         Text(
                           AppLocalizations.of(context).appTheFileIsReady,
-                          style: SmartSpendTypography.style(
-                            14,
-                            FontWeight.w700,
-                          ).copyWith(color: colors.accent),
+                          style: Theme.of(context).textTheme.titleSmall!
+                              .copyWith(color: colors.accent),
                         ),
                         Text(
                           _exportedFile!.path
                               .split(Platform.pathSeparator)
                               .last,
-                          style: SmartSpendTypography.style(
-                            12,
-                            FontWeight.w500,
-                          ).copyWith(color: colors.foreground),
+                          style: Theme.of(context).textTheme.bodySmall!
+                              .copyWith(color: colors.foreground),
                         ),
                       ],
                     ),

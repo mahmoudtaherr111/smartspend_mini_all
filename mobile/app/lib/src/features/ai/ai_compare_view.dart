@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 
+import '../ledger/ledger_providers.dart';
+import '../stats/stats_providers.dart';
 import 'ai_models.dart';
 import 'ai_providers.dart';
 
@@ -17,293 +18,147 @@ class AiCompareView extends ConsumerStatefulWidget {
 }
 
 class _AiCompareViewState extends ConsumerState<AiCompareView> {
-  late String _firstMonth;
-  late String _secondMonth;
-
-  @override
-  void initState() {
-    super.initState();
-    final now = DateTime.now();
-    _firstMonth = DateFormat('yyyy-MM').format(now);
-    _secondMonth = DateFormat('yyyy-MM')
-        .format(DateTime(now.year, now.month - 1, 1));
-  }
-
-  bool get _isSameMonth => _firstMonth == _secondMonth;
-
-  List<String> _getAvailableMonths() {
-    final list = <String>[];
-    final now = DateTime.now();
-    for (int i = 0; i < 12; i++) {
-      final date = DateTime(now.year, now.month - i, 1);
-      list.add(DateFormat('yyyy-MM').format(date));
-    }
-    return list;
-  }
-
-  String _formatMonth(String yyyyMm) {
-    try {
-      final date = DateFormat('yyyy-MM').parse(yyyyMm);
-      return DateFormat('MMMM yyyy', 'ar').format(date);
-    } catch (_) {
-      return yyyyMm;
-    }
-  }
+  String? _firstMonth;
+  String? _secondMonth;
 
   @override
   Widget build(BuildContext context) {
-    final availableMonths = _getAvailableMonths();
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            AppLocalizations.of(context).aiCompareTwoMonths,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    final l10n = AppLocalizations.of(context);
+    final colors = context.smartSpendColors;
+    final textTheme = Theme.of(context).textTheme;
+    return ref
+        .watch(currentMonthProvider)
+        .when(
+          loading: () => const Padding(
+            padding: EdgeInsets.all(SmartSpendSpacing.screen),
+            child: Skeleton(height: 180),
           ),
-          const SizedBox(height: 6),
-          Text(
-            AppLocalizations.of(context).aiPickTwoDifferentMonthsTo,
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          error: (_, _) => Center(
+            child: ErrorState(
+              message: l10n.aiWeCouldnTCompareThem,
+              retryLabel: l10n.retry,
+              onRetry: () => ref.invalidate(currentMonthProvider),
+            ),
           ),
-          const SizedBox(height: 16),
-
-          // Selectors
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context).aiFirstMonth,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      initialValue: _firstMonth,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                      ),
-                      items: [
-                        for (final m in availableMonths)
-                          DropdownMenuItem(
-                            value: m,
-                            child: Text(
-                              _formatMonth(m),
-                              style: const TextStyle(fontSize: 13),
+          data: (current) {
+            // The server says which month it is (mobile rule 8); the list is the twelve before it.
+            final months = [
+              for (var back = 0; back < 12; back++) monthBefore(current, back),
+            ];
+            final first = _firstMonth ?? months[0];
+            final second = _secondMonth ?? months[1];
+            return ListView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: SmartSpendSpacing.screen,
+                vertical: SmartSpendSpacing.lg,
+              ),
+              children: [
+                Text(l10n.aiCompareTwoMonths, style: textTheme.titleLarge),
+                const SizedBox(height: SmartSpendSpacing.xs),
+                Text(
+                  l10n.aiPickTwoDifferentMonthsTo,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.mutedForeground,
+                  ),
+                ),
+                const SizedBox(height: SmartSpendSpacing.lg),
+                _monthField(
+                  label: l10n.aiFirstMonth,
+                  value: first,
+                  months: months,
+                  onChanged: (month) => setState(() => _firstMonth = month),
+                ),
+                const SizedBox(height: SmartSpendSpacing.md),
+                _monthField(
+                  label: l10n.aiSecondMonth,
+                  value: second,
+                  months: months,
+                  onChanged: (month) => setState(() => _secondMonth = month),
+                ),
+                const SizedBox(height: SmartSpendSpacing.lg),
+                if (first == second)
+                  InlineMessage(l10n.aiPickTwoDifferentMonths)
+                else
+                  ...ref
+                      .watch(monthComparisonFamily((first, second)))
+                      .when(
+                        loading: () => [const Skeleton(height: 180)],
+                        error: (_, _) => [
+                          ErrorState(
+                            message: l10n.aiWeCouldnTCompareThem,
+                            retryLabel: l10n.retry,
+                            onRetry: () => ref.invalidate(
+                              monthComparisonFamily((first, second)),
                             ),
                           ),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setState(() => _firstMonth = val);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context).aiSecondMonth,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        ],
+                        data: _comparisonResults,
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      initialValue: _secondMonth,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                      ),
-                      items: [
-                        for (final m in availableMonths)
-                          DropdownMenuItem(
-                            value: m,
-                            child: Text(
-                              _formatMonth(m),
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                          ),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setState(() => _secondMonth = val);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+              ],
+            );
+          },
+        );
+  }
 
-          // Same month prevention alert (AI-07)
-          if (_isSameMonth) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.error_outline_rounded,
-                    color: Colors.red.shade700,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      AppLocalizations.of(context).aiPickTwoDifferentMonths,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.red.shade900,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ] else ...[
-            const SizedBox(height: 20),
-            Consumer(
-              builder: (context, ref, _) {
-                final compareAsync = ref.watch(
-                  monthComparisonFamily((_firstMonth, _secondMonth)),
-                );
-                return compareAsync.when(
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                  error: (err, _) => Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      child: Text(
-                        AppLocalizations.of(context).aiWeCouldnTCompareThem,
-                      ),
-                    ),
-                  ),
-                  data: (comparison) => _buildComparisonResults(comparison),
-                );
-              },
-            ),
-          ],
-        ],
-      ),
+  Widget _monthField({
+    required String label,
+    required String value,
+    required List<String> months,
+    required ValueChanged<String> onChanged,
+  }) {
+    final words = DateWords.of(context);
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: InputDecoration(labelText: label),
+      items: [
+        for (final month in months)
+          DropdownMenuItem(value: month, child: Text(words.month(month))),
+      ],
+      onChanged: (month) {
+        if (month != null) onChanged(month);
+      },
     );
   }
 
-  Widget _buildComparisonResults(MonthComparison comparison) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.compare_arrows_rounded,
-                    color: Colors.teal.shade700,
-                    size: 22,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    AppLocalizations.of(context).aiComparisonP0AndP1(
-                      _formatMonth(comparison.secondMonth),
-                      _formatMonth(comparison.firstMonth),
-                    ),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                comparison.responseText,
-                style: const TextStyle(fontSize: 14.5, height: 1.5),
-              ),
-            ],
-          ),
+  List<Widget> _comparisonResults(MonthComparison comparison) {
+    final l10n = AppLocalizations.of(context);
+    final colors = context.smartSpendColors;
+    final words = DateWords.of(context);
+    return [
+      GroupedCard(
+        title: l10n.aiComparisonP0AndP1(
+          words.month(comparison.secondMonth),
+          words.month(comparison.firstMonth),
         ),
-
-        if (comparison.changes.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(
-            AppLocalizations.of(context).aiBiggestChangesByCategory,
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: comparison.changes.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final change = comparison.changes[index];
-                final cat =
-                    (change['category'] as String?) ??
-                    AppLocalizations.of(context).aiCategory;
-                final diff = (change['diff'] as num?)?.toDouble() ?? 0.0;
-                final isIncrease = diff > 0;
-
-                return ListTile(
-                  dense: true,
-                  leading: Icon(
-                    isIncrease
+        child: Text(
+          comparison.responseText,
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+      ),
+      if (comparison.changes.isNotEmpty) ...[
+        const SizedBox(height: SmartSpendSpacing.md),
+        GroupedSection(
+          title: l10n.aiBiggestChangesByCategory,
+          children: [
+            for (final change in comparison.changes)
+              Builder(
+                builder: (context) {
+                  final diff = (change['diff'] as num?)?.toDouble() ?? 0;
+                  return GroupedRow(
+                    icon: diff > 0
                         ? Icons.arrow_upward_rounded
                         : Icons.arrow_downward_rounded,
-                    color: isIncrease ? Colors.red : Colors.green,
-                    size: 20,
-                  ),
-                  title: Text(
-                    cat,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  trailing: AmountText(diff.abs()),
-                );
-              },
-            ),
-          ),
-        ],
+                    tint: diff > 0 ? colors.danger : colors.accent,
+                    title: (change['category'] as String?) ?? l10n.aiCategory,
+                    value: AmountText(diff.abs()),
+                  );
+                },
+              ),
+          ],
+        ),
       ],
-    );
+      const SizedBox(height: SmartSpendSpacing.lg),
+    ];
   }
 }

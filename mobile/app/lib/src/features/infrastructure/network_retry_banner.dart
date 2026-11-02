@@ -23,7 +23,10 @@ class NetworkRetryBanner extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: SmartSpendSpacing.lg,
+        vertical: SmartSpendSpacing.md,
+      ),
       decoration: BoxDecoration(
         color: colors.warning.withValues(alpha: 0.14),
         border: Border(
@@ -44,10 +47,7 @@ class NetworkRetryBanner extends ConsumerWidget {
                   (!online
                       ? AppLocalizations.of(context).appYouReOfflineChangesSave
                       : AppLocalizations.of(context).appConnectionError),
-              style: textTheme.bodySmall?.copyWith(
-                color: colors.warning,
-                fontWeight: FontWeight.w500,
-              ),
+              style: textTheme.bodySmall?.copyWith(color: colors.warning),
             ),
           ),
           if (onRetry != null) ...[
@@ -58,7 +58,6 @@ class NetworkRetryBanner extends ConsumerWidget {
                 AppLocalizations.of(context).appTryAgain,
                 style: textTheme.labelSmall?.copyWith(
                   color: colors.accent,
-                  fontWeight: FontWeight.bold,
                   decoration: TextDecoration.underline,
                 ),
               ),

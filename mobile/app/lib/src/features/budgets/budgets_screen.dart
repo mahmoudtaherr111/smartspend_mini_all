@@ -15,8 +15,6 @@ class BudgetsScreen extends ConsumerWidget {
 
   static const path = '/more/budgets';
 
-  static const Color _positiveGreen = Color(0xFF10B981);
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.smartSpendColors;
@@ -51,7 +49,6 @@ class BudgetsScreen extends ConsumerWidget {
                 Text(
                   AppLocalizations.of(context).monWeCanTLoadYour,
                   style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
                     color: colors.foreground,
                   ),
                 ),
@@ -88,7 +85,6 @@ class BudgetsScreen extends ConsumerWidget {
                     Text(
                       AppLocalizations.of(context).monNoBudgetsYet,
                       style: textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
                         color: colors.foreground,
                       ),
                     ),
@@ -143,7 +139,6 @@ class BudgetsScreen extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: colors.surfaceRaised,
                     borderRadius: BorderRadius.circular(SmartSpendRadii.lg),
-                    border: Border.all(color: colors.border),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -156,14 +151,12 @@ class BudgetsScreen extends ConsumerWidget {
                                 ? overall.title
                                 : AppLocalizations.of(context).monAllBudgets,
                             style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
                               color: colors.foreground,
                             ),
                           ),
                           Text(
                             '$heroPercentage%',
                             style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
                               color: isHeroExceeded
                                   ? colors.danger
                                   : (heroPercentage >= 80
@@ -175,7 +168,7 @@ class BudgetsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: SmartSpendSpacing.sm),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(SmartSpendRadii.sm),
                         child: LinearProgressIndicator(
                           value: heroLimit > 0
                               ? (heroSpent / heroLimit).clamp(0.0, 1.0)
@@ -210,11 +203,10 @@ class BudgetsScreen extends ConsumerWidget {
                                 : AppLocalizations.of(context).monLeftP0(
                                     moneyText(context, heroLimit - heroSpent),
                                   ),
-                            style: textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.bold,
+                            style: textTheme.labelMedium?.copyWith(
                               color: isHeroExceeded
                                   ? colors.danger
-                                  : _positiveGreen,
+                                  : colors.accent,
                             ),
                           ),
                         ],
@@ -227,7 +219,6 @@ class BudgetsScreen extends ConsumerWidget {
                 Text(
                   AppLocalizations.of(context).monBudgetDetails,
                   style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
                     color: colors.foreground,
                   ),
                 ),
@@ -250,7 +241,6 @@ class BudgetsScreen extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: colors.surface,
                         borderRadius: BorderRadius.circular(SmartSpendRadii.md),
-                        border: Border.all(color: colors.border),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -272,7 +262,6 @@ class BudgetsScreen extends ConsumerWidget {
                                     Text(
                                       budget.title,
                                       style: textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w600,
                                         color: colors.foreground,
                                       ),
                                     ),
@@ -372,7 +361,9 @@ class BudgetsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: SmartSpendSpacing.sm),
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(
+                              SmartSpendRadii.sm,
+                            ),
                             child: LinearProgressIndicator(
                               value: budget.monthlyLimit > 0
                                   ? (budget.currentSpent / budget.monthlyLimit)
@@ -405,8 +396,8 @@ class BudgetsScreen extends ConsumerWidget {
                               if (budget.isExceeded)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
+                                    horizontal: SmartSpendSpacing.sm,
+                                    vertical: SmartSpendSpacing.xs / 2,
                                   ),
                                   decoration: BoxDecoration(
                                     color: colors.danger.withValues(alpha: 0.1),
@@ -418,18 +409,17 @@ class BudgetsScreen extends ConsumerWidget {
                                     AppLocalizations.of(
                                       context,
                                     ).monOverBudgetP0('${budget.percentage}'),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: colors.danger,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(color: colors.danger),
                                   ),
                                 )
                               else if (budget.isNearLimit)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
+                                    horizontal: SmartSpendSpacing.sm,
+                                    vertical: SmartSpendSpacing.xs / 2,
                                   ),
                                   decoration: BoxDecoration(
                                     color: colors.warning.withValues(
@@ -443,11 +433,10 @@ class BudgetsScreen extends ConsumerWidget {
                                     AppLocalizations.of(
                                       context,
                                     ).monAlmostUsedP0('${budget.percentage}'),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: colors.warning,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(color: colors.warning),
                                   ),
                                 )
                               else
@@ -455,9 +444,8 @@ class BudgetsScreen extends ConsumerWidget {
                                   AppLocalizations.of(context).monLeftP02(
                                     moneyText(context, budget.remaining),
                                   ),
-                                  style: textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: _positiveGreen,
+                                  style: textTheme.labelMedium?.copyWith(
+                                    color: colors.accent,
                                   ),
                                 ),
                             ],

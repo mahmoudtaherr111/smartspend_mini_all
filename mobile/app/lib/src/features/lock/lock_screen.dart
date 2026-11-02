@@ -212,7 +212,10 @@ class _ForgotPanel extends ConsumerWidget {
         ),
         if (unsent > 0) ...[
           const SizedBox(height: SmartSpendSpacing.md),
-          InlineMessage(l10n.lockForgotUnsent(unsent), warning: true),
+          InlineMessage(
+            l10n.lockForgotUnsent(unsent),
+            tone: MessageTone.warning,
+          ),
         ],
         const SizedBox(height: SmartSpendSpacing.xl),
         SmartSpendButton(

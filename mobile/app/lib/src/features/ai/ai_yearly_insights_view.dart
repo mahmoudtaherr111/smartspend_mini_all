@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../ledger/ledger_providers.dart';
 import 'ai_providers.dart';
 
 /// Yearly insights view analyzing the user's entire year of finances (AI-11).
@@ -15,130 +16,75 @@ class AiYearlyInsightsView extends ConsumerStatefulWidget {
 }
 
 class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
-  String _selectedYear = '2026';
-  bool _isLoading = false;
-  bool _failed = false;
-  String? _insightsText;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadYearlyInsights();
-  }
-
-  Future<void> _loadYearlyInsights() async {
-    setState(() => _isLoading = true);
-    try {
-      final res = await ref
-          .read(aiApiProvider)
-          .generateYearlyInsights(_selectedYear);
-      if (mounted) {
-        setState(() {
-          _insightsText =
-              (res['insights'] as String?) ??
-              (res['response_text'] as String?) ??
-              (res['summary'] as String?);
-          _failed = false;
-        });
-      }
-    } on Object {
-      // A failed analysis says so: a person never reads a made-up verdict on their money.
-      if (mounted) {
-        setState(() {
-          _insightsText = null;
-          _failed = true;
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
+  String? _selectedYear;
 
   @override
   Widget build(BuildContext context) {
-    if (_failed && !_isLoading) {
-      return ErrorState(
-        message: AppLocalizations.of(context).aiWeCanTRunThe,
-        retryLabel: AppLocalizations.of(context).retry,
-        onRetry: _loadYearlyInsights,
-      );
-    }
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                AppLocalizations.of(context).aiYearlyReport2,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const Spacer(),
-              DropdownButton<String>(
-                value: _selectedYear,
-                items: const [
-                  DropdownMenuItem(value: '2026', child: Text('2026')),
-                  DropdownMenuItem(value: '2025', child: Text('2025')),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() => _selectedYear = val);
-                    _loadYearlyInsights();
-                  }
-                },
-              ),
-            ],
+    final l10n = AppLocalizations.of(context);
+    return ref
+        .watch(currentMonthProvider)
+        .when(
+          loading: () => const Padding(
+            padding: EdgeInsets.all(SmartSpendSpacing.screen),
+            child: Skeleton(height: 180),
           ),
-          const SizedBox(height: 12),
-          if (_isLoading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: CircularProgressIndicator(),
+          error: (_, _) => Center(
+            child: ErrorState(
+              message: l10n.aiWeCanTRunThe,
+              retryLabel: l10n.retry,
+              onRetry: () => ref.invalidate(currentMonthProvider),
+            ),
+          ),
+          data: (month) {
+            final thisYear = int.parse(month.substring(0, 4));
+            final years = ['$thisYear', '${thisYear - 1}'];
+            final year = _selectedYear ?? years.first;
+            return ListView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: SmartSpendSpacing.screen,
+                vertical: SmartSpendSpacing.lg,
               ),
-            )
-          else
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today_rounded,
-                        color: Colors.teal.shade700,
-                        size: 20,
+              children: [
+                Text(
+                  l10n.aiYearlyReport2,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: SmartSpendSpacing.sm),
+                Wrap(
+                  spacing: SmartSpendSpacing.sm,
+                  children: [
+                    for (final option in years)
+                      ChoiceChip(
+                        label: Text(option),
+                        selected: option == year,
+                        onSelected: (_) =>
+                            setState(() => _selectedYear = option),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        AppLocalizations.of(context).aiP0Summary(_selectedYear),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
+                  ],
+                ),
+                const SizedBox(height: SmartSpendSpacing.md),
+                ref
+                    .watch(yearlyInsightsFamily(year))
+                    .when(
+                      loading: () => const Skeleton(height: 180),
+                      // A failed analysis says so: a person never reads a made-up verdict on their money.
+                      error: (_, _) => ErrorState(
+                        message: l10n.aiWeCanTRunThe,
+                        retryLabel: l10n.retry,
+                        onRetry: () =>
+                            ref.invalidate(yearlyInsightsFamily(year)),
+                      ),
+                      data: (insights) => GroupedCard(
+                        title: l10n.aiP0Summary(year),
+                        child: Text(
+                          insights ?? l10n.aiNotEnoughDataForThis,
+                          style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _insightsText ??
-                        AppLocalizations.of(context).aiNotEnoughDataForThis,
-                    style: const TextStyle(fontSize: 14.5, height: 1.55),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
+                    ),
+              ],
+            );
+          },
+        );
   }
 }
