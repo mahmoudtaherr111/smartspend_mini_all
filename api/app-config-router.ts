@@ -1,3 +1,4 @@
+import { businessDateKey } from "./lib/app-time";
 import { aiSwitchesOff } from "./lib/feature-switches";
 import { getSystemSettings } from "./lib/settings-cache";
 import { publicProcedure, router } from "./middleware";
@@ -17,6 +18,8 @@ export const appConfigRouter = router({
         ios: settings.mobile_store_url_ios ?? "",
       },
       aiOff: aiSwitchesOff(settings),
+      // The Cairo day, so no client works out a ledger month from its own clock (golden rule 6).
+      today: businessDateKey(),
     };
   }),
 });

@@ -465,7 +465,7 @@
     },
     "platform": {
       "files": {
-        "api/app-config-router.ts": "d321237da523",
+        "api/app-config-router.ts": "498371446b25",
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#GET /robots.txt": "c4dc59fa55af",
@@ -514,9 +514,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "d271ee15cf38"
       },
-      "checked": "2026-11-02 69f9ab34",
-      "arabic": "d521b3fe9cdd",
-      "arabicChecked": "2026-11-02 69f9ab34"
+      "checked": "2026-11-02 081290b7",
+      "arabic": "8c463050b6ff",
+      "arabicChecked": "2026-11-02 081290b7"
     },
     "voice-calls": {
       "files": {

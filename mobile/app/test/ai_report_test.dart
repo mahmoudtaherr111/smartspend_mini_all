@@ -10,7 +10,7 @@ import 'package:smartspend_app/src/features/ai/ai_models.dart';
 import 'package:smartspend_app/src/features/ai/ai_providers.dart';
 import 'package:smartspend_app/src/features/ai/ai_report_view.dart';
 import 'package:smartspend_app/src/features/ai/ai_yearly_insights_view.dart';
-import 'package:smartspend_app/src/features/ledger/ledger_providers.dart';
+import 'package:smartspend_app/src/features/infrastructure/remote_config.dart';
 import 'package:smartspend_app/src/l10n/app_localizations.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
@@ -28,7 +28,7 @@ List<Override> _testOverrides(
     trpcClientProvider.overrideWithValue(trpc),
     aiApiProvider.overrideWithValue(AiApi(trpc)),
     sessionStoreProvider.overrideWithValue(MemorySessionStore('test-token')),
-    currentMonthProvider.overrideWith((ref) async => '2026-10'),
+    serverMonthProvider.overrideWith((ref) async => '2026-10'),
     ...extra,
   ];
 }

@@ -98,7 +98,7 @@ storage, the contracts shared with the web app, and the retention job that prune
   (`settingsgen`), the admin's AI providers, models and prices (`aiconfiggen`), and the capture catalog of banks, wallets
   and subscriptions (`capturecataloggen`, [bank messages](bank-messages.md)), checked at most every ten seconds.
 - `appConfig.get` (`api/app-config-router.ts`, public) tells a client the oldest mobile build the server works with,
-  where to update, and which AI features an admin stopped.
+  where to update, which AI features an admin stopped, and the Cairo date, so the app never works out a ledger month from the phone's clock.
 - `system_settings` is read through `getSystemSettings()`, cached in the process for five minutes and cleared
   by `invalidateSettingsCache()` (golden rule 5), which also bumps the Redis generation `settingsgen`; every other
   process compares it at most every ten seconds and reloads. Every cache in the system, with its key, lifetime and

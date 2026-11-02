@@ -4,7 +4,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 
-import '../ledger/ledger_providers.dart';
+import '../infrastructure/remote_config.dart';
 import '../stats/stats_providers.dart';
 import 'ai_models.dart';
 import 'ai_providers.dart';
@@ -27,7 +27,7 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
     return ref
-        .watch(currentMonthProvider)
+        .watch(serverMonthProvider)
         .when(
           loading: () => const Padding(
             padding: EdgeInsets.all(SmartSpendSpacing.screen),
@@ -37,7 +37,7 @@ class _AiCompareViewState extends ConsumerState<AiCompareView> {
             child: ErrorState(
               message: l10n.aiWeCouldnTCompareThem,
               retryLabel: l10n.retry,
-              onRetry: () => ref.invalidate(currentMonthProvider),
+              onRetry: () => ref.invalidate(serverMonthProvider),
             ),
           ),
           data: (current) {

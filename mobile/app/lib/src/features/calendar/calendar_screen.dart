@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../infrastructure/remote_config.dart';
 import '../ledger/ledger_providers.dart';
 import '../wallets/wallet_providers.dart';
 import '../wallets/wallets_screen.dart';
@@ -34,7 +35,7 @@ class CalendarScreen extends ConsumerWidget {
 
     // Compute month key and current target date
     final monthKey = calendarMonthKey(
-      ref.watch(currentMonthProvider).value,
+      ref.watch(serverMonthProvider).value,
       offset,
     );
     final monthParts = monthKey.split('-');

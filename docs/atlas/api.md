@@ -181,7 +181,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `appConfig.get` | query | `publicProcedure` | no | — | — | `api/lib/feature-switches.ts`, `api/lib/settings-cache.ts` | — |
+| `appConfig.get` | query | `publicProcedure` | no | — | — | `api/lib/app-time.ts`, `api/lib/feature-switches.ts`, `api/lib/settings-cache.ts` | — |
 
 ### `auth` — `api/auth-router.ts`
 

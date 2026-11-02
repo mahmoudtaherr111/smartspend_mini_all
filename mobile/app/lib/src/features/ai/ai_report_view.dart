@@ -8,8 +8,8 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
 
+import '../infrastructure/remote_config.dart';
 import '../ledger/category_style.dart';
-import '../ledger/ledger_providers.dart';
 import '../plans/plan_providers.dart';
 import '../stats/stats_providers.dart';
 import 'ai_models.dart';
@@ -80,7 +80,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final current = ref.watch(currentMonthProvider);
+    final current = ref.watch(serverMonthProvider);
     final monthsBack = ref.watch(reportMonthsBackProvider);
     final months = ref.read(reportMonthsBackProvider.notifier);
 
@@ -90,7 +90,7 @@ class _AiReportViewState extends ConsumerState<AiReportView> {
         child: ErrorState(
           message: l10n.aiWeCanTLoadThe2,
           retryLabel: l10n.retry,
-          onRetry: () => ref.invalidate(currentMonthProvider),
+          onRetry: () => ref.invalidate(serverMonthProvider),
         ),
       ),
       data: (currentMonth) {

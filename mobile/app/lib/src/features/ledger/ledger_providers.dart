@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 
 import '../../core/providers.dart';
 import '../auth/session_controller.dart';
+import '../infrastructure/remote_config.dart';
 import '../stats/stats_providers.dart';
 import '../wallets/wallet_providers.dart';
 import 'ledger_api.dart';
@@ -94,10 +94,11 @@ final salaryDayProvider = FutureProvider<int?>((ref) async {
   }
 });
 
-/// The month shown on the record tab, "2026-10", from the phone's date and the payday.
+/// The month shown on the record tab, "2026-10", from the server's date and the payday.
 final currentMonthProvider = FutureProvider<String>((ref) async {
   final salaryDay = await ref.watch(salaryDayProvider.future);
-  return currentMonthKey(clock.now(), salaryDay: salaryDay);
+  final today = await ref.watch(todayProvider.future);
+  return currentMonthKey(today, salaryDay: salaryDay);
 });
 
 /// The month's totals; without a network, the last ones seen for the same month.

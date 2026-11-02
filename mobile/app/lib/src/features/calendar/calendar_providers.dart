@@ -3,6 +3,7 @@ import 'package:smartspend_api/smartspend_api.dart';
 
 import '../../core/providers.dart';
 import '../auth/session_controller.dart';
+import '../infrastructure/remote_config.dart';
 import '../ledger/ledger_providers.dart';
 import '../stats/stats_models.dart';
 import '../stats/stats_providers.dart';
@@ -84,10 +85,10 @@ final calendarMonthStatsProvider = FutureProvider<MonthStats>((ref) async {
   final offset = ref.watch(calendarMonthOffsetProvider);
   final salaryDay = ref.watch(salaryDayProvider).value;
 
-  final String? current = await ref
-      .watch(currentMonthProvider.future)
-      .then<String?>((month) => month, onError: (Object _) => null);
-  final monthKey = calendarMonthKey(current, offset);
+  final monthKey = calendarMonthKey(
+    await ref.watch(serverMonthProvider.future),
+    offset,
+  );
 
   try {
     final stats = await ref

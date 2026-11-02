@@ -1,5 +1,7 @@
 import 'dart:io' show Platform;
 
+import 'package:clock/clock.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:smartspend_api/smartspend_api.dart';
@@ -13,6 +15,7 @@ final class RemoteConfig {
     this.minVersion = '',
     this.storeUrl = '',
     this.aiOff = const {},
+    this.today = '',
   });
 
   factory RemoteConfig.fromJson(Map<String, Object?> json, String platform) {
@@ -27,12 +30,16 @@ final class RemoteConfig {
       minVersion: read('minVersion'),
       storeUrl: read('storeUrl'),
       aiOff: {...(json['aiOff'] as List<Object?>? ?? const []).whereType()},
+      today: json['today'] as String? ?? '',
     );
   }
 
   final String minVersion;
   final String storeUrl;
   final Set<String> aiOff;
+
+  /// The Cairo day as the server counts it, "2026-11-02"; empty when the server did not answer.
+  final String today;
 }
 
 /// Whether [installed] comes before [minimum], part by part: "1.9.0" before "1.10.0". An empty or unreadable minimum
@@ -67,6 +74,19 @@ final remoteConfigProvider = FutureProvider<RemoteConfig>((ref) async {
   }
 });
 
+/// Today on the server's calendar (mobile rule 8); the phone's date only when the server has not answered.
+final todayProvider = FutureProvider<DateTime>((ref) async {
+  final config = await ref.watch(remoteConfigProvider.future);
+  return DateTime.tryParse(config.today) ?? clock.now();
+});
+
+/// The calendar month on the server, "2026-11". The ledger's financial month, which follows the payday, is
+/// `currentMonthProvider`.
+final serverMonthProvider = FutureProvider<String>((ref) async {
+  final today = await ref.watch(todayProvider.future);
+  return '${today.year}-${today.month.toString().padLeft(2, '0')}';
+});
+
 final installedVersionProvider = FutureProvider<String?>((ref) async {
   try {
     return (await PackageInfo.fromPlatform()).version;
@@ -82,3 +102,36 @@ final updateRequiredProvider = Provider<RemoteConfig?>((ref) {
   if (config == null || installed == null) return null;
   return isOlderVersion(installed, config.minVersion) ? config : null;
 });
+
+/// Reads the configuration again when the app returns from the background: a phone can sleep past midnight or past a
+/// stopped feature.
+class RemoteConfigRefresher extends ConsumerStatefulWidget {
+  const RemoteConfigRefresher({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<RemoteConfigRefresher> createState() =>
+      _RemoteConfigRefresherState();
+}
+
+class _RemoteConfigRefresherState extends ConsumerState<RemoteConfigRefresher> {
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(
+      onResume: () => ref.invalidate(remoteConfigProvider),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}

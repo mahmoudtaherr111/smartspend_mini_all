@@ -52,7 +52,7 @@ class SmartSpendApp extends ConsumerWidget {
         builder: (context, ref, _) {
           final config = ref.watch(updateRequiredProvider);
           return config == null
-              ? LockGate(child: child!)
+              ? RemoteConfigRefresher(child: LockGate(child: child!))
               : AppUpdateScreen(
                   minimumVersion: config.minVersion,
                   storeUrl: config.storeUrl,

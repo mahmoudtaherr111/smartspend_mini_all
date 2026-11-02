@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../ledger/ledger_providers.dart';
+import '../infrastructure/remote_config.dart';
 import 'ai_providers.dart';
 
 /// Yearly insights view analyzing the user's entire year of finances (AI-11).
@@ -22,7 +22,7 @@ class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return ref
-        .watch(currentMonthProvider)
+        .watch(serverMonthProvider)
         .when(
           loading: () => const Padding(
             padding: EdgeInsets.all(SmartSpendSpacing.screen),
@@ -32,7 +32,7 @@ class _AiYearlyInsightsViewState extends ConsumerState<AiYearlyInsightsView> {
             child: ErrorState(
               message: l10n.aiWeCanTRunThe,
               retryLabel: l10n.retry,
-              onRetry: () => ref.invalidate(currentMonthProvider),
+              onRetry: () => ref.invalidate(serverMonthProvider),
             ),
           ),
           data: (month) {
