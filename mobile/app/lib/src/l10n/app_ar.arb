@@ -734,5 +734,15 @@
   "resetPasswordNew": "كلمة المرور الجديدة",
   "resetPasswordConfirm": "تأكيد كلمة المرور",
   "resetPasswordSubmit": "تغيير كلمة المرور والدخول",
-  "resetPasswordSuccess": "تم تغيير كلمة المرور بنجاح"
+  "resetPasswordSuccess": "تم تغيير كلمة المرور بنجاح",
+  "planBuy": "اشترك في Pro بـ {price}",
+  "@planBuy": { "placeholders": { "price": { "type": "String", "example": "99 ج.م" } } },
+  "planStoreSoon": "الاشتراك من جوه التطبيق هيتاح قريب.",
+  "planActivated": "اشتراك Pro اتفعّل.",
+  "planPurchasePending": "عملية الدفع لسه بتتراجع. هنفعّل الاشتراك أول ما تتأكد.",
+  "planPurchaseFailed": "الاشتراك ما اتمّش، ومفيش فلوس اتخصمت من عندنا. جرّب تاني.",
+  "planRestore": "رجّع مشترياتي",
+  "planRestored": "اشتراكك رجع.",
+  "planNothingToRestore": "مش لاقيين اشتراك سابق على الحساب ده في المتجر.",
+  "exportShare": "شارك الملف"
 }

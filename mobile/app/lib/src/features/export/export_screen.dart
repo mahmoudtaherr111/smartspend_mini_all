@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'export_api.dart';
 import 'export_models.dart';
 
@@ -65,7 +67,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'مقدرناش نجهز الملف دلوقتي، اتأكد من النت وجرّب تاني: $e';
+        _error = 'مقدرناش نجهز الملف دلوقتي. اتأكد من النت وجرّب تاني.';
       });
     }
   }
@@ -296,7 +298,7 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'تم تصدير وحفظ الملف بنجاح 🎉',
+                          'الملف جاهز',
                           style: SmartSpendTypography.style(
                             14,
                             FontWeight.w700,
@@ -319,7 +321,20 @@ class _ExportScreenState extends ConsumerState<ExportScreen> {
             ),
             const SizedBox(height: SmartSpendSpacing.md),
           ],
+          if (_exportedFile != null) ...[
+            SmartSpendButton(
+              label: AppLocalizations.of(context).exportShare,
+              icon: Icons.ios_share_rounded,
+              onPressed: () => SharePlus.instance.share(
+                ShareParams(files: [XFile(_exportedFile!.path)]),
+              ),
+            ),
+            const SizedBox(height: SmartSpendSpacing.sm),
+          ],
           SmartSpendButton(
+            variant: _exportedFile == null
+                ? ButtonVariant.primary
+                : ButtonVariant.secondary,
             label: _loading ? 'بنجهز الملف...' : 'تصدير وتحميل الملف',
             busy: _loading,
             onPressed: _loading ? null : _runExport,

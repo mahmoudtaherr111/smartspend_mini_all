@@ -33,7 +33,7 @@ final class PushNotificationService {
       _foregroundMessageController.stream;
 
   /// Initializes Firebase and Push Notification handlers safely.
-  Future<void> initialize() async {
+  Future<void> initialize({bool askPermission = false}) async {
     if (_initialized) return;
 
     try {
@@ -44,15 +44,14 @@ final class PushNotificationService {
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
       // 2. Request Notification Permissions (critical for iOS and Android 13+)
-      final settings = await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
+      // Asked when the person turns notifications on, never on launch (design rule: ask after explaining).
+      final settings = askPermission
+          ? await FirebaseMessaging.instance.requestPermission()
+          : await FirebaseMessaging.instance.getNotificationSettings();
+      if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+          settings.authorizationStatus != AuthorizationStatus.provisional) {
+        return;
+      }
 
       if (kDebugMode) {
         print(
@@ -74,9 +73,6 @@ final class PushNotificationService {
       // ignore: deprecated_member_use
       _fcmToken = await FirebaseMessaging.instance.getToken();
       if (_fcmToken != null && _fcmToken!.isNotEmpty) {
-        if (kDebugMode) {
-          print('FCM Token retrieved: $_fcmToken');
-        }
         await _registerTokenWithBackend(_fcmToken!);
       }
 

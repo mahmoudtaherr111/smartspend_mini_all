@@ -6,6 +6,7 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 import '../../core/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../account/account_providers.dart';
+import 'push_notification_service.dart';
 
 /// Screen for managing push and in-app notification preferences (NOT-03, GAP-35).
 class NotificationSettingsScreen extends ConsumerStatefulWidget {
@@ -117,6 +118,12 @@ class _NotificationSettingsScreenState
                     : (val) {
                         setState(() => _masterEnabled = val);
                         _save();
+                        // The system prompt comes here, when the person asked for notifications.
+                        if (val) {
+                          ref
+                              .read(pushNotificationServiceProvider)
+                              .initialize(askPermission: true);
+                        }
                       },
               ),
             ),

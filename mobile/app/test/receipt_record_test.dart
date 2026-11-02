@@ -1,18 +1,25 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartspend_app/src/features/ledger/receipts/receipt_image_service.dart';
-import 'package:smartspend_app/src/features/ledger/receipts/receipt_permission_sheet.dart';
 import 'package:smartspend_app/src/features/ledger/receipts/receipt_review_sheet.dart';
-import 'package:smartspend_app/src/features/ledger/receipts/receipt_source_sheet.dart';
 import 'package:smartspend_app/src/features/ledger/record_composer.dart';
 import 'package:smartspend_app/src/features/plans/plan_models.dart';
 import 'package:smartspend_app/src/features/plans/plan_providers.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
+import 'support/device_fakes.dart';
 import 'support/sample_month.dart';
 import 'support/test_app.dart';
+
+final class _RefusedCamera implements ReceiptImagePickerService {
+  @override
+  Future<PickedReceiptImage?> pickFromCamera() =>
+      throw PlatformException(code: 'camera_access_denied');
+
+  @override
+  Future<PickedReceiptImage?> pickFromGallery() async => null;
+}
 
 void main() {
   testWidgets('shows camera button in composer', (tester) async {
@@ -54,13 +61,12 @@ void main() {
     },
   );
 
-  testWidgets('pro user without camera permission sees explanation sheet', (
+  testWidgets('a refused camera explains the way forward and sends nothing', (
     tester,
   ) async {
     final fakeApi = FakeApi();
     fakeApi.answer('localAuth.me', (_) => phoneUser());
     answerSampleMonth(fakeApi);
-    final fakePicker = FakeReceiptImagePickerService(hasPermission: false);
 
     final app = TestApp(
       token: 'stored-token',
@@ -69,26 +75,18 @@ void main() {
         userPlanProvider.overrideWith(
           (ref) async => const UserPlanInfo(plan: 'pro', role: 'user'),
         ),
-        receiptImagePickerProvider.overrideWithValue(fakePicker),
+        receiptImagePickerProvider.overrideWithValue(_RefusedCamera()),
       ],
     );
     await app.pump(tester);
 
     await tester.tap(find.byTooltip('تصوير فاتورة'));
     await tester.pumpAndSettle();
-
-    // Source sheet opens first
-    expect(find.byType(ReceiptSourceSheet), findsOneWidget);
-    expect(find.text('الكاميرا'), findsOneWidget);
-
-    // Tap camera
     await tester.tap(find.text('الكاميرا'));
     await tester.pumpAndSettle();
 
-    // Explanation sheet opens because permission is not granted
-    expect(find.byType(ReceiptPermissionSheet), findsOneWidget);
-    expect(find.text('تصوير الفواتير بالكاميرا'), findsOneWidget);
-    expect(find.text('السماح بالكاميرا'), findsOneWidget);
+    expect(find.textContaining('مش قادرين نفتح الكاميرا'), findsOneWidget);
+    expect(fakeApi.paths, isNot(contains('image.parseReceipt')));
   });
 
   testWidgets('pro user captures receipt, reviews and saves', (tester) async {
@@ -115,7 +113,6 @@ void main() {
     fakeApi.answer('expense.create', (_) => {'id': 991});
 
     final fakePicker = FakeReceiptImagePickerService(
-      hasPermission: true,
       mockImage: PickedReceiptImage(
         bytes: Uint8List.fromList(List.filled(200, 42)),
         mimeType: 'image/jpeg',
@@ -181,7 +178,6 @@ void main() {
     );
 
     final fakePicker = FakeReceiptImagePickerService(
-      hasPermission: true,
       mockImage: PickedReceiptImage(
         bytes: Uint8List.fromList(List.filled(150, 99)),
         mimeType: 'image/jpeg',

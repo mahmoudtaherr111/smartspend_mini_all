@@ -1,10 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 
 /// Result of an audio recording session (REC-05).
 class RecordingResult {
   const RecordingResult({
     required this.audioBase64,
-    this.mimeType = 'audio/m4a',
+    this.mimeType = 'audio/mp4',
     this.durationSeconds = 0,
   });
 
@@ -41,72 +46,76 @@ abstract interface class AudioRecorderService {
 
   /// Whether a recording is currently in progress.
   bool get isRecording;
+
+  Future<void> dispose();
 }
 
-/// In-memory fake implementation of [AudioRecorderService] for unit/widget tests and headless runs.
-class FakeAudioRecorderService implements AudioRecorderService {
-  FakeAudioRecorderService({
-    bool hasPermissionByDefault = true,
-    this.permissionGrantedOnRequest = true,
-    this.mockBase64 = 'AAAA',
-    this.mockDurationSeconds = 3,
-  }) : _hasPermission = hasPermissionByDefault;
-
-  bool _hasPermission;
-  final bool permissionGrantedOnRequest;
-  final String mockBase64;
-  final int mockDurationSeconds;
-
+/// The phone's microphone, recording compressed mono audio to a temporary file that is deleted once read: no
+/// recording stays on the phone (owner decision: no transcripts or voice are stored).
+class DeviceAudioRecorderService implements AudioRecorderService {
+  final _recorder = AudioRecorder();
+  String? _path;
+  DateTime? _startedAt;
   bool _recording = false;
-  final _amplitudeController = StreamController<double>.broadcast();
 
   @override
   bool get isRecording => _recording;
 
+  /// `dBFS` runs from about -60 (silence) to 0 (loud).
   @override
-  Stream<double> get amplitudeStream => _amplitudeController.stream;
+  Stream<double> get amplitudeStream => _recorder
+      .onAmplitudeChanged(const Duration(milliseconds: 100))
+      .map((level) => ((level.current + 60) / 60).clamp(0.0, 1.0));
 
   @override
-  Future<bool> hasPermission() async => _hasPermission;
+  Future<bool> hasPermission() => _recorder.hasPermission(request: false);
 
   @override
-  Future<bool> requestPermission() async {
-    _hasPermission = permissionGrantedOnRequest;
-    return _hasPermission;
-  }
+  Future<bool> requestPermission() => _recorder.hasPermission();
 
   @override
   Future<void> startRecording() async {
+    final folder = await getTemporaryDirectory();
+    final path =
+        '${folder.path}/voice_${DateTime.now().microsecondsSinceEpoch}.m4a';
+    await _recorder.start(
+      const RecordConfig(
+        encoder: AudioEncoder.aacLc,
+        bitRate: 48000,
+        sampleRate: 16000,
+        numChannels: 1,
+      ),
+      path: path,
+    );
+    _path = path;
+    _startedAt = DateTime.now();
     _recording = true;
-    _amplitudeController.add(0.4);
-  }
-
-  /// Helper for tests to simulate voice fluctuations.
-  void emitAmplitude(double amp) {
-    if (_recording) {
-      _amplitudeController.add(amp);
-    }
   }
 
   @override
   Future<RecordingResult?> stopRecording() async {
     if (!_recording) return null;
     _recording = false;
-    _amplitudeController.add(0.0);
+    final path = await _recorder.stop() ?? _path;
+    if (path == null) return null;
+    final file = File(path);
+    if (!file.existsSync()) return null;
+    final bytes = await file.readAsBytes();
+    await file.delete();
+    if (bytes.isEmpty) return null;
     return RecordingResult(
-      audioBase64: mockBase64,
-      mimeType: 'audio/m4a',
-      durationSeconds: mockDurationSeconds,
+      audioBase64: base64Encode(bytes),
+      mimeType: 'audio/mp4',
+      durationSeconds: DateTime.now().difference(_startedAt!).inSeconds,
     );
   }
 
   @override
   Future<void> cancelRecording() async {
     _recording = false;
-    _amplitudeController.add(0.0);
+    await _recorder.cancel();
   }
 
-  void dispose() {
-    _amplitudeController.close();
-  }
+  @override
+  Future<void> dispose() => _recorder.dispose();
 }

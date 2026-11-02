@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
@@ -136,12 +139,10 @@ class InviteFriendsScreen extends ConsumerWidget {
                         onPressed: code.isEmpty
                             ? null
                             : () {
-                                Clipboard.setData(
-                                  ClipboardData(text: shareText),
-                                );
-                                showSmartSpendNotice(
-                                  context,
-                                  'تم نسخ رسالة الدعوة للمشاركة!',
+                                unawaited(
+                                  SharePlus.instance.share(
+                                    ShareParams(text: shareText),
+                                  ),
                                 );
                               },
                       ),

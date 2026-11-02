@@ -21,8 +21,11 @@ import 'package:smartspend_app/src/features/auth/session_controller.dart';
 import 'package:smartspend_app/src/features/ledger/ledger_providers.dart';
 import 'package:smartspend_app/src/features/ledger/offline/ledger_store.dart';
 import 'package:smartspend_app/src/features/ledger/offline/outbox.dart';
+import 'package:smartspend_app/src/features/ledger/voice/voice_providers.dart';
 import 'package:smartspend_app/src/features/lock/app_lock.dart';
 import 'package:smartspend_app/src/features/lock/lock_store.dart';
+
+import 'device_fakes.dart';
 
 /// A tRPC error the fake API answers with.
 final class TrpcFailure implements Exception {
@@ -301,6 +304,9 @@ final class TestApp {
           httpClientProvider.overrideWithValue(api.client),
           googleIdentityProvider.overrideWithValue(google),
           humanCheckProvider.overrideWithValue(humanCheck),
+          audioRecorderServiceProvider.overrideWithValue(
+            FakeAudioRecorderService(),
+          ),
           bankCaptureProvider.overrideWithValue(bankCapture),
           ledgerStoreProvider.overrideWithValue(ledgerStore),
           connectivityProvider.overrideWith((ref) => connection.stream),

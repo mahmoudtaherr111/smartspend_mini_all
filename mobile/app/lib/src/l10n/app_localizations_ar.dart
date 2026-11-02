@@ -1685,4 +1685,36 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get resetPasswordSuccess => 'تم تغيير كلمة المرور بنجاح';
+
+  @override
+  String planBuy(String price) {
+    return 'اشترك في Pro بـ $price';
+  }
+
+  @override
+  String get planStoreSoon => 'الاشتراك من جوه التطبيق هيتاح قريب.';
+
+  @override
+  String get planActivated => 'اشتراك Pro اتفعّل.';
+
+  @override
+  String get planPurchasePending =>
+      'عملية الدفع لسه بتتراجع. هنفعّل الاشتراك أول ما تتأكد.';
+
+  @override
+  String get planPurchaseFailed =>
+      'الاشتراك ما اتمّش، ومفيش فلوس اتخصمت من عندنا. جرّب تاني.';
+
+  @override
+  String get planRestore => 'رجّع مشترياتي';
+
+  @override
+  String get planRestored => 'اشتراكك رجع.';
+
+  @override
+  String get planNothingToRestore =>
+      'مش لاقيين اشتراك سابق على الحساب ده في المتجر.';
+
+  @override
+  String get exportShare => 'شارك الملف';
 }

@@ -536,5 +536,14 @@
   "resetPasswordNew": "New Password",
   "resetPasswordConfirm": "Confirm Password",
   "resetPasswordSubmit": "Change Password & Sign In",
-  "resetPasswordSuccess": "Password reset successfully"
+  "resetPasswordSuccess": "Password reset successfully",
+  "planBuy": "Get Pro for {price}",
+  "planStoreSoon": "Subscribing inside the app is coming soon.",
+  "planActivated": "Pro is on.",
+  "planPurchasePending": "Your payment is still being reviewed. Pro turns on once it is confirmed.",
+  "planPurchaseFailed": "The subscription did not go through. Please try again.",
+  "planRestore": "Restore my purchases",
+  "planRestored": "Your subscription is back.",
+  "planNothingToRestore": "We can't find a past subscription in the store for this account.",
+  "exportShare": "Share the file"
 }

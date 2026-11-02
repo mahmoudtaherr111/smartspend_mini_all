@@ -1196,6 +1196,21 @@
       "count": 1
     }
   },
+  "tests/e2e/instant-tab-switching.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "tests/e2e/mobile-dashboard-ai-recording.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 8
+    }
+  },
+  "tests/e2e/mobile-fidelity.spec.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
   "tests/expense-rollups.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1

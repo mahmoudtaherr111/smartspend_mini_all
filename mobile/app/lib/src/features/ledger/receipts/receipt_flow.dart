@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
@@ -15,17 +15,11 @@ import '../offline/outbox.dart';
 import '../record_flow.dart';
 import 'receipt_image_service.dart';
 import 'receipt_models.dart';
-import 'receipt_permission_sheet.dart';
 import 'receipt_review_sheet.dart';
 import 'receipt_source_sheet.dart';
 
-/// Image compression helper ensuring payload is within reasonable mobile bounds.
-Uint8List compressReceiptBytes(Uint8List raw) {
-  // If under 1MB, pass through
-  if (raw.lengthInBytes <= 1024 * 1024) return raw;
-  // Large payload safeguard: take up to 1MB
-  return raw.sublist(0, 1024 * 1024);
-}
+/// The largest photo sent; the server refuses what it cannot read in one request.
+const _maxReceiptBytes = 6 * 1024 * 1024;
 
 /// Orchestrates the entire receipt intake journey (`REC-06`).
 Future<void> startReceiptIntake({
@@ -65,34 +59,32 @@ Future<void> startReceiptIntake({
   final picker = ref.read(receiptImagePickerProvider);
   PickedReceiptImage? picked;
 
-  if (source == ReceiptSource.camera) {
-    // Camera permission check & explanation
-    var hasPerm = await picker.hasCameraPermission();
-    if (!hasPerm) {
-      if (!context.mounted) return;
-      final proceed = await ReceiptPermissionSheet.show(context);
-      if (!proceed) return;
-      hasPerm = await picker.requestCameraPermission();
-      if (!hasPerm) {
-        if (context.mounted) {
-          showSmartSpendNotice(
-            context,
-            'تم رفض إذن الكاميرا. تقدر تختار صورة الفاتورة من المعرض بدلاً منها.',
-          );
-        }
-        return;
-      }
+  try {
+    if (source == ReceiptSource.camera) {
+      picked = await picker.pickFromCamera();
+    } else {
+      picked = await picker.pickFromGallery();
     }
-    picked = await picker.pickFromCamera();
-  } else {
-    picked = await picker.pickFromGallery();
+  } on PlatformException {
+    if (context.mounted) {
+      showSmartSpendNotice(
+        context,
+        'مش قادرين نفتح الكاميرا. اسمح بالوصول من إعدادات الموبايل، أو اختار صورة من المعرض.',
+      );
+    }
+    return;
   }
 
   if (picked == null || !context.mounted) return;
+  if (picked.bytes.lengthInBytes > _maxReceiptBytes) {
+    showSmartSpendNotice(
+      context,
+      'الصورة كبيرة قوي. جرّب صورة تانية أقرب للفاتورة.',
+    );
+    return;
+  }
 
-  // 4. Compress image on phone
-  final compressed = compressReceiptBytes(picked.bytes);
-  final base64String = base64Encode(compressed);
+  final base64String = base64Encode(picked.bytes);
 
   // 5. Progress past 1s, cancel past 10s dialog
   final completer = Completer<ReceiptData?>();

@@ -14,6 +14,9 @@ import 'voice/voice_call_controller.dart';
 import 'voice/voice_call_screen.dart';
 
 /// The central container screen for all AI features in SmartSpend AI (AI-01 through AI-11).
+/// Off until the call has real microphone and speaker audio: a person never sees a call that cannot talk.
+const liveCallsEnabled = false;
+
 class AiCenterScreen extends ConsumerStatefulWidget {
   const AiCenterScreen({super.key});
 
@@ -28,7 +31,10 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(
+      length: liveCallsEnabled ? 5 : 4,
+      vsync: this,
+    );
   }
 
   @override
@@ -169,11 +175,12 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
         ),
         actions: [
           // Live Voice Call button (AI-09)
-          IconButton(
-            icon: const Icon(Icons.phone_in_talk_outlined),
-            tooltip: 'مكالمة ذكية مباشرة',
-            onPressed: _startVoiceCall,
-          ),
+          if (liveCallsEnabled)
+            IconButton(
+              icon: const Icon(Icons.phone_in_talk_outlined),
+              tooltip: 'مكالمة ذكية مباشرة',
+              onPressed: _startVoiceCall,
+            ),
           // Long-term Memories list (AI-05)
           IconButton(
             icon: const Icon(Icons.psychology_outlined),
@@ -195,7 +202,7 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
             Tab(text: 'المحادثة'),
             Tab(text: 'التقرير الشهري'),
             Tab(text: 'مقارنة الشهور'),
-            Tab(text: 'سجل المكالمات'),
+            if (liveCallsEnabled) Tab(text: 'سجل المكالمات'),
             Tab(text: 'التقرير السنوي'),
           ],
         ),
@@ -213,7 +220,7 @@ class _AiCenterScreenState extends ConsumerState<AiCenterScreen>
           const AiCompareView(),
 
           // 4. Past Voice Calls History (AI-10)
-          PastCallsView(onStartNewCall: _startVoiceCall),
+          if (liveCallsEnabled) PastCallsView(onStartNewCall: _startVoiceCall),
 
           // 5. Yearly Insights (AI-11)
           const AiYearlyInsightsView(),

@@ -4,7 +4,7 @@ import 'audio_recorder_service.dart';
 
 /// Provides the active [AudioRecorderService] instance.
 final audioRecorderServiceProvider = Provider<AudioRecorderService>((ref) {
-  final service = FakeAudioRecorderService();
+  final service = DeviceAudioRecorderService();
   ref.onDispose(service.dispose);
   return service;
 });

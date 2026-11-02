@@ -325,8 +325,9 @@ class BudgetsScreen extends ConsumerWidget {
                                     ),
                                   );
 
-                                  if (confirmed != true || !context.mounted)
+                                  if (confirmed != true || !context.mounted) {
                                     return;
+                                  }
 
                                   final notifier = ref.read(
                                     budgetsProvider.notifier,

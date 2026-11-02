@@ -88,10 +88,7 @@ void main() {
 
         expect(exportArgs, isNotNull);
         expect(exportArgs!['format'], 'xlsx');
-        expect(
-          find.textContaining('تم تصدير وحفظ الملف بنجاح'),
-          findsOneWidget,
-        );
+        expect(find.textContaining('الملف جاهز'), findsOneWidget);
       },
     );
   });

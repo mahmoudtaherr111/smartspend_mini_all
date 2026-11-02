@@ -2959,6 +2959,60 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تم تغيير كلمة المرور بنجاح'**
   String get resetPasswordSuccess;
+
+  /// No description provided for @planBuy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في Pro بـ {price}'**
+  String planBuy(String price);
+
+  /// No description provided for @planStoreSoon.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراك من جوه التطبيق هيتاح قريب.'**
+  String get planStoreSoon;
+
+  /// No description provided for @planActivated.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراك Pro اتفعّل.'**
+  String get planActivated;
+
+  /// No description provided for @planPurchasePending.
+  ///
+  /// In ar, this message translates to:
+  /// **'عملية الدفع لسه بتتراجع. هنفعّل الاشتراك أول ما تتأكد.'**
+  String get planPurchasePending;
+
+  /// No description provided for @planPurchaseFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراك ما اتمّش، ومفيش فلوس اتخصمت من عندنا. جرّب تاني.'**
+  String get planPurchaseFailed;
+
+  /// No description provided for @planRestore.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجّع مشترياتي'**
+  String get planRestore;
+
+  /// No description provided for @planRestored.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراكك رجع.'**
+  String get planRestored;
+
+  /// No description provided for @planNothingToRestore.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش لاقيين اشتراك سابق على الحساب ده في المتجر.'**
+  String get planNothingToRestore;
+
+  /// No description provided for @exportShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'شارك الملف'**
+  String get exportShare;
 }
 
 class _AppLocalizationsDelegate

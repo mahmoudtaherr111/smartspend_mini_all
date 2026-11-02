@@ -9,12 +9,7 @@ const { dbMock, dbState } = vi.hoisted(() => {
   const dbMock: any = {
     select: vi.fn((fields?: Record<string, unknown>) => {
       if (fields?.tokens) {
-        const tokensChain: any = {
-          from: vi.fn(() => tokensChain),
-          where: vi.fn(() => tokensChain),
-          limit: vi.fn(() => Promise.resolve([{ tokens: 0 }])),
-        };
-        return tokensChain;
+        return { from: () => ({ where: () => ({ limit: () => Promise.resolve([{ tokens: 0 }]) }) }) };
       }
 
       if (fields?.count) {

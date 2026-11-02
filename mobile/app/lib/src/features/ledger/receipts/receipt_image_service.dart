@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Raw image bytes captured or picked from device.
 final class PickedReceiptImage {
@@ -15,43 +16,36 @@ final class PickedReceiptImage {
   final String name;
 }
 
-/// Abstract contract for picking receipt photos.
+/// Picks a receipt photo. Null means the person closed the picker.
 abstract class ReceiptImagePickerService {
-  Future<bool> hasCameraPermission();
-  Future<bool> requestCameraPermission();
   Future<PickedReceiptImage?> pickFromCamera();
   Future<PickedReceiptImage?> pickFromGallery();
 }
 
-/// In-memory fake service for tests and fallback.
-class FakeReceiptImagePickerService implements ReceiptImagePickerService {
-  FakeReceiptImagePickerService({
-    this.hasPermission = true,
-    this.permissionGrantedOnRequest = true,
-    this.mockImage,
-  });
+/// The phone's camera and gallery. The system picker asks for its own permission, and it scales and compresses the
+/// photo, so a receipt reaches the server small enough for an Egyptian mobile connection and still readable.
+class DeviceReceiptImagePickerService implements ReceiptImagePickerService {
+  final _picker = ImagePicker();
 
-  bool hasPermission;
-  bool permissionGrantedOnRequest;
-  PickedReceiptImage? mockImage;
-
-  @override
-  Future<bool> hasCameraPermission() async => hasPermission;
-
-  @override
-  Future<bool> requestCameraPermission() async {
-    hasPermission = permissionGrantedOnRequest;
-    return hasPermission;
+  Future<PickedReceiptImage?> _pick(ImageSource source) async {
+    final file = await _picker.pickImage(
+      source: source,
+      maxWidth: 1600,
+      maxHeight: 2400,
+      imageQuality: 80,
+    );
+    if (file == null) return null;
+    return PickedReceiptImage(bytes: await file.readAsBytes());
   }
 
   @override
-  Future<PickedReceiptImage?> pickFromCamera() async => mockImage;
+  Future<PickedReceiptImage?> pickFromCamera() => _pick(ImageSource.camera);
 
   @override
-  Future<PickedReceiptImage?> pickFromGallery() async => mockImage;
+  Future<PickedReceiptImage?> pickFromGallery() => _pick(ImageSource.gallery);
 }
 
 /// Provides the active [ReceiptImagePickerService].
 final receiptImagePickerProvider = Provider<ReceiptImagePickerService>((ref) {
-  return FakeReceiptImagePickerService();
+  return DeviceReceiptImagePickerService();
 });

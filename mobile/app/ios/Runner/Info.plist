@@ -25,14 +25,12 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>عشان تفتح SmartSpend بوشّك بدل الرمز السري.</string>
 	<!-- Shown by iOS when the live voice call asks for microphone access (AI-09, GAP-06). -->
+	<key>NSCameraUsageDescription</key>
+	<string>علشان تصوّر الفاتورة ونقراها لك.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>علشان تختار صورة الفاتورة من المعرض.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>عشان تتكلم بالصوت مع المساعد الذكي في المكالمة المباشرة.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>audio</string>
-		<string>fetch</string>
-		<string>remote-notification</string>
-	</array>
+	<string>علشان تسجّل مصاريفك بصوتك.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- A debug build may reach the API on the development machine over plain HTTP. -->

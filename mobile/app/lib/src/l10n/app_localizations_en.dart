@@ -1685,4 +1685,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resetPasswordSuccess => 'Password reset successfully';
+
+  @override
+  String planBuy(String price) {
+    return 'Get Pro for $price';
+  }
+
+  @override
+  String get planStoreSoon => 'Subscribing inside the app is coming soon.';
+
+  @override
+  String get planActivated => 'Pro is on.';
+
+  @override
+  String get planPurchasePending =>
+      'Your payment is still being reviewed. Pro turns on once it is confirmed.';
+
+  @override
+  String get planPurchaseFailed =>
+      'The subscription did not go through. Please try again.';
+
+  @override
+  String get planRestore => 'Restore my purchases';
+
+  @override
+  String get planRestored => 'Your subscription is back.';
+
+  @override
+  String get planNothingToRestore =>
+      'We can\'t find a past subscription in the store for this account.';
+
+  @override
+  String get exportShare => 'Share the file';
 }
