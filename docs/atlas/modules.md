@@ -119,7 +119,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/pro-router.ts` | `api-core`, `auth`, `billing`, `contracts`, `database`, `platform` | — | `local_users`, `pro_subscriptions`, `store_purchases`, `users` | `pro_subscriptions`, `store_purchases` |
 | `api/profile-router.ts` | `accounts`, `ai-insights`, `api-core`, `auth`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `security`, `whatsapp` | — | `expenses`, `in_app_notifications`, `local_users`, `onboarding_questions`, `push_subscriptions`, `user_contacts`, `user_profiles` | `expenses`, `in_app_notifications`, `local_users`, `monthly_behavior_snapshots`, `push_subscriptions`, `scheduled_cashflows`, `user_contacts`, `user_profiles`, `users` |
 | `api/referral-router.ts` | `api-core`, `database`, `platform` | — | `discount_codes`, `local_users`, `referrals`, `users` | `local_users`, `referrals`, `users` |
-| `api/seo-router.ts` | `api-core`, `database` | — | `seo_pages` | `seo_pages` |
+| `api/seo-router.ts` | `api-core`, `database`, `platform` | — | `seo_pages` | `seo_pages` |
 | `api/session-router.ts` | `api-core`, `auth`, `database`, `security` | — | `sessions` | `user_analytics` |
 | `api/support-router.ts` | `api-core`, `database`, `notifications`, `security` | — | `local_users`, `support_tickets`, `users` | `in_app_notifications`, `support_tickets` |
 | `api/voice-router.ts` | `api-core`, `database`, `voice` | — | `voice_calls` | — |

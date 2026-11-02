@@ -2520,7 +2520,7 @@ model {
       }
     }
     seo = router 'seo' {
-      description 'api/seo-router.ts — 5 procedures.'
+      description 'api/seo-router.ts — 4 procedures.'
       metadata {
         file 'api/seo-router.ts'
       }
@@ -2551,16 +2551,6 @@ model {
         metadata {
           file 'api/seo-router.ts'
           builder 'adminProcedure'
-          procedureKind 'query'
-        }
-      }
-      sitemap = procedure 'seo.sitemap' {
-        #query #public #uncalled
-        technology 'publicProcedure'
-        description 'query · publicProcedure · no caller in src/'
-        metadata {
-          file 'api/seo-router.ts'
-          builder 'publicProcedure'
           procedureKind 'query'
         }
       }
@@ -2922,6 +2912,24 @@ model {
         file 'api/boot.ts'
         method 'GET'
         path '/health'
+      }
+    }
+    get_robots_txt = endpoint 'GET /robots.txt' {
+      #http
+      description 'Declared in api/boot.ts.'
+      metadata {
+        file 'api/boot.ts'
+        method 'GET'
+        path '/robots.txt'
+      }
+    }
+    get_sitemap_xml = endpoint 'GET /sitemap.xml' {
+      #http
+      description 'Declared in api/boot.ts.'
+      metadata {
+        file 'api/boot.ts'
+        method 'GET'
+        path '/sitemap.xml'
       }
     }
     get_webhooks_whatsapp = endpoint 'GET /api/webhooks/whatsapp' {

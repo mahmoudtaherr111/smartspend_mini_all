@@ -18,10 +18,10 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (5 of 
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-02 b7dfb797 | 2026-10-31 092bd28c | 7 | — | 1 | 7 | 1 |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-02 af0ee524 | 2026-11-02 af0ee524 | 2 | — | — | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 4 | — | — | 3 | 1 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-02 16d8e737 | 2026-11-02 16d8e737 | 4 | — | 1 | 6 | 1 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-02 af230467 | 2026-11-02 af230467 | 4 | — | — | 3 | 1 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-02 af230467 | 2026-11-02 af230467 | 4 | — | 1 | 6 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-02 4eb38dce | 2026-11-02 4eb38dce | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-02 ae0ca928 | 2026-11-02 ae0ca928 | 5 | — | — | — | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-02 af230467 | 2026-11-02 af230467 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 7 | — | — | 3 | 1 |
 
 
@@ -99,14 +99,14 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days and one day before the end and pays again; in the last week the subscription card on the plans screen (`src/pages/Pro.tsx`) offers the same plan in one tap (`pro.createCheckoutSession` with the current plan), and the paid period starts where the current one ends. Charging a stored card needs Paymob's recurring flow. `pro.cancel` only changes the status the plans screen shows, and there is no refund path.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
-- The logging reminder the permission prompt mentions reaches only users with a streak whose last recorded day was 12 to 36 hours ago.
+- The logging reminder reaches whoever last recorded 12 to 36 hours ago, so someone who signed up and never recorded gets none.
 - A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount that checkout never gives ([billing](billing.md)); unedited ones were replaced.
 - A device cannot be removed from the web, and nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion. Bell items keep no type, so the icon is read from the destination; the Capacitor shells have no native push (no channels or small icon of their own).
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - `logAdminAction` in `api/lib/admin-audit.ts` records actions in `admin_audit_logs` and the audit tab shows them, but not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
 - The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the browser; nothing backs up the database.
-- Answering a ticket does not notify the user, while the support page promises a reply within a day. The reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses them, and `support.assign` has no screen.
+- The reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses them, and `support.assign` has no screen.
 - Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
 - The website counts impressions through `ads.recordImpression`; the mobile app shows no ads yet.
 - Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one), `support.getById`, `support.assign` and every statistic of `analytics`.

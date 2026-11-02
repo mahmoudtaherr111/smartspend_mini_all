@@ -291,7 +291,6 @@ final class SeoProcedures {
   const SeoProcedures._();
 
   ApiQuery get getPage => const ApiQuery('seo.getPage', builder: 'publicProcedure', hasInput: true);
-  ApiQuery get sitemap => const ApiQuery('seo.sitemap', builder: 'publicProcedure');
 }
 
 /// The `session` router, `api/session-router.ts`.

@@ -8,6 +8,8 @@ model {
   smartspend.api.http.get_auth_google_callback -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_auth_google_start -[uses]-> smartspend.api.modules.api-routers
   smartspend.api.http.get_auth_google_start -[uses]-> smartspend.api.modules.platform
+  smartspend.api.http.get_robots_txt -[uses]-> smartspend.api.modules.platform
+  smartspend.api.http.get_sitemap_xml -[uses]-> smartspend.api.modules.api-routers
   smartspend.api.http.get_webhooks_whatsapp -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.get_webhooks_whatsapp -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.http.post_webhooks_apple-asn -[uses]-> smartspend.api.modules.billing
@@ -1243,7 +1245,6 @@ model {
   smartspend.api.trpc.seo.delete -[writes]-> smartspend.mysql.seo_pages
   smartspend.api.trpc.seo.getPage -[reads]-> smartspend.mysql.seo_pages
   smartspend.api.trpc.seo.list -[reads]-> smartspend.mysql.seo_pages
-  smartspend.api.trpc.seo.sitemap -[reads]-> smartspend.mysql.seo_pages
   smartspend.api.trpc.seo.upsert -[reads]-> smartspend.mysql.seo_pages
   smartspend.api.trpc.seo.upsert -[writes]-> smartspend.mysql.seo_pages
   smartspend.api.trpc.session.listAll -[reads]-> smartspend.mysql.sessions

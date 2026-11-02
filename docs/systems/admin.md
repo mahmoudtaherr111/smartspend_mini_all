@@ -129,7 +129,7 @@ Checked against the code; each one names where it lives.
    shown by the command center's quality card (`admin.getClassificationQuality`).
 3. **Gap.** The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
    browser; nothing backs up the database.
-4. **Gap.** Answering a ticket does not notify the user, while the support page promises a reply within a day. The
+4. **Gap.** The
    reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses
    them, and `support.assign` has no screen.
 5. **Gap.** Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it

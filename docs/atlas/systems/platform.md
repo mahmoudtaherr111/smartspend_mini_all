@@ -381,7 +381,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | --- | --- | --- |
 | `AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION` | yes | `api/lib/redis-client.ts` |
 | `APP_TIMEZONE` | yes | `api/boot.ts`, `api/lib/app-time.ts` |
-| `APP_URL` | yes | `api/webauthn-router.ts` |
+| `APP_URL` | yes | `api/boot.ts`, `api/seo-router.ts`, `api/webauthn-router.ts` |
 | `AWS_ACCESS_KEY_ID` | no | `api/services/storage/s3-driver.ts` |
 | `AWS_REGION` | no | `api/services/storage/s3-driver.ts` |
 | `AWS_SECRET_ACCESS_KEY` | no | `api/services/storage/s3-driver.ts` |

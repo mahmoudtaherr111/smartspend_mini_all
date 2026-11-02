@@ -15,7 +15,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `APPLE_BUNDLE_ID` | no | `com.smartspend.app` | `api/lib/store-billing/apple-app-store-verifier.ts` |
 | `APPLE_STORE_BILLING_ENABLED` | no | — | `api/lib/store-billing/apple-app-store-verifier.ts` |
 | `APP_TIMEZONE` | no | `Africa/Cairo` | `api/boot.ts`, `api/lib/app-time.ts`, `api/lib/seasons.ts` |
-| `APP_URL` | no | `http://localhost:5173` | `api/lib/origin-policy.ts`, `api/notification-engine.ts`, `api/webauthn-router.ts` |
+| `APP_URL` | no | `http://localhost:5173` | `api/boot.ts`, `api/lib/origin-policy.ts`, `api/notification-engine.ts`, `api/seo-router.ts`, `api/webauthn-router.ts` |
 | `BILLING_SIMULATE` | no | — | `api/pro-router.ts` |
 | `DATABASE_URL` | yes | — | `api/queries/connection.ts` |
 | `ENABLE_CRONS` | no | — | `api/boot.ts` |

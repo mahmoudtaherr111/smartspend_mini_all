@@ -139,8 +139,8 @@ stop words), `api/lib/whatsapp/outbox.test.ts` (retry delays, status order) and 
 Checked against the code; each one names where it lives.
 1. **Debt.** The activity checks and scheduled templates have no test against a real database;
    `api/notification-engine.delivery.test.ts` covers the push payloads only.
-2. **Gap.** The logging reminder the permission prompt mentions reaches only users with a streak whose last recorded day
-   was 12 to 36 hours ago.
+2. **Gap.** The logging reminder reaches whoever last recorded 12 to 36 hours ago, so someone who signed up and never
+   recorded gets none.
 3. **Gap.** A default template an admin edited keeps its old text, which may still carry emoji or the old Pro upsell's 30% discount
    that checkout never gives ([billing](billing.md)); unedited ones were replaced.
 4. **Gap.** A device cannot be removed from the web, and nothing prunes `in_app_notifications` or `notification_logs`

@@ -783,7 +783,8 @@ export async function checkAndTriggerSmartActivityNotifications() {
     await seedDefaultTemplates();
     const now = new Date();
 
-    // 1. inactivity_reminder: streak >= minStreak, last activity was yesterday
+    // 1. inactivity_reminder: whoever recorded yesterday and not today, from the first day on, which is when the habit
+    // is still forming.
     const inactivityTemplate = await db.select().from(notificationTemplates)
       .where(and(eq(notificationTemplates.eventType, "inactivity_reminder"), eq(notificationTemplates.isActive, true)))
       .limit(1);
@@ -791,7 +792,7 @@ export async function checkAndTriggerSmartActivityNotifications() {
     if (inactivityTemplate.length > 0) {
       const template = inactivityTemplate[0];
       const segment = parseSegment(template.targetSegment);
-      const minStreak = segment.minStreak !== undefined ? Number(segment.minStreak) : 2;
+      const minStreak = segment.minStreak !== undefined ? Number(segment.minStreak) : 1;
 
       const startOfToday = businessDayRange().start;
 

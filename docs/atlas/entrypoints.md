@@ -32,6 +32,8 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 | GET | `/api/webhooks/whatsapp` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/whatsapp/webhook.ts` | — | — |
 | POST | `/api/webhooks/whatsapp` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/whatsapp/outbox.ts`, `api/lib/whatsapp/webhook.ts` | — | — |
 | GET | `/health` | http | `api/boot.ts` | — | — | — |
+| GET | `/robots.txt` | http | `api/boot.ts` | `api/lib/env.ts` | — | — |
+| GET | `/sitemap.xml` | http | `api/boot.ts` | `api/seo-router.ts` | — | — |
 
 ## WebSocket upgrades
 

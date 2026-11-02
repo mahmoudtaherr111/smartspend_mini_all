@@ -25,7 +25,7 @@ flowchart LR
     router_ads["ads API · 8 procedures"]
     router_analytics["analytics API · 4 procedures"]
     router_export["export API · 1 procedure"]
-    router_seo["seo API · 5 procedures"]
+    router_seo["seo API · 4 procedures"]
     router_support["support API · 7 procedures"]
   end
   subgraph g_modules["Code modules"]
@@ -206,7 +206,6 @@ flowchart LR
 | `seo.delete` | mutation | `adminProcedure` | — | `seo_pages` | — |
 | `seo.getPage` | query | `publicProcedure` | `seo_pages` | — | `Admin`, `Landing`, `More`, `PlanPage`, `Privacy`, `Pro`, `Settings`, `Support`, `Terms`, `UltraLounge`, `WalletsPage` |
 | `seo.list` | query | `adminProcedure` | `seo_pages` | — | — |
-| `seo.sitemap` | query | `publicProcedure` | `seo_pages` | — | — |
 | `seo.upsert` | mutation | `adminProcedure` | `seo_pages` | `seo_pages` | — |
 | `support.assign` | mutation | `adminProcedure` | `support_tickets` | `support_tickets` | — |
 | `support.close` | mutation | `authedProcedure` | `support_tickets` | `support_tickets` | `Admin`, `More` |
@@ -245,7 +244,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `pending_clarifications` | D | `admin.resolveClarification` | `admin.getPendingClarifications` |
 | `pro_subscriptions` | A | — | `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.listSubscriptionsAdmin` |
 | `push_subscriptions` | A | — | `admin.getNotificationStats`, `admin.sendInstantNotification`, `admin.sendPushNotification` |
-| `seo_pages` | A | `seo.delete`, `seo.upsert` | `seo.getPage`, `seo.list`, `seo.sitemap`, `seo.upsert` |
+| `seo_pages` | A | `seo.delete`, `seo.upsert` | `seo.getPage`, `seo.list`, `seo.upsert` |
 | `sessions` | D | — | `admin.getActivityLog`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getUserSessions` |
 | `store_purchases` | A | — | `admin.getDashboardStats`, `admin.listStorePurchasesAdmin` |
 | `support_tickets` | A | `support.assign`, `support.close`, `support.create`, `support.respond` | `admin.getDashboardStats`, `admin.getFounderMetrics`, `support.assign`, `support.close`, `support.getById`, `support.listAll`, `support.listMine`, `support.respond` |

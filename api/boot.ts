@@ -674,6 +674,17 @@ app.post("/api/webhooks/apple-asn", async (c) => {
   return c.json({ ok: true, outcome: result.outcome });
 });
 
+// What search engines read: the public pages, never the signed-in app or the admin console.
+app.get("/sitemap.xml", async (c) => {
+  const { buildSitemapXml } = await import("./seo-router");
+  return c.body(await buildSitemapXml(), 200, { "content-type": "application/xml; charset=utf-8" });
+});
+app.get("/robots.txt", (c) =>
+  c.text(
+    `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${env.APP_URL.replace(/\/$/, "")}/sitemap.xml\n`,
+  ),
+);
+
 // Health check
 app.get("/health", (c) =>
   c.json({ status: "ok", timestamp: new Date().toISOString() }),

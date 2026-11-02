@@ -65,7 +65,7 @@
         "api/analytics-router.ts": "ef70b00b91a8",
         "api/export-router.ts#export.allUsers": "c142aeea8326",
         "api/export-router.ts#rest-of-file": "264f56b1884e",
-        "api/seo-router.ts": "0891e38625fb",
+        "api/seo-router.ts": "34739ab2bc7e",
         "api/support-router.ts": "937d038e771c",
         "src/components/admin/AdminAdsTab.tsx": "3a9364ae243b",
         "src/components/admin/AdminAuditTab.tsx": "4d1826b3f408",
@@ -96,9 +96,9 @@
         "src/pages/Admin.tsx": "6dbe6a2f35fb",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-02 16d8e737",
-      "arabic": "4e7183e8df18",
-      "arabicChecked": "2026-11-02 16d8e737"
+      "checked": "2026-11-02 af230467",
+      "arabic": "6a2e1c935ece",
+      "arabicChecked": "2026-11-02 af230467"
     },
     "ai-center": {
       "files": {
@@ -450,7 +450,7 @@
         "api/lib/whatsapp/outbox.ts": "0ea9582f1170",
         "api/lib/whatsapp/templates.ts": "ad010886f602",
         "api/lib/whatsapp/webhook.ts": "b53832f7a45f",
-        "api/notification-engine.ts": "8dc006c4830a",
+        "api/notification-engine.ts": "0433237c7f6d",
         "api/profile-router.ts#profile.getInAppNotifications": "ff2aee79554d",
         "api/profile-router.ts#profile.markAllInAppNotificationsRead": "6a3d324697cb",
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
@@ -459,9 +459,9 @@
         "api/services/firebase.ts": "2181d9177c35",
         "src/pages/Notifications.tsx": "57d9f2b4b95f"
       },
-      "checked": "2026-11-02 b7dfb797",
-      "arabic": "e685f6ce433d",
-      "arabicChecked": "2026-11-02 b7dfb797"
+      "checked": "2026-11-02 af230467",
+      "arabic": "5012d7aeea12",
+      "arabicChecked": "2026-11-02 af230467"
     },
     "platform": {
       "files": {
@@ -469,7 +469,7 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "e24c600528f6",
+        "api/boot.ts#rest-of-file": "74f88df7623e",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "f25bdcf5392f",
         "api/lib/app-time.ts": "7eaf4ab8fae6",
@@ -512,9 +512,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "d271ee15cf38"
       },
-      "checked": "2026-11-02 ae0ca928",
+      "checked": "2026-11-02 af230467",
       "arabic": "d521b3fe9cdd",
-      "arabicChecked": "2026-11-02 ae0ca928"
+      "arabicChecked": "2026-11-02 af230467"
     },
     "voice-calls": {
       "files": {

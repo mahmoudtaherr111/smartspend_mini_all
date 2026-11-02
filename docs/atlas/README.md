@@ -28,11 +28,11 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 | Tables with relations | 64 |
 | Foreign-key constraints | 0 |
 | tRPC routers | 27 |
-| tRPC procedures | 272 |
-| — queries | 110 |
+| tRPC procedures | 271 |
+| — queries | 109 |
 | — mutations | 162 |
 | Procedure builders | 14 |
-| HTTP routes (outside tRPC) | 8 |
+| HTTP routes (outside tRPC) | 10 |
 | WebSocket upgrade prefixes | 2 |
 | Scheduled jobs | 19 |
 | Browser routes | 18 |
@@ -47,4 +47,5 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 
 Gaps the generator found between the code and the hand-maintained maps in `docs/architecture/`, or code patterns it cannot read.
 
-None.
+- docs/architecture/systems.json: the route "GET /robots.txt" belongs to no system.
+- docs/architecture/systems.json: the route "GET /sitemap.xml" belongs to no system.
