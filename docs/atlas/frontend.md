@@ -87,16 +87,14 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 
 ### `Admin` — `src/pages/Admin.tsx`
 
-34 files in its import closure (not counting `src/components/ui/`).
+33 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
 | `admin.addAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.clearAllApiKeyErrors` | useMutation | `src/pages/Admin.tsx` |
-| `admin.createDiscountCode` | useMutation | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.createNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.deleteAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.deleteDiscountCode` | useMutation | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.deleteLearnedRule` | useMutation | `src/components/admin/AdminRulesTab.tsx` |
 | `admin.deleteNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.deleteUser` | useMutation | `src/hooks/useAdmin.ts` |
@@ -113,7 +111,6 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
 | `admin.getDashboardStats` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.getDiscountCodes` | useQuery, utils.invalidate | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getLearnedRules` | useQuery | `src/components/admin/AdminRulesTab.tsx` |
 | `admin.getNotificationLogs` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
@@ -256,16 +253,14 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-63 files in its import closure (not counting `src/components/ui/`).
+62 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
 | `admin.addAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.clearAllApiKeyErrors` | useMutation | `src/pages/Admin.tsx` |
-| `admin.createDiscountCode` | useMutation | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.createNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.deleteAiProvider` | useMutation | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.deleteDiscountCode` | useMutation | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.deleteLearnedRule` | useMutation | `src/components/admin/AdminRulesTab.tsx` |
 | `admin.deleteNotificationTemplate` | useMutation | `src/components/admin/NotificationsTab.tsx` |
 | `admin.deleteUser` | useMutation | `src/hooks/useAdmin.ts` |
@@ -282,7 +277,6 @@ _None._
 | `admin.getClassificationLogs` | useQuery | `src/hooks/useAdmin.ts` |
 | `admin.getClassificationQuality` | useQuery | `src/components/admin/ai-center/tabs/ClassificationQualityTab.tsx` |
 | `admin.getDashboardStats` | useQuery | `src/hooks/useAdmin.ts` |
-| `admin.getDiscountCodes` | useQuery, utils.invalidate | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.getFounderMetrics` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getLearnedRules` | useQuery | `src/components/admin/AdminRulesTab.tsx` |
 | `admin.getNotificationLogs` | useQuery, utils.invalidate | `src/components/admin/NotificationsTab.tsx` |
@@ -374,8 +368,6 @@ _None._
 | `profile.updateContact` | useMutation | `src/components/settings/PeopleSettingsView.tsx` |
 | `profile.updateSmartProfile` | useMutation | `src/components/notifications/NotificationSettings.tsx`, `src/components/settings/LanguageSettings.tsx`, `src/pages/Settings.tsx` |
 | `profile.updateUserInfo` | useMutation | `src/components/profile/ProfileScreen.tsx` |
-| `referral.applyCode` | useMutation | `src/pages/Pro.tsx` |
-| `referral.myCode` | useQuery | `src/pages/Pro.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 | `support.close` | useMutation | `src/pages/Admin.tsx` |
 | `support.create` | useMutation | `src/pages/Support.tsx` |
@@ -446,8 +438,6 @@ _None._
 | `pro.myPlan` | useQuery, utils.invalidate | `src/hooks/usePro.ts` |
 | `pro.planCatalog` | useQuery | `src/pages/Pro.tsx` |
 | `pro.upgrade` | useMutation | `src/hooks/usePro.ts` |
-| `referral.applyCode` | useMutation | `src/pages/Pro.tsx` |
-| `referral.myCode` | useQuery | `src/pages/Pro.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 
 ### `Settings` — `src/pages/Settings.tsx`

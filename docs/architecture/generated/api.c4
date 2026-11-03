@@ -4,7 +4,7 @@
 model {
   extend smartspend.api.trpc {
     admin = router 'admin' {
-      description 'api/admin-router.ts — 60 procedures.'
+      description 'api/admin-router.ts — 57 procedures.'
       metadata {
         file 'api/admin-router.ts'
       }
@@ -38,16 +38,6 @@ model {
           procedureKind 'mutation'
         }
       }
-      createDiscountCode = procedure 'admin.createDiscountCode' {
-        #mutation #admin
-        technology 'adminProcedure'
-        description 'mutation · adminProcedure'
-        metadata {
-          file 'api/admin-router.ts'
-          builder 'adminProcedure'
-          procedureKind 'mutation'
-        }
-      }
       createNotificationTemplate = procedure 'admin.createNotificationTemplate' {
         #mutation #admin
         technology 'adminProcedure'
@@ -59,16 +49,6 @@ model {
         }
       }
       deleteAiProvider = procedure 'admin.deleteAiProvider' {
-        #mutation #admin
-        technology 'adminProcedure'
-        description 'mutation · adminProcedure'
-        metadata {
-          file 'api/admin-router.ts'
-          builder 'adminProcedure'
-          procedureKind 'mutation'
-        }
-      }
-      deleteDiscountCode = procedure 'admin.deleteDiscountCode' {
         #mutation #admin
         technology 'adminProcedure'
         description 'mutation · adminProcedure'
@@ -249,16 +229,6 @@ model {
         }
       }
       getDashboardStats = procedure 'admin.getDashboardStats' {
-        #query #admin
-        technology 'adminProcedure'
-        description 'query · adminProcedure'
-        metadata {
-          file 'api/admin-router.ts'
-          builder 'adminProcedure'
-          procedureKind 'query'
-        }
-      }
-      getDiscountCodes = procedure 'admin.getDiscountCodes' {
         #query #admin
         technology 'adminProcedure'
         description 'query · adminProcedure'
@@ -2556,52 +2526,6 @@ model {
           file 'api/profile-router.ts'
           builder 'authedProcedure'
           procedureKind 'mutation'
-        }
-      }
-    }
-    referral = router 'referral' {
-      description 'api/referral-router.ts — 4 procedures.'
-      metadata {
-        file 'api/referral-router.ts'
-      }
-      applyCode = procedure 'referral.applyCode' {
-        #mutation #authed
-        technology 'authedProcedure'
-        description 'mutation · authedProcedure'
-        metadata {
-          file 'api/referral-router.ts'
-          builder 'authedProcedure'
-          procedureKind 'mutation'
-        }
-      }
-      listAll = procedure 'referral.listAll' {
-        #query #admin #uncalled
-        technology 'adminProcedure'
-        description 'query · adminProcedure · no caller in src/'
-        metadata {
-          file 'api/referral-router.ts'
-          builder 'adminProcedure'
-          procedureKind 'query'
-        }
-      }
-      myCode = procedure 'referral.myCode' {
-        #query #authed
-        technology 'authedProcedure'
-        description 'query · authedProcedure'
-        metadata {
-          file 'api/referral-router.ts'
-          builder 'authedProcedure'
-          procedureKind 'query'
-        }
-      }
-      myReferrals = procedure 'referral.myReferrals' {
-        #query #authed #uncalled
-        technology 'authedProcedure'
-        description 'query · authedProcedure · no caller in src/'
-        metadata {
-          file 'api/referral-router.ts'
-          builder 'authedProcedure'
-          procedureKind 'query'
         }
       }
     }

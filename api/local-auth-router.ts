@@ -110,7 +110,6 @@ export const localAuthRouter = router({
         phone: z.string().min(11, "رقم التليفون لازم يكون 11 رقم").max(11),
         email: z.string().email("الإيميل مش صحيح").optional().or(z.literal("")),
         password: z.string().min(6, "الباسورد لازم يكون 6 أحرف على الأقل"),
-        referralCode: z.string().optional(),
         /** From `generateVerificationCode`, once `confirmVerificationCode` accepted the code sent on WhatsApp. */
         verificationTicket: z.string().max(200).optional(),
       }),
@@ -154,14 +153,6 @@ export const localAuthRouter = router({
       const hashedPassword = await hashPassword(input.password);
       const referral = generateReferralCode();
 
-      let referredBy: number | null = null;
-      if (input.referralCode) {
-        const referrer = await db.query.localUsers.findFirst({
-          where: eq(localUsers.referralCode, input.referralCode),
-        });
-        if (referrer) referredBy = referrer.id;
-      }
-
       // The proof is spent in the transaction that creates the account: two tabs with one ticket get one account,
       // and an insert that fails gives the proof back.
       const newUser = await db.transaction(async (tx) => {
@@ -176,9 +167,8 @@ export const localAuthRouter = router({
             email: input.email || null,
             password: hashedPassword,
 
+            // Each account keeps a code of its own for when the stores allow referral offers (decision 0042).
             referralCode: referral,
-            referredBy: referredBy,
-            referredByType: referredBy ? "local" : null,
           })
           .$returningId();
         return created;

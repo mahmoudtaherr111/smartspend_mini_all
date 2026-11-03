@@ -668,12 +668,6 @@ abstract class AppLocalizations {
   /// **'6 حروف على الأقل'**
   String get passwordHint;
 
-  /// No description provided for @referralLabel.
-  ///
-  /// In ar, this message translates to:
-  /// **'كود دعوة (لو معاك)'**
-  String get referralLabel;
-
   /// No description provided for @registerButton.
   ///
   /// In ar, this message translates to:
@@ -2726,42 +2720,6 @@ abstract class AppLocalizations {
   /// **'باقتك هتفضل شغالة لحد آخر الفترة اللي دفعتها.'**
   String get cancelPlanRetainNotice;
 
-  /// No description provided for @inviteTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'دعوة أصدقاء'**
-  String get inviteTitle;
-
-  /// No description provided for @inviteYourCode.
-  ///
-  /// In ar, this message translates to:
-  /// **'كود الدعوة الخاص بك'**
-  String get inviteYourCode;
-
-  /// No description provided for @inviteShare.
-  ///
-  /// In ar, this message translates to:
-  /// **'مشاركة الكود'**
-  String get inviteShare;
-
-  /// No description provided for @inviteShareText.
-  ///
-  /// In ar, this message translates to:
-  /// **'جرب تطبيق SmartSpend AI لتنظيم مصاريفك بذكاء! استخدم كود الدعوة بتاعي: {code}'**
-  String inviteShareText(String code);
-
-  /// No description provided for @inviteCopy.
-  ///
-  /// In ar, this message translates to:
-  /// **'نسخ الكود'**
-  String get inviteCopy;
-
-  /// No description provided for @inviteCopied.
-  ///
-  /// In ar, this message translates to:
-  /// **'تم نسخ الكود!'**
-  String get inviteCopied;
-
   /// No description provided for @appearanceTitle.
   ///
   /// In ar, this message translates to:
@@ -3499,12 +3457,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'قارن الباقات واتحكم في اشتراكك'**
   String get calComparePlansAndManageYour;
-
-  /// No description provided for @calInviteFriends.
-  ///
-  /// In ar, this message translates to:
-  /// **'ادعي أصحابك'**
-  String get calInviteFriends;
 
   /// No description provided for @calShareYourInviteCode.
   ///

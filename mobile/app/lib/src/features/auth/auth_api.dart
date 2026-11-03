@@ -112,7 +112,6 @@ final class AuthApi {
     required String name,
     required String phone,
     required String password,
-    String? referralCode,
     String? verificationTicket,
   }) async {
     final data = await _client.mutate(
@@ -121,8 +120,6 @@ final class AuthApi {
         'name': name,
         'phone': phone,
         'password': password,
-        if (referralCode != null && referralCode.isNotEmpty)
-          'referralCode': referralCode,
         'verificationTicket': ?verificationTicket,
       },
     );

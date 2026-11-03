@@ -202,7 +202,6 @@ final _screens = <(String, bool, PrepareApi?, Reach)>[
     '/more/help',
     '/more/plan',
     '/more/cancel-plan',
-    '/more/invite',
     '/more/terms',
     '/more/data-stored',
     '/more/capture',

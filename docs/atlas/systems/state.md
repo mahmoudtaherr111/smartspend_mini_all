@@ -4,7 +4,7 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (5 of 76 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 74 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
@@ -16,12 +16,12 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (5 of 
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-02 16d8e737 | 2026-11-02 16d8e737 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 9 | — | 2 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-02 b7dfb797 | 2026-10-31 092bd28c | 7 | — | 1 | 7 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-03 8bcebb49 | 2026-11-03 8bcebb49 | 16 | **1** | — | 7 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-03 454074d0 | 2026-11-03 454074d0 | 2 | — | — | 3 | 2 |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-03 ff028180 | 2026-11-03 ff028180 | 16 | **1** | — | 7 | — |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-03 ff028180 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-02 af230467 | 2026-11-02 af230467 | 4 | — | — | 3 | 1 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-03 1222f20d | 2026-11-03 1222f20d | 4 | — | 1 | 6 | 1 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-03 ff028180 | 2026-11-03 ff028180 | 4 | — | — | 6 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-03 8bcebb49 | 2026-11-03 8bcebb49 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-03 1222f20d | 2026-11-03 7fe374fe | 5 | — | — | — | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-03 ff028180 | 2026-11-03 7fe374fe | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-03 454074d0 | 2026-11-03 454074d0 | 7 | — | — | 3 | 1 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (5 of 
 
 Every system's explanation names at least one test.
 
-## What is waiting (76 issue(s))
+## What is waiting (74 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -38,7 +38,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - The website's app lock hashes its PIN with PBKDF2 and a random salt, but the hash and the lockout counter sit in `localStorage`, so it stops a passer-by and not anyone who can open the browser's tools (`src/lib/biometricAuth.ts`).
 
-### Bugs (4)
+### Bugs (3)
 
 **Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
 - With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the financial month only.
@@ -47,10 +47,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 
-**Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
-- Discount codes are created here but checkout never applies them ([billing](billing.md)).
-
-### Gaps (45)
+### Gaps (44)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and The website has no receipt capture. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
@@ -95,7 +92,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
 - Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that sends anyone not on Ultra back to the plans; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
-- Referrals give nothing yet: checkout always charges the plan's full price and nothing rewards the referrer, so `referral.myCode` returns no discount (`REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT` in `api/referral-router.ts`) and the plans screen promises none; the discount codes admins create in `discount_codes` are never applied.
 - Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days and one day before the end and pays again; in the last week the subscription card on the plans screen (`src/pages/Pro.tsx`) offers the same plan in one tap (`pro.createCheckoutSession` with the current plan), and the paid period starts where the current one ends. Charging a stored card needs Paymob's recurring flow. `pro.cancel` only changes the status the plans screen shows, and there is no refund path.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
@@ -105,10 +101,10 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - `logAdminAction` in `api/lib/admin-audit.ts` records actions in `admin_audit_logs` and the audit tab shows them, but not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
-- The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the browser; nothing backs up the database.
+- The backup button returns settings with secrets masked, onboarding questions and ads to the browser; nothing backs up the database.
 - `support.assign` has no screen, so tickets cannot be given to one person of the team.
 - No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served at `/sitemap.xml` from the app's address.
-- The website counts impressions through `ads.recordImpression`; the mobile app shows no ads yet.
+- Ads show only in the mobile app (`mobile/app/lib/src/features/ads/sponsored_card.dart`), which records impressions and clicks; the website shows none.
 - Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one), `support.getById`, `support.assign` and every statistic of `analytics`.
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
@@ -147,7 +143,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
 - In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
-- No test covers the grant's transaction (`grantProSubscription` against a database), the expiry job or referrals.
+- No test covers the grant's transaction (`grantProSubscription` against a database) or the expiry job.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - The activity checks and scheduled templates have no test against a real database; `api/notification-engine.delivery.test.ts` covers the push payloads only.

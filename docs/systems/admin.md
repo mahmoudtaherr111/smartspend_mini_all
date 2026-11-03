@@ -87,10 +87,10 @@ opens the console's page, `no-store` and `noindex`). `npm run admin:dev` runs it
 | --- | --- | --- |
 | Console | `src/pages/Admin.tsx` | The tabs below; overview, users, support and subscriptions are drawn in this file |
 | Admin queries | `src/hooks/useAdmin.ts` | The dashboard, user list, role, plan, delete and revoke calls the console shares |
-| Admin API | `api/admin-router.ts` | Users, sessions, settings, AI providers and telemetry, discount codes, learned rules, raw messages, notification templates |
+| Admin API | `api/admin-router.ts` | Users, sessions, settings, AI providers and telemetry, learned rules, raw messages, notification templates |
 | Tab components | `src/components/admin/` | Audit, settings, rules, ads, WhatsApp, clarifications, bank messages and notifications |
 | AI command center | `src/components/admin/ai-center/AiCommandCenter.tsx` | Classification quality and telemetry, providers, one user's quota, and a sandbox |
-| Settings screens | `src/components/admin/settings/` | Plan limits, API keys, discount codes, and the controls for a bad day (`src/components/admin/settings/AdminOperationsSection.tsx`): stop one AI feature, the daily AI cost ceiling, the oldest allowed mobile build |
+| Settings screens | `src/components/admin/settings/` | Plan limits, API keys, and the controls for a bad day (`src/components/admin/settings/AdminOperationsSection.tsx`): stop one AI feature, the daily AI cost ceiling, the oldest allowed mobile build |
 | Support | `api/support-router.ts`, `src/pages/Support.tsx` | Tickets from users, answers from admins |
 | Ads | `api/ads-router.ts`, `src/hooks/useAds.ts`, `src/components/ads/AdBanner.tsx` | Campaigns, the banner in the app, clicks |
 | SEO | `api/seo-router.ts`, `src/components/seo/SEOMeta.tsx` | The title and description of a public page, and a sitemap |
@@ -189,17 +189,17 @@ Checked against the code; each one names where it lives.
    `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would
    show them, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted. The classification quality itself is
    shown by the command center's quality card (`admin.getClassificationQuality`).
-3. **Gap.** The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
+3. **Gap.** The backup button returns settings with secrets masked, onboarding questions and ads to the
    browser; nothing backs up the database.
 4. **Gap.** `support.assign` has no screen, so tickets cannot be given to one person of the team.
 5. **Gap.** No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served
    at `/sitemap.xml` from the app's address.
-6. **Gap.** The website counts impressions through `ads.recordImpression`; the mobile app shows no ads yet.
+6. **Gap.** Ads show only in the mobile app (`mobile/app/lib/src/features/ads/sponsored_card.dart`), which records
+   impressions and clicks; the website shows none.
 7. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
    `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`,
    `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one),
    `support.getById`, `support.assign` and every statistic of `analytics`.
-8. **Bug.** Discount codes are created here but checkout never applies them ([billing](billing.md)).
 
 ## Voice capacity and release controls
 The voice settings expose per-model input TPM and the per-call reservation, in addition to seat caps. The effective cap reserves 20% headroom; 65k TPM and 30k reserved allows one standard call. A quota below one reservation refuses calls. Extended defaults to 65k TPM and 60k reserved and stays off until task qualification and capacity permit it. All capacity inputs have accessible names. Model-segment statistics attribute switched-call time and cost to each effective model. A hidden apology or a successful tool invocation is not a task-qualification result.
@@ -210,5 +210,5 @@ The voice settings expose per-model input TPM and the per-call reservation, in a
 - [Recording spending](expense-capture.md): clarifications, learned rules and the parser the sandbox calls.
 - [Bank and wallet messages](bank-messages.md): the capture catalog tabs.
 - [Notifications and WhatsApp](notifications.md): templates and the WhatsApp tab.
-- [Plans and payments](billing.md): subscriptions and discount codes.
+- [Plans and payments](billing.md): subscriptions and plans.
 - [Web and mobile app shell](web-app.md): the route guards, and the ads and events in the app shell.

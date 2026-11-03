@@ -32,7 +32,6 @@ Future<void> _fillForm(
   await tester.enterText(_field('اسمك'), 'منى');
   await tester.enterText(_field('رقم التليفون'), '0101 234 5678');
   await tester.enterText(_field('الباسورد'), password);
-  await tester.enterText(_field('كود دعوة (لو معاك)'), 'SSFRIEND');
 }
 
 Future<void> _tapRegister(WidgetTester tester) async {
@@ -81,7 +80,6 @@ void main() {
       'name': 'منى',
       'phone': '01012345678',
       'password': 'secret-pass',
-      'referralCode': 'SSFRIEND',
     });
     expect(api.paths, isNot(contains('localAuth.generateVerificationCode')));
     expect(app.store.token, 'new-account-token');
@@ -157,7 +155,6 @@ void main() {
         'name': 'منى',
         'phone': '01012345678',
         'password': 'secret-pass',
-        'referralCode': 'SSFRIEND',
         'verificationTicket': '9.ticket',
       });
       expect(app.store.token, 'new-account-token');

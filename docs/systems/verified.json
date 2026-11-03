@@ -22,7 +22,7 @@
         "api/lib/security-headers.ts": "057db5e4ad04",
         "api/lib/security-logger.ts": "23e02f6971e7",
         "api/lib/session-validation.ts": "ac2005332694",
-        "api/local-auth-router.ts": "9c258e53674d",
+        "api/local-auth-router.ts": "494c6a750527",
         "api/local-auth-utils.ts": "9cc975515b2d",
         "api/profile-router.ts#profile.confirmPhoneChange": "d49e0d210176",
         "api/profile-router.ts#profile.deleteMyAccount": "1dada0eaa8c8",
@@ -51,17 +51,17 @@
         "src/components/settings/LanguageSettings.tsx": "2e84329609e6",
         "src/components/settings/PeopleSettingsView.tsx": "fe994df04b34",
         "src/pages/AuthCallback.tsx": "6ca3f9321f43",
-        "src/pages/Login.tsx": "17db05b6b3eb",
+        "src/pages/Login.tsx": "721a99583418",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-11-03 8bcebb49",
-      "arabic": "b5c234ca2441",
-      "arabicChecked": "2026-11-03 8bcebb49"
+      "checked": "2026-11-03 ff028180",
+      "arabic": "8eec4771d993",
+      "arabicChecked": "2026-11-03 ff028180"
     },
     "admin": {
       "files": {
         "api/admin-console-router.ts": "376d69f09ad6",
-        "api/admin-router.ts": "53cc31168fe7",
+        "api/admin-router.ts": "d84a7b207611",
         "api/ads-router.ts": "ace6b064f74c",
         "api/analytics-router.ts": "ef70b00b91a8",
         "api/boot.ts#GET /admin": "ecbf724126aa",
@@ -72,7 +72,7 @@
         "src/components/admin/AdminAdsTab.tsx": "3a9364ae243b",
         "src/components/admin/AdminAuditTab.tsx": "4d1826b3f408",
         "src/components/admin/AdminRulesTab.tsx": "c133f73e05d9",
-        "src/components/admin/AdminSettingsTab.tsx": "fd59ae4a5822",
+        "src/components/admin/AdminSettingsTab.tsx": "e66be74b3a8b",
         "src/components/admin/AdminUserMobileCard.tsx": "0b007a182bc9",
         "src/components/admin/AdminWhatsAppTab.tsx": "79ad28d75a17",
         "src/components/admin/ClarificationsTab.tsx": "5d7eeb83b615",
@@ -88,7 +88,6 @@
         "src/components/admin/capture/AdminCaptureNumbers.tsx": "fc68fb7725a8",
         "src/components/admin/capture/AdminCaptureTab.tsx": "7a3d0409d074",
         "src/components/admin/settings/AdminCaptureSection.tsx": "ae07fa37dd43",
-        "src/components/admin/settings/AdminCodesTab.tsx": "fc5ce8efd65d",
         "src/components/admin/settings/AdminKeysTab.tsx": "326d1b6bb70a",
         "src/components/admin/settings/AdminOperationsSection.tsx": "14f41844095f",
         "src/components/admin/settings/AdminPlansTab.tsx": "0de7a93480c1",
@@ -98,9 +97,9 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-03 1222f20d",
-      "arabic": "1f3dc99f2e23",
-      "arabicChecked": "2026-11-03 1222f20d"
+      "checked": "2026-11-03 ff028180",
+      "arabic": "3302d5479147",
+      "arabicChecked": "2026-11-03 ff028180"
     },
     "ai-center": {
       "files": {
@@ -246,13 +245,12 @@
         "api/lib/store-billing/ledger.ts": "042d4243741a",
         "api/lib/subscription-service.ts": "0713a862027e",
         "api/pro-router.ts": "0c249ceb7420",
-        "api/referral-router.ts": "b298497fadda",
-        "src/pages/Pro.tsx": "5beaa63617ea",
+        "src/pages/Pro.tsx": "fe168b78b55e",
         "src/pages/UltraLounge.tsx": "394f7655307b"
       },
-      "checked": "2026-11-03 454074d0",
-      "arabic": "b6e7d2541e2a",
-      "arabicChecked": "2026-11-03 454074d0"
+      "checked": "2026-11-03 ff028180",
+      "arabic": "64a70c660023",
+      "arabicChecked": "2026-11-03 ff028180"
     },
     "expense-capture": {
       "files": {
@@ -486,10 +484,10 @@
         "api/lib/redis-client.ts": "b5bd5c4ff3ad",
         "api/lib/settings-cache.ts": "ee7c564513f7",
         "api/lib/shared-generation.ts": "2d53bf30e567",
-        "api/lib/system-settings-registry.ts": "2f3f867e348c",
+        "api/lib/system-settings-registry.ts": "155ba835f514",
         "api/middleware.ts": "e82907a611a2",
         "api/queries/connection.ts": "49fd2ab76893",
-        "api/router.ts": "ac67dc2c09d0",
+        "api/router.ts": "d748ca88b929",
         "api/server.ts#rest-of-file": "e728f2d81677",
         "api/services/scheduler-lock.ts": "861ab6f129a3",
         "api/services/storage/avatar-service.ts": "d0562e7ea889",
@@ -517,7 +515,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "d271ee15cf38"
       },
-      "checked": "2026-11-03 1222f20d",
+      "checked": "2026-11-03 ff028180",
       "arabic": "9da8ce92632a",
       "arabicChecked": "2026-11-03 7fe374fe"
     },

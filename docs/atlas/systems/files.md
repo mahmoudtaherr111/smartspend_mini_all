@@ -179,7 +179,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/pro-router.ts` | [billing](billing.md) |
 | `api/profile-router.ts` | [accounts](accounts.md): `profile.confirmPhoneChange`, `profile.deleteMyAccount`, `profile.getMyProfile`, `profile.requestPhoneChange`, `profile.updateProfile`, `profile.updateUserInfo` · [insights](insights.md): `profile.dismissOnboarding`, `profile.getNextOnboardingQuestion`, `profile.getQuestions`, `profile.getSmartProfile`, `profile.refreshInferences`, `profile.submitOnboardingAnswer`, `profile.updateSmartProfile` · [money](money.md): `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` · [notifications](notifications.md): `profile.getInAppNotifications`, `profile.markAllInAppNotificationsRead`, `profile.markInAppNotificationRead`, `profile.savePushSubscription` · rest of the file: [accounts](accounts.md), [insights](insights.md), [money](money.md), [notifications](notifications.md) |
 | `api/queries/connection.ts` | [platform](platform.md) |
-| `api/referral-router.ts` | [billing](billing.md) |
 | `api/router.ts` | [platform](platform.md) |
 | `api/seo-router.ts` | [admin](admin.md) |
 | `api/server.ts` | [voice-calls](voice-calls.md): `ws:/api/voice/v2` · rest of the file: [platform](platform.md) |
@@ -345,7 +344,6 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/admin/capture/AdminCaptureNumbers.tsx` | [admin](admin.md) |
 | `src/components/admin/capture/AdminCaptureTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminCaptureSection.tsx` | [admin](admin.md) |
-| `src/components/admin/settings/AdminCodesTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminKeysTab.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminOperationsSection.tsx` | [admin](admin.md) |
 | `src/components/admin/settings/AdminPlansTab.tsx` | [admin](admin.md) |

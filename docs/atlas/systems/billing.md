@@ -2,7 +2,7 @@
 
 # Plans and payments
 
-The Free, Pro and Ultra plans and the Ultra members page, checkout through Paymob and its webhook, referral codes, and the daily job that ends expired subscriptions.
+The Free, Pro and Ultra plans and the Ultra members page, checkout through Paymob and its webhook, and the daily job that ends expired subscriptions.
 
 How it works: [docs/systems/billing.md](../../systems/billing.md) · بالعربي: [docs/ar/systems/billing.md](../../ar/systems/billing.md) · [All systems](README.md)
 
@@ -22,16 +22,13 @@ flowchart LR
     http__api_webhooks["HTTP /api/webhooks/… · 3 routes"]
     job_daily_subscription_expiry["Job · daily-subscription-expiry"]
     router_pro["pro API · 9 procedures"]
-    router_referral["referral API · 4 procedures"]
   end
   subgraph g_modules["Code modules"]
     mod_billing["Billing"]
   end
   subgraph g_tables["MySQL tables"]
-    tbl_discount_codes[("discount_codes")]
     tbl_local_users[("local_users")]
     tbl_pro_subscriptions[("pro_subscriptions")]
-    tbl_referrals[("referrals")]
     tbl_store_events[("store_events")]
     tbl_store_purchases[("store_purchases")]
     tbl_user_analytics[("user_analytics")]
@@ -53,7 +50,6 @@ flowchart LR
   mod_billing ==> tbl_store_purchases
   mod_billing ==> tbl_user_analytics
   page_Pro --> router_pro
-  page_Pro --> router_referral
   router_pro --> mod_billing
   router_pro --> sys_accounts
   router_pro --> sys_platform
@@ -61,14 +57,8 @@ flowchart LR
   router_pro -.-> tbl_users
   router_pro ==> tbl_pro_subscriptions
   router_pro ==> tbl_store_purchases
-  router_referral --> sys_platform
-  router_referral -.-> tbl_discount_codes
-  router_referral ==> tbl_local_users
-  router_referral ==> tbl_referrals
-  router_referral ==> tbl_users
   screens_money --> router_pro
   screens_web_app --> router_pro
-  screens_web_app --> router_referral
 ```
 
 ## Journeys
@@ -121,10 +111,6 @@ Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it 
 | `pro.storeBilling` | query | `authedProcedure` | — | — | — |
 | `pro.upgrade` | mutation | `authedProcedure` | — | — | `More`, `Pro` |
 | `pro.verifyStorePurchase` | mutation | `authedProcedure` | — | — | — |
-| `referral.applyCode` | mutation | `authedProcedure` | `local_users`, `referrals`, `users` | `local_users`, `referrals`, `users` | `More`, `Pro` |
-| `referral.listAll` | query | `adminProcedure` | `referrals` | — | — |
-| `referral.myCode` | query | `authedProcedure` | `discount_codes`, `local_users`, `referrals`, `users` | `local_users`, `users` | `More`, `Pro` |
-| `referral.myReferrals` | query | `authedProcedure` | `referrals` | — | — |
 
 ## HTTP routes, WebSockets and scheduled jobs
 
@@ -141,14 +127,12 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
-| `discount_codes` | A | — | `referral.myCode` |
-| `local_users` | A | `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
+| `local_users` | A | — | `pro.myPlan` |
 | `pro_subscriptions` | A | `billing`, `pro.cancel`, `pro.myPlan` | `billing`, `pro.listSubscriptions`, `pro.myPlan` |
-| `referrals` | A | `referral.applyCode` | `referral.applyCode`, `referral.listAll`, `referral.myCode`, `referral.myReferrals` |
 | `store_events` | E | `billing` | — |
 | `store_purchases` | A | `billing`, `pro.myPlan` | `billing`, `pro.myPlan` |
 | `user_analytics` | E | `billing` | — |
-| `users` | A | `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
+| `users` | A | — | `pro.myPlan` |
 
 ## Outside systems
 
@@ -182,7 +166,7 @@ Used by: [Money: expenses, wallets, budgets, goals and businesses](money.md), [S
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/billing.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>17 files and declarations</summary>
+<details><summary>16 files and declarations</summary>
 
 - `api/boot.ts#POST /api/webhooks/apple-asn`
 - `api/boot.ts#POST /api/webhooks/google-play`
@@ -198,7 +182,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/store-billing/ledger.ts`
 - `api/lib/subscription-service.ts`
 - `api/pro-router.ts`
-- `api/referral-router.ts`
 - `src/pages/Pro.tsx`
 - `src/pages/UltraLounge.tsx`
 

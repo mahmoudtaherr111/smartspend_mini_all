@@ -111,10 +111,10 @@
       "id": "billing",
       "title": "Plans and payments",
       "titleAr": "الباقات والدفع",
-      "summary": "The Free, Pro and Ultra plans and the Ultra members page, checkout through Paymob and its webhook, referral codes, and the daily job that ends expired subscriptions.",
-      "summaryAr": "باقات Free وPro وUltra وصفحة مشتركي Ultra، والدفع عن طريق Paymob وإشعاره للسيرفر، وأكواد الإحالة، والمهمة اليومية اللي بتنهي الاشتراكات المنتهية.",
+      "summary": "The Free, Pro and Ultra plans and the Ultra members page, checkout through Paymob and its webhook, and the daily job that ends expired subscriptions.",
+      "summaryAr": "باقات Free وPro وUltra وصفحة مشتركي Ultra، والدفع عن طريق Paymob وإشعاره للسيرفر، والمهمة اليومية اللي بتنهي الاشتراكات المنتهية.",
       "clusters": ["billing"],
-      "routers": ["pro", "referral"],
+      "routers": ["pro"],
       "pages": ["Pro", "UltraLounge"],
       "routes": [
         "POST /api/webhooks/paymob",

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { usePro } from "../hooks/usePro";
 import { trpc } from "../providers/trpc";
@@ -13,9 +12,6 @@ import {
   Sparkles,
   Check,
   X,
-  Gift,
-  Share2,
-  Copy,
   CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -37,21 +33,12 @@ export default function Pro() {
     }
   };
   const { myPlan, upgrade, cancel, checkout } = usePro();
-  const [copied, setCopied] = useState(false);
-
-  const referral = trpc.referral.myCode.useQuery();
-  const applyCode = trpc.referral.applyCode.useMutation({
-    onSuccess: () => toast.success("تم تطبيق الكود بنجاح! ✅"),
-    onError: (e) => toast.error(e.message || "مش قادرين نطبق الكود ❌"),
-  });
-  const [inputCode, setInputCode] = useState("");
 
   const plan = myPlan.data;
   const tier = plan?.plan ?? "free";
   const isPaid = tier === "pro" || tier === "ultra";
   const isProTier = tier === "pro";
   const isUltraTier = tier === "ultra";
-  const referralDiscount = referral.data?.discount;
 
   // What each plan includes comes from the admin's settings (pro.planCatalog), the same
   // numbers the server enforces — not fixed marketing text.
@@ -59,15 +46,6 @@ export default function Pro() {
   const rowsFor = (id: "free" | "pro" | "ultra") => {
     const rows = catalog.data?.[id];
     return Array.isArray(rows) ? rows : [];
-  };
-
-  const handleCopy = () => {
-    if (referral.data?.code) {
-      navigator.clipboard.writeText(referral.data.code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast.success("تم نسخ الكود! ✅");
-    }
   };
 
   const startCheckout = (planId: BillingPlan = "pro_monthly") => {
@@ -299,79 +277,6 @@ export default function Pro() {
           </Card>
         </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Gift className="w-5 h-5 text-pink-500" /> كود الإحالة
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground mb-2">كودك:</p>
-                <div className="flex items-center gap-2">
-                  <code className="bg-muted px-4 py-2 rounded-lg font-mono text-lg">
-                    {referral.data?.code || "..."}
-                  </code>
-                  <Button size="icon" variant="outline" onClick={handleCopy}>
-                    {copied ? (
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={() => {
-                      if (referral.data?.code) {
-                        void navigator.share({
-                          title: "SmartSpend AI",
-                          text:
-                            referralDiscount != null
-                              ? `استخدم كود ${referral.data.code} للحصول على خصم ${referralDiscount}% في SmartSpend!`
-                              : `استخدم كود ${referral.data.code} في SmartSpend!`,
-                        });
-                      }
-                    }}
-                  >
-                    <Share2 className="w-4 h-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  دعوة {referral.data?.completed ?? 0} من{" "}
-                  {referral.data?.totalReferrals ?? 0} صديق
-                  {referralDiscount != null && (
-                    <span className="block mt-1 text-emerald-500 font-medium">
-                      كودك يمنح خصم {referralDiscount}% لأصدقائك!
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="flex-1 w-full">
-                <p className="text-sm text-muted-foreground mb-2">
-                  {referralDiscount != null
-                    ? `عندك كود إحالة؟ (احصل على خصم ${referralDiscount}%)`
-                    : "عندك كود إحالة؟"}
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    className="flex-1 px-3 py-2 border rounded-lg text-sm bg-background"
-                    placeholder="اكتب الكود هنا"
-                    value={inputCode}
-                    onChange={(e) => setInputCode(e.target.value)}
-                  />
-                  <Button
-                    onClick={() => applyCode.mutate({ code: inputCode })}
-                    disabled={!inputCode}
-                  >
-                    تطبيق
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

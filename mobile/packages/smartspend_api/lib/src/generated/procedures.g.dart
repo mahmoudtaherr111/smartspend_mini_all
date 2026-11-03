@@ -27,7 +27,6 @@ abstract final class Procedures {
   static const localAuth = LocalAuthProcedures._();
   static const pro = ProProcedures._();
   static const profile = ProfileProcedures._();
-  static const referral = ReferralProcedures._();
   static const seo = SeoProcedures._();
   static const session = SessionProcedures._();
   static const support = SupportProcedures._();
@@ -275,15 +274,6 @@ final class ProfileProcedures {
   ApiMutation get updateProfile => const ApiMutation('profile.updateProfile', builder: 'authedProcedure', hasInput: true);
   ApiMutation get updateSmartProfile => const ApiMutation('profile.updateSmartProfile', builder: 'authedProcedure', hasInput: true);
   ApiMutation get updateUserInfo => const ApiMutation('profile.updateUserInfo', builder: 'authedProcedure', hasInput: true);
-}
-
-/// The `referral` router, `api/referral-router.ts`.
-final class ReferralProcedures {
-  const ReferralProcedures._();
-
-  ApiMutation get applyCode => const ApiMutation('referral.applyCode', builder: 'authedProcedure', hasInput: true);
-  ApiQuery get myCode => const ApiQuery('referral.myCode', builder: 'authedProcedure');
-  ApiQuery get myReferrals => const ApiQuery('referral.myReferrals', builder: 'authedProcedure');
 }
 
 /// The `seo` router, `api/seo-router.ts`.

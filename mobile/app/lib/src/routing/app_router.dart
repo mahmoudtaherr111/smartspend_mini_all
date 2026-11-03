@@ -34,7 +34,6 @@ import '../features/more/settings_screen.dart';
 import '../features/notifications/notification_inbox_screen.dart';
 import '../features/notifications/notification_settings_screen.dart';
 import '../features/plans/cancel_plan_screen.dart';
-import '../features/plans/invite_friends_screen.dart';
 import '../features/plans/plan_screen.dart';
 import '../features/seasons/seasons_screen.dart';
 import '../features/stats/category_transactions_screen.dart';
@@ -148,10 +147,6 @@ final appTabs = <AppTab>[
       GoRoute(
         path: CancelPlanScreen.path.substring('/more/'.length),
         builder: (context, state) => const CancelPlanScreen(),
-      ),
-      GoRoute(
-        path: InviteFriendsScreen.path.substring('/more/'.length),
-        builder: (context, state) => const InviteFriendsScreen(),
       ),
       GoRoute(
         path: TermsScreen.path.substring('/more/'.length),

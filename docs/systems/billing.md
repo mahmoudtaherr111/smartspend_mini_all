@@ -1,7 +1,8 @@
 # Plans and payments
 
 The Free, Pro and Ultra plans, buying Pro through Paymob's hosted checkout or inside the phone stores, the webhooks that
-grant a plan, the daily job that ends subscriptions, referral codes, and the Ultra members page.
+grant a plan, the daily job that ends subscriptions, and the Ultra members page. There are no discount or referral
+codes ([decision 0042](../decisions/0042-no-codes-until-store-offers.md)).
 
 - Facts generated from the code, with diagrams: [docs/atlas/systems/billing.md](../atlas/systems/billing.md)
 - The same story for readers who do not read code: [docs/ar/systems/billing.md](../ar/systems/billing.md)
@@ -33,14 +34,13 @@ grant a plan, the daily job that ends subscriptions, referral codes, and the Ult
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Plans screen | `src/pages/Pro.tsx#Pro`, `src/hooks/usePro.ts` | The current plan and its end date, the plan cards, checkout, cancelling, the referral code |
+| Plans screen | `src/pages/Pro.tsx#Pro`, `src/hooks/usePro.ts` | The current plan and its end date, the plan cards, checkout, cancelling |
 | Ultra page | `src/pages/UltraLounge.tsx` | A placeholder for Ultra members |
 | Plan API | `api/pro-router.ts` | `pro.myPlan`, `pro.createCheckoutSession`, `pro.upgrade`, `pro.cancel`, `pro.listSubscriptions` |
 | Paymob checkout | `api/lib/paymob.ts#createPaymobHostedCheckoutUrl` | The order, the payment key and the hosted checkout address |
 | Webhook | the `/api/webhooks/paymob` route in `api/boot.ts` | Verifies Paymob's callback and grants the plan |
 | Grant | `api/lib/subscription-service.ts#grantProSubscription` | One transaction: the subscription row, the user's plan, the session refresh |
 | Expiry | `api/jobs/subscription-expiry-job.ts#runSubscriptionExpiryJob` | Ends subscriptions whose period is over |
-| Referrals | `api/referral-router.ts` | The user's code, applying someone's code, the referral lists |
 
 ## Buying Pro, step by step
 1. The Pro card's button calls `pro.createCheckoutSession` for `pro_monthly`.
@@ -76,12 +76,11 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
 - `pro.myPlan` also expires the latest subscription when it finds it past its end date, and returns the plan, the role,
   that subscription and a fixed list of paid features.
 
-## Referral codes
-- `referral.myCode` returns the user's code (created on first use and checked against users of the same kind and the
-  discount codes), how many people used it, and the discount percentage in the `promo_code_discount` setting.
-- `referral.applyCode` records that the caller joined through someone's code: once per user, with a unique index
-  guarding races, and never with one's own code. Phone users can also enter a code when they register.
-- `referral.myReferrals` and the admin `referral.listAll` list referrals.
+## Discount and referral codes
+There are none ([decision 0042](../decisions/0042-no-codes-until-store-offers.md)): no screen asks for or shows a code,
+and no procedure creates or applies one. The `discount_codes` and `referrals` tables and each account's
+`referral_code` (still given at sign-up) are kept for a later offer, and account deletion still clears them. Phone
+sign-up ignores a `referralCode` an older build sends.
 
 ## Where to change what
 | To change | Edit | Check with |
@@ -129,21 +128,17 @@ amount; granted only when correctly signed, settled and of the plan's amount (th
 Checked against the code; each one names where it lives.
 1. **Gap.** Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that sends anyone not on Ultra back to
    the plans; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
-2. **Gap.** Referrals give nothing yet: checkout always charges the plan's full price and nothing rewards the referrer, so
-   `referral.myCode` returns no discount (`REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT` in `api/referral-router.ts`) and the
-   plans screen promises none; the discount codes admins create in `discount_codes` are never applied.
-3. **Gap.** Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days
+2. **Gap.** Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days
    and one day before the end and pays again; in the last week the subscription card on the plans screen
    (`src/pages/Pro.tsx`) offers the same plan in one tap (`pro.createCheckoutSession` with the current plan), and the
    paid period starts where the current one ends. Charging a stored card needs Paymob's recurring flow. `pro.cancel` only changes the status the plans screen shows, and there is no
    refund path.
-4. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
-5. **Debt.** No test covers the grant's transaction (`grantProSubscription` against a database), the expiry job or
-   referrals.
+3. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
+4. **Debt.** No test covers the grant's transaction (`grantProSubscription` against a database) or the expiry job.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): the user rows that carry the plan, and the auth version.
-- [Admin console, support and growth tools](admin.md): subscriptions, plans and discount codes in the admin console.
+- [Admin console, support and growth tools](admin.md): subscriptions and plans in the admin console.
 - [AI providers and usage limits](ai-platform.md): the plan-dependent AI limits.
 - [Server platform and data](platform.md): the Hono app that hosts the webhook, and the job scheduler.
 - [Web and mobile app shell](web-app.md): the More page and the route guards.

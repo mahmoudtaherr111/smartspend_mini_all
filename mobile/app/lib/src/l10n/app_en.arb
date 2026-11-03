@@ -139,7 +139,6 @@
   "registerSubtitle": "Sign up with your Egyptian mobile number.",
   "nameLabel": "Your name",
   "passwordHint": "At least 6 characters",
-  "referralLabel": "Invite code (optional)",
   "registerButton": "Create account",
   "haveAccountPrompt": "Already have an account?",
   "goToSignIn": "Sign in",
@@ -490,20 +489,6 @@
   "planFeaturesTitle": "Pro Plan Features",
   "cancelPlanTitle": "Cancel Subscription",
   "cancelPlanRetainNotice": "Your plan keeps working until the end of the period you paid for.",
-  "inviteTitle": "Invite Friends",
-  "inviteYourCode": "Your Referral Code",
-  "inviteShare": "Share Code",
-  "inviteShareText": "Try SmartSpend AI to manage your spending! Use my referral code: {code}",
-  "@inviteShareText": {
-    "placeholders": {
-      "code": {
-        "type": "String",
-        "example": "SMART123"
-      }
-    }
-  },
-  "inviteCopy": "Copy Code",
-  "inviteCopied": "Code copied!",
   "appearanceTitle": "Appearance",
   "appearanceSystem": "System Default",
   "appearanceLight": "Light",
@@ -627,7 +612,6 @@
   "calPlanAndRewards": "Plan and rewards",
   "calMyPlan": "My plan",
   "calComparePlansAndManageYour": "Compare plans and manage your subscription",
-  "calInviteFriends": "Invite friends",
   "calShareYourInviteCode": "Share your invite code",
   "calWhatTheAppStoresAbout": "What the app stores about me",
   "calYourDataAndYourRights": "Your data and your rights",

@@ -368,9 +368,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get passwordHint => '6 حروف على الأقل';
 
   @override
-  String get referralLabel => 'كود دعوة (لو معاك)';
-
-  @override
   String get registerButton => 'اعمل الحساب';
 
   @override
@@ -1565,26 +1562,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'باقتك هتفضل شغالة لحد آخر الفترة اللي دفعتها.';
 
   @override
-  String get inviteTitle => 'دعوة أصدقاء';
-
-  @override
-  String get inviteYourCode => 'كود الدعوة الخاص بك';
-
-  @override
-  String get inviteShare => 'مشاركة الكود';
-
-  @override
-  String inviteShareText(String code) {
-    return 'جرب تطبيق SmartSpend AI لتنظيم مصاريفك بذكاء! استخدم كود الدعوة بتاعي: $code';
-  }
-
-  @override
-  String get inviteCopy => 'نسخ الكود';
-
-  @override
-  String get inviteCopied => 'تم نسخ الكود!';
-
-  @override
   String get appearanceTitle => 'المظهر';
 
   @override
@@ -1987,9 +1964,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get calComparePlansAndManageYour => 'قارن الباقات واتحكم في اشتراكك';
-
-  @override
-  String get calInviteFriends => 'ادعي أصحابك';
 
   @override
   String get calShareYourInviteCode => 'شارك كود الدعوة بتاعك';

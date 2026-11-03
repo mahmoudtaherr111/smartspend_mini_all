@@ -47,3 +47,5 @@ A record explains why the code looks the way it does. What the code does today i
 | [0038](0038-whatsapp-cloud-api.md) | WhatsApp goes through Meta's official Cloud API, every message through a persistent outbox |
 | [0039](0039-clarifications-confirmation-vs-immediate-save.md) | Clarifications use optimistic immediate save with undo banner instead of blocking confirmation modals |
 | [0040](0040-real-device-features.md) | Device features are real or hidden |
+
+| [0042](0042-no-codes-until-store-offers.md) | Remove discount and referral code entry points until store offers can be honoured |

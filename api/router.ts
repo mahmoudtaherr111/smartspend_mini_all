@@ -13,7 +13,6 @@ import { exportRouter } from "./export-router";
 import { sessionRouter } from "./session-router";
 import { proRouter } from "./pro-router";
 import { adsRouter } from "./ads-router";
-import { referralRouter } from "./referral-router";
 import { seoRouter } from "./seo-router";
 import { profileRouter } from "./profile-router";
 import { walletRouter } from "./wallet-router";
@@ -43,7 +42,6 @@ export const appRouter = router({
   session: sessionRouter,
   pro: proRouter,
   ads: adsRouter,
-  referral: referralRouter,
   seo: seoRouter,
   profile: profileRouter,
   wallet: walletRouter,

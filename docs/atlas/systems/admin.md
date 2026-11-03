@@ -23,7 +23,7 @@ flowchart LR
   subgraph g_api["API, routes and jobs"]
     http__admin["GET /admin"]
     router_adminConsole["adminConsole API · 8 procedures"]
-    router_admin["admin API · 60 procedures"]
+    router_admin["admin API · 57 procedures"]
     router_ads["ads API · 8 procedures"]
     router_analytics["analytics API · 4 procedures"]
     router_export["export API · 1 procedure"]
@@ -39,7 +39,6 @@ flowchart LR
     tbl_ads[("ads")]
     tbl_ai_models[("ai_models")]
     tbl_ai_providers[("ai_providers")]
-    tbl_discount_codes[("discount_codes")]
     tbl_in_app_notifications[("in_app_notifications")]
     tbl_local_users[("local_users")]
     tbl_more[("13 tables it only reads, listed under Data")]
@@ -84,7 +83,6 @@ flowchart LR
   router_admin -.-> tbl_support_tickets
   router_admin ==> tbl_ai_models
   router_admin ==> tbl_ai_providers
-  router_admin ==> tbl_discount_codes
   router_admin ==> tbl_local_users
   router_admin ==> tbl_notification_logs
   router_admin ==> tbl_notification_templates
@@ -133,7 +131,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `web-admin` — Admin UI | Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration. | 26 |
+| `web-admin` — Admin UI | Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration. | 25 |
 
 ## API procedures
 
@@ -142,10 +140,8 @@ flowchart LR
 | `admin.addAiProvider` | mutation | `adminProcedure` | — | `ai_providers` | `Admin`, `More` |
 | `admin.checkProviderHealth` | mutation | `adminProcedure` | `ai_providers` | `ai_providers` | — |
 | `admin.clearAllApiKeyErrors` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
-| `admin.createDiscountCode` | mutation | `adminProcedure` | `discount_codes` | `discount_codes` | `Admin`, `More` |
 | `admin.createNotificationTemplate` | mutation | `adminProcedure` | — | `notification_templates` | `Admin`, `More` |
 | `admin.deleteAiProvider` | mutation | `adminProcedure` | — | `ai_models`, `ai_providers` | `Admin`, `More` |
-| `admin.deleteDiscountCode` | mutation | `adminProcedure` | — | `discount_codes` | `Admin`, `More` |
 | `admin.deleteLearnedRule` | mutation | `adminProcedure` | — | `user_dictionaries` | `Admin`, `More` |
 | `admin.deleteNotificationTemplate` | mutation | `adminProcedure` | — | `notification_templates` | `Admin`, `More` |
 | `admin.deleteUser` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
@@ -164,7 +160,6 @@ flowchart LR
 | `admin.getClassificationLogs` | query | `adminProcedure` | `classification_logs`, `local_users`, `users` | — | `Admin`, `More` |
 | `admin.getClassificationQuality` | query | `adminProcedure` | `classification_logs` | — | `Admin`, `More` |
 | `admin.getDashboardStats` | query | `adminProcedure` | `expense_daily_rollups`, `local_users`, `pro_subscriptions`, `sessions`, `store_purchases`, `support_tickets`, `users` | — | `Admin`, `More` |
-| `admin.getDiscountCodes` | query | `adminProcedure` | `discount_codes` | — | `Admin`, `More` |
 | `admin.getFounderMetrics` | query | `adminProcedure` | `expenses`, `local_users`, `pro_subscriptions`, `store_purchases`, `support_tickets`, `users` | — | `Admin`, `More` |
 | `admin.getLearnedRules` | query | `adminProcedure` | `local_users`, `user_dictionaries`, `users` | — | `Admin`, `More` |
 | `admin.getNotificationLogs` | query | `adminProcedure` | `notification_logs` | — | `Admin`, `More` |
@@ -191,7 +186,7 @@ flowchart LR
 | `admin.setUserTokenLimit` | mutation | `adminProcedure` | `system_settings` | `system_settings` | — |
 | `admin.toggleNotificationTemplate` | mutation | `adminProcedure` | — | `notification_templates` | `Admin`, `More` |
 | `admin.triggerActivityCheck` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
-| `admin.triggerBackupDemo` | mutation | `adminProcedure` | `ads`, `discount_codes`, `onboarding_questions` | — | `Admin`, `More` |
+| `admin.triggerBackupDemo` | mutation | `adminProcedure` | `ads`, `onboarding_questions` | — | `Admin`, `More` |
 | `admin.updateAiProvider` | mutation | `adminProcedure` | — | `ai_providers` | `Admin`, `More` |
 | `admin.updateNotificationTemplate` | mutation | `adminProcedure` | — | `notification_templates` | `Admin`, `More` |
 | `admin.updateSettings` | mutation | `adminProcedure` | — | `system_settings` | `Admin`, `More` |
@@ -254,7 +249,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `api_key_errors` | E | — | `adminConsole.today` |
 | `capture_devices` | A | — | `adminConsole.person` |
 | `classification_logs` | E | — | `admin.getAIClassificationStats`, `admin.getClassificationLogs`, `admin.getClassificationQuality`, `admin.getPipelineVersionStats`, `adminConsole.classifications` |
-| `discount_codes` | A | `admin.createDiscountCode`, `admin.deleteDiscountCode` | `admin.createDiscountCode`, `admin.getDiscountCodes`, `admin.triggerBackupDemo` |
 | `expense_daily_rollups` | C | — | `admin.getDashboardStats` |
 | `expenses` | B | — | `admin.getFounderMetrics`, `admin.listAllUsers`, `adminConsole.growth`, `adminConsole.person`, `adminConsole.today`, `analytics.getAllUserStats`, `analytics.getDashboardStats` |
 | `in_app_notifications` | D | `support.respond` | — |
@@ -296,7 +290,7 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/admin.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>37 files and declarations</summary>
+<details><summary>36 files and declarations</summary>
 
 - `api/admin-console-router.ts`
 - `api/admin-router.ts`
@@ -326,7 +320,6 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/admin/capture/AdminCaptureNumbers.tsx`
 - `src/components/admin/capture/AdminCaptureTab.tsx`
 - `src/components/admin/settings/AdminCaptureSection.tsx`
-- `src/components/admin/settings/AdminCodesTab.tsx`
 - `src/components/admin/settings/AdminKeysTab.tsx`
 - `src/components/admin/settings/AdminOperationsSection.tsx`
 - `src/components/admin/settings/AdminPlansTab.tsx`

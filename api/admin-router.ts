@@ -16,7 +16,6 @@ import {
   systemSettings,
   classificationLogs,
   voiceUsage,
-  discountCodes,
   userWallets,
   proSubscriptions,
   monthlyReports,
@@ -1310,66 +1309,6 @@ export const adminRouter = router({
     };
   }),
 
-  // ─── Discount Codes CRUD ───
-  getDiscountCodes: adminProcedure.query(async () => {
-    return await db
-      .select()
-      .from(discountCodes)
-      .orderBy(desc(discountCodes.createdAt));
-  }),
-
-  createDiscountCode: adminProcedure
-    .input(
-      z.object({
-        code: z.string().min(3).max(50),
-        type: z.enum(["referral", "promo"]).default("promo"),
-        discountPercent: z.number().min(1).max(100),
-        maxUses: z.number().min(0).optional(),
-        expiresAt: z.string().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const existing = await db
-        .select()
-        .from(discountCodes)
-        .where(eq(discountCodes.code, input.code.toUpperCase()))
-        .limit(1);
-      if (existing.length > 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "الكود موجود بالفعل",
-        });
-      }
-      await db.insert(discountCodes).values({
-        code: input.code.toUpperCase(),
-        type: input.type,
-        discountPercent: input.discountPercent,
-        maxUses: input.maxUses || null,
-        usedCount: 0,
-        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
-      });
-      await logAdminAction(ctx, {
-        action: "CREATE_DISCOUNT_CODE",
-        targetType: "discount_code",
-        targetId: input.code.toUpperCase(),
-        details: { code: input.code.toUpperCase(), type: input.type, discountPercent: input.discountPercent },
-      });
-      return { success: true, message: "تم إنشاء الكود بنجاح" };
-    }),
-
-  deleteDiscountCode: adminProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      await db.delete(discountCodes).where(eq(discountCodes.id, input.id));
-      await logAdminAction(ctx, {
-        action: "DELETE_DISCOUNT_CODE",
-        targetType: "discount_code",
-        targetId: input.id,
-        details: { id: input.id },
-      });
-      return { success: true, message: "تم حذف الكود" };
-    }),
-
   /** Founder / ops: who records, who signs up and stays, Pro subs, token burn estimate */
   getFounderMetrics: adminProcedure.query(async () => {
     // Cairo's midnight, not the server's (golden rule 6).
@@ -2156,24 +2095,21 @@ export const adminRouter = router({
       key,
       value: isSensitiveKey(key) && typeof value === "string" ? maskSecret(value) : value,
     }));
-    const codes = await db.select().from(discountCodes);
     const questions = await db.select().from(onboardingQuestions);
     const activeAds = await db.select().from(ads);
 
     const backupData = {
       metadata: {
         timestamp: new Date().toISOString(),
-        tablesBackedUp: ["system_settings", "discount_codes", "onboarding_questions", "ads"],
+        tablesBackedUp: ["system_settings", "onboarding_questions", "ads"],
         version: "2.0.0",
         stats: {
           settingsCount: settings.length,
-          discountCodesCount: codes.length,
           onboardingQuestionsCount: questions.length,
           adsCount: activeAds.length,
         }
       },
       systemSettings: settings,
-      discountCodes: codes,
       onboardingQuestions: questions,
       ads: activeAds,
     };

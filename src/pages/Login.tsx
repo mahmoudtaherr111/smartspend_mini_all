@@ -75,7 +75,6 @@ export default function Login() {
   const [regPhone, setRegPhone] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
-  const [regReferral, setRegReferral] = useState("");
 
   // Verification state. The code is shown for the user to send from their WhatsApp; the ticket stays in this tab
   // and is what the server turns into an account once the bot has seen the message; the watch token only lets
@@ -185,7 +184,6 @@ export default function Login() {
         phone: regPhone,
         email: regEmail || undefined,
         password: regPassword,
-        referralCode: regReferral || undefined,
         verificationTicket: ticket,
       });
     },
@@ -309,7 +307,6 @@ export default function Login() {
         phone: regPhone,
         email: regEmail || undefined,
         password: regPassword,
-        referralCode: regReferral || undefined,
       });
     }
   };
@@ -643,19 +640,6 @@ export default function Login() {
                         className="h-10 rounded-xl bg-slate-50/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 focus-visible:ring-emerald-500 text-sm"
                         required
                         minLength={6}
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                        كود الدعوة (اختياري)
-                      </Label>
-                      <Input
-                        value={regReferral}
-                        onChange={(e) => setRegReferral(e.target.value)}
-                        placeholder="SSXXXXXX"
-                        dir="ltr"
-                        className="h-10 text-start rounded-xl font-mono bg-slate-50/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 focus-visible:ring-emerald-500 text-sm"
                       />
                     </div>
 

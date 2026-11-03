@@ -107,11 +107,6 @@ views {
     include *
   }
 
-  view router_referral of smartspend.api.trpc.referral {
-    title 'tRPC router · referral'
-    include *
-  }
-
   view router_seo of smartspend.api.trpc.seo {
     title 'tRPC router · seo'
     include *

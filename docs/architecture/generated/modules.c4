@@ -62,7 +62,7 @@ model {
     api-routers = module 'tRPC routers and HTTP sub-apps' {
       description 'One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts.'
       metadata {
-        files '28'
+        files '27'
         paths 'api/*-router.ts'
       }
     }
@@ -243,7 +243,7 @@ model {
     web-admin = module 'Admin UI' {
       description 'Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.'
       metadata {
-        files '26'
+        files '25'
         paths 'src/components/admin/**'
       }
     }

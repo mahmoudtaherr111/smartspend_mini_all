@@ -57,7 +57,6 @@ flowchart LR
     tbl_chat_conversations[("chat_conversations")]
     tbl_chat_messages[("chat_messages")]
     tbl_classification_logs[("classification_logs")]
-    tbl_discount_codes[("discount_codes")]
     tbl_expense_categories[("expense_categories")]
     tbl_expense_daily_rollups[("expense_daily_rollups")]
     tbl_expenses[("expenses")]
@@ -74,7 +73,6 @@ flowchart LR
     tbl_pro_subscriptions[("pro_subscriptions")]
     tbl_profile_learning_events[("profile_learning_events")]
     tbl_push_subscriptions[("push_subscriptions")]
-    tbl_referrals[("referrals")]
     tbl_scheduled_cashflows[("scheduled_cashflows")]
     tbl_seo_pages[("seo_pages")]
     tbl_sessions[("sessions")]
@@ -178,7 +176,6 @@ flowchart LR
   mod_api_routers ==> tbl_chat_conversations
   mod_api_routers ==> tbl_chat_messages
   mod_api_routers ==> tbl_classification_logs
-  mod_api_routers ==> tbl_discount_codes
   mod_api_routers ==> tbl_expense_categories
   mod_api_routers ==> tbl_expenses
   mod_api_routers ==> tbl_financial_goals
@@ -191,7 +188,6 @@ flowchart LR
   mod_api_routers ==> tbl_pending_clarifications
   mod_api_routers ==> tbl_pro_subscriptions
   mod_api_routers ==> tbl_push_subscriptions
-  mod_api_routers ==> tbl_referrals
   mod_api_routers ==> tbl_scheduled_cashflows
   mod_api_routers ==> tbl_seo_pages
   mod_api_routers ==> tbl_store_purchases
@@ -270,7 +266,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `api-core` — API server core | Hono app and server entry points, request context, tRPC procedure builders and the root router. | 5 |
-| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 28 |
+| `api-routers` — tRPC routers and HTTP sub-apps | One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts. | 27 |
 | `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 15 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
@@ -326,7 +322,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `chat_conversations` | G | `api-routers` | `api-routers` |
 | `chat_messages` | G | `api-routers`, `jobs` | `api-routers` |
 | `classification_logs` | E | `api-core`, `api-routers`, `jobs` | `api-routers` |
-| `discount_codes` | A | `api-routers` | `api-routers` |
 | `expense_categories` | A | `api-routers` | `api-routers` |
 | `expense_daily_rollups` | C | — | `api-routers`, `jobs` |
 | `expenses` | B | `api-routers`, `jobs` | `api-routers`, `jobs` |
@@ -343,7 +338,6 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `pro_subscriptions` | A | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `profile_learning_events` | E | `jobs` | — |
 | `push_subscriptions` | A | `api-routers` | `api-routers` |
-| `referrals` | A | `api-routers` | `api-routers` |
 | `scheduled_cashflows` | C | `api-routers` | `api-routers` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
 | `sessions` | D | — | `api-routers` |

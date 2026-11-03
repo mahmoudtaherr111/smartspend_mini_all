@@ -44,7 +44,7 @@ account of the same person.
    random `oauth_state` cookie and the redirect address for ten minutes, and redirects to Google
    (`api/auth-router.ts#buildGoogleAuthorizationUrl`).
 3. The callback route compares the state with the cookie in constant time and calls `auth.googleCallback`, which
-   exchanges the code, finds the user by Google id or creates one with a referral code, updates the last sign-in and
+   exchanges the code, finds the user by Google id or creates one (with a `referral_code` kept for later offers), updates the last sign-in and
    creates a session.
 4. The route sets the `google_session` cookie (HttpOnly, seven days) and redirects to the dashboard; any failure
    returns to the login screen.

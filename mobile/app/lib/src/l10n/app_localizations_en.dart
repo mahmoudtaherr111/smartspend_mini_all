@@ -367,9 +367,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordHint => 'At least 6 characters';
 
   @override
-  String get referralLabel => 'Invite code (optional)';
-
-  @override
   String get registerButton => 'Create account';
 
   @override
@@ -1565,26 +1562,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your plan keeps working until the end of the period you paid for.';
 
   @override
-  String get inviteTitle => 'Invite Friends';
-
-  @override
-  String get inviteYourCode => 'Your Referral Code';
-
-  @override
-  String get inviteShare => 'Share Code';
-
-  @override
-  String inviteShareText(String code) {
-    return 'Try SmartSpend AI to manage your spending! Use my referral code: $code';
-  }
-
-  @override
-  String get inviteCopy => 'Copy Code';
-
-  @override
-  String get inviteCopied => 'Code copied!';
-
-  @override
   String get appearanceTitle => 'Appearance';
 
   @override
@@ -1992,9 +1969,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get calComparePlansAndManageYour =>
       'Compare plans and manage your subscription';
-
-  @override
-  String get calInviteFriends => 'Invite friends';
 
   @override
   String get calShareYourInviteCode => 'Share your invite code';

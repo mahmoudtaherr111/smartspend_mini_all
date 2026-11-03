@@ -230,7 +230,6 @@ model {
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.chat_messages
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.classification_logs
-  smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.discount_codes
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.expense_categories
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.expenses
@@ -244,7 +243,6 @@ model {
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.pending_clarifications
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.pro_subscriptions
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.push_subscriptions
-  smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.referrals
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.seo_pages
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.sessions
@@ -284,7 +282,6 @@ model {
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.chat_messages
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.classification_logs
-  smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.discount_codes
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.expense_categories
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.expenses
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.financial_goals
@@ -297,7 +294,6 @@ model {
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.pro_subscriptions
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.push_subscriptions
-  smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.referrals
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.seo_pages
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.store_purchases
@@ -598,17 +594,12 @@ model {
   smartspend.api.trpc.admin.checkProviderHealth -[writes]-> smartspend.mysql.ai_providers
   smartspend.api.trpc.admin.clearAllApiKeyErrors -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.admin.clearAllApiKeyErrors -[uses]-> smartspend.api.modules.security
-  smartspend.api.trpc.admin.createDiscountCode -[reads]-> smartspend.mysql.discount_codes
-  smartspend.api.trpc.admin.createDiscountCode -[uses]-> smartspend.api.modules.security
-  smartspend.api.trpc.admin.createDiscountCode -[writes]-> smartspend.mysql.discount_codes
   smartspend.api.trpc.admin.createNotificationTemplate -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.admin.createNotificationTemplate -[writes]-> smartspend.mysql.notification_templates
   smartspend.api.trpc.admin.deleteAiProvider -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.admin.deleteAiProvider -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.admin.deleteAiProvider -[writes]-> smartspend.mysql.ai_models
   smartspend.api.trpc.admin.deleteAiProvider -[writes]-> smartspend.mysql.ai_providers
-  smartspend.api.trpc.admin.deleteDiscountCode -[uses]-> smartspend.api.modules.security
-  smartspend.api.trpc.admin.deleteDiscountCode -[writes]-> smartspend.mysql.discount_codes
   smartspend.api.trpc.admin.deleteLearnedRule -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.admin.deleteLearnedRule -[writes]-> smartspend.mysql.user_dictionaries
   smartspend.api.trpc.admin.deleteNotificationTemplate -[uses]-> smartspend.api.modules.security
@@ -646,7 +637,6 @@ model {
   smartspend.api.trpc.admin.getDashboardStats -[reads]-> smartspend.mysql.support_tickets
   smartspend.api.trpc.admin.getDashboardStats -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.admin.getDashboardStats -[uses]-> smartspend.api.modules.platform
-  smartspend.api.trpc.admin.getDiscountCodes -[reads]-> smartspend.mysql.discount_codes
   smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.admin.getFounderMetrics -[reads]-> smartspend.mysql.pro_subscriptions
@@ -712,7 +702,6 @@ model {
   smartspend.api.trpc.admin.toggleNotificationTemplate -[writes]-> smartspend.mysql.notification_templates
   smartspend.api.trpc.admin.triggerActivityCheck -[uses]-> smartspend.api.modules.notifications
   smartspend.api.trpc.admin.triggerBackupDemo -[reads]-> smartspend.mysql.ads
-  smartspend.api.trpc.admin.triggerBackupDemo -[reads]-> smartspend.mysql.discount_codes
   smartspend.api.trpc.admin.triggerBackupDemo -[reads]-> smartspend.mysql.onboarding_questions
   smartspend.api.trpc.admin.triggerBackupDemo -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.admin.updateAiProvider -[uses]-> smartspend.api.modules.ai-providers
@@ -1271,21 +1260,6 @@ model {
   smartspend.api.trpc.profile.updateSmartProfile -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.profile.updateUserInfo -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.profile.updateUserInfo -[writes]-> smartspend.mysql.users
-  smartspend.api.trpc.referral.applyCode -[reads]-> smartspend.mysql.local_users
-  smartspend.api.trpc.referral.applyCode -[reads]-> smartspend.mysql.referrals
-  smartspend.api.trpc.referral.applyCode -[reads]-> smartspend.mysql.users
-  smartspend.api.trpc.referral.applyCode -[writes]-> smartspend.mysql.local_users
-  smartspend.api.trpc.referral.applyCode -[writes]-> smartspend.mysql.referrals
-  smartspend.api.trpc.referral.applyCode -[writes]-> smartspend.mysql.users
-  smartspend.api.trpc.referral.listAll -[reads]-> smartspend.mysql.referrals
-  smartspend.api.trpc.referral.myCode -[reads]-> smartspend.mysql.discount_codes
-  smartspend.api.trpc.referral.myCode -[reads]-> smartspend.mysql.local_users
-  smartspend.api.trpc.referral.myCode -[reads]-> smartspend.mysql.referrals
-  smartspend.api.trpc.referral.myCode -[reads]-> smartspend.mysql.users
-  smartspend.api.trpc.referral.myCode -[uses]-> smartspend.api.modules.platform
-  smartspend.api.trpc.referral.myCode -[writes]-> smartspend.mysql.local_users
-  smartspend.api.trpc.referral.myCode -[writes]-> smartspend.mysql.users
-  smartspend.api.trpc.referral.myReferrals -[reads]-> smartspend.mysql.referrals
   smartspend.api.trpc.seo.delete -[writes]-> smartspend.mysql.seo_pages
   smartspend.api.trpc.seo.getPage -[reads]-> smartspend.mysql.seo_pages
   smartspend.api.trpc.seo.list -[reads]-> smartspend.mysql.seo_pages
@@ -1449,10 +1423,8 @@ model {
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.voice.eligibility
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.addAiProvider
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.clearAllApiKeyErrors
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.createDiscountCode
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.createNotificationTemplate
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.deleteAiProvider
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.deleteDiscountCode
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.deleteLearnedRule
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.deleteNotificationTemplate
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.deleteUser
@@ -1469,7 +1441,6 @@ model {
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getClassificationLogs
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getClassificationQuality
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getDashboardStats
-  smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getDiscountCodes
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getFounderMetrics
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getLearnedRules
   smartspend.web.pages.Admin -[calls]-> smartspend.api.trpc.admin.getNotificationLogs
@@ -1584,10 +1555,8 @@ model {
   smartspend.web.pages.Login -[calls]-> smartspend.api.trpc.webauthn.verifyAuthentication
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.addAiProvider
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.clearAllApiKeyErrors
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.createDiscountCode
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.createNotificationTemplate
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.deleteAiProvider
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.deleteDiscountCode
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.deleteLearnedRule
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.deleteNotificationTemplate
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.deleteUser
@@ -1604,7 +1573,6 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getClassificationLogs
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getClassificationQuality
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getDashboardStats
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getDiscountCodes
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getFounderMetrics
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getLearnedRules
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.admin.getNotificationLogs
@@ -1696,8 +1664,6 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.updateContact
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.updateSmartProfile
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.profile.updateUserInfo
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.referral.applyCode
-  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.referral.myCode
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.close
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.create
@@ -1734,8 +1700,6 @@ model {
   smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.pro.myPlan
   smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.pro.planCatalog
   smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.pro.upgrade
-  smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.referral.applyCode
-  smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.referral.myCode
   smartspend.web.pages.Pro -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.ai.getUserLimits
   smartspend.web.pages.Settings -[calls]-> smartspend.api.trpc.auth.logout

@@ -193,7 +193,6 @@
   "registerSubtitle": "سجّل برقم تليفونك المصري.",
   "nameLabel": "اسمك",
   "passwordHint": "6 حروف على الأقل",
-  "referralLabel": "كود دعوة (لو معاك)",
   "registerButton": "اعمل الحساب",
   "haveAccountPrompt": "عندك حساب؟",
   "goToSignIn": "ادخل",
@@ -842,20 +841,6 @@
   "planFeaturesTitle": "مميزات خطة Pro",
   "cancelPlanTitle": "إلغاء الاشتراك",
   "cancelPlanRetainNotice": "باقتك هتفضل شغالة لحد آخر الفترة اللي دفعتها.",
-  "inviteTitle": "دعوة أصدقاء",
-  "inviteYourCode": "كود الدعوة الخاص بك",
-  "inviteShare": "مشاركة الكود",
-  "inviteShareText": "جرب تطبيق SmartSpend AI لتنظيم مصاريفك بذكاء! استخدم كود الدعوة بتاعي: {code}",
-  "@inviteShareText": {
-    "placeholders": {
-      "code": {
-        "type": "String",
-        "example": "SMART123"
-      }
-    }
-  },
-  "inviteCopy": "نسخ الكود",
-  "inviteCopied": "تم نسخ الكود!",
   "appearanceTitle": "المظهر",
   "appearanceSystem": "تلقائي (حسب النظام)",
   "appearanceLight": "فاتح",
@@ -1070,7 +1055,6 @@
   "calPlanAndRewards": "الباقة والدعوات",
   "calMyPlan": "باقتي",
   "calComparePlansAndManageYour": "قارن الباقات واتحكم في اشتراكك",
-  "calInviteFriends": "ادعي أصحابك",
   "calShareYourInviteCode": "شارك كود الدعوة بتاعك",
   "calWhatTheAppStoresAbout": "ما يخزنه التطبيق عني",
   "calYourDataAndYourRights": "بياناتك وحقوقك",
@@ -2187,22 +2171,64 @@
   "settingsTitle": "الإعدادات",
   "settingsEntry": "الإشعارات والشكل والأمان وبياناتك",
   "aiOpeningMonth": "صرفت {p0} الشهر ده، وأكبر بند عندك {p1}.",
-  "@aiOpeningMonth": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "@aiOpeningMonth": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
   "aiOpeningQuestion": "إزاي أقلل صرفي على {p0}؟",
-  "@aiOpeningQuestion": { "placeholders": { "p0": { "type": "String" } } },
+  "@aiOpeningQuestion": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "walletsStale": "{p0} من أرصدتك ما اتحدثتش من أكتر من أسبوع. حدّثها عشان حساباتك تفضل صح.",
-  "@walletsStale": { "placeholders": { "p0": { "type": "String" } } },
+  "@walletsStale": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "calOldBalances": "رقم المتاح مبني على رصيد قديم.",
   "calUpdateBalances": "حدّث",
   "statsNextTitle": "الخطوة الجاية",
   "statsNextBudget": "ميزانية {p0} وصلت {p1}%. راجعها قبل ما الشهر يخلص.",
-  "@statsNextBudget": { "placeholders": { "p0": { "type": "String" }, "p1": { "type": "String" } } },
+  "@statsNextBudget": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      },
+      "p1": {
+        "type": "String"
+      }
+    }
+  },
   "statsNextBudgetAction": "افتح الميزانيات",
   "statsNextFirstBudget": "أكبر بند عندك {p0}. حط له حد شهري ونبهك قبل ما تعدّيه.",
-  "@statsNextFirstBudget": { "placeholders": { "p0": { "type": "String" } } },
+  "@statsNextFirstBudget": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "statsNextFirstBudgetAction": "حط ميزانية",
   "statsNextAsk": "أكبر بند عندك {p0}. اسأل المساعد إزاي تقلله.",
-  "@statsNextAsk": { "placeholders": { "p0": { "type": "String" } } },
+  "@statsNextAsk": {
+    "placeholders": {
+      "p0": {
+        "type": "String"
+      }
+    }
+  },
   "statsNextAskAction": "اسأل المساعد",
   "aiOneQuestion": "سؤال واحد يخليني أفهمك أحسن",
   "aiOneQuestionBody": "إجابتك بتخلي نصايحي على مقاسك.",

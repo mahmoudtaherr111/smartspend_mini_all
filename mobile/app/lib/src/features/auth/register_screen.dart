@@ -36,7 +36,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _name = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
-  final _referral = TextEditingController();
   final _code = TextEditingController();
 
   bool _busy = false;
@@ -63,7 +62,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _name.dispose();
     _phone.dispose();
     _password.dispose();
-    _referral.dispose();
     _code.dispose();
     super.dispose();
   }
@@ -169,7 +167,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           name: _name.text.trim(),
           phone: normalizePhoneNumber(_phone.text),
           password: _password.text,
-          referralCode: _referral.text.trim(),
           verificationTicket: verificationTicket,
         );
     await ref.read(sessionProvider.notifier).signIn(answer);
@@ -308,17 +305,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               controller: _password,
               newPassword: true,
               helperText: l10n.passwordHint,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: SmartSpendSpacing.md),
-            TextField(
-              controller: _referral,
-              textInputAction: TextInputAction.done,
-              textCapitalization: TextCapitalization.characters,
-              decoration: InputDecoration(
-                labelText: l10n.referralLabel,
-                prefixIcon: const Icon(Icons.card_giftcard_outlined),
-              ),
               onSubmitted: (_) => _submit(),
             ),
           ],
