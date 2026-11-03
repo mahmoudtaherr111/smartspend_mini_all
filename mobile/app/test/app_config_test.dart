@@ -21,6 +21,17 @@ void main() {
     expect(android.userAgent, 'SmartSpend-Mobile (android; development)');
   });
 
+  test('the user agent carries the version, so the server can count versions in use', () {
+    final config = AppConfig.resolve(
+      environment: 'production',
+      apiUrl: 'https://api.example.test',
+      isReleaseBuild: true,
+      platform: 'ios',
+      appVersion: '1.4.0',
+    );
+    expect(config.userAgent, 'SmartSpend-Mobile (ios; production; 1.4.0)');
+  });
+
   test('a release build without an API address refuses to start', () {
     expect(
       () => AppConfig.resolve(

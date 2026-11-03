@@ -6,6 +6,7 @@ import { SignIn } from "./pages/SignIn";
 import { AiCalls } from "./pages/AiCalls";
 import { Classifications } from "./pages/Classifications";
 import { Connectors } from "./pages/Connectors";
+import { Growth } from "./pages/Growth";
 import { People } from "./pages/People";
 import { Person } from "./pages/Person";
 import { Today } from "./pages/Today";
@@ -29,6 +30,7 @@ export default function App() {
       <Suspense fallback={<Loading />}>
         <Routes>
           <Route path="/" element={isAdmin ? <Today /> : <Navigate to="/legacy" replace />} />
+          {isAdmin && <Route path="/growth" element={<Growth />} />}
           {isAdmin && <Route path="/people" element={<People />} />}
           {isAdmin && <Route path="/people/:type/:id" element={<Person />} />}
           {isAdmin && <Route path="/ai/calls" element={<AiCalls />} />}

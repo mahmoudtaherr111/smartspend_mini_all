@@ -1417,7 +1417,8 @@ export const adminRouter = router({
             .where(
               and(
                 gte(table.createdAt, weekAgo),
-                sql`EXISTS (SELECT 1 FROM ${expenses} WHERE ${expenses.userId} = ${table.id} AND ${expenses.userType} = ${userType})`,
+                // Named in full: inside the subquery a bare `id` would be the expense's own id.
+                sql`EXISTS (SELECT 1 FROM expenses e WHERE e.user_id = ${sql.raw(userType === "oauth" ? "users" : "local_users")}.id AND e.user_type = ${userType})`,
               ),
             ),
         ),
@@ -1444,7 +1445,8 @@ export const adminRouter = router({
           and(
             gte(expenses.date, twoWeeksAgo),
             lt(expenses.date, weekAgo),
-            sql`EXISTS (SELECT 1 FROM expenses later WHERE later.user_id = ${expenses.userId} AND later.user_type = ${expenses.userType} AND later.date >= ${weekAgo})`,
+            // The outer columns are named in full: inside the subquery a bare `user_id` would mean the subquery's own row.
+              sql`EXISTS (SELECT 1 FROM expenses later WHERE later.user_id = expenses.user_id AND later.user_type = expenses.user_type AND later.date >= ${weekAgo})`,
           ),
         ),
     );

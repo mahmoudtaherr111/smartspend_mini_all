@@ -24,7 +24,7 @@ final class AppConfig {
   /// Without `SMARTSPEND_API_URL`, a debug build calls the development server (`npm run dev`, port 3000) on the
   /// computer it runs from: 10.0.2.2 from the Android emulator, localhost from the iOS simulator. A release build
   /// without it refuses to start, so a store build can never point at a development machine.
-  factory AppConfig.fromEnvironment() {
+  factory AppConfig.fromEnvironment({String appVersion = ''}) {
     const environment = String.fromEnvironment(
       'SMARTSPEND_ENV',
       defaultValue: 'development',
@@ -40,6 +40,7 @@ final class AppConfig {
       ),
       googleIosClientId: const String.fromEnvironment('GOOGLE_IOS_CLIENT_ID'),
       turnstileSiteKey: const String.fromEnvironment('TURNSTILE_SITE_KEY'),
+      appVersion: appVersion,
     );
   }
 
@@ -52,6 +53,7 @@ final class AppConfig {
     String googleServerClientId = '',
     String googleIosClientId = '',
     String turnstileSiteKey = '',
+    String appVersion = '',
   }) {
     if (apiUrl.isEmpty && isReleaseBuild) {
       throw StateError(
@@ -68,7 +70,10 @@ final class AppConfig {
     return AppConfig(
       environment: environment,
       apiBaseUri: uri,
-      userAgent: 'SmartSpend-Mobile ($platform; $environment)',
+      // The server counts people by platform and version from this (api/lib/client-platform.ts).
+      userAgent: appVersion.isEmpty
+          ? 'SmartSpend-Mobile ($platform; $environment)'
+          : 'SmartSpend-Mobile ($platform; $environment; $appVersion)',
       googleServerClientId: googleServerClientId.trim(),
       googleIosClientId: googleIosClientId.trim(),
       turnstileSiteKey: turnstileSiteKey.trim(),

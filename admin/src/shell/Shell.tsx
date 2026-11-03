@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Brain, Home, LogOut, Menu, Plug, Receipt, Users, Wrench, X } from "lucide-react";
+import { Brain, ChartLine, Home, LogOut, Menu, Plug, Receipt, Users, Wrench, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/providers/trpc";
 
@@ -15,6 +15,7 @@ interface Area {
 // The console's areas, named by the work an admin does. An area appears here only once its page is real.
 const AREAS: Area[] = [
   { to: "/", label: "النهارده", hint: "الأرقام المهمة واللي مستنيك", icon: Home, adminOnly: true },
+  { to: "/growth", label: "النمو", hint: "بيسجلوا وبيرجعوا؟ ومن أنهي موبايل", icon: ChartLine, adminOnly: true },
   { to: "/people", label: "الناس", hint: "كل حساب وكل حاجة عنه", icon: Users, adminOnly: true },
   { to: "/ai/calls", label: "نداءات الذكاء", hint: "كل نداء: مين، ليه، بكام", icon: Receipt, adminOnly: true },
   { to: "/ai/classifications", label: "التصنيف وسببه", hint: "كل جملة اتفهمت إزاي وليه", icon: Brain, adminOnly: true },

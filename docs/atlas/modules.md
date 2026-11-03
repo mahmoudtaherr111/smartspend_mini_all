@@ -12,7 +12,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `api-routers` | tRPC routers and HTTP sub-apps | 28 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq` |
 | `auth` | Authentication and sessions | 6 | `capture-intake`, `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `capture-intake`, `jobs` | `google-oauth` |
 | `security` | Request security | 12 | `database`, `platform` | `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `capture-intake` | `turnstile` |
-| `platform` | Platform services | 11 | `contracts`, `database` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `capture-reader`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
+| `platform` | Platform services | 12 | `contracts`, `database` | `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `capture-reader`, `classification`, `coaching`, `database`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `mysql` |
 | `contracts` | Shared contracts | 15 | — | `ai-actions`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `api-routers`, `billing`, `capture-ai-reader`, `capture-catalog`, `capture-intake`, `classification`, `coaching`, `jobs`, `notifications`, `platform`, `voice`, `web-account`, `web-admin`, `web-capture`, `web-finance`, `web-lib`, `web-pages`, `web-shared`, `web-voice-call` | — |
 | `billing` | Billing | 8 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `google-oauth`, `paymob` |
@@ -98,7 +98,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/admin-console-router.ts` | `ai-governance`, `ai-providers`, `api-core`, `database`, `platform` | — | `ai_token_ledgers`, `api_key_errors`, `capture_devices`, `classification_logs`, `expenses`, `local_users`, `sessions`, `store_purchases`, `support_tickets`, `users` | — |
+| `api/admin-console-router.ts` | `ai-governance`, `ai-providers`, `api-core`, `database`, `platform` | — | `ai_token_ledgers`, `api_key_errors`, `capture_devices`, `classification_logs`, `expenses`, `local_users`, `sessions`, `store_purchases`, `support_tickets`, `user_analytics`, `users` | — |
 | `api/admin-router.ts` | `accounts`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `auth`, `classification`, `contracts`, `database`, `notifications`, `platform`, `security` | `gemini` | `admin_audit_logs`, `ads`, `ai_models`, `ai_providers`, `ai_token_ledgers`, `classification_logs`, `discount_codes`, `expense_daily_rollups`, `expenses`, `local_users`, `notification_logs`, `notification_templates`, `onboarding_questions`, `pending_clarifications`, `pro_subscriptions`, `push_subscriptions`, `sessions`, `store_purchases`, `support_tickets`, `system_settings`, `user_dictionaries`, `users`, `voice_usage` | `ai_models`, `ai_providers`, `discount_codes`, `local_users`, `notification_logs`, `notification_templates`, `pending_clarifications`, `system_settings`, `user_dictionaries`, `users` |
 | `api/admin-whatsapp-router.ts` | `api-core`, `database`, `platform`, `security`, `whatsapp` | — | `local_users`, `users`, `whatsapp_contacts`, `whatsapp_messages` | `system_settings`, `whatsapp_messages` |
 | `api/ads-router.ts` | `api-core`, `database`, `platform`, `security` | — | `ad_impressions`, `ads` | `ad_clicks`, `ad_impressions`, `ads` |
@@ -167,6 +167,7 @@ Environment validation, Redis client (cache, shared state for one-time codes, ge
 | --- | --- | --- | --- | --- |
 | `api/lib/app-time.ts` | — | — | — | — |
 | `api/lib/cache-keys.ts` | — | — | — | — |
+| `api/lib/client-platform.ts` | `database` | — | — | `user_analytics` |
 | `api/lib/env.ts` | — | — | — | — |
 | `api/lib/error-logger.ts` | `database` | — | `api_key_errors` | `api_key_errors` |
 | `api/lib/error-reporting.ts` | — | `sentry` | — | — |

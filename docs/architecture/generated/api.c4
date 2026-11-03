@@ -610,7 +610,7 @@ model {
       }
     }
     adminConsole = router 'adminConsole' {
-      description 'api/admin-console-router.ts — 6 procedures.'
+      description 'api/admin-console-router.ts — 7 procedures.'
       metadata {
         file 'api/admin-console-router.ts'
       }
@@ -625,6 +625,16 @@ model {
         }
       }
       classifications = procedure 'adminConsole.classifications' {
+        #query #admin #uncalled
+        technology 'adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-console-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      growth = procedure 'adminConsole.growth' {
         #query #admin #uncalled
         technology 'adminProcedure'
         description 'query · adminProcedure · no caller in src/'

@@ -36,6 +36,15 @@ opens the console's page, `no-store` and `noindex`). `npm run admin:dev` runs it
   OpenAI-compatible address after testing the key (`admin.validateApiKey`), pauses, re-keys, checks the health of all
   (`admin.checkProviderHealth`, which had no screen) and removes them, shows each provider's models, purposes and
   prices, and lists unresolved key errors. Assigning models to purposes still happens in the previous console.
+- «النمو» (`admin/src/pages/Growth.tsx`, `adminConsole.growth`): per Cairo day, who recorded and who signed up; the
+  share of new accounts that recorded within 24 hours; weekly cohorts of the last six weeks and the share of each
+  that recorded in each later week; how operations were recorded (by source); people per platform in the last 7 days
+  and the mobile versions in use, from the `app_seen` events `noteAppSeen` (`api/lib/client-platform.ts`) writes once
+  per person per Cairo day from `authedProcedure`, read from the app's user agent
+  (`SmartSpend-Mobile (android; production; 1.4.0)`), kept 30 days like other usage events; store subscriptions by
+  store and status.
+- The retention and activation queries name the outer table in full inside their subqueries: a bare column there
+  resolved to the subquery's own row, which made «رجعوا بعد أسبوع» and the activation counts wrong.
 - «باقي الأدوات» mounts the previous console whole until each area has its new page; moderators land there.
 - `scripts/dev/seed-admin.ts` makes a phone admin on a throwaway database on port 3399.
 

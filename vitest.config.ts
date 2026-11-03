@@ -47,7 +47,9 @@ export default defineConfig({
       GEMINI_API_KEY: process.env.GEMINI_API_KEY || "test",
       NODE_ENV: "test",
       TRUST_PROXY: "true",
-      REDIS_URL: process.env.REDIS_URL || "redis://localhost:6379",
+      // Unit tests never reach a real Redis: a developer's machine may run one that holds real data on 6379.
+      // The Redis tests (`npm run test:redis`) pass their own REDIS_URL.
+      REDIS_URL: process.env.REDIS_URL || "",
     },
   },
 });

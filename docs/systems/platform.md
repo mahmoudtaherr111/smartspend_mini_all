@@ -37,7 +37,9 @@ storage, the contracts shared with the web app, and the retention job that prune
 2. `/api/trpc/*` builds the context. A Bearer header wins over cookies; the token's SHA-256 hash is looked up
    in the Redis principal cache first and only then in `sessions` plus the user table
    ([accounts](accounts.md)).
-3. The procedure's builder applies its limit and checks: anonymous traffic 3,000 requests a minute per IP (mobile carriers put many customers behind one address),
+3. `authedProcedure` also notes, once per person per Cairo day, the platform and app version the request came from
+   (`noteAppSeen` in `api/lib/client-platform.ts`, never blocking the request). The procedure's builder applies its
+   limit and checks: anonymous traffic 3,000 requests a minute per IP (mobile carriers put many customers behind one address),
    sign-in and registration 300 per quarter hour, a signed-in user 300 a minute, and an AI call another 100 a
    minute on top. `proProcedure`, `proAiProcedure` and `ultraProcedure` check the plan, and the per-feature builders
    (`businessProcedure`, `receiptsProcedure`, `proReportProcedure`, `goalAnalysisProcedure`) read the admin's

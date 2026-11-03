@@ -28,8 +28,8 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 | Tables with relations | 64 |
 | Foreign-key constraints | 0 |
 | tRPC routers | 28 |
-| tRPC procedures | 277 |
-| — queries | 115 |
+| tRPC procedures | 278 |
+| — queries | 116 |
 | — mutations | 162 |
 | Procedure builders | 14 |
 | HTTP routes (outside tRPC) | 11 |
@@ -37,7 +37,7 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 | Scheduled jobs | 19 |
 | Browser routes | 18 |
 | Lazy-loaded pages | 17 |
-| Runtime source files | 520 |
+| Runtime source files | 521 |
 | Clusters | 46 |
 | External systems in use | 18 |
 | Validated server env vars | 62 |

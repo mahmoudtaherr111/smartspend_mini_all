@@ -60,8 +60,8 @@
     },
     "admin": {
       "files": {
-        "api/admin-console-router.ts": "51ad288ab3a2",
-        "api/admin-router.ts": "c9c4e40d57a8",
+        "api/admin-console-router.ts": "2f8c08c1d73b",
+        "api/admin-router.ts": "53cc31168fe7",
         "api/ads-router.ts": "ace6b064f74c",
         "api/analytics-router.ts": "ef70b00b91a8",
         "api/boot.ts#GET /admin": "ecbf724126aa",
@@ -98,9 +98,9 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-03 5b75e7a2",
-      "arabic": "760f9e20aeb8",
-      "arabicChecked": "2026-11-03 5b75e7a2"
+      "checked": "2026-11-03 7fe374fe",
+      "arabic": "afdc832a2daa",
+      "arabicChecked": "2026-11-03 7fe374fe"
     },
     "ai-center": {
       "files": {
@@ -478,6 +478,7 @@
         "api/jobs/data-retention-job.ts": "f25bdcf5392f",
         "api/lib/app-time.ts": "7eaf4ab8fae6",
         "api/lib/cache-keys.ts": "89dc693d0c12",
+        "api/lib/client-platform.ts": "fe6ce60846a0",
         "api/lib/env.ts": "89899a5070f2",
         "api/lib/error-logger.ts": "9cb0f25fe459",
         "api/lib/error-reporting.ts": "9891f7185094",
@@ -486,7 +487,7 @@
         "api/lib/settings-cache.ts": "ee7c564513f7",
         "api/lib/shared-generation.ts": "2d53bf30e567",
         "api/lib/system-settings-registry.ts": "a5f0dcbdcc05",
-        "api/middleware.ts": "bf9e6f7d50b0",
+        "api/middleware.ts": "e82907a611a2",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "ac67dc2c09d0",
         "api/server.ts#rest-of-file": "e728f2d81677",
@@ -516,9 +517,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "d271ee15cf38"
       },
-      "checked": "2026-11-03 8bcebb49",
-      "arabic": "2435e634e75f",
-      "arabicChecked": "2026-11-03 8bcebb49"
+      "checked": "2026-11-03 7fe374fe",
+      "arabic": "9da8ce92632a",
+      "arabicChecked": "2026-11-03 7fe374fe"
     },
     "voice-calls": {
       "files": {

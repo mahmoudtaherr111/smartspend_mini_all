@@ -10,9 +10,11 @@ import {
   sessions,
   storePurchases,
   supportTickets,
+  userAnalytics,
   users,
 } from "../db/schema";
 import { ledgerTotalCostUsdSince } from "./lib/ai-ledger";
+import { readClient } from "./lib/client-platform";
 import { dailyAiCapUsd } from "./lib/feature-switches";
 import { businessMonthRange, startOfBusinessDay } from "./lib/app-time";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
@@ -23,14 +25,6 @@ import { db } from "./queries/connection";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const personRef = z.object({ type: z.enum(["oauth", "local"]), id: z.number().int().positive() });
-
-/** Which app a session came from, read from the user agent the app sends ("SmartSpend-Mobile (android; …)"). */
-export function platformOf(userAgent: string | null | undefined): "android" | "ios" | "web" | "unknown" {
-  const agent = (userAgent ?? "").toLowerCase();
-  if (agent.startsWith("smartspend-mobile")) return agent.includes("ios") ? "ios" : agent.includes("android") ? "android" : "unknown";
-  if (!agent) return "unknown";
-  return "web";
-}
 
 /** A count that cannot break the page: a failed query reads as null, which the console shows as unknown, never as 0. */
 async function countOrNull(run: () => Promise<{ count?: number | string | null }[]>): Promise<number | null> {
@@ -91,7 +85,8 @@ export const adminConsoleRouter = router({
             and(
               gte(expenses.date, twoWeeksAgo),
               lt(expenses.date, weekAgo),
-              sql`EXISTS (SELECT 1 FROM expenses later WHERE later.user_id = ${expenses.userId} AND later.user_type = ${expenses.userType} AND later.date >= ${weekAgo})`,
+              // The outer columns are named in full: inside the subquery a bare `user_id` would mean the subquery's own row.
+              sql`EXISTS (SELECT 1 FROM expenses later WHERE later.user_id = expenses.user_id AND later.user_type = expenses.user_type AND later.date >= ${weekAgo})`,
             ),
           ),
       ),
@@ -293,7 +288,7 @@ export const adminConsoleRouter = router({
       },
       recent,
       aiCalls,
-      devices: devices.map((device) => ({ ...device, platform: platformOf(device.userAgent) })),
+      devices: devices.map((device) => ({ ...device, ...readClient(device.userAgent) })),
       captureDevices: captures,
       purchases,
       tickets,
@@ -453,6 +448,145 @@ export const adminConsoleRouter = router({
           items: readItems(row.items),
         })),
         hasMore: rows.length > pageSize,
+      };
+    }),
+  // The growth page: daily activity and sign-ups, how many new people recorded within a day, weekly cohorts, how
+  // people record, which platforms and versions they use, and store subscriptions. Days are Cairo days.
+  growth: adminProcedure
+    .input(z.object({ days: z.number().int().min(7).max(60).default(30) }))
+    .query(async ({ input }) => {
+      const todayStart = startOfBusinessDay();
+      // One boundary per day, oldest first, from Cairo's own midnights (a DST change makes a day 23 or 25 hours).
+      const starts: Date[] = [];
+      for (let back = input.days - 1; back >= 0; back--) {
+        starts.push(startOfBusinessDay(new Date(todayStart.getTime() - back * DAY_MS + 12 * 60 * 60 * 1000)));
+      }
+      const ends = [...starts.slice(1), new Date(todayStart.getTime() + DAY_MS + 12 * 60 * 60 * 1000)].map((value, index) =>
+        index === starts.length - 1 ? startOfBusinessDay(value) : value,
+      );
+      const from = starts[0];
+
+      const perDay = (column: unknown, distinct: boolean) =>
+        starts.map(
+          (start, index) =>
+            distinct
+              ? sql<number>`COUNT(DISTINCT CASE WHEN ${column} >= ${start} AND ${column} < ${ends[index]} THEN CONCAT(${expenses.userType}, ':', ${expenses.userId}) END)`
+              : sql<number>`COALESCE(SUM(CASE WHEN ${column} >= ${start} AND ${column} < ${ends[index]} THEN 1 ELSE 0 END), 0)`,
+        );
+      const toRecord = (values: unknown[]) => Object.fromEntries(values.map((value, index) => [`d${index}`, value])) as Record<string, ReturnType<typeof sql<number>>>;
+
+      const [recorders] = await db.select(toRecord(perDay(expenses.date, true))).from(expenses).where(gte(expenses.date, from));
+      const signupsPerDay = async (table: typeof users | typeof localUsers) => {
+        const [row] = await db
+          .select(toRecord(starts.map((start, index) => sql<number>`COALESCE(SUM(CASE WHEN ${table.createdAt} >= ${start} AND ${table.createdAt} < ${ends[index]} THEN 1 ELSE 0 END), 0)`)))
+          .from(table)
+          .where(gte(table.createdAt, from));
+        return row;
+      };
+      const [googleSignups, phoneSignups] = await Promise.all([signupsPerDay(users), signupsPerDay(localUsers)]);
+
+      // Who recorded within a day of signing up, by the day they signed up.
+      const activatedOf = (table: typeof users | typeof localUsers, userType: "oauth" | "local") =>
+        db
+          .select({
+            createdAt: table.createdAt,
+            // Named in full: a bare `id` inside the subquery would be the expense's own id.
+            activated: sql<number>`EXISTS (SELECT 1 FROM expenses e WHERE e.user_id = ${sql.raw(userType === "oauth" ? "users" : "local_users")}.id AND e.user_type = ${userType} AND e.created_at < DATE_ADD(${sql.raw(userType === "oauth" ? "users" : "local_users")}.created_at, INTERVAL 1 DAY))`,
+          })
+          .from(table)
+          .where(gte(table.createdAt, from));
+      const newcomers = [...(await activatedOf(users, "oauth")), ...(await activatedOf(localUsers, "local"))];
+
+      const daily = starts.map((start, index) => {
+        const key = `d${index}`;
+        const signups = Number(googleSignups?.[key] ?? 0) + Number(phoneSignups?.[key] ?? 0);
+        const inDay = newcomers.filter((row) => {
+          const at = new Date(row.createdAt).getTime();
+          return at >= start.getTime() && at < ends[index].getTime();
+        });
+        return {
+          day: start.toISOString(),
+          recorders: Number(recorders?.[key] ?? 0),
+          signups,
+          activated: inDay.filter((row) => Number(row.activated) === 1).length,
+        };
+      });
+
+      // Weekly cohorts: of the people who signed up in a week, the share who recorded in each later week.
+      const cohortStart = new Date(todayStart.getTime() - 6 * 7 * DAY_MS);
+      const cohortRows = await db.execute(sql`
+        SELECT u.week AS cohort, FLOOR(TIMESTAMPDIFF(DAY, u.created_at, e.date) / 7) AS age, COUNT(DISTINCT u.user_type, u.id) AS people
+        FROM (
+          SELECT id, 'oauth' AS user_type, created_at, FLOOR(TIMESTAMPDIFF(DAY, ${cohortStart}, created_at) / 7) AS week FROM users WHERE created_at >= ${cohortStart}
+          UNION ALL
+          SELECT id, 'local' AS user_type, created_at, FLOOR(TIMESTAMPDIFF(DAY, ${cohortStart}, created_at) / 7) AS week FROM local_users WHERE created_at >= ${cohortStart}
+        ) u
+        JOIN expenses e ON e.user_id = u.id AND e.user_type = u.user_type AND e.date >= u.created_at
+        GROUP BY cohort, age`);
+      const cohortSizes = await db.execute(sql`
+        SELECT week AS cohort, COUNT(*) AS people FROM (
+          SELECT FLOOR(TIMESTAMPDIFF(DAY, ${cohortStart}, created_at) / 7) AS week FROM users WHERE created_at >= ${cohortStart}
+          UNION ALL
+          SELECT FLOOR(TIMESTAMPDIFF(DAY, ${cohortStart}, created_at) / 7) AS week FROM local_users WHERE created_at >= ${cohortStart}
+        ) s GROUP BY week`);
+      const rowsOf = (result: unknown) => ((Array.isArray(result) ? result[0] : result) ?? []) as Record<string, unknown>[];
+      const sizes = new Map(rowsOf(cohortSizes).map((row) => [Number(row.cohort), Number(row.people)]));
+      const cohorts = [...sizes.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([cohort, size]) => {
+          const weeks: (number | null)[] = [];
+          const weekStart = cohortStart.getTime() + cohort * 7 * DAY_MS;
+          // Weeks that have begun for this cohort; later ones have not happened yet.
+          const maxAge = Math.floor((todayStart.getTime() + DAY_MS - weekStart) / (7 * DAY_MS));
+          for (let age = 0; age <= 5; age++) {
+            if (age > maxAge) {
+              weeks.push(null);
+              continue;
+            }
+            const row = rowsOf(cohortRows).find((r) => Number(r.cohort) === cohort && Number(r.age) === age);
+            weeks.push(size ? Math.round((Number(row?.people ?? 0) / size) * 100) : 0);
+          }
+          return { weekStart: new Date(weekStart).toISOString(), size, weeks };
+        });
+
+      const [sources, platforms, versions, subscriptions] = await Promise.all([
+        db
+          .select({ source: expenses.source, count: count() })
+          .from(expenses)
+          .where(gte(expenses.date, from))
+          .groupBy(expenses.source),
+        db
+          .select({
+            platform: sql<string>`JSON_UNQUOTE(JSON_EXTRACT(${userAnalytics.metadata}, '$.platform'))`,
+            people: sql<number>`COUNT(DISTINCT ${userAnalytics.userType}, ${userAnalytics.userId})`,
+          })
+          .from(userAnalytics)
+          .where(and(eq(userAnalytics.event, "app_seen"), gte(userAnalytics.createdAt, new Date(todayStart.getTime() - 6 * DAY_MS))))
+          .groupBy(sql`1`),
+        db
+          .select({
+            platform: sql<string>`JSON_UNQUOTE(JSON_EXTRACT(${userAnalytics.metadata}, '$.platform'))`,
+            version: sql<string>`JSON_UNQUOTE(JSON_EXTRACT(${userAnalytics.metadata}, '$.version'))`,
+            people: sql<number>`COUNT(DISTINCT ${userAnalytics.userType}, ${userAnalytics.userId})`,
+          })
+          .from(userAnalytics)
+          .where(and(eq(userAnalytics.event, "app_seen"), gte(userAnalytics.createdAt, new Date(todayStart.getTime() - 6 * DAY_MS))))
+          .groupBy(sql`1`, sql`2`),
+        db
+          .select({ store: storePurchases.store, status: storePurchases.status, count: count() })
+          .from(storePurchases)
+          .groupBy(storePurchases.store, storePurchases.status),
+      ]);
+
+      return {
+        daily,
+        cohorts,
+        sources: sources.map((row) => ({ source: row.source ?? "manual", count: Number(row.count) })),
+        platforms: platforms.map((row) => ({ platform: row.platform ?? "unknown", people: Number(row.people) })),
+        versions: versions
+          .filter((row) => row.platform === "android" || row.platform === "ios")
+          .map((row) => ({ platform: row.platform, version: row.version && row.version !== "null" ? row.version : "قديم", people: Number(row.people) })),
+        subscriptions: subscriptions.map((row) => ({ store: row.store, status: row.status, count: Number(row.count) })),
       };
     }),
 });

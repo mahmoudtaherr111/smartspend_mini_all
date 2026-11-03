@@ -1,5 +1,7 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { Context } from "./context";
+import { noteAppSeen } from "./lib/client-platform";
+import { getIncomingHeader } from "./lib/get-client-ip";
 import { createRateLimiter } from "./lib/rate-limit";
 import { getSystemSettings } from "./lib/settings-cache";
 import { isPlanFeatureEnabled, type PlanFeature } from "../contracts/plan-features";
@@ -64,8 +66,11 @@ export const authedProcedure = t.procedure.use(async ({ ctx, next }) => {
     `usr:${ctx.user.type}:${ctx.user.id}`,
     "طلبات كتير جداً! اهدى شوية واستنى شوية.",
   );
-
-  return next({ ctx: { ...ctx, user: ctx.user } });
+  const result = await next({ ctx: { ...ctx, user: ctx.user } });
+  // Only a request that was allowed and answered counts as using the app.
+  // Calls made inside the server (voice tools, jobs) have no request.
+  if (result.ok && ctx.req) noteAppSeen(ctx.user, getIncomingHeader(ctx.req, "user-agent"));
+  return result;
 });
 
 export const aiProcedure = authedProcedure.use(async ({ ctx, next }) => {

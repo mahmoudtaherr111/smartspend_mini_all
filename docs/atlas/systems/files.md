@@ -89,6 +89,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/classifier-contract.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/classify-text.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/clause-roles.ts` | [expense-capture](expense-capture.md) |
+| `api/lib/client-platform.ts` | [platform](platform.md) |
 | `api/lib/confidence-calibration.generated.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/confidence-calibrator.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/correction-rules.ts` | [expense-capture](expense-capture.md) |

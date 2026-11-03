@@ -520,6 +520,7 @@ model {
   smartspend.api.modules.platform -[uses]-> sentry
   smartspend.api.modules.platform -[uses]-> smartspend.redis
   smartspend.api.modules.platform -[writes]-> smartspend.mysql.api_key_errors
+  smartspend.api.modules.platform -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.modules.receipt-parsing -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.receipt-parsing -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.receipt-parsing -[imports]-> smartspend.api.modules.classification
@@ -738,6 +739,12 @@ model {
   smartspend.api.trpc.adminConsole.classifications -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.adminConsole.classifications -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.adminConsole.classifications -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.adminConsole.growth -[reads]-> smartspend.mysql.expenses
+  smartspend.api.trpc.adminConsole.growth -[reads]-> smartspend.mysql.local_users
+  smartspend.api.trpc.adminConsole.growth -[reads]-> smartspend.mysql.store_purchases
+  smartspend.api.trpc.adminConsole.growth -[reads]-> smartspend.mysql.user_analytics
+  smartspend.api.trpc.adminConsole.growth -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.adminConsole.growth -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.capture_devices
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.expenses

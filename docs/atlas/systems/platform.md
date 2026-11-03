@@ -259,6 +259,7 @@ flowchart LR
   mod_platform --> mod_contracts
   mod_platform -.-> tbl_system_settings
   mod_platform ==> tbl_api_key_errors
+  mod_platform ==> tbl_user_analytics
   mod_storage --> ext_object_storage
   router_appConfig --> mod_platform
   router_appConfig --> sys_ai_platform
@@ -273,7 +274,7 @@ flowchart LR
 | `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 15 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 6 |
-| `platform` — Platform services | Environment validation, Redis client (cache, shared state for one-time codes, generation counters with replay of bumps Redis missed) and cache keys, the generation watcher that tells a per-process copy of shared data to reload, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 11 |
+| `platform` — Platform services | Environment validation, Redis client (cache, shared state for one-time codes, generation counters with replay of bumps Redis missed) and cache keys, the generation watcher that tells a per-process copy of shared data to reload, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 12 |
 | `storage` — File storage | File storage behind one driver interface (local disk or S3-compatible storage such as R2), plus the avatar service. | 5 |
 
 ## API procedures
@@ -350,7 +351,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `subscription_catalog` | A | `api-routers` | `api-routers` |
 | `support_tickets` | A | `api-routers` | `api-routers` |
 | `system_settings` | A | `api-routers` | `api-routers`, `platform` |
-| `user_analytics` | E | `api-routers`, `jobs` | `api-routers` |
+| `user_analytics` | E | `api-routers`, `jobs`, `platform` | `api-routers` |
 | `user_budgets` | C | `api-routers`, `jobs` | `api-routers`, `jobs` |
 | `user_businesses` | A | `api-routers` | `api-routers` |
 | `user_contacts` | A | `api-routers` | `api-routers` |
@@ -408,7 +409,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `GOOGLE_REDIRECT_URI` | yes | `api/auth-router.ts` |
 | `GROQ_API_KEY` | yes | `api/ai-router.ts` |
 | `LOG_SLOW_QUERIES` | yes | `api/queries/connection.ts` |
-| `NODE_ENV` | yes | `api/boot.ts`, `api/chat-router.ts`, `api/lib/log.ts`, `api/lib/redis-client.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts` |
+| `NODE_ENV` | yes | `api/boot.ts`, `api/chat-router.ts`, `api/lib/client-platform.ts`, `api/lib/log.ts`, `api/lib/redis-client.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts` |
 | `NVIDIA_API_KEY` | yes | `api/ai-router.ts` |
 | `PAYMOB_HMAC_SECRET` | yes | `api/boot.ts` |
 | `PORT` | yes | `api/boot.ts`, `api/server.ts` |
@@ -434,7 +435,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>48 files and declarations</summary>
+<details><summary>49 files and declarations</summary>
 
 - `api/app-config-router.ts`
 - `api/boot.ts#ALL /api/trpc/*`
@@ -447,6 +448,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/jobs/data-retention-job.ts`
 - `api/lib/app-time.ts`
 - `api/lib/cache-keys.ts`
+- `api/lib/client-platform.ts`
 - `api/lib/env.ts`
 - `api/lib/error-logger.ts`
 - `api/lib/error-reporting.ts`
