@@ -27,7 +27,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `ai-governance` | AI usage and cost governance | 4 | `ai-providers`, `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-routers`, `capture-ai-reader`, `jobs` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-intake`, `capture-reader`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
 | `capture-intake` | Capture intake | 12 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `ledger` | — |
-| `capture-ai-reader` | Message model reader | 3 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `platform`, `security` | `capture-intake` | `gemini` |
+| `capture-ai-reader` | Message model reader | 4 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `platform`, `security` | `capture-intake` | `gemini` |
 | `capture-catalog` | Capture catalog | 3 | `contracts`, `database`, `platform` | `api-core`, `api-routers`, `capture-intake` | — |
 | `capture-reader` | Message reader | 12 | `arabic-nlp`, `platform` | `capture-intake` | — |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
@@ -413,6 +413,7 @@ Layer two of capture: reads one bank or wallet message with the model the admin 
 | --- | --- | --- | --- | --- |
 | `api/lib/capture/ai-reader.ts` | `ai-governance`, `ai-providers`, `capture-intake`, `platform`, `security` | — | — | — |
 | `api/lib/capture/model-contract.ts` | `contracts`, `security` | — | — | — |
+| `api/lib/capture/privacy.ts` | `contracts`, `security` | — | — | — |
 | `api/lib/sms-ai-contract.ts` | `classification`, `contracts`, `security` | `gemini` | — | — |
 
 ### `capture-catalog` — Capture catalog

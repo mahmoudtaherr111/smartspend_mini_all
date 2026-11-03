@@ -178,6 +178,16 @@ describe("the admin's route reads the message", () => {
 });
 
 describe("what leaves the server", () => {
+  it.each([
+    "Sent EGP 40 to FIRST SECOND THIRD FOURTH FIFTH SIXTH SEVENTH via wallet",
+    "Paid EGP 40. Unknown identifier 1234567890",
+    "OTP 543210 for purchase EGP 100",
+  ])("does not call any provider when privacy checks fail", async (message) => {
+    const read = await readMessageWithModel(message, USER);
+    expect(read.outcome).toBe("redaction_failed");
+    expect(state.requests).toHaveLength(0);
+    expect(assertAiBudget).not.toHaveBeenCalled();
+  });
   it("carries no card digits, account, phone, reference or name", async () => {
     state.replies.push(
       reply({

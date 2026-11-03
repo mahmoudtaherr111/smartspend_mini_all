@@ -290,3 +290,12 @@ Checked against the code; each one names where it lives.
 - [Plans and payments](billing.md): the plan stored on the user.
 - [Money](money.md): the people and business screens inside Settings.
 - [Web and mobile app shell](web-app.md): route guards, the More page and the app lock provider.
+
+## Capture token boundary
+`redactWithPrivateTokens` uses the same redaction policy with numbered markers per kind. Its local resolver holds
+original values in a closure; JSON serialization emits only the redacted text. Repeated equal values reuse their
+marker within one call, and no map is shared across calls. Card tails are read through a method returning a copy.
+Arabic and Persian digits are supported in fixed Egyptian phone prefixes as well as the rest of the number.
+An overlong name sets `incompleteName` rather than claiming the entire name was removed. Existing redaction callers
+keep legacy markers; capture's model caller now refuses that incomplete finding. This bounded matcher is not proof
+that an arbitrary unlabelled name has been detected.

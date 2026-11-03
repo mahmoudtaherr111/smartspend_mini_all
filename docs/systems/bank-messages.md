@@ -429,3 +429,15 @@ Checked against the code; each one names where it lives.
   goes through.
 - [Admin console, support and growth tools](admin.md): the capture catalog tabs and the bank-message model's settings.
 - [Server platform and data](platform.md): the retention job and storage classes.
+
+## Outbound privacy gate
+`api/lib/capture/privacy.ts` prepares raw text with numbered, locally resolvable markers. It refuses reserved markers
+in raw input, codes, incomplete names, oversized text and known residual identifiers (including spaced ten-digit
+runs and non-ASCII digits). `preparedCapturePrompt` accepts only an immutable object issued by that preparation
+in the same process; serializing local token data is not a provider payload. A persistent worker will still need
+a separately scoped storage/rehydration design before this numbered path replaces the active reader.
+
+The current sms-v2 model reader also checks its redacted text and sender for known residues before cache lookup,
+budget checks or provider calls, and returns `redaction_failed` on failure. Merchant shielding cannot restore an
+explicit holder name or known identifier and cannot hide an incomplete-name finding. These checks intentionally
+withhold uncertain input; they do not prove arbitrary-language privacy or qualify a source for automatic recording.

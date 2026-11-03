@@ -24,6 +24,7 @@ import { costAtRates, ratesFor, type ModelRates } from "../ai-pricing";
 import { businessDayRange } from "../app-time";
 import { redactSensitiveData, redactWithFindings } from "../anonymizer";
 import { redactKeeping } from "./keep-merchants";
+import { capturePrivacyCodes } from "./privacy";
 import {
   SMS_PROMPT_VERSION,
   SMS_REPLY_SCHEMA,
@@ -73,7 +74,8 @@ export type AiReaderOutcome =
   | "budget"
   | "cost_cap"
   | "failed"
-  | "invalid_reply";
+  | "invalid_reply"
+  | "redaction_failed";
 
 export interface AiReading {
   /** The reply that passed the contract, when there is one (also for `needs_review`). */
@@ -275,9 +277,16 @@ export async function readMessageWithModel(message: string, user: AiReaderUser =
   // Condensed, then redacted: the model never sees a card, account, phone, reference or name.
   const condensed = condenseMessage(trimmed);
   const { text: redacted, findings } = user.keepNames?.length ? redactKeeping(condensed, user.keepNames) : redactWithFindings(condensed);
+  const privacyCodes = capturePrivacyCodes(redacted, findings.incompleteName);
+  const sender = user.sender ? redactSensitiveData(user.sender.trim()) : null;
+  if (sender) privacyCodes.push(...capturePrivacyCodes(sender));
+  if (privacyCodes.length) {
+    log.warn({ ...logBase, event: "sms.ai.redaction_failed", reasons: [...new Set(privacyCodes)] }, "Bank message withheld after redaction");
+    return skip("redaction_failed");
+  }
   const userPrompt = buildSmsUserPrompt({
     text: redacted,
-    sender: user.sender ? redactSensitiveData(user.sender.trim()) : null,
+    sender,
     providerHint: user.providerHint,
   });
   const interpretContext = { providerHint: user.providerHint, cardLast4: findings.cardLast4 };

@@ -5,7 +5,7 @@
  * merchant, or when it looks like a business (a payment gateway's "PAYMOB*SHOP", a domain, «ماركت», «صيدلية»…); in a
  * transfer between people nothing is kept, so a person's name is still removed.
  */
-import { redactWithFindings, type RedactedText } from "../anonymizer";
+import { redactWithFindings, redactWithPrivateTokens, type RedactedText } from "../anonymizer";
 
 /** Kinds where the other side is usually a person: no name is kept unless the reader said it is a merchant. */
 const PERSON_KINDS = new Set(["transfer_out", "transfer_in", "wallet_send", "wallet_receive", "cash_in", "cash_out"]);
@@ -41,9 +41,19 @@ export function merchantNamesToKeep(text: string, reading: MerchantHint): string
 /** Redacts `text` as the general redaction does, except the `keep` names, which come back as they were written. */
 export function redactKeeping(text: string, keep: string[]): RedactedText {
   if (keep.length === 0) return redactWithFindings(text);
+  const privateReading = redactWithPrivateTokens(text);
+  if (privateReading.incompleteName) return redactWithFindings(text);
+  const comparable = (value: string) => value.toLowerCase().replace(/\s+/g, " ").trim();
+  const privateValues = privateReading.markers
+    .filter((token) => token.kind !== "PERSON" || token.explicitHolder)
+    .map((token) => privateReading.localValue(token.marker)!)
+    .map(comparable);
   const slots: string[] = [];
   let shielded = text;
   for (const name of keep) {
+    // A reader's merchant guess must not undo explicit holder/identifier redaction.
+    if (privateValues.some((value) => comparable(name).includes(value))) continue;
+    if (slots.length >= 26) break;
     if (!shielded.includes(name)) continue;
     // Lower case and letters only: the redaction takes it for neither a name nor a number.
     shielded = shielded.split(name).join(`keepslot${String.fromCharCode(97 + slots.length)}x`);

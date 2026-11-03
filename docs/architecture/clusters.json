@@ -240,6 +240,7 @@
         "api/lib/capture/ai-reader.ts",
         "api/lib/sms-ai-contract.ts",
         "api/lib/capture/model-contract.ts",
+        "api/lib/capture/privacy.ts",
         "api/qa/capture-contract-runner.ts"
       ]
     },

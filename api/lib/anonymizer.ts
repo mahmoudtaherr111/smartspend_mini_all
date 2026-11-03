@@ -26,7 +26,13 @@ const NOT_AN_AMOUNT = `(?![.,\\u066B\\u066C]${D})(?!\\s*${CURRENCY})`;
 export interface RedactionFindings {
   /** Last four digits (ASCII) of each card or account the text named, in order of appearance, without repeats. */
   cardLast4: string[];
+  /** The bounded name reader encountered more words than it could safely mask. */
+  incompleteName?: true;
 }
+
+export type RedactionTokenKind = "PERSON" | "PHONE" | "CARD" | "ACCOUNT" | "REF" | "IBAN" | "EMAIL" | "OTP";
+type MarkerWriter = (kind: RedactionTokenKind, value: string, explicitHolder?: boolean) => string;
+const legacyMarker: MarkerWriter = (kind) => `[REDACTED_${kind === "PERSON" ? "NAME" : kind}]`;
 
 export interface RedactedText {
   text: string;
@@ -54,13 +60,14 @@ const IBAN = new RegExp(
 );
 
 /** An Egyptian mobile number, with or without the country code, with spaces or dashes between digits. */
+const PHONE_PREFIX = "(?:(?:\\+|[0٠۰]{2})\\s?[2٢۲][0٠۰][\\s-]?|[0٠۰])[1١۱][0٠۰1١۱2٢۲5٥۵]";
 const PHONE = new RegExp(
-  `${NO_DIGIT_BEFORE}(?:(?:\\+|00)\\s?20[\\s-]?|0)1[0125](?:[\\s-]?${D}){8}${NO_DIGIT_AFTER}`,
+  `${NO_DIGIT_BEFORE}${PHONE_PREFIX}(?:[\\s-]?${D}){8}${NO_DIGIT_AFTER}`,
   "gu",
 );
 /** The same number partly masked by the sender, e.g. 010****5678. */
 const MASKED_PHONE = new RegExp(
-  `${NO_DIGIT_BEFORE}(?:(?:\\+|00)\\s?20[\\s-]?|0)1[0125]${D}?[*xX•]{3,}${D}{2,4}${NO_DIGIT_AFTER}`,
+  `${NO_DIGIT_BEFORE}${PHONE_PREFIX}${D}?[*xX•]{3,}${D}{2,4}${NO_DIGIT_AFTER}`,
   "gu",
 );
 
@@ -180,14 +187,14 @@ function isNameWord(word: string, explicitHolder = false): boolean {
   return word !== "على" && !ARABIC_NOT_NAME.has(foldArabic(word));
 }
 
-function maskNames(text: string): string {
+function maskNames(text: string, replace: (value: string, explicitHolder: boolean) => string, incomplete: () => void): string {
   const mask = (explicitHolder: boolean) => (match: string, words: string, offset: number, input: string) => {
     // After a person preposition, Bassem belongs to the name; let the general pass mask the whole name.
     if (explicitHolder && /^ب[اإأ]سم\s/u.test(match) && /(?:إلى|الى|إلي|الي|من|لـ|\bto|\bfrom)\s*$/iu.test(input.slice(0, offset))) {
       return match;
     }
     // "باسم" is also a person's first name. Preserve it as a label only beside a name we already masked.
-    if (!explicitHolder && /ب[اإأ]سم$/u.test(words) && /^\s*[:،,]?\s*\[REDACTED_NAME\]/u.test(input.slice(offset + match.length))) {
+    if (!explicitHolder && /ب[اإأ]سم$/u.test(words) && /^\s*[:،,]?\s*\[(?:REDACTED_NAME|PERSON_\d+)\]/u.test(input.slice(offset + match.length))) {
       return match;
     }
     const list = words.split(/\s+/);
@@ -197,16 +204,24 @@ function maskNames(text: string): string {
     let end = start;
     while (end < list.length && end - start < 5 && isNameWord(list[end], explicitHolder)) end++;
     if (end === start) return match;
+    if (end - start === 5) {
+      const following = list[end] ?? new RegExp(`^\\s+(${NAME_WORD})`, "u").exec(input.slice(offset + match.length))?.[1];
+      if (following && isNameWord(following, explicitHolder)) incomplete();
+    }
     const before = match.slice(0, match.length - words.length);
     const kept = list.slice(0, start);
     const rest = list.slice(end);
-    return before + [...kept, "[REDACTED_NAME]", ...rest].join(" ");
+    return before + [...kept, replace(list.slice(start, end).join(" "), explicitHolder), ...rest].join(" ");
   };
   return text.replace(HOLDER_NAME, mask(true)).replace(NAME, mask(false));
 }
 
 /** The redacted text, and the card endings it removed (kept on the server, never sent). */
 export function redactWithFindings(text: string): RedactedText {
+  return redactCore(text, legacyMarker);
+}
+
+function redactCore(text: string, marker: MarkerWriter): RedactedText {
   const cardLast4: string[] = [];
   const keepLast4 = (digits: string) => {
     const last4 = asciiDigits(digits).slice(-4);
@@ -215,41 +230,83 @@ export function redactWithFindings(text: string): RedactedText {
   if (!text) return { text: "", findings: { cardLast4 } };
 
   let r = text;
-  r = r.replace(EMAIL, "[REDACTED_EMAIL]");
-  r = r.replace(IBAN, (match) => (match.replace(/ /g, "").length >= 15 ? "[REDACTED_IBAN]" : match));
+  r = r.replace(EMAIL, (match) => marker("EMAIL", match));
+  r = r.replace(IBAN, (match) => (match.replace(/ /g, "").length >= 15 ? marker("IBAN", match) : match));
   r = r.replace(GROUPED_NUMBER, (match) => {
     keepLast4(match.replace(/[ -]/g, ""));
-    return "[REDACTED_ACCOUNT]";
+    return marker("ACCOUNT", match);
   });
-  r = r.replace(MASKED_PHONE, "[REDACTED_PHONE]");
-  r = r.replace(PHONE, "[REDACTED_PHONE]");
-  r = r.replace(LONG_NUMBER, "[REDACTED_ACCOUNT]");
+  r = r.replace(MASKED_PHONE, (match) => marker("PHONE", match));
+  r = r.replace(PHONE, (match) => marker("PHONE", match));
+  r = r.replace(LONG_NUMBER, (match) => marker("ACCOUNT", match));
   r = r.replace(MASKED_CARD, (match, digits: string) => {
     keepLast4(digits);
-    return "[REDACTED_CARD]";
+    return marker("CARD", match);
   });
   for (const pattern of [ENDING_EN, ENDING_AR, CARD_WORD]) {
     r = r.replace(pattern, (match, digits: string) => {
       keepLast4(digits);
-      return maskTail(match, digits, "[REDACTED_CARD]");
+      return maskTail(match, digits, marker("CARD", digits));
     });
   }
   r = r.replace(ACCOUNT_WORD, (match, digits: string) => {
     keepLast4(digits);
-    return maskTail(match, digits, "[REDACTED_ACCOUNT]");
+    return maskTail(match, digits, marker("ACCOUNT", digits));
   });
   for (const pattern of [REFERENCE_EN, REFERENCE_AR]) {
-    r = r.replace(pattern, (match, token: string) => maskTail(match, token, "[REDACTED_REF]"));
+    r = r.replace(pattern, (match, token: string) => maskTail(match, token, marker("REF", token)));
   }
-  r = r.replace(OTP, (match, code: string) => maskTail(match, code, "[REDACTED_OTP]"));
+  r = r.replace(OTP, (match, code: string) => maskTail(match, code, marker("OTP", code)));
+  let incompleteName = false;
   // A name pass stops at the first word that is not a name, so "from AHMED to MOHAMED" needs a second one.
   for (let pass = 0; pass < 4; pass++) {
-    const next = maskNames(r);
+    const next = maskNames(r, (value, explicit) => marker("PERSON", value, explicit), () => { incompleteName = true; });
     if (next === r) break;
     r = next;
   }
 
-  return { text: r, findings: { cardLast4 } };
+  return { text: r, findings: { cardLast4, ...(incompleteName ? { incompleteName: true as const } : {}) } };
+}
+
+export interface NumberedRedactedText {
+  readonly text: string;
+  readonly markers: ReadonlyArray<Readonly<{ marker: string; kind: RedactionTokenKind; explicitHolder?: true }>>;
+  readonly incompleteName: boolean;
+  /** Private values live in a closure, not enumerable fields a request or log could accidentally spread. */
+  localValue(marker: string): string | null;
+  localCardLast4(): string[];
+  toJSON(): { text: string };
+}
+
+/** Numbered markers for capture. Never pass localValue's return value to a provider or store it in public telemetry. */
+export function redactWithPrivateTokens(text: string): NumberedRedactedText {
+  const values = new Map<string, string>();
+  const byValue = new Map<string, string>();
+  const counts = new Map<RedactionTokenKind, number>();
+  const markers: Array<{ marker: string; kind: RedactionTokenKind; explicitHolder?: true }> = [];
+  const redacted = redactCore(text, (kind, value, explicitHolder) => {
+    const key = `${kind}:${value}`;
+    const previous = byValue.get(key);
+    if (previous) {
+      if (explicitHolder) markers.find((entry) => entry.marker === previous)!.explicitHolder = true;
+      return previous;
+    }
+    const index = (counts.get(kind) ?? 0) + 1;
+    counts.set(kind, index);
+    const token = `[${kind}_${index}]`;
+    values.set(token, value);
+    byValue.set(key, token);
+    markers.push({ marker: token, kind, ...(explicitHolder ? { explicitHolder: true as const } : {}) });
+    return token;
+  });
+  return Object.freeze({
+    text: redacted.text,
+    markers: Object.freeze(markers.map((entry) => Object.freeze(entry))),
+    incompleteName: redacted.findings.incompleteName === true,
+    localValue: (token: string) => values.get(token) ?? null,
+    localCardLast4: () => [...redacted.findings.cardLast4],
+    toJSON: () => ({ text: redacted.text }),
+  });
 }
 
 export function redactSensitiveData(text: string): string {
