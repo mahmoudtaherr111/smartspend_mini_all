@@ -3,6 +3,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { trpc } from "@/providers/trpc";
 import { Shell } from "./shell/Shell";
 import { SignIn } from "./pages/SignIn";
+import { People } from "./pages/People";
+import { Person } from "./pages/Person";
 import { Today } from "./pages/Today";
 import { Loading } from "./ui/states";
 
@@ -24,6 +26,8 @@ export default function App() {
       <Suspense fallback={<Loading />}>
         <Routes>
           <Route path="/" element={isAdmin ? <Today /> : <Navigate to="/legacy" replace />} />
+          {isAdmin && <Route path="/people" element={<People />} />}
+          {isAdmin && <Route path="/people/:type/:id" element={<Person />} />}
           <Route path="/legacy" element={<LegacyConsole />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

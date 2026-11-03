@@ -60,7 +60,7 @@
     },
     "admin": {
       "files": {
-        "api/admin-console-router.ts": "1bf234dd7228",
+        "api/admin-console-router.ts": "f2e0296cf869",
         "api/admin-router.ts": "c9c4e40d57a8",
         "api/ads-router.ts": "ace6b064f74c",
         "api/analytics-router.ts": "ef70b00b91a8",
@@ -98,9 +98,9 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-03 8bcebb49",
-      "arabic": "c09001869bcd",
-      "arabicChecked": "2026-11-03 8bcebb49"
+      "checked": "2026-11-03 eea94bbd",
+      "arabic": "ecb5bb21b4c1",
+      "arabicChecked": "2026-11-03 eea94bbd"
     },
     "ai-center": {
       "files": {

@@ -18,6 +18,12 @@ opens the console's page, `no-store` and `noindex`). `npm run admin:dev` runs it
   last week's recorders who came back, today's AI cost against the daily cap, active store subscriptions, open tickets
   and the oldest one's age, AI calls and failures in the last hour, unresolved key errors, and a real check of the
   database and Redis. A count that fails reads as unknown, never as 0. «محتاج تدخلك» lists only what needs action.
+- «الناس» (`admin/src/pages/People.tsx`, `adminConsole.searchPeople`) finds a person by name, phone or email across Google
+  and phone accounts. A person's page (`admin/src/pages/Person.tsx`, `adminConsole.person`) shows their numbers this
+  month, their last 20 operations and last 10 AI calls with tokens and cost, their devices (platform read from the
+  user agent) with a sign-out per device, store subscriptions and tickets; plan, role, monthly AI limit, resetting AI
+  usage and deleting go through the existing admin procedures after a confirmation that says what will happen, and
+  making someone an admin or deleting asks for a typed word.
 - «باقي الأدوات» mounts the previous console whole until each area has its new page; moderators land there.
 - `scripts/dev/seed-admin.ts` makes a phone admin on a throwaway database on port 3399.
 

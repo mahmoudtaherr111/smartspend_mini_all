@@ -49,6 +49,7 @@ flowchart LR
     tbl_auth_challenges[("auth_challenges")]
     tbl_business_categories[("business_categories")]
     tbl_capture_ai_jobs[("capture_ai_jobs")]
+    tbl_capture_devices[("capture_devices")]
     tbl_capture_events[("capture_events")]
     tbl_capture_signals[("capture_signals")]
     tbl_capture_sources[("capture_sources")]
@@ -155,6 +156,7 @@ flowchart LR
   mod_api_routers -.-> tbl_ai_pending_actions
   mod_api_routers -.-> tbl_ai_token_ledgers
   mod_api_routers -.-> tbl_api_key_errors
+  mod_api_routers -.-> tbl_capture_devices
   mod_api_routers -.-> tbl_cashflow_settlements
   mod_api_routers -.-> tbl_expense_daily_rollups
   mod_api_routers -.-> tbl_onboarding_questions
@@ -315,6 +317,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `auth_challenges` | D | `api-core`, `api-routers`, `jobs` | `api-routers` |
 | `business_categories` | A | `api-routers` | `api-routers` |
 | `capture_ai_jobs` | D | `jobs` | — |
+| `capture_devices` | A | — | `api-routers` |
 | `capture_events` | E | `jobs` | — |
 | `capture_signals` | E | `jobs` | — |
 | `capture_sources` | A | `api-routers` | `api-routers` |
