@@ -121,3 +121,8 @@ Session 1 established the canonical patterns that all subsequent mobile sessions
 
 ### 4. Sheet & Form Pattern (FND-09)
 - **Draft & Edit Protection**: Modal sheets and creation forms (such as `_EditTransactionSheet` and `_WalletForm`) track their dirty state by attaching listeners to text controllers and comparing against initial values. If the user attempts to swipe down, press Android back, or tap cancel while dirty, `PopScope` intercepts the dismissal and presents a confirmation dialog (`l10n.discardChangesTitle` / `l10n.discardChangesBody`), preventing silent loss of edits.
+
+## What the server controls after release
+`appConfig.get` is read at launch and when the app returns from the background (`remote_config.dart`): the oldest build
+the server works with, where to update, the AI features an admin stopped, and the Cairo date. Without an answer the app
+works as it did, so this check can never be the reason it stops.
