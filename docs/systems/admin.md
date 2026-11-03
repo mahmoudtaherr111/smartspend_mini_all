@@ -45,7 +45,13 @@ opens the console's page, `no-store` and `noindex`). `npm run admin:dev` runs it
   store and status.
 - The retention and activation queries name the outer table in full inside their subqueries: a bare column there
   resolved to the subquery's own row, which made «رجعوا بعد أسبوع» and the activation counts wrong.
-- «باقي الأدوات» mounts the previous console whole until each area has its new page; moderators land there.
+- «الدعم» (`admin/src/pages/Support.tsx`): the oldest waiting ticket first, how long each has waited, the person's
+  message and any reply, and the reply box; `support.listAll` and `support.respond` take `moderatorProcedure`, so
+  support moderators answer tickets and land on this page, while every other page stays with admins.
+- «التشغيل» (`admin/src/pages/Operations.tsx`): the AI switches, the daily cost cap and the mobile versions and store
+  links, saved through `admin.updateSettings` from a bar that appears with the count of unsaved changes (and a
+  warning before leaving the page with them), and the last 30 entries of the audit log in plain words.
+ until each area has its new page; it is for admins only, and moderators land on «الدعم».
 - `scripts/dev/seed-admin.ts` makes a phone admin on a throwaway database on port 3399.
 
 ## Who gets in
@@ -57,8 +63,9 @@ opens the console's page, `no-store` and `noindex`). `npm run admin:dev` runs it
   router and checks that answers carry no password hashes or session tokens, and
   `api/admin-authentication.security.test.ts` checks the session behind the role: a demoted admin, a revoked
   session, an expired token and a forged signature are all refused.
-- The `moderator` role can be given but grants nothing: `moderatorProcedure` is not used by any procedure, and
-  a moderator reaches only their own support tickets.
+- The `moderator` role answers support and nothing else: `support.listAll` and `support.respond` use
+  `moderatorProcedure` (decision 0041), and every other staff procedure stays `adminProcedure`; the security test
+  checks both sides.
 
 ## The pieces
 | Piece | Where | What it does |
@@ -169,12 +176,9 @@ Checked against the code; each one names where it lives.
    shown by the command center's quality card (`admin.getClassificationQuality`).
 3. **Gap.** The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
    browser; nothing backs up the database.
-4. **Gap.** The
-   reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses
-   them, and `support.assign` has no screen.
-5. **Gap.** Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it
-   would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either
-   (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
+4. **Gap.** `support.assign` has no screen, so tickets cannot be given to one person of the team.
+5. **Gap.** No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served
+   at `/sitemap.xml` from the app's address.
 6. **Gap.** The website counts impressions through `ads.recordImpression`; the mobile app shows no ads yet.
 7. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
    `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`,

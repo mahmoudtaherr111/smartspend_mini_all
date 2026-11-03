@@ -19,7 +19,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (5 of 
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-03 8bcebb49 | 2026-11-03 8bcebb49 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-03 454074d0 | 2026-11-03 454074d0 | 2 | — | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-02 af230467 | 2026-11-02 af230467 | 4 | — | — | 3 | 1 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-03 7fe374fe | 2026-11-03 7fe374fe | 4 | — | 1 | 6 | 1 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-03 0b6e57ae | 2026-11-03 0b6e57ae | 4 | — | 1 | 6 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-03 8bcebb49 | 2026-11-03 8bcebb49 | 8 | — | — | 3 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-03 7fe374fe | 2026-11-03 7fe374fe | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-03 454074d0 | 2026-11-03 454074d0 | 7 | — | — | 3 | 1 |
@@ -106,8 +106,8 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - `logAdminAction` in `api/lib/admin-audit.ts` records actions in `admin_audit_logs` and the audit tab shows them, but not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
 - The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the browser; nothing backs up the database.
-- The reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses them, and `support.assign` has no screen.
-- Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
+- `support.assign` has no screen, so tickets cannot be given to one person of the team.
+- No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served at `/sitemap.xml` from the app's address.
 - The website counts impressions through `ads.recordImpression`; the mobile app shows no ads yet.
 - Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one), `support.getById`, `support.assign` and every statistic of `analytics`.
 

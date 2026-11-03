@@ -3,6 +3,7 @@ import {
   router,
   authedProcedure,
   adminProcedure,
+  moderatorProcedure,
 } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
@@ -89,7 +90,8 @@ export const supportRouter = router({
     }),
 
   // ─── List All Tickets (Admin only) ───
-  listAll: adminProcedure
+  // Support moderators answer tickets too; everything else in the console stays with admins.
+  listAll: moderatorProcedure
     .input(
       z
         .object({
@@ -147,7 +149,7 @@ export const supportRouter = router({
     }),
 
   // ─── Respond to Ticket (GAP-38) ───
-  respond: adminProcedure
+  respond: moderatorProcedure
     .input(
       z.object({
         id: z.number(),

@@ -58,9 +58,15 @@ const administrativeRouter = router({
     listAll: sessionRouter.listAll,
   }),
   support: router({
+    assign: supportRouter.assign,
+  }),
+});
+
+// The support inbox is the one thing a moderator may open (decision 0041).
+const supportStaffRouter = router({
+  support: router({
     listAll: supportRouter.listAll,
     respond: supportRouter.respond,
-    assign: supportRouter.assign,
   }),
 });
 
@@ -252,7 +258,33 @@ describe("administrator response data minimization", () => {
   });
 });
 
-describe("support ticket ownership after removing moderator administrative access", () => {
+describe("the support inbox is open to moderators and admins only", () => {
+  for (const [path, procedure] of Object.entries(supportStaffRouter._def.procedures)) {
+    it(`${path} refuses everyone else`, async () => {
+      for (const type of ["oauth", "local"] as const) {
+        for (const role of [null, "user"] as const) {
+          await expect(
+            callTRPCProcedure({
+              router: supportStaffRouter,
+              path,
+              type: procedure._def.type,
+              ctx: context(role, type),
+              getRawInput: async () => ({}),
+              signal: undefined,
+              batchIndex: 0,
+            }),
+          ).rejects.toMatchObject({ code: role ? "FORBIDDEN" : "UNAUTHORIZED" });
+        }
+      }
+      expect(execute).not.toHaveBeenCalled();
+    });
+  }
+  it("a moderator can list the tickets", async () => {
+    await expect(supportRouter.createCaller(context("moderator")).listAll()).resolves.toHaveProperty("list");
+  });
+});
+
+describe("support ticket ownership", () => {
   for (const role of ["user", "moderator"] as const) {
     it(`${role} can still read their own ticket`, async () => {
       const ctx = context(role);

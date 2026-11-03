@@ -68,7 +68,7 @@
         "api/export-router.ts#export.allUsers": "c142aeea8326",
         "api/export-router.ts#rest-of-file": "264f56b1884e",
         "api/seo-router.ts": "34739ab2bc7e",
-        "api/support-router.ts": "937d038e771c",
+        "api/support-router.ts": "e1f2a36f2111",
         "src/components/admin/AdminAdsTab.tsx": "3a9364ae243b",
         "src/components/admin/AdminAuditTab.tsx": "4d1826b3f408",
         "src/components/admin/AdminRulesTab.tsx": "c133f73e05d9",
@@ -98,9 +98,9 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-03 7fe374fe",
-      "arabic": "afdc832a2daa",
-      "arabicChecked": "2026-11-03 7fe374fe"
+      "checked": "2026-11-03 0b6e57ae",
+      "arabic": "8064707227ac",
+      "arabicChecked": "2026-11-03 0b6e57ae"
     },
     "ai-center": {
       "files": {

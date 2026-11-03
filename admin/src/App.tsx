@@ -7,7 +7,9 @@ import { AiCalls } from "./pages/AiCalls";
 import { Classifications } from "./pages/Classifications";
 import { Connectors } from "./pages/Connectors";
 import { Growth } from "./pages/Growth";
+import { Operations } from "./pages/Operations";
 import { People } from "./pages/People";
+import { Support } from "./pages/Support";
 import { Person } from "./pages/Person";
 import { Today } from "./pages/Today";
 import { Loading } from "./ui/states";
@@ -29,14 +31,16 @@ export default function App() {
     <Shell name={session.data.name} isAdmin={isAdmin}>
       <Suspense fallback={<Loading />}>
         <Routes>
-          <Route path="/" element={isAdmin ? <Today /> : <Navigate to="/legacy" replace />} />
+          <Route path="/" element={isAdmin ? <Today /> : <Navigate to="/support" replace />} />
+          <Route path="/support" element={<Support isAdmin={isAdmin} />} />
+          {isAdmin && <Route path="/operations" element={<Operations />} />}
           {isAdmin && <Route path="/growth" element={<Growth />} />}
           {isAdmin && <Route path="/people" element={<People />} />}
           {isAdmin && <Route path="/people/:type/:id" element={<Person />} />}
           {isAdmin && <Route path="/ai/calls" element={<AiCalls />} />}
           {isAdmin && <Route path="/ai/classifications" element={<Classifications />} />}
           {isAdmin && <Route path="/ai/connectors" element={<Connectors />} />}
-          <Route path="/legacy" element={<LegacyConsole />} />
+          {isAdmin && <Route path="/legacy" element={<LegacyConsole />} />}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

@@ -65,7 +65,7 @@ export function Today() {
         text={`${d.openTickets} تذكرة دعم من غير رد، أقدمها ${ago(d.oldestTicketAt)}`}
         action={
           <Button asChild size="sm" variant="outline">
-            <Link to="/legacy">رد</Link>
+            <Link to="/support">رد</Link>
           </Button>
         }
       />,

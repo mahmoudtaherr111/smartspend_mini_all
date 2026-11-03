@@ -227,9 +227,9 @@ flowchart LR
 | `support.close` | mutation | `authedProcedure` | `support_tickets` | `support_tickets` | `Admin`, `More` |
 | `support.create` | mutation | `authedProcedure` | — | `support_tickets` | `More`, `Support` |
 | `support.getById` | query | `authedProcedure` | `support_tickets` | — | — |
-| `support.listAll` | query | `adminProcedure` | `local_users`, `support_tickets`, `users` | — | `Admin`, `More` |
+| `support.listAll` | query | `moderatorProcedure` | `local_users`, `support_tickets`, `users` | — | `Admin`, `More` |
 | `support.listMine` | query | `authedProcedure` | `support_tickets` | — | `More`, `Support` |
-| `support.respond` | mutation | `adminProcedure` | `support_tickets` | `in_app_notifications`, `support_tickets` | `Admin`, `More` |
+| `support.respond` | mutation | `moderatorProcedure` | `support_tickets` | `in_app_notifications`, `support_tickets` | `Admin`, `More` |
 
 ## HTTP routes, WebSockets and scheduled jobs
 

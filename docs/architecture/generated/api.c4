@@ -2743,12 +2743,12 @@ model {
         }
       }
       listAll = procedure 'support.listAll' {
-        #query #admin
-        technology 'adminProcedure'
-        description 'query · adminProcedure'
+        #query #moderator
+        technology 'moderatorProcedure'
+        description 'query · moderatorProcedure'
         metadata {
           file 'api/support-router.ts'
-          builder 'adminProcedure'
+          builder 'moderatorProcedure'
           procedureKind 'query'
         }
       }
@@ -2763,12 +2763,12 @@ model {
         }
       }
       respond = procedure 'support.respond' {
-        #mutation #admin
-        technology 'adminProcedure'
-        description 'mutation · adminProcedure'
+        #mutation #moderator
+        technology 'moderatorProcedure'
+        description 'mutation · moderatorProcedure'
         metadata {
           file 'api/support-router.ts'
-          builder 'adminProcedure'
+          builder 'moderatorProcedure'
           procedureKind 'mutation'
         }
       }

@@ -51,7 +51,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `referral` | `api/referral-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `seo` | `api/seo-router.ts` | 4 | 2 | 2 | `adminProcedure`, `publicProcedure` |
 | `session` | `api/session-router.ts` | 5 | 3 | 2 | `adminProcedure`, `authedProcedure` |
-| `support` | `api/support-router.ts` | 7 | 3 | 4 | `adminProcedure`, `authedProcedure` |
+| `support` | `api/support-router.ts` | 7 | 3 | 4 | `adminProcedure`, `authedProcedure`, `moderatorProcedure` |
 | `voice` | `api/voice-router.ts` | 4 | 3 | 1 | `adminProcedure`, `authedProcedure` |
 | `wallet` | `api/wallet-router.ts` | 6 | 3 | 3 | `authedProcedure` |
 | `webauthn` | `api/webauthn-router.ts` | 6 | 1 | 5 | `authedProcedure`, `strictPublicProcedure` |
@@ -441,9 +441,9 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `support.close` | mutation | `authedProcedure` | yes | `support_tickets` | `support_tickets` | — | `src/pages/Admin.tsx` |
 | `support.create` | mutation | `authedProcedure` | yes | — | `support_tickets` | — | `src/pages/Support.tsx` |
 | `support.getById` | query | `authedProcedure` | yes | `support_tickets` | — | — | — |
-| `support.listAll` | query | `adminProcedure` | yes | `local_users`, `support_tickets`, `users` | — | — | `src/pages/Admin.tsx` |
+| `support.listAll` | query | `moderatorProcedure` | yes | `local_users`, `support_tickets`, `users` | — | — | `src/pages/Admin.tsx` |
 | `support.listMine` | query | `authedProcedure` | no | `support_tickets` | — | — | `src/pages/Support.tsx` |
-| `support.respond` | mutation | `adminProcedure` | yes | `support_tickets` | `in_app_notifications`, `support_tickets` | `api/lib/admin-audit.ts`, `api/notification-engine.ts` | `src/pages/Admin.tsx` |
+| `support.respond` | mutation | `moderatorProcedure` | yes | `support_tickets` | `in_app_notifications`, `support_tickets` | `api/lib/admin-audit.ts`, `api/notification-engine.ts` | `src/pages/Admin.tsx` |
 
 ### `voice` — `api/voice-router.ts`
 

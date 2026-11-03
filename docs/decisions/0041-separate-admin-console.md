@@ -20,6 +20,8 @@ what was missing.
   so the 2,600-line admin router does not grow.
 - The previous console stays reachable inside the new one under «باقي الأدوات» until each area has moved, so nothing
   an admin can do today is lost during the rebuild. An area leaves it once its new page is live.
+- Two roles use it: an admin opens everything; a moderator opens only the support inbox (`support.listAll` and
+  `support.respond` take `moderatorProcedure`), which the console shows them on its own.
 - The console is never indexed (`X-Robots-Tag: noindex`) and never cached (`no-store`, except hashed assets).
 
 ## Consequences
