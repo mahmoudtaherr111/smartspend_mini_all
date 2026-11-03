@@ -10,7 +10,7 @@
         "api/lib/access-control.ts": "ec360a101b90",
         "api/lib/admin-audit.ts": "182cdae6283d",
         "api/lib/admin-safe-fields.ts": "cfb73d6bbe66",
-        "api/lib/anonymizer.ts": "a2779010eaec",
+        "api/lib/anonymizer.ts": "b2c35caaeadc",
         "api/lib/get-client-ip.ts": "72af77e654a4",
         "api/lib/google-id-token.ts": "219f290d6998",
         "api/lib/http-origin-security.ts": "066096844fe2",
@@ -54,9 +54,9 @@
         "src/pages/Login.tsx": "721a99583418",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-11-03 ff028180",
-      "arabic": "8eec4771d993",
-      "arabicChecked": "2026-11-03 ff028180"
+      "checked": "2026-11-03 22278aaf",
+      "arabic": "5a3762688bc8",
+      "arabicChecked": "2026-11-03 22278aaf"
     },
     "admin": {
       "files": {

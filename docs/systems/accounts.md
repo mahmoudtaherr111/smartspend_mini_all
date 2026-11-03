@@ -191,7 +191,7 @@ Then, per procedure:
 - **Uploads** (`verifyImageMagicBytes`): receipts must really be JPEG, PNG or WebP.
 - **Redaction** (`redactSensitiveData`, and `redactWithFindings`, which also returns the card endings it removed):
   card and account digits, IBANs, Egyptian phone numbers, reference numbers, e-mail addresses, one-time codes and the
-  names after من، إلى، لـ، to, from or Dear are replaced by markers; amounts, balances, dates and merchants stay. It
+  names after من، إلى، لـ، to, from or Dear are replaced by markers. Explicit holder labels (باسم، بإسم، بأسم، registered as, to name) are read first and also mask lowercase Latin names, while keeping the label and financial values. Amounts, balances, dates and merchants stay. It
   runs on a bank message before it is sent to a model ([bank messages](bank-messages.md)) and on the expense lines a
   report prompt quotes.
 - **Admin answers** select fields from `api/lib/admin-safe-fields.ts`, so credentials and session tokens never leave.

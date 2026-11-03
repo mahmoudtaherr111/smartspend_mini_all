@@ -75,7 +75,30 @@ describe("references", () => {
 });
 
 describe("names of people", () => {
+  it.each([
+    ["المسجل بإسم", "TEST PERSON"],
+    ["المسجل باسم", "Test Person"],
+    ["باسم", "test person"],
+    ["بإسم", "أحمد محمود"],
+    ["بأسم", "منى حسن"],
+    ["registered as", "TEST PERSON"],
+    ["registered as", "test person"],
+    ["REGISTERED AS:", "Test Person"],
+    ["to name", "test person"],
+  ])("masks an explicit account holder after %s, preserving financial values", (lead, name) => {
+    const message = `Received EGP 195 from wallet ${lead} ${name} balance EGP 355.04`;
+    const redacted = redactWithFindings(message).text;
+    expect(redacted).toBe(message.replace(name, "[REDACTED_NAME]"));
+    expect(redacted).not.toContain(name);
+    expect(redacted).toContain("[REDACTED_NAME]");
+    expect(redacted).toContain("EGP 195");
+    expect(redacted).toContain("balance EGP 355.04");
+  });
+
   it("masks a name after من, إلى, لـ, to, from and Dear", () => {
+    expect(redactSensitiveData("تحويل 100 جنيه إلى باسم محمد عبر انستاباي")).toBe(
+      "تحويل 100 جنيه إلى [REDACTED_NAME] عبر انستاباي",
+    );
     expect(redactSensitiveData("تم تحويل 500 جنيه إلى محمد أحمد علي عبر انستاباي")).toBe(
       "تم تحويل 500 جنيه إلى [REDACTED_NAME] عبر انستاباي",
     );

@@ -124,6 +124,11 @@ const NAME_LEAD =
 const ARABIC_WORD = "[\\u064B-\\u0652\\u0621-\\u063A\\u0641-\\u064A\\u0640]+";
 const LATIN_WORD = "[A-Za-z][A-Za-z.'-]*";
 const NAME_WORD = `(?:${ARABIC_WORD}|${LATIN_WORD})`;
+// Read explicit holder labels first: the general "from wallet ..." matcher can otherwise consume the label.
+const HOLDER_NAME = new RegExp(
+  `${START}(?:registered\\s+as|to\\s+name|(?:المسجل[ةه]?\\s+)?ب[اإأ]سم)\\s*[:،,]?\\s+(${NAME_WORD}(?:\\s+${NAME_WORD}){0,5})`,
+  "giu",
+);
 const NAME = new RegExp(
   `${START}(?:${NAME_LEAD}\\s*[:،,]?\\s+|لـ\\s*)(${NAME_WORD}(?:\\s+${NAME_WORD}){0,5})`,
   "giu",
@@ -135,7 +140,7 @@ const NAME_CONNECTORS = new Set(["حساب", "محفظه", "account", "wallet", 
 const LATIN_NOT_NAME = new Set(
   (
     "mr mrs ms via through thru on at for with by in of and or the a an your you my our their his her its this that " +
-    "account acct card wallet number no successfully success amount egp le usd eur gbp sar aed ref reference " +
+    "account acct card wallet number no registered as name successfully success amount egp le usd eur gbp sar aed ref reference " +
     "has have was were is are will been be date time balance available avl customer client valued sir madam " +
     "atm pos mobile phone transfer transferred payment purchase merchant cash back cashback fees fee charges " +
     "today yesterday please kindly dear team service services app online international local " +
@@ -155,7 +160,7 @@ function foldArabic(word: string): string {
 
 const ARABIC_NOT_NAME = new Set(
   (
-    "حساب محفظه السيد السيده الاستاذ الاستاذه " +
+    "حساب محفظه السيد السيده الاستاذ الاستاذه المسجل المسجله " +
     "عبر بنجاح بمبلغ مبلغ المبلغ بقيمه قيمه رصيد الرصيد رصيدك في يوم اليوم بتاريخ تاريخ الساعه رقم برقم حسابك " +
     "حسابكم الحساب حسابي بطاقه بطاقتك البطاقه كارت الكارت كارتك محفظتك المحفظه ماكينه ماكينات الصراف صراف لدي " +
     "عن الي من و جنيه جنيها ج جم دولار يورو خلال بواسطه طريق انستاباي انستا فودافون اورنج اورانج اتصالات وي " +
@@ -167,28 +172,37 @@ const ARABIC_NOT_NAME = new Set(
   ).split(" "),
 );
 
-function isNameWord(word: string): boolean {
+function isNameWord(word: string, explicitHolder = false): boolean {
   if (/^[A-Za-z]/.test(word)) {
-    return /^[A-Z]/.test(word) && !LATIN_NOT_NAME.has(word.toLowerCase().replace(/[.']/g, ""));
+    return (explicitHolder || /^[A-Z]/.test(word)) && !LATIN_NOT_NAME.has(word.toLowerCase().replace(/[.']/g, ""));
   }
   // The preposition على is compared as written: folded it is علي, which is also a name.
   return word !== "على" && !ARABIC_NOT_NAME.has(foldArabic(word));
 }
 
 function maskNames(text: string): string {
-  return text.replace(NAME, (match, words: string) => {
+  const mask = (explicitHolder: boolean) => (match: string, words: string, offset: number, input: string) => {
+    // After a person preposition, Bassem belongs to the name; let the general pass mask the whole name.
+    if (explicitHolder && /^ب[اإأ]سم\s/u.test(match) && /(?:إلى|الى|إلي|الي|من|لـ|\bto|\bfrom)\s*$/iu.test(input.slice(0, offset))) {
+      return match;
+    }
+    // "باسم" is also a person's first name. Preserve it as a label only beside a name we already masked.
+    if (!explicitHolder && /ب[اإأ]سم$/u.test(words) && /^\s*[:،,]?\s*\[REDACTED_NAME\]/u.test(input.slice(offset + match.length))) {
+      return match;
+    }
     const list = words.split(/\s+/);
     let start = 0;
     const firstKey = /^[A-Za-z]/.test(list[0]) ? list[0].toLowerCase().replace(/\.$/, "") : foldArabic(list[0]);
     if (list.length > 1 && NAME_CONNECTORS.has(firstKey)) start = 1;
     let end = start;
-    while (end < list.length && end - start < 5 && isNameWord(list[end])) end++;
+    while (end < list.length && end - start < 5 && isNameWord(list[end], explicitHolder)) end++;
     if (end === start) return match;
     const before = match.slice(0, match.length - words.length);
     const kept = list.slice(0, start);
     const rest = list.slice(end);
     return before + [...kept, "[REDACTED_NAME]", ...rest].join(" ");
-  });
+  };
+  return text.replace(HOLDER_NAME, mask(true)).replace(NAME, mask(false));
 }
 
 /** The redacted text, and the card endings it removed (kept on the server, never sent). */
