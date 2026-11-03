@@ -127,8 +127,8 @@ amount; granted only when correctly signed, settled and of the plan's amount (th
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that `src/App.tsx` guards only with a
-   sign-in, not with `UltraFeatureRoute`; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
+1. **Gap.** Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that sends anyone not on Ultra back to
+   the plans; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
 2. **Gap.** Referrals give nothing yet: checkout always charges the plan's full price and nothing rewards the referrer, so
    `referral.myCode` returns no discount (`REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT` in `api/referral-router.ts`) and the
    plans screen promises none; the discount codes admins create in `discount_codes` are never applied.

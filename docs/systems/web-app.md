@@ -40,7 +40,7 @@ public pages (landing, privacy, terms and the not-found page).
 | `/pro` | signed in | Plans and checkout ([billing](billing.md)) |
 | `/support` | signed in | Support tickets ([admin](admin.md)) |
 | `/more`, `/settings/*` | signed in | The settings menu and its sections; `/settings` redirects to `/more` |
-| `/ultra` | signed in | The Ultra lounge |
+| `/ultra` | signed in, on Ultra | The Ultra lounge |
 | `/admin` | admin only, after the session is verified | The console ([admin](admin.md)) |
 | anything else | open | Not found |
 
@@ -131,8 +131,8 @@ and the component tests beside their files.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Gap.** `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page
-   itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in
+1. **Gap.** `/ultra` sends anyone not on Ultra to the plans page itself, while the page tells the reader it is
+   protected by `UltraFeatureRoute`. Both gates in
    gate components are unused, so the plan is checked on the server only.
 2. **Gap.** The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another
    site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the

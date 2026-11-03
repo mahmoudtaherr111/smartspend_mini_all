@@ -1732,6 +1732,10 @@ model {
   smartspend.web.pages.Support -[calls]-> smartspend.api.trpc.support.create
   smartspend.web.pages.Support -[calls]-> smartspend.api.trpc.support.listMine
   smartspend.web.pages.Terms -[calls]-> smartspend.api.trpc.seo.getPage
+  smartspend.web.pages.UltraLounge -[calls]-> smartspend.api.trpc.auth.logout
+  smartspend.web.pages.UltraLounge -[calls]-> smartspend.api.trpc.auth.me
+  smartspend.web.pages.UltraLounge -[calls]-> smartspend.api.trpc.localAuth.logout
+  smartspend.web.pages.UltraLounge -[calls]-> smartspend.api.trpc.localAuth.me
   smartspend.web.pages.UltraLounge -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.seo.getPage
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.createWallet

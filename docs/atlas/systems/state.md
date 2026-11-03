@@ -17,12 +17,12 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (5 of 
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 9 | — | 2 | 3 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-02 b7dfb797 | 2026-10-31 092bd28c | 7 | — | 1 | 7 | 1 |
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 16 | **1** | — | 7 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-02 af0ee524 | 2026-11-02 af0ee524 | 2 | — | — | 3 | 2 |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-03 454074d0 | 2026-11-03 454074d0 | 2 | — | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-02 af230467 | 2026-11-02 af230467 | 4 | — | — | 3 | 1 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-02 add3d763 | 2026-11-02 add3d763 | 4 | — | 1 | 6 | 1 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-03 454074d0 | 2026-11-03 454074d0 | 4 | — | 1 | 6 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-02 4eb38dce | 2026-11-02 4eb38dce | 8 | — | — | 3 | 4 |
 | [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-02 081290b7 | 2026-11-02 081290b7 | 5 | — | — | — | 7 |
-| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 7 | — | — | 3 | 1 |
+| [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-03 454074d0 | 2026-11-03 454074d0 | 7 | — | — | 3 | 1 |
 
 
 ## Where the risk is
@@ -94,7 +94,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The mobile app has no passkey sign-in, and neither the app nor the web's Login screen offers WhatsApp sign-in (`localAuth.verifyOtp`).
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
-- Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that `src/App.tsx` guards only with a sign-in, not with `UltraFeatureRoute`; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
+- Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that sends anyone not on Ultra back to the plans; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
 - Referrals give nothing yet: checkout always charges the plan's full price and nothing rewards the referrer, so `referral.myCode` returns no discount (`REFERRAL_DISCOUNT_APPLIED_AT_CHECKOUT` in `api/referral-router.ts`) and the plans screen promises none; the discount codes admins create in `discount_codes` are never applied.
 - Nothing renews a subscription, since each Paymob payment is a one-time charge: the user is reminded three days and one day before the end and pays again; in the last week the subscription card on the plans screen (`src/pages/Pro.tsx`) offers the same plan in one tap (`pro.createCheckoutSession` with the current plan), and the paid period starts where the current one ends. Charging a stored card needs Paymob's recurring flow. `pro.cancel` only changes the status the plans screen shows, and there is no refund path.
 
@@ -117,7 +117,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card — is only ever written by the breaker during real traffic ([admin](admin.md)).
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
-- `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in gate components are unused, so the plan is checked on the server only.
+- `/ultra` sends anyone not on Ultra to the plans page itself, while the page tells the reader it is protected by `UltraFeatureRoute`. Both gates in gate components are unused, so the plan is checked on the server only.
 - The Capacitor shells (`android/`, `ios/`) serve the build from `https://localhost` and call the API on another site, where a `SameSite=Lax` cookie is not sent, so they cannot keep a session since the website stopped holding the token. The Flutter app replaces them (decision 0022); until they are retired they only reach the sign-in screen.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 

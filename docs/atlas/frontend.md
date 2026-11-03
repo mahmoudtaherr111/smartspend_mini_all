@@ -511,10 +511,14 @@ _None._
 
 ### `UltraLounge` — `src/pages/UltraLounge.tsx`
 
-3 files in its import closure (not counting `src/components/ui/`).
+6 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
+| `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
+| `auth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
+| `localAuth.logout` | useMutation | `src/hooks/useAuth.ts` |
+| `localAuth.me` | useQuery, utils.invalidate, utils.setData | `src/hooks/useAuth.ts` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
 
 ### `WalletsPage` — `src/pages/WalletsPage.tsx`

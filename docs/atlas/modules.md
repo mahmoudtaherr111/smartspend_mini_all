@@ -665,7 +665,7 @@ Route-level page components lazy-loaded by src/App.tsx.
 | `src/pages/Settings.tsx` | `web-account`, `web-growth`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/Support.tsx` | `web-growth`, `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/Terms.tsx` | `web-growth`, `web-ui-kit` | — | — | — |
-| `src/pages/UltraLounge.tsx` | `web-growth`, `web-ui-kit` | — | — | — |
+| `src/pages/UltraLounge.tsx` | `web-growth`, `web-hooks`, `web-ui-kit` | — | — | — |
 | `src/pages/WalletsPage.tsx` | `web-finance`, `web-growth` | — | — | — |
 
 ### `web-ui-kit` — UI primitives
