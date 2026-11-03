@@ -17,6 +17,7 @@ specification {
   tag dualOwner
   tag goalAnalysis
   tag http
+  tag moderator
   tag mutation
   tag proReport
   tag public

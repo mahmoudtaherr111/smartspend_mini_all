@@ -1,4 +1,5 @@
 import { router } from "./middleware";
+import { adminConsoleRouter } from "./admin-console-router";
 import { appConfigRouter } from "./app-config-router";
 import { authRouter } from "./auth-router";
 import { localAuthRouter } from "./local-auth-router";
@@ -28,6 +29,7 @@ import { captureRouter } from "./capture-router";
 import { captureAdminRouter } from "./capture-admin-router";
 
 export const appRouter = router({
+  adminConsole: adminConsoleRouter,
   appConfig: appConfigRouter,
   auth: authRouter,
   localAuth: localAuthRouter,

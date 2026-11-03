@@ -17,12 +17,14 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 | 7 | `onError` | `inline handler` |
 | 8 | `notFound` | `inline handler` |
 | 9 | `*` | `registerCaptureRoutes(app)` |
-| 10 | `/*` | `serveStatic()` |
+| 10 | `/admin/*` | `serveStatic()` |
+| 11 | `/*` | `serveStatic()` |
 
 ## HTTP routes
 
 | Method | Path | Kind | Declared in | Depends on | Reads | Writes |
 | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/admin` | http | `api/boot.ts` | — | — | — |
 | GET | `/api/auth/google/callback` | http | `api/boot.ts` | `api/context.ts`, `api/lib/env.ts`, `api/router.ts` | — | — |
 | GET | `/api/auth/google/start` | http | `api/boot.ts` | `api/auth-router.ts`, `api/lib/env.ts` | — | — |
 | ALL | `/api/trpc/*` | trpc | `api/boot.ts` | `api/router.ts` | — | — |

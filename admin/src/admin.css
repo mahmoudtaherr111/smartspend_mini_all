@@ -1,0 +1,11 @@
+@import "../../src/index.css";
+
+body {
+  font-family: "Cairo Variable", "Cairo", system-ui, sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}

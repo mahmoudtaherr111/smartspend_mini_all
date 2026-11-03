@@ -62,7 +62,7 @@ model {
     api-routers = module 'tRPC routers and HTTP sub-apps' {
       description 'One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts.'
       metadata {
-        files '27'
+        files '28'
         paths 'api/*-router.ts'
       }
     }

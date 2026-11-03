@@ -144,7 +144,8 @@
       "summary": "The admin console (users and plans, settings, AI providers, notification templates, learned rules, discount codes), support tickets, ads, SEO pages and usage analytics.",
       "summaryAr": "لوحة الإدارة (المستخدمين والباقات والإعدادات ومزودي الذكاء الاصطناعي وقوالب الإشعارات والقواعد المتعلمة وأكواد الخصم)، وتذاكر الدعم، والإعلانات، وصفحات SEO، وإحصائيات الاستخدام.",
       "clusters": ["web-admin"],
-      "routers": ["admin", "ads", "seo", "support", "analytics"],
+      "routers": ["admin", "adminConsole", "ads", "seo", "support", "analytics"],
+      "routes": ["GET /admin"],
       "procedures": ["export.allUsers"],
       "pages": ["Admin", "Support"]
     },

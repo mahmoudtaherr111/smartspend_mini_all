@@ -12,7 +12,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@contracts/*": ["./contracts/*"],
-      "@db/*": ["./db/*"]
+      "@db/*": ["./db/*"],
+      "@admin/*": ["./admin/src/*"]
     },
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -27,5 +28,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": false
   },
-  "include": ["src"]
+  "include": ["src", "admin/src"]
 }

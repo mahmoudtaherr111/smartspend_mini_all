@@ -7,6 +7,11 @@ views {
     include *
   }
 
+  view router_adminConsole of smartspend.api.trpc.adminConsole {
+    title 'tRPC router · adminConsole'
+    include *
+  }
+
   view router_adminWhatsapp of smartspend.api.trpc.adminWhatsapp {
     title 'tRPC router · adminWhatsapp'
     include *

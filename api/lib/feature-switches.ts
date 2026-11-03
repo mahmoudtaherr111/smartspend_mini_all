@@ -3,6 +3,7 @@ import { ledgerTotalCostUsdSince } from "./ai-ledger";
 import { startOfBusinessDay } from "./app-time";
 import { createLogger } from "./log";
 import { getSystemSettings } from "./settings-cache";
+import { settingDefaults } from "./system-settings-registry";
 
 const log = createLogger("feature-switches");
 
@@ -41,7 +42,7 @@ export async function assertAiSwitchOn(name: AiSwitch, settings?: Record<string,
  */
 export async function assertDailyAiCost(settings?: Record<string, string>): Promise<void> {
   const config = settings ?? (await getSystemSettings());
-  const capUsd = Number(config.ai_daily_cost_cap_usd) || 0;
+  const capUsd = dailyAiCapUsd(config);
   if (capUsd <= 0) return;
 
   const now = Date.now();
@@ -61,6 +62,11 @@ export async function assertDailyAiCost(settings?: Record<string, string>): Prom
       message: "المساعد واخد راحة النهارده. سجّل مصاريفك يدوي، وهيرجع بكره.",
     });
   }
+}
+
+/** The day's ceiling in USD: the admin's value, or the registry's default when none was ever saved. 0 means none. */
+export function dailyAiCapUsd(settings: Record<string, string>): number {
+  return Number(settings.ai_daily_cost_cap_usd ?? settingDefaults().ai_daily_cost_cap_usd) || 0;
 }
 
 /** For tests. */

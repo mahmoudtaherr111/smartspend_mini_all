@@ -21,6 +21,8 @@ flowchart LR
     screens_web_app["Screens of Web and mobile app shell"]
   end
   subgraph g_api["API, routes and jobs"]
+    http__admin["GET /admin"]
+    router_adminConsole["adminConsole API · 2 procedures"]
     router_admin["admin API · 60 procedures"]
     router_ads["ads API · 8 procedures"]
     router_analytics["analytics API · 4 procedures"]
@@ -40,7 +42,7 @@ flowchart LR
     tbl_discount_codes[("discount_codes")]
     tbl_in_app_notifications[("in_app_notifications")]
     tbl_local_users[("local_users")]
-    tbl_more[("11 tables it only reads, listed under Data")]
+    tbl_more[("12 tables it only reads, listed under Data")]
     tbl_notification_logs[("notification_logs")]
     tbl_notification_templates[("notification_templates")]
     tbl_pending_clarifications[("pending_clarifications")]
@@ -90,6 +92,12 @@ flowchart LR
   router_admin ==> tbl_system_settings
   router_admin ==> tbl_user_dictionaries
   router_admin ==> tbl_users
+  router_adminConsole --> sys_ai_platform
+  router_adminConsole --> sys_platform
+  router_adminConsole -.-> tbl_local_users
+  router_adminConsole -.-> tbl_more
+  router_adminConsole -.-> tbl_support_tickets
+  router_adminConsole -.-> tbl_users
   router_ads --> sys_accounts
   router_ads --> sys_platform
   router_ads ==> tbl_ad_clicks
@@ -190,6 +198,8 @@ flowchart LR
 | `admin.updateUserPlanV2` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `admin.updateUserRole` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `admin.validateApiKey` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
+| `adminConsole.session` | query | `moderatorProcedure` | — | — | — |
+| `adminConsole.today` | query | `adminProcedure` | `ai_token_ledgers`, `api_key_errors`, `expenses`, `local_users`, `store_purchases`, `support_tickets`, `users` | — | — |
 | `ads.click` | mutation | `authedProcedure` | — | `ad_clicks`, `ads` | `App shell` |
 | `ads.create` | mutation | `adminProcedure` | — | `ads` | `Admin`, `More` |
 | `ads.delete` | mutation | `adminProcedure` | — | `ad_clicks`, `ad_impressions`, `ads` | `Admin`, `More` |
@@ -217,7 +227,9 @@ flowchart LR
 
 ## HTTP routes, WebSockets and scheduled jobs
 
-_None._
+| Entry point | Kind | Declared in |
+| --- | --- | --- |
+| `GET /admin` | http | `api/boot.ts` |
 
 ## Data
 
@@ -231,13 +243,14 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `ads` | A | `ads.click`, `ads.create`, `ads.delete`, `ads.impression`, `ads.recordImpression`, `ads.update` | `admin.triggerBackupDemo`, `ads.list`, `ads.stats` |
 | `ai_models` | A | `admin.deleteAiProvider`, `admin.saveAiModels` | `admin.getAiModels`, `admin.saveAiModels` |
 | `ai_providers` | A | `admin.addAiProvider`, `admin.checkProviderHealth`, `admin.deleteAiProvider`, `admin.updateAiProvider` | `admin.checkProviderHealth`, `admin.getAiProviders` |
-| `ai_token_ledgers` | E | — | `admin.getAiTelemetryOverview`, `admin.getAiTokenLedger`, `admin.getUserAiQuota` |
+| `ai_token_ledgers` | E | — | `admin.getAiTelemetryOverview`, `admin.getAiTokenLedger`, `admin.getUserAiQuota`, `adminConsole.today` |
+| `api_key_errors` | E | — | `adminConsole.today` |
 | `classification_logs` | E | — | `admin.getAIClassificationStats`, `admin.getClassificationLogs`, `admin.getClassificationQuality`, `admin.getPipelineVersionStats` |
 | `discount_codes` | A | `admin.createDiscountCode`, `admin.deleteDiscountCode` | `admin.createDiscountCode`, `admin.getDiscountCodes`, `admin.triggerBackupDemo` |
 | `expense_daily_rollups` | C | — | `admin.getDashboardStats` |
-| `expenses` | B | — | `admin.getFounderMetrics`, `admin.listAllUsers`, `analytics.getAllUserStats`, `analytics.getDashboardStats` |
+| `expenses` | B | — | `admin.getFounderMetrics`, `admin.listAllUsers`, `adminConsole.today`, `analytics.getAllUserStats`, `analytics.getDashboardStats` |
 | `in_app_notifications` | D | `support.respond` | — |
-| `local_users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getAuditLogs`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendInstantNotification`, `admin.sendPushNotification`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
+| `local_users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getAuditLogs`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendInstantNotification`, `admin.sendPushNotification`, `adminConsole.today`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
 | `notification_logs` | E | `admin.sendInstantNotification` | `admin.getNotificationLogs` |
 | `notification_templates` | A | `admin.createNotificationTemplate`, `admin.deleteNotificationTemplate`, `admin.toggleNotificationTemplate`, `admin.updateNotificationTemplate` | `admin.getNotificationTemplates` |
 | `onboarding_questions` | A | — | `admin.triggerBackupDemo` |
@@ -246,12 +259,12 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `push_subscriptions` | A | — | `admin.getNotificationStats`, `admin.sendInstantNotification`, `admin.sendPushNotification` |
 | `seo_pages` | A | `seo.delete`, `seo.upsert` | `seo.getPage`, `seo.list`, `seo.upsert` |
 | `sessions` | D | — | `admin.getActivityLog`, `admin.getDashboardStats`, `admin.getUserSessions` |
-| `store_purchases` | A | — | `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.listStorePurchasesAdmin` |
-| `support_tickets` | A | `support.assign`, `support.close`, `support.create`, `support.respond` | `admin.getDashboardStats`, `admin.getFounderMetrics`, `support.assign`, `support.close`, `support.getById`, `support.listAll`, `support.listMine`, `support.respond` |
+| `store_purchases` | A | — | `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.listStorePurchasesAdmin`, `adminConsole.today` |
+| `support_tickets` | A | `support.assign`, `support.close`, `support.create`, `support.respond` | `admin.getDashboardStats`, `admin.getFounderMetrics`, `adminConsole.today`, `support.assign`, `support.close`, `support.getById`, `support.listAll`, `support.listMine`, `support.respond` |
 | `system_settings` | A | `admin.setUserTokenLimit`, `admin.updateSettings` | `admin.setUserTokenLimit` |
 | `user_analytics` | E | `analytics.trackEvent` | `analytics.getMyAnalytics` |
 | `user_dictionaries` | F | `admin.deleteLearnedRule` | `admin.getLearnedRules` |
-| `users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getAuditLogs`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendInstantNotification`, `admin.sendPushNotification`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
+| `users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getAuditLogs`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendInstantNotification`, `admin.sendPushNotification`, `adminConsole.today`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
 | `voice_usage` | E | — | `admin.getVoiceUsageStats` |
 
 ## Outside systems
@@ -275,11 +288,13 @@ _None._
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/admin.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>35 files and declarations</summary>
+<details><summary>37 files and declarations</summary>
 
+- `api/admin-console-router.ts`
 - `api/admin-router.ts`
 - `api/ads-router.ts`
 - `api/analytics-router.ts`
+- `api/boot.ts#GET /admin`
 - `api/export-router.ts#export.allUsers`
 - `api/export-router.ts#rest-of-file`
 - `api/seo-router.ts`

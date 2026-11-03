@@ -312,6 +312,18 @@ app.onError((err, c) => {
 let indexHtml: Promise<string> | null = null;
 
 app.notFound(async (c) => {
+  if (env.NODE_ENV === "production" && c.req.path.startsWith("/admin/")) {
+    // Every console route opens the console's page, which routes on its own.
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      c.header("Cache-Control", "no-store");
+      c.header("X-Robots-Tag", "noindex, nofollow");
+      return c.html(await fs.promises.readFile(path.resolve("./dist/admin/index.html"), "utf-8"));
+    } catch {
+      return c.json({ error: "Not Found" }, 404);
+    }
+  }
   if (env.NODE_ENV === "production" && !c.req.path.startsWith("/api/")) {
     try {
       if (!indexHtml) {
@@ -332,6 +344,12 @@ app.notFound(async (c) => {
   console.warn("404 Not Found:", c.req.url);
   return c.json({ error: "Not Found" }, 404);
 });
+
+/** A path on this site to land on after signing in; anything else (another host, a protocol-relative URL) is ignored. */
+function safeReturnPath(value: string | undefined): string | null {
+  if (!value) return null;
+  return /^\/admin\/[\w\-/]*$/.test(value) ? value : null;
+}
 
 function readCookie(
   cookieHeader: string | undefined,
@@ -375,6 +393,7 @@ app.get("/api/auth/google/start", (c) => {
   }
   const dynamicRedirectUri = `${requestOrigin}/api/auth/google/callback`;
   const googleUrl = buildGoogleAuthorizationUrl(state, dynamicRedirectUri);
+  const next = safeReturnPath(c.req.query("next"));
   if (!googleUrl)
     return c.json({ error: "Google OAuth is not configured" }, 503);
   c.header(
@@ -385,6 +404,13 @@ app.get("/api/auth/google/start", (c) => {
     c.header(
       "Set-Cookie",
       `oauth_redirect_uri=${encodeURIComponent(dynamicRedirectUri)}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=600${secureCookieSuffix(requestOrigin)}`,
+      { append: true },
+    );
+  }
+  if (next) {
+    c.header(
+      "Set-Cookie",
+      `oauth_next=${encodeURIComponent(next)}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=600${secureCookieSuffix(dynamicRedirectUri)}`,
       { append: true },
     );
   }
@@ -431,7 +457,13 @@ app.get("/api/auth/google/callback", async (c) => {
       `oauth_redirect_uri=; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=0${secureCookieSuffix(redirectUriCookie)}`,
       { append: true },
     );
-    return c.redirect(`/dashboard`);
+    const next = safeReturnPath(readCookie(c.req.header("cookie"), "oauth_next"));
+    c.header(
+      "Set-Cookie",
+      `oauth_next=; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=0${secureCookieSuffix(redirectUriCookie)}`,
+      { append: true },
+    );
+    return c.redirect(next ?? `/dashboard`);
   } catch (error) {
     return c.redirect(`/login?error=auth_failed`);
   }
@@ -695,6 +727,21 @@ const isDirectBootEntry = !process.argv[1] || process.argv[1].includes("boot");
 if (env.NODE_ENV === "production" && isDirectBootEntry) {
   const { serve } = await import("@hono/node-server");
   const { serveStatic } = await import("@hono/node-server/serve-static");
+
+  // The admin console (admin/) is a site of its own at /admin, served whether or not the web app is deployed.
+  app.get("/admin", (c) => c.redirect("/admin/"));
+  app.use(
+    "/admin/*",
+    serveStatic({
+      root: "./dist/admin",
+      rewriteRequestPath: (requestPath) => requestPath.replace(/^\/admin/, ""),
+      onFound: (filePath, c) => {
+        const cc = filePath.includes("/assets/") ? "public, max-age=31536000, immutable" : "no-store";
+        c.header("Cache-Control", cc);
+        c.header("X-Robots-Tag", "noindex, nofollow");
+      },
+    }),
+  );
 
   app.use(
     "/*",

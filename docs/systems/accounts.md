@@ -36,7 +36,10 @@ account of the same person.
 ## Signing in
 
 ### Google
-1. The Login screen asks `auth.googleUrl`, which points at `/api/auth/google/start` when Google is configured.
+1. The Login screen asks `auth.googleUrl`, which points at `/api/auth/google/start` when Google is configured. A
+   `next` path under `/admin/` is kept in an `oauth_next` cookie and the callback returns there instead of
+   `/dashboard`; any other value is ignored. In development the origin policy also trusts port 3100, the admin
+   console's dev server.
 2. The start route builds the redirect address from the request's origin, which must be an allowed web origin, sets a
    random `oauth_state` cookie and the redirect address for ten minutes, and redirects to Google
    (`api/auth-router.ts#buildGoogleAuthorizationUrl`).

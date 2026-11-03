@@ -609,6 +609,32 @@ model {
         }
       }
     }
+    adminConsole = router 'adminConsole' {
+      description 'api/admin-console-router.ts — 2 procedures.'
+      metadata {
+        file 'api/admin-console-router.ts'
+      }
+      session = procedure 'adminConsole.session' {
+        #query #moderator #uncalled
+        technology 'moderatorProcedure'
+        description 'query · moderatorProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-console-router.ts'
+          builder 'moderatorProcedure'
+          procedureKind 'query'
+        }
+      }
+      today = procedure 'adminConsole.today' {
+        #query #admin #uncalled
+        technology 'adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-console-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+    }
     adminWhatsapp = router 'adminWhatsapp' {
       description 'api/admin-whatsapp-router.ts — 14 procedures.'
       metadata {
@@ -2885,6 +2911,15 @@ model {
         file 'api/boot.ts'
         method 'ALL'
         path '/api/trpc/*'
+      }
+    }
+    get_admin = endpoint 'GET /admin' {
+      #http
+      description 'Declared in api/boot.ts.'
+      metadata {
+        file 'api/boot.ts'
+        method 'GET'
+        path '/admin'
       }
     }
     get_auth_google_callback = endpoint 'GET /api/auth/google/callback' {

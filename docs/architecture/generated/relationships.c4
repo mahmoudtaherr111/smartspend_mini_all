@@ -221,6 +221,7 @@ model {
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.ai_providers
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.ai_summaries
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.ai_token_ledgers
+  smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.api_key_errors
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.auth_challenges
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.business_categories
   smartspend.api.modules.api-routers -[reads]-> smartspend.mysql.capture_sources
@@ -728,6 +729,16 @@ model {
   smartspend.api.trpc.admin.updateUserRole -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.admin.validateApiKey -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.admin.validateApiKey -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.adminConsole.today -[reads]-> smartspend.mysql.ai_token_ledgers
+  smartspend.api.trpc.adminConsole.today -[reads]-> smartspend.mysql.api_key_errors
+  smartspend.api.trpc.adminConsole.today -[reads]-> smartspend.mysql.expenses
+  smartspend.api.trpc.adminConsole.today -[reads]-> smartspend.mysql.local_users
+  smartspend.api.trpc.adminConsole.today -[reads]-> smartspend.mysql.store_purchases
+  smartspend.api.trpc.adminConsole.today -[reads]-> smartspend.mysql.support_tickets
+  smartspend.api.trpc.adminConsole.today -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.adminConsole.today -[uses]-> smartspend.api.modules.ai-governance
+  smartspend.api.trpc.adminConsole.today -[uses]-> smartspend.api.modules.ai-providers
+  smartspend.api.trpc.adminConsole.today -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminWhatsapp.broadcastTemplate -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.adminWhatsapp.broadcastTemplate -[reads]-> smartspend.mysql.whatsapp_contacts
   smartspend.api.trpc.adminWhatsapp.broadcastTemplate -[uses]-> smartspend.api.modules.security

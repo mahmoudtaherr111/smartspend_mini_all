@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "cross-env NODE_ENV=production vite build --mode production && esbuild api/boot.ts --platform=node --bundle --format=esm --outdir=dist --external:@sentry/* --external:@sentry-internal/* --external:node-cron --banner:js=\"import { createRequire as __bannerCreateRequire } from 'module';const require = __bannerCreateRequire(import.meta.url);\"",
+    "admin:dev": "vite --config admin/vite.config.ts",
+    "build": "cross-env NODE_ENV=production vite build --mode production && cross-env NODE_ENV=production vite build --config admin/vite.config.ts --mode production && esbuild api/boot.ts --platform=node --bundle --format=esm --outdir=dist --external:@sentry/* --external:@sentry-internal/* --external:node-cron --banner:js=\"import { createRequire as __bannerCreateRequire } from 'module';const require = __bannerCreateRequire(import.meta.url);\"",
     "lint": "eslint .",
     "lint:prune": "eslint . --prune-suppressions",
     "knip": "knip --exclude exports,types,duplicates",

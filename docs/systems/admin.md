@@ -8,6 +8,19 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
 - The same story for readers who do not read code: [docs/ar/systems/admin.md](../ar/systems/admin.md)
 - Folder rules while editing: `api/AGENTS.md`, `src/AGENTS.md`
 
+## The new console (admin/)
+The console is moving to a site of its own ([decision 0041](../decisions/0041-separate-admin-console.md)): `admin/`,
+built to `dist/admin` and served by `api/boot.ts` at `/admin` (`/admin` redirects to `/admin/`, every path under it
+opens the console's page, `no-store` and `noindex`). `npm run admin:dev` runs it with the API on port 3100.
+- `admin/src/App.tsx` asks `adminConsole.session` (moderators and admins); anyone else sees the sign-in page, Google
+  (`/api/auth/google/start?next=/admin/`) or a phone account, and a signed-in user without the role is told so.
+- «النهارده» (`admin/src/pages/Today.tsx`, `adminConsole.today`): who recorded today, yesterday and this week, sign-ups, the share of
+  last week's recorders who came back, today's AI cost against the daily cap, active store subscriptions, open tickets
+  and the oldest one's age, AI calls and failures in the last hour, unresolved key errors, and a real check of the
+  database and Redis. A count that fails reads as unknown, never as 0. «محتاج تدخلك» lists only what needs action.
+- «باقي الأدوات» mounts the previous console whole until each area has its new page; moderators land there.
+- `scripts/dev/seed-admin.ts` makes a phone admin on a throwaway database on port 3399.
+
 ## Who gets in
 - `AdminRoute` in `src/App.tsx` waits for the verified session before deciding, sends a signed-out visitor to
   `/login` and anyone who is not an admin to `/dashboard`. The identity snapshot kept on the device carries no

@@ -107,7 +107,7 @@ refused key, and the next answers. The chat also takes its model from the admin'
 
 ## Budgets and limits
 - Before anything else `assertAiBudget` obeys the admin's stop for the channel (`ai_off_<name>`) and the ceiling on
-  what all AI costs in a Cairo day (`ai_daily_cost_cap_usd`, 50 USD by default, read at most once a minute per process):
+  what all AI costs in a Cairo day (`ai_daily_cost_cap_usd`, 50 USD when the admin never saved a value, read at most once a minute per process):
   `api/lib/feature-switches.ts`. Past the ceiling AI stops until midnight; a failed reading lets the call through.
 - `assertAiBudget` runs the burst guard, resolves the budget, and refuses the call when the plan has no
   allowance for that channel, when the input alone exceeds the hard ceiling, or when the monthly limit is

@@ -38,6 +38,11 @@ describe("feature switches", () => {
     await expect(assertDailyAiCost({ ai_daily_cost_cap_usd: "50" })).rejects.toThrow("بكره");
   });
 
+  it("holds the default cap when an admin never saved one", async () => {
+    state.usd = 60;
+    await expect(assertDailyAiCost({})).rejects.toThrow("بكره");
+  });
+
   it("lets calls through under the cap, and reads the cost once a minute", async () => {
     state.usd = 10;
     await assertDailyAiCost({ ai_daily_cost_cap_usd: "50" });

@@ -48,7 +48,7 @@ export function createOriginPolicy(config: OriginConfig) {
   // blank page even though the HTML itself is served successfully.
   const localPorts =
     config.NODE_ENV === "development"
-      ? new Set(["3000", "5173", config.PORT || "3000"])
+      ? new Set(["3000", "3100", "5173", config.PORT || "3000"])
       : new Set([config.PORT || "3000"]);
   for (const port of localPorts) {
     for (const host of ["localhost", "127.0.0.1", "[::1]"]) {

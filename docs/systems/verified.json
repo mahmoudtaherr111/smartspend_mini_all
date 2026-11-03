@@ -4,8 +4,8 @@
     "accounts": {
       "files": {
         "api/auth-router.ts": "bf8ddd1b118f",
-        "api/boot.ts#GET /api/auth/google/callback": "4aa70d89b69f",
-        "api/boot.ts#GET /api/auth/google/start": "30860aaa6f6e",
+        "api/boot.ts#GET /api/auth/google/callback": "7e04ba285e00",
+        "api/boot.ts#GET /api/auth/google/start": "25f3ff016648",
         "api/boot.ts#job:daily-auth-cleanup": "acfde0491549",
         "api/lib/access-control.ts": "ec360a101b90",
         "api/lib/admin-audit.ts": "182cdae6283d",
@@ -16,7 +16,7 @@
         "api/lib/http-origin-security.ts": "066096844fe2",
         "api/lib/image-magic-bytes.ts": "4e8c26a07b43",
         "api/lib/login-protection.ts": "2e7377afad07",
-        "api/lib/origin-policy.ts": "48b4669b572f",
+        "api/lib/origin-policy.ts": "8450ca2b0f3a",
         "api/lib/ownership-guard.ts": "982cc47a2b0d",
         "api/lib/rate-limit.ts": "347538d282a7",
         "api/lib/security-headers.ts": "057db5e4ad04",
@@ -54,15 +54,17 @@
         "src/pages/Login.tsx": "17db05b6b3eb",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-11-02 b7dfb797",
-      "arabic": "8ac0dcf37b4f",
-      "arabicChecked": "2026-11-02 b7dfb797"
+      "checked": "2026-11-03 8bcebb49",
+      "arabic": "b5c234ca2441",
+      "arabicChecked": "2026-11-03 8bcebb49"
     },
     "admin": {
       "files": {
+        "api/admin-console-router.ts": "1bf234dd7228",
         "api/admin-router.ts": "c9c4e40d57a8",
         "api/ads-router.ts": "ace6b064f74c",
         "api/analytics-router.ts": "ef70b00b91a8",
+        "api/boot.ts#GET /admin": "ecbf724126aa",
         "api/export-router.ts#export.allUsers": "c142aeea8326",
         "api/export-router.ts#rest-of-file": "264f56b1884e",
         "api/seo-router.ts": "34739ab2bc7e",
@@ -96,9 +98,9 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-03 454074d0",
-      "arabic": "6b5862974f20",
-      "arabicChecked": "2026-11-03 454074d0"
+      "checked": "2026-11-03 8bcebb49",
+      "arabic": "c09001869bcd",
+      "arabicChecked": "2026-11-03 8bcebb49"
     },
     "ai-center": {
       "files": {
@@ -170,7 +172,7 @@
         "api/lib/ai-usage-policy.ts": "c638486f2242",
         "api/lib/deepseek-client.ts": "25b94e78c4ee",
         "api/lib/embedding-provider.ts": "72fa42725bca",
-        "api/lib/feature-switches.ts": "13a45bcc027e",
+        "api/lib/feature-switches.ts": "2bc21c37fb32",
         "api/lib/fireworks-client.ts": "0ff5cda683b6",
         "api/lib/groq-client.ts": "bdb495a8b189",
         "api/lib/llm-provider-chain.ts": "fb82931289a2",
@@ -182,9 +184,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "3185b204f24e"
       },
-      "checked": "2026-11-02 4eb38dce",
-      "arabic": "cc26e24d7464",
-      "arabicChecked": "2026-11-02 4eb38dce"
+      "checked": "2026-11-03 8bcebb49",
+      "arabic": "a2e28f571eea",
+      "arabicChecked": "2026-11-03 8bcebb49"
     },
     "bank-messages": {
       "files": {
@@ -471,7 +473,7 @@
         "api/boot.ts#GET /robots.txt": "c4dc59fa55af",
         "api/boot.ts#GET /sitemap.xml": "64c40dc44152",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "74f88df7623e",
+        "api/boot.ts#rest-of-file": "6a403e321e21",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "f25bdcf5392f",
         "api/lib/app-time.ts": "7eaf4ab8fae6",
@@ -486,7 +488,7 @@
         "api/lib/system-settings-registry.ts": "a5f0dcbdcc05",
         "api/middleware.ts": "bf9e6f7d50b0",
         "api/queries/connection.ts": "49fd2ab76893",
-        "api/router.ts": "21a62d0e0c04",
+        "api/router.ts": "ac67dc2c09d0",
         "api/server.ts#rest-of-file": "e728f2d81677",
         "api/services/scheduler-lock.ts": "861ab6f129a3",
         "api/services/storage/avatar-service.ts": "d0562e7ea889",
@@ -514,9 +516,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "d271ee15cf38"
       },
-      "checked": "2026-11-02 081290b7",
-      "arabic": "8c463050b6ff",
-      "arabicChecked": "2026-11-02 081290b7"
+      "checked": "2026-11-03 8bcebb49",
+      "arabic": "2435e634e75f",
+      "arabicChecked": "2026-11-03 8bcebb49"
     },
     "voice-calls": {
       "files": {
