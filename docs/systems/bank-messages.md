@@ -287,6 +287,30 @@ EGP equivalent or merchant not written in the text is dropped. A valid reply is 
 declined payment, a hold, a code, an offer, a statement or a balance, or `needs_review` for a foreign amount with no
 EGP equivalent in the text, which is not used as pounds.
 
+## sms-v4 contract and offline evaluation
+`api/lib/capture/model-contract.ts` implements the next contract, separate from the active sms-v2 reader. It is not yet
+connected to intake or recording: passing its checks is not a measured model qualification or permission to write.
+Every reply field is required, absent facts are null, and unknown facts have an explicit `unknown` state. Ownership
+is independent of incoming/outgoing direction. Money has a value, ISO currency and an exact unique source quote;
+state, direction and counterparty carry evidence too. Checks reject role conflicts, invented or ambiguous quotes,
+unsupported currency, sub-cent precision, a currency belonging to another number in the quote, unsupported numeric grouping or multipliers, a completed claim for a declined/held attempt, a hidden completed purchase
+called a balance, and an unsupported salary/refund/other specialised movement kind. A person's party is only a source
+marker. An invalid category is dropped so it can later become a general category with an optional question.
+
+The pure `proposeCapturePosting` returns a ready EGP principal, fee and total as fixed-decimal strings, no posting,
+or a waiting reason. Included fees are subtracted from the principal; additional fees are added once. Standalone fees
+are one amount. Unknown fee inclusion, a foreign fee, missing EGP equivalent or an overflowing debit never causes a
+guessed posting. A negative overdraft balance is allowed and cannot become a positive purchase amount. Incoming transfers carrying fees currently wait with `fee_direction`; that treatment is not qualified.
+The source checks are conservative and require corpus qualification; they do not prove arbitrary-language semantics.
+
+`npm run bench:capture:contract -- --cases api/qa/fixtures/capture-contract-cases.json` runs four invented examples.
+For a private local JSON corpus, pass its path instead. Each case has an numeric `id` of the form `CASE_123`, redacted `message`, a
+saved candidate `reply`, and the expected proposal (`ready` includes flow and the three EGP strings; `waiting` a reason;
+`no_posting` a state; `rejected` required codes). The CLI exits 0 when all match, 1 on a mismatch and 2 for invalid input.
+It prints counts, outcome statuses and case ids only; it never prints message text, monetary values, paths or model
+responses, calls a provider or writes a database. Duplicate ids are refused. This is offline contract consistency,
+explicitly not live-model accuracy, end-to-end classification quality, or production qualification.
+
 ## Data
 - `capture_sources` and `subscription_catalog`: the capture catalog above, shared by all users.
 - `capture_devices` (one row per installation: the token's hash, labels, last seen, revoked), `capture_consents` (one

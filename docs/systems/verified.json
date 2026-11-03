@@ -208,6 +208,7 @@
         "api/lib/capture/keep-merchants.ts": "86e8880fa6e2",
         "api/lib/capture/markers.ts": "636e75d4ccb1",
         "api/lib/capture/memory.ts": "4bbf061cedd9",
+        "api/lib/capture/model-contract.ts": "361b246fd986",
         "api/lib/capture/operations.ts": "40f0c67beab1",
         "api/lib/capture/reader/clauses.ts": "5b86ed12ca60",
         "api/lib/capture/reader/counterparty.ts": "4560b5469773",
@@ -225,9 +226,9 @@
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c"
       },
-      "checked": "2026-11-02 b7dfb797",
-      "arabic": "d30417cbce33",
-      "arabicChecked": "2026-10-28 70ef02d1"
+      "checked": "2026-11-03 f70c8772",
+      "arabic": "7d01d06ed91f",
+      "arabicChecked": "2026-11-03 f70c8772"
     },
     "billing": {
       "files": {

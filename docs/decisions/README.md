@@ -49,3 +49,5 @@ A record explains why the code looks the way it does. What the code does today i
 | [0040](0040-real-device-features.md) | Device features are real or hidden |
 
 | [0042](0042-no-codes-until-store-offers.md) | Remove discount and referral code entry points until store offers can be honoured |
+
+| [0043](0043-capture-evidence-before-automatic-recording.md) | Ground capture facts in source evidence and evaluate the automatic-recording contract before connecting the runtime |
