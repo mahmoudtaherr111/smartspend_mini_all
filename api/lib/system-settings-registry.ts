@@ -133,7 +133,10 @@ export const SETTINGS: SettingDef[] = [
   { key: "ultra_max_per_request", default: "1024" },
 
   // ── Feature toggles ──
-  { key: "free_ai_analysis", default: "false" },
+  // AI parsing and AI analysis (monthly report, month comparison, yearly analysis) per plan. The server reads a
+  // missing row as on, so every default is on: a free default of "false" once showed the switch off in the console
+  // while free users still got the analysis.
+  { key: "free_ai_analysis", default: "true" },
   { key: "pro_ai_analysis", default: "true" },
   { key: "ultra_ai_analysis", default: "true" },
   { key: "free_ai_parse", default: "true" },
@@ -260,7 +263,6 @@ export const SETTINGS: SettingDef[] = [
   // Question notifications a user gets a Cairo day; the rest wait in the app.
   { key: "capture_daily_question_notices", default: "2" },
   { key: "promo_code_discount", default: "20" },
-  { key: "pipeline_version", default: "v1" },
   { key: "whatsapp_otp_enabled", default: "true" },
   // EGP per USD for the AI cost ledger's EGP column (api/lib/ai-pricing.ts); the admin updates it as the rate moves.
   { key: "usd_to_egp_rate", default: "48.5" },

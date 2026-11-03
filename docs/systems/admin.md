@@ -35,7 +35,7 @@ opens the console's page, `no-store` and `noindex`). `npm run admin:dev` runs it
 - «الموصلات» (`admin/src/pages/Connectors.tsx`) adds a provider from a short list of known services or any
   OpenAI-compatible address after testing the key (`admin.validateApiKey`), pauses, re-keys, checks the health of all
   (`admin.checkProviderHealth`, which had no screen) and removes them, shows each provider's models, purposes and
-  prices, and lists unresolved key errors. Assigning models to purposes still happens in the previous console.
+  prices, and lists unresolved key errors. Assigning models to purposes is on «إعداد الذكاء».
 - «النمو» (`admin/src/pages/Growth.tsx`, `adminConsole.growth`): per Cairo day, who recorded and who signed up; the
   share of new accounts that recorded within 24 hours; weekly cohorts of the last six weeks and the share of each
   that recorded in each later week; how operations were recorded (by source); people per platform in the last 7 days
@@ -51,7 +51,22 @@ opens the console's page, `no-store` and `noindex`). `npm run admin:dev` runs it
 - «التشغيل» (`admin/src/pages/Operations.tsx`): the AI switches, the daily cost cap and the mobile versions and store
   links, saved through `admin.updateSettings` from a bar that appears with the count of unsaved changes (and a
   warning before leaving the page with them), and the last 30 entries of the audit log in plain words.
- until each area has its new page; it is for admins only, and moderators land on «الدعم».
+- «الفلوس والباقات» (`admin/src/pages/Money.tsx`, `adminConsole.money`): a monthly revenue estimate from the list
+  prices in `contracts/plans.ts` (yearly divided by 12) over subscriptions that are active, cancelled but still paid,
+  or in grace, before the store's share; active subscriptions by store; subscriptions started this month and those
+  that expired or were refunded this month; the latest 40 with names; and the plan limits (`AdminPlansTab`).
+- Screens of the previous console that moved whole live in `admin/src/pages/Hosted.tsx`, each under a plain title and
+  a sentence per section: «إعداد الذكاء» (`AiCommandCenter`, where models are assigned to purposes, and the server keys
+  of `AdminKeysTab`), «القاموس والأسئلة» (`AdminRulesTab`, `ClarificationsTab`), «رسايل البنوك» (`AdminCaptureTab`)
+  and «التواصل والإعلانات» (`NotificationsTab`, `AdminWhatsAppTab`, `AdminAdsTab`).
+- Settings sections are hosted by `admin/src/ui/SettingsEditor.tsx`: the saved values with the admin's edits on top,
+  only changed keys sent to `admin.updateSettings`, and the same save bar. `updateSettings` keeps only registry keys,
+  so `tests/knowledge/settings-read.test.ts` fails when a screen edits a key outside the registry, or when a registry
+  key is read by no server code (a switch that does nothing).
+- Each page sits in `admin/src/ui/ErrorBoundary.tsx`, keyed by path: a page that throws shows a reload button, and a
+  page file missing after a deploy says a new version is out.
+- «باقي الأدوات» mounts the previous console (`src/pages/Admin.tsx`) at full width for what has not moved yet; it is
+  for admins only, and moderators land on «الدعم».
 - `scripts/dev/seed-admin.ts` makes a phone admin on a throwaway database on port 3399.
 
 ## Who gets in

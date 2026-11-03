@@ -28,8 +28,8 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 | Tables with relations | 64 |
 | Foreign-key constraints | 0 |
 | tRPC routers | 28 |
-| tRPC procedures | 278 |
-| — queries | 116 |
+| tRPC procedures | 279 |
+| — queries | 117 |
 | — mutations | 162 |
 | Procedure builders | 14 |
 | HTTP routes (outside tRPC) | 11 |

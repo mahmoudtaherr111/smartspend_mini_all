@@ -1,5 +1,6 @@
 import { and, count, desc, eq, gte, inArray, isNull, like, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
+import { BILLING_PLANS } from "../contracts/plans";
 import {
   aiTokenLedgers,
   apiKeyErrors,
@@ -589,6 +590,58 @@ export const adminConsoleRouter = router({
         subscriptions: subscriptions.map((row) => ({ store: row.store, status: row.status, count: Number(row.count) })),
       };
     }),
+  // Money: store subscriptions now and this month, a monthly revenue estimate from the published prices, and the
+  // latest subscriptions with who holds them.
+  money: adminProcedure.query(async () => {
+    const monthStart = businessMonthRange().start;
+    const [byStatus, newThisMonth, endedThisMonth, latest] = await Promise.all([
+      db
+        .select({ store: storePurchases.store, product: storePurchases.storeProductId, status: storePurchases.status, count: count() })
+        .from(storePurchases)
+        .groupBy(storePurchases.store, storePurchases.storeProductId, storePurchases.status),
+      countOrNull(() => db.select({ count: count() }).from(storePurchases).where(gte(storePurchases.createdAt, monthStart))),
+      countOrNull(() =>
+        db
+          .select({ count: count() })
+          .from(storePurchases)
+          .where(and(inArray(storePurchases.status, ["expired", "revoked"]), gte(storePurchases.updatedAt, monthStart))),
+      ),
+      db
+        .select({
+          id: storePurchases.id,
+          userId: storePurchases.userId,
+          userType: storePurchases.userType,
+          store: storePurchases.store,
+          product: storePurchases.storeProductId,
+          status: storePurchases.status,
+          expiresAt: storePurchases.expiresAt,
+          createdAt: storePurchases.createdAt,
+        })
+        .from(storePurchases)
+        .orderBy(desc(storePurchases.createdAt))
+        .limit(40),
+    ]);
+    // A month's worth of each active subscription at the published price, in pounds. The stores keep their cut, so
+    // this is what people pay, not what reaches the bank.
+    const monthlyPounds = (product: string) => {
+      const plan = BILLING_PLANS[product as keyof typeof BILLING_PLANS];
+      if (!plan) return 0;
+      return plan.duration === "year" ? plan.amountCents / 100 / 12 : plan.amountCents / 100;
+    };
+    const active = byStatus.filter((row) => row.status === "active" || row.status === "cancelled" || row.status === "grace");
+    const names = await namesOf(latest);
+    return {
+      activeByStore: ["google_play", "app_store"].map((store) => ({
+        store,
+        count: active.filter((row) => row.store === store).reduce((sum, row) => sum + Number(row.count), 0),
+      })),
+      monthlyRevenueEstimate: Math.round(active.reduce((sum, row) => sum + monthlyPounds(row.product) * Number(row.count), 0)),
+      byStatus: byStatus.map((row) => ({ ...row, count: Number(row.count) })),
+      newThisMonth,
+      endedThisMonth,
+      latest: latest.map((row) => ({ ...row, who: names.get(`${row.userType}:${row.userId}`) ?? null })),
+    };
+  }),
 });
 
 /** Names of the people behind a page of rows, in two queries. */

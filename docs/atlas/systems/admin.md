@@ -22,7 +22,7 @@ flowchart LR
   end
   subgraph g_api["API, routes and jobs"]
     http__admin["GET /admin"]
-    router_adminConsole["adminConsole API · 7 procedures"]
+    router_adminConsole["adminConsole API · 8 procedures"]
     router_admin["admin API · 60 procedures"]
     router_ads["ads API · 8 procedures"]
     router_analytics["analytics API · 4 procedures"]
@@ -202,6 +202,7 @@ flowchart LR
 | `adminConsole.aiCalls` | query | `adminProcedure` | `ai_token_ledgers`, `local_users`, `users` | — | — |
 | `adminConsole.classifications` | query | `adminProcedure` | `classification_logs`, `local_users`, `users` | — | — |
 | `adminConsole.growth` | query | `adminProcedure` | `expenses`, `local_users`, `store_purchases`, `user_analytics`, `users` | — | — |
+| `adminConsole.money` | query | `adminProcedure` | `local_users`, `store_purchases`, `users` | — | — |
 | `adminConsole.person` | query | `adminProcedure` | `ai_token_ledgers`, `capture_devices`, `expenses`, `local_users`, `sessions`, `store_purchases`, `support_tickets`, `users` | — | — |
 | `adminConsole.searchPeople` | query | `adminProcedure` | `local_users`, `users` | — | — |
 | `adminConsole.session` | query | `moderatorProcedure` | — | — | — |
@@ -257,7 +258,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `expense_daily_rollups` | C | — | `admin.getDashboardStats` |
 | `expenses` | B | — | `admin.getFounderMetrics`, `admin.listAllUsers`, `adminConsole.growth`, `adminConsole.person`, `adminConsole.today`, `analytics.getAllUserStats`, `analytics.getDashboardStats` |
 | `in_app_notifications` | D | `support.respond` | — |
-| `local_users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getAuditLogs`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendInstantNotification`, `admin.sendPushNotification`, `adminConsole.aiCalls`, `adminConsole.classifications`, `adminConsole.growth`, `adminConsole.person`, `adminConsole.searchPeople`, `adminConsole.today`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
+| `local_users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getAuditLogs`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendInstantNotification`, `admin.sendPushNotification`, `adminConsole.aiCalls`, `adminConsole.classifications`, `adminConsole.growth`, `adminConsole.money`, `adminConsole.person`, `adminConsole.searchPeople`, `adminConsole.today`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
 | `notification_logs` | E | `admin.sendInstantNotification` | `admin.getNotificationLogs` |
 | `notification_templates` | A | `admin.createNotificationTemplate`, `admin.deleteNotificationTemplate`, `admin.toggleNotificationTemplate`, `admin.updateNotificationTemplate` | `admin.getNotificationTemplates` |
 | `onboarding_questions` | A | — | `admin.triggerBackupDemo` |
@@ -266,12 +267,12 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `push_subscriptions` | A | — | `admin.getNotificationStats`, `admin.sendInstantNotification`, `admin.sendPushNotification` |
 | `seo_pages` | A | `seo.delete`, `seo.upsert` | `seo.getPage`, `seo.list`, `seo.upsert` |
 | `sessions` | D | — | `admin.getActivityLog`, `admin.getDashboardStats`, `admin.getUserSessions`, `adminConsole.person` |
-| `store_purchases` | A | — | `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.listStorePurchasesAdmin`, `adminConsole.growth`, `adminConsole.person`, `adminConsole.today` |
+| `store_purchases` | A | — | `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.listStorePurchasesAdmin`, `adminConsole.growth`, `adminConsole.money`, `adminConsole.person`, `adminConsole.today` |
 | `support_tickets` | A | `support.assign`, `support.close`, `support.create`, `support.respond` | `admin.getDashboardStats`, `admin.getFounderMetrics`, `adminConsole.person`, `adminConsole.today`, `support.assign`, `support.close`, `support.getById`, `support.listAll`, `support.listMine`, `support.respond` |
 | `system_settings` | A | `admin.setUserTokenLimit`, `admin.updateSettings` | `admin.setUserTokenLimit` |
 | `user_analytics` | E | `analytics.trackEvent` | `adminConsole.growth`, `analytics.getMyAnalytics` |
 | `user_dictionaries` | F | `admin.deleteLearnedRule` | `admin.getLearnedRules` |
-| `users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getAuditLogs`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendInstantNotification`, `admin.sendPushNotification`, `adminConsole.aiCalls`, `adminConsole.classifications`, `adminConsole.growth`, `adminConsole.person`, `adminConsole.searchPeople`, `adminConsole.today`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
+| `users` | A | `admin.resetUserTokens` | `admin.getActivityLog`, `admin.getAuditLogs`, `admin.getClassificationLogs`, `admin.getDashboardStats`, `admin.getFounderMetrics`, `admin.getLearnedRules`, `admin.getUserAiQuota`, `admin.listAllUsers`, `admin.sendInstantNotification`, `admin.sendPushNotification`, `adminConsole.aiCalls`, `adminConsole.classifications`, `adminConsole.growth`, `adminConsole.money`, `adminConsole.person`, `adminConsole.searchPeople`, `adminConsole.today`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `export.allUsers`, `support.listAll` |
 | `voice_usage` | E | — | `admin.getVoiceUsageStats` |
 
 ## Outside systems

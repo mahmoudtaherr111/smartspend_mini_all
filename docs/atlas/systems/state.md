@@ -10,7 +10,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (5 of 
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-02 b7dfb797 | 2026-11-02 b7dfb797 | 18 | — | — | 1 | 1 |
+| [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-03 1222f20d | 2026-11-03 1222f20d | 18 | — | — | 1 | 1 |
 | [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-02 b7dfb797 | 2026-10-28 70ef02d1 | 11 | — | — | 3 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-02 16d8e737 | 2026-11-02 16d8e737 | 6 | — | — | 2 | 2 |
@@ -19,9 +19,9 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (5 of 
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-03 8bcebb49 | 2026-11-03 8bcebb49 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-03 454074d0 | 2026-11-03 454074d0 | 2 | — | — | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-02 af230467 | 2026-11-02 af230467 | 4 | — | — | 3 | 1 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-03 0b6e57ae | 2026-11-03 0b6e57ae | 4 | — | 1 | 6 | 1 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-03 1222f20d | 2026-11-03 1222f20d | 4 | — | 1 | 6 | 1 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-03 8bcebb49 | 2026-11-03 8bcebb49 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-03 7fe374fe | 2026-11-03 7fe374fe | 5 | — | — | — | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-03 1222f20d | 2026-11-03 7fe374fe | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-03 454074d0 | 2026-11-03 454074d0 | 7 | — | — | 3 | 1 |
 
 

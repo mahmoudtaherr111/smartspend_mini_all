@@ -745,6 +745,11 @@ model {
   smartspend.api.trpc.adminConsole.growth -[reads]-> smartspend.mysql.user_analytics
   smartspend.api.trpc.adminConsole.growth -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.adminConsole.growth -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.local_users
+  smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.store_purchases
+  smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.adminConsole.money -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.adminConsole.money -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.capture_devices
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.expenses

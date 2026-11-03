@@ -1056,7 +1056,8 @@ export const aiRouter = router({
         }
         // Gemini:
         const slot = slotPreference || sttKeySlot;
-        if (slot === "key2" && cfg.ai_api_key_2) return cfg.ai_api_key_2;
+        // The second slot uses the console's second speech key, then the second general key.
+        if (slot === "key2" && (cfg.stt_api_key_2 || cfg.ai_api_key_2)) return cfg.stt_api_key_2 || cfg.ai_api_key_2;
         if (
           cfg.stt_api_key &&
           cfg.stt_api_key !== "YOUR_GEMINI_API_KEY_HERE"

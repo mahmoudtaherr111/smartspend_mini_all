@@ -60,7 +60,7 @@
     },
     "admin": {
       "files": {
-        "api/admin-console-router.ts": "2f8c08c1d73b",
+        "api/admin-console-router.ts": "376d69f09ad6",
         "api/admin-router.ts": "53cc31168fe7",
         "api/ads-router.ts": "ace6b064f74c",
         "api/analytics-router.ts": "ef70b00b91a8",
@@ -98,9 +98,9 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-03 0b6e57ae",
-      "arabic": "8064707227ac",
-      "arabicChecked": "2026-11-03 0b6e57ae"
+      "checked": "2026-11-03 1222f20d",
+      "arabic": "1f3dc99f2e23",
+      "arabicChecked": "2026-11-03 1222f20d"
     },
     "ai-center": {
       "files": {
@@ -259,7 +259,7 @@
         "api/ai-router.ts#ai.learnWord": "ef6a568c333e",
         "api/ai-router.ts#ai.parseExpense": "c8f5ae781196",
         "api/ai-router.ts#ai.parseVoiceExpense": "a2da9c226247",
-        "api/ai-router.ts#ai.speechToText": "b2afa75738a4",
+        "api/ai-router.ts#ai.speechToText": "a7448c0e2eb7",
         "api/ai-router.ts#rest-of-file": "fdff02729ef4",
         "api/boot.ts#job:classification-log-cleanup": "4b85025f200f",
         "api/expense-router.ts#expense.answerClarification": "300ac1ab436c",
@@ -328,9 +328,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-02 b7dfb797",
-      "arabic": "125a5517d05b",
-      "arabicChecked": "2026-11-02 b7dfb797"
+      "checked": "2026-11-03 1222f20d",
+      "arabic": "d442aca63f86",
+      "arabicChecked": "2026-11-03 1222f20d"
     },
     "insights": {
       "files": {
@@ -486,7 +486,7 @@
         "api/lib/redis-client.ts": "b5bd5c4ff3ad",
         "api/lib/settings-cache.ts": "ee7c564513f7",
         "api/lib/shared-generation.ts": "2d53bf30e567",
-        "api/lib/system-settings-registry.ts": "a5f0dcbdcc05",
+        "api/lib/system-settings-registry.ts": "2f3f867e348c",
         "api/middleware.ts": "e82907a611a2",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "ac67dc2c09d0",
@@ -517,7 +517,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "d271ee15cf38"
       },
-      "checked": "2026-11-03 7fe374fe",
+      "checked": "2026-11-03 1222f20d",
       "arabic": "9da8ce92632a",
       "arabicChecked": "2026-11-03 7fe374fe"
     },

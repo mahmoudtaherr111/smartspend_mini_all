@@ -322,7 +322,8 @@ seconds, from the per-plan settings `voice_limit_<plan>` and `voice_per_req_<pla
 in `voice_usage`, and runs the same pipeline on the transcript, in business mode when the form's switch is on and the user has a business. The form stops a recording
 at the plan's per-recording limit and at the seconds left this month.
 
-`ai.speechToText` transcribes without parsing; no screen calls it.
+`ai.speechToText` transcribes without parsing; no screen calls it. Its Gemini key comes from the speech key slot the admin picks; the second slot
+uses `stt_api_key_2`, the second speech key the console edits, and falls back to `ai_api_key_2`.
 
 ## Receipts
 `image.parseReceipt` is gated by the plan's receipts switch (`receiptsProcedure`, `feature_receipts_<plan>`). It checks the payload size and the image signature (JPEG, PNG or WebP),
