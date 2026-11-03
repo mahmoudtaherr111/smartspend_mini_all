@@ -3,6 +3,9 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { trpc } from "@/providers/trpc";
 import { Shell } from "./shell/Shell";
 import { SignIn } from "./pages/SignIn";
+import { AiCalls } from "./pages/AiCalls";
+import { Classifications } from "./pages/Classifications";
+import { Connectors } from "./pages/Connectors";
 import { People } from "./pages/People";
 import { Person } from "./pages/Person";
 import { Today } from "./pages/Today";
@@ -28,6 +31,9 @@ export default function App() {
           <Route path="/" element={isAdmin ? <Today /> : <Navigate to="/legacy" replace />} />
           {isAdmin && <Route path="/people" element={<People />} />}
           {isAdmin && <Route path="/people/:type/:id" element={<Person />} />}
+          {isAdmin && <Route path="/ai/calls" element={<AiCalls />} />}
+          {isAdmin && <Route path="/ai/classifications" element={<Classifications />} />}
+          {isAdmin && <Route path="/ai/connectors" element={<Connectors />} />}
           <Route path="/legacy" element={<LegacyConsole />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

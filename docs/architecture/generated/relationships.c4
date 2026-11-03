@@ -730,6 +730,14 @@ model {
   smartspend.api.trpc.admin.updateUserRole -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.admin.validateApiKey -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.admin.validateApiKey -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.adminConsole.aiCalls -[reads]-> smartspend.mysql.ai_token_ledgers
+  smartspend.api.trpc.adminConsole.aiCalls -[reads]-> smartspend.mysql.local_users
+  smartspend.api.trpc.adminConsole.aiCalls -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.adminConsole.aiCalls -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.adminConsole.classifications -[reads]-> smartspend.mysql.classification_logs
+  smartspend.api.trpc.adminConsole.classifications -[reads]-> smartspend.mysql.local_users
+  smartspend.api.trpc.adminConsole.classifications -[reads]-> smartspend.mysql.users
+  smartspend.api.trpc.adminConsole.classifications -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.ai_token_ledgers
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.capture_devices
   smartspend.api.trpc.adminConsole.person -[reads]-> smartspend.mysql.expenses

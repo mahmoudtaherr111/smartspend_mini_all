@@ -1,9 +1,10 @@
-import { and, count, desc, eq, gte, isNull, like, lt, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNull, like, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   aiTokenLedgers,
   apiKeyErrors,
   captureDevices,
+  classificationLogs,
   expenses,
   localUsers,
   sessions,
@@ -298,4 +299,200 @@ export const adminConsoleRouter = router({
       tickets,
     };
   }),
+  // Every AI call, newest first, with who asked, what for, which model answered, the tokens each way and the cost;
+  // and the totals of the chosen period by what was asked and by model.
+  aiCalls: adminProcedure
+    .input(
+      z.object({
+        days: z.number().int().min(1).max(90).default(1),
+        channel: z.string().max(40).optional(),
+        provider: z.string().max(60).optional(),
+        failedOnly: z.boolean().default(false),
+        page: z.number().int().min(1).default(1),
+      }),
+    )
+    .query(async ({ input }) => {
+      const since = new Date(startOfBusinessDay().getTime() - (input.days - 1) * DAY_MS);
+      const where = and(
+        gte(aiTokenLedgers.createdAt, since),
+        input.channel ? eq(aiTokenLedgers.channel, input.channel) : undefined,
+        input.provider ? eq(aiTokenLedgers.providerSlug, input.provider) : undefined,
+        input.failedOnly ? gte(aiTokenLedgers.httpStatus, 400) : undefined,
+      );
+      const pageSize = 50;
+      const [rows, byChannel, byModel] = await Promise.all([
+        db
+          .select({
+            id: aiTokenLedgers.id,
+            createdAt: aiTokenLedgers.createdAt,
+            userId: aiTokenLedgers.userId,
+            userType: aiTokenLedgers.userType,
+            channel: aiTokenLedgers.channel,
+            provider: aiTokenLedgers.providerSlug,
+            model: aiTokenLedgers.modelId,
+            input: aiTokenLedgers.promptTokens,
+            output: aiTokenLedgers.completionTokens,
+            cached: aiTokenLedgers.cachedTokens,
+            reasoning: aiTokenLedgers.reasoningTokens,
+            systemPrompt: aiTokenLedgers.systemPromptTokens,
+            memory: aiTokenLedgers.memoryRagTokens,
+            history: aiTokenLedgers.historyTokens,
+            userInput: aiTokenLedgers.userInputTokens,
+            tools: aiTokenLedgers.toolSchemaTokens,
+            usd: aiTokenLedgers.costUsd,
+            egp: aiTokenLedgers.costEgp,
+            latencyMs: aiTokenLedgers.latencyMs,
+            httpStatus: aiTokenLedgers.httpStatus,
+            finishReason: aiTokenLedgers.finishReason,
+            classificationLogId: aiTokenLedgers.classificationLogId,
+          })
+          .from(aiTokenLedgers)
+          .where(where)
+          .orderBy(desc(aiTokenLedgers.createdAt))
+          .limit(pageSize + 1)
+          .offset((input.page - 1) * pageSize),
+        db
+          .select({
+            channel: aiTokenLedgers.channel,
+            calls: count(),
+            usd: sql<number>`COALESCE(SUM(${aiTokenLedgers.costUsd}), 0)`,
+            input: sql<number>`COALESCE(SUM(${aiTokenLedgers.promptTokens}), 0)`,
+            output: sql<number>`COALESCE(SUM(${aiTokenLedgers.completionTokens}), 0)`,
+            failed: sql<number>`COALESCE(SUM(CASE WHEN ${aiTokenLedgers.httpStatus} >= 400 THEN 1 ELSE 0 END), 0)`,
+          })
+          .from(aiTokenLedgers)
+          .where(where)
+          .groupBy(aiTokenLedgers.channel),
+        db
+          .select({
+            provider: aiTokenLedgers.providerSlug,
+            model: aiTokenLedgers.modelId,
+            calls: count(),
+            usd: sql<number>`COALESCE(SUM(${aiTokenLedgers.costUsd}), 0)`,
+            avgLatencyMs: sql<number>`COALESCE(AVG(${aiTokenLedgers.latencyMs}), 0)`,
+            failed: sql<number>`COALESCE(SUM(CASE WHEN ${aiTokenLedgers.httpStatus} >= 400 THEN 1 ELSE 0 END), 0)`,
+          })
+          .from(aiTokenLedgers)
+          .where(where)
+          .groupBy(aiTokenLedgers.providerSlug, aiTokenLedgers.modelId),
+      ]);
+      const names = await namesOf(rows.slice(0, pageSize));
+      const number = (value: unknown) => Number(value ?? 0);
+      return {
+        rows: rows.slice(0, pageSize).map((row) => ({
+          ...row,
+          usd: number(row.usd),
+          egp: number(row.egp),
+          who: names.get(`${row.userType}:${row.userId}`) ?? null,
+        })),
+        hasMore: rows.length > pageSize,
+        byChannel: byChannel.map((row) => ({
+          ...row,
+          usd: number(row.usd),
+          input: number(row.input),
+          output: number(row.output),
+          failed: number(row.failed),
+        })),
+        byModel: byModel
+          .map((row) => ({ ...row, usd: number(row.usd), avgLatencyMs: Math.round(number(row.avgLatencyMs)), failed: number(row.failed) }))
+          .sort((a, b) => b.usd - a.usd),
+      };
+    }),
+
+  // The sentences people recorded and how each was read: the items, whether a rule or the model decided, the
+  // confidence, what matched, and whether the person corrected it afterwards.
+  classifications: adminProcedure
+    .input(
+      z.object({
+        days: z.number().int().min(1).max(90).default(7),
+        by: z.enum(["all", "rules", "model", "corrected", "unsure"]).default("all"),
+        page: z.number().int().min(1).default(1),
+      }),
+    )
+    .query(async ({ input }) => {
+      const since = new Date(startOfBusinessDay().getTime() - (input.days - 1) * DAY_MS);
+      const filter =
+        input.by === "rules"
+          ? eq(classificationLogs.parsedBy, "rule_engine")
+          : input.by === "model"
+            ? inArray(classificationLogs.parsedBy, ["ai", "hybrid"])
+            : input.by === "corrected"
+              ? eq(classificationLogs.wasCorrected, true)
+              : input.by === "unsure"
+                ? inArray(classificationLogs.decision, ["review", "clarify"])
+                : undefined;
+      const pageSize = 30;
+      const rows = await db
+        .select({
+          id: classificationLogs.id,
+          createdAt: classificationLogs.createdAt,
+          userId: classificationLogs.userId,
+          userType: classificationLogs.userType,
+          text: classificationLogs.originalText,
+          parsedBy: classificationLogs.parsedBy,
+          confidence: classificationLogs.confidence,
+          decision: classificationLogs.decision,
+          channel: classificationLogs.inputChannel,
+          model: classificationLogs.modelUsed,
+          tokens: classificationLogs.tokensUsed,
+          timeMs: classificationLogs.processingTimeMs,
+          corrected: classificationLogs.wasCorrected,
+          correction: classificationLogs.correction,
+          items: classificationLogs.finalResult,
+        })
+        .from(classificationLogs)
+        .where(and(gte(classificationLogs.createdAt, since), filter))
+        .orderBy(desc(classificationLogs.createdAt))
+        .limit(pageSize + 1)
+        .offset((input.page - 1) * pageSize);
+      const names = await namesOf(rows.slice(0, pageSize));
+      return {
+        rows: rows.slice(0, pageSize).map((row) => ({
+          ...row,
+          who: names.get(`${row.userType}:${row.userId}`) ?? null,
+          items: readItems(row.items),
+        })),
+        hasMore: rows.length > pageSize,
+      };
+    }),
 });
+
+/** Names of the people behind a page of rows, in two queries. */
+async function namesOf(rows: { userId: number | null; userType: string | null }[]): Promise<Map<string, string>> {
+  const ids = (type: string) => [
+    ...new Set(rows.filter((row) => row.userType === type && row.userId).map((row) => row.userId as number)),
+  ];
+  const [google, phone] = await Promise.all([
+    ids("oauth").length ? db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, ids("oauth"))) : [],
+    ids("local").length
+      ? db.select({ id: localUsers.id, name: localUsers.name }).from(localUsers).where(inArray(localUsers.id, ids("local")))
+      : [],
+  ]);
+  return new Map([
+    ...google.map((row) => [`oauth:${row.id}`, row.name ?? ""] as const),
+    ...phone.map((row) => [`local:${row.id}`, row.name ?? ""] as const),
+  ]);
+}
+
+/** The parts of a stored item the console explains: what it became and why. */
+function readItems(value: unknown) {
+  const list = Array.isArray(value) ? value : [];
+  return list.slice(0, 10).map((raw) => {
+    const item = (raw ?? {}) as Record<string, unknown>;
+    const evidence = (item.evidence ?? {}) as Record<string, unknown>;
+    return {
+      amount: Number(item.amount ?? 0),
+      category: String(item.category ?? ""),
+      subCategory: item.subCategory ? String(item.subCategory) : null,
+      description: item.description ? String(item.description) : null,
+      type: String(item.type ?? ""),
+      confidence: Number(item.confidence ?? 0),
+      matchKind: evidence.matchKind ? String(evidence.matchKind) : null,
+      agreement: Number(evidence.agreement ?? 0),
+      disagreement: Number(evidence.disagreement ?? 0),
+      categoryIsFallback: evidence.categoryIsFallback === true,
+      reviewReasons: Array.isArray(item.reviewReasons) ? item.reviewReasons.map(String).slice(0, 5) : [],
+      candidates: Array.isArray(item.candidates) ? item.candidates.map(String).slice(0, 4) : [],
+    };
+  });
+}

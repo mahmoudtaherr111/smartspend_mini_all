@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, LogOut, Menu, Users, Wrench, X } from "lucide-react";
+import { Brain, Home, LogOut, Menu, Plug, Receipt, Users, Wrench, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/providers/trpc";
 
@@ -16,6 +16,9 @@ interface Area {
 const AREAS: Area[] = [
   { to: "/", label: "النهارده", hint: "الأرقام المهمة واللي مستنيك", icon: Home, adminOnly: true },
   { to: "/people", label: "الناس", hint: "كل حساب وكل حاجة عنه", icon: Users, adminOnly: true },
+  { to: "/ai/calls", label: "نداءات الذكاء", hint: "كل نداء: مين، ليه، بكام", icon: Receipt, adminOnly: true },
+  { to: "/ai/classifications", label: "التصنيف وسببه", hint: "كل جملة اتفهمت إزاي وليه", icon: Brain, adminOnly: true },
+  { to: "/ai/connectors", label: "الموصلات", hint: "خدمات الذكاء ومفاتيحها", icon: Plug, adminOnly: true },
   { to: "/legacy", label: "باقي الأدوات", hint: "اللوحة القديمة لحد ما كل قسم يتنقل", icon: Wrench },
 ];
 

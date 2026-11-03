@@ -24,6 +24,18 @@ opens the console's page, `no-store` and `noindex`). `npm run admin:dev` runs it
   user agent) with a sign-out per device, store subscriptions and tickets; plan, role, monthly AI limit, resetting AI
   usage and deleting go through the existing admin procedures after a confirmation that says what will happen, and
   making someone an admin or deleting asks for a typed word.
+- «نداءات الذكاء» (`admin/src/pages/AiCalls.tsx`, `adminConsole.aiCalls`) lists every row of the cost ledger with
+  who, what for, provider and model, tokens each way and the cost, filters by period, purpose and failures, totals by
+  purpose and by model with average latency, and opens one call's token anatomy (system prompt, memory, history,
+  user input, tools, cached and thinking tokens).
+- «التصنيف وسببه» (`admin/src/pages/Classifications.tsx`, `adminConsole.classifications`) lists classification logs
+  with each item's category and the reason in plain words, from the evidence's match kind
+  (`admin/src/ui/ai-words.ts`), the agreeing and disagreeing resolvers, the candidates, the confidence, the decision
+  and whether the person corrected it.
+- «الموصلات» (`admin/src/pages/Connectors.tsx`) adds a provider from a short list of known services or any
+  OpenAI-compatible address after testing the key (`admin.validateApiKey`), pauses, re-keys, checks the health of all
+  (`admin.checkProviderHealth`, which had no screen) and removes them, shows each provider's models, purposes and
+  prices, and lists unresolved key errors. Assigning models to purposes still happens in the previous console.
 - «باقي الأدوات» mounts the previous console whole until each area has its new page; moderators land there.
 - `scripts/dev/seed-admin.ts` makes a phone admin on a throwaway database on port 3399.
 

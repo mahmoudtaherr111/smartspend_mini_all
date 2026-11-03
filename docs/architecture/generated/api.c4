@@ -610,9 +610,29 @@ model {
       }
     }
     adminConsole = router 'adminConsole' {
-      description 'api/admin-console-router.ts — 4 procedures.'
+      description 'api/admin-console-router.ts — 6 procedures.'
       metadata {
         file 'api/admin-console-router.ts'
+      }
+      aiCalls = procedure 'adminConsole.aiCalls' {
+        #query #admin #uncalled
+        technology 'adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-console-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
+      }
+      classifications = procedure 'adminConsole.classifications' {
+        #query #admin #uncalled
+        technology 'adminProcedure'
+        description 'query · adminProcedure · no caller in src/'
+        metadata {
+          file 'api/admin-console-router.ts'
+          builder 'adminProcedure'
+          procedureKind 'query'
+        }
       }
       person = procedure 'adminConsole.person' {
         #query #admin #uncalled
