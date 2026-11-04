@@ -18,6 +18,7 @@ import android.os.Build
 internal object CaptureNotifier {
     private const val REVIEW_CHANNEL = "smartspend_capture_review"
     private const val SYNC_CHANNEL = "smartspend_capture_sync"
+    private const val CAPTURE_TAG = "smartspend.capture"
     const val SYNC_NOTIFICATION_ID = 7_400_001
     private const val STOPPED_NOTIFICATION_ID = 7_400_002
 
@@ -29,7 +30,8 @@ internal object CaptureNotifier {
         ) {
             return false
         }
-        return manager(context).areNotificationsEnabled()
+        if (!manager(context).areNotificationsEnabled()) return false
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.O || manager(context).getNotificationChannel(REVIEW_CHANNEL)?.importance != NotificationManager.IMPORTANCE_NONE
     }
 
     private fun ensureChannels(context: Context, arabic: Boolean) {
@@ -59,8 +61,8 @@ internal object CaptureNotifier {
     private fun smallIcon(context: Context): Int = context.applicationInfo.icon
 
     /** Asks about one captured transaction. [actions] are the buttons the server allowed ("record", "dismiss"). */
-    fun showReview(context: Context, eventId: Long, title: String, body: String, actions: List<String>, language: String) {
-        if (!canNotify(context)) return
+    fun showReview(context: Context, eventId: Long, title: String, body: String, actions: List<String>, language: String): Boolean {
+        if (!canNotify(context)) return false
         val arabic = language != "en"
         ensureChannels(context, arabic)
         val publicVersion = builder(context, REVIEW_CHANNEL)
@@ -75,6 +77,7 @@ internal object CaptureNotifier {
             .setVisibility(Notification.VISIBILITY_PRIVATE)
             .setPublicVersion(publicVersion)
             .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
             .setContentIntent(openApp(context))
         for (action in actions) {
             val label = when (action) {
@@ -85,10 +88,21 @@ internal object CaptureNotifier {
             }
             notification.addAction(Notification.Action.Builder(null, label, CaptureActionReceiver.intent(context, eventId, action)).build())
         }
-        manager(context).notify(notificationId(eventId), notification.build())
+        return try { manager(context).notify(CAPTURE_TAG, notificationId(eventId), notification.build()); true } catch (_: SecurityException) { false }
     }
 
-    fun cancelReview(context: Context, eventId: Long) = manager(context).cancel(notificationId(eventId))
+    fun cancelReview(context: Context, eventId: Long) {
+        manager(context).cancel(CAPTURE_TAG, notificationId(eventId))
+        manager(context).cancel(notificationId(eventId))
+    }
+    fun clearCapture(context: Context) {
+        for (posted in manager(context).activeNotifications) {
+            if (posted.tag == CAPTURE_TAG || posted.id == SYNC_NOTIFICATION_ID || posted.id == STOPPED_NOTIFICATION_ID ||
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && posted.notification.channelId in listOf(REVIEW_CHANNEL, SYNC_CHANNEL))) {
+                manager(context).cancel(posted.tag, posted.id)
+            }
+        }
+    }
 
     /** Says capture stopped because the app may no longer read notifications; opening it leads back to the card. */
     fun showStopped(context: Context, language: String) {

@@ -114,6 +114,41 @@ class AppLocalizationsAr extends AppLocalizations {
   String get captureAiReadingFailed => 'ماقدرناش نحفظ اختيارك. جرّب تاني.';
 
   @override
+  String get captureSmsTitle => 'قراءة رسايل البنك SMS';
+
+  @override
+  String get captureSmsBody =>
+      'بنقرا رسايل البنوك والمحافظ أول ما توصل، ورسايلك الشخصية مش بتتقري.';
+
+  @override
+  String get captureSmsOn => 'شغالة: رسايل البنك بتتسجل أول ما توصل.';
+
+  @override
+  String get captureSmsAllow => 'اسمح';
+
+  @override
+  String get captureSmsImport => 'سجّل رسايل آخر 30 يوم';
+
+  @override
+  String captureSmsImported(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بنسجّل $count رسالة',
+      one: 'بنسجّل رسالة واحدة',
+      zero: 'مالقيناش رسايل بنك جديدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get captureSamplesTitle => 'ساعدنا نحسّن قراءة الرسايل';
+
+  @override
+  String get captureSamplesBody =>
+      'بنحتفظ برسايل البنك متخبّي منها الأسماء والأرقام، عشان نقرا الرسايل من غير ذكاء اصطناعي بعدين. لو قفلتها بنمسح اللي اتحفظ.';
+
+  @override
   String get captureUpdateRequired =>
       'نسخة التطبيق دي قديمة على تسجيل رسايل البنك. حدّث التطبيق، والرسايل المستنية هتتبعت بعدها.';
 

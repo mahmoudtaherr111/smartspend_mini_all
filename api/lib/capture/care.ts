@@ -9,6 +9,7 @@ import {
   captureDevices,
   captureEvents,
   captureQuestions,
+  captureSamples,
   captureMarkers,
   captureMemory,
   captureSignals,
@@ -173,7 +174,9 @@ export async function deleteMyCaptureData(owner: CaptureOwner): Promise<{ signal
   await getDb().transaction(async (tx) => {
       await lockLedgerOwner(tx, owner, "NOT_FOUND");
     await tx.delete(captureAiJobs).where(scope(captureAiJobs));
-      if ((await optionalCaptureTables(tx)).has("capture_questions")) await tx.delete(captureQuestions).where(scope(captureQuestions));
+      const optional = await optionalCaptureTables(tx);
+      if (optional.has("capture_questions")) await tx.delete(captureQuestions).where(scope(captureQuestions));
+      if (optional.has("capture_samples")) await tx.delete(captureSamples).where(scope(captureSamples));
     const [removed] = await tx.delete(captureSignals).where(scope(captureSignals));
     signals = Number((removed as { affectedRows?: number }).affectedRows ?? 0);
       const [open] = await tx.delete(captureEvents).where(and(scope(captureEvents), inArray(captureEvents.status, ["review", "held", "waiting"])));

@@ -203,7 +203,7 @@ Then, per procedure:
   Without WhatsApp configured the change is refused with a plain message.
 - `purgeUserData` first locks the identity row, which delayed memory writers also lock; it deletes, inside the caller's transaction, every user-owned row (conversations and memory, the ledger,
   goals, contacts, sessions, passkeys, the profile, logs, voice usage and live calls with their incidents, the capture
-  devices, consents, signals, events, monthly use, memory and pairs, the model's queue, the cards and phrases it ignores, the
+  devices, consents, signals, events, monthly use, memory and pairs, the model's queue, the redacted message samples, the cards and phrases it ignores, the
   WhatsApp messages sent to them and their WhatsApp consents, and referrals)
   and then the identity row. `admin.deleteUser`, `localAuth.deleteUser` and `profile.deleteMyAccount` call it, then
   drop the cached principal (`invalidatePrincipal`), so a session resolved before the deletion stops answering at once;

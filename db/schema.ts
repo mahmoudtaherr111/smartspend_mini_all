@@ -1296,6 +1296,38 @@ export const captureAiJobs = mysqlTable(
   ],
 );
 
+/**
+ * Redacted bank messages and what the model read from them, kept only with the `message_samples` consent, to build
+ * and measure a reader that needs no model (plan v7 §8). The text holds numbered markers, never a name, phone, card or
+ * code; the user's final answer is read from the event and its ledger row at export time, not copied here.
+ */
+export const captureSamples = mysqlTable(
+  "capture_samples",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    signalId: int("signal_id").notNull(),
+    eventId: int("event_id"),
+    sourceSlug: varchar("source_slug", { length: 64 }),
+    channel: varchar("channel", { length: 16 }).notNull(),
+    textRedacted: text("text_redacted").notNull(),
+    textHmac: varchar("text_hmac", { length: 64 }).notNull(),
+    promptVersion: varchar("prompt_version", { length: 16 }).notNull(),
+    provider: varchar("provider", { length: 64 }),
+    model: varchar("model", { length: 128 }),
+    modelReply: json("model_reply"),
+    posting: json("posting"),
+    receivedMonth: varchar("received_month", { length: 7 }).notNull(),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("capture_samples_signal_idx").on(t.signalId),
+    index("capture_samples_user_idx").on(t.userId, t.userType),
+    index("capture_samples_created_idx").on(t.createdAt),
+  ],
+);
+
 /** Atomic capture-only resource accounting. Reservations survive an uncertain provider timeout. */
 export const captureAiDays = mysqlTable("capture_ai_days", {
   day: varchar("day", { length: 10 }).primaryKey(),

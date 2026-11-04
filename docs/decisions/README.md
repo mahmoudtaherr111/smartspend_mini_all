@@ -53,3 +53,11 @@ A record explains why the code looks the way it does. What the code does today i
 | [0043](0043-capture-evidence-before-automatic-recording.md) | Ground capture facts in source evidence and evaluate the automatic-recording contract before connecting the runtime |
 
 | [0044](0044-durable-capture-worker-and-admission.md) | Bind queued identity maps cryptographically and reserve capture-only costs and capacity before HTTP |
+
+| [0045](0045-versioned-ledger-cashflow.md) | Separate a row's financial meaning from its type and gate the income-or-spending cutover behind a versioned migration |
+
+| [0046](0046-atomic-capture-bundles.md) | File a captured payment, its fee and its quota in one transaction, and keep later user edits |
+
+| [0047](0047-post-save-feedback-and-explicit-wallet-semantics.md) | Optional purpose questions after saving, renewed automatic consent, and explicit wallet kinds |
+
+| [0048](0048-direct-sms-samples-and-live-contract-fixes.md) | Direct SMS in its own build, redacted samples with consent, and sms-v4 checks fitted to live model replies |

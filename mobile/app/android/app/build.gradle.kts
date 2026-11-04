@@ -74,3 +74,10 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+// The SMS build only; the default build has no SMS permission (see settings.gradle.kts).
+if (providers.gradleProperty("smartspend.sms").orNull == "true") {
+    dependencies {
+        implementation(project(":bank_capture_sms"))
+    }
+}

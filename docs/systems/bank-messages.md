@@ -302,6 +302,17 @@ or a waiting reason. Included fees are subtracted from the principal; additional
 are one amount. Unknown fee inclusion, a foreign fee, missing EGP equivalent or an overflowing debit never causes a
 guessed posting. A negative overdraft balance is allowed and cannot become a positive purchase amount. Incoming transfers carrying fees currently wait with `fee_direction`; that treatment is not qualified.
 The source checks are conservative and require corpus qualification; they do not prove arbitrary-language semantics.
+State, amount, direction and fee are strict: a failed check rejects the reading. Balance, limit and ownership fail
+soft: an unproven one becomes null (or `unknown`) and is listed in `repairs`, and the movement is still read. A
+transfer's direction may be proven by the preposition before its counterparty marker ("لرقم [PHONE_1]",
+"from [PERSON_1]"); a purchase, bill or salary needs no direction quote, but a quote that contradicts its direction
+still rejects (decision 0048). A "no money moved" reading needs no state quote when nothing in the message says money
+moved. Several drains claim jobs at once (each process runs three, and every replica its own); a claim MySQL picks
+as a deadlock victim is retried up to three times and otherwise left to the next drain. Measured locally
+(`tests/capture-load.test.ts`, stub model): 800 messages from 200 users at 10 a second plus a 20-a-second burst with
+six drains gave ingest p95 90 ms and filing p95 1.5 s, nothing lost or doubled; with 20% failed model calls every
+message was still filed after its retries. The first live run on 14 invented messages (`.agents/capture-v8/live-v4/`, outside
+git) found these rules and two provider bugs; it is not qualification.
 
 `npm run bench:capture:contract -- --cases api/qa/fixtures/capture-contract-cases.json` runs four invented examples.
 For a private local JSON corpus, pass its path instead. Each case has an numeric `id` of the form `CASE_123`, redacted `message`, a
@@ -417,7 +428,9 @@ Checked against the code; each one names where it lives.
    (`api/lib/capture/keep-merchants.ts`); a plain name the reader missed ("من AHMED STORES") still reaches the model as
    `[REDACTED_NAME]`.
 
-4. **Gap.** The merge windows are guesses until real messages measure them. A hold the bank settles later is not
+4. **Gap.** No export of `capture_samples` exists yet: the rows are kept, but building the no-model reader from them
+   needs an admin export without user ids (`api/lib/capture/samples.ts`).
+5. **Gap.** The merge windows are guesses until real messages measure them. A hold the bank settles later is not
    joined to its charge (the reader reads a hold as no transaction), and a transfer that might be between the user's
    own accounts without both legs saying so is asked about as two payments.
 
@@ -556,3 +569,36 @@ when the original debit included a fee. The encrypted identity envelope is disca
 Still required before activation: native SMS/nosms coverage, explicit notice acknowledgement, late-evidence/reversal
 coverage, on-device verification, measured capacity and the private held-out source/model qualification. No production
 migration, provider call or capture enablement is implied by shipping these guarded changes.
+
+## Explicit phone delivery acknowledgements (in development)
+`GET /api/capture/v1/notices` now reads eligible notices at least once without marking delivery. Each notice carries
+its job-based `noticeId`; only `POST /api/capture/v1/notices/ack` from that same owner pair and device records the
+successful OS post. ACK batches are bounded at20 and idempotent; a different registered device cannot acknowledge
+another device's notice. Fetch prefers recent notices and signals `hasMore` for another bounded batch. User edits
+or deletion clear an undelivered obsolete notice rather than reporting it delivered.
+
+Android's SQLite queue upgrade stores shown notice ids and pending acknowledgements per owner. It posts first,
+remembers success and retries the ACK after network failure without repeating the OS alert. Blocked notification
+permission/channel never sends ACK. Account changes serialize queue/notification effects, clear old capture
+notifications and discard late responses for a different owner/token. Network work never holds that local lock.
+Native compiler/on-device verification remains pending while the local Android toolchain is being prepared.
+
+## Direct SMS (the SMS build only)
+`SmsReceiver` (`mobile/packages/bank_capture/android/src/main/kotlin/com/smartspend/bank_capture/SmsReceiver.kt`) reads `SMS_RECEIVED`, joins the parts of
+one sender into one message and takes the network's originating address as the sender, so a bank saved as a contact
+is still the bank. It goes through the same `CaptureGate`, encrypted queue and owner guard as a notification, with
+channel `sms`. Only the module `mobile/packages/bank_capture/android-sms`, added by `-Psmartspend.sms=true`
+(`flutter build apk --android-project-arg=smartspend.sms=true`), declares `RECEIVE_SMS`, `READ_SMS` and the receiver;
+the default build declares none of them, and `CaptureStatus.smsSupported` is false there. While SMS arrive directly,
+`BankNotificationListener` ignores messaging apps. `importSmsInbox` queues the inbox's last 30 days at most (what
+the server keeps), marked `imported`: the queue sends live messages first, and the server records an imported one
+without a phone notice. The More tab shows the permission and the import only in the SMS build. The SMS build must
+not be published before Google Play approves the declaration (decision 0048).
+
+## Redacted samples
+`capture_samples` keeps, per model reading, the numbered-marker text the model saw, its checked reply, the posting,
+the prompt version, provider and model (`api/lib/capture/samples.ts`, written in the transaction that finishes the
+job). It needs both the admin switch `capture_samples_enabled` (default `false`) and the user's `message_samples`
+consent; the phone shows that switch only while the server offers it. Taking the consent back deletes the user's
+samples, as do `deleteMyData` and account deletion. Retention is 365 days until the lawyer sets the period. The
+user's final answer is not copied: an export reads it from the event and its ledger row.

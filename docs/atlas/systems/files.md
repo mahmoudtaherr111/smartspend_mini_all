@@ -87,6 +87,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/reader/spans.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/types.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/when.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/samples.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/schema-state.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/seed-sources.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/seed-subscriptions.ts` | [bank-messages](bank-messages.md) |

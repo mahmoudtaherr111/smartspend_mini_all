@@ -245,7 +245,10 @@ data class CaptureStatus (
   val lastCaptureAt: Long? = null,
   val lastUploadAt: Long? = null,
   /** Why the last send failed, as an id ("offline", "device_revoked", "capture_disabled", "consent_required"). */
-  val lastError: String? = null
+  val lastError: String? = null,
+  /** This build declares SMS reading (the SMS build only), and whether the person allowed it. */
+  val smsSupported: Boolean? = null,
+  val smsAccess: CaptureAccess? = null
 )
  {
   companion object {
@@ -258,7 +261,9 @@ data class CaptureStatus (
       val lastCaptureAt = pigeonVar_list[5] as Long?
       val lastUploadAt = pigeonVar_list[6] as Long?
       val lastError = pigeonVar_list[7] as String?
-      return CaptureStatus(method, access, connected, notificationsAllowed, waiting, lastCaptureAt, lastUploadAt, lastError)
+      val smsSupported = pigeonVar_list[8] as Boolean?
+      val smsAccess = pigeonVar_list[9] as CaptureAccess?
+      return CaptureStatus(method, access, connected, notificationsAllowed, waiting, lastCaptureAt, lastUploadAt, lastError, smsSupported, smsAccess)
     }
   }
   fun toList(): List<Any?> {
@@ -271,6 +276,8 @@ data class CaptureStatus (
       lastCaptureAt,
       lastUploadAt,
       lastError,
+      smsSupported,
+      smsAccess,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -281,7 +288,7 @@ data class CaptureStatus (
       return true
     }
     val other = other as CaptureStatus
-    return BankCaptureApiPigeonUtils.deepEquals(this.method, other.method) && BankCaptureApiPigeonUtils.deepEquals(this.access, other.access) && BankCaptureApiPigeonUtils.deepEquals(this.connected, other.connected) && BankCaptureApiPigeonUtils.deepEquals(this.notificationsAllowed, other.notificationsAllowed) && BankCaptureApiPigeonUtils.deepEquals(this.waiting, other.waiting) && BankCaptureApiPigeonUtils.deepEquals(this.lastCaptureAt, other.lastCaptureAt) && BankCaptureApiPigeonUtils.deepEquals(this.lastUploadAt, other.lastUploadAt) && BankCaptureApiPigeonUtils.deepEquals(this.lastError, other.lastError)
+    return BankCaptureApiPigeonUtils.deepEquals(this.method, other.method) && BankCaptureApiPigeonUtils.deepEquals(this.access, other.access) && BankCaptureApiPigeonUtils.deepEquals(this.connected, other.connected) && BankCaptureApiPigeonUtils.deepEquals(this.notificationsAllowed, other.notificationsAllowed) && BankCaptureApiPigeonUtils.deepEquals(this.waiting, other.waiting) && BankCaptureApiPigeonUtils.deepEquals(this.lastCaptureAt, other.lastCaptureAt) && BankCaptureApiPigeonUtils.deepEquals(this.lastUploadAt, other.lastUploadAt) && BankCaptureApiPigeonUtils.deepEquals(this.lastError, other.lastError) && BankCaptureApiPigeonUtils.deepEquals(this.smsSupported, other.smsSupported) && BankCaptureApiPigeonUtils.deepEquals(this.smsAccess, other.smsAccess)
   }
 
   override fun hashCode(): Int {
@@ -294,10 +301,12 @@ data class CaptureStatus (
     result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.lastCaptureAt)
     result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.lastUploadAt)
     result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.lastError)
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.smsSupported)
+    result = 31 * result + BankCaptureApiPigeonUtils.deepHash(this.smsAccess)
     return result
   }
   override fun toString(): String {
-    return "CaptureStatus(method=$method, access=$access, connected=$connected, notificationsAllowed=$notificationsAllowed, waiting=$waiting, lastCaptureAt=$lastCaptureAt, lastUploadAt=$lastUploadAt, lastError=$lastError)"
+    return "CaptureStatus(method=$method, access=$access, connected=$connected, notificationsAllowed=$notificationsAllowed, waiting=$waiting, lastCaptureAt=$lastCaptureAt, lastUploadAt=$lastUploadAt, lastError=$lastError, smsSupported=$smsSupported, smsAccess=$smsAccess)"
   }
 }
 
@@ -425,6 +434,13 @@ interface BankCaptureHostApi {
   fun sendNow()
   /** Asks for permission to show notifications (Android 13 and newer). True when the app may show them. */
   suspend fun requestNotificationPermission(): Boolean
+  /** Asks for the SMS permissions in the SMS build; false in the default build or when refused. */
+  suspend fun requestSmsPermission(): Boolean
+  /**
+   * Queues the inbox's bank SMS of the last [days] days, at most [max] of them, through the same filter as a live
+   * SMS. Returns how many were queued; 0 without the SMS build or permission.
+   */
+  fun importSmsInbox(days: Long, max: Long): Long
 
   companion object {
     /** The codec used by BankCaptureHostApi. */
@@ -546,6 +562,41 @@ interface BankCaptureHostApi {
               }
               reply.reply(wrapped)
             }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.requestSmsPermission$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            CoroutineScope(Dispatchers.Main).launch {
+              val wrapped: List<Any?> = try {
+                listOf(api.requestSmsPermission())
+              } catch (exception: Throwable) {
+                BankCaptureApiPigeonUtils.wrapError(exception)
+              }
+              reply.reply(wrapped)
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.importSmsInbox$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val daysArg = args[0] as Long
+            val maxArg = args[1] as Long
+            val wrapped: List<Any?> = try {
+              listOf(api.importSmsInbox(daysArg, maxArg))
+            } catch (exception: Throwable) {
+              BankCaptureApiPigeonUtils.wrapError(exception)
+            }
+            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)

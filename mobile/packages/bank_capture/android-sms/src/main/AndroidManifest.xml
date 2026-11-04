@@ -1,0 +1,18 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Play's "SMS-based money management" exception: read bank and wallet SMS as they arrive, and the inbox once
+         when the person imports past months. Declared only in the SMS build. -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+
+    <application>
+        <!-- Only the system can send SMS_RECEIVED (BROADCAST_SMS); the class lives in the bank_capture plugin. -->
+        <receiver
+            android:name="com.smartspend.bank_capture.SmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

@@ -61,6 +61,10 @@ class CaptureStatus {
 
   /// Why the last send failed, as an id ("offline", "device_revoked", "capture_disabled", "consent_required").
   String? lastError;
+
+  /// This build declares SMS reading (the SMS build only), and whether the person allowed it.
+  bool? smsSupported;
+  CaptureAccess? smsAccess;
 }
 
 /// What the native side needs to send signals on its own, while the app is closed.
@@ -108,4 +112,12 @@ abstract class BankCaptureHostApi {
   /// Asks for permission to show notifications (Android 13 and newer). True when the app may show them.
   @async
   bool requestNotificationPermission();
+
+  /// Asks for the SMS permissions in the SMS build; false in the default build or when refused.
+  @async
+  bool requestSmsPermission();
+
+  /// Queues the inbox's bank SMS of the last [days] days, at most [max] of them, through the same filter as a live
+  /// SMS. Returns how many were queued; 0 without the SMS build or permission.
+  int importSmsInbox(int days, int max);
 }

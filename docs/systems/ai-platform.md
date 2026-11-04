@@ -96,6 +96,11 @@ refused key, and the next answers. The chat also takes its model from the admin'
 - Failures are classified: rate limited, auth, unsupported schema, server, timeout, network, empty response,
   truncated. Everything but "unsupported schema" moves to the next route; an unsupported schema is retried
   once on the same route without the schema.
+- So a schema the provider refuses silently loses its guarantee. Gemini refuses JSON Schema documents (`$schema`,
+  `additionalProperties`, `anyOf` with null, as `z.toJSONSchema` writes them), so `toGeminiSchema` converts a schema
+  that carries `$schema` into Gemini's subset; hand-written Gemini schemas pass unchanged. Groq refuses
+  `chat_template_kwargs`: a reasoning route there gets `reasoning_effort: "none"` for Qwen and
+  `reasoning_format: "hidden"` otherwise (`applyThinkingSuppression`, decision 0048).
 - The breaker is per route (provider plus model), opens after three failures — or immediately on an auth
   failure — and stays open for a minute, ten minutes for an auth failure, or for as long as the provider's
   `Retry-After` says, up to thirty minutes. One shut-out route is probed per request, behind every route that

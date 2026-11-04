@@ -36,4 +36,9 @@ public class BankCapturePlugin: NSObject, FlutterPlugin, BankCaptureHostApi {
   func sendNow() throws {}
 
   func requestNotificationPermission() async throws -> Bool { true }
+
+  // iOS gives no app access to SMS: Shortcuts automations are the way in (decision 0028).
+  func requestSmsPermission() async throws -> Bool { false }
+
+  func importSmsInbox(days: Int64, max: Int64) throws -> Int64 { 0 }
 }

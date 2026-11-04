@@ -16,7 +16,7 @@ Foreign-key constraints declared in the schema: **0**. Every relationship below 
 | `B` | Core Ledger | Forever | MySQL; narrow hot table; covering indexes; never auto-deleted | 2 |
 | `C` | Derived / Rollup | Forever (cheap) | MySQL; tiny; rebuildable from B at any time | 14 |
 | `D` | Operational / Ephemeral | Minutes -> days | Redis primary, MySQL as durable fallback/audit | 10 |
-| `E` | Telemetry / Logs | 30–365 days | MySQL; chunk-pruned on a schedule, rolled up before deletion | 17 |
+| `E` | Telemetry / Logs | 30–365 days | MySQL; chunk-pruned on a schedule, rolled up before deletion | 18 |
 | `F` | AI Memory | Forever (items), rebuildable (vectors) | Text/metadata in MySQL; vectors in vector store or quantized binary | 6 |
 | `G` | Conversation | 90 days raw | MySQL raw for a window, then summarized and pruned | 2 |
 
@@ -99,7 +99,7 @@ Sessions, challenges, OTPs, pending actions
 | `auth_challenges` | `authChallenges` | 5 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/webauthn-router.ts` | `api/boot.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts`, `api/webauthn-router.ts` |
 | `capture_ai_accounts` | `captureAiAccounts` | 6 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/admission.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/admission.ts`, `api/services/user-purge-service.ts` |
 | `capture_ai_days` | `captureAiDays` | 3 | 0 | — | — | `api/lib/capture/admission.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/admission.ts` |
-| `capture_ai_jobs` | `captureAiJobs` | 15 | 4 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/activity.ts`, `api/lib/capture/ai-queue.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/operations.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/ai-queue.ts`, `api/lib/capture/care.ts`, `api/lib/capture/intake.ts`, `api/services/user-purge-service.ts` |
+| `capture_ai_jobs` | `captureAiJobs` | 15 | 4 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/activity.ts`, `api/lib/capture/ai-queue.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/operations.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/ai-queue.ts`, `api/lib/capture/care.ts`, `api/lib/capture/intake.ts`, `api/services/ledger-writer.ts`, `api/services/user-purge-service.ts` |
 | `capture_ai_reservations` | `captureAiReservations` | 10 | 3 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/lib/capture/admission.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/admission.ts`, `api/services/user-purge-service.ts` |
 | `in_app_notifications` | `inAppNotifications` | 8 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/profile-router.ts` | `api/lib/capture/care.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/operations.ts`, `api/notification-engine.ts`, `api/profile-router.ts`, `api/services/coach/plans.ts`, `api/services/user-purge-service.ts`, `api/support-router.ts` |
 | `pending_clarifications` | `pendingClarifications` | 9 | 3 | `user_id` + `user_type` | `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/ai-router.ts`, `api/expense-router.ts`, `api/services/voice/app-calls.ts`, `api/services/voice/brain/tools/reports.ts` | `api/admin-router.ts`, `api/ai-router.ts`, `api/expense-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts`, `api/services/voice/app-calls.ts` |
@@ -119,6 +119,7 @@ Classification logs, token ledgers, analytics, notification logs
 | `api_key_errors` | `apiKeyErrors` | 10 | 5 | — | `localUser → local_users`, `oauthUser → users` | `api/admin-console-router.ts`, `api/lib/error-logger.ts` | `api/jobs/data-retention-job.ts`, `api/lib/error-logger.ts` |
 | `capture_events` | `captureEvents` | 31 | 5 | `user_id` + `user_type` | `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/lib/capture/activity.ts`, `api/lib/capture/care.ts`, `api/lib/capture/fees.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/operations.ts`, `api/services/ledger-writer.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/care.ts`, `api/lib/capture/fees.ts`, `api/lib/capture/intake.ts`, `api/lib/capture/operations.ts`, `api/services/ledger-writer.ts`, `api/services/user-purge-service.ts` |
 | `capture_questions` | `captureQuestions` | 12 | 4 | `user_id` + `user_type` | `event → capture_events`, `expense → expenses`, `localUser → local_users`, `oauthUser → users` | `api/lib/capture/questions.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/care.ts`, `api/lib/capture/questions.ts`, `api/services/user-purge-service.ts` |
+| `capture_samples` | `captureSamples` | 16 | 3 | `user_id` + `user_type` | `event → capture_events`, `localUser → local_users`, `oauthUser → users` | `api/lib/capture/samples.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/care.ts`, `api/lib/capture/consent.ts`, `api/lib/capture/samples.ts`, `api/services/user-purge-service.ts` |
 | `capture_signals` | `captureSignals` | 13 | 4 | `user_id` + `user_type` | `device → capture_devices`, `event → capture_events`, `localUser → local_users`, `oauthUser → users` | `api/lib/capture/ai-queue.ts`, `api/lib/capture/intake.ts` | `api/jobs/data-retention-job.ts`, `api/lib/capture/ai-queue.ts`, `api/lib/capture/care.ts`, `api/lib/capture/intake.ts`, `api/services/user-purge-service.ts` |
 | `classification_logs` | `classificationLogs` | 22 | 3 | `user_id` + `user_type` | `expenses → expenses`, `localUser → local_users`, `oauthUser → users` | `api/admin-console-router.ts`, `api/admin-router.ts`, `api/expense-router.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/resolvers.ts` | `api/ai-router.ts`, `api/boot.ts`, `api/expense-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts` |
 | `notification_logs` | `notificationLogs` | 8 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users`, `template → notification_templates` | `api/admin-router.ts`, `api/notification-engine.ts` | `api/admin-router.ts`, `api/jobs/data-retention-job.ts`, `api/notification-engine.ts`, `api/services/user-purge-service.ts` |
@@ -217,6 +218,9 @@ chat_messages and conversation threads
 | `capture_questions` | `expense` | one | `expenses` | `expense_id` |
 | `capture_questions` | `localUser` | one | `local_users` | `user_id` |
 | `capture_questions` | `oauthUser` | one | `users` | `user_id` |
+| `capture_samples` | `event` | one | `capture_events` | `event_id` |
+| `capture_samples` | `localUser` | one | `local_users` | `user_id` |
+| `capture_samples` | `oauthUser` | one | `users` | `user_id` |
 | `capture_signals` | `device` | one | `capture_devices` | `device_id` |
 | `capture_signals` | `event` | one | `capture_events` | `event_id` |
 | `capture_signals` | `localUser` | one | `local_users` | `user_id` |

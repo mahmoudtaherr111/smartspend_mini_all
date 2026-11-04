@@ -46,6 +46,7 @@ model {
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_markers
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_memory
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_questions
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_samples
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_signals
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_usage
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_user_pairs
@@ -347,12 +348,14 @@ model {
   smartspend.api.modules.capture-ai-reader -[reads]-> smartspend.mysql.capture_ai_accounts
   smartspend.api.modules.capture-ai-reader -[reads]-> smartspend.mysql.capture_ai_days
   smartspend.api.modules.capture-ai-reader -[reads]-> smartspend.mysql.capture_ai_reservations
+  smartspend.api.modules.capture-ai-reader -[reads]-> smartspend.mysql.capture_samples
   smartspend.api.modules.capture-ai-reader -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.capture-ai-reader -[reads]-> smartspend.mysql.users
   smartspend.api.modules.capture-ai-reader -[uses]-> gemini
   smartspend.api.modules.capture-ai-reader -[writes]-> smartspend.mysql.capture_ai_accounts
   smartspend.api.modules.capture-ai-reader -[writes]-> smartspend.mysql.capture_ai_days
   smartspend.api.modules.capture-ai-reader -[writes]-> smartspend.mysql.capture_ai_reservations
+  smartspend.api.modules.capture-ai-reader -[writes]-> smartspend.mysql.capture_samples
   smartspend.api.modules.capture-catalog -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.capture-catalog -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.capture-catalog -[reads]-> smartspend.mysql.capture_sources
@@ -392,6 +395,7 @@ model {
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_markers
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_memory
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_questions
+  smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_samples
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_signals
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_usage
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_user_pairs
@@ -482,6 +486,7 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_ai_reservations
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_events
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_questions
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_samples
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_signals
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.chat_messages
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.classification_logs
@@ -518,6 +523,7 @@ model {
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.users
+  smartspend.api.modules.ledger -[writes]-> smartspend.mysql.capture_ai_jobs
   smartspend.api.modules.ledger -[writes]-> smartspend.mysql.capture_events
   smartspend.api.modules.ledger -[writes]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.modules.ledger -[writes]-> smartspend.mysql.expenses

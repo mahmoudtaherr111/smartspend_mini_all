@@ -67,6 +67,12 @@ class BankCapturePlugin : FlutterPlugin, ActivityAware, BankCaptureHostApi, Plug
             lastCaptureAt = settings.lastCaptureAt,
             lastUploadAt = settings.lastUploadAt,
             lastError = settings.lastError,
+            smsSupported = SmsCapture.supported(context),
+            smsAccess = when {
+                !SmsCapture.supported(context) -> CaptureAccess.UNKNOWN
+                SmsCapture.active(context) -> CaptureAccess.GRANTED
+                else -> CaptureAccess.NOT_GRANTED
+            },
         )
     }
 
@@ -85,39 +91,45 @@ class BankCapturePlugin : FlutterPlugin, ActivityAware, BankCaptureHostApi, Plug
     }
 
     override fun connect(setup: CaptureSetup) {
-        val context = requireContext()
-        val settings = CaptureSettings(context)
-        if (settings.ownerKey != null && settings.ownerKey != setup.ownerKey) {
-            // Another account signed in on this phone: nothing of the previous one is sent with the new token.
+        synchronized(CaptureOwnerGuard.lock) {
+            val context = requireContext()
+            val settings = CaptureSettings(context)
+            if (settings.ownerKey != null && settings.ownerKey != setup.ownerKey) {
+                // Another account signed in on this phone: nothing of the previous one is sent with the new token.
+                val queue = CaptureQueue(context)
+                try {
+                    queue.clear()
+                } finally {
+                    queue.close()
+                }
+                CaptureNotifier.clearCapture(context)
+                settings.clear()
+            }
+            settings.baseUrl = setup.baseUrl
+            settings.ownerKey = setup.ownerKey
+            settings.language = setup.language
+            settings.token = setup.deviceToken
+            settings.lastError = null
+            // Read the server's config at the next send, then keep sending every six hours as a safety net.
+            settings.config = null
+            CaptureScheduler.sendSoon(context)
+            CaptureScheduler.keepAlive(context)
+        }
+    }
+
+    override fun disconnect() {
+        synchronized(CaptureOwnerGuard.lock) {
+            val context = requireContext()
+            CaptureNotifier.clearCapture(context)
+            CaptureScheduler.stop(context)
             val queue = CaptureQueue(context)
             try {
                 queue.clear()
             } finally {
                 queue.close()
             }
-            settings.clear()
+            CaptureSettings(context).clear()
         }
-        settings.baseUrl = setup.baseUrl
-        settings.ownerKey = setup.ownerKey
-        settings.language = setup.language
-        settings.token = setup.deviceToken
-        settings.lastError = null
-        // Read the server's config at the next send, then keep sending every six hours as a safety net.
-        settings.config = null
-        CaptureScheduler.sendSoon(context)
-        CaptureScheduler.keepAlive(context)
-    }
-
-    override fun disconnect() {
-        val context = requireContext()
-        CaptureScheduler.stop(context)
-        val queue = CaptureQueue(context)
-        try {
-            queue.clear()
-        } finally {
-            queue.close()
-        }
-        CaptureSettings(context).clear()
     }
 
     override fun setLanguage(language: String) {
@@ -142,9 +154,26 @@ class BankCapturePlugin : FlutterPlugin, ActivityAware, BankCaptureHostApi, Plug
         }
     }
 
+    override suspend fun requestSmsPermission(): Boolean {
+        val context = requireContext()
+        if (!SmsCapture.supported(context)) return false
+        val wanted = arrayOf(android.Manifest.permission.RECEIVE_SMS, android.Manifest.permission.READ_SMS)
+        if (wanted.all { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) return true
+        val current: Activity = activity?.activity ?: return false
+        return suspendCancellableCoroutine { waiter ->
+            permissionWaiter?.resume(false)
+            permissionWaiter = waiter
+            current.requestPermissions(wanted, PERMISSION_REQUEST)
+        }
+    }
+
+    override fun importSmsInbox(days: Long, max: Long): Long =
+        SmsInbox.import(requireContext(), days.coerceIn(1, 366).toInt(), max.coerceIn(1, 5_000).toInt()).toLong()
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray): Boolean {
         if (requestCode != PERMISSION_REQUEST) return false
-        val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+        // Every permission asked for at once must be granted (SMS asks for receive and read together).
+        val granted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
         permissionWaiter?.resume(granted)
         permissionWaiter = null
         return true

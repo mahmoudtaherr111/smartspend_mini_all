@@ -60,7 +60,9 @@ What the code already gives a native client:
    - Android SMS permissions (`READ_SMS`, `RECEIVE_SMS`) are not requested. Google Play lists "SMS-based money
      management" as a possible exception, but grants it only after a declaration and review, and only when no
      other method gives the core feature; the notification listener does. Reading the SMS inbox (for example to
-     import past months) would be its own decision with its own Play declaration.
+     import past months) would be its own decision with its own Play declaration. (Superseded on 2026-11-04 by
+     [decision 0048](0048-direct-sms-samples-and-live-contract-fixes.md): a separate SMS build declares them; the
+     default build still does not.)
    - iOS gives no app access to SMS or to other apps' notifications. The app exposes an App Intent ("record a bank
      message") that a Shortcuts automation on incoming messages runs, without confirmation since iOS 17, and that
      posts with the app's own session, so no token sits in a public Shortcut. A share extension records any shared

@@ -11,7 +11,7 @@
  * The request that queued a job wakes the worker in its own process; a protected job every minute picks up what a
  * restart or a lost lease left (`api/boot.ts`).
  */
-import { and, asc, count, eq, inArray, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
 import { captureAiJobs, captureSignals, localUsers, users } from "../../../db/schema";
 import { planNumber } from "../../../contracts/plan-features";
 import type { CaptureNotice, CaptureNoticesResponse } from "../../../contracts/capture-intake";
@@ -21,6 +21,7 @@ import { createLogger } from "../log";
 import { SMS_PROMPT_VERSION, type SmsModelReply } from "../sms-ai-contract";
 import { readMessageWithModel } from "./ai-reader";
 import { CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION, captureConsentsOf } from "./consent";
+import { keepCaptureSample } from "./samples";
 import type { CaptureDevice } from "./devices";
 import { autoPolicyOf, lockCaptureUser, placeSignal, startIntakeRun, noteWalletBalance, type SignalReading } from "./intake";
 import { openCaptureText } from "./vault";
@@ -30,7 +31,7 @@ import { getSystemSettings } from "../settings-cache";
 import { captureHmac } from "./memory";
 import { asciiDigits } from "../anonymizer";
 import type { PreparedCaptureText } from "./privacy";
-import type { CaptureModelReply, CapturePostingProposal } from "./model-contract";
+import { CAPTURE_PROMPT_VERSION, type CaptureModelReply, type CapturePostingProposal } from "./model-contract";
 import { merchantNamesToKeep } from "./keep-merchants";
 import { merchantKey } from "./reader/counterparty";
 import { primaryInstrument } from "./instruments";
@@ -145,7 +146,32 @@ export async function drainCaptureModel(max = PER_WAKE, now = () => new Date()):
 }
 
 /** The oldest due job, or one whose lease ran out, taken with a lease so no other process reads it. */
+/** MySQL picked this transaction as a deadlock victim or it waited too long for a row lock: safe to try again. */
+function lockConflict(err: unknown): boolean {
+  for (let cause: unknown = err, depth = 0; cause && depth < 4; cause = (cause as { cause?: unknown }).cause, depth++) {
+    const code = (cause as { code?: unknown }).code;
+    if (code === "ER_LOCK_DEADLOCK" || code === "ER_LOCK_WAIT_TIMEOUT") return true;
+  }
+  return false;
+}
+
+/**
+ * Several drains run at once (this process's wakers, other replicas). Two claims can still deadlock on the queue's
+ * index even with SKIP LOCKED: the loser retries, and after three tries leaves the job to the next drain.
+ */
 async function claimJob(now: Date): Promise<Job | null> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await claimJobOnce(now);
+    } catch (err) {
+      if (!lockConflict(err)) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 20 + Math.random() * 80 * (attempt + 1)));
+    }
+  }
+  return null;
+}
+
+async function claimJobOnce(now: Date): Promise<Job | null> {
   return getDb().transaction(async (tx) => {
     const [job] = await tx
       .select()
@@ -326,6 +352,9 @@ async function readV4Job(job: Job, signal: typeof captureSignals.$inferSelect, s
         .where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));
       await tx.update(captureAiJobs).set({ status: "done", leaseUntil: null,
         outcome: result.proposal.status === "waiting" ? `waiting_${result.proposal.reason}` : "not_transaction" }).where(eq(captureAiJobs.id, job.id));
+      await keepCaptureSample(tx, owner, { signalId: signal.id, eventId: null, sourceSlug: signal.sourceSlug, channel: signal.channel, text: text.text,
+        textHmac: signal.textHmac, promptVersion: CAPTURE_PROMPT_VERSION, provider: result.provider, model: result.model, reply: result.check.reply,
+        posting: result.proposal, receivedAt: signal.receivedAt });
     });
     return;
   }
@@ -357,12 +386,16 @@ async function readV4Job(job: Job, signal: typeof captureSignals.$inferSelect, s
     const placed = await placeSignal(tx, run, { signalId: signal.id, clientSignalId: signal.clientSignalId, channel: signal.channel, sourceSlug: signal.sourceSlug,
       textHmac: signal.textHmac, receivedAt: signal.receivedAt, reading });
     await tx.update(captureAiJobs).set({ status: "done", outcome: placed.reason?.startsWith("waiting_") ? placed.reason : "read", leaseUntil: null, eventId: placed.eventId ?? null,
-      notice: placed.notice ?? null, noticeDeliveredAt: placed.notice ? null : new Date() }).where(eq(captureAiJobs.id, job.id));
+      // An imported past message is recorded quietly: dozens of old notices on the phone would help nobody.
+      notice: stored.imported ? null : placed.notice ?? null, noticeDeliveredAt: placed.notice && !stored.imported ? null : new Date() }).where(eq(captureAiJobs.id, job.id));
+    await keepCaptureSample(tx, owner, { signalId: signal.id, eventId: placed.eventId ?? null, sourceSlug: signal.sourceSlug, channel: signal.channel,
+      text: text.text, textHmac: signal.textHmac, promptVersion: CAPTURE_PROMPT_VERSION, provider: result.provider, model: result.model,
+      reply: result.check.reply, posting: result.proposal, receivedAt: signal.receivedAt });
   });
   if (run.recordedAny) await afterLedgerWrite(owner, { spending: run.spentAny });
 }
 
-/** The notices this phone's queued signals left since it last asked, each handed out once, and how many still wait. */
+/** At-least-once fetch: a notice stays until this same device explicitly acknowledges its successful OS post. */
 export async function takeCaptureNotices(device: CaptureDevice): Promise<CaptureNoticesResponse> {
   const mine = and(eq(captureAiJobs.userId, device.userId), eq(captureAiJobs.userType, device.userType), eq(captureAiJobs.deviceId, device.deviceId));
   return getDb().transaction(async (tx) => {
@@ -370,16 +403,22 @@ export async function takeCaptureNotices(device: CaptureDevice): Promise<Capture
       .select({ id: captureAiJobs.id, eventId: captureAiJobs.eventId, notice: captureAiJobs.notice })
       .from(captureAiJobs)
       .where(and(mine, eq(captureAiJobs.status, "done"), isNull(captureAiJobs.noticeDeliveredAt), isNotNull(captureAiJobs.notice)))
-      .orderBy(asc(captureAiJobs.id))
-      .limit(20)
-      .for("update");
-    if (ready.length > 0) {
-      await tx.update(captureAiJobs).set({ noticeDeliveredAt: new Date() }).where(inArray(captureAiJobs.id, ready.map((row) => row.id)));
-    }
+      .orderBy(desc(captureAiJobs.id))
+      .limit(21);
     const [{ pending }] = await tx.select({ pending: count() }).from(captureAiJobs).where(and(mine, inArray(captureAiJobs.status, ["queued", "running"])));
     return {
-      notices: ready.filter((row) => row.eventId !== null).map((row) => ({ eventId: row.eventId!, notice: row.notice as CaptureNotice })),
+      notices: ready.slice(0, 20).filter((row) => row.eventId !== null).map((row) => ({ noticeId: row.id, eventId: row.eventId!, notice: row.notice as CaptureNotice })),
       pending,
+      ...(ready.length > 20 ? { hasMore: true } : {}),
     };
   });
+}
+
+export async function acknowledgeCaptureNotices(device: CaptureDevice, ids: number[]): Promise<number> {
+  if (!ids.length) return 0;
+  const [result] = await getDb().update(captureAiJobs).set({ noticeDeliveredAt: new Date() }).where(and(
+    eq(captureAiJobs.userId, device.userId), eq(captureAiJobs.userType, device.userType), eq(captureAiJobs.deviceId, device.deviceId),
+    inArray(captureAiJobs.id, [...new Set(ids)]), eq(captureAiJobs.status, "done"), isNull(captureAiJobs.noticeDeliveredAt), isNotNull(captureAiJobs.notice),
+  ));
+  return Number((result as { affectedRows?: number }).affectedRows ?? 0);
 }

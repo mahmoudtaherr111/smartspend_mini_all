@@ -218,6 +218,9 @@ struct CaptureStatus: Hashable, CustomStringConvertible {
   var lastUploadAt: Int64? = nil
   /// Why the last send failed, as an id ("offline", "device_revoked", "capture_disabled", "consent_required").
   var lastError: String? = nil
+  /// This build declares SMS reading (the SMS build only), and whether the person allowed it.
+  var smsSupported: Bool? = nil
+  var smsAccess: CaptureAccess? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -230,6 +233,8 @@ struct CaptureStatus: Hashable, CustomStringConvertible {
     let lastCaptureAt: Int64? = nilOrValue(pigeonVar_list[5])
     let lastUploadAt: Int64? = nilOrValue(pigeonVar_list[6])
     let lastError: String? = nilOrValue(pigeonVar_list[7])
+    let smsSupported: Bool? = nilOrValue(pigeonVar_list[8])
+    let smsAccess: CaptureAccess? = nilOrValue(pigeonVar_list[9])
 
     return CaptureStatus(
       method: method,
@@ -239,7 +244,9 @@ struct CaptureStatus: Hashable, CustomStringConvertible {
       waiting: waiting,
       lastCaptureAt: lastCaptureAt,
       lastUploadAt: lastUploadAt,
-      lastError: lastError
+      lastError: lastError,
+      smsSupported: smsSupported,
+      smsAccess: smsAccess
     )
   }
   func toList() -> [Any?] {
@@ -252,13 +259,15 @@ struct CaptureStatus: Hashable, CustomStringConvertible {
       lastCaptureAt,
       lastUploadAt,
       lastError,
+      smsSupported,
+      smsAccess,
     ]
   }
   static func == (lhs: CaptureStatus, rhs: CaptureStatus) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return BankCaptureApiPigeonInternal.deepEquals(lhs.method, rhs.method) && BankCaptureApiPigeonInternal.deepEquals(lhs.access, rhs.access) && BankCaptureApiPigeonInternal.deepEquals(lhs.connected, rhs.connected) && BankCaptureApiPigeonInternal.deepEquals(lhs.notificationsAllowed, rhs.notificationsAllowed) && BankCaptureApiPigeonInternal.deepEquals(lhs.waiting, rhs.waiting) && BankCaptureApiPigeonInternal.deepEquals(lhs.lastCaptureAt, rhs.lastCaptureAt) && BankCaptureApiPigeonInternal.deepEquals(lhs.lastUploadAt, rhs.lastUploadAt) && BankCaptureApiPigeonInternal.deepEquals(lhs.lastError, rhs.lastError)
+    return BankCaptureApiPigeonInternal.deepEquals(lhs.method, rhs.method) && BankCaptureApiPigeonInternal.deepEquals(lhs.access, rhs.access) && BankCaptureApiPigeonInternal.deepEquals(lhs.connected, rhs.connected) && BankCaptureApiPigeonInternal.deepEquals(lhs.notificationsAllowed, rhs.notificationsAllowed) && BankCaptureApiPigeonInternal.deepEquals(lhs.waiting, rhs.waiting) && BankCaptureApiPigeonInternal.deepEquals(lhs.lastCaptureAt, rhs.lastCaptureAt) && BankCaptureApiPigeonInternal.deepEquals(lhs.lastUploadAt, rhs.lastUploadAt) && BankCaptureApiPigeonInternal.deepEquals(lhs.lastError, rhs.lastError) && BankCaptureApiPigeonInternal.deepEquals(lhs.smsSupported, rhs.smsSupported) && BankCaptureApiPigeonInternal.deepEquals(lhs.smsAccess, rhs.smsAccess)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -271,10 +280,12 @@ struct CaptureStatus: Hashable, CustomStringConvertible {
     BankCaptureApiPigeonInternal.deepHash(value: lastCaptureAt, hasher: &hasher)
     BankCaptureApiPigeonInternal.deepHash(value: lastUploadAt, hasher: &hasher)
     BankCaptureApiPigeonInternal.deepHash(value: lastError, hasher: &hasher)
+    BankCaptureApiPigeonInternal.deepHash(value: smsSupported, hasher: &hasher)
+    BankCaptureApiPigeonInternal.deepHash(value: smsAccess, hasher: &hasher)
   }
 
   public var description: String {
-    return "CaptureStatus(method: \(String(describing: method)), access: \(String(describing: access)), connected: \(String(describing: connected)), notificationsAllowed: \(String(describing: notificationsAllowed)), waiting: \(String(describing: waiting)), lastCaptureAt: \(String(describing: lastCaptureAt)), lastUploadAt: \(String(describing: lastUploadAt)), lastError: \(String(describing: lastError)))"
+    return "CaptureStatus(method: \(String(describing: method)), access: \(String(describing: access)), connected: \(String(describing: connected)), notificationsAllowed: \(String(describing: notificationsAllowed)), waiting: \(String(describing: waiting)), lastCaptureAt: \(String(describing: lastCaptureAt)), lastUploadAt: \(String(describing: lastUploadAt)), lastError: \(String(describing: lastError)), smsSupported: \(String(describing: smsSupported)), smsAccess: \(String(describing: smsAccess)))"
   }
 }
 
@@ -410,6 +421,11 @@ protocol BankCaptureHostApi {
   func sendNow() throws
   /// Asks for permission to show notifications (Android 13 and newer). True when the app may show them.
   func requestNotificationPermission() async throws -> Bool
+  /// Asks for the SMS permissions in the SMS build; false in the default build or when refused.
+  func requestSmsPermission() async throws -> Bool
+  /// Queues the inbox's bank SMS of the last [days] days, at most [max] of them, through the same filter as a live
+  /// SMS. Returns how many were queued; 0 without the SMS build or permission.
+  func importSmsInbox(days: Int64, max: Int64) throws -> Int64
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -521,6 +537,40 @@ class BankCaptureHostApiSetup {
       }
     } else {
       requestNotificationPermissionChannel.setMessageHandler(nil)
+    }
+    /// Asks for the SMS permissions in the SMS build; false in the default build or when refused.
+    let requestSmsPermissionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.requestSmsPermission\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      requestSmsPermissionChannel.setMessageHandler { _, reply in
+        Task { @MainActor in
+          do {
+            let result = try await api.requestSmsPermission()
+            reply(wrapResult(result))
+          } catch {
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      requestSmsPermissionChannel.setMessageHandler(nil)
+    }
+    /// Queues the inbox's bank SMS of the last [days] days, at most [max] of them, through the same filter as a live
+    /// SMS. Returns how many were queued; 0 without the SMS build or permission.
+    let importSmsInboxChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.bank_capture.BankCaptureHostApi.importSmsInbox\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      importSmsInboxChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let daysArg = args[0] as! Int64
+        let maxArg = args[1] as! Int64
+        do {
+          let result = try api.importSmsInbox(days: daysArg, max: maxArg)
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      importSmsInboxChannel.setMessageHandler(nil)
     }
   }
 }

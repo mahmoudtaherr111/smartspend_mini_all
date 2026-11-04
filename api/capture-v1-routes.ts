@@ -18,12 +18,13 @@ import {
   CAPTURE_TEXT_MAX,
   captureActionRequestSchema,
   captureHeartbeatSchema,
+  captureNoticeAckSchema,
   captureSignalsRequestSchema,
   type CaptureConfig,
   type CaptureError,
 } from "../contracts/capture-intake";
 import { captureOpenFor, olderThan, secondsToNextBusinessDay, takeDailySignals } from "./lib/capture/access";
-import { takeCaptureNotices, wakeCaptureModel } from "./lib/capture/ai-queue";
+import { acknowledgeCaptureNotices, takeCaptureNotices, wakeCaptureModel } from "./lib/capture/ai-queue";
 import { recordHeartbeat } from "./lib/capture/care";
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
 import { CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION, captureConsentsOf } from "./lib/capture/consent";
@@ -131,6 +132,15 @@ export function registerCaptureRoutes(app: Hono): void {
       return fail(c, 429, "rate_limited");
     }
     return c.json(await takeCaptureNotices(device));
+  });
+
+  app.post("/api/capture/v1/notices/ack", limit, async (c) => {
+    const device = await deviceOf(c);
+    if (!device) return fail(c, 401, "invalid_device");
+    if (!(await underLimit(actionTaps, `capture:notice-acks:${device.deviceId}`))) return fail(c, 429, "rate_limited");
+    const parsed = captureNoticeAckSchema.safeParse(await readJson(c));
+    if (!parsed.success) return fail(c, 400, "invalid_request");
+    return c.json({ acked: await acknowledgeCaptureNotices(device, parsed.data.noticeIds) });
   });
 
   app.get("/api/capture/v1/config", async (c) => {

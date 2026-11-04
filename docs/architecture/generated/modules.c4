@@ -88,10 +88,10 @@ model {
       }
     }
     capture-ai-reader = module 'Message model reader' {
-      description 'Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server’s Gemini key until then), behind the admin’s switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. The unsure-message queue calls the active sms-v2 reader. The separate sms-v4 contract grounds fields in source quotes and proposes decimal-exact EGP postings; an offline CLI checks saved replies without calling a model or writing the ledger.'
+      description 'Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server’s Gemini key until then), behind the admin’s switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. The unsure-message queue calls the active sms-v2 reader. The separate sms-v4 contract grounds fields in source quotes and proposes decimal-exact EGP postings; an offline CLI checks saved replies without calling a model or writing the ledger. With the admin switch and the user’s consent, each reading’s numbered-marker text, reply and posting are kept as a sample to build a reader without a model (decision 0048).'
       metadata {
-        files '7'
-        paths 'api/lib/capture/ai-reader.ts, api/lib/sms-ai-contract.ts, api/lib/capture/model-contract.ts, api/lib/capture/privacy.ts, api/lib/capture/vault.ts, api/lib/capture/admission.ts, api/lib/capture/model-reader.ts, api/qa/capture-contract-runner.ts'
+        files '8'
+        paths 'api/lib/capture/ai-reader.ts, api/lib/sms-ai-contract.ts, api/lib/capture/model-contract.ts, api/lib/capture/privacy.ts, api/lib/capture/vault.ts, api/lib/capture/admission.ts, api/lib/capture/model-reader.ts, api/lib/capture/samples.ts, api/qa/capture-contract-runner.ts'
       }
     }
     capture-catalog = module 'Capture catalog' {

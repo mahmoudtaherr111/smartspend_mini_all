@@ -39,4 +39,11 @@ class BankCapture {
   /// Asks to show notifications (Android 13 and newer); true when the app may show them.
   Future<bool> requestNotificationPermission() =>
       _hostApi.requestNotificationPermission();
+
+  /// Asks for the SMS permissions; only the SMS build ([CaptureStatus.smsSupported]) can say yes.
+  Future<bool> requestSmsPermission() => _hostApi.requestSmsPermission();
+
+  /// Queues the bank SMS of the last [days] days (30 at most, what the server keeps); returns how many.
+  Future<int> importSmsInbox({int days = 30, int max = 500}) =>
+      _hostApi.importSmsInbox(days, max);
 }

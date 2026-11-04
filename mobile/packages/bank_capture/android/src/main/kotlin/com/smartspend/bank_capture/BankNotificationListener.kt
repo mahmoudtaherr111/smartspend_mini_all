@@ -38,6 +38,7 @@ class BankNotificationListener : NotificationListenerService() {
     private fun capture(sbn: StatusBarNotification) {
         val settings = CaptureSettings(this)
         val owner = settings.ownerKey ?: return
+        val token = settings.token ?: return
         if (!settings.connected) return
         val config = settings.config ?: return
         if (!config.enabled || !config.consented) return
@@ -47,6 +48,8 @@ class BankNotificationListener : NotificationListenerService() {
         val defaultSms = Telephony.Sms.getDefaultSmsPackage(this)
         val messaging = app in config.messagingPackages || app == defaultSms
         if (!messaging && app !in config.appPackages) return
+        // While SMS arrive directly, a messaging app's notification of the same SMS would only repeat it.
+        if (messaging && SmsCapture.active(this)) return
 
         val notification = sbn.notification ?: return
         if (notification.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
@@ -56,17 +59,20 @@ class BankNotificationListener : NotificationListenerService() {
         val gate = config.gate.dropReason(read.sender, read.title, read.text, messaging)
         if (gate != null) return
 
-        val queue = CaptureQueue(this)
-        try {
-            // The system posts a notification again when it is updated: one identity is one message.
-            val identity = "${sbn.key}|${read.postedAt}|${read.text.hashCode()}"
-            if (!queue.firstSight(identity)) return
-            queue.add(owner, if (messaging) "sms" else "notification", app, read.sender, read.title, read.text, read.postedAt)
-        } finally {
-            queue.close()
+        synchronized(CaptureOwnerGuard.lock) {
+            if (!CaptureOwnerGuard.matches(settings, owner, token)) return
+            val queue = CaptureQueue(this)
+            try {
+                // The system posts a notification again when it is updated: one identity is one message.
+                val identity = "${sbn.key}|${read.postedAt}|${read.text.hashCode()}"
+                if (!queue.firstSight(identity)) return
+                queue.add(owner, if (messaging) "sms" else "notification", app, read.sender, read.title, read.text, read.postedAt)
+            } finally {
+                queue.close()
+            }
+            settings.lastCaptureAt = System.currentTimeMillis()
+            CaptureScheduler.sendSoon(this)
         }
-        settings.lastCaptureAt = System.currentTimeMillis()
-        CaptureScheduler.sendSoon(this)
     }
 }
 

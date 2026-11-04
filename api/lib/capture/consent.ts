@@ -4,7 +4,7 @@
  * 151/2020, so each grant is a row with the version of the text the user read, and taking it back keeps the row.
  */
 import { and, eq, isNull } from "drizzle-orm";
-import { captureConsents, localUsers, users } from "../../../db/schema";
+import { captureConsents, captureSamples, localUsers, users } from "../../../db/schema";
 import type { CaptureConsentScope } from "../../../contracts/capture-intake";
 import { getDb } from "../../queries/connection";
 import type { CaptureOwner } from "./devices";
@@ -14,13 +14,13 @@ export const CAPTURE_CONSENT_TEXT_VERSION = "2026-10-27";
 /** Broader scope: every redacted financial message, with automatic filing. Legacy grants never imply this grant. */
 export const CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION = "2026-11-04";
 
-export async function captureConsentsOf(owner: CaptureOwner, reader: Pick<ReturnType<typeof getDb>, "select"> = getDb(), version?: string): Promise<{ capture: boolean; aiReading: boolean }> {
+export async function captureConsentsOf(owner: CaptureOwner, reader: Pick<ReturnType<typeof getDb>, "select"> = getDb(), version?: string): Promise<{ capture: boolean; aiReading: boolean; samples: boolean }> {
   const rows = await reader
     .select({ scope: captureConsents.scope })
     .from(captureConsents)
     .where(and(eq(captureConsents.userId, owner.userId), eq(captureConsents.userType, owner.userType), isNull(captureConsents.revokedAt), ...(version ? [eq(captureConsents.textVersion, version)] : [])));
   const scopes = new Set(rows.map((row) => row.scope));
-  return { capture: scopes.has("capture"), aiReading: scopes.has("ai_reading") };
+  return { capture: scopes.has("capture"), aiReading: scopes.has("ai_reading"), samples: scopes.has("message_samples") };
 }
 
 /** Gives or takes back one consent. Giving it twice keeps the first grant. */
@@ -37,6 +37,8 @@ export async function setCaptureConsent(owner: CaptureOwner, scope: CaptureConse
   );
   if (!granted) {
     await db.update(captureConsents).set({ revokedAt: new Date() }).where(active);
+    // Taking back the samples consent takes back the samples kept under it.
+    if (scope === "message_samples") await db.delete(captureSamples).where(and(eq(captureSamples.userId, owner.userId), eq(captureSamples.userType, owner.userType)));
     return;
   }
   const [existing] = await db.select({ id: captureConsents.id, textVersion: captureConsents.textVersion }).from(captureConsents).where(active).limit(1);

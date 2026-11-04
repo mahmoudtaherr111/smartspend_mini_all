@@ -54,6 +54,7 @@ import {
   captureSignals,
   captureEvents,
   captureQuestions,
+  captureSamples,
   captureUsage,
   captureMemory,
   captureUserPairs,
@@ -128,6 +129,7 @@ export async function purgeUserData(
   await tx.delete(captureSignals).where(userScope(captureSignals, userId, userType));
   await tx.delete(captureEvents).where(userScope(captureEvents, userId, userType));
   if (captureTables.has("capture_questions")) await tx.delete(captureQuestions).where(userScope(captureQuestions, userId, userType));
+  if (captureTables.has("capture_samples")) await tx.delete(captureSamples).where(userScope(captureSamples, userId, userType));
   await tx.delete(captureUsage).where(userScope(captureUsage, userId, userType));
   await tx.delete(captureMemory).where(userScope(captureMemory, userId, userType));
   await tx.delete(captureUserPairs).where(userScope(captureUserPairs, userId, userType));

@@ -12,8 +12,8 @@
  * (`assertEntityOwnership`), finding or creating the contact, and the category the taxonomy holds stay with them.
  */
 import { TRPCError } from "@trpc/server";
-import { and, eq, inArray, sql } from "drizzle-orm";
-import { captureEvents, expenses, localUsers, userContacts, users, userWallets } from "../../db/schema";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { captureAiJobs, captureEvents, expenses, localUsers, userContacts, users, userWallets } from "../../db/schema";
 import { idsOfNames, rememberFiling } from "../lib/capture/memory";
 import { businessDayRange } from "../lib/app-time";
 import { CacheKeys } from "../lib/cache-keys";
@@ -416,6 +416,7 @@ export async function updateLedgerEntryInTx(tx: LedgerTx, owner: LedgerOwner, id
   // A row recorded from a bank message that the user files elsewhere teaches where that merchant goes next time
   // (decision 0030).
   const captured = (row.parsedMetadata as { capture?: { eventId?: unknown } } | null)?.capture?.eventId;
+  if (typeof captured === "number") await tx.update(captureAiJobs).set({ notice: null }).where(and(eq(captureAiJobs.userId, owner.userId), eq(captureAiJobs.userType, owner.userType), eq(captureAiJobs.eventId, captured), isNull(captureAiJobs.noticeDeliveredAt)));
   if (typeof captured === "number" && ((set.category !== undefined && set.category !== row.category) || (set.subCategory !== undefined && set.subCategory !== row.subCategory))) {
     const [event] = await tx
       .select({ merchantKey: captureEvents.merchantKey })
@@ -488,6 +489,7 @@ export async function deleteLedgerEntryInTx(tx: LedgerTx, owner: LedgerOwner, id
   // not bring it back (decision 0029).
   const captured = (row.parsedMetadata as { capture?: { eventId?: unknown } } | null)?.capture?.eventId;
   if (typeof captured === "number") {
+    await tx.update(captureAiJobs).set({ notice: null }).where(and(eq(captureAiJobs.userId, owner.userId), eq(captureAiJobs.userType, owner.userType), eq(captureAiJobs.eventId, captured), isNull(captureAiJobs.noticeDeliveredAt)));
     const children = await tx.select().from(expenses).where(and(eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType), eq(expenses.clientRequestId, `cap:e${captured}:fee`))).for("update");
     for (const child of children) {
       await deleteLedgerEntryInTx(tx, owner, child.id);

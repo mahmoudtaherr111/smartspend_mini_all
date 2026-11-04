@@ -266,6 +266,54 @@ abstract class AppLocalizations {
   /// **'ماقدرناش نحفظ اختيارك. جرّب تاني.'**
   String get captureAiReadingFailed;
 
+  /// No description provided for @captureSmsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة رسايل البنك SMS'**
+  String get captureSmsTitle;
+
+  /// No description provided for @captureSmsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنقرا رسايل البنوك والمحافظ أول ما توصل، ورسايلك الشخصية مش بتتقري.'**
+  String get captureSmsBody;
+
+  /// No description provided for @captureSmsOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغالة: رسايل البنك بتتسجل أول ما توصل.'**
+  String get captureSmsOn;
+
+  /// No description provided for @captureSmsAllow.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمح'**
+  String get captureSmsAllow;
+
+  /// No description provided for @captureSmsImport.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل رسايل آخر 30 يوم'**
+  String get captureSmsImport;
+
+  /// No description provided for @captureSmsImported.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{مالقيناش رسايل بنك جديدة} =1{بنسجّل رسالة واحدة} other{بنسجّل {count} رسالة}}'**
+  String captureSmsImported(int count);
+
+  /// No description provided for @captureSamplesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساعدنا نحسّن قراءة الرسايل'**
+  String get captureSamplesTitle;
+
+  /// No description provided for @captureSamplesBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنحتفظ برسايل البنك متخبّي منها الأسماء والأرقام، عشان نقرا الرسايل من غير ذكاء اصطناعي بعدين. لو قفلتها بنمسح اللي اتحفظ.'**
+  String get captureSamplesBody;
+
   /// No description provided for @captureUpdateRequired.
   ///
   /// In ar, this message translates to:

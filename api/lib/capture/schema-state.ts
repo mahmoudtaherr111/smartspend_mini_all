@@ -7,7 +7,7 @@ export async function optionalCaptureTables(
 ): Promise<Set<string>> {
   const [raw] =
     await tx.execute(sql`SELECT table_name AS tableName FROM information_schema.tables WHERE table_schema = DATABASE()
-    AND table_name IN ('capture_questions', 'capture_ai_accounts', 'capture_ai_reservations')`);
+    AND table_name IN ('capture_questions', 'capture_ai_accounts', 'capture_ai_reservations', 'capture_samples')`);
   return new Set(
     Array.isArray(raw)
       ? raw.flatMap((row) =>

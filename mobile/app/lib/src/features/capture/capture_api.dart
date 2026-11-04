@@ -15,6 +15,8 @@ final class CaptureServerStatus {
     this.automatic = false,
     this.questionsEnabled = false,
     this.walletTypesEnabled = false,
+    this.samples = false,
+    this.samplesOffered = false,
   });
 
   final bool enabled;
@@ -26,6 +28,11 @@ final class CaptureServerStatus {
 
   /// The person lets the admin's model read the messages the code could not read with confidence (decision 0031).
   final bool aiReading;
+
+  /// The person lets us keep their messages, with names and numbers hidden, to improve reading without AI; and
+  /// whether the server offers that at all.
+  final bool samples;
+  final bool samplesOffered;
 
   /// New payments counted this month against the plan's limit, and the limit (0 = none).
   final int used;
@@ -260,6 +267,8 @@ class CaptureApi {
       consentTextVersion: map['consentTextVersion'] as String? ?? '',
       aiReading:
           consent is Map<String, Object?> && consent['aiReading'] == true,
+      samples: consent is Map<String, Object?> && consent['samples'] == true,
+      samplesOffered: map['samplesOffered'] == true,
       used: number('used'),
       limit: number('limit'),
       held: number('held'),
@@ -280,6 +289,16 @@ class CaptureApi {
     Procedures.capture.setConsent,
     input: {
       'scope': 'ai_reading',
+      'granted': granted,
+      'textVersion': textVersion,
+    },
+  );
+
+  /// Gives or takes back the consent to keep redacted messages; taking it back deletes the kept ones.
+  Future<void> setSamples(bool granted, String textVersion) => _client.mutate(
+    Procedures.capture.setConsent,
+    input: {
+      'scope': 'message_samples',
       'granted': granted,
       'textVersion': textVersion,
     },

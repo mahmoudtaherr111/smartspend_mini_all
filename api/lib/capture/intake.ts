@@ -126,6 +126,8 @@ interface KeptMoney {
 
 /** The reader's fields kept with a signal (the `reading` column). No evidence, no message text. */
 export interface SignalReading {
+  /** The signal came from an inbox import: its recording posts no notice on the phone. */
+  imported?: boolean;
   captureV4?: { envelope: string; reply?: CaptureModelReply; posting?: CapturePostingProposal; model?: string; provider?: string };
   readerVersion: string;
   kind: Reading["kind"];
@@ -618,6 +620,7 @@ function eventKeysOf(row: typeof captureEvents.$inferSelect): EventKeys {
   const posting = (row.reading as { capturePosting?: { principalEgp?: unknown } } | null)?.capturePosting;
   return {
     principalEgp: typeof posting?.principalEgp === "string" && /^\d+\.\d{2}$/.test(posting.principalEgp) ? Number(posting.principalEgp) : null,
+    kind: row.kind,
     sourceSlug: row.sourceSlug,
     id: row.id,
     status: row.status,
@@ -744,6 +747,7 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
   const channelKey = channelKeyOf(device.deviceId, input.channel, input.sourceSlug);
   const keys: SignalKeys = {
     principalEgp: reading.captureV4?.posting?.status === "ready" ? Number(reading.captureV4.posting.principalEgp) : null,
+    kind: reading.kind,
     sourceSlug: input.sourceSlug,
     channelKey,
     deviceId: device.deviceId,
@@ -1024,6 +1028,7 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
       if (privateText && !privateText.ok) return { id: signal.id, result: privateText.codes.includes("otp") ? "ignored" : "rejected", reason: privateText.codes.includes("otp") ? "otp" : "redaction_failed" };
       if (privateText?.ok) {
         if (isPrivateIdentityIgnored(run.ignore, privateText.value)) return { id: signal.id, result: "ignored", reason: "user_ignored" };
+        if (signal.imported) reading.imported = true;
         reading.captureV4 = { envelope: sealCaptureText(privateText.value, { userId: device.userId, userType: device.userType as "oauth" | "local", deviceId: device.deviceId, clientSignalId: signal.id }) };
         // The shadow is diagnostic only; no stale amount/party drives v4 filing or survives as plaintext identity data.
         reading.counterparty = null;

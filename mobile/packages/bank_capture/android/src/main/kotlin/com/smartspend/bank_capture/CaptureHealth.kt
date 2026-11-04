@@ -27,21 +27,26 @@ internal object CaptureHealth {
     private const val REPORT_EVERY_MS = 12L * 3600 * 1000
     private const val TELL_EVERY_MS = 24L * 3600 * 1000
 
-    fun reportIfDue(context: Context, api: CaptureApi, settings: CaptureSettings, waiting: Long) {
+    fun reportIfDue(context: Context, api: CaptureApi, settings: CaptureSettings, waiting: Long, owner: String, token: String) {
         val now = System.currentTimeMillis()
-        val access = listenerGranted(context)
-        if (!access && now - settings.stoppedNoticeAt > TELL_EVERY_MS) {
-            CaptureNotifier.showStopped(context, settings.language)
-            settings.stoppedNoticeAt = now
+        val report = synchronized(CaptureOwnerGuard.lock) {
+            if (!CaptureOwnerGuard.matches(settings, owner, token)) return
+            val access = listenerGranted(context)
+            if (!access && now - settings.stoppedNoticeAt > TELL_EVERY_MS) {
+                CaptureNotifier.showStopped(context, settings.language)
+                settings.stoppedNoticeAt = now
+            }
+            if (now - settings.heartbeatAt < REPORT_EVERY_MS) return
+            JSONObject().put("access", access)
+                .put("notifications", CaptureNotifier.canNotify(context))
+                .put("waiting", waiting)
+                .put("lastCaptureAt", settings.lastCaptureAt?.let { isoInstant(it) } ?: JSONObject.NULL)
+                .also { body -> appVersion(context)?.let { body.put("appVersion", it.take(32)) } }
         }
-        if (now - settings.heartbeatAt < REPORT_EVERY_MS) return
-        val report = JSONObject()
-            .put("access", access)
-            .put("notifications", CaptureNotifier.canNotify(context))
-            .put("waiting", waiting)
-            .put("lastCaptureAt", settings.lastCaptureAt?.let { isoInstant(it) } ?: JSONObject.NULL)
-        appVersion(context)?.let { report.put("appVersion", it.take(32)) }
-        // A report that does not arrive is sent again on the next run.
-        if (api.heartbeat(report).code in 200..299) settings.heartbeatAt = now
+        val response = api.heartbeat(report)
+        synchronized(CaptureOwnerGuard.lock) {
+            if (response.code in 200..299 && CaptureOwnerGuard.matches(settings, owner, token)) settings.heartbeatAt = now
+        }
     }
+
 }

@@ -205,6 +205,8 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
           Text(l10n.captureWaiting(status.waiting), style: muted),
           const _UsageLines(),
           const _AiReadingSwitch(),
+          const _SamplesSwitch(),
+          if (status.smsSupported == true) _SmsSection(status: status),
           if (status.lastError == 'offline')
             Text(l10n.captureOffline, style: muted),
           if (status.lastError == 'update_required')
@@ -314,6 +316,120 @@ class _AiReadingSwitchState extends ConsumerState<_AiReadingSwitch> {
             : l10n.captureAiReadingBody,
       ),
       value: server.aiReading,
+      onChanged: _busy ? null : (granted) => _set(server, granted),
+    );
+  }
+}
+
+/// Reading bank SMS directly, in the SMS build only (plan v6 §6.1): the permission, then a one-time import of the
+/// last 30 days.
+class _SmsSection extends ConsumerStatefulWidget {
+  const _SmsSection({required this.status});
+
+  final CaptureStatus status;
+
+  @override
+  ConsumerState<_SmsSection> createState() => _SmsSectionState();
+}
+
+class _SmsSectionState extends ConsumerState<_SmsSection> {
+  bool _busy = false;
+
+  Future<void> _run(Future<void> Function() action) async {
+    setState(() => _busy = true);
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+      ref.invalidate(captureStatusProvider);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final capture = ref.read(bankCaptureProvider);
+    final granted = widget.status.smsAccess == CaptureAccess.granted;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(l10n.captureSmsTitle),
+          subtitle: Text(granted ? l10n.captureSmsOn : l10n.captureSmsBody),
+          trailing: granted
+              ? null
+              : TextButton(
+                  onPressed: _busy
+                      ? null
+                      : () => _run(() async {
+                          await capture.requestSmsPermission();
+                        }),
+                  child: Text(l10n.captureSmsAllow),
+                ),
+        ),
+        if (granted)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton(
+              onPressed: _busy
+                  ? null
+                  : () => _run(() async {
+                      final count = await capture.importSmsInbox();
+                      messenger.showSnackBar(
+                        SnackBar(content: Text(l10n.captureSmsImported(count))),
+                      );
+                    }),
+              child: Text(l10n.captureSmsImport),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// The consent to keep messages with names and numbers hidden, offered only while the admin keeps them (v7 §8).
+class _SamplesSwitch extends ConsumerStatefulWidget {
+  const _SamplesSwitch();
+
+  @override
+  ConsumerState<_SamplesSwitch> createState() => _SamplesSwitchState();
+}
+
+class _SamplesSwitchState extends ConsumerState<_SamplesSwitch> {
+  bool _busy = false;
+
+  Future<void> _set(CaptureServerStatus server, bool granted) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(captureApiProvider)
+          .setSamples(granted, server.consentTextVersion);
+      ref.invalidate(captureServerStatusProvider);
+    } on Object {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.captureAiReadingFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final server = ref.watch(captureServerStatusProvider).value;
+    if (server == null || !server.samplesOffered) {
+      return const SizedBox.shrink();
+    }
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(l10n.captureSamplesTitle),
+      subtitle: Text(l10n.captureSamplesBody),
+      value: server.samples,
       onChanged: _busy ? null : (granted) => _set(server, granted),
     );
   }

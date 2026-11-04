@@ -397,6 +397,13 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
       expect(first.pending).toBe(0);
       expect(first.notices).toHaveLength(1);
       expect(first.notices[0].notice.actions).toEqual(["record", "dismiss"]);
+      expect((await notices()).notices).toHaveLength(1);
+      const noticeId = first.notices[0].noticeId;
+      const secondDevice = await registerCaptureDevice(owner, { platform: "android", installationId: "install-notice-other" });
+      expect(await (await post("/api/capture/v1/notices/ack", { noticeIds: [noticeId] }, secondDevice.token)).json()).toEqual({ acked: 0 });
+      expect((await notices()).notices).toHaveLength(1);
+      expect(await (await post("/api/capture/v1/notices/ack", { noticeIds: [noticeId, noticeId] })).json()).toEqual({ acked: 1 });
+      expect(await (await post("/api/capture/v1/notices/ack", { noticeIds: [noticeId] })).json()).toEqual({ acked: 0 });
       expect((await notices()).notices).toHaveLength(0);
 
       const eventId = first.notices[0].eventId;

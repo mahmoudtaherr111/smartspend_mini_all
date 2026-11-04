@@ -38,6 +38,8 @@ export const captureSignalSchema = z.object({
   text: z.string().min(1).max(CAPTURE_TEXT_MAX),
   /** When the phone received it (ISO instant). */
   postedAt: z.string().datetime({ offset: true }),
+  /** Read from the SMS inbox by an import of past days, not as it arrived: recorded without a notice on the phone. */
+  imported: z.boolean().optional(),
 });
 export type CaptureSignal = z.infer<typeof captureSignalSchema>;
 
@@ -105,10 +107,14 @@ export type CaptureHeartbeat = z.infer<typeof captureHeartbeatSchema>;
 
 /** `GET /api/capture/v1/notices`: the notices of this phone's queued signals read since it last asked. */
 export interface CaptureNoticesResponse {
-  notices: Array<{ eventId: number; notice: CaptureNotice }>;
+  notices: Array<{ noticeId: number; eventId: number; notice: CaptureNotice }>;
   /** This phone's signals still waiting for the model: ask again later when it is more than zero. */
   pending: number;
+  hasMore?: boolean;
 }
+
+/** A successful OS post is acknowledged explicitly; fetching a response alone is never delivery. */
+export const captureNoticeAckSchema = z.object({ noticeIds: z.array(z.number().int().positive()).min(1).max(20) });
 
 export const captureActionRequestSchema = z.object({
   /** The phone's id for this tap: repeating it changes nothing. */
@@ -167,5 +173,6 @@ export const CAPTURE_ERRORS = [
 export type CaptureError = (typeof CAPTURE_ERRORS)[number];
 
 /** Consents a user gives for capture, each with the version of the text they agreed to. */
-export const CAPTURE_CONSENT_SCOPES = ["capture", "ai_reading"] as const;
+/** `message_samples`: keep the redacted message and its reading to build a reader that needs no model (v7 §8). */
+export const CAPTURE_CONSENT_SCOPES = ["capture", "ai_reading", "message_samples"] as const;
 export type CaptureConsentScope = (typeof CAPTURE_CONSENT_SCOPES)[number];

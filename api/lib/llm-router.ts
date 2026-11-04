@@ -439,6 +439,13 @@ function applyThinkingSuppression(body: Record<string, unknown>, route: LlmRoute
     body.thinking = { type: "disabled" };
     return;
   }
+  // Groq answers 400 to `chat_template_kwargs`. Qwen there turns thinking off with `reasoning_effort: "none"`;
+  // its other reasoning models only accept low to high, so their reasoning is kept out of `content` instead.
+  if (/(^|\.)groq\.com$/i.test(hostOf(route.baseUrl))) {
+    if (/qwen/i.test(route.model)) body.reasoning_effort = "none";
+    else body.reasoning_format = "hidden";
+    return;
+  }
   body.chat_template_kwargs = { thinking: false };
 }
 
@@ -603,7 +610,7 @@ async function callGemini(
         // the default provider.
         maxOutputTokens: req.maxOutputTokens,
         responseMimeType: "application/json",
-        ...(withSchema && req.schema ? { responseSchema: req.schema as never } : {}),
+        ...(withSchema && req.schema ? { responseSchema: toGeminiSchema(req.schema) as never } : {}),
         ...(lowThinking ? ({ thinkingConfig: { thinkingLevel: "LOW" } } as Record<string, unknown>) : {}),
       },
     });
@@ -704,6 +711,47 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
  * Gemini schemas carry `format: "enum"` and omit `additionalProperties`; strict JSON
  * Schema validators reject the first and object to the second.
  */
+/**
+ * Gemini's `responseSchema` is an OpenAPI subset: it answers 400 to `$schema`, `additionalProperties`
+ * and `anyOf: [X, null]`, and the chain then retries with no schema at all. Zod's JSON Schema output
+ * (`z.toJSONSchema`, marked by `$schema`) has all three, so convert it; any other schema passes unchanged.
+ */
+export function toGeminiSchema(schema: StructuredSchema): Record<string, unknown> {
+  // Only JSON Schema documents are converted; every hand-written Gemini schema keeps today's exact shape.
+  if (!("$schema" in schema)) return schema as unknown as Record<string, unknown>;
+  const DROP = new Set(["$schema", "additionalProperties", "minLength", "maxLength", "pattern", "default", "$id", "title"]);
+  const walk = (node: unknown): unknown => {
+    if (Array.isArray(node)) return node.map(walk);
+    if (!node || typeof node !== "object") return node;
+    const src = node as Record<string, unknown>;
+    if (Array.isArray(src.anyOf)) {
+      const others = src.anyOf.filter((item) => !(item && typeof item === "object" && (item as { type?: unknown }).type === "null"));
+      if (others.length === 1 && others.length < src.anyOf.length) {
+        return { ...(walk(others[0]) as Record<string, unknown>), nullable: true };
+      }
+    }
+    const out: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(src)) {
+      if (DROP.has(key)) continue;
+      if (key === "const") { out.enum = [value]; continue; }
+      if (key === "type" && Array.isArray(value)) {
+        const types = value.filter((item) => item !== "null");
+        out.type = types[0];
+        if (types.length < value.length) out.nullable = true;
+        continue;
+      }
+      out[key] = key === "properties" && value && typeof value === "object"
+        ? Object.fromEntries(Object.entries(value).map(([name, child]) => [name, walk(child)]))
+        : walk(value);
+    }
+    if (out.properties && typeof out.properties === "object" && !out.propertyOrdering) {
+      out.propertyOrdering = Object.keys(out.properties);
+    }
+    return out;
+  };
+  return walk(schema) as Record<string, unknown>;
+}
+
 export function toJsonSchema(schema: StructuredSchema): Record<string, unknown> {
   const walk = (node: unknown): unknown => {
     if (Array.isArray(node)) return node.map(walk);

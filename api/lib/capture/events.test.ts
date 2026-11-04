@@ -122,4 +122,14 @@ describe("one payment, one event", () => {
     expect(matchSignal(arrived, [out], [])).toEqual({ type: "merge", eventId: 7, rule: "own_transfer" });
     expect(matchSignal({ ...arrived, ownAccount: false }, [out], [])).toEqual({ type: "new" });
   });
+
+  it("never takes a reversal or refund as the other leg of an own transfer", () => {
+    const out = event(7, { direction: "out", amount: 1000, ownAccount: true, merchantKey: null, cardSuffix: null, kind: "transfer_out",
+      referenceHmac: "ref-9", sourceSlug: "cib" });
+    const back = signal({ direction: "in", amount: 1000, amountEgp: 1000, principalEgp: 1000, ownAccount: true, merchantKey: null, cardSuffix: null,
+      receivedAt: at(20), channelKey: "1:sms:CIB", referenceHmac: "ref-9", sourceSlug: "cib", kind: "reversal" });
+    expect(matchSignal(back, [{ ...out, principalEgp: 1000 }], [], true)).toEqual({ type: "new" });
+    expect(matchSignal({ ...back, kind: "refund" }, [out], [])).toEqual({ type: "new" });
+    expect(matchSignal({ ...back, kind: "transfer_in" }, [{ ...out, principalEgp: 1000 }], [], true)).toEqual({ type: "merge", eventId: 7, rule: "own_transfer" });
+  });
 });

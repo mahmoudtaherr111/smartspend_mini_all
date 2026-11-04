@@ -61,6 +61,8 @@ export const captureRouter = router({
     return { enabled: captureOpenFor(settings, ownerOf(ctx)), mode: settings.capture_read_mode === "model_first" ? "automatic" as const : "legacy" as const,
       questionsEnabled: settings.capture_questions_enabled === "true",
       walletTypesEnabled: settings.capture_financial_version === "cashflow-v1",
+      // The samples consent is offered only while the admin keeps samples (v7 §8).
+      samplesOffered: settings.capture_samples_enabled === "true",
       consent, consentTextVersion, usage };
   }),
 

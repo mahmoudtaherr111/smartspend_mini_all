@@ -128,6 +128,8 @@ class CaptureStatus {
     this.lastCaptureAt,
     this.lastUploadAt,
     this.lastError,
+    this.smsSupported,
+    this.smsAccess,
   });
 
   CaptureMethod method;
@@ -152,6 +154,11 @@ class CaptureStatus {
   /// Why the last send failed, as an id ("offline", "device_revoked", "capture_disabled", "consent_required").
   String? lastError;
 
+  /// This build declares SMS reading (the SMS build only), and whether the person allowed it.
+  bool? smsSupported;
+
+  CaptureAccess? smsAccess;
+
   List<Object?> _toList() {
     return <Object?>[
       method,
@@ -162,6 +169,8 @@ class CaptureStatus {
       lastCaptureAt,
       lastUploadAt,
       lastError,
+      smsSupported,
+      smsAccess,
     ];
   }
 
@@ -180,6 +189,8 @@ class CaptureStatus {
       lastCaptureAt: result[5] as int?,
       lastUploadAt: result[6] as int?,
       lastError: result[7] as String?,
+      smsSupported: result[8] as bool?,
+      smsAccess: result[9] as CaptureAccess?,
     );
   }
 
@@ -199,7 +210,9 @@ class CaptureStatus {
         _deepEquals(waiting, other.waiting) &&
         _deepEquals(lastCaptureAt, other.lastCaptureAt) &&
         _deepEquals(lastUploadAt, other.lastUploadAt) &&
-        _deepEquals(lastError, other.lastError);
+        _deepEquals(lastError, other.lastError) &&
+        _deepEquals(smsSupported, other.smsSupported) &&
+        _deepEquals(smsAccess, other.smsAccess);
   }
 
   @override
@@ -208,7 +221,7 @@ class CaptureStatus {
 
   @override
   String toString() {
-    return 'CaptureStatus(method: $method, access: $access, connected: $connected, notificationsAllowed: $notificationsAllowed, waiting: $waiting, lastCaptureAt: $lastCaptureAt, lastUploadAt: $lastUploadAt, lastError: $lastError)';
+    return 'CaptureStatus(method: $method, access: $access, connected: $connected, notificationsAllowed: $notificationsAllowed, waiting: $waiting, lastCaptureAt: $lastCaptureAt, lastUploadAt: $lastUploadAt, lastError: $lastError, smsSupported: $smsSupported, smsAccess: $smsAccess)';
   }
 }
 
@@ -473,5 +486,48 @@ class BankCaptureHostApi {
       isNullValid: false,
     );
     return pigeonVar_replyValue! as bool;
+  }
+
+  /// Asks for the SMS permissions in the SMS build; false in the default build or when refused.
+  Future<bool> requestSmsPermission() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.bank_capture.BankCaptureHostApi.requestSmsPermission$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as bool;
+  }
+
+  /// Queues the inbox's bank SMS of the last [days] days, at most [max] of them, through the same filter as a live
+  /// SMS. Returns how many were queued; 0 without the SMS build or permission.
+  Future<int> importSmsInbox(int days, int max) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.bank_capture.BankCaptureHostApi.importSmsInbox$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(
+      <Object?>[days, max],
+    );
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as int;
   }
 }

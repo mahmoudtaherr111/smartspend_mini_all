@@ -406,3 +406,6 @@ the fallback. A deliberate nature change can remove the standing. Unlinked rows 
 identity no longer cancel unrelated people. An explicitly chosen owned contact can teach a private full-phone alias;
 plain names never make that link. Contact counts follow reassignment, and contact merge/delete take the identity
 lock before updating ledger links. These rules are exercised against the disposable MySQL, not customer data.
+
+Edits/deletion of a captured entry also clear a still-undelivered obsolete model-job notice in the same transaction.
+This is cancellation, not a fabricated delivery timestamp; already delivered notices retain their historical receipt.

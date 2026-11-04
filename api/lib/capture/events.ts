@@ -11,6 +11,8 @@
 /** What a new signal is matched on. */
 export interface SignalKeys {
   principalEgp?: number | null;
+  /** The reading's kind: a reversal or refund undoes a payment and is never the other leg of one. */
+  kind?: string | null;
   sourceSlug?: string | null;
   /** The device and the way it arrived ("12:sms:CIB", "12:notification:com.bank.app"). */
   channelKey: string;
@@ -36,6 +38,7 @@ export interface SignalKeys {
 /** An event already kept for the user, with what its signals said. */
 export interface EventKeys {
   principalEgp?: number | null;
+  kind?: string | null;
   sourceSlug?: string | null;
   id: number;
   status: string;
@@ -122,6 +125,10 @@ function sameMoney(signal: SignalKeys, event: EventKeys): boolean {
   return false;
 }
 
+const UNDOES = new Set(["reversal", "refund"]);
+/** A transfer's two legs are both movements; money coming back is a different event even with the same reference. */
+const bothMovements = (signal: SignalKeys, event: EventKeys) => !UNDOES.has(signal.kind ?? "") && !UNDOES.has(event.kind ?? "");
+
 export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: SameText[], strict = false): Match {
   const byAge = [...events].sort((a, b) => a.firstReceivedAt.getTime() - b.firstReceivedAt.getTime());
   const sameSource = (event: EventKeys) => !!signal.sourceSlug && signal.sourceSlug === event.sourceSlug;
@@ -137,7 +144,7 @@ export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: S
     const repeated = byAge.find((event) => balanceProof(event) && apart(signal.receivedAt, event.firstReceivedAt) <= MATCH_WINDOWS.crossChannel);
     if (repeated) return { type: "merge", eventId: repeated.id, rule: "cross_channel" };
     const ownLeg = byAge.find((event) => sameSource(event) && signal.ownAccount && event.ownAccount && signal.referenceHmac
-      && signal.referenceHmac === event.referenceHmac && signal.direction !== event.direction
+      && signal.referenceHmac === event.referenceHmac && signal.direction !== event.direction && bothMovements(signal, event)
       && strictMoney(event) && apart(signal.receivedAt, event.firstReceivedAt) <= MATCH_WINDOWS.ownTransfer);
     if (ownLeg) return { type: "merge", eventId: ownLeg.id, rule: "own_transfer" };
   }
@@ -147,6 +154,8 @@ export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: S
     const found = byAge.find(
       (event) =>
         event.referenceHmac === signal.referenceHmac &&
+        // A refund or reversal often repeats the payment's reference: it is a new event, linked later, never merged.
+        (bothMovements(signal, event) || signal.kind === event.kind) &&
         (!strict || (sameSource(event) && directionsAgree(signal.direction, event.direction) && strictMoney(event) && !conflicts(signal, event))) &&
         (strict ? strictMoney(event) : sameMoney(signal, event)) &&
         apart(signal.receivedAt, event.firstReceivedAt) <= MATCH_WINDOWS.reference,
@@ -196,6 +205,7 @@ export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: S
     const otherLeg = byAge.find(
       (event) =>
         event.ownAccount &&
+        bothMovements(signal, event) &&
         event.direction !== null &&
         event.direction !== signal.direction &&
         event.direction !== "internal" &&

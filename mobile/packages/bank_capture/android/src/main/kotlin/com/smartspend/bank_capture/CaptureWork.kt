@@ -101,48 +101,61 @@ internal class UploadWorker(context: Context, params: WorkerParameters) : Corout
         try {
             if (System.currentTimeMillis() - settings.configAt > CONFIG_MAX_AGE_MS || settings.config == null) {
                 val reply = api.config()
-                when {
-                    reply.code == 200 && reply.body != null -> settings.config = CaptureConfig.parse(reply.body)
-                    reply.code == 401 -> return@withContext stopForDevice(settings, queue)
-                    reply.code >= 500 -> return@withContext Result.retry()
+                synchronized(CaptureOwnerGuard.lock) {
+                    if (!CaptureOwnerGuard.matches(settings, owner, token)) return@withContext Result.success()
+                    when {
+                        reply.code == 200 && reply.body != null -> settings.config = CaptureConfig.parse(reply.body)
+                        reply.code == 401 -> return@withContext stopForDevice(settings, queue)
+                        reply.code >= 500 -> return@withContext Result.retry()
+                    }
                 }
             }
-            queue.prune(owner)
-            CaptureHealth.reportIfDue(context, api, settings, queue.count())
+            synchronized(CaptureOwnerGuard.lock) {
+                if (!CaptureOwnerGuard.matches(settings, owner, token)) return@withContext Result.success()
+                queue.prune(owner)
+            }
+            CaptureHealth.reportIfDue(context, api, settings, queue.count(), owner, token)
             val batchMax = settings.config?.batchMax ?: 20
             repeat(MAX_BATCHES) {
-                val batch = queue.oldest(owner, batchMax)
+                val batch = synchronized(CaptureOwnerGuard.lock) {
+                    if (!CaptureOwnerGuard.matches(settings, owner, token)) return@withContext Result.success()
+                    queue.oldest(owner, batchMax)
+                }
                 if (batch.isEmpty()) {
-                    settings.lastError = null
+                    CaptureScheduler.fetchNotices(context)
+                    synchronized(CaptureOwnerGuard.lock) { if (CaptureOwnerGuard.matches(settings, owner, token)) settings.lastError = null }
                     return@withContext Result.success()
                 }
                 val reply = api.signals(request(batch, settings.language))
-                when (reply.code) {
-                    200 -> handle(reply.body, batch, queue, settings)
-                    401 -> return@withContext stopForDevice(settings, queue)
-                    426 -> {
-                        // This build is too old: keep the queue for the updated app, and say so on the card.
-                        settings.lastError = "update_required"
-                        return@withContext Result.success()
+                synchronized(CaptureOwnerGuard.lock) {
+                    if (!CaptureOwnerGuard.matches(settings, owner, token)) return@withContext Result.success()
+                    when (reply.code) {
+                        200 -> handle(reply.body, batch, queue, settings)
+                        401 -> return@withContext stopForDevice(settings, queue)
+                        426 -> {
+                            // This build is too old: keep the queue for the updated app, and say so on the card.
+                            settings.lastError = "update_required"
+                            return@withContext Result.success()
+                        }
+                        403, 503 -> {
+                            // Consent taken back or capture switched off: keep the queue, and read the config again.
+                            settings.lastError = reply.error ?: "capture_disabled"
+                            settings.config = null
+                            return@withContext Result.success()
+                        }
+                        400, 413 -> {
+                            // The batch as a whole is not acceptable: drop it rather than send it forever.
+                            queue.remove(batch.map { it.id })
+                            settings.lastError = "invalid_request"
+                        }
+                        429 -> return@withContext Result.retry()
+                        else -> return@withContext if (reply.code >= 500) Result.retry() else Result.success()
                     }
-                    403, 503 -> {
-                        // Consent taken back or capture switched off: keep the queue, and read the config again.
-                        settings.lastError = reply.error ?: "capture_disabled"
-                        settings.config = null
-                        return@withContext Result.success()
-                    }
-                    400, 413 -> {
-                        // The batch as a whole is not acceptable: drop it rather than send it forever.
-                        queue.remove(batch.map { it.id })
-                        settings.lastError = "invalid_request"
-                    }
-                    429 -> return@withContext Result.retry()
-                    else -> return@withContext if (reply.code >= 500) Result.retry() else Result.success()
                 }
             }
             Result.success()
         } catch (_: IOException) {
-            settings.lastError = "offline"
+            synchronized(CaptureOwnerGuard.lock) { if (CaptureOwnerGuard.matches(settings, owner, token)) settings.lastError = "offline" }
             Result.retry()
         } finally {
             queue.close()
@@ -160,7 +173,8 @@ internal class UploadWorker(context: Context, params: WorkerParameters) : Corout
                     .put("sender", signal.sender ?: JSONObject.NULL)
                     .put("title", signal.title ?: JSONObject.NULL)
                     .put("text", signal.text.take(TEXT_MAX))
-                    .put("postedAt", isoInstant(signal.postedAt)),
+                    .put("postedAt", isoInstant(signal.postedAt))
+                    .apply { if (signal.imported) put("imported", true) },
             )
         }
         return JSONObject().put("signals", signals).put("lang", if (language == "en") "en" else "ar")
@@ -229,10 +243,10 @@ internal class ActionWorker(context: Context, params: WorkerParameters) : Corout
 }
 
 /** Shows the server's notice for a payment, when there is one. */
-private fun showNotice(context: Context, notice: JSONObject?, eventId: Long, language: String) {
-    if (notice == null || eventId <= 0) return
+private fun showNotice(context: Context, notice: JSONObject?, eventId: Long, language: String): Boolean {
+    if (notice == null || eventId <= 0) return false
     val actions = notice.optJSONArray("actions")
-    CaptureNotifier.showReview(
+    return CaptureNotifier.showReview(
         context,
         eventId,
         notice.optString("title"),
@@ -250,27 +264,46 @@ internal class NoticeWorker(context: Context, params: WorkerParameters) : Corout
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val settings = CaptureSettings(applicationContext)
         val token = settings.token ?: return@withContext Result.success()
+        val owner = settings.ownerKey ?: return@withContext Result.success()
         val baseUrl = settings.baseUrl ?: return@withContext Result.success()
+        val api = CaptureApi(baseUrl, token, appVersion(applicationContext))
+        val queue = CaptureQueue(applicationContext)
+        fun current() = CaptureOwnerGuard.matches(settings, owner, token)
+        fun acknowledge(): Boolean {
+            val ids = synchronized(CaptureOwnerGuard.lock) { if (current()) queue.pendingAcknowledgements(owner) else emptyList() }
+            if (ids.isEmpty()) return true
+            val response = api.acknowledgeNotices(JSONObject().put("noticeIds", JSONArray(ids)))
+            if (response.code != 200) return false
+            synchronized(CaptureOwnerGuard.lock) { if (current()) queue.acknowledge(owner, ids) }
+            return true
+        }
         try {
-            val reply = CaptureApi(baseUrl, token, appVersion(applicationContext)).notices()
+            acknowledge()
+            if (!current()) return@withContext Result.success()
+            val reply = api.notices()
             if (reply.code == 429 || reply.code >= 500) return@withContext retryOrStop()
             if (reply.code != 200) return@withContext Result.success()
+            var unshown = false
             val notices = reply.body?.optJSONArray("notices")
             for (i in 0 until (notices?.length() ?: 0)) {
                 val item = notices!!.getJSONObject(i)
-                showNotice(applicationContext, item.optJSONObject("notice"), item.optLong("eventId", 0), settings.language)
+                val id = item.optLong("noticeId", 0)
+                synchronized(CaptureOwnerGuard.lock) {
+                    if (!current()) return@withContext Result.success()
+                    if (id <= 0 || !queue.wasShown(owner, id)) {
+                        val shown = showNotice(applicationContext, item.optJSONObject("notice"), item.optLong("eventId", 0), settings.language)
+                        if (shown && id > 0) queue.noteShown(owner, id)
+                        if (!shown) unshown = true
+                    }
+                }
             }
-            if ((reply.body?.optInt("pending", 0) ?: 0) > 0) retryOrStop() else Result.success()
+            if (!acknowledge() || unshown || reply.body?.optBoolean("hasMore", false) == true || (reply.body?.optInt("pending", 0) ?: 0) > 0) retryOrStop() else Result.success()
         } catch (_: IOException) {
             retryOrStop()
-        }
+        } finally { queue.close() }
     }
-
     private fun retryOrStop(): Result = if (runAttemptCount < MAX_TRIES) Result.retry() else Result.success()
-
-    private companion object {
-        const val MAX_TRIES = 5
-    }
+    private companion object { const val MAX_TRIES = 5 }
 }
 
 /** This app's version name ("1.4.0"), sent so the server can refuse a build too old to talk to it. */

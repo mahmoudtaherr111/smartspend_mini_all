@@ -85,7 +85,8 @@ describe("sms-v4 source evidence", () => {
   it("keeps a negative overdraft balance distinct from a positive purchase", () => {
     const text = PURCHASE.replace("675.60", "-25.00");
     expect(ready(purchase({ balance: quotedMoney(-25, "Available balance EGP -25.00") }), text)).toMatchObject({ totalEgp: "85.00" });
-    expect(checkCaptureReply(purchase({ balance: quotedMoney(25, "Available balance EGP -25.00") }), text)).toMatchObject({ ok: false, codes: expect.arrayContaining(["balance_number"]) });
+    // A balance the text does not prove is dropped; the purchase itself is still read.
+    expect(checkCaptureReply(purchase({ balance: quotedMoney(25, "Available balance EGP -25.00") }), text)).toMatchObject({ ok: true, reply: { balance: null }, repairs: expect.arrayContaining(["balance"]) });
   });
   it("rejects ambiguous repeated evidence but accepts context that distinguishes it", () => {
     const text = "Paid EGP 85. Fee EGP 85.";
@@ -148,7 +149,7 @@ describe("financial state, direction and ownership", () => {
     }
   });
   it("does not infer ownership from a transfer", () => {
-    expect(checkCaptureReply(purchase({ ownership: "own", ownershipQuote: "Successful purchase" }), PURCHASE)).toMatchObject({ ok: false, codes: expect.arrayContaining(["ownership_role"]) });
+    expect(checkCaptureReply(purchase({ ownership: "own", ownershipQuote: "Successful purchase" }), PURCHASE)).toMatchObject({ ok: true, reply: { ownership: "unknown", ownershipQuote: null }, repairs: expect.arrayContaining(["ownership"]) });
   });
   it.each(["purchase", "bill", "topup", "cash_out", "fee", "installment", "card_payment"] as const)("rejects incoming %s", (type) => {
     expect(checkCaptureReply(purchase({ type, flow: "in" }), PURCHASE)).toMatchObject({ ok: false, codes: expect.arrayContaining(["flow_type"]) });

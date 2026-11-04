@@ -235,6 +235,14 @@ model {
         storageClass 'E'
       }
     }
+    capture_samples = table 'capture_samples' {
+      #classE #dualOwner
+      description '16 columns, 3 indexes, storage class E.'
+      metadata {
+        export 'captureSamples'
+        storageClass 'E'
+      }
+    }
     capture_signals = table 'capture_signals' {
       #classE #dualOwner
       description '13 columns, 4 indexes, storage class E.'

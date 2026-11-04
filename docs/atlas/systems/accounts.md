@@ -61,6 +61,7 @@ flowchart LR
     tbl_capture_markers[("capture_markers")]
     tbl_capture_memory[("capture_memory")]
     tbl_capture_questions[("capture_questions")]
+    tbl_capture_samples[("capture_samples")]
     tbl_capture_signals[("capture_signals")]
     tbl_capture_usage[("capture_usage")]
     tbl_capture_user_pairs[("capture_user_pairs")]
@@ -138,6 +139,7 @@ flowchart LR
   mod_accounts ==> tbl_capture_markers
   mod_accounts ==> tbl_capture_memory
   mod_accounts ==> tbl_capture_questions
+  mod_accounts ==> tbl_capture_samples
   mod_accounts ==> tbl_capture_signals
   mod_accounts ==> tbl_capture_usage
   mod_accounts ==> tbl_capture_user_pairs
@@ -334,6 +336,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `capture_markers` | A | `accounts` | — |
 | `capture_memory` | A | `accounts` | — |
 | `capture_questions` | E | `accounts` | — |
+| `capture_samples` | E | `accounts` | — |
 | `capture_signals` | E | `accounts` | — |
 | `capture_usage` | C | `accounts` | — |
 | `capture_user_pairs` | A | `accounts` | — |

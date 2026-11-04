@@ -23,6 +23,7 @@ internal class CaptureApi(private val baseUrl: String, private val token: String
     fun action(body: JSONObject): CaptureReply = call("POST", "/api/capture/v1/actions", body)
 
     fun notices(): CaptureReply = call("GET", "/api/capture/v1/notices", null)
+    fun acknowledgeNotices(body: JSONObject): CaptureReply = call("POST", "/api/capture/v1/notices/ack", body)
 
     fun heartbeat(body: JSONObject): CaptureReply = call("POST", "/api/capture/v1/heartbeat", body)
 

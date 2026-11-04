@@ -330,6 +330,13 @@
       "when": 1793770262592,
       "tag": "0046_sour_valkyrie",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "5",
+      "when": 1793813077482,
+      "tag": "0047_round_shriek",
+      "breakpoints": true
     }
   ]
 }

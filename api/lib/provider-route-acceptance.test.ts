@@ -435,6 +435,20 @@ describe("M09 — a truncated answer is not a successful one", () => {
     expect(bodies[0]).toMatchObject({ chat_template_kwargs: { thinking: false } });
   });
 
+  it("uses Groq's own switches, which answers 400 to chat_template_kwargs", async () => {
+    const bodies: Array<Record<string, unknown>> = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {
+      bodies.push(JSON.parse(String((init as RequestInit).body)));
+      return Promise.resolve(ok());
+    });
+    const groq = { slug: "groq", baseUrl: "https://api.groq.com/openai/v1", suppressReasoning: true };
+    await executeLlmChain([route({ ...groq, model: "qwen/qwen3.8-27b" })], req);
+    await executeLlmChain([route({ ...groq, model: "openai/gpt-oss-20b" })], req);
+    expect(bodies[0]).toMatchObject({ reasoning_effort: "none" });
+    expect(bodies[1]).toMatchObject({ reasoning_format: "hidden" });
+    expect(bodies.every((body) => body.chat_template_kwargs === undefined)).toBe(true);
+  });
+
   it("does not send a thinking flag to a model that does not reason", async () => {
     const bodies: Array<Record<string, unknown>> = [];
     vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {

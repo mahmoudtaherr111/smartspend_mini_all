@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 74 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 75 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 18 | — | — | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 11 | — | — | 3 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-11-04 61a28184 | 2026-11-04 61a28184 | 11 | — | — | 4 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-10-31 092bd28c | 2026-10-31 092bd28c | 10 | — | — | 4 | 2 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 6 | — | — | 2 | 2 |
 | [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 9 | — | 2 | 3 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 7 | — | 1 | 7 | 1 |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 16 | **1** | — | 7 | — |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-11-04 61a28184 | 2026-11-04 61a28184 | 7 | — | 1 | 7 | 1 |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-04 61a28184 | 2026-11-04 61a28184 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-03 ff028180 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 4 | — | — | 3 | 1 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-04 907e6d5e | 2026-11-04 907e6d5e | 4 | — | — | 6 | 1 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-03 8bcebb49 | 2026-11-03 8bcebb49 | 8 | — | — | 3 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 5 | — | — | — | 7 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-04 61a28184 | 2026-11-04 61a28184 | 8 | — | — | 3 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-04 61a28184 | 2026-11-04 61a28184 | 5 | — | — | — | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 7 | — | — | 3 | 1 |
 
 
@@ -29,7 +29,7 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 
 Every system's explanation names at least one test.
 
-## What is waiting (74 issue(s))
+## What is waiting (75 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
@@ -47,7 +47,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Money: expenses, wallets, budgets, goals and businesses** — [docs/systems/money.md](../../systems/money.md)
 - The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
 
-### Gaps (44)
+### Gaps (45)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and The website has no receipt capture. (People a recording names become contacts when the entry is saved, as for typed text; voice seconds are counted per Cairo calendar month, `voiceMonth` in `api/services/entitlements/voice.ts`.)
@@ -55,6 +55,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - iPhone capture is not built: the card on an iPhone only opens the Shortcuts app. There is no push: a question from the model the phone did not fetch within about a minute shows only in the app. The Android side was compiled and tested only in CI; it has not run on a real phone yet.
 - A merchant after من، إلى، to or from is kept only when the reader named it or it looks like a business (`api/lib/capture/keep-merchants.ts`); a plain name the reader missed ("من AHMED STORES") still reaches the model as `[REDACTED_NAME]`.
+- No export of `capture_samples` exists yet: the rows are kept, but building the no-model reader from them needs an admin export without user ids (`api/lib/capture/samples.ts`).
 - The merge windows are guesses until real messages measure them. A hold the bank settles later is not joined to its charge (the reader reads a hold as no transaction), and a transfer that might be between the user's own accounts without both legs saying so is asked about as two payments.
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)

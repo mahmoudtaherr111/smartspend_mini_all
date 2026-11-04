@@ -36,6 +36,12 @@ class _FakeBankCapture implements BankCapture {
 
   @override
   Future<bool> requestNotificationPermission() async => true;
+
+  @override
+  Future<bool> requestSmsPermission() async => false;
+
+  @override
+  Future<int> importSmsInbox({int days = 30, int max = 500}) async => 0;
 }
 
 /// The app with a phone account already signed in.

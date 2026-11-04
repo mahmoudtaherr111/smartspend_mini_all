@@ -114,6 +114,41 @@ class AppLocalizationsEn extends AppLocalizations {
       'We couldn\'t save your choice. Try again.';
 
   @override
+  String get captureSmsTitle => 'Read bank SMS';
+
+  @override
+  String get captureSmsBody =>
+      'We read bank and wallet SMS as they arrive; personal messages are never read.';
+
+  @override
+  String get captureSmsOn => 'On: bank SMS are recorded as they arrive.';
+
+  @override
+  String get captureSmsAllow => 'Allow';
+
+  @override
+  String get captureSmsImport => 'Record the last 30 days';
+
+  @override
+  String captureSmsImported(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Recording $count messages',
+      one: 'Recording 1 message',
+      zero: 'No new bank messages found',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get captureSamplesTitle => 'Help us read messages better';
+
+  @override
+  String get captureSamplesBody =>
+      'We keep your bank messages with names and numbers hidden, to read them without AI later. Turning this off deletes what was kept.';
+
+  @override
   String get captureUpdateRequired =>
       'This version of the app is too old for bank message capture. Update the app, and waiting messages will be sent after.';
 

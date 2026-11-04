@@ -27,7 +27,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `ai-governance` | AI usage and cost governance | 4 | `ai-providers`, `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-routers`, `capture-ai-reader`, `jobs` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-intake`, `capture-reader`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
 | `capture-intake` | Capture intake | 18 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `capture-reader`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security` | `accounts`, `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `ledger` | — |
-| `capture-ai-reader` | Message model reader | 7 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `database`, `platform`, `security` | `capture-intake` | `gemini` |
+| `capture-ai-reader` | Message model reader | 8 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `database`, `platform`, `security` | `capture-intake` | `gemini` |
 | `capture-catalog` | Capture catalog | 3 | `contracts`, `database`, `platform` | `api-core`, `api-routers`, `capture-intake` | — |
 | `capture-reader` | Message reader | 12 | `arabic-nlp`, `platform` | `capture-intake` | — |
 | `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
@@ -243,7 +243,7 @@ The ledger writer (adding, changing and removing an expense row in one transacti
 | `api/services/installments.ts` | — | — | — | — |
 | `api/services/ledger-bundles.ts` | `contracts`, `database` | — | `expenses` | — |
 | `api/services/ledger-semantics.ts` | `contracts`, `database` | — | — | — |
-| `api/services/ledger-writer.ts` | `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `notifications`, `platform` | — | `capture_events`, `expenses`, `local_users`, `user_contacts`, `user_wallets`, `users` | `capture_events`, `expenses`, `local_users`, `user_contacts`, `users` |
+| `api/services/ledger-writer.ts` | `capture-intake`, `classification`, `coaching`, `contracts`, `database`, `finance-semantic-layer`, `notifications`, `platform` | — | `capture_events`, `expenses`, `local_users`, `user_contacts`, `user_wallets`, `users` | `capture_ai_jobs`, `capture_events`, `expenses`, `local_users`, `user_contacts`, `users` |
 | `api/services/wallet-balance-policy.ts` | `contracts`, `database` | — | `capture_markers` | — |
 
 ### `coaching` — Commitments and coaching plans
@@ -262,7 +262,7 @@ Account deletion: purgeUserData removes every row a user owns, inside the caller
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/services/user-purge-service.ts` | `capture-intake`, `database` | — | `chat_conversations`, `local_users`, `user_businesses`, `users` | `ad_clicks`, `ad_impressions`, `ai_action_audit_logs`, `ai_action_memory`, `ai_conversation_summaries`, `ai_cost_monthly`, `ai_memory_embeddings`, `ai_memory_items`, `ai_pending_actions`, `ai_summaries`, `ai_token_ledgers`, `auth_challenges`, `business_categories`, `capture_ai_accounts`, `capture_ai_jobs`, `capture_ai_reservations`, `capture_consents`, `capture_devices`, `capture_events`, `capture_markers`, `capture_memory`, `capture_questions`, `capture_signals`, `capture_usage`, `capture_user_pairs`, `cashflow_settlements`, `chat_conversations`, `chat_messages`, `classification_logs`, `coaching_plans`, `coaching_steps`, `expense_categories`, `expense_daily_rollups`, `expenses`, `financial_goals`, `in_app_notifications`, `installment_plans`, `local_users`, `monthly_behavior_snapshots`, `monthly_reports`, `notification_logs`, `pending_clarifications`, `pro_subscriptions`, `profile_learning_events`, `push_subscriptions`, `referrals`, `scheduled_cashflows`, `sessions`, `store_purchases`, `support_tickets`, `user_analytics`, `user_budgets`, `user_businesses`, `user_contacts`, `user_correction_rules`, `user_credentials`, `user_dictionaries`, `user_profiles`, `user_wallets`, `users`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `whatsapp_contacts`, `whatsapp_messages` |
+| `api/services/user-purge-service.ts` | `capture-intake`, `database` | — | `chat_conversations`, `local_users`, `user_businesses`, `users` | `ad_clicks`, `ad_impressions`, `ai_action_audit_logs`, `ai_action_memory`, `ai_conversation_summaries`, `ai_cost_monthly`, `ai_memory_embeddings`, `ai_memory_items`, `ai_pending_actions`, `ai_summaries`, `ai_token_ledgers`, `auth_challenges`, `business_categories`, `capture_ai_accounts`, `capture_ai_jobs`, `capture_ai_reservations`, `capture_consents`, `capture_devices`, `capture_events`, `capture_markers`, `capture_memory`, `capture_questions`, `capture_samples`, `capture_signals`, `capture_usage`, `capture_user_pairs`, `cashflow_settlements`, `chat_conversations`, `chat_messages`, `classification_logs`, `coaching_plans`, `coaching_steps`, `expense_categories`, `expense_daily_rollups`, `expenses`, `financial_goals`, `in_app_notifications`, `installment_plans`, `local_users`, `monthly_behavior_snapshots`, `monthly_reports`, `notification_logs`, `pending_clarifications`, `pro_subscriptions`, `profile_learning_events`, `push_subscriptions`, `referrals`, `scheduled_cashflows`, `sessions`, `store_purchases`, `support_tickets`, `user_analytics`, `user_budgets`, `user_businesses`, `user_contacts`, `user_correction_rules`, `user_credentials`, `user_dictionaries`, `user_profiles`, `user_wallets`, `users`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `whatsapp_contacts`, `whatsapp_messages` |
 
 ### `jobs` — Scheduled job bodies
 
@@ -270,7 +270,7 @@ Job implementations scheduled from api/boot.ts.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_ai_accounts`, `capture_ai_days`, `capture_ai_jobs`, `capture_ai_reservations`, `capture_events`, `capture_questions`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `whatsapp_messages` |
+| `api/jobs/data-retention-job.ts` | `database` | — | `ad_clicks`, `ai_token_ledgers` | `ad_clicks`, `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `ai_pending_actions`, `ai_token_ledgers`, `api_key_errors`, `auth_challenges`, `capture_ai_accounts`, `capture_ai_days`, `capture_ai_jobs`, `capture_ai_reservations`, `capture_events`, `capture_questions`, `capture_samples`, `capture_signals`, `chat_messages`, `classification_logs`, `notification_logs`, `pending_clarifications`, `profile_learning_events`, `user_analytics`, `voice_call_incidents`, `voice_calls`, `voice_usage`, `whatsapp_messages` |
 | `api/jobs/monthly-behavior-job.ts` | `api-routers`, `database`, `platform` | — | `expenses`, `user_profiles` | — |
 | `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `contracts`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users`, `whatsapp_contacts` | `monthly_reports` |
 | `api/jobs/rollup-reconciliation-job.ts` | `database`, `ledger`, `platform` | — | `expense_daily_rollups`, `expenses` | — |
@@ -402,8 +402,8 @@ Where captured bank and wallet notifications come in (decision 0028): the device
 | `api/lib/capture/access.ts` | `database`, `platform` | — | — | `capture_usage` |
 | `api/lib/capture/activity.ts` | `database`, `ledger` | — | `capture_ai_jobs`, `capture_events`, `expenses` | — |
 | `api/lib/capture/ai-queue.ts` | `capture-ai-reader`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | — | `capture_ai_jobs`, `capture_signals`, `local_users`, `users` | `capture_ai_jobs`, `capture_signals` |
-| `api/lib/capture/care.ts` | `capture-catalog`, `database`, `ledger`, `platform` | — | `capture_devices`, `capture_events`, `capture_markers`, `user_wallets` | `capture_ai_jobs`, `capture_consents`, `capture_devices`, `capture_events`, `capture_markers`, `capture_memory`, `capture_questions`, `capture_signals`, `capture_user_pairs`, `in_app_notifications`, `user_wallets` |
-| `api/lib/capture/consent.ts` | `database` | — | `capture_consents`, `local_users`, `users` | `capture_consents` |
+| `api/lib/capture/care.ts` | `capture-catalog`, `database`, `ledger`, `platform` | — | `capture_devices`, `capture_events`, `capture_markers`, `user_wallets` | `capture_ai_jobs`, `capture_consents`, `capture_devices`, `capture_events`, `capture_markers`, `capture_memory`, `capture_questions`, `capture_samples`, `capture_signals`, `capture_user_pairs`, `in_app_notifications`, `user_wallets` |
+| `api/lib/capture/consent.ts` | `database` | — | `capture_consents`, `local_users`, `users` | `capture_consents`, `capture_samples` |
 | `api/lib/capture/devices.ts` | `auth`, `contracts`, `database`, `platform` | — | `capture_devices` | `capture_devices` |
 | `api/lib/capture/events.ts` | — | — | — | — |
 | `api/lib/capture/fees.ts` | `contracts`, `database` | — | `capture_events`, `expenses` | `capture_events`, `expenses` |
@@ -419,7 +419,7 @@ Where captured bank and wallet notifications come in (decision 0028): the device
 
 ### `capture-ai-reader` — Message model reader
 
-Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server's Gemini key until then), behind the admin's switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. The unsure-message queue calls the active sms-v2 reader. The separate sms-v4 contract grounds fields in source quotes and proposes decimal-exact EGP postings; an offline CLI checks saved replies without calling a model or writing the ledger.
+Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server's Gemini key until then), behind the admin's switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. The unsure-message queue calls the active sms-v2 reader. The separate sms-v4 contract grounds fields in source quotes and proposes decimal-exact EGP postings; an offline CLI checks saved replies without calling a model or writing the ledger. With the admin switch and the user's consent, each reading's numbered-marker text, reply and posting are kept as a sample to build a reader without a model (decision 0048).
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -428,6 +428,7 @@ Layer two of capture: reads one bank or wallet message with the model the admin 
 | `api/lib/capture/model-contract.ts` | `contracts`, `security` | — | — | — |
 | `api/lib/capture/model-reader.ts` | `ai-governance`, `ai-providers`, `capture-intake`, `platform` | — | — | — |
 | `api/lib/capture/privacy.ts` | `contracts`, `security` | — | — | — |
+| `api/lib/capture/samples.ts` | `capture-intake`, `database`, `platform` | — | `capture_samples` | `capture_samples` |
 | `api/lib/capture/vault.ts` | `ai-providers` | — | — | — |
 | `api/lib/sms-ai-contract.ts` | `classification`, `contracts`, `security` | `gemini` | — | — |
 

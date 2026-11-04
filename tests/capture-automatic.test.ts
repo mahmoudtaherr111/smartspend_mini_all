@@ -17,6 +17,7 @@ import {
   captureDevices,
   captureEvents,
   captureQuestions,
+  captureSamples,
   captureMarkers,
   captureMemory,
   captureSignals,
@@ -85,6 +86,7 @@ const keys = [
   "capture_model_qualified",
   "capture_monthly_limit_free",
   "capture_questions_enabled",
+  "capture_samples_enabled",
 ];
 const text =
   "Successful purchase EGP 100 including service fee EGP 5 at ZED MARKET. Available balance EGP 900.";
@@ -144,6 +146,7 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
         captureSignals,
         captureEvents,
         captureQuestions,
+        captureSamples,
         captureUsage,
         captureMemory,
         captureUserPairs,
@@ -177,6 +180,7 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
         capture_financial_version: "cashflow-v1",
         capture_monthly_limit_free: "50",
         capture_questions_enabled: "true",
+        capture_samples_enabled: "false",
         capture_model_qualified: JSON.stringify({
           version: "sms-v4",
           digest: CAPTURE_PROMPT_DIGEST,
@@ -208,7 +212,7 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
       await db.delete(systemSettings).where(inArray(systemSettings.key, keys));
       invalidateSettingsCache();
     });
-    const send = async (id: string, message = text, expectFinished = true) => {
+    const send = async (id: string, message = text, expectFinished = true, extra: Record<string, unknown> = {}) => {
       const response = await app.request("/api/capture/v1/signals", {
         method: "POST",
         headers: {
@@ -223,6 +227,7 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
               app: "com.cibeg.ddc1.digitalbanking.live",
               text: message,
               postedAt: new Date().toISOString(),
+              ...extra,
             },
           ],
         }),
@@ -294,6 +299,8 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
         category: "تسوق",
         subCategory: "عام",
       });
+      const outstanding = await app.request("/api/capture/v1/notices", { headers: { "x-capture-device": token } });
+      expect((await outstanding.json()).notices).toEqual([]);
       await send("synthetic-auto-02");
       const [principal] = await db
         .select()
@@ -640,12 +647,12 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
     });
     it("requires renewed automatic consent instead of silently broadening a legacy grant", async () => {
       await db.update(captureConsents).set({ textVersion: "2026-10-27" }).where(own(captureConsents));
-      expect((await caller.status()).consent).toEqual({ capture: false, aiReading: false });
+      expect((await caller.status()).consent).toEqual({ capture: false, aiReading: false, samples: false });
       const rejected = await app.request("/api/capture/v1/signals", { method: "POST", headers: { "content-type": "application/json", "x-capture-device": token }, body: JSON.stringify({ signals: [{ id: "synthetic-old-consent", channel: "notification", app: "com.cibeg.ddc1.digitalbanking.live", text, postedAt: new Date().toISOString() }] }) });
       expect(rejected.status).toBe(403);
       expect(await db.select().from(captureAiJobs).where(own(captureAiJobs))).toHaveLength(0);
       for (const scope of ["capture", "ai_reading"] as const) await setCaptureConsent(owner, scope, true, CAPTURE_CONSENT_TEXT_VERSION);
-      expect((await caller.status()).consent).toEqual({ capture: true, aiReading: true });
+      expect((await caller.status()).consent).toEqual({ capture: true, aiReading: true, samples: false });
       await send("synthetic-current-consent");
       expect(await db.select().from(expenses).where(own(expenses))).toHaveLength(2);
     });
@@ -688,6 +695,33 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")(
       expect(incoming[0].bundle).toMatchObject({ totalAmount: "95.00", feeAmount: "0.00" });
       expect(await getFinanceSummary(owner)).toMatchObject({ totalExpense: 5, totalIncome: 0 });
       const [usage] = await db.select().from(captureUsage).where(own(captureUsage)); expect(usage.reserved).toBe(1);
+    });
+
+    it("keeps a redacted sample only with the switch and the samples consent, and forgets it when the consent is taken back", async () => {
+      await send("synthetic-sample-01");
+      expect(await db.select().from(captureSamples).where(own(captureSamples))).toHaveLength(0);
+      await setting("capture_samples_enabled", "true");
+      await send("synthetic-sample-02");
+      expect(await db.select().from(captureSamples).where(own(captureSamples))).toHaveLength(0);
+      await setCaptureConsent(owner, "message_samples", true, CAPTURE_CONSENT_TEXT_VERSION);
+      await send("synthetic-sample-03");
+      const samples = await db.select().from(captureSamples).where(own(captureSamples));
+      expect(samples).toHaveLength(1);
+      expect(samples[0]).toMatchObject({ promptVersion: "sms-v4", provider: "synthetic-a", model: "synthetic-model", channel: "notification" });
+      expect(samples[0].textRedacted).toContain("ZED MARKET");
+      expect(samples[0].posting).toMatchObject({ status: "ready", principalEgp: "95.00", feeEgp: "5.00" });
+      expect(samples[0].receivedMonth).toMatch(/^\d{4}-\d{2}$/);
+      await setCaptureConsent(owner, "message_samples", false, CAPTURE_CONSENT_TEXT_VERSION);
+      expect(await db.select().from(captureSamples).where(own(captureSamples))).toHaveLength(0);
+    });
+
+    it("records an imported past message without a notice for the phone", async () => {
+      await send("synthetic-import-01", text, true, { imported: true });
+      const rows = await db.select().from(expenses).where(own(expenses));
+      expect(rows.map((row) => Number(row.amount)).sort((a, b) => a - b)).toEqual([5, 95]);
+      const [job] = await db.select().from(captureAiJobs).where(own(captureAiJobs));
+      expect(job.notice).toBeNull();
+      expect(job.noticeDeliveredAt).not.toBeNull();
     });
   },
 );
