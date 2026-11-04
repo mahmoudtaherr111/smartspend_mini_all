@@ -23,13 +23,13 @@ import {
   type CaptureSignalsRequest,
 } from "../../../contracts/capture-intake";
 import { getDb } from "../../queries/connection";
-import { afterLedgerWrite, bumpStreakInTx, deleteLedgerEntry, insertLedgerEntriesInTx, type LedgerTx } from "../../services/ledger-writer";
+import { afterLedgerWrite, bumpStreakInTx, deleteLedgerEntry, insertLedgerEntriesInTx, lockLedgerOwner, type LedgerTx } from "../../services/ledger-writer";
 import { businessDateKey } from "../app-time";
 import { getSystemSettings } from "../settings-cache";
 import { createLogger } from "../log";
 import { getCaptureCatalog, sourceForPackage, sourceForSender, subscriptionForMerchant, type CaptureCatalog, type CaptureSource } from "./catalog";
 import { captureConsentsOf } from "./consent";
-import { captureIgnoreRulesOf, isIgnored, type CaptureIgnoreRules } from "./markers";
+import { captureIgnoreRulesOf, isIgnored, walletBalanceKind, type CaptureIgnoreRules } from "./markers";
 import { merchantNamesToKeep, redactKeeping } from "./keep-merchants";
 import type { CaptureDevice, CaptureOwner } from "./devices";
 import { matchSignal, MATCH_WINDOWS, type EventKeys, type SignalKeys } from "./events";
@@ -48,6 +48,7 @@ import type { Reading } from "./reader/types";
 import { prepareCaptureText } from "./privacy";
 import { sealCaptureText } from "./vault";
 import type { CaptureModelReply, CapturePostingProposal } from "./model-contract";
+import type { MovementKind } from "../../../contracts/ledger-movement";
 import { captureQualification } from "./model-reader";
 
 const log = createLogger("capture-intake");
@@ -186,7 +187,7 @@ export interface LedgerSuggestion {
   /** The amount in pounds, or null when only a foreign amount is known (the user types it). */
   amountEgp: number | null;
   /** Where the filing comes from: the user's own memory, the subscription catalog, or the kind's default. */
-  from: "memory" | "catalog" | "default";
+  from: "memory" | "catalog" | "model" | "default";
 }
 
 type KindFiling = Omit<LedgerSuggestion, "amountEgp" | "from">;
@@ -247,12 +248,13 @@ function kindDefault(reading: SignalReading): KindFiling {
  * then the subscription catalog, then the kind's default.
  */
 export function suggestLedgerEntry(reading: SignalReading, catalog: CaptureCatalog, memory?: Map<string, Filing>): LedgerSuggestion {
-  const amountEgp =
+  const posted = reading.captureV4?.posting;
+  const amountEgp = posted?.status === "ready" ? Number(posted.principalEgp) :
     reading.amount?.currency === "EGP" ? reading.amount.value : reading.amountEgp?.currency === "EGP" ? reading.amountEgp.value : null;
   let filing = kindDefault(reading);
   const key = memoryKeyOf(reading.counterparty);
   const remembered = key ? memory?.get(key) : undefined;
-  if (remembered && CATEGORIES.some((item) => item.id === remembered.categoryId)) {
+  if (remembered && CATEGORIES.some((item) => item.id === remembered.categoryId && (!reading.captureV4 || item.type === "transfer" || item.type === (reading.direction === "in" ? "income" : "expense")))) {
     const categoryType = CATEGORIES.find((item) => item.id === remembered.categoryId)?.type;
     const type = categoryType === "income" || categoryType === "transfer" ? categoryType : "expense";
     const direction = type === "transfer" ? (filing.direction ?? (reading.direction === "in" ? "incoming" : "outgoing")) : null;
@@ -268,6 +270,13 @@ export function suggestLedgerEntry(reading: SignalReading, catalog: CaptureCatal
       : reading.direction === "in"
         ? filing
         : { type: "expense", direction: null, categoryId: "miscellaneous", subCategoryId: "general" };
+  }
+  if (reading.captureV4?.reply?.category && from === "default") {
+    const category = CATEGORIES.find((item) => item.id === reading.captureV4!.reply!.category);
+    if (category && (category.type === "transfer" || category.type === (reading.direction === "in" ? "income" : "expense"))) {
+      filing = { type: reading.direction === "in" ? "income" : "expense", direction: null, categoryId: category.id, subCategoryId: category.subcategories[0]?.id ?? "" };
+      from = "model";
+    }
   }
   return { ...filing, amountEgp, from };
 }
@@ -342,7 +351,7 @@ export function mayRecordAlone(input: {
 export function recordedNotice(reading: SignalReading, suggestion: LedgerSuggestion, lang: "ar" | "en"): CaptureNotice {
   const label = KIND_LABELS[reading.kind] ?? { ar: "عملية", en: "Transaction" };
   const party = reading.counterparty?.name ?? (reading.counterparty?.phoneTail ? `••${reading.counterparty.phoneTail}` : null);
-  const pounds = suggestion.amountEgp ?? 0;
+  const pounds = reading.captureV4?.posting?.status === "ready" ? Number(reading.captureV4.posting.totalEgp) : suggestion.amountEgp ?? 0;
   const { category } = taxonomyNames(suggestion.categoryId, suggestion.subCategoryId);
   const provisional = suggestion.from === "default";
   if (lang === "en") {
@@ -891,13 +900,15 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
  * A message that only gives a balance moves the balance of the one wallet whose last digits it names, when the message
  * is newer than what the wallet holds (decision 0033). Nothing of the message is kept.
  */
-async function noteWalletBalance(run: IntakeRun, reading: SignalReading): Promise<void> {
+export async function noteWalletBalance(run: IntakeRun, reading: SignalReading, transaction?: LedgerTx): Promise<void> {
   const suffix = reading.cardSuffix ?? reading.accountSuffix;
   if (!suffix || !reading.balanceAfter || reading.balanceAfter.currency !== "EGP") return;
   const matches = run.wallets.filter((wallet) => wallet.lastFourDigits && wallet.lastFourDigits.slice(-3) === suffix.slice(-3));
   if (matches.length !== 1) return;
+  const reader = transaction ?? getDb();
+  if (reading.captureV4 && !["cash", "bank", "debit"].includes(await walletBalanceKind(run.device, matches[0].id, reader))) return;
   const observedAt = new Date(reading.occurredAt);
-  await getDb()
+  await reader
     .update(userWallets)
     .set({ balance: String(reading.balanceAfter.value), balanceObservedAt: observedAt, balanceSource: "bank_message" })
     .where(
@@ -1068,7 +1079,7 @@ async function recordEventInTx(
     const [purchase] = await tx
       .select({ eventId: captureEvents.id, category: expenses.category, subCategory: expenses.subCategory })
       .from(captureEvents)
-      .innerJoin(expenses, eq(expenses.id, captureEvents.expenseId))
+      .innerJoin(expenses, and(eq(expenses.id, captureEvents.expenseId), eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType)))
       .where(
         and(
           mine,
@@ -1090,16 +1101,21 @@ async function recordEventInTx(
     throw new TRPCError({ code: "BAD_REQUEST", message: "الفئة دي مش موجودة" });
   }
   const categoryType = CATEGORIES.find((item) => item.id === categoryId)?.type;
-  const type = refundOf ? "expense" : categoryType === "income" || categoryType === "transfer" ? categoryType : "expense";
+  const type = refundOf ? "expense" : reading.captureV4 ? (reading.direction === "in" ? "income" : "expense") : categoryType === "income" || categoryType === "transfer" ? categoryType : "expense";
   const subCategoryId = choice.subCategoryId ?? (choice.categoryId ? "" : suggestion.subCategoryId);
   const names = refundOf ? { category: refundOf.category, subCategory: refundOf.subCategory } : taxonomyNames(categoryId, subCategoryId);
-  const direction = refundOf ? "incoming" : type === "transfer" ? suggestion.direction : null;
+  const direction = refundOf ? "incoming" : reading.captureV4 ? (reading.direction === "in" ? "incoming" : "outgoing") : type === "transfer" ? suggestion.direction : null;
+  const movementKind: MovementKind | undefined = refundOf ? "refund"
+    : ["atm_withdrawal", "cash_out", "cash_in", "cash_deposit"].includes(reading.kind) ? "cash_transfer"
+      : reading.kind === "card_payment" ? "card_payment" : reading.captureV4?.reply?.ownership === "own" ? "own_transfer" : undefined;
+  const fee = reading.captureV4?.posting?.status === "ready" ? Number(reading.captureV4.posting.feeEgp) : 0;
   const party = reading.counterparty?.name ?? (reading.counterparty?.phoneTail ? `••${reading.counterparty.phoneTail}` : null);
   const description = [party, reading.sourceName?.ar].filter(Boolean).join(" · ") || names.category;
 
   const [expenseId] = await insertLedgerEntriesInTx(tx, owner, [
     {
       type,
+      movementKind,
       amount,
       direction,
       category: names.category,
@@ -1118,11 +1134,19 @@ async function recordEventInTx(
           source: reading.sourceSlug,
           kind: reading.kind,
           readerVersion: reading.readerVersion,
+          ...(reading.captureV4 ? { details: { feeEgp: fee, originalAmount: reading.amount, via: reading.captureV4.reply?.via,
+            categoryPending: suggestion.from === "default", promptVersion: "sms-v4" } } : {}),
           ...(options.auto ? { auto: true, provisional: suggestion.from === "default" } : {}),
         },
       },
     },
   ]);
+  if (fee > 0) {
+    const fees = taxonomyNames("installments", "bank_fees");
+    await insertLedgerEntriesInTx(tx, owner, [{ type: "expense", amount: fee, category: fees.category, subCategory: fees.subCategory,
+      description: "رسوم بنكية", source: "sms", date: new Date(reading.occurredAt), walletId: event.walletId, clientRequestId: `cap:e${event.id}:fee`,
+      parsedMetadata: { capture: { feeOfEventId: event.id, parentExpenseId: expenseId, source: reading.sourceSlug } } }]);
+  }
   // A row the user recorded counts for their streak; one recorded on its own does not (the owner's decision).
   if (!options.auto) await bumpStreakInTx(tx, owner);
   await tx
@@ -1132,6 +1156,8 @@ async function recordEventInTx(
 
   // The wallet's balance follows the bank's message when the message is newer than what the wallet holds.
   if (event.walletId && event.balanceAfter !== null) {
+    const safeBalance = !reading.captureV4 || ["cash", "bank", "debit"].includes(await walletBalanceKind(owner, event.walletId, tx));
+    if (safeBalance) {
     const occurredAt = new Date(reading.occurredAt);
     await tx
       .update(userWallets)
@@ -1144,6 +1170,7 @@ async function recordEventInTx(
           or(isNull(userWallets.balanceObservedAt), lt(userWallets.balanceObservedAt, occurredAt)),
         ),
       );
+    }
   }
   const filing = refundOf ? null : { categoryId, subCategoryId: subCategoryId || (taxonomyIdsOf(categoryId, names.subCategory) ?? "") };
   return { expenseId, spending: type === "expense", suggestion, filing: filing && filing.subCategoryId ? filing : null };
@@ -1231,6 +1258,7 @@ export async function answerEvent(
   let undo: { expenseId: number; sourceSlug: string | null; kind: string; quotaPeriod: string | null } | null = null;
 
   await getDb().transaction(async (tx) => {
+    await lockLedgerOwner(tx, owner, "NOT_FOUND");
     const [event] = await tx.select().from(captureEvents).where(own).limit(1).for("update");
     if (!event || (fromDevice !== undefined && (event.deviceId !== fromDevice || Date.now() - event.createdAt.getTime() > ANSWER_FROM_NOTICE_MS))) {
       throw new TRPCError({ code: "NOT_FOUND", message: "العملية دي مش موجودة" });

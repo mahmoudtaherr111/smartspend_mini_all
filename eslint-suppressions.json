@@ -448,14 +448,6 @@
       "count": 1
     }
   },
-  "api/referral-router.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "api/scripts/test-extract.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
@@ -473,7 +465,7 @@
   },
   "api/services/action-runtime/extended-actions.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 3
+      "count": 2
     }
   },
   "api/services/action-runtime/goal-create.ts": {
@@ -799,11 +791,6 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 4
-    }
-  },
-  "src/components/admin/settings/AdminCodesTab.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
     }
   },
   "src/components/admin/settings/AdminKeysTab.tsx": {

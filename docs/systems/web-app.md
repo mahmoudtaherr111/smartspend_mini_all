@@ -151,3 +151,6 @@ Checked against the code; each one names where it lives.
 - [Plans and payments](billing.md): the plan strip and the upgrade screens.
 - [Admin console, support and growth tools](admin.md): the admin route, the ad banner and the usage events.
 - [Server platform and data](platform.md): the API the client talks to, and the origins it is allowed from.
+
+
+The shared transaction display reads validated financial metadata before legacy category-name heuristics. Canonical loans display as spending/income; internal movements display as transfers/investments. Editing preserves this meaning unless the user deliberately changes kind.

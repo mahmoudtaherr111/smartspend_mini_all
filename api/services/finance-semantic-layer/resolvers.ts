@@ -1,4 +1,6 @@
 import type { InferSelectModel } from "drizzle-orm";
+import { financialBucket } from "../../../contracts/ledger-movement";
+import { ledgerBucketSql } from "../ledger-semantics";
 import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { classificationLogs, financialGoals, expenses, userContacts, userProfiles, userWallets } from "../../../db/schema";
 import { db } from "../../queries/connection";
@@ -42,6 +44,7 @@ import type {
 
 /** The columns the layer reads from an expense; parsed metadata and bookkeeping columns stay in MySQL. */
 const ROW_COLUMNS = {
+  parsedMetadata: expenses.parsedMetadata,
   id: expenses.id,
   type: expenses.type,
   amount: expenses.amount,
@@ -197,8 +200,8 @@ export async function getFinanceSummary(
     // One aggregate in MySQL, without loading the rows: exact at any size (a year of forwarded bank messages is
     // thousands of rows), and the same totals the Home screen's daily rollups add up to.
     const sum = (type: string) =>
-      sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = ${type} THEN ${expenses.amount} ELSE 0 END), 0)`;
-    const count = (type: string) => sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = ${type} THEN 1 ELSE 0 END), 0)`;
+      sql<string>`COALESCE(SUM(CASE WHEN ${ledgerBucketSql} = ${type} THEN ${expenses.amount} ELSE 0 END), 0)`;
+    const count = (type: string) => sql<string>`COALESCE(SUM(CASE WHEN ${ledgerBucketSql} = ${type} THEN 1 ELSE 0 END), 0)`;
     const [totals] = await db
       .select({
         income: sum("income"),
@@ -330,9 +333,9 @@ export async function getCategoryTotal(
 
     for (const row of rows) {
       const amount = amountOf(row);
-      if (row.type === "income") {
+      if (financialBucket(row) === "income") {
         totalIncome += amount;
-      } else {
+      } else if (financialBucket(row) === "expense") {
         totalExpense += amount;
         const name = row.subCategory || "general";
         const existing = subCategories.get(name) ?? { amount: 0, count: 0 };
@@ -405,8 +408,8 @@ export async function getPersonTotal(
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
     const loaded = await loadRowsForPeriod(ctx, period);
     const rows = loaded.filter((row) => row.contactId === contact.id);
-    const spent = rows.filter((row) => row.type === "expense");
-    const received = rows.filter((row) => row.type === "income");
+    const spent = rows.filter((row) => financialBucket(row) === "expense");
+    const received = rows.filter((row) => financialBucket(row) === "income");
     return {
       period,
       contactId: contact.id,
@@ -498,7 +501,7 @@ export async function getFinanceTransactions(
     let rows = await loadRowsForPeriod(ctx, period);
     const partial = rows.length >= ROW_LIMIT;
     if (transactionTypes.length > 0) {
-      rows = rows.filter((row) => transactionTypes.includes(row.type));
+      rows = rows.filter((row) => transactionTypes.includes(financialBucket(row)));
     }
     if (categories.length > 0) {
       rows = rows.filter((row) => rowMatchesAnyCategory(row, categories));
@@ -512,7 +515,7 @@ export async function getFinanceTransactions(
 
     const transactions: FinanceTransactionFact[] = rows.slice(0, limit).map((row) => ({
       id: row.id,
-      type: row.type,
+      type: financialBucket(row),
       amount: numeric(row.amount),
       category: canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint),
       subCategory: row.subCategory,
@@ -906,7 +909,7 @@ export async function getBusinessCashflow(
   for (const row of allRows) {
     const amount = amountOf(row);
     const cat = canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint);
-    if (row.type === "income") {
+    if (financialBucket(row) === "income") {
       incomeByCategory.set(cat, (incomeByCategory.get(cat) ?? 0) + amount);
     } else if (isSpendingRow(row)) {
       expenseByCategory.set(cat, (expenseByCategory.get(cat) ?? 0) + amount);
@@ -1077,7 +1080,7 @@ export async function getTransactionLookup(
   const tokens = transactionLookupTokens(query);
   const normalizedQuery = normalizeLookupText(String(query ?? ""));
   const candidates = rows.filter((row) => {
-    if (allowedTypes.size > 0 && !allowedTypes.has(String(row.type))) return false;
+    if (allowedTypes.size > 0 && !allowedTypes.has(financialBucket(row))) return false;
     if (category && !rowMatchesCategory(row, category)) return false;
     return true;
   });
@@ -1106,7 +1109,7 @@ export async function getTransactionLookup(
   if (latest) {
     return {
       id: latest.id,
-      type: latest.type,
+      type: financialBucket(latest),
       amount: amountOf(latest),
       category: latest.category ?? "uncategorized",
       subCategory: latest.subCategory,

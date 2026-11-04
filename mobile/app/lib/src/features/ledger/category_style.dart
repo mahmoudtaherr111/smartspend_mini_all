@@ -317,7 +317,7 @@ AmountKind amountKindOf(String type, num amount) => switch (type) {
 };
 
 AmountKind entryKind(LedgerEntry entry) =>
-    amountKindOf(entry.type, entry.amount);
+    amountKindOf(entry.displayType, entry.amount);
 
 AmountKind itemKind(ParsedItem item) => item.directionToSave == 'incoming'
     ? AmountKind.income

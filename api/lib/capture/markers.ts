@@ -3,8 +3,10 @@
  * on the same phone, a work card), or a phrase. The intake drops a matching message before anything of it is kept.
  */
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
-import { captureMarkers } from "../../../db/schema";
+import { and, eq, inArray, like } from "drizzle-orm";
+import { captureMarkers, userWallets } from "../../../db/schema";
+import { CAPTURE_WALLET_KINDS, type CaptureWalletKind } from "../../../contracts/capture";
+import { lockLedgerOwner } from "../../services/ledger-writer";
 import { getDb } from "../../queries/connection";
 import { asciiDigits } from "../anonymizer";
 import { normalizeArabic } from "../unified-normalizer";
@@ -76,8 +78,28 @@ export async function listCaptureMarkers(owner: CaptureOwner) {
   return getDb()
     .select({ id: captureMarkers.id, kind: captureMarkers.kind, value: captureMarkers.value, createdAt: captureMarkers.createdAt })
     .from(captureMarkers)
-    .where(and(eq(captureMarkers.userId, owner.userId), eq(captureMarkers.userType, owner.userType)))
+    .where(and(eq(captureMarkers.userId, owner.userId), eq(captureMarkers.userType, owner.userType), inArray(captureMarkers.kind, [...CAPTURE_IGNORE_KINDS])))
     .orderBy(captureMarkers.id);
+}
+
+export async function walletBalanceKind(owner: CaptureOwner, walletId: number, reader: Pick<ReturnType<typeof getDb>, "select"> = getDb()): Promise<CaptureWalletKind> {
+  const rows = await reader.select({ value: captureMarkers.value }).from(captureMarkers).where(and(
+    eq(captureMarkers.userId, owner.userId), eq(captureMarkers.userType, owner.userType), eq(captureMarkers.kind, "wallet_kind"), like(captureMarkers.value, `${walletId}:%`),
+  ));
+  if (rows.length !== 1) return "unknown";
+  const kind = rows[0].value.split(":")[1];
+  return CAPTURE_WALLET_KINDS.includes(kind as CaptureWalletKind) ? kind as CaptureWalletKind : "unknown";
+}
+
+export async function setWalletBalanceKind(owner: CaptureOwner, walletId: number, kind: CaptureWalletKind): Promise<void> {
+  if (!Number.isSafeInteger(walletId) || walletId <= 0 || !CAPTURE_WALLET_KINDS.includes(kind)) throw new TRPCError({ code: "BAD_REQUEST", message: "اختار نوع المحفظة من الاختيارات." });
+  await getDb().transaction(async (tx) => {
+    await lockLedgerOwner(tx, owner);
+    const [wallet] = await tx.select({ id: userWallets.id }).from(userWallets).where(and(eq(userWallets.id, walletId), eq(userWallets.userId, owner.userId), eq(userWallets.userType, owner.userType)));
+    if (!wallet) throw new TRPCError({ code: "NOT_FOUND", message: "المحفظة مش موجودة في حسابك." });
+    await tx.delete(captureMarkers).where(and(eq(captureMarkers.userId, owner.userId), eq(captureMarkers.userType, owner.userType), eq(captureMarkers.kind, "wallet_kind"), like(captureMarkers.value, `${walletId}:%`)));
+    await tx.insert(captureMarkers).values({ userId: owner.userId, userType: owner.userType, kind: "wallet_kind", value: `${walletId}:${kind}` });
+  });
 }
 
 export async function addCaptureMarker(owner: CaptureOwner, kind: CaptureIgnoreKind, raw: string): Promise<{ id: number; value: string }> {

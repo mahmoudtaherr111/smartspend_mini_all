@@ -217,6 +217,7 @@ final class LedgerEntry {
     this.source,
     this.walletId,
     this.contactId,
+    this.parsedMetadata,
   });
 
   factory LedgerEntry.fromJson(Map<String, Object?> json) => LedgerEntry(
@@ -230,6 +231,9 @@ final class LedgerEntry {
     source: json['source'] as String?,
     walletId: (json['walletId'] as num?)?.toInt(),
     contactId: (json['contactId'] as num?)?.toInt(),
+    parsedMetadata: json['parsedMetadata'] is Map<String, Object?>
+        ? json['parsedMetadata'] as Map<String, Object?>
+        : null,
     date:
         DateTime.tryParse(
           json['date'] as String? ?? json['createdAt'] as String? ?? '',
@@ -251,6 +255,46 @@ final class LedgerEntry {
   final String? source;
   final int? walletId;
   final int? contactId;
+  final Map<String, Object?>? parsedMetadata;
+
+  /// Versioned economic meaning from the server; never infer exclusions from a category name.
+  String? get financialKind {
+    final value = parsedMetadata?['financial'];
+    if (value is! Map<String, Object?> ||
+        value['version'] != 1 ||
+        !const ['in', 'out'].contains(value['movement'])) {
+      return null;
+    }
+    final kind = value['kind'];
+    return kind is String &&
+            const [
+              'spending',
+              'income',
+              'personal_transfer',
+              'loan',
+              'gam3eya',
+              'own_transfer',
+              'cash_transfer',
+              'card_payment',
+              'investment',
+              'refund',
+            ].contains(kind)
+        ? kind
+        : null;
+  }
+
+  bool get excludedFromTotals => const [
+    'own_transfer',
+    'cash_transfer',
+    'card_payment',
+    'investment',
+  ].contains(financialKind);
+
+  String get displayType => excludedFromTotals
+      ? financialKind == 'investment'
+            ? 'investment'
+            : 'transfer'
+      : type;
 
   /// When it happened, in the phone's time.
   final DateTime date;
@@ -270,6 +314,7 @@ final class LedgerEntry {
     'source': source,
     'walletId': walletId,
     'contactId': contactId,
+    if (parsedMetadata != null) 'parsedMetadata': parsedMetadata,
     'date': date.toUtc().toIso8601String(),
   };
 

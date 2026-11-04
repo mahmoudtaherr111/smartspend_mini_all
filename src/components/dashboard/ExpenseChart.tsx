@@ -1,3 +1,4 @@
+import { financialBucket } from "../../../contracts/ledger-movement";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { trpc } from "../../providers/trpc";
@@ -167,9 +168,9 @@ export function ExpenseChart({
     const stat = electronicStats[providerName];
     const amount = Number(item.amount) || 0;
 
-    if (item.type === "income") {
+    if (financialBucket(item) === "income") {
       stat.received += amount;
-    } else if (item.type === "expense") {
+    } else if (financialBucket(item) === "expense") {
       stat.spent += amount;
     }
 
@@ -199,7 +200,7 @@ export function ExpenseChart({
       name: getProviderMeta(s.provider).nameAr,
       value: s.spent,
       provider: s.provider,
-      count: s.transactions.filter((t) => t.type === "expense").length,
+      count: s.transactions.filter((t) => financialBucket(t) === "expense").length,
     }));
 
   const processCategoryData = () => {
@@ -257,7 +258,7 @@ export function ExpenseChart({
     const dayTotals: Record<string, number> = {};
     const hourTotals: Record<number, number> = {};
 
-    items.filter((i) => i.type === "expense").forEach((item) => {
+    items.filter((i) => financialBucket(i) === "expense").forEach((item) => {
       const d = new Date(item.date);
       if (isNaN(d.getTime())) return;
       const dayName = daysOfWeek[d.getDay()];
@@ -760,10 +761,10 @@ export function ExpenseChart({
           <TabsContent value="budget" className="m-0 space-y-4">
             {(() => {
               const totalExp = items
-                .filter((i) => i.type === "expense")
+                .filter((i) => financialBucket(i) === "expense")
                 .reduce((sum, item) => sum + Number(item.amount), 0);
               const totalInc = items
-                .filter((i) => i.type === "income")
+                .filter((i) => financialBucket(i) === "income")
                 .reduce((sum, item) => sum + Number(item.amount), 0);
               const profileIncome = profile?.financialInfo?.averageMonthlyIncome;
               // The user's own budget for all spending comes first; income is only a
@@ -927,7 +928,7 @@ export function ExpenseChart({
               const filteredItems = items
                 .filter(
                   (i) =>
-                    i.type === "expense" &&
+                    financialBucket(i) === "expense" &&
                     (selectedCategory
                       ? i.category === selectedCategory
                       : i.subCategory === selectedSubCategory),

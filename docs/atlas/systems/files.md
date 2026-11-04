@@ -238,9 +238,11 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/finance-semantic-layer/resolvers.ts` | [ai-center](ai-center.md) |
 | `api/services/finance-semantic-layer/row-aggregators.ts` | [ai-center](ai-center.md) |
 | `api/services/finance-semantic-layer/types.ts` | [ai-center](ai-center.md) |
+| `api/services/financial-migration.ts` | [money](money.md) |
 | `api/services/financial-month.ts` | [money](money.md) |
 | `api/services/firebase.ts` | [notifications](notifications.md) |
 | `api/services/installments.ts` | [money](money.md) |
+| `api/services/ledger-semantics.ts` | [money](money.md) |
 | `api/services/ledger-writer.ts` | [money](money.md) |
 | `api/services/lifestyle-inference-engine.ts` | [insights](insights.md) |
 | `api/services/parser-trace.ts` | [expense-capture](expense-capture.md) |
@@ -313,6 +315,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `contracts/constants.ts` | [platform](platform.md) |
 | `contracts/errors.ts` | [platform](platform.md) |
 | `contracts/expense-save.ts` | [platform](platform.md) |
+| `contracts/ledger-movement.ts` | [platform](platform.md) |
 | `contracts/notification-types.ts` | [platform](platform.md) |
 | `contracts/plan-features.ts` | [platform](platform.md) |
 | `contracts/plans.ts` | [platform](platform.md) |

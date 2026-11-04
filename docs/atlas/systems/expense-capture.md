@@ -111,7 +111,7 @@ flowchart LR
 
 ### record an expense from text
 
-The expense form on the home screen sends the sentence to ai.parseExpense. runSmartPipeline splits it into financial events, then tries the result cache, muscle memory and the rule engine, and asks a model only to name the category of clauses it could not settle. auto_save items are saved at once, review items after the user confirms, and clarify returns a question. One item is saved with expense.create, several with expense.batchCreate; both write through the ledger writer, which inserts the rows with their daily rollup delta, contact counts and streak in one transaction.
+The expense form on the home screen sends the sentence to ai.parseExpense. runSmartPipeline splits it into financial events, then tries the result cache, muscle memory and the rule engine, and asks a model only to name the category of clauses it could not settle. auto_save items are saved at once, review items after the user confirms, and clarify returns a question. One item is saved with expense.create, several with expense.batchCreate; both write through the ledger writer, which locks the owner and, after a guarded cashflow cutover, separates movement kind from income/expense before inserting rows with their daily rollup delta, contact counts and streak in one transaction.
 
 ```mermaid
 sequenceDiagram

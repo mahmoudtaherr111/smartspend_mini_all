@@ -14,6 +14,7 @@
 
 import { db } from "../queries/connection";
 import { systemSettings } from "../../db/schema";
+import { inArray } from "drizzle-orm";
 import { watchGeneration } from "./shared-generation";
 
 let cachedSettings: Record<string, string> | null = null;
@@ -25,7 +26,13 @@ const generation = watchGeneration("settingsgen");
  * Returns system settings from in-memory cache, or fetches from MySQL if cache is stale.
  * This replaces all direct `db.select().from(systemSettings)` calls across the codebase.
  */
-export async function getSystemSettings(): Promise<Record<string, string>> {
+export async function getSystemSettings(reader?: Pick<typeof db, "select">, options: { keys?: string[]; lock?: boolean } = {}): Promise<Record<string, string>> {
+  if (reader) {
+    // A write transaction must not wait for another pool connection or publish uncommitted settings into a cache.
+    const query = reader.select().from(systemSettings).where(options.keys?.length ? inArray(systemSettings.key, options.keys) : undefined);
+    const rows = options.lock ? await query.for("share") : await query;
+    return Object.fromEntries(rows.filter((row) => row.key && row.value !== null).map((row) => [row.key, row.value!]));
+  }
   const now = Date.now();
   if (cachedSettings && cacheExpiresAt > now && !(await generation.moved(now))) return cachedSettings;
 

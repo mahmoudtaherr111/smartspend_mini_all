@@ -22,7 +22,7 @@ flowchart LR
     job_capture_silent_devices["Job · capture-silent-devices"]
     job_seed_capture_catalog["Job · seed-capture-catalog"]
     router_captureAdmin["captureAdmin API · 10 procedures"]
-    router_capture["capture API · 16 procedures"]
+    router_capture["capture API · 18 procedures"]
   end
   subgraph g_modules["Code modules"]
     mod_capture_ai_reader["Message model reader"]
@@ -138,9 +138,11 @@ flowchart LR
 | `capture.revokeDevice` | mutation | `authedProcedure` | — | — | — |
 | `capture.setAuto` | mutation | `authedProcedure` | — | — | — |
 | `capture.setConsent` | mutation | `authedProcedure` | — | — | — |
+| `capture.setWalletKind` | mutation | `authedProcedure` | — | — | — |
 | `capture.sources` | query | `authedProcedure` | — | — | — |
 | `capture.status` | query | `authedProcedure` | — | — | — |
 | `capture.unignore` | mutation | `authedProcedure` | — | — | — |
+| `capture.walletKind` | query | `authedProcedure` | — | — | — |
 | `capture.walletOffers` | query | `authedProcedure` | — | — | — |
 | `captureAdmin.bulkUndo` | mutation | `adminProcedure` | — | — | `Admin`, `More` |
 | `captureAdmin.catalog` | query | `adminProcedure` | `capture_sources`, `subscription_catalog` | — | `Admin`, `More` |

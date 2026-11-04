@@ -31,7 +31,7 @@
     "prepare": "node -e \"try{require('./scripts/agent/install-git-hooks.cjs')}catch(e){if(e.code!=='MODULE_NOT_FOUND')throw e}\"",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:db": "cross-env RUN_DB_INTEGRATION=1 vitest run tests/capture-admission.test.ts tests/store-billing-ledger.test.ts tests/auth-hot-path.test.ts tests/expense-rollups.test.ts tests/ledger-writer.test.ts tests/capture-intake.test.ts tests/data-retention-job.test.ts tests/phone-challenge.test.ts tests/taxonomy-migration.test.ts tests/coach-follow-up.test.ts tests/voice-memory-slots.test.ts tests/finance-business-scope.test.ts tests/chat-clarification.test.ts tests/action-undo.test.ts tests/account-self-deletion.test.ts tests/wallet-month.test.ts",
+    "test:db": "cross-env RUN_DB_INTEGRATION=1 vitest run --no-file-parallelism tests/cashflow-ledger.test.ts tests/financial-migration.test.ts tests/capture-admission.test.ts tests/store-billing-ledger.test.ts tests/auth-hot-path.test.ts tests/expense-rollups.test.ts tests/ledger-writer.test.ts tests/capture-intake.test.ts tests/data-retention-job.test.ts tests/phone-challenge.test.ts tests/taxonomy-migration.test.ts tests/coach-follow-up.test.ts tests/voice-memory-slots.test.ts tests/finance-business-scope.test.ts tests/chat-clarification.test.ts tests/action-undo.test.ts tests/account-self-deletion.test.ts tests/wallet-month.test.ts",
     "test:build": "cross-env REQUIRE_BUILD=1 vitest run tests/fonts-self-hosted.test.ts tests/capacitor-manifest-sync.test.ts tests/static-compression.test.ts tests/pwa-instant-resume.test.ts tests/server-bundles.test.ts",
     "test:redis": "cross-env RUN_REDIS_INTEGRATION=1 vitest run api/lib/redis-client.integration.test.ts api/lib/login-protection.integration.test.ts api/services/voice/gateway/shared-state.integration.test.ts",
     "test:e2e": "playwright test",
@@ -60,7 +60,8 @@
     "frontend:build": "cross-env NODE_ENV=production vite build --mode frontend",
     "cap:sync": "tsx scripts/sync-capacitor-assets.ts",
     "assets:splash": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-pwa-splashes.ps1",
-    "db:seed": "tsx db/seed.ts"
+    "db:seed": "tsx db/seed.ts",
+    "ledger:cashflow": "tsx scripts/agent/cashflow-ledger.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.0.0",

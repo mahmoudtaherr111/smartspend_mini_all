@@ -31,7 +31,7 @@ Screens of other systems use these APIs: people in `src/components/settings/Peop
 `src/components/settings/BusinessSettingsView.tsx`.
 
 ## The ledger and its daily rollups
-- An item is a row of `expenses` with a type (income, expense, transfer, investment), an amount, a category and
+- An item is a row of `expenses` with a stored type (legacy: income, expense, transfer, investment; cashflow-v1: income or expense), an amount, a category and
   subcategory, a date, a source, a status, and optional wallet, business and contact, with its original text
   (`raw_text`) and parsed metadata (`parsed_metadata`) on the same row. A side table that copied those two,
   `expense_details`, was read by nothing and kept the text of deleted expenses; migration
@@ -131,7 +131,7 @@ thousands separators read, anything else refused by `walletBalanceSchema`), `wal
 `wallet.deleteWallet`, which detaches the wallet from the user's items in the same transaction.
 `wallet.getWalletTransactions` pages through the items of one wallet. `wallet.getWalletMonth` sums a wallet's money in
 and out over one Cairo month (from payday when the caller passes a salary day): income and refunds are money in,
-spending is money out, transfers count in neither, and items waiting for confirmation are left out. The web card and the
+spending and outgoing transfers are money out, incoming transfers are money in, and items waiting for confirmation are left out. The web card and the
 mobile wallet screen both show this sum, over every row of the month rather than a page of them. The [AI Center](ai-center.md) can also create and
 change wallets through confirmed actions. A balance is what the user entered or a bank message said, not a running
 total (no saved item moves it): each one given is stamped with when and by what (`balance_observed_at`,
@@ -349,3 +349,36 @@ Checked against the code; each one names where it lives.
 
 ### Installment attribution
 `expense.listInstallmentPlans` groups linked settlements by plan and due date: partial payments on two dates never count as a fully paid installment on either. Unlinked keyword payments use net recorded personal amounts, not row counts, and remain estimates. A word shared by two plans is ambiguous; no final remaining amount is claimed by voice and the installment panel requests linking instead of displaying false precision. Business ledger payments and schedules are excluded from personal installment progress. `tests/coach-follow-up.test.ts` holds these boundaries on migrated MySQL.
+
+## Versioned financial meaning and guarded cutover
+`contracts/ledger-movement.ts` separates physical direction from economic kind. With
+`capture_financial_version=cashflow-v1`, every new shared-writer row is income or expense, with
+`parsedMetadata.financial` version 1. Loans and gam3eya payments/payouts enter expense/income respectively.
+Own-account, cash, card-repayment and investment movements are excluded from those totals; their real direction
+still enters wallet movement. Linked refunds remain negative expense in the purchase category. The SQL lens,
+rollup deltas/reconciliation, direct expense/analytics/budget/goal queries, AI finance facts, export filters and
+web chart use the same buckets. The legacy default remains compatible until cutover.
+
+Every ledger mutation locks the identity first. Both wallets of an internal movement are checked against the
+owner pair; the destination is a metadata link, not a second ledger row. Wallet views reverse that leg, and wallet
+month sums include internal movement. Deleting a wallet removes its reverse links and balance-kind policy under
+the same identity lock. Debt/gam3eya readers retain direction without requiring the old physical transfer type.
+Taxonomy migration re-reads locked rows and does not rewrite canonical rows back to legacy types.
+
+`npm run ledger:cashflow` previews bounded batches. `--apply` converts only known legacy directions; unresolved ids
+and reasons are reported without financial text or amounts. `--apply --activate` takes the financial-flag exclusive
+lock, waits for the writers' shared locks, and checks for any remaining unsupported type before enabling new writes.
+`--apply --rollback` disables that flag and restores only authenticated migration snapshots whose financial fields
+have not since changed. Snapshots are HMAC-bound to row and owner and tolerate MySQL JSON key order; edits and forged
+snapshots are skipped. Keep compatible readers deployed during rollback; ordinary new canonical rows are retained.
+This tool has only been exercised on a disposable local MySQL. No production conversion or activation has run.
+
+Wallet balance semantics are deliberately explicit: `capture.walletKind` and `capture.setWalletKind` store a scoped marker
+(cash/bank/debit/credit/unknown) without changing the existing wallet table. A v4 observation changes balance only
+for known cash/bank/debit wallets; a credit limit or an unknown balance never overwrites available cash.
+Web and Flutter retain versioned metadata for display/editing and offline copies. A category-only edit preserves
+economic nature; a deliberate kind change can supply `movementKind`.
+
+Real MySQL coverage: `tests/cashflow-ledger.test.ts`, `tests/financial-migration.test.ts`, writer, rollup, debt,
+taxonomy and action undo suites. The cashflow fixture checks salary, rent, loans/repayment, two-wallet ATM movement,
+purchases, fees, refund, gam3eya, owner-pair checks, old-editor compatibility and zero reconciliation drift.

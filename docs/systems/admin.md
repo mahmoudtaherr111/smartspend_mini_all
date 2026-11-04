@@ -212,3 +212,6 @@ The voice settings expose per-model input TPM and the per-call reservation, in a
 - [Notifications and WhatsApp](notifications.md): templates and the WhatsApp tab.
 - [Plans and payments](billing.md): subscriptions and plans.
 - [Web and mobile app shell](web-app.md): the route guards, and the ads and events in the app shell.
+
+
+Financial analytics now uses the shared financial bucket for income/spending. Export labeling follows that bucket; internal movements are named as transfers/investments even when physically stored as income or expense.

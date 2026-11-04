@@ -1,3 +1,4 @@
+import { spendingRowSql } from "./ledger-semantics";
 /**
  * Where each of a user's budgets stands in its current cycle, and the alerts it owes.
  *
@@ -90,7 +91,7 @@ export async function listBudgetStatuses(userId: number, userType: string, now =
       and(
         eq(expenses.userId, userId),
         eq(expenses.userType, userType),
-        eq(expenses.type, "expense"),
+        spendingRowSql,
         gte(expenses.date, new Date(Math.min(...starts))),
         lt(expenses.date, new Date(Math.max(...ends))),
       ),

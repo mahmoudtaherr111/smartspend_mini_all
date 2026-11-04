@@ -469,8 +469,14 @@ accounting at 60. New optional resource tables are skipped by retention before m
 0044 and 0045 add tables/indexes only, have been applied to a disposable local MySQL, and are not applied to production.
 
 `capture_financial_version` must be `cashflow-v1` before the v4 worker makes paid calls or files movements. It defaults
-to empty because shared financial semantics/migration are not implemented yet. This is a deployment guard, not an
+to empty until the shared financial migration is reviewed and applied. The writer and bounded preview/apply/rollback tool are implemented (see Money). This is a deployment guard, not an
 operator claim that the unfinished migration is ready. Source/type qualification is rechecked before placing an
 event. Unresolved facts finish with a waiting reason and checked reading metadata, never a guessed ledger row.
 Legacy reader behavior remains available; completing the financial writer, delivery acknowledgements, user activity
 and optional category questions is still required before enabling this path.
+
+V4 writes principal and an explicit extra/included fee as linked rows in the same transaction (one capture quota
+reservation). The notice shows their total. Deleting the parent through the ledger writer removes its fee and
+rollup delta atomically; neither raw bank text nor private token maps are copied into the ledger. Balance updates
+require a wallet balance-kind policy and use the existing transaction. These foundations do not complete delivery,
+post-save questions, fee-signal linking or native SMS qualification.

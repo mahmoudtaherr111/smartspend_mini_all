@@ -40,6 +40,7 @@ flowchart LR
   subgraph g_tables["MySQL tables"]
     tbl_business_categories[("business_categories")]
     tbl_capture_events[("capture_events")]
+    tbl_capture_markers[("capture_markers")]
     tbl_cashflow_settlements[("cashflow_settlements")]
     tbl_classification_logs[("classification_logs")]
     tbl_coaching_plans[("coaching_plans")]
@@ -51,6 +52,7 @@ flowchart LR
     tbl_installment_plans[("installment_plans")]
     tbl_local_users[("local_users")]
     tbl_scheduled_cashflows[("scheduled_cashflows")]
+    tbl_system_settings[("system_settings")]
     tbl_user_budgets[("user_budgets")]
     tbl_user_businesses[("user_businesses")]
     tbl_user_contacts[("user_contacts")]
@@ -86,14 +88,17 @@ flowchart LR
   mod_coaching ==> tbl_scheduled_cashflows
   mod_ledger --> mod_coaching
   mod_ledger --> sys_ai_center
+  mod_ledger --> sys_ai_platform
   mod_ledger --> sys_bank_messages
   mod_ledger --> sys_expense_capture
   mod_ledger --> sys_notifications
   mod_ledger --> sys_platform
+  mod_ledger -.-> tbl_user_wallets
   mod_ledger ==> tbl_capture_events
   mod_ledger ==> tbl_expense_daily_rollups
   mod_ledger ==> tbl_expenses
   mod_ledger ==> tbl_local_users
+  mod_ledger ==> tbl_system_settings
   mod_ledger ==> tbl_user_budgets
   mod_ledger ==> tbl_user_contacts
   mod_ledger ==> tbl_users
@@ -135,8 +140,10 @@ flowchart LR
   router_expense -.-> tbl_user_dictionaries
   router_expense ==> tbl_classification_logs
   router_expense ==> tbl_installment_plans
+  router_export --> mod_ledger
   router_export --> sys_platform
   router_export -.-> tbl_expenses
+  router_goals --> mod_ledger
   router_goals --> sys_ai_center
   router_goals --> sys_ai_platform
   router_goals --> sys_insights
@@ -154,6 +161,7 @@ flowchart LR
   router_wallet --> mod_ledger
   router_wallet --> sys_ai_center
   router_wallet --> sys_platform
+  router_wallet ==> tbl_capture_markers
   router_wallet ==> tbl_expenses
   router_wallet ==> tbl_user_wallets
   screens_accounts --> router_business
@@ -172,7 +180,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `coaching` — Commitments and coaching plans | Scheduled commitments and expected income with their due dates (the 31st on a short month's last day), the payments linked to each due date without counting one twice, what is free until the next payday from the recorded wallets, the coaching plan the user accepted with its steps, and in-app reminders delivered once per step revision. | 3 |
-| `ledger` — Ledger writer and aggregates | The ledger writer (adding, changing and removing an expense row in one transaction with its signed amount, rollup delta, contact count, settlements and the streak, then clearing muscle memory and the finance caches and checking budgets), daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer). | 7 |
+| `ledger` — Ledger writer and aggregates | The ledger writer (adding, changing and removing an expense row in one transaction with its signed amount, rollup delta, contact count, settlements and the streak, then clearing muscle memory and the finance caches and checking budgets), daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer). | 9 |
 | `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses, goals, and the cards and wallets screen. | 19 |
 
 ## API procedures
@@ -229,7 +237,7 @@ flowchart LR
 | `profile.mergeContacts` | mutation | `authedProcedure` | `expenses`, `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `More`, `Settings` |
 | `profile.updateContact` | mutation | `authedProcedure` | `user_contacts` | `user_contacts` | `More`, `Settings` |
 | `wallet.createWallet` | mutation | `authedProcedure` | — | `user_wallets` | `More`, `WalletsPage` |
-| `wallet.deleteWallet` | mutation | `authedProcedure` | — | `expenses`, `user_wallets` | `More`, `WalletsPage` |
+| `wallet.deleteWallet` | mutation | `authedProcedure` | — | `capture_markers`, `expenses`, `user_wallets` | `More`, `WalletsPage` |
 | `wallet.getWalletMonth` | query | `authedProcedure` | `expenses` | — | `More`, `WalletsPage` |
 | `wallet.getWalletTransactions` | query | `authedProcedure` | `expenses` | — | `More`, `WalletsPage` |
 | `wallet.getWallets` | query | `authedProcedure` | `user_wallets` | — | `More`, `WalletsPage` |
@@ -251,6 +259,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- | --- |
 | `business_categories` | A | `business.addCategory`, `business.create`, `business.delete`, `business.removeCategory`, `business.updateCategory` | `business.get`, `business.removeCategory`, `business.updateCategory` |
 | `capture_events` | E | `ledger` | `ledger` |
+| `capture_markers` | A | `wallet.deleteWallet` | — |
 | `cashflow_settlements` | C | `coaching` | `coaching`, `expense.listInstallmentPlans` |
 | `classification_logs` | E | `expense.update` | `expense.update` |
 | `coaching_plans` | C | `coaching` | `coaching` |
@@ -260,15 +269,16 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `financial_goals` | C | `goals.analyze`, `goals.create`, `goals.delete`, `goals.setStatus` | `goals.analyze`, `goals.create`, `goals.list` |
 | `in_app_notifications` | D | `coaching` | — |
 | `installment_plans` | C | `expense.createInstallmentPlan`, `expense.deleteInstallmentPlan` | `coaching`, `expense.listInstallmentPlans` |
-| `local_users` | A | `ledger` | — |
+| `local_users` | A | `ledger` | `ledger` |
 | `scheduled_cashflows` | C | `coaching`, `profile.deleteContact`, `profile.mergeContacts` | `coaching`, `expense.listInstallmentPlans` |
+| `system_settings` | A | `ledger` | `ledger` |
 | `user_budgets` | C | `budget.create`, `budget.delete`, `budget.update`, `goals.delete`, `ledger` | `budget.delete`, `budget.update`, `ledger` |
 | `user_businesses` | A | `business.create`, `business.delete`, `business.update` | `business.addCategory`, `business.create`, `business.delete`, `business.get`, `business.linkContact`, `business.removeCategory`, `business.update`, `business.updateCategory` |
 | `user_contacts` | A | `business.delete`, `business.linkContact`, `ledger`, `profile.addContact`, `profile.deleteContact`, `profile.mergeContacts`, `profile.updateContact` | `business.get`, `business.linkContact`, `coaching`, `ledger`, `profile.addContact`, `profile.deleteContact`, `profile.listContacts`, `profile.mergeContacts`, `profile.updateContact` |
 | `user_dictionaries` | F | — | `expense.previewCategory` |
 | `user_profiles` | A | `profile.deleteContact`, `profile.mergeContacts` | `profile.deleteContact`, `profile.mergeContacts` |
-| `user_wallets` | A | `wallet.createWallet`, `wallet.deleteWallet`, `wallet.updateWallet` | `coaching`, `wallet.getWallets` |
-| `users` | A | `ledger` | — |
+| `user_wallets` | A | `wallet.createWallet`, `wallet.deleteWallet`, `wallet.updateWallet` | `coaching`, `ledger`, `wallet.getWallets` |
+| `users` | A | `ledger` | `ledger` |
 
 ## Outside systems
 
@@ -278,7 +288,7 @@ _None._
 
 Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
-Used by: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md), [Web and mobile app shell](web-app.md).
 
 ## Environment variables
 
@@ -290,7 +300,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [AI Center](ai-center.md
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>65 files and declarations</summary>
+<details><summary>67 files and declarations</summary>
 
 - `api/boot.ts#job:coaching-reminders`
 - `api/boot.ts#job:nightly-rollup-reconciliation`
@@ -331,8 +341,10 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/coach/schedule.ts`
 - `api/services/debt-ledger.ts`
 - `api/services/expense-rollups.ts`
+- `api/services/financial-migration.ts`
 - `api/services/financial-month.ts`
 - `api/services/installments.ts`
+- `api/services/ledger-semantics.ts`
 - `api/services/ledger-writer.ts`
 - `api/wallet-router.ts`
 - `src/components/budgets/BudgetsPanel.tsx`

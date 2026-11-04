@@ -1,5 +1,6 @@
 import { confirmAction, createPendingGoalAction, createPendingRuntimeAction, expiresAt } from "./index";
 import { invalidateMemoryUserCache } from "../ai-memory";
+import { createLedgerEntry } from "../ledger-writer";
 
 const { dbMock, insertedRows, updatedRows, state } = vi.hoisted(() => {
   const insertedRows: Array<Record<string, unknown>> = [];
@@ -52,6 +53,7 @@ const { dbMock, insertedRows, updatedRows, state } = vi.hoisted(() => {
 vi.mock("../../queries/connection", () => ({
   db: dbMock,
 }));
+vi.mock("../ledger-writer", () => ({ createLedgerEntry: vi.fn(async () => ({ id: 700, existing: null })), updateLedgerEntry: vi.fn(async () => ({})) }));
 
 // The rollup and detail writes are covered by tests/expense-rollups.test.ts against a real database.
 vi.mock("../expense-rollups", () => ({
@@ -81,6 +83,7 @@ describe("action runtime goal.create flow", () => {
     state.nextId = 50;
     state.pendingAction = undefined;
     vi.mocked(invalidateMemoryUserCache).mockClear();
+    vi.mocked(createLedgerEntry).mockClear();
   });
 
   it("creates a pending action and executes it after confirmation", async () => {
@@ -162,7 +165,7 @@ describe("action runtime goal.create flow", () => {
       status: "pending_confirmation",
       confirmationRequired: true,
     });
-    expect(insertedRows.some((row) => row.category === "food" && row.amount === "45")).toBe(false);
+    expect(createLedgerEntry).not.toHaveBeenCalled();
 
     if (state.pendingAction?.payload) {
       state.pendingAction = {
@@ -178,18 +181,13 @@ describe("action runtime goal.create flow", () => {
       status: "executed",
       message: "تم تسجيل المصروف بنجاح.",
     });
+    expect(createLedgerEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 1, userType: "oauth" }),
+      expect.objectContaining({ amount: 45, category: "أكل وشرب", source: "ai_parsed", placeHint: "ستاربكس", clientRequestId: `action:${draft.action.id}` }),
+      { countsForStreak: false },
+    );
     expect(insertedRows).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          amount: "45",
-          // expenses.category stores the Arabic name_ar. This path used to write the
-          // English canonical id, which made the row invisible to every reader that
-          // compares by exact string — budget matching, category filters, the person
-          // -category set, and the CSV export.
-          category: "أكل وشرب",
-          source: "ai_parsed",
-          placeHint: "ستاربكس",
-        }),
         expect.objectContaining({
           actionName: "expense.create",
           status: "executed",

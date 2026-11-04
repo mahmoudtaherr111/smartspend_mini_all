@@ -92,7 +92,7 @@ export function canPayCashflow(schedule: Payable, payment: Payment): boolean {
     ? direction === (schedule.direction === "in" ? "incoming" : "outgoing")
     : payment.type === (schedule.direction === "in" ? "income" : "expense");
   if (!rightWay || (schedule.contactId != null && payment.contactId !== schedule.contactId)) return false;
-  return schedule.kind !== "debt" || (payment.type === "transfer" && payment.category === LOAN_CATEGORY && payment.subCategory === LOAN_SUBCATEGORY);
+  return schedule.kind !== "debt" || (payment.category === LOAN_CATEGORY && payment.subCategory === LOAN_SUBCATEGORY);
 }
 
 async function assertOwned(user: CoachUser, input: Pick<CashflowInput, "installmentPlanId" | "contactId">): Promise<void> {

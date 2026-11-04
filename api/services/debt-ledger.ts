@@ -6,6 +6,7 @@
  * outgoing minus incoming: positive means they owe the user, negative that the user owes them.
  */
 import Decimal from "decimal.js";
+import { movementOf } from "../../contracts/ledger-movement";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../queries/connection";
 import { expenses, userContacts } from "../../db/schema";
@@ -44,14 +45,13 @@ export function gam3eyaStanding(rows: Array<{ amount: string | number; direction
 /** The user's gam3eya standing across all its recorded payments and payouts. */
 export async function getGam3eyaStanding(userId: number, userType: string): Promise<Gam3eyaStanding> {
   const rows = await db
-    .select({ amount: expenses.amount, parsedMetadata: expenses.parsedMetadata })
+    .select({ amount: expenses.amount, type: expenses.type, parsedMetadata: expenses.parsedMetadata })
     .from(expenses)
     .where(
       and(
         eq(expenses.userId, userId),
         eq(expenses.userType, userType),
         isNull(expenses.businessId),
-        eq(expenses.type, "transfer"),
         eq(expenses.category, LOAN_CATEGORY),
         eq(expenses.subCategory, GAM3EYA_SUBCATEGORY),
         eq(expenses.status, "confirmed"),
@@ -61,7 +61,7 @@ export async function getGam3eyaStanding(userId: number, userType: string): Prom
   return gam3eyaStanding(
     rows.map((row) => ({
       amount: row.amount,
-      direction: ((row.parsedMetadata ?? {}) as { direction?: string }).direction ?? null,
+      direction: movementOf(row) === "in" ? "incoming" : movementOf(row) === "out" ? "outgoing" : null,
     })),
   );
 }
@@ -122,6 +122,7 @@ export async function listDebtBalances(userId: number, userType: string): Promis
   const rows = await db
     .select({
       amount: expenses.amount,
+      type: expenses.type,
       contactId: expenses.contactId,
       contactName: userContacts.name,
       description: expenses.description,
@@ -142,7 +143,6 @@ export async function listDebtBalances(userId: number, userType: string): Promis
         eq(expenses.userId, userId),
         eq(expenses.userType, userType),
         isNull(expenses.businessId),
-        eq(expenses.type, "transfer"),
         eq(expenses.category, LOAN_CATEGORY),
         eq(expenses.subCategory, LOAN_SUBCATEGORY),
         eq(expenses.status, "confirmed"),
@@ -155,7 +155,7 @@ export async function listDebtBalances(userId: number, userType: string): Promis
       contactId: row.contactId,
       contactName: row.contactName,
       description: row.description,
-      direction: ((row.parsedMetadata ?? {}) as { direction?: string }).direction ?? null,
+      direction: movementOf(row) === "in" ? "incoming" : movementOf(row) === "out" ? "outgoing" : null,
       date: row.date,
     })),
   );

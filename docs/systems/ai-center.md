@@ -279,3 +279,6 @@ Checked against the code; each one names where it lives.
 
 ### Atomic memory updates
 `api/services/ai-memory/slot-store.ts` locks the identity row for the user id/type during writes, deletion and account purge. A slotted fact carries an exact observation timestamp; older delayed facts do not replace newer ones, and replacement/insertion roll back together. Conversation memory processes stored message ids after a durable watermark in the conversation metadata, skips deleted conversations, and checks active memory again after asynchronous embedding work. `tests/voice-memory-slots.test.ts` exercises concurrency, rollback, deletion and delayed writes on migrated MySQL.
+
+
+Confirmed expense-create and recategorize actions now use the shared ledger writer. Create carries an action-scoped idempotency key and preserves place/date. Recategorization and undo apply rollup deltas, keep later unrelated fields, and restore financial nature from the prior snapshot. Finance transaction filters and facts use economic buckets, excluding internal movement from ordinary spending queries.

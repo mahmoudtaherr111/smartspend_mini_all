@@ -43,3 +43,5 @@ export interface CaptureSourceForPhone {
   androidPackages: string[];
   senderIds: string[];
 }
+export const CAPTURE_WALLET_KINDS = ["cash", "bank", "debit", "credit", "unknown"] as const;
+export type CaptureWalletKind = typeof CAPTURE_WALLET_KINDS[number];

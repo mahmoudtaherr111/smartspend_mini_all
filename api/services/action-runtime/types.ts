@@ -21,6 +21,7 @@ export type RuntimeActionStatus =
   | "failed";
 
 export interface ActionRuntimeContext {
+  actionId?: number;
   userId: number;
   userType: string;
   userPlan: string;

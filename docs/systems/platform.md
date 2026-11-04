@@ -191,3 +191,6 @@ usage remains reserved while capacity expires after a minute. They have 60-day r
 account deletion removes user-owned budget rows but preserves the anonymous aggregate daily cost. Optional-table
 retention policies first check schema availability, so deploying disabled feature code before its migration does
 not generate missing-table retention failures. Pending capture model jobs no longer expire at seven days.
+
+
+The settings accessor accepts an existing transaction for an uncached read on that same connection. The financial writer requests a shared lock on the cutover flag, held to commit; activation takes its exclusive lock before counting legacy rows. Uncommitted settings never enter the process cache.

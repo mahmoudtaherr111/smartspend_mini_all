@@ -78,7 +78,7 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
     final entry = widget.entry;
     _kind = entry.isRefund
         ? _EditKind.refund
-        : switch (entry.type) {
+        : switch (entry.displayType) {
             'income' => _EditKind.income,
             'transfer' => _EditKind.transfer,
             'investment' => _EditKind.investment,
@@ -253,6 +253,15 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
             id: widget.entry.id,
             amount: parsed,
             type: _kind.ledgerType,
+            movementKind: _kind == _initialKind
+                ? null
+                : switch (_kind) {
+                    _EditKind.expense => 'spending',
+                    _EditKind.refund => 'refund',
+                    _EditKind.income => 'income',
+                    _EditKind.transfer => 'personal_transfer',
+                    _EditKind.investment => 'investment',
+                  },
             refund: _kind.ledgerType == 'expense'
                 ? _kind == _EditKind.refund
                 : null,

@@ -13,6 +13,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
 import { CAPTURE_CONSENT_SCOPES } from "../contracts/capture-intake";
+import { CAPTURE_WALLET_KINDS } from "../contracts/capture";
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
 import { CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf, setCaptureConsent } from "./lib/capture/consent";
 import { listCaptureDevices, registerCaptureDevice, revokeCaptureDevice } from "./lib/capture/devices";
@@ -20,7 +21,7 @@ import { answerEvent, captureLimitOf, captureUsageOf, pendingEvents, releaseHeld
 import { autoOffers, setPairAuto } from "./lib/capture/memory";
 import { captureOpenFor } from "./lib/capture/access";
 import { acceptWalletOffer, declineWalletOffer, deleteMyCaptureData, walletOffers } from "./lib/capture/care";
-import { CAPTURE_IGNORE_KINDS, addCaptureMarker, listCaptureMarkers, removeCaptureMarker } from "./lib/capture/markers";
+import { CAPTURE_IGNORE_KINDS, addCaptureMarker, listCaptureMarkers, removeCaptureMarker, walletBalanceKind, setWalletBalanceKind } from "./lib/capture/markers";
 import { planNumber } from "../contracts/plan-features";
 import { createRateLimiter } from "./lib/rate-limit";
 import { getSystemSettings } from "./lib/settings-cache";
@@ -31,6 +32,11 @@ const deviceRegistrations = createRateLimiter(10, 3_600_000);
 const ownerOf = (ctx: { user: { id: number; type: string } | null }) => ({ userId: ctx.user!.id, userType: ctx.user!.type });
 
 export const captureRouter = router({
+  walletKind: authedProcedure.input(z.object({ walletId: z.number().int().positive() })).query(({ ctx, input }) => walletBalanceKind(ownerOf(ctx), input.walletId)),
+  setWalletKind: authedProcedure.input(z.object({ walletId: z.number().int().positive(), kind: z.enum(CAPTURE_WALLET_KINDS) })).mutation(async ({ ctx, input }) => {
+    await setWalletBalanceKind(ownerOf(ctx), input.walletId, input.kind);
+    return { success: true };
+  }),
   sources: authedProcedure.query(async () => {
     const catalog = await getCaptureCatalog();
     return { version: catalog.version, sources: sourcesForPhones(catalog) };

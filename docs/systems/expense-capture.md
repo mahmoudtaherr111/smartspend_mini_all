@@ -439,3 +439,6 @@ Checked against the code; each one names where it lives.
 - [AI Center](ai-center.md): the assistant can also propose recording an expense.
 
 A filing-only clause such as «سجلها في حساب مشروع ورشة النجارة» after a priced purchase is retained as a rejected instruction, not an incomplete financial event needing another amount. Real unpriced purchases or payments still require clarification. «للمحل» alone can name a merchant and never establishes that the user is recording in their own business ledger.
+
+
+The classifier keeps its semantic transfer/investment output for compatibility. The shared writer converts it only after the cashflow-v1 cutover, using explicit direction and independent financial metadata; missing legacy transfer direction is refused rather than inferred from the amount.

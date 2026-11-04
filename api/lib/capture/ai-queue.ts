@@ -21,7 +21,7 @@ import { SMS_PROMPT_VERSION, type SmsModelReply } from "../sms-ai-contract";
 import { readMessageWithModel } from "./ai-reader";
 import { captureConsentsOf } from "./consent";
 import type { CaptureDevice } from "./devices";
-import { lockCaptureUser, placeSignal, startIntakeRun, type SignalReading } from "./intake";
+import { lockCaptureUser, placeSignal, startIntakeRun, noteWalletBalance, type SignalReading } from "./intake";
 import { openCaptureText } from "./vault";
 import { readCaptureWithModel } from "./model-reader";
 import { captureQualification } from "./model-reader";
@@ -287,6 +287,9 @@ async function readV4Job(job: Job, signal: typeof captureSignals.$inferSelect, s
     return deferV4(job, result.outcome, result.outcome === "capacity" ? 5000 : result.outcome === "failed" ? Math.min(3600_000, 30000 * Math.pow(2, Math.min(job.attempts - 1, 7))) : 3600_000);
   }
   if (result.proposal.status !== "ready") {
+    const qualifiedBalance = result.check.reply.type === "balance" && result.check.reply.state === "none" && result.check.reply.balance
+      && captureQualification(await getSystemSettings())?.pairs.includes(`${signal.sourceSlug}:balance`);
+    const balanceRun = qualifiedBalance ? await startIntakeRun({ ...owner, deviceId: job.deviceId }, job.lang === "en" ? "en" : "ar") : null;
     await getDb().transaction(async (tx) => {
       await lockCaptureUser(tx, owner);
       const [lease] = await tx.select().from(captureAiJobs).where(and(eq(captureAiJobs.id, job.id), eq(captureAiJobs.userId, owner.userId), eq(captureAiJobs.userType, owner.userType))).for("update");
@@ -297,6 +300,8 @@ async function readV4Job(job: Job, signal: typeof captureSignals.$inferSelect, s
         await tx.delete(captureSignals).where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));
         return;
       }
+      if (balanceRun && result.check.reply.balance) await noteWalletBalance(balanceRun, { ...stored, captureV4: { ...stored.captureV4!, reply: result.check.reply },
+        balanceAfter: { value: result.check.reply.balance.value, currency: result.check.reply.balance.currency } }, tx);
       await tx.update(captureSignals).set({ reading: { ...stored, amount: null, counterparty: null,
         captureV4: { ...stored.captureV4!, reply: result.check.reply, posting: result.proposal, model: result.model, provider: result.provider } } })
         .where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));

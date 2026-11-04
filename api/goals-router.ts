@@ -26,6 +26,7 @@ import { ExpenseInputLimits } from "../contracts/constants";
 import { getSystemSettings } from "./lib/settings-cache";
 import { isPlanFeatureEnabled, planNumber } from "../contracts/plan-features";
 import { recordGeminiCall } from "./lib/ai-ledger";
+import { spendingRowSql } from "./services/ledger-semantics";
 
 const FREE_DESCRIPTION_MAX = 120;
 
@@ -186,7 +187,7 @@ export const goalsRouter = router({
           and(
             eq(expenses.userId, ctx.user.id),
             eq(expenses.userType, ctx.user.type),
-            eq(expenses.type, "expense"),
+            spendingRowSql,
             gte(expenses.date, monthRange.start),
             lt(expenses.date, monthRange.endExclusive),
           ),

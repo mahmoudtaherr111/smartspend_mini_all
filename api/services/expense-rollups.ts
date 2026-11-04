@@ -6,6 +6,7 @@ const log = createLogger("expense-rollups");
 import { expenseDailyRollups, expenses } from "../../db/schema";
 import { db } from "../queries/connection";
 import { businessDateKey, startOfBusinessDay } from "../lib/app-time";
+import { financialBucket } from "../../contracts/ledger-movement";
 
 export type ExpenseRollupDelta = {
   userId: number;
@@ -68,6 +69,7 @@ export function expenseToRollupDelta(
     amount: number | string | Decimal;
     source?: string | null;
     status?: string | null;
+    parsedMetadata?: unknown;
   },
   multiplier: 1 | -1 = 1,
 ): ExpenseRollupDelta {
@@ -87,7 +89,7 @@ export function expenseToRollupDelta(
   let automatedExpenseDelta = "0.00";
 
   if (isConfirmed) {
-    switch (expense.type) {
+    switch (financialBucket(expense)) {
       case "income":
         incomeDelta = amount;
         if (isSms) automatedIncomeDelta = amount;
@@ -292,6 +294,7 @@ export async function reconcileRollupsForRange(
       type,
       amount,
       source,
+      parsed_metadata,
       status
     FROM expenses
     WHERE user_id = ${userId}
@@ -302,6 +305,7 @@ export async function reconcileRollupsForRange(
   `);
 
   type ExpenseRecord = {
+    parsed_metadata?: unknown;
     id: number;
     business_id: number | string;
     date: Date | string;
@@ -354,7 +358,7 @@ export async function reconcileRollupsForRange(
     const amt = new Decimal(exp.amount || 0);
     const isSms = exp.source === "sms";
 
-    switch (exp.type) {
+    switch (financialBucket({ ...exp, parsedMetadata: exp.parsed_metadata })) {
       case "income":
         item.income = item.income.plus(amt);
         if (isSms) item.automatedIncome = item.automatedIncome.plus(amt);

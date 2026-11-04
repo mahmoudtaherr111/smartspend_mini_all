@@ -2,8 +2,11 @@ import { z } from "zod";
 import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
 import { router, authedProcedure } from "./middleware";
 import { db } from "./queries/connection";
-import { userWallets, expenses } from "../db/schema";
-import { eq, and, desc, gte, lt, sql } from "drizzle-orm";
+import { userWallets, expenses, captureMarkers } from "../db/schema";
+import { eq, and, or, desc, gte, lt, like, sql } from "drizzle-orm";
+import { counterWalletSql, ledgerMovementSql } from "./services/ledger-semantics";
+import { financialMovement, movementOf } from "../contracts/ledger-movement";
+import { lockLedgerOwner } from "./services/ledger-writer";
 import { businessDateKey } from "./lib/app-time";
 import { reportPeriod } from "./services/financial-month";
 
@@ -49,14 +52,20 @@ export const walletRouter = router({
           and(
             eq(expenses.userId, ctx.user.id as number),
             eq(expenses.userType, ctx.user.type),
-            eq(expenses.walletId, input.walletId),
+            or(eq(expenses.walletId, input.walletId), sql`${counterWalletSql} = ${input.walletId}`),
           ),
         )
         .orderBy(desc(expenses.date))
         .limit(input.limit)
         .offset(input.offset);
 
-      return walletExpenses;
+      return walletExpenses.map((row) => {
+        const financial = financialMovement(row);
+        if (row.walletId === input.walletId || financial?.counterWalletId !== input.walletId) return row;
+        const incoming = movementOf(row) === "out";
+        return { ...row, type: incoming ? "income" : "expense", amount: Math.abs(Number(row.amount)).toFixed(2), walletId: input.walletId,
+          parsedMetadata: { ...(row.parsedMetadata as Record<string, unknown> | null), financial: { ...financial, movement: incoming ? "in" : "out" }, walletView: { originalWalletId: row.walletId } } };
+      });
     }),
 
   /**
@@ -76,10 +85,12 @@ export const walletRouter = router({
     .query(async ({ ctx, input }) => {
       const month = input.month ?? businessDateKey().slice(0, 7);
       const { current } = reportPeriod(month, input.salaryDay);
+      const incoming = sql`((${expenses.walletId} = ${input.walletId} AND ${ledgerMovementSql} = 'in') OR (${counterWalletSql} = ${input.walletId} AND (${expenses.walletId} IS NULL OR ${expenses.walletId} <> ${input.walletId}) AND ${ledgerMovementSql} = 'out'))`;
+      const outgoing = sql`((${expenses.walletId} = ${input.walletId} AND ${ledgerMovementSql} = 'out') OR (${counterWalletSql} = ${input.walletId} AND (${expenses.walletId} IS NULL OR ${expenses.walletId} <> ${input.walletId}) AND ${ledgerMovementSql} = 'in'))`;
       const [row] = await db
         .select({
-          moneyIn: sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = 'income' THEN ABS(${expenses.amount}) WHEN ${expenses.type} = 'expense' AND ${expenses.amount} < 0 THEN -${expenses.amount} ELSE 0 END), 0)`,
-          moneyOut: sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = 'expense' AND ${expenses.amount} > 0 THEN ${expenses.amount} ELSE 0 END), 0)`,
+          moneyIn: sql<string>`COALESCE(SUM(CASE WHEN ${incoming} THEN ABS(${expenses.amount}) ELSE 0 END), 0)`,
+          moneyOut: sql<string>`COALESCE(SUM(CASE WHEN ${outgoing} THEN ABS(${expenses.amount}) ELSE 0 END), 0)`,
           count: sql<number>`COUNT(*)`,
         })
         .from(expenses)
@@ -87,7 +98,7 @@ export const walletRouter = router({
           and(
             eq(expenses.userId, ctx.user.id as number),
             eq(expenses.userType, ctx.user.type),
-            eq(expenses.walletId, input.walletId),
+            or(eq(expenses.walletId, input.walletId), sql`${counterWalletSql} = ${input.walletId}`),
             gte(expenses.date, current.startUtc),
             lt(expenses.date, current.endUtc),
             sql`(${expenses.status} IS NULL OR ${expenses.status} = 'confirmed')`,
@@ -161,6 +172,11 @@ export const walletRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await db.transaction(async (tx) => {
+        await lockLedgerOwner(tx, { userId: ctx.user.id as number, userType: ctx.user.type });
+        await tx.delete(captureMarkers).where(and(eq(captureMarkers.userId, ctx.user.id as number), eq(captureMarkers.userType, ctx.user.type), eq(captureMarkers.kind, "wallet_kind"), like(captureMarkers.value, `${input.id}:%`)));
+        await tx.update(expenses).set({ parsedMetadata: sql`JSON_REMOVE(${expenses.parsedMetadata}, '$.financial.counterWalletId')` }).where(and(
+          eq(expenses.userId, ctx.user.id as number), eq(expenses.userType, ctx.user.type), sql`${counterWalletSql} = ${input.id}`,
+        ));
         // Nullify foreign keys on linked expenses first to prevent orphaned references
         await tx
           .update(expenses)

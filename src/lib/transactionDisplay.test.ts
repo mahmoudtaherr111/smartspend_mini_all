@@ -80,6 +80,17 @@ describe("transactionDisplay helper", () => {
 });
 
 describe("a refund in the list", () => {
+  it("uses financial meaning for canonical rows instead of inferring exclusion from the transfer category", () => {
+    const loan = getTransactionDisplayMeta({ type: "expense", category: "تحويل", amount: 100,
+      parsedMetadata: { financial: { version: 1, kind: "loan", movement: "out" } } });
+    expect(loan.label).toBe("مصروف"); expect(loan.isTransfer).toBe(false);
+    const own = getTransactionDisplayMeta({ type: "income", amount: 100,
+      parsedMetadata: { financial: { version: 1, kind: "own_transfer", movement: "in" } } });
+    expect(own.isTransfer).toBe(true); expect(own.sign).toBe("+");
+    const investment = getTransactionDisplayMeta({ type: "income", amount: 100,
+      parsedMetadata: { financial: { version: 1, kind: "investment", movement: "in" } } });
+    expect(investment.isInvestment).toBe(true); expect(investment.sign).toBe("+");
+  });
   it("shows a negative expense as money back, not spending", () => {
     const meta = getTransactionDisplayMeta({ type: "expense", category: "تسوق", amount: "-300.00" });
     expect(meta.label).toContain("مرتجع");

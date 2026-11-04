@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../api/queries/connection";
 import {
-  cashflowSettlements, coachingPlans, coachingSteps, expenses, inAppNotifications, installmentPlans, scheduledCashflows, userContacts,
+  cashflowSettlements, coachingPlans, coachingSteps, expenses, expenseDailyRollups, inAppNotifications, installmentPlans, scheduledCashflows, userContacts, localUsers, users,
 } from "../db/schema";
 import { createCashflow, resolveCashflowContact, settle, updateCashflow, upcoming } from "../api/services/coach/cashflows";
 import { acceptPlan, activePlan, cancelReminder, deliverDueReminders, setReminder } from "../api/services/coach/plans";
@@ -36,7 +36,17 @@ async function clean() {
     await db.delete(installmentPlans).where(scope(installmentPlans));
     await db.delete(expenses).where(scope(expenses));
     await db.delete(userContacts).where(scope(userContacts));
+    await db.delete(expenseDailyRollups).where(scope(expenseDailyRollups));
   }
+  await db.delete(localUsers).where(eq(localUsers.id, user.userId));
+  await db.delete(users).where(eq(users.id, other.userId));
+}
+
+async function setUp() {
+  await clean();
+  if (process.env.RUN_DB_INTEGRATION !== "1") return;
+  await db.insert(localUsers).values({ id: user.userId, phone: 'synthetic-coach', name: 'Synthetic', password: 'synthetic' });
+  await db.insert(users).values({ id: other.userId, unionId: 'synthetic-coach', email: 'synthetic-coach@example.invalid', name: 'Synthetic' });
 }
 
 async function spend(who: typeof user, amount: number, day: string, type = "expense"): Promise<number> {
@@ -65,7 +75,7 @@ describe("scheduled cashflows and their payments", () => {
     ]);
     expect((await caller.listInstallmentPlans()).find((row) => row.id === planId)).toMatchObject({ paid: 3, remaining: 9, remainingAmount: 6400, countedBy: "linked" });
   });
-  beforeEach(clean);
+  beforeEach(setUp);
   afterAll(clean);
 
   itWithDatabase("links payments to a due date, part by part, never beyond what is owed or what a payment holds", async () => {
@@ -139,7 +149,7 @@ describe("scheduled cashflows and their payments", () => {
 });
 
 describe("coaching plans and reminders", () => {
-  beforeEach(clean);
+  beforeEach(setUp);
   afterAll(clean);
 
   const plan = (title: string) => ({
@@ -185,7 +195,7 @@ describe("coaching plans and reminders", () => {
 });
 
 describe("installment progress from linked payments", () => {
-  beforeEach(clean);
+  beforeEach(setUp);
   afterAll(clean);
 
   itWithDatabase("counts a partial payment by its amount, and keeps two plans with the same word apart", async () => {
@@ -216,7 +226,7 @@ describe("installment progress from linked payments", () => {
 });
 
 describe("dated debt links stay consistent with the ledger", () => {
-  beforeEach(clean);
+  beforeEach(setUp);
   afterAll(clean);
   const dueDay = "2026-11-15";
   async function person(name: string, who = user) {

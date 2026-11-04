@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { and, eq, type Column } from "drizzle-orm";
 import { db } from "../api/queries/connection";
-import { aiActionMemory, expenses, userBudgets } from "../db/schema";
+import { aiActionMemory, expenses, userBudgets, localUsers, expenseDailyRollups } from "../db/schema";
 import { executeRuntimeAction } from "../api/services/action-runtime/extended-actions";
 
 vi.mock("../api/notification-engine", () => ({ checkUserBudgetExceeded: vi.fn(async () => undefined) }));
@@ -17,6 +17,8 @@ async function clean() {
   await db.delete(aiActionMemory).where(mine(aiActionMemory));
   await db.delete(expenses).where(mine(expenses));
   await db.delete(userBudgets).where(mine(userBudgets));
+  await db.delete(expenseDailyRollups).where(mine(expenseDailyRollups));
+  await db.delete(localUsers).where(eq(localUsers.id, ctx.userId));
 }
 
 /** What confirmAction stores after it runs a draft. */
@@ -32,7 +34,7 @@ async function remember(actionName: string, payload: Record<string, unknown>) {
 }
 
 describe("undo of what an assistant action created", () => {
-  beforeEach(clean);
+  beforeEach(async () => { await clean(); await db.insert(localUsers).values({ id: ctx.userId, name: "Synthetic", phone: "synthetic-undo", password: "synthetic" }); });
   afterAll(clean);
 
   itWithDatabase("removes the expense and the budget, newest first, each once", async () => {

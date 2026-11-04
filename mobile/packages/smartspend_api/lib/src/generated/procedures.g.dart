@@ -128,9 +128,11 @@ final class CaptureProcedures {
   ApiMutation get revokeDevice => const ApiMutation('capture.revokeDevice', builder: 'authedProcedure', hasInput: true);
   ApiMutation get setAuto => const ApiMutation('capture.setAuto', builder: 'authedProcedure', hasInput: true);
   ApiMutation get setConsent => const ApiMutation('capture.setConsent', builder: 'authedProcedure', hasInput: true);
+  ApiMutation get setWalletKind => const ApiMutation('capture.setWalletKind', builder: 'authedProcedure', hasInput: true);
   ApiQuery get sources => const ApiQuery('capture.sources', builder: 'authedProcedure');
   ApiQuery get status => const ApiQuery('capture.status', builder: 'authedProcedure');
   ApiMutation get unignore => const ApiMutation('capture.unignore', builder: 'authedProcedure', hasInput: true);
+  ApiQuery get walletKind => const ApiQuery('capture.walletKind', builder: 'authedProcedure', hasInput: true);
   ApiQuery get walletOffers => const ApiQuery('capture.walletOffers', builder: 'authedProcedure');
 }
 

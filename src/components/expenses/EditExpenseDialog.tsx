@@ -14,6 +14,7 @@ import {
   AdaptiveDialogTitle,
 } from "@/components/ui/adaptive-dialog";
 import { ExpenseInputLimits } from "@contracts/constants";
+import { financialBucket } from "@contracts/ledger-movement";
 import {
   defaultSubCategory,
   getCategoryOptionsForType,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/financial-taxonomy";
 
 export interface EditableExpense {
+  parsedMetadata?: unknown;
   id: number;
   amount: string | number;
   type: string;
@@ -41,9 +43,9 @@ const TYPE_OPTIONS = [
 type ExpenseType = (typeof TYPE_OPTIONS)[number]["value"];
 
 /** A refund is stored as a negative expense (ledgerAmount on the server). */
-function kindOf(expense: { type: string; amount: string | number }): ExpenseType {
+function kindOf(expense: EditableExpense): ExpenseType {
   if (expense.type === "expense" && Number(expense.amount) < 0) return "refund";
-  return (expense.type as ExpenseType) || "expense";
+  return (financialBucket(expense) as ExpenseType) || "expense";
 }
 
 /** The day of an instant on this device, as the date input shows it (YYYY-MM-DD). */
@@ -98,6 +100,7 @@ export function EditExpenseDialog({
     const changes: Parameters<typeof update.mutate>[0] = { id: expense.id };
     if (value !== originalAmount) changes.amount = value;
     if (type !== originalKind) {
+      changes.movementKind = type === "refund" ? "refund" : type === "transfer" ? "personal_transfer" : type === "investment" ? "investment" : type === "income" ? "income" : "spending";
       const storedType = type === "refund" ? "expense" : type;
       if (storedType !== expense.type) changes.type = storedType;
       changes.refund = type === "refund";

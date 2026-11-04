@@ -37,7 +37,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `auth` | `api/auth-router.ts` | 5 | 2 | 3 | `authedProcedure`, `publicProcedure`, `strictPublicProcedure` |
 | `budget` | `api/budget-router.ts` | 4 | 1 | 3 | `authedProcedure` |
 | `business` | `api/business-router.ts` | 10 | 2 | 8 | `businessAiProcedure`, `businessProcedure` |
-| `capture` | `api/capture-router.ts` | 16 | 7 | 9 | `authedProcedure` |
+| `capture` | `api/capture-router.ts` | 18 | 8 | 10 | `authedProcedure` |
 | `captureAdmin` | `api/capture-admin-router.ts` | 10 | 3 | 7 | `adminProcedure` |
 | `chat` | `api/chat-router.ts` | 10 | 4 | 6 | `aiProcedure`, `authedProcedure` |
 | `coach` | `api/coach-router.ts` | 10 | 2 | 8 | `authedProcedure` |
@@ -182,8 +182,8 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `analytics.getAllUserStats` | query | `adminProcedure` | yes | `expenses`, `local_users`, `users` | — | — | — |
-| `analytics.getDashboardStats` | query | `adminProcedure` | no | `expenses`, `local_users`, `users` | — | `api/lib/app-time.ts` | — |
+| `analytics.getAllUserStats` | query | `adminProcedure` | yes | `expenses`, `local_users`, `users` | — | `api/services/ledger-semantics.ts` | — |
+| `analytics.getDashboardStats` | query | `adminProcedure` | no | `expenses`, `local_users`, `users` | — | `api/lib/app-time.ts`, `api/services/ledger-semantics.ts` | — |
 | `analytics.getMyAnalytics` | query | `authedProcedure` | no | `user_analytics` | — | — | — |
 | `analytics.trackEvent` | mutation | `authedProcedure` | yes | — | `user_analytics` | — | `src/hooks/useSessionTracker.ts` |
 
@@ -243,9 +243,11 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `capture.revokeDevice` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/devices.ts` | — |
 | `capture.setAuto` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/memory.ts` | — |
 | `capture.setConsent` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/consent.ts`, `contracts/capture-intake.ts` | — |
+| `capture.setWalletKind` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/markers.ts`, `contracts/capture.ts` | — |
 | `capture.sources` | query | `authedProcedure` | no | — | — | `api/lib/capture/catalog.ts` | — |
 | `capture.status` | query | `authedProcedure` | no | — | — | `api/lib/capture/access.ts`, `api/lib/capture/consent.ts`, `api/lib/capture/intake.ts`, `api/lib/settings-cache.ts` | — |
 | `capture.unignore` | mutation | `authedProcedure` | yes | — | — | `api/lib/capture/markers.ts` | — |
+| `capture.walletKind` | query | `authedProcedure` | yes | — | — | `api/lib/capture/markers.ts` | — |
 | `capture.walletOffers` | query | `authedProcedure` | no | — | — | `api/lib/capture/care.ts` | — |
 
 ### `captureAdmin` — `api/capture-admin-router.ts`
@@ -298,8 +300,8 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `expense.answerClarification` | mutation | `authedProcedure` | yes | `business_categories`, `classification_logs`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `pending_clarifications` | `api/ai-router.ts`, `api/lib/env.ts`, `api/lib/person-resolver.ts`, `api/lib/relationship-normalizer.ts`, `api/lib/settings-cache.ts`, `api/lib/smart-pipeline.ts`, `api/services/ledger-writer.ts`, `api/services/personal-context-builder.ts`, `api/services/user-profile-service.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
-| `expense.batchCreate` | mutation | `authedProcedure` | yes | `classification_logs`, `user_contacts` | `classification_logs` | `api/lib/correction-rules.ts`, `api/lib/ownership-guard.ts`, `api/lib/relationship-normalizer.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts` | `src/components/expenses/ExpenseForm.tsx` |
-| `expense.create` | mutation | `authedProcedure` | yes | `classification_logs`, `user_contacts` | `classification_logs` | `api/lib/correction-rules.ts`, `api/lib/ownership-guard.ts`, `api/lib/relationship-normalizer.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts` | `src/components/expenses/ExpenseForm.tsx` |
+| `expense.batchCreate` | mutation | `authedProcedure` | yes | `classification_logs`, `user_contacts` | `classification_logs` | `api/lib/correction-rules.ts`, `api/lib/ownership-guard.ts`, `api/lib/relationship-normalizer.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts`, `contracts/ledger-movement.ts` | `src/components/expenses/ExpenseForm.tsx` |
+| `expense.create` | mutation | `authedProcedure` | yes | `classification_logs`, `user_contacts` | `classification_logs` | `api/lib/correction-rules.ts`, `api/lib/ownership-guard.ts`, `api/lib/relationship-normalizer.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts`, `contracts/ledger-movement.ts` | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.createCategory` | mutation | `authedProcedure` | yes | — | `expense_categories` | — | — |
 | `expense.createInstallmentPlan` | mutation | `authedProcedure` | yes | — | `installment_plans` | — | `src/components/installments/InstallmentsPanel.tsx` |
 | `expense.delete` | mutation | `authedProcedure` | yes | — | — | `api/services/ledger-writer.ts` | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx`, `src/components/expenses/RecentExpenses.tsx` |
@@ -309,15 +311,15 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `expense.getCategoryList` | query | `authedProcedure` | no | `expense_categories` | — | — | — |
 | `expense.getDebtBalances` | query | `authedProcedure` | no | — | — | `api/services/debt-ledger.ts` | `src/components/debts/DebtsPanel.tsx` |
 | `expense.getMonthSummary` | query | `authedProcedure` | yes | `expense_daily_rollups` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/services/financial-month.ts` | `src/pages/Home.tsx` |
-| `expense.getMonthlyStats` | query | `authedProcedure` | yes | `expense_daily_rollups`, `expenses` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/lib/spending-behavior.ts`, `api/services/expense-rollups.ts`, `api/services/financial-month.ts`, `contracts/categories.ts` | `src/components/settings/BusinessSettingsView.tsx`, `src/pages/Home.tsx` |
+| `expense.getMonthlyStats` | query | `authedProcedure` | yes | `expense_daily_rollups`, `expenses` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts`, `api/lib/spending-behavior.ts`, `api/services/expense-rollups.ts`, `api/services/financial-month.ts`, `api/services/ledger-semantics.ts`, `contracts/categories.ts` | `src/components/settings/BusinessSettingsView.tsx`, `src/pages/Home.tsx` |
 | `expense.getPendingClarifications` | query | `authedProcedure` | no | `pending_clarifications` | — | — | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
-| `expense.getSeasonSpending` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/seasons.ts` | `src/components/seasons/SeasonsPanel.tsx` |
+| `expense.getSeasonSpending` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/seasons.ts`, `api/services/ledger-semantics.ts` | `src/components/seasons/SeasonsPanel.tsx` |
 | `expense.getYearlyStats` | query | `authedProcedure` | yes | `expense_daily_rollups` | — | `api/lib/app-time.ts`, `api/lib/cache-keys.ts`, `api/lib/redis-client.ts` | — |
-| `expense.list` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `contracts/constants.ts` | `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
-| `expense.listInstallmentPlans` | query | `authedProcedure` | no | `cashflow_settlements`, `expenses`, `installment_plans`, `scheduled_cashflows` | — | `api/lib/normalizer-v2.ts`, `api/services/installments.ts` | `src/components/installments/InstallmentsPanel.tsx` |
+| `expense.list` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `api/services/ledger-semantics.ts`, `contracts/constants.ts` | `src/components/dashboard/MonthlyCalendar.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx` |
+| `expense.listInstallmentPlans` | query | `authedProcedure` | no | `cashflow_settlements`, `expenses`, `installment_plans`, `scheduled_cashflows` | — | `api/lib/normalizer-v2.ts`, `api/services/installments.ts`, `api/services/ledger-semantics.ts` | `src/components/installments/InstallmentsPanel.tsx` |
 | `expense.previewCategory` | query | `authedProcedure` | yes | `user_dictionaries` | — | `api/lib/normalizer-v2.ts`, `api/lib/rule-engine.ts`, `contracts/constants.ts` | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.searchTransactions` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/unified-normalizer.ts` | `src/components/dashboard/GlobalSearch.tsx` |
-| `expense.update` | mutation | `authedProcedure` | yes | `classification_logs` | `classification_logs` | `api/lib/category-registry.ts`, `api/lib/correction-rules.ts`, `api/lib/ownership-guard.ts`, `api/lib/relationship-normalizer.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts` | `src/components/expenses/EditExpenseDialog.tsx` |
+| `expense.update` | mutation | `authedProcedure` | yes | `classification_logs` | `classification_logs` | `api/lib/category-registry.ts`, `api/lib/correction-rules.ts`, `api/lib/ownership-guard.ts`, `api/lib/relationship-normalizer.ts`, `api/services/ledger-writer.ts`, `api/services/user-profile-service.ts`, `contracts/constants.ts`, `contracts/ledger-movement.ts` | `src/components/expenses/EditExpenseDialog.tsx` |
 
 ### `export` — `api/export-router.ts`
 
@@ -325,13 +327,13 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `export.allUsers` | mutation | `adminProcedure` | yes | `local_users`, `users` | — | — | `src/pages/Admin.tsx` |
 | `export.monthlyReportHtml` | mutation | `proReportProcedure` | yes | — | — | `api/services/pro-report-engine.ts` | `src/components/insights/AIInsights.tsx` |
-| `export.myExpenses` | mutation | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts` | `src/components/expenses/ExportExpensesCard.tsx` |
+| `export.myExpenses` | mutation | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `api/services/ledger-semantics.ts`, `contracts/ledger-movement.ts` | `src/components/expenses/ExportExpensesCard.tsx` |
 
 ### `goals` — `api/goals-router.ts`
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `goals.analyze` | mutation | `goalAnalysisProcedure` | yes | `expenses`, `financial_goals` | `financial_goals` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/user-profile-service.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
+| `goals.analyze` | mutation | `goalAnalysisProcedure` | yes | `expenses`, `financial_goals` | `financial_goals` | `api/lib/ai-ledger.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/app-time.ts`, `api/lib/env.ts`, `api/lib/model-mapper.ts`, `api/services/finance-semantic-layer/index.ts`, `api/services/ledger-semantics.ts`, `api/services/user-profile-service.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.create` | mutation | `authedProcedure` | yes | `financial_goals` | `financial_goals` | `api/lib/settings-cache.ts`, `api/services/finance-semantic-layer/index.ts`, `contracts/constants.ts`, `contracts/plan-features.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
 | `goals.delete` | mutation | `authedProcedure` | yes | — | `financial_goals`, `user_budgets` | `api/services/finance-semantic-layer/index.ts` | — |
 | `goals.list` | query | `authedProcedure` | no | `financial_goals` | — | `api/lib/settings-cache.ts`, `contracts/plan-features.ts` | `src/components/goals/FinancialGoalsPanel.tsx` |
@@ -447,9 +449,9 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `wallet.createWallet` | mutation | `authedProcedure` | yes | — | `user_wallets` | — | `src/components/wallets/DigitalBankingSuite.tsx` |
-| `wallet.deleteWallet` | mutation | `authedProcedure` | yes | — | `expenses`, `user_wallets` | `api/services/finance-semantic-layer/index.ts` | `src/components/wallets/DigitalBankingSuite.tsx` |
-| `wallet.getWalletMonth` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `api/services/financial-month.ts` | `src/components/wallets/DigitalBankingSuite.tsx` |
-| `wallet.getWalletTransactions` | query | `authedProcedure` | yes | `expenses` | — | — | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.deleteWallet` | mutation | `authedProcedure` | yes | — | `capture_markers`, `expenses`, `user_wallets` | `api/services/finance-semantic-layer/index.ts`, `api/services/ledger-semantics.ts`, `api/services/ledger-writer.ts` | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletMonth` | query | `authedProcedure` | yes | `expenses` | — | `api/lib/app-time.ts`, `api/services/financial-month.ts`, `api/services/ledger-semantics.ts` | `src/components/wallets/DigitalBankingSuite.tsx` |
+| `wallet.getWalletTransactions` | query | `authedProcedure` | yes | `expenses` | — | `api/services/ledger-semantics.ts`, `contracts/ledger-movement.ts` | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.getWallets` | query | `authedProcedure` | no | `user_wallets` | — | — | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.updateWallet` | mutation | `authedProcedure` | yes | — | `user_wallets` | — | — |
 
@@ -468,4 +470,4 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 These are not referenced by the web app. Some may be called by other clients (Android app, iOS shortcuts) or server-side through `createCaller`; the rest are candidates for removal.
 
-`admin.checkProviderHealth`, `admin.generateBackupExport`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `adminConsole.aiCalls`, `adminConsole.classifications`, `adminConsole.growth`, `adminConsole.money`, `adminConsole.person`, `adminConsole.searchPeople`, `adminConsole.session`, `adminConsole.today`, `adminWhatsapp.broadcastMessage`, `adminWhatsapp.broadcastTemplate`, `adminWhatsapp.clearQueue`, `adminWhatsapp.getUsers`, `adminWhatsapp.startService`, `adminWhatsapp.stopService`, `adminWhatsapp.toggleOtpVerification`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `appConfig.get`, `auth.googleCallback`, `auth.signInWithGoogle`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `capture.answer`, `capture.answerWalletOffer`, `capture.autoOffers`, `capture.deleteMyData`, `capture.devices`, `capture.ignore`, `capture.ignored`, `capture.pending`, `capture.registerDevice`, `capture.revokeDevice`, `capture.setAuto`, `capture.setConsent`, `capture.sources`, `capture.status`, `capture.unignore`, `capture.walletOffers`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.resetPassword`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `pro.restorePurchases`, `pro.storeBilling`, `pro.verifyStorePurchase`, `profile.confirmPhoneChange`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `seo.delete`, `seo.list`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`
+`admin.checkProviderHealth`, `admin.generateBackupExport`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.sendPushNotification`, `admin.setUserTokenLimit`, `admin.updateUserPlan`, `adminConsole.aiCalls`, `adminConsole.classifications`, `adminConsole.growth`, `adminConsole.money`, `adminConsole.person`, `adminConsole.searchPeople`, `adminConsole.session`, `adminConsole.today`, `adminWhatsapp.broadcastMessage`, `adminWhatsapp.broadcastTemplate`, `adminWhatsapp.clearQueue`, `adminWhatsapp.getUsers`, `adminWhatsapp.startService`, `adminWhatsapp.stopService`, `adminWhatsapp.toggleOtpVerification`, `ads.impression`, `ai.generateYearlyInsights`, `ai.learnWord`, `ai.speechToText`, `analytics.getAllUserStats`, `analytics.getDashboardStats`, `analytics.getMyAnalytics`, `appConfig.get`, `auth.googleCallback`, `auth.signInWithGoogle`, `budget.update`, `business.linkContact`, `business.types`, `business.updateCategory`, `capture.answer`, `capture.answerWalletOffer`, `capture.autoOffers`, `capture.deleteMyData`, `capture.devices`, `capture.ignore`, `capture.ignored`, `capture.pending`, `capture.registerDevice`, `capture.revokeDevice`, `capture.setAuto`, `capture.setConsent`, `capture.setWalletKind`, `capture.sources`, `capture.status`, `capture.unignore`, `capture.walletKind`, `capture.walletOffers`, `coach.updateCashflow`, `expense.createCategory`, `expense.getById`, `expense.getCategoryList`, `expense.getYearlyStats`, `goals.delete`, `goals.setStatus`, `localAuth.deleteUser`, `localAuth.getStats`, `localAuth.listUsers`, `localAuth.resetPassword`, `localAuth.updateRole`, `localAuth.verifyOtp`, `pro.listSubscriptions`, `pro.restorePurchases`, `pro.storeBilling`, `pro.verifyStorePurchase`, `profile.confirmPhoneChange`, `profile.getMyProfile`, `profile.getQuestions`, `profile.refreshInferences`, `profile.requestPhoneChange`, `profile.updateProfile`, `seo.delete`, `seo.list`, `seo.upsert`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats`, `session.trackEvent`, `support.assign`, `support.getById`, `voice.startCall`, `wallet.updateWallet`

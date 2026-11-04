@@ -1,3 +1,5 @@
+import { MOVEMENT_KINDS } from "../contracts/ledger-movement";
+import { spendingRowSql, ledgerBucketSql } from "./services/ledger-semantics";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
@@ -666,6 +668,8 @@ export const expenseRouter = router({
         contactId: z.number().int().positive().optional(),
         classificationLogId: z.number().int().positive().optional(),
         businessId: z.number().int().positive().optional(),
+        counterWalletId: z.number().int().positive().optional(),
+        movementKind: z.enum(MOVEMENT_KINDS).optional(),
         walletId: z.number().int().positive().optional(),
         clientRequestId: z.string().min(1).max(64).optional(),
         direction: z.enum(["incoming", "outgoing"]).optional(),
@@ -730,6 +734,8 @@ export const expenseRouter = router({
           classificationLogId: references.classificationLogId,
           businessId: input.businessId,
           walletId: input.walletId,
+          counterWalletId: input.counterWalletId,
+          movementKind: input.movementKind,
           clientRequestId: input.clientRequestId,
           parsedMetadata: input.parsedMetadata,
         },
@@ -763,6 +769,8 @@ export const expenseRouter = router({
           contactId: z.number().int().positive().optional(),
           classificationLogId: z.number().int().positive().optional(),
           businessId: z.number().int().positive().optional(),
+          counterWalletId: z.number().int().positive().optional(),
+          movementKind: z.enum(MOVEMENT_KINDS).optional(),
           walletId: z.number().int().positive().optional(),
           clientRequestId: z.string().min(1).max(64).optional(),
           // Which way a transfer moved (a loan given or received, a gam3eya payment or payout).
@@ -834,6 +842,8 @@ export const expenseRouter = router({
         classificationLogId: references[index].classificationLogId,
         businessId: item.businessId,
         walletId: item.walletId,
+        counterWalletId: item.counterWalletId,
+        movementKind: item.movementKind,
         clientRequestId: item.clientRequestId,
       }));
 
@@ -905,7 +915,7 @@ export const expenseRouter = router({
           conditions.push(lte(expenses.date, parseBusinessInstant(input.endDate)));
         if (input?.category)
           conditions.push(eq(expenses.category, input.category));
-        if (input?.type) conditions.push(eq(expenses.type, input.type));
+        if (input?.type) conditions.push(eq(ledgerBucketSql, input.type));
         if (input?.cursor) conditions.push(lt(expenses.id, input.cursor));
 
         const items = await db
@@ -1007,6 +1017,9 @@ export const expenseRouter = router({
           .optional(),
         rawText: expenseRawText.optional(),
         date: z.string().optional(),
+        counterWalletId: z.number().int().positive().nullable().optional(),
+        movementKind: z.enum(MOVEMENT_KINDS).optional(),
+        direction: z.enum(["incoming", "outgoing"]).optional(),
         walletId: z.number().int().positive().nullable().optional(),
         businessId: z.number().int().positive().nullable().optional(),
         contactId: z.number().int().positive().nullable().optional(),
@@ -1042,6 +1055,9 @@ export const expenseRouter = router({
         type: input.type,
         amount: input.amount,
         refund: input.refund,
+        direction: input.direction,
+        movementKind: input.movementKind,
+        counterWalletId: input.counterWalletId,
         category,
         subCategory,
         description: input.description,
@@ -1236,7 +1252,7 @@ export const expenseRouter = router({
             and(
               eq(expenses.userId, userId),
               eq(expenses.userType, userType),
-              eq(expenses.type, "expense"),
+              spendingRowSql,
               eq(expenses.category, INSTALLMENTS_CATEGORY),
               or(isNull(expenses.businessId), eq(expenses.businessId, 0)),
               gte(expenses.date, plan.createdAt),
@@ -1331,7 +1347,7 @@ export const expenseRouter = router({
             and(
               eq(expenses.userId, userId),
               eq(expenses.userType, userType),
-              eq(expenses.type, "expense"),
+              spendingRowSql,
               isNull(expenses.businessId),
               gte(expenses.date, window.start),
               lt(expenses.date, window.endExclusive),
@@ -1602,7 +1618,7 @@ export const expenseRouter = router({
                 ? sql`(${expenses.businessId} IS NULL OR ${expenses.businessId} = 0)`
                 : eq(expenses.businessId, bizFilter),
               sql`(${expenses.status} IS NULL OR ${expenses.status} = 'confirmed')`,
-              eq(expenses.type, "expense"),
+              spendingRowSql,
             ),
           )
           .groupBy(expenses.category, expenses.subCategory);
@@ -1875,7 +1891,7 @@ export const expenseRouter = router({
               ? sql`(${expenses.businessId} IS NULL OR ${expenses.businessId} = 0)`
               : eq(expenses.businessId, bizFilter),
             sql`(${expenses.status} IS NULL OR ${expenses.status} = 'confirmed')`,
-            eq(expenses.type, "expense"),
+            spendingRowSql,
           ),
         )
         .groupBy(expenses.category, expenses.subCategory);
