@@ -141,8 +141,12 @@ class _Filled extends ConsumerWidget {
               : l10n.walletBalanceStory(when),
           wash: true,
         ),
-        if (ref.watch(captureServerStatusProvider).value?.walletTypesEnabled == true)
-          WalletBalanceKindChoice(walletId: wallet.id, kind: wallet.balanceKind),
+        if (ref.watch(captureServerStatusProvider).value?.walletTypesEnabled ==
+            true)
+          WalletBalanceKindChoice(
+            walletId: wallet.id,
+            kind: wallet.balanceKind,
+          ),
         if (detail.isPartial) ...[
           const SizedBox(height: SmartSpendSpacing.sm),
           InlineMessage(l10n.walletOfflinePartial),
