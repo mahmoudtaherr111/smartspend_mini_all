@@ -311,8 +311,9 @@ moved. Several drains claim jobs at once (each process runs three, and every rep
 as a deadlock victim is retried up to three times and otherwise left to the next drain. Measured locally
 (`tests/capture-load.test.ts`, stub model): 800 messages from 200 users at 10 a second plus a 20-a-second burst with
 six drains gave ingest p95 90 ms and filing p95 1.5 s, nothing lost or doubled; with 20% failed model calls every
-message was still filed after its retries. The first live run on 14 invented messages (`.agents/capture-v8/live-v4/`, outside
-git) found these rules and two provider bugs; it is not qualification.
+message was still filed after its retries. The first live run on 14 invented messages (a local script kept outside
+git) found two provider bugs and loosened these rules on those same messages, so its scores say nothing about unseen
+messages; it is not qualification.
 
 `npm run bench:capture:contract -- --cases api/qa/fixtures/capture-contract-cases.json` runs four invented examples.
 For a private local JSON corpus, pass its path instead. Each case has an numeric `id` of the form `CASE_123`, redacted `message`, a
