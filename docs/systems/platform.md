@@ -194,3 +194,6 @@ not generate missing-table retention failures. Pending capture model jobs no lon
 
 
 The settings accessor accepts an existing transaction for an uncached read on that same connection. The financial writer requests a shared lock on the cutover flag, held to commit; activation takes its exclusive lock before counting legacy rows. Uncommitted settings never enter the process cache.
+
+
+Capture duplicate-evidence waiting events share the 30-day review retention policy. The settings accessor share-lock mode also gates post-provider writes against an operator stop or qualification change.

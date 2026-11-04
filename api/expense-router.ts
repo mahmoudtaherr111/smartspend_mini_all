@@ -1003,6 +1003,7 @@ export const expenseRouter = router({
       z.object({
         id: z.number(),
         amount: expenseAmount.optional(),
+        linkedFeeAmount: z.number().finite().min(0).max(ExpenseInputLimits.amountMax).optional(),
         type: transactionTypeSchema.optional(),
         /** An expense whose money came back; stored negative (ledgerAmount). */
         refund: z.boolean().optional(),
@@ -1052,6 +1053,7 @@ export const expenseRouter = router({
       // memory and the ledger caches forget it (api/services/ledger-writer.ts). A correction has to clear every
       // layer that could replay the old answer, not only the one that learns from it.
       const originalExpense = await updateLedgerEntry({ userId, userType }, input.id, {
+        linkedFeeAmount: input.linkedFeeAmount,
         type: input.type,
         amount: input.amount,
         refund: input.refund,

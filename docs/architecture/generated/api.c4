@@ -1264,9 +1264,19 @@ model {
       }
     }
     capture = router 'capture' {
-      description 'api/capture-router.ts — 18 procedures.'
+      description 'api/capture-router.ts — 19 procedures.'
       metadata {
         file 'api/capture-router.ts'
+      }
+      activity = procedure 'capture.activity' {
+        #query #authed #uncalled
+        technology 'authedProcedure'
+        description 'query · authedProcedure · no caller in src/'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'query'
+        }
       }
       answer = procedure 'capture.answer' {
         #mutation #authed #uncalled

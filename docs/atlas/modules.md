@@ -26,7 +26,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `ai-providers` | AI provider access | 14 | `ai-governance`, `contracts`, `database`, `platform` | `ai-governance`, `ai-kernel`, `ai-memory`, `api-core`, `api-routers`, `capture-ai-reader`, `classification`, `jobs`, `ledger`, `receipt-parsing`, `voice` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 4 | `ai-providers`, `contracts`, `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-routers`, `capture-ai-reader`, `jobs` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `capture-intake`, `capture-reader`, `classification`, `coaching`, `receipt-parsing`, `voice` | — |
-| `capture-intake` | Capture intake | 12 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `ledger` | — |
+| `capture-intake` | Capture intake | 14 | `arabic-nlp`, `auth`, `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | `api-core`, `api-routers`, `auth`, `capture-ai-reader`, `ledger` | — |
 | `capture-ai-reader` | Message model reader | 7 | `ai-governance`, `ai-providers`, `capture-intake`, `classification`, `contracts`, `database`, `platform`, `security` | `capture-intake` | `gemini` |
 | `capture-catalog` | Capture catalog | 3 | `contracts`, `database`, `platform` | `api-core`, `api-routers`, `capture-intake` | — |
 | `capture-reader` | Message reader | 12 | `arabic-nlp`, `platform` | `capture-intake` | — |
@@ -397,16 +397,18 @@ Where captured bank and wallet notifications come in (decision 0028): the device
 | --- | --- | --- | --- | --- |
 | `api/capture-v1-routes.ts` | `capture-catalog`, `contracts`, `platform`, `security` | — | — | — |
 | `api/lib/capture/access.ts` | `database`, `platform` | — | — | `capture_usage` |
-| `api/lib/capture/ai-queue.ts` | `capture-ai-reader`, `capture-reader`, `database`, `ledger`, `platform`, `security` | — | `capture_ai_jobs`, `capture_signals`, `local_users`, `users` | `capture_ai_jobs`, `capture_signals` |
+| `api/lib/capture/activity.ts` | `database` | — | `capture_ai_jobs`, `capture_events` | — |
+| `api/lib/capture/ai-queue.ts` | `capture-ai-reader`, `capture-reader`, `contracts`, `database`, `ledger`, `platform`, `security` | — | `capture_ai_jobs`, `capture_signals`, `local_users`, `users` | `capture_ai_jobs`, `capture_signals` |
 | `api/lib/capture/care.ts` | `capture-catalog`, `database`, `platform` | — | `capture_devices`, `capture_events`, `capture_markers`, `user_wallets` | `capture_ai_jobs`, `capture_consents`, `capture_devices`, `capture_events`, `capture_markers`, `capture_memory`, `capture_signals`, `capture_user_pairs`, `in_app_notifications`, `user_wallets` |
 | `api/lib/capture/consent.ts` | `database` | — | `capture_consents`, `local_users`, `users` | `capture_consents` |
 | `api/lib/capture/devices.ts` | `auth`, `contracts`, `database`, `platform` | — | `capture_devices` | `capture_devices` |
 | `api/lib/capture/events.ts` | — | — | — | — |
-| `api/lib/capture/intake.ts` | `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `local_users`, `user_wallets`, `users` | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `in_app_notifications`, `user_wallets` |
+| `api/lib/capture/fees.ts` | `contracts`, `database` | — | `capture_events`, `expenses` | `capture_events`, `expenses` |
+| `api/lib/capture/intake.ts` | `capture-ai-reader`, `capture-catalog`, `capture-reader`, `contracts`, `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `local_users`, `user_wallets`, `users` | `capture_ai_jobs`, `capture_events`, `capture_signals`, `capture_usage`, `expenses`, `in_app_notifications`, `user_wallets` |
 | `api/lib/capture/keep-merchants.ts` | `security` | — | — | — |
 | `api/lib/capture/markers.ts` | `arabic-nlp`, `contracts`, `database`, `ledger`, `security` | — | `capture_markers`, `user_wallets` | `capture_markers` |
 | `api/lib/capture/memory.ts` | `contracts`, `database`, `platform` | — | `capture_memory`, `capture_user_pairs` | `capture_memory`, `capture_user_pairs` |
-| `api/lib/capture/operations.ts` | `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_consents`, `capture_devices`, `capture_events`, `capture_markers`, `capture_usage`, `local_users`, `users` | `in_app_notifications`, `system_settings` |
+| `api/lib/capture/operations.ts` | `database`, `ledger`, `platform` | — | `capture_ai_jobs`, `capture_consents`, `capture_devices`, `capture_events`, `capture_markers`, `capture_usage`, `local_users`, `users` | `capture_events`, `in_app_notifications`, `system_settings` |
 
 ### `capture-ai-reader` — Message model reader
 

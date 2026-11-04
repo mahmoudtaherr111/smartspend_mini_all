@@ -19,7 +19,7 @@ import {
   users,
 } from "../../../db/schema";
 import { getDb } from "../../queries/connection";
-import { deleteLedgerEntry } from "../../services/ledger-writer";
+import { afterLedgerWrite, deleteLedgerEntryInTx, lockLedgerOwner } from "../../services/ledger-writer";
 import { createLogger } from "../log";
 import { stateGet, stateSet } from "../redis-client";
 import { getSystemSettings, invalidateSettingsCache } from "../settings-cache";
@@ -227,13 +227,23 @@ export async function applyBulkUndo(input: BulkUndoInput): Promise<number> {
     const owner = { userId: event.userId, userType: event.userType };
     try {
       // The writer marks the event deleted in the same transaction.
-      await deleteLedgerEntry(owner, event.expenseId!);
+      const deleted = await getDb().transaction(async (tx) => {
+        await lockLedgerOwner(tx, owner, "NOT_FOUND");
+        const scope = and(eq(captureEvents.id, event.id), eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType));
+        const [current] = await tx.select().from(captureEvents).where(scope).for("update");
+        if (!current || current.status !== "recorded" || (input.onlyAuto && !current.autoRecorded) || !current.expenseId) return false;
+        await deleteLedgerEntryInTx(tx, owner, current.expenseId);
+        if (current.quotaPeriod) await releaseQuota(tx, owner, current.quotaPeriod);
+        await tx.update(captureEvents).set({ quotaPeriod: null }).where(scope);
+        return true;
+      });
+      if (!deleted) continue;
+      await afterLedgerWrite(owner);
     } catch (err) {
       // The user deleted the row meanwhile: nothing left to undo.
       if ((err as { code?: string }).code !== "NOT_FOUND") throw err;
       continue;
     }
-    if (event.quotaPeriod) await getDb().transaction((tx) => releaseQuota(tx, owner, event.quotaPeriod!));
     removed++;
   }
   log.warn({ event: "capture.bulk_undo", sourceSlug: input.sourceSlug, readerVersion: input.readerVersion ?? null, removed }, "Captured rows undone in bulk");

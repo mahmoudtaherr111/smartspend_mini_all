@@ -382,3 +382,6 @@ economic nature; a deliberate kind change can supply `movementKind`.
 Real MySQL coverage: `tests/cashflow-ledger.test.ts`, `tests/financial-migration.test.ts`, writer, rollup, debt,
 taxonomy and action undo suites. The cashflow fixture checks salary, rent, loans/repayment, two-wallet ATM movement,
 purchases, fees, refund, gam3eya, owner-pair checks, old-editor compatibility and zero reconciliation drift.
+
+
+The writer now exposes transaction-scoped edit/delete primitives. `linkedFeeAmount` edits a captured bundle in the same transaction; zero deletes the fee, date/wallet changes propagate, and parent deletion follows adopted fee events into tombstones. Caller-level undo can therefore release capture quota atomically with the deletion.

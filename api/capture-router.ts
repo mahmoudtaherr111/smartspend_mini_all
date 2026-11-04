@@ -12,7 +12,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
-import { CAPTURE_CONSENT_SCOPES } from "../contracts/capture-intake";
+import { CAPTURE_ACTIONS, CAPTURE_CONSENT_SCOPES } from "../contracts/capture-intake";
 import { CAPTURE_WALLET_KINDS } from "../contracts/capture";
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
 import { CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf, setCaptureConsent } from "./lib/capture/consent";
@@ -25,6 +25,7 @@ import { CAPTURE_IGNORE_KINDS, addCaptureMarker, listCaptureMarkers, removeCaptu
 import { planNumber } from "../contracts/plan-features";
 import { createRateLimiter } from "./lib/rate-limit";
 import { getSystemSettings } from "./lib/settings-cache";
+import { captureActivity } from "./lib/capture/activity";
 
 // A stolen session should not mint device tokens in bulk.
 const deviceRegistrations = createRateLimiter(10, 3_600_000);
@@ -32,6 +33,7 @@ const deviceRegistrations = createRateLimiter(10, 3_600_000);
 const ownerOf = (ctx: { user: { id: number; type: string } | null }) => ({ userId: ctx.user!.id, userType: ctx.user!.type });
 
 export const captureRouter = router({
+  activity: authedProcedure.input(z.object({ limit: z.number().int().min(1).max(50).default(30) }).optional()).query(({ ctx, input }) => captureActivity(ownerOf(ctx), input?.limit)),
   walletKind: authedProcedure.input(z.object({ walletId: z.number().int().positive() })).query(({ ctx, input }) => walletBalanceKind(ownerOf(ctx), input.walletId)),
   setWalletKind: authedProcedure.input(z.object({ walletId: z.number().int().positive(), kind: z.enum(CAPTURE_WALLET_KINDS) })).mutation(async ({ ctx, input }) => {
     await setWalletBalanceKind(ownerOf(ctx), input.walletId, input.kind);
@@ -49,7 +51,8 @@ export const captureRouter = router({
       captureConsentsOf(ownerOf(ctx)),
       captureUsageOf(ownerOf(ctx), ctx.user!.plan),
     ]);
-    return { enabled: captureOpenFor(settings, ownerOf(ctx)), consent, consentTextVersion: CAPTURE_CONSENT_TEXT_VERSION, usage };
+    return { enabled: captureOpenFor(settings, ownerOf(ctx)), mode: settings.capture_read_mode === "model_first" ? "automatic" as const : "legacy" as const,
+      consent, consentTextVersion: CAPTURE_CONSENT_TEXT_VERSION, usage };
   }),
 
   /** The device token for this installation, shown once; registering the same installation again replaces it. */
@@ -158,7 +161,7 @@ export const captureRouter = router({
     .input(
       z.object({
         eventId: z.number().int().positive(),
-        action: z.enum(["record", "dismiss"]),
+        action: z.enum(CAPTURE_ACTIONS),
         categoryId: z.string().max(60).optional(),
         subCategoryId: z.string().max(60).optional(),
         amountEgp: z.number().positive().max(100_000_000).optional(),

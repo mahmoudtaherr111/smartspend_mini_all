@@ -13,15 +13,16 @@
  */
 import { and, asc, count, eq, inArray, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
 import { captureAiJobs, captureSignals, localUsers, users } from "../../../db/schema";
+import { planNumber } from "../../../contracts/plan-features";
 import type { CaptureNotice, CaptureNoticesResponse } from "../../../contracts/capture-intake";
 import { getDb } from "../../queries/connection";
-import { afterLedgerWrite } from "../../services/ledger-writer";
+import { afterLedgerWrite, type LedgerTx } from "../../services/ledger-writer";
 import { createLogger } from "../log";
 import { SMS_PROMPT_VERSION, type SmsModelReply } from "../sms-ai-contract";
 import { readMessageWithModel } from "./ai-reader";
 import { captureConsentsOf } from "./consent";
 import type { CaptureDevice } from "./devices";
-import { lockCaptureUser, placeSignal, startIntakeRun, noteWalletBalance, type SignalReading } from "./intake";
+import { autoPolicyOf, lockCaptureUser, placeSignal, startIntakeRun, noteWalletBalance, type SignalReading } from "./intake";
 import { openCaptureText } from "./vault";
 import { readCaptureWithModel } from "./model-reader";
 import { captureQualification } from "./model-reader";
@@ -91,7 +92,9 @@ export function readingFromV4(stored: SignalReading, reply: CaptureModelReply, p
   const phone = digits?.startsWith("0020") ? `0${digits.slice(4)}` : digits?.startsWith("20") ? `0${digits.slice(2)}` : digits;
   const identityKey = isPhone ? (phone?.length === 11 && !/[*xX•]/u.test(identity ?? "") ? phone : null) : identity;
   const name = isPhone ? null : identity ?? (reply.party?.startsWith("[") ? null : reply.party);
+  const cards = [...new Set(text.markers.filter((marker) => marker.kind === "CARD").map((marker) => asciiDigits(text.localValue(marker.marker) ?? "").replace(/\D/g, "").slice(-4)).filter((value) => /^\d{4}$/.test(value)))];
   return { ...stored, readBy: "model", readerVersion: "model:sms-v4", kind, direction: reply.flow, confidence: "likely",
+    cardSuffix: cards.length === 1 ? cards[0] : cards.length > 1 ? null : stored.cardSuffix,
     amount: { value: reply.amount.value, currency: reply.amount.currency }, amountEgp: reply.egp ? { value: reply.egp.value, currency: "EGP" } : null,
     fee: reply.fee ? { value: reply.fee.value, currency: reply.fee.currency } : null,
     balanceAfter: reply.balance ? { value: reply.balance.value, currency: reply.balance.currency } : null,
@@ -100,7 +103,7 @@ export function readingFromV4(stored: SignalReading, reply: CaptureModelReply, p
       phoneTail: digits?.slice(-4) ?? null, ipa: null,
       merchantKey: reply.partyType === "merchant" && name ? merchantKey(name) : null,
       ...(reply.partyType === "person" && identityKey ? { identityHmac: captureHmac("person", identityKey.trim().replace(/\s+/g, " ").toLowerCase()) } : {}),
-    }, captureV4: { ...stored.captureV4, reply, posting },
+    }, captureV4: { ...stored.captureV4, envelope: "", reply, posting },
   };
 }
 
@@ -257,6 +260,16 @@ async function deferV4(job: Job, reason: string, waitMs: number): Promise<void> 
     .where(and(eq(captureAiJobs.id, job.id), eq(captureAiJobs.attempts, job.attempts), eq(captureAiJobs.status, "running")));
 }
 
+/** Short share-lock barrier with operator changes; never holds a connection over a provider call. */
+async function v4PostingControls(tx: LedgerTx, job: Job, source: string | null, type: string) {
+  const settings = await getSystemSettings(tx, { keys: ["capture_enabled", "capture_financial_version", "capture_model_qualified", "capture_paused_sources", "capture_monthly_limit_free", "capture_monthly_limit_pro", "capture_monthly_limit_ultra"], lock: true });
+  const policy = autoPolicyOf(settings);
+  if (settings.capture_enabled === "true" && settings.capture_financial_version === "cashflow-v1" && source && !policy.paused.has(source) && policy.v4Pairs?.has(`${source}:${type}`)) return settings;
+  await tx.update(captureAiJobs).set({ status: "queued", outcome: "configuration_changed", nextAt: new Date(Date.now() + 3600_000), leaseUntil: null })
+    .where(and(eq(captureAiJobs.id, job.id), eq(captureAiJobs.userId, job.userId), eq(captureAiJobs.userType, job.userType), eq(captureAiJobs.attempts, job.attempts)));
+  return null;
+}
+
 async function readV4Job(job: Job, signal: typeof captureSignals.$inferSelect, stored: SignalReading): Promise<void> {
   // Expand only when actual v4 work exists; the shared admission table remains the cross-replica cap.
   wakeOne(64);
@@ -300,8 +313,11 @@ async function readV4Job(job: Job, signal: typeof captureSignals.$inferSelect, s
         await tx.delete(captureSignals).where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));
         return;
       }
-      if (balanceRun && result.check.reply.balance) await noteWalletBalance(balanceRun, { ...stored, captureV4: { ...stored.captureV4!, reply: result.check.reply },
-        balanceAfter: { value: result.check.reply.balance.value, currency: result.check.reply.balance.currency } }, tx);
+      if (balanceRun && result.check.reply.balance) {
+        if (!(await v4PostingControls(tx, job, signal.sourceSlug, "balance"))) return;
+        await noteWalletBalance(balanceRun, { ...stored, captureV4: { ...stored.captureV4!, reply: result.check.reply },
+          balanceAfter: { value: result.check.reply.balance.value, currency: result.check.reply.balance.currency } }, tx);
+      }
       await tx.update(captureSignals).set({ reading: { ...stored, amount: null, counterparty: null,
         captureV4: { ...stored.captureV4!, reply: result.check.reply, posting: result.proposal, model: result.model, provider: result.provider } } })
         .where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));
@@ -324,16 +340,20 @@ async function readV4Job(job: Job, signal: typeof captureSignals.$inferSelect, s
     await lockCaptureUser(tx, owner);
     const [lease] = await tx.select().from(captureAiJobs).where(and(eq(captureAiJobs.id, job.id), eq(captureAiJobs.userId, owner.userId), eq(captureAiJobs.userType, owner.userType))).for("update");
     if (!lease || lease.status !== "running" || lease.attempts !== job.attempts) return;
-    const [stillAlive] = await tx.select({ id: account.id }).from(account).where(eq(account.id, owner.userId));
+    const [stillAlive] = await tx.select({ id: account.id, plan: account.plan }).from(account).where(eq(account.id, owner.userId));
     const freshConsent = await captureConsentsOf(owner, tx);
     if (!stillAlive || !freshConsent.capture || !freshConsent.aiReading) {
       await tx.delete(captureAiJobs).where(eq(captureAiJobs.id, job.id));
       await tx.delete(captureSignals).where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));
       return;
     }
+    const freshControls = await v4PostingControls(tx, job, signal.sourceSlug, result.check.reply.type);
+    if (!freshControls) return;
+    run.policy = autoPolicyOf(freshControls);
+    run.limit = planNumber(freshControls, stillAlive.plan, "capture_monthly_limit");
     const placed = await placeSignal(tx, run, { signalId: signal.id, clientSignalId: signal.clientSignalId, channel: signal.channel, sourceSlug: signal.sourceSlug,
       textHmac: signal.textHmac, receivedAt: signal.receivedAt, reading });
-    await tx.update(captureAiJobs).set({ status: "done", outcome: "read", leaseUntil: null, eventId: placed.eventId ?? null,
+    await tx.update(captureAiJobs).set({ status: "done", outcome: placed.reason?.startsWith("waiting_") ? placed.reason : "read", leaseUntil: null, eventId: placed.eventId ?? null,
       notice: placed.notice ?? null, noticeDeliveredAt: placed.notice ? null : new Date() }).where(eq(captureAiJobs.id, job.id));
   });
   if (run.recordedAny) await afterLedgerWrite(owner, { spending: run.spentAny });

@@ -8,7 +8,7 @@
  * nothing of it is stored. A kept signal holds the text redacted and the reader's fields, read before redaction, for
  * 30 days (`api/jobs/data-retention-job.ts`).
  */
-import { and, count, desc, eq, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { captureAiJobs, captureEvents, captureSignals, captureUsage, expenses, inAppNotifications, localUsers, userWallets, users } from "../../../db/schema";
 import { planNumber } from "../../../contracts/plan-features";
@@ -23,7 +23,7 @@ import {
   type CaptureSignalsRequest,
 } from "../../../contracts/capture-intake";
 import { getDb } from "../../queries/connection";
-import { afterLedgerWrite, bumpStreakInTx, deleteLedgerEntry, insertLedgerEntriesInTx, lockLedgerOwner, type LedgerTx } from "../../services/ledger-writer";
+import { afterLedgerWrite, bumpStreakInTx, deleteLedgerEntryInTx, insertLedgerEntriesInTx, lockLedgerOwner, type LedgerTx } from "../../services/ledger-writer";
 import { businessDateKey } from "../app-time";
 import { getSystemSettings } from "../settings-cache";
 import { createLogger } from "../log";
@@ -48,8 +48,9 @@ import type { Reading } from "./reader/types";
 import { prepareCaptureText } from "./privacy";
 import { sealCaptureText } from "./vault";
 import type { CaptureModelReply, CapturePostingProposal } from "./model-contract";
-import type { MovementKind } from "../../../contracts/ledger-movement";
+import { financialMovement, type MovementKind } from "../../../contracts/ledger-movement";
 import { captureQualification } from "./model-reader";
+import { adoptEarlierFee, declaredFeeParent } from "./fees";
 
 const log = createLogger("capture-intake");
 
@@ -505,19 +506,30 @@ export async function releaseHeldEvents(owner: CaptureOwner, now = new Date()): 
   if (held.length === 0) return { released: 0, recorded: 0 };
 
   const catalog = await getCaptureCatalog();
-  const policy = autoPolicyOf(await getSystemSettings());
   let released = 0;
   let recorded = 0;
   let spending = false;
   for (const { id } of held) {
     await getDb().transaction(async (tx) => {
       await lockCaptureUser(tx, owner);
+      const account = owner.userType === "oauth" ? users : localUsers;
+      const [currentUser] = await tx.select({ plan: account.plan }).from(account).where(eq(account.id, owner.userId));
+      const settings = await getSystemSettings(tx);
+      if (planNumber(settings, currentUser?.plan, "capture_monthly_limit") !== 0) return;
       const [event] = await tx.select().from(captureEvents).where(and(eq(captureEvents.id, id), mine, eq(captureEvents.status, "held"))).limit(1).for("update");
       if (!event) return;
-      await tx.update(captureEvents).set({ status: "review" }).where(eq(captureEvents.id, id));
+      const reading = event.reading as SignalReading | null;
+      const policy = autoPolicyOf(settings);
+      if (reading?.captureV4) {
+        const consent = await captureConsentsOf(owner, tx);
+        if (!consent.capture || !consent.aiReading || settings.capture_enabled !== "true" || settings.capture_financial_version !== "cashflow-v1"
+          || !policy.v4Pairs?.has(`${reading.sourceSlug}:${reading.captureV4.reply?.type}`) || policy.paused.has(reading.sourceSlug ?? "")) return;
+      }
+      const period = capturePeriod(now);
+      if (!event.quotaPeriod) await reserveQuota(tx, owner, period, 0);
+      await tx.update(captureEvents).set({ status: "review", quotaPeriod: event.quotaPeriod ?? period }).where(and(eq(captureEvents.id, id), mine));
       released++;
       // What the user or the admin let record on its own is recorded now; the rest waits for an answer.
-      const reading = event.reading as SignalReading | null;
       if (!reading) return;
       const memoryKey = memoryKeyOf(reading.counterparty);
       const suggestion = eventSuggestion(event, reading, catalog, await memoryFor(tx, owner, memoryKey ? [memoryKey] : []));
@@ -601,6 +613,7 @@ const money = (value: string | null): number | null => (value === null ? null : 
 
 function eventKeysOf(row: typeof captureEvents.$inferSelect): EventKeys {
   return {
+    sourceSlug: row.sourceSlug,
     id: row.id,
     status: row.status,
     direction: row.direction as EventKeys["direction"],
@@ -623,6 +636,7 @@ function eventKeysOf(row: typeof captureEvents.$inferSelect): EventKeys {
 function joinedResult(id: string, event: { id: number; status: string }): CaptureSignalResult {
   if (event.status === "recorded") return { id, result: "recorded", eventId: event.id };
   if (event.status === "review") return { id, result: "merged", eventId: event.id };
+  if (event.status === "waiting") return { id, result: "queued", eventId: event.id, reason: "waiting_duplicate" };
   return { id, result: "dismissed", eventId: event.id };
 }
 
@@ -724,6 +738,7 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
   // Built from what the signal row keeps (its source), so a stored signal gives the same key back.
   const channelKey = channelKeyOf(device.deviceId, input.channel, input.sourceSlug);
   const keys: SignalKeys = {
+    sourceSlug: input.sourceSlug,
     channelKey,
     deviceId: device.deviceId,
     receivedAt,
@@ -771,13 +786,15 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
       receivedAt: row.receivedAt,
     }));
 
-  const match = matchSignal(keys, candidates, sameText);
+  const feeParent = await declaredFeeParent(tx, device, reading);
+  const match = feeParent ? { type: "merge" as const, eventId: feeParent.id, rule: "reference" as const } : matchSignal(keys, candidates, sameText, !!reading.captureV4);
+  const ambiguous = !!reading.captureV4 && match.type === "possible_duplicate";
 
   // A new payment counts against the month's limit; over it, it is held (no question, no ledger). A reading the
   // reader is unsure of counts only when the user records it.
   let reservedNow: number | null = null;
   let held = false;
-  if (match.type !== "merge" && reading.confidence !== "unsure") {
+  if (!ambiguous && match.type !== "merge" && reading.confidence !== "unsure") {
     reservedNow = await reserveQuota(tx, device, run.period, run.limit);
     if (reservedNow === null) {
       const [{ heldCount }] = await tx.select({ heldCount: count() }).from(captureEvents).where(and(mineEvents, eq(captureEvents.status, "held")));
@@ -824,6 +841,21 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
       .where(eq(captureEvents.id, event.id));
     await tx.update(captureSignals).set({ eventId: event.id }).where(eq(captureSignals.id, signalId));
 
+    // A later proved own-account leg enriches only the counter link, never the user's amount/category/note.
+    if (reading.captureV4 && match.rule === "own_transfer" && event.status === "recorded" && event.expenseId && event.walletId) {
+      const suffix = reading.cardSuffix ?? reading.accountSuffix;
+      const wallets = suffix ? run.wallets.filter((wallet) => wallet.lastFourDigits?.slice(-3) === suffix.slice(-3)) : [];
+      if (wallets.length === 1 && wallets[0].id !== event.walletId) {
+        const [row] = await tx.select().from(expenses).where(and(eq(expenses.id, event.expenseId), eq(expenses.userId, device.userId), eq(expenses.userType, device.userType))).for("update");
+        const financial = row ? financialMovement(row) : null;
+        if (row && row.walletId === event.walletId && financial?.excluded && (!financial.counterWalletId || financial.counterWalletId === wallets[0].id)) {
+          await tx.update(expenses).set({ parsedMetadata: { ...(row.parsedMetadata as Record<string, unknown>), financial: { ...financial, counterWalletId: wallets[0].id } } })
+            .where(and(eq(expenses.id, row.id), eq(expenses.userId, device.userId), eq(expenses.userType, device.userType)));
+          run.recordedAny = true;
+        }
+      }
+    }
+
     // A foreign charge that now has its pound value can be answered from the notice: ask again.
     if (match.rule === "pound_posting" && event.status === "review") {
       const primaryReading = (event.reading ?? reading) as SignalReading;
@@ -838,7 +870,7 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
   const [created] = await tx.insert(captureEvents).values({
     userId: device.userId,
     userType: device.userType,
-    status: held ? "held" : "review",
+    status: ambiguous ? "waiting" : held ? "held" : "review",
     kind: reading.kind,
     direction: reading.direction,
     amount: String(keys.amount),
@@ -864,6 +896,7 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
   });
   const eventId = Number((created as { insertId?: number }).insertId);
   await tx.update(captureSignals).set({ eventId }).where(eq(captureSignals.id, signalId));
+  if (ambiguous) return { id: input.clientSignalId, result: "queued", eventId, reason: "waiting_duplicate" };
   if (held) {
     const first = await noteHeld(tx, device, run.period);
     return first
@@ -1042,7 +1075,7 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
 
 /** Where an event would be filed: its first signal's reading, with what other signals added and the user's memory. */
 function eventSuggestion(event: typeof captureEvents.$inferSelect, reading: SignalReading, catalog: CaptureCatalog, memory?: Map<string, Filing>): LedgerSuggestion {
-  if (event.direction === "internal") {
+  if (event.direction === "internal" && !reading.captureV4) {
     return { type: "transfer", direction: "outgoing", categoryId: "transfer", subCategoryId: "bank_transfer", amountEgp: money(event.amountEgp), from: "default" };
   }
   const suggestion = suggestLedgerEntry(reading, catalog, memory);
@@ -1076,7 +1109,7 @@ async function recordEventInTx(
   // A refund goes back where its purchase was filed, when the purchase was recorded from a message too.
   let refundOf: { eventId: number; category: string; subCategory: string } | null = null;
   if (reading.kind === "refund" && event.merchantKey && !choice.categoryId) {
-    const [purchase] = await tx
+    const purchases = await tx
       .select({ eventId: captureEvents.id, category: expenses.category, subCategory: expenses.subCategory })
       .from(captureEvents)
       .innerJoin(expenses, and(eq(expenses.id, captureEvents.expenseId), eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType)))
@@ -1084,15 +1117,20 @@ async function recordEventInTx(
         and(
           mine,
           eq(captureEvents.status, "recorded"),
+          eq(captureEvents.direction, "out"),
+          inArray(captureEvents.kind, ["card_purchase", "online_purchase", "international_purchase", "bill_payment", "installment"]),
           eq(captureEvents.merchantKey, event.merchantKey),
           gte(captureEvents.occurredAt, new Date(event.occurredAt.getTime() - 90 * 24 * 3600 * 1000)),
           // Not after the refund: times are kept to the second, and both may carry the same one.
           lte(captureEvents.occurredAt, event.occurredAt),
           gte(captureEvents.amount, event.amount),
+          ...(reading.captureV4 && event.cardSuffix ? [sql`RIGHT(${captureEvents.cardSuffix}, 3) = ${event.cardSuffix.slice(-3)}`] : []),
+          ...(reading.captureV4 && event.sourceSlug ? [eq(captureEvents.sourceSlug, event.sourceSlug)] : []),
         ),
       )
       .orderBy(desc(captureEvents.occurredAt))
-      .limit(1);
+      .limit(reading.captureV4 ? 2 : 1);
+    const purchase = purchases.length === 1 ? purchases[0] : null;
     if (purchase) refundOf = { eventId: purchase.eventId, category: purchase.category, subCategory: purchase.subCategory ?? "عام" };
   }
 
@@ -1110,7 +1148,7 @@ async function recordEventInTx(
       : reading.kind === "card_payment" ? "card_payment" : reading.captureV4?.reply?.ownership === "own" ? "own_transfer" : undefined;
   const fee = reading.captureV4?.posting?.status === "ready" ? Number(reading.captureV4.posting.feeEgp) : 0;
   const party = reading.counterparty?.name ?? (reading.counterparty?.phoneTail ? `••${reading.counterparty.phoneTail}` : null);
-  const description = [party, reading.sourceName?.ar].filter(Boolean).join(" · ") || names.category;
+  const description = [reading.captureV4 ? KIND_LABELS[reading.kind]?.ar : null, party, reading.sourceName?.ar].filter(Boolean).join(" · ") || names.category;
 
   const [expenseId] = await insertLedgerEntriesInTx(tx, owner, [
     {
@@ -1135,6 +1173,8 @@ async function recordEventInTx(
           kind: reading.kind,
           readerVersion: reading.readerVersion,
           ...(reading.captureV4 ? { details: { feeEgp: fee, originalAmount: reading.amount, via: reading.captureV4.reply?.via,
+            party: party, partyType: reading.captureV4.reply?.partyType, cardSuffix: reading.cardSuffix, accountSuffix: reading.accountSuffix,
+            recurring: reading.captureV4.reply?.recurring ?? false, memoryKey,
             categoryPending: suggestion.from === "default", promptVersion: "sms-v4" } } : {}),
           ...(options.auto ? { auto: true, provisional: suggestion.from === "default" } : {}),
         },
@@ -1142,10 +1182,14 @@ async function recordEventInTx(
     },
   ]);
   if (fee > 0) {
-    const fees = taxonomyNames("installments", "bank_fees");
-    await insertLedgerEntriesInTx(tx, owner, [{ type: "expense", amount: fee, category: fees.category, subCategory: fees.subCategory,
-      description: "رسوم بنكية", source: "sms", date: new Date(reading.occurredAt), walletId: event.walletId, clientRequestId: `cap:e${event.id}:fee`,
-      parsedMetadata: { capture: { feeOfEventId: event.id, parentExpenseId: expenseId, source: reading.sourceSlug } } }]);
+    const earlier = await adoptEarlierFee(tx, owner, event, reading, expenseId, fee);
+    if (earlier.quotaPeriod) await releaseQuota(tx, owner, earlier.quotaPeriod);
+    if (!earlier.adopted) {
+      const fees = taxonomyNames("installments", "bank_fees");
+      await insertLedgerEntriesInTx(tx, owner, [{ type: "expense", amount: fee, category: fees.category, subCategory: fees.subCategory,
+        description: "رسوم بنكية", source: "sms", date: new Date(reading.occurredAt), walletId: event.walletId, clientRequestId: `cap:e${event.id}:fee`,
+        parsedMetadata: { capture: { feeOfEventId: event.id, parentExpenseId: expenseId, source: reading.sourceSlug } } }]);
+    }
   }
   // A row the user recorded counts for their streak; one recorded on its own does not (the owner's decision).
   if (!options.auto) await bumpStreakInTx(tx, owner);
@@ -1158,18 +1202,18 @@ async function recordEventInTx(
   if (event.walletId && event.balanceAfter !== null) {
     const safeBalance = !reading.captureV4 || ["cash", "bank", "debit"].includes(await walletBalanceKind(owner, event.walletId, tx));
     if (safeBalance) {
-    const occurredAt = new Date(reading.occurredAt);
-    await tx
-      .update(userWallets)
-      .set({ balance: event.balanceAfter, balanceObservedAt: occurredAt, balanceSource: "bank_message" })
-      .where(
-        and(
-          eq(userWallets.id, event.walletId),
-          eq(userWallets.userId, owner.userId),
-          eq(userWallets.userType, owner.userType),
-          or(isNull(userWallets.balanceObservedAt), lt(userWallets.balanceObservedAt, occurredAt)),
-        ),
-      );
+      const occurredAt = new Date(reading.occurredAt);
+      await tx
+        .update(userWallets)
+        .set({ balance: event.balanceAfter, balanceObservedAt: occurredAt, balanceSource: "bank_message" })
+        .where(
+          and(
+            eq(userWallets.id, event.walletId),
+            eq(userWallets.userId, owner.userId),
+            eq(userWallets.userType, owner.userType),
+            or(isNull(userWallets.balanceObservedAt), lt(userWallets.balanceObservedAt, occurredAt)),
+          ),
+        );
     }
   }
   const filing = refundOf ? null : { categoryId, subCategoryId: subCategoryId || (taxonomyIdsOf(categoryId, names.subCategory) ?? "") };
@@ -1255,7 +1299,6 @@ export async function answerEvent(
   let outcome: { result: "recorded" | "dismissed"; expenseId?: number } | null = null;
   let spending = false;
   let wrote = false;
-  let undo: { expenseId: number; sourceSlug: string | null; kind: string; quotaPeriod: string | null } | null = null;
 
   await getDb().transaction(async (tx) => {
     await lockLedgerOwner(tx, owner, "NOT_FOUND");
@@ -1269,7 +1312,12 @@ export async function answerEvent(
         return;
       }
       const [signal] = await tx.select({ sourceSlug: captureSignals.sourceSlug }).from(captureSignals).where(eq(captureSignals.id, event.primarySignalId));
-      undo = { expenseId: event.expenseId, sourceSlug: signal?.sourceSlug ?? null, kind: event.kind, quotaPeriod: event.quotaPeriod };
+      await deleteLedgerEntryInTx(tx, owner, event.expenseId);
+      await tx.update(captureEvents).set({ status: "dismissed", quotaPeriod: null, resolvedAt: new Date() }).where(own);
+      if (event.quotaPeriod) await releaseQuota(tx, owner, event.quotaPeriod);
+      if (signal?.sourceSlug) await resetPair(tx, owner, signal.sourceSlug, event.kind);
+      outcome = { result: "dismissed" };
+      wrote = true;
       return;
     }
     if (event.status !== "review") {
@@ -1311,17 +1359,6 @@ export async function answerEvent(
     wrote = true;
   });
 
-  if (undo) {
-    const taken = undo as { expenseId: number; sourceSlug: string | null; kind: string; quotaPeriod: string | null };
-    // The ledger writer deletes the row with everything that moves with it and marks the event deleted.
-    await deleteLedgerEntry(owner, taken.expenseId);
-    await getDb().transaction(async (tx) => {
-      await tx.update(captureEvents).set({ status: "dismissed", resolvedAt: new Date() }).where(own);
-      if (taken.quotaPeriod) await releaseQuota(tx, owner, taken.quotaPeriod);
-      if (taken.sourceSlug) await resetPair(tx, owner, taken.sourceSlug, taken.kind);
-    });
-    outcome = { result: "dismissed" };
-  }
   if (wrote) await afterLedgerWrite(owner, { spending });
   log.info({ event: "capture.answer", userId: owner.userId, eventId, action: answer.action, result: outcome!.result }, "Event answered");
   return outcome!;

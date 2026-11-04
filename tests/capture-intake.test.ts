@@ -582,6 +582,7 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
         await clearSetting("capture_monthly_limit_free");
       }
       await db.insert(captureUserPairs).values({ userId: owner.userId, userType: "local", sourceSlug: "cib", kind: "card_purchase", streak: 3, autoEnabled: true });
+      await db.update(localUsers).set({ plan: "pro" }).where(eq(localUsers.id, owner.userId));
       const released = await releaseHeldEvents(owner);
       expect(released).toEqual({ released: 2, recorded: 2 });
       const [note] = await notices();

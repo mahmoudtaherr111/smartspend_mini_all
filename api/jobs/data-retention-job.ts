@@ -172,7 +172,7 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
     class: "E",
     retainDays: 30,
     dateColumn: "created_at",
-    whereClause: "status = 'review'",
+      whereClause: "status IN ('review', 'waiting')",
     description: "A captured payment nobody answered in 30 days: its signals are gone, so it is forgotten too (decision 0029).",
   },
   {

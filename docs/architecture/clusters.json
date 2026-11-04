@@ -223,6 +223,8 @@
         "api/capture-v1-routes.ts",
         "api/lib/capture/intake.ts",
         "api/lib/capture/events.ts",
+          "api/lib/capture/fees.ts",
+          "api/lib/capture/activity.ts",
         "api/lib/capture/memory.ts",
         "api/lib/capture/ai-queue.ts",
         "api/lib/capture/operations.ts",

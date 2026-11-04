@@ -10,6 +10,7 @@
 
 /** What a new signal is matched on. */
 export interface SignalKeys {
+  sourceSlug?: string | null;
   /** The device and the way it arrived ("12:sms:CIB", "12:notification:com.bank.app"). */
   channelKey: string;
   deviceId: number;
@@ -33,6 +34,7 @@ export interface SignalKeys {
 
 /** An event already kept for the user, with what its signals said. */
 export interface EventKeys {
+  sourceSlug?: string | null;
   id: number;
   status: string;
   direction: "in" | "out" | "internal" | null;
@@ -118,14 +120,32 @@ function sameMoney(signal: SignalKeys, event: EventKeys): boolean {
   return false;
 }
 
-export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: SameText[]): Match {
+export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: SameText[], strict = false): Match {
   const byAge = [...events].sort((a, b) => a.firstReceivedAt.getTime() - b.firstReceivedAt.getTime());
+  const sameSource = (event: EventKeys) => !!signal.sourceSlug && signal.sourceSlug === event.sourceSlug;
+  const strictMoney = (event: EventKeys) => signal.currency === event.currency ? signal.amount === event.amount
+    : signal.currency === "EGP" ? signal.amount === event.amountEgp : event.currency === "EGP" && event.amount === signal.amountEgp;
+  const balanceProof = (event: EventKeys) => sameSource(event) && signal.balanceAfter !== null && signal.balanceAfter === event.balanceAfter
+    && (!signal.referenceHmac || !event.referenceHmac || signal.referenceHmac === event.referenceHmac)
+    && ((!!signal.cardSuffix && !!event.cardSuffix && cardsAgree(signal.cardSuffix, event.cardSuffix)) || (!!signal.accountSuffix && signal.accountSuffix === event.accountSuffix))
+    && signal.direction === event.direction && strictMoney(event) && !conflicts(signal, event);
+
+  // Same-account same-balance evidence is stronger than channel similarity. Never collapse on amount/time alone.
+  if (strict) {
+    const repeated = byAge.find((event) => balanceProof(event) && apart(signal.receivedAt, event.firstReceivedAt) <= MATCH_WINDOWS.crossChannel);
+    if (repeated) return { type: "merge", eventId: repeated.id, rule: "cross_channel" };
+    const ownLeg = byAge.find((event) => sameSource(event) && signal.ownAccount && event.ownAccount && signal.referenceHmac
+      && signal.referenceHmac === event.referenceHmac && signal.direction !== event.direction
+      && strictMoney(event) && apart(signal.receivedAt, event.firstReceivedAt) <= MATCH_WINDOWS.ownTransfer);
+    if (ownLeg) return { type: "merge", eventId: ownLeg.id, rule: "own_transfer" };
+  }
 
   // 1. The bank's own reference: the same payment, whatever the channel.
   if (signal.referenceHmac) {
     const found = byAge.find(
       (event) =>
         event.referenceHmac === signal.referenceHmac &&
+        (!strict || (sameSource(event) && directionsAgree(signal.direction, event.direction) && strictMoney(event) && !conflicts(signal, event))) &&
         sameMoney(signal, event) &&
         apart(signal.receivedAt, event.firstReceivedAt) <= MATCH_WINDOWS.reference,
     );
@@ -136,7 +156,7 @@ export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: S
   const otherDevice = sameText.find(
     (other) => other.deviceId !== signal.deviceId && apart(signal.receivedAt, other.receivedAt) <= MATCH_WINDOWS.sameTextOtherDevice,
   );
-  if (otherDevice) return { type: "merge", eventId: otherDevice.eventId, rule: "same_text_other_device" };
+  if (otherDevice && (!strict || byAge.some((event) => event.id === otherDevice.eventId && balanceProof(event)))) return { type: "merge", eventId: otherDevice.eventId, rule: "same_text_other_device" };
 
   // 3. The same words from the same channel minutes apart: two payments or one message twice; the user says.
   const sameChannel = sameText.find(
@@ -147,6 +167,7 @@ export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: S
   // 4. Another channel, the same money, close in time, nothing in conflict, and that channel not on the event yet.
   for (const event of byAge) {
     if (event.channels.includes(signal.channelKey)) continue;
+    if (strict && !balanceProof(event)) continue;
     if (!directionsAgree(signal.direction, event.direction) || !sameMoney(signal, event) || conflicts(signal, event)) continue;
     const window =
       signal.timeFromMessage && sameMinute(signal.occurredAt, event.occurredAt) ? MATCH_WINDOWS.crossChannelSameMinute : MATCH_WINDOWS.crossChannel;
@@ -154,7 +175,7 @@ export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: S
   }
 
   // 5. The pound posting of a foreign charge still waiting for its pound value: the same card and merchant.
-  if (signal.currency === "EGP" && signal.direction !== "in") {
+  if (!strict && signal.currency === "EGP" && signal.direction !== "in") {
     const foreign = byAge.find(
       (event) =>
         event.status === "review" &&
@@ -169,7 +190,7 @@ export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: S
 
   // 6. Money leaving one of the user's accounts and arriving in another: one transfer, only when both sides show
   //    the accounts are the user's. "Sent 1000 to a friend" and "received 1000 from someone" stay two.
-  if (signal.ownAccount && (signal.direction === "in" || signal.direction === "out")) {
+  if (!strict && signal.ownAccount && (signal.direction === "in" || signal.direction === "out")) {
     const otherLeg = byAge.find(
       (event) =>
         event.ownAccount &&

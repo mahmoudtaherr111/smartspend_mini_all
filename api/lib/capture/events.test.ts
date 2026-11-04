@@ -43,6 +43,20 @@ const event = (id: number, overrides: Partial<EventKeys> = {}): EventKeys => ({
 });
 
 describe("one payment, one event", () => {
+  it("does not merge automatic readings on amount/time alone, nor on conflicting references", () => {
+    const next = signal({ sourceSlug: "cib", channelKey: "1:notification:cib", receivedAt: at(1) });
+    expect(matchSignal(next, [event(7, { sourceSlug: "cib" })], [], true)).toEqual({ type: "new" });
+    expect(matchSignal({ ...next, balanceAfter: 900, referenceHmac: "new-ref" }, [event(7, { sourceSlug: "cib", balanceAfter: 900, referenceHmac: "old-ref" })], [], true)).toEqual({ type: "new" });
+  });
+  it("uses exact same-account balance evidence for automatic cross-channel repeats", () => {
+    expect(matchSignal(signal({ sourceSlug: "cib", balanceAfter: 900, channelKey: "1:notification:cib" }), [event(7, { sourceSlug: "cib", balanceAfter: 900 })], [], true)).toMatchObject({ type: "merge", eventId: 7 });
+    expect(matchSignal(signal({ sourceSlug: "cib", balanceAfter: 900, channelKey: "1:notification:cib" }), [event(7, { sourceSlug: "other", balanceAfter: 900 })], [], true)).toEqual({ type: "new" });
+  });
+  it("does not merge a refund sharing a reference with its purchase or accept approximate FX values", () => {
+    const previous = event(7, { sourceSlug: "cib", referenceHmac: "same-ref" });
+    expect(matchSignal(signal({ sourceSlug: "cib", direction: "in", referenceHmac: "same-ref", channelKey: "1:notification:cib" }), [previous], [], true)).toEqual({ type: "new" });
+    expect(matchSignal(signal({ sourceSlug: "cib", referenceHmac: "same-ref", currency: "USD", amount: 1, amountEgp: 49.5 }), [previous], [], true)).toEqual({ type: "new" });
+  });
   it("joins the bank's SMS and its app's notification of the same payment", () => {
     const fromApp = signal({ channelKey: "1:notification:com.cib.app", receivedAt: at(1) });
     expect(matchSignal(fromApp, [event(7)], [])).toEqual({ type: "merge", eventId: 7, rule: "cross_channel" });

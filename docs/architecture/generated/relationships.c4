@@ -388,6 +388,7 @@ model {
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_signals
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_usage
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_user_pairs
+  smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.expenses
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.in_app_notifications
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.system_settings
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.user_wallets
@@ -961,7 +962,9 @@ model {
   smartspend.api.trpc.business.updateCategory -[reads]-> smartspend.mysql.business_categories
   smartspend.api.trpc.business.updateCategory -[reads]-> smartspend.mysql.user_businesses
   smartspend.api.trpc.business.updateCategory -[writes]-> smartspend.mysql.business_categories
+  smartspend.api.trpc.capture.activity -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.answer -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.trpc.capture.answer -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.capture.answerWalletOffer -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.autoOffers -[uses]-> smartspend.api.modules.capture-catalog
   smartspend.api.trpc.capture.autoOffers -[uses]-> smartspend.api.modules.capture-intake

@@ -116,6 +116,7 @@ final class BusinessProcedures {
 final class CaptureProcedures {
   const CaptureProcedures._();
 
+  ApiQuery get activity => const ApiQuery('capture.activity', builder: 'authedProcedure', hasInput: true);
   ApiMutation get answer => const ApiMutation('capture.answer', builder: 'authedProcedure', hasInput: true);
   ApiMutation get answerWalletOffer => const ApiMutation('capture.answerWalletOffer', builder: 'authedProcedure', hasInput: true);
   ApiQuery get autoOffers => const ApiQuery('capture.autoOffers', builder: 'authedProcedure');

@@ -4,8 +4,8 @@ Automatic capture of bank, wallet and payment messages, so a transaction is reco
 is being rebuilt from scratch: the old intake (the Android companion app, the iPhone Shortcut, the public ingest route,
 the rule parser, the filing and the suggestions over the monthly limit, and the setup screens) was removed. The new
 intake's server side is built ([below](#the-intake-phones-send-the-user-confirms)): phones register for a device token
-and send notifications to `/api/capture/v1`, the reader reads them, and every transaction waits for the user to confirm
-it before the ledger is written ([decision 0028](../decisions/0028-capture-intake-from-phones.md)). The Flutter app's
+and send notifications to `/api/capture/v1`, the reader reads them, and its legacy mode waits for the user to confirm
+it before the ledger is written. The staged model-first mode records qualified movements automatically with undo ([decision 0028](../decisions/0028-capture-intake-from-phones.md)). The Flutter app's
 Android capture sends them ([below](#on-the-phone)); iPhone capture comes later. The admin's switch `capture_enabled`
 is off, so nothing is captured until the closed beta.
 
@@ -288,7 +288,7 @@ declined payment, a hold, a code, an offer, a statement or a balance, or `needs_
 EGP equivalent in the text, which is not used as pounds.
 
 ## sms-v4 contract and offline evaluation
-`api/lib/capture/model-contract.ts` implements the next contract, separate from the active sms-v2 reader. It is not yet
+`api/lib/capture/model-contract.ts` implements the v4 contract, separate from the legacy sms-v2 reader. In legacy mode it is not
 connected to intake or recording: passing its checks is not a measured model qualification or permission to write.
 Every reply field is required, absent facts are null, and unknown facts have an explicit `unknown` state. Ownership
 is independent of incoming/outgoing direction. Money has a value, ISO currency and an exact unique source quote;
@@ -434,8 +434,7 @@ Checked against the code; each one names where it lives.
 `api/lib/capture/privacy.ts` prepares raw text with numbered, locally resolvable markers. It refuses reserved markers
 in raw input, codes, incomplete names, oversized text and known residual identifiers (including spaced ten-digit
 runs and non-ASCII digits). `preparedCapturePrompt` accepts only an immutable object issued by that preparation
-in the same process; serializing local token data is not a provider payload. A persistent worker will still need
-a separately scoped storage/rehydration design before this numbered path replaces the active reader.
+in the same process; serializing local token data is not a provider payload. The staged worker persists and restores this boundary through the scoped authenticated vault described below.
 
 The current sms-v2 model reader also checks its redacted text and sender for known residues before cache lookup,
 budget checks or provider calls, and returns `redaction_failed` on failure. Merchant shielding cannot restore an
@@ -472,11 +471,45 @@ accounting at 60. New optional resource tables are skipped by retention before m
 to empty until the shared financial migration is reviewed and applied. The writer and bounded preview/apply/rollback tool are implemented (see Money). This is a deployment guard, not an
 operator claim that the unfinished migration is ready. Source/type qualification is rechecked before placing an
 event. Unresolved facts finish with a waiting reason and checked reading metadata, never a guessed ledger row.
-Legacy reader behavior remains available; completing the financial writer, delivery acknowledgements, user activity
-and optional category questions is still required before enabling this path.
+Legacy reader behavior remains available. The financial writer and activity API are implemented; delivery acknowledgements, client activity views
+and optional category questions remain required before enabling this path.
 
 V4 writes principal and an explicit extra/included fee as linked rows in the same transaction (one capture quota
 reservation). The notice shows their total. Deleting the parent through the ledger writer removes its fee and
 rollup delta atomically; neither raw bank text nor private token maps are copied into the ledger. Balance updates
 require a wallet balance-kind policy and use the existing transaction. These foundations do not complete delivery,
-post-save questions, fee-signal linking or native SMS qualification.
+post-save questions, client delivery or native SMS qualification. Scoped fee-signal linking is implemented below.
+
+## Automatic filing, explicit waiting and linked fees (staged)
+`tests/capture-automatic.test.ts` exercises real HTTP routes, encrypted job restoration, contract checks and actual
+MySQL with synthetic provider replies. A qualified v4 movement writes principal plus a linked fee atomically and
+uses one monthly movement reservation. The application API accepts undo as well as the native route; undo now
+removes the bundle, tombstones it and returns its quota in the same owner-locked transaction, so concurrent retries
+cannot release twice. Bulk undo uses the same transaction boundary. The shared writer exports transactional edit
+and delete functions for workflows that already hold a transaction; cache invalidation stays after commit.
+
+`api/lib/capture/fees.ts` associates a separately delivered fee only with a unique issuer-scoped reference and an
+exact explicitly declared EGP fee. If it arrived first, its existing row is adopted without overwriting later
+amount/category/note edits and its separate quota is released; if it arrived after the bundle, it is not recorded
+again. A deleted fee is not recreated by a later signal. Ambiguous/unreferenced associations are not inferred.
+`expense.update` accepts `linkedFeeAmount` (zero removes it); fee/date/wallet bundle changes and rollup deltas are
+atomic. The bank-declared fee remains evidence, while the actual editable amount lives on the linked ledger row.
+
+V4 dedup does not collapse amount/time similarity or approximate FX. A same-source reference with compatible facts,
+or exact same-account balance evidence, is required. Conflicting references and refund/purchase direction do not
+merge. Identical same-channel signals with insufficient duplicate evidence wait without a quota or ledger guess.
+Proved opposite own-account legs can enrich the counter-wallet link while preserving user amount/category/note.
+An unambiguous local card marker supplies its tail even when the shadow missed the wording; several cards do not
+select one by guess. Successful posting discards the encrypted identity envelope from the derived reading.
+V4 refunds use a unique eligible purchase; multiple possible purchases are not arbitrarily assigned a category.
+
+A fresh settings share-lock barrier rechecks enablement, source pause, qualification and financial version after the
+provider returns. Consent and current plan are checked under the owner lock before writing. Held events are released
+only while the account has an unlimited limit; v4 also requires current consent and qualification. Release reserves
+one movement, records automatically, is idempotent and never bypasses the free limit. Held data remains bounded at
+200 events/60 days. No provider call runs inside a transaction.
+
+`capture.activity` gives bounded user-scoped recorded/processing/waiting/held/removed states and reason ids without
+raw messages or token maps; `capture.status` exposes automatic versus legacy mode. Waiting duplicate events expire
+at 30 days. Displaying these states in both apps, optional category questions, native SMS, notice acknowledgements
+and measured capacity/private model qualification still belong to the remaining release work.

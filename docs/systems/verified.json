@@ -194,24 +194,26 @@
         "api/boot.ts#job:capture-silent-devices": "e650646f7646",
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
         "api/capture-admin-router.ts": "2f6bf9be58c6",
-        "api/capture-router.ts": "b1e2ac64c0c1",
+        "api/capture-router.ts": "20ebbdd9c489",
         "api/capture-v1-routes.ts": "db95c617e1b4",
         "api/lib/capture/access.ts": "a05bd6473e8d",
+        "api/lib/capture/activity.ts": "4cb245cdc4d9",
         "api/lib/capture/admission.ts": "743a668dd677",
-        "api/lib/capture/ai-queue.ts": "2c1cdb5c137b",
+        "api/lib/capture/ai-queue.ts": "5cb682601d32",
         "api/lib/capture/ai-reader.ts": "c7dd878f0c11",
         "api/lib/capture/care.ts": "b2a6ac452265",
         "api/lib/capture/catalog.ts": "dd7c3d61d374",
         "api/lib/capture/consent.ts": "eda09ac799f5",
         "api/lib/capture/devices.ts": "caff87cd0199",
-        "api/lib/capture/events.ts": "edb833c76977",
-        "api/lib/capture/intake.ts": "fd82840f0680",
+        "api/lib/capture/events.ts": "028d635fcb6c",
+        "api/lib/capture/fees.ts": "82cc9bb53e75",
+        "api/lib/capture/intake.ts": "491a57cfc09a",
         "api/lib/capture/keep-merchants.ts": "3c94830a3d74",
         "api/lib/capture/markers.ts": "7c9c535c02a9",
         "api/lib/capture/memory.ts": "37a0bd659e1f",
         "api/lib/capture/model-contract.ts": "361b246fd986",
         "api/lib/capture/model-reader.ts": "1f66e863888a",
-        "api/lib/capture/operations.ts": "40f0c67beab1",
+        "api/lib/capture/operations.ts": "166e0fb5bd16",
         "api/lib/capture/privacy.ts": "a1dbcc2ac5aa",
         "api/lib/capture/reader/clauses.ts": "5b86ed12ca60",
         "api/lib/capture/reader/counterparty.ts": "4560b5469773",
@@ -230,9 +232,9 @@
         "api/lib/capture/vault.ts": "fae7d2695222",
         "api/lib/sms-ai-contract.ts": "34562a4b9e0c"
       },
-      "checked": "2026-11-04 907e6d5e",
-      "arabic": "f67b70440f43",
-      "arabicChecked": "2026-11-04 907e6d5e"
+      "checked": "2026-11-04 e20f0bb5",
+      "arabic": "f07f89f81d03",
+      "arabicChecked": "2026-11-04 e20f0bb5"
     },
     "billing": {
       "files": {
@@ -391,7 +393,7 @@
         "api/expense-router.ts#expense.listInstallmentPlans": "115b08de9c7a",
         "api/expense-router.ts#expense.previewCategory": "dab97f94d0c8",
         "api/expense-router.ts#expense.searchTransactions": "2e8fa55eefed",
-        "api/expense-router.ts#expense.update": "15209cf415b6",
+        "api/expense-router.ts#expense.update": "4f3b81c3338b",
         "api/expense-router.ts#rest-of-file": "dc0ea5c49072",
         "api/export-router.ts#export.myExpenses": "89b0670d4bbb",
         "api/export-router.ts#rest-of-file": "6fd0720d7afa",
@@ -415,7 +417,7 @@
         "api/services/financial-month.ts": "b9b532b0dd06",
         "api/services/installments.ts": "c8bdc9de1497",
         "api/services/ledger-semantics.ts": "5661ebae8024",
-        "api/services/ledger-writer.ts": "dec05afe253a",
+        "api/services/ledger-writer.ts": "06ef12c5453d",
         "api/wallet-router.ts": "dc872a134389",
         "src/components/budgets/BudgetsPanel.tsx": "514a88e41280",
         "src/components/dashboard/BehaviorInsights.tsx": "47729e6b7532",
@@ -440,9 +442,9 @@
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-11-04 907e6d5e",
-      "arabic": "1567f2b82c35",
-      "arabicChecked": "2026-11-04 907e6d5e"
+      "checked": "2026-11-04 e20f0bb5",
+      "arabic": "d52c02d4ef4f",
+      "arabicChecked": "2026-11-04 e20f0bb5"
     },
     "notifications": {
       "files": {
@@ -480,7 +482,7 @@
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
         "api/boot.ts#rest-of-file": "6a403e321e21",
         "api/context.ts": "d2add89863df",
-        "api/jobs/data-retention-job.ts": "76d2d143d391",
+        "api/jobs/data-retention-job.ts": "fa5524867785",
         "api/lib/app-time.ts": "7eaf4ab8fae6",
         "api/lib/cache-keys.ts": "89dc693d0c12",
         "api/lib/client-platform.ts": "fe6ce60846a0",
@@ -523,9 +525,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "54e3a817b0b0"
       },
-      "checked": "2026-11-04 907e6d5e",
-      "arabic": "c312d61cdaea",
-      "arabicChecked": "2026-11-04 907e6d5e"
+      "checked": "2026-11-04 e20f0bb5",
+      "arabic": "6d8c6bb5a985",
+      "arabicChecked": "2026-11-04 e20f0bb5"
     },
     "voice-calls": {
       "files": {

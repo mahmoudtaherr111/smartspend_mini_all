@@ -27,6 +27,8 @@ import { applyExpenseRollupDelta, expenseToRollupDelta, ledgerAmount } from "./e
 import { invalidateFinanceUserCache } from "./finance-semantic-layer";
 import { normalizeFinancialMovement, financialMovement, movementOf, type MovementKind } from "../../contracts/ledger-movement";
 import { getSystemSettings } from "../lib/settings-cache";
+import { CATEGORIES } from "../../contracts/categories";
+import { ExpenseInputLimits } from "../../contracts/constants";
 
 const log = createLogger("ledger-writer");
 
@@ -67,6 +69,7 @@ export interface NewLedgerEntry {
 
 /** What an edit changes; anything left undefined is kept. `amount` is a magnitude. */
 export interface LedgerEntryChange {
+  linkedFeeAmount?: number;
   counterWalletId?: number | null;
   direction?: "incoming" | "outgoing";
   movementKind?: MovementKind;
@@ -318,6 +321,14 @@ export async function updateLedgerEntry(
   change: LedgerEntryChange,
   options: { afterCommit?: (before: LedgerRow) => Promise<void> } = {},
 ): Promise<LedgerRow> {
+  const before = await getDb().transaction((tx) => updateLedgerEntryInTx(tx, owner, id, change));
+  await options.afterCommit?.(before);
+  await afterLedgerWrite(owner);
+  return before;
+}
+
+/** Shared edit inside an existing owner transaction; the caller invalidates caches after commit. */
+export async function updateLedgerEntryInTx(tx: LedgerTx, owner: LedgerOwner, id: number, change: LedgerEntryChange): Promise<LedgerRow> {
   const set: Partial<typeof expenses.$inferInsert> = {};
   if (change.type !== undefined) set.type = change.type;
   if (change.category !== undefined) set.category = change.category;
@@ -330,75 +341,100 @@ export async function updateLedgerEntry(
   if (change.contactId !== undefined) set.contactId = change.contactId;
 
   const own = and(eq(expenses.id, id), eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType));
-  let before: LedgerRow | undefined;
-  await getDb().transaction(async (tx) => {
-    await lockLedgerOwner(tx, owner, "NOT_FOUND");
-    const [row] = await tx.select().from(expenses).where(own).limit(1).for("update");
-    if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
-    before = row;
-    await assertWalletsInTx(tx, owner, [change.walletId, change.counterWalletId]);
+  await lockLedgerOwner(tx, owner, "NOT_FOUND");
+  const [row] = await tx.select().from(expenses).where(own).limit(1).for("update");
+  if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
+  await assertWalletsInTx(tx, owner, [change.walletId, change.counterWalletId]);
 
-    // The stored sign follows the kind and whether the money came back: a refund is a negative expense, anything
-    // else is positive.
-    if (change.amount !== undefined || change.type !== undefined || change.refund !== undefined) {
-      const type = change.type ?? row.type;
-      const wasRefund = row.type === "expense" && Number(row.amount) < 0;
-      const refund = change.refund ?? wasRefund;
-      set.amount = ledgerAmount(type, refund ? "incoming" : null, change.amount ?? Math.abs(Number(row.amount))).toString();
+  // The stored sign follows the kind and whether the money came back: a refund is a negative expense, anything
+  // else is positive.
+  if (change.amount !== undefined || change.type !== undefined || change.refund !== undefined) {
+    const type = change.type ?? row.type;
+    const wasRefund = row.type === "expense" && Number(row.amount) < 0;
+    const refund = change.refund ?? wasRefund;
+    set.amount = ledgerAmount(type, refund ? "incoming" : null, change.amount ?? Math.abs(Number(row.amount))).toString();
+  }
+
+  const financialEnabled = (await getSystemSettings(tx, { keys: ["capture_financial_version"], lock: true })).capture_financial_version === "cashflow-v1" || !!(row.parsedMetadata as { financial?: unknown } | null)?.financial;
+  const wasRefundMovement = row.type === "expense" && Number(row.amount) < 0;
+  const refundChanged = change.refund === true || (change.refund === false && wasRefundMovement);
+  const kind = change.movementKind ?? (!refundChanged ? undefined : change.refund ? "refund" : (change.type ?? row.type) === "income" ? "income" : "spending");
+  const direction = change.direction ?? (refundChanged ? (change.refund || change.type === "income" ? "incoming" : "outgoing")
+    : change.type === "income" ? "incoming" : change.type === "expense" ? (Number(set.amount ?? row.amount) < 0 ? "incoming" : "outgoing")
+      : change.type ? (movementOf(row) === "in" ? "incoming" : movementOf(row) === "out" ? "outgoing" : undefined) : undefined);
+  const financial = financialEnabled ? normalizeFinancialMovement({ ...row, ...set, direction }, kind) : null;
+  if (financial) {
+    if (change.counterWalletId !== undefined) {
+      if (change.counterWalletId && financial.financial.excluded) financial.financial.counterWalletId = change.counterWalletId;
+      else delete financial.financial.counterWalletId;
     }
+    if (financial.financial.counterWalletId && financial.financial.counterWalletId === (change.walletId ?? row.walletId)) throw new TRPCError({ code: "BAD_REQUEST", message: "اختار محفظتين مختلفتين للتحويل." });
+    set.type = financial.type;
+    set.amount = ledgerAmount(financial.type, financial.financial.movement === "in" ? "incoming" : "outgoing", set.amount ?? row.amount).toString();
+    set.parsedMetadata = { ...(row.parsedMetadata as Record<string, unknown> | null), financial: financial.financial,
+      direction: financial.financial.movement === "in" ? "incoming" : "outgoing" };
+  } else if (financialEnabled && (change.amount !== undefined || change.type !== undefined || change.direction !== undefined || change.movementKind !== undefined)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "حدد حركة الفلوس داخلة ولا خارجة." });
+  }
+  if (!financialEnabled && change.direction) set.parsedMetadata = { ...(row.parsedMetadata as Record<string, unknown> | null), direction: change.direction };
 
-    const financialEnabled = (await getSystemSettings(tx, { keys: ["capture_financial_version"], lock: true })).capture_financial_version === "cashflow-v1" || !!(row.parsedMetadata as { financial?: unknown } | null)?.financial;
-    const wasRefundMovement = row.type === "expense" && Number(row.amount) < 0;
-    const refundChanged = change.refund === true || (change.refund === false && wasRefundMovement);
-    const kind = change.movementKind ?? (!refundChanged ? undefined : change.refund ? "refund" : (change.type ?? row.type) === "income" ? "income" : "spending");
-    const direction = change.direction ?? (refundChanged ? (change.refund || change.type === "income" ? "incoming" : "outgoing")
-      : change.type === "income" ? "incoming" : change.type === "expense" ? (Number(set.amount ?? row.amount) < 0 ? "incoming" : "outgoing")
-        : change.type ? (movementOf(row) === "in" ? "incoming" : movementOf(row) === "out" ? "outgoing" : undefined) : undefined);
-    const financial = financialEnabled ? normalizeFinancialMovement({ ...row, ...set, direction }, kind) : null;
-    if (financial) {
-      if (change.counterWalletId !== undefined) {
-        if (change.counterWalletId && financial.financial.excluded) financial.financial.counterWalletId = change.counterWalletId;
-        else delete financial.financial.counterWalletId;
-      }
-      if (financial.financial.counterWalletId && financial.financial.counterWalletId === (change.walletId ?? row.walletId)) throw new TRPCError({ code: "BAD_REQUEST", message: "اختار محفظتين مختلفتين للتحويل." });
-      set.type = financial.type;
-      set.amount = ledgerAmount(financial.type, financial.financial.movement === "in" ? "incoming" : "outgoing", set.amount ?? row.amount).toString();
-      set.parsedMetadata = { ...(row.parsedMetadata as Record<string, unknown> | null), financial: financial.financial,
-        direction: financial.financial.movement === "in" ? "incoming" : "outgoing" };
-    } else if (financialEnabled && (change.amount !== undefined || change.type !== undefined || change.direction !== undefined || change.movementKind !== undefined)) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: "حدد حركة الفلوس داخلة ولا خارجة." });
+  await tx.update(expenses).set(set).where(own);
+  await updateLinkedFeeInTx(tx, owner, row, change);
+  await reconcileSettlementsOf(tx, owner, id);
+
+  await applyExpenseRollupDelta(tx, expenseToRollupDelta(row, -1));
+  const after = {
+    ...row,
+    ...set,
+    amount: set.amount ?? row.amount,
+    date: set.date ?? row.date,
+    type: set.type ?? row.type,
+  };
+  await applyExpenseRollupDelta(tx, expenseToRollupDelta(after, 1));
+
+  // A row recorded from a bank message that the user files elsewhere teaches where that merchant goes next time
+  // (decision 0030).
+  const captured = (row.parsedMetadata as { capture?: { eventId?: unknown } } | null)?.capture?.eventId;
+  if (typeof captured === "number" && set.category !== undefined && set.category !== row.category) {
+    const [event] = await tx
+      .select({ merchantKey: captureEvents.merchantKey })
+      .from(captureEvents)
+      .where(and(eq(captureEvents.id, captured), eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType)));
+    const filing = idsOfNames(set.category, set.subCategory ?? null);
+    if (event?.merchantKey && filing) await rememberFiling(tx, owner, `m:${event.merchantKey}`.slice(0, 140), filing);
+  }
+  return row;
+}
+
+/** Bundle edits stay atomic. Bank-declared fee metadata remains immutable evidence for late-signal deduplication. */
+async function updateLinkedFeeInTx(tx: LedgerTx, owner: LedgerOwner, row: LedgerRow, change: LedgerEntryChange): Promise<void> {
+  if (change.linkedFeeAmount === undefined && change.walletId === undefined && change.date === undefined) return;
+  const capture = (row.parsedMetadata as { capture?: { eventId?: unknown; parentExpenseId?: unknown; details?: { promptVersion?: string } } } | null)?.capture;
+  if (change.linkedFeeAmount !== undefined && (!Number.isFinite(change.linkedFeeAmount) || change.linkedFeeAmount < 0 || change.linkedFeeAmount > ExpenseInputLimits.amountMax)) throw new TRPCError({ code: "BAD_REQUEST", message: "الرسوم لازم تكون مبلغ صحيح أو صفر." });
+  if (typeof capture?.eventId !== "number" || capture.parentExpenseId || capture.details?.promptVersion !== "sms-v4") {
+    if (change.linkedFeeAmount !== undefined) throw new TRPCError({ code: "BAD_REQUEST", message: "عدّل الرسوم من العملية الأصلية." });
+    return;
+  }
+  const scope = and(eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType), eq(expenses.clientRequestId, `cap:e${capture.eventId}:fee`));
+  const [child] = await tx.select().from(expenses).where(scope).for("update");
+  if (child) {
+    if (change.linkedFeeAmount === 0) {
+      await deleteLedgerEntryInTx(tx, owner, child.id);
+    } else {
+      await applyExpenseRollupDelta(tx, expenseToRollupDelta(child, -1));
+      const after = { ...child, amount: change.linkedFeeAmount === undefined ? child.amount : String(change.linkedFeeAmount),
+        date: change.date ?? child.date, walletId: change.walletId === undefined ? child.walletId : change.walletId };
+      await tx.update(expenses).set({ amount: after.amount, date: after.date, walletId: after.walletId }).where(scope);
+      await reconcileSettlementsOf(tx, owner, child.id);
+      await applyExpenseRollupDelta(tx, expenseToRollupDelta(after, 1));
     }
-    if (!financialEnabled && change.direction) set.parsedMetadata = { ...(row.parsedMetadata as Record<string, unknown> | null), direction: change.direction };
-
-    await tx.update(expenses).set(set).where(own);
-    await reconcileSettlementsOf(tx, owner, id);
-
-    await applyExpenseRollupDelta(tx, expenseToRollupDelta(row, -1));
-    const after = {
-      ...row,
-      ...set,
-      amount: set.amount ?? row.amount,
-      date: set.date ?? row.date,
-      type: set.type ?? row.type,
-    };
-    await applyExpenseRollupDelta(tx, expenseToRollupDelta(after, 1));
-
-    // A row recorded from a bank message that the user files elsewhere teaches where that merchant goes next time
-    // (decision 0030).
-    const captured = (row.parsedMetadata as { capture?: { eventId?: unknown } } | null)?.capture?.eventId;
-    if (typeof captured === "number" && set.category !== undefined && set.category !== row.category) {
-      const [event] = await tx
-        .select({ merchantKey: captureEvents.merchantKey })
-        .from(captureEvents)
-        .where(and(eq(captureEvents.id, captured), eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType)));
-      const filing = idsOfNames(set.category, set.subCategory ?? null);
-      if (event?.merchantKey && filing) await rememberFiling(tx, owner, `m:${event.merchantKey}`.slice(0, 140), filing);
-    }
-  });
-
-  await options.afterCommit?.(before!);
-  await afterLedgerWrite(owner);
-  return before!;
+  } else if (change.linkedFeeAmount && change.linkedFeeAmount > 0) {
+    const main = CATEGORIES.find((category) => category.id === "installments")!;
+    const sub = main.subcategories.find((item) => item.id === "bank_fees")!;
+    await insertLedgerEntriesInTx(tx, owner, [{ type: "expense", amount: change.linkedFeeAmount, category: main.name_ar, subCategory: sub.name_ar,
+      description: sub.name_ar, source: "sms", date: change.date ?? row.date, walletId: change.walletId === undefined ? row.walletId : change.walletId,
+      clientRequestId: `cap:e${capture.eventId}:fee`, parsedMetadata: { capture: { feeOfEventId: capture.eventId, parentExpenseId: row.id } } }]);
+  }
 }
 
 /**
@@ -411,43 +447,42 @@ export async function deleteLedgerEntry(
   id: number,
   options: { afterCommit?: (removed: LedgerRow) => Promise<void> } = {},
 ): Promise<LedgerRow> {
-  const own = and(eq(expenses.id, id), eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType));
-  let removed: LedgerRow | undefined;
-  await getDb().transaction(async (tx) => {
-    await lockLedgerOwner(tx, owner, "NOT_FOUND");
-    const [row] = await tx.select().from(expenses).where(own).limit(1).for("update");
-    if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
-    removed = row;
-
-    await tx.delete(expenses).where(own);
-    // A row recorded from a bank message leaves its event as a tombstone, so a late signal of the same payment does
-    // not bring it back (decision 0029).
-    const captured = (row.parsedMetadata as { capture?: { eventId?: unknown } } | null)?.capture?.eventId;
-    if (typeof captured === "number") {
-      const children = await tx.select().from(expenses).where(and(eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType), eq(expenses.clientRequestId, `cap:e${captured}:fee`))).for("update");
-      for (const child of children) {
-        await releaseSettlementsOf(tx, owner, [child.id]);
-        await tx.delete(expenses).where(and(eq(expenses.id, child.id), eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType)));
-        await applyExpenseRollupDelta(tx, expenseToRollupDelta(child, -1));
-      }
-      await tx
-        .update(captureEvents)
-        .set({ status: "deleted", expenseId: null, resolvedAt: new Date() })
-        .where(and(eq(captureEvents.id, captured), eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType)));
-    }
-    // What it paid toward a commitment is unpaid again (api/services/coach/cashflows.ts).
-    await releaseSettlementsOf(tx, owner, [row.id]);
-    await applyExpenseRollupDelta(tx, expenseToRollupDelta(row, -1));
-
-    if (row.contactId) {
-      await tx
-        .update(userContacts)
-        .set({ transactionCount: sql`GREATEST(COALESCE(${userContacts.transactionCount}, 1) - 1, 0)` })
-        .where(and(eq(userContacts.id, row.contactId), eq(userContacts.userId, owner.userId), eq(userContacts.userType, owner.userType)));
-    }
-  });
-
-  await options.afterCommit?.(removed!);
+  const removed = await getDb().transaction((tx) => deleteLedgerEntryInTx(tx, owner, id));
+  await options.afterCommit?.(removed);
   await afterLedgerWrite(owner);
-  return removed!;
+  return removed;
+}
+
+/** Deletes with rollup/fee/tombstone effects inside the caller's transaction; invalidate caches after commit. */
+export async function deleteLedgerEntryInTx(tx: LedgerTx, owner: LedgerOwner, id: number): Promise<LedgerRow> {
+  const own = and(eq(expenses.id, id), eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType));
+  await lockLedgerOwner(tx, owner, "NOT_FOUND");
+  const [row] = await tx.select().from(expenses).where(own).limit(1).for("update");
+  if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
+
+  await tx.delete(expenses).where(own);
+  // A row recorded from a bank message leaves its event as a tombstone, so a late signal of the same payment does
+  // not bring it back (decision 0029).
+  const captured = (row.parsedMetadata as { capture?: { eventId?: unknown } } | null)?.capture?.eventId;
+  if (typeof captured === "number") {
+    const children = await tx.select().from(expenses).where(and(eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType), eq(expenses.clientRequestId, `cap:e${captured}:fee`))).for("update");
+    for (const child of children) {
+      await deleteLedgerEntryInTx(tx, owner, child.id);
+    }
+    await tx
+      .update(captureEvents)
+      .set({ status: "deleted", expenseId: null, resolvedAt: new Date() })
+      .where(and(eq(captureEvents.id, captured), eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType)));
+  }
+  // What it paid toward a commitment is unpaid again (api/services/coach/cashflows.ts).
+  await releaseSettlementsOf(tx, owner, [row.id]);
+  await applyExpenseRollupDelta(tx, expenseToRollupDelta(row, -1));
+
+  if (row.contactId) {
+    await tx
+      .update(userContacts)
+      .set({ transactionCount: sql`GREATEST(COALESCE(${userContacts.transactionCount}, 1) - 1, 0)` })
+      .where(and(eq(userContacts.id, row.contactId), eq(userContacts.userId, owner.userId), eq(userContacts.userType, owner.userType)));
+  }
+  return row;
 }
