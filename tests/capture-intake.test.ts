@@ -138,6 +138,39 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].textRedacted).not.toContain("1234");
   });
+  it("durably queues model-first input without trusting the shadow, leaks no local identity, and erases revoked work", async () => {
+    await db.insert(systemSettings).values({ key: "capture_read_mode", value: "model_first" }).onDuplicateKeyUpdate({ set: { value: "model_first" } });
+    invalidateSettingsCache();
+    try {
+      await setCaptureConsent(owner, "ai_reading", true, CAPTURE_CONSENT_TEXT_VERSION);
+      const input = { ...purchase("signal-v4-shadow"), text: "Your Card ending 1234 had a Successful transaction of EGP 85 @FAWRYPF*ZED MARKET, available bal.EGP 675.6. registered as TEST PERSON" };
+      const first = await (await post("/api/capture/v1/signals", { signals: [input] })).json();
+      expect(first.results[0].result).toBe("queued");
+      const again = await (await post("/api/capture/v1/signals", { signals: [input] })).json();
+      expect(again.results[0].result).toBe("queued");
+      const conflict = await (await post("/api/capture/v1/signals", { signals: [{ ...input, text: input.text.replace("EGP 85", "EGP 99") }] })).json();
+      expect(conflict.results[0]).toMatchObject({ result: "rejected", reason: "conflict" });
+      const rows = await db.select().from(captureSignals).where(eq(captureSignals.userId, owner.userId));
+      expect(rows).toHaveLength(1);
+      expect(rows[0].textRedacted).not.toMatch(/1234|TEST PERSON/);
+      expect(JSON.stringify(rows[0].reading)).not.toContain("TEST PERSON");
+      expect(rows[0].reading).toMatchObject({ captureV4: { envelope: expect.stringMatching(/^cv1:/) } });
+      expect(await db.select().from(expenses).where(eq(expenses.userId, owner.userId))).toHaveLength(0);
+      await setCaptureConsent(owner, "ai_reading", false, CAPTURE_CONSENT_TEXT_VERSION);
+      await db.update(captureAiJobs).set({ status: "queued", nextAt: new Date(Date.now() - 5000), leaseUntil: null }).where(eq(captureAiJobs.userId, owner.userId));
+      await drainCaptureModel(5);
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const pending = await db.select().from(captureAiJobs).where(eq(captureAiJobs.userId, owner.userId));
+        if (!pending.length) break;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      expect(await db.select().from(captureAiJobs).where(eq(captureAiJobs.userId, owner.userId))).toHaveLength(0);
+      expect(await db.select().from(captureSignals).where(eq(captureSignals.userId, owner.userId))).toHaveLength(0);
+    } finally {
+      await db.delete(systemSettings).where(eq(systemSettings.key, "capture_read_mode"));
+      invalidateSettingsCache();
+    }
+  });
 
   it("records exactly one ledger row from the notification's button, however often it is tapped", async () => {
     const { results } = await (await post("/api/capture/v1/signals", { signals: [purchase("signal-buy-02")] })).json();

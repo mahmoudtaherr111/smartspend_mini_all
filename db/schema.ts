@@ -1275,6 +1275,28 @@ export const captureAiJobs = mysqlTable(
   ],
 );
 
+/** Atomic capture-only resource accounting. Reservations survive an uncertain provider timeout. */
+export const captureAiDays = mysqlTable("capture_ai_days", {
+  day: varchar("day", { length: 10 }).primaryKey(),
+  costUsd: decimal("cost_usd", { precision: 16, scale: 8 }).notNull().default("0"),
+  createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+export const captureAiAccounts = mysqlTable("capture_ai_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(), userType: varchar("user_type", { length: 50 }).notNull(),
+  period: varchar("period", { length: 7 }).notNull(), tokens: int("tokens").notNull().default(0),
+  createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [uniqueIndex("capture_ai_accounts_owner_period").on(t.userId, t.userType, t.period), index("capture_ai_accounts_created").on(t.createdAt)]);
+export const captureAiReservations = mysqlTable("capture_ai_reservations", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: int("user_id").notNull(), userType: varchar("user_type", { length: 50 }).notNull(),
+  day: varchar("day", { length: 10 }).notNull(), period: varchar("period", { length: 7 }).notNull(),
+  tokens: int("tokens").notNull(), costUsd: decimal("cost_usd", { precision: 16, scale: 8 }).notNull(),
+  status: varchar("status", { length: 16 }).notNull().default("reserved"),
+  leaseUntil: datetime("lease_until").notNull(),
+  createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [index("capture_ai_reservations_owner").on(t.userId, t.userType, t.period), index("capture_ai_reservations_leases").on(t.status, t.leaseUntil), index("capture_ai_reservations_created").on(t.createdAt)]);
+
 // ─── WhatsApp OTP Codes ───
 export const whatsappOtpCodes = mysqlTable(
   "whatsapp_otp_codes",

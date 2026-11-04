@@ -241,6 +241,9 @@
         "api/lib/sms-ai-contract.ts",
         "api/lib/capture/model-contract.ts",
         "api/lib/capture/privacy.ts",
+        "api/lib/capture/vault.ts",
+        "api/lib/capture/admission.ts",
+        "api/lib/capture/model-reader.ts",
         "api/qa/capture-contract-runner.ts"
       ]
     },

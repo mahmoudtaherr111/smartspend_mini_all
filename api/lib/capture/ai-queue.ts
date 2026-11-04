@@ -22,6 +22,14 @@ import { readMessageWithModel } from "./ai-reader";
 import { captureConsentsOf } from "./consent";
 import type { CaptureDevice } from "./devices";
 import { lockCaptureUser, placeSignal, startIntakeRun, type SignalReading } from "./intake";
+import { openCaptureText } from "./vault";
+import { readCaptureWithModel } from "./model-reader";
+import { captureQualification } from "./model-reader";
+import { getSystemSettings } from "../settings-cache";
+import { captureHmac } from "./memory";
+import { asciiDigits } from "../anonymizer";
+import type { PreparedCaptureText } from "./privacy";
+import type { CaptureModelReply, CapturePostingProposal } from "./model-contract";
 import { merchantNamesToKeep } from "./keep-merchants";
 import { merchantKey } from "./reader/counterparty";
 
@@ -70,19 +78,48 @@ export function readingFromModel(stored: SignalReading, reply: SmsModelReply): S
   };
 }
 
+export function readingFromV4(stored: SignalReading, reply: CaptureModelReply, posting: CapturePostingProposal, text: PreparedCaptureText): SignalReading | null {
+  if (posting.status !== "ready" || !reply.amount || !reply.flow || !stored.captureV4) return null;
+  const kind: SignalReading["kind"] = reply.type === "purchase" ? (reply.amount.currency === "EGP" ? "card_purchase" : "international_purchase")
+    : reply.type === "bill" ? "bill_payment" : reply.type === "topup" ? "mobile_recharge"
+      : reply.type === "transfer" ? (reply.flow === "in" ? "transfer_in" : "transfer_out")
+        : reply.type === "cash_out" ? "atm_withdrawal" : reply.type === "cash_in" ? "cash_deposit"
+          : reply.type as SignalReading["kind"];
+  const identity = reply.party?.startsWith("[") ? text.localValue(reply.party) : null;
+  const isPhone = reply.party?.startsWith("[PHONE_") === true;
+  const digits = isPhone ? asciiDigits(identity ?? "").replace(/\D/g, "") : null;
+  const phone = digits?.startsWith("0020") ? `0${digits.slice(4)}` : digits?.startsWith("20") ? `0${digits.slice(2)}` : digits;
+  const identityKey = isPhone ? (phone?.length === 11 && !/[*xX•]/u.test(identity ?? "") ? phone : null) : identity;
+  const name = isPhone ? null : identity ?? (reply.party?.startsWith("[") ? null : reply.party);
+  return { ...stored, readBy: "model", readerVersion: "model:sms-v4", kind, direction: reply.flow, confidence: "likely",
+    amount: { value: reply.amount.value, currency: reply.amount.currency }, amountEgp: reply.egp ? { value: reply.egp.value, currency: "EGP" } : null,
+    fee: reply.fee ? { value: reply.fee.value, currency: reply.fee.currency } : null,
+    balanceAfter: reply.balance ? { value: reply.balance.value, currency: reply.balance.currency } : null,
+    currencyInferred: false, missing: [],
+    counterparty: { type: reply.ownership === "own" ? "own_account" : reply.partyType, name,
+      phoneTail: digits?.slice(-4) ?? null, ipa: null,
+      merchantKey: reply.partyType === "merchant" && name ? merchantKey(name) : null,
+      ...(reply.partyType === "person" && identityKey ? { identityHmac: captureHmac("person", identityKey.trim().replace(/\s+/g, " ").toLowerCase()) } : {}),
+    }, captureV4: { ...stored.captureV4, reply, posting },
+  };
+}
+
 let running = 0;
+
+function wakeOne(maximum: number): void {
+  if (running >= maximum) return;
+  running++;
+  setImmediate(() => {
+    void drainCaptureModel(PER_WAKE)
+      .catch((err) => log.error({ err, event: "capture.ai.drain_failed" }, "Capture model queue stopped"))
+      .finally(() => { running--; });
+  });
+}
 
 /** Starts reading in this process, up to a few jobs at a time. Safe to call often. */
 export function wakeCaptureModel(): void {
   while (running < PER_PROCESS) {
-    running++;
-    setImmediate(() => {
-      void drainCaptureModel(PER_WAKE)
-        .catch((err) => log.error({ err, event: "capture.ai.drain_failed" }, "Capture model queue stopped"))
-        .finally(() => {
-          running--;
-        });
-    });
+    wakeOne(PER_PROCESS);
   }
 }
 
@@ -149,6 +186,7 @@ async function readJob(job: Job): Promise<void> {
     .where(and(eq(captureSignals.id, job.signalId), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));
   if (!signal) return finish(job, "gone");
   const stored = signal.reading as SignalReading;
+  if (stored.captureV4) return readV4Job(job, signal, stored);
 
   let reading: SignalReading | null = null;
   let outcome: string;
@@ -158,6 +196,7 @@ async function readJob(job: Job): Promise<void> {
   } else {
     const account = owner.userType === "oauth" ? users : localUsers;
     const [user] = await getDb().select({ plan: account.plan }).from(account).where(eq(account.id, owner.userId));
+    if (!user) return finish(job, "gone");
     const text = signal.textRedacted ?? "";
     const read = await readMessageWithModel(text, {
       userId: owner.userId,
@@ -209,6 +248,90 @@ async function readJob(job: Job): Promise<void> {
   });
   if (run.recordedAny) await afterLedgerWrite(device, { spending: run.spentAny });
   log.info({ event: "capture.ai.placed", userId: owner.userId, jobId: job.id, outcome, result: placed?.result ?? "lost_lease" }, "Capture model job placed");
+}
+
+async function deferV4(job: Job, reason: string, waitMs: number): Promise<void> {
+  const maximumAge = reason === "failed" ? 24 * 3600_000 : 30 * 24 * 3600_000;
+  if (Date.now() - job.createdAt.getTime() >= maximumAge) return finish(job, `expired_${reason}`.slice(0, 32));
+  await getDb().update(captureAiJobs).set({ status: "queued", outcome: reason, nextAt: new Date(Date.now() + waitMs), leaseUntil: null })
+    .where(and(eq(captureAiJobs.id, job.id), eq(captureAiJobs.attempts, job.attempts), eq(captureAiJobs.status, "running")));
+}
+
+async function readV4Job(job: Job, signal: typeof captureSignals.$inferSelect, stored: SignalReading): Promise<void> {
+  // Expand only when actual v4 work exists; the shared admission table remains the cross-replica cap.
+  wakeOne(64);
+  const owner = { userId: job.userId, userType: job.userType };
+  const consent = await captureConsentsOf(owner);
+  if (!consent.capture || !consent.aiReading) {
+    await getDb().transaction(async (tx) => {
+      await lockCaptureUser(tx, owner);
+      await tx.delete(captureAiJobs).where(and(eq(captureAiJobs.id, job.id), eq(captureAiJobs.userId, owner.userId), eq(captureAiJobs.userType, owner.userType)));
+      await tx.delete(captureSignals).where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));
+    });
+    return;
+  }
+  const account = owner.userType === "oauth" ? users : localUsers;
+  const [user] = await getDb().select({ plan: account.plan }).from(account).where(eq(account.id, owner.userId));
+  if (!user) return finish(job, "gone");
+  const controls = await getSystemSettings();
+  if (controls.capture_enabled !== "true" || (controls.capture_paused_sources ?? "").split(",").map((entry) => entry.trim()).includes(signal.sourceSlug ?? "")) return deferV4(job, "disabled", 3600_000);
+  if (controls.capture_financial_version !== "cashflow-v1") return deferV4(job, "financial_upgrade", 3600_000);
+  const text = openCaptureText(stored.captureV4!.envelope, signal.textRedacted ?? "", {
+    ...owner, userType: owner.userType as "oauth" | "local", deviceId: job.deviceId, clientSignalId: signal.clientSignalId,
+  });
+  if (!text) return finish(job, "redaction_failed");
+  const result = await readCaptureWithModel(text, { ...owner, userType: owner.userType as "oauth" | "local", plan: user.plan, sourceSlug: signal.sourceSlug });
+  if (result.outcome !== "read") {
+    if (result.outcome === "gone") return finish(job, "gone");
+    if (result.outcome === "invalid_reply") return finish(job, "invalid_reply");
+    return deferV4(job, result.outcome, result.outcome === "capacity" ? 5000 : result.outcome === "failed" ? Math.min(3600_000, 30000 * Math.pow(2, Math.min(job.attempts - 1, 7))) : 3600_000);
+  }
+  if (result.proposal.status !== "ready") {
+    await getDb().transaction(async (tx) => {
+      await lockCaptureUser(tx, owner);
+      const [lease] = await tx.select().from(captureAiJobs).where(and(eq(captureAiJobs.id, job.id), eq(captureAiJobs.userId, owner.userId), eq(captureAiJobs.userType, owner.userType))).for("update");
+      if (!lease || lease.status !== "running" || lease.attempts !== job.attempts) return;
+      const fresh = await captureConsentsOf(owner, tx);
+      if (!fresh.capture || !fresh.aiReading) {
+        await tx.delete(captureAiJobs).where(eq(captureAiJobs.id, job.id));
+        await tx.delete(captureSignals).where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));
+        return;
+      }
+      await tx.update(captureSignals).set({ reading: { ...stored, amount: null, counterparty: null,
+        captureV4: { ...stored.captureV4!, reply: result.check.reply, posting: result.proposal, model: result.model, provider: result.provider } } })
+        .where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));
+      await tx.update(captureAiJobs).set({ status: "done", leaseUntil: null,
+        outcome: result.proposal.status === "waiting" ? `waiting_${result.proposal.reason}` : "not_transaction" }).where(eq(captureAiJobs.id, job.id));
+    });
+    return;
+  }
+  const settings = await getSystemSettings();
+  // The two-kind shared ledger migration must finish before any new automatic writes can run.
+  if (settings.capture_financial_version !== "cashflow-v1") return deferV4(job, "financial_upgrade", 3600_000);
+  const qualification = captureQualification(settings);
+  if (!qualification?.pairs.includes(`${signal.sourceSlug}:${result.check.reply.type}`)) return deferV4(job, "unqualified", 3600_000);
+  const reading = readingFromV4(stored, result.check.reply, result.proposal, text);
+  if (!reading) return finish(job, "invalid_reply");
+  reading.captureV4 = { ...reading.captureV4!, model: result.model, provider: result.provider };
+  const device: CaptureDevice = { ...owner, deviceId: job.deviceId };
+  const run = await startIntakeRun(device, job.lang === "en" ? "en" : "ar");
+  await getDb().transaction(async (tx) => {
+    await lockCaptureUser(tx, owner);
+    const [lease] = await tx.select().from(captureAiJobs).where(and(eq(captureAiJobs.id, job.id), eq(captureAiJobs.userId, owner.userId), eq(captureAiJobs.userType, owner.userType))).for("update");
+    if (!lease || lease.status !== "running" || lease.attempts !== job.attempts) return;
+    const [stillAlive] = await tx.select({ id: account.id }).from(account).where(eq(account.id, owner.userId));
+    const freshConsent = await captureConsentsOf(owner, tx);
+    if (!stillAlive || !freshConsent.capture || !freshConsent.aiReading) {
+      await tx.delete(captureAiJobs).where(eq(captureAiJobs.id, job.id));
+      await tx.delete(captureSignals).where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));
+      return;
+    }
+    const placed = await placeSignal(tx, run, { signalId: signal.id, clientSignalId: signal.clientSignalId, channel: signal.channel, sourceSlug: signal.sourceSlug,
+      textHmac: signal.textHmac, receivedAt: signal.receivedAt, reading });
+    await tx.update(captureAiJobs).set({ status: "done", outcome: "read", leaseUntil: null, eventId: placed.eventId ?? null,
+      notice: placed.notice ?? null, noticeDeliveredAt: placed.notice ? null : new Date() }).where(eq(captureAiJobs.id, job.id));
+  });
+  if (run.recordedAny) await afterLedgerWrite(owner, { spending: run.spentAny });
 }
 
 /** The notices this phone's queued signals left since it last asked, each handed out once, and how many still wait. */

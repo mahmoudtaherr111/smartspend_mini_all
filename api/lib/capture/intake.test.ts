@@ -61,6 +61,14 @@ const accepted = (outcome: ReturnType<typeof gateSignal>) => {
 };
 
 describe("which signals the server keeps", () => {
+  it("lets the model-first path read a successful purchase that the shadow calls balance-only", () => {
+    const input = signal({ text: "Your Card ending 1234 had a Successful transaction of EGP 85 @FAWRYPF*ZED MARKET, your available bal.EGP 675.6" });
+    expect(gateSignal(input, catalog, receivedAt).accept).toBe(false);
+    expect(gateSignal(input, catalog, receivedAt, true).accept).toBe(true);
+  });
+  it("does not use a missing shadow amount to reject a model-first message", () => {
+    expect(gateSignal(signal({ text: "An unfamiliar financial format" }), catalog, receivedAt, true).accept).toBe(true);
+  });
   it("keeps a bank app's purchase with the amount, the card and the merchant", () => {
     const kept = accepted(gateSignal(signal({}), catalog, receivedAt));
     const reading = keepReading(kept.reading, kept.source);

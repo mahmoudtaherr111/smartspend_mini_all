@@ -54,6 +54,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/benchmark-taxonomy-assert.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/cache-keys.ts` | [platform](platform.md) |
 | `api/lib/capture/access.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/admission.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/ai-queue.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/ai-reader.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/care.ts` | [bank-messages](bank-messages.md) |
@@ -66,6 +67,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/markers.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/memory.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/model-contract.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/model-reader.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/operations.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/privacy.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/clauses.ts` | [bank-messages](bank-messages.md) |
@@ -82,6 +84,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/reader/when.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/seed-sources.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/seed-subscriptions.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/vault.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/category-registry.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/classification-cache.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/classification-decision.ts` | [expense-capture](expense-capture.md) |

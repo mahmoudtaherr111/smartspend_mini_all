@@ -45,6 +45,10 @@ import {
 } from "./memory";
 import { readMessage } from "./reader/read";
 import type { Reading } from "./reader/types";
+import { prepareCaptureText } from "./privacy";
+import { sealCaptureText } from "./vault";
+import type { CaptureModelReply, CapturePostingProposal } from "./model-contract";
+import { captureQualification } from "./model-reader";
 
 const log = createLogger("capture-intake");
 
@@ -74,7 +78,7 @@ export type GateOutcome =
  * senders, apps outside the catalog); the server is strict: the app must be in the catalog, a messaging app's sender
  * must not be a person, and the reader must see money that moved.
  */
-export function gateSignal(signal: CaptureSignal, catalog: CaptureCatalog, receivedAt: Date): GateOutcome {
+export function gateSignal(signal: CaptureSignal, catalog: CaptureCatalog, receivedAt: Date, modelFirst = false): GateOutcome {
   const appSource = signal.app ? sourceForPackage(catalog, signal.app) : null;
   // An app's own notification comes from an app the catalog lists. An SMS may come through any messaging app (the
   // phone's default one is not always listed), so it is judged by its sender instead.
@@ -94,16 +98,16 @@ export function gateSignal(signal: CaptureSignal, catalog: CaptureCatalog, recei
     sourceKind: source?.kind ?? null,
     receivedAt,
   });
-  if (reading.status === "not_transaction") {
+  if (!modelFirst && reading.status === "not_transaction") {
     // The reading goes back with it: a balance alone still moves the card's wallet (decision 0033).
     return { accept: false, result: "ignored", reason: reading.reasons[0] ?? reading.kind, source, reading };
   }
   // A message the reader could not read an amount from is kept only when a bank of the catalog sent it and the reader
   // says it is unsure (not "not a transaction"): the model may read it (decision 0031).
-  if (!reading.amount && !(reading.status === "unsure" && source)) return { accept: false, result: "ignored", reason: "no_amount" };
+  if (!modelFirst && !reading.amount && !(reading.status === "unsure" && source)) return { accept: false, result: "ignored", reason: "no_amount" };
   // A messaging app's sender the catalog does not know must show it is the user's account: a card, an account or a
   // balance. Anyone can send an SMS that says "تم خصم".
-  if (fromMessagingApp && !source && !reading.card && !reading.account && !reading.balanceAfter) {
+  if (!modelFirst && fromMessagingApp && !source && !reading.card && !reading.account && !reading.balanceAfter) {
     return { accept: false, result: "ignored", reason: "unknown_sender" };
   }
   return { accept: true, source, reading };
@@ -118,6 +122,7 @@ interface KeptMoney {
 
 /** The reader's fields kept with a signal (the `reading` column). No evidence, no message text. */
 export interface SignalReading {
+  captureV4?: { envelope: string; reply?: CaptureModelReply; posting?: CapturePostingProposal; model?: string; provider?: string };
   readerVersion: string;
   kind: Reading["kind"];
   direction: Reading["direction"];
@@ -129,7 +134,7 @@ export interface SignalReading {
   balanceAfter: KeptMoney | null;
   cardSuffix: string | null;
   accountSuffix: string | null;
-  counterparty: { type: string; name: string | null; merchantKey: string | null; phoneTail: string | null; ipa: string | null } | null;
+  counterparty: { type: string; name: string | null; merchantKey: string | null; phoneTail: string | null; ipa: string | null; identityHmac?: string } | null;
   occurredAt: string;
   /** The time came from the message itself, not from when the phone received it. */
   timeFromMessage: boolean;
@@ -270,6 +275,7 @@ export function suggestLedgerEntry(reading: SignalReading, catalog: CaptureCatal
 // ─── Recording on its own (decision 0030) ───
 
 export interface AutoPolicy {
+  v4Pairs?: Set<string>;
   /** "<source>:<kind>" or "*:<kind>" pairs the admin opened for everyone. */
   pairs: Set<string>;
   /** Sources never recorded on their own (a bank that changed its messages). */
@@ -294,6 +300,7 @@ export function autoPolicyOf(settings: Record<string, string | undefined>): Auto
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
   };
   return {
+    v4Pairs: new Set(settings.capture_financial_version === "cashflow-v1" ? captureQualification(settings as Record<string, string>)?.pairs ?? [] : []),
     pairs: list(settings.capture_auto_pairs),
     paused: list(settings.capture_paused_sources),
     personTransferAskAbove: number(settings.capture_p2p_ask_above, 1000),
@@ -317,6 +324,10 @@ export function mayRecordAlone(input: {
 }): boolean {
   const { policy, reading, suggestion } = input;
   const source = reading.sourceSlug;
+  if (reading.captureV4) {
+    return !!source && !policy.paused.has(source) && reading.captureV4.posting?.status === "ready"
+      && policy.v4Pairs?.has(`${source}:${reading.captureV4.reply?.type}`) === true;
+  }
   if (!source || reading.confidence !== "certain" || suggestion.amountEgp === null || input.possibleDuplicate) return false;
   if (policy.paused.has(source)) return false;
   const opened = policy.pairs.has(`${source}:${reading.kind}`) || policy.pairs.has(`*:${reading.kind}`);
@@ -687,7 +698,8 @@ export interface SignalToPlace {
 /** Locks the user for the rest of the transaction: the account row (the streak and account deletion take it too). */
 export async function lockCaptureUser(tx: LedgerTx, owner: CaptureOwner): Promise<void> {
   const account = owner.userType === "oauth" ? users : localUsers;
-  await tx.select({ id: account.id }).from(account).where(eq(account.id, owner.userId)).for("update");
+  const [alive] = await tx.select({ id: account.id }).from(account).where(eq(account.id, owner.userId)).for("update");
+  if (!alive) throw new TRPCError({ code: "UNAUTHORIZED", message: "الحساب مش متاح. ادخل تاني." });
 }
 
 /**
@@ -930,6 +942,7 @@ async function queueModelReading(tx: LedgerTx, device: CaptureDevice, input: Sig
 export async function ingestSignals(device: CaptureDevice, request: CaptureSignalsRequest, now = new Date()): Promise<CaptureSignalResult[]> {
   const run = await startIntakeRun(device, request.lang, now);
   const settings = await getSystemSettings();
+  const modelFirst = settings.capture_read_mode === "model_first";
   // A message the reader is unsure of goes to the admin's model only with the user's consent and the model switched on.
   const modelReads = settings.sms_ai_enabled !== "false" && (await captureConsentsOf(device)).aiReading;
   const results: CaptureSignalResult[] = [];
@@ -945,7 +958,7 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
       if (age > MAX_AGE_MS) return { id: signal.id, result: "rejected", reason: "too_old" };
       if (age < -MAX_AHEAD_MS) return { id: signal.id, result: "rejected", reason: "in_future" };
 
-      const gate = gateSignal(signal, run.catalog, receivedAt);
+      const gate = gateSignal(signal, run.catalog, receivedAt, modelFirst);
       if (!gate.accept) {
         if (gate.reading?.kind === "balance_only" && gate.source) {
           const balance = keepReading(gate.reading, gate.source);
@@ -956,7 +969,14 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
       const reading = keepReading(gate.reading, gate.source);
       // A card or phrase the user asked to ignore (a family member's card): nothing of it is kept.
       if (isIgnored(run.ignore, reading, signal.text)) return { id: signal.id, result: "ignored", reason: "user_ignored" };
-      const toModel = modelReads && reading.confidence === "unsure";
+      const toModel = modelFirst || (modelReads && reading.confidence === "unsure");
+      const privateText = modelFirst ? prepareCaptureText(signal.text) : null;
+      if (privateText && !privateText.ok) return { id: signal.id, result: privateText.codes.includes("otp") ? "ignored" : "rejected", reason: privateText.codes.includes("otp") ? "otp" : "redaction_failed" };
+      if (privateText?.ok) {
+        reading.captureV4 = { envelope: sealCaptureText(privateText.value, { userId: device.userId, userType: device.userType as "oauth" | "local", deviceId: device.deviceId, clientSignalId: signal.id }) };
+        // The shadow is diagnostic only; no stale amount/party drives v4 filing or survives as plaintext identity data.
+        reading.counterparty = null;
+      }
       // Without the model, a message with no amount the reader could read gives the user nothing to answer.
       if (!reading.amount && !toModel) return { id: signal.id, result: "ignored", reason: "no_amount" };
       const textHmac = textHmacOf(signal);
@@ -965,11 +985,12 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
         await lockCaptureUser(tx, device);
 
         const [known] = await tx
-          .select({ id: captureSignals.id, eventId: captureSignals.eventId })
+          .select({ id: captureSignals.id, eventId: captureSignals.eventId, textHmac: captureSignals.textHmac })
           .from(captureSignals)
           .where(and(mineSignals, eq(captureSignals.clientSignalId, signal.id)))
           .limit(1);
         if (known) {
+          if (known.textHmac !== textHmac) return { id: signal.id, result: "rejected" as const, reason: "conflict" };
           const [event] = known.eventId
             ? await tx.select({ id: captureEvents.id, status: captureEvents.status }).from(captureEvents).where(eq(captureEvents.id, known.eventId))
             : [];
@@ -987,7 +1008,7 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
           receivedAt,
           reading,
           // Redacted, but the merchant stays (decision 0035): the model and the user's review need it.
-          textRedacted: redactKeeping(signal.text, merchantNamesToKeep(signal.text, reading)).text,
+          textRedacted: privateText?.ok ? privateText.value.text : redactKeeping(signal.text, merchantNamesToKeep(signal.text, reading)).text,
         };
         if (toModel) {
           await queueModelReading(tx, device, placing, run.lang, now);

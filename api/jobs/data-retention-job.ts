@@ -7,6 +7,8 @@ export interface RetentionPolicy {
   retainDays: number;
   dateColumn: string;
   whereClause?: string;
+  /** Expand/contract deployment: skip newly introduced optional tables until their migration is installed. */
+  optionalTable?: boolean;
   rollupBefore?: () => Promise<void>;
   customCleanup?: (dryRun: boolean) => Promise<number>;
   description: string;
@@ -154,10 +156,14 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
     description:
       "Bank and wallet notifications read as transactions (redacted text and the reader's fields). A recorded one lives on in the ledger; one never answered is forgotten (decision 0028).",
   },
+  { tableName: "capture_ai_days", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },
+  { tableName: "capture_ai_accounts", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },
+  { tableName: "capture_ai_reservations", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },
   {
     tableName: "capture_ai_jobs",
     class: "D",
     retainDays: 7,
+    whereClause: "status = 'done'",
     dateColumn: "created_at",
     description: "Captured messages the model read (or could not) and the notice it left for the phone (decision 0031).",
   },
@@ -383,6 +389,13 @@ export async function runDataRetentionJob(options: {
     let rolledUp = false;
 
     try {
+      if (policy.optionalTable) {
+        const [tables] = await db.execute(sql`SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ${policy.tableName}`);
+        if (!Array.isArray(tables) || tables.length === 0) {
+          results.push({ table: policy.tableName, class: policy.class, prunedCount: 0, durationMs: 0, dryRun });
+          continue;
+        }
+      }
       const cutoffDate = new Date(Date.now() - policy.retainDays * 24 * 3600 * 1000);
       const cutoffStr = cutoffDate.toISOString().slice(0, 19).replace("T", " ");
 

@@ -155,11 +155,35 @@ model {
         storageClass 'A'
       }
     }
+    capture_ai_accounts = table 'capture_ai_accounts' {
+      #classD #dualOwner
+      description '6 columns, 2 indexes, storage class D.'
+      metadata {
+        export 'captureAiAccounts'
+        storageClass 'D'
+      }
+    }
+    capture_ai_days = table 'capture_ai_days' {
+      #classD
+      description '3 columns, 0 indexes, storage class D.'
+      metadata {
+        export 'captureAiDays'
+        storageClass 'D'
+      }
+    }
     capture_ai_jobs = table 'capture_ai_jobs' {
       #classD #dualOwner
       description '15 columns, 4 indexes, storage class D.'
       metadata {
         export 'captureAiJobs'
+        storageClass 'D'
+      }
+    }
+    capture_ai_reservations = table 'capture_ai_reservations' {
+      #classD #dualOwner
+      description '10 columns, 3 indexes, storage class D.'
+      metadata {
+        export 'captureAiReservations'
         storageClass 'D'
       }
     }

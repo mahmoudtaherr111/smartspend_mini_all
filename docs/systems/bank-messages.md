@@ -441,3 +441,36 @@ The current sms-v2 model reader also checks its redacted text and sender for kno
 budget checks or provider calls, and returns `redaction_failed` on failure. Merchant shielding cannot restore an
 explicit holder name or known identifier and cannot hide an incomplete-name finding. These checks intentionally
 withhold uncertain input; they do not prove arbitrary-language privacy or qualify a source for automatic recording.
+
+## Durable model-first worker (staged, financial cutover still pending)
+`capture_read_mode` defaults to `reader_first` for compatibility. In `model_first`, ingestion still applies source,
+personal-sender, ignore-list and privacy checks, but the shadow's kind/amount never discards input. Numbered tokens
+are stored in `reading.captureV4.envelope` using `api/lib/capture/vault.ts`: AES-256-GCM with a domain-separated key and an AAD binding
+to both user fields, device, signal id and the redacted text digest. The gateway key ring supports rotation; there is
+no plaintext fallback. The pending signal contains redacted text and no plaintext counterparty. A reused signal id
+with changed content is a conflict. Identical retries keep one job.
+
+The worker restores prepared text on any replica. It checks consent and account existence before calls and under the
+user lock before accepting results; withdrawal erases unprocessed signals/jobs. `api/lib/capture/model-reader.ts` requires two
+qualified admin providers, matching prompt/schema digest and version, approved data processing, and source/type
+pairs in `capture_model_qualified`; it never falls back to a built-in key. Rejected JSON/semantic output tries the
+other provider once. No checked numeric result is used as a live-model accuracy estimate.
+
+The capture budget is independent of generic user AI tokens: default global cap USD 50/day, free budget 2 million
+reserved tokens/month, no paid monthly token cap, and global concurrency 64. Short MySQL transactions reserve before
+HTTP, using `capture_ai_days`, `capture_ai_accounts`, and indexed `capture_ai_reservations`. Actual costs settle once;
+a timeout without usage retains its estimate. Expiring capacity never refunds uncertain spending. Provider usage
+is recorded on channel `capture`. Missing users cannot create a reservation. There is no provider call in a DB
+transaction. Actual v4 work expands local workers up to 64; the shared admission table enforces the global bound.
+
+Transport outages retry with backoff up to 24 hours. Disabled/unqualified/budget-blocked work can wait up to 30 days.
+Only finished AI jobs are eligible for the seven-day job cleanup; signals still expire at 30 days and resource
+accounting at 60. New optional resource tables are skipped by retention before migrations are installed. Migrations
+0044 and 0045 add tables/indexes only, have been applied to a disposable local MySQL, and are not applied to production.
+
+`capture_financial_version` must be `cashflow-v1` before the v4 worker makes paid calls or files movements. It defaults
+to empty because shared financial semantics/migration are not implemented yet. This is a deployment guard, not an
+operator claim that the unfinished migration is ready. Source/type qualification is rechecked before placing an
+event. Unresolved facts finish with a waiting reason and checked reading metadata, never a guessed ledger row.
+Legacy reader behavior remains available; completing the financial writer, delivery acknowledgements, user activity
+and optional category questions is still required before enabling this path.

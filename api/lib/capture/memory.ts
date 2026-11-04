@@ -25,8 +25,9 @@ export function captureHmac(purpose: string, value: string): string {
  * The memory key of the other side of a payment: a merchant by its key ("m:carrefour"), a person by an HMAC of their
  * InstaPay address or name ("p:…"), never the name itself. Null when the message names nobody to remember.
  */
-export function memoryKeyOf(counterparty: { type: string; name: string | null; merchantKey: string | null; ipa: string | null } | null): string | null {
+export function memoryKeyOf(counterparty: { type: string; name: string | null; merchantKey: string | null; ipa: string | null; identityHmac?: string } | null): string | null {
   if (!counterparty) return null;
+  if (counterparty.type === "person" && counterparty.identityHmac && /^[a-f0-9]{64}$/.test(counterparty.identityHmac)) return `p:${counterparty.identityHmac}`;
   if (counterparty.type === "merchant" && counterparty.merchantKey) return `m:${counterparty.merchantKey}`.slice(0, 140);
   if (counterparty.type === "person") {
     const identity = counterparty.ipa ?? counterparty.name?.replace(/\s+/g, " ").trim().toLowerCase();

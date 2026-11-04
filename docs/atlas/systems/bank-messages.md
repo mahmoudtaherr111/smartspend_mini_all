@@ -31,7 +31,10 @@ flowchart LR
     mod_capture_reader["Message reader"]
   end
   subgraph g_tables["MySQL tables"]
+    tbl_capture_ai_accounts[("capture_ai_accounts")]
+    tbl_capture_ai_days[("capture_ai_days")]
     tbl_capture_ai_jobs[("capture_ai_jobs")]
+    tbl_capture_ai_reservations[("capture_ai_reservations")]
     tbl_capture_consents[("capture_consents")]
     tbl_capture_devices[("capture_devices")]
     tbl_capture_events[("capture_events")]
@@ -65,6 +68,11 @@ flowchart LR
   mod_capture_ai_reader --> sys_ai_platform
   mod_capture_ai_reader --> sys_expense_capture
   mod_capture_ai_reader --> sys_platform
+  mod_capture_ai_reader -.-> tbl_local_users
+  mod_capture_ai_reader -.-> tbl_users
+  mod_capture_ai_reader ==> tbl_capture_ai_accounts
+  mod_capture_ai_reader ==> tbl_capture_ai_days
+  mod_capture_ai_reader ==> tbl_capture_ai_reservations
   mod_capture_catalog --> sys_platform
   mod_capture_catalog ==> tbl_capture_sources
   mod_capture_catalog ==> tbl_subscription_catalog
@@ -109,7 +117,7 @@ flowchart LR
 
 | Module | What it does | Files |
 | --- | --- | --- |
-| `capture-ai-reader` — Message model reader | Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server's Gemini key until then), behind the admin's switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. The unsure-message queue calls the active sms-v2 reader. The separate sms-v4 contract grounds fields in source quotes and proposes decimal-exact EGP postings; an offline CLI checks saved replies without calling a model or writing the ledger. | 4 |
+| `capture-ai-reader` — Message model reader | Layer two of capture: reads one bank or wallet message with the model the admin assigned to bank messages (the server's Gemini key until then), behind the admin's switch, the plan budget and a daily USD cap, on condensed and redacted text, one message of one user per call, with the reply checked against a versioned contract before it is used. The unsure-message queue calls the active sms-v2 reader. The separate sms-v4 contract grounds fields in source quotes and proposes decimal-exact EGP postings; an offline CLI checks saved replies without calling a model or writing the ledger. | 7 |
 | `capture-catalog` — Capture catalog | The banks, wallets, payment networks, fintech and messaging apps whose notifications are read, and the subscriptions recognised in card charges: the shipped seed, the per-process copy that reloads on an admin change, and the lookups by Android app, SMS sender and merchant name. | 3 |
 | `capture-intake` — Capture intake | Where captured bank and wallet notifications come in (decision 0028): the device tokens phones register while signed in and send with every request, the user's consents with their text version, the /api/capture/v1 routes (signals, config, a notification's button), the server's filter that keeps only what the reader reads as money that moved, the rules that merge the signals of one payment into one event (decision 0029), the user's memory of where each merchant and person is filed and which banks and kinds are recorded on their own (decision 0030), the monthly limit with the payments held over it, the queue where the admin's model reads what the reader is unsure of and the questions it leaves for the phone (decision 0031), the breaker that stops a bank whose recordings are taken back, the admin's bulk undo and the numbers per bank and kind (decision 0032), who capture is open to with the oldest build, the phones per plan and the daily cap, and the cards and phrases each user asked to ignore (decision 0033), each phone's health with the notice when one stops, the wallet suggested for a card seen in messages and deleting a user's capture data (decision 0034), the redaction that keeps a message's merchant, the admins' in-app alerts and the support timeline (decision 0035), the notice written in the phone's language, where each kind would be filed, and the user's answer, which writes the ledger through the ledger writer. | 12 |
 | `capture-reader` — Message reader | Layer one of capture, before any model: reads a bank, wallet or payment notification into what happened, which way, how much and in what currency, with which card and with whom, when, how sure it is and why (normalization with a position map, piece finders, an Arabic and English lexicon, sentences, money roles, kind and direction, the other side, the date), plus its benchmark corpus. | 12 |
@@ -160,7 +168,10 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
+| `capture_ai_accounts` | D | `capture-ai-reader` | `capture-ai-reader` |
+| `capture_ai_days` | D | `capture-ai-reader` | `capture-ai-reader` |
 | `capture_ai_jobs` | D | `capture-intake` | `capture-intake` |
+| `capture_ai_reservations` | D | `capture-ai-reader` | `capture-ai-reader` |
 | `capture_consents` | A | `capture-intake` | `capture-intake` |
 | `capture_devices` | A | `capture-intake` | `capture-intake` |
 | `capture_events` | E | `capture-intake` | `capture-intake` |
@@ -172,11 +183,11 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `capture_user_pairs` | A | `capture-intake` | `capture-intake` |
 | `expenses` | B | — | `capture-intake` |
 | `in_app_notifications` | D | `capture-intake` | — |
-| `local_users` | A | — | `capture-intake` |
+| `local_users` | A | — | `capture-ai-reader`, `capture-intake` |
 | `subscription_catalog` | A | `capture-catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` | `capture-catalog`, `captureAdmin.catalog`, `captureAdmin.restoreSeed`, `captureAdmin.saveSubscription`, `captureAdmin.setSubscriptionStatus` |
 | `system_settings` | A | `capture-intake` | — |
 | `user_wallets` | A | `capture-intake` | `capture-intake` |
-| `users` | A | — | `capture-intake` |
+| `users` | A | — | `capture-ai-reader`, `capture-intake` |
 
 ## Outside systems
 
@@ -201,7 +212,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/bank-messages.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>37 files and declarations</summary>
+<details><summary>40 files and declarations</summary>
 
 - `api/boot.ts#job:capture-ai-sweep`
 - `api/boot.ts#job:capture-breaker`
@@ -211,6 +222,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/capture-router.ts`
 - `api/capture-v1-routes.ts`
 - `api/lib/capture/access.ts`
+- `api/lib/capture/admission.ts`
 - `api/lib/capture/ai-queue.ts`
 - `api/lib/capture/ai-reader.ts`
 - `api/lib/capture/care.ts`
@@ -223,6 +235,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/capture/markers.ts`
 - `api/lib/capture/memory.ts`
 - `api/lib/capture/model-contract.ts`
+- `api/lib/capture/model-reader.ts`
 - `api/lib/capture/operations.ts`
 - `api/lib/capture/privacy.ts`
 - `api/lib/capture/reader/clauses.ts`
@@ -239,6 +252,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/capture/reader/when.ts`
 - `api/lib/capture/seed-sources.ts`
 - `api/lib/capture/seed-subscriptions.ts`
+- `api/lib/capture/vault.ts`
 - `api/lib/sms-ai-contract.ts`
 
 </details>

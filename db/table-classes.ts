@@ -148,4 +148,7 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   // Class G: Conversation (Windowed retention + summarization)
   chat_conversations: "G",
   chat_messages: "G",
+  capture_ai_days: "D",
+  capture_ai_accounts: "D",
+  capture_ai_reservations: "D",
 };

@@ -51,3 +51,5 @@ A record explains why the code looks the way it does. What the code does today i
 | [0042](0042-no-codes-until-store-offers.md) | Remove discount and referral code entry points until store offers can be honoured |
 
 | [0043](0043-capture-evidence-before-automatic-recording.md) | Ground capture facts in source evidence and evaluate the automatic-recording contract before connecting the runtime |
+
+| [0044](0044-durable-capture-worker-and-admission.md) | Bind queued identity maps cryptographically and reserve capture-only costs and capacity before HTTP |

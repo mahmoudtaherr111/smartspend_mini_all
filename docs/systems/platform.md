@@ -183,3 +183,11 @@ The settings registry defines `voice_standard_input_tpm`, `voice_standard_reserv
   profile](insights.md), [Plans and payments](billing.md): the scheduled jobs registered here.
 - [Money: expenses, wallets, budgets, goals and businesses](money.md): the rollups the reconciliation job
   repairs, and the taxonomy migration job.
+
+## Capture resource accounting
+Capture's v4 path has dedicated daily cost, per-owner monthly token and leased reservation tables, introduced by
+additive migrations 0044/0045. Daily-row locks coordinate admission and settlement across replicas; unknown billed
+usage remains reserved while capacity expires after a minute. They have 60-day retention and owner-pair indexes;
+account deletion removes user-owned budget rows but preserves the anonymous aggregate daily cost. Optional-table
+retention policies first check schema availability, so deploying disabled feature code before its migration does
+not generate missing-table retention failures. Pending capture model jobs no longer expire at seven days.

@@ -56,6 +56,8 @@ import {
   captureMemory,
   captureUserPairs,
   captureAiJobs,
+  captureAiAccounts,
+  captureAiReservations,
   whatsappMessages,
   whatsappContacts,
   captureMarkers,
@@ -115,6 +117,8 @@ export async function purgeUserData(
 
   // Capture: the notifications waiting for an answer, the consents and the phones (decision 0028).
   await tx.delete(captureAiJobs).where(userScope(captureAiJobs, userId, userType));
+  await tx.delete(captureAiReservations).where(userScope(captureAiReservations, userId, userType));
+  await tx.delete(captureAiAccounts).where(userScope(captureAiAccounts, userId, userType));
   await tx.delete(whatsappMessages).where(userScope(whatsappMessages, userId, userType));
   await tx.delete(whatsappContacts).where(userScope(whatsappContacts, userId, userType));
   await tx.delete(captureMarkers).where(userScope(captureMarkers, userId, userType));

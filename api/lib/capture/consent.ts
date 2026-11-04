@@ -4,7 +4,7 @@
  * 151/2020, so each grant is a row with the version of the text the user read, and taking it back keeps the row.
  */
 import { and, eq, isNull } from "drizzle-orm";
-import { captureConsents } from "../../../db/schema";
+import { captureConsents, localUsers, users } from "../../../db/schema";
 import type { CaptureConsentScope } from "../../../contracts/capture-intake";
 import { getDb } from "../../queries/connection";
 import type { CaptureOwner } from "./devices";
@@ -12,8 +12,8 @@ import type { CaptureOwner } from "./devices";
 /** The version of the consent text the app shows; a new text gets a new version. */
 export const CAPTURE_CONSENT_TEXT_VERSION = "2026-10-27";
 
-export async function captureConsentsOf(owner: CaptureOwner): Promise<{ capture: boolean; aiReading: boolean }> {
-  const rows = await getDb()
+export async function captureConsentsOf(owner: CaptureOwner, reader: Pick<ReturnType<typeof getDb>, "select"> = getDb()): Promise<{ capture: boolean; aiReading: boolean }> {
+  const rows = await reader
     .select({ scope: captureConsents.scope })
     .from(captureConsents)
     .where(and(eq(captureConsents.userId, owner.userId), eq(captureConsents.userType, owner.userType), isNull(captureConsents.revokedAt)));
@@ -23,7 +23,10 @@ export async function captureConsentsOf(owner: CaptureOwner): Promise<{ capture:
 
 /** Gives or takes back one consent. Giving it twice keeps the first grant. */
 export async function setCaptureConsent(owner: CaptureOwner, scope: CaptureConsentScope, granted: boolean, textVersion: string): Promise<void> {
-  const db = getDb();
+  await getDb().transaction(async (db) => {
+  const account = owner.userType === "oauth" ? users : localUsers;
+  const [alive] = await db.select({ id: account.id }).from(account).where(eq(account.id, owner.userId)).for("update");
+  if (!alive) return;
   const active = and(
     eq(captureConsents.userId, owner.userId),
     eq(captureConsents.userType, owner.userType),
@@ -38,4 +41,5 @@ export async function setCaptureConsent(owner: CaptureOwner, scope: CaptureConse
   if (!existing) {
     await db.insert(captureConsents).values({ userId: owner.userId, userType: owner.userType, scope, textVersion });
   }
+  });
 }

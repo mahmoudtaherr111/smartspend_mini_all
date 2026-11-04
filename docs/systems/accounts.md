@@ -299,3 +299,8 @@ Arabic and Persian digits are supported in fixed Egyptian phone prefixes as well
 An overlong name sets `incompleteName` rather than claiming the entire name was removed. Existing redaction callers
 keep legacy markers; capture's model caller now refuses that incomplete finding. This bounded matcher is not proof
 that an arbitrary unlabelled name has been detected.
+
+Capture consent writes now lock the identity row before changing consent, so deletion cannot race a late grant
+into recreating user data. Its transactional reader accepts the existing transaction, avoiding a second connection
+while holding a user lock. The purge also clears capture AI reservations and per-user resource counters; global daily
+cost aggregates contain no identity and remain.

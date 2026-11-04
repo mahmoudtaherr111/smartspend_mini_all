@@ -262,6 +262,12 @@ export const SETTINGS: SettingDef[] = [
   { key: "capture_p2p_ask_above", default: "1000" },
   // Question notifications a user gets a Cairo day; the rest wait in the app.
   { key: "capture_daily_question_notices", default: "2" },
+  { key: "capture_read_mode", default: "reader_first" },
+  { key: "capture_financial_version", default: "" },
+  { key: "capture_model_qualified", default: "" },
+  { key: "capture_ai_daily_cost_cap_usd", default: "50" },
+  { key: "capture_ai_tokens_free", default: "2000000" },
+  { key: "capture_ai_concurrency", default: "64" },
   { key: "whatsapp_otp_enabled", default: "true" },
   // EGP per USD for the AI cost ledger's EGP column (api/lib/ai-pricing.ts); the admin updates it as the rate moves.
   { key: "usd_to_egp_rate", default: "48.5" },
