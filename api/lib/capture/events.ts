@@ -10,6 +10,7 @@
 
 /** What a new signal is matched on. */
 export interface SignalKeys {
+  principalEgp?: number | null;
   sourceSlug?: string | null;
   /** The device and the way it arrived ("12:sms:CIB", "12:notification:com.bank.app"). */
   channelKey: string;
@@ -34,6 +35,7 @@ export interface SignalKeys {
 
 /** An event already kept for the user, with what its signals said. */
 export interface EventKeys {
+  principalEgp?: number | null;
   sourceSlug?: string | null;
   id: number;
   status: string;
@@ -123,7 +125,7 @@ function sameMoney(signal: SignalKeys, event: EventKeys): boolean {
 export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: SameText[], strict = false): Match {
   const byAge = [...events].sort((a, b) => a.firstReceivedAt.getTime() - b.firstReceivedAt.getTime());
   const sameSource = (event: EventKeys) => !!signal.sourceSlug && signal.sourceSlug === event.sourceSlug;
-  const strictMoney = (event: EventKeys) => signal.currency === event.currency ? signal.amount === event.amount
+  const strictMoney = (event: EventKeys) => signal.principalEgp != null && event.principalEgp != null ? signal.principalEgp === event.principalEgp : signal.currency === event.currency ? signal.amount === event.amount
     : signal.currency === "EGP" ? signal.amount === event.amountEgp : event.currency === "EGP" && event.amount === signal.amountEgp;
   const balanceProof = (event: EventKeys) => sameSource(event) && signal.balanceAfter !== null && signal.balanceAfter === event.balanceAfter
     && (!signal.referenceHmac || !event.referenceHmac || signal.referenceHmac === event.referenceHmac)
@@ -146,7 +148,7 @@ export function matchSignal(signal: SignalKeys, events: EventKeys[], sameText: S
       (event) =>
         event.referenceHmac === signal.referenceHmac &&
         (!strict || (sameSource(event) && directionsAgree(signal.direction, event.direction) && strictMoney(event) && !conflicts(signal, event))) &&
-        sameMoney(signal, event) &&
+        (strict ? strictMoney(event) : sameMoney(signal, event)) &&
         apart(signal.receivedAt, event.firstReceivedAt) <= MATCH_WINDOWS.reference,
     );
     if (found) return { type: "merge", eventId: found.id, rule: "reference" };

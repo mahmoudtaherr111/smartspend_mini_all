@@ -264,6 +264,7 @@ export const SETTINGS: SettingDef[] = [
   { key: "capture_daily_question_notices", default: "2" },
   { key: "capture_read_mode", default: "reader_first" },
   { key: "capture_financial_version", default: "" },
+  { key: "capture_questions_enabled", default: "false" },
   { key: "capture_model_qualified", default: "" },
   { key: "capture_ai_daily_cost_cap_usd", default: "50" },
   { key: "capture_ai_tokens_free", default: "2000000" },

@@ -5,13 +5,15 @@ import 'package:smartspend_ui/smartspend_ui.dart';
 
 void main() {
   group('formatMoney writes money as the web app does', () {
-    // The same cases as src/i18n/format.ts#formatCurrency, which rounds with toLocaleString("en-US").
+    // The same display precision as the web, including actual bank payments in piastres.
     for (final (value, arabic, english) in [
       (0, '0 ج.م', '0 EGP'),
       (85, '85 ج.م', '85 EGP'),
       (1250, '1,250 ج.م', '1,250 EGP'),
-      (1234567.6, '1,234,568 ج.م', '1,234,568 EGP'),
-      (999.5, '1,000 ج.م', '1,000 EGP'),
+      (1234567.6, '1,234,567.6 ج.م', '1,234,567.6 EGP'),
+      (999.5, '999.5 ج.م', '999.5 EGP'),
+      (85.75, '85.75 ج.م', '85.75 EGP'),
+      (0.01, '0.01 ج.م', '0.01 EGP'),
       (-1250, '-1,250 ج.م', '-1,250 EGP'),
     ]) {
       test('$value', () {

@@ -34,6 +34,7 @@ flowchart LR
   sys_accounts[["Accounts, sign-in and security (system)"]]
   sys_admin[["Admin console, support and growth tools (system)"]]
   sys_ai_center[["AI Center (system)"]]
+  sys_bank_messages[["Bank and wallet messages (system)"]]
   sys_expense_capture[["Recording spending (system)"]]
   sys_money[["Money: expenses, wallets, budgets, goals and businesses (system)"]]
   sys_platform[["Server platform and data (system)"]]
@@ -55,6 +56,7 @@ flowchart LR
   mod_web_pages --> sys_accounts
   mod_web_pages --> sys_admin
   mod_web_pages --> sys_ai_center
+  mod_web_pages --> sys_bank_messages
   mod_web_pages --> sys_expense_capture
   mod_web_pages --> sys_money
   mod_web_pages --> sys_platform
@@ -116,7 +118,7 @@ _None._
 
 Depends on: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [AI providers and usage limits](ai-platform.md), [Bank and wallet messages](bank-messages.md), [Plans and payments](billing.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Notifications and WhatsApp](notifications.md), [Server platform and data](platform.md), [Live voice assistant](voice-calls.md).
 
-Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Live voice assistant](voice-calls.md).
+Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support and growth tools](admin.md), [AI Center](ai-center.md), [Bank and wallet messages](bank-messages.md), [Recording spending](expense-capture.md), [Reports, insights and the smart profile](insights.md), [Money: expenses, wallets, budgets, goals and businesses](money.md), [Live voice assistant](voice-calls.md).
 
 ## Environment variables
 

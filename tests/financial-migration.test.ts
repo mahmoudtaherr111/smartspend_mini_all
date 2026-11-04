@@ -48,7 +48,7 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")("financial migration agai
     await updateLedgerEntry(owner, id, { description: "A later edit" });
     expect((await rollbackFinancialBatch({ owner })).skipped).toEqual([{ id, reason: "changed_after_migration" }]);
     const [row] = await db.select().from(expenses).where(eq(expenses.id, id));
-    const metadata = row.parsedMetadata as Record<string, any>;
+    const metadata = row.parsedMetadata as { cashflowMigration: { signature: string } };
     metadata.cashflowMigration.signature = "0".repeat(64);
     await db.update(expenses).set({ parsedMetadata: metadata }).where(eq(expenses.id, id));
     expect((await rollbackFinancialBatch({ owner })).skipped).toEqual([{ id, reason: "invalid_snapshot" }]);

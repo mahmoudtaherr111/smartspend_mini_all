@@ -12,10 +12,16 @@ final class CaptureServerStatus {
     this.limit = 0,
     this.held = 0,
     this.heldUntil,
+    this.automatic = false,
+    this.questionsEnabled = false,
+    this.walletTypesEnabled = false,
   });
 
   final bool enabled;
   final bool consented;
+  final bool automatic;
+  final bool questionsEnabled;
+  final bool walletTypesEnabled;
   final String consentTextVersion;
 
   /// The person lets the admin's model read the messages the code could not read with confidence (decision 0031).
@@ -247,6 +253,9 @@ class CaptureApi {
         : 0;
     return CaptureServerStatus(
       enabled: map['enabled'] == true,
+      automatic: map['mode'] == 'automatic',
+      questionsEnabled: map['questionsEnabled'] == true,
+      walletTypesEnabled: map['walletTypesEnabled'] == true,
       consented: consent is Map<String, Object?> && consent['capture'] == true,
       consentTextVersion: map['consentTextVersion'] as String? ?? '',
       aiReading:

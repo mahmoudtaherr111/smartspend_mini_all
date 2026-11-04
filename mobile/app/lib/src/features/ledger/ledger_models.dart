@@ -218,6 +218,8 @@ final class LedgerEntry {
     this.walletId,
     this.contactId,
     this.parsedMetadata,
+    this.bundleFee,
+    this.bundleTotal,
   });
 
   factory LedgerEntry.fromJson(Map<String, Object?> json) => LedgerEntry(
@@ -233,6 +235,12 @@ final class LedgerEntry {
     contactId: (json['contactId'] as num?)?.toInt(),
     parsedMetadata: json['parsedMetadata'] is Map<String, Object?>
         ? json['parsedMetadata'] as Map<String, Object?>
+        : null,
+    bundleFee: json['bundle'] is Map<String, Object?>
+        ? readAmount((json['bundle'] as Map<String, Object?>)['feeAmount'])
+        : null,
+    bundleTotal: json['bundle'] is Map<String, Object?>
+        ? readAmount((json['bundle'] as Map<String, Object?>)['totalAmount'])
         : null,
     date:
         DateTime.tryParse(
@@ -256,6 +264,9 @@ final class LedgerEntry {
   final int? walletId;
   final int? contactId;
   final Map<String, Object?>? parsedMetadata;
+  final num? bundleFee;
+  final num? bundleTotal;
+  num get displayAmount => bundleTotal ?? amount.abs();
 
   /// Versioned economic meaning from the server; never infer exclusions from a category name.
   String? get financialKind {
@@ -315,6 +326,8 @@ final class LedgerEntry {
     'walletId': walletId,
     'contactId': contactId,
     if (parsedMetadata != null) 'parsedMetadata': parsedMetadata,
+    if (bundleTotal != null)
+      'bundle': {'feeAmount': bundleFee, 'totalAmount': bundleTotal},
     'date': date.toUtc().toIso8601String(),
   };
 

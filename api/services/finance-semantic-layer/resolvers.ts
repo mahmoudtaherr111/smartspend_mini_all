@@ -1,5 +1,7 @@
 import type { InferSelectModel } from "drizzle-orm";
 import { financialBucket } from "../../../contracts/ledger-movement";
+import { walletBalancePolicies } from "../wallet-balance-policy";
+import { getSystemSettings } from "../../lib/settings-cache";
 import { ledgerBucketSql } from "../ledger-semantics";
 import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { classificationLogs, financialGoals, expenses, userContacts, userProfiles, userWallets } from "../../../db/schema";
@@ -285,7 +287,8 @@ export async function getFinancePeriodComparison(
 }
 
 export async function getWalletSummary(ctx: FinanceContext): Promise<FinanceWalletSummary> {
-  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, "wallet_summary_v2"));
+  const version = (await getSystemSettings()).capture_financial_version;
+  const key = financeCacheKey(ctx.userId, ctx.userType, scoped(ctx, `wallet_summary_v3:${version ?? "legacy"}`));
 
   return withFinanceCache(key, 60, async () => {
     const wallets = (await db
@@ -294,18 +297,21 @@ export async function getWalletSummary(ctx: FinanceContext): Promise<FinanceWall
       .where(and(eq(userWallets.userId, ctx.userId), eq(userWallets.userType, ctx.userType)))
       .orderBy(userWallets.createdAt)) as WalletRow[];
 
+    const policy = version === "cashflow-v1" ? await walletBalancePolicies(ctx) : null;
     const normalized = wallets.map((wallet) => ({
       id: wallet.id,
       name: wallet.name,
       provider: wallet.provider,
       balance: numeric(wallet.balance),
+      balanceKind: policy?.kinds.get(wallet.id) ?? "unknown",
+      cashBalanceIncluded: !policy?.creditWalletIds.has(wallet.id),
       lastFourDigits: wallet.lastFourDigits,
       observedDay: wallet.balanceObservedAt ? businessDateKey(new Date(wallet.balanceObservedAt)) : null,
       source: wallet.balanceSource ?? null,
     }));
 
     return {
-      totalBalance: normalized.reduce((sum, wallet) => sum + wallet.balance, 0),
+      totalBalance: normalized.reduce((sum, wallet) => sum + (policy?.creditWalletIds.has(wallet.id) ? 0 : wallet.balance), 0),
       walletCount: normalized.length,
       wallets: normalized,
     };
@@ -765,7 +771,7 @@ function walletFacts(need: DataNeed, summary: FinanceWalletSummary): ResolvedFac
         need.id,
         need.kind,
         `wallet_${index + 1}`,
-        `${wallet.name} (${wallet.provider}) balance=${wallet.balance}`,
+        `${wallet.name} (${wallet.provider}) balance=${wallet.balance}; balance_kind=${wallet.balanceKind ?? "unknown"}; included_in_cash=${wallet.cashBalanceIncluded !== false}`,
         1,
         [
           {

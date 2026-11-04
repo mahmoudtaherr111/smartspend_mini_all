@@ -1264,14 +1264,14 @@ model {
       }
     }
     capture = router 'capture' {
-      description 'api/capture-router.ts — 19 procedures.'
+      description 'api/capture-router.ts — 21 procedures.'
       metadata {
         file 'api/capture-router.ts'
       }
       activity = procedure 'capture.activity' {
-        #query #authed #uncalled
+        #query #authed
         technology 'authedProcedure'
-        description 'query · authedProcedure · no caller in src/'
+        description 'query · authedProcedure'
         metadata {
           file 'api/capture-router.ts'
           builder 'authedProcedure'
@@ -1279,9 +1279,19 @@ model {
         }
       }
       answer = procedure 'capture.answer' {
-        #mutation #authed #uncalled
+        #mutation #authed
         technology 'authedProcedure'
-        description 'mutation · authedProcedure · no caller in src/'
+        description 'mutation · authedProcedure'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
+      answerQuestion = procedure 'capture.answerQuestion' {
+        #mutation #authed
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure'
         metadata {
           file 'api/capture-router.ts'
           builder 'authedProcedure'
@@ -1348,6 +1358,16 @@ model {
           procedureKind 'query'
         }
       }
+      nextQuestion = procedure 'capture.nextQuestion' {
+        #mutation #authed
+        technology 'authedProcedure'
+        description 'mutation · authedProcedure'
+        metadata {
+          file 'api/capture-router.ts'
+          builder 'authedProcedure'
+          procedureKind 'mutation'
+        }
+      }
       pending = procedure 'capture.pending' {
         #query #authed #uncalled
         technology 'authedProcedure'
@@ -1399,9 +1419,9 @@ model {
         }
       }
       setWalletKind = procedure 'capture.setWalletKind' {
-        #mutation #authed #uncalled
+        #mutation #authed
         technology 'authedProcedure'
-        description 'mutation · authedProcedure · no caller in src/'
+        description 'mutation · authedProcedure'
         metadata {
           file 'api/capture-router.ts'
           builder 'authedProcedure'
@@ -1419,9 +1439,9 @@ model {
         }
       }
       status = procedure 'capture.status' {
-        #query #authed #uncalled
+        #query #authed
         technology 'authedProcedure'
-        description 'query · authedProcedure · no caller in src/'
+        description 'query · authedProcedure'
         metadata {
           file 'api/capture-router.ts'
           builder 'authedProcedure'
@@ -1439,9 +1459,9 @@ model {
         }
       }
       walletKind = procedure 'capture.walletKind' {
-        #query #authed #uncalled
+        #query #authed
         technology 'authedProcedure'
-        description 'query · authedProcedure · no caller in src/'
+        description 'query · authedProcedure'
         metadata {
           file 'api/capture-router.ts'
           builder 'authedProcedure'

@@ -3937,4 +3937,120 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helpTicketReply => 'Support replied';
+
+  @override
+  String get captureAutomaticTitle => 'Bank messages';
+
+  @override
+  String get captureAutomaticBody =>
+      'Payments are recorded automatically. Missing financial facts wait for clear evidence.';
+
+  @override
+  String get captureStateRecorded => 'Recorded';
+
+  @override
+  String get captureStateProcessing => 'Reading message';
+
+  @override
+  String get captureStateWaiting => 'Waiting for more evidence';
+
+  @override
+  String get captureStateHeld => 'Held over your plan limit';
+
+  @override
+  String get captureStateRemoved => 'Removed';
+
+  @override
+  String get capturePurposeQuestion => 'What was this payment for?';
+
+  @override
+  String get capturePurposeOptional =>
+      'Optional. The payment is already saved.';
+
+  @override
+  String get capturePurposeCategory => 'Category';
+
+  @override
+  String get capturePurposeSubcategory => 'Subcategory';
+
+  @override
+  String get capturePurposeLabel =>
+      'Or describe the purpose, such as nursery fees';
+
+  @override
+  String get capturePurposeSave => 'Save category';
+
+  @override
+  String get capturePurposeOwn => 'Between my accounts';
+
+  @override
+  String get capturePurposeCardPayment => 'Repaying my card';
+
+  @override
+  String get capturePurposeKeep => 'Keep current category';
+
+  @override
+  String get capturePurposeSkip => 'Skip';
+
+  @override
+  String get captureChangeFailed => 'Could not save the change. Try again.';
+
+  @override
+  String get captureFeeInvalid => 'Enter a valid fee or zero.';
+
+  @override
+  String get capturePrincipalLabel => 'Amount before fees';
+
+  @override
+  String get captureFeeLabel => 'Fees';
+
+  @override
+  String get captureAutomaticConsentBody =>
+      'We read messages from enabled bank and wallet sources and send them to SmartSpend. Detected numbers and names are hidden before each message is read by the approved AI provider. Known codes and personal messages are filtered. Clear financial movements are recorded automatically with undo; incomplete facts wait. Redacted messages and temporary classification data expire after 30 days; over-limit held movements after 60 days. Saved ledger entries remain. You can stop sending, withdraw consent and delete capture data in settings.';
+
+  @override
+  String get captureRenewConsent =>
+      'Automatic recording needs renewed consent to read every redacted bank message.';
+
+  @override
+  String get captureAutomaticAiTitle => 'AI message reading';
+
+  @override
+  String get captureAutomaticAiBody =>
+      'Each enabled bank message is read by the approved provider after detected private data is hidden. Turning this off stops automatic recording.';
+
+  @override
+  String get walletKindFailed => 'Could not save the balance type. Try again.';
+
+  @override
+  String get walletKindUnknown => 'Not specified';
+
+  @override
+  String get walletKindCash => 'Cash or e-wallet';
+
+  @override
+  String get walletKindBank => 'Bank account';
+
+  @override
+  String get walletKindDebit => 'Debit card';
+
+  @override
+  String get walletKindCredit => 'Credit card';
+
+  @override
+  String get walletBalanceKindTitle => 'Balance type';
+
+  @override
+  String get walletBalanceKindBody =>
+      'Available credit is not cash. Choosing a type keeps balances and cash forecasts clearer.';
+
+  @override
+  String get walletCreditAvailable => 'Available credit';
+
+  @override
+  String get capturePurposePerson => 'Person (optional)';
+
+  @override
+  String get captureAutomaticStopped =>
+      'Automatic recording is stopped until you consent to reading. Saved entries remain available to edit.';
 }

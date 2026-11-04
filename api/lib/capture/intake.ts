@@ -28,8 +28,8 @@ import { businessDateKey } from "../app-time";
 import { getSystemSettings } from "../settings-cache";
 import { createLogger } from "../log";
 import { getCaptureCatalog, sourceForPackage, sourceForSender, subscriptionForMerchant, type CaptureCatalog, type CaptureSource } from "./catalog";
-import { captureConsentsOf } from "./consent";
-import { captureIgnoreRulesOf, isIgnored, walletBalanceKind, type CaptureIgnoreRules } from "./markers";
+import { CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION, captureConsentsOf } from "./consent";
+import { captureIgnoreRulesOf, isIgnored, isPrivateIdentityIgnored, walletBalanceKind, type CaptureIgnoreRules } from "./markers";
 import { merchantNamesToKeep, redactKeeping } from "./keep-merchants";
 import type { CaptureDevice, CaptureOwner } from "./devices";
 import { matchSignal, MATCH_WINDOWS, type EventKeys, type SignalKeys } from "./events";
@@ -51,6 +51,8 @@ import type { CaptureModelReply, CapturePostingProposal } from "./model-contract
 import { financialMovement, type MovementKind } from "../../../contracts/ledger-movement";
 import { captureQualification } from "./model-reader";
 import { adoptEarlierFee, declaredFeeParent } from "./fees";
+import { enqueuePurposeQuestion, needsPurposeQuestion } from "./questions";
+import { contactFromIdentity } from "./identity-links";
 
 const log = createLogger("capture-intake");
 
@@ -136,7 +138,7 @@ export interface SignalReading {
   balanceAfter: KeptMoney | null;
   cardSuffix: string | null;
   accountSuffix: string | null;
-  counterparty: { type: string; name: string | null; merchantKey: string | null; phoneTail: string | null; ipa: string | null; identityHmac?: string } | null;
+  counterparty: { type: string; name: string | null; merchantKey: string | null; phoneTail: string | null; ipa: string | null; identityHmac?: string; identityKind?: "phone" | "name" } | null;
   occurredAt: string;
   /** The time came from the message itself, not from when the phone received it. */
   timeFromMessage: boolean;
@@ -275,7 +277,8 @@ export function suggestLedgerEntry(reading: SignalReading, catalog: CaptureCatal
   if (reading.captureV4?.reply?.category && from === "default") {
     const category = CATEGORIES.find((item) => item.id === reading.captureV4!.reply!.category);
     if (category && (category.type === "transfer" || category.type === (reading.direction === "in" ? "income" : "expense"))) {
-      filing = { type: reading.direction === "in" ? "income" : "expense", direction: null, categoryId: category.id, subCategoryId: category.subcategories[0]?.id ?? "" };
+      filing = { type: reading.direction === "in" ? "income" : "expense", direction: null, categoryId: category.id,
+        subCategoryId: category.id === filing.categoryId ? filing.subCategoryId : category.subcategories.find((sub) => sub.name_ar === "عام")?.id ?? "" };
       from = "model";
     }
   }
@@ -521,7 +524,7 @@ export async function releaseHeldEvents(owner: CaptureOwner, now = new Date()): 
       const reading = event.reading as SignalReading | null;
       const policy = autoPolicyOf(settings);
       if (reading?.captureV4) {
-        const consent = await captureConsentsOf(owner, tx);
+        const consent = await captureConsentsOf(owner, tx, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION);
         if (!consent.capture || !consent.aiReading || settings.capture_enabled !== "true" || settings.capture_financial_version !== "cashflow-v1"
           || !policy.v4Pairs?.has(`${reading.sourceSlug}:${reading.captureV4.reply?.type}`) || policy.paused.has(reading.sourceSlug ?? "")) return;
       }
@@ -612,7 +615,9 @@ const channelKeyOf = (deviceId: number, channel: string, slugOrApp: string | nul
 const money = (value: string | null): number | null => (value === null ? null : Number(value));
 
 function eventKeysOf(row: typeof captureEvents.$inferSelect): EventKeys {
+  const posting = (row.reading as { capturePosting?: { principalEgp?: unknown } } | null)?.capturePosting;
   return {
+    principalEgp: typeof posting?.principalEgp === "string" && /^\d+\.\d{2}$/.test(posting.principalEgp) ? Number(posting.principalEgp) : null,
     sourceSlug: row.sourceSlug,
     id: row.id,
     status: row.status,
@@ -738,6 +743,7 @@ export async function placeSignal(tx: LedgerTx, run: IntakeRun, input: SignalToP
   // Built from what the signal row keeps (its source), so a stored signal gives the same key back.
   const channelKey = channelKeyOf(device.deviceId, input.channel, input.sourceSlug);
   const keys: SignalKeys = {
+    principalEgp: reading.captureV4?.posting?.status === "ready" ? Number(reading.captureV4.posting.principalEgp) : null,
     sourceSlug: input.sourceSlug,
     channelKey,
     deviceId: device.deviceId,
@@ -1017,6 +1023,7 @@ export async function ingestSignals(device: CaptureDevice, request: CaptureSigna
       const privateText = modelFirst ? prepareCaptureText(signal.text) : null;
       if (privateText && !privateText.ok) return { id: signal.id, result: privateText.codes.includes("otp") ? "ignored" : "rejected", reason: privateText.codes.includes("otp") ? "otp" : "redaction_failed" };
       if (privateText?.ok) {
+        if (isPrivateIdentityIgnored(run.ignore, privateText.value)) return { id: signal.id, result: "ignored", reason: "user_ignored" };
         reading.captureV4 = { envelope: sealCaptureText(privateText.value, { userId: device.userId, userType: device.userType as "oauth" | "local", deviceId: device.deviceId, clientSignalId: signal.id }) };
         // The shadow is diagnostic only; no stale amount/party drives v4 filing or survives as plaintext identity data.
         reading.counterparty = null;
@@ -1147,6 +1154,7 @@ async function recordEventInTx(
     : ["atm_withdrawal", "cash_out", "cash_in", "cash_deposit"].includes(reading.kind) ? "cash_transfer"
       : reading.kind === "card_payment" ? "card_payment" : reading.captureV4?.reply?.ownership === "own" ? "own_transfer" : undefined;
   const fee = reading.captureV4?.posting?.status === "ready" ? Number(reading.captureV4.posting.feeEgp) : 0;
+  const categoryPending = !refundOf && needsPurposeQuestion(reading, suggestion);
   const party = reading.counterparty?.name ?? (reading.counterparty?.phoneTail ? `••${reading.counterparty.phoneTail}` : null);
   const description = [reading.captureV4 ? KIND_LABELS[reading.kind]?.ar : null, party, reading.sourceName?.ar].filter(Boolean).join(" · ") || names.category;
 
@@ -1164,6 +1172,7 @@ async function recordEventInTx(
       source: "sms",
       date: new Date(reading.occurredAt),
       walletId: event.walletId,
+      contactId: reading.captureV4 ? await contactFromIdentity(tx, owner, memoryKey, reading.counterparty?.identityKind) : null,
       clientRequestId: `cap:e${event.id}`,
       parsedMetadata: {
         ...(direction ? { direction } : {}),
@@ -1175,8 +1184,9 @@ async function recordEventInTx(
           ...(reading.captureV4 ? { details: { feeEgp: fee, originalAmount: reading.amount, via: reading.captureV4.reply?.via,
             party: party, partyType: reading.captureV4.reply?.partyType, cardSuffix: reading.cardSuffix, accountSuffix: reading.accountSuffix,
             recurring: reading.captureV4.reply?.recurring ?? false, memoryKey,
-            categoryPending: suggestion.from === "default", promptVersion: "sms-v4" } } : {}),
-          ...(options.auto ? { auto: true, provisional: suggestion.from === "default" } : {}),
+            identityKind: reading.counterparty?.identityKind,
+            categoryPending, promptVersion: "sms-v4" } } : {}),
+          ...(options.auto ? { auto: true, provisional: reading.captureV4 ? categoryPending : suggestion.from === "default" } : {}),
         },
       },
     },
@@ -1191,11 +1201,13 @@ async function recordEventInTx(
         parsedMetadata: { capture: { feeOfEventId: event.id, parentExpenseId: expenseId, source: reading.sourceSlug } } }]);
     }
   }
+  if (categoryPending) await enqueuePurposeQuestion(tx, owner, event.id, expenseId, names.category, names.subCategory);
   // A row the user recorded counts for their streak; one recorded on its own does not (the owner's decision).
   if (!options.auto) await bumpStreakInTx(tx, owner);
   await tx
     .update(captureEvents)
-    .set({ status: "recorded", expenseId, autoRecorded: options.auto, linkedEventId: refundOf?.eventId ?? null, reading: null, resolvedAt: new Date() })
+    .set({ status: "recorded", expenseId, autoRecorded: options.auto, linkedEventId: refundOf?.eventId ?? null,
+      reading: reading.captureV4?.posting?.status === "ready" ? { capturePosting: reading.captureV4.posting } : null, resolvedAt: new Date() })
     .where(and(eq(captureEvents.id, event.id), mine));
 
   // The wallet's balance follows the bank's message when the message is newer than what the wallet holds.

@@ -93,6 +93,7 @@ flowchart LR
   mod_ledger --> sys_expense_capture
   mod_ledger --> sys_notifications
   mod_ledger --> sys_platform
+  mod_ledger -.-> tbl_capture_markers
   mod_ledger -.-> tbl_user_wallets
   mod_ledger ==> tbl_capture_events
   mod_ledger ==> tbl_expense_daily_rollups
@@ -108,8 +109,10 @@ flowchart LR
   page_Home --> router_business
   page_Home --> router_expense
   page_Home --> router_goals
+  page_Home --> router_profile
   page_PlanPage --> router_coach
   page_PlanPage --> router_profile
+  page_WalletsPage --> router_coach
   page_WalletsPage --> router_wallet
   router_budget --> mod_ledger
   router_budget --> sys_accounts
@@ -151,9 +154,12 @@ flowchart LR
   router_goals -.-> tbl_expenses
   router_goals ==> tbl_financial_goals
   router_goals ==> tbl_user_budgets
+  router_profile --> mod_ledger
   router_profile --> sys_accounts
   router_profile --> sys_ai_center
+  router_profile --> sys_bank_messages
   router_profile --> sys_expense_capture
+  router_profile --> sys_platform
   router_profile ==> tbl_expenses
   router_profile ==> tbl_scheduled_cashflows
   router_profile ==> tbl_user_contacts
@@ -180,8 +186,8 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `coaching` — Commitments and coaching plans | Scheduled commitments and expected income with their due dates (the 31st on a short month's last day), the payments linked to each due date without counting one twice, what is free until the next payday from the recorded wallets, the coaching plan the user accepted with its steps, and in-app reminders delivered once per step revision. | 3 |
-| `ledger` — Ledger writer and aggregates | The ledger writer (adding, changing and removing an expense row in one transaction with its signed amount, rollup delta, contact count, settlements and the streak, then clearing muscle memory and the finance caches and checking budgets), daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer). | 9 |
-| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses, goals, and the cards and wallets screen. | 19 |
+| `ledger` — Ledger writer and aggregates | The ledger writer (adding, changing and removing an expense row in one transaction with its signed amount, rollup delta, contact count, settlements and the streak, then clearing muscle memory and the finance caches and checking budgets), daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer). | 11 |
+| `web-finance` — Finance UI | Home dashboard (summaries, calendar, charts, search, streaks), recent expenses, goals, and the cards and wallets screen. | 20 |
 
 ## API procedures
 
@@ -204,7 +210,7 @@ flowchart LR
 | `coach.addCashflow` | mutation | `authedProcedure` | — | — | `More`, `PlanPage` |
 | `coach.cancelReminder` | mutation | `authedProcedure` | — | — | `More`, `PlanPage` |
 | `coach.endPlan` | mutation | `authedProcedure` | — | — | `More`, `PlanPage` |
-| `coach.overview` | query | `authedProcedure` | — | — | `More`, `PlanPage` |
+| `coach.overview` | query | `authedProcedure` | — | — | `More`, `PlanPage`, `WalletsPage` |
 | `coach.paymentSuggestions` | query | `authedProcedure` | — | — | `More`, `PlanPage` |
 | `coach.setReminder` | mutation | `authedProcedure` | — | — | `More`, `PlanPage` |
 | `coach.setStepStatus` | mutation | `authedProcedure` | — | — | `More`, `PlanPage` |
@@ -233,7 +239,7 @@ flowchart LR
 | `goals.setStatus` | mutation | `authedProcedure` | — | `financial_goals` | — |
 | `profile.addContact` | mutation | `authedProcedure` | `user_contacts` | `user_contacts` | `More`, `Settings` |
 | `profile.deleteContact` | mutation | `authedProcedure` | `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `More`, `Settings` |
-| `profile.listContacts` | query | `authedProcedure` | `expenses`, `user_contacts` | — | `More`, `PlanPage`, `Settings` |
+| `profile.listContacts` | query | `authedProcedure` | `expenses`, `user_contacts` | — | `Home`, `More`, `PlanPage`, `Settings` |
 | `profile.mergeContacts` | mutation | `authedProcedure` | `expenses`, `user_contacts`, `user_profiles` | `expenses`, `scheduled_cashflows`, `user_contacts`, `user_profiles` | `More`, `Settings` |
 | `profile.updateContact` | mutation | `authedProcedure` | `user_contacts` | `user_contacts` | `More`, `Settings` |
 | `wallet.createWallet` | mutation | `authedProcedure` | — | `user_wallets` | `More`, `WalletsPage` |
@@ -259,7 +265,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | --- | --- | --- | --- |
 | `business_categories` | A | `business.addCategory`, `business.create`, `business.delete`, `business.removeCategory`, `business.updateCategory` | `business.get`, `business.removeCategory`, `business.updateCategory` |
 | `capture_events` | E | `ledger` | `ledger` |
-| `capture_markers` | A | `wallet.deleteWallet` | — |
+| `capture_markers` | A | `wallet.deleteWallet` | `ledger` |
 | `cashflow_settlements` | C | `coaching` | `coaching`, `expense.listInstallmentPlans` |
 | `classification_logs` | E | `expense.update` | `expense.update` |
 | `coaching_plans` | C | `coaching` | `coaching` |
@@ -300,7 +306,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/money.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>67 files and declarations</summary>
+<details><summary>70 files and declarations</summary>
 
 - `api/boot.ts#job:coaching-reminders`
 - `api/boot.ts#job:nightly-rollup-reconciliation`
@@ -344,8 +350,10 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/services/financial-migration.ts`
 - `api/services/financial-month.ts`
 - `api/services/installments.ts`
+- `api/services/ledger-bundles.ts`
 - `api/services/ledger-semantics.ts`
 - `api/services/ledger-writer.ts`
+- `api/services/wallet-balance-policy.ts`
 - `api/wallet-router.ts`
 - `src/components/budgets/BudgetsPanel.tsx`
 - `src/components/dashboard/BehaviorInsights.tsx`
@@ -366,6 +374,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `src/components/installments/InstallmentsPanel.tsx`
 - `src/components/seasons/SeasonsPanel.tsx`
 - `src/components/wallets/DigitalBankingSuite.tsx`
+- `src/components/wallets/WalletBalanceKind.tsx`
 - `src/pages/Home.tsx`
 - `src/pages/PlanPage.tsx`
 - `src/pages/WalletsPage.tsx`

@@ -55,6 +55,7 @@ flowchart LR
     tbl_capture_devices[("capture_devices")]
     tbl_capture_events[("capture_events")]
     tbl_capture_markers[("capture_markers")]
+    tbl_capture_questions[("capture_questions")]
     tbl_capture_signals[("capture_signals")]
     tbl_capture_sources[("capture_sources")]
     tbl_cashflow_settlements[("cashflow_settlements")]
@@ -240,6 +241,7 @@ flowchart LR
   mod_jobs ==> tbl_capture_ai_jobs
   mod_jobs ==> tbl_capture_ai_reservations
   mod_jobs ==> tbl_capture_events
+  mod_jobs ==> tbl_capture_questions
   mod_jobs ==> tbl_capture_signals
   mod_jobs ==> tbl_chat_messages
   mod_jobs ==> tbl_classification_logs
@@ -328,6 +330,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `capture_devices` | A | — | `api-routers` |
 | `capture_events` | E | `jobs` | — |
 | `capture_markers` | A | `api-routers` | — |
+| `capture_questions` | E | `jobs` | — |
 | `capture_signals` | E | `jobs` | — |
 | `capture_sources` | A | `api-routers` | `api-routers` |
 | `cashflow_settlements` | C | — | `api-routers` |

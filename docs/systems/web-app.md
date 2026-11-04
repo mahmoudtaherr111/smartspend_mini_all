@@ -154,3 +154,10 @@ Checked against the code; each one names where it lives.
 
 
 The shared transaction display reads validated financial metadata before legacy category-name heuristics. Canonical loans display as spending/income; internal movements display as transfers/investments. Editing preserves this meaning unless the user deliberately changes kind.
+
+
+The shared money formatter preserves up to two decimal places instead of rounding bank amounts to whole pounds.
+The automatic-capture card on Home shows bounded activity with foreground polling, optional post-save feedback and
+undo. It never renders the legacy record-confirmation button for automatic activity. The Flutter implementation
+uses the same semantics and server-generated procedure names, honors amount privacy, refreshes on resume and is
+covered at 200% text scale/offline. A summary income row wraps at that scale rather than overflowing.

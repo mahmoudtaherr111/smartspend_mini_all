@@ -27,6 +27,7 @@ import { applyExpenseRollupDelta, expenseToRollupDelta, ledgerAmount } from "./e
 import { invalidateFinanceUserCache } from "./finance-semantic-layer";
 import { normalizeFinancialMovement, financialMovement, movementOf, type MovementKind } from "../../contracts/ledger-movement";
 import { getSystemSettings } from "../lib/settings-cache";
+import { rememberIdentityContact } from "../lib/capture/identity-links";
 import { CATEGORIES } from "../../contracts/categories";
 import { ExpenseInputLimits } from "../../contracts/constants";
 
@@ -69,6 +70,9 @@ export interface NewLedgerEntry {
 
 /** What an edit changes; anything left undefined is kept. `amount` is a magnitude. */
 export interface LedgerEntryChange {
+  /** Internal post-save capture feedback; HTTP callers expose only the purpose-question contract. */
+  capturePurpose?: string;
+  captureCategoryResolved?: boolean;
   linkedFeeAmount?: number;
   counterWalletId?: number | null;
   direction?: "incoming" | "outgoing";
@@ -345,6 +349,10 @@ export async function updateLedgerEntryInTx(tx: LedgerTx, owner: LedgerOwner, id
   const [row] = await tx.select().from(expenses).where(own).limit(1).for("update");
   if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
   await assertWalletsInTx(tx, owner, [change.walletId, change.counterWalletId]);
+  if (change.contactId) {
+    const [contact] = await tx.select({ id: userContacts.id }).from(userContacts).where(and(eq(userContacts.id, change.contactId), eq(userContacts.userId, owner.userId), eq(userContacts.userType, owner.userType)));
+    if (!contact) throw new TRPCError({ code: "BAD_REQUEST", message: "الشخص مش موجود في حسابك." });
+  }
 
   // The stored sign follows the kind and whether the money came back: a refund is a negative expense, anything
   // else is positive.
@@ -378,7 +386,20 @@ export async function updateLedgerEntryInTx(tx: LedgerTx, owner: LedgerOwner, id
   }
   if (!financialEnabled && change.direction) set.parsedMetadata = { ...(row.parsedMetadata as Record<string, unknown> | null), direction: change.direction };
 
+  const capturedMetadata = row.parsedMetadata as { capture?: { details?: Record<string, unknown> } } | null;
+  const filingChanged = (change.category !== undefined && change.category !== row.category) || (change.subCategory !== undefined && change.subCategory !== row.subCategory);
+  if (capturedMetadata?.capture && (change.captureCategoryResolved || change.capturePurpose || filingChanged)) {
+    set.parsedMetadata = { ...(set.parsedMetadata as Record<string, unknown> | undefined ?? row.parsedMetadata as Record<string, unknown> | null),
+      capture: { ...capturedMetadata.capture, provisional: false, details: { ...capturedMetadata.capture.details, categoryPending: false,
+        ...(change.capturePurpose ? { purpose: change.capturePurpose.trim().slice(0, 200) } : {}) } } };
+  }
+
   await tx.update(expenses).set(set).where(own);
+  if (change.contactId !== undefined && change.contactId !== row.contactId) {
+    if (row.contactId) await tx.update(userContacts).set({ transactionCount: sql`GREATEST(COALESCE(${userContacts.transactionCount}, 1) - 1, 0)` }).where(and(eq(userContacts.id, row.contactId), eq(userContacts.userId, owner.userId), eq(userContacts.userType, owner.userType)));
+    if (change.contactId) await tx.update(userContacts).set({ transactionCount: sql`COALESCE(${userContacts.transactionCount}, 0) + 1` }).where(and(eq(userContacts.id, change.contactId), eq(userContacts.userId, owner.userId), eq(userContacts.userType, owner.userType)));
+    await rememberIdentityContact(tx, owner, capturedMetadata?.capture?.details?.memoryKey, capturedMetadata?.capture?.details?.identityKind, change.contactId);
+  }
   await updateLinkedFeeInTx(tx, owner, row, change);
   await reconcileSettlementsOf(tx, owner, id);
 
@@ -395,13 +416,15 @@ export async function updateLedgerEntryInTx(tx: LedgerTx, owner: LedgerOwner, id
   // A row recorded from a bank message that the user files elsewhere teaches where that merchant goes next time
   // (decision 0030).
   const captured = (row.parsedMetadata as { capture?: { eventId?: unknown } } | null)?.capture?.eventId;
-  if (typeof captured === "number" && set.category !== undefined && set.category !== row.category) {
+  if (typeof captured === "number" && ((set.category !== undefined && set.category !== row.category) || (set.subCategory !== undefined && set.subCategory !== row.subCategory))) {
     const [event] = await tx
       .select({ merchantKey: captureEvents.merchantKey })
       .from(captureEvents)
       .where(and(eq(captureEvents.id, captured), eq(captureEvents.userId, owner.userId), eq(captureEvents.userType, owner.userType)));
-    const filing = idsOfNames(set.category, set.subCategory ?? null);
-    if (event?.merchantKey && filing) await rememberFiling(tx, owner, `m:${event.merchantKey}`.slice(0, 140), filing);
+    const filing = idsOfNames(set.category ?? row.category, set.subCategory ?? row.subCategory);
+    const privateKey = capturedMetadata?.capture?.details?.memoryKey;
+    const memoryKey = typeof privateKey === "string" && /^[mp]:.{1,138}$/.test(privateKey) ? privateKey : event?.merchantKey ? `m:${event.merchantKey}`.slice(0, 140) : null;
+    if (memoryKey && filing) await rememberFiling(tx, owner, memoryKey, filing);
   }
   return row;
 }

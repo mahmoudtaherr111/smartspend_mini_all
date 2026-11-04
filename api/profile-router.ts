@@ -2,6 +2,9 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
 import { db } from "./queries/connection";
+import { lockLedgerOwner } from "./services/ledger-writer";
+import { mergeIdentityContact, removeIdentityContact } from "./lib/capture/identity-links";
+import { getSystemSettings } from "./lib/settings-cache";
 import {
   expenses,
   monthlyBehaviorSnapshots,
@@ -929,6 +932,9 @@ export const profileRouter = router({
       }
 
       await db.transaction(async (tx) => {
+        const owner = { userId: ctx.user.id as number, userType: ctx.user.type };
+        await lockLedgerOwner(tx, owner, "NOT_FOUND");
+        if ((await getSystemSettings(tx, { keys: ["capture_financial_version"] })).capture_financial_version === "cashflow-v1") await removeIdentityContact(tx, owner, input.id);
         await tx
           .update(expenses)
           .set({ contactId: null })
@@ -1034,6 +1040,11 @@ export const profileRouter = router({
       const mergedBusinessId = primary.businessId || secondary.businessId;
 
       await db.transaction(async (tx) => {
+        const owner = { userId: ctx.user.id as number, userType: ctx.user.type };
+        await lockLedgerOwner(tx, owner, "NOT_FOUND");
+        const current = await tx.select({ id: userContacts.id }).from(userContacts).where(and(eq(userContacts.userId, owner.userId), eq(userContacts.userType, owner.userType), sql`${userContacts.id} IN (${primary.id}, ${secondary.id})`)).for("update");
+        if (current.length !== 2) throw new TRPCError({ code: "NOT_FOUND", message: "الشخص مش موجود في حسابك." });
+        if ((await getSystemSettings(tx, { keys: ["capture_financial_version"] })).capture_financial_version === "cashflow-v1") await mergeIdentityContact(tx, owner, secondary.id, primary.id);
         await tx
           .update(expenses)
           .set({ contactId: primary.id })

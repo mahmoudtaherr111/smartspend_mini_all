@@ -282,3 +282,9 @@ Checked against the code; each one names where it lives.
 
 
 Confirmed expense-create and recategorize actions now use the shared ledger writer. Create carries an action-scoped idempotency key and preserves place/date. Recategorization and undo apply rollup deltas, keep later unrelated fields, and restore financial nature from the prior snapshot. Finance transaction filters and facts use economic buckets, excluding internal movement from ordinary spending queries.
+
+
+Wallet facts now identify credit availability separately and exclude known credit from the reported cash total.
+Cache keys distinguish financial cutover mode; changing wallet policy invalidates the owner's finance facts. The
+ledger lookup/list layer annotates a captured principal/fee display bundle without nesting or changing the existing
+flat row shape. Loan standing and cashflow matching use validated economic nature rather than category wording.

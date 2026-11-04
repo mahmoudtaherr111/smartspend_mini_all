@@ -307,6 +307,11 @@ views {
     include *
   }
 
+  view module_web_bank_capture of smartspend.web.modules.web-bank-capture {
+    title 'Module · Automatic bank capture activity'
+    include *
+  }
+
   view module_web_capture of smartspend.web.modules.web-capture {
     title 'Module · Expense entry UI'
     include *

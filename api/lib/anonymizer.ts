@@ -77,28 +77,28 @@ const GROUPED_NUMBER = new RegExp(`${NO_DIGIT_BEFORE}${D}{4}(?:[ -]${D}{4}){2,3}
 const LONG_NUMBER = new RegExp(`${NO_DIGIT_BEFORE}${D}{12,}${NO_DIGIT_AFTER}`, "gu");
 
 /** A card or account masked by the bank except its last four digits: **1234, ****1234, XXXX-1234. */
-const MASKED_CARD = new RegExp(`(?:[*•]{2,}|[xX]{4,})[\\s-]?(${D}{4})${NO_DIGIT_AFTER}`, "gu");
+const MASKED_CARD = new RegExp(`(?:[*•]{2,}|[xX]{4,})[\\s-]?(${D}{3,4})${NO_DIGIT_AFTER}`, "gu");
 
 /** "ending with 1234", "ends in 1234", "last 4 digits 1234". */
 const ENDING_EN = new RegExp(
-  `${START}(?:(?:ending|ends|ended)(?:\\s+(?:with|in|by))?|last\\s+(?:4|four)\\s+digits?(?:\\s+(?:of|are|is))?)\\s*(?:no\\.?|number|#)?\\s*[:#-]?\\s*(${D}{4})${NO_DIGIT_AFTER}`,
+  `${START}(?:(?:ending|ends|ended)(?:\\s+(?:with|in|by))?|last\\s+(?:4|four)\\s+digits?(?:\\s+(?:of|are|is))?)\\s*(?:no\\.?|number|#)?\\s*[:#-]?\\s*(${D}{3,4})${NO_DIGIT_AFTER}`,
   "giu",
 );
 /** "المنتهية ب 1234", "المنتهي برقم ١٢٣٤", "آخر 4 أرقام 1234". */
 const ENDING_AR = new RegExp(
-  `(?:(?:ال)?(?:منتهي[ةه]?|تنتهي|ينتهي)\\s*(?:بـ?|برقم|بالرقم|بالأرقام|بالارقام|بأرقام|بارقام)?|[آا]خر\\s+(?:${D}|أربع[ةه]?|اربع[ةه]?)\\s+(?:أرقام|ارقام))\\s*[:#-]?\\s*(${D}{4})${NO_DIGIT_AFTER}`,
+  `(?:(?:ال)?(?:منتهي[ةه]?|تنتهي|ينتهي)\\s*(?:بـ?|برقم|بالرقم|بالأرقام|بالارقام|بأرقام|بارقام)?|[آا]خر\\s+(?:${D}|أربع[ةه]?|اربع[ةه]?)\\s+(?:أرقام|ارقام))\\s*[:#-]?\\s*(${D}{3,4})${NO_DIGIT_AFTER}`,
   "gu",
 );
 /** The letters Arabic writes attached to a word: و، ف، ب، ل، لل ("بالبطاقة" is ب + البطاقة). */
 const AR_PREFIX = "(?:[وفبل]|لل)?";
 /** "card 1234", "بطاقة رقم 1234", "كارت ١٢٣٤", unless the four digits are an amount. */
 const CARD_WORD = new RegExp(
-  `${START}(?:(?:credit\\s+|debit\\s+|prepaid\\s+)?card|visa|mastercard|meeza|${AR_PREFIX}(?:بطاق[ةه]|بطاقتك|البطاق[ةه]|كارت|الكارت|كارتك|فيزا|ميزة))\\s*(?:no\\.?|number|رقم|برقم|#)?\\s*[:#-]?\\s*(${D}{4})${NO_DIGIT_AFTER}${NOT_AN_AMOUNT}`,
+  `${START}(?:(?:credit\\s+|debit\\s+|prepaid\\s+)?card|visa|mastercard|meeza|${AR_PREFIX}(?:بطاق[ةه]|بطاقتك|البطاق[ةه]|كارت|الكارت|كارتك|فيزا|ميزة))\\s*(?:no\\.?|number|رقم|برقم|#)?\\s*[:#-]?\\s*(${D}{3,4})${NO_DIGIT_AFTER}${NOT_AN_AMOUNT}`,
   "giu",
 );
 /** "account no. 123456", "حساب رقم 1234", "محفظة رقم 5678". */
 const ACCOUNT_WORD = new RegExp(
-  `${START}(?:account|acct|a\\/c|wallet|${AR_PREFIX}(?:حساب|حسابك|الحساب|محفظ[ةه]|محفظتك|المحفظ[ةه]))\\s*(?:no\\.?|number|رقم|برقم|#)\\s*[:#-]?\\s*(${D}{4,11})${NO_DIGIT_AFTER}${NOT_AN_AMOUNT}`,
+  `${START}(?:account|acct|a\\/c|wallet|${AR_PREFIX}(?:حساب|حسابك|الحساب|محفظ[ةه]|محفظتك|المحفظ[ةه]))\\s*(?:no\\.?|number|رقم|برقم|#)\\s*[:#-]?\\s*(${D}{3,11})${NO_DIGIT_AFTER}${NOT_AN_AMOUNT}`,
   "giu",
 );
 

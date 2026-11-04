@@ -15,7 +15,7 @@ next, `docs/decisions/0022-flutter-mobile-app.md`; rules for the code, `mobile/A
   (Central Bank of Egypt). Their bank and wallet messages are where our data comes from, so the vocabulary of those
   messages (تحويل، سحب، إيداع، رصيد) is familiar.
 - **Arabic first, in Egyptian Arabic**, with Western digits, as the web app shows money
-  (`src/i18n/format.ts#formatCurrency`: «1,250 ج.م»).
+  (`src/i18n/format.ts#formatCurrency`: «1,250 ج.م», retaining up to two decimal places for piastres).
 - **Money is sensitive.** Egypt's personal data protection law (151 of 2020) has executive regulations since November
   2025, with enforcement expected from about November 2026; app stores also ask how financial data is used.
   Trust is earned on every screen.

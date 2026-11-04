@@ -197,3 +197,10 @@ The settings accessor accepts an existing transaction for an uncached read on th
 
 
 Capture duplicate-evidence waiting events share the 30-day review retention policy. The settings accessor share-lock mode also gates post-provider writes against an operator stop or qualification change.
+
+
+Migration 0046 adds only `capture_questions`, with owner/event uniqueness and owner/status/day plus retention indexes,
+relations in application code and storage class E. Optional-table checks in the existing purge transaction cover
+new questions/resource counters before additive migrations are installed. The question flag remains false by
+default; only a disposable local MySQL was migrated. Question display/answers and contact alias changes share the
+identity lock with ledger writes. No network/model call is made while that transaction is held.

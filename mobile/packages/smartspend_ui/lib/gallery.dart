@@ -32,7 +32,7 @@ class ComponentGallery extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: SmartSpendSpacing.xs),
-                  AmountText(12480, style: textTheme.displaySmall),
+                  AmountText(12480.75, style: textTheme.displaySmall),
                   const SizedBox(height: SmartSpendSpacing.xs),
                   Text(
                     'أقل من الشهر اللي فات بـ 1,320 ج.م',

@@ -1,5 +1,6 @@
 import { MOVEMENT_KINDS } from "../contracts/ledger-movement";
 import { spendingRowSql, ledgerBucketSql } from "./services/ledger-semantics";
+import { ledgerBundle, ledgerBundleColumns, ledgerBundleJoin, linkedLedgerFee, standaloneLedgerRowSql } from "./services/ledger-bundles";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
@@ -894,6 +895,7 @@ export const expenseRouter = router({
           limit: z.number().min(1).max(100).default(50),
           cursor: z.number().optional(),
           offset: z.number().min(0).optional(),
+          groupLinkedFees: z.boolean().default(false),
         })
         .optional(),
     )
@@ -916,11 +918,13 @@ export const expenseRouter = router({
         if (input?.category)
           conditions.push(eq(expenses.category, input.category));
         if (input?.type) conditions.push(eq(ledgerBucketSql, input.type));
+        if (input?.groupLinkedFees) conditions.push(standaloneLedgerRowSql);
         if (input?.cursor) conditions.push(lt(expenses.id, input.cursor));
 
         const items = await db
-          .select()
+          .select(ledgerBundleColumns)
           .from(expenses)
+          .leftJoin(linkedLedgerFee, ledgerBundleJoin)
           .where(and(...conditions))
           .orderBy(desc(expenses.id))
           .limit(input?.limit || 50)
@@ -932,7 +936,7 @@ export const expenseRouter = router({
           .where(and(...conditions));
 
         return {
-          items,
+          items: items.map(({ entry, fee }) => input?.groupLinkedFees ? ledgerBundle(entry, fee) : ({ ...entry, bundle: null })),
           total: Number(countResult[0].count),
         };
       } catch (err) {
@@ -970,13 +974,14 @@ export const expenseRouter = router({
       );
 
       const items = await db
-        .select()
+        .select(ledgerBundleColumns)
         .from(expenses)
+        .leftJoin(linkedLedgerFee, ledgerBundleJoin)
         .where(conditions)
         .orderBy(desc(expenses.date))
         .limit(20);
 
-      return items;
+      return items.map(({ entry, fee }) => ledgerBundle(entry, fee));
     }),
 
   getById: authedProcedure
@@ -986,8 +991,9 @@ export const expenseRouter = router({
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
       const result = await db
-        .select()
+        .select(ledgerBundleColumns)
         .from(expenses)
+        .leftJoin(linkedLedgerFee, ledgerBundleJoin)
         .where(
           and(
             eq(expenses.id, input.id),
@@ -995,7 +1001,7 @@ export const expenseRouter = router({
             eq(expenses.userType, userType),
           ),
         );
-      return result[0] || null;
+      return result[0] ? ledgerBundle(result[0].entry, result[0].fee) : null;
     }),
 
   update: authedProcedure

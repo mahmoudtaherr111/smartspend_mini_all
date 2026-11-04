@@ -39,7 +39,7 @@ final class WalletsRepository {
   Future<List<LedgerEntry>> transactions(int walletId, {int limit = 50}) async {
     final data = await _client.query(
       Procedures.wallet.getWalletTransactions,
-      input: {'walletId': walletId, 'limit': limit},
+      input: {'walletId': walletId, 'limit': limit, 'groupLinkedFees': true},
     );
     return [
       for (final raw in (data as List<Object?>? ?? const []))

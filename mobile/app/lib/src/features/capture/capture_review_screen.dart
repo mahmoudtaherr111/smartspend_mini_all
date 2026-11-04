@@ -6,6 +6,7 @@ import '../../l10n/app_localizations.dart';
 import '../ledger/ledger_providers.dart';
 import 'capture_api.dart';
 import 'capture_controller.dart';
+import 'capture_overview_card.dart';
 
 /// The captured bank transactions waiting for the person (decision 0028): each one is recorded or dismissed here,
 /// as from its notification, and one whose amount the message gave in another currency asks for the pounds first.
@@ -17,6 +18,17 @@ class CaptureReviewScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final automatic =
+        ref.watch(captureServerStatusProvider).value?.automatic == true;
+    if (automatic) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.captureAutomaticTitle)),
+        body: const SingleChildScrollView(
+          padding: EdgeInsets.all(SmartSpendSpacing.screen),
+          child: CaptureOverviewCard(),
+        ),
+      );
+    }
     final pending = ref.watch(capturePendingProvider);
     final offers = ref.watch(captureAutoOffersProvider).value ?? const [];
     final wallets = ref.watch(captureWalletOffersProvider).value ?? const [];

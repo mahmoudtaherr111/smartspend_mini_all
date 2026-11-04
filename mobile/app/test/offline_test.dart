@@ -299,14 +299,14 @@ void main() {
           (_) => {'totalIncome': 0, 'totalExpense': '4250.50', 'count': 12},
         );
       final app = await _signedIn(tester, api);
-      expect(find.text('\u20664,251\u2069 ج.م'), findsOneWidget);
+      expect(find.text('\u20664,250.5\u2069 ج.م'), findsOneWidget);
 
       api.offline = true;
       app.container.invalidate(outboxProvider);
       await tester.drag(find.byType(ListView).first, const Offset(0, 400));
       await tester.pumpAndSettle();
 
-      expect(find.text('\u20664,251\u2069 ج.م'), findsOneWidget);
+      expect(find.text('\u20664,250.5\u2069 ج.م'), findsOneWidget);
       expect(
         find.text('النت فاصل. اللي بتسجّله بيتحفظ هنا وهيتبعت لما يرجع.'),
         findsOneWidget,

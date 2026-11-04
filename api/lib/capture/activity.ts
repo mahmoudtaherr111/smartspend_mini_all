@@ -1,6 +1,7 @@
 /** User-visible progress without exposing raw signals, private token maps, or pretending unresolved money was saved. */
-import { and, desc, eq, isNull, notInArray, or } from "drizzle-orm";
-import { captureAiJobs, captureEvents } from "../../../db/schema";
+import { and, desc, eq, inArray, isNull, ne, notInArray, or } from "drizzle-orm";
+import { captureAiJobs, captureEvents, expenses } from "../../../db/schema";
+import { ledgerBundle, ledgerBundleColumns, ledgerBundleJoin, linkedLedgerFee } from "../../services/ledger-bundles";
 import { getDb } from "../../queries/connection";
 import type { CaptureOwner } from "./devices";
 
@@ -12,6 +13,7 @@ export async function captureActivity(owner: CaptureOwner, limit = 30) {
         id: captureEvents.id,
         expenseId: captureEvents.expenseId,
         status: captureEvents.status,
+        autoRecorded: captureEvents.autoRecorded,
         kind: captureEvents.kind,
         source: captureEvents.sourceSlug,
         amountEgp: captureEvents.amountEgp,
@@ -22,6 +24,7 @@ export async function captureActivity(owner: CaptureOwner, limit = 30) {
         and(
           eq(captureEvents.userId, owner.userId),
           eq(captureEvents.userType, owner.userType),
+          or(ne(captureEvents.kind, "fee"), isNull(captureEvents.linkedEventId)),
         ),
       )
       .orderBy(desc(captureEvents.id))
@@ -56,11 +59,17 @@ export async function captureActivity(owner: CaptureOwner, limit = 30) {
       .orderBy(desc(captureAiJobs.id))
       .limit(size),
   ]);
+  const ids = events.filter((event) => event.status === "recorded" && event.expenseId !== null).map((event) => event.expenseId!);
+  const entries = ids.length ? await getDb().select(ledgerBundleColumns).from(expenses).leftJoin(linkedLedgerFee, ledgerBundleJoin)
+    .where(and(eq(expenses.userId, owner.userId), eq(expenses.userType, owner.userType), inArray(expenses.id, ids))) : [];
+  const current = new Map(entries.map(({ entry, fee }) => [entry.id, ledgerBundle(entry, fee)]));
   return [
     ...events.map((event) => ({
       key: `event:${event.id}`,
       eventId: event.id,
       expenseId: event.expenseId,
+      canUndo: event.status === "recorded" && event.autoRecorded && current.has(event.expenseId ?? 0),
+      title: current.get(event.expenseId ?? 0)?.description ?? null,
       state:
         event.status === "recorded"
           ? ("recorded" as const)
@@ -74,7 +83,7 @@ export async function captureActivity(owner: CaptureOwner, limit = 30) {
       reason: event.status === "waiting" ? "duplicate_evidence" : null,
       source: event.source,
       kind: event.kind,
-      amountEgp: event.amountEgp === null ? null : Number(event.amountEgp),
+      amountEgp: current.has(event.expenseId ?? 0) ? Math.abs(Number(current.get(event.expenseId!)!.bundle?.totalAmount ?? current.get(event.expenseId!)!.amount)) : event.amountEgp === null ? null : Number(event.amountEgp),
       at: event.at,
     })),
     ...jobs
@@ -87,6 +96,8 @@ export async function captureActivity(owner: CaptureOwner, limit = 30) {
         key: `job:${job.id}`,
         eventId: null,
         expenseId: null,
+        canUndo: false,
+        title: null,
         state:
           job.status === "done"
             ? ("waiting" as const)

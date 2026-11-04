@@ -6877,6 +6877,222 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'رد فريق الدعم'**
   String get helpTicketReply;
+
+  /// No description provided for @captureAutomaticTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسايل البنك'**
+  String get captureAutomaticTitle;
+
+  /// No description provided for @captureAutomaticBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'عملياتك بتتسجل تلقائيًا. البيانات الناقصة بتفضل منتظرة دليل واضح.'**
+  String get captureAutomaticBody;
+
+  /// No description provided for @captureStateRecorded.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتسجلت'**
+  String get captureStateRecorded;
+
+  /// No description provided for @captureStateProcessing.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنقرأ الرسالة'**
+  String get captureStateProcessing;
+
+  /// No description provided for @captureStateWaiting.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتظرين بيانات تكمل العملية'**
+  String get captureStateWaiting;
+
+  /// No description provided for @captureStateHeld.
+  ///
+  /// In ar, this message translates to:
+  /// **'محجوزة بسبب حد الباقة'**
+  String get captureStateHeld;
+
+  /// No description provided for @captureStateRemoved.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتشالت'**
+  String get captureStateRemoved;
+
+  /// No description provided for @capturePurposeQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحب تحدد كانت في إيه؟'**
+  String get capturePurposeQuestion;
+
+  /// No description provided for @capturePurposeOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختياري. العملية اتسجلت بالفعل.'**
+  String get capturePurposeOptional;
+
+  /// No description provided for @capturePurposeCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة'**
+  String get capturePurposeCategory;
+
+  /// No description provided for @capturePurposeSubcategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة الفرعية'**
+  String get capturePurposeSubcategory;
+
+  /// No description provided for @capturePurposeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو اكتب الغرض، زي مصاريف حضانة'**
+  String get capturePurposeLabel;
+
+  /// No description provided for @capturePurposeSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ التصنيف'**
+  String get capturePurposeSave;
+
+  /// No description provided for @capturePurposeOwn.
+  ///
+  /// In ar, this message translates to:
+  /// **'بين حساباتي'**
+  String get capturePurposeOwn;
+
+  /// No description provided for @capturePurposeCardPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'سداد بطاقتي'**
+  String get capturePurposeCardPayment;
+
+  /// No description provided for @capturePurposeKeep.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيب التصنيف زي ما هو'**
+  String get capturePurposeKeep;
+
+  /// No description provided for @capturePurposeSkip.
+  ///
+  /// In ar, this message translates to:
+  /// **'تخطي'**
+  String get capturePurposeSkip;
+
+  /// No description provided for @captureChangeFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحفظ التغيير، جرّب تاني.'**
+  String get captureChangeFailed;
+
+  /// No description provided for @captureFeeInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب رسوم صحيحة أو صفر.'**
+  String get captureFeeInvalid;
+
+  /// No description provided for @capturePrincipalLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ قبل الرسوم'**
+  String get capturePrincipalLabel;
+
+  /// No description provided for @captureFeeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرسوم'**
+  String get captureFeeLabel;
+
+  /// No description provided for @captureAutomaticConsentBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'هنقرا رسايل البنوك والمحافظ المفعّلة بس ونبعتها لسيرفر SmartSpend. هنخفي الأرقام والأسماء اللي نقدر نحددها قبل ما مزوّد الذكاء الاصطناعي المعتمد يقرا كل رسالة. الأكواد والرسايل الشخصية المعروفة بتتفلتر. العملية اللي بياناتها واضحة بتتسجل تلقائيًا مع تراجع؛ والناقصة بتستنى. الرسايل المنقّحة وبيانات التصنيف المؤقتة بتتنسى بعد 30 يوم، والمحجوزة بسبب حد الباقة بعد 60 يوم. دفتر العمليات بيحتفظ بالتسجيلات. تقدر توقف الإرسال وتسحب موافقتك وتمسح بيانات الالتقاط من الإعدادات.'**
+  String get captureAutomaticConsentBody;
+
+  /// No description provided for @captureRenewConsent.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسجيل التلقائي محتاج موافقة جديدة على قراءة كل رسايل البنك المنقّحة.'**
+  String get captureRenewConsent;
+
+  /// No description provided for @captureAutomaticAiTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة الذكاء الاصطناعي'**
+  String get captureAutomaticAiTitle;
+
+  /// No description provided for @captureAutomaticAiBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل رسالة بنك من المصادر المفعّلة بتمر على المزوّد المعتمد بعد إخفاء البيانات المكتشفة. إيقاف الاختيار بيوقف التسجيل التلقائي.'**
+  String get captureAutomaticAiBody;
+
+  /// No description provided for @walletKindFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحفظ نوع الرصيد، جرّب تاني.'**
+  String get walletKindFailed;
+
+  /// No description provided for @walletKindUnknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش محدد'**
+  String get walletKindUnknown;
+
+  /// No description provided for @walletKindCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقدي أو محفظة إلكترونية'**
+  String get walletKindCash;
+
+  /// No description provided for @walletKindBank.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب بنكي'**
+  String get walletKindBank;
+
+  /// No description provided for @walletKindDebit.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقة خصم مباشر'**
+  String get walletKindDebit;
+
+  /// No description provided for @walletKindCredit.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقة ائتمان'**
+  String get walletKindCredit;
+
+  /// No description provided for @walletBalanceKindTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الرصيد'**
+  String get walletBalanceKindTitle;
+
+  /// No description provided for @walletBalanceKindBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح الائتمان مش فلوس نقدية. تحديد النوع بيخلّي الرصيد وحساب المتاح أدق.'**
+  String get walletBalanceKindBody;
+
+  /// No description provided for @walletCreditAvailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح الائتمان'**
+  String get walletCreditAvailable;
+
+  /// No description provided for @capturePurposePerson.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشخص (اختياري)'**
+  String get capturePurposePerson;
+
+  /// No description provided for @captureAutomaticStopped.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسجيل التلقائي متوقف لحد ما توافق على القراءة. عملياتك المحفوظة موجودة وتقدر تعدّلها.'**
+  String get captureAutomaticStopped;
 }
 
 class _AppLocalizationsDelegate

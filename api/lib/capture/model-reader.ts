@@ -11,7 +11,7 @@ import { getSystemSettings } from "../settings-cache";
 import { reserveCaptureCall, settleCaptureCall } from "./admission";
 import { CAPTURE_MODEL_REPLY_SCHEMA, CAPTURE_PROMPT_VERSION, CAPTURE_SYSTEM_PROMPT, checkCaptureReply, parseCaptureReply, proposeCapturePosting, type CaptureReplyCheck, type CapturePostingProposal } from "./model-contract";
 import { preparedCapturePrompt, type PreparedCaptureText } from "./privacy";
-import { captureConsentsOf } from "./consent";
+import { CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION, captureConsentsOf } from "./consent";
 
 export const CAPTURE_PROMPT_DIGEST = createHash("sha256").update(CAPTURE_SYSTEM_PROMPT).update(JSON.stringify(CAPTURE_MODEL_REPLY_SCHEMA)).digest("hex");
 const qualificationSchema = z.strictObject({
@@ -75,7 +75,7 @@ export async function readCaptureWithModel(text: PreparedCaptureText, user: Capt
     let attempts: LlmAttempt[] = [];
     let sent = false;
     try {
-      const consent = await captureConsentsOf(user);
+      const consent = await captureConsentsOf(user, undefined, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION);
       if (!consent.capture || !consent.aiReading) return { outcome: "disabled" };
       sent = true;
       const response = await executeLlmChain([route], {

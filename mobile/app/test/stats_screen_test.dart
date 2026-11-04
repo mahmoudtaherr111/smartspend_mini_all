@@ -29,7 +29,7 @@ void main() {
     await _openStats(tester, api);
 
     expect(find.byType(HeroFigure), findsOneWidget);
-    expect(find.text('${ltrIsolate('4,251')} ج.م'), findsOneWidget);
+    expect(find.text('${ltrIsolate('4,250.5')} ج.م'), findsOneWidget);
     expect(
       find.text('أقل من الشهر اللي فات بـ ${ltrIsolate('12%')}.'),
       findsOneWidget,
@@ -142,7 +142,7 @@ void main() {
     final onlineApi = FakeApi();
     answerSampleMonth(onlineApi);
     final first = await _openStats(tester, onlineApi);
-    expect(find.text('${ltrIsolate('4,251')} ج.م'), findsOneWidget);
+    expect(find.text('${ltrIsolate('4,250.5')} ج.م'), findsOneWidget);
 
     final offlineApi = FakeApi()..offline = true;
     final second = TestApp(token: 'stored-token', api: offlineApi);
@@ -152,7 +152,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(OfflineBanner), findsOneWidget);
-    expect(find.text('${ltrIsolate('4,251')} ج.م'), findsOneWidget);
+    expect(find.text('${ltrIsolate('4,250.5')} ج.م'), findsOneWidget);
     expect(find.text('أكل وشرب'), findsOneWidget);
   });
 

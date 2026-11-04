@@ -511,5 +511,48 @@ one movement, records automatically, is idempotent and never bypasses the free l
 
 `capture.activity` gives bounded user-scoped recorded/processing/waiting/held/removed states and reason ids without
 raw messages or token maps; `capture.status` exposes automatic versus legacy mode. Waiting duplicate events expire
-at 30 days. Displaying these states in both apps, optional category questions, native SMS, notice acknowledgements
-and measured capacity/private model qualification still belong to the remaining release work.
+at 30 days. Activity views and optional questions are implemented below. Native SMS, notice acknowledgements, late-evidence
+coverage and measured capacity/private model qualification remain release work.
+
+
+## Optional feedback after saving (staged)
+`capture_questions` (migration 0046) holds a question only after a v4 movement and its fee have been saved.
+`capture_questions_enabled` defaults to false until the migration and rollout are approved. The owner lock makes
+`capture.nextQuestion` show one question across devices, at most three new questions per Cairo day; repeated reads
+return the same question. Waiting questions are bounded at 200 and expire after 30 days. `capture.answerQuestion`
+sets a category, accepts a short purpose, keeps the category or skips. First answer wins, newer manual edits supersede
+an old question, the existing ledger row is edited transactionally and no capture quota is consumed again.
+Purpose classification uses the local classifier outside the transaction, with no model call. An unknown purpose
+stays general rather than inventing a category. Personal filing memory is updated for category and subcategory edits.
+
+The web Home card and Flutter record/capture views show automatic activity, waiting facts and undo. The purpose form
+is optional, disabled offline on Flutter and tested at enlarged text. Grouped fee views opt in through
+`expense.list` and `wallet.getWalletTransactions`; older callers still receive separate rows. The joins return
+principal and fee from one SQL snapshot. Details and editors retain the stored principal separately from the fee,
+wallet counter views exclude a source-side fee, and activity reads current edited ledger values. Money display now
+keeps up to two decimals, including spoken amounts, instead of rounding bank payments to whole pounds.
+
+The automatic consent text is version 2026-11-04, distinct from the legacy 2026-10-27 grant. A legacy grant never
+allows every-message AI processing. Automatic ingest/config, provider calls, held release and post-call consent
+checks require the new capture/AI grants. Re-granting a new version revokes the older active version under the identity
+lock. Flutter shows the broader disclosure and grants both only after explicit acceptance; a mode change while that
+dialog was open requires another consent rather than silently widening scope. Turning AI reading off stops automatic
+intake. Registered ledger entries remain editable.
+
+Only an explicitly chosen contact can be remembered from a complete private phone HMAC. `api/lib/capture/identity-links.ts` keeps
+that owner-scoped association in a marker, rechecks contact ownership when resolving it and never links ambiguous
+plain names. Contact edits keep counts and the private link in step; deletion/merge serialize with ledger writes.
+Unlinked loans do not cancel unrelated people merely because both lack a contact. Standing follows the versioned
+loan/gam3eya kind even after a category-only edit. Known credit availability is excluded from cash totals/forecast;
+wallet-kind selectors are available after financial cutover. Capture-data deletion retains that wallet property,
+while full account deletion erases it.
+
+Private card/account tails of three or four digits are redacted too. `api/lib/capture/instruments.ts` uses labeled local identities
+and the checked flow to distinguish a funding account from a recipient card; ambiguous identities remain unassigned.
+An explicit ignored card is respected before the provider even when the diagnostic shadow missed its wording.
+The recorded event retains only a numeric `capturePosting` snapshot, so an own-account credit can match its principal
+when the original debit included a fee. The encrypted identity envelope is discarded from the derived reading.
+
+Still required before activation: native SMS/nosms coverage, explicit notice acknowledgement, late-evidence/reversal
+coverage, on-device verification, measured capacity and the private held-out source/model qualification. No production
+migration, provider call or capture enablement is implied by shipping these guarded changes.

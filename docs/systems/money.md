@@ -385,3 +385,24 @@ purchases, fees, refund, gam3eya, owner-pair checks, old-editor compatibility an
 
 
 The writer now exposes transaction-scoped edit/delete primitives. `linkedFeeAmount` edits a captured bundle in the same transaction; zero deletes the fee, date/wallet changes propagate, and parent deletion follows adopted fee events into tombstones. Caller-level undo can therefore release capture quota atomically with the deletion.
+
+
+## Exact amounts, display bundles and wallet balance type
+The new opt-in ledger/transaction lists group a captured fee with its parent without changing either stored amount.
+`api/services/ledger-bundles.ts` uses an owned one-to-one SQL join, so concurrent edits cannot mix principal and fee
+from different read snapshots. Orphan fees remain visible. `expense.getById` and search return flat rows with optional
+bundle details. Flutter keeps those details offline and its editor sends principal plus `linkedFeeAmount` atomically.
+Web and Flutter display up to two decimal places; summaries and speech do not discard piastres.
+
+`wallet.getWallets` exposes balance kind and whether the reported balance enters cash totals after cashflow cutover.
+The separate kind is not inferred from Visa/Mastercard branding. Known credit availability is excluded from the AI
+wallet cash total and the coach's cash position, with owner-cache invalidation after a policy change. Its value can
+still be displayed as available credit. Legacy untyped manual balances retain their existing behavior; automatic
+observations still require known cash/bank/debit kinds. Conflicting policies do not make known credit into cash.
+Wallet-kind data is retained when capture data is erased because the wallet itself remains.
+
+Loan/gam3eya standing follows validated financial kind instead of mutable category text; legacy categories remain
+the fallback. A deliberate nature change can remove the standing. Unlinked rows without a complete private phone
+identity no longer cancel unrelated people. An explicitly chosen owned contact can teach a private full-phone alias;
+plain names never make that link. Contact counts follow reassignment, and contact merge/delete take the identity
+lock before updating ledger links. These rules are exercised against the disposable MySQL, not customer data.

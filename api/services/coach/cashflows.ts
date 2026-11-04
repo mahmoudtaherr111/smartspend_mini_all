@@ -11,6 +11,9 @@ import { cashflowSettlements, expenses, installmentPlans, scheduledCashflows, us
 import { businessDateKey, startOfBusinessDay } from "../../lib/app-time";
 import { normalizeArabic } from "../../lib/unified-normalizer";
 import { db } from "../../queries/connection";
+import { getSystemSettings } from "../../lib/settings-cache";
+import { walletBalancePolicies } from "../wallet-balance-policy";
+import { financialMovement } from "../../../contracts/ledger-movement";
 import { LOAN_CATEGORY, LOAN_SUBCATEGORY } from "../debt-ledger";
 import { getProfileSnapshot } from "../finance-semantic-layer";
 import { addDays, cashPosition, dueDays, isCalendarDay, occurrences, type CashPosition, type Occurrence, type ScheduleRow } from "./schedule";
@@ -92,7 +95,8 @@ export function canPayCashflow(schedule: Payable, payment: Payment): boolean {
     ? direction === (schedule.direction === "in" ? "incoming" : "outgoing")
     : payment.type === (schedule.direction === "in" ? "income" : "expense");
   if (!rightWay || (schedule.contactId != null && payment.contactId !== schedule.contactId)) return false;
-  return schedule.kind !== "debt" || (payment.category === LOAN_CATEGORY && payment.subCategory === LOAN_SUBCATEGORY);
+  const financial = financialMovement(payment);
+  return schedule.kind !== "debt" || (financial ? financial.kind === "loan" : payment.category === LOAN_CATEGORY && payment.subCategory === LOAN_SUBCATEGORY);
 }
 
 async function assertOwned(user: CoachUser, input: Pick<CashflowInput, "installmentPlanId" | "contactId">): Promise<void> {
@@ -282,14 +286,15 @@ export async function upcoming(user: CoachUser, from: string, to: string, today 
 /** What the records say is free until the next payday (api/services/coach/schedule.ts#cashPosition). */
 export async function position(user: CoachUser, now = new Date()): Promise<CashPosition> {
   const today = businessDateKey(now);
+  const policy = (await getSystemSettings()).capture_financial_version === "cashflow-v1" ? await walletBalancePolicies(user) : null;
   const [rows, settlements, wallets, profile] = await Promise.all([
     listCashflows(user),
     listSettlements(user, addDays(today, -60)),
-    db.select({ balance: userWallets.balance, observedAt: userWallets.balanceObservedAt }).from(userWallets)
+    db.select({ id: userWallets.id, balance: userWallets.balance, observedAt: userWallets.balanceObservedAt }).from(userWallets)
       .where(and(eq(userWallets.userId, user.userId), eq(userWallets.userType, user.userType))),
     getProfileSnapshot({ userId: user.userId, userType: user.userType }).catch(() => null),
   ]);
-  return cashPosition({ today, salaryDay: profile?.salaryDay ?? null, wallets, rows, settlements });
+  return cashPosition({ today, salaryDay: profile?.salaryDay ?? null, wallets: wallets.filter((wallet) => !policy?.creditWalletIds.has(wallet.id)), rows, settlements });
 }
 
 /**

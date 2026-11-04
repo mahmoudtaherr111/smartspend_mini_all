@@ -56,6 +56,7 @@ function inferredKind(row: MovementRow): MovementKind {
   if (row.type === "expense" && Number(row.amount ?? 0) < 0) return "refund";
   if (row.subCategory === "دين/سلفة") return "loan";
   if (row.subCategory === "جمعية") return "gam3eya";
+  if (row.subCategory === "ادخار") return "own_transfer";
   if (captured?.kind === "card_payment") return "card_payment";
   if (["atm_withdrawal", "cash_out", "cash_in", "cash_deposit"].includes(captured?.kind ?? "")) return "cash_transfer";
   if (["سحب ATM", "تحويل نقدي", "كاش", "سحب نقدي / ATM"].includes(row.subCategory ?? "")) return "cash_transfer";

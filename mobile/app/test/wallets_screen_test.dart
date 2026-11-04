@@ -50,8 +50,8 @@ void main() {
     await _openWallets(tester, api);
 
     expect(find.byType(HeroFigure), findsOneWidget);
-    // 24,350 + 1,820.50 + 6,200, in whole pounds.
-    expect(find.text(_money('32,371')), findsOneWidget);
+    // 24,350 + 1,820.50 + 6,200, without rounding away the piastres.
+    expect(find.text(_money('32,370.5')), findsOneWidget);
     expect(find.text('كارت CIB'), findsOneWidget);
     expect(find.text(_money('24,350')), findsOneWidget);
     expect(
@@ -98,7 +98,7 @@ void main() {
 
     expect(find.byType(OfflineBanner), findsOneWidget);
     expect(find.text('كارت CIB'), findsOneWidget);
-    expect(find.text(_money('32,371')), findsOneWidget);
+    expect(find.text(_money('32,370.5')), findsOneWidget);
   });
 
   testWidgets('offline without a cached list shows an error and retries', (
@@ -208,7 +208,7 @@ void main() {
     );
     expect(find.text('دخل الشهر ده'), findsOneWidget);
     expect(find.text('خرج الشهر ده'), findsOneWidget);
-    expect(find.text(_money('3,121')), findsOneWidget);
+    expect(find.text(_money('3,120.5')), findsOneWidget);
     final asked = api.lastInput('wallet.getWalletMonth')! as Map;
     expect(asked['walletId'], 1);
     expect(asked['month'], matches(RegExp(r'^\d{4}-\d{2}$')));

@@ -217,7 +217,7 @@ void main() {
         await _signedIn(tester, api);
 
         expect(find.text('صرفت في أكتوبر'), findsOneWidget);
-        expect(find.text('\u20664,251\u2069 ج.م'), findsOneWidget);
+        expect(find.text('\u20664,250.5\u2069 ج.م'), findsOneWidget);
         expect(find.text('12 عملية'), findsOneWidget);
         expect(find.text('النهارده'), findsOneWidget);
         expect(find.text('امبارح'), findsOneWidget);

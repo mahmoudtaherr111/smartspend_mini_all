@@ -11,12 +11,14 @@ import type { CaptureOwner } from "./devices";
 
 /** The version of the consent text the app shows; a new text gets a new version. */
 export const CAPTURE_CONSENT_TEXT_VERSION = "2026-10-27";
+/** Broader scope: every redacted financial message, with automatic filing. Legacy grants never imply this grant. */
+export const CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION = "2026-11-04";
 
-export async function captureConsentsOf(owner: CaptureOwner, reader: Pick<ReturnType<typeof getDb>, "select"> = getDb()): Promise<{ capture: boolean; aiReading: boolean }> {
+export async function captureConsentsOf(owner: CaptureOwner, reader: Pick<ReturnType<typeof getDb>, "select"> = getDb(), version?: string): Promise<{ capture: boolean; aiReading: boolean }> {
   const rows = await reader
     .select({ scope: captureConsents.scope })
     .from(captureConsents)
-    .where(and(eq(captureConsents.userId, owner.userId), eq(captureConsents.userType, owner.userType), isNull(captureConsents.revokedAt)));
+    .where(and(eq(captureConsents.userId, owner.userId), eq(captureConsents.userType, owner.userType), isNull(captureConsents.revokedAt), ...(version ? [eq(captureConsents.textVersion, version)] : [])));
   const scopes = new Set(rows.map((row) => row.scope));
   return { capture: scopes.has("capture"), aiReading: scopes.has("ai_reading") };
 }
@@ -37,8 +39,9 @@ export async function setCaptureConsent(owner: CaptureOwner, scope: CaptureConse
     await db.update(captureConsents).set({ revokedAt: new Date() }).where(active);
     return;
   }
-  const [existing] = await db.select({ id: captureConsents.id }).from(captureConsents).where(active).limit(1);
-  if (!existing) {
+  const [existing] = await db.select({ id: captureConsents.id, textVersion: captureConsents.textVersion }).from(captureConsents).where(active).limit(1);
+  if (!existing || existing.textVersion !== textVersion) {
+    if (existing) await db.update(captureConsents).set({ revokedAt: new Date() }).where(active);
     await db.insert(captureConsents).values({ userId: owner.userId, userType: owner.userType, scope, textVersion });
   }
   });

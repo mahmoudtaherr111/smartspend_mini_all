@@ -7,7 +7,10 @@ import { eq, and, or, desc, gte, lt, like, sql } from "drizzle-orm";
 import { counterWalletSql, ledgerMovementSql } from "./services/ledger-semantics";
 import { financialMovement, movementOf } from "../contracts/ledger-movement";
 import { lockLedgerOwner } from "./services/ledger-writer";
+import { ledgerBundle, ledgerBundleColumns, ledgerBundleJoin, linkedLedgerFee, standaloneLedgerRowSql } from "./services/ledger-bundles";
 import { businessDateKey } from "./lib/app-time";
+import { getSystemSettings } from "./lib/settings-cache";
+import { walletBalancePolicies } from "./services/wallet-balance-policy";
 import { reportPeriod } from "./services/financial-month";
 
 /**
@@ -24,7 +27,7 @@ export const walletBalanceSchema = z
 
 export const walletRouter = router({
   getWallets: authedProcedure.query(async ({ ctx }) => {
-    return await db
+    const rows = await db
       .select()
       .from(userWallets)
       .where(
@@ -34,6 +37,9 @@ export const walletRouter = router({
         ),
       )
       .orderBy(userWallets.createdAt);
+    const enabled = (await getSystemSettings()).capture_financial_version === "cashflow-v1";
+    const policy = enabled ? await walletBalancePolicies({ userId: ctx.user.id, userType: ctx.user.type }) : null;
+    return rows.map((row) => ({ ...row, balanceKind: policy?.kinds.get(row.id) ?? "unknown", cashBalanceIncluded: !policy?.creditWalletIds.has(row.id) }));
   }),
 
   getWalletTransactions: authedProcedure
@@ -42,29 +48,33 @@ export const walletRouter = router({
         walletId: z.number(),
         limit: z.number().min(1).max(200).default(50),
         offset: z.number().min(0).default(0),
+        groupLinkedFees: z.boolean().default(false),
       }),
     )
     .query(async ({ ctx, input }) => {
       const walletExpenses = await db
-        .select()
+        .select(ledgerBundleColumns)
         .from(expenses)
+        .leftJoin(linkedLedgerFee, ledgerBundleJoin)
         .where(
           and(
             eq(expenses.userId, ctx.user.id as number),
             eq(expenses.userType, ctx.user.type),
             or(eq(expenses.walletId, input.walletId), sql`${counterWalletSql} = ${input.walletId}`),
+            ...(input.groupLinkedFees ? [standaloneLedgerRowSql] : []),
           ),
         )
         .orderBy(desc(expenses.date))
         .limit(input.limit)
         .offset(input.offset);
 
-      return walletExpenses.map((row) => {
+      return walletExpenses.map(({ entry: row, fee }) => {
         const financial = financialMovement(row);
-        if (row.walletId === input.walletId || financial?.counterWalletId !== input.walletId) return row;
+        if (row.walletId === input.walletId || financial?.counterWalletId !== input.walletId) return input.groupLinkedFees ? ledgerBundle(row, fee, input.walletId) : { ...row, bundle: null };
         const incoming = movementOf(row) === "out";
-        return { ...row, type: incoming ? "income" : "expense", amount: Math.abs(Number(row.amount)).toFixed(2), walletId: input.walletId,
+        const view = { ...row, type: incoming ? "income" : "expense", amount: Math.abs(Number(row.amount)).toFixed(2), walletId: input.walletId,
           parsedMetadata: { ...(row.parsedMetadata as Record<string, unknown> | null), financial: { ...financial, movement: incoming ? "in" : "out" }, walletView: { originalWalletId: row.walletId } } };
+        return input.groupLinkedFees ? ledgerBundle(view, fee, input.walletId) : { ...view, bundle: null };
       });
     }),
 

@@ -39,6 +39,8 @@ final class Wallet {
     required this.balance,
     this.lastFour,
     this.balanceObservedAt,
+    this.balanceKind = 'unknown',
+    this.cashBalanceIncluded = true,
     String? provider,
   }) : provider = provider ?? '';
 
@@ -58,11 +60,15 @@ final class Wallet {
         _ => null,
       },
       provider: provider,
+      balanceKind: json['balanceKind'] as String? ?? 'unknown',
+      cashBalanceIncluded: json['cashBalanceIncluded'] != false,
     );
   }
 
   final int id;
   final String name;
+  final String balanceKind;
+  final bool cashBalanceIncluded;
   final WalletKind kind;
   final num balance;
   final String? lastFour;
@@ -76,6 +82,8 @@ final class Wallet {
     'balance': balance,
     'lastFourDigits': lastFour,
     'balanceObservedAt': balanceObservedAt?.toUtc().toIso8601String(),
+    'balanceKind': balanceKind,
+    'cashBalanceIncluded': cashBalanceIncluded,
   };
 }
 

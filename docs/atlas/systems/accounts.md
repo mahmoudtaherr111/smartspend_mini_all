@@ -60,6 +60,7 @@ flowchart LR
     tbl_capture_events[("capture_events")]
     tbl_capture_markers[("capture_markers")]
     tbl_capture_memory[("capture_memory")]
+    tbl_capture_questions[("capture_questions")]
     tbl_capture_signals[("capture_signals")]
     tbl_capture_usage[("capture_usage")]
     tbl_capture_user_pairs[("capture_user_pairs")]
@@ -114,6 +115,7 @@ flowchart LR
   http__api_auth --> sys_platform
   job_daily_auth_cleanup --> mod_auth
   job_daily_auth_cleanup ==> tbl_auth_challenges
+  mod_accounts --> sys_bank_messages
   mod_accounts ==> tbl_ad_clicks
   mod_accounts ==> tbl_ad_impressions
   mod_accounts ==> tbl_ai_action_audit_logs
@@ -135,6 +137,7 @@ flowchart LR
   mod_accounts ==> tbl_capture_events
   mod_accounts ==> tbl_capture_markers
   mod_accounts ==> tbl_capture_memory
+  mod_accounts ==> tbl_capture_questions
   mod_accounts ==> tbl_capture_signals
   mod_accounts ==> tbl_capture_usage
   mod_accounts ==> tbl_capture_user_pairs
@@ -330,6 +333,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `capture_events` | E | `accounts` | — |
 | `capture_markers` | A | `accounts` | — |
 | `capture_memory` | A | `accounts` | — |
+| `capture_questions` | E | `accounts` | — |
 | `capture_signals` | E | `accounts` | — |
 | `capture_usage` | C | `accounts` | — |
 | `capture_user_pairs` | A | `accounts` | — |

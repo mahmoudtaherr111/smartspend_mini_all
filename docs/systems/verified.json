@@ -10,7 +10,7 @@
         "api/lib/access-control.ts": "ec360a101b90",
         "api/lib/admin-audit.ts": "182cdae6283d",
         "api/lib/admin-safe-fields.ts": "cfb73d6bbe66",
-        "api/lib/anonymizer.ts": "3669201b0a32",
+        "api/lib/anonymizer.ts": "1385b9e873fc",
         "api/lib/get-client-ip.ts": "72af77e654a4",
         "api/lib/google-id-token.ts": "219f290d6998",
         "api/lib/http-origin-security.ts": "066096844fe2",
@@ -30,10 +30,10 @@
         "api/profile-router.ts#profile.requestPhoneChange": "2e2cb7c91a60",
         "api/profile-router.ts#profile.updateProfile": "9aba6a0c3710",
         "api/profile-router.ts#profile.updateUserInfo": "ceefc1e288f8",
-        "api/profile-router.ts#rest-of-file": "b05c177eb2f5",
+        "api/profile-router.ts#rest-of-file": "8fde10be8ce6",
         "api/services/phone-challenge.ts": "11f2c4fe8637",
         "api/services/turnstile-service.ts": "89a28fc96d49",
-        "api/services/user-purge-service.ts": "ea37557e2637",
+        "api/services/user-purge-service.ts": "83e887ec649d",
         "api/session-router.ts": "cf7e37238571",
         "api/webauthn-router.ts": "30c264b63011",
         "src/components/auth/BiometricLockOverlay.tsx": "b9b9b5184b56",
@@ -54,9 +54,9 @@
         "src/pages/Login.tsx": "721a99583418",
         "src/pages/Settings.tsx": "64399eac358f"
       },
-      "checked": "2026-11-04 d8b301b2",
-      "arabic": "d9c9a732e94c",
-      "arabicChecked": "2026-11-04 d8b301b2"
+      "checked": "2026-11-04 4def5707",
+      "arabic": "d8e44da2c942",
+      "arabicChecked": "2026-11-04 4def5707"
     },
     "admin": {
       "files": {
@@ -143,9 +143,9 @@
         "api/services/finance-semantic-layer/monthly-report-facts.ts": "3f971c8a47ab",
         "api/services/finance-semantic-layer/period-resolver.ts": "6ebc06ee9807",
         "api/services/finance-semantic-layer/proactive-insights.ts": "4673f997eb5c",
-        "api/services/finance-semantic-layer/resolvers.ts": "155b2fc7ae80",
+        "api/services/finance-semantic-layer/resolvers.ts": "6616e35ab2e7",
         "api/services/finance-semantic-layer/row-aggregators.ts": "6eaf0336f1e1",
-        "api/services/finance-semantic-layer/types.ts": "37504cacb25f",
+        "api/services/finance-semantic-layer/types.ts": "e3af4a5be50f",
         "api/services/site-guide/embedding.ts": "bc5457180269",
         "api/services/site-guide/index.ts": "d2416784dee1",
         "api/services/site-guide/knowledge-base.ts": "25cb012efb96",
@@ -156,9 +156,9 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "05db1979579d"
       },
-      "checked": "2026-11-04 907e6d5e",
-      "arabic": "4eb6bde501ac",
-      "arabicChecked": "2026-11-04 907e6d5e"
+      "checked": "2026-11-04 4def5707",
+      "arabic": "3af71d75d228",
+      "arabicChecked": "2026-11-04 4def5707"
     },
     "ai-platform": {
       "files": {
@@ -194,27 +194,30 @@
         "api/boot.ts#job:capture-silent-devices": "e650646f7646",
         "api/boot.ts#job:seed-capture-catalog": "c2080520b0f3",
         "api/capture-admin-router.ts": "2f6bf9be58c6",
-        "api/capture-router.ts": "20ebbdd9c489",
-        "api/capture-v1-routes.ts": "db95c617e1b4",
+        "api/capture-router.ts": "0598d4a3e645",
+        "api/capture-v1-routes.ts": "84fe278fc10b",
         "api/lib/capture/access.ts": "a05bd6473e8d",
-        "api/lib/capture/activity.ts": "4cb245cdc4d9",
+        "api/lib/capture/activity.ts": "aedd1fdb0db3",
         "api/lib/capture/admission.ts": "743a668dd677",
-        "api/lib/capture/ai-queue.ts": "5cb682601d32",
+        "api/lib/capture/ai-queue.ts": "40df94ed7563",
         "api/lib/capture/ai-reader.ts": "c7dd878f0c11",
-        "api/lib/capture/care.ts": "b2a6ac452265",
+        "api/lib/capture/care.ts": "c96f4e6f3da8",
         "api/lib/capture/catalog.ts": "dd7c3d61d374",
-        "api/lib/capture/consent.ts": "eda09ac799f5",
+        "api/lib/capture/consent.ts": "71f1d5384ecb",
         "api/lib/capture/devices.ts": "caff87cd0199",
-        "api/lib/capture/events.ts": "028d635fcb6c",
+        "api/lib/capture/events.ts": "b9ffe799238b",
         "api/lib/capture/fees.ts": "82cc9bb53e75",
-        "api/lib/capture/intake.ts": "491a57cfc09a",
+        "api/lib/capture/identity-links.ts": "098288d84314",
+        "api/lib/capture/instruments.ts": "548f489f588a",
+        "api/lib/capture/intake.ts": "7acfefd0cf6f",
         "api/lib/capture/keep-merchants.ts": "3c94830a3d74",
-        "api/lib/capture/markers.ts": "7c9c535c02a9",
+        "api/lib/capture/markers.ts": "520d1dbab96a",
         "api/lib/capture/memory.ts": "37a0bd659e1f",
         "api/lib/capture/model-contract.ts": "361b246fd986",
-        "api/lib/capture/model-reader.ts": "1f66e863888a",
+        "api/lib/capture/model-reader.ts": "cbc34457dc3d",
         "api/lib/capture/operations.ts": "166e0fb5bd16",
-        "api/lib/capture/privacy.ts": "a1dbcc2ac5aa",
+        "api/lib/capture/privacy.ts": "a132785c68f0",
+        "api/lib/capture/questions.ts": "c5930e9a0621",
         "api/lib/capture/reader/clauses.ts": "5b86ed12ca60",
         "api/lib/capture/reader/counterparty.ts": "4560b5469773",
         "api/lib/capture/reader/explain.ts": "3455f6c511dd",
@@ -227,14 +230,16 @@
         "api/lib/capture/reader/spans.ts": "c114d6c25a66",
         "api/lib/capture/reader/types.ts": "dbc3ac582ea5",
         "api/lib/capture/reader/when.ts": "3c9cce811dd1",
+        "api/lib/capture/schema-state.ts": "921972d8d1ff",
         "api/lib/capture/seed-sources.ts": "693b8813dd6c",
         "api/lib/capture/seed-subscriptions.ts": "706a9d802a32",
         "api/lib/capture/vault.ts": "fae7d2695222",
-        "api/lib/sms-ai-contract.ts": "34562a4b9e0c"
+        "api/lib/sms-ai-contract.ts": "34562a4b9e0c",
+        "src/components/bank-capture/CaptureOverview.tsx": "30e973b0cfd2"
       },
-      "checked": "2026-11-04 e20f0bb5",
-      "arabic": "f07f89f81d03",
-      "arabicChecked": "2026-11-04 e20f0bb5"
+      "checked": "2026-11-04 4def5707",
+      "arabic": "7a1b391c099d",
+      "arabicChecked": "2026-11-04 4def5707"
     },
     "billing": {
       "files": {
@@ -274,7 +279,7 @@
         "api/expense-router.ts#expense.dismissClarification": "a9dbadaeccf5",
         "api/expense-router.ts#expense.getCategoryList": "4ff9fd01cf7d",
         "api/expense-router.ts#expense.getPendingClarifications": "5c6a000a9957",
-        "api/expense-router.ts#rest-of-file": "dc0ea5c49072",
+        "api/expense-router.ts#rest-of-file": "491c6b9cd8a2",
         "api/image-router.ts": "18fc7e24ebeb",
         "api/lib/admissibility-gate.ts": "3b5889850057",
         "api/lib/amount-ledger.ts": "262deb8a7ce8",
@@ -333,9 +338,9 @@
         "src/lib/clientRulesEngine.ts": "52564818c057",
         "src/lib/compress-image.ts": "d916cce940f9"
       },
-      "checked": "2026-11-04 907e6d5e",
-      "arabic": "5ab7dcb04480",
-      "arabicChecked": "2026-11-04 907e6d5e"
+      "checked": "2026-11-04 4def5707",
+      "arabic": "1c65bb1b1634",
+      "arabicChecked": "2026-11-04 4def5707"
     },
     "insights": {
       "files": {
@@ -359,7 +364,7 @@
         "api/profile-router.ts#profile.refreshInferences": "a5e6ec461dbc",
         "api/profile-router.ts#profile.submitOnboardingAnswer": "6a50afa4a2ab",
         "api/profile-router.ts#profile.updateSmartProfile": "28d67008ded5",
-        "api/profile-router.ts#rest-of-file": "b05c177eb2f5",
+        "api/profile-router.ts#rest-of-file": "8fde10be8ce6",
         "api/services/adaptive-question-engine.ts": "cb640c037896",
         "api/services/lifestyle-inference-engine.ts": "bd27b467fde8",
         "api/services/personal-context-builder.ts": "1e5742c3811f",
@@ -368,9 +373,9 @@
         "api/services/user-profile-service.ts": "620d598615c2",
         "src/components/insights/AIInsights.tsx": "3be01c23f12c"
       },
-      "checked": "2026-11-04 907e6d5e",
+      "checked": "2026-11-04 4def5707",
       "arabic": "60402dc9a410",
-      "arabicChecked": "2026-11-04 907e6d5e"
+      "arabicChecked": "2026-11-04 4def5707"
     },
     "money": {
       "files": {
@@ -383,18 +388,18 @@
         "api/expense-router.ts#expense.createInstallmentPlan": "d0e4ac52ce8b",
         "api/expense-router.ts#expense.delete": "7680319b9ecd",
         "api/expense-router.ts#expense.deleteInstallmentPlan": "fc7d83b8ccfe",
-        "api/expense-router.ts#expense.getById": "883d7c8c2233",
+        "api/expense-router.ts#expense.getById": "9b980f9e145a",
         "api/expense-router.ts#expense.getDebtBalances": "821a765233cc",
         "api/expense-router.ts#expense.getMonthSummary": "dced3e0b75b4",
         "api/expense-router.ts#expense.getMonthlyStats": "2024a1fcba8c",
         "api/expense-router.ts#expense.getSeasonSpending": "6dd8e9465800",
         "api/expense-router.ts#expense.getYearlyStats": "6d543ca15ce5",
-        "api/expense-router.ts#expense.list": "fd19b7fc25e7",
+        "api/expense-router.ts#expense.list": "12dad4e2af82",
         "api/expense-router.ts#expense.listInstallmentPlans": "115b08de9c7a",
         "api/expense-router.ts#expense.previewCategory": "dab97f94d0c8",
-        "api/expense-router.ts#expense.searchTransactions": "2e8fa55eefed",
+        "api/expense-router.ts#expense.searchTransactions": "67e877566eaa",
         "api/expense-router.ts#expense.update": "4f3b81c3338b",
-        "api/expense-router.ts#rest-of-file": "dc0ea5c49072",
+        "api/expense-router.ts#rest-of-file": "491c6b9cd8a2",
         "api/export-router.ts#export.myExpenses": "89b0670d4bbb",
         "api/export-router.ts#rest-of-file": "6fd0720d7afa",
         "api/goals-router.ts": "504b451d0fcb",
@@ -402,23 +407,25 @@
         "api/jobs/taxonomy-migration-job.ts": "5ea0dd684409",
         "api/lib/seasons.ts": "205240329d13",
         "api/profile-router.ts#profile.addContact": "2f3848ca5c55",
-        "api/profile-router.ts#profile.deleteContact": "8ac0c4fff7ab",
+        "api/profile-router.ts#profile.deleteContact": "c6c014e9e93e",
         "api/profile-router.ts#profile.listContacts": "90da0645d250",
-        "api/profile-router.ts#profile.mergeContacts": "14b81ff3948c",
+        "api/profile-router.ts#profile.mergeContacts": "02fdd775d74d",
         "api/profile-router.ts#profile.updateContact": "f2c5c45b1581",
-        "api/profile-router.ts#rest-of-file": "b05c177eb2f5",
+        "api/profile-router.ts#rest-of-file": "8fde10be8ce6",
         "api/services/budget-status.ts": "f29a27e9d8ac",
-        "api/services/coach/cashflows.ts": "b1f56b543f16",
+        "api/services/coach/cashflows.ts": "8ffae22a9575",
         "api/services/coach/plans.ts": "443a3bd6fcc6",
         "api/services/coach/schedule.ts": "953b1adf18cf",
-        "api/services/debt-ledger.ts": "6f1c24b0449d",
+        "api/services/debt-ledger.ts": "3bc22d8bd9dc",
         "api/services/expense-rollups.ts": "a18e7843b796",
         "api/services/financial-migration.ts": "3b6f7024e0a5",
         "api/services/financial-month.ts": "b9b532b0dd06",
         "api/services/installments.ts": "c8bdc9de1497",
-        "api/services/ledger-semantics.ts": "5661ebae8024",
-        "api/services/ledger-writer.ts": "06ef12c5453d",
-        "api/wallet-router.ts": "dc872a134389",
+        "api/services/ledger-bundles.ts": "0491358afb74",
+        "api/services/ledger-semantics.ts": "285af0b3e4f8",
+        "api/services/ledger-writer.ts": "4554e9502bd7",
+        "api/services/wallet-balance-policy.ts": "694476838cb3",
+        "api/wallet-router.ts": "4ff144574e46",
         "src/components/budgets/BudgetsPanel.tsx": "514a88e41280",
         "src/components/dashboard/BehaviorInsights.tsx": "47729e6b7532",
         "src/components/dashboard/ExpenseChart.tsx": "f0f89f88a466",
@@ -430,21 +437,22 @@
         "src/components/dashboard/StatsView.tsx": "8522fd3a2d33",
         "src/components/dashboard/StreakCounter.tsx": "86c3f654ff1d",
         "src/components/debts/DebtsPanel.tsx": "77a2bd04b79d",
-        "src/components/expenses/EditExpenseDialog.tsx": "d956a6040993",
+        "src/components/expenses/EditExpenseDialog.tsx": "93595fe25a21",
         "src/components/expenses/ExportExpensesCard.tsx": "706afb6113c1",
         "src/components/expenses/PendingQuestionsCard.tsx": "5bad05726b40",
-        "src/components/expenses/RecentExpenses.tsx": "063f17151844",
+        "src/components/expenses/RecentExpenses.tsx": "2663f9149b64",
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/components/installments/InstallmentsPanel.tsx": "a23758827f16",
         "src/components/seasons/SeasonsPanel.tsx": "4c118a1dc96e",
-        "src/components/wallets/DigitalBankingSuite.tsx": "99acb2c19bd2",
-        "src/pages/Home.tsx": "b2b5870a8509",
+        "src/components/wallets/DigitalBankingSuite.tsx": "f85cc994994f",
+        "src/components/wallets/WalletBalanceKind.tsx": "1d043328f186",
+        "src/pages/Home.tsx": "925a6a0147e5",
         "src/pages/PlanPage.tsx": "107068a002b0",
         "src/pages/WalletsPage.tsx": "a1964708847b"
       },
-      "checked": "2026-11-04 e20f0bb5",
-      "arabic": "d52c02d4ef4f",
-      "arabicChecked": "2026-11-04 e20f0bb5"
+      "checked": "2026-11-04 4def5707",
+      "arabic": "3d88b79fe289",
+      "arabicChecked": "2026-11-04 4def5707"
     },
     "notifications": {
       "files": {
@@ -464,13 +472,13 @@
         "api/profile-router.ts#profile.markAllInAppNotificationsRead": "6a3d324697cb",
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
         "api/profile-router.ts#profile.savePushSubscription": "788ec5760eef",
-        "api/profile-router.ts#rest-of-file": "b05c177eb2f5",
+        "api/profile-router.ts#rest-of-file": "8fde10be8ce6",
         "api/services/firebase.ts": "2181d9177c35",
         "src/pages/Notifications.tsx": "57d9f2b4b95f"
       },
-      "checked": "2026-11-02 af230467",
+      "checked": "2026-11-04 4def5707",
       "arabic": "5012d7aeea12",
-      "arabicChecked": "2026-11-02 af230467"
+      "arabicChecked": "2026-11-04 4def5707"
     },
     "platform": {
       "files": {
@@ -482,7 +490,7 @@
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
         "api/boot.ts#rest-of-file": "6a403e321e21",
         "api/context.ts": "d2add89863df",
-        "api/jobs/data-retention-job.ts": "fa5524867785",
+        "api/jobs/data-retention-job.ts": "fcd7f88b3e59",
         "api/lib/app-time.ts": "7eaf4ab8fae6",
         "api/lib/cache-keys.ts": "89dc693d0c12",
         "api/lib/client-platform.ts": "fe6ce60846a0",
@@ -493,7 +501,7 @@
         "api/lib/redis-client.ts": "b5bd5c4ff3ad",
         "api/lib/settings-cache.ts": "cf6ddd683871",
         "api/lib/shared-generation.ts": "2d53bf30e567",
-        "api/lib/system-settings-registry.ts": "16a68f21002f",
+        "api/lib/system-settings-registry.ts": "8fb8ab17acfb",
         "api/middleware.ts": "e82907a611a2",
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "d748ca88b929",
@@ -512,7 +520,7 @@
         "contracts/constants.ts": "f047c234a332",
         "contracts/errors.ts": "823cdb78cfc4",
         "contracts/expense-save.ts": "6e04603f9cbc",
-        "contracts/ledger-movement.ts": "c7f5459833b0",
+        "contracts/ledger-movement.ts": "5bde6df7b14d",
         "contracts/notification-types.ts": "796e38e868ce",
         "contracts/plan-features.ts": "bfe2ce4533ca",
         "contracts/plans.ts": "371c028a6907",
@@ -520,14 +528,14 @@
         "contracts/types.ts": "191164b8f041",
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
-        "db/relations.ts": "86b68c07de8c",
-        "db/schema.ts": "adc8fd50c96c",
+        "db/relations.ts": "66e020701ca7",
+        "db/schema.ts": "080a596b3f17",
         "db/seed.ts": "811d2a0df636",
-        "db/table-classes.ts": "54e3a817b0b0"
+        "db/table-classes.ts": "4f7a8f5c974a"
       },
-      "checked": "2026-11-04 e20f0bb5",
-      "arabic": "6d8c6bb5a985",
-      "arabicChecked": "2026-11-04 e20f0bb5"
+      "checked": "2026-11-04 4def5707",
+      "arabic": "2884210d907c",
+      "arabicChecked": "2026-11-04 4def5707"
     },
     "voice-calls": {
       "files": {
@@ -689,12 +697,12 @@
         "src/i18n/ar.ts": "a6a4f3c63cf0",
         "src/i18n/context.ts": "862082f8b940",
         "src/i18n/en.ts": "00526651cd6d",
-        "src/i18n/format.ts": "99c743113c52",
+        "src/i18n/format.ts": "dcabd0402133",
         "src/i18n/language.ts": "398827de4cd9",
         "src/lib/back-button-manager.ts": "8f9f1a1d70ca",
         "src/lib/biometricAuth.ts": "40b2dc329b69",
         "src/lib/financial-taxonomy.ts": "8d5316f3e67b",
-        "src/lib/ledger-refresh.ts": "50107fa5e42e",
+        "src/lib/ledger-refresh.ts": "0db704f2a63e",
         "src/lib/offline-queue-count.ts": "99cb920afb03",
         "src/lib/queryPersister.ts": "078724e324de",
         "src/lib/saved-toast.ts": "84f65651ad19",
@@ -714,9 +722,9 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "checked": "2026-11-04 907e6d5e",
-      "arabic": "c0c469239c6a",
-      "arabicChecked": "2026-11-04 907e6d5e"
+      "checked": "2026-11-04 4def5707",
+      "arabic": "f69cd703fa4f",
+      "arabicChecked": "2026-11-04 4def5707"
     }
   }
 }

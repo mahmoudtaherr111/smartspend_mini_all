@@ -16,6 +16,7 @@ import { trpc } from "@/providers/trpc";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { RecentExpenses } from "@/components/expenses/RecentExpenses";
 import { PendingQuestionsCard } from "@/components/expenses/PendingQuestionsCard";
+import { CaptureOverview } from "@/components/bank-capture/CaptureOverview";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OnboardingCard } from "@/components/OnboardingCard";
 import { cn } from "@/lib/utils";
@@ -288,6 +289,7 @@ export default function Home() {
                     }}
                   />
                   <div className="space-y-4">
+                    <CaptureOverview />
                     <PendingQuestionsCard />
                     <RecentExpenses
                       limit={7}

@@ -26,7 +26,7 @@ import { captureOpenFor, olderThan, secondsToNextBusinessDay, takeDailySignals }
 import { takeCaptureNotices, wakeCaptureModel } from "./lib/capture/ai-queue";
 import { recordHeartbeat } from "./lib/capture/care";
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
-import { captureConsentsOf } from "./lib/capture/consent";
+import { CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION, captureConsentsOf } from "./lib/capture/consent";
 import { resolveCaptureDevice, touchCaptureDevice, type CaptureDevice } from "./lib/capture/devices";
 import { CAPTURE_GATE, answerEvent, ingestSignals } from "./lib/capture/intake";
 import { createLogger } from "./lib/log";
@@ -94,9 +94,11 @@ export function registerCaptureRoutes(app: Hono): void {
     }
     const parsed = captureSignalsRequestSchema.safeParse(await readJson(c));
     if (!parsed.success) return fail(c, 400, "invalid_request");
-    if (!(await captureConsentsOf(device)).capture) return fail(c, 403, "consent_required");
+    const settings = await getSystemSettings();
+    const consent = await captureConsentsOf(device, undefined, settings.capture_read_mode === "model_first" ? CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION : undefined);
+    if (!consent.capture || (settings.capture_read_mode === "model_first" && !consent.aiReading)) return fail(c, 403, "consent_required");
     // The day's signals of all the user's phones: past the cap, the batch waits until Cairo midnight.
-    const dailyLimit = Number.parseInt((await getSystemSettings()).capture_daily_signal_limit ?? "1000", 10) || 0;
+    const dailyLimit = Number.parseInt(settings.capture_daily_signal_limit ?? "1000", 10) || 0;
     if (!(await takeDailySignals(device, parsed.data.signals.length, dailyLimit))) {
       c.header("Retry-After", String(secondsToNextBusinessDay()));
       return fail(c, 429, "rate_limited");
@@ -134,11 +136,12 @@ export function registerCaptureRoutes(app: Hono): void {
   app.get("/api/capture/v1/config", async (c) => {
     const device = await deviceOf(c);
     if (!device) return fail(c, 401, "invalid_device");
-    const [enabled, consent, catalog] = await Promise.all([captureOpen(device), captureConsentsOf(device), getCaptureCatalog()]);
+    const [enabled, settings, catalog] = await Promise.all([captureOpen(device), getSystemSettings(), getCaptureCatalog()]);
+    const consent = await captureConsentsOf(device, undefined, settings.capture_read_mode === "model_first" ? CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION : undefined);
     await touchCaptureDevice(device.deviceId, false);
     const config: CaptureConfig = {
       apiVersion: CAPTURE_API_VERSION,
-      enabled,
+      enabled: enabled && (settings.capture_read_mode !== "model_first" || (consent.capture && consent.aiReading)),
       consent,
       minClientVersion: CAPTURE_MIN_CLIENT_VERSION,
       catalogVersion: catalog.version,

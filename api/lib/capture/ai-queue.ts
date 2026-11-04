@@ -20,7 +20,7 @@ import { afterLedgerWrite, type LedgerTx } from "../../services/ledger-writer";
 import { createLogger } from "../log";
 import { SMS_PROMPT_VERSION, type SmsModelReply } from "../sms-ai-contract";
 import { readMessageWithModel } from "./ai-reader";
-import { captureConsentsOf } from "./consent";
+import { CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION, captureConsentsOf } from "./consent";
 import type { CaptureDevice } from "./devices";
 import { autoPolicyOf, lockCaptureUser, placeSignal, startIntakeRun, noteWalletBalance, type SignalReading } from "./intake";
 import { openCaptureText } from "./vault";
@@ -33,6 +33,7 @@ import type { PreparedCaptureText } from "./privacy";
 import type { CaptureModelReply, CapturePostingProposal } from "./model-contract";
 import { merchantNamesToKeep } from "./keep-merchants";
 import { merchantKey } from "./reader/counterparty";
+import { primaryInstrument } from "./instruments";
 
 const log = createLogger("capture-ai-queue");
 
@@ -92,9 +93,10 @@ export function readingFromV4(stored: SignalReading, reply: CaptureModelReply, p
   const phone = digits?.startsWith("0020") ? `0${digits.slice(4)}` : digits?.startsWith("20") ? `0${digits.slice(2)}` : digits;
   const identityKey = isPhone ? (phone?.length === 11 && !/[*xX•]/u.test(identity ?? "") ? phone : null) : identity;
   const name = isPhone ? null : identity ?? (reply.party?.startsWith("[") ? null : reply.party);
-  const cards = [...new Set(text.markers.filter((marker) => marker.kind === "CARD").map((marker) => asciiDigits(text.localValue(marker.marker) ?? "").replace(/\D/g, "").slice(-4)).filter((value) => /^\d{4}$/.test(value)))];
+  const instrument = primaryInstrument(text, reply.flow, reply.type);
   return { ...stored, readBy: "model", readerVersion: "model:sms-v4", kind, direction: reply.flow, confidence: "likely",
-    cardSuffix: cards.length === 1 ? cards[0] : cards.length > 1 ? null : stored.cardSuffix,
+    cardSuffix: instrument?.kind === "card" ? instrument.suffix : null,
+    accountSuffix: instrument?.kind === "account" ? instrument.suffix : null,
     amount: { value: reply.amount.value, currency: reply.amount.currency }, amountEgp: reply.egp ? { value: reply.egp.value, currency: "EGP" } : null,
     fee: reply.fee ? { value: reply.fee.value, currency: reply.fee.currency } : null,
     balanceAfter: reply.balance ? { value: reply.balance.value, currency: reply.balance.currency } : null,
@@ -103,6 +105,7 @@ export function readingFromV4(stored: SignalReading, reply: CaptureModelReply, p
       phoneTail: digits?.slice(-4) ?? null, ipa: null,
       merchantKey: reply.partyType === "merchant" && name ? merchantKey(name) : null,
       ...(reply.partyType === "person" && identityKey ? { identityHmac: captureHmac("person", identityKey.trim().replace(/\s+/g, " ").toLowerCase()) } : {}),
+      ...(reply.partyType === "person" && identityKey ? { identityKind: isPhone ? "phone" as const : "name" as const } : {}),
     }, captureV4: { ...stored.captureV4, envelope: "", reply, posting },
   };
 }
@@ -274,7 +277,7 @@ async function readV4Job(job: Job, signal: typeof captureSignals.$inferSelect, s
   // Expand only when actual v4 work exists; the shared admission table remains the cross-replica cap.
   wakeOne(64);
   const owner = { userId: job.userId, userType: job.userType };
-  const consent = await captureConsentsOf(owner);
+  const consent = await captureConsentsOf(owner, undefined, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION);
   if (!consent.capture || !consent.aiReading) {
     await getDb().transaction(async (tx) => {
       await lockCaptureUser(tx, owner);
@@ -307,7 +310,7 @@ async function readV4Job(job: Job, signal: typeof captureSignals.$inferSelect, s
       await lockCaptureUser(tx, owner);
       const [lease] = await tx.select().from(captureAiJobs).where(and(eq(captureAiJobs.id, job.id), eq(captureAiJobs.userId, owner.userId), eq(captureAiJobs.userType, owner.userType))).for("update");
       if (!lease || lease.status !== "running" || lease.attempts !== job.attempts) return;
-      const fresh = await captureConsentsOf(owner, tx);
+      const fresh = await captureConsentsOf(owner, tx, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION);
       if (!fresh.capture || !fresh.aiReading) {
         await tx.delete(captureAiJobs).where(eq(captureAiJobs.id, job.id));
         await tx.delete(captureSignals).where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));
@@ -341,7 +344,7 @@ async function readV4Job(job: Job, signal: typeof captureSignals.$inferSelect, s
     const [lease] = await tx.select().from(captureAiJobs).where(and(eq(captureAiJobs.id, job.id), eq(captureAiJobs.userId, owner.userId), eq(captureAiJobs.userType, owner.userType))).for("update");
     if (!lease || lease.status !== "running" || lease.attempts !== job.attempts) return;
     const [stillAlive] = await tx.select({ id: account.id, plan: account.plan }).from(account).where(eq(account.id, owner.userId));
-    const freshConsent = await captureConsentsOf(owner, tx);
+    const freshConsent = await captureConsentsOf(owner, tx, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION);
     if (!stillAlive || !freshConsent.capture || !freshConsent.aiReading) {
       await tx.delete(captureAiJobs).where(eq(captureAiJobs.id, job.id));
       await tx.delete(captureSignals).where(and(eq(captureSignals.id, signal.id), eq(captureSignals.userId, owner.userId), eq(captureSignals.userType, owner.userType)));

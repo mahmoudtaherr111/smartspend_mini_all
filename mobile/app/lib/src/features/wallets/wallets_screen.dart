@@ -76,7 +76,11 @@ class WalletsScreen extends ConsumerWidget {
                             label: l10n.walletsTotal,
                             amount: list.fold<num>(
                               0,
-                              (num sum, Wallet wallet) => sum + wallet.balance,
+                              (num sum, Wallet wallet) =>
+                                  sum +
+                                  (wallet.cashBalanceIncluded
+                                      ? wallet.balance
+                                      : 0),
                             ),
                             story: l10n.walletsTotalStory,
                             wash: true,

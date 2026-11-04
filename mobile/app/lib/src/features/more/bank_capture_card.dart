@@ -68,27 +68,43 @@ class _StatusBody extends ConsumerStatefulWidget {
 
 class _StatusBodyState extends ConsumerState<_StatusBody> {
   bool _busy = false;
+  bool _starting = false;
 
   Future<void> _start() async {
-    final l10n = AppLocalizations.of(context);
-    final agreed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.captureConsentTitle),
-        content: Text(l10n.captureConsentBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.captureConsentAgree),
-          ),
-        ],
-      ),
-    );
-    if (agreed != true || !mounted) return;
+    if (_starting) return;
+    _starting = true;
     setState(() => _busy = true);
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final outcome = await ref.read(captureConnectorProvider).connect();
+      final server = await ref.read(captureApiProvider).status();
+      if (!mounted) return;
+      setState(() => _busy = false);
+      final agreed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.captureConsentTitle),
+          content: SingleChildScrollView(
+            child: Text(
+              server.automatic
+                  ? l10n.captureAutomaticConsentBody
+                  : l10n.captureConsentBody,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.captureConsentAgree),
+            ),
+          ],
+        ),
+      );
+      if (agreed != true || !mounted) return;
+      setState(() => _busy = true);
+      final outcome = await ref
+          .read(captureConnectorProvider)
+          .connect(automaticConsentAccepted: server.automatic);
+      if (!mounted) return;
       if (outcome == CaptureConnectOutcome.unavailable) {
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.captureUnavailable)),
@@ -100,10 +116,13 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
         }
       }
     } on Object {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.captureConnectFailed)),
-      );
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.captureConnectFailed)),
+        );
+      }
     } finally {
+      _starting = false;
       if (mounted) setState(() => _busy = false);
     }
   }
@@ -116,7 +135,10 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
     final status = widget.status;
     final android = status.method == CaptureMethod.notificationListener;
     final granted = status.access == CaptureAccess.granted;
-    final running = android && status.connected && granted;
+    final server = ref.watch(captureServerStatusProvider).value;
+    final needsRenewal =
+        server?.automatic == true && (!server!.consented || !server.aiReading);
+    final running = android && status.connected && granted && !needsRenewal;
     final muted = textTheme.bodyMedium?.copyWith(color: colors.mutedForeground);
 
     return Column(
@@ -141,7 +163,11 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
         ),
         const SizedBox(height: SmartSpendSpacing.sm),
         Text(
-          android ? l10n.captureAndroidBody : l10n.captureIosBody,
+          android
+              ? (server?.automatic == true
+                    ? l10n.captureAutomaticBody
+                    : l10n.captureAndroidBody)
+              : l10n.captureIosBody,
           style: muted,
         ),
         if (!android) ...[
@@ -154,7 +180,8 @@ class _StatusBodyState extends ConsumerState<_StatusBody> {
                   ref.read(bankCaptureProvider).openAccessSettings(),
             ),
           ],
-        ] else if (!status.connected) ...[
+        ] else if (!status.connected || needsRenewal) ...[
+          if (needsRenewal) Text(l10n.captureRenewConsent),
           if (status.lastError == 'device_revoked') ...[
             const SizedBox(height: SmartSpendSpacing.sm),
             Text(l10n.captureRevoked, style: muted),
@@ -276,8 +303,16 @@ class _AiReadingSwitchState extends ConsumerState<_AiReadingSwitch> {
     if (server == null) return const SizedBox.shrink();
     return SwitchListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(l10n.captureAiReadingTitle),
-      subtitle: Text(l10n.captureAiReadingBody),
+      title: Text(
+        server.automatic
+            ? l10n.captureAutomaticAiTitle
+            : l10n.captureAiReadingTitle,
+      ),
+      subtitle: Text(
+        server.automatic
+            ? l10n.captureAutomaticAiBody
+            : l10n.captureAiReadingBody,
+      ),
       value: server.aiReading,
       onChanged: _busy ? null : (granted) => _set(server, granted),
     );
@@ -293,7 +328,11 @@ class _PendingLink extends ConsumerWidget {
     final count = ref.watch(capturePendingProvider).value?.length ?? 0;
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(l10n.captureReviewEntry(count)),
+      title: Text(
+        ref.watch(captureServerStatusProvider).value?.automatic == true
+            ? l10n.captureAutomaticTitle
+            : l10n.captureReviewEntry(count),
+      ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.go(CaptureReviewScreen.path),
     );

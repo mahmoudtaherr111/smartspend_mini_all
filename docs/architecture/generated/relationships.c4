@@ -19,6 +19,7 @@ model {
   smartspend.api.http.post_webhooks_paymob -[uses]-> smartspend.shared.contracts
   smartspend.api.http.post_webhooks_whatsapp -[uses]-> smartspend.api.modules.platform
   smartspend.api.http.post_webhooks_whatsapp -[uses]-> smartspend.api.modules.whatsapp
+  smartspend.api.modules.accounts -[imports]-> smartspend.api.modules.capture-intake
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.chat_conversations
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.accounts -[reads]-> smartspend.mysql.user_businesses
@@ -44,6 +45,7 @@ model {
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_events
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_markers
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_memory
+  smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_questions
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_signals
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_usage
   smartspend.api.modules.accounts -[writes]-> smartspend.mysql.capture_user_pairs
@@ -362,6 +364,8 @@ model {
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.capture-ai-reader
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.capture-catalog
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.capture-reader
+  smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.classification
+  smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.capture-intake -[imports]-> smartspend.api.modules.security
@@ -372,11 +376,13 @@ model {
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_events
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_markers
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_memory
+  smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_questions
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_signals
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_usage
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.capture_user_pairs
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.local_users
+  smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.modules.capture-intake -[reads]-> smartspend.mysql.users
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_ai_jobs
@@ -385,6 +391,7 @@ model {
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_events
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_markers
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_memory
+  smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_questions
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_signals
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_usage
   smartspend.api.modules.capture-intake -[writes]-> smartspend.mysql.capture_user_pairs
@@ -474,6 +481,7 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_ai_jobs
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_ai_reservations
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_events
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_questions
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.capture_signals
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.chat_messages
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.classification_logs
@@ -501,6 +509,7 @@ model {
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.ledger -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.capture_events
+  smartspend.api.modules.ledger -[reads]-> smartspend.mysql.capture_markers
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.expense_daily_rollups
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.ledger -[reads]-> smartspend.mysql.local_users
@@ -965,6 +974,8 @@ model {
   smartspend.api.trpc.capture.activity -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.answer -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.answer -[uses]-> smartspend.shared.contracts
+  smartspend.api.trpc.capture.answerQuestion -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.trpc.capture.answerQuestion -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.capture.answerWalletOffer -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.autoOffers -[uses]-> smartspend.api.modules.capture-catalog
   smartspend.api.trpc.capture.autoOffers -[uses]-> smartspend.api.modules.capture-intake
@@ -972,6 +983,7 @@ model {
   smartspend.api.trpc.capture.devices -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.ignore -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.ignored -[uses]-> smartspend.api.modules.capture-intake
+  smartspend.api.trpc.capture.nextQuestion -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.pending -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.registerDevice -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.capture.registerDevice -[uses]-> smartspend.api.modules.platform
@@ -1105,6 +1117,7 @@ model {
   smartspend.api.trpc.expense.deleteInstallmentPlan -[writes]-> smartspend.mysql.installment_plans
   smartspend.api.trpc.expense.dismissClarification -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.trpc.expense.getById -[reads]-> smartspend.mysql.expenses
+  smartspend.api.trpc.expense.getById -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.getCategoryList -[reads]-> smartspend.mysql.expense_categories
   smartspend.api.trpc.expense.getDebtBalances -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.getMonthSummary -[reads]-> smartspend.mysql.expense_daily_rollups
@@ -1137,6 +1150,7 @@ model {
   smartspend.api.trpc.expense.previewCategory -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.expense.searchTransactions -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.expense.searchTransactions -[uses]-> smartspend.api.modules.arabic-nlp
+  smartspend.api.trpc.expense.searchTransactions -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.expense.update -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.expense.update -[uses]-> smartspend.api.modules.ai-insights
   smartspend.api.trpc.expense.update -[uses]-> smartspend.api.modules.classification
@@ -1244,8 +1258,11 @@ model {
   smartspend.api.trpc.profile.confirmPhoneChange -[writes]-> smartspend.mysql.local_users
   smartspend.api.trpc.profile.deleteContact -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.deleteContact -[reads]-> smartspend.mysql.user_profiles
+  smartspend.api.trpc.profile.deleteContact -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.profile.deleteContact -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.profile.deleteContact -[uses]-> smartspend.api.modules.finance-semantic-layer
+  smartspend.api.trpc.profile.deleteContact -[uses]-> smartspend.api.modules.ledger
+  smartspend.api.trpc.profile.deleteContact -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.trpc.profile.deleteContact -[writes]-> smartspend.mysql.user_contacts
@@ -1270,8 +1287,11 @@ model {
   smartspend.api.trpc.profile.mergeContacts -[reads]-> smartspend.mysql.expenses
   smartspend.api.trpc.profile.mergeContacts -[reads]-> smartspend.mysql.user_contacts
   smartspend.api.trpc.profile.mergeContacts -[reads]-> smartspend.mysql.user_profiles
+  smartspend.api.trpc.profile.mergeContacts -[uses]-> smartspend.api.modules.capture-intake
   smartspend.api.trpc.profile.mergeContacts -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.profile.mergeContacts -[uses]-> smartspend.api.modules.finance-semantic-layer
+  smartspend.api.trpc.profile.mergeContacts -[uses]-> smartspend.api.modules.ledger
+  smartspend.api.trpc.profile.mergeContacts -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.profile.mergeContacts -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.profile.mergeContacts -[writes]-> smartspend.mysql.scheduled_cashflows
   smartspend.api.trpc.profile.mergeContacts -[writes]-> smartspend.mysql.user_contacts
@@ -1340,6 +1360,8 @@ model {
   smartspend.api.trpc.wallet.getWalletTransactions -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.wallet.getWalletTransactions -[uses]-> smartspend.shared.contracts
   smartspend.api.trpc.wallet.getWallets -[reads]-> smartspend.mysql.user_wallets
+  smartspend.api.trpc.wallet.getWallets -[uses]-> smartspend.api.modules.ledger
+  smartspend.api.trpc.wallet.getWallets -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.wallet.updateWallet -[writes]-> smartspend.mysql.user_wallets
   smartspend.api.trpc.webauthn.checkHasPasskey -[reads]-> smartspend.mysql.user_credentials
   smartspend.api.trpc.webauthn.deletePasskey -[writes]-> smartspend.mysql.user_credentials
@@ -1381,6 +1403,9 @@ model {
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-ui-kit
+  smartspend.web.modules.web-bank-capture -[imports]-> smartspend.web.modules.web-lib
+  smartspend.web.modules.web-bank-capture -[imports]-> smartspend.web.modules.web-shell
+  smartspend.web.modules.web-bank-capture -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.modules.web-capture -[imports]-> smartspend.shared.contracts
   smartspend.web.modules.web-capture -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-capture -[imports]-> smartspend.web.modules.web-lib
@@ -1406,6 +1431,7 @@ model {
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-account
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-admin
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-ai
+  smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-bank-capture
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-capture
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-finance
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-growth
@@ -1548,6 +1574,12 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.budget.delete
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.budget.list
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.business.get
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.capture
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.capture.activity
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.capture.answer
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.capture.answerQuestion
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.capture.nextQuestion
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.capture.status
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.answerClarification
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.batchCreate
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.expense.create
@@ -1575,6 +1607,7 @@ model {
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.dismissOnboarding
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.getNextOnboardingQuestion
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.getSmartProfile
+  smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.listContacts
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.savePushSubscription
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.profile.submitOnboardingAnswer
   smartspend.web.pages.Home -[calls]-> smartspend.api.trpc.voice.eligibility
@@ -1661,6 +1694,9 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.business.removeCategory
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.business.suggestCategories
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.business.update
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.capture.setWalletKind
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.capture.status
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.capture.walletKind
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.bulkUndo
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.catalog
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.captureAdmin.funnel
@@ -1709,6 +1745,7 @@ model {
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.listMine
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.support.respond
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.voice.adminStats
+  smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.createWallet
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.deleteWallet
   smartspend.web.pages.More -[calls]-> smartspend.api.trpc.wallet.getWalletMonth
@@ -1782,7 +1819,12 @@ model {
   smartspend.web.pages.UltraLounge -[calls]-> smartspend.api.trpc.localAuth.logout
   smartspend.web.pages.UltraLounge -[calls]-> smartspend.api.trpc.localAuth.me
   smartspend.web.pages.UltraLounge -[calls]-> smartspend.api.trpc.seo.getPage
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.capture.setWalletKind
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.capture.status
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.capture.walletKind
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.coach.overview
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.seo.getPage
+  smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.createWallet
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.deleteWallet
   smartspend.web.pages.WalletsPage -[calls]-> smartspend.api.trpc.wallet.getWalletMonth

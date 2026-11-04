@@ -168,6 +168,7 @@ class LedgerApi {
     String? type,
     bool? refund,
     String? movementKind,
+    num? linkedFeeAmount,
     String? category,
     String? subCategory,
     String? description,
@@ -181,6 +182,7 @@ class LedgerApi {
       'type': ?type,
       'refund': ?refund,
       'movementKind': ?movementKind,
+      'linkedFeeAmount': ?linkedFeeAmount,
       'category': ?category,
       'subCategory': ?subCategory,
       'description': ?description,
@@ -209,6 +211,7 @@ class LedgerApi {
       Procedures.expense.list,
       input: {
         'limit': limit,
+        'groupLinkedFees': true,
         'cursor': ?before,
         'category': ?category,
         'type': ?type,

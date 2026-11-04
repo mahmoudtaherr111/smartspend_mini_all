@@ -31,7 +31,7 @@
       "titleAr": "رسائل البنوك والمحافظ",
       "summary": "Automatic capture of bank and wallet messages from phones: the catalog of banks, wallets and subscriptions the admin edits, the reader that reads a message without a model, the admin's model for what the reader is unsure of, the intake that merges signals into payments, and the user's answer that writes the ledger.",
       "summaryAr": "تسجيل رسايل البنوك والمحافظ من الموبايل: قايمة البنوك والمحافظ والاشتراكات اللي الأدمن بيعدّلها، والقارئ اللي بيقرا الرسالة من غير AI، والموديل اللي الأدمن اختاره للي القارئ مش متأكد منه، والاستلام اللي بيجمع الرسايل في عمليات، وإجابة المستخدم اللي بتكتب في الدفتر.",
-      "clusters": ["capture-ai-reader", "capture-catalog", "capture-intake", "capture-reader"],
+      "clusters": ["capture-ai-reader", "capture-catalog", "capture-intake", "capture-reader", "web-bank-capture"],
       "routers": ["capture", "captureAdmin"],
       "jobs": ["seed-capture-catalog", "capture-ai-sweep", "capture-breaker", "capture-silent-devices"]
     },

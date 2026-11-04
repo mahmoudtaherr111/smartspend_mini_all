@@ -442,3 +442,8 @@ A filing-only clause such as «سجلها في حساب مشروع ورشة ال
 
 
 The classifier keeps its semantic transfer/investment output for compatibility. The shared writer converts it only after the cashflow-v1 cutover, using explicit direction and independent financial metadata; missing legacy transfer direction is refused rather than inferred from the amount.
+
+
+Saved capture-purpose feedback edits the already stored row through the shared writer and does not run the entry
+parse/save flow again. Lists can opt into fee grouping; existing clients retain ungrouped rows. This does not change
+text/voice classification decisions or the explicit review of manually entered drafts.

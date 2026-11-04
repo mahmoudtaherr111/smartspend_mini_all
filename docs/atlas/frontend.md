@@ -180,7 +180,7 @@ _None._
 
 ### `Home` — `src/pages/Home.tsx`
 
-53 files in its import closure (not counting `src/components/ui/`).
+54 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -193,6 +193,12 @@ _None._
 | `budget.delete` | useMutation | `src/components/budgets/BudgetsPanel.tsx` |
 | `budget.list` | useQuery, utils.invalidate | `src/components/budgets/BudgetsPanel.tsx`, `src/components/dashboard/ExpenseChart.tsx` |
 | `business.get` | useQuery | `src/pages/Home.tsx` |
+| `capture.*` | utils.invalidate | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.activity` | useQuery, utils.invalidate | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.answer` | useMutation | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.answerQuestion` | useMutation | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.nextQuestion` | useMutation | `src/components/bank-capture/CaptureOverview.tsx` |
+| `capture.status` | useQuery | `src/components/bank-capture/CaptureOverview.tsx` |
 | `expense.answerClarification` | useMutation | `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/PendingQuestionsCard.tsx` |
 | `expense.batchCreate` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `expense.create` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
@@ -220,6 +226,7 @@ _None._
 | `profile.dismissOnboarding` | useMutation | `src/components/OnboardingCard.tsx` |
 | `profile.getNextOnboardingQuestion` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx` |
 | `profile.getSmartProfile` | useQuery, utils.invalidate | `src/components/OnboardingCard.tsx`, `src/components/dashboard/ExpenseChart.tsx`, `src/pages/Home.tsx` |
+| `profile.listContacts` | useQuery | `src/components/bank-capture/CaptureOverview.tsx` |
 | `profile.savePushSubscription` | useMutation | `src/hooks/usePushNotifications.ts` |
 | `profile.submitOnboardingAnswer` | useMutation | `src/components/OnboardingCard.tsx` |
 | `voice.eligibility` | useQuery | `src/hooks/useVoiceCallEntry.ts` |
@@ -253,7 +260,7 @@ _None._
 
 ### `More` — `src/pages/More.tsx`
 
-62 files in its import closure (not counting `src/components/ui/`).
+63 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
@@ -327,6 +334,9 @@ _None._
 | `business.removeCategory` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.suggestCategories` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
 | `business.update` | useMutation | `src/components/settings/BusinessSettingsView.tsx` |
+| `capture.setWalletKind` | useMutation | `src/components/wallets/WalletBalanceKind.tsx` |
+| `capture.status` | useQuery | `src/components/wallets/WalletBalanceKind.tsx` |
+| `capture.walletKind` | useQuery, utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
 | `captureAdmin.bulkUndo` | useMutation | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
 | `captureAdmin.catalog` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureTab.tsx` |
 | `captureAdmin.funnel` | useQuery, utils.invalidate | `src/components/admin/capture/AdminCaptureNumbers.tsx` |
@@ -340,7 +350,7 @@ _None._
 | `coach.addCashflow` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.cancelReminder` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.endPlan` | useMutation | `src/pages/PlanPage.tsx` |
-| `coach.overview` | useQuery, utils.invalidate | `src/pages/PlanPage.tsx` |
+| `coach.overview` | useQuery, utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx`, `src/pages/PlanPage.tsx` |
 | `coach.paymentSuggestions` | useQuery | `src/pages/PlanPage.tsx` |
 | `coach.setReminder` | useMutation | `src/pages/PlanPage.tsx` |
 | `coach.setStepStatus` | useMutation | `src/pages/PlanPage.tsx` |
@@ -375,6 +385,7 @@ _None._
 | `support.listMine` | useQuery | `src/pages/Support.tsx` |
 | `support.respond` | useMutation | `src/pages/Admin.tsx` |
 | `voice.adminStats` | useQuery | `src/components/admin/settings/AdminVoiceCallSection.tsx` |
+| `wallet.*` | utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
 | `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.getWalletMonth` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |
@@ -513,11 +524,16 @@ _None._
 
 ### `WalletsPage` — `src/pages/WalletsPage.tsx`
 
-4 files in its import closure (not counting `src/components/ui/`).
+5 files in its import closure (not counting `src/components/ui/`).
 
 | Procedure | Calls | Files |
 | --- | --- | --- |
+| `capture.setWalletKind` | useMutation | `src/components/wallets/WalletBalanceKind.tsx` |
+| `capture.status` | useQuery | `src/components/wallets/WalletBalanceKind.tsx` |
+| `capture.walletKind` | useQuery, utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
+| `coach.overview` | utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
+| `wallet.*` | utils.invalidate | `src/components/wallets/WalletBalanceKind.tsx` |
 | `wallet.createWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.deleteWallet` | useMutation | `src/components/wallets/DigitalBankingSuite.tsx` |
 | `wallet.getWalletMonth` | useQuery | `src/components/wallets/DigitalBankingSuite.tsx` |

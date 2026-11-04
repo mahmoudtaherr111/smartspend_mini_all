@@ -3,7 +3,7 @@ import { CAPTURE_TEXT_MAX } from "../../../contracts/capture-intake";
 import { asciiDigits, redactWithPrivateTokens, type NumberedRedactedText } from "../anonymizer";
 import { z } from "zod";
 
-export type CapturePrivacyCode = "input_size" | "reserved_marker" | "otp" | "incomplete_name" | "residual_identifier";
+export type CapturePrivacyCode = "input_size" | "reserved_marker" | "otp" | "incomplete_name" | "residual_identifier" | "numeric_fragment";
 export type PreparedCaptureText = NumberedRedactedText;
 export type CapturePrivacyResult = { ok: true; value: PreparedCaptureText } | { ok: false; codes: CapturePrivacyCode[] };
 const issued = new WeakSet<object>();
@@ -14,6 +14,7 @@ export function capturePrivacyCodes(text: string, incompleteName = false): Captu
   const codes: CapturePrivacyCode[] = [];
   if (!text || text.length > CAPTURE_TEXT_MAX) codes.push("input_size");
   if (incompleteName) codes.push("incomplete_name");
+  if (/\[(?:CARD|ACCOUNT|REDACTED_CARD|REDACTED_ACCOUNT)(?:_\d+)?\][.,٫]\d/u.test(asciiDigits(text))) codes.push("numeric_fragment");
   if (/\[(?:OTP_\d+|REDACTED_OTP)\]/u.test(text)) codes.push("otp");
   const visible = asciiDigits(text).replace(/\[(?:[A-Z]+_\d+|REDACTED_[A-Z]+)\]/gu, "");
   if (/(?:\d[\s-]*){10,}/u.test(visible) || /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/u.test(visible)

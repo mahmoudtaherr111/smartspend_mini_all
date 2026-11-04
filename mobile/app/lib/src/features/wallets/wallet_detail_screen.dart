@@ -8,8 +8,10 @@ import 'package:smartspend_api/smartspend_api.dart';
 import 'package:smartspend_ui/smartspend_ui.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../capture/capture_controller.dart';
 import '../ledger/ledger_providers.dart';
 import '../ledger/ledger_widgets.dart';
+import 'wallet_balance_kind.dart';
 import 'wallet_form.dart';
 import 'wallet_models.dart';
 import 'wallet_providers.dart';
@@ -99,13 +101,13 @@ class WalletDetailScreen extends ConsumerWidget {
   }
 }
 
-class _Filled extends StatelessWidget {
+class _Filled extends ConsumerWidget {
   const _Filled({required this.detail});
 
   final WalletDetail detail;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.smartSpendColors;
     final textTheme = Theme.of(context).textTheme;
@@ -130,13 +132,17 @@ class _Filled extends StatelessWidget {
     return StaggeredReveal(
       children: [
         HeroFigure(
-          label: label,
+          label: wallet.balanceKind == 'credit'
+              ? '${l10n.walletCreditAvailable} · $label'
+              : label,
           amount: wallet.balance,
           story: when == null
               ? l10n.walletBalanceStoryUnknown
               : l10n.walletBalanceStory(when),
           wash: true,
         ),
+        if (ref.watch(captureServerStatusProvider).value?.walletTypesEnabled == true)
+          WalletBalanceKindChoice(walletId: wallet.id, kind: wallet.balanceKind),
         if (detail.isPartial) ...[
           const SizedBox(height: SmartSpendSpacing.sm),
           InlineMessage(l10n.walletOfflinePartial),

@@ -41,7 +41,7 @@ export function formatCurrency(
 ): string {
   const num = Number(value || 0);
   const formatted = num.toLocaleString("en-US", {
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   });
   return language === "en" ? `${formatted} EGP` : `${formatted} ج.م`;
 }

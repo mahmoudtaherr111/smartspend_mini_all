@@ -2,12 +2,13 @@
  * Looking after a user's capture (decision 0034): the health each phone reports and the notice when one stops
  * capturing, the wallet suggested for a card seen in messages, and deleting what capture keeps about the user.
  */
-import { and, count, desc, eq, gte, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
 import {
   captureAiJobs,
   captureConsents,
   captureDevices,
   captureEvents,
+  captureQuestions,
   captureMarkers,
   captureMemory,
   captureSignals,
@@ -21,6 +22,8 @@ import { createLogger } from "../log";
 import { getCaptureCatalog } from "./catalog";
 import { captureConsentsOf } from "./consent";
 import type { CaptureDevice, CaptureOwner } from "./devices";
+import { optionalCaptureTables } from "./schema-state";
+import { lockLedgerOwner } from "../../services/ledger-writer";
 
 const log = createLogger("capture-care");
 const DAY_MS = 24 * 3600 * 1000;
@@ -168,10 +171,12 @@ export async function deleteMyCaptureData(owner: CaptureOwner): Promise<{ signal
   let signals = 0;
   let waiting = 0;
   await getDb().transaction(async (tx) => {
+      await lockLedgerOwner(tx, owner, "NOT_FOUND");
     await tx.delete(captureAiJobs).where(scope(captureAiJobs));
+      if ((await optionalCaptureTables(tx)).has("capture_questions")) await tx.delete(captureQuestions).where(scope(captureQuestions));
     const [removed] = await tx.delete(captureSignals).where(scope(captureSignals));
     signals = Number((removed as { affectedRows?: number }).affectedRows ?? 0);
-    const [open] = await tx.delete(captureEvents).where(and(scope(captureEvents), inArray(captureEvents.status, ["review", "held"])));
+      const [open] = await tx.delete(captureEvents).where(and(scope(captureEvents), inArray(captureEvents.status, ["review", "held", "waiting"])));
     waiting = Number((open as { affectedRows?: number }).affectedRows ?? 0);
     await tx
       .update(captureEvents)
@@ -179,7 +184,7 @@ export async function deleteMyCaptureData(owner: CaptureOwner): Promise<{ signal
       .where(scope(captureEvents));
     await tx.delete(captureMemory).where(scope(captureMemory));
     await tx.delete(captureUserPairs).where(scope(captureUserPairs));
-    await tx.delete(captureMarkers).where(scope(captureMarkers));
+      await tx.delete(captureMarkers).where(and(scope(captureMarkers), ne(captureMarkers.kind, "wallet_kind")));
     const now = new Date();
     await tx.update(captureDevices).set({ revokedAt: now }).where(and(scope(captureDevices), isNull(captureDevices.revokedAt)));
     await tx.update(captureConsents).set({ revokedAt: now }).where(and(scope(captureConsents), isNull(captureConsents.revokedAt)));

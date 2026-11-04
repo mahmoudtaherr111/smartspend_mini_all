@@ -64,6 +64,8 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/devices.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/events.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/fees.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/identity-links.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/instruments.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/intake.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/keep-merchants.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/markers.ts` | [bank-messages](bank-messages.md) |
@@ -72,6 +74,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/model-reader.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/operations.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/privacy.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/questions.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/clauses.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/counterparty.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/explain.ts` | [bank-messages](bank-messages.md) |
@@ -84,6 +87,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/capture/reader/spans.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/types.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/reader/when.ts` | [bank-messages](bank-messages.md) |
+| `api/lib/capture/schema-state.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/seed-sources.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/seed-subscriptions.ts` | [bank-messages](bank-messages.md) |
 | `api/lib/capture/vault.ts` | [bank-messages](bank-messages.md) |
@@ -244,6 +248,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/financial-month.ts` | [money](money.md) |
 | `api/services/firebase.ts` | [notifications](notifications.md) |
 | `api/services/installments.ts` | [money](money.md) |
+| `api/services/ledger-bundles.ts` | [money](money.md) |
 | `api/services/ledger-semantics.ts` | [money](money.md) |
 | `api/services/ledger-writer.ts` | [money](money.md) |
 | `api/services/lifestyle-inference-engine.ts` | [insights](insights.md) |
@@ -304,6 +309,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/voice/gateway/store.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/post-call.ts` | [voice-calls](voice-calls.md) |
 | `api/services/voice/text-model.ts` | [voice-calls](voice-calls.md) |
+| `api/services/wallet-balance-policy.ts` | [money](money.md) |
 | `api/session-router.ts` | [accounts](accounts.md) |
 | `api/support-router.ts` | [admin](admin.md) |
 | `api/voice-router.ts` | [voice-calls](voice-calls.md) |
@@ -369,6 +375,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/auth/PasskeySettings.tsx` | [accounts](accounts.md) |
 | `src/components/auth/SignOutDialog.tsx` | [accounts](accounts.md) |
 | `src/components/auth/TurnstileWidget.tsx` | [accounts](accounts.md) |
+| `src/components/bank-capture/CaptureOverview.tsx` | [bank-messages](bank-messages.md) |
 | `src/components/budgets/BudgetsPanel.tsx` | [money](money.md) |
 | `src/components/dashboard/BehaviorInsights.tsx` | [money](money.md) |
 | `src/components/dashboard/ExpenseChart.tsx` | [money](money.md) |
@@ -468,6 +475,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `src/components/voice/VoiceCallScreen.tsx` | [voice-calls](voice-calls.md) |
 | `src/components/voice/VoiceCallTab.tsx` | [voice-calls](voice-calls.md) |
 | `src/components/wallets/DigitalBankingSuite.tsx` | [money](money.md) |
+| `src/components/wallets/WalletBalanceKind.tsx` | [money](money.md) |
 | `src/hooks/use-mobile.ts` | [web-app](web-app.md) |
 | `src/hooks/useAdmin.ts` | [web-app](web-app.md) |
 | `src/hooks/useAds.ts` | [web-app](web-app.md) |

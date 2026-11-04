@@ -52,8 +52,9 @@ class MonthSummaryCard extends ConsumerWidget {
                   spacing: SmartSpendSpacing.md,
                   runSpacing: SmartSpendSpacing.xs,
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
+                    Wrap(
+                      spacing: SmartSpendSpacing.xs,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
                           '${l10n.summaryIncome} ',
@@ -193,8 +194,9 @@ class _EntryRow extends StatelessWidget {
       icon: categoryIcon(entry.category),
       iconColor: categoryColor(context, entry.category),
       title: entry.title,
-      subtitle: '${entry.category} · ${inlineName(words.clock(entry.date))}',
-      amount: entry.amount.abs(),
+      subtitle:
+          '${entry.category} · ${inlineName(words.clock(entry.date))}${(entry.bundleFee ?? 0) > 0 ? ' · ${AppLocalizations.of(context).captureFeeLabel}: ${moneyText(context, entry.bundleFee!)}' : ''}',
+      amount: entry.displayAmount,
       kind: entryKind(entry),
       heroTag: heroTag,
       onTap: onTap,

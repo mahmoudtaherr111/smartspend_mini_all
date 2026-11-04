@@ -5,6 +5,7 @@ import {
   captureConsents,
   captureSignals,
   captureEvents,
+  captureQuestions,
   captureUsage,
   captureMemory,
   captureUserPairs,
@@ -712,6 +713,13 @@ export const captureMarkersRelations = relations(captureMarkers, ({ one }) => ({
 export const captureAiAccountsRelations = relations(captureAiAccounts, ({ one }) => ({
   localUser: one(localUsers, { fields: [captureAiAccounts.userId], references: [localUsers.id] }),
   oauthUser: one(users, { fields: [captureAiAccounts.userId], references: [users.id] }),
+}));
+
+export const captureQuestionsRelations = relations(captureQuestions, ({ one }) => ({
+  localUser: one(localUsers, { fields: [captureQuestions.userId], references: [localUsers.id] }),
+  oauthUser: one(users, { fields: [captureQuestions.userId], references: [users.id] }),
+  event: one(captureEvents, { fields: [captureQuestions.eventId], references: [captureEvents.id] }),
+  expense: one(expenses, { fields: [captureQuestions.expenseId], references: [expenses.id] }),
 }));
 
 export const captureAiReservationsRelations = relations(captureAiReservations, ({ one }) => ({

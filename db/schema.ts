@@ -1195,6 +1195,27 @@ export const captureUsage = mysqlTable(
 // What a user filed a merchant or a person under, from their own answers and edits (decision 0030): the first place
 // a captured payment's filing comes from. The key is "m:<merchant key>" or "p:<HMAC of the person's number, address
 // or name>", never the name itself.
+/** Optional purpose questions asked only after a movement has already been saved. */
+export const captureQuestions = mysqlTable("capture_questions", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  eventId: int("event_id").notNull(),
+  expenseId: int("expense_id").notNull(),
+  status: varchar("status", { length: 16 }).notNull().default("pending"),
+  expectedCategory: varchar("expected_category", { length: 100 }).notNull(),
+  expectedSubCategory: varchar("expected_sub_category", { length: 100 }).notNull(),
+  shownDay: varchar("shown_day", { length: 10 }),
+  shownAt: datetime("shown_at"),
+  resolvedAt: datetime("resolved_at"),
+  createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  uniqueIndex("capture_questions_owner_event_idx").on(t.userId, t.userType, t.eventId),
+  index("capture_questions_owner_status_idx").on(t.userId, t.userType, t.status, t.id),
+  index("capture_questions_owner_day_idx").on(t.userId, t.userType, t.shownDay),
+  index("capture_questions_created_idx").on(t.createdAt),
+]);
+
 export const captureMemory = mysqlTable(
   "capture_memory",
   {

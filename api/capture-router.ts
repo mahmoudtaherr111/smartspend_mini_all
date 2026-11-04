@@ -15,7 +15,7 @@ import { router, authedProcedure } from "./middleware";
 import { CAPTURE_ACTIONS, CAPTURE_CONSENT_SCOPES } from "../contracts/capture-intake";
 import { CAPTURE_WALLET_KINDS } from "../contracts/capture";
 import { getCaptureCatalog, sourcesForPhones } from "./lib/capture/catalog";
-import { CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf, setCaptureConsent } from "./lib/capture/consent";
+import { CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION, CAPTURE_CONSENT_TEXT_VERSION, captureConsentsOf, setCaptureConsent } from "./lib/capture/consent";
 import { listCaptureDevices, registerCaptureDevice, revokeCaptureDevice } from "./lib/capture/devices";
 import { answerEvent, captureLimitOf, captureUsageOf, pendingEvents, releaseHeldEvents } from "./lib/capture/intake";
 import { autoOffers, setPairAuto } from "./lib/capture/memory";
@@ -26,6 +26,8 @@ import { planNumber } from "../contracts/plan-features";
 import { createRateLimiter } from "./lib/rate-limit";
 import { getSystemSettings } from "./lib/settings-cache";
 import { captureActivity } from "./lib/capture/activity";
+import { answerPurposeQuestion, nextPurposeQuestion } from "./lib/capture/questions";
+import { MOVEMENT_KINDS } from "../contracts/ledger-movement";
 
 // A stolen session should not mint device tokens in bulk.
 const deviceRegistrations = createRateLimiter(10, 3_600_000);
@@ -33,6 +35,10 @@ const deviceRegistrations = createRateLimiter(10, 3_600_000);
 const ownerOf = (ctx: { user: { id: number; type: string } | null }) => ({ userId: ctx.user!.id, userType: ctx.user!.type });
 
 export const captureRouter = router({
+  nextQuestion: authedProcedure.mutation(({ ctx }) => nextPurposeQuestion(ownerOf(ctx))),
+  answerQuestion: authedProcedure.input(z.object({ questionId: z.number().int().positive(), action: z.enum(["set", "keep", "skip"]),
+    categoryId: z.string().max(60).optional(), subCategoryId: z.string().max(60).optional(), purpose: z.string().trim().min(1).max(200).optional(), movementKind: z.enum(MOVEMENT_KINDS).optional(), contactId: z.number().int().positive().nullable().optional(),
+  }).refine((input) => input.action !== "set" || !!input.categoryId || !!input.purpose || !!input.movementKind, "اختار فئة أو اكتب الغرض من العملية.")).mutation(({ ctx, input }) => answerPurposeQuestion(ownerOf(ctx), input.questionId, input)),
   activity: authedProcedure.input(z.object({ limit: z.number().int().min(1).max(50).default(30) }).optional()).query(({ ctx, input }) => captureActivity(ownerOf(ctx), input?.limit)),
   walletKind: authedProcedure.input(z.object({ walletId: z.number().int().positive() })).query(({ ctx, input }) => walletBalanceKind(ownerOf(ctx), input.walletId)),
   setWalletKind: authedProcedure.input(z.object({ walletId: z.number().int().positive(), kind: z.enum(CAPTURE_WALLET_KINDS) })).mutation(async ({ ctx, input }) => {
@@ -46,13 +52,16 @@ export const captureRouter = router({
 
   /** Whether capture is open, what the user agreed to, and the consent text version the app must show. */
   status: authedProcedure.query(async ({ ctx }) => {
-    const [settings, consent, usage] = await Promise.all([
+    const [settings, usage] = await Promise.all([
       getSystemSettings(),
-      captureConsentsOf(ownerOf(ctx)),
       captureUsageOf(ownerOf(ctx), ctx.user!.plan),
     ]);
+    const consentTextVersion = settings.capture_read_mode === "model_first" ? CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION : CAPTURE_CONSENT_TEXT_VERSION;
+    const consent = await captureConsentsOf(ownerOf(ctx), undefined, settings.capture_read_mode === "model_first" ? consentTextVersion : undefined);
     return { enabled: captureOpenFor(settings, ownerOf(ctx)), mode: settings.capture_read_mode === "model_first" ? "automatic" as const : "legacy" as const,
-      consent, consentTextVersion: CAPTURE_CONSENT_TEXT_VERSION, usage };
+      questionsEnabled: settings.capture_questions_enabled === "true",
+      walletTypesEnabled: settings.capture_financial_version === "cashflow-v1",
+      consent, consentTextVersion, usage };
   }),
 
   /** The device token for this installation, shown once; registering the same installation again replaces it. */

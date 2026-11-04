@@ -489,12 +489,12 @@ void main() {
           (_) => {'totalIncome': 0, 'totalExpense': '4250.50', 'count': 12},
         );
       final app = await _open(tester, api: api);
-      expect(find.text('\u20664,251\u2069 ج.م'), findsOneWidget);
+      expect(find.text('\u20664,250.5\u2069 ج.م'), findsOneWidget);
 
       await tester.tap(find.byTooltip('اخفي المبالغ'));
       await tester.pumpAndSettle();
 
-      expect(find.text('\u20664,251\u2069 ج.م'), findsNothing);
+      expect(find.text('\u20664,250.5\u2069 ج.م'), findsNothing);
       expect(find.text('•••• ج.م'), findsWidgets);
       expect(app.lockStore.record.hideAmounts, isTrue);
       expect(find.byTooltip('اظهر المبالغ'), findsOneWidget);

@@ -118,12 +118,14 @@ final class CaptureProcedures {
 
   ApiQuery get activity => const ApiQuery('capture.activity', builder: 'authedProcedure', hasInput: true);
   ApiMutation get answer => const ApiMutation('capture.answer', builder: 'authedProcedure', hasInput: true);
+  ApiMutation get answerQuestion => const ApiMutation('capture.answerQuestion', builder: 'authedProcedure', hasInput: true);
   ApiMutation get answerWalletOffer => const ApiMutation('capture.answerWalletOffer', builder: 'authedProcedure', hasInput: true);
   ApiQuery get autoOffers => const ApiQuery('capture.autoOffers', builder: 'authedProcedure');
   ApiMutation get deleteMyData => const ApiMutation('capture.deleteMyData', builder: 'authedProcedure');
   ApiQuery get devices => const ApiQuery('capture.devices', builder: 'authedProcedure');
   ApiMutation get ignore => const ApiMutation('capture.ignore', builder: 'authedProcedure', hasInput: true);
   ApiQuery get ignored => const ApiQuery('capture.ignored', builder: 'authedProcedure');
+  ApiMutation get nextQuestion => const ApiMutation('capture.nextQuestion', builder: 'authedProcedure');
   ApiQuery get pending => const ApiQuery('capture.pending', builder: 'authedProcedure');
   ApiMutation get registerDevice => const ApiMutation('capture.registerDevice', builder: 'authedProcedure', hasInput: true);
   ApiMutation get revokeDevice => const ApiMutation('capture.revokeDevice', builder: 'authedProcedure', hasInput: true);

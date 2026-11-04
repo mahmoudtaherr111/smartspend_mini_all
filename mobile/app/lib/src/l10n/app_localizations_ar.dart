@@ -3897,4 +3897,118 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get helpTicketReply => 'رد فريق الدعم';
+
+  @override
+  String get captureAutomaticTitle => 'رسايل البنك';
+
+  @override
+  String get captureAutomaticBody =>
+      'عملياتك بتتسجل تلقائيًا. البيانات الناقصة بتفضل منتظرة دليل واضح.';
+
+  @override
+  String get captureStateRecorded => 'اتسجلت';
+
+  @override
+  String get captureStateProcessing => 'بنقرأ الرسالة';
+
+  @override
+  String get captureStateWaiting => 'منتظرين بيانات تكمل العملية';
+
+  @override
+  String get captureStateHeld => 'محجوزة بسبب حد الباقة';
+
+  @override
+  String get captureStateRemoved => 'اتشالت';
+
+  @override
+  String get capturePurposeQuestion => 'تحب تحدد كانت في إيه؟';
+
+  @override
+  String get capturePurposeOptional => 'اختياري. العملية اتسجلت بالفعل.';
+
+  @override
+  String get capturePurposeCategory => 'الفئة';
+
+  @override
+  String get capturePurposeSubcategory => 'الفئة الفرعية';
+
+  @override
+  String get capturePurposeLabel => 'أو اكتب الغرض، زي مصاريف حضانة';
+
+  @override
+  String get capturePurposeSave => 'احفظ التصنيف';
+
+  @override
+  String get capturePurposeOwn => 'بين حساباتي';
+
+  @override
+  String get capturePurposeCardPayment => 'سداد بطاقتي';
+
+  @override
+  String get capturePurposeKeep => 'سيب التصنيف زي ما هو';
+
+  @override
+  String get capturePurposeSkip => 'تخطي';
+
+  @override
+  String get captureChangeFailed => 'ماقدرناش نحفظ التغيير، جرّب تاني.';
+
+  @override
+  String get captureFeeInvalid => 'اكتب رسوم صحيحة أو صفر.';
+
+  @override
+  String get capturePrincipalLabel => 'المبلغ قبل الرسوم';
+
+  @override
+  String get captureFeeLabel => 'الرسوم';
+
+  @override
+  String get captureAutomaticConsentBody =>
+      'هنقرا رسايل البنوك والمحافظ المفعّلة بس ونبعتها لسيرفر SmartSpend. هنخفي الأرقام والأسماء اللي نقدر نحددها قبل ما مزوّد الذكاء الاصطناعي المعتمد يقرا كل رسالة. الأكواد والرسايل الشخصية المعروفة بتتفلتر. العملية اللي بياناتها واضحة بتتسجل تلقائيًا مع تراجع؛ والناقصة بتستنى. الرسايل المنقّحة وبيانات التصنيف المؤقتة بتتنسى بعد 30 يوم، والمحجوزة بسبب حد الباقة بعد 60 يوم. دفتر العمليات بيحتفظ بالتسجيلات. تقدر توقف الإرسال وتسحب موافقتك وتمسح بيانات الالتقاط من الإعدادات.';
+
+  @override
+  String get captureRenewConsent =>
+      'التسجيل التلقائي محتاج موافقة جديدة على قراءة كل رسايل البنك المنقّحة.';
+
+  @override
+  String get captureAutomaticAiTitle => 'قراءة الذكاء الاصطناعي';
+
+  @override
+  String get captureAutomaticAiBody =>
+      'كل رسالة بنك من المصادر المفعّلة بتمر على المزوّد المعتمد بعد إخفاء البيانات المكتشفة. إيقاف الاختيار بيوقف التسجيل التلقائي.';
+
+  @override
+  String get walletKindFailed => 'ماقدرناش نحفظ نوع الرصيد، جرّب تاني.';
+
+  @override
+  String get walletKindUnknown => 'مش محدد';
+
+  @override
+  String get walletKindCash => 'نقدي أو محفظة إلكترونية';
+
+  @override
+  String get walletKindBank => 'حساب بنكي';
+
+  @override
+  String get walletKindDebit => 'بطاقة خصم مباشر';
+
+  @override
+  String get walletKindCredit => 'بطاقة ائتمان';
+
+  @override
+  String get walletBalanceKindTitle => 'نوع الرصيد';
+
+  @override
+  String get walletBalanceKindBody =>
+      'متاح الائتمان مش فلوس نقدية. تحديد النوع بيخلّي الرصيد وحساب المتاح أدق.';
+
+  @override
+  String get walletCreditAvailable => 'متاح الائتمان';
+
+  @override
+  String get capturePurposePerson => 'الشخص (اختياري)';
+
+  @override
+  String get captureAutomaticStopped =>
+      'التسجيل التلقائي متوقف لحد ما توافق على القراءة. عملياتك المحفوظة موجودة وتقدر تعدّلها.';
 }

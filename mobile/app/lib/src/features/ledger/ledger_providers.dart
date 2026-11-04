@@ -6,6 +6,8 @@ import 'package:smartspend_api/smartspend_api.dart';
 
 import '../../core/providers.dart';
 import '../auth/session_controller.dart';
+import '../calendar/calendar_providers.dart';
+import '../contacts/contacts_providers.dart';
 import '../infrastructure/remote_config.dart';
 import '../stats/stats_providers.dart';
 import '../wallets/wallet_providers.dart';
@@ -343,6 +345,13 @@ class AllEntries extends AsyncNotifier<LedgerListState> {
 /// Reloads everything that shows the ledger after a save, an edit, a deletion or an undo.
 void refreshLedger(WidgetRef ref) {
   ref
+    ..invalidate(coachOverviewProvider)
+    ..invalidate(calendarMonthStatsProvider)
+    ..invalidate(debtsSummaryProvider)
+    ..invalidate(peopleDebtsDataProvider)
+    ..invalidate(debtsOverviewProvider)
+    ..invalidate(budgetComparisonProvider)
+    ..invalidate(yearlyStatsProvider)
     ..invalidate(monthSummaryProvider)
     ..invalidate(recentEntriesProvider)
     ..invalidate(allEntriesProvider)
@@ -361,6 +370,13 @@ void refreshLedger(WidgetRef ref) {
 /// popping a detail route).
 void invalidateLedgerContainer(ProviderContainer container) {
   container
+    ..invalidate(coachOverviewProvider)
+    ..invalidate(calendarMonthStatsProvider)
+    ..invalidate(debtsSummaryProvider)
+    ..invalidate(peopleDebtsDataProvider)
+    ..invalidate(debtsOverviewProvider)
+    ..invalidate(budgetComparisonProvider)
+    ..invalidate(yearlyStatsProvider)
     ..invalidate(monthSummaryProvider)
     ..invalidate(recentEntriesProvider)
     ..invalidate(allEntriesProvider)

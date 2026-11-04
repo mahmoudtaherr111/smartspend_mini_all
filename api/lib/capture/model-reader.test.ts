@@ -5,7 +5,7 @@ vi.mock("../ai-gateway", () => ({ resolveAdminRoutes: async () => ({ preferred: 
 vi.mock("./admission", () => ({ reserveCaptureCall: vi.fn(async () => state.reservation ? { ok: true, reservation: { id: "reservation", userId: 1, userType: "local" } } : { ok: false, reason: "daily_cap" }), settleCaptureCall: vi.fn(async () => {}) }));
 vi.mock("../ai-pricing", () => ({ ratesFor: async () => ({ input: 0.25, output: 1.5, cached: 0.025 }), costAtRates: (_: unknown, usage: { promptTokens: number; completionTokens: number }) => (usage.promptTokens * 0.25 + usage.completionTokens * 1.5) / 1e6 }));
 vi.mock("../ai-ledger", () => ({ recordAiLedger: vi.fn(async () => {}) }));
-vi.mock("./consent", () => ({ captureConsentsOf: vi.fn(async () => ({ capture: true, aiReading: true })) }));
+vi.mock("./consent", () => ({ CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION: "2026-11-04", captureConsentsOf: vi.fn(async () => ({ capture: true, aiReading: true })) }));
 vi.mock("../llm-router", async (load) => ({ ...await load<typeof import("../llm-router")>(), executeLlmChain: vi.fn(async (routes, request) => {
   state.requests.push(request);
   const text = state.replies.shift(); if (!text) throw new Error("synthetic outage");

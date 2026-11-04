@@ -53,6 +53,7 @@ class _EditTransactionSheet extends ConsumerStatefulWidget {
 class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
   late _EditKind _kind;
   late final TextEditingController _amountController;
+  late final TextEditingController _feeController;
   late final TextEditingController _noteController;
   late String _category;
   late String _subCategory;
@@ -60,6 +61,7 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
   int? _walletId;
   int? _contactId;
   String? _amountError;
+  String? _feeError;
   String? _serverError;
   bool _saving = false;
   bool _dateChanged = false;
@@ -89,6 +91,9 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
         ? absAmount.toInt().toString()
         : absAmount.toString();
     _amountController = TextEditingController(text: initialAmount);
+    _feeController = TextEditingController(
+      text: (entry.bundleFee ?? 0).toString(),
+    );
     _noteController = TextEditingController(text: entry.description ?? '');
     _category = entry.category.trim().isNotEmpty
         ? entry.category.trim()
@@ -114,6 +119,7 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
     _initialContactId = entry.contactId;
 
     _amountController.addListener(_onFieldChanged);
+    _feeController.addListener(_onFieldChanged);
     _noteController.addListener(_onFieldChanged);
   }
 
@@ -122,6 +128,9 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
   }
 
   bool get _isDirty =>
+      (widget.entry.bundleTotal != null &&
+          parseAmount(_feeController.text, signed: true) !=
+              (widget.entry.bundleFee ?? 0)) ||
       _kind != _initialKind ||
       _amountController.text.trim() != _initialAmount ||
       _noteController.text.trim() != _initialNote ||
@@ -158,6 +167,7 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
     _amountController.removeListener(_onFieldChanged);
     _noteController.removeListener(_onFieldChanged);
     _amountController.dispose();
+    _feeController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -221,6 +231,14 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
     final parsed = parseAmount(_amountController.text);
+    final fee = widget.entry.bundleTotal == null
+        ? null
+        : parseAmount(_feeController.text, signed: true);
+    if (widget.entry.bundleTotal != null &&
+        (fee == null || fee < 0 || fee > 999999999)) {
+      setState(() => _feeError = l10n.captureFeeInvalid);
+      return;
+    }
     if (parsed == null || parsed <= 0 || parsed > 999999999) {
       unawaited(SmartSpendHaptics.warning());
       setState(() {
@@ -252,6 +270,7 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
           .update(
             id: widget.entry.id,
             amount: parsed,
+            linkedFeeAmount: fee,
             type: _kind.ledgerType,
             movementKind: _kind == _initialKind
                 ? null
@@ -443,11 +462,31 @@ class _EditTransactionSheetState extends ConsumerState<_EditTransactionSheet> {
                 }
               },
               decoration: InputDecoration(
-                labelText: l10n.editAmountLabel,
+                labelText: widget.entry.bundleTotal == null
+                    ? l10n.editAmountLabel
+                    : l10n.capturePrincipalLabel,
                 errorText: _amountError,
               ),
             ),
             const SizedBox(height: SmartSpendSpacing.md),
+            if (widget.entry.bundleTotal != null) ...[
+              TextField(
+                controller: _feeController,
+                enabled: !_saving,
+                textDirection: TextDirection.ltr,
+                onChanged: (_) {
+                  if (_feeError != null) setState(() => _feeError = null);
+                },
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: l10n.captureFeeLabel,
+                  errorText: _feeError,
+                ),
+              ),
+              const SizedBox(height: SmartSpendSpacing.md),
+            ],
             DropdownButtonFormField<String>(
               key: ValueKey('category-${_kind.name}-$_category'),
               initialValue: _category,

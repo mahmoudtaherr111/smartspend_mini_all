@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../api/router";
+import { WalletBalanceKind } from "./WalletBalanceKind";
 
 type WalletOutputs = inferRouterOutputs<AppRouter>["wallet"];
 type Wallet = WalletOutputs["getWallets"][number];
@@ -394,7 +395,7 @@ export function DigitalBankingSuite() {
                   >
                     <div className="flex flex-col">
                       <span className="text-[9px] text-white/50 tracking-wider uppercase">
-                        الرصيد الحالي
+                        {wallet.balanceKind === "credit" ? "متاح الائتمان" : "الرصيد الحالي"}
                       </span>
                       <span className="text-lg font-black tracking-tight text-white drop-shadow-md">
                         {parseFloat(wallet.balance || "0").toLocaleString(
@@ -489,6 +490,7 @@ export function DigitalBankingSuite() {
 
             {/* Actions Panel */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-md space-y-4">
+              <WalletBalanceKind walletId={selectedWallet.id} />
               <h3 className="font-extrabold text-sm text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                 <Info className="w-4 h-4 text-red-500" />
                 خيارات وإجراءات الكارت

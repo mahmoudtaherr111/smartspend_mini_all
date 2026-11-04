@@ -15,12 +15,14 @@ const { dbMock } = vi.hoisted(() => {
   const mock = {
     select: vi.fn((fields?: Record<string, unknown>) => {
       const isCountQuery = Boolean(fields?.count);
+      const resultRows = fields?.entry ? rows.map((entry) => ({ entry, fee: null })) : rows;
       const chain: QueryChain = {
         from: vi.fn(() => chain),
+        leftJoin: vi.fn(() => chain),
         where: vi.fn(() => (isCountQuery ? Promise.resolve(countRows) : chain)),
         orderBy: vi.fn(() => chain),
         limit: vi.fn(() => chain),
-        offset: vi.fn(() => Promise.resolve(rows)),
+        offset: vi.fn(() => Promise.resolve(resultRows)),
       };
       return chain;
     }),
@@ -68,6 +70,7 @@ describe("Expense Router", () => {
     dbMock.select.mockImplementationOnce(() => {
       const chain: QueryChain = {
         from: vi.fn(() => chain),
+        leftJoin: vi.fn(() => chain),
         where: vi.fn((condition: SQL) => {
           where = condition;
           return chain;

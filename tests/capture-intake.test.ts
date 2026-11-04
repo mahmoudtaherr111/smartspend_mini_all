@@ -6,7 +6,7 @@ import { db } from "../api/queries/connection";
 import { registerCaptureRoutes } from "../api/capture-v1-routes";
 import { captureRouter } from "../api/capture-router";
 import { invalidateCaptureCatalog, syncCaptureSeed } from "../api/lib/capture/catalog";
-import { CAPTURE_CONSENT_TEXT_VERSION, setCaptureConsent } from "../api/lib/capture/consent";
+import { CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION, CAPTURE_CONSENT_TEXT_VERSION, setCaptureConsent } from "../api/lib/capture/consent";
 import { registerCaptureDevice, revokeCaptureDevice } from "../api/lib/capture/devices";
 import { invalidateSettingsCache } from "../api/lib/settings-cache";
 import { deleteLedgerEntry, updateLedgerEntry } from "../api/services/ledger-writer";
@@ -142,7 +142,8 @@ describeWithDatabase("capture from a phone, confirmed by the user", () => {
     await db.insert(systemSettings).values({ key: "capture_read_mode", value: "model_first" }).onDuplicateKeyUpdate({ set: { value: "model_first" } });
     invalidateSettingsCache();
     try {
-      await setCaptureConsent(owner, "ai_reading", true, CAPTURE_CONSENT_TEXT_VERSION);
+      await setCaptureConsent(owner, "capture", true, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION);
+      await setCaptureConsent(owner, "ai_reading", true, CAPTURE_AUTOMATIC_CONSENT_TEXT_VERSION);
       const input = { ...purchase("signal-v4-shadow"), text: "Your Card ending 1234 had a Successful transaction of EGP 85 @FAWRYPF*ZED MARKET, available bal.EGP 675.6. registered as TEST PERSON" };
       const first = await (await post("/api/capture/v1/signals", { signals: [input] })).json();
       expect(first.results[0].result).toBe("queued");

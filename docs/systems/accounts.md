@@ -304,3 +304,9 @@ Capture consent writes now lock the identity row before changing consent, so del
 into recreating user data. Its transactional reader accepts the existing transaction, avoiding a second connection
 while holding a user lock. The purge also clears capture AI reservations and per-user resource counters; global daily
 cost aggregates contain no identity and remain.
+
+
+Capture's automatic-consent scope has its own version and never inherits the older unclear-message grant. Renewal
+revokes the prior active version atomically. Newly introduced optional capture question/resource tables are checked
+through the same transaction before account purge, allowing a disabled expand/contract deployment to retain account
+deletion. Private three-digit card/account tails now receive the same redaction treatment as four-digit tails.

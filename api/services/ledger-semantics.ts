@@ -1,6 +1,18 @@
 /** SQL view of the shared financial bucket, for direct queries that do not use daily rollups. */
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { expenses } from "../../db/schema";
+import { MOVEMENT_KINDS, type MovementKind } from "../../contracts/ledger-movement";
+
+const validFinancialSql = sql`(JSON_TYPE(JSON_EXTRACT(${expenses.parsedMetadata}, '$.financial.version')) IN ('INTEGER','DOUBLE','DECIMAL')
+  AND JSON_EXTRACT(${expenses.parsedMetadata}, '$.financial.version') = 1
+  AND JSON_UNQUOTE(JSON_EXTRACT(${expenses.parsedMetadata}, '$.financial.movement')) IN ('in','out')
+  AND ${inArray(sql`JSON_UNQUOTE(JSON_EXTRACT(${expenses.parsedMetadata}, '$.financial.kind'))`, [...MOVEMENT_KINDS])})`;
+
+/** Standing follows versioned economic nature; mutable display categories remain a legacy fallback only. */
+export function economicKindSql(kind: MovementKind, legacyCategory: string, legacySubCategory: string) {
+  return sql`(CASE WHEN ${validFinancialSql} THEN JSON_UNQUOTE(JSON_EXTRACT(${expenses.parsedMetadata}, '$.financial.kind')) = ${kind}
+    ELSE (${expenses.category} = ${legacyCategory} AND ${expenses.subCategory} = ${legacySubCategory}) END)`;
+}
 
 const excludedMovementSql = sql`(JSON_TYPE(JSON_EXTRACT(${expenses.parsedMetadata}, '$.financial.version')) IN ('INTEGER', 'DOUBLE', 'DECIMAL')
    AND JSON_EXTRACT(${expenses.parsedMetadata}, '$.financial.version') = 1

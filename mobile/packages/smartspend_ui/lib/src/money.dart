@@ -5,7 +5,7 @@ import 'theme.dart';
 import 'typography.dart';
 
 /// How money is written in one interface language. Mirrors the web app's `src/i18n/format.ts#formatCurrency`:
-/// whole pounds, Western digits grouped by commas, the currency after the number («1,250 ج.م», "1,250 EGP").
+/// up to two decimal places, Western digits grouped by commas, the currency after the number.
 final class MoneyLocale {
   const MoneyLocale._({
     required this.symbol,
@@ -53,10 +53,22 @@ final class MoneyLocale {
       : arabic;
 }
 
-/// Writes [value] as money: «1,250 ج.م». Rounds to whole pounds, as the web app does; a negative value keeps its
-/// minus sign.
+/// Writes [value] as money without discarding the piastres of an actual payment.
 String formatMoney(num value, {MoneyLocale locale = MoneyLocale.arabic}) =>
-    '${groupDigits(value.round())} ${locale.symbol}';
+    '${moneyDigits(value)} ${locale.symbol}';
+
+/// Display precision only; server-side decimal arithmetic still owns financial calculations.
+String moneyDigits(num value) {
+  final cents = (value * 100).round();
+  final magnitude = cents.abs();
+  final fraction = magnitude % 100;
+  final tail = fraction == 0
+      ? ''
+      : fraction % 10 == 0
+      ? '.${fraction ~/ 10}'
+      : '.${fraction.toString().padLeft(2, '0')}';
+  return '${cents < 0 ? '-' : ''}${groupDigits(magnitude ~/ 100)}$tail';
+}
 
 /// What shows instead of the digits of an amount while amounts are hidden.
 const hiddenDigits = '••••';
@@ -171,7 +183,7 @@ class AmountText extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = MoneyLocale.of(context);
     final colors = context.smartSpendColors;
-    final whole = groupDigits(value.abs().round());
+    final whole = moneyDigits(value.abs());
     final sign = switch (kind) {
       AmountKind.expense => '-',
       AmountKind.income => '+',
@@ -207,7 +219,7 @@ class AmountText extends StatelessWidget {
       ),
       semanticsLabel: hidden
           ? '$spokenKind${locale.spokenHidden}'
-          : '$spokenKind${value.abs().round()} ${locale.spokenCurrency}',
+          : '$spokenKind${moneyDigits(value.abs()).replaceAll(',', '')} ${locale.spokenCurrency}',
     );
   }
 }

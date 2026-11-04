@@ -1,4 +1,5 @@
 import { and, eq, inArray, or } from "drizzle-orm";
+import { optionalCaptureTables } from "../lib/capture/schema-state";
 import {
   adClicks,
   adImpressions,
@@ -52,6 +53,7 @@ import {
   voiceUsage,
   captureSignals,
   captureEvents,
+  captureQuestions,
   captureUsage,
   captureMemory,
   captureUserPairs,
@@ -117,13 +119,15 @@ export async function purgeUserData(
 
   // Capture: the notifications waiting for an answer, the consents and the phones (decision 0028).
   await tx.delete(captureAiJobs).where(userScope(captureAiJobs, userId, userType));
-  await tx.delete(captureAiReservations).where(userScope(captureAiReservations, userId, userType));
-  await tx.delete(captureAiAccounts).where(userScope(captureAiAccounts, userId, userType));
+  const captureTables = await optionalCaptureTables(tx);
+  if (captureTables.has("capture_ai_reservations")) await tx.delete(captureAiReservations).where(userScope(captureAiReservations, userId, userType));
+  if (captureTables.has("capture_ai_accounts")) await tx.delete(captureAiAccounts).where(userScope(captureAiAccounts, userId, userType));
   await tx.delete(whatsappMessages).where(userScope(whatsappMessages, userId, userType));
   await tx.delete(whatsappContacts).where(userScope(whatsappContacts, userId, userType));
   await tx.delete(captureMarkers).where(userScope(captureMarkers, userId, userType));
   await tx.delete(captureSignals).where(userScope(captureSignals, userId, userType));
   await tx.delete(captureEvents).where(userScope(captureEvents, userId, userType));
+  if (captureTables.has("capture_questions")) await tx.delete(captureQuestions).where(userScope(captureQuestions, userId, userType));
   await tx.delete(captureUsage).where(userScope(captureUsage, userId, userType));
   await tx.delete(captureMemory).where(userScope(captureMemory, userId, userType));
   await tx.delete(captureUserPairs).where(userScope(captureUserPairs, userId, userType));

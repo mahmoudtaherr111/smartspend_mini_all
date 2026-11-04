@@ -106,6 +106,8 @@
       "description": "The ledger writer (adding, changing and removing an expense row in one transaction with its signed amount, rollup delta, contact count, settlements and the streak, then clearing muscle memory and the finance caches and checking budgets), daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), salary-cycle month ranges, installment-plan progress, and Egyptian season date ranges (Ramadan and the Eids from the Hijri calendar, school and summer).",
       "paths": [
         "api/services/ledger-writer.ts",
+        "api/services/ledger-bundles.ts",
+        "api/services/wallet-balance-policy.ts",
         "api/services/ledger-semantics.ts",
         "api/services/financial-migration.ts",
         "api/services/expense-rollups.ts",
@@ -225,6 +227,10 @@
         "api/lib/capture/events.ts",
           "api/lib/capture/fees.ts",
           "api/lib/capture/activity.ts",
+          "api/lib/capture/questions.ts",
+          "api/lib/capture/identity-links.ts",
+          "api/lib/capture/instruments.ts",
+          "api/lib/capture/schema-state.ts",
         "api/lib/capture/memory.ts",
         "api/lib/capture/ai-queue.ts",
         "api/lib/capture/operations.ts",
@@ -442,6 +448,12 @@
       "paths": [
         "src/components/ai/**"
       ]
+    },
+    {
+      "id": "web-bank-capture",
+      "title": "Automatic bank capture activity",
+      "description": "User-facing automatic capture activity, processing states, undo and optional purpose questions after a movement has been saved.",
+      "paths": ["src/components/bank-capture/**"]
     },
     {
       "id": "web-capture",

@@ -323,6 +323,13 @@
       "when": 1793751417257,
       "tag": "0045_gigantic_bastion",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "5",
+      "when": 1793770262592,
+      "tag": "0046_sour_valkyrie",
+      "breakpoints": true
     }
   ]
 }

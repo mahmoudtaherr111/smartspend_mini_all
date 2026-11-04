@@ -10,9 +10,10 @@ import '../auth/auth_api.dart';
 import '../auth/session_controller.dart';
 import 'capture_api.dart';
 
-final captureApiProvider = Provider<CaptureApi>(
-  (ref) => CaptureApi(ref.watch(trpcClientProvider)),
-);
+final captureApiProvider = Provider<CaptureApi>((ref) {
+  ref.watch(sessionProvider);
+  return CaptureApi(ref.watch(trpcClientProvider));
+});
 
 /// Whether capture is open on the server and what the person agreed to.
 final captureServerStatusProvider = FutureProvider<CaptureServerStatus>(
@@ -63,7 +64,9 @@ class CaptureConnector {
 
   final Ref _ref;
 
-  Future<CaptureConnectOutcome> connect() async {
+  Future<CaptureConnectOutcome> connect({
+    bool automaticConsentAccepted = false,
+  }) async {
     final session = _ref.read(sessionProvider);
     final user = session is SignedIn ? session.user : null;
     if (user == null) throw StateError('capture needs a signed-in person');
@@ -71,7 +74,13 @@ class CaptureConnector {
     final api = _ref.read(captureApiProvider);
     final status = await api.status();
     if (!status.enabled) return CaptureConnectOutcome.unavailable;
+    if (status.automatic && !automaticConsentAccepted) {
+      throw StateError('capture consent scope changed');
+    }
     await api.consent(status.consentTextVersion);
+    if (status.automatic) {
+      await api.setAiReading(true, status.consentTextVersion);
+    }
 
     final token = await api.registerDevice(
       installationId: await _installationId(),

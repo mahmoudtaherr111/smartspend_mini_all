@@ -7,11 +7,14 @@ import { and, eq, inArray, like } from "drizzle-orm";
 import { captureMarkers, userWallets } from "../../../db/schema";
 import { CAPTURE_WALLET_KINDS, type CaptureWalletKind } from "../../../contracts/capture";
 import { lockLedgerOwner } from "../../services/ledger-writer";
+import { invalidateFinanceUserCache } from "../../services/finance-semantic-layer";
 import { getDb } from "../../queries/connection";
 import { asciiDigits } from "../anonymizer";
 import { normalizeArabic } from "../unified-normalizer";
 import { CAPTURE_GATE, type SignalReading } from "./intake";
 import type { CaptureOwner } from "./devices";
+import type { PreparedCaptureText } from "./privacy";
+import { localInstruments } from "./instruments";
 
 export const CAPTURE_IGNORE_KINDS = ["ignore_card", "ignore_phrase"] as const;
 export type CaptureIgnoreKind = (typeof CAPTURE_IGNORE_KINDS)[number];
@@ -74,6 +77,11 @@ export function isIgnored(rules: CaptureIgnoreRules, reading: Pick<SignalReading
   return rules.phrases.some((phrase) => folded.includes(phrase));
 }
 
+/** The privacy tokenizer can see a card the diagnostic shadow missed. Respect an explicit ignore before any model call. */
+export function isPrivateIdentityIgnored(rules: CaptureIgnoreRules, prepared: PreparedCaptureText): boolean {
+  return localInstruments(prepared).some((instrument) => rules.cards.has(instrument.suffix.slice(-3)));
+}
+
 export async function listCaptureMarkers(owner: CaptureOwner) {
   return getDb()
     .select({ id: captureMarkers.id, kind: captureMarkers.kind, value: captureMarkers.value, createdAt: captureMarkers.createdAt })
@@ -100,6 +108,7 @@ export async function setWalletBalanceKind(owner: CaptureOwner, walletId: number
     await tx.delete(captureMarkers).where(and(eq(captureMarkers.userId, owner.userId), eq(captureMarkers.userType, owner.userType), eq(captureMarkers.kind, "wallet_kind"), like(captureMarkers.value, `${walletId}:%`)));
     await tx.insert(captureMarkers).values({ userId: owner.userId, userType: owner.userType, kind: "wallet_kind", value: `${walletId}:${kind}` });
   });
+  await invalidateFinanceUserCache(owner.userId, owner.userType);
 }
 
 export async function addCaptureMarker(owner: CaptureOwner, kind: CaptureIgnoreKind, raw: string): Promise<{ id: number; value: string }> {

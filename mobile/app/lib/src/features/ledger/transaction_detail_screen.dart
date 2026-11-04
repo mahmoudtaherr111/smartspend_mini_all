@@ -273,7 +273,7 @@ class _Filled extends ConsumerWidget {
       children: [
         HeroFigure(
           label: '${_kindWord(l10n)} · ${inlineName(entry.title)}',
-          amount: entry.amount.abs(),
+          amount: entry.displayAmount,
           kind: entryKind(entry),
           story: dateText,
           wash: true,
@@ -284,6 +284,18 @@ class _Filled extends ConsumerWidget {
         GroupedSection(
           title: l10n.transactionDetailsSection,
           children: [
+            if ((entry.bundleFee ?? 0) > 0) ...[
+              GroupedRow(
+                icon: Icons.payments_outlined,
+                title: l10n.capturePrincipalLabel,
+                value: AmountText(entry.amount.abs()),
+              ),
+              GroupedRow(
+                icon: Icons.receipt_long_outlined,
+                title: l10n.captureFeeLabel,
+                value: AmountText(entry.bundleFee!),
+              ),
+            ],
             GroupedRow(
               icon: categoryIcon(entry.category),
               tint: categoryColor(context, entry.category),

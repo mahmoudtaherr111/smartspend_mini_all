@@ -3,8 +3,9 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../api/queries/connection";
 import { expenses, expenseDailyRollups, localUsers, userWallets, userContacts, systemSettings, captureMarkers } from "../db/schema";
-import { createLedgerEntry, updateLedgerEntry, deleteLedgerEntry, type NewLedgerEntry } from "../api/services/ledger-writer";
-import { getFinanceSummary } from "../api/services/finance-semantic-layer/resolvers";
+import { createLedgerEntry, updateLedgerEntry, type NewLedgerEntry } from "../api/services/ledger-writer";
+import { getFinanceSummary, getWalletSummary } from "../api/services/finance-semantic-layer/resolvers";
+import { position } from "../api/services/coach/cashflows";
 import { listDebtBalances, getGam3eyaStanding } from "../api/services/debt-ledger";
 import { reconcileRollupsForRange } from "../api/services/expense-rollups";
 import { invalidateSettingsCache } from "../api/lib/settings-cache";
@@ -29,6 +30,16 @@ async function clean() {
   await db.delete(systemSettings).where(eq(systemSettings.key, "capture_financial_version")); invalidateSettingsCache();
 }
 describe.runIf(process.env.RUN_DB_INTEGRATION === "1")("cashflow-v1 ledger", () => {
+  it("keeps known credit availability out of cash totals and refreshes cached policy changes", async () => {
+    await db.update(userWallets).set({ balance: "1000", balanceObservedAt: new Date() }).where(eq(userWallets.id, bank));
+    await db.update(userWallets).set({ balance: "5000", balanceObservedAt: new Date() }).where(eq(userWallets.id, cash));
+    await setWalletBalanceKind(owner, bank, "bank"); await setWalletBalanceKind(owner, cash, "credit");
+    expect((await wallets.getWallets()).find((wallet) => wallet.id === cash)).toMatchObject({ balanceKind: "credit", cashBalanceIncluded: false });
+    expect(await getWalletSummary(owner)).toMatchObject({ totalBalance: 1000 });
+    expect((await position(owner)).wallets).toMatchObject({ total: 1000, count: 1 });
+    await setWalletBalanceKind(owner, cash, "debit");
+    expect(await getWalletSummary(owner)).toMatchObject({ totalBalance: 6000 });
+  });
   beforeEach(async () => {
     await clean();
     await db.insert(localUsers).values([{ id: owner.userId, name: "Synthetic", phone: "synthetic-finance-01", password: "synthetic" }, { id: stranger.userId, name: "Synthetic Other", phone: "synthetic-finance-02", password: "synthetic" }]);
@@ -66,6 +77,18 @@ describe.runIf(process.env.RUN_DB_INTEGRATION === "1")("cashflow-v1 ledger", () 
     await add({ type: "transfer", amount: 500, direction: "incoming", category: "تحويل", subCategory: "جمعية" });
     expect(await getGam3eyaStanding(owner.userId, owner.userType)).toMatchObject({ paid: 1000, received: 500, held: 500 });
     expect(await getFinanceSummary(owner, period)).toMatchObject({ totalIncome: 500, totalExpense: 1000 });
+  });
+  it("preserves loan and gam3eya nature through a category-only edit and honors an explicit nature correction", async () => {
+    const loan = await add({ type: "transfer", direction: "outgoing", amount: 100, category: "تحويل", subCategory: "دين/سلفة", contactId: person });
+    await updateLedgerEntry(owner, loan, { category: "متنوعات", subCategory: "عام" });
+    expect(await listDebtBalances(owner.userId, owner.userType)).toEqual([expect.objectContaining({ contactId: person, balance: 100 })]);
+    await updateLedgerEntry(owner, loan, { movementKind: "spending" });
+    expect(await listDebtBalances(owner.userId, owner.userType)).toEqual([]);
+    const gam3eya = await add({ type: "transfer", direction: "outgoing", amount: 200, category: "تحويل", subCategory: "جمعية" });
+    await updateLedgerEntry(owner, gam3eya, { category: "متنوعات", subCategory: "عام" });
+    expect(await getGam3eyaStanding(owner.userId, owner.userType)).toMatchObject({ paid: 200, held: 200 });
+    await add({ type: "transfer", direction: "outgoing", movementKind: "own_transfer", amount: 300, category: "تحويل", subCategory: "دين/سلفة", contactId: person });
+    expect(await listDebtBalances(owner.userId, owner.userType)).toEqual([]);
   });
   it("does not turn an incoming own-account transfer into income when an older editor submits refund=false", async () => {
     const id = await add({ type: "transfer", direction: "incoming", amount: 100, category: "تحويل", subCategory: "بين حساباتي", walletId: bank, counterWalletId: cash });
