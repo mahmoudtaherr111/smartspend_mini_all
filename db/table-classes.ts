@@ -136,6 +136,7 @@ export const TABLE_CLASSES: Record<string, TableClass> = {
   voice_calls: "E",
   voice_call_incidents: "E",
   api_key_errors: "E",
+  scheduled_job_runs: "E",
   profile_learning_events: "E",
   ai_action_audit_logs: "E",
 

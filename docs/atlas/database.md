@@ -16,7 +16,7 @@ Foreign-key constraints declared in the schema: **0**. Every relationship below 
 | `B` | Core Ledger | Forever | MySQL; narrow hot table; covering indexes; never auto-deleted | 2 |
 | `C` | Derived / Rollup | Forever (cheap) | MySQL; tiny; rebuildable from B at any time | 14 |
 | `D` | Operational / Ephemeral | Minutes -> days | Redis primary, MySQL as durable fallback/audit | 10 |
-| `E` | Telemetry / Logs | 30–365 days | MySQL; chunk-pruned on a schedule, rolled up before deletion | 18 |
+| `E` | Telemetry / Logs | 30–365 days | MySQL; chunk-pruned on a schedule, rolled up before deletion | 19 |
 | `F` | AI Memory | Forever (items), rebuildable (vectors) | Text/metadata in MySQL; vectors in vector store or quantized binary | 6 |
 | `G` | Conversation | 90 days raw | MySQL raw for a window, then summarized and pruned | 2 |
 
@@ -124,6 +124,7 @@ Classification logs, token ledgers, analytics, notification logs
 | `classification_logs` | `classificationLogs` | 22 | 3 | `user_id` + `user_type` | `expenses → expenses`, `localUser → local_users`, `oauthUser → users` | `api/admin-console-router.ts`, `api/admin-router.ts`, `api/expense-router.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/muscle-memory.ts`, `api/services/finance-semantic-layer/resolvers.ts` | `api/ai-router.ts`, `api/boot.ts`, `api/expense-router.ts`, `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts` |
 | `notification_logs` | `notificationLogs` | 8 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users`, `template → notification_templates` | `api/admin-router.ts`, `api/notification-engine.ts` | `api/admin-router.ts`, `api/jobs/data-retention-job.ts`, `api/notification-engine.ts`, `api/services/user-purge-service.ts` |
 | `profile_learning_events` | `profileLearningEvents` | 9 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/services/user-profile-service.ts` | `api/jobs/data-retention-job.ts`, `api/services/user-profile-service.ts`, `api/services/user-purge-service.ts` |
+| `scheduled_job_runs` | `scheduledJobRuns` | 7 | 1 | — | — | `api/services/job-runs.ts` | `api/jobs/data-retention-job.ts`, `api/services/job-runs.ts` |
 | `store_events` | `storeEvents` | 7 | 2 | — | — | — | `api/lib/store-billing/ledger.ts` |
 | `user_analytics` | `userAnalytics` | 6 | 2 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/admin-console-router.ts`, `api/analytics-router.ts`, `api/lib/ai-usage-policy.ts`, `api/services/ai-cost-analytics.ts` | `api/analytics-router.ts`, `api/jobs/data-retention-job.ts`, `api/lib/ai-usage-policy.ts`, `api/lib/client-platform.ts`, `api/lib/subscription-service.ts`, `api/services/user-purge-service.ts`, `api/session-router.ts` |
 | `voice_call_incidents` | `voiceCallIncidents` | 7 | 3 | `user_id` + `user_type` | `call → voice_calls`, `localUser → local_users`, `oauthUser → users` | `api/services/voice/admin-stats.ts` | `api/jobs/data-retention-job.ts`, `api/services/user-purge-service.ts`, `api/services/voice/gateway/persistence.ts` |
@@ -422,7 +423,7 @@ chat_messages and conversation threads
 
 | Check | Tables |
 | --- | --- |
-| No relations in db/relations.ts | `ad_impressions`, `ad_stats_daily`, `admin_audit_logs`, `ai_cost_monthly`, `capture_ai_days`, `capture_sources`, `expense_daily_rollups`, `onboarding_questions`, `seo_pages`, `store_events`, `store_purchases`, `subscription_catalog`, `system_settings`, `whatsapp_otp_codes` |
+| No relations in db/relations.ts | `ad_impressions`, `ad_stats_daily`, `admin_audit_logs`, `ai_cost_monthly`, `capture_ai_days`, `capture_sources`, `expense_daily_rollups`, `onboarding_questions`, `scheduled_job_runs`, `seo_pages`, `store_events`, `store_purchases`, `subscription_catalog`, `system_settings`, `whatsapp_otp_codes` |
 | Not read or written by any runtime file | `discount_codes` |
 | Written but never read by runtime code | `ad_stats_daily`, `ai_action_audit_logs`, `ai_cost_monthly`, `referrals`, `store_events` |
 | Read but never written by runtime code | `onboarding_questions` |

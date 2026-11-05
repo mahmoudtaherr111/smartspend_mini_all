@@ -475,6 +475,14 @@ model {
         storageClass 'C'
       }
     }
+    scheduled_job_runs = table 'scheduled_job_runs' {
+      #classE
+      description '7 columns, 1 indexes, storage class E.'
+      metadata {
+        export 'scheduledJobRuns'
+        storageClass 'E'
+      }
+    }
     seo_pages = table 'seo_pages' {
       #classA
       description '8 columns, 0 indexes, storage class A.'

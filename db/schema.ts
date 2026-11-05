@@ -1467,6 +1467,25 @@ export const apiKeyErrors = mysqlTable(
   ],
 );
 
+// ─── Scheduled job runs ───
+/**
+ * One run of a background job (`withScheduledJobLock`): when it started, how long it took and whether it failed, by
+ * the error's class only. It holds no user data. Kept 14 days (`api/jobs/data-retention-job.ts`).
+ */
+export const scheduledJobRuns = mysqlTable(
+  "scheduled_job_runs",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    jobName: varchar("job_name", { length: 80 }).notNull(),
+    startedAt: datetime("started_at").notNull(),
+    durationMs: int("duration_ms").notNull(),
+    status: varchar("status", { length: 16 }).notNull(), // ok | failed
+    errorName: varchar("error_name", { length: 120 }),
+    host: varchar("host", { length: 120 }),
+  },
+  (t) => [index("job_runs_name_started_idx").on(t.jobName, t.startedAt)],
+);
+
 // ─── Web Push Subscriptions ───
 export const pushSubscriptions = mysqlTable(
   "push_subscriptions",

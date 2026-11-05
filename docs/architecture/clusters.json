@@ -69,7 +69,8 @@
         "api/lib/system-settings-registry.ts",
         "api/lib/app-time.ts",
         "api/lib/error-logger.ts",
-        "api/services/scheduler-lock.ts"
+        "api/services/scheduler-lock.ts",
+        "api/services/job-runs.ts"
       ]
     },
     {

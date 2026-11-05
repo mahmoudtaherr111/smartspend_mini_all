@@ -21,6 +21,7 @@ import { businessMonthRange, startOfBusinessDay } from "./lib/app-time";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
 import { getSystemSettings } from "./lib/settings-cache";
 import { adminProcedure, moderatorProcedure, router } from "./middleware";
+import { loadJobOverview } from "./services/job-runs";
 import { db } from "./queries/connection";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -592,6 +593,9 @@ export const adminConsoleRouter = router({
     }),
   // Money: store subscriptions now and this month, a monthly revenue estimate from the published prices, and the
   // latest subscriptions with who holds them.
+  /** The background jobs: what should run, when each last ran, and what failed in the last day. */
+  jobs: adminProcedure.query(() => loadJobOverview()),
+
   money: adminProcedure.query(async () => {
     const monthStart = businessMonthRange().start;
     const [byStatus, newThisMonth, endedThisMonth, latest] = await Promise.all([

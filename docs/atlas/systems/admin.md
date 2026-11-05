@@ -22,7 +22,7 @@ flowchart LR
   end
   subgraph g_api["API, routes and jobs"]
     http__admin["GET /admin"]
-    router_adminConsole["adminConsole API · 8 procedures"]
+    router_adminConsole["adminConsole API · 9 procedures"]
     router_admin["admin API · 57 procedures"]
     router_ads["ads API · 8 procedures"]
     router_aiSetup["aiSetup API · 6 procedures"]
@@ -208,6 +208,7 @@ flowchart LR
 | `adminConsole.aiCalls` | query | `adminProcedure` | `ai_token_ledgers`, `local_users`, `users` | — | — |
 | `adminConsole.classifications` | query | `adminProcedure` | `classification_logs`, `local_users`, `users` | — | — |
 | `adminConsole.growth` | query | `adminProcedure` | `expenses`, `local_users`, `store_purchases`, `user_analytics`, `users` | — | — |
+| `adminConsole.jobs` | query | `adminProcedure` | — | — | — |
 | `adminConsole.money` | query | `adminProcedure` | `local_users`, `store_purchases`, `users` | — | — |
 | `adminConsole.person` | query | `adminProcedure` | `ai_token_ledgers`, `capture_devices`, `expenses`, `local_users`, `sessions`, `store_purchases`, `support_tickets`, `users` | — | — |
 | `adminConsole.searchPeople` | query | `adminProcedure` | `local_users`, `users` | — | — |

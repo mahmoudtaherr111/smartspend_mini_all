@@ -60,7 +60,7 @@
     },
     "admin": {
       "files": {
-        "api/admin-console-router.ts": "376d69f09ad6",
+        "api/admin-console-router.ts": "7315ae5a29cb",
         "api/admin-router.ts": "e8201ba5d982",
         "api/ads-router.ts": "ace6b064f74c",
         "api/ai-setup-router.ts": "5c77cfe36acb",
@@ -98,9 +98,9 @@
         "src/pages/Admin.tsx": "9444393be5fa",
         "src/pages/Support.tsx": "b148a7cde72b"
       },
-      "checked": "2026-11-05 5af36e21",
-      "arabic": "8decbb36f2b1",
-      "arabicChecked": "2026-11-05 5af36e21"
+      "checked": "2026-11-05 aa6f9b19",
+      "arabic": "df937ce58eec",
+      "arabicChecked": "2026-11-05 aa6f9b19"
     },
     "ai-center": {
       "files": {
@@ -482,9 +482,9 @@
         "api/boot.ts#GET /robots.txt": "7089e4cacdb2",
         "api/boot.ts#GET /sitemap.xml": "4c2af6ff5731",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "2be5a0b190c1",
+        "api/boot.ts#rest-of-file": "d07c22de0bff",
         "api/context.ts": "d2add89863df",
-        "api/jobs/data-retention-job.ts": "013fac14e6c9",
+        "api/jobs/data-retention-job.ts": "0b30321625dc",
         "api/lib/app-time.ts": "7eaf4ab8fae6",
         "api/lib/cache-keys.ts": "89dc693d0c12",
         "api/lib/client-platform.ts": "fe6ce60846a0",
@@ -500,7 +500,8 @@
         "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "b0795d9392ff",
         "api/server.ts#rest-of-file": "e728f2d81677",
-        "api/services/scheduler-lock.ts": "861ab6f129a3",
+        "api/services/job-runs.ts": "3c081129871f",
+        "api/services/scheduler-lock.ts": "ca8e4e7dc54f",
         "api/services/storage/avatar-service.ts": "d0562e7ea889",
         "api/services/storage/index.ts": "f1351d7807f4",
         "api/services/storage/local-driver.ts": "3f1bfd3b9a11",
@@ -523,13 +524,13 @@
         "contracts/voice-models.ts": "900951ef83ec",
         "contracts/voice-protocol.ts": "0a986f6adbdc",
         "db/relations.ts": "23d6f74c42ad",
-        "db/schema.ts": "b6dd75e38e9a",
+        "db/schema.ts": "cc03cd30b3a0",
         "db/seed.ts": "811d2a0df636",
-        "db/table-classes.ts": "24dd31475b42"
+        "db/table-classes.ts": "72aa640d44a7"
       },
-      "checked": "2026-11-05 f7bb4b83",
-      "arabic": "4862e3a91489",
-      "arabicChecked": "2026-11-05 0c8067ac"
+      "checked": "2026-11-05 aa6f9b19",
+      "arabic": "ed1c0c4e8150",
+      "arabicChecked": "2026-11-05 aa6f9b19"
     },
     "voice-calls": {
       "files": {

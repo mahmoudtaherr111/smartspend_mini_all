@@ -66,7 +66,10 @@ opens the console's page, `no-store` and `noindex`). `npm run dev` (or `admin:de
   closes a ticket (`support.close`, which refuses anyone but the ticket's owner or an admin).
 - «التشغيل» (`admin/src/pages/Operations.tsx`): the AI switches, the daily cost cap and the mobile versions and store
   links, saved through `admin.updateSettings` from a bar that appears with the count of unsaved changes (and a
-  warning before leaving the page with them), and the last 30 entries of the audit log in plain words.
+  warning before leaving the page with them); the background jobs (`adminConsole.jobs`, `admin/src/pages/Jobs.tsx`):
+  each job in words with how often it runs, its last run and how long it took or the error's class, its last success,
+  its runs and failures in the last day, the late and failing ones first ([platform](platform.md#jobs)); and the last
+  30 entries of the audit log in plain words.
 - «الفلوس» (`admin/src/pages/Money.tsx`, `adminConsole.money`): a monthly revenue estimate from the list
   prices in `contracts/plans.ts` (yearly divided by 12) over subscriptions that are active, cancelled but still paid,
   or in grace, before the store's share; active subscriptions by store; subscriptions started this month and those
@@ -212,14 +215,12 @@ Checked against the code; each one names where it lives.
    not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
 2. **Gap.** Nothing backs up the database from the console; `admin.triggerBackupDemo` (settings with secrets masked,
    onboarding questions and ads) has no screen.
-3. **Gap.** No screen shows when each background job last ran or whether it failed: `withScheduledJobLock` records
-   nothing.
-4. **Gap.** `support.assign` has no screen, so tickets cannot be given to one person of the team.
-5. **Gap.** No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served
+3. **Gap.** `support.assign` has no screen, so tickets cannot be given to one person of the team.
+4. **Gap.** No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served
    at `/sitemap.xml` from the app's address.
-6. **Gap.** Ads show only in the mobile app (`mobile/app/lib/src/features/ads/sponsored_card.dart`), which records
+5. **Gap.** Ads show only in the mobile app (`mobile/app/lib/src/features/ads/sponsored_card.dart`), which records
    impressions and clicks; the website shows none.
-7. **Gap.** Procedures without a screen: `admin.sendPushNotification` (web push only), `admin.getAiTokenLedger`,
+6. **Gap.** Procedures without a screen: `admin.sendPushNotification` (web push only), `admin.getAiTokenLedger`,
    `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.updateUserPlan` (the console uses the
    `V2` one), `admin.getAICostOverview`, `admin.getAIClassificationStats`, `admin.getVoiceUsageStats`,
    `admin.getUserAiQuota`, `admin.getUserSmartProfile`, `admin.listAllUsers`, `admin.listSubscriptionsAdmin`,

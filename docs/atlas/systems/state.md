@@ -19,9 +19,9 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (4 of 
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-11-05 df6216e1 | 2026-11-05 df6216e1 | 16 | **1** | — | 7 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-11-05 df6216e1 | 2026-11-03 ff028180 | 2 | — | — | 2 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-11-04 4def5707 | 2026-11-05 08b37c7f | 4 | — | — | 3 | 1 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 5af36e21 | 2026-11-05 5af36e21 | 7 | — | — | 7 | — |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-11-05 aa6f9b19 | 2026-11-05 aa6f9b19 | 7 | — | — | 6 | — |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-11-05 f7bb4b83 | 2026-11-05 f7bb4b83 | 10 | — | — | 3 | 5 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 f7bb4b83 | 2026-11-05 0c8067ac | 5 | — | — | — | 7 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-11-05 aa6f9b19 | 2026-11-05 aa6f9b19 | 5 | — | — | 1 | 7 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-11-04 4def5707 | 2026-11-04 4def5707 | 7 | — | — | 3 | 1 |
 
 
@@ -104,7 +104,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 **Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
 - `logAdminAction` in `api/lib/admin-audit.ts` records actions in `admin_audit_logs` and the audit tab shows them, but not every procedure of `api/admin-router.ts` calls it yet, and a failed write of the trail does not stop the action.
 - Nothing backs up the database from the console; `admin.triggerBackupDemo` (settings with secrets masked, onboarding questions and ads) has no screen.
-- No screen shows when each background job last ran or whether it failed: `withScheduledJobLock` records nothing.
 - `support.assign` has no screen, so tickets cannot be given to one person of the team.
 - No screen edits SEO pages (`seo.upsert`, `seo.list` and `seo.delete` have no caller); the sitemap is served at `/sitemap.xml` from the app's address.
 - Ads show only in the mobile app (`mobile/app/lib/src/features/ads/sponsored_card.dart`), which records impressions and clicks; the website shows none.
@@ -114,6 +113,9 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Two accountings remain: the `ai_cost_*` events of `recordAICostMetric` estimate tokens on their own and the screen that would show them is not mounted ([admin](admin.md)); the ledger is the priced one.
 - Speech-to-text reports one token count, so its row is priced at the model's text input rate although the input is audio, and models the admin adds without a price are recorded as unpriced until a price is entered.
 - Nobody has called Claude with a real key from this code yet: the adapter is tested against recorded response shapes, and a call with an invented key reached Anthropic and came back as `auth`.
+
+**Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
+- Nothing alerts anyone when a job is late or failing: «التشغيل» shows it, and only to an admin who looks.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - `/ultra` sends anyone not on Ultra to the plans page itself, while the page tells the reader it is protected by `UltraFeatureRoute`. Both gates in gate components are unused, so the plan is checked on the server only.

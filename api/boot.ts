@@ -35,6 +35,7 @@ import {
   seedDefaultTemplates,
   checkAndTriggerSmartActivityNotifications,
 } from "./notification-engine";
+import { registerJobSchedule } from "./services/job-runs";
 import { withScheduledJobLock } from "./services/scheduler-lock";
 import { syncCaptureSeed } from "./lib/capture/catalog";
 import { registerCaptureRoutes } from "./capture-v1-routes";
@@ -68,6 +69,8 @@ function scheduleProtectedJob(
   jobName: string,
   task: () => Promise<void>,
 ) {
+  // Every process knows the schedule, so the console can say what should have run whichever process answers it.
+  registerJobSchedule(jobName, expression);
   if (!cronsEnabled) return;
   // The hours below are Cairo business time (golden rule 6), not the server's clock: on a UTC host the 20:00
   // activity reminder reached people at 23:00 in summer.

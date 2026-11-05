@@ -81,6 +81,7 @@ flowchart LR
     tbl_profile_learning_events[("profile_learning_events")]
     tbl_push_subscriptions[("push_subscriptions")]
     tbl_scheduled_cashflows[("scheduled_cashflows")]
+    tbl_scheduled_job_runs[("scheduled_job_runs")]
     tbl_seo_pages[("seo_pages")]
     tbl_sessions[("sessions")]
     tbl_store_purchases[("store_purchases")]
@@ -257,6 +258,7 @@ flowchart LR
   mod_jobs ==> tbl_pending_clarifications
   mod_jobs ==> tbl_pro_subscriptions
   mod_jobs ==> tbl_profile_learning_events
+  mod_jobs ==> tbl_scheduled_job_runs
   mod_jobs ==> tbl_store_purchases
   mod_jobs ==> tbl_user_analytics
   mod_jobs ==> tbl_user_budgets
@@ -271,6 +273,7 @@ flowchart LR
   mod_platform --> mod_contracts
   mod_platform -.-> tbl_system_settings
   mod_platform ==> tbl_api_key_errors
+  mod_platform ==> tbl_scheduled_job_runs
   mod_platform ==> tbl_user_analytics
   mod_storage --> ext_object_storage
   router_appConfig --> mod_platform
@@ -286,7 +289,7 @@ flowchart LR
 | `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 16 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 7 |
-| `platform` — Platform services | Environment validation, Redis client (cache, shared state for one-time codes, generation counters with replay of bumps Redis missed) and cache keys, the generation watcher that tells a per-process copy of shared data to reload, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 12 |
+| `platform` — Platform services | Environment validation, Redis client (cache, shared state for one-time codes, generation counters with replay of bumps Redis missed) and cache keys, the generation watcher that tells a per-process copy of shared data to reload, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 13 |
 | `storage` — File storage | File storage behind one driver interface (local disk or S3-compatible storage such as R2), plus the avatar service. | 5 |
 
 ## API procedures
@@ -362,6 +365,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `profile_learning_events` | E | `jobs` | — |
 | `push_subscriptions` | A | `api-routers` | `api-routers` |
 | `scheduled_cashflows` | C | `api-routers` | `api-routers` |
+| `scheduled_job_runs` | E | `jobs`, `platform` | `platform` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
 | `sessions` | D | — | `api-routers` |
 | `store_purchases` | A | `api-routers`, `jobs` | `api-routers`, `jobs` |
@@ -453,7 +457,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>51 files and declarations</summary>
+<details><summary>52 files and declarations</summary>
 
 - `api/app-config-router.ts`
 - `api/boot.ts#ALL /api/trpc/*`
@@ -480,6 +484,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/queries/connection.ts`
 - `api/router.ts`
 - `api/server.ts#rest-of-file`
+- `api/services/job-runs.ts`
 - `api/services/scheduler-lock.ts`
 - `api/services/storage/avatar-service.ts`
 - `api/services/storage/index.ts`

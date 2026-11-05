@@ -239,6 +239,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/services/financial-month.ts` | [money](money.md) |
 | `api/services/firebase.ts` | [notifications](notifications.md) |
 | `api/services/installments.ts` | [money](money.md) |
+| `api/services/job-runs.ts` | [platform](platform.md) |
 | `api/services/ledger-bundles.ts` | [money](money.md) |
 | `api/services/ledger-semantics.ts` | [money](money.md) |
 | `api/services/ledger-writer.ts` | [money](money.md) |

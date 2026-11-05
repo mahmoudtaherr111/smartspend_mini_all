@@ -157,6 +157,7 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
       "Bank and wallet notifications read as transactions (redacted text and the reader's fields). A recorded one lives on in the ledger; one never answered is forgotten (decision 0028).",
   },
   { tableName: "capture_questions", class: "E", retainDays: 30, dateColumn: "created_at", optionalTable: true, description: "Optional post-save purpose questions, never a condition for saving money" },
+  { tableName: "scheduled_job_runs", class: "E", retainDays: 14, dateColumn: "started_at", optionalTable: true, description: "When each background job ran, how long it took and whether it failed" },
   { tableName: "capture_ai_days", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },
   { tableName: "capture_ai_accounts", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },
   { tableName: "capture_ai_reservations", class: "D", retainDays: 60, dateColumn: "created_at", optionalTable: true, description: "Capture-only resource reservations and aggregate budgets" },

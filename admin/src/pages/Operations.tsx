@@ -6,6 +6,7 @@ import { Label } from "@admin/kit/label";
 import { Switch } from "@admin/kit/switch";
 import { trpc } from "@admin/lib/trpc";
 import { SaveBar } from "../ui/SaveBar";
+import { Jobs } from "./Jobs";
 import { LoadError, Loading, PageHeader } from "../ui/states";
 import { AUDIT_ACTION, dayTime } from "../ui/words";
 
@@ -106,6 +107,12 @@ export function Operations() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="mt-4 rounded-xl border bg-background p-4">
+        <h2 className="font-bold">المهام المجدولة</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">الشغل اللي السيرفر بيعمله لوحده في الخلفية. المتأخرة واللي وقعت فوق، وبتتحدث كل دقيقة.</p>
+        <Jobs />
       </section>
 
       <section className="mt-4 rounded-xl border bg-background p-4">

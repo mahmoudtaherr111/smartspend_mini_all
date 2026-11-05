@@ -23,6 +23,7 @@ storage, the contracts shared with the web app, and the retention job that prune
 | Settings | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` (with the embedding keys, `usd_to_egp_rate`, and the bank-message model's `sms_ai_enabled` and `sms_ai_daily_cost_cap_usd`) | `system_settings` behind one cached read, and the registry of keys, defaults and secrets |
 | Business time | `api/lib/app-time.ts` | The day and month boundaries of the ledger, in `APP_TIMEZONE` (Cairo) rather than the server's clock, and `parseBusinessInstant`, which reads a date the client wrote without a time zone as Cairo wall-clock time |
 | Job lock | `api/services/scheduler-lock.ts` | A MySQL advisory lock so a job registered on every replica runs on one |
+| Job runs | `api/services/job-runs.ts`, table `scheduled_job_runs` | Every run that took the lock, with its duration and, on failure, the error's class; the console's «التشغيل» shows each job's last run, last success, failures and whether it is late |
 | Retention | `api/jobs/data-retention-job.ts` | Rolls up and prunes telemetry, conversation and ephemeral tables |
 | File storage | `api/services/storage/` | One driver interface over local disk or S3-compatible storage, plus the avatar service |
 | Shared contracts | `contracts/` | Input limits, plan prices and plan features, the category taxonomy (`contracts/categories.ts`, with the map from old category names), the live call's wire protocol (`contracts/voice-protocol.ts`), what a parsed item carries into a save from any channel (`contracts/expense-save.ts`), the Gemini models it may use (`contracts/voice-models.ts`; same per-token prices, labelled without a cost factor), the purposes a model can serve (classification, chat, reports, embeddings, bank messages) and the published model prices (`contracts/ai-models.ts`), the profile questions the app asks and why (`contracts/profile-fields.ts`), each notification type and the page it opens (`contracts/notification-types.ts`), the kinds of capture sources and subscription cycles (`contracts/capture.ts`), and shared types the web app imports |
@@ -109,7 +110,12 @@ storage, the contracts shared with the web app, and the retention job that prune
 
 ## Jobs
 Registered in `api/boot.ts` and only where `ENABLE_CRONS=true`; each takes a MySQL advisory lock named after
-the job, so every replica may register it and one runs it (golden rule 7). The hours are Cairo time: node-cron
+the job, so every replica may register it and one runs it (golden rule 7). The process that took the lock writes the
+run to `scheduled_job_runs` (start, duration, `ok` or `failed` with the error's code or class, never its message, and
+the host), kept 14 days; a write that fails, as before migration 0048 is applied, never fails the job and is logged once
+(`job_runs.write_failed`). Every process registers the schedules (`registerJobSchedule`), crons on or off, so
+`adminConsole.jobs` can name what should run whichever process answers. A job counts as late when its last success is
+older than twice its interval, at least an hour, counted from the first recorded run. The hours are Cairo time: node-cron
 schedules each job in `APP_TIMEZONE`, not the server's clock. The list, with each schedule, is in
 [docs/atlas/entrypoints.md](../atlas/entrypoints.md). In short: session, challenge and phone-code cleanup
 (daily), classification logs (Sundays), scheduled notifications (every minute) and the smart activity check
@@ -172,6 +178,7 @@ Checked against the code; each one names where it lives.
    print `error.message` as text print provider, socket and storage errors today, or failed reads whose values
    are ids and dates (`api/ai-router.ts`,
    `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
+8. **Gap.** Nothing alerts anyone when a job is late or failing: «التشغيل» shows it, and only to an admin who looks.
 
 ## Voice capacity settings
 The settings registry defines `voice_standard_input_tpm`, `voice_standard_reserved_tpm`, `voice_ultra_input_tpm` and `voice_ultra_reserved_tpm`. Admission reads them through the shared settings accessor, combines them with per-model seat caps, and reserves 20% headroom. Values are editable in the admin voice section and require review against the active project’s AI Studio limits; an estimate is not a guarantee for unlimited conversation context.

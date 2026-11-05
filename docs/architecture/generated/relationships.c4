@@ -498,6 +498,7 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.pro_subscriptions
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.profile_learning_events
+  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.scheduled_job_runs
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.store_purchases
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_budgets
@@ -552,10 +553,12 @@ model {
   smartspend.api.modules.notifications -[writes]-> smartspend.mysql.push_subscriptions
   smartspend.api.modules.platform -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.platform -[reads]-> smartspend.mysql.api_key_errors
+  smartspend.api.modules.platform -[reads]-> smartspend.mysql.scheduled_job_runs
   smartspend.api.modules.platform -[reads]-> smartspend.mysql.system_settings
   smartspend.api.modules.platform -[uses]-> sentry
   smartspend.api.modules.platform -[uses]-> smartspend.redis
   smartspend.api.modules.platform -[writes]-> smartspend.mysql.api_key_errors
+  smartspend.api.modules.platform -[writes]-> smartspend.mysql.scheduled_job_runs
   smartspend.api.modules.platform -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.modules.receipt-parsing -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.receipt-parsing -[imports]-> smartspend.api.modules.arabic-nlp
@@ -776,6 +779,7 @@ model {
   smartspend.api.trpc.adminConsole.growth -[reads]-> smartspend.mysql.user_analytics
   smartspend.api.trpc.adminConsole.growth -[reads]-> smartspend.mysql.users
   smartspend.api.trpc.adminConsole.growth -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.adminConsole.jobs -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.store_purchases
   smartspend.api.trpc.adminConsole.money -[reads]-> smartspend.mysql.users
